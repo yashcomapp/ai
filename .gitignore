@@ -1,0 +1,27 @@
+# node_modules
+node_modules/
+
+# next build cache and build output
+.next/
+out/
+build/
+
+# environment variables
+.env*.local
+.env
+
+# service accounts / exposed keys
+*.json
+!package.json
+!tsconfig.json
+!tsconfig.tsbuildinfo
+
+.vercel
+
+# Local backups and scratch data
+backups/
+scratch/
+
+# debug/inspect helper scripts at root
+inspect-*.js
+debug-*.js

@@ -1,0 +1,1210 @@
+/* ============================================================
+   THEME.CSS — Apple / iOS Frosted Glassmorphism Design System
+   Liquid Glass Surfaces, Specular Highlights & Cupertino Ergonomics
+   ============================================================ */
+
+/* ---------- 1. DESIGN SYSTEM VARIABLES (Modern Sleek Slate / Neutral Dark Gray) ---------- */
+:root,
+html[data-theme="dark"],
+html.dark {
+    --bg: #0d0f12;
+    --bg-soft: #13161a;
+    --bg-grad: #0d0f12;
+
+    /* Clean Neutral Slate & Charcoal Glass Surfaces */
+    --surface: #171a1f;
+    --surface-2: #1c2026;
+    --surface-3: #222730;
+    --surface-tint: rgba(255, 255, 255, 0.02);
+    --surface-glass: rgba(23, 26, 31, 0.85);
+    --surface-popover: #181c22;
+    --border-popover: rgba(255, 255, 255, 0.10);
+
+    /* Crisp Subtle Borders */
+    --border: rgba(255, 255, 255, 0.09);
+    --border-light: rgba(255, 255, 255, 0.05);
+    --border-glass: rgba(255, 255, 255, 0.12);
+
+    /* Clean Professional Typography */
+    --text: #f1f5f9;
+    --text-2: #e2e8f0;
+    --text-secondary: #cbd5e1;
+    --text-muted: #94a3b8;
+    --text-faint: #64748b;
+
+    /* Primary Accent - Modern Sky Blue */
+    --accent: #38bdf8;
+    --accent-dark: #0284c7;
+    --accent-grad: linear-gradient(135deg, #38bdf8 0%, #0284c7 100%);
+    --accent-soft: rgba(56, 189, 248, 0.12);
+    --accent-ring: rgba(56, 189, 248, 0.25);
+    --accent-tint: rgba(56, 189, 248, 0.05);
+    --accent-light: rgba(56, 189, 248, 0.08);
+
+    /* Faint / Pastel Status Colors */
+    --success: #34d399;
+    --warning: #fbbf24;
+    --danger: #f87171;
+    --info: #38bdf8;
+
+    --success-bg: rgba(52, 211, 153, 0.12);
+    --warning-bg: rgba(251, 191, 36, 0.12);
+    --danger-bg: rgba(248, 113, 113, 0.12);
+    --info-bg: rgba(56, 189, 248, 0.12);
+
+    --review-card-bg: #171a1f;
+    --review-card-border: rgba(255, 255, 255, 0.09);
+    --review-option-bg: #1c2026;
+    --review-option-border: rgba(255, 255, 255, 0.06);
+
+    --text-on-accent: #171a1f;
+
+    /* Professional Typography */
+    --font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', var(--font-inter), 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --font-outfit: var(--font-outfit), sans-serif;
+
+    /* Refined Squircles */
+    --radius-sm: 8px;
+    --radius: 12px;
+    --radius-lg: 16px;
+    --radius-pill: 999px;
+
+    /* Gentle Natural Glass Blur */
+    --glass-blur: blur(12px);
+
+    /* Soft Natural Drop Shadows */
+    --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.30);
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.40);
+    --shadow-md: 0 4px 12px -2px rgba(0, 0, 0, 0.50);
+    --shadow-lg: 0 10px 24px -4px rgba(0, 0, 0, 0.60);
+    --shadow-glass: 0 4px 16px rgba(0, 0, 0, 0.40);
+    --card-hover-shadow: 0 8px 24px rgba(0, 0, 0, 0.50);
+
+    /* Focus */
+    --focus-ring: 0 0 0 3px rgba(56, 189, 248, 0.25);
+
+    /* Smooth Transition */
+    --ease: cubic-bezier(0.16, 1, 0.3, 1);
+
+    /* Layout */
+    --content-max: 1400px;
+    --topbar-h: 64px;
+
+    /* Z-Index Scale */
+    --z-base: 1;
+    --z-dropdown: 100;
+    --z-sticky: 150;
+    --z-nav: 200;
+    --z-modal: 5000;
+    --z-tooltip: 6000;
+}
+
+/* ---------- 3. BASE RESET & VIEWPORT LOCK ---------- */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html {
+    background-color: var(--bg) !important;
+    min-height: 100%;
+}
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+    font-family: var(--font-family);
+    color: var(--text);
+    background-color: var(--bg) !important;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    line-height: 1.5;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior-y: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+body {
+    min-height: 100vh;
+}
+
+/* KaTeX High-Contrast Invariant */
+.katex, .katex-display, .katex-html,
+.katex .mord, .katex .mbin, .katex .mrel, .katex .mopen, .katex .mclose, .katex .mpunct {
+    color: var(--text) !important;
+}
+
+/* ---------- 4. TYPOGRAPHY ---------- */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-weight: 600;
+    letter-spacing: -0.012em;
+    color: var(--text);
+    margin: 0;
+}
+
+h1 {
+    font-size: 26.4px;
+}
+h2 {
+    font-size: 21.6px;
+}
+h3 {
+    font-size: 18px;
+}
+h4 {
+    font-size: 15.6px;
+}
+p {
+    margin: 0;
+    color: var(--text-2);
+}
+
+a {
+    color: var(--accent);
+    text-decoration: none;
+    transition: color .15s var(--ease);
+}
+
+a:hover {
+    color: var(--accent-dark);
+}
+
+/* ---------- 5. SELECTION ---------- */
+::selection {
+    background: var(--accent-soft);
+    color: var(--text);
+}
+
+/* ---------- 6. SCROLLBAR ---------- */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 8px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--text-faint);
+}
+
+/* ---------- 7. FOCUS ---------- */
+:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+    border-radius: 4px;
+}
+
+/* ---------- 8. APPLICATION SHELL ---------- */
+.app-shell {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.main-content {
+    flex: 1;
+    width: 100%;
+    max-width: var(--content-max);
+    margin: 0 auto;
+    padding: 14px 14px 90px;
+}
+
+@media (min-width: 768px) {
+    .main-content {
+        padding: 16px 18px 90px;
+    }
+}
+
+/* ---------- 9. GLASS UTILITY ---------- */
+.glass {
+    background: var(--surface-glass);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: 2px solid var(--border-glass);
+    box-shadow: var(--shadow-glass);
+    border-radius: var(--radius-lg);
+}
+
+html[data-theme="dark"] .glass {
+    background: var(--surface-glass);
+}
+
+/* ---------- 10. TRANSITIONS FOR THEME SWITCH ---------- */
+body,
+.card,
+.stat-card,
+.top-bar,
+.nav-chip-panel,
+.nav-hamburger-btn,
+.form-section,
+.modal-content {
+    transition: background-color .25s var(--ease),
+                color .25s var(--ease),
+                border-color .25s var(--ease),
+                box-shadow .25s var(--ease);
+}
+
+/* ---------- 11. ANIMATIONS ---------- */
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulse {
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+/* ---------- 12. SPACING UTILITIES ---------- */
+/* Margins */
+.mt-1 {
+    margin-top: 4px;
+}
+.mt-2 {
+    margin-top: 8px;
+}
+.mt-3 {
+    margin-top: 12px;
+}
+.mt-4 {
+    margin-top: 16px;
+}
+.mt-5 {
+    margin-top: 20px;
+}
+
+.mb-1 {
+    margin-bottom: 4px;
+}
+.mb-2 {
+    margin-bottom: 8px;
+}
+.mb-3 {
+    margin-bottom: 12px;
+}
+.mb-4 {
+    margin-bottom: 16px;
+}
+.mb-5 {
+    margin-bottom: 20px;
+}
+
+.ml-1 {
+    margin-left: 4px;
+}
+.ml-2 {
+    margin-left: 8px;
+}
+.ml-3 {
+    margin-left: 12px;
+}
+
+.mr-1 {
+    margin-right: 4px;
+}
+.mr-2 {
+    margin-right: 8px;
+}
+.mr-3 {
+    margin-right: 12px;
+}
+
+.mx-1 {
+    margin-left: 4px;
+    margin-right: 4px;
+}
+.mx-2 {
+    margin-left: 8px;
+    margin-right: 8px;
+}
+.mx-3 {
+    margin-left: 12px;
+    margin-right: 12px;
+}
+
+.my-1 {
+    margin-top: 4px;
+    margin-bottom: 4px;
+}
+.my-2 {
+    margin-top: 8px;
+    margin-bottom: 8px;
+}
+.my-3 {
+    margin-top: 12px;
+    margin-bottom: 12px;
+}
+
+/* Padding */
+.pt-1 {
+    padding-top: 4px;
+}
+.pt-2 {
+    padding-top: 8px;
+}
+.pt-3 {
+    padding-top: 12px;
+}
+.pt-4 {
+    padding-top: 16px;
+}
+
+.pb-1 {
+    padding-bottom: 4px;
+}
+.pb-2 {
+    padding-bottom: 8px;
+}
+.pb-3 {
+    padding-bottom: 12px;
+}
+.pb-4 {
+    padding-bottom: 16px;
+}
+
+.pl-1 {
+    padding-left: 4px;
+}
+.pl-2 {
+    padding-left: 8px;
+}
+.pl-3 {
+    padding-left: 12px;
+}
+
+.pr-1 {
+    padding-right: 4px;
+}
+.pr-2 {
+    padding-right: 8px;
+}
+.pr-3 {
+    padding-right: 12px;
+}
+
+.px-1 {
+    padding-left: 4px;
+    padding-right: 4px;
+}
+.px-2 {
+    padding-left: 8px;
+    padding-right: 8px;
+}
+.px-3 {
+    padding-left: 12px;
+    padding-right: 12px;
+}
+
+.py-1 {
+    padding-top: 4px;
+    padding-bottom: 4px;
+}
+.py-2 {
+    padding-top: 8px;
+    padding-bottom: 8px;
+}
+.py-3 {
+    padding-top: 12px;
+    padding-bottom: 12px;
+}
+
+.p-1 {
+    padding: 4px;
+}
+.p-2 {
+    padding: 8px;
+}
+.p-3 {
+    padding: 12px;
+}
+.p-4 {
+    padding: 16px;
+}
+
+/* ---------- 13. FLEX UTILITIES ---------- */
+.flex {
+    display: flex;
+}
+
+.flex-col {
+    display: flex;
+    flex-direction: column;
+}
+
+.flex-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.flex-between {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.flex-wrap {
+    flex-wrap: wrap;
+}
+
+.flex-1 {
+    flex: 1;
+}
+
+.gap-1 {
+    gap: 4px;
+}
+.gap-2 {
+    gap: 8px;
+}
+.gap-3 {
+    gap: 12px;
+}
+.gap-4 {
+    gap: 16px;
+}
+.gap-5 {
+    gap: 20px;
+}
+
+.items-center {
+    align-items: center;
+}
+.items-start {
+    align-items: flex-start;
+}
+.items-end {
+    align-items: flex-end;
+}
+
+.justify-center {
+    justify-content: center;
+}
+.justify-start {
+    justify-content: flex-start;
+}
+.justify-end {
+    justify-content: flex-end;
+}
+
+/* ---------- 14. TEXT UTILITIES ---------- */
+.text-center {
+    text-align: center;
+}
+.text-right {
+    text-align: right;
+}
+.text-left {
+    text-align: left;
+}
+
+.text-muted {
+    color: var(--text-muted);
+}
+.text-faint {
+    color: var(--text-faint);
+}
+.text-success {
+    color: var(--success);
+}
+.text-danger {
+    color: var(--danger);
+}
+.text-warning {
+    color: var(--warning);
+}
+.text-info {
+    color: var(--info);
+}
+.text-accent {
+    color: var(--accent);
+}
+
+/* ---------- 15. VISIBILITY UTILITIES ---------- */
+.hidden {
+    display: none !important;
+}
+
+.invisible {
+    visibility: hidden !important;
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* ---------- 16. WIDTH UTILITIES ---------- */
+.w-full {
+    width: 100%;
+}
+.w-50 {
+    width: 50%;
+}
+.w-33 {
+    width: 33.333%;
+}
+.w-25 {
+    width: 25%;
+}
+
+/* ---------- 17. RESPONSIVE BREAKPOINTS ---------- */
+@media (max-width: 768px) {
+    /* Scale up all base text sizes for mobile screen readability */
+    body, p, button, input, select, textarea, label {
+        font-size: 16px !important;
+    }
+    
+    /* Headers scale-up on mobile */
+    h1 { font-size: 24px !important; }
+    h2 { font-size: 20px !important; }
+    h3 { font-size: 18px !important; }
+    h4 { font-size: 16px !important; }
+
+    /* Component specific text scale-up for mobile */
+    .question-preview-text,
+    .question-text,
+    .option-text,
+    .option label,
+    .student-name,
+    .item-title,
+    .backup-name,
+    .request-topic,
+    .template-name {
+        font-size: 17px !important;
+    }
+    
+    .option {
+        padding: 12px 16px !important; /* give option rows more touch target space too! */
+    }
+    
+    .student-roll,
+    .registration-date,
+    .batch-info,
+    .backup-meta,
+    .item-subtitle,
+    .template-stats,
+    .topic-mastery,
+    .trend-up,
+    .trend-down,
+    .collection-count {
+        font-size: 14px !important;
+    }
+    
+    .badge,
+    .chip,
+    .topic-badge,
+    .chapter-badge,
+    .collection-badge,
+    .stage-badge {
+        font-size: 13px !important;
+        padding: 4px 10px !important;
+    }
+
+    .hide-mobile {
+        display: none !important;
+    }
+    .page-header {
+        padding: 8px 10px;
+        gap: 6px;
+    }
+    .page-header .brand {
+        font-size: 18px !important;
+        font-weight: 800;
+        white-space: nowrap;
+    }
+    .page-header h1 {
+        font-size: 14.4px !important;
+    }
+    .page-header .subtitle {
+        font-size: 13px !important;
+    }
+    .page-header-left {
+        gap: 8px;
+    }
+    .page-header-right {
+        gap: 6px;
+    }
+    .page-header-right #usernameDisplay {
+        display: none;
+    }
+    .theme-toggle,
+    .btn-icon.logout-btn {
+        width: 32px;
+        height: 32px;
+        font-size: 18px !important;
+    }
+}
+
+@media (min-width: 769px) {
+    .hide-desktop {
+        display: none !important;
+    }
+}
+
+/* ---------- 18. THEME TOGGLE (Only the button, NOT the container) ---------- */
+.theme-toggle {
+    background: rgba(255, 255, 255, 0.16);
+    color: var(--text-on-accent);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 19.2px;
+    line-height: 1;
+    cursor: pointer;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    transition: background 0.15s var(--ease), transform 0.25s var(--ease);
+    flex-shrink: 0;
+}
+
+.theme-toggle:hover {
+    background: rgba(255, 255, 255, 0.28);
+}
+
+.theme-toggle:active {
+    transform: scale(0.92);
+}
+
+.theme-toggle .ico-sun,
+.ico-sun {
+    display: inline;
+}
+
+.theme-toggle .ico-moon,
+.ico-moon {
+    display: none;
+}
+
+html[data-theme="dark"] .theme-toggle .ico-sun,
+html[data-theme="dark"] .ico-sun {
+    display: none;
+}
+
+html[data-theme="dark"] .theme-toggle .ico-moon,
+html[data-theme="dark"] .ico-moon {
+    display: inline;
+}
+
+.btn-icon.logout-btn {
+    background: rgba(255, 255, 255, 0.16);
+    color: var(--text-on-accent);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 19.2px;
+    line-height: 1;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.15s var(--ease), transform 0.25s var(--ease);
+}
+
+.btn-icon.logout-btn:hover {
+    background: var(--danger);
+}
+
+.btn-icon.logout-btn:active {
+    transform: scale(0.92);
+}
+
+/* ---------- 19. BUTTONS (Base only, variants in components.css) ---------- */
+.btn,
+button.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    border: 1px solid transparent;
+    border-radius: var(--radius-pill);
+    padding: 8px 16px;
+    font-family: inherit;
+    font-size: 15.6px;
+    font-weight: 500;
+    line-height: 1;
+    cursor: pointer;
+    transition: background .18s var(--ease), color .18s var(--ease),
+                box-shadow .18s var(--ease), transform .12s var(--ease),
+                border-color .18s var(--ease);
+    user-select: none;
+    white-space: nowrap;
+}
+
+.btn:disabled,
+button:disabled {
+    opacity: .55;
+    cursor: not-allowed;
+}
+
+.btn:active {
+    transform: translateY(1px);
+}
+
+.btn-sm {
+    padding: 6px 12px;
+    font-size: 14.4px;
+}
+
+.btn-lg {
+    padding: 11px 22px;
+    font-size: 16.8px;
+}
+
+.btn-block {
+    width: 100%;
+}
+
+.btn-primary {
+    background: var(--accent-grad);
+    color: var(--text-on-accent);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.btn-primary:hover {
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+}
+
+.btn-secondary {
+    background: var(--surface);
+    color: var(--text-2);
+    border-color: var(--border);
+    box-shadow: var(--shadow-xs);
+}
+
+.btn-secondary:hover {
+    background: var(--bg-soft);
+    color: var(--text);
+}
+
+.btn-success {
+    background: var(--success);
+    color: var(--text-on-accent);
+}
+
+.btn-success:hover {
+    filter: brightness(.92);
+}
+
+.btn-danger {
+    background: var(--danger);
+    color: var(--text-on-accent);
+}
+
+.btn-danger:hover {
+    filter: brightness(.92);
+}
+
+.btn-warning {
+    background: var(--warning);
+    color: var(--text-on-accent);
+}
+
+.btn-warning:hover {
+    filter: brightness(.92);
+}
+
+.btn-ghost {
+    background: transparent;
+    color: var(--text-2);
+    border-color: var(--border);
+}
+
+.btn-ghost:hover {
+    background: var(--bg-soft);
+}
+
+/* ---------- 20. ICON BUTTON (Top bar) ---------- */
+.icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: rgba(255, 255, 255, 0.16);
+    color: var(--text-on-accent);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: var(--radius-pill);
+    padding: 6px 14px;
+    font-size: 15px;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    transition: background 0.15s var(--ease), transform 0.1s var(--ease);
+}
+
+.icon-btn:hover {
+    background: rgba(255, 255, 255, 0.28);
+}
+
+.icon-btn:active {
+    transform: scale(0.97);
+}
+
+.icon-btn .ico {
+    font-size: 16.8px;
+    line-height: 1;
+}
+
+/* ---------- 21. TOP BAR (Sticky header) ---------- */
+.top-bar {
+    position: sticky;
+    top: 0;
+    z-index: var(--z-sticky);
+    height: var(--topbar-h);
+    padding: 0 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    background: var(--accent-grad);
+    color: var(--text-on-accent);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+}
+
+.top-bar .left,
+.top-bar .right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.top-bar .brand {
+    color: var(--text-on-accent);
+    font-weight: 600;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    letter-spacing: -0.01em;
+}
+
+.top-bar .username {
+    background: rgba(255, 255, 255, 0.18);
+    color: var(--text-on-accent);
+    padding: 5px 12px;
+    border-radius: var(--radius-pill);
+    font-size: 15px;
+    font-weight: 500;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+.top-bar .role-chip {
+    background: rgba(255, 255, 255, 0.14);
+    color: var(--text-on-accent);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    padding: 3px 9px;
+    border-radius: var(--radius-pill);
+}
+
+/* ---------- 22. HAMBURGER MENU (replaces the old full-width bottom bar) ----------
+   A small floating button toggles a chip panel. All main-menu chips are
+   visible as soon as the panel opens; each chip with a submenu only builds
+   its dropdown in the DOM at the moment it's clicked (see admin-nav.js /
+   student-nav.js), nothing is pre-rendered. */
+.nav-hamburger-btn {
+    position: fixed;
+    bottom: 16px;
+    right: 16px;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: var(--accent-grad);
+    color: #ffffff;
+    border: none;
+    box-shadow: var(--shadow-lg);
+    font-size: 24px;
+    z-index: var(--z-nav);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.nav-hamburger-btn .hb-icon {
+    display: inline-block;
+    transition: transform .2s var(--ease);
+}
+
+.nav-hamburger-btn.open .hb-icon {
+    transform: rotate(90deg);
+}
+
+.nav-chip-panel {
+    /* 🔴 FIX: previously a wrapping 2-column grid of large 72px square
+       buttons (bottom:78px, max-width:220px, flex-wrap) — with 5-6 chips
+       that grid grew tall enough to float well above the hamburger,
+       looking like a disconnected floating card rather than a menu
+       attached to the button that opened it. Now a compact single-column
+       list, sized to its content, anchored directly above the hamburger
+       with a small 6px gap — the same shape as .dropdown-menu below it. */
+    position: fixed;
+    bottom: 74px;   /* hamburger bottom(16) + height(52) + 6px gap */
+    right: 16px;
+    left: auto;
+    width: max-content;
+    min-width: 150px;
+    max-width: 200px;
+    display: none;
+    flex-direction: column;
+    gap: 2px;
+    padding: 5px;
+    z-index: var(--z-nav);
+    background: var(--surface-glass);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--border-glass);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-lg);
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.nav-chip-panel.show {
+    display: flex;
+}
+
+.nav-item {
+    /* 🔴 FIX: was flex-direction:column with icon-over-label stacked in a
+       min-width:72px square button — that's what made each chip a big
+       standalone tile. Now a single compact row (icon beside label),
+       identical shape to .dropdown-item, so opening the menu shows a
+       tight list instead of a grid of tiles. */
+    position: relative;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 10px;
+    border-radius: calc(var(--radius) - 4px);
+    cursor: pointer;
+    color: var(--text);
+    font-family: inherit;
+    background: transparent;
+    border: none;
+    white-space: nowrap;
+    transition: background .12s var(--ease), color .12s var(--ease);
+}
+
+.nav-label-hi {
+    display: block;
+    font-size: 10.2px;
+    font-weight: 500;
+    opacity: .8;
+    line-height: 1.2;
+}
+
+.dropdown-label-hi,
+.dropdown-label .nav-label-hi {
+    display: block;
+    font-size: 10.8px;
+    font-weight: 500;
+    opacity: .75;
+}
+
+.nav-item:hover {
+    background: var(--accent-soft);
+    color: var(--accent);
+}
+
+.nav-item.active {
+    background: var(--accent);
+    color: #ffffff;
+}
+
+.nav-item.active .nav-label {
+    font-weight: 700;
+    color: #ffffff;
+}
+
+.nav-item:active {
+    transform: scale(.98);
+}
+
+.nav-icon {
+    font-size: 18px;
+    line-height: 1;
+    width: 18px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.nav-label {
+    font-size: 14.4px;
+    font-weight: 500;
+    color: inherit;
+    letter-spacing: 0.01em;
+}
+
+.nav-item .weekly-chip {
+    /* 🔴 FIX: was position:absolute top:-6/right:-6, designed to sit as a
+       badge on the corner of a square tile. In the new row layout that
+       corner no longer exists in a sensible place, so this now sits
+       inline at the end of the row instead. */
+    margin-left: auto;
+    background: var(--accent);
+    color: var(--text-on-accent);
+    font-size: 10.8px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 20px;
+    min-width: 22px;
+    text-align: center;
+    line-height: 1.4;
+    flex-shrink: 0;
+}
+
+.nav-item {
+    position: relative;
+}
+
+/* ---------- 23. PAGE HEADER (Base only) ---------- */
+.page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: nowrap;
+    padding: 10px 16px;
+    margin-bottom: 12px;
+    background: var(--surface-glass);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--border-glass);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xs);
+    overflow: hidden;
+}
+
+.page-header .brand {
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: 0.2px;
+    color: var(--text);
+    white-space: nowrap;
+}
+
+.page-header h1 {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.page-header .subtitle {
+    color: var(--text-muted);
+    font-size: 15.6px;
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.page-header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    flex: 1 1 auto;
+    overflow: hidden;
+}
+
+.page-header-left > div {
+    min-width: 0;
+    overflow: hidden;
+}
+
+.page-header-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+@media (max-width: 580px) {
+    .hide-mobile {
+        display: none !important;
+    }
+    .page-header {
+        padding: 8px 12px !important;
+    }
+}
+
+/* Style KaTeX Parse Error spans to be highly readable */
+.katex-error {
+    color: #ef4444 !important;
+    background: rgba(239, 68, 68, 0.08) !important;
+    border: 1px dashed rgba(239, 68, 68, 0.25) !important;
+    padding: 1px 6px !important;
+    border-radius: 4px !important;
+    font-family: inherit !important;
+    font-size: inherit !important;
+    white-space: pre-wrap !important;
+    display: inline-block !important;
+}

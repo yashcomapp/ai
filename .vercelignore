@@ -1,0 +1,14 @@
+# Vercel Deployment Ignore Rules
+.next/
+node_modules/
+backups/
+scratch/
+scripts/
+*.log
+*.bak
+*.json
+!package.json
+!tsconfig.json
+!firestore.indexes.json
+.git
+.agents/

@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>अभिभावक एवं विद्यार्थी मार्गदर्शिका — Yashcom Learning OS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 0;
+      background: #f1f5f9;
+      color: #0f172a;
+      font-family: 'Noto Sans Devanagari', 'Segoe UI', Tahoma, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    .top-bar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: #ffffff;
+      border-bottom: 1px solid #e2e8f0;
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .btn-download {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 22px;
+      border-radius: 8px;
+      border: none;
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      color: #ffffff;
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+      box-shadow: 0 2px 5px rgba(37,99,235,0.25);
+    }
+    .btn-download:hover {
+      background: linear-gradient(135deg, #1d4ed8, #1e40af);
+    }
+    .guide-container {
+      max-width: 860px;
+      margin: 24px auto;
+      padding: 40px 48px;
+      background: #ffffff;
+      border-radius: 16px;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+    }
+    .flow-node {
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 14px 16px;
+      border: 1.5px solid #cbd5e1;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+      text-align: center;
+      flex: 1;
+    }
+    .arrow-right {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #64748b;
+      font-weight: 800;
+      font-size: 18px;
+      padding: 0 4px;
+    }
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+      margin: 16px 0;
+    }
+    @media print {
+      .no-print { display: none !important; }
+      body { background: #ffffff !important; }
+      .guide-container {
+        margin: 0 !important;
+        padding: 15px !important;
+        border: none !important;
+        box-shadow: none !important;
+        max-width: 100% !important;
+      }
+    }
+    @media (max-width: 640px) {
+      .guide-container { padding: 20px 16px; margin: 12px; }
+      .card-grid { grid-template-columns: 1fr !important; }
+      .flow-row { flex-direction: column !important; }
+      .arrow-right { transform: rotate(90deg); margin: 6px 0; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Action Bar -->
+  <div class="top-bar no-print">
+    <div style="font-weight: 700; color: #1e293b; font-size: 15px;">
+      📚 Yashcom Learning OS — गाइड
+    </div>
+    <button class="btn-download" onclick="downloadPDF()">
+      📥 PDF डाउनलोड करें (Download PDF)
+    </button>
+  </div>
+
+  <!-- Printable Document Content -->
+  <div class="guide-container" id="printable-content">
+    
+    <!-- Title Header -->
+    <div style="text-align: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 20px; margin-bottom: 26px;">
+      <div style="display: inline-block; padding: 4px 12px; borderRadius: 20px; background: #eff6ff; color: #1d4ed8; font-size: 12px; font-weight: 700; margin-bottom: 8px;">
+        YASHCOM LEARNING OS • अभिभावक एवं विद्यार्थी मार्गदर्शिका
+      </div>
+      <h1 style="margin: 4px 0 8px; font-size: 24px; font-weight: 800; color: #0f172a; line-height: 1.3;">
+        बच्चे की पढ़ाई और सीखने की प्रक्रिया को समझें
+      </h1>
+      <p style="margin: 0; font-size: 13.5px; color: #64748b;">
+        बिना किसी जटिल हिसाब-किताब के — सरल फ्लोचार्ट और आसान भाषा में
+      </p>
+    </div>
+
+    <!-- SECTION 1: 3 CORE METRICS -->
+    <div style="margin-bottom: 30px;">
+      <h2 style="font-size: 17px; font-weight: 700; color: #1e293b; margin-bottom: 14px; display: flex; align-items: center; gap: 8px;">
+        <span style="background: #3b82f6; color: #fff; width: 24px; height: 24px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700;">1</span>
+        डैशबोर्ड के 3 मुख्य स्तंभ (3 Core Pillars)
+      </h2>
+
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
+        
+        <!-- Pillar 1 -->
+        <div style="background: #f0fdf4; border: 1.5px solid #bbf7d0; border-radius: 12px; padding: 14px; text-align: center;">
+          <div style="font-size: 22px; margin-bottom: 4px;">🎯</div>
+          <div style="font-weight: 800; font-size: 14.5px; color: #166534;">Mastery (मास्टरी %)</div>
+          <div style="font-size: 11px; color: #15803d; font-weight: 600; margin-bottom: 6px;">विषय की वास्तविक समझ</div>
+          <div style="font-size: 12px; color: #334155; line-height: 1.45;">
+            यह दिखाता है कि बच्चे ने टॉपिक को कितने गहरे स्तर पर समझा है। कठिन और कॉन्सेप्चुअल प्रश्नों को सही करने पर यह स्कोर बढ़ता है।
+          </div>
+        </div>
+
+        <!-- Pillar 2 -->
+        <div style="background: #eff6ff; border: 1.5px solid #bfdbfe; border-radius: 12px; padding: 14px; text-align: center;">
+          <div style="font-size: 22px; margin-bottom: 4px;">📈</div>
+          <div style="font-weight: 800; font-size: 14.5px; color: #1e40af;">Confidence (कॉन्फिडेंस)</div>
+          <div style="font-size: 11px; color: #1d4ed8; font-weight: 600; margin-bottom: 6px;">अभ्यास की गहराई</div>
+          <div style="font-size: 12px; color: #334155; line-height: 1.45;">
+            यह सुनिश्चित करता है कि बच्चे का ज्ञान पक्का है। जब विद्यार्थी किसी टॉपिक पर पर्याप्त संख्या में प्रश्न हल कर लेता है, तब आत्मविश्वास सिद्ध होता है।
+          </div>
+        </div>
+
+        <!-- Pillar 3 -->
+        <div style="background: #fffbeb; border: 1.5px solid #fde68a; border-radius: 12px; padding: 14px; text-align: center;">
+          <div style="font-size: 22px; margin-bottom: 4px;">⚡</div>
+          <div style="font-weight: 800; font-size: 14.5px; color: #92400e;">Efforts % (प्रयास)</div>
+          <div style="font-size: 11px; color: #b45309; font-weight: 600; margin-bottom: 6px;">सेल्फ-स्टडी की नियमितता</div>
+          <div style="font-size: 12px; color: #334155; line-height: 1.45;">
+            क्लास में पढ़ाए गए टॉपिक्स में से बच्चे ने कितने टॉपिक्स की घर पर खुद से प्रैक्टिस पूरी की है। यह बच्चे की लगन और अनुशासन का माप है।
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- SECTION 2: FLOWCHART - DAILY LEARNING CYCLE -->
+    <div style="margin-bottom: 30px; background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 14px; padding: 18px;">
+      <h2 style="font-size: 17px; font-weight: 700; color: #1e293b; margin-bottom: 4px; display: flex; align-items: center; gap: 8px;">
+        <span style="background: #3b82f6; color: #fff; width: 24px; height: 24px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700;">2</span>
+        फ्लोचार्ट: रोज़ाना सीखने का चक्र (Daily Learning Flow)
+      </h2>
+      <p style="font-size: 12px; color: #64748b; margin: 0 0 14px;">
+        बच्चा किस प्रकार क्लास से लेकर घर तक अपनी पढ़ाई पूरी करता है:
+      </p>
+
+      <div class="flow-row" style="display: flex; align-items: center; gap: 8px;">
+        
+        <div class="flow-node" style="border-left: 4px solid #3b82f6;">
+          <div style="font-size: 20px;">🏫</div>
+          <div style="font-weight: 700; font-size: 12.5px; color: #0f172a;">1. क्लास में पढ़ाई</div>
+          <div style="font-size: 11px; color: #64748b;">टीचर द्वारा टॉपिक सिखाना और क्लास टेस्ट</div>
+        </div>
+
+        <div class="arrow-right">➔</div>
+
+        <div class="flow-node" style="border-left: 4px solid #f59e0b;">
+          <div style="font-size: 20px;">📊</div>
+          <div style="font-weight: 700; font-size: 12.5px; color: #0f172a;">2. कमजोरी की पहचान</div>
+          <div style="font-size: 11px; color: #64748b;">गलत हुए टॉपिक्स Focus टैब में आना</div>
+        </div>
+
+        <div class="arrow-right">➔</div>
+
+        <div class="flow-node" style="border-left: 4px solid #8b5cf6;">
+          <div style="font-size: 20px;">✍️</div>
+          <div style="font-weight: 700; font-size: 12.5px; color: #0f172a;">3. घर पर सेल्फ-प्रैक्टिस</div>
+          <div style="font-size: 11px; color: #64748b;">6-6 प्रश्नों के सेशन्स हल करना</div>
+        </div>
+
+        <div class="arrow-right">➔</div>
+
+        <div class="flow-node" style="border-left: 4px solid #10b981;">
+          <div style="font-size: 20px;">⭐</div>
+          <div style="font-weight: 700; font-size: 12.5px; color: #0f172a;">4. टॉपिक मास्टर होना</div>
+          <div style="font-size: 11px; color: #64748b;">90%+ समझ के साथ Mastered में पहुंचना</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- SECTION 3: 4 LEARNING TABS -->
+    <div style="margin-bottom: 30px;">
+      <h2 style="font-size: 17px; font-weight: 700; color: #1e293b; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+        <span style="background: #3b82f6; color: #fff; width: 24px; height: 24px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700;">3</span>
+        सीखने के 4 चरण (4 Learning Stages in Portal)
+      </h2>
+
+      <div class="card-grid">
+        
+        <!-- Stage 1 -->
+        <div style="border: 1.5px solid #fecaca; background: #fff5f5; border-radius: 12px; padding: 14px;">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+            <span style="background: #ef4444; color: #fff; padding: 2px 7px; border-radius: 5px; font-size: 10.5px; font-weight: 700;">चरण 1</span>
+            <span style="font-weight: 800; font-size: 13.5px; color: #991b1b;">🚨 Focus (विशेष ध्यान दें)</span>
+          </div>
+          <div style="font-size: 11.5px; color: #7f1d1d; font-weight: 600; margin-bottom: 4px;">
+            स्थिति: समझ कमजोर है या टेस्ट छूट गया है
+          </div>
+          <div style="font-size: 11.5px; color: #334155; line-height: 1.4;">
+            👉 <strong>क्या करें:</strong> सबसे पहले इस टॉपिक का प्रैक्टिस टेस्ट दें और गलत उत्तरों के समाधान ध्यान से पढ़ें।
+          </div>
+        </div>
+
+        <!-- Stage 2 -->
+        <div style="border: 1.5px solid #fed7aa; background: #fffaf5; border-radius: 12px; padding: 14px;">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+            <span style="background: #f59e0b; color: #fff; padding: 2px 7px; border-radius: 5px; font-size: 10.5px; font-weight: 700;">चरण 2</span>
+            <span style="font-weight: 800; font-size: 13.5px; color: #9a3412;">🔄 Practice (अभ्यास जारी रखें)</span>
+          </div>
+          <div style="font-size: 11.5px; color: #9a3412; font-weight: 600; margin-bottom: 4px;">
+            स्थिति: बुनियादी समझ अच्छी है, पर और सुधार चाहिए
+          </div>
+          <div style="font-size: 11.5px; color: #334155; line-height: 1.4;">
+            👉 <strong>क्या करें:</strong> नियमित 6 प्रश्नों के सेशन्स देकर अपनी सटीकता को 90% से ऊपर ले जाएं।
+          </div>
+        </div>
+
+        <!-- Stage 3 -->
+        <div style="border: 1.5px solid #bfdbfe; background: #f8faff; border-radius: 12px; padding: 14px;">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+            <span style="background: #3b82f6; color: #fff; padding: 2px 7px; border-radius: 5px; font-size: 10.5px; font-weight: 700;">चरण 3</span>
+            <span style="font-weight: 800; font-size: 13.5px; color: #1e40af;">📖 Revise (दोहराएं)</span>
+          </div>
+          <div style="font-size: 11.5px; color: #1e40af; font-weight: 600; margin-bottom: 4px;">
+            स्थिति: समझ बहुत अच्छी है, पर प्रश्न संख्या बढ़ानी है
+          </div>
+          <div style="font-size: 11.5px; color: #334155; line-height: 1.4;">
+            👉 <strong>क्या करें:</strong> कुछ और प्रश्न हल करें ताकि विषय हमेशा के लिए दिमाग में पक्का हो जाए।
+          </div>
+        </div>
+
+        <!-- Stage 4 -->
+        <div style="border: 1.5px solid #bbf7d0; background: #f6fef9; border-radius: 12px; padding: 14px;">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+            <span style="background: #10b981; color: #fff; padding: 2px 7px; border-radius: 5px; font-size: 10.5px; font-weight: 700;">चरण 4</span>
+            <span style="font-weight: 800; font-size: 13.5px; color: #166534;">⭐ Mastered (उत्कृष्ट पकड़)</span>
+          </div>
+          <div style="font-size: 11.5px; color: #166534; font-weight: 600; margin-bottom: 4px;">
+            स्थिति: विषय पर पूरी और पक्की पकड़ बन चुकी है
+          </div>
+          <div style="font-size: 11.5px; color: #334155; line-height: 1.4;">
+            👉 <strong>क्या करें:</strong> बधाई! यह टॉपिक तैयार है। परीक्षा से पहले केवल एक बार रीविज़न करें।
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- SECTION 4: 2-TIER MASTERY -->
+    <div style="margin-bottom: 28px; background: #faf5ff; border: 1.5px solid #e9d5ff; border-radius: 14px; padding: 18px;">
+      <h2 style="font-size: 17px; font-weight: 700; color: #581c87; margin-bottom: 4px; display: flex; align-items: center; gap: 8px;">
+        <span style="background: #7c3aed; color: #fff; width: 24px; height: 24px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700;">4</span>
+        मास्टरी हासिल करने के दो तरीके (2 Types of Mastery)
+      </h2>
+      <p style="font-size: 12px; color: #6b21a8; margin: 0 0 14px;">
+        रट्टा मारने से रोकने और हर बच्चे को सीखने का मौका देने के लिए दो स्तर बनाए गए हैं:
+      </p>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+        
+        <div style="background: #ffffff; border: 1.5px solid #86efac; border-radius: 12px; padding: 14px;">
+          <div style="display: inline-block; background: linear-gradient(135deg, #10b981, #059669); color: #fff; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px; margin-bottom: 6px;">
+            🌟 Certified Mastered
+          </div>
+          <div style="font-weight: 700; font-size: 13px; color: #166534; margin-bottom: 4px;">पहली ही कोशिश में सिद्ध</div>
+          <div style="font-size: 11.5px; color: #475569; line-height: 1.4;">
+            विद्यार्थी ने पहले 5 प्रैक्टिस सेशन्स में ही बिना अटके 90%+ स्कोर हासिल कर लिया।
+          </div>
+        </div>
+
+        <div style="background: #ffffff; border: 1.5px solid #d8b4fe; border-radius: 12px; padding: 14px;">
+          <div style="display: inline-block; background: linear-gradient(135deg, #8b5cf6, #6366f1); color: #fff; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px; margin-bottom: 6px;">
+            ⚡ Recovery Mastered
+          </div>
+          <div style="font-weight: 700; font-size: 13px; color: #6b21a8; margin-bottom: 4px;">रिकवरी क्विज पास करके सिद्ध</div>
+          <div style="font-size: 11.5px; color: #475569; line-height: 1.4;">
+            5 प्रैक्टिस के बाद बच्चे ने <strong>नए + पुराने गलत प्रश्नों</strong> का स्पेशल टेस्ट देकर अपनी गलतियों को सुधार लिया।
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- SECTION 5: ADVICE FOR PARENTS -->
+    <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 12px; padding: 16px 20px;">
+      <h3 style="margin: 0 0 8px; font-size: 14.5px; font-weight: 800; color: #0f172a;">
+        💡 अभिभावकों (Parents) के लिए 3 उपयोगी टिप्स:
+      </h3>
+      <ul style="margin: 0; padding-left: 18px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+        <li><strong>रोज़ाना 2 मिनट डैशबोर्ड देखें:</strong> देखें कि <strong>Focus</strong> टैब में कमजोर टॉपिक्स कम हो रहे हैं या नहीं।</li>
+        <li><strong>Efforts स्कोर 80%+ रखें:</strong> यह सुनिश्चित करता है कि बच्चा क्लास में पढ़ाए गए हर टॉपिक की समय पर प्रैक्टिस कर रहा है।</li>
+        <li><strong>छूटी परीक्षा (Missed Exam) तुरंत पूरी कराएं:</strong> यदि किसी कारण से टेस्ट छूटे, तो बच्चा घर पर तुरंत उसका टेस्ट देकर अपनी पढ़ाई पूरी कर सकता है।</li>
+      </ul>
+    </div>
+
+    <!-- Footer -->
+    <div style="text-align: center; margin-top: 20px; padding-top: 14px; border-top: 1px solid #e2e8f0; font-size: 11px; color: #94a3b8;">
+      Yashcom Learning OS • संस्थागत गुणवत्ता एवं प्रामाणिक शिक्षण प्रणाली
+    </div>
+
+  </div>
+
+  <script>
+    function downloadPDF() {
+      const element = document.getElementById('printable-content');
+      const opt = {
+        margin: [8, 8, 8, 8],
+        filename: 'Yashcom_Learning_OS_Parent_Student_Guide.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+      html2pdf().set(opt).from(element).save();
+    }
+  </script>
+
+</body>
+</html>

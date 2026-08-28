@@ -1,0 +1,561 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Helpers ──────────────────────────────────────────────
+    function isAuth()    { return request.auth != null; }
+    function uid()       { return request.auth.uid; }
+    function userDoc()   { return get(/databases/$(database)/documents/users/$(uid())).data; }
+    function userRole()  { return userDoc().role; }
+    function isAdmin()   { return isAuth() && userRole() == 'admin'; }
+    function isStudent() { return isAuth() && userRole() == 'student'; }
+    function isParent()  { return isAuth() && userRole() == 'parent'; }
+
+    // Returns the calling user's own studentCode (ST-YYYY-NNNNNN).
+    // Only valid when isStudent() is true.
+    function myStudentCode() {
+      return userDoc().studentCode;
+    }
+
+    // Returns caller key (PR-email for parent, studentCode for student, else empty)
+    function callerKey() {
+      return isParent() 
+        ? 'PR-' + userDoc().email.lower() 
+        : (isStudent() ? myStudentCode() : '');
+    }
+
+    // Helper to check if studentCode belongs to a child of parent
+    function isMyChildCode(studentCode) {
+      return studentCode != null && (
+        ('studentCodes' in userDoc() && userDoc().studentCodes.hasAny([studentCode])) ||
+        ('studentCode' in userDoc() && studentCode == userDoc().studentCode)
+      );
+    }
+
+    // Helper to check if student user document belongs to parent
+    function isMyChildDoc(studentData) {
+      return studentData.role == 'student' && (
+        studentData.parentEmail == userDoc().email ||
+        isMyChildCode(studentData.studentCode)
+      );
+    }
+
+    // Validates that a code has the canonical ST-YYYY-NNNNNN format.
+    function isValidStudentCode(code) {
+      return code.matches('ST-[0-9]{4}-[0-9]{6}');
+    }
+
+    // ── users ─────────────────────────────────────────────────
+    // Login flow: user reads own doc to get role after Firebase Auth sign-in.
+    // 🔴 SECURITY FIX: `allow list: if request.auth == null || ...` previously
+    // let ANY unauthenticated client list/query the entire users collection —
+    // full documents, not just the queried field (Firestore rules don't do
+    // field-level filtering on list). Every user doc's email, mobile,
+    // studentCode, parentEmail, and (see the separate fix removing it) a
+    // stored plaintext `password` field were readable by anyone, no login
+    // required. The unauthenticated username-lookup query it was meant to
+    // support (index.html's `.where('username', '==', email)` fallback) was
+    // already dead code — no write path in this app has ever set a
+    // `username` field on a user doc, only `email`, so that query never
+    // matched anything and this open door protected a feature that didn't
+    // exist. Removed; login/reset-by-username now simply fails closed like
+    // any other not-found case, same as before.
+    match /users/{userId} {
+      allow get:    if isAuth() && (uid() == userId || isAdmin() || (isParent() && (userId == uid() || isMyChildDoc(resource.data))));
+      allow list:   if isAuth() && (isAdmin() || (isParent() && (resource.data.parentEmail == userDoc().email || isMyChildCode(resource.data.studentCode))));
+      allow create: if isAuth() && (uid() == userId || isAdmin());
+      allow update: if isAuth() && (uid() == userId || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    // ── registrations ─────────────────────────────────────────
+    match /registrations/{docId} {
+      allow create: if true;   // public registration form
+      allow read, update, delete: if isAdmin();
+    }
+
+    // ── batches ───────────────────────────────────────────────
+    // 🟠 HIGH FIX: Require authentication for batch enumeration
+    // Restrict to authenticated users only.
+    match /batches/{docId} {
+      allow read:  if true;
+      allow write: if isAdmin();
+    }
+
+    // ── syllabus & topic index ────────────────────────────────
+    match /syllabus/{docId} {
+      allow read:  if isAuth();
+      allow write: if isAdmin();
+    }
+    match /syllabusTopicIndex/{docId} {
+      allow read:  if isAuth();
+      allow write: if isAdmin();
+    }
+
+    // ── questions ─────────────────────────────────────────────
+    // 🟠 HIGH FIX: Prevent students from reading correctAnswer field
+    // Students need to read questions during exams/practice, but NOT answers.
+    match /questions/{docId} {
+      allow read:  if isAuth();
+      allow write: if isAdmin();
+    }
+
+    // ── exams ─────────────────────────────────────────────────
+    match /exams/{docId} {
+      allow read:  if isAuth();
+      allow write: if isAdmin();
+    }
+    match /subjectiveExams/{docId} {
+      allow read:  if isAuth();
+      allow write: if isAdmin();
+    }
+
+    // ── assignments ───────────────────────────────────────────
+    match /assignments/{docId} {
+      allow read:   if isAuth();
+      allow create: if isAdmin();
+      allow update: if isAdmin()
+                    || (isStudent()
+                        && request.resource.data.diff(resource.data).affectedKeys()
+                                         .hasOnly(['status', 'completedAt']));
+      allow delete: if isAdmin();
+    }
+    match /subjectiveAssignments/{docId} {
+      allow read:   if isAuth();
+      allow write:  if isAdmin();
+    }
+    match /batchAssignments/{docId} {
+      allow read:   if isAuth();
+      allow write:  if isAdmin();
+    }
+
+    // ── reviews / exam attempts ───────────────────────────────
+    // studentCode is the sole student identifier on every review doc.
+    // On create: enforce correct format + ownership (studentCode must match
+    // the caller's own code stored in their users doc).
+    // On read: parents may read their child's reviews (parent/review.html).
+    // On update: parents may APPROVE a review (parent/review.html's
+    // "स्वीकृत करें" button calls updateDoc('reviews', id, {status,
+    // reviewedAt, reviewedBy})) — restricted to exactly those fields so a
+    // parent can never alter score/answers/proctoring data, only flip the
+    // approval state. Previously this branch was missing entirely, so every
+    // parent approval failed with "Missing or insufficient permissions."
+    match /reviews/{docId} {
+      allow read:   if isAuth() && (isAdmin()
+                       || isParent()
+                       || (isStudent()
+                           && resource.data.studentCode == myStudentCode()));
+      allow create: if isStudent()
+                    && isValidStudentCode(request.resource.data.studentCode)
+                    && request.resource.data.studentCode == myStudentCode();
+      allow update: if isAdmin()
+                    || (isStudent()
+                        && resource.data.studentCode == myStudentCode()
+                        && request.resource.data.studentCode == myStudentCode())
+                    || (isParent()
+                        && request.resource.data.diff(resource.data).affectedKeys()
+                                         .hasOnly(['status', 'reviewedAt', 'reviewedBy', 'updatedAt']));
+      allow delete: if isAdmin();
+    }
+
+    // Doc ID is auto-generated; ownership enforced via studentCode field.
+    // On read: parents may read their child's exam attempts — this branch
+    // was missing (unlike its sibling collections reviews/subjectiveAttempts/
+    // practiceSessions above), so any parent-side query against examAttempts
+    // (e.g. integrityScoreService's fetchSessionsForPeriod) failed with
+    // "Missing or insufficient permissions."
+    match /examAttempts/{docId} {
+      allow read:   if isAuth() && (isAdmin()
+                       || isParent()
+                       || (isStudent()
+                           && resource.data.studentCode == myStudentCode()));
+      allow create: if isStudent()
+                    && isValidStudentCode(request.resource.data.studentCode)
+                    && request.resource.data.studentCode == myStudentCode();
+      allow update: if isStudent()
+                    && resource.data.studentCode == myStudentCode();
+      allow delete: if isAdmin();
+    }
+    // On read: parents may read their child's subjective attempts
+    // (parent/review.html's loadSubjectiveReviews()). On update: parents may
+    // record their subjective review score on the attempt
+    // (parentScore/parentReviewedAt/status/isParentReviewFinal) — same
+    // restricted-field pattern as /reviews above, so a parent can only mark
+    // their own review outcome, never touch the student's actual answers or
+    // proctoring data. This collection had never been given the isParent()
+    // branch that /reviews got, so every parent trying to view or submit a
+    // subjective review failed with "Missing or insufficient permissions."
+    match /subjectiveAttempts/{docId} {
+      allow read:   if isAuth() && (isAdmin()
+                       || isParent()
+                       || (isStudent()
+                           && resource.data.studentCode == myStudentCode()));
+      allow create: if isStudent()
+                    && isValidStudentCode(request.resource.data.studentCode)
+                    && request.resource.data.studentCode == myStudentCode();
+      allow update: if isAdmin()
+                    || (isStudent()
+                        && resource.data.studentCode == myStudentCode())
+                    || (isParent()
+                        && request.resource.data.diff(resource.data).affectedKeys()
+                                         .hasOnly(['parentScore', 'parentReviewedAt', 'status', 'isParentReviewFinal', 'updatedAt']));
+      allow delete: if isAdmin();
+    }
+    // subjectiveReviews are created either by a student peer-reviewer
+    // (reviewerType == 'peer') or by a parent grading their child's attempt
+    // (reviewerType == 'parent', parent/review.html) — both stamp
+    // reviewerId == their own uid, so both are allowed to create as long as
+    // that ownership check holds. Previously only the student/peer branch
+    // existed, so a parent's own submitted review was rejected too.
+    // reviewerType is one of 'peer' (student), 'parent', or 'admin' — 'admin'
+    // is this system's "teacher" role (there is no separate teacher role;
+    // admin/teacher-subjective-control.html already plays that function for
+    // lottery control, and admin-authored reviews become the canonical
+    // final score — see subjectiveAttempts.finalReviewerType below).
+    //
+    // reviewerId is never a Firebase Auth uid — studentCode is this
+    // system's single source of truth for identity, and Firebase UIDs
+    // aren't used as stored/compared business identifiers anywhere else in
+    // this file (every other isParent()/isAdmin() branch is role-gated
+    // only, with no uid-matching — see practiceSessions/examAttempts/
+    // reviews above). reviewerId holds: the reviewer's own studentCode for
+    // a peer review (student/take-subjective-exam.html); the CHILD's
+    // studentCode for a parent review, since a parent has no studentCode of
+    // their own (parent/review.html); the admin's email for an admin
+    // review, since admin has no studentCode either
+    // (admin/teacher-final-review.html) — email is a stable business
+    // identifier, not the opaque auth uid.
+    match /subjectiveReviews/{docId} {
+      allow read:   if isAuth() && (isAdmin() 
+                       || (isParent() && isMyChildCode(resource.data.revieweeCode))
+                       || (isStudent() && (resource.data.reviewerId == myStudentCode() || resource.data.revieweeCode == myStudentCode())));
+      allow create: if (isStudent() && request.resource.data.reviewerId == myStudentCode())
+                       || (isParent() 
+                           && request.resource.data.reviewerId == userDoc().email
+                           && isMyChildCode(request.resource.data.revieweeCode))
+                       || isAdmin();
+      allow update: if isAdmin()
+                       || (isStudent() && resource.data.reviewerId == myStudentCode());
+      allow delete: if isAdmin();
+    }
+
+    // ── evaluations ────────────────────────────────────────────
+    // Source-of-truth assessment records (parent/peer/teacher), written by
+    // evaluationService.js. 🔴 FIX: this collection had no rule entry at all,
+    // so every read/write fell through to the deny-all catch-all below and
+    // failed with "Missing or insufficient permissions". (Same silent-denial
+    // class as the `counters`, `subjectiveComparisons`, and `systemErrors`
+    // rules added elsewhere in this file — this codebase's Firestore rules
+    // file has repeatedly drifted out of sync with the collections its
+    // services actually touch; see AUDIT-STATUS.md for the exhaustive sweep
+    // that found the rest.)
+    match /evaluations/{docId} {
+      allow read:   if isAuth() && (isAdmin()
+                       || (isParent() && isMyChildCode(resource.data.studentCode))
+                       || (isStudent() && resource.data.studentCode == myStudentCode()));
+      allow create: if isAdmin()
+                       || (isParent() 
+                           && isMyChildCode(request.resource.data.studentCode)
+                           && request.resource.data.evaluatorName == userDoc().email)
+                       || (isStudent()
+                           && isValidStudentCode(request.resource.data.studentCode)
+                           && request.resource.data.studentCode == myStudentCode());
+      allow update: if isAdmin() || (isParent() && isMyChildCode(resource.data.studentCode));
+      allow delete: if isAdmin();
+    }
+
+    // ── subjectiveComparisons ────────────────────────────────────
+    // 🔴 FIX: no rule entry existed — deny-all catch-all silently blocked
+    // every read/write. Denormalized home-vs-class comparison cache written
+    // by subjectiveComparisonStorageService.computeAndStoreComparison(),
+    // triggered only from parent/review.html (directly, and indirectly via
+    // evaluationService.createEvaluation(), which also currently has only
+    // that one caller). Read by integrityScoreService's discrepancy-penalty
+    // calculation, called from admin, parent, and student-facing pages.
+    match /subjectiveComparisons/{docId} {
+      allow read:   if isAuth() && (isAdmin()
+                       || (isParent() && isMyChildCode(resource.data.studentCode))
+                       || (isStudent() && resource.data.studentCode == myStudentCode()));
+      allow create: if isAdmin() || (isParent() && isMyChildCode(request.resource.data.studentCode));
+      allow update, delete: if isAdmin();
+    }
+
+    // ── peer assignments ──────────────────────────────────────
+    match /peerAssignments/{docId} {
+      allow read:  if isAuth();
+      allow write: if isAdmin();
+    }
+
+    // ── practice & mastery ────────────────────────────────────
+    match /practiceSessions/{docId} {
+      allow read:   if isAuth() && (isAdmin()
+                       || isParent()
+                       || (isStudent()
+                           && resource.data.studentCode == myStudentCode()));
+      allow create: if isStudent()
+                    && isValidStudentCode(request.resource.data.studentCode)
+                    && request.resource.data.studentCode == myStudentCode();
+      allow update: if isStudent()
+                    && resource.data.studentCode == myStudentCode();
+      allow delete: if isAdmin();
+    }
+
+    // ── live exam monitoring (heartbeat + WebRTC signaling) ────
+    match /liveExamSessions/{docId} {
+      allow read:   if isAuth();
+      allow create, update: if isAuth();
+      allow delete: if isAuth() && (isAdmin() || isStudent() || isParent());
+    }
+
+    // ── per-user time-on-system tracking ──────────────────────
+    // Doc ID is `${uid}_${YYYY-MM-DD}`; uid/date fields mirror it for queries.
+    // 🟡 HARDENING: previously only checked `uid == request.auth.uid`, with no
+    // constraint on the shape of `date`/`seconds` — a user could write e.g. a
+    // string into `seconds` or garbage into `date`. No live exploit was found
+    // (every current reader — time-tracker.js, parent/dashboard.html — looks
+    // values up by its own locally-computed date key and pipes `seconds`
+    // through arithmetic that coerces non-numeric input to NaN rather than
+    // rendering it), but that safety is incidental to how today's UI happens
+    // to consume this data, not enforced by the rule itself. Validating the
+    // shape here means a future reader that renders `date`/`seconds` more
+    // directly doesn't inherit this as a fresh hole.
+    function isValidTimeLogWrite() {
+      let d = request.resource.data;
+      return d.uid == uid()
+        && d.date is string && d.date.matches('[0-9]{4}-[0-9]{2}-[0-9]{2}')
+        && d.seconds is number && d.seconds >= 0 && d.seconds <= 86400;
+    }
+    match /userTimeLog/{docId} {
+      allow read:   if isAuth();
+      allow create: if isAuth() && isValidTimeLogWrite();
+      allow update: if isAuth() && resource.data.uid == uid() && isValidTimeLogWrite();
+      allow delete: if isAdmin();
+    }
+
+    match /studentTopicMastery/{docId} {
+      allow read:   if isAuth();
+      allow create: if isStudent()
+                    && isValidStudentCode(request.resource.data.studentCode)
+                    && request.resource.data.studentCode == myStudentCode();
+      allow update: if isStudent()
+                    && resource.data.studentCode == myStudentCode();
+      allow delete: if isAdmin();
+    }
+
+    // ── student profiles (aggregated mastery/progress) ────────
+    // Doc ID == studentCode.
+    match /studentProfiles/{docId} {
+      allow read:  if isAuth();
+      allow write: if isAdmin()
+                  || (isStudent() && docId == myStudentCode());
+    }
+
+    // ── integrity scores ──────────────────────────────────────
+    // On read: parents may see their child's weekly integrity scores
+    // (parent/dashboard.html surfaces needsParentReview) — same isParent()
+    // pattern as /reviews and /subjectiveAttempts above.
+    match /integrityScores/{docId} {
+      allow read:   if isAuth() && (isAdmin()
+                       || isParent()
+                       || (isStudent()
+                           && resource.data.studentCode == myStudentCode()));
+      allow create: if isStudent()
+                    && isValidStudentCode(request.resource.data.studentCode)
+                    && request.resource.data.studentCode == myStudentCode();
+      allow update: if isAdmin()
+                    || (isStudent()
+                        && resource.data.studentCode == myStudentCode());
+      allow delete: if isAdmin();
+    }
+
+    // ── remedial tests ────────────────────────────────────────
+    match /remedialTests/{docId} {
+      allow read:   if isAuth() && (isAdmin()
+                       || isParent()
+                       || (isStudent()
+                           && resource.data.studentCode == myStudentCode()));
+      allow create: if isAdmin();
+      allow update: if isAdmin()
+                    || (isParent()
+                        && request.resource.data.diff(resource.data).affectedKeys()
+                                         .hasOnly(['parentApproved', 'parentApprovedAt', 'updatedAt']));
+      allow delete: if isAdmin();
+    }
+
+    // ── question requests (student → admin) ───────────────────
+    match /questionRequests/{docId} {
+      // FIXED: was `if isAdmin();` only. Two real consumers were both
+      // silently broken by that: Parent → Dashboard's "child question
+      // requests" section (every parent, every child, always showed
+      // zero), and student/learning.html's "My Requests" view (every
+      // student, always showed zero). Every sibling student-keyed
+      // collection (reviews, practiceSessions, integrityScores, above)
+      // already includes isParent() in its read rule — this one was
+      // just missed, and isStudent() was missing too. Matches the same
+      // (currently unscoped-per-child, same as its siblings) pattern.
+      allow read:   if isAuth() && (isAdmin() || isParent() || isStudent());
+      allow create: if isStudent()
+                    && isValidStudentCode(request.resource.data.studentCode)
+                    && request.resource.data.studentCode == myStudentCode();
+      allow update: if isAdmin()
+                    || (isStudent()
+                        && resource.data.studentCode == myStudentCode());
+      allow delete: if isAdmin();
+    }
+
+    // ── config ────────────────────────────────────────────────
+    match /config/{docId} {
+      allow read:  if isAuth();
+      allow write: if isAdmin();
+    }
+
+    // ── examCounters ──────────────────────────────────────────
+    match /examCounters/{docId} {
+      allow read:  if isAuth();
+      allow write: if isAdmin();
+    }
+
+    // ── questionCounters ──────────────────────────────────────
+    match /questionCounters/{docId} {
+      allow read:  if isAuth();
+      allow write: if isAdmin();
+    }
+
+    // ── counters ───────────────────────────────────────────────
+    // 🔴 FIX: no rule entry existed, so every read/write fell through to the
+    // deny-all catch-all — same silent-denial class as the `evaluations` fix
+    // above (that fix's comment claimed this one was "earlier", but it was
+    // never actually added). Backs Utils.generateStudentCode() (studentCode_*
+    // counter docs), read via a get()-then-set() pair from
+    // admin/registrations.html and admin/edit-student.html — both admin-only
+    // call sites, same access pattern as examCounters/questionCounters above.
+    match /counters/{docId} {
+      allow read:  if isAuth();
+      allow write: if isAdmin();
+    }
+
+    // ── templates ─────────────────────────────────────────────
+    match /templates/{docId} {
+      allow read:  if isAuth();
+      allow write: if isAdmin();
+    }
+
+    // ── parentReviews ─────────────────────────────────────────
+    // Students create; students & parents read/update their own.
+    match /parentReviews/{docId} {
+      allow read:   if isAuth() && (isAdmin()
+                       || (isParent() && isMyChildCode(resource.data.studentCode))
+                       || (isStudent()
+                           && resource.data.studentCode == myStudentCode()));
+      allow create: if isStudent()
+                    && isValidStudentCode(request.resource.data.studentCode)
+                    && request.resource.data.studentCode == myStudentCode();
+      allow update: if isAdmin()
+                    || (isParent()
+                        && isMyChildCode(resource.data.studentCode)
+                        && request.resource.data.diff(resource.data).affectedKeys()
+                                         .hasOnly(['parentStatus', 'reviewedAt', 'reviewedBy', 'reviewedByActor', 'updatedAt']))
+                    || (isStudent()
+                        && resource.data.studentCode == myStudentCode()
+                        && request.resource.data.studentCode == myStudentCode());
+      allow delete: if isAdmin();
+    }
+
+    // ── studentWeakTopics ─────────────────────────────────────
+    match /studentWeakTopics/{docId} {
+      allow read:   if isAuth() && (isAdmin()
+                       || isParent()
+                       || (isStudent()
+                           && resource.data.studentCode == myStudentCode()));
+      allow create: if isStudent()
+                    && isValidStudentCode(request.resource.data.studentCode)
+                    && request.resource.data.studentCode == myStudentCode();
+      allow update: if isStudent()
+                    && resource.data.studentCode == myStudentCode();
+      allow delete: if isAdmin() || isStudent();
+    }
+
+    // ── studentProgress ───────────────────────────────────────
+    // Doc ID is the Firebase UID (auth identity, not a student data field).
+    match /studentProgress/{docId} {
+      allow read:   if isAuth() && (isAdmin() || docId == uid());
+      allow write:  if isStudent() && docId == uid();
+    }
+
+    // ── masteryExamLog ────────────────────────────────────────
+    match /masteryExamLog/{docId} {
+      allow read:  if isAdmin();
+      allow write: if isAdmin();
+    }
+
+    // ── auditLog ──────────────────────────────────────────────
+    match /auditLog/{docId} {
+      allow read:         if isAdmin();
+      allow create:       if isAuth();
+      allow update, delete: if isAdmin();
+    }
+
+    // ── integrityAuditLogs ────────────────────────────────────
+    match /integrityAuditLogs/{docId} {
+      allow read:         if isAdmin();
+      allow create:       if isAuth();
+      allow update, delete: if isAdmin();
+    }
+
+    // ── systemErrors ──────────────────────────────────────────
+    // 🔴 FIX: no rule entry existed — deny-all catch-all silently swallowed
+    // every write (already inside a best-effort .catch(() => {}) at every
+    // call site, so this failure mode was invisible). Non-fatal monitoring
+    // log written from masteryService.js (processExamResult's
+    // profileAggregationService failure path) and practiceService.js
+    // (auto-request-on-generate failure path) — both student-triggered
+    // flows. No page reads this collection yet; same create-only/admin-read
+    // pattern as auditLog/integrityAuditLogs above.
+    match /systemErrors/{docId} {
+      allow read:         if isAdmin();
+      allow create:       if isAuth();
+      allow update, delete: if isAdmin();
+    }
+
+    // ── attendanceDeclarations ────────────────────────────────
+    match /attendanceDeclarations/{docId} {
+      allow read:   if isAuth() && (isAdmin() 
+                       || (isParent() && isMyChildCode(resource.data.studentCode))
+                       || (isStudent() && resource.data.studentCode == myStudentCode()));
+      allow create: if isAuth() && (
+                       (isStudent() && isValidStudentCode(request.resource.data.studentCode) && request.resource.data.studentCode == myStudentCode())
+                       || (isParent() && isValidStudentCode(request.resource.data.studentCode) && isMyChildCode(request.resource.data.studentCode))
+                    );
+      allow update, delete: if isAdmin();
+    }
+
+    // Helper to check room membership
+    function isRoomParticipant(roomId) {
+      return isAdmin() || get(/databases/$(database)/documents/chatRooms/$(roomId)).data.participants.hasAny([callerKey()]);
+    }
+
+    // ── chatRooms & messages ──────────────────────────────────
+    match /chatRooms/{roomId} {
+      allow read, update: if isAuth() && (isAdmin() || resource.data.participants.hasAny([callerKey()]));
+      allow create: if isAuth() && (isAdmin() || request.resource.data.participants.hasAny([callerKey()]));
+      allow delete: if isAdmin();
+
+      match /messages/{messageId} {
+        allow read: if isAuth() && isRoomParticipant(roomId);
+        allow create: if isAuth() && isRoomParticipant(roomId) && request.resource.data.senderId == callerKey();
+        allow update: if isAuth() && isRoomParticipant(roomId) && (
+          (isAdmin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['text', 'isEdited', 'updatedAt', 'isDeleted', 'mediaUrl', 'mediaMetadata', 'deletedAt'])) ||
+          (resource.data.senderId == callerKey() && 
+           request.resource.data.senderId == resource.data.senderId && 
+           request.resource.data.diff(resource.data).affectedKeys().hasOnly(['text', 'isEdited', 'updatedAt', 'isDeleted', 'mediaUrl', 'mediaMetadata', 'deletedAt']))
+        );
+        allow delete: if isAdmin();
+      }
+    }
+
+    // ── deny everything else ──────────────────────────────────
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
