@@ -1,6 +1,5 @@
 import React, { Suspense } from 'react';
 import Link from 'next/link';
-import VisitorCounter from '@/components/VisitorCounter';
 import LoginModal from '@/components/LoginModal';
 import Image from 'next/image';
 import { Outfit } from 'next/font/google';
@@ -407,7 +406,6 @@ export default function LoginPage() {
       {/* Footer */}
       <footer className="landing-footer" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
         <p>© 2026 Yashcom LearnOS. Empowering different minds to learn and grow.</p>
-        <VisitorCounter />
       </footer>
 
       {/* Suspended Client-side login modal overlay */}

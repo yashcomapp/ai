@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminAuth, adminDb } from '@/lib/firebase/admin';
 import * as admin from 'firebase-admin';
 import { notifyStudentLogin, notifyStudentLogout } from '@/lib/notifications';
-import { verifyToken } from '@/lib/auth';
+import { verifyToken, verifyAnyRole, invalidateUserCache } from '@/lib/auth';
 import { chunkArray } from '@/lib/firestoreUtils';
 
 async function isParentFullyAutonomous(userData: any, email?: string): Promise<boolean> {
@@ -52,15 +52,51 @@ async function isParentFullyAutonomous(userData: any, email?: string): Promise<b
 
 export async function POST(req: NextRequest) {
   try {
+    const body = await req.json();
+    const { action } = body;
+
+    // Fast-path for get_profile and check_role using 60s userCache
+    if (action === 'get_profile' || action === 'check_role') {
+      const verified = await verifyAnyRole(req, ['student', 'parent', 'admin']);
+      if (!verified) {
+        return NextResponse.json({ message: 'Unauthorized or profile not found.' }, { status: 401 });
+      }
+
+      const { decodedToken, userData, role } = verified;
+      const { uid, email } = decodedToken;
+      const studentCode = userData.studentCode || '';
+      const activeSessionToken = userData.activeSessionToken || null;
+
+      if (action === 'check_role') {
+        return NextResponse.json({
+          role,
+          studentCode,
+          activeSessionToken
+        });
+      }
+
+      return NextResponse.json({
+        profile: {
+          uid,
+          email,
+          role,
+          name: userData.name || userData.displayName || email || role,
+          displayName: userData.name || userData.displayName || email || role,
+          studentCode,
+          activeSessionToken,
+          hasPushRegistered: Array.isArray(userData.fcmTokens) && userData.fcmTokens.length > 0,
+          curfewBypass: userData.curfewBypass || false
+        },
+        serverTime: Date.now()
+      });
+    }
+
     const decodedToken = await verifyToken(req);
     if (!decodedToken) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
     const { uid, email } = decodedToken;
-    const body = await req.json();
-    const { action } = body;
-
     const userDocRef = adminDb.collection('users').doc(uid);
     const userDoc = await userDocRef.get();
 
@@ -221,11 +257,13 @@ export async function POST(req: NextRequest) {
       }
 
       await userDocRef.set(updateData, { merge: true });
+      invalidateUserCache(uid);
 
       return NextResponse.json({ success: true });
     }
 
     if (action === 'end_session') {
+      invalidateUserCache(uid);
       // Clear token on logout
       if (role !== 'admin') {
         await userDocRef.update({

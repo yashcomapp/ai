@@ -37,6 +37,10 @@ export default function TimeTracker() {
   const flushTime = async (forcedPresence?: string) => {
     if (!firebaseUser || !user) return;
     const toFlush = pendingSecondsRef.current;
+    
+    // Skip empty network calls if 0 seconds to flush unless it's a critical offline exit
+    if (toFlush <= 0 && forcedPresence !== 'offline') return;
+
     pendingSecondsRef.current = 0;
     lastFlushTimeRef.current = Date.now();
 
@@ -78,14 +82,14 @@ export default function TimeTracker() {
     pendingSecondsRef.current = 0;
     lastActivityRef.current = Date.now();
 
-    const TICK_INTERVAL = 5000; 
+    const TICK_INTERVAL = 10000; // 10 seconds tick
 
     // User interaction activity listener
     const resetActivity = () => {
       lastActivityRef.current = Date.now();
     };
 
-    const activityEvents = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll', 'click'];
+    const activityEvents = ['mousedown', 'keydown', 'touchstart', 'scroll', 'click'];
     activityEvents.forEach(evt => {
       window.addEventListener(evt, resetActivity, { passive: true });
     });
@@ -97,16 +101,10 @@ export default function TimeTracker() {
       if (isVisibleAndFocused && isInteracting) {
         pendingSecondsRef.current += TICK_INTERVAL / 1000;
 
-        // Periodically flush active time and update presence status (every 300 seconds / 5 minutes)
+        // Periodically flush active time (every 300 seconds / 5 minutes)
         const timeSinceLastFlush = Date.now() - lastFlushTimeRef.current;
-        if (timeSinceLastFlush >= 300000) {
+        if (timeSinceLastFlush >= 300000 && pendingSecondsRef.current > 0) {
           flushTime('active');
-        }
-      } else if (isVisibleAndFocused && !isInteracting) {
-        // User is idle on screen - update presence to idle
-        const timeSinceLastFlush = Date.now() - lastFlushTimeRef.current;
-        if (timeSinceLastFlush >= 300000) {
-          flushTime('idle');
         }
       }
     };
@@ -114,24 +112,14 @@ export default function TimeTracker() {
     const tickTimer = setInterval(handleTick, TICK_INTERVAL);
 
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'hidden') {
+      if (document.visibilityState === 'hidden' && pendingSecondsRef.current > 0) {
         flushTime('background');
-      } else {
+      } else if (document.visibilityState === 'visible') {
         resetActivity();
       }
     };
 
-    const handleWindowBlur = () => {
-      flushTime('background');
-    };
-
-    const handleWindowFocus = () => {
-      resetActivity();
-    };
-
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('blur', handleWindowBlur);
-    window.addEventListener('focus', handleWindowFocus);
 
     const handleBeforeUnload = () => {
       const token = idTokenRef.current;
@@ -166,10 +154,10 @@ export default function TimeTracker() {
         window.removeEventListener(evt, resetActivity);
       });
       document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('blur', handleWindowBlur);
-      window.removeEventListener('focus', handleWindowFocus);
       window.removeEventListener('beforeunload', handleBeforeUnload);
-      flushTime('background');
+      if (pendingSecondsRef.current > 0) {
+        flushTime('background');
+      }
     };
   }, [firebaseUser, user]);
 

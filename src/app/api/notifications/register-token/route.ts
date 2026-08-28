@@ -1,16 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase/admin';
 import * as admin from 'firebase-admin';
-import { verifyToken } from '@/lib/auth';
+import { verifyAnyRole, invalidateUserCache } from '@/lib/auth';
 
 export async function POST(req: NextRequest) {
   try {
-    const decodedToken = await verifyToken(req);
-    if (!decodedToken) {
+    const verified = await verifyAnyRole(req, ['student', 'parent', 'admin']);
+    if (!verified) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    const { uid } = decodedToken;
+    const { uid } = verified.decodedToken;
     const body = await req.json();
     const { token, action } = body;
 
@@ -27,12 +27,12 @@ export async function POST(req: NextRequest) {
       }).catch((e) => {
         console.warn('Soft fail unregistering token:', e.message);
       });
+      invalidateUserCache(uid);
       return NextResponse.json({ success: true, message: 'Token unregistered successfully' });
     }
 
-    // Default: register token
-    const userDoc = await userRef.get();
-    const userData = userDoc.exists ? userDoc.data() || {} : {};
+    // Default: register token using cached userData
+    const userData = verified.userData || {};
     const existingTokens = Array.isArray(userData.fcmTokens) ? userData.fcmTokens : [];
     const isNewToken = !existingTokens.includes(token);
 
@@ -40,6 +40,7 @@ export async function POST(req: NextRequest) {
       fcmTokens: admin.firestore.FieldValue.arrayUnion(token),
       updatedAt: admin.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
+    invalidateUserCache(uid);
 
     if (isNewToken) {
       // Send a readiness/welcome push notification to confirm it works!

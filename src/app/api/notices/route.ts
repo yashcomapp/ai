@@ -1,59 +1,53 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase/admin';
-import { verifyRole, verifyToken } from '@/lib/auth';
+import { verifyAnyRole } from '@/lib/auth';
+import { getFromCache, setInCache } from '@/lib/firebase/cache';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   try {
-    
-    // Decode token once, then fetch the user document to determine role
-    const decodedToken = await verifyToken(req);
-    if (!decodedToken) {
+    const verified = await verifyAnyRole(req, ['student', 'parent', 'admin']);
+    if (!verified) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    const userDoc = await adminDb.collection('users').doc(decodedToken.uid).get();
-    if (!userDoc.exists) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-    }
-
-    const userData = userDoc.data()!;
-    const role = userData.role?.toLowerCase();
-
-    let parentAuth = null;
-    let studentAuth = null;
-
-    if (role === 'student') {
+    const { decodedToken, userData, role } = verified;
+    let parentAuth = role === 'parent' ? { decodedToken, userData } : null;
+    let studentAuth = role === 'student' ? { decodedToken, userData } : null;
+    if (role === 'admin') {
       studentAuth = { decodedToken, userData };
-    } else if (role === 'parent') {
-      parentAuth = { decodedToken, userData };
-    } else {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    const noticesSnap = await adminDb.collection('notices')
-      .orderBy('createdAt', 'desc')
-      .limit(50)
-      .get();
+    const cacheKey = 'active_notices_24h';
+    let allNotices = getFromCache<any[]>(cacheKey);
 
-    const twentyFourHoursAgo = Date.now() - 24 * 60 * 60 * 1000;
-    const allNotices = noticesSnap.docs.map(doc => {
-      const data = doc.data();
-      const createdAtMs = data.createdAt ? (data.createdAt.toMillis ? data.createdAt.toMillis() : new Date(data.createdAt).getTime()) : 0;
-      return {
-        id: doc.id,
-        title: data.title || '',
-        body: data.body || '',
-        targetType: data.targetType || 'all',
-        targetValues: data.targetValues || [],
-        createdAt: data.createdAt ? (data.createdAt.toDate ? data.createdAt.toDate().toISOString() : new Date(data.createdAt).toISOString()) : null,
-        createdAtMs,
-        isOverlay: !!data.isOverlay,
-        type: data.type || 'general',
-        noticeDate: data.noticeDate || null
-      };
-    }).filter(notice => notice.createdAtMs >= twentyFourHoursAgo);
+    if (!allNotices) {
+      const noticesSnap = await adminDb.collection('notices')
+        .orderBy('createdAt', 'desc')
+        .limit(50)
+        .get();
+
+      const twentyFourHoursAgo = Date.now() - 24 * 60 * 60 * 1000;
+      allNotices = noticesSnap.docs.map(doc => {
+        const data = doc.data();
+        const createdAtMs = data.createdAt ? (data.createdAt.toMillis ? data.createdAt.toMillis() : new Date(data.createdAt).getTime()) : 0;
+        return {
+          id: doc.id,
+          title: data.title || '',
+          body: data.body || '',
+          targetType: data.targetType || 'all',
+          targetValues: data.targetValues || [],
+          createdAt: data.createdAt ? (data.createdAt.toDate ? data.createdAt.toDate().toISOString() : new Date(data.createdAt).toISOString()) : null,
+          createdAtMs,
+          isOverlay: !!data.isOverlay,
+          type: data.type || 'general',
+          noticeDate: data.noticeDate || null
+        };
+      }).filter(notice => notice.createdAtMs >= twentyFourHoursAgo);
+
+      setInCache(cacheKey, allNotices, 60000); // 60s cache
+    }
 
     let filteredNotices: any[] = [];
 

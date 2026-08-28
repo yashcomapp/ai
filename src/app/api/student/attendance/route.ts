@@ -3,6 +3,7 @@ import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole } from '@/lib/auth';
 import { getDateKeyIST as getISTDateString } from '@/lib/dateUtils';
 import { calculateAttendanceSummary } from '@/lib/attendanceUtils';
+import { getFromCache, setInCache, invalidateCache } from '@/lib/firebase/cache';
 
 export const dynamic = 'force-dynamic';
 
@@ -72,6 +73,11 @@ export async function GET(req: NextRequest) {
     }
 
     const sCodeUpper = studentCode.trim().toUpperCase();
+    const cacheKey = `student_attendance_${sCodeUpper}`;
+    const cachedData = getFromCache<any>(cacheKey);
+    if (cachedData) {
+      return NextResponse.json(cachedData);
+    }
 
     // 3. Fetch all daily attendance documents for the student's batches
     const attendanceSnap = await adminDb.collection('attendance')

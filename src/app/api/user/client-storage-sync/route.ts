@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase/admin';
-import { verifyToken } from '@/lib/auth';
+import { verifyAnyRole } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
   try {
-    const decodedToken = await verifyToken(req);
-    if (!decodedToken) {
+    const verified = await verifyAnyRole(req, ['student', 'parent', 'admin']);
+    if (!verified) {
       return NextResponse.json({ message: 'Unauthorized.' }, { status: 401 });
     }
 
@@ -18,10 +18,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'Invalid payload.' }, { status: 400 });
     }
 
+    const { decodedToken, userData, role } = verified;
     const uid = decodedToken.uid;
-    const userDoc = await adminDb.collection('users').doc(uid).get();
-    const userData = userDoc.exists ? userDoc.data() : {};
-
     const studentCode = userData?.studentCode || '';
     const docId = studentCode || uid;
 

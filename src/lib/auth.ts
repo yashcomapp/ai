@@ -21,6 +21,14 @@ export async function verifyToken(req: Request): Promise<any | null> {
 const userCache = new Map<string, { data: any; expiresAt: number }>();
 const CACHE_TTL_MS = 60000; // 60 seconds
 
+export function invalidateUserCache(uid?: string) {
+  if (uid) {
+    userCache.delete(uid);
+  } else {
+    userCache.clear();
+  }
+}
+
 export async function verifyRole(req: Request, role: 'admin' | 'student' | 'parent'): Promise<VerifiedUser | null> {
   const result = await verifyAnyRole(req, [role]);
   if (!result) return null;

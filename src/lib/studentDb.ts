@@ -1,5 +1,5 @@
 import { adminDb } from '@/lib/firebase/admin';
-import { getCachedSyllabus } from '@/lib/firebase/cache';
+import { getCachedSyllabus, getFromCache, setInCache } from '@/lib/firebase/cache';
 import { getDateKeyIST } from '@/lib/dateUtils';
 import { calculateUnifiedMetrics } from '@/lib/dashboardMetrics';
 import { deriveTopicCodeFromQuestionCode, getCanonicalSubjectName } from '@/lib/questionTypes';
@@ -856,6 +856,10 @@ export async function getStudentLearningData(userData: any) {
     throw new Error('Missing student identifier profile.');
   }
 
+  const cacheKey = `learning_data_${studentCode}`;
+  const cached = getFromCache<any>(cacheKey);
+  if (cached) return cached;
+
   const batchIds: string[] = userData.batchIds || (userData.batchId ? [userData.batchId] : []);
 
   // 1. Fetch batches to get all associated class codes (for multi-class enrolled students)
@@ -997,24 +1001,35 @@ export async function getStudentLearningData(userData: any) {
     }
   }
 
-  // 3. Fetch standard syllabus topic index docs for all enrolled student classes
+  // 3. Fetch standard syllabus topic index docs for all enrolled student classes (In-Memory Cached)
   let syllabusTopics: any[] = [];
-  const classesArr = Array.from(allClasses);
-  if (classesArr.length > 0) {
-    const chunkSize = 10;
-    for (let i = 0; i < classesArr.length; i += chunkSize) {
-      const chunk = classesArr.slice(i, i + chunkSize);
-      const sSnap = await adminDb.collection('syllabusTopicIndex')
-        .where('classCode', 'in', chunk)
-        .get();
-      sSnap.docs.forEach((doc: any) => syllabusTopics.push(doc.data()));
-    }
-  }
+  const classesArr = Array.from(allClasses).sort();
+  const classKey = `syllabus_topics_${classesArr.join('_')}`;
+  let cachedTopics = getFromCache<any[]>(classKey);
 
-  // Fallback if no topics match
-  if (syllabusTopics.length === 0) {
-    const syllabusTopicsSnap = await adminDb.collection('syllabusTopicIndex').limit(500).get();
-    syllabusTopics = syllabusTopicsSnap.docs.map((doc: any) => doc.data());
+  if (cachedTopics) {
+    syllabusTopics = cachedTopics;
+  } else {
+    if (classesArr.length > 0) {
+      const chunkSize = 10;
+      for (let i = 0; i < classesArr.length; i += chunkSize) {
+        const chunk = classesArr.slice(i, i + chunkSize);
+        const sSnap = await adminDb.collection('syllabusTopicIndex')
+          .where('classCode', 'in', chunk)
+          .get();
+        sSnap.docs.forEach((doc: any) => syllabusTopics.push(doc.data()));
+      }
+    }
+
+    // Fallback if no topics match
+    if (syllabusTopics.length === 0) {
+      const syllabusTopicsSnap = await adminDb.collection('syllabusTopicIndex').limit(500).get();
+      syllabusTopics = syllabusTopicsSnap.docs.map((doc: any) => doc.data());
+    }
+
+    if (syllabusTopics.length > 0) {
+      setInCache(classKey, syllabusTopics, 300000); // 5 minutes in-memory cache
+    }
   }
 
   // Populate masteryMap
@@ -1128,11 +1143,14 @@ export async function getStudentLearningData(userData: any) {
   revision.sort(sortFn);
   mastered.sort(sortFn);
 
-  return {
+  const result = {
     studentCode,
     needsAttention,
     continuePractice,
     revision,
     mastered
   };
+
+  setInCache(cacheKey, result, 120000); // 2 mins cache
+  return result;
 }

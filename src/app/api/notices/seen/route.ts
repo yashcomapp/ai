@@ -1,35 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase/admin';
 import * as admin from 'firebase-admin';
-import { verifyRole, verifyToken } from '@/lib/auth';
+import { verifyAnyRole } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
   try {
-    // Decode token once, then fetch the user document to determine role
-    const decodedToken = await verifyToken(req);
-    if (!decodedToken) {
+    const verified = await verifyAnyRole(req, ['student', 'parent', 'admin']);
+    if (!verified) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    const userDoc = await adminDb.collection('users').doc(decodedToken.uid).get();
-    if (!userDoc.exists) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-    }
-
-    const userData = userDoc.data()!;
-    const roleVal = userData.role?.toLowerCase();
-
-    let parentAuth = null;
-    let studentAuth = null;
-
-    if (roleVal === 'student') {
+    const { decodedToken, userData, role: roleVal } = verified;
+    let parentAuth = roleVal === 'parent' ? { decodedToken, userData } : null;
+    let studentAuth = roleVal === 'student' ? { decodedToken, userData } : null;
+    if (roleVal === 'admin') {
       studentAuth = { decodedToken, userData };
-    } else if (roleVal === 'parent') {
-      parentAuth = { decodedToken, userData };
-    } else {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
     const { noticeId, remove, reason, remarks } = await req.json();

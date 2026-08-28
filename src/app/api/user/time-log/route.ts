@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase/admin';
 import * as admin from 'firebase-admin';
 import { getDateKeyIST } from '@/lib/dateUtils';
-import { verifyToken } from '@/lib/auth';
+import { verifyAnyRole } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,20 +11,17 @@ const dateKeyOf = (d: Date) => getDateKeyIST(d);
 // 1. GET - Load time log stats (today, this week, last week, trend)
 export async function GET(req: NextRequest) {
   try {
-    const decodedToken = await verifyToken(req);
-    if (!decodedToken) {
+    const verified = await verifyAnyRole(req, ['student', 'parent', 'admin']);
+    if (!verified) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
+    const { decodedToken, userData: callerData, role: callerRole } = verified;
 
     const { searchParams } = new URL(req.url);
     const targetUid = searchParams.get('uid') || decodedToken.uid;
 
     if (targetUid !== decodedToken.uid) {
       // Must be admin or parent of this child
-      const callerDoc = await adminDb.collection('users').doc(decodedToken.uid).get();
-      const callerData = callerDoc.data() || {};
-      const callerRole = callerData.role;
-
       if (callerRole !== 'admin') {
         if (callerRole === 'parent') {
           // Verify targetUid belongs to parent
@@ -144,18 +141,24 @@ export async function GET(req: NextRequest) {
 // 2. POST - Flush active time and update presence page info
 export async function POST(req: NextRequest) {
   try {
-    const decodedToken = await verifyToken(req);
-    if (!decodedToken) {
+    const verified = await verifyAnyRole(req, ['student', 'parent', 'admin']);
+    if (!verified) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    const { uid } = decodedToken;
+    const { uid } = verified.decodedToken;
     const body = await req.json();
     const { secondsToFlush, dateKey, currentPage, currentPagePath } = body;
+    const presenceState = body.presenceState || 'active';
+
+    const numSeconds = Number(secondsToFlush) || 0;
+    if (numSeconds <= 0 && presenceState !== 'offline') {
+      return NextResponse.json({ success: true, skipped: true });
+    }
 
     const key = dateKey || dateKeyOf(new Date());
 
-    if (secondsToFlush && secondsToFlush > 0) {
+    if (numSeconds > 0) {
       const docId = `${uid}_${key}`;
       const ref = adminDb.collection('userTimeLog').doc(docId);
       const userRef = adminDb.collection('users').doc(uid);
@@ -166,11 +169,11 @@ export async function POST(req: NextRequest) {
 
       if (currentPagePath) {
         if (currentPagePath.includes('take-exam') || currentPagePath.includes('take-subjective-exam')) {
-          examSecondsAdd = Number(secondsToFlush);
+          examSecondsAdd = numSeconds;
         } else if (currentPagePath.includes('results')) {
-          reviewSecondsAdd = Number(secondsToFlush);
+          reviewSecondsAdd = numSeconds;
         } else if (currentPagePath.includes('topic') || currentPagePath.includes('learning')) {
-          practiceSecondsAdd = Number(secondsToFlush);
+          practiceSecondsAdd = numSeconds;
         }
       }
 
@@ -178,46 +181,37 @@ export async function POST(req: NextRequest) {
         const snap = await tx.get(ref);
         const existingData = snap.exists ? snap.data()! : {};
         const existingSeconds = existingData.seconds || 0;
-        const existingExam = existingData.examSeconds || 0;
-        const existingReview = existingData.reviewSeconds || 0;
-        const existingPractice = existingData.practiceSeconds || 0;
-
-        const newSeconds = Math.min(86400, existingSeconds + Number(secondsToFlush));
-        const newExam = Math.min(86400, existingExam + examSecondsAdd);
-        const newReview = Math.min(86400, existingReview + reviewSecondsAdd);
-        const newPractice = Math.min(86400, existingPractice + practiceSecondsAdd);
-
-        const addedSeconds = newSeconds - existingSeconds;
+        const addedSeconds = Math.max(0, numSeconds);
 
         tx.set(ref, {
           uid,
           date: key,
-          seconds: newSeconds,
-          examSeconds: newExam,
-          reviewSeconds: newReview,
-          practiceSeconds: newPractice,
+          seconds: existingSeconds + addedSeconds,
+          examSeconds: (existingData.examSeconds || 0) + examSecondsAdd,
+          reviewSeconds: (existingData.reviewSeconds || 0) + reviewSecondsAdd,
+          practiceSeconds: (existingData.practiceSeconds || 0) + practiceSecondsAdd,
           updatedAt: admin.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
 
         if (addedSeconds > 0) {
           tx.set(userRef, {
             cumulativeSeconds: admin.firestore.FieldValue.increment(addedSeconds),
+            currentPage: currentPage || '',
+            currentPagePath: currentPagePath || '',
+            currentPageAt: admin.firestore.FieldValue.serverTimestamp(),
+            presenceState,
+            lastActiveAt: admin.firestore.FieldValue.serverTimestamp(),
             updatedAt: admin.firestore.FieldValue.serverTimestamp()
           }, { merge: true });
         }
       });
+    } else if (presenceState === 'offline') {
+      await adminDb.collection('users').doc(uid).set({
+        presenceState: 'offline',
+        lastActiveAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
     }
-
-    const presenceState = body.presenceState || 'active';
-
-    await adminDb.collection('users').doc(uid).set({
-      currentPage: currentPage || '',
-      currentPagePath: currentPagePath || '',
-      currentPageAt: admin.firestore.FieldValue.serverTimestamp(),
-      presenceState,
-      lastActiveAt: admin.firestore.FieldValue.serverTimestamp(),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp()
-    }, { merge: true });
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
