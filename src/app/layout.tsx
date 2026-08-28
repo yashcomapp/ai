@@ -9,7 +9,6 @@ import Script from 'next/script';
 import TimeTracker from '@/components/TimeTracker';
 import PushNotificationManager from '@/components/PushNotificationManager';
 import ToastContainer from '@/components/ToastContainer';
-import { SpeedInsights } from '@vercel/speed-insights/next';
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -72,7 +71,6 @@ export default function RootLayout({
             <div className="app-shell">
               {children}
             </div>
-            <SpeedInsights />
           </AuthProvider>
         </ThemeProvider>
       </body>

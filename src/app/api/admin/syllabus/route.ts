@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import * as admin from 'firebase-admin';
 import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole, verifyAnyRole } from '@/lib/auth';
+import { getCachedSyllabusList, invalidateCache } from '@/lib/firebase/cache';
 export const dynamic = 'force-dynamic';
 
 const matchTopicCode = (examTopicCodes: any, cleanCode: string, number: string, chapNum: string) => {
@@ -342,11 +343,14 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    // Return list of all subjects
-    const snapshot = await adminDb.collection('syllabus').get();
-    const subjects = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    // Return list of all subjects (cached in memory to reduce serverless CPU usage)
+    const subjects = await getCachedSyllabusList();
 
-    return NextResponse.json(subjects);
+    return NextResponse.json(subjects, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300'
+      }
+    });
 
   } catch (error: any) {
     console.error('API load syllabus subjects error:', error);
@@ -356,6 +360,9 @@ export async function GET(req: NextRequest) {
 
 async function syncSyllabusConfigTree() {
   try {
+    invalidateCache('syllabus');
+    invalidateCache('config');
+
     const syllabusSnap = await adminDb.collection('syllabus').get();
     const subjectsMap: Record<string, Record<string, Record<string, { docId: string }>>> = {};
     const boardCodes: Record<string, string> = {
