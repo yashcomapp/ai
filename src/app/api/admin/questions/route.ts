@@ -5,6 +5,7 @@ import { verifyRole } from '@/lib/auth';
 import { QuestionRepository } from '@/repositories/question.repository';
 import { ChunkedBatch } from '@/lib/firebase/batch';
 import { validateQuestion, normalizeBloomLevel, OBJECTIVE_QUESTION_TYPES, SUBJECTIVE_QUESTION_TYPES, QUESTION_TYPE_MAP } from '@/lib/questionTypes';
+import { getFromCache, setInCache, invalidateCache } from '@/lib/firebase/cache';
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
@@ -101,14 +102,20 @@ export async function GET(req: NextRequest) {
     const lastCode = searchParams.get('lastCode') || '';
     const usageStatus = searchParams.get('usageStatus') || '';
 
-    // Fetch base documents matching board, class, subject
-    let baseQuery: admin.firestore.Query = adminDb.collection('questions');
-    if (board) baseQuery = baseQuery.where('board', '==', board);
-    if (classNum) baseQuery = baseQuery.where('class', '==', classNum);
-    if (subject) baseQuery = baseQuery.where('subject', '==', subject);
+    // Fetch base documents matching board, class, subject (in-memory cached)
+    const cacheKey = `qb_base_${board}_${classNum}_${subject}`;
+    let allQuestions = getFromCache<any[]>(cacheKey);
 
-    const baseSnap = await baseQuery.get();
-    let allQuestions = baseSnap.docs.map(doc => ({ id: doc.id, ...doc.data() as any }));
+    if (!allQuestions) {
+      let baseQuery: admin.firestore.Query = adminDb.collection('questions');
+      if (board) baseQuery = baseQuery.where('board', '==', board);
+      if (classNum) baseQuery = baseQuery.where('class', '==', classNum);
+      if (subject) baseQuery = baseQuery.where('subject', '==', subject);
+
+      const baseSnap = await baseQuery.get();
+      allQuestions = baseSnap.docs.map(doc => ({ id: doc.id, ...doc.data() as any }));
+      setInCache(cacheKey, allQuestions, 180000); // 3 mins cache
+    }
 
     // In-memory filter for chapter, topic, category, type, usageStatus
     allQuestions = allQuestions.filter(q => {
@@ -351,6 +358,7 @@ export async function POST(req: NextRequest) {
       }
 
       await batch.commit();
+      invalidateCache('qb_base_');
       return NextResponse.json({ success: true, count: processedItems.length });
     }
 
@@ -484,6 +492,7 @@ export async function POST(req: NextRequest) {
     }
 
     await adminDb.collection('questions').doc(finalCode).set(questionDoc, { merge: true });
+    invalidateCache('qb_base_');
 
     return NextResponse.json({ success: true, questionCode: finalCode });
 
@@ -507,6 +516,7 @@ export async function DELETE(req: NextRequest) {
     // Handle single question deletion
     if (id) {
       await adminDb.collection('questions').doc(id).delete();
+      invalidateCache('qb_base_');
       return NextResponse.json({ success: true });
     }
 
@@ -524,6 +534,7 @@ export async function DELETE(req: NextRequest) {
       batch.delete(docRef);
     });
     await batch.commit();
+    invalidateCache('qb_base_');
 
     return NextResponse.json({ success: true, count: ids.length });
 
