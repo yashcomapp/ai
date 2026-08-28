@@ -9,7 +9,11 @@ export async function GET(req: NextRequest) {
     const docRef = adminDb.collection('systemStats').doc('visitors');
     const snap = await docRef.get();
     const count = snap.exists ? (snap.data()?.count || 0) : 0;
-    return NextResponse.json({ count });
+    return NextResponse.json({ count }, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=120, stale-while-revalidate=300'
+      }
+    });
   } catch (error: any) {
     console.error('Visitor counter GET error:', error);
     return NextResponse.json({ count: 0, error: error.message }, { status: 500 });

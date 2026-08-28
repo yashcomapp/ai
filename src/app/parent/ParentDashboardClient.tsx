@@ -783,7 +783,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
       fallbackData: selectedChildCode === defaultChildCode ? serverInitialData : (localCache || undefined),
       revalidateOnFocus: false, 
       keepPreviousData: true,
-      dedupingInterval: 5000 
+      dedupingInterval: 60000 
     }
   );
 

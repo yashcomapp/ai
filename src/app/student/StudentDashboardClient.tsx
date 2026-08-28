@@ -214,7 +214,8 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
 
   const { data: feesData } = useSWR<any>(
     firebaseUser ? '/api/student/fees' : null,
-    fetcher
+    fetcher,
+    { revalidateOnFocus: false, dedupingInterval: 60000 }
   );
 
   const { data: chatRoomsData } = useSWR<any>(
@@ -228,7 +229,8 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
 
   const { data: attendanceData } = useSWR<any>(
     firebaseUser ? '/api/student/attendance' : null,
-    fetcher
+    fetcher,
+    { revalidateOnFocus: false, dedupingInterval: 60000 }
   );
 
   const { data: learningData } = useSWR<any>(
