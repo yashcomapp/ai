@@ -817,7 +817,8 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
 
   const { data: feesData } = useSWR<any>(
     firebaseUser && selectedChildCode ? `/api/student/fees?studentCode=${selectedChildCode}` : null,
-    fetcher
+    fetcher,
+    { revalidateOnFocus: false, dedupingInterval: 60000 }
   );
 
   const { data: chatRoomsData } = useSWR<any>(
@@ -831,7 +832,8 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
 
   const { data: attendanceData } = useSWR<any>(
     firebaseUser && selectedChildCode ? `/api/student/attendance?studentCode=${selectedChildCode}` : null,
-    fetcher
+    fetcher,
+    { revalidateOnFocus: false, dedupingInterval: 60000 }
   );
 
   const [dismissedOverdue, setDismissedOverdue] = useState(false);

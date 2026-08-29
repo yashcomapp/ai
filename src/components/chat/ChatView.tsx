@@ -437,6 +437,21 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
     prevActiveRoomIdRef.current = activeRoomId;
   }, [messages, pendingMessages, activeRoomId]);
 
+  // Keep pinned to bottom when resuming from background or switching back from other apps
+  useEffect(() => {
+    const handleResume = () => {
+      if (document.visibilityState === 'visible' && activeRoomId) {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
+      }
+    };
+    document.addEventListener('visibilitychange', handleResume);
+    window.addEventListener('focus', handleResume);
+    return () => {
+      document.removeEventListener('visibilitychange', handleResume);
+      window.removeEventListener('focus', handleResume);
+    };
+  }, [activeRoomId]);
+
   const mentionCandidates = useMemo(() => {
     if (!activeRoomId || !participantNames) return [];
     const activeRoom = rooms.find(r => r.roomId === activeRoomId);

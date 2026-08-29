@@ -19,7 +19,8 @@ export default function StudentFeesPage() {
 
   const { data, error, isLoading } = useSWR<any>(
     firebaseUser ? '/api/student/fees' : null,
-    fetcher
+    fetcher,
+    { revalidateOnFocus: false, dedupingInterval: 60000 }
   );
 
   const fee = data?.feeRecord || null;

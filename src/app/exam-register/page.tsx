@@ -54,7 +54,8 @@ function ExamRegisterContent() {
 
   const { data, error, isLoading } = useSWR<RegisterData>(
     user && targetCode ? `/api/student/exam-register?studentCode=${targetCode}` : null,
-    fetcher
+    fetcher,
+    { revalidateOnFocus: false, dedupingInterval: 60000 }
   );
 
   useEffect(() => {
