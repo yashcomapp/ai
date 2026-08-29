@@ -81,59 +81,58 @@ export async function GET(req: NextRequest) {
         childrenCodes = [parentData.studentId];
       }
 
-      // Query parentEmail matching in students
+      // Query parentEmail matching and studentCodes in parallel
       let childrenBatches: string[] = [];
-      if (parentEmail) {
-        try {
-          const studsSnap = await adminDb.collection('users')
-            .where('role', '==', 'student')
-            .where('parentEmail', '==', parentEmail)
-            .get();
-          
-          studsSnap.docs.forEach(doc => {
-            const d = doc.data();
-            if (d.studentCode && !childrenCodes.includes(d.studentCode)) {
-              childrenCodes.push(d.studentCode);
-            }
-            if (d.batchId && !childrenBatches.includes(d.batchId)) {
-              childrenBatches.push(d.batchId);
-            }
-            if (Array.isArray(d.batchIds)) {
-              d.batchIds.forEach((b: string) => {
-                if (b && !childrenBatches.includes(b)) {
-                  childrenBatches.push(b);
-                }
-              });
-            }
-          });
-        } catch (e) {
-          console.warn('Error fetching children for parent notice matching:', e);
-        }
-      }
+      try {
+        const [studsSnap, snaps] = await Promise.all([
+          parentEmail
+            ? adminDb.collection('users')
+                .where('role', '==', 'student')
+                .where('parentEmail', '==', parentEmail)
+                .get()
+                .catch(() => ({ docs: [] } as any))
+            : Promise.resolve({ docs: [] } as any),
+          childrenCodes.length > 0
+            ? adminDb.collection('users')
+                .where('role', '==', 'student')
+                .where('studentCode', 'in', childrenCodes.slice(0, 30))
+                .get()
+                .catch(() => ({ docs: [] } as any))
+            : Promise.resolve({ docs: [] } as any)
+        ]);
 
-      // Also fetch children profiles to resolve their batch ids if not matching email
-      if (childrenCodes.length > 0) {
-        try {
-          const snaps = await adminDb.collection('users')
-            .where('role', '==', 'student')
-            .where('studentCode', 'in', childrenCodes.slice(0, 30))
-            .get();
-          snaps.docs.forEach(doc => {
-            const d = doc.data();
-            if (d.batchId && !childrenBatches.includes(d.batchId)) {
-              childrenBatches.push(d.batchId);
-            }
-            if (Array.isArray(d.batchIds)) {
-              d.batchIds.forEach((b: string) => {
-                if (b && !childrenBatches.includes(b)) {
-                  childrenBatches.push(b);
-                }
-              });
-            }
-          });
-        } catch (e) {
-          console.warn('Error fetching mapped children profiles:', e);
-        }
+        studsSnap.docs.forEach((doc: any) => {
+          const d = doc.data();
+          if (d.studentCode && !childrenCodes.includes(d.studentCode)) {
+            childrenCodes.push(d.studentCode);
+          }
+          if (d.batchId && !childrenBatches.includes(d.batchId)) {
+            childrenBatches.push(d.batchId);
+          }
+          if (Array.isArray(d.batchIds)) {
+            d.batchIds.forEach((b: string) => {
+              if (b && !childrenBatches.includes(b)) {
+                childrenBatches.push(b);
+              }
+            });
+          }
+        });
+
+        snaps.docs.forEach((doc: any) => {
+          const d = doc.data();
+          if (d.batchId && !childrenBatches.includes(d.batchId)) {
+            childrenBatches.push(d.batchId);
+          }
+          if (Array.isArray(d.batchIds)) {
+            d.batchIds.forEach((b: string) => {
+              if (b && !childrenBatches.includes(b)) {
+                childrenBatches.push(b);
+              }
+            });
+          }
+        });
+      } catch (e) {
+        console.warn('Error fetching children for parent notice matching:', e);
       }
 
       filteredNotices = allNotices.filter(notice => {

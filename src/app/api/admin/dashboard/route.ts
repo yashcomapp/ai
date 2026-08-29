@@ -30,7 +30,10 @@ export async function GET(req: NextRequest) {
       adminDb.collection('exams').where('status', '==', 'active').count().get(),
       adminDb.collection('studentFees').where('hasOverdueInstallment', '==', true).count().get(),
       adminDb.collection('attendance').where('date', '==', todayStr).get(),
-      adminDb.collection('chatRooms').get(),
+      adminDb.collection('chatRooms')
+        .where('participants', 'array-contains', 'admin')
+        .select('unreadCounts')
+        .get(),
       adminDb.collection('registrations')
         .where('status', '==', 'pending')
         .orderBy('createdAt', 'desc')
@@ -104,7 +107,7 @@ export async function GET(req: NextRequest) {
     // Calculate admin unread chats count
     const unreadChatsCount = chatRoomsSnap.docs.filter(doc => {
       const uCounts = doc.data().unreadCounts || {};
-      return Number(uCounts[adminUid] || 0) > 0;
+      return Number(uCounts[adminUid] || uCounts['admin'] || 0) > 0;
     }).length;
 
     return NextResponse.json({

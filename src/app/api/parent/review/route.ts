@@ -213,17 +213,21 @@ export async function GET(req: NextRequest) {
     const uniqueTopicCodes = Array.from(allTopicCodes);
     if (uniqueTopicCodes.length > 0) {
       const chunks = chunkArray(uniqueTopicCodes, 30);
-      for (const chunk of chunks) {
-        const syllabusSnap = await adminDb.collection('syllabusTopicIndex')
-          .where('topicCode', 'in', chunk)
-          .get();
+      const snaps = await Promise.all(
+        chunks.map(chunk =>
+          adminDb.collection('syllabusTopicIndex')
+            .where('topicCode', 'in', chunk)
+            .get()
+        )
+      );
+      snaps.forEach(syllabusSnap => {
         syllabusSnap.docs.forEach(doc => {
           const d = doc.data();
           if (d.topicCode) {
             syllabusMap.set(d.topicCode, d);
           }
         });
-      }
+      });
     }
 
     // 1. Map Objective reviews

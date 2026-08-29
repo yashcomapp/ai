@@ -21,28 +21,34 @@ export async function getParentDashboardData(
     studentCodes = [parentData.studentId];
   }
 
-  // Always query all students who have this parent's email to discover all children/siblings
-  if (parentEmail) {
-    const querySnap = await adminDb.collection('users')
-      .where('role', '==', 'student')
-      .where('parentEmail', '==', parentEmail)
-      .get();
-    querySnap.docs.forEach(doc => {
+  // Query students matching parent email or parent phone in parallel to discover all children/siblings
+  const parentPhone = parentData?.phone || parentData?.parentPhone;
+  if (parentEmail || parentPhone) {
+    const [emailSnap, phoneSnap] = await Promise.all([
+      parentEmail
+        ? adminDb.collection('users')
+            .where('role', '==', 'student')
+            .where('parentEmail', '==', parentEmail)
+            .get()
+            .catch(() => ({ docs: [] } as any))
+        : Promise.resolve({ docs: [] } as any),
+      parentPhone
+        ? adminDb.collection('users')
+            .where('role', '==', 'student')
+            .where('parentPhone', '==', parentPhone)
+            .get()
+            .catch(() => ({ docs: [] } as any))
+        : Promise.resolve({ docs: [] } as any)
+    ]);
+
+    emailSnap.docs.forEach((doc: any) => {
       const data = doc.data();
       if (data.studentCode && !studentCodes.includes(data.studentCode)) {
         studentCodes.push(data.studentCode);
       }
     });
-  }
 
-  // Also query by parentPhone if available to link any siblings registered with the same phone
-  const parentPhone = parentData?.phone || parentData?.parentPhone;
-  if (parentPhone) {
-    const phoneSnap = await adminDb.collection('users')
-      .where('role', '==', 'student')
-      .where('parentPhone', '==', parentPhone)
-      .get();
-    phoneSnap.docs.forEach(doc => {
+    phoneSnap.docs.forEach((doc: any) => {
       const data = doc.data();
       if (data.studentCode && !studentCodes.includes(data.studentCode)) {
         studentCodes.push(data.studentCode);
@@ -203,7 +209,10 @@ export async function getParentDashboardData(
     subAssignmentsSnapshot,
     subStudentAssignmentsSnapshot,
     classroomExamsSnap,
-    homePracticeSnap
+    homePracticeSnap,
+    integritySnapshot,
+    masterySnapshot,
+    evaluationsSnapshot
   ] = await Promise.all([
     adminDb.collection('reviews')
       .where('studentCode', '==', targetStudentCode)
@@ -260,7 +269,24 @@ export async function getParentDashboardData(
           .where('type', '==', 'home_practice')
           .where('batchId', 'in', childBatchIds)
           .get()
-      : Promise.resolve({ docs: [] } as any)
+      : Promise.resolve({ docs: [] } as any),
+
+    // Integrity Scores
+    adminDb.collection('integrityScores')
+      .where('studentCode', '==', targetStudentCode)
+      .get(),
+
+    // Topics Mastery
+    adminDb.collection('studentTopicMastery')
+      .where('studentCode', '==', targetStudentCode)
+      .select('mastery', 'topicCode')
+      .get(),
+
+    // Evaluations
+    adminDb.collection('evaluations')
+      .where('studentCode', '==', targetStudentCode)
+      .where('evaluatorType', '==', 'parent')
+      .get()
   ]);
 
   const allExamResults = reviewsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() as any }));
@@ -439,10 +465,6 @@ export async function getParentDashboardData(
   ].sort((a, b) => b.date.getTime() - a.date.getTime()).slice(0, 10);
 
   // 3. Integrity Score
-  const integritySnapshot = await adminDb.collection('integrityScores')
-    .where('studentCode', '==', targetStudentCode)
-    .get();
-  
   let integrityScore = 100;
   let integrityRecord = null;
   if (!integritySnapshot.empty) {
@@ -457,11 +479,6 @@ export async function getParentDashboardData(
   }
 
   // 4. Topics Needing Attention
-  const masterySnapshot = await adminDb.collection('studentTopicMastery')
-    .where('studentCode', '==', targetStudentCode)
-    .select('mastery')
-    .get();
-
   let needsAttentionCount = 0;
   masterySnapshot.docs.forEach(doc => {
     if (Number(doc.data().mastery || 0) < 50) {
@@ -522,11 +539,6 @@ export async function getParentDashboardData(
   });
 
   // 5. Compile line chart data showing exam marks & integrity over time
-  const evaluationsSnapshot = await adminDb.collection('evaluations')
-    .where('studentCode', '==', targetStudentCode)
-    .where('evaluatorType', '==', 'parent')
-    .get();
-
   const conductedTopicCodes = new Set<string>(objectiveTopicCodes);
   masterySnapshot.docs.forEach(doc => {
     const tc = doc.data().topicCode;

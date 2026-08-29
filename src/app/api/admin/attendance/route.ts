@@ -20,18 +20,26 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Missing batchId or date.' }, { status: 400 });
     }
 
-    // 1. Fetch batch name/details
-    const batchDoc = await adminDb.collection('batches').doc(batchId).get();
+    // 1. Fetch batch details, students, active leaves, and attendance concurrently in parallel
+    const dateStr = date.replace(/-/g, '');
+    const attendanceDocId = `${dateStr}_${batchId}`;
+
+    const [batchDoc, studentsSnap, leavesSnap, attendanceDoc] = await Promise.all([
+      adminDb.collection('batches').doc(batchId).get(),
+      adminDb.collection('users')
+        .where('role', '==', 'student')
+        .where('batchIds', 'array-contains', batchId)
+        .get(),
+      adminDb.collection('leaveApplications')
+        .where('endDate', '>=', date)
+        .get(),
+      adminDb.collection('attendance').doc(attendanceDocId).get()
+    ]);
+
     if (!batchDoc.exists) {
       return NextResponse.json({ error: 'Batch not found.' }, { status: 404 });
     }
     const batchName = batchDoc.data()?.name || 'Unknown Batch';
-
-    // 2. Fetch all students in this batch (filtered server-side using batchIds)
-    const studentsSnap = await adminDb.collection('users')
-      .where('role', '==', 'student')
-      .where('batchIds', 'array-contains', batchId)
-      .get();
 
     const students = studentsSnap.docs
       .map(doc => {
@@ -48,11 +56,6 @@ export async function GET(req: NextRequest) {
       })
       .filter(s => s.status === 'active');
 
-    // 3. Fetch active leaves for the selected date (date-scoped query to avoid full scan)
-    const leavesSnap = await adminDb.collection('leaveApplications')
-      .where('endDate', '>=', date)
-      .get();
-
     const activeLeaves = new Map<string, any>();
     leavesSnap.docs.forEach(doc => {
       const data = doc.data();
@@ -61,10 +64,6 @@ export async function GET(req: NextRequest) {
       }
     });
 
-    // 4. Fetch existing marked attendance for this date & batch
-    const dateStr = date.replace(/-/g, '');
-    const attendanceDocId = `${dateStr}_${batchId}`;
-    const attendanceDoc = await adminDb.collection('attendance').doc(attendanceDocId).get();
     const existingRecords = attendanceDoc.exists ? attendanceDoc.data()?.records || {} : {};
 
     // 5. Merge data to compile current roster status
@@ -202,21 +201,27 @@ export async function POST(req: NextRequest) {
       // Resolve all absent students with role == 'student' (chunked to respect Firestore 'in' limit of 30)
       const absentStudentsMap = new Map<string, any>();
       if (absentCodes.length > 0) {
-        const chunkSize = 30;
-        for (let i = 0; i < absentCodes.length; i += chunkSize) {
-          const chunk = absentCodes.slice(i, i + chunkSize);
-          const studentsSnap = await adminDb.collection('users')
-            .where('role', '==', 'student')
-            .where('studentCode', 'in', chunk)
-            .get();
+        const chunks = [];
+        for (let i = 0; i < absentCodes.length; i += 30) {
+          chunks.push(absentCodes.slice(i, i + 30));
+        }
+        const snaps = await Promise.all(
+          chunks.map(chunk =>
+            adminDb.collection('users')
+              .where('role', '==', 'student')
+              .where('studentCode', 'in', chunk)
+              .get()
+          )
+        );
 
+        snaps.forEach(studentsSnap => {
           studentsSnap.docs.forEach(doc => {
             const data = doc.data();
             if (data.studentCode && data.role === 'student') {
               absentStudentsMap.set(data.studentCode.toUpperCase(), data);
             }
           });
-        }
+        });
       }
 
       // Batch lookups of direct message rooms

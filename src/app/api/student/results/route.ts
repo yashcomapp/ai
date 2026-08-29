@@ -374,11 +374,12 @@ export async function GET(req: NextRequest) {
             ].filter(Boolean);
 
             let subDocFound: any = null;
-            for (const subId of candidateIds) {
-              const subDoc = await adminDb.collection('practiceSubmissions').doc(subId).get();
-              if (subDoc.exists) {
-                subDocFound = subDoc.data();
-                break;
+            if (candidateIds.length > 0) {
+              const refs = candidateIds.map(subId => adminDb.collection('practiceSubmissions').doc(subId));
+              const snaps = await adminDb.getAll(...refs).catch(() => []);
+              const foundSnap = snaps.find(s => s && s.exists);
+              if (foundSnap) {
+                subDocFound = foundSnap.data();
               }
             }
 

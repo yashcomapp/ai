@@ -862,8 +862,9 @@ export async function getStudentLearningData(userData: any) {
 
   const batchIds: string[] = userData.batchIds || (userData.batchId ? [userData.batchId] : []);
 
-  // 1. Fetch batches to get all associated class codes (for multi-class enrolled students)
-  const batchSnaps = await Promise.all(batchIds.map((id: string) => adminDb.collection('batches').doc(id).get().catch(() => null)));
+  // 1. Fetch batches to get all associated class codes (for multi-class enrolled students) in 1 batch RPC
+  const batchRefs = batchIds.map((id: string) => adminDb.collection('batches').doc(id));
+  const batchSnaps = batchRefs.length > 0 ? await adminDb.getAll(...batchRefs).catch(() => []) : [];
   const allClasses = new Set<string>();
   if (userData.class) {
     const m = String(userData.class).match(/\d+/);
@@ -965,13 +966,18 @@ export async function getStudentLearningData(userData: any) {
   const absentTopicCodes = new Set<string>();
   if (absentExamIds.size > 0) {
     const examIdsArr = Array.from(absentExamIds);
-    const chunkSize = 30;
-    for (let i = 0; i < examIdsArr.length; i += chunkSize) {
-      const chunk = examIdsArr.slice(i, i + chunkSize);
-      const [examsSnap, subExamsSnap] = await Promise.all([
+    const chunks = [];
+    for (let i = 0; i < examIdsArr.length; i += 30) {
+      chunks.push(examIdsArr.slice(i, i + 30));
+    }
+    const chunkResults = await Promise.all(chunks.map(chunk =>
+      Promise.all([
         adminDb.collection('exams').where('__name__', 'in', chunk).get(),
         adminDb.collection('subjectiveExams').where('__name__', 'in', chunk).get().catch(() => ({ docs: [] } as any))
-      ]);
+      ])
+    ));
+
+    chunkResults.forEach(([examsSnap, subExamsSnap]) => {
       examsSnap.docs.forEach((doc: any) => {
         const data = doc.data();
         if (data.questionCodes && Array.isArray(data.questionCodes)) {
@@ -998,7 +1004,7 @@ export async function getStudentLearningData(userData: any) {
           if (tc && tc.includes('-')) absentTopicCodes.add(tc);
         });
       });
-    }
+    });
   }
 
   // 3. Fetch standard syllabus topic index docs for all enrolled student classes (In-Memory Cached)
@@ -1011,14 +1017,18 @@ export async function getStudentLearningData(userData: any) {
     syllabusTopics = cachedTopics;
   } else {
     if (classesArr.length > 0) {
-      const chunkSize = 10;
-      for (let i = 0; i < classesArr.length; i += chunkSize) {
-        const chunk = classesArr.slice(i, i + chunkSize);
-        const sSnap = await adminDb.collection('syllabusTopicIndex')
-          .where('classCode', 'in', chunk)
-          .get();
-        sSnap.docs.forEach((doc: any) => syllabusTopics.push(doc.data()));
+      const classChunks = [];
+      for (let i = 0; i < classesArr.length; i += 10) {
+        classChunks.push(classesArr.slice(i, i + 10));
       }
+      const sSnaps = await Promise.all(classChunks.map(chunk =>
+        adminDb.collection('syllabusTopicIndex')
+          .where('classCode', 'in', chunk)
+          .get()
+      ));
+      sSnaps.forEach(sSnap => {
+        sSnap.docs.forEach((doc: any) => syllabusTopics.push(doc.data()));
+      });
     }
 
     // Fallback if no topics match
@@ -1056,17 +1066,21 @@ export async function getStudentLearningData(userData: any) {
   });
 
   if (missingTopicCodes.length > 0) {
-    // Fetch missing syllabus details in chunks of 30 (Firestore IN operator limit)
-    const chunkSize = 30;
-    for (let i = 0; i < missingTopicCodes.length; i += chunkSize) {
-      const chunk = missingTopicCodes.slice(i, i + chunkSize);
-      const extraSnap = await adminDb.collection('syllabusTopicIndex')
+    // Fetch missing syllabus details in chunks of 30 (Firestore IN operator limit) in parallel
+    const missingChunks = [];
+    for (let i = 0; i < missingTopicCodes.length; i += 30) {
+      missingChunks.push(missingTopicCodes.slice(i, i + 30));
+    }
+    const extraSnaps = await Promise.all(missingChunks.map(chunk =>
+      adminDb.collection('syllabusTopicIndex')
         .where('topicCode', 'in', chunk)
-        .get();
+        .get()
+    ));
+    extraSnaps.forEach(extraSnap => {
       extraSnap.docs.forEach((doc: any) => {
         syllabusTopics.push(doc.data());
       });
-    }
+    });
   }
 
   const practiceCountMap = new Map<string, number>();

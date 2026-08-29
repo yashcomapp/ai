@@ -56,12 +56,16 @@ export async function GET(req: NextRequest) {
       const syllabusMap = new Map<string, any>();
 
       if (topicCodes.length > 0) {
-        const chunkSize = 30;
-        for (let i = 0; i < topicCodes.length; i += chunkSize) {
-          const chunk = topicCodes.slice(i, i + chunkSize);
-          const sSnap = await adminDb.collection('syllabusTopicIndex').where('topicCode', 'in', chunk).get();
-          sSnap.docs.forEach(doc => syllabusMap.set(doc.data().topicCode, doc.data()));
+        const chunks = [];
+        for (let i = 0; i < topicCodes.length; i += 30) {
+          chunks.push(topicCodes.slice(i, i + 30));
         }
+        const snaps = await Promise.all(
+          chunks.map(chunk => adminDb.collection('syllabusTopicIndex').where('topicCode', 'in', chunk).get())
+        );
+        snaps.forEach(sSnap => {
+          sSnap.docs.forEach(doc => syllabusMap.set(doc.data().topicCode, doc.data()));
+        });
       }
 
       const mastered: any[] = [];
@@ -525,6 +529,8 @@ export async function POST(req: NextRequest) {
     if (!dupSnap.empty) {
       const incomingBatches = new Set(targetBatches || []);
       const incomingStudents = new Set(targetStudents || []);
+      const archiveBatch = adminDb.batch();
+      let hasArchived = false;
 
       for (const doc of dupSnap.docs) {
         const data = doc.data();
@@ -532,17 +538,21 @@ export async function POST(req: NextRequest) {
           const existingBatches = data.targetBatches || [];
           const overlap = existingBatches.some((b: string) => incomingBatches.has(b));
           if (overlap) {
-            // Supersede/archive old assignment to allow schedule updates or reassignments
-            await doc.ref.update({ status: 'archived', updatedAt: admin.firestore.FieldValue.serverTimestamp() }).catch(() => {});
+            archiveBatch.update(doc.ref, { status: 'archived', updatedAt: admin.firestore.FieldValue.serverTimestamp() });
+            hasArchived = true;
           }
         } else if (targetType === 'student' && data.targetType === 'student') {
           const existingStudents = data.targetStudents || [];
           const overlap = existingStudents.some((s: string) => incomingStudents.has(s));
           if (overlap) {
-            // Supersede/archive old assignment to allow make-up reassignment for absent students
-            await doc.ref.update({ status: 'archived', updatedAt: admin.firestore.FieldValue.serverTimestamp() }).catch(() => {});
+            archiveBatch.update(doc.ref, { status: 'archived', updatedAt: admin.firestore.FieldValue.serverTimestamp() });
+            hasArchived = true;
           }
         }
+      }
+
+      if (hasArchived) {
+        await archiveBatch.commit().catch(() => {});
       }
     }
 
@@ -603,10 +613,12 @@ export async function POST(req: NextRequest) {
       if (!existingSnap.empty) {
         const targetDoc = existingSnap.docs[0];
         assignmentDocId = targetDoc.id;
-        await targetDoc.ref.set(payload);
+        const deleteBatch = adminDb.batch();
+        deleteBatch.set(targetDoc.ref, payload);
         for (let i = 1; i < existingSnap.docs.length; i++) {
-          await existingSnap.docs[i].ref.delete().catch(() => {});
+          deleteBatch.delete(existingSnap.docs[i].ref);
         }
+        await deleteBatch.commit();
       } else {
         const docRef = await adminDb.collection('batchAssignments').add(payload);
         assignmentDocId = docRef.id;
@@ -651,10 +663,12 @@ export async function POST(req: NextRequest) {
       if (!existingSnap.empty) {
         const targetDoc = existingSnap.docs[0];
         assignmentDocId = targetDoc.id;
-        await targetDoc.ref.set(payload);
+        const deleteBatch = adminDb.batch();
+        deleteBatch.set(targetDoc.ref, payload);
         for (let i = 1; i < existingSnap.docs.length; i++) {
-          await existingSnap.docs[i].ref.delete().catch(() => {});
+          deleteBatch.delete(existingSnap.docs[i].ref);
         }
+        await deleteBatch.commit();
       } else {
         const docRef = await adminDb.collection('subjectiveAssignments').add(payload);
         assignmentDocId = docRef.id;

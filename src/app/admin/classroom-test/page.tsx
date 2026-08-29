@@ -261,35 +261,45 @@ export default function AdminClassroomTestPage() {
     try {
       const idToken = await firebaseUser.getIdToken();
       const sets: string[] = [];
-      for (const chKey of selectedChapters) {
-        const [subj, chNum] = chKey.split('||');
-        let qBoard = selectedBoard;
-        if (qBoard === 'State Board' || qBoard === 'MSBSHSE' || qBoard === 'MH') {
-          qBoard = 'Maharashtra Board';
-        }
-        const res = await fetch(`/api/admin/questions?board=${qBoard}&classNum=${selectedClass}&subject=${subj}&chapterNumber=${chNum}&limit=150`, {
-          headers: { 'Authorization': `Bearer ${idToken}` }
-        });
-        if (res.ok) {
-          const data = await res.json();
-          const qs = data.questions || [];
-          qs.forEach((q: any) => {
-            const rawSet = q.textbookPracticeSet || q.textbookProblemSet || '';
-            if (rawSet) {
-              const match = rawSet.match(/(Practice Set|Problem Set|Exercise|Figure it out|Try these|Question Tag|Question Box)\s*\d+(\.\d+)?/i);
-              if (match) {
-                let cleanSet = match[0].trim().replace(/\s+/g, ' ');
-                cleanSet = cleanSet.split(' ').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
-                cleanSet = cleanSet.replace(/Figure It Out/i, 'Figure it out')
-                                   .replace(/Try These/i, 'Try these');
-                if (!sets.includes(cleanSet)) {
-                  sets.push(cleanSet);
-                }
-              }
-            }
-          });
-        }
+      
+      let qBoard = selectedBoard;
+      if (qBoard === 'State Board' || qBoard === 'MSBSHSE' || qBoard === 'MH') {
+        qBoard = 'Maharashtra Board';
       }
+
+      const chapterFetches = selectedChapters.map(async (chKey) => {
+        const [subj, chNum] = chKey.split('||');
+        try {
+          const res = await fetch(`/api/admin/questions?board=${qBoard}&classNum=${selectedClass}&subject=${subj}&chapterNumber=${chNum}&limit=150`, {
+            headers: { 'Authorization': `Bearer ${idToken}` }
+          });
+          if (res.ok) {
+            const data = await res.json();
+            return data.questions || [];
+          }
+        } catch (e) {
+          console.warn(`Failed to fetch questions for ${chKey}:`, e);
+        }
+        return [];
+      });
+
+      const chapterResults = await Promise.all(chapterFetches);
+      chapterResults.flat().forEach((q: any) => {
+        const rawSet = q.textbookPracticeSet || q.textbookProblemSet || '';
+        if (rawSet) {
+          const match = rawSet.match(/(Practice Set|Problem Set|Exercise|Figure it out|Try these|Question Tag|Question Box)\s*\d+(\.\d+)?/i);
+          if (match) {
+            let cleanSet = match[0].trim().replace(/\s+/g, ' ');
+            cleanSet = cleanSet.split(' ').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+            cleanSet = cleanSet.replace(/Figure It Out/i, 'Figure it out')
+                               .replace(/Try These/i, 'Try these');
+            if (!sets.includes(cleanSet)) {
+              sets.push(cleanSet);
+            }
+          }
+        }
+      });
+
       sets.sort((a, b) => {
         return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
       });
@@ -930,36 +940,33 @@ OUTPUT FORMAT: Return ONLY a valid JSON array of objects with schema:
       setQbStatus('⏳ Writing validated questions to Question Bank...');
 
       const idToken = await firebaseUser!.getIdToken();
-      let savedCount = 0;
+      const formattedQuestions = previewQuestions.map((q) => ({
+        ...q,
+        qtype: q.type || q.qtype || 'subjective_define',
+        pyqInfo: q.pyqInfo || '',
+        keywords: Array.isArray(q.keywords) 
+          ? q.keywords 
+          : (q.keywordsText ? q.keywordsText.split(',').map((s: string) => s.trim()).filter(Boolean) : [])
+      }));
 
-      for (let i = 0; i < previewQuestions.length; i++) {
-        const q = previewQuestions[i];
+      // Ingest all questions in a single atomic bulk batch request
+      const res = await fetch('/api/admin/questions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`
+        },
+        body: JSON.stringify({ action: 'bulkSave', questions: formattedQuestions })
+      });
 
-        const payload = {
-          ...q,
-          qtype: q.type || q.qtype || 'subjective_define',
-          pyqInfo: q.pyqInfo || '',
-          keywords: Array.isArray(q.keywords) 
-            ? q.keywords 
-            : (q.keywordsText ? q.keywordsText.split(',').map((s: string) => s.trim()).filter(Boolean) : [])
-        };
-
-        const res = await fetch('/api/admin/questions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${idToken}`
-          },
-          body: JSON.stringify(payload)
-        });
-
-        if (!res.ok) {
-          const errData = await res.json().catch(() => ({}));
-          throw new Error(errData.message || errData.error || `API rejected question #${i + 1} saving (Status ${res.status}).`);
-        }
-        savedCount++;
-        setSaveStats({ current: savedCount, total: previewQuestions.length });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.message || errData.error || `API rejected batch question saving (Status ${res.status}).`);
       }
+
+      const resData = await res.json().catch(() => ({}));
+      const savedCount = resData.savedCount || formattedQuestions.length;
+      setSaveStats({ current: savedCount, total: previewQuestions.length });
 
       setQbStatus(`✅ Successfully saved ${savedCount} question(s) to Question Bank! You can now click "⚡ Generate 1-Click Weekly Suite" below.`);
       setPreviewQuestions([]);
@@ -1024,18 +1031,18 @@ OUTPUT FORMAT: Return ONLY a valid JSON array of objects with schema:
       const uniqueTopics = Array.from(new Set(activeTopics.length > 0 ? activeTopics : currentChapterTopics));
 
       const isMath = selectedSubjects.some(subj => /math|algebra|geometry|ganit/i.test(subj));
-      for (const tc of targetChapters) {
-        if (isMath) continue; // Skip Question Bank check for Mathematics!
+      if (!isMath) {
+        await Promise.all(targetChapters.map(async (tc) => {
+          const qRes = await fetch(`/api/admin/questions?board=${selectedBoard}&classNum=${selectedClass}&subject=${tc.subject}&chapterNumber=${tc.chapterNumber}&limit=20`, {
+            headers: { 'Authorization': `Bearer ${idToken}` }
+          });
+          const qData = await qRes.json().catch(() => ({}));
+          const existingQs = qData.questions || [];
 
-        const qRes = await fetch(`/api/admin/questions?board=${selectedBoard}&classNum=${selectedClass}&subject=${tc.subject}&chapterNumber=${tc.chapterNumber}&limit=20`, {
-          headers: { 'Authorization': `Bearer ${idToken}` }
-        });
-        const qData = await qRes.json();
-        const existingQs = qData.questions || [];
-
-        if (existingQs.length < 8) {
-          throw new Error(`The Question Bank only contains ${existingQs.length} question(s) for ${tc.subject} - Chapter ${tc.chapterNumber}. You must have at least 8 questions in the Question Bank for this chapter. Please manually add questions to the Question Bank first.`);
-        }
+          if (existingQs.length < 8) {
+            throw new Error(`The Question Bank only contains ${existingQs.length} question(s) for ${tc.subject} - Chapter ${tc.chapterNumber}. You must have at least 8 questions in the Question Bank for this chapter. Please manually add questions to the Question Bank first.`);
+          }
+        }));
       }
       setQbStatus('✅ Found/Generated questions in Question Bank.');
 

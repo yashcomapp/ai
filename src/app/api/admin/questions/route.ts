@@ -200,7 +200,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { action } = body;
 
-    if (action === 'bulkSave') {
+    if (action === 'bulkSave' || (Array.isArray(body.questions) && body.questions.length > 0)) {
       const { questions } = body;
       if (!Array.isArray(questions) || questions.length === 0) {
         return NextResponse.json({ message: 'Invalid or empty questions array.' }, { status: 400 });
@@ -359,7 +359,7 @@ export async function POST(req: NextRequest) {
 
       await batch.commit();
       invalidateCache('qb_base_');
-      return NextResponse.json({ success: true, count: processedItems.length });
+      return NextResponse.json({ success: true, count: processedItems.length, savedCount: processedItems.length });
     }
 
     const { id, qtype, text, options, correctAnswer, correctAnswers, assertion, reason, solution, difficulty, bloomLevel, board, classNum, subjectName, chapterNumber, topicNumber, topic, topicName, textbookPracticeSet, textbookProblemSet, isSolvedExample, isTheorem, requiresFigure, imageUrl, keywords, examCategory } = body;

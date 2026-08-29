@@ -1,7 +1,9 @@
 # Project Rules & Architecture Guardrails
 
-## 1. Command Permissions
-- The agent has permanent permission to run `npm run build` directly. Always run this command with `run_command` without asking for user approval.
+## 1. Autonomous Execution & Permissions
+- **Full Autonomous Editing & Tool Permissions**: The agent has permanent permission to proactively read, edit, create files, run git operations, and execute project commands without asking for user confirmation or repetitive permission prompts.
+- **Direct Build & Verification**: Always run verification commands (such as `npm run build`, linting, or tests) automatically without asking.
+- **Git Commit Workflow**: When code tasks, optimizations, or bug fixes are verified, proactively commit changes with descriptive conventional commit messages.
 
 ## 2. Single Source of Truth (SSOT) Architecture Guardrails
 
