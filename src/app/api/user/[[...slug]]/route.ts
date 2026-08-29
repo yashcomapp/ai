@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { GET as getAttendance } from '../handlers/attendance';
-import { GET as getDeclare, POST as postDeclare } from '../handlers/declare';
+import { GET as getTimeLog, POST as postTimeLog } from '../handlers/timeLog';
+import { POST as postClientStorageSync } from '../handlers/clientStorageSync';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,15 +10,13 @@ export async function GET(req: NextRequest, { params }: { params: { slug?: strin
     const subroute = (resolvedParams.slug || []).join('/');
 
     switch (subroute) {
-      case '':
-        return await getAttendance(req);
-      case 'declare':
-        return await getDeclare(req);
+      case 'time-log':
+        return await getTimeLog(req);
       default:
-        return NextResponse.json({ message: `Unknown student attendance GET route: ${subroute}` }, { status: 404 });
+        return NextResponse.json({ message: `Unknown user GET route: ${subroute}` }, { status: 404 });
     }
   } catch (error: any) {
-    console.error('API Student Attendance Dispatcher GET Error:', error);
+    console.error('API User Dispatcher GET Error:', error);
     return NextResponse.json({ message: error.message || 'Internal Server Error' }, { status: 500 });
   }
 }
@@ -29,13 +27,15 @@ export async function POST(req: NextRequest, { params }: { params: { slug?: stri
     const subroute = (resolvedParams.slug || []).join('/');
 
     switch (subroute) {
-      case 'declare':
-        return await postDeclare(req);
+      case 'time-log':
+        return await postTimeLog(req);
+      case 'client-storage-sync':
+        return await postClientStorageSync(req);
       default:
-        return NextResponse.json({ message: `Unknown student attendance POST route: ${subroute}` }, { status: 404 });
+        return NextResponse.json({ message: `Unknown user POST route: ${subroute}` }, { status: 404 });
     }
   } catch (error: any) {
-    console.error('API Student Attendance Dispatcher POST Error:', error);
+    console.error('API User Dispatcher POST Error:', error);
     return NextResponse.json({ message: error.message || 'Internal Server Error' }, { status: 500 });
   }
 }
