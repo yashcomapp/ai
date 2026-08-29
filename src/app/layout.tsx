@@ -17,7 +17,7 @@ const inter = Inter({
 });
 
 export const viewport: Viewport = {
-  themeColor: '#0d0f12',
+  themeColor: '#f4f6f8',
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
@@ -37,10 +37,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" data-theme="dark" className={`${inter.variable} dark`}>
+    <html lang="en" data-theme="light" className={`${inter.variable} light`}>
       <head>
         <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content="#0d0f12" />
+        <meta name="theme-color" content="#f4f6f8" />
         <link rel="icon" href="/icons/favicon-32.png?v=2" sizes="32x32" />
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png?v=2" />
         <meta name="mobile-web-app-capable" content="yes" />

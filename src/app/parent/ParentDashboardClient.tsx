@@ -1246,7 +1246,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                   }}
                 >
                   {children.map(c => (
-                    <option key={c.studentCode} value={c.studentCode} style={{ background: '#171a1f', color: '#ffffff' }}>
+                    <option key={c.studentCode} value={c.studentCode} style={{ background: 'var(--surface)', color: 'var(--text)' }}>
                       {c.name}
                     </option>
                   ))}
@@ -2459,11 +2459,11 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
             
             {/* Left: Interactive Sync Flow (Steps 1, 2, 3) */}
             <div style={{
-              background: '#171a1f',
-              border: '1px solid rgba(20, 184, 166, 0.3)',
+              background: 'var(--surface)',
+              border: '1.5px solid var(--border)',
               borderRadius: 'var(--radius-lg)',
               padding: '24px',
-              boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
+              boxShadow: 'var(--shadow-md)',
               display: 'flex',
               flexDirection: 'column',
               gap: '20px'
@@ -2847,17 +2847,17 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
 
               {/* CAMERA FEED BOX */}
               <div style={{
-                background: '#171a1f',
-                border: '1px solid rgba(20, 184, 166, 0.3)',
+                background: 'var(--surface)',
+                border: '1.5px solid var(--border)',
                 borderRadius: 'var(--radius-lg)',
                 padding: '16px',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '12px',
-                boxShadow: '0 10px 30px rgba(0,0,0,0.3)'
+                boxShadow: 'var(--shadow-md)'
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span style={{ fontSize: '12px', fontWeight: 800, color: '#ffffff' }}>📹 Live Camera Feed</span>
+                  <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text)' }}>📹 Live Camera Feed</span>
                   <span style={{ fontSize: '9px', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', background: '#ef4444', color: '#fff' }}>
                     LIVE
                   </span>
