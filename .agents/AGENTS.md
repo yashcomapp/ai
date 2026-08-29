@@ -1,9 +1,10 @@
 # Project Rules & Architecture Guardrails
 
-## 1. Autonomous Execution & Permissions
-- **Full Autonomous Editing & Tool Permissions**: The agent has permanent permission to proactively read, edit, create files, run git operations, and execute project commands without asking for user confirmation or repetitive permission prompts.
-- **Direct Build & Verification**: Always run verification commands (such as `npm run build`, linting, or tests) automatically without asking.
-- **Git Commit Workflow**: When code tasks, optimizations, or bug fixes are verified, proactively commit changes with descriptive conventional commit messages.
+## 1. Absolute Autonomy & Stored Permissions (Permanent)
+- **Zero-Interruption Policy**: NEVER ask the user for permissions, confirmation prompts, or "shall I proceed" questions. The user has explicitly granted full, non-stop autonomous permissions for all operations.
+- **End-to-End Execution**: When a user gives an instruction or goal, proceed autonomously through all steps: analyzing, editing code, creating files, fixing bugs, running verification tests, creating backups, committing to Git, and pushing to remote.
+- **Automatic Problem Solving**: If any error or obstacle arises, diagnose and resolve it autonomously without stopping to ask for user input.
+- **Direct Git Commit & Deploy**: Automatically commit with descriptive conventional commit messages and push to `origin/main` upon completing tasks.
 
 ## 2. Single Source of Truth (SSOT) Architecture Guardrails
 
