@@ -1348,16 +1348,16 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                       setDailySyncOpen(true);
                     }}
                     style={{
-                      background: isSyncTimeSlot() ? 'var(--accent-grad)' : 'var(--surface-2)',
+                      background: isSyncTimeSlot() ? 'var(--accent)' : 'var(--surface-2)',
                       color: isSyncTimeSlot() ? '#ffffff' : 'var(--text-muted)',
                       fontWeight: 700,
                       fontSize: '13px',
                       padding: '10px 18px',
-                      borderRadius: 'var(--radius)',
+                      borderRadius: '10px',
                       border: isSyncTimeSlot() ? 'none' : '1px solid var(--border)',
                       cursor: isSyncTimeSlot() ? 'pointer' : 'not-allowed',
                       opacity: isSyncTimeSlot() ? 1 : 0.65,
-                      boxShadow: isSyncTimeSlot() ? '0 4px 12px rgba(56, 189, 248, 0.3)' : 'none',
+                      boxShadow: isSyncTimeSlot() ? '0 2px 10px rgba(216, 78, 85, 0.3)' : 'none',
                       display: 'flex',
                       alignItems: 'center',
                       gap: '6px'
@@ -1376,7 +1376,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
 
             {/* CARD 1: Child at a Glance (Clean Minimal Card matching Student Dashboard) */}
             <div className="card" style={{
-              background: 'var(--surface)',
+              background: '#ffffff',
               border: '1px solid var(--border)',
               borderRadius: 'var(--radius)',
               padding: '16px 20px',
@@ -1443,12 +1443,8 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
 
             {/* CARD 2: Pending Reviews / Action Ledger */}
             <div style={{
-              background: pendingReviews.length > 0 
-                ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.18), rgba(153, 27, 27, 0.12))' 
-                : 'linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(6, 78, 59, 0.12))',
-              border: pendingReviews.length > 0 
-                ? '1px solid rgba(239, 68, 68, 0.4)' 
-                : '1px solid rgba(16, 185, 129, 0.3)',
+              background: pendingReviews.length > 0 ? 'var(--danger-bg)' : 'var(--success-bg)',
+              border: pendingReviews.length > 0 ? '1px solid rgba(239, 68, 68, 0.25)' : '1px solid rgba(16, 185, 129, 0.25)',
               borderRadius: 'var(--radius)',
               padding: '16px 20px',
               marginBottom: '16px',

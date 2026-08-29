@@ -25,3 +25,4 @@ scratch/
 # debug/inspect helper scripts at root
 inspect-*.js
 debug-*.js
+.env*

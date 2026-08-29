@@ -293,10 +293,11 @@ export default function AdminDashboard() {
             }}>
               {/* Card 1: Academic & Attendance Stats */}
               <div className="card" style={{
-                background: 'var(--surface)',
-                padding: '12px 14px',
+                background: '#ffffff',
+                padding: '14px 16px',
                 borderRadius: 'var(--radius-lg)',
-                border: '1px solid var(--border-light)',
+                border: '1px solid var(--border)',
+                boxShadow: 'var(--shadow-sm)',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '8px',
@@ -309,20 +310,20 @@ export default function AdminDashboard() {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    padding: '8px 12px',
-                    background: 'var(--bg-soft)',
-                    borderRadius: 'var(--radius-md)',
+                    padding: '10px 14px',
+                    background: 'var(--surface-2)',
+                    borderRadius: 'var(--radius)',
                     cursor: 'pointer',
-                    transition: 'opacity 0.2s',
-                    border: '1px solid var(--border-glass)'
+                    transition: 'all 0.18s ease',
+                    border: '1px solid var(--border)'
                   }}
-                  onMouseEnter={(e) => e.currentTarget.style.opacity = '0.85'}
-                  onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#cbd5e1'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'translateY(0)'; }}
                 >
-                  <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                     Batches (Students)
                   </span>
-                  <span style={{ fontSize: '13px', fontWeight: 800, color: '#a78bfa' }}>
+                  <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#7c3aed' }}>
                     {stats.totalBatches} ({stats.totalStudents})
                   </span>
                 </div>
@@ -334,20 +335,20 @@ export default function AdminDashboard() {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    padding: '8px 12px',
-                    background: 'var(--bg-soft)',
-                    borderRadius: 'var(--radius-md)',
+                    padding: '10px 14px',
+                    background: 'var(--surface-2)',
+                    borderRadius: 'var(--radius)',
                     cursor: 'pointer',
-                    transition: 'opacity 0.2s',
-                    border: '1px solid var(--border-glass)'
+                    transition: 'all 0.18s ease',
+                    border: '1px solid var(--border)'
                   }}
-                  onMouseEnter={(e) => e.currentTarget.style.opacity = '0.85'}
-                  onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#cbd5e1'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'translateY(0)'; }}
                 >
-                  <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                     Exams - Practice
                   </span>
-                  <span style={{ fontSize: '13px', fontWeight: 800, color: '#2dd4bf' }}>
+                  <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#0d9488' }}>
                     {stats.activeExams} - {stats.cumulativePractice}
                   </span>
                 </div>
@@ -359,20 +360,20 @@ export default function AdminDashboard() {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    padding: '8px 12px',
-                    background: 'var(--bg-soft)',
-                    borderRadius: 'var(--radius-md)',
+                    padding: '10px 14px',
+                    background: 'var(--surface-2)',
+                    borderRadius: 'var(--radius)',
                     cursor: 'pointer',
-                    transition: 'opacity 0.2s',
-                    border: '1px solid var(--border-glass)'
+                    transition: 'all 0.18s ease',
+                    border: '1px solid var(--border)'
                   }}
-                  onMouseEnter={(e) => e.currentTarget.style.opacity = '0.85'}
-                  onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#cbd5e1'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'translateY(0)'; }}
                 >
-                  <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                     Attendance
                   </span>
-                  <span style={{ fontSize: '13px', fontWeight: 800, color: '#60a5fa' }}>
+                  <span style={{ fontSize: '13.5px', fontWeight: 800, color: '#2563eb' }}>
                     {stats.todayAttendanceRate !== null ? `${stats.todayAttendanceRate}%` : '--'}
                   </span>
                 </div>
@@ -380,10 +381,11 @@ export default function AdminDashboard() {
 
               {/* Card 2: Communication & Accounts Stats */}
               <div className="card" style={{
-                background: 'var(--surface)',
-                padding: '12px 14px',
+                background: '#ffffff',
+                padding: '14px 16px',
                 borderRadius: 'var(--radius-lg)',
-                border: '1px solid var(--border-light)',
+                border: '1px solid var(--border)',
+                boxShadow: 'var(--shadow-sm)',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '8px',
@@ -396,20 +398,20 @@ export default function AdminDashboard() {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    padding: '8px 12px',
-                    background: 'var(--bg-soft)',
-                    borderRadius: 'var(--radius-md)',
+                    padding: '10px 14px',
+                    background: 'var(--surface-2)',
+                    borderRadius: 'var(--radius)',
                     cursor: 'pointer',
-                    transition: 'opacity 0.2s',
-                    border: '1px solid var(--border-glass)'
+                    transition: 'all 0.18s ease',
+                    border: '1px solid var(--border)'
                   }}
-                  onMouseEnter={(e) => e.currentTarget.style.opacity = '0.85'}
-                  onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#cbd5e1'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'translateY(0)'; }}
                 >
-                  <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                     Chat
                   </span>
-                  <span style={{ fontSize: '13px', fontWeight: 800, color: stats.unreadChatsCount > 0 ? '#f87171' : 'var(--text-muted)' }}>
+                  <span style={{ fontSize: '13.5px', fontWeight: 800, color: stats.unreadChatsCount > 0 ? '#dc2626' : 'var(--text-muted)' }}>
                     {stats.unreadChatsCount} Rooms
                   </span>
                 </div>
@@ -421,20 +423,20 @@ export default function AdminDashboard() {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    padding: '8px 12px',
-                    background: 'var(--bg-soft)',
-                    borderRadius: 'var(--radius-md)',
+                    padding: '10px 14px',
+                    background: 'var(--surface-2)',
+                    borderRadius: 'var(--radius)',
                     cursor: 'pointer',
-                    transition: 'opacity 0.2s',
-                    border: '1px solid var(--border-glass)'
+                    transition: 'all 0.18s ease',
+                    border: '1px solid var(--border)'
                   }}
-                  onMouseEnter={(e) => e.currentTarget.style.opacity = '0.85'}
-                  onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#cbd5e1'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'translateY(0)'; }}
                 >
-                  <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                     Fees Pending
                   </span>
-                  <span style={{ fontSize: '13px', fontWeight: 800, color: stats.overdueFeesCount > 0 ? '#f87171' : '#34d399' }}>
+                  <span style={{ fontSize: '13.5px', fontWeight: 800, color: stats.overdueFeesCount > 0 ? '#dc2626' : '#059669' }}>
                     {stats.overdueFeesCount} Accounts
                   </span>
                 </div>
@@ -442,7 +444,7 @@ export default function AdminDashboard() {
             </div>
 
             {/* Quick Actions Panel */}
-            <div className="card" style={{ background: 'var(--surface)', padding: '18px 20px', borderRadius: 'var(--radius)', border: '1px solid var(--border)', marginBottom: '24px' }}>
+            <div className="card" style={{ background: '#ffffff', padding: '18px 20px', borderRadius: 'var(--radius)', border: '1px solid var(--border)', marginBottom: '24px', boxShadow: 'var(--shadow-sm)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '14px' }}>
                 <h3 style={{ fontSize: '14px', fontWeight: 800, margin: 0, color: 'var(--text)' }}>Quick Actions</h3>
               </div>

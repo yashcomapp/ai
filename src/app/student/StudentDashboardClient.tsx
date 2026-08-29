@@ -744,83 +744,83 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
               </div>
             </div>
         {/* ROW 2: Exams & Review Card (Full Width) */}
-        <div className="card" style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', overflow: 'hidden', marginBottom: '16px', minHeight: '240px' }}>
-          <div className="exams-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 16px', borderBottom: '1px solid var(--border-light)' }}>
-            <h3 style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--text)' }}>📝 Exams & Review</h3>
-            <div className="review-badge" style={{ background: 'var(--danger)', color: 'white', padding: '2px 8px', borderRadius: '30px', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}>
+        <div className="card" style={{ background: '#ffffff', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', overflow: 'hidden', marginBottom: '16px', minHeight: '240px', boxShadow: 'var(--shadow-sm)' }}>
+          <div className="exams-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 18px', borderBottom: '1px solid var(--border-light)' }}>
+            <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text)' }}>📝 Exams & Review</h3>
+            <div className="review-badge" style={{ background: 'var(--danger)', color: 'white', padding: '3px 10px', borderRadius: '30px', fontSize: '11.5px', fontWeight: 800, cursor: 'pointer' }}>
               Pending: {resultsSummary?.pendingReviewCount || 0}
             </div>
           </div>
 
           {/* Peer Review Container */}
           {peerReviews.count > 0 && (
-            <div className="peer-review-link-container" style={{ display: 'block', padding: '8px 16px', borderBottom: '1px solid var(--border-light)', background: 'var(--success-bg)' }}>
-              <a className="peer-review-link" onClick={() => handleGoToPeerReview(peerReviews.firstExamId)} style={{ display: 'inline-block', color: 'var(--success)', fontSize: '12px', fontWeight: 600, textDecoration: 'none', cursor: 'pointer' }}>
+            <div className="peer-review-link-container" style={{ display: 'block', padding: '10px 18px', borderBottom: '1px solid var(--border-light)', background: 'var(--success-bg)' }}>
+              <a className="peer-review-link" onClick={() => handleGoToPeerReview(peerReviews.firstExamId)} style={{ display: 'inline-block', color: 'var(--success)', fontSize: '12.5px', fontWeight: 700, textDecoration: 'none', cursor: 'pointer' }}>
                 🔄 Peer Review Pending <span className="badge" style={{ background: 'var(--danger)', color: 'white', borderRadius: '50%', padding: '2px 6px', fontSize: '10px', marginLeft: '6px' }}>{peerReviews.count}</span>
               </a>
-              <span className="peer-review-sub" style={{ fontSize: '11px', color: 'var(--text-muted)', marginLeft: '8px' }}>Review your classmate's paper</span>
+              <span className="peer-review-sub" style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginLeft: '8px' }}>Review your classmate's paper</span>
             </div>
           )}
 
           {/* Exam Tabs */}
           {(user as any)?.autonomous !== true ? (
-            <div className="exam-tabs" style={{ display: 'flex', borderBottom: '1px solid var(--border-light)', background: 'var(--bg-soft)' }}>
+            <div className="exam-tabs" style={{ display: 'flex', borderBottom: '1px solid var(--border-light)', background: 'var(--surface-2)', padding: '6px 12px', gap: '8px' }}>
               <div 
                 className={`exam-tab ${examTab === 'objective' ? 'active' : ''}`} 
                 onClick={() => setExamTab('objective')}
-                style={{ flex: 1, textAlign: 'center', padding: '10px 0', fontSize: '12.5px', fontWeight: 700, cursor: 'pointer', borderBottom: examTab === 'objective' ? '2.5px solid #38bdf8' : 'none', color: examTab === 'objective' ? 'var(--text)' : 'var(--text-muted)' }}
+                style={{ flex: 1, textAlign: 'center', padding: '8px 0', fontSize: '13px', fontWeight: 700, cursor: 'pointer', borderRadius: '8px', background: examTab === 'objective' ? '#ffffff' : 'transparent', color: examTab === 'objective' ? 'var(--accent)' : 'var(--text-muted)', boxShadow: examTab === 'objective' ? '0 1px 3px rgba(0,0,0,0.06)' : 'none', border: examTab === 'objective' ? '1px solid var(--border)' : '1px solid transparent', transition: 'all 0.18s ease' }}
               >
-                📋 Objective <span className="tab-count" style={{ background: examTab === 'objective' ? '#0284c7' : 'var(--surface-3)', color: 'white', borderRadius: '10px', padding: '2px 7px', fontSize: '10.5px', fontWeight: 700, marginLeft: '4px' }}>{exams.pendingObjectiveExams.length + exams.scheduledObjectiveExams.length}</span>
+                📋 Objective <span className="tab-count" style={{ background: examTab === 'objective' ? 'var(--accent)' : 'var(--border)', color: examTab === 'objective' ? '#ffffff' : 'var(--text-muted)', borderRadius: '10px', padding: '2px 7px', fontSize: '10.5px', fontWeight: 800, marginLeft: '4px' }}>{exams.pendingObjectiveExams.length + exams.scheduledObjectiveExams.length}</span>
               </div>
               <div 
                 className={`exam-tab ${examTab === 'subjective' ? 'active' : ''}`} 
                 onClick={() => setExamTab('subjective')}
-                style={{ flex: 1, textAlign: 'center', padding: '10px 0', fontSize: '12.5px', fontWeight: 700, cursor: 'pointer', borderBottom: examTab === 'subjective' ? '2.5px solid #a78bfa' : 'none', color: examTab === 'subjective' ? 'var(--text)' : 'var(--text-muted)' }}
+                style={{ flex: 1, textAlign: 'center', padding: '8px 0', fontSize: '13px', fontWeight: 700, cursor: 'pointer', borderRadius: '8px', background: examTab === 'subjective' ? '#ffffff' : 'transparent', color: examTab === 'subjective' ? '#7c3aed' : 'var(--text-muted)', boxShadow: examTab === 'subjective' ? '0 1px 3px rgba(0,0,0,0.06)' : 'none', border: examTab === 'subjective' ? '1px solid var(--border)' : '1px solid transparent', transition: 'all 0.18s ease' }}
               >
-                📝 Subjective <span className="tab-count" style={{ background: examTab === 'subjective' ? '#7c3aed' : 'var(--surface-3)', color: 'white', borderRadius: '10px', padding: '2px 7px', fontSize: '10.5px', fontWeight: 700, marginLeft: '4px' }}>{exams.pendingSubjectiveExams.length + exams.scheduledSubjectiveExams.length}</span>
+                📝 Subjective <span className="tab-count" style={{ background: examTab === 'subjective' ? '#7c3aed' : 'var(--border)', color: examTab === 'subjective' ? '#ffffff' : 'var(--text-muted)', borderRadius: '10px', padding: '2px 7px', fontSize: '10.5px', fontWeight: 800, marginLeft: '4px' }}>{exams.pendingSubjectiveExams.length + exams.scheduledSubjectiveExams.length}</span>
               </div>
               <div 
                 className={`exam-tab ${examTab === 'mock' ? 'active' : ''}`} 
                 onClick={() => setExamTab('mock')}
-                style={{ flex: 1, textAlign: 'center', padding: '10px 0', fontSize: '12.5px', fontWeight: 700, cursor: 'pointer', borderBottom: examTab === 'mock' ? '2.5px solid #fbbf24' : 'none', color: examTab === 'mock' ? 'var(--text)' : 'var(--text-muted)' }}
+                style={{ flex: 1, textAlign: 'center', padding: '8px 0', fontSize: '13px', fontWeight: 700, cursor: 'pointer', borderRadius: '8px', background: examTab === 'mock' ? '#ffffff' : 'transparent', color: examTab === 'mock' ? '#d97706' : 'var(--text-muted)', boxShadow: examTab === 'mock' ? '0 1px 3px rgba(0,0,0,0.06)' : 'none', border: examTab === 'mock' ? '1px solid var(--border)' : '1px solid transparent', transition: 'all 0.18s ease' }}
               >
-                🏆 Mock <span className="tab-count" style={{ background: examTab === 'mock' ? '#d97706' : 'var(--surface-3)', color: 'white', borderRadius: '10px', padding: '2px 7px', fontSize: '10.5px', fontWeight: 700, marginLeft: '4px' }}>{(exams.pendingEntranceExams?.length || 0) + (exams.scheduledEntranceExams?.length || 0)}</span>
+                🏆 Mock <span className="tab-count" style={{ background: examTab === 'mock' ? '#d97706' : 'var(--border)', color: examTab === 'mock' ? '#ffffff' : 'var(--text-muted)', borderRadius: '10px', padding: '2px 7px', fontSize: '10.5px', fontWeight: 800, marginLeft: '4px' }}>{(exams.pendingEntranceExams?.length || 0) + (exams.scheduledEntranceExams?.length || 0)}</span>
               </div>
             </div>
           ) : null}
 
           {/* Objective Exams List */}
           {examTab === 'objective' && (
-            <div className="pending-exams-flex-list" style={{ display: 'flex', flexDirection: 'column', padding: '10px 16px', maxHeight: '350px', overflowY: 'auto', gap: '6px' }}>
+            <div className="pending-exams-flex-list" style={{ display: 'flex', flexDirection: 'column', padding: '12px 16px', maxHeight: '350px', overflowY: 'auto', gap: '8px' }}>
               {exams.pendingObjectiveExams.length === 0 && exams.scheduledObjectiveExams.length === 0 ? (
-                <div className="no-exams" style={{ textAlign: 'center', color: 'var(--text-faint)', padding: '20px 0' }}>No pending objective exams</div>
+                <div className="no-exams" style={{ textAlign: 'center', color: 'var(--text-faint)', padding: '24px 0', fontSize: '13px' }}>No pending objective exams</div>
               ) : (
                 <>
                   {exams.pendingObjectiveExams.map((exam) => (
-                    <div key={exam.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: 'var(--bg-soft)', borderRadius: '8px', border: '1px solid var(--border-light)' }}>
+                    <div key={exam.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px', background: '#ffffff', borderRadius: '10px', border: '1px solid var(--border)', boxShadow: '0 1px 2px rgba(0,0,0,0.03)' }}>
                       <div style={{ flex: 1, minWidth: 0, paddingRight: '12px' }}>
-                        <div className="pending-exam-name" style={{ fontSize: '13px', fontWeight: 'bold', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={exam.name}>{exam.name}</div>
-                        <div className="pending-exam-details" style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                        <div className="pending-exam-name" style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={exam.name}>{exam.name}</div>
+                        <div className="pending-exam-details" style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '2px' }}>
                           {exam.subject} • {exam.questionsCount} Qs • {exam.duration} mins • {exam.totalMarks} Marks
                         </div>
                       </div>
-                      <button className="start-exam-small" onClick={() => handleStartExam(exam.id, false)} style={{ background: 'var(--accent-grad)', color: 'white', border: 'none', padding: '6px 14px', borderRadius: '30px', fontSize: '11px', fontWeight: 600, cursor: 'pointer', flexShrink: 0 }}>
+                      <button className="btn btn-primary btn-sm" onClick={() => handleStartExam(exam.id, false)}>
                         Start
                       </button>
                     </div>
                   ))}
                   {exams.scheduledObjectiveExams.map((exam) => (
-                    <div key={exam.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: 'var(--bg-soft)', borderRadius: '8px', border: '1px solid var(--border-light)', opacity: 0.8 }}>
+                    <div key={exam.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px', background: '#ffffff', borderRadius: '10px', border: '1px solid var(--border)', opacity: 0.85 }}>
                       <div style={{ flex: 1, minWidth: 0, paddingRight: '12px' }}>
-                        <div className="pending-exam-name" style={{ fontSize: '13px', fontWeight: 'bold', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={exam.name}>{exam.name}</div>
-                        <div className="pending-exam-details" style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                        <div className="pending-exam-name" style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={exam.name}>{exam.name}</div>
+                        <div className="pending-exam-details" style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '2px' }}>
                           {exam.subject} • {exam.questionsCount} Qs • {exam.duration} mins • {exam.totalMarks} Marks
-                          <div style={{ marginTop: '3px', color: 'var(--warning)', fontWeight: 600, fontSize: '10px' }}>
+                          <div style={{ marginTop: '3px', color: 'var(--warning)', fontWeight: 700, fontSize: '11px' }}>
                             📅 Starts: {exam.startAt ? new Date(exam.startAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—'}
                           </div>
                         </div>
                       </div>
-                      <button className="start-exam-small" disabled style={{ background: 'var(--text-faint)', color: 'var(--text-muted)', border: 'none', padding: '6px 14px', borderRadius: '30px', fontSize: '11px', fontWeight: 600, cursor: 'not-allowed', flexShrink: 0 }}>
+                      <button className="btn btn-secondary btn-sm" disabled>
                         Locked
                       </button>
                     </div>
@@ -832,20 +832,20 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
 
           {/* Subjective Exams List */}
           {examTab === 'subjective' && (
-            <div className="pending-exams-flex-list" style={{ display: 'flex', flexDirection: 'column', padding: '10px 16px', maxHeight: '350px', overflowY: 'auto', gap: '6px' }}>
+            <div className="pending-exams-flex-list" style={{ display: 'flex', flexDirection: 'column', padding: '12px 16px', maxHeight: '350px', overflowY: 'auto', gap: '8px' }}>
               {exams.pendingSubjectiveExams.length === 0 && exams.scheduledSubjectiveExams.length === 0 ? (
-                <div className="no-exams" style={{ textAlign: 'center', color: 'var(--text-faint)', padding: '20px 0' }}>No pending subjective exams</div>
+                <div className="no-exams" style={{ textAlign: 'center', color: 'var(--text-faint)', padding: '24px 0', fontSize: '13px' }}>No pending subjective exams</div>
               ) : (
                 <>
                   {exams.pendingSubjectiveExams.map((exam) => (
-                    <div key={exam.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: 'var(--bg-soft)', borderRadius: '8px', border: '1px solid var(--border-light)' }}>
+                    <div key={exam.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px', background: '#ffffff', borderRadius: '10px', border: '1px solid var(--border)', boxShadow: '0 1px 2px rgba(0,0,0,0.03)' }}>
                       <div style={{ flex: 1, minWidth: 0, paddingRight: '12px' }}>
-                        <div className="pending-exam-name" style={{ fontSize: '13px', fontWeight: 'bold', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={exam.name}>{exam.name}</div>
-                        <div className="pending-exam-details" style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                        <div className="pending-exam-name" style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={exam.name}>{exam.name}</div>
+                        <div className="pending-exam-details" style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '2px' }}>
                           {exam.subject} • {exam.questionsCount} Qs • {exam.totalTime} mins • {exam.totalMarks} Marks • Mode: {exam.mode}
                         </div>
                       </div>
-                      <button className="start-exam-small subjective" onClick={() => handleStartExam(exam.id, true)} style={{ background: 'var(--accent-grad)', color: 'white', border: 'none', padding: '6px 14px', borderRadius: '30px', fontSize: '11px', fontWeight: 600, cursor: 'pointer', flexShrink: 0 }}>
+                      <button className="btn btn-primary btn-sm" onClick={() => handleStartExam(exam.id, true)}>
                         Start
                       </button>
                     </div>

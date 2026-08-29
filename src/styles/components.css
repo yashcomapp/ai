@@ -14,18 +14,17 @@
    1. CARD SYSTEM — Apple Frosted Glass & Cupertino Squircles
    ============================================================ */
 .card {
-    background: var(--surface-glass);
-    backdrop-filter: var(--glass-blur);
-    -webkit-backdrop-filter: var(--glass-blur);
-    border: 1px solid var(--border-glass);
+    background: #ffffff;
+    border: 1px solid var(--border);
     border-radius: var(--radius);
-    box-shadow: var(--shadow-glass);
+    box-shadow: var(--shadow-sm);
     overflow: hidden;
-    transition: transform 0.25s var(--ease), box-shadow 0.25s var(--ease), border-color 0.25s var(--ease);
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease;
 }
 .card:hover { 
-    transform: translateY(-3px); 
+    transform: translateY(-2px); 
     box-shadow: var(--card-hover-shadow); 
+    border-color: #cbd5e1;
 }
 
 .card-header {
@@ -35,11 +34,12 @@
     align-items: center;
     justify-content: space-between;
     gap: 8px;
-    font-weight: 600;
-    font-size: 16.8px;
+    font-weight: 700;
+    font-size: 15.5px;
+    color: var(--text);
 }
-.card-header h1,.card-header h2,.card-header h3 { font-size: 16.8px; font-weight: 600; margin: 0; }
-.card-body { padding: 12px; }
+.card-header h1,.card-header h2,.card-header h3 { font-size: 15.5px; font-weight: 700; color: var(--text); margin: 0; }
+.card-body { padding: 14px 16px; }
 .card-footer {
     padding: 12px 18px;
     border-top: 1px solid var(--border-light);
@@ -53,7 +53,7 @@
 /* Card modifiers */
 .card-compact .card-body { padding: 10px 14px; }
 .card-compact .card-header { padding: 10px 14px; }
-.card-hover:hover { transform: translateY(-6px); box-shadow: var(--shadow-lg); }
+.card-hover:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
 .card-clickable { cursor: pointer; }
 
 /* Stat card */
@@ -82,23 +82,18 @@
 .parent-snapshot-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr) !important;
-    gap: 1px;
-    background: rgba(148, 163, 184, 0.25);
-    border: 1.5px solid rgba(148, 163, 184, 0.25);
+    gap: 8px;
+    background: transparent;
+    border: none;
     border-radius: var(--radius-lg);
-    overflow: hidden;
     margin-top: 10px;
     margin-bottom: 16px;
-}
-html[data-theme='dark'] .stats-grid-container,
-html[data-theme='dark'] .parent-snapshot-grid {
-    background: rgba(20, 184, 166, 0.20);
-    border-color: rgba(20, 184, 166, 0.20);
 }
 @media (min-width: 768px) {
     .stats-grid-container,
     .parent-snapshot-grid {
         grid-template-columns: repeat(9, 1fr) !important;
+        gap: 10px;
     }
 }
 
@@ -106,27 +101,28 @@ html[data-theme='dark'] .parent-snapshot-grid {
 .admin-quick-actions-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
+    gap: 10px;
 }
 @media (min-width: 768px) {
     .admin-quick-actions-grid {
         grid-template-columns: repeat(5, 1fr);
-        gap: 10px;
+        gap: 12px;
     }
 }
 .stat-item,
 .parent-snap-card {
-    background: var(--surface);
-    backdrop-filter: var(--glass-blur);
-    -webkit-backdrop-filter: var(--glass-blur);
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 12px 8px;
+    padding: 14px 8px;
     min-width: 0;
     gap: 4px;
-    transition: background-color 0.2s var(--ease), transform 0.2s var(--ease);
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease;
     text-align: center;
     user-select: none;
     -webkit-user-select: none;
@@ -137,12 +133,14 @@ html[data-theme='dark'] .parent-snapshot-grid {
 }
 .stat-item-clickable:hover,
 .parent-snap-card-clickable:hover {
-    background: var(--bg-soft);
-    transform: scale(1.02);
+    background: #ffffff;
+    border-color: #cbd5e1;
+    transform: translateY(-2px);
+    box-shadow: var(--card-hover-shadow);
 }
 .stat-item-clickable:active,
 .parent-snap-card-clickable:active {
-    background: var(--border-light);
+    background: var(--surface-2);
     transform: scale(0.98);
 }
 .stat-icon-wrapper,
@@ -1590,20 +1588,24 @@ button, a, .brand, .tab, .btn, [role="button"], .settings-toggle, .theme-toggle,
 
 /* 2. RedBus Elevated Listing Card */
 .redbus-card,
-.modern-listing-card {
+.modern-listing-card,
+.exam-listing-card,
+.practice-listing-card {
     position: relative;
     background: #ffffff;
-    border: 1.5px solid #e2e8f0;
+    border: 1px solid #e5e7eb;
     border-radius: 16px;
-    padding: 16px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    padding: 18px 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
     transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease;
-    margin-bottom: 12px;
+    margin-bottom: 14px;
 }
 .redbus-card:hover,
-.modern-listing-card:hover {
+.modern-listing-card:hover,
+.exam-listing-card:hover,
+.practice-listing-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.03);
     border-color: #cbd5e1;
 }
 
