@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GET as getRoster, POST as postRoster } from '../handlers/roster';
 import { GET as getLeaves, POST as postLeaves } from '../handlers/leaves';
-import { GET as getParentSync, POST as postParentSync } from '../handlers/parentSync';
+import { GET as getParentSync } from '../handlers/parentSync';
 
 export const dynamic = 'force-dynamic';
 
@@ -36,8 +36,6 @@ export async function POST(req: NextRequest, { params }: { params: { slug?: stri
         return await postRoster(req);
       case 'leaves':
         return await postLeaves(req);
-      case 'parent-sync':
-        return await postParentSync(req);
       default:
         return NextResponse.json({ message: `Unknown attendance POST route: ${subroute}` }, { status: 404 });
     }

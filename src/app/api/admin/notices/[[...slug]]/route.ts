@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GET as getNotices, POST as postNotices, DELETE as deleteNotices } from '../handlers/notices';
-import { GET as getLogs, POST as postLogs } from '../handlers/logs';
+import { GET as getLogs } from '../handlers/logs';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,8 +31,6 @@ export async function POST(req: NextRequest, { params }: { params: { slug?: stri
     switch (subroute) {
       case '':
         return await postNotices(req);
-      case 'logs':
-        return await postLogs(req);
       default:
         return NextResponse.json({ message: `Unknown admin notice POST route: ${subroute}` }, { status: 404 });
     }

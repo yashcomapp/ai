@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { GET as getExams, POST as postExams, DELETE as deleteExams } from '../handlers/exams';
 import { GET as getGenerate, POST as postGenerate } from '../handlers/generate';
 import { GET as getLottery, POST as postLottery } from '../handlers/lottery';
-import { GET as getObjective, POST as postObjective, DELETE as deleteObjective } from '../handlers/objective';
-import { GET as getSubjective, POST as postSubjective, DELETE as deleteSubjective } from '../handlers/subjective';
+import { GET as getObjective, POST as postObjective } from '../handlers/objective';
+import { GET as getSubjective, POST as postSubjective } from '../handlers/subjective';
 import { POST as postBroadcastResults } from '../handlers/broadcastResults';
 import { POST as postConsolidate } from '../handlers/consolidate';
 import { POST as postRescheduleToday } from '../handlers/rescheduleToday';
@@ -74,10 +74,6 @@ export async function DELETE(req: NextRequest, { params }: { params: { slug?: st
     switch (subroute) {
       case '':
         return await deleteExams(req);
-      case 'objective':
-        return await deleteObjective(req);
-      case 'subjective':
-        return await deleteSubjective(req);
       default:
         return NextResponse.json({ message: `Unknown exam DELETE route: ${subroute}` }, { status: 404 });
     }

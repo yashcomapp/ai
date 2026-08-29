@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { GET as getDashboard } from '../handlers/dashboard';
 import { GET as getLearning } from '../handlers/learning';
 import { GET as getPractice, POST as postPractice } from '../handlers/practice';
-import { GET as getResults, POST as postResults } from '../handlers/results';
+import { GET as getResults } from '../handlers/results';
 import { GET as getFees } from '../handlers/fees';
 import { GET as getSettings, POST as postSettings } from '../handlers/settings';
 import { POST as postDisputes } from '../handlers/disputes';
@@ -60,8 +60,6 @@ export async function POST(req: NextRequest, { params }: { params: { slug?: stri
     switch (subroute) {
       case 'practice':
         return await postPractice(req);
-      case 'results':
-        return await postResults(req);
       case 'settings':
         return await postSettings(req);
       case 'disputes':
