@@ -976,16 +976,30 @@ input:disabled,textarea:disabled,select:disabled {
 .filter-group label { display: block; font-size: 14.4px; font-weight: 600; color: var(--text-muted); margin-bottom: 3px; }
 .filter-buttons { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
 .filter-chip {
-    padding: 4px 12px;
+    padding: 6px 14px;
     border-radius: 20px;
-    font-size: 13.2px;
+    font-size: 13px;
+    font-weight: 600;
     cursor: pointer;
-    background: var(--surface-2);
-    border: 1px solid var(--border);
-    color: var(--text-muted);
+    background: #ffffff;
+    border: 2px solid #64748b;
+    color: #1e293b;
     font-family: inherit;
+    transition: all 0.18s ease;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
-.filter-chip.active { background: var(--accent); color: white; border-color: var(--accent); }
+.filter-chip:hover {
+    border-color: #2563eb;
+    color: #2563eb;
+    background: #f0f7ff;
+}
+.filter-chip.active {
+    background: #2563eb;
+    color: #ffffff;
+    border-color: #1d4ed8;
+    font-weight: 800;
+    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
+}
 .search-box {
     width: 100%;
     padding: 8px 12px;
@@ -1587,9 +1601,33 @@ html[data-theme="dark"] .dropdown-item:hover {
 /* ============================================================
    26. CREATE EXAM PAGE
    ============================================================ */
-.chips-container { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px; background: var(--surface-2); border-radius: 8px; border: 1px solid var(--border); max-height: 150px; overflow-y: auto; }
-.chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; background: var(--info-bg); border-radius: 30px; font-size: 13.2px; cursor: pointer; }
-.chip.selected { background: var(--accent); color: white; }
+.chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    background: #ffffff;
+    border: 1.5px solid #64748b;
+    border-radius: 30px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #1e293b;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+.chip:hover {
+    border-color: #2563eb;
+    color: #2563eb;
+    background: #f0f7ff;
+}
+.chip.selected {
+    background: #2563eb;
+    border-color: #1d4ed8;
+    color: #ffffff;
+    font-weight: 800;
+    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
+}
 .question-item,.preview-question-item { background: var(--surface-2); padding: 10px; margin-bottom: 10px; border-radius: 8px; border-left: 3px solid var(--accent); }
 .question-preview-text { font-size: 14.4px; color: var(--text); }
 .subjects-section { margin-top: 14px; padding: 12px; background: var(--surface-2); border-radius: 8px; border: 1px solid var(--border); }
@@ -1854,28 +1892,29 @@ button, a, .brand, .tab, .btn, [role="button"], .settings-toggle, .theme-toggle,
     align-items: center;
     gap: 6px;
     background: #ffffff;
-    border: 1.5px solid #cbd5e1;
+    border: 2px solid #64748b;
     border-radius: 999px;
     padding: 6px 14px;
     font-size: 13px;
-    font-weight: 500;
-    color: #334155;
+    font-weight: 600;
+    color: #1e293b;
     white-space: nowrap;
     cursor: pointer;
     transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 .filter-pill-chip:hover {
-    border-color: #94a3b8;
-    background: #f8fafc;
+    border-color: #2563eb;
+    color: #2563eb;
+    background: #eff6ff;
 }
 .filter-pill-chip.active,
 .filter-pill-chip[data-active="true"] {
-    background: #eff6ff;
-    border-color: #2563eb;
-    color: #2563eb;
-    font-weight: 700;
-    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.15);
+    background: #2563eb;
+    border-color: #1d4ed8;
+    color: #ffffff;
+    font-weight: 800;
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
 }
 
 /* 2. Elevated Educational Listing Card */

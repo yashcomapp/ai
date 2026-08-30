@@ -762,27 +762,27 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
 
           {/* Exam Tabs */}
           {(user as any)?.autonomous !== true ? (
-            <div className="exam-tabs" style={{ display: 'flex', borderBottom: '1px solid var(--border-light)', background: 'var(--surface-2)', padding: '6px 12px', gap: '8px' }}>
+            <div className="exam-tabs" style={{ display: 'flex', borderBottom: '1.5px solid #bfdbfe', background: '#f8fafc', padding: '8px 12px', gap: '8px' }}>
               <div 
                 className={`exam-tab ${examTab === 'objective' ? 'active' : ''}`} 
                 onClick={() => setExamTab('objective')}
-                style={{ flex: 1, textAlign: 'center', padding: '8px 0', fontSize: '13px', fontWeight: 700, cursor: 'pointer', borderRadius: '8px', background: examTab === 'objective' ? '#ffffff' : 'transparent', color: examTab === 'objective' ? 'var(--accent)' : 'var(--text-muted)', boxShadow: examTab === 'objective' ? '0 1px 3px rgba(0,0,0,0.06)' : 'none', border: examTab === 'objective' ? '1px solid var(--border)' : '1px solid transparent', transition: 'all 0.18s ease' }}
+                style={{ flex: 1, textAlign: 'center', padding: '8px 0', fontSize: '13px', fontWeight: 800, cursor: 'pointer', borderRadius: '8px', background: examTab === 'objective' ? '#eff6ff' : '#ffffff', color: examTab === 'objective' ? '#2563eb' : '#475569', boxShadow: examTab === 'objective' ? '0 1px 3px rgba(37,99,235,0.1)' : 'none', border: examTab === 'objective' ? '2px solid #2563eb' : '1.5px solid #94a3b8', transition: 'all 0.18s ease' }}
               >
-                📋 Objective <span className="tab-count" style={{ background: examTab === 'objective' ? 'var(--accent)' : 'var(--border)', color: examTab === 'objective' ? '#ffffff' : 'var(--text-muted)', borderRadius: '10px', padding: '2px 7px', fontSize: '10.5px', fontWeight: 800, marginLeft: '4px' }}>{exams.pendingObjectiveExams.length + exams.scheduledObjectiveExams.length}</span>
+                📋 Objective <span className="tab-count" style={{ background: examTab === 'objective' ? '#2563eb' : '#64748b', color: '#ffffff', borderRadius: '10px', padding: '2px 7px', fontSize: '10.5px', fontWeight: 800, marginLeft: '4px' }}>{exams.pendingObjectiveExams.length + exams.scheduledObjectiveExams.length}</span>
               </div>
               <div 
                 className={`exam-tab ${examTab === 'subjective' ? 'active' : ''}`} 
                 onClick={() => setExamTab('subjective')}
-                style={{ flex: 1, textAlign: 'center', padding: '8px 0', fontSize: '13px', fontWeight: 700, cursor: 'pointer', borderRadius: '8px', background: examTab === 'subjective' ? '#ffffff' : 'transparent', color: examTab === 'subjective' ? '#7c3aed' : 'var(--text-muted)', boxShadow: examTab === 'subjective' ? '0 1px 3px rgba(0,0,0,0.06)' : 'none', border: examTab === 'subjective' ? '1px solid var(--border)' : '1px solid transparent', transition: 'all 0.18s ease' }}
+                style={{ flex: 1, textAlign: 'center', padding: '8px 0', fontSize: '13px', fontWeight: 800, cursor: 'pointer', borderRadius: '8px', background: examTab === 'subjective' ? '#f5f3ff' : '#ffffff', color: examTab === 'subjective' ? '#7c3aed' : '#475569', boxShadow: examTab === 'subjective' ? '0 1px 3px rgba(124,58,237,0.1)' : 'none', border: examTab === 'subjective' ? '2px solid #7c3aed' : '1.5px solid #94a3b8', transition: 'all 0.18s ease' }}
               >
-                📝 Subjective <span className="tab-count" style={{ background: examTab === 'subjective' ? '#7c3aed' : 'var(--border)', color: examTab === 'subjective' ? '#ffffff' : 'var(--text-muted)', borderRadius: '10px', padding: '2px 7px', fontSize: '10.5px', fontWeight: 800, marginLeft: '4px' }}>{exams.pendingSubjectiveExams.length + exams.scheduledSubjectiveExams.length}</span>
+                📝 Subjective <span className="tab-count" style={{ background: examTab === 'subjective' ? '#7c3aed' : '#64748b', color: '#ffffff', borderRadius: '10px', padding: '2px 7px', fontSize: '10.5px', fontWeight: 800, marginLeft: '4px' }}>{exams.pendingSubjectiveExams.length + exams.scheduledSubjectiveExams.length}</span>
               </div>
               <div 
                 className={`exam-tab ${examTab === 'mock' ? 'active' : ''}`} 
                 onClick={() => setExamTab('mock')}
-                style={{ flex: 1, textAlign: 'center', padding: '8px 0', fontSize: '13px', fontWeight: 700, cursor: 'pointer', borderRadius: '8px', background: examTab === 'mock' ? '#ffffff' : 'transparent', color: examTab === 'mock' ? '#d97706' : 'var(--text-muted)', boxShadow: examTab === 'mock' ? '0 1px 3px rgba(0,0,0,0.06)' : 'none', border: examTab === 'mock' ? '1px solid var(--border)' : '1px solid transparent', transition: 'all 0.18s ease' }}
+                style={{ flex: 1, textAlign: 'center', padding: '8px 0', fontSize: '13px', fontWeight: 800, cursor: 'pointer', borderRadius: '8px', background: examTab === 'mock' ? '#fffbeb' : '#ffffff', color: examTab === 'mock' ? '#d97706' : '#475569', boxShadow: examTab === 'mock' ? '0 1px 3px rgba(217,119,6,0.1)' : 'none', border: examTab === 'mock' ? '2px solid #d97706' : '1.5px solid #94a3b8', transition: 'all 0.18s ease' }}
               >
-                🏆 Mock <span className="tab-count" style={{ background: examTab === 'mock' ? '#d97706' : 'var(--border)', color: examTab === 'mock' ? '#ffffff' : 'var(--text-muted)', borderRadius: '10px', padding: '2px 7px', fontSize: '10.5px', fontWeight: 800, marginLeft: '4px' }}>{(exams.pendingEntranceExams?.length || 0) + (exams.scheduledEntranceExams?.length || 0)}</span>
+                🏆 Mock <span className="tab-count" style={{ background: examTab === 'mock' ? '#d97706' : '#64748b', color: '#ffffff', borderRadius: '10px', padding: '2px 7px', fontSize: '10.5px', fontWeight: 800, marginLeft: '4px' }}>{(exams.pendingEntranceExams?.length || 0) + (exams.scheduledEntranceExams?.length || 0)}</span>
               </div>
             </div>
           ) : null}
