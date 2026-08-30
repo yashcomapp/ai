@@ -3,6 +3,8 @@ import { adminDb } from '@/lib/firebase/admin';
 import * as firebaseAdmin from 'firebase-admin';
 import { verifyRole } from '@/lib/auth';
 import { ChunkedBatch } from '@/lib/firebase/batch';
+import { getFromCache, setInCache, invalidateCache } from '@/lib/firebase/cache';
+
 export async function GET(request: Request) {
   try {
     const admin = await verifyRole(request, 'admin');
@@ -127,6 +129,13 @@ export async function GET(request: Request) {
       return NextResponse.json({ success: true, logs, batches, users });
     }
 
+    // 5-min Cache for Database Settings Backup Collection Snapshots
+    const cacheKey = 'admin-settings-backup-snapshot';
+    const cachedBackup = getFromCache<any>(cacheKey);
+    if (cachedBackup) {
+      return NextResponse.json({ success: true, backup: cachedBackup });
+    }
+
     // Backup major collections with safety limits to avoid quota exhaustion on large tables
     const collections = ['users', 'batches', 'questions', 'subjectiveExams', 'examAttempts', 'integrityScores'];
     const limitMap: { [key: string]: number } = {
@@ -150,6 +159,7 @@ export async function GET(request: Request) {
       backupData[col] = snaps[idx].docs.map(doc => ({ id: doc.id, ...doc.data() }));
     });
 
+    setInCache(cacheKey, backupData, 300000); // 5 mins cache
     return NextResponse.json({ success: true, backup: backupData });
   } catch (err: any) {
     console.error(err);
@@ -187,12 +197,14 @@ export async function POST(request: Request) {
           writeBatch.set(ref, cleanData, { merge: true });
         });
         await writeBatch.commit();
+        invalidateCache('admin-settings-backup');
       }
       return NextResponse.json({ success: true });
     }
 
     // Action B: Run specific database utility purges
     if (action === 'utility') {
+      invalidateCache('admin-settings-backup');
       if (utilityType === 'resetFlags') {
         // Clear all used counter flags on questions
         const snap = await adminDb.collection('questions').get();
@@ -225,6 +237,7 @@ export async function POST(request: Request) {
           });
           await writeBatch.commit();
         }
+        invalidateCache();
         return NextResponse.json({ success: true });
       }
 
@@ -248,6 +261,7 @@ export async function POST(request: Request) {
           });
           await writeBatch.commit();
         }
+        invalidateCache();
         return NextResponse.json({ success: true });
       }
 
@@ -272,6 +286,8 @@ export async function POST(request: Request) {
         });
 
         await writeBatch.commit();
+        invalidateCache('syllabus');
+        invalidateCache('questions');
         return NextResponse.json({ success: true, count });
       }
     }

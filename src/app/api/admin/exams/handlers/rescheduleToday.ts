@@ -2,11 +2,24 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase/admin';
 import { getDateKeyIST } from '@/lib/dateUtils';
 import { ChunkedBatch } from '@/lib/firebase/batch';
+import { verifyRole } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
   try {
+    // 1. Verify Authorization: Admin role or valid CRON_SECRET
+    const authHeader = req.headers.get('authorization') || req.headers.get('Authorization');
+    const cronSecret = process.env.CRON_SECRET;
+    const isCronAuthorized = Boolean(cronSecret && authHeader === `Bearer ${cronSecret}`);
+
+    if (!isCronAuthorized) {
+      const admin = await verifyRole(req, 'admin');
+      if (!admin) {
+        return NextResponse.json({ message: 'Unauthorized. Admin role or valid Cron Secret required.' }, { status: 401 });
+      }
+    }
+
     const todayKey = getDateKeyIST(); // "2026-08-26"
     console.log(`[Reschedule] Running reschedule and attempt reset for date: ${todayKey}`);
 
