@@ -545,17 +545,17 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
               flexDirection: 'column',
               gap: '10px'
             }}>
-              {/* Compact Header (1-line All Clear) */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'nowrap' }}>
+              {/* Compact Header */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 {(needAttentionTopics.length > 0 || peerReviews.count > 0) ? (
-                  <AlertTriangle size={26} color="#d97706" style={{ flexShrink: 0 }} />
+                  <AlertTriangle size={24} color="#d97706" style={{ flexShrink: 0 }} />
                 ) : (
-                  <CheckCircle2 size={26} color="#059669" style={{ flexShrink: 0 }} />
+                  <CheckCircle2 size={24} color="#059669" style={{ flexShrink: 0 }} />
                 )}
-                <h3 style={{ margin: 0, fontSize: '13.5px', fontWeight: 800, color: (needAttentionTopics.length > 0 || peerReviews.count > 0) ? '#92400e' : '#065f46', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                <h3 style={{ margin: 0, fontSize: '13.5px', fontWeight: 800, color: (needAttentionTopics.length > 0 || peerReviews.count > 0) ? '#92400e' : '#065f46', lineHeight: 1.3 }}>
                   {(needAttentionTopics.length > 0 || peerReviews.count > 0) 
                     ? `${needAttentionTopics.length + (peerReviews.count > 0 ? 1 : 0)} Action Item(s) Need Attention` 
-                    : 'All Clear! Keep up the great momentum'}
+                    : 'All Clear! You are fully on track!'}
                 </h3>
               </div>
 
