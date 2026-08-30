@@ -61,9 +61,35 @@ html.light {
 
     --text-on-accent: #ffffff;
 
-    /* Professional Typography */
+    /* Professional Typography & Canonical Type Scale (SSOT) */
     --font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', var(--font-inter), 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     --font-outfit: var(--font-outfit), sans-serif;
+
+    /* Canonical Font Size Tokens */
+    --text-2xs: 10px;
+    --text-xs: 11px;
+    --text-sm: 12px;
+    --text-base: 13px;
+    --text-md: 14px;
+    --text-lg: 16px;
+    --text-xl: 18px;
+    --text-2xl: 22px;
+    --text-stat: 24px;
+    --text-stat-lg: 1.55rem;
+
+    /* Canonical Font Weight Tokens */
+    --font-normal: 400;
+    --font-medium: 500;
+    --font-semibold: 600;
+    --font-bold: 700;
+    --font-extrabold: 800;
+    --font-black: 900;
+
+    /* Canonical Line Height Tokens */
+    --lh-tight: 1.1;
+    --lh-snug: 1.2;
+    --lh-normal: 1.35;
+    --lh-relaxed: 1.5;
 
     /* Refined Squircles */
     --radius-sm: 8px;
@@ -189,34 +215,32 @@ body {
     color: var(--text) !important;
 }
 
-/* ---------- 4. TYPOGRAPHY ---------- */
+/* ---------- 4. TYPOGRAPHY (SINGLE SOURCE OF TRUTH) ---------- */
 h1,
 h2,
 h3,
 h4,
 h5,
 h6 {
-    font-weight: 600;
-    letter-spacing: -0.012em;
+    font-family: var(--font-family);
+    font-weight: var(--font-extrabold);
+    letter-spacing: -0.01em;
     color: var(--text);
     margin: 0;
+    line-height: var(--lh-snug);
 }
 
-h1 {
-    font-size: 26.4px;
-}
-h2 {
-    font-size: 21.6px;
-}
-h3 {
-    font-size: 18px;
-}
-h4 {
-    font-size: 15.6px;
-}
+h1 { font-size: var(--text-2xl); }
+h2 { font-size: var(--text-xl); }
+h3 { font-size: var(--text-lg); }
+h4 { font-size: var(--text-md); }
+h5 { font-size: var(--text-base); }
+h6 { font-size: var(--text-sm); }
 p {
     margin: 0;
     color: var(--text-2);
+    font-size: var(--text-base);
+    line-height: var(--lh-normal);
 }
 
 a {
