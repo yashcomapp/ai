@@ -17,6 +17,7 @@ import {
   TrendingUp, 
   AlertTriangle, 
   CheckCircle, 
+  CheckCircle2,
   Dumbbell, 
   Calendar, 
   ClipboardList, 
@@ -35,7 +36,9 @@ import {
   ChevronRight,
   ShieldCheck,
   Sparkles,
-  BarChart2
+  BarChart2,
+  Receipt,
+  Video
 } from 'lucide-react';
 import { getScoreColor } from '@/lib/dashboardMetrics';
 
@@ -1200,9 +1203,9 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
             flexWrap: 'nowrap'
           }}>
             <div>
-              <h1 suppressHydrationWarning style={{ margin: 0, fontSize: '0.88rem', fontWeight: 700, color: 'var(--text)', lineHeight: '1.2' }}>
-                {getGreeting()}, {(user?.name || user?.displayName || 'Parent').replace(/\s*ji$/i, '')} ji
-              </h1>
+              <p suppressHydrationWarning style={{ margin: 0, fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', lineHeight: '1.2' }}>
+                {getGreeting()}, <span style={{ color: 'var(--text)', fontWeight: 700 }}>{(user?.name || user?.displayName || 'Parent').replace(/\s*ji$/i, '')} ji</span>
+              </p>
             </div>
 
             {/* Child Selector Pill Container */}
@@ -1279,43 +1282,17 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
               boxShadow: 'var(--shadow-sm)'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <div style={{
-                  width: '38px',
-                  height: '38px',
-                  borderRadius: '50%',
-                  background: '#ccfbf1',
-                  border: '1.5px solid #99f6e4',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '18px',
-                  color: '#115e59',
-                  flexShrink: 0
-                }}>
-                  🌙
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                  <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 800, color: '#115e59' }}>
-                    Daily 5-Min Parent-Kid Sync
-                  </h3>
-                  <span style={{
-                    fontSize: '10px',
-                    fontWeight: 700,
-                    padding: '2px 8px',
-                    borderRadius: 'var(--radius-pill)',
-                    background: isSyncTimeSlot() ? '#ecfdf5' : '#ffffff',
-                    color: isSyncTimeSlot() ? '#059669' : '#64748b',
-                    border: isSyncTimeSlot() ? '1px solid #a7f3d0' : '1.5px solid #99f6e4'
-                  }}>
-                    {isSyncTimeSlot() ? 'Active Now' : 'Starts at 9:30 PM IST'}
-                  </span>
-                </div>
+                <Moon size={28} color="#0f766e" />
+                <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 800, color: '#115e59' }}>
+                  Daily 5-Min Parent-Kid Sync
+                </h3>
               </div>
 
               <div>
                 {dailySyncDoneToday ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#ecfdf5', border: '1.5px solid #a7f3d0', padding: '8px 14px', borderRadius: 'var(--radius)', color: '#059669', fontWeight: 700, fontSize: '12px' }}>
-                    <span>✅ Verified for Today!</span>
+                    <CheckCircle2 size={16} color="#059669" />
+                    <span>Verified for Today!</span>
                   </div>
                 ) : (
                   <button 
@@ -1349,7 +1326,10 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                     title={isSyncTimeSlot() ? 'Start live 5-minute sync with photo verification' : 'Parent-Child Sync starts at 9:30 PM IST'}
                   >
                     {isSyncTimeSlot() ? (
-                      <span>✨ Start 5-Min Sync (Live Video)</span>
+                      <>
+                        <Video size={16} color="#ffffff" />
+                        <span>Start 5-Min Sync</span>
+                      </>
                     ) : (
                       <span>Starts at 9:30 PM IST</span>
                     )}
@@ -1367,8 +1347,8 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
               position: 'relative'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexWrap: 'nowrap', gap: '8px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: '0', flexShrink: 0 }}>
-                  <TrendingUp size={16} color="#2563eb" />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: '0', flexShrink: 0 }}>
+                  <TrendingUp size={22} color="#2563eb" />
                   <strong style={{ fontSize: '14px', color: '#1e40af', fontWeight: 800, letterSpacing: '0.2px', whiteSpace: 'nowrap' }}>Child at a Glance</strong>
                 </div>
                 <span style={{
@@ -1435,20 +1415,11 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
               gap: '12px'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                <div style={{
-                  width: '42px',
-                  height: '42px',
-                  borderRadius: '50%',
-                  background: pendingReviews.length > 0 ? 'rgba(217, 119, 6, 0.2)' : 'rgba(5, 150, 105, 0.2)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '20px',
-                  color: pendingReviews.length > 0 ? '#d97706' : '#059669',
-                  flexShrink: 0
-                }}>
-                  {pendingReviews.length > 0 ? '❗️' : '✅'}
-                </div>
+                {pendingReviews.length > 0 ? (
+                  <AlertTriangle size={28} color="#d97706" />
+                ) : (
+                  <CheckCircle2 size={28} color="#059669" />
+                )}
                 <div>
                   <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 800, color: pendingReviews.length > 0 ? '#92400e' : '#065f46' }}>
                     {pendingReviews.length > 0 
@@ -1515,14 +1486,14 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                     background: '#ffffff',
                     border: '1.5px solid #bbf7d0',
                     borderRadius: 'var(--radius)',
-                    padding: '8px 4px',
+                    padding: '10px 4px',
                     cursor: 'pointer',
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
                     justifyContent: 'center',
                     textAlign: 'center',
-                    gap: '4px',
+                    gap: '6px',
                     transition: 'all 0.2s ease',
                     boxShadow: '0 1px 2px rgba(5,150,105,0.05)'
                   }}
@@ -1535,20 +1506,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                     e.currentTarget.style.transform = 'translateY(0)';
                   }}
                 >
-                  <div style={{
-                    width: '30px',
-                    height: '30px',
-                    borderRadius: '8px',
-                    background: '#ecfdf5',
-                    border: '1.5px solid #a7f3d0',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#059669',
-                    flexShrink: 0
-                  }}>
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                  </div>
+                  <Calendar size={28} color="#059669" />
                   <div style={{ fontSize: '11px', fontWeight: 800, color: '#1e293b', lineHeight: 1.2, whiteSpace: 'nowrap' }}>
                     Attendance
                   </div>
@@ -1564,14 +1522,14 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                     background: '#ffffff',
                     border: '1.5px solid #e9d5ff',
                     borderRadius: 'var(--radius)',
-                    padding: '8px 4px',
+                    padding: '10px 4px',
                     cursor: 'pointer',
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
                     justifyContent: 'center',
                     textAlign: 'center',
-                    gap: '4px',
+                    gap: '6px',
                     transition: 'all 0.2s ease',
                     boxShadow: '0 1px 2px rgba(124,58,237,0.05)'
                   }}
@@ -1584,20 +1542,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                     e.currentTarget.style.transform = 'translateY(0)';
                   }}
                 >
-                  <div style={{
-                    width: '30px',
-                    height: '30px',
-                    borderRadius: '8px',
-                    background: '#f5f3ff',
-                    border: '1.5px solid #ddd6fe',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#7c3aed',
-                    flexShrink: 0
-                  }}>
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-                  </div>
+                  <ClipboardList size={28} color="#7c3aed" />
                   <div style={{ fontSize: '11px', fontWeight: 800, color: '#1e293b', lineHeight: 1.2, whiteSpace: 'nowrap' }}>
                     Exam Register
                   </div>
@@ -1613,14 +1558,14 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                     background: '#ffffff',
                     border: '1.5px solid #fde68a',
                     borderRadius: 'var(--radius)',
-                    padding: '8px 4px',
+                    padding: '10px 4px',
                     cursor: 'pointer',
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
                     justifyContent: 'center',
                     textAlign: 'center',
-                    gap: '4px',
+                    gap: '6px',
                     transition: 'all 0.2s ease',
                     boxShadow: '0 1px 2px rgba(217,119,6,0.05)'
                   }}
@@ -1633,20 +1578,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                     e.currentTarget.style.transform = 'translateY(0)';
                   }}
                 >
-                  <div style={{
-                    width: '30px',
-                    height: '30px',
-                    borderRadius: '8px',
-                    background: '#fffbeb',
-                    border: '1.5px solid #fde68a',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#d97706',
-                    flexShrink: 0
-                  }}>
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-                  </div>
+                  <Receipt size={28} color="#d97706" />
                   <div style={{ fontSize: '11px', fontWeight: 800, color: '#1e293b', lineHeight: 1.2, whiteSpace: 'nowrap' }}>
                     Fees & Dues
                   </div>
@@ -1662,14 +1594,14 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                     background: '#ffffff',
                     border: '1.5px solid #bae6fd',
                     borderRadius: 'var(--radius)',
-                    padding: '8px 4px',
+                    padding: '10px 4px',
                     cursor: 'pointer',
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
                     justifyContent: 'center',
                     textAlign: 'center',
-                    gap: '4px',
+                    gap: '6px',
                     transition: 'all 0.2s ease',
                     boxShadow: '0 1px 2px rgba(2,132,199,0.05)'
                   }}
@@ -1682,20 +1614,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                     e.currentTarget.style.transform = 'translateY(0)';
                   }}
                 >
-                  <div style={{
-                    width: '30px',
-                    height: '30px',
-                    borderRadius: '8px',
-                    background: '#f0f9ff',
-                    border: '1.5px solid #bae6fd',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#0284c7',
-                    flexShrink: 0
-                  }}>
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                  </div>
+                  <MessageSquare size={28} color="#0284c7" />
                   <div style={{ fontSize: '11px', fontWeight: 800, color: '#1e293b', lineHeight: 1.2, whiteSpace: 'nowrap' }}>
                     Chat Desk
                   </div>
