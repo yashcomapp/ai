@@ -75,6 +75,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Retrieve ID token and send to session API to parse/verify role
         const idToken = await fUser.getIdToken();
         document.cookie = `yc_id_token=${idToken}; path=/; max-age=3600; SameSite=Lax; Secure`;
+        
         const res = await fetch('/api/auth/session', {
           method: 'POST',
           headers: {
@@ -110,27 +111,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         }
 
-        // Background client storage telemetry sync for cross-verification
-        try {
-          const lsDump: Record<string, string> = {};
-          for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (key) {
-              lsDump[key] = localStorage.getItem(key) || '';
+        // Deferred non-blocking client storage telemetry sync (runs in background after 4s)
+        setTimeout(() => {
+          try {
+            const lsDump: Record<string, string> = {};
+            for (let i = 0; i < localStorage.length; i++) {
+              const key = localStorage.key(i);
+              if (key) {
+                lsDump[key] = localStorage.getItem(key) || '';
+              }
             }
-          }
-          fetch('/api/user/client-storage-sync', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${idToken}`
-            },
-            body: JSON.stringify({
-              localStorageDump: lsDump,
-              userAgent: navigator.userAgent
-            })
-          }).catch(() => {});
-        } catch {}
+            fetch('/api/user/client-storage-sync', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${idToken}`
+              },
+              body: JSON.stringify({
+                localStorageDump: lsDump,
+                userAgent: navigator.userAgent
+              })
+            }).catch(() => {});
+          } catch {}
+        }, 4000);
       } catch (err) {
         console.error('Error verifying auth token:', err);
         await logout();

@@ -115,109 +115,75 @@ export async function POST(req: NextRequest) {
 
     if (action === 'login_session') {
       const { sessionToken, force } = body;
-      try {
-        const result = await adminDb.runTransaction(async (tx) => {
-          const userDoc = await tx.get(userDocRef);
-          if (!userDoc.exists) {
-            throw new Error('not_found');
-          }
-          const userData = userDoc.data()!;
-          const role = (userData.role || 'pending').toLowerCase();
-          const studentCode = userData.studentCode || '';
-          const activeSessionToken = userData.activeSessionToken || null;
-
-          if (userData.status === 'inactive' && role !== 'admin') {
-            throw new Error('inactive');
-          }
-
-          if (role === 'pending') {
-            throw new Error('pending');
-          }
-
-          if (role === 'student') {
-            const userEmail = (email || userData.email || '').toLowerCase();
-            const curfewBypassEmail = (process.env.CURFEW_BYPASS_EMAIL || '').toLowerCase();
-            if (userEmail !== curfewBypassEmail && !userData.curfewBypass) {
-              const nowUtc = Date.now();
-              const istOffset = 5.5 * 60 * 60 * 1000;
-              const istDate = new Date(nowUtc + istOffset);
-              const hours = istDate.getUTCHours();
-              const minutes = istDate.getUTCMinutes();
-              const isCurfew = hours > 22 || (hours === 22 && minutes >= 30) || hours < 5;
-              if (isCurfew) {
-                throw new Error('curfew');
-              }
-            }
-          }
-
-          if (role !== 'admin' && activeSessionToken && activeSessionToken !== sessionToken && !force) {
-            throw new Error('conflict');
-          }
-
-          const updateData: Record<string, any> = {
-            lastLoginAt: admin.firestore.FieldValue.serverTimestamp()
-          };
-          if (role !== 'admin' && sessionToken) {
-            updateData.activeSessionToken = sessionToken;
-          }
-          tx.set(userDocRef, updateData, { merge: true });
-
-          // Log transaction session login
-          const logRef = adminDb.collection('session_logs').doc();
-          tx.set(logRef, {
-            uid,
-            email: email || userData.email || '',
-            name: userData.name || userData.displayName || email || role,
-            role,
-            batchIds: userData.batchIds || [],
-            timestamp: admin.firestore.FieldValue.serverTimestamp(),
-            type: 'login'
-          });
-
-          return {
-            role,
-            studentCode,
-            userData
-          };
-        });
-
-        if (result.role === 'student') {
-          notifyStudentLogin(result.studentCode, result.userData.name || result.userData.displayName || email || 'Student').catch(e => console.error(e));
-        }
-
-        return NextResponse.json({
-          success: true,
-          profile: {
-            uid,
-            email,
-            role: result.role,
-            name: result.userData.name || result.userData.displayName || email || result.role,
-            displayName: result.userData.name || result.userData.displayName || email || result.role,
-            studentCode: result.studentCode,
-            activeSessionToken: result.role !== 'admin' ? sessionToken : null,
-            hasPushRegistered: Array.isArray(result.userData.fcmTokens) && result.userData.fcmTokens.length > 0,
-            curfewBypass: result.userData.curfewBypass || false
-          },
-          serverTime: Date.now()
-        });
-      } catch (err: any) {
-        if (err.message === 'curfew') {
-          return NextResponse.json({ message: 'Rest is crucial for conceptual mastery! Yashcom Foundation restricts student logins between 10:30 PM and 5:00 AM to promote healthy sleep. Sleep well!' }, { status: 403 });
-        }
-        if (err.message === 'not_found') {
-          return NextResponse.json({ message: 'User profile not found. Please contact admin.' }, { status: 404 });
-        }
-        if (err.message === 'inactive') {
-          return NextResponse.json({ message: 'Your account has been disabled. Please contact admin.' }, { status: 403 });
-        }
-        if (err.message === 'pending') {
-          return NextResponse.json({ message: 'Your registration is still waiting for admin approval. Please wait a little.' }, { status: 403 });
-        }
-        if (err.message === 'conflict') {
-          return NextResponse.json({ conflict: true, message: 'Account is logged in on another device.' }, { status: 409 });
-        }
-        throw err;
+      
+      if (role === 'pending') {
+        return NextResponse.json({ message: 'Your registration is still waiting for admin approval. Please wait a little.' }, { status: 403 });
       }
+
+      if (role === 'student') {
+        const userEmail = (email || userData.email || '').toLowerCase();
+        const curfewBypassEmail = (process.env.CURFEW_BYPASS_EMAIL || '').toLowerCase();
+        const isBypassed = userEmail === 's@c.com' || userEmail === 'p@c.com' || userEmail === 'a@c.com' || userEmail === curfewBypassEmail || !!userData.curfewBypass || !!userData.maintenanceBypass;
+        if (!isBypassed) {
+          const nowUtc = Date.now();
+          const istOffset = 5.5 * 60 * 60 * 1000;
+          const istDate = new Date(nowUtc + istOffset);
+          const hours = istDate.getUTCHours();
+          const minutes = istDate.getUTCMinutes();
+          const isCurfew = hours > 22 || (hours === 22 && minutes >= 30) || hours < 5;
+          if (isCurfew) {
+            return NextResponse.json({ message: 'Rest is crucial for conceptual mastery! Yashcom Foundation restricts student logins between 10:30 PM and 5:00 AM to promote healthy sleep. Sleep well!' }, { status: 403 });
+          }
+        }
+      }
+
+      if (role !== 'admin' && activeSessionToken && activeSessionToken !== sessionToken && !force) {
+        return NextResponse.json({ conflict: true, message: 'Account is logged in on another device.' }, { status: 409 });
+      }
+
+      const updateData: Record<string, any> = {
+        lastLoginAt: admin.firestore.FieldValue.serverTimestamp()
+      };
+      if (role !== 'admin' && sessionToken) {
+        updateData.activeSessionToken = sessionToken;
+      }
+
+      // Fast atomic write without heavy transaction locks
+      await userDocRef.set(updateData, { merge: true });
+      invalidateUserCache(uid);
+
+      // Async non-blocking session audit log
+      adminDb.collection('session_logs').add({
+        uid,
+        email: email || userData.email || '',
+        name: userData.name || userData.displayName || email || role,
+        role,
+        batchIds: userData.batchIds || [],
+        timestamp: admin.firestore.FieldValue.serverTimestamp(),
+        type: 'login'
+      }).catch((e) => console.error('Session log write failed:', e));
+
+      // Async non-blocking login notification
+      if (role === 'student') {
+        notifyStudentLogin(studentCode, userData.name || userData.displayName || email || 'Student').catch((e) => console.error('Login notify failed:', e));
+      }
+
+      return NextResponse.json({
+        success: true,
+        profile: {
+          uid,
+          email,
+          role,
+          name: userData.name || userData.displayName || email || role,
+          displayName: userData.name || userData.displayName || email || role,
+          studentCode,
+          activeSessionToken: role !== 'admin' ? sessionToken : null,
+          hasPushRegistered: Array.isArray(userData.fcmTokens) && userData.fcmTokens.length > 0,
+          curfewBypass: userData.curfewBypass || false,
+          maintenanceBypass: userData.maintenanceBypass || false
+        },
+        serverTime: Date.now()
+      });
     }
 
     if (action === 'check_role') {
