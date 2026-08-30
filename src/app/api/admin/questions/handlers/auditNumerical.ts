@@ -3,6 +3,7 @@ import * as admin from 'firebase-admin';
 import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole } from '@/lib/auth';
 import { ChunkedBatch } from '@/lib/firebase/batch';
+import { invalidateCache } from '@/lib/firebase/cache';
 
 export const dynamic = 'force-dynamic';
 
@@ -118,6 +119,7 @@ export async function POST(req: NextRequest) {
 
     if (updatedCount > 0) {
       await batch.commit();
+      invalidateCache('qb_base_');
     }
 
     return NextResponse.json({

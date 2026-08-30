@@ -4,6 +4,7 @@ import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole } from '@/lib/auth';
 import { ChunkedBatch } from '@/lib/firebase/batch';
 import { preprocessMathText, QUESTION_TYPE_MAP } from '@/lib/questionTypes';
+import { invalidateCache } from '@/lib/firebase/cache';
 
 export const dynamic = 'force-dynamic';
 
@@ -287,8 +288,12 @@ export async function POST(req: NextRequest) {
         stats.orphanedAutoIdsRemoved++;
       }
       await batch.commit();
+      invalidateCache('qb_base_');
+      invalidateCache('syllabus');
     } else if (!isDryRun) {
       await batch.commit();
+      invalidateCache('qb_base_');
+      invalidateCache('syllabus');
     }
 
     return NextResponse.json({

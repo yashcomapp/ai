@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole } from '@/lib/auth';
+import { invalidateCache } from '@/lib/firebase/cache';
 
 export const dynamic = 'force-dynamic';
 
@@ -197,6 +198,7 @@ export async function POST(req: NextRequest) {
       if (batchOps > 0) {
         await currentBatch.commit();
       }
+      invalidateCache('qb_base_');
 
       return NextResponse.json({
         success: true,
@@ -252,6 +254,9 @@ export async function POST(req: NextRequest) {
 
     if (batchOperationCount > 0) {
       await currentBatch.commit();
+    }
+    if (updatedCount > 0) {
+      invalidateCache('qb_base_');
     }
 
     return NextResponse.json({

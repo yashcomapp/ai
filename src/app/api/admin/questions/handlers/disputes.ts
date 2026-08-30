@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole } from '@/lib/auth';
+import { invalidateCache } from '@/lib/firebase/cache';
 
 export const dynamic = 'force-dynamic';
 
@@ -91,6 +92,7 @@ export async function POST(req: NextRequest) {
             defectiveReason: disputeData.reason || 'Student reported issue',
             quarantinedAt: new Date().toISOString()
           });
+          invalidateCache('qb_base_');
         }
       } catch (qErr) {
         console.warn('Failed to update question status:', qErr);
