@@ -69,6 +69,7 @@ export async function POST(req: NextRequest) {
 
     const batch = new ChunkedBatch(adminDb);
     const docIdsToDelete = new Set<string>();
+    const idMigrationMap = new Map<string, string>();
 
     for (const doc of questionsSnap.docs) {
       const data = doc.data();
@@ -171,6 +172,10 @@ export async function POST(req: NextRequest) {
         stats.migratedDocIds++;
         changes.push(`Doc ID migrated from [${currentDocId}] to canonical [${targetDocId}]`);
         isModified = true;
+        idMigrationMap.set(currentDocId, targetDocId);
+        if (data.questionCode && data.questionCode !== targetDocId) {
+          idMigrationMap.set(data.questionCode, targetDocId);
+        }
       }
 
       if (isModified || isAutoId) {
@@ -208,6 +213,14 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Helper to remap any question code/ID across all migrations
+    const remapQuestionCode = (c: string): string => {
+      if (!c) return c;
+      let mapped = idMigrationMap.get(c) || c;
+      mapped = mapped.replace('-GANI-', '-MGP1-').replace('-SCIE-', '-CURI-');
+      return mapped;
+    };
+
     // Also synchronize active exams and subjectiveExams questionCodes
     const [examsSnap, subjExamsSnap] = await Promise.all([
       adminDb.collection('exams').get(),
@@ -220,16 +233,31 @@ export async function POST(req: NextRequest) {
       const updates: any = {};
 
       if (Array.isArray(edata.questionCodes)) {
-        const newCodes = edata.questionCodes.map((c: string) => c.replace('-GANI-', '-MGP1-').replace('-SCIE-', '-CURI-'));
+        const newCodes = edata.questionCodes.map((c: string) => remapQuestionCode(c));
         if (JSON.stringify(newCodes) !== JSON.stringify(edata.questionCodes)) {
           updates.questionCodes = newCodes;
           updated = true;
         }
       }
       if (Array.isArray(edata.questionIds)) {
-        const newIds = edata.questionIds.map((c: string) => c.replace('-GANI-', '-MGP1-').replace('-SCIE-', '-CURI-'));
+        const newIds = edata.questionIds.map((c: string) => remapQuestionCode(c));
         if (JSON.stringify(newIds) !== JSON.stringify(edata.questionIds)) {
           updates.questionIds = newIds;
+          updated = true;
+        }
+      }
+      if (Array.isArray(edata.questions)) {
+        const newQuestions = edata.questions.map((q: any) => {
+          if (!q || typeof q !== 'object') return q;
+          const currentId = q.id || q.questionCode || '';
+          const remappedId = remapQuestionCode(currentId);
+          if (remappedId !== currentId) {
+            return { ...q, id: remappedId, questionCode: remappedId };
+          }
+          return q;
+        });
+        if (JSON.stringify(newQuestions) !== JSON.stringify(edata.questions)) {
+          updates.questions = newQuestions;
           updated = true;
         }
       }
@@ -253,16 +281,31 @@ export async function POST(req: NextRequest) {
       const updates: any = {};
 
       if (Array.isArray(edata.questionIds)) {
-        const newIds = edata.questionIds.map((c: string) => c.replace('-GANI-', '-MGP1-').replace('-SCIE-', '-CURI-'));
+        const newIds = edata.questionIds.map((c: string) => remapQuestionCode(c));
         if (JSON.stringify(newIds) !== JSON.stringify(edata.questionIds)) {
           updates.questionIds = newIds;
           updated = true;
         }
       }
       if (Array.isArray(edata.questionCodes)) {
-        const newCodes = edata.questionCodes.map((c: string) => c.replace('-GANI-', '-MGP1-').replace('-SCIE-', '-CURI-'));
+        const newCodes = edata.questionCodes.map((c: string) => remapQuestionCode(c));
         if (JSON.stringify(newCodes) !== JSON.stringify(edata.questionCodes)) {
           updates.questionCodes = newCodes;
+          updated = true;
+        }
+      }
+      if (Array.isArray(edata.questions)) {
+        const newQuestions = edata.questions.map((q: any) => {
+          if (!q || typeof q !== 'object') return q;
+          const currentId = q.id || q.questionCode || '';
+          const remappedId = remapQuestionCode(currentId);
+          if (remappedId !== currentId) {
+            return { ...q, id: remappedId, questionCode: remappedId };
+          }
+          return q;
+        });
+        if (JSON.stringify(newQuestions) !== JSON.stringify(edata.questions)) {
+          updates.questions = newQuestions;
           updated = true;
         }
       }

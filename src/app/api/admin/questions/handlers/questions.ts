@@ -29,21 +29,31 @@ export async function GET(req: NextRequest) {
           .map(s => ({ id: s.id, ...s.data() }));
 
         // Fallback: If some question codes were passed instead of doc IDs, query by questionCode
-        if (questions.length < ids.length) {
-          const qSnap = await adminDb.collection('questions')
-            .where('questionCode', 'in', ids.slice(0, 30))
-            .get()
-            .catch(() => null);
-
-          if (qSnap && !qSnap.empty) {
-            const extra = qSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            const existingIds = new Set(questions.map(q => q.id));
-            extra.forEach(eq => {
-              if (!existingIds.has(eq.id)) {
-                questions.push(eq);
-              }
-            });
+        const foundDocIds = new Set(questions.map(q => q.id));
+        const missingIds = ids.filter(id => !foundDocIds.has(id));
+        if (missingIds.length > 0) {
+          const chunks: string[][] = [];
+          for (let i = 0; i < missingIds.length; i += 30) {
+            chunks.push(missingIds.slice(i, i + 30));
           }
+          const chunkSnaps = await Promise.all(
+            chunks.map(chunk =>
+              adminDb.collection('questions')
+                .where('questionCode', 'in', chunk)
+                .get()
+                .catch(() => null)
+            )
+          );
+          chunkSnaps.forEach(qSnap => {
+            if (qSnap && !qSnap.empty) {
+              qSnap.docs.forEach(doc => {
+                if (!foundDocIds.has(doc.id)) {
+                  foundDocIds.add(doc.id);
+                  questions.push({ id: doc.id, ...doc.data() });
+                }
+              });
+            }
+          });
         }
 
         return NextResponse.json({ questions });
@@ -214,7 +224,7 @@ export async function POST(req: NextRequest) {
 
       const createdByEmail = (adminUser.decodedToken?.email || adminUser.userData?.email) || 'admin@yashcom.com';
 
-      // 1. Group questions by counterId to allocate sequence numbers efficiently
+      // 1. Group questions by counterId to allocate sequence numbers efficiently (only for new questions)
       const counterNeeds: Record<string, number> = {};
       const processedItems: any[] = [];
 
@@ -243,9 +253,14 @@ export async function POST(req: NextRequest) {
         const topicCode = `${boardCode}-${classNum}-${subjectCode}-${chapterPart}-${topicPart}`;
         const counterId = `${topicCode}-${typeCode}`;
 
-        counterNeeds[counterId] = (counterNeeds[counterId] || 0) + 1;
+        const isNew = !item.id && !item.questionCode;
+        if (isNew) {
+          counterNeeds[counterId] = (counterNeeds[counterId] || 0) + 1;
+        }
+
         processedItems.push({
           item,
+          isNew,
           qtype,
           finalBoard,
           boardCode,
@@ -258,20 +273,23 @@ export async function POST(req: NextRequest) {
         });
       }
 
-      // 2. Transactionally reserve sequence numbers for all counterIds
+      // 2. Transactionally reserve sequence numbers only for new questions
       const startSeqMap: Record<string, number> = {};
-      await adminDb.runTransaction(async (tx) => {
-        const counterRefs = Object.keys(counterNeeds).map(cid => adminDb.collection('questionCounters').doc(cid));
-        const snaps = await tx.getAll(...counterRefs);
-        
-        snaps.forEach(snap => {
-          const cid = snap.id;
-          const needed = counterNeeds[cid];
-          const currentSeq = snap.exists && snap.data() ? (snap.data()!.nextSequence || 1) : 1;
-          startSeqMap[cid] = currentSeq;
-          tx.set(snap.ref, { nextSequence: currentSeq + needed }, { merge: true });
+      const neededCounterIds = Object.keys(counterNeeds);
+      if (neededCounterIds.length > 0) {
+        await adminDb.runTransaction(async (tx) => {
+          const counterRefs = neededCounterIds.map(cid => adminDb.collection('questionCounters').doc(cid));
+          const snaps = await tx.getAll(...counterRefs);
+          
+          snaps.forEach(snap => {
+            const cid = snap.id;
+            const needed = counterNeeds[cid];
+            const currentSeq = snap.exists && snap.data() ? (snap.data()!.nextSequence || 1) : 1;
+            startSeqMap[cid] = currentSeq;
+            tx.set(snap.ref, { nextSequence: currentSeq + needed }, { merge: true });
+          });
         });
-      });
+      }
 
       // 3. Pre-fetch syllabus topic names
       const uniqueTopicCodes = Array.from(new Set(processedItems.map(p => p.topicCode)));
@@ -300,11 +318,14 @@ export async function POST(req: NextRequest) {
 
       for (let idx = 0; idx < processedItems.length; idx++) {
         const p = processedItems[idx];
-        const { item, qtype, finalBoard, topicPart, topicCode, counterId } = p;
+        const { item, isNew, qtype, finalBoard, topicPart, topicCode, counterId } = p;
 
-        const seqNum = currentSeqOffset[counterId]++;
-        const seqStr = String(seqNum).padStart(3, '0');
-        const finalCode = item.id || `${counterId}-${seqStr}`;
+        let finalCode = item.id || item.questionCode || '';
+        if (isNew) {
+          const seqNum = currentSeqOffset[counterId]++;
+          const seqStr = String(seqNum).padStart(3, '0');
+          finalCode = `${counterId}-${seqStr}`;
+        }
         const normalizedQType = qtype === 'numerical5' ? 'numerical' : qtype;
 
         let finalTopicName = (topicNameMap[topicCode] || item.topic || item.topicName || '').trim();
@@ -512,20 +533,50 @@ export async function DELETE(req: NextRequest) {
 
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id') || '';
+    const force = searchParams.get('force') === 'true';
 
     // Handle single question deletion
     if (id) {
-      await adminDb.collection('questions').doc(id).delete();
+      const qRef = adminDb.collection('questions').doc(id);
+      const snap = await qRef.get();
+      if (!snap.exists) {
+        return NextResponse.json({ message: 'Question not found.' }, { status: 404 });
+      }
+
+      const qData = snap.data() || {};
+      const isUsed = qData.usedInClassroomTest === true || (Number(qData.timesUsed) > 0);
+      if (isUsed && !force) {
+        return NextResponse.json({ 
+          message: `Cannot delete question '${id}' because it is used in exams. Delete prohibited to preserve student exam review integrity. Quarantine the question or pass ?force=true to override.` 
+        }, { status: 400 });
+      }
+
+      await qRef.delete();
       invalidateCache('qb_base_');
       return NextResponse.json({ success: true });
     }
 
     // Handle bulk questions deletion
-    const body = await req.json();
-    const { ids } = body;
+    const body = await req.json().catch(() => ({}));
+    const { ids, force: bulkForce } = body;
+    const isForce = bulkForce === true || force;
 
     if (!Array.isArray(ids) || ids.length === 0) {
       return NextResponse.json({ message: 'Missing parameters (ids).' }, { status: 400 });
+    }
+
+    if (!isForce) {
+      const refs = ids.map(qCode => adminDb.collection('questions').doc(qCode));
+      const snaps = await adminDb.getAll(...refs).catch(() => []);
+      const usedQuestions = snaps
+        .filter(s => s && s.exists && (s.data()?.usedInClassroomTest === true || Number(s.data()?.timesUsed) > 0))
+        .map(s => s.id || s.data()?.questionCode);
+
+      if (usedQuestions.length > 0) {
+        return NextResponse.json({
+          message: `Cannot delete ${usedQuestions.length} question(s) because they are referenced in exams: ${usedQuestions.slice(0, 5).join(', ')}${usedQuestions.length > 5 ? '...' : ''}. Pass force: true to override.`
+        }, { status: 400 });
+      }
     }
 
     const batch = new ChunkedBatch(adminDb);
