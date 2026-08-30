@@ -467,9 +467,9 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
               position: 'relative'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', flexWrap: 'nowrap', gap: '6px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: '0', flexShrink: 0 }}>
-                  <TrendingUp size={18} color="#2563eb" />
-                  <strong style={{ fontSize: '14px', color: '#1e40af', fontWeight: 800, letterSpacing: '0.2px', whiteSpace: 'nowrap' }}>Glance</strong>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <TrendingUp size={18} color="#1e40af" />
+                  <h3 style={{ fontSize: '14px', fontWeight: 800, margin: 0, color: '#1e40af', lineHeight: 1.2, whiteSpace: 'nowrap' }}>Glance</h3>
                 </div>
                 {/* Interactive Time Range Filter Dropdown */}
                 <select
@@ -546,13 +546,13 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
               gap: '6px'
             }}>
               {/* Compact Header */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 {(needAttentionTopics.length > 0 || peerReviews.count > 0) ? (
-                  <AlertTriangle size={20} color="#d97706" style={{ flexShrink: 0 }} />
+                  <AlertTriangle size={18} color="#92400e" style={{ flexShrink: 0 }} />
                 ) : (
-                  <CheckCircle2 size={20} color="#059669" style={{ flexShrink: 0 }} />
+                  <CheckCircle2 size={18} color="#065f46" style={{ flexShrink: 0 }} />
                 )}
-                <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 800, color: (needAttentionTopics.length > 0 || peerReviews.count > 0) ? '#92400e' : '#065f46', lineHeight: 1.3 }}>
+                <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 800, color: (needAttentionTopics.length > 0 || peerReviews.count > 0) ? '#92400e' : '#065f46', lineHeight: 1.2 }}>
                   {(needAttentionTopics.length > 0 || peerReviews.count > 0) 
                     ? `${needAttentionTopics.length + (peerReviews.count > 0 ? 1 : 0)} Action Item(s) Need Attention` 
                     : 'All Clear! You are fully on track!'}

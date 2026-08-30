@@ -1192,23 +1192,28 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
       {/* Main Dashboard Container */}
       <div className="dashboard-container" style={{ maxWidth: '1000px', width: '100%', margin: '0 auto', padding: '4px 8px 30px 8px' }}>
 
-        {/* ROW 1: Parent Greeting & Child Selector in ONE cohesive, polished bar */}
+        {/* ROW 1: Parent Greeting & Child Selector in ONE unified top glass bar */}
         {initialLoading ? (
           renderChildSelectorSkeleton()
         ) : children.length > 0 ? (
-          <div style={{
+          <div className="card" style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
             gap: '8px',
             marginBottom: '8px',
+            padding: '8px 12px',
+            borderRadius: 'var(--radius)',
+            border: '1px solid var(--border-light)',
+            background: 'var(--surface)',
+            boxShadow: 'var(--shadow-sm)',
             flexWrap: 'nowrap'
           }}>
             {/* Left: Parent Greeting */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
               <div style={{
-                width: '30px',
-                height: '30px',
+                width: '32px',
+                height: '32px',
                 borderRadius: '50%',
                 background: 'var(--accent-soft)',
                 border: '1px solid var(--accent-ring)',
@@ -1220,10 +1225,10 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                 <User size={16} color="var(--accent)" />
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-                <span suppressHydrationWarning style={{ fontSize: '11.5px', fontWeight: 600, color: 'var(--text-muted)', lineHeight: 1.1 }}>
+                <span suppressHydrationWarning style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', lineHeight: 1.1 }}>
                   {getGreeting()}
                 </span>
-                <span style={{ fontSize: '14.5px', fontWeight: 800, color: 'var(--text)', lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                <span style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text)', lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {(user?.name || user?.displayName || 'Parent').replace(/\s*ji$/i, '')} ji
                 </span>
               </div>
@@ -1233,26 +1238,24 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
             <div style={{
               display: 'flex',
               alignItems: 'center',
-              background: 'var(--surface)',
+              background: 'var(--bg-soft)',
               border: '1px solid var(--border-light)',
-              borderRadius: 'var(--radius)',
-              padding: '4px 10px',
-              gap: '8px',
-              boxShadow: 'var(--shadow-sm)',
+              borderRadius: 'var(--radius-sm)',
+              padding: '4px 8px',
+              gap: '6px',
               position: 'relative'
             }}>
               <div style={{
-                width: '26px',
-                height: '26px',
+                width: '24px',
+                height: '24px',
                 borderRadius: '50%',
                 background: 'var(--accent-soft)',
-                border: '1px solid var(--accent-ring)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 flexShrink: 0
               }}>
-                <GraduationCap size={15} color="var(--accent)" />
+                <GraduationCap size={14} color="var(--accent)" />
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', position: 'relative' }}>
@@ -1263,11 +1266,11 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                       background: 'transparent', 
                       border: 'none', 
                       color: 'var(--text)', 
-                      fontSize: '14px', 
+                      fontSize: '13px', 
                       fontWeight: 800, 
                       outline: 'none', 
                       cursor: 'pointer',
-                      paddingRight: '16px',
+                      paddingRight: '14px',
                       appearance: 'none',
                       WebkitAppearance: 'none'
                     }}
@@ -1278,9 +1281,9 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                       </option>
                     ))}
                   </select>
-                  <ChevronDown size={14} color="var(--text-muted)" style={{ position: 'absolute', right: 0, pointerEvents: 'none' }} />
+                  <ChevronDown size={12} color="var(--text-muted)" style={{ position: 'absolute', right: 0, pointerEvents: 'none' }} />
                 </div>
-                <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '-1px', fontWeight: 600 }}>
+                <span style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '-1px', fontWeight: 600 }}>
                   {(() => {
                     const active = children.find(c => c.studentCode === selectedChildCode) || children[0];
                     if (active?.className && active.className.trim()) {
@@ -1322,9 +1325,9 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
               gap: '8px',
               boxShadow: 'var(--shadow-sm)'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Moon size={22} color="#0f766e" />
-                <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 800, color: '#115e59' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Moon size={18} color="#115e59" />
+                <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 800, color: '#115e59', lineHeight: 1.2 }}>
                   Daily 5-Min Parent-Kid Sync
                 </h3>
               </div>
@@ -1388,9 +1391,9 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
               position: 'relative'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', flexWrap: 'nowrap', gap: '6px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: '0', flexShrink: 0 }}>
-                  <TrendingUp size={18} color="#2563eb" />
-                  <strong style={{ fontSize: '14px', color: '#1e40af', fontWeight: 800, letterSpacing: '0.2px', whiteSpace: 'nowrap' }}>Child at a Glance</strong>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <TrendingUp size={18} color="#1e40af" />
+                  <h3 style={{ fontSize: '14px', fontWeight: 800, color: '#1e40af', margin: 0, lineHeight: 1.2, whiteSpace: 'nowrap' }}>Child at a Glance</h3>
                 </div>
                 <span style={{
                   background: '#ffffff',
@@ -1455,14 +1458,14 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
               flexWrap: 'wrap',
               gap: '8px'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 {pendingReviews.length > 0 ? (
-                  <AlertTriangle size={22} color="#d97706" />
+                  <AlertTriangle size={18} color="#92400e" style={{ flexShrink: 0 }} />
                 ) : (
-                  <CheckCircle2 size={22} color="#059669" />
+                  <CheckCircle2 size={18} color="#065f46" style={{ flexShrink: 0 }} />
                 )}
                 <div>
-                  <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 800, color: pendingReviews.length > 0 ? '#92400e' : '#065f46' }}>
+                  <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 800, color: pendingReviews.length > 0 ? '#92400e' : '#065f46', lineHeight: 1.2 }}>
                     {pendingReviews.length > 0 
                       ? `${pendingReviews.length} thing(s) need your attention` 
                       : 'All Clear!'}
@@ -1513,6 +1516,12 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
               marginBottom: '8px',
               boxShadow: 'var(--shadow-sm)'
             }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+                <Rocket size={18} color="#6b21a8" />
+                <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 800, color: '#6b21a8', lineHeight: 1.2 }}>
+                  Quick Actions
+                </h3>
+              </div>
               {/* Bento Grid: 4 Action Modules in 1 Single Line */}
               <div style={{
                 display: 'grid',
