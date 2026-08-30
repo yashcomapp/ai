@@ -1200,8 +1200,8 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
             flexWrap: 'nowrap'
           }}>
             <div>
-              <h1 suppressHydrationWarning style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: 'var(--text)', lineHeight: '1.2' }}>
-                {getGreeting()}, Parent 👋
+              <h1 suppressHydrationWarning style={{ margin: 0, fontSize: '0.88rem', fontWeight: 700, color: 'var(--text)', lineHeight: '1.2' }}>
+                {getGreeting()}, {(user?.name || user?.displayName || 'Parent').replace(/\s*ji$/i, '')} ji
               </h1>
             </div>
 
@@ -1209,27 +1209,12 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
             <div style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '10px',
-              background: 'var(--surface)',
-              border: '1px solid var(--border-light)',
+              background: '#ffffff',
+              border: '1.5px solid #bfdbfe',
               borderRadius: '24px',
               padding: '6px 14px',
               boxShadow: 'var(--shadow-sm)'
             }}>
-              <div style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '50%',
-                background: 'var(--accent-grad)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '16px',
-                color: '#ffffff',
-                fontWeight: 700
-              }}>
-                👦
-              </div>
               <div style={{ display: 'flex', flexDirection: 'column' }}>
                 <select 
                   value={selectedChildCode}
@@ -1237,7 +1222,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                   style={{ 
                     background: 'transparent', 
                     border: 'none', 
-                    color: 'var(--text)', 
+                    color: '#1e293b', 
                     fontSize: '13px', 
                     fontWeight: 700, 
                     outline: 'none', 
@@ -1246,12 +1231,12 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                   }}
                 >
                   {children.map(c => (
-                    <option key={c.studentCode} value={c.studentCode} style={{ background: 'var(--surface)', color: 'var(--text)' }}>
+                    <option key={c.studentCode} value={c.studentCode} style={{ background: '#ffffff', color: '#1e293b' }}>
                       {c.name}
                     </option>
                   ))}
                 </select>
-                <span style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '-2px' }}>
+                <span style={{ fontSize: '10px', color: '#64748b', marginTop: '-2px', fontWeight: 600 }}>
                   {(() => {
                     const active = children.find(c => c.studentCode === selectedChildCode) || children[0];
                     if (active?.className && active.className.trim()) {
@@ -1282,9 +1267,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
         ) : (
           <>
             {/* DAILY 5-MIN PARENT-CHILD SYNC BANNER */}
-            <div className="card" style={{
-              background: 'var(--surface)',
-              border: '1px solid var(--border)',
+            <div className="card card-cyan" style={{
               borderRadius: 'var(--radius)',
               padding: '14px 18px',
               marginBottom: '16px',
@@ -1300,18 +1283,19 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                   width: '38px',
                   height: '38px',
                   borderRadius: '50%',
-                  background: 'var(--accent-soft)',
+                  background: '#ccfbf1',
+                  border: '1.5px solid #99f6e4',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   fontSize: '18px',
-                  color: 'var(--accent)',
+                  color: '#115e59',
                   flexShrink: 0
                 }}>
                   🌙
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                  <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 800, color: 'var(--text)' }}>
+                  <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 800, color: '#115e59' }}>
                     Daily 5-Min Parent-Kid Sync
                   </h3>
                   <span style={{
@@ -1319,18 +1303,18 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                     fontWeight: 700,
                     padding: '2px 8px',
                     borderRadius: 'var(--radius-pill)',
-                    background: isSyncTimeSlot() ? 'var(--success-bg)' : 'var(--surface-2)',
-                    color: isSyncTimeSlot() ? 'var(--success)' : 'var(--text-muted)',
-                    border: isSyncTimeSlot() ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid var(--border)'
+                    background: isSyncTimeSlot() ? '#ecfdf5' : '#ffffff',
+                    color: isSyncTimeSlot() ? '#059669' : '#64748b',
+                    border: isSyncTimeSlot() ? '1px solid #a7f3d0' : '1.5px solid #99f6e4'
                   }}>
-                    {isSyncTimeSlot() ? '✨ 9:30–10:30 PM IST (Active Now)' : '⏰ 9:30 PM – 10:30 PM IST Slot'}
+                    {isSyncTimeSlot() ? 'Active Now' : 'Starts at 9:30 PM IST'}
                   </span>
                 </div>
               </div>
 
               <div>
                 {dailySyncDoneToday ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(34, 197, 94, 0.15)', border: '1px solid rgba(34, 197, 94, 0.3)', padding: '8px 14px', borderRadius: 'var(--radius)', color: '#4ade80', fontWeight: 700, fontSize: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#ecfdf5', border: '1.5px solid #a7f3d0', padding: '8px 14px', borderRadius: 'var(--radius)', color: '#059669', fontWeight: 700, fontSize: '12px' }}>
                     <span>✅ Verified for Today!</span>
                   </div>
                 ) : (
@@ -1348,26 +1332,26 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                       setDailySyncOpen(true);
                     }}
                     style={{
-                      background: isSyncTimeSlot() ? 'var(--accent)' : 'var(--surface-2)',
-                      color: isSyncTimeSlot() ? '#ffffff' : 'var(--text-muted)',
+                      background: isSyncTimeSlot() ? '#0284c7' : '#ffffff',
+                      color: isSyncTimeSlot() ? '#ffffff' : '#64748b',
                       fontWeight: 700,
                       fontSize: '13px',
                       padding: '10px 18px',
                       borderRadius: '10px',
-                      border: isSyncTimeSlot() ? 'none' : '1px solid var(--border)',
+                      border: isSyncTimeSlot() ? 'none' : '1.5px solid #99f6e4',
                       cursor: isSyncTimeSlot() ? 'pointer' : 'not-allowed',
-                      opacity: isSyncTimeSlot() ? 1 : 0.65,
-                      boxShadow: isSyncTimeSlot() ? '0 2px 10px rgba(37, 99, 235, 0.3)' : 'none',
+                      opacity: isSyncTimeSlot() ? 1 : 0.85,
+                      boxShadow: isSyncTimeSlot() ? '0 2px 10px rgba(2, 132, 199, 0.3)' : 'none',
                       display: 'flex',
                       alignItems: 'center',
                       gap: '6px'
                     }}
-                    title={isSyncTimeSlot() ? 'Start live 5-minute sync with photo verification' : 'Parent-Child Sync opens only between 9:30 PM and 10:30 PM IST'}
+                    title={isSyncTimeSlot() ? 'Start live 5-minute sync with photo verification' : 'Parent-Child Sync starts at 9:30 PM IST'}
                   >
                     {isSyncTimeSlot() ? (
                       <span>✨ Start 5-Min Sync (Live Video)</span>
                     ) : (
-                      <span>🔒 Slot Opens at 9:30 PM IST</span>
+                      <span>Starts at 9:30 PM IST</span>
                     )}
                   </button>
                 )}
