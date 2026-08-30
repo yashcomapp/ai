@@ -1198,15 +1198,15 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            gap: '12px',
-            marginBottom: '18px',
+            gap: '8px',
+            marginBottom: '8px',
             flexWrap: 'nowrap'
           }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-              <span suppressHydrationWarning style={{ fontSize: '11.5px', fontWeight: 600, color: 'var(--text-muted)', lineHeight: '1.1' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+              <span suppressHydrationWarning style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', lineHeight: '1.1' }}>
                 {getGreeting()}
               </span>
-              <span style={{ fontSize: '13.5px', fontWeight: 800, color: 'var(--text)', lineHeight: '1.2' }}>
+              <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text)', lineHeight: '1.2' }}>
                 {(user?.name || user?.displayName || 'Parent').replace(/\s*ji$/i, '')} ji
               </span>
             </div>
@@ -1217,8 +1217,8 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
               alignItems: 'center',
               background: '#ffffff',
               border: '1.5px solid #bfdbfe',
-              borderRadius: '24px',
-              padding: '6px 14px',
+              borderRadius: '20px',
+              padding: '4px 10px',
               boxShadow: 'var(--shadow-sm)'
             }}>
               <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -1229,11 +1229,11 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                     background: 'transparent', 
                     border: 'none', 
                     color: '#1e293b', 
-                    fontSize: '13px', 
+                    fontSize: '12px', 
                     fontWeight: 700, 
                     outline: 'none', 
                     cursor: 'pointer',
-                    paddingRight: '12px'
+                    paddingRight: '8px'
                   }}
                 >
                   {children.map(c => (
@@ -1242,7 +1242,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                     </option>
                   ))}
                 </select>
-                <span style={{ fontSize: '10px', color: '#64748b', marginTop: '-2px', fontWeight: 600 }}>
+                <span style={{ fontSize: '9.5px', color: '#64748b', marginTop: '-2px', fontWeight: 600 }}>
                   {(() => {
                     const active = children.find(c => c.studentCode === selectedChildCode) || children[0];
                     if (active?.className && active.className.trim()) {
@@ -1275,26 +1275,26 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
             {/* DAILY 5-MIN PARENT-CHILD SYNC BANNER */}
             <div className="card card-cyan" style={{
               borderRadius: 'var(--radius)',
-              padding: '14px 18px',
-              marginBottom: '16px',
+              padding: '10px 12px',
+              marginBottom: '8px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
               flexWrap: 'wrap',
-              gap: '12px',
+              gap: '8px',
               boxShadow: 'var(--shadow-sm)'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <Moon size={28} color="#0f766e" />
-                <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 800, color: '#115e59' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Moon size={22} color="#0f766e" />
+                <h3 style={{ margin: 0, fontSize: '13px', fontWeight: 800, color: '#115e59' }}>
                   Daily 5-Min Parent-Kid Sync
                 </h3>
               </div>
 
               <div>
                 {dailySyncDoneToday ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#ecfdf5', border: '1.5px solid #a7f3d0', padding: '8px 14px', borderRadius: 'var(--radius)', color: '#059669', fontWeight: 700, fontSize: '12px' }}>
-                    <CheckCircle2 size={16} color="#059669" />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: '#ecfdf5', border: '1.5px solid #a7f3d0', padding: '6px 10px', borderRadius: 'var(--radius)', color: '#059669', fontWeight: 700, fontSize: '11px' }}>
+                    <CheckCircle2 size={14} color="#059669" />
                     <span>Verified for Today!</span>
                   </div>
                 ) : (
@@ -1315,22 +1315,22 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                       background: isSyncTimeSlot() ? '#0284c7' : '#ffffff',
                       color: isSyncTimeSlot() ? '#ffffff' : '#64748b',
                       fontWeight: 700,
-                      fontSize: '13px',
-                      padding: '10px 18px',
-                      borderRadius: '10px',
+                      fontSize: '12px',
+                      padding: '6px 12px',
+                      borderRadius: '8px',
                       border: isSyncTimeSlot() ? 'none' : '1.5px solid #99f6e4',
                       cursor: isSyncTimeSlot() ? 'pointer' : 'not-allowed',
                       opacity: isSyncTimeSlot() ? 1 : 0.85,
-                      boxShadow: isSyncTimeSlot() ? '0 2px 10px rgba(2, 132, 199, 0.3)' : 'none',
+                      boxShadow: isSyncTimeSlot() ? '0 2px 8px rgba(2, 132, 199, 0.25)' : 'none',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '6px'
+                      gap: '5px'
                     }}
                     title={isSyncTimeSlot() ? 'Start live 5-minute sync with photo verification' : 'Parent-Child Sync starts at 9:30 PM IST'}
                   >
                     {isSyncTimeSlot() ? (
                       <>
-                        <Video size={16} color="#ffffff" />
+                        <Video size={14} color="#ffffff" />
                         <span>Start 5-Min Sync</span>
                       </>
                     ) : (
@@ -1344,22 +1344,22 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
             {/* CARD 1: Child at a Glance (Soothing Royal Blue Accent Card) */}
             <div className="card card-blue" style={{
               borderRadius: 'var(--radius)',
-              padding: '16px 20px',
-              marginBottom: '14px',
+              padding: '10px 12px',
+              marginBottom: '8px',
               boxShadow: 'var(--shadow-sm)',
               position: 'relative'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexWrap: 'nowrap', gap: '8px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: '0', flexShrink: 0 }}>
-                  <TrendingUp size={22} color="#2563eb" />
-                  <strong style={{ fontSize: '14px', color: '#1e40af', fontWeight: 800, letterSpacing: '0.2px', whiteSpace: 'nowrap' }}>Child at a Glance</strong>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', flexWrap: 'nowrap', gap: '6px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: '0', flexShrink: 0 }}>
+                  <TrendingUp size={18} color="#2563eb" />
+                  <strong style={{ fontSize: '13px', color: '#1e40af', fontWeight: 800, letterSpacing: '0.2px', whiteSpace: 'nowrap' }}>Child at a Glance</strong>
                 </div>
                 <span style={{
                   background: '#ffffff',
                   color: '#1e40af',
-                  fontSize: '11px',
+                  fontSize: '10.5px',
                   fontWeight: 700,
-                  padding: '4px 10px',
+                  padding: '3px 8px',
                   borderRadius: 'var(--radius-pill)',
                   border: '1.5px solid #bfdbfe',
                   whiteSpace: 'nowrap'
@@ -1369,37 +1369,37 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
               </div>
 
               {/* 3 Stats Grid */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', alignItems: 'center' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', alignItems: 'center' }}>
                 {/* Stat 1: Avg Exam Marks */}
                 <div 
                   onClick={() => router.push(`/parent/review?child=${selectedChildCode}`)}
-                  style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', justifyContent: 'center', gap: '4px', cursor: 'pointer', background: '#ffffff', padding: '12px 6px', borderRadius: '12px', border: '1.5px solid #bfdbfe', transition: 'all 0.2s', boxShadow: '0 1px 2px rgba(37,99,235,0.06)' }}
+                  style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', justifyContent: 'center', gap: '2px', cursor: 'pointer', background: '#ffffff', padding: '8px 4px', borderRadius: '10px', border: '1.5px solid #bfdbfe', transition: 'all 0.2s', boxShadow: '0 1px 2px rgba(37,99,235,0.06)' }}
                   title="Click to view detailed exam reviews"
                 >
-                  <div style={{ fontSize: '1.85rem', fontWeight: 800, color: '#1e40af', lineHeight: 1 }}>
+                  <div style={{ fontSize: '1.55rem', fontWeight: 800, color: '#1e40af', lineHeight: 1 }}>
                     {snapshot ? Math.round(snapshot.avgScore || 0) : 0}%
                   </div>
-                  <div style={{ fontSize: '11.5px', color: '#475569', fontWeight: 700 }}>
+                  <div style={{ fontSize: '11px', color: '#475569', fontWeight: 700 }}>
                     Average Marks
                   </div>
                 </div>
 
                 {/* Stat 2: LQ Score */}
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', justifyContent: 'center', gap: '4px', background: '#ffffff', padding: '12px 6px', borderRadius: '12px', border: '1.5px solid #a7f3d0', boxShadow: '0 1px 2px rgba(5,150,105,0.06)' }}>
-                  <div style={{ fontSize: '1.85rem', fontWeight: 800, color: '#065f46', lineHeight: 1 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', justifyContent: 'center', gap: '2px', background: '#ffffff', padding: '8px 4px', borderRadius: '10px', border: '1.5px solid #a7f3d0', boxShadow: '0 1px 2px rgba(5,150,105,0.06)' }}>
+                  <div style={{ fontSize: '1.55rem', fontWeight: 800, color: '#065f46', lineHeight: 1 }}>
                     {snapshot ? Math.round(snapshot.lqScore ?? snapshot.overallMastery ?? 0) : 0}%
                   </div>
-                  <div style={{ fontSize: '11.5px', color: '#475569', fontWeight: 700 }}>
+                  <div style={{ fontSize: '11px', color: '#475569', fontWeight: 700 }}>
                     LQ Score
                   </div>
                 </div>
 
                 {/* Stat 3: Efforts % */}
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', justifyContent: 'center', gap: '4px', background: '#ffffff', padding: '12px 6px', borderRadius: '12px', border: '1.5px solid #fde68a', boxShadow: '0 1px 2px rgba(217,119,6,0.06)' }}>
-                  <div style={{ fontSize: '1.85rem', fontWeight: 800, color: '#92400e', lineHeight: 1 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', justifyContent: 'center', gap: '2px', background: '#ffffff', padding: '8px 4px', borderRadius: '10px', border: '1.5px solid #fde68a', boxShadow: '0 1px 2px rgba(217,119,6,0.06)' }}>
+                  <div style={{ fontSize: '1.55rem', fontWeight: 800, color: '#92400e', lineHeight: 1 }}>
                     {snapshot ? Math.round(snapshot.effortsPercent ?? Math.min(100, Math.round(((snapshot as any)?.practicesCompletedCount || 0) / Math.max(1, (snapshot as any)?.totalTopicsCount || 24) * 100))) : 0}%
                   </div>
-                  <div style={{ fontSize: '11.5px', color: '#475569', fontWeight: 700 }}>
+                  <div style={{ fontSize: '11px', color: '#475569', fontWeight: 700 }}>
                     Efforts %
                   </div>
                 </div>
@@ -1409,27 +1409,27 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
             {/* CARD 2: Pending Reviews / Action Ledger */}
             <div className={pendingReviews.length > 0 ? "card card-amber" : "card card-emerald"} style={{
               borderRadius: 'var(--radius)',
-              padding: '16px 20px',
-              marginBottom: '16px',
+              padding: '10px 12px',
+              marginBottom: '8px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
               flexWrap: 'wrap',
-              gap: '12px'
+              gap: '8px'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 {pendingReviews.length > 0 ? (
-                  <AlertTriangle size={28} color="#d97706" />
+                  <AlertTriangle size={22} color="#d97706" />
                 ) : (
-                  <CheckCircle2 size={28} color="#059669" />
+                  <CheckCircle2 size={22} color="#059669" />
                 )}
                 <div>
-                  <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 800, color: pendingReviews.length > 0 ? '#92400e' : '#065f46' }}>
+                  <h3 style={{ margin: 0, fontSize: '13px', fontWeight: 800, color: pendingReviews.length > 0 ? '#92400e' : '#065f46' }}>
                     {pendingReviews.length > 0 
                       ? `${pendingReviews.length} thing(s) need your attention` 
                       : 'All Clear!'}
                   </h3>
-                  <p style={{ margin: '2px 0 0 0', fontSize: '12px', color: '#475569' }}>
+                  <p style={{ margin: '1px 0 0 0', fontSize: '11px', color: '#475569' }}>
                     {pendingReviews.length > 0 
                       ? `Submission pending for review • ${pendingReviews[0]?.subject || 'Mathematics'} • Submitted today` 
                       : 'All exam paper reviews are completed and up to date.'}
@@ -1443,14 +1443,14 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                     className="btn btn-primary"
                     onClick={() => router.push(`/parent/review?child=${selectedChildCode}${pendingReviews[0]?.id ? `&select=${pendingReviews[0].id}` : ''}`)}
                     style={{
-                      padding: '8px 18px',
-                      borderRadius: '20px',
-                      fontSize: '12px',
+                      padding: '5px 12px',
+                      borderRadius: '16px',
+                      fontSize: '11px',
                       fontWeight: 800,
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '6px'
+                      gap: '4px'
                     }}
                   >
                     <span>Review Now</span>
@@ -1460,7 +1460,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                   <button
                     className="btn btn-secondary"
                     onClick={() => router.push(`/parent/review?child=${selectedChildCode}`)}
-                    style={{ padding: '6px 14px', fontSize: '12px', borderRadius: '20px', fontWeight: 700 }}
+                    style={{ padding: '4px 10px', fontSize: '11px', borderRadius: '16px', fontWeight: 700 }}
                   >
                     View History →
                   </button>
@@ -1471,15 +1471,15 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
             {/* CARD 3: Compact 1-Line Quick Actions Bento Card (Lavender Purple) */}
             <div className="card card-purple" style={{
               borderRadius: 'var(--radius)',
-              padding: '14px 16px',
-              marginBottom: '18px',
+              padding: '10px 12px',
+              marginBottom: '8px',
               boxShadow: 'var(--shadow-sm)'
             }}>
               {/* Bento Grid: 4 Action Modules in 1 Single Line */}
               <div style={{
                 display: 'grid',
                 gridTemplateColumns: 'repeat(4, 1fr)',
-                gap: '8px',
+                gap: '6px',
                 alignItems: 'stretch'
               }}>
                 {/* Bento Item 1: Attendance */}
@@ -1488,15 +1488,15 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                   style={{
                     background: '#ffffff',
                     border: '1.5px solid #bbf7d0',
-                    borderRadius: 'var(--radius)',
-                    padding: '10px 4px',
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '8px 3px',
                     cursor: 'pointer',
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
                     justifyContent: 'center',
                     textAlign: 'center',
-                    gap: '6px',
+                    gap: '4px',
                     transition: 'all 0.2s ease',
                     boxShadow: '0 1px 2px rgba(5,150,105,0.05)'
                   }}
@@ -1509,11 +1509,11 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                     e.currentTarget.style.transform = 'translateY(0)';
                   }}
                 >
-                  <Calendar size={28} color="#059669" />
-                  <div style={{ fontSize: '11px', fontWeight: 800, color: '#1e293b', lineHeight: 1.2, whiteSpace: 'nowrap' }}>
+                  <Calendar size={24} color="#059669" />
+                  <div style={{ fontSize: '10.5px', fontWeight: 800, color: '#1e293b', lineHeight: 1.2, whiteSpace: 'nowrap' }}>
                     Attendance
                   </div>
-                  <div style={{ fontSize: '10px', color: '#059669', fontWeight: 700, whiteSpace: 'nowrap' }}>
+                  <div style={{ fontSize: '9.5px', color: '#059669', fontWeight: 700, whiteSpace: 'nowrap' }}>
                     {attendanceData?.stats?.attendanceRate !== undefined ? `${attendanceData.stats.attendanceRate}%` : '100%'}
                   </div>
                 </div>
@@ -1524,15 +1524,15 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                   style={{
                     background: '#ffffff',
                     border: '1.5px solid #e9d5ff',
-                    borderRadius: 'var(--radius)',
-                    padding: '10px 4px',
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '8px 3px',
                     cursor: 'pointer',
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
                     justifyContent: 'center',
                     textAlign: 'center',
-                    gap: '6px',
+                    gap: '4px',
                     transition: 'all 0.2s ease',
                     boxShadow: '0 1px 2px rgba(124,58,237,0.05)'
                   }}
@@ -1545,11 +1545,11 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                     e.currentTarget.style.transform = 'translateY(0)';
                   }}
                 >
-                  <ClipboardList size={28} color="#7c3aed" />
-                  <div style={{ fontSize: '11px', fontWeight: 800, color: '#1e293b', lineHeight: 1.2, whiteSpace: 'nowrap' }}>
+                  <ClipboardList size={24} color="#7c3aed" />
+                  <div style={{ fontSize: '10.5px', fontWeight: 800, color: '#1e293b', lineHeight: 1.2, whiteSpace: 'nowrap' }}>
                     Exam Register
                   </div>
-                  <div style={{ fontSize: '10px', color: (childData?.snapshot?.absentExamsCount || data?.snapshot?.absentExamsCount || 0) > 0 ? '#ef4444' : '#7c3aed', fontWeight: 700, whiteSpace: 'nowrap' }}>
+                  <div style={{ fontSize: '9.5px', color: (childData?.snapshot?.absentExamsCount || data?.snapshot?.absentExamsCount || 0) > 0 ? '#ef4444' : '#7c3aed', fontWeight: 700, whiteSpace: 'nowrap' }}>
                     {(childData?.snapshot?.absentExamsCount || data?.snapshot?.absentExamsCount || 0) > 0 ? `${childData?.snapshot?.absentExamsCount || data?.snapshot?.absentExamsCount} Absent` : 'Active'}
                   </div>
                 </div>
@@ -1560,15 +1560,15 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                   style={{
                     background: '#ffffff',
                     border: '1.5px solid #fde68a',
-                    borderRadius: 'var(--radius)',
-                    padding: '10px 4px',
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '8px 3px',
                     cursor: 'pointer',
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
                     justifyContent: 'center',
                     textAlign: 'center',
-                    gap: '6px',
+                    gap: '4px',
                     transition: 'all 0.2s ease',
                     boxShadow: '0 1px 2px rgba(217,119,6,0.05)'
                   }}
@@ -1581,11 +1581,11 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                     e.currentTarget.style.transform = 'translateY(0)';
                   }}
                 >
-                  <Receipt size={28} color="#d97706" />
-                  <div style={{ fontSize: '11px', fontWeight: 800, color: '#1e293b', lineHeight: 1.2, whiteSpace: 'nowrap' }}>
+                  <Receipt size={24} color="#d97706" />
+                  <div style={{ fontSize: '10.5px', fontWeight: 800, color: '#1e293b', lineHeight: 1.2, whiteSpace: 'nowrap' }}>
                     Fees & Dues
                   </div>
-                  <div style={{ fontSize: '10px', color: '#d97706', fontWeight: 700, whiteSpace: 'nowrap' }}>
+                  <div style={{ fontSize: '9.5px', color: '#d97706', fontWeight: 700, whiteSpace: 'nowrap' }}>
                     Receipts
                   </div>
                 </div>
@@ -1596,15 +1596,15 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                   style={{
                     background: '#ffffff',
                     border: '1.5px solid #bae6fd',
-                    borderRadius: 'var(--radius)',
-                    padding: '10px 4px',
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '8px 3px',
                     cursor: 'pointer',
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
                     justifyContent: 'center',
                     textAlign: 'center',
-                    gap: '6px',
+                    gap: '4px',
                     transition: 'all 0.2s ease',
                     boxShadow: '0 1px 2px rgba(2,132,199,0.05)'
                   }}
@@ -1617,11 +1617,11 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                     e.currentTarget.style.transform = 'translateY(0)';
                   }}
                 >
-                  <MessageSquare size={28} color="#0284c7" />
-                  <div style={{ fontSize: '11px', fontWeight: 800, color: '#1e293b', lineHeight: 1.2, whiteSpace: 'nowrap' }}>
+                  <MessageSquare size={24} color="#0284c7" />
+                  <div style={{ fontSize: '10.5px', fontWeight: 800, color: '#1e293b', lineHeight: 1.2, whiteSpace: 'nowrap' }}>
                     Chat Desk
                   </div>
-                  <div style={{ fontSize: '10px', color: '#0284c7', fontWeight: 700, whiteSpace: 'nowrap' }}>
+                  <div style={{ fontSize: '9.5px', color: '#0284c7', fontWeight: 700, whiteSpace: 'nowrap' }}>
                     Messages
                   </div>
                 </div>

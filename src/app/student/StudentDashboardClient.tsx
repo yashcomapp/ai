@@ -450,7 +450,7 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
       background: 'var(--bg)',
       minHeight: '100vh'
     }}>
-      <div className="dashboard-container" style={{ maxWidth: '1000px', margin: '0 auto', padding: '6px 12px 60px 12px' }}>
+      <div className="dashboard-container" style={{ maxWidth: '1000px', margin: '0 auto', padding: '4px 8px 30px 8px' }}>
         {(!activeData && isLoading) || !profile ? (
           <>
             {renderStatsSkeleton()}
@@ -461,15 +461,15 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
             {/* CARD 1: Glance (Soothing Royal Blue Accent Card) */}
             <div className="card card-blue" style={{
               borderRadius: 'var(--radius)',
-              padding: '16px 20px',
-              marginBottom: '14px',
+              padding: '10px 12px',
+              marginBottom: '8px',
               boxShadow: 'var(--shadow-sm)',
               position: 'relative'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexWrap: 'nowrap', gap: '8px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: '0', flexShrink: 0 }}>
-                  <TrendingUp size={22} color="#2563eb" />
-                  <strong style={{ fontSize: '14px', color: '#1e40af', fontWeight: 800, letterSpacing: '0.2px', whiteSpace: 'nowrap' }}>Glance</strong>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', flexWrap: 'nowrap', gap: '6px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: '0', flexShrink: 0 }}>
+                  <TrendingUp size={18} color="#2563eb" />
+                  <strong style={{ fontSize: '13px', color: '#1e40af', fontWeight: 800, letterSpacing: '0.2px', whiteSpace: 'nowrap' }}>Glance</strong>
                 </div>
                 {/* Interactive Time Range Filter Dropdown */}
                 <select
@@ -481,14 +481,14 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
                     color: '#1e293b',
                     fontSize: '11px',
                     fontWeight: 600,
-                    padding: '4px 10px',
+                    padding: '3px 8px',
                     borderRadius: 'var(--radius-pill)',
                     border: '1.5px solid #bfdbfe',
                     outline: 'none',
                     cursor: 'pointer',
                     width: 'auto',
-                    minWidth: '95px',
-                    maxWidth: '115px',
+                    minWidth: '90px',
+                    maxWidth: '110px',
                     flexShrink: 0
                   }}
                 >
@@ -499,37 +499,37 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
               </div>
 
               {/* 3 Stats Grid */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', alignItems: 'center' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', alignItems: 'center' }}>
                 {/* Stat 1: Avg Exam Marks (Click opens results page) */}
                 <div 
                   onClick={() => router.push('/student/results')}
-                  style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', justifyContent: 'center', gap: '4px', cursor: 'pointer', background: '#ffffff', padding: '12px 6px', borderRadius: '12px', border: '1.5px solid #bfdbfe', transition: 'all 0.2s', boxShadow: '0 1px 2px rgba(37,99,235,0.06)' }}
+                  style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', justifyContent: 'center', gap: '2px', cursor: 'pointer', background: '#ffffff', padding: '8px 4px', borderRadius: '10px', border: '1.5px solid #bfdbfe', transition: 'all 0.2s', boxShadow: '0 1px 2px rgba(37,99,235,0.06)' }}
                   title="Click to view detailed exam results"
                 >
-                  <div style={{ fontSize: '1.85rem', fontWeight: 800, color: '#1e40af', lineHeight: 1 }}>
+                  <div style={{ fontSize: '1.55rem', fontWeight: 800, color: '#1e40af', lineHeight: 1 }}>
                     {resultsSummary?.examCount ? Math.round(resultsSummary.averageScore) : 0}%
                   </div>
-                  <div style={{ fontSize: '11.5px', color: '#475569', fontWeight: 700 }}>
+                  <div style={{ fontSize: '11px', color: '#475569', fontWeight: 700 }}>
                     Average Marks
                   </div>
                 </div>
 
                 {/* Stat 2: LQ Score */}
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', justifyContent: 'center', gap: '4px', background: '#ffffff', padding: '12px 6px', borderRadius: '12px', border: '1.5px solid #a7f3d0', boxShadow: '0 1px 2px rgba(5,150,105,0.06)' }}>
-                  <div style={{ fontSize: '1.85rem', fontWeight: 800, color: '#065f46', lineHeight: 1 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', justifyContent: 'center', gap: '2px', background: '#ffffff', padding: '8px 4px', borderRadius: '10px', border: '1.5px solid #a7f3d0', boxShadow: '0 1px 2px rgba(5,150,105,0.06)' }}>
+                  <div style={{ fontSize: '1.55rem', fontWeight: 800, color: '#065f46', lineHeight: 1 }}>
                     {Math.round(profile?.overallMastery || 0)}%
                   </div>
-                  <div style={{ fontSize: '11.5px', color: '#475569', fontWeight: 700 }}>
+                  <div style={{ fontSize: '11px', color: '#475569', fontWeight: 700 }}>
                     LQ Score
                   </div>
                 </div>
 
                 {/* Stat 3: Efforts % */}
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', justifyContent: 'center', gap: '4px', background: '#ffffff', padding: '12px 6px', borderRadius: '12px', border: '1.5px solid #fde68a', boxShadow: '0 1px 2px rgba(217,119,6,0.06)' }}>
-                  <div style={{ fontSize: '1.85rem', fontWeight: 800, color: '#92400e', lineHeight: 1 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', justifyContent: 'center', gap: '2px', background: '#ffffff', padding: '8px 4px', borderRadius: '10px', border: '1.5px solid #fde68a', boxShadow: '0 1px 2px rgba(217,119,6,0.06)' }}>
+                  <div style={{ fontSize: '1.55rem', fontWeight: 800, color: '#92400e', lineHeight: 1 }}>
                     {Math.round((profile as any)?.effortsPercent ?? Math.min(100, Math.round((((profile as any)?.practicesCompletedCount || 0) / Math.max(1, (profile as any)?.totalTopicsCount || 24)) * 100)))}%
                   </div>
-                  <div style={{ fontSize: '11.5px', color: '#475569', fontWeight: 700 }}>
+                  <div style={{ fontSize: '11px', color: '#475569', fontWeight: 700 }}>
                     Efforts %
                   </div>
                 </div>
@@ -539,20 +539,20 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
             {/* CARD 2: Action Needed / All Clear Ledger */}
             <div className={(needAttentionTopics.length > 0 || peerReviews.count > 0) ? "card card-amber" : "card card-emerald"} style={{
               borderRadius: 'var(--radius)',
-              padding: '14px 18px',
-              marginBottom: '14px',
+              padding: '10px 12px',
+              marginBottom: '8px',
               display: 'flex',
               flexDirection: 'column',
-              gap: '10px'
+              gap: '6px'
             }}>
               {/* Compact Header */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 {(needAttentionTopics.length > 0 || peerReviews.count > 0) ? (
-                  <AlertTriangle size={24} color="#d97706" style={{ flexShrink: 0 }} />
+                  <AlertTriangle size={20} color="#d97706" style={{ flexShrink: 0 }} />
                 ) : (
-                  <CheckCircle2 size={24} color="#059669" style={{ flexShrink: 0 }} />
+                  <CheckCircle2 size={20} color="#059669" style={{ flexShrink: 0 }} />
                 )}
-                <h3 style={{ margin: 0, fontSize: '13.5px', fontWeight: 800, color: (needAttentionTopics.length > 0 || peerReviews.count > 0) ? '#92400e' : '#065f46', lineHeight: 1.3 }}>
+                <h3 style={{ margin: 0, fontSize: '13px', fontWeight: 800, color: (needAttentionTopics.length > 0 || peerReviews.count > 0) ? '#92400e' : '#065f46', lineHeight: 1.3 }}>
                   {(needAttentionTopics.length > 0 || peerReviews.count > 0) 
                     ? `${needAttentionTopics.length + (peerReviews.count > 0 ? 1 : 0)} Action Item(s) Need Attention` 
                     : 'All Clear! You are fully on track!'}
@@ -561,14 +561,14 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
 
               {/* Peer Review Alert */}
               {peerReviews.count > 0 && (
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: '#ffffff', borderRadius: 'var(--radius-sm)', border: '1.5px solid #fde68a' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <ClipboardList size={18} color="#d97706" />
-                    <div style={{ fontWeight: 700, fontSize: '12.5px', color: '#92400e' }}>Peer Paper Review Pending</div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 10px', background: '#ffffff', borderRadius: 'var(--radius-sm)', border: '1.5px solid #fde68a' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <ClipboardList size={16} color="#d97706" />
+                    <div style={{ fontWeight: 700, fontSize: '12px', color: '#92400e' }}>Peer Paper Review Pending</div>
                   </div>
                   <button 
                     className="btn btn-primary" 
-                    style={{ padding: '5px 14px', fontSize: '11px', borderRadius: 'var(--radius-sm)', fontWeight: 700 }}
+                    style={{ padding: '4px 10px', fontSize: '11px', borderRadius: 'var(--radius-sm)', fontWeight: 700 }}
                     onClick={() => handleGoToPeerReview(peerReviews.firstExamId)}
                   >
                     Grade Paper
@@ -578,12 +578,12 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
 
               {/* Need Attention Topics List */}
               {needAttentionTopics.length > 0 && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   {needAttentionTopics.slice(0, 4).map((t: any) => (
-                    <div key={t.topicCode} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: '#ffffff', borderRadius: 'var(--radius-sm)', border: '1.5px solid #fde68a', gap: '10px' }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1 }}>
-                        <div style={{ fontWeight: 700, fontSize: '12.5px', color: '#1e293b' }}>{t.topicName}</div>
-                        <div style={{ fontSize: '11px', color: '#64748b', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <div key={t.topicCode} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 10px', background: '#ffffff', borderRadius: 'var(--radius-sm)', border: '1.5px solid #fde68a', gap: '8px' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', flex: 1 }}>
+                        <div style={{ fontWeight: 700, fontSize: '12px', color: '#1e293b' }}>{t.topicName}</div>
+                        <div style={{ fontSize: '10.5px', color: '#64748b', display: 'flex', alignItems: 'center', gap: '4px' }}>
                           <span>{t.subjectName || 'General'}</span>
                           <span>•</span>
                           {t.isAbsentExam ? (
@@ -595,7 +595,7 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
                       </div>
                       <button 
                         className="btn btn-secondary btn-sm"
-                        style={{ padding: '4px 10px', fontSize: '11px', fontWeight: 700 }}
+                        style={{ padding: '3px 8px', fontSize: '10.5px', fontWeight: 700 }}
                         onClick={() => router.push(`/student/topic/${encodeURIComponent(t.topicCode)}`)}
                       >
                         Revise
@@ -609,17 +609,17 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
             {/* CARD 3: Quick Navigation Hotspot Grid (Lavender Violet Card) */}
             <div className="card card-purple" style={{
               borderRadius: 'var(--radius)',
-              padding: '16px 20px',
-              marginBottom: '16px',
+              padding: '10px 12px',
+              marginBottom: '8px',
               boxShadow: 'var(--shadow-sm)',
               display: 'flex',
               flexDirection: 'column',
-              gap: '12px'
+              gap: '8px'
             }}>
-              <h3 style={{ margin: 0, fontSize: '13.5px', fontWeight: 800, color: '#6b21a8', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Rocket size={20} color="#7c3aed" /> Quick Navigation
+              <h3 style={{ margin: 0, fontSize: '13px', fontWeight: 800, color: '#6b21a8', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Rocket size={18} color="#7c3aed" /> Quick Navigation
               </h3>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
                 {/* Hotspot 1: Learn OS */}
                 <div 
                   onClick={() => router.push('/student/learning')}
@@ -628,21 +628,21 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
                     flexDirection: 'column',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    padding: '14px 8px',
+                    padding: '8px 4px',
                     background: '#ffffff',
                     border: '1.5px solid #e9d5ff',
                     borderRadius: 'var(--radius-sm)',
                     cursor: 'pointer',
                     textAlign: 'center',
-                    gap: '6px',
+                    gap: '4px',
                     transition: 'all 0.2s ease',
                     boxShadow: '0 1px 2px rgba(124,58,237,0.05)'
                   }}
                   onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#7c3aed'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
                   onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#e9d5ff'; e.currentTarget.style.transform = 'translateY(0)'; }}
                 >
-                  <Dumbbell size={28} color="#7c3aed" />
-                  <span style={{ fontSize: '12px', fontWeight: 700, color: '#1e293b' }}>Learn OS</span>
+                  <Dumbbell size={24} color="#7c3aed" />
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#1e293b' }}>Learn OS</span>
                 </div>
 
                 {/* Hotspot 2: Attendance showing % */}
@@ -653,21 +653,21 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
                     flexDirection: 'column',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    padding: '14px 8px',
+                    padding: '8px 4px',
                     background: '#ffffff',
                     border: '1.5px solid #bbf7d0',
                     borderRadius: 'var(--radius-sm)',
                     cursor: 'pointer',
                     textAlign: 'center',
-                    gap: '6px',
+                    gap: '4px',
                     transition: 'all 0.2s ease',
                     boxShadow: '0 1px 2px rgba(5,150,105,0.05)'
                   }}
                   onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#059669'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
                   onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#bbf7d0'; e.currentTarget.style.transform = 'translateY(0)'; }}
                 >
-                  <Calendar size={28} color="#059669" />
-                  <span style={{ fontSize: '12px', fontWeight: 700, color: '#1e293b' }}>
+                  <Calendar size={24} color="#059669" />
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#1e293b' }}>
                     Attendance ({attendanceData?.stats?.attendanceRate !== undefined ? `${attendanceData.stats.attendanceRate}%` : '100%'})
                   </span>
                 </div>
@@ -680,21 +680,21 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
                     flexDirection: 'column',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    padding: '14px 8px',
+                    padding: '8px 4px',
                     background: '#ffffff',
                     border: '1.5px solid #fde68a',
                     borderRadius: 'var(--radius-sm)',
                     cursor: 'pointer',
                     textAlign: 'center',
-                    gap: '6px',
+                    gap: '4px',
                     transition: 'all 0.2s ease',
                     boxShadow: '0 1px 2px rgba(217,119,6,0.05)'
                   }}
                   onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#d97706'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
                   onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#fde68a'; e.currentTarget.style.transform = 'translateY(0)'; }}
                 >
-                  <ClipboardList size={28} color="#d97706" />
-                  <span style={{ fontSize: '12px', fontWeight: 700, color: '#1e293b' }}>Exam Register</span>
+                  <ClipboardList size={24} color="#d97706" />
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#1e293b' }}>Exam Register</span>
                 </div>
 
                 {/* Hotspot 4: Live Chat */}
@@ -706,25 +706,25 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
                     flexDirection: 'column',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    padding: '14px 8px',
+                    padding: '8px 4px',
                     background: '#ffffff',
                     border: '1.5px solid #bae6fd',
                     borderRadius: 'var(--radius-sm)',
                     cursor: 'pointer',
                     textAlign: 'center',
-                    gap: '6px',
+                    gap: '4px',
                     transition: 'all 0.2s ease',
                     boxShadow: '0 1px 2px rgba(2,132,199,0.05)'
                   }}
                   onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#0284c7'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
                   onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#bae6fd'; e.currentTarget.style.transform = 'translateY(0)'; }}
                 >
-                  <MessageSquare size={28} color="#0284c7" />
-                  <span style={{ fontSize: '12px', fontWeight: 700, color: '#1e293b' }}>
+                  <MessageSquare size={24} color="#0284c7" />
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#1e293b' }}>
                     Live Chat
                   </span>
                   {((chatRoomsData?.rooms || []).reduce((sum: number, r: any) => sum + (r.unreadCounts?.[(user as any)?.studentCode || ''] || 0), 0)) > 0 && (
-                    <span style={{ position: 'absolute', top: '6px', right: '6px', background: '#e11d48', color: '#fff', fontSize: '10px', fontWeight: 700, padding: '2px 6px', borderRadius: '10px' }}>
+                    <span style={{ position: 'absolute', top: '4px', right: '4px', background: '#e11d48', color: '#fff', fontSize: '9px', fontWeight: 700, padding: '1px 5px', borderRadius: '8px' }}>
                       {(chatRoomsData?.rooms || []).reduce((sum: number, r: any) => sum + (r.unreadCounts?.[(user as any)?.studentCode || ''] || 0), 0)}
                     </span>
                   )}
@@ -733,89 +733,89 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
             </div>
 
         {/* ROW 2: Exams & Review Card (Full Width) */}
-        <div className="card card-academic" style={{ borderRadius: 'var(--radius-lg)', overflow: 'hidden', marginBottom: '16px', minHeight: '240px', boxShadow: 'var(--shadow-sm)' }}>
-          <div className="exams-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 18px', borderBottom: '1.5px solid #bfdbfe' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <FileText size={20} color="#1e40af" />
-              <h3 style={{ fontSize: '15px', fontWeight: 800, color: '#1e40af', margin: 0 }}>Exams & Review</h3>
+        <div className="card card-academic" style={{ borderRadius: 'var(--radius)', overflow: 'hidden', marginBottom: '8px', boxShadow: 'var(--shadow-sm)' }}>
+          <div className="exams-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', borderBottom: '1.5px solid #bfdbfe' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <FileText size={18} color="#1e40af" />
+              <h3 style={{ fontSize: '14px', fontWeight: 800, color: '#1e40af', margin: 0 }}>Exams & Review</h3>
             </div>
-            <div className="review-badge" style={{ background: '#2563eb', color: 'white', padding: '3px 10px', borderRadius: '30px', fontSize: '11.5px', fontWeight: 800, cursor: 'pointer' }}>
+            <div className="review-badge" style={{ background: '#2563eb', color: 'white', padding: '2px 8px', borderRadius: '20px', fontSize: '11px', fontWeight: 800, cursor: 'pointer' }}>
               Pending: {resultsSummary?.pendingReviewCount || 0}
             </div>
           </div>
 
           {/* Peer Review Container */}
           {peerReviews.count > 0 && (
-            <div className="peer-review-link-container" style={{ display: 'block', padding: '10px 18px', borderBottom: '1px solid var(--border-light)', background: 'var(--success-bg)' }}>
-              <a className="peer-review-link" onClick={() => handleGoToPeerReview(peerReviews.firstExamId)} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: 'var(--success)', fontSize: '12.5px', fontWeight: 700, textDecoration: 'none', cursor: 'pointer' }}>
-                <RotateCcw size={16} color="var(--success)" />
+            <div className="peer-review-link-container" style={{ display: 'block', padding: '6px 12px', borderBottom: '1px solid var(--border-light)', background: 'var(--success-bg)' }}>
+              <a className="peer-review-link" onClick={() => handleGoToPeerReview(peerReviews.firstExamId)} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: 'var(--success)', fontSize: '12px', fontWeight: 700, textDecoration: 'none', cursor: 'pointer' }}>
+                <RotateCcw size={14} color="var(--success)" />
                 <span>Peer Review Pending</span>
-                <span className="badge" style={{ background: 'var(--danger)', color: 'white', borderRadius: '50%', padding: '2px 6px', fontSize: '10px', marginLeft: '6px' }}>{peerReviews.count}</span>
+                <span className="badge" style={{ background: 'var(--danger)', color: 'white', borderRadius: '50%', padding: '1px 5px', fontSize: '9.5px', marginLeft: '4px' }}>{peerReviews.count}</span>
               </a>
-              <span className="peer-review-sub" style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginLeft: '8px' }}>Review your classmate's paper</span>
+              <span className="peer-review-sub" style={{ fontSize: '11px', color: 'var(--text-muted)', marginLeft: '6px' }}>Review your classmate's paper</span>
             </div>
           )}
 
           {/* Exam Tabs (Obj, Sub, Mock) */}
           {(user as any)?.autonomous !== true ? (
-            <div className="exam-tabs" style={{ display: 'flex', borderBottom: '1.5px solid #bfdbfe', background: '#f8fafc', padding: '8px 12px', gap: '8px' }}>
+            <div className="exam-tabs" style={{ display: 'flex', borderBottom: '1.5px solid #bfdbfe', background: '#f8fafc', padding: '6px 8px', gap: '6px' }}>
               <div 
                 className={`exam-tab ${examTab === 'objective' ? 'active' : ''}`} 
                 onClick={() => setExamTab('objective')}
-                style={{ flex: 1, textAlign: 'center', padding: '8px 0', fontSize: '13px', fontWeight: 800, cursor: 'pointer', borderRadius: '8px', background: examTab === 'objective' ? '#eff6ff' : '#ffffff', color: examTab === 'objective' ? '#2563eb' : '#475569', boxShadow: examTab === 'objective' ? '0 1px 3px rgba(37,99,235,0.1)' : 'none', border: examTab === 'objective' ? '2px solid #2563eb' : '1.5px solid #94a3b8', transition: 'all 0.18s ease' }}
+                style={{ flex: 1, textAlign: 'center', padding: '6px 0', fontSize: '12px', fontWeight: 800, cursor: 'pointer', borderRadius: '6px', background: examTab === 'objective' ? '#eff6ff' : '#ffffff', color: examTab === 'objective' ? '#2563eb' : '#475569', boxShadow: examTab === 'objective' ? '0 1px 2px rgba(37,99,235,0.08)' : 'none', border: examTab === 'objective' ? '2px solid #2563eb' : '1.5px solid #94a3b8', transition: 'all 0.18s ease' }}
               >
-                Obj <span className="tab-count" style={{ background: examTab === 'objective' ? '#2563eb' : '#64748b', color: '#ffffff', borderRadius: '10px', padding: '2px 7px', fontSize: '10.5px', fontWeight: 800, marginLeft: '4px' }}>{exams.pendingObjectiveExams.length + exams.scheduledObjectiveExams.length}</span>
+                Obj <span className="tab-count" style={{ background: examTab === 'objective' ? '#2563eb' : '#64748b', color: '#ffffff', borderRadius: '8px', padding: '1px 5px', fontSize: '10px', fontWeight: 800, marginLeft: '3px' }}>{exams.pendingObjectiveExams.length + exams.scheduledObjectiveExams.length}</span>
               </div>
               <div 
                 className={`exam-tab ${examTab === 'subjective' ? 'active' : ''}`} 
                 onClick={() => setExamTab('subjective')}
-                style={{ flex: 1, textAlign: 'center', padding: '8px 0', fontSize: '13px', fontWeight: 800, cursor: 'pointer', borderRadius: '8px', background: examTab === 'subjective' ? '#f5f3ff' : '#ffffff', color: examTab === 'subjective' ? '#7c3aed' : '#475569', boxShadow: examTab === 'subjective' ? '0 1px 3px rgba(124,58,237,0.1)' : 'none', border: examTab === 'subjective' ? '2px solid #7c3aed' : '1.5px solid #94a3b8', transition: 'all 0.18s ease' }}
+                style={{ flex: 1, textAlign: 'center', padding: '6px 0', fontSize: '12px', fontWeight: 800, cursor: 'pointer', borderRadius: '6px', background: examTab === 'subjective' ? '#f5f3ff' : '#ffffff', color: examTab === 'subjective' ? '#7c3aed' : '#475569', boxShadow: examTab === 'subjective' ? '0 1px 2px rgba(124,58,237,0.08)' : 'none', border: examTab === 'subjective' ? '2px solid #7c3aed' : '1.5px solid #94a3b8', transition: 'all 0.18s ease' }}
               >
-                Sub <span className="tab-count" style={{ background: examTab === 'subjective' ? '#7c3aed' : '#64748b', color: '#ffffff', borderRadius: '10px', padding: '2px 7px', fontSize: '10.5px', fontWeight: 800, marginLeft: '4px' }}>{exams.pendingSubjectiveExams.length + exams.scheduledSubjectiveExams.length}</span>
+                Sub <span className="tab-count" style={{ background: examTab === 'subjective' ? '#7c3aed' : '#64748b', color: '#ffffff', borderRadius: '8px', padding: '1px 5px', fontSize: '10px', fontWeight: 800, marginLeft: '3px' }}>{exams.pendingSubjectiveExams.length + exams.scheduledSubjectiveExams.length}</span>
               </div>
               <div 
                 className={`exam-tab ${examTab === 'mock' ? 'active' : ''}`} 
                 onClick={() => setExamTab('mock')}
-                style={{ flex: 1, textAlign: 'center', padding: '8px 0', fontSize: '13px', fontWeight: 800, cursor: 'pointer', borderRadius: '8px', background: examTab === 'mock' ? '#fffbeb' : '#ffffff', color: examTab === 'mock' ? '#d97706' : '#475569', boxShadow: examTab === 'mock' ? '0 1px 3px rgba(217,119,6,0.1)' : 'none', border: examTab === 'mock' ? '2px solid #d97706' : '1.5px solid #94a3b8', transition: 'all 0.18s ease' }}
+                style={{ flex: 1, textAlign: 'center', padding: '6px 0', fontSize: '12px', fontWeight: 800, cursor: 'pointer', borderRadius: '6px', background: examTab === 'mock' ? '#fffbeb' : '#ffffff', color: examTab === 'mock' ? '#d97706' : '#475569', boxShadow: examTab === 'mock' ? '0 1px 2px rgba(217,119,6,0.08)' : 'none', border: examTab === 'mock' ? '2px solid #d97706' : '1.5px solid #94a3b8', transition: 'all 0.18s ease' }}
               >
-                Mock <span className="tab-count" style={{ background: examTab === 'mock' ? '#d97706' : '#64748b', color: '#ffffff', borderRadius: '10px', padding: '2px 7px', fontSize: '10.5px', fontWeight: 800, marginLeft: '4px' }}>{(exams.pendingEntranceExams?.length || 0) + (exams.scheduledEntranceExams?.length || 0)}</span>
+                Mock <span className="tab-count" style={{ background: examTab === 'mock' ? '#d97706' : '#64748b', color: '#ffffff', borderRadius: '8px', padding: '1px 5px', fontSize: '10px', fontWeight: 800, marginLeft: '3px' }}>{(exams.pendingEntranceExams?.length || 0) + (exams.scheduledEntranceExams?.length || 0)}</span>
               </div>
             </div>
           ) : null}
 
           {/* Objective Exams List */}
           {examTab === 'objective' && (
-            <div className="pending-exams-flex-list" style={{ display: 'flex', flexDirection: 'column', padding: '12px 16px', maxHeight: '350px', overflowY: 'auto', gap: '8px' }}>
+            <div className="pending-exams-flex-list" style={{ display: 'flex', flexDirection: 'column', padding: '8px 10px', maxHeight: '350px', overflowY: 'auto', gap: '6px' }}>
               {exams.pendingObjectiveExams.length === 0 && exams.scheduledObjectiveExams.length === 0 ? (
-                <div className="no-exams" style={{ textAlign: 'center', color: 'var(--text-faint)', padding: '24px 0', fontSize: '13px' }}>No pending objective exams</div>
+                <div className="no-exams" style={{ textAlign: 'center', color: 'var(--text-faint)', padding: '16px 0', fontSize: '12.5px' }}>No pending objective exams</div>
               ) : (
                 <>
                   {exams.pendingObjectiveExams.map((exam) => (
-                    <div key={exam.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px', background: '#ffffff', borderRadius: '10px', border: '1px solid var(--border)', boxShadow: '0 1px 2px rgba(0,0,0,0.03)' }}>
-                      <div style={{ flex: 1, minWidth: 0, paddingRight: '12px' }}>
-                        <div className="pending-exam-name" style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={exam.name}>{exam.name}</div>
-                        <div className="pending-exam-details" style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                    <div key={exam.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', background: '#ffffff', borderRadius: '8px', border: '1px solid var(--border)', boxShadow: '0 1px 2px rgba(0,0,0,0.03)' }}>
+                      <div style={{ flex: 1, minWidth: 0, paddingRight: '8px' }}>
+                        <div className="pending-exam-name" style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={exam.name}>{exam.name}</div>
+                        <div className="pending-exam-details" style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '1px' }}>
                           {exam.subject} • {exam.questionsCount} Qs • {exam.duration} mins • {exam.totalMarks} Marks
                         </div>
                       </div>
-                      <button className="btn btn-primary btn-sm" onClick={() => handleStartExam(exam.id, false)}>
+                      <button className="btn btn-primary btn-sm" style={{ padding: '4px 10px', fontSize: '11px' }} onClick={() => handleStartExam(exam.id, false)}>
                         Start
                       </button>
                     </div>
                   ))}
                   {exams.scheduledObjectiveExams.map((exam) => (
-                    <div key={exam.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px', background: '#ffffff', borderRadius: '10px', border: '1px solid var(--border)', opacity: 0.85 }}>
-                      <div style={{ flex: 1, minWidth: 0, paddingRight: '12px' }}>
-                        <div className="pending-exam-name" style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={exam.name}>{exam.name}</div>
-                        <div className="pending-exam-details" style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                    <div key={exam.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', background: '#ffffff', borderRadius: '8px', border: '1px solid var(--border)', opacity: 0.85 }}>
+                      <div style={{ flex: 1, minWidth: 0, paddingRight: '8px' }}>
+                        <div className="pending-exam-name" style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={exam.name}>{exam.name}</div>
+                        <div className="pending-exam-details" style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '1px' }}>
                           {exam.subject} • {exam.questionsCount} Qs • {exam.duration} mins • {exam.totalMarks} Marks
-                          <div style={{ marginTop: '3px', color: 'var(--warning)', fontWeight: 700, fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <Clock size={12} color="var(--warning)" />
+                          <div style={{ marginTop: '2px', color: 'var(--warning)', fontWeight: 700, fontSize: '10.5px', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                            <Clock size={11} color="var(--warning)" />
                             <span>Starts: {exam.startAt ? new Date(exam.startAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—'}</span>
                           </div>
                         </div>
                       </div>
-                      <button className="btn btn-secondary btn-sm" disabled>
+                      <button className="btn btn-secondary btn-sm" style={{ padding: '4px 8px', fontSize: '10.5px' }} disabled>
                         Locked
                       </button>
                     </div>
@@ -827,37 +827,37 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
 
           {/* Subjective Exams List */}
           {examTab === 'subjective' && (
-            <div className="pending-exams-flex-list" style={{ display: 'flex', flexDirection: 'column', padding: '12px 16px', maxHeight: '350px', overflowY: 'auto', gap: '8px' }}>
+            <div className="pending-exams-flex-list" style={{ display: 'flex', flexDirection: 'column', padding: '8px 10px', maxHeight: '350px', overflowY: 'auto', gap: '6px' }}>
               {exams.pendingSubjectiveExams.length === 0 && exams.scheduledSubjectiveExams.length === 0 ? (
-                <div className="no-exams" style={{ textAlign: 'center', color: 'var(--text-faint)', padding: '24px 0', fontSize: '13px' }}>No pending subjective exams</div>
+                <div className="no-exams" style={{ textAlign: 'center', color: 'var(--text-faint)', padding: '16px 0', fontSize: '12.5px' }}>No pending subjective exams</div>
               ) : (
                 <>
                   {exams.pendingSubjectiveExams.map((exam) => (
-                    <div key={exam.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px', background: '#ffffff', borderRadius: '10px', border: '1px solid var(--border)', boxShadow: '0 1px 2px rgba(0,0,0,0.03)' }}>
-                      <div style={{ flex: 1, minWidth: 0, paddingRight: '12px' }}>
-                        <div className="pending-exam-name" style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={exam.name}>{exam.name}</div>
-                        <div className="pending-exam-details" style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                    <div key={exam.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', background: '#ffffff', borderRadius: '8px', border: '1px solid var(--border)', boxShadow: '0 1px 2px rgba(0,0,0,0.03)' }}>
+                      <div style={{ flex: 1, minWidth: 0, paddingRight: '8px' }}>
+                        <div className="pending-exam-name" style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={exam.name}>{exam.name}</div>
+                        <div className="pending-exam-details" style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '1px' }}>
                           {exam.subject} • {exam.questionsCount} Qs • {exam.totalTime} mins • {exam.totalMarks} Marks • Mode: {exam.mode}
                         </div>
                       </div>
-                      <button className="btn btn-primary btn-sm" onClick={() => handleStartExam(exam.id, true)}>
+                      <button className="btn btn-primary btn-sm" style={{ padding: '4px 10px', fontSize: '11px' }} onClick={() => handleStartExam(exam.id, true)}>
                         Start
                       </button>
                     </div>
                   ))}
                   {exams.scheduledSubjectiveExams.map((exam) => (
-                    <div key={exam.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: 'var(--bg-soft)', borderRadius: '8px', border: '1px solid var(--border-light)', opacity: 0.8 }}>
-                      <div style={{ flex: 1, minWidth: 0, paddingRight: '12px' }}>
+                    <div key={exam.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', background: 'var(--bg-soft)', borderRadius: '8px', border: '1px solid var(--border-light)', opacity: 0.8 }}>
+                      <div style={{ flex: 1, minWidth: 0, paddingRight: '8px' }}>
                         <div className="pending-exam-name" style={{ fontSize: '13px', fontWeight: 'bold', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={exam.name}>{exam.name}</div>
                         <div className="pending-exam-details" style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
                           {exam.subject} • {exam.questionsCount} Qs • {exam.totalTime} mins • {exam.totalMarks} Marks • Mode: {exam.mode}
-                          <div style={{ marginTop: '3px', color: 'var(--warning)', fontWeight: 600, fontSize: '10px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <Clock size={12} color="var(--warning)" />
+                          <div style={{ marginTop: '2px', color: 'var(--warning)', fontWeight: 600, fontSize: '10.5px', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                            <Clock size={11} color="var(--warning)" />
                             <span>Starts: {exam.startAt ? new Date(exam.startAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—'}</span>
                           </div>
                         </div>
                       </div>
-                      <button className="start-exam-small subjective" disabled style={{ background: 'var(--text-faint)', color: 'var(--text-muted)', border: 'none', padding: '6px 14px', borderRadius: '30px', fontSize: '11px', fontWeight: 600, cursor: 'not-allowed', flexShrink: 0 }}>
+                      <button className="start-exam-small subjective" disabled style={{ background: 'var(--text-faint)', color: 'var(--text-muted)', border: 'none', padding: '4px 10px', borderRadius: '20px', fontSize: '10.5px', fontWeight: 600, cursor: 'not-allowed', flexShrink: 0 }}>
                         Locked
                       </button>
                     </div>
@@ -869,37 +869,37 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
 
           {/* Mock Exams List */}
           {examTab === 'mock' && (
-            <div className="pending-exams-flex-list" style={{ display: 'flex', flexDirection: 'column', padding: '10px 16px', maxHeight: '350px', overflowY: 'auto', gap: '6px' }}>
+            <div className="pending-exams-flex-list" style={{ display: 'flex', flexDirection: 'column', padding: '8px 10px', maxHeight: '350px', overflowY: 'auto', gap: '6px' }}>
               {(exams.pendingEntranceExams?.length || 0) === 0 && (exams.scheduledEntranceExams?.length || 0) === 0 ? (
-                <div className="no-exams" style={{ textAlign: 'center', color: 'var(--text-faint)', padding: '20px 0' }}>No pending mock exams</div>
+                <div className="no-exams" style={{ textAlign: 'center', color: 'var(--text-faint)', padding: '16px 0', fontSize: '12.5px' }}>No pending mock exams</div>
               ) : (
                 <>
                   {(exams.pendingEntranceExams || []).map((exam) => (
-                    <div key={exam.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: 'var(--bg-soft)', borderRadius: '8px', border: '1px solid var(--border-light)' }}>
-                      <div style={{ flex: 1, minWidth: 0, paddingRight: '12px' }}>
+                    <div key={exam.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', background: 'var(--bg-soft)', borderRadius: '8px', border: '1px solid var(--border-light)' }}>
+                      <div style={{ flex: 1, minWidth: 0, paddingRight: '8px' }}>
                         <div className="pending-exam-name" style={{ fontSize: '13px', fontWeight: 'bold', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={exam.name}>{exam.name}</div>
                         <div className="pending-exam-details" style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
                           {exam.subject} • {exam.questionsCount} Qs • {exam.duration} mins • {exam.totalMarks} Marks
                         </div>
                       </div>
-                      <button className="start-exam-small" onClick={() => handleStartExam(exam.id, false)} style={{ background: 'var(--accent-grad)', color: 'white', border: 'none', padding: '6px 14px', borderRadius: '30px', fontSize: '11px', fontWeight: 600, cursor: 'pointer', flexShrink: 0 }}>
+                      <button className="start-exam-small" onClick={() => handleStartExam(exam.id, false)} style={{ background: 'var(--accent-grad)', color: 'white', border: 'none', padding: '4px 10px', borderRadius: '20px', fontSize: '10.5px', fontWeight: 600, cursor: 'pointer', flexShrink: 0 }}>
                         Start
                       </button>
                     </div>
                   ))}
                   {(exams.scheduledEntranceExams || []).map((exam) => (
-                    <div key={exam.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: 'var(--bg-soft)', borderRadius: '8px', border: '1px solid var(--border-light)', opacity: 0.8 }}>
-                      <div style={{ flex: 1, minWidth: 0, paddingRight: '12px' }}>
+                    <div key={exam.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', background: 'var(--bg-soft)', borderRadius: '8px', border: '1px solid var(--border-light)', opacity: 0.8 }}>
+                      <div style={{ flex: 1, minWidth: 0, paddingRight: '8px' }}>
                         <div className="pending-exam-name" style={{ fontSize: '13px', fontWeight: 'bold', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={exam.name}>{exam.name}</div>
                         <div className="pending-exam-details" style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
                           {exam.subject} • {exam.questionsCount} Qs • {exam.duration} mins • {exam.totalMarks} Marks
-                          <div style={{ marginTop: '3px', color: 'var(--warning)', fontWeight: 600, fontSize: '10px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <Clock size={12} color="var(--warning)" />
+                          <div style={{ marginTop: '2px', color: 'var(--warning)', fontWeight: 600, fontSize: '10.5px', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                            <Clock size={11} color="var(--warning)" />
                             <span>Starts: {exam.startAt ? new Date(exam.startAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—'}</span>
                           </div>
                         </div>
                       </div>
-                      <button className="start-exam-small" disabled style={{ background: 'var(--text-faint)', color: 'var(--text-muted)', border: 'none', padding: '6px 14px', borderRadius: '30px', fontSize: '11px', fontWeight: 600, cursor: 'not-allowed', flexShrink: 0 }}>
+                      <button className="start-exam-small" disabled style={{ background: 'var(--text-faint)', color: 'var(--text-muted)', border: 'none', padding: '4px 10px', borderRadius: '20px', fontSize: '10.5px', fontWeight: 600, cursor: 'not-allowed', flexShrink: 0 }}>
                         Locked
                       </button>
                     </div>
@@ -913,31 +913,31 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
         {/* Today's Study & Practice (Combined Card) */}
         {((exams.studyChips && exams.studyChips.length > 0) || (exams.dailyHomePractices && exams.dailyHomePractices.length > 0)) && (
           <div className="card card-cyan" style={{ 
-            borderRadius: 'var(--radius-lg)', 
-            padding: '14px 18px', 
-            marginBottom: '16px',
+            borderRadius: 'var(--radius)', 
+            padding: '10px 12px', 
+            marginBottom: '8px',
             boxShadow: 'var(--shadow-sm)'
           }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', borderBottom: '1.5px solid #99f6e4', paddingBottom: '8px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <BookOpen size={20} color="#115e59" />
-                <h3 style={{ fontSize: '14px', fontWeight: 800, margin: 0, color: '#115e59', whiteSpace: 'nowrap' }}>Today's Study & Practice</h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', borderBottom: '1.5px solid #99f6e4', paddingBottom: '6px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <BookOpen size={18} color="#115e59" />
+                <h3 style={{ fontSize: '13px', fontWeight: 800, margin: 0, color: '#115e59', whiteSpace: 'nowrap' }}>Today's Study & Practice</h3>
               </div>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {/* Part 1: Learning Material */}
               {exams.studyChips && exams.studyChips.map((chip: any) => (
-                <div key={chip.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', paddingBottom: exams.dailyHomePractices?.length ? '12px' : '0', borderBottom: exams.dailyHomePractices?.length ? '1px dashed var(--border-light)' : 'none' }}>
-                  <div style={{ flex: '1 1 280px' }}>
-                    <div style={{ fontWeight: 800, fontSize: '13px', lineHeight: 1.3, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <BookOpen size={16} color="#0f766e" style={{ flexShrink: 0 }} />
+                <div key={chip.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', paddingBottom: exams.dailyHomePractices?.length ? '8px' : '0', borderBottom: exams.dailyHomePractices?.length ? '1px dashed var(--border-light)' : 'none' }}>
+                  <div style={{ flex: '1 1 240px' }}>
+                    <div style={{ fontWeight: 800, fontSize: '12.5px', lineHeight: 1.3, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <BookOpen size={15} color="#0f766e" style={{ flexShrink: 0 }} />
                       <span>{chip.isTomorrow ? "Tomorrow's Study Sheet" : (chip.dayName ? `${chip.dayName} Study Sheet` : "Today's Study Sheet")} — {chip.topics && chip.topics.length > 0 ? chip.topics.join(', ') : chip.chapterName}</span>
                     </div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                    <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', marginTop: '1px' }}>
                       {chip.subject} • <strong>{chip.totalQuestions} Questions</strong>
                       {chip.isTomorrow && (
-                        <span className="badge" style={{ background: '#22c55e', color: 'white', marginLeft: '8px', padding: '2px 6px', borderRadius: '4px', fontSize: '9px', fontWeight: 700 }}>Early Access</span>
+                        <span className="badge" style={{ background: '#22c55e', color: 'white', marginLeft: '6px', padding: '1px 5px', borderRadius: '4px', fontSize: '9px', fontWeight: 700 }}>Early Access</span>
                       )}
                     </div>
                   </div>
@@ -956,7 +956,7 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
                         alert('Failed to generate protected PDF: ' + err.message);
                       }
                     }}
-                    style={{ padding: '5px 12px', fontSize: '11px', fontWeight: 700, whiteSpace: 'nowrap' }}
+                    style={{ padding: '4px 10px', fontSize: '10.5px', fontWeight: 700, whiteSpace: 'nowrap' }}
                   >
                     🔒 Download PDF
                   </button>
@@ -968,18 +968,18 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
                 const isMathHP = /math|algebra|geometry|ganit/i.test(hp.subject || '');
                 const unlockTimeStr = isMathHP ? "5:00 AM" : "8:30 PM";
                 return (
-                  <div key={hp.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-                    <div style={{ flex: '1 1 280px' }}>
-                      <div style={{ fontWeight: 800, fontSize: '13px', lineHeight: 1.3, color: 'var(--text)' }}>
+                  <div key={hp.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                    <div style={{ flex: '1 1 240px' }}>
+                      <div style={{ fontWeight: 800, fontSize: '12.5px', lineHeight: 1.3, color: 'var(--text)' }}>
                         ✍️ {hp.dayName ? `${hp.dayName} Practice Sheet` : "Daily Practice Sheet"} {!hp.isActive && (
                           hp.isExpired ? (
-                            <span style={{ color: 'var(--text-muted)', fontSize: '10px', fontWeight: 'normal', marginLeft: '4px' }}>⏳ (Closed)</span>
+                            <span style={{ color: 'var(--text-muted)', fontSize: '9.5px', fontWeight: 'normal', marginLeft: '4px' }}>⏳ (Closed)</span>
                           ) : (
-                            <span style={{ color: 'var(--warning)', fontSize: '10px', fontWeight: 'normal', marginLeft: '4px' }}>⏳ (Starts at {unlockTimeStr})</span>
+                            <span style={{ color: 'var(--warning)', fontSize: '9.5px', fontWeight: 'normal', marginLeft: '4px' }}>⏳ (Starts at {unlockTimeStr})</span>
                           )
                         )}
                       </div>
-                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                      <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', marginTop: '1px' }}>
                         {hp.subject} • <strong>{hp.totalMarks} Marks</strong> ({hp.totalQuestions} Questions)
                       </div>
                     </div>
@@ -988,30 +988,30 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
                       <button 
                         className="btn btn-primary btn-sm"
                         onClick={() => router.push(`/student/take-subjective-exam?examId=${hp.id}`)}
-                        style={{ padding: '5px 12px', fontSize: '11px', fontWeight: 700, whiteSpace: 'nowrap' }}
+                        style={{ padding: '4px 10px', fontSize: '10.5px', fontWeight: 700, whiteSpace: 'nowrap' }}
                       >
                         Start Test
                       </button>
                     ) : (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                         {hp.isExpired ? (
                           <>
-                            <span className="badge" style={{ background: 'var(--text-faint)', color: 'var(--text-muted)', padding: '4px 8px', borderRadius: '4px', fontSize: '10px', fontWeight: 700 }}>Closed</span>
+                            <span className="badge" style={{ background: 'var(--text-faint)', color: 'var(--text-muted)', padding: '2px 6px', borderRadius: '4px', fontSize: '9.5px', fontWeight: 700 }}>Closed</span>
                             <button 
                               className="btn btn-secondary btn-sm"
                               disabled
-                              style={{ padding: '5px 12px', fontSize: '11px', fontWeight: 700, cursor: 'not-allowed', opacity: 0.6, whiteSpace: 'nowrap' }}
+                              style={{ padding: '4px 8px', fontSize: '10.5px', fontWeight: 700, cursor: 'not-allowed', opacity: 0.6, whiteSpace: 'nowrap' }}
                             >
                               🔒 Closed
                             </button>
                           </>
                         ) : (
                           <>
-                            <span className="badge" style={{ background: 'var(--warning)', color: 'white', padding: '4px 8px', borderRadius: '4px', fontSize: '10px', fontWeight: 700 }}>Upcoming</span>
+                            <span className="badge" style={{ background: 'var(--warning)', color: 'white', padding: '2px 6px', borderRadius: '4px', fontSize: '9.5px', fontWeight: 700 }}>Upcoming</span>
                             <button 
                               className="btn btn-secondary btn-sm"
                               disabled
-                              style={{ padding: '5px 12px', fontSize: '11px', fontWeight: 700, cursor: 'not-allowed', opacity: 0.6, whiteSpace: 'nowrap' }}
+                              style={{ padding: '4px 8px', fontSize: '10.5px', fontWeight: 700, cursor: 'not-allowed', opacity: 0.6, whiteSpace: 'nowrap' }}
                             >
                               🔒 Unlocks at {unlockTimeStr}
                             </button>

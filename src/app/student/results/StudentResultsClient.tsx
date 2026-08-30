@@ -332,18 +332,18 @@ export default function StudentResults({ initialData }: { initialData?: { result
         .mobile-responsive-grid {
           display: grid;
           grid-template-columns: repeat(4, 1fr) !important;
-          gap: 8px;
-          margin-bottom: 24px;
+          gap: 6px;
+          margin-bottom: 10px;
         }
         @media (max-width: 640px) {
           .mobile-responsive-grid {
             grid-template-columns: repeat(2, 1fr) !important;
-            gap: 10px;
+            gap: 6px;
           }
         }
       `}</style>
 
-      <div className="dashboard-container" style={{ maxWidth: '1000px', width: '100%', margin: '0 auto', padding: '24px 12px' }}>
+      <div className="dashboard-container" style={{ maxWidth: '1000px', width: '100%', margin: '0 auto', padding: '10px 8px 30px 8px' }}>
         {loading ? (
           <>
             {renderWidgetsSkeleton()}
@@ -354,26 +354,26 @@ export default function StudentResults({ initialData }: { initialData?: { result
           <>
             {/* Statistics Widgets */}
             <div className="mobile-responsive-grid">
-              <div className="card mobile-responsive-card" style={{ background: 'var(--surface)', padding: '12px 8px', borderRadius: 'var(--radius-lg)', textAlign: 'center', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', minHeight: '64px' }}>
-                <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--accent)' }}>{examsList.length}</div>
-                <div style={{ fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', marginTop: '4px', lineHeight: '1.2' }}>Exams Submitted</div>
+              <div className="card mobile-responsive-card" style={{ background: 'var(--surface)', padding: '8px 4px', borderRadius: 'var(--radius)', textAlign: 'center', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', minHeight: '52px' }}>
+                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--accent)' }}>{examsList.length}</div>
+                <div style={{ fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', marginTop: '2px', lineHeight: '1.2' }}>Exams Submitted</div>
               </div>
-              <div className="card mobile-responsive-card" style={{ background: 'var(--surface)', padding: '12px 8px', borderRadius: 'var(--radius-lg)', textAlign: 'center', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', minHeight: '64px' }}>
-                <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--success)' }}>{avgExamScore}%</div>
-                <div style={{ fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', marginTop: '4px', lineHeight: '1.2' }}>Average Exam Score</div>
+              <div className="card mobile-responsive-card" style={{ background: 'var(--surface)', padding: '8px 4px', borderRadius: 'var(--radius)', textAlign: 'center', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', minHeight: '52px' }}>
+                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--success)' }}>{avgExamScore}%</div>
+                <div style={{ fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', marginTop: '2px', lineHeight: '1.2' }}>Average Exam Score</div>
               </div>
-              <div className="card mobile-responsive-card" style={{ background: 'var(--surface)', padding: '12px 8px', borderRadius: 'var(--radius-lg)', textAlign: 'center', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', minHeight: '64px' }}>
-                <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--accent-light-bg)' }}>{practiceList.length}</div>
-                <div style={{ fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', marginTop: '4px', lineHeight: '1.2' }}>Practice Sets Done</div>
+              <div className="card mobile-responsive-card" style={{ background: 'var(--surface)', padding: '8px 4px', borderRadius: 'var(--radius)', textAlign: 'center', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', minHeight: '52px' }}>
+                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--accent-light-bg)' }}>{practiceList.length}</div>
+                <div style={{ fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', marginTop: '2px', lineHeight: '1.2' }}>Practice Sets Done</div>
               </div>
-              <div className="card mobile-responsive-card" style={{ background: 'var(--surface)', padding: '12px 8px', borderRadius: 'var(--radius-lg)', textAlign: 'center', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', minHeight: '64px' }}>
-                <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--success)' }}>{avgPracticeScore}%</div>
-                <div style={{ fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', marginTop: '4px', lineHeight: '1.2' }}>Average Practice Score</div>
+              <div className="card mobile-responsive-card" style={{ background: 'var(--surface)', padding: '8px 4px', borderRadius: 'var(--radius)', textAlign: 'center', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', minHeight: '52px' }}>
+                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--success)' }}>{avgPracticeScore}%</div>
+                <div style={{ fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', marginTop: '2px', lineHeight: '1.2' }}>Average Practice Score</div>
               </div>
             </div>
 
             {/* Tab Controls */}
-            <div className="review-tabs" style={{ display: 'flex', gap: '8px', marginBottom: '16px', alignItems: 'center' }}>
+            <div className="review-tabs" style={{ display: 'flex', gap: '6px', marginBottom: '10px', alignItems: 'center' }}>
               <button className={`tab-btn ${activeTab === 'exams' ? 'active' : ''}`} onClick={() => setActiveTab('exams')} style={{ flex: 1 }}>
                 📝 Formal Exams
               </button>
@@ -385,7 +385,7 @@ export default function StudentResults({ initialData }: { initialData?: { result
             {/* Accordion Lists */}
             <div id="results-accordion-section">
               {sortedSubjects.length === 0 ? (
-                <div className="card" style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', padding: '40px 0', textAlign: 'center', color: 'var(--text-faint)' }}>
+                <div className="card" style={{ background: 'var(--surface)', borderRadius: 'var(--radius)', border: '1px solid var(--border-light)', padding: '24px 0', textAlign: 'center', color: 'var(--text-faint)' }}>
                   📭 No submissions found in this category.
                 </div>
               ) : (
@@ -399,28 +399,28 @@ export default function StudentResults({ initialData }: { initialData?: { result
               const sortedChapters = Array.from(chapters.keys()).sort();
 
               return (
-                <div key={subjName} className="subject-group" style={{ marginBottom: '16px', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-lg)', background: 'var(--surface)', overflow: 'hidden' }}>
+                <div key={subjName} className="subject-group" style={{ marginBottom: '8px', border: '1px solid var(--border-light)', borderRadius: 'var(--radius)', background: 'var(--surface)', overflow: 'hidden' }}>
                   <div 
                     className="subject-header" 
                     onClick={() => toggleSubject(subjName)}
-                    style={{ padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-soft)', cursor: 'pointer', borderBottom: isSubjExpanded ? '1px solid var(--border-light)' : 'none' }}
+                    style={{ padding: '8px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-soft)', cursor: 'pointer', borderBottom: isSubjExpanded ? '1px solid var(--border-light)' : 'none' }}
                   >
-                    <div className="subject-title" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <span className="subject-icon" style={{ fontSize: '1.2rem' }}>📖</span>
-                      <span className="subject-name" style={{ fontWeight: 'bold', fontSize: '14px' }}>{subjName}</span>
-                      <span className="subject-stats" style={{ fontSize: '11px', color: 'var(--text-muted)' }}>({allSubjItems.length} attempts)</span>
+                    <div className="subject-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span className="subject-icon" style={{ fontSize: '1.1rem' }}>📖</span>
+                      <span className="subject-name" style={{ fontWeight: 'bold', fontSize: '13.5px' }}>{subjName}</span>
+                      <span className="subject-stats" style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>({allSubjItems.length} attempts)</span>
                     </div>
-                    <div className="subject-progress" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <div className="subject-progress-bar" style={{ width: '80px', height: '6px', background: 'var(--border-light)', borderRadius: '3px', overflow: 'hidden' }}>
+                    <div className="subject-progress" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <div className="subject-progress-bar" style={{ width: '70px', height: '5px', background: 'var(--border-light)', borderRadius: '3px', overflow: 'hidden' }}>
                         <div className="subject-progress-fill" style={{ width: `${subjectAvgScore}%`, height: '100%', background: subjProgressColor }}></div>
                       </div>
-                      <span className="subject-percent" style={{ fontSize: '12px', fontWeight: 600 }}>{Math.round(subjectAvgScore)}%</span>
-                      <span className={`expand-icon ${isSubjExpanded ? 'expanded' : ''}`} style={{ fontSize: '10px', transition: 'transform 0.2s', transform: isSubjExpanded ? 'rotate(180deg)' : 'none' }}>▼</span>
+                      <span className="subject-percent" style={{ fontSize: '11.5px', fontWeight: 600 }}>{Math.round(subjectAvgScore)}%</span>
+                      <span className={`expand-icon ${isSubjExpanded ? 'expanded' : ''}`} style={{ fontSize: '9px', transition: 'transform 0.2s', transform: isSubjExpanded ? 'rotate(180deg)' : 'none' }}>▼</span>
                     </div>
                   </div>
 
                   {isSubjExpanded && (
-                    <div className="subject-content" style={{ padding: '12px 20px' }}>
+                    <div className="subject-content" style={{ padding: '6px 10px' }}>
                       {sortedChapters.map(chapterName => {
                         const items = chapters.get(chapterName)!;
                         const chapterAvgScore = items.reduce((acc, t) => acc + t.percentage, 0) / items.length;
@@ -431,27 +431,27 @@ export default function StudentResults({ initialData }: { initialData?: { result
                         const sortedAttempts = getSortedAttempts(items);
 
                         return (
-                          <div key={chapterName} className="chapter-group" style={{ marginBottom: '12px', border: '1px solid var(--border-light)', borderRadius: 'var(--radius)', background: 'var(--bg-soft)', overflow: 'hidden' }}>
+                          <div key={chapterName} className="chapter-group" style={{ marginBottom: '6px', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', background: 'var(--bg-soft)', overflow: 'hidden' }}>
                             <div 
                               className="chapter-header" 
                               onClick={() => toggleChapter(subjName, chapterName)}
-                              style={{ padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', borderBottom: isChExpanded ? '1px solid var(--border-light)' : 'none' }}
+                              style={{ padding: '6px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', borderBottom: isChExpanded ? '1px solid var(--border-light)' : 'none' }}
                             >
-                              <div className="chapter-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <span className="expand-icon" style={{ fontSize: '9px', transform: isChExpanded ? 'rotate(90deg)' : 'none', transition: 'transform 0.15s' }}>▶</span>
-                                <span className="chapter-name" style={{ fontWeight: 600, fontSize: '13px' }}>📘 {chapterName}</span>
-                                <span className="chapter-stats" style={{ fontSize: '10px', color: 'var(--text-muted)' }}>({items.length} attempts)</span>
+                              <div className="chapter-title" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <span className="expand-icon" style={{ fontSize: '8px', transform: isChExpanded ? 'rotate(90deg)' : 'none', transition: 'transform 0.15s' }}>▶</span>
+                                <span className="chapter-name" style={{ fontWeight: 600, fontSize: '12.5px' }}>📘 {chapterName}</span>
+                                <span className="chapter-stats" style={{ fontSize: '9.5px', color: 'var(--text-muted)' }}>({items.length} attempts)</span>
                               </div>
-                              <div className="chapter-progress" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                <div className="chapter-progress-bar" style={{ width: '60px', height: '4px', background: 'var(--border-light)', borderRadius: '2px', overflow: 'hidden' }}>
+                              <div className="chapter-progress" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <div className="chapter-progress-bar" style={{ width: '50px', height: '4px', background: 'var(--border-light)', borderRadius: '2px', overflow: 'hidden' }}>
                                   <div className="chapter-progress-fill" style={{ width: `${chapterAvgScore}%`, height: '100%', background: chProgressColor }}></div>
                                 </div>
-                                <span className="chapter-percent" style={{ fontSize: '11px', fontWeight: 600 }}>{Math.round(chapterAvgScore)}%</span>
+                                <span className="chapter-percent" style={{ fontSize: '10.5px', fontWeight: 600 }}>{Math.round(chapterAvgScore)}%</span>
                               </div>
                             </div>
 
                             {isChExpanded && (
-                              <div className="topics-list" style={{ padding: '8px 12px' }}>
+                              <div className="topics-list" style={{ padding: '4px 6px' }}>
                                 <div style={{ width: '100%', overflowX: 'auto', WebkitOverflowScrolling: 'touch', display: 'block' }}>
                                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', minWidth: '600px' }}>
                                     <thead>

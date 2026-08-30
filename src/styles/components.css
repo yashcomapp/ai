@@ -28,26 +28,26 @@
 }
 
 .card-header {
-    padding: 14px 18px;
+    padding: 8px 12px;
     border-bottom: 1.5px solid var(--border-light);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 8px;
+    gap: 6px;
     font-weight: 700;
-    font-size: 15.5px;
+    font-size: 14px;
     color: var(--text);
 }
-.card-header h1,.card-header h2,.card-header h3 { font-size: 15.5px; font-weight: 700; color: var(--text); margin: 0; }
-.card-body { padding: 14px 16px; }
+.card-header h1,.card-header h2,.card-header h3 { font-size: 14px; font-weight: 700; color: var(--text); margin: 0; }
+.card-body { padding: 8px 10px; }
 .card-footer {
-    padding: 12px 18px;
+    padding: 6px 10px;
     border-top: 1.5px solid var(--border-light);
     background: var(--surface-2);
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    gap: 8px;
+    gap: 6px;
 }
 
 /* Color-Differentiated Card Layout Variants (Full Soft Pastel Tints - Zero Eye Strain) */
@@ -195,9 +195,9 @@
 }
 
 /* Card modifiers */
-.card-compact .card-body { padding: 10px 14px; }
-.card-compact .card-header { padding: 10px 14px; }
-.card-hover:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+.card-compact .card-body { padding: 6px 8px; }
+.card-compact .card-header { padding: 6px 8px; }
+.card-hover:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
 .card-clickable { cursor: pointer; }
 
 /* Stat card */
@@ -219,25 +219,25 @@
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
-    gap: 8px;
-    min-height: 32px;
+    gap: 6px;
+    min-height: 28px;
 }
 .stats-grid-container,
 .parent-snapshot-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr) !important;
-    gap: 8px;
+    gap: 6px;
     background: transparent;
     border: none;
-    border-radius: var(--radius-lg);
-    margin-top: 10px;
-    margin-bottom: 16px;
+    border-radius: var(--radius);
+    margin-top: 6px;
+    margin-bottom: 8px;
 }
 @media (min-width: 768px) {
     .stats-grid-container,
     .parent-snapshot-grid {
         grid-template-columns: repeat(9, 1fr) !important;
-        gap: 10px;
+        gap: 8px;
     }
 }
 
@@ -245,12 +245,12 @@
 .admin-quick-actions-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
+    gap: 8px;
 }
 @media (min-width: 768px) {
     .admin-quick-actions-grid {
         grid-template-columns: repeat(5, 1fr);
-        gap: 12px;
+        gap: 10px;
     }
 }
 .stat-item,
@@ -263,9 +263,9 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 14px 8px;
+    padding: 8px 4px;
     min-width: 0;
-    gap: 4px;
+    gap: 3px;
     transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease;
     text-align: center;
     user-select: none;

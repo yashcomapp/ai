@@ -325,7 +325,7 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
         }
       `}</style>
 
-      <div className="dashboard-container" style={{ maxWidth: '1000px', margin: '0 auto', padding: '24px 12px' }}>
+      <div className="dashboard-container" style={{ maxWidth: '1000px', margin: '0 auto', padding: '10px 8px 30px 8px' }}>
         {loading ? (
           <>
             {renderToolbarSkeleton()}
@@ -335,24 +335,24 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
         ) : (
           <>
             {/* Search & Toolbars */}
-            <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap', alignItems: 'center' }}>
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
               <input 
                 type="text" 
                 placeholder="Search subject, chapter or topic..." 
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                style={{ flex: 1, minWidth: '240px', padding: '8px 16px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)' }}
+                style={{ flex: 1, minWidth: '240px', padding: '6px 12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: '13px' }}
               />
             </div>
 
             {alertMsg && (
-              <div className={`alert-box ${alertMsg.isError ? 'alert-box-danger' : 'alert-box-success'}`} style={{ display: 'block', marginBottom: '16px' }}>
+              <div className={`alert-box ${alertMsg.isError ? 'alert-box-danger' : 'alert-box-success'}`} style={{ display: 'block', marginBottom: '8px' }}>
                 {alertMsg.text}
               </div>
             )}
 
             {/* Tab Controls (Focus is fully restored) */}
-            <div className="review-tabs" style={{ display: 'flex', gap: '8px', marginBottom: '16px', overflowX: 'auto', paddingBottom: '4px' }}>
+            <div className="review-tabs" style={{ display: 'flex', gap: '6px', marginBottom: '10px', overflowX: 'auto', paddingBottom: '2px' }}>
               <button className={`tab-btn ${activeTab === 'needsAttention' ? 'active' : ''}`} onClick={() => setActiveTab('needsAttention')}>
                 🚨 Focus <span className="tab-count">{data ? data.needsAttention.length : 0}</span>
               </button>
@@ -373,7 +373,7 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
         {!loading && (
           <div id="student-learning-pathway">
             {sortedSubjects.length === 0 ? (
-              <div className="empty-state" style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-faint)' }}>📭 No topics found in this category.</div>
+              <div className="empty-state" style={{ textAlign: 'center', padding: '24px 0', color: 'var(--text-faint)' }}>📭 No topics found in this category.</div>
             ) : (
               sortedSubjects.map(subjName => {
                 const chapters = grouped.get(subjName)!;
@@ -396,28 +396,28 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                 });
 
                 return (
-                  <div key={subjName} className="subject-group" style={{ marginBottom: '16px', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-lg)', background: 'var(--surface)', overflow: 'hidden' }}>
+                  <div key={subjName} className="subject-group" style={{ marginBottom: '8px', border: '1px solid var(--border-light)', borderRadius: 'var(--radius)', background: 'var(--surface)', overflow: 'hidden' }}>
                     <div 
                       className="subject-header" 
                       onClick={() => toggleSubject(subjName)}
-                      style={{ padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-soft)', cursor: 'pointer', borderBottom: isSubjExpanded ? '1px solid var(--border-light)' : 'none' }}
+                      style={{ padding: '8px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-soft)', cursor: 'pointer', borderBottom: isSubjExpanded ? '1px solid var(--border-light)' : 'none' }}
                     >
-                      <div className="subject-title" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <span className="subject-icon" style={{ fontSize: '1.2rem' }}>📖</span>
-                        <span className="subject-name" style={{ fontWeight: 'bold', fontSize: '14px' }}>{subjName}</span>
-                        <span className="subject-stats" style={{ fontSize: '11px', color: 'var(--text-muted)' }}>({allSubjTopics.length} topics)</span>
+                      <div className="subject-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span className="subject-icon" style={{ fontSize: '1.1rem' }}>📖</span>
+                        <span className="subject-name" style={{ fontWeight: 'bold', fontSize: '13.5px' }}>{subjName}</span>
+                        <span className="subject-stats" style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>({allSubjTopics.length} topics)</span>
                       </div>
-                      <div className="subject-progress" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <div className="subject-progress-bar" style={{ width: '80px', height: '6px', background: 'var(--border-light)', borderRadius: '3px', overflow: 'hidden' }}>
+                      <div className="subject-progress" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div className="subject-progress-bar" style={{ width: '70px', height: '5px', background: 'var(--border-light)', borderRadius: '3px', overflow: 'hidden' }}>
                           <div className="subject-progress-fill" style={{ width: `${subjectMastery}%`, height: '100%', background: subjProgressColor }}></div>
                         </div>
-                        <span className="subject-percent" style={{ fontSize: '12px', fontWeight: 600 }}>{Math.round(subjectMastery)}%</span>
-                        <span className={`expand-icon ${isSubjExpanded ? 'expanded' : ''}`} style={{ fontSize: '10px', transition: 'transform 0.2s', transform: isSubjExpanded ? 'rotate(180deg)' : 'none' }}>▼</span>
+                        <span className="subject-percent" style={{ fontSize: '11.5px', fontWeight: 600 }}>{Math.round(subjectMastery)}%</span>
+                        <span className={`expand-icon ${isSubjExpanded ? 'expanded' : ''}`} style={{ fontSize: '9px', transition: 'transform 0.2s', transform: isSubjExpanded ? 'rotate(180deg)' : 'none' }}>▼</span>
                       </div>
                     </div>
 
                     {isSubjExpanded && (
-                      <div className="subject-content" style={{ padding: '12px 20px' }}>
+                      <div className="subject-content" style={{ padding: '6px 10px' }}>
                         {sortedChapters.map(chapterName => {
                           const topics = chapters.get(chapterName)!;
                           const chapterMastery = getChapterMastery(topics);
@@ -428,27 +428,27 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                           const sortedTopics = getSortedTopics(topics);
 
                           return (
-                            <div key={chapterName} className="chapter-group" style={{ marginBottom: '12px', border: '1px solid var(--border-light)', borderRadius: 'var(--radius)', background: 'var(--bg-soft)', overflow: 'hidden' }}>
+                            <div key={chapterName} className="chapter-group" style={{ marginBottom: '6px', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', background: 'var(--bg-soft)', overflow: 'hidden' }}>
                               <div 
                                 className="chapter-header" 
                                 onClick={() => toggleChapter(subjName, chapterName)}
-                                style={{ padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', borderBottom: isChExpanded ? '1px solid var(--border-light)' : 'none' }}
+                                style={{ padding: '6px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer', borderBottom: isChExpanded ? '1px solid var(--border-light)' : 'none' }}
                               >
-                                <div className="chapter-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                  <span className="expand-icon" style={{ fontSize: '9px', transform: isChExpanded ? 'rotate(90deg)' : 'none', transition: 'transform 0.15s' }}>▶</span>
-                                  <span className="chapter-name" style={{ fontWeight: 600, fontSize: '13px' }}>📘 {chapterName}</span>
-                                  <span className="chapter-stats" style={{ fontSize: '10px', color: 'var(--text-muted)' }}>({topics.length} topics)</span>
+                                <div className="chapter-title" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                  <span className="expand-icon" style={{ fontSize: '8px', transform: isChExpanded ? 'rotate(90deg)' : 'none', transition: 'transform 0.15s' }}>▶</span>
+                                  <span className="chapter-name" style={{ fontWeight: 600, fontSize: '12.5px' }}>📘 {chapterName}</span>
+                                  <span className="chapter-stats" style={{ fontSize: '9.5px', color: 'var(--text-muted)' }}>({topics.length} topics)</span>
                                 </div>
-                                <div className="chapter-progress" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                  <div className="chapter-progress-bar" style={{ width: '60px', height: '4px', background: 'var(--border-light)', borderRadius: '2px', overflow: 'hidden' }}>
+                                <div className="chapter-progress" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                  <div className="chapter-progress-bar" style={{ width: '50px', height: '4px', background: 'var(--border-light)', borderRadius: '2px', overflow: 'hidden' }}>
                                     <div className="chapter-progress-fill" style={{ width: `${chapterMastery}%`, height: '100%', background: chProgressColor }}></div>
                                   </div>
-                                  <span className="chapter-percent" style={{ fontSize: '11px', fontWeight: 600 }}>{Math.round(chapterMastery)}%</span>
+                                  <span className="chapter-percent" style={{ fontSize: '10.5px', fontWeight: 600 }}>{Math.round(chapterMastery)}%</span>
                                 </div>
                               </div>
 
                               {isChExpanded && (
-                                <div className="topics-list" style={{ padding: '8px 12px' }}>
+                                <div className="topics-list" style={{ padding: '4px 6px' }}>
                                   <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
                                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', minWidth: '550px' }}>
                                       <thead>
