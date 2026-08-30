@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as admin from 'firebase-admin';
 import { adminDb } from '@/lib/firebase/admin';
-import { OBJECTIVE_QUESTION_TYPES, SUBJECTIVE_QUESTION_TYPES, QUESTION_TYPE_MAP } from '@/lib/questionTypes';
+import { OBJECTIVE_QUESTION_TYPES, SUBJECTIVE_QUESTION_TYPES } from '@/lib/questionTypes';
 import { verifyRole } from '@/lib/auth';
 import { ChunkedBatch } from '@/lib/firebase/batch';
 export const dynamic = 'force-dynamic';
@@ -98,19 +98,19 @@ export async function GET(req: NextRequest) {
           return typeMatch && unusedMatch && categoryMatch && topicMatch;
         });
 
-      return NextResponse.json({ pool });
+      return NextResponse.json({ success: true, count: pool.length, questions: pool });
     }
 
-    // Action B: Load specific syllabus chapters
+    // Action B: Fetch single syllabus document with live calculated question counts
     if (docId) {
-      const syllabusSnap = await adminDb.collection('syllabus').doc(docId).get();
-      if (!syllabusSnap.exists) {
-        return NextResponse.json({ message: 'Syllabus document not found.' }, { status: 404 });
+      const docSnap = await adminDb.collection('syllabus').doc(docId).get();
+      if (!docSnap.exists) {
+        return NextResponse.json({ message: 'Subject syllabus not found.' }, { status: 404 });
       }
-      const subjectData = syllabusSnap.data()!;
 
-      // Fetch questions matching board, class, subject to compute live objective/subjective counts
+      const subjectData = docSnap.data()!;
       let questionsList: any[] = [];
+
       try {
         const boardVal = subjectData.board || '';
         const classVal = subjectData.class !== undefined ? subjectData.class : '';
@@ -143,29 +143,16 @@ export async function GET(req: NextRequest) {
             const qtype = q.type || '';
             const isObjective = !qtype.startsWith('subjective');
 
-            // Extract canonical chapter number if not explicitly set
             if (!chNum && tCode.includes('-')) {
               const parts = tCode.split('-');
-              if (parts.length >= 4) {
-                chNum = parts[3];
-              }
+              if (parts.length >= 4) { chNum = parts[3]; }
             }
             if (!chNum && doc.id.includes('-')) {
               const parts = doc.id.split('-');
-              if (parts.length >= 4) {
-                chNum = parts[3];
-              }
+              if (parts.length >= 4) { chNum = parts[3]; }
             }
 
-            return {
-              id: doc.id,
-              chNum,
-              topNum,
-              subNum,
-              tCode,
-              sCode,
-              isObjective
-            };
+            return { id: doc.id, chNum, topNum, subNum, tCode, sCode, isObjective };
           })
           .filter(Boolean) as any[];
       } catch (err) {
@@ -183,7 +170,6 @@ export async function GET(req: NextRequest) {
           if (!chap || typeof chap !== 'object') return;
           const chapNumStr = String(chap.number ?? '').trim();
           
-          // Exact unique questions belonging to this chapter using tokenized matching
           const chapQuestions = questionsList.filter(q => {
             if (!q) return false;
             if (q.chNum && q.chNum === chapNumStr) return true;
@@ -201,7 +187,6 @@ export async function GET(req: NextRequest) {
             const cleanTopicCode = String(top.topicCode || `${canonicalTopicPrefix}-${chapNumStr}-${topNumStr}`).trim();
             const subtopics = Array.isArray(top.subtopics) ? top.subtopics : [];
 
-            // Questions belonging to this topic branch using tokenized matching
             const topicBranchQuestions = chapQuestions.filter(q => {
               if (!q) return false;
               const tCode = String(q.tCode || '');
@@ -229,18 +214,21 @@ export async function GET(req: NextRequest) {
                 const cleanSubCode = String(sub.subtopicCode || `${canonicalTopicPrefix}-${chapNumStr}-${subNumStr}`).trim();
                 const subQuestions = topicBranchQuestions.filter(q => {
                   if (!q) return false;
-                  const tCode = String(q.tCode || '');
                   const sCode = String(q.sCode || '');
+                  const subNum = String(q.subNum || '');
                   const id = String(q.id || '');
 
-                  if (q.subNum === subNumStr) return true;
-                  if (q.topNum === subNumStr) return true;
-                  if (sCode === cleanSubCode || tCode === cleanSubCode) return true;
-                  if (sCode.endsWith(`-${subNumStr}`) || tCode.endsWith(`-${subNumStr}`)) return true;
-                  const tParts = tCode.split('-');
-                  if (tParts.length >= 5 && (tParts[4] === subNumStr || tParts[4] === `${chapNumStr}.${subNumStr}`)) return true;
-                  const idParts = id.split('-');
-                  if (idParts.length >= 5 && (idParts[4] === subNumStr || idParts[4] === `${chapNumStr}.${subNumStr}`)) return true;
+                  if (subNum && (subNum === subNumStr || subNum === `${topNumStr}.${subNumStr}` || subNum === `${chapNumStr}.${subNumStr}` || subNum === `${chapNumStr}.${topNumStr}.${subNumStr}` || subNum.endsWith(`.${subNumStr}`))) {
+                    return true;
+                  }
+                  if (sCode && (sCode === cleanSubCode || sCode.endsWith(`-${subNumStr}`) || sCode.endsWith(`_${subNumStr}`) || sCode.endsWith(`.${subNumStr}`))) {
+                    return true;
+                  }
+                  const sParts = sCode.split(/[-_]/);
+                  if (sParts.length >= 6 && (sParts[5] === subNumStr || sParts[5] === `${topNumStr}.${subNumStr}`)) return true;
+                  const idParts = id.split(/[-_]/);
+                  if (idParts.length >= 6 && (idParts[5] === subNumStr || idParts[5] === `${topNumStr}.${subNumStr}`)) return true;
+
                   return false;
                 });
 
@@ -350,109 +338,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'Missing parameters (action).' }, { status: 400 });
     }
 
-    // Scenario A: Save newly AI-generated questions to the Question Bank
-    if (action === 'saveAIQuestions') {
-      const { questions } = body;
-      if (!Array.isArray(questions)) {
-        return NextResponse.json({ message: 'Invalid payload: questions array expected.' }, { status: 400 });
-      }
-
-      const boardCodesSnap = await adminDb.collection('config').doc('boardCodes').get();
-      const subjectCodesSnap = await adminDb.collection('config').doc('subjectCodes').get();
-      const boardCodes = boardCodesSnap.exists ? boardCodesSnap.data()! : {};
-      const subjectCodes = subjectCodesSnap.exists ? subjectCodesSnap.data()! : {};
-
-      const savedQuestions: any[] = [];
-      
-      // 1. Group questions by counterId
-      const counterIds = new Set<string>();
-      const questionCounterMappings = questions.map((q: any) => {
-        const qBoard = q.board || '';
-        const qSubj = q.subjectName || '';
-        const qBoardCode = boardCodes[qBoard] || qBoard.substring(0, 4).toUpperCase();
-        const qSubjectCode = subjectCodes[qSubj] || qSubj.substring(0, 4).toUpperCase();
-
-        const typeCode = QUESTION_TYPE_MAP[q.type]?.code || 'SSA';
-        const chapterNumber = q.chapterNumber || '01';
-        const topicNumber = q.topicNumber || '1.1';
-        const topicCode = `${qBoardCode}-${q.class}-${qSubjectCode}-${chapterNumber}-${topicNumber}`;
-        const counterId = `${topicCode}-${typeCode}`;
-        counterIds.add(counterId);
-        return { q, counterId };
-      });
-
-      // 2. Fetch and increment all counters in a single transaction
-      const counterIdList = Array.from(counterIds);
-      const counterRefs = counterIdList.map(id => adminDb.collection('questionCounters').doc(id));
-
-      const sequences = await adminDb.runTransaction(async (tx) => {
-        const snaps = counterRefs.length > 0 ? await tx.getAll(...counterRefs) : [];
-        const currentSequences: Record<string, number> = {};
-
-        snaps.forEach((snap, idx) => {
-          const id = counterIdList[idx];
-          const seqNow = (snap.exists && snap.data()?.nextSequence) || 1;
-          currentSequences[id] = seqNow;
-        });
-
-        const counts: Record<string, number> = {};
-        questionCounterMappings.forEach(item => {
-          counts[item.counterId] = (counts[item.counterId] || 0) + 1;
-        });
-
-        counterIdList.forEach((id, idx) => {
-          const needed = counts[id] || 0;
-          const currentSeq = currentSequences[id] || 1;
-          tx.set(counterRefs[idx], { nextSequence: currentSeq + needed }, { merge: true });
-        });
-
-        return currentSequences;
-      });
-
-      // 3. Assign codes and save questions in a single Batch Write
-      const batch = adminDb.batch();
-      const trackingSeqs: Record<string, number> = { ...sequences };
-
-      const marksMap: { [key: string]: number } = {
-        subjective_short: 2,
-        subjective_long: 4,
-        subjective_reason: 2,
-        subjective_notes: 2,
-        subjective_define: 1,
-        numerical_short: 2,
-        numerical_long: 4,
-        subjective_laws: 1
-      };
-
-      questionCounterMappings.forEach(item => {
-        const { q, counterId } = item;
-        const currentSeq = trackingSeqs[counterId];
-        trackingSeqs[counterId] = currentSeq + 1;
-
-        const seqStr = String(currentSeq).padStart(3, '0');
-        const questionCode = `${counterId}-${seqStr}`;
-        const resolvedMarks = marksMap[q.type];
-
-        const questionDoc = {
-          ...q,
-          questionCode,
-          marks: resolvedMarks !== undefined ? resolvedMarks : (q.marks || 0),
-          source: 'ai_generated',
-          usageCount: 0,
-          createdBy: (adminUser.decodedToken?.email || adminUser.userData?.email) || 'admin@yashcom.com',
-          createdAt: admin.firestore.FieldValue.serverTimestamp()
-        };
-
-        const docRef = adminDb.collection('questions').doc(questionCode);
-        batch.set(docRef, questionDoc);
-        savedQuestions.push({ id: questionCode, ...questionDoc });
-      });
-
-      await batch.commit();
-      return NextResponse.json({ success: true, savedQuestions });
-    }
-
-    // Scenario B: Compile and Save Final Exam
+    // Compile and Save Final Exam
     if (action === 'saveExam') {
       const { 
         name, board, classNum, subjectName, subjects, subjectWeightage, weightageMode,
