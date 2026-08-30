@@ -26,7 +26,7 @@ interface BatchGroup {
   members: Member[];
 }
 
-import { formatLastActiveIST as formatLastActive } from '@/lib/dateUtils';
+import { formatLastActiveIST as formatLastActive, getDateKeyIST } from '@/lib/dateUtils';
 
 interface LoginLogoutLog {
   id: string;
@@ -48,7 +48,7 @@ export default function LoginRegisterReportPage() {
   const [batches, setBatches] = useState<BatchGroup[]>([]);
   const [logs, setLogs] = useState<LoginLogoutLog[]>([]);
   const [activeTab, setActiveTab] = useState<'roster' | 'register'>('register');
-  const [selectedDate, setSelectedDate] = useState(new Date().toLocaleDateString('sv').substring(0, 10));
+  const [selectedDate, setSelectedDate] = useState(getDateKeyIST());
   const [error, setError] = useState('');
 
   // Filtering & Sorting State
@@ -396,7 +396,8 @@ export default function LoginRegisterReportPage() {
                       <tbody>
                         {b.members.map(m => {
                           const isStudent = m.role === 'student';
-                          const isOnline = m.presenceState === 'active' && m.lastActiveAt && (Date.now() - new Date(m.lastActiveAt.seconds ? m.lastActiveAt.seconds * 1000 : m.lastActiveAt).getTime()) < 300000;
+                          const activeTime = m.lastActiveAt ? new Date((m.lastActiveAt as any).seconds ? (m.lastActiveAt as any).seconds * 1000 : m.lastActiveAt).getTime() : 0;
+                          const isOnline = m.presenceState === 'active' && activeTime > 0 && (Date.now() - activeTime) < 300000;
                           
                           return (
                             <tr key={m.id} style={{ borderBottom: '1px solid var(--border-light)' }}>

@@ -507,29 +507,29 @@ async function handleLoginRegister(req: NextRequest) {
 
   const url = new URL(req.url);
   const dateParam = url.searchParams.get('date');
+  const targetDateStr = dateParam || getDateKeyIST();
 
-  const cacheKey = `login-register-report-${dateParam || 'today'}`;
+  const cacheKey = `login-register-report-${targetDateStr}`;
   const cached = await ReportCacheManager.getReport<any>(cacheKey);
   if (cached) {
     return NextResponse.json(cached);
   }
   
-  let startDate = new Date();
-  if (dateParam) {
-    const parts = dateParam.split('-');
-    if (parts.length === 3) {
-      startDate = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
-    }
-  }
-  startDate.setHours(0, 0, 0, 0);
+  const startOfISTDay = new Date(`${targetDateStr}T00:00:00+05:30`);
+  const endOfISTDay = new Date(`${targetDateStr}T23:59:59.999+05:30`);
 
-  const endDate = new Date(startDate);
-  endDate.setDate(startDate.getDate() + 1);
-
-  const [batchesSnap, students, parents] = await Promise.all([
+  const [batchesSnap, students, parents, sessionLogsSnap] = await Promise.all([
     adminDb.collection('batches').get(),
     StudentRepository.listStudents(),
-    StudentRepository.listParents()
+    StudentRepository.listParents(),
+    adminDb.collection('session_logs')
+      .where('timestamp', '>=', startOfISTDay)
+      .where('timestamp', '<=', endOfISTDay)
+      .get()
+      .catch(err => {
+        console.warn('Failed to query session_logs:', err.message);
+        return { docs: [] } as any;
+      })
   ]);
 
   const batches = batchesSnap.docs.map(doc => ({
@@ -549,6 +549,7 @@ async function handleLoginRegister(req: NextRequest) {
       role: s.role,
       studentCode: s.studentCode,
       lastActiveAt: s.lastActiveAt,
+      lastLoginAt: s.lastLoginAt,
       presenceState: s.presenceState,
       currentPage: s.currentPage,
       currentPagePath: s.currentPagePath
@@ -576,6 +577,7 @@ async function handleLoginRegister(req: NextRequest) {
           role: p.role,
           linkedStudentName: s.name,
           lastActiveAt: p.lastActiveAt,
+          lastLoginAt: p.lastLoginAt,
           presenceState: p.presenceState,
           currentPage: p.currentPage,
           currentPagePath: p.currentPagePath
@@ -609,6 +611,7 @@ async function handleLoginRegister(req: NextRequest) {
         email: p.email,
         role: p.role,
         lastActiveAt: p.lastActiveAt,
+        lastLoginAt: p.lastLoginAt,
         presenceState: p.presenceState,
         currentPage: p.currentPage,
         currentPagePath: p.currentPagePath
@@ -630,13 +633,61 @@ async function handleLoginRegister(req: NextRequest) {
     });
   }
 
+  // Build daily login/logout logs map
+  const logsMap = new Map<string, any>();
+
+  sessionLogsSnap.docs.forEach((doc: any) => {
+    const data = doc.data();
+    const ts = data.timestamp?.toDate ? data.timestamp.toDate().toISOString() : (data.timestamp ? new Date(data.timestamp).toISOString() : null);
+    logsMap.set(doc.id, {
+      id: doc.id,
+      uid: data.uid || '',
+      name: data.name || 'Unknown',
+      email: data.email || '',
+      role: data.role || 'student',
+      batchIds: data.batchIds || [],
+      type: data.type || 'login',
+      timestamp: ts
+    });
+  });
+
+  // Ensure any user who logged in during this IST window is also included if missing from session_logs
+  [...students, ...parents].forEach(user => {
+    if (user.lastLoginAt) {
+      const loginTime = new Date(user.lastLoginAt).getTime();
+      if (loginTime >= startOfISTDay.getTime() && loginTime <= endOfISTDay.getTime()) {
+        const hasExisting = Array.from(logsMap.values()).some(l => l.uid === user.id && l.type === 'login');
+        if (!hasExisting) {
+          const synthId = `synth-${user.id}-${targetDateStr}`;
+          logsMap.set(synthId, {
+            id: synthId,
+            uid: user.id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            batchIds: user.batchIds || [],
+            type: 'login',
+            timestamp: new Date(user.lastLoginAt).toISOString()
+          });
+        }
+      }
+    }
+  });
+
+  const logs = Array.from(logsMap.values()).sort((a, b) => {
+    const tA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+    const tB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+    return tB - tA;
+  });
+
   const result = {
     success: true,
-    date: dateParam || 'today',
-    batches: reportData
+    date: targetDateStr,
+    batches: reportData,
+    logs
   };
 
-  await ReportCacheManager.setReport(cacheKey, result, 60);
+  await ReportCacheManager.setReport(cacheKey, result, 30);
   return NextResponse.json(result);
 }
 

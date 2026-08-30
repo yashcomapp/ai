@@ -30,8 +30,23 @@ export class StudentRepository {
    */
   static async listStudents(): Promise<any[]> {
     const snap = await adminDb.collection('users').where('role', '==', 'student').get();
+    const toIsoString = (val: any) => {
+      if (!val) return null;
+      if (val.toDate) return val.toDate().toISOString();
+      const d = new Date(val);
+      return isNaN(d.getTime()) ? null : d.toISOString();
+    };
+
     return snap.docs.map(doc => {
       const data = doc.data();
+      const lastActiveRaw = data.lastActiveAt || data.lastLoginAt || data.currentPageAt || data.updatedAt || null;
+      const lastActiveAt = toIsoString(lastActiveRaw);
+      const lastLoginAt = toIsoString(data.lastLoginAt);
+
+      const lastActiveMs = lastActiveAt ? new Date(lastActiveAt).getTime() : 0;
+      const isRecentlyActive = lastActiveMs > 0 && (Date.now() - lastActiveMs < 5 * 60 * 1000);
+      const presenceState = isRecentlyActive ? 'active' : (data.presenceState || 'inactive');
+
       return {
         id: doc.id,
         name: data.name || data.displayName || 'Unknown Student',
@@ -43,9 +58,10 @@ export class StudentRepository {
         feeStatus: data.feeStatus || 'pending',
         parentEmail: (data.parentEmail || '').toLowerCase(),
         batchIds: data.batchIds || (data.batchId ? [data.batchId] : []),
-        lastActiveAt: data.lastActiveAt || null,
-        presenceState: data.presenceState || 'inactive',
-        currentPage: data.currentPage || '',
+        lastActiveAt,
+        lastLoginAt,
+        presenceState,
+        currentPage: data.currentPage || (isRecentlyActive ? 'In App' : ''),
         currentPagePath: data.currentPagePath || '',
         overallMastery: data.overallMastery || 0,
         autonomous: data.autonomous === true || data.isAutonomous === true || data.mode === 'autonomous',
@@ -60,17 +76,33 @@ export class StudentRepository {
    */
   static async listParents(): Promise<any[]> {
     const snap = await adminDb.collection('users').where('role', '==', 'parent').get();
+    const toIsoString = (val: any) => {
+      if (!val) return null;
+      if (val.toDate) return val.toDate().toISOString();
+      const d = new Date(val);
+      return isNaN(d.getTime()) ? null : d.toISOString();
+    };
+
     return snap.docs.map(doc => {
       const data = doc.data();
       const codes = data.studentCodes || (data.studentCode ? [data.studentCode] : []);
+      const lastActiveRaw = data.lastActiveAt || data.lastLoginAt || data.currentPageAt || data.updatedAt || null;
+      const lastActiveAt = toIsoString(lastActiveRaw);
+      const lastLoginAt = toIsoString(data.lastLoginAt);
+
+      const lastActiveMs = lastActiveAt ? new Date(lastActiveAt).getTime() : 0;
+      const isRecentlyActive = lastActiveMs > 0 && (Date.now() - lastActiveMs < 5 * 60 * 1000);
+      const presenceState = isRecentlyActive ? 'active' : (data.presenceState || 'inactive');
+
       return {
         id: doc.id,
         name: data.name || data.displayName || 'Unknown Parent',
         email: (data.email || '').toLowerCase(),
         studentCodes: codes,
-        lastActiveAt: data.lastActiveAt || null,
-        presenceState: data.presenceState || 'inactive',
-        currentPage: data.currentPage || '',
+        lastActiveAt,
+        lastLoginAt,
+        presenceState,
+        currentPage: data.currentPage || (isRecentlyActive ? 'In App' : ''),
         currentPagePath: data.currentPagePath || '',
         role: 'parent' as const,
         status: data.status || 'active'
