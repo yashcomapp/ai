@@ -835,6 +835,11 @@ In addition to the topic-based questions:
       requirementsSection = `\n========================================\nCONSOLIDATED STUDENT REQUESTED REQUIREMENTS:\n========================================\nPlease generate questions specifically matching these student requested targets:\n${paramRequirements.split(', ').map(r => `- ${r}`).join('\n')}\n`;
     }
 
+    const isCalculativeTopic = isMath || promptTopics.some(t => {
+      const text = `${t.subject || ''} ${t.chapter || ''} ${t.topic || ''}`.toLowerCase();
+      return /physic|motion|force|gravitat|light|reflection|refraction|electric|current|circuit|sound|work|energy|power|heat|thermodynamic|optics|lens|mirror|wave|mole concept|stoichiometr|density|pressure|floatation|kinematics|fluid|magnetic/i.test(text);
+    });
+
     if (type === 'all_in_one') {
       let topicBreakdownBlock = '';
       promptTopics.forEach((tp, idx) => {
@@ -863,8 +868,8 @@ In addition to the topic-based questions:
      • Hard (HOTS / Traps): ${hardC} questions
   B) SUBJECTIVE SUITE (${subC} Questions with Model Answer Solutions & Keywords):
      • 1-Mark (Definitions / Laws / Formulas): ${m1C} questions (type: "subjective_define" or "subjective_laws")
-     • 2-Mark (Short Answer / Scientific Reasons): ${m2C} questions (type: "subjective_short" or "subjective_reason" or "numerical_short")
-     • 4-Mark (Long Problems / Proofs / Derivations): ${m4C} questions (type: "subjective_long" or "numerical_long")`;
+     • 2-Mark (Short Answer / Scientific Reasons): ${m2C} questions (type: "subjective_short" or "subjective_reason"${isCalculativeTopic ? ' or "numerical_short"' : ''})
+     • 4-Mark (Long Problems / Proofs / Derivations): ${m4C} questions (type: "subjective_long"${isCalculativeTopic ? ' or "numerical_long"' : ''})`;
       });
 
       (window as any).lastPromptMeta = { mode: 'all_in_one', totalQs };
@@ -1000,15 +1005,33 @@ CRITICAL RULES & FORMATTING:
 5. RANDOMIZE CORRECT OPTION POSITIONS: Distribute the correct answer position randomly and evenly across option index 0, 1, 2, and 3 (A, B, C, D). Do NOT always place the correct answer as the first item in "options".`;
     }
 
+    const isCalculativeTopic = isMath || promptTopics.some(t => {
+      const text = `${t.subject || ''} ${t.chapter || ''} ${t.topic || ''}`.toLowerCase();
+      return /physic|motion|force|gravitat|light|reflection|refraction|electric|current|circuit|sound|work|energy|power|heat|thermodynamic|optics|lens|mirror|wave|mole concept|stoichiometr|density|pressure|floatation|kinematics|fluid|magnetic/i.test(text);
+    });
+
     if (type === 'objective') {
       const diff = blueprint.difficulty || { easy: 30, medium: 50, hard: 20 };
       const easyC = Math.round((diff.easy / 100) * totalQs);
       const medC = Math.round((diff.medium / 100) * totalQs);
       const hardC = Math.max(0, totalQs - easyC - medC);
 
-      // Compute type counts based on blueprint type ratios
+      // Compute type counts based on blueprint type ratios (dynamically sanitize for qualitative topics)
       let typeBD = '', typeInst = '', reqTypes: any[] = [];
-      const ratios = blueprint.typeRatios || { single_mcq: 100 };
+      const rawRatios = blueprint.typeRatios || { single_mcq: 100 };
+      const ratios: Record<string, number> = {};
+      let shiftedPct = 0;
+      Object.entries(rawRatios).forEach(([tid, pct]) => {
+        if (tid === 'numerical' && !isCalculativeTopic) {
+          shiftedPct += pct;
+        } else {
+          ratios[tid] = pct;
+        }
+      });
+      if (shiftedPct > 0) {
+        ratios['single_mcq'] = (ratios['single_mcq'] || 0) + shiftedPct;
+      }
+
       let allocatedCount = 0;
       const ratioEntries = Object.entries(ratios);
 
@@ -1142,7 +1165,10 @@ CRITICAL RULES & LEVEL/SOURCE FIDELITY:
 7. Use \\( ... \\) for math expressions (KaTeX). Wrap chemical formulas inside \\ce{...}.
 8. Return ONLY a valid JSON array.
 ${isMath ? '9. For Mathematics, you MUST include a "textbookPracticeSet" key inside each question object containing the textbook reference (e.g., "Practice Set 1.2: Q3") or pattern source.' : ''}
-10. NON-NUMERICAL CHAPTERS RULE: If the selected topic or chapter is purely theoretical/conceptual with no calculations (e.g. Cell Structure, Diversity, Tissues, Crop Production, Synthetic Fibres), replace the numerical question quota with additional conceptual Single MCQ or Assertion & Reason questions instead of forcing unnatural mathematical equations.
+10. STRICT ZERO FAKE NUMERICALS ON BIOLOGY & QUALITATIVE CONCEPTS:
+   - For Biology, life processes, human anatomy, nervous coordination (e.g., nerve impulses, reflex arcs, brain functions), ecology, cellular structure, plant science, or qualitative chemistry:
+     * NEVER invent synthetic physics formulas, speeds, arithmetic equations, or time-taken calculations (e.g., calculating nerve impulse velocity, time for reflex action in milliseconds, rate of enzyme reaction arithmetic).
+     * All questions for biological and qualitative topics MUST be pure conceptual MCQs, Assertion-Reason, Diagrams, or Scientific Reasons based on real textbook facts and mechanisms.
 
 CRITICAL JSON ESCAPING & MATH FORMATTING RULES:
 1. Return ONLY the raw valid JSON array. DO NOT wrap it in any explanations, introduction, or extra text.
