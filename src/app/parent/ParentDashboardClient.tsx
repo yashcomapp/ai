@@ -1357,7 +1357,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                       border: isSyncTimeSlot() ? 'none' : '1px solid var(--border)',
                       cursor: isSyncTimeSlot() ? 'pointer' : 'not-allowed',
                       opacity: isSyncTimeSlot() ? 1 : 0.65,
-                      boxShadow: isSyncTimeSlot() ? '0 2px 10px rgba(216, 78, 85, 0.3)' : 'none',
+                      boxShadow: isSyncTimeSlot() ? '0 2px 10px rgba(37, 99, 235, 0.3)' : 'none',
                       display: 'flex',
                       alignItems: 'center',
                       gap: '6px'

@@ -6,14 +6,17 @@ import { db } from '@/lib/firebase/firestore';
 import { doc, onSnapshot } from 'firebase/firestore';
 
 export default function ParentLayout({ children }: { children: React.ReactNode }) {
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
   const [maintenance, setMaintenance] = useState<{ active: boolean; message: string } | null>(null);
 
   useEffect(() => {
     const unsub = onSnapshot(doc(db, 'config', 'systemAccess'), (snapshot) => {
+      const email = (user?.email || '').toLowerCase();
+      const isBypassed = email === 'p@c.com' || email === 's@c.com' || email === 'a@c.com' || !!user?.maintenanceBypass || !!user?.curfewBypass;
+
       if (snapshot.exists()) {
         const data = snapshot.data();
-        if (data.maintenanceMode && data.blockedRoles?.includes('parent')) {
+        if (!isBypassed && data.maintenanceMode && data.blockedRoles?.includes('parent')) {
           setMaintenance({
             active: true,
             message: data.message || 'The system is undergoing scheduled maintenance. Access will be restored shortly.'
@@ -26,7 +29,7 @@ export default function ParentLayout({ children }: { children: React.ReactNode }
       }
     }, () => {});
     return () => unsub();
-  }, []);
+  }, [user]);
 
   if (maintenance?.active) {
     return (

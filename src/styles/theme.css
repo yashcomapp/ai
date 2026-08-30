@@ -3,27 +3,27 @@
    Liquid Glass Surfaces, Specular Highlights & Cupertino Ergonomics
    ============================================================ */
 
-/* ---------- 1. DESIGN SYSTEM VARIABLES (RedBus Clean, High-Contrast Light Theme) ---------- */
+/* ---------- 1. DESIGN SYSTEM VARIABLES (Modern Educational Focused Palette) ---------- */
 :root,
 html[data-theme="light"],
 html.light {
-    --bg: #f4f6f8;
-    --bg-soft: #edf2f7;
-    --bg-grad: #f4f6f8;
+    --bg: #f8fafc;
+    --bg-soft: #f1f5f9;
+    --bg-grad: #f8fafc;
 
     /* Clean Elevated White & Light Slate Surfaces */
     --surface: #ffffff;
     --surface-2: #f8fafc;
     --surface-3: #f1f5f9;
-    --surface-tint: rgba(0, 0, 0, 0.02);
+    --surface-tint: rgba(37, 99, 235, 0.02);
     --surface-glass: #ffffff;
     --surface-popover: #ffffff;
     --border-popover: rgba(0, 0, 0, 0.12);
 
-    /* Crisp Subtle Borders */
-    --border: #e5e7eb;
-    --border-light: #f3f4f6;
-    --border-glass: #e5e7eb;
+    /* Crisp Defined High-Contrast Borders */
+    --border: #cbd5e1;
+    --border-light: #e2e8f0;
+    --border-glass: #cbd5e1;
 
     /* Crisp High-Contrast Typography */
     --text: #0f172a;
@@ -32,30 +32,32 @@ html.light {
     --text-muted: #64748b;
     --text-faint: #94a3b8;
 
-    /* Primary Accent - Vibrant RedBus Crimson / Coral */
-    --accent: #d84e55;
-    --accent-dark: #b91c1c;
-    --accent-grad: linear-gradient(135deg, #d84e55 0%, #c83239 100%);
-    --accent-soft: rgba(216, 78, 85, 0.08);
-    --accent-ring: rgba(216, 78, 85, 0.25);
-    --accent-tint: rgba(216, 78, 85, 0.04);
-    --accent-light: rgba(216, 78, 85, 0.06);
+    /* Primary Accent - Focused Intellectual Royal Indigo */
+    --accent: #2563eb;
+    --accent-dark: #1d4ed8;
+    --accent-grad: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    --accent-soft: rgba(37, 99, 235, 0.08);
+    --accent-ring: rgba(37, 99, 235, 0.25);
+    --accent-tint: rgba(37, 99, 235, 0.04);
+    --accent-light: rgba(37, 99, 235, 0.06);
 
-    /* Rich Status & Rating Colors */
+    /* Rich Educational Category & Status Colors */
     --success: #059669;
     --warning: #d97706;
     --danger: #dc2626;
     --info: #0284c7;
+    --purple: #7c3aed;
 
     --success-bg: #ecfdf5;
-    --warning-bg: #fef3c7;
+    --warning-bg: #fffbeb;
     --danger-bg: #fef2f2;
     --info-bg: #f0f9ff;
+    --purple-bg: #f5f3ff;
 
     --review-card-bg: #ffffff;
-    --review-card-border: #e5e7eb;
+    --review-card-border: #cbd5e1;
     --review-option-bg: #f8fafc;
-    --review-option-border: #e5e7eb;
+    --review-option-border: #cbd5e1;
 
     --text-on-accent: #ffffff;
 
@@ -81,7 +83,7 @@ html.light {
     --card-hover-shadow: 0 8px 25px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.03);
 
     /* Focus */
-    --focus-ring: 0 0 0 3px rgba(216, 78, 85, 0.25);
+    --focus-ring: 0 0 0 3px rgba(37, 99, 235, 0.25);
 
     /* Smooth Transition */
     --ease: cubic-bezier(0.16, 1, 0.3, 1);
@@ -866,15 +868,15 @@ button:disabled {
 }
 
 .btn-primary {
-    background: #d84e55;
+    background: #2563eb;
     color: #ffffff;
-    border-color: #c83239;
-    box-shadow: 0 2px 8px rgba(216, 78, 85, 0.25);
+    border-color: #1d4ed8;
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
 }
 
 .btn-primary:hover {
-    background: #c83239;
-    box-shadow: 0 4px 14px rgba(216, 78, 85, 0.35);
+    background: #1d4ed8;
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
     transform: translateY(-1px);
 }
 

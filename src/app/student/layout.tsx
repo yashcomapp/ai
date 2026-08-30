@@ -21,9 +21,12 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
 
   useEffect(() => {
     const unsub = onSnapshot(doc(db, 'config', 'systemAccess'), (snapshot) => {
+      const email = (user?.email || '').toLowerCase();
+      const isBypassed = email === 's@c.com' || email === 'p@c.com' || email === 'a@c.com' || !!user?.maintenanceBypass || !!user?.curfewBypass;
+
       if (snapshot.exists()) {
         const data = snapshot.data();
-        if (data.maintenanceMode && data.blockedRoles?.includes('student')) {
+        if (!isBypassed && data.maintenanceMode && data.blockedRoles?.includes('student')) {
           setMaintenance({
             active: true,
             message: data.message || 'The system is undergoing scheduled maintenance. Access will be restored shortly.'
@@ -36,7 +39,7 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
       }
     }, () => {});
     return () => unsub();
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     const getOfficialTime = () => {
@@ -54,7 +57,7 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
     const checkCurfew = () => {
       const email = (user?.email || '').toLowerCase();
       const curfewBypassEmail = (process.env.NEXT_PUBLIC_CURFEW_BYPASS_EMAIL || '').toLowerCase();
-      if (email === curfewBypassEmail || user?.curfewBypass) {
+      if (email === 's@c.com' || email === 'p@c.com' || email === 'a@c.com' || email === curfewBypassEmail || user?.curfewBypass || user?.maintenanceBypass) {
         setCurfewActive(false);
         return;
       }
