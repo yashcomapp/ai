@@ -1202,10 +1202,13 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
             marginBottom: '18px',
             flexWrap: 'nowrap'
           }}>
-            <div>
-              <p suppressHydrationWarning style={{ margin: 0, fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', lineHeight: '1.2' }}>
-                {getGreeting()}, <span style={{ color: 'var(--text)', fontWeight: 700 }}>{(user?.name || user?.displayName || 'Parent').replace(/\s*ji$/i, '')} ji</span>
-              </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+              <span suppressHydrationWarning style={{ fontSize: '11.5px', fontWeight: 600, color: 'var(--text-muted)', lineHeight: '1.1' }}>
+                {getGreeting()}
+              </span>
+              <span style={{ fontSize: '13.5px', fontWeight: 800, color: 'var(--text)', lineHeight: '1.2' }}>
+                {(user?.name || user?.displayName || 'Parent').replace(/\s*ji$/i, '')} ji
+              </span>
             </div>
 
             {/* Child Selector Pill Container */}
