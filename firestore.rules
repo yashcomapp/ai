@@ -382,26 +382,6 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // ── question requests (student → admin) ───────────────────
-    match /questionRequests/{docId} {
-      // FIXED: was `if isAdmin();` only. Two real consumers were both
-      // silently broken by that: Parent → Dashboard's "child question
-      // requests" section (every parent, every child, always showed
-      // zero), and student/learning.html's "My Requests" view (every
-      // student, always showed zero). Every sibling student-keyed
-      // collection (reviews, practiceSessions, integrityScores, above)
-      // already includes isParent() in its read rule — this one was
-      // just missed, and isStudent() was missing too. Matches the same
-      // (currently unscoped-per-child, same as its siblings) pattern.
-      allow read:   if isAuth() && (isAdmin() || isParent() || isStudent());
-      allow create: if isStudent()
-                    && isValidStudentCode(request.resource.data.studentCode)
-                    && request.resource.data.studentCode == myStudentCode();
-      allow update: if isAdmin()
-                    || (isStudent()
-                        && resource.data.studentCode == myStudentCode());
-      allow delete: if isAdmin();
-    }
 
     // ── config ────────────────────────────────────────────────
     match /config/{docId} {
