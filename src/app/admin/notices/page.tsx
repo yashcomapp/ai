@@ -1038,11 +1038,7 @@ export default function AdminNoticesPage() {
           </span>
         </div>
         
-        <p style={{ margin: '0 0 16px 0', fontSize: '12px', color: 'var(--text-muted)' }}>
-          Block students or parents from accessing the application workspace during code updates or system maintenance periods.
-        </p>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '12px' }}>
           {/* Row 1: Maintenance Toggles & Blocking Message */}
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '24px', alignItems: 'flex-start' }}>
             {/* Toggles */}

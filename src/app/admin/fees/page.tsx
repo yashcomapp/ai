@@ -424,9 +424,6 @@ export default function AdminFeesPage() {
         <div className="card glass" style={{ padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
           <div>
             <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--accent)', margin: 0 }}>🪙 Fees Manager & Ledger</h2>
-            <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: 'var(--text-muted)' }}>
-              Configure blanket class packages, manage custom installments, and maintain the CRUD transaction ledger.
-            </p>
           </div>
           <button className="btn btn-secondary" onClick={() => router.push('/admin')}>Back</button>
         </div>

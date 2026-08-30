@@ -307,10 +307,6 @@ export default function AttendanceManager({ role }: AttendanceManagerProps) {
               </div>
             ) : (
               <div>
-                <p style={{ margin: '0 0 12px 0', fontSize: '12.5px', color: 'var(--text-muted)' }}>
-                  Mark the daily status of <strong>{displayName}</strong> for today (<strong>{formatDateStr(todayStr)}</strong>). Once submitted, it cannot be modified.
-                </p>
-                
                 {voluntaryError && <div className="alert-box alert-box-danger" style={{ marginBottom: '12px', padding: '10px' }}>{voluntaryError}</div>}
                 {voluntarySuccess && <div className="alert-box alert-box-success" style={{ marginBottom: '12px', padding: '10px' }}>{voluntarySuccess}</div>}
 
@@ -372,10 +368,7 @@ export default function AttendanceManager({ role }: AttendanceManagerProps) {
                 padding: '16px',
                 background: 'rgba(239, 68, 68, 0.03)'
               }}>
-                <h3 style={{ margin: '0 0 10px 0', fontSize: '14px', fontWeight: 'bold', color: '#ef4444' }}>📢 Leave Request</h3>
-                <p style={{ margin: '0 0 16px 0', fontSize: '12.5px', color: 'var(--text-muted)' }}>
-                  Use this section <strong>ONLY</strong> to request excused leaves for future dates. To report attendance or absence for today, please use the <strong>Daily Check-in</strong> card above.
-                </p>
+                <h3 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: 'bold', color: '#ef4444' }}>📢 Leave Request</h3>
 
                 {declError && <div className="alert-box alert-box-danger" style={{ marginBottom: '12px', padding: '10px' }}>{declError}</div>}
                 {declSuccess && <div className="alert-box alert-box-success" style={{ marginBottom: '12px', padding: '10px' }}>{declSuccess}</div>}

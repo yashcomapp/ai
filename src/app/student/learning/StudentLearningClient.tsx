@@ -29,6 +29,8 @@ interface TopicItem {
   lastScore: number;
   state: string;
   practiceCount: number;
+  targetQuestions?: number;
+  totalQuestions?: number;
   isAbsentExam?: boolean;
   isRecoveryMastered?: boolean;
 }
@@ -578,7 +580,7 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                                               </td>
                                               <td style={{ padding: '6px 8px', textAlign: 'center', color: 'var(--text)' }}>
                                                  {topic.practiceCount}/5 practices
-                                                 <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>({topic.attempts}/30 Qs)</div>
+                                                 <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>({topic.attempts} / {topic.totalQuestions || topic.targetQuestions || 30} Qs max)</div>
                                                </td>
                                               <td style={{ padding: '6px 8px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '11px' }}>
                                                 {formatDate(topic.lastAttempt)}

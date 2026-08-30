@@ -1729,7 +1729,6 @@ OUTPUT FORMAT: Return ONLY a valid JSON array of objects with schema:
           <span className="brand" style={{ fontSize: '18px', fontWeight: 800 }}>🏫 YASHCOM</span>
           <div>
             <h1 style={{ fontSize: '16px', margin: 0 }}>Classroom Test & Weekly Suite Generator</h1>
-            <div className="subtitle hide-mobile" style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Automate daily home practice & Saturday classroom exams</div>
           </div>
         </div>
         <div className="page-header-right" style={{ display: 'flex', gap: '10px' }}>

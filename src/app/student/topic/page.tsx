@@ -33,6 +33,8 @@ interface QuestionItem {
 interface PracticeData {
   topicCode: string;
   totalQuestions: number;
+  maxQuestionsAvailable?: number;
+  totalTopicPool?: number;
   questions: QuestionItem[];
   masteryAtStart: number;
   idealTimeSeconds: number;
@@ -1257,7 +1259,9 @@ function TopicPracticeContent() {
           <div className="card" ref={questionContainerRef} style={{ background: 'var(--surface)', padding: '24px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                <span className="badge badge-info" style={{ textTransform: 'uppercase', fontSize: '10px' }}>Q {currentQIndex + 1} of {data.questions.length}</span>
+                <span className="badge badge-info" style={{ textTransform: 'uppercase', fontSize: '10px' }}>
+                  Q {currentQIndex + 1} of {data.questions.length}{data.maxQuestionsAvailable ? ` • Pool: ${data.maxQuestionsAvailable} Qs` : ''}
+                </span>
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                   <span className="badge badge-secondary" style={{ textTransform: 'uppercase', fontSize: '10px' }}>{q.difficulty} • {q.bloomLevel}</span>
                   {!isQSubmitted && !disputedQuestionIds.has(q.id) && (

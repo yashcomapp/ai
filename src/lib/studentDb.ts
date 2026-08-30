@@ -1116,6 +1116,8 @@ export async function getStudentLearningData(userData: any) {
     const subCode = sData.subjectCode || (topicCode ? topicCode.split('-')[2] : '') || '';
     const subName = sData.subjectName || getCanonicalSubjectName(subCode, topicCode, sData.chapterName);
 
+    const targetQuestions = Number(sData.targetQuestions || sData.totalQuestions || sData.questionCount || 30);
+
     const topicItem = {
       topicCode,
       topicName: sData.topicName || mData?.topicName || '',
@@ -1133,7 +1135,9 @@ export async function getStudentLearningData(userData: any) {
       lastAttempt: mData?.updatedAt?.toDate ? mData.updatedAt.toDate().toISOString() : mData?.updatedAt || mData?.lastAttempt || null,
       attempts,
       lastScore: mData?.lastScore || 0,
-      practiceCount
+      practiceCount,
+      targetQuestions,
+      totalQuestions: targetQuestions
     };
 
     // A topic is truly in Focus only if mastery is low (<50) or if the student has never attempted it (attempts === 0) and missed an assigned exam.

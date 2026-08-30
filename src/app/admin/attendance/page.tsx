@@ -346,9 +346,6 @@ export default function AdminAttendancePage() {
         <div className="card glass" style={{ padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
           <div>
             <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--accent)', margin: 0 }}>📅 Daily Attendance Sheet</h2>
-            <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: 'var(--text-muted)' }}>
-              Mark date-wise presence. Select any date (past to current) to view or update daily presence records.
-            </p>
           </div>
           <div style={{ display: 'flex', gap: '8px' }}>
             <button className="btn btn-secondary" onClick={() => setShowLeaveModal(true)}>

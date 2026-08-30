@@ -242,6 +242,8 @@ export async function GET(req: NextRequest) {
         topicCode,
         isRecoveryMode: true,
         totalQuestions: sanitizedQuestions.length,
+        maxQuestionsAvailable: allQuestions.length,
+        totalTopicPool: allQuestions.length,
         questions: sanitizedQuestions,
         needRequest: false,
         isEligibleToRequest: false,
@@ -446,6 +448,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       topicCode,
       totalQuestions: sanitizedQuestions.length,
+      maxQuestionsAvailable: allQuestions.length,
+      totalTopicPool: allQuestions.length,
       questions: sanitizedQuestions,
       fullyMastered: isFullyMastered,
       requestedSize: finalSize,
