@@ -1005,11 +1005,6 @@ CRITICAL RULES & FORMATTING:
 5. RANDOMIZE CORRECT OPTION POSITIONS: Distribute the correct answer position randomly and evenly across option index 0, 1, 2, and 3 (A, B, C, D). Do NOT always place the correct answer as the first item in "options".`;
     }
 
-    const isCalculativeTopic = isMath || promptTopics.some(t => {
-      const text = `${t.subject || ''} ${t.chapter || ''} ${t.topic || ''}`.toLowerCase();
-      return /physic|motion|force|gravitat|light|reflection|refraction|electric|current|circuit|sound|work|energy|power|heat|thermodynamic|optics|lens|mirror|wave|mole concept|stoichiometr|density|pressure|floatation|kinematics|fluid|magnetic/i.test(text);
-    });
-
     if (type === 'objective') {
       const diff = blueprint.difficulty || { easy: 30, medium: 50, hard: 20 };
       const easyC = Math.round((diff.easy / 100) * totalQs);
