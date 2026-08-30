@@ -25,6 +25,7 @@ export interface UserProfile {
   activeSessionToken?: string;
   hasPushRegistered?: boolean;
   curfewBypass?: boolean;
+  maintenanceBypass?: boolean;
 }
 
 interface AuthContextType {
