@@ -98,7 +98,7 @@ export async function GET(req: NextRequest) {
           return typeMatch && unusedMatch && categoryMatch && topicMatch;
         });
 
-      return NextResponse.json({ success: true, count: pool.length, questions: pool });
+      return NextResponse.json({ success: true, count: pool.length, questions: pool, pool });
     }
 
     // Action B: Fetch single syllabus document with live calculated question counts

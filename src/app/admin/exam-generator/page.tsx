@@ -467,7 +467,7 @@ export default function AdminExamGeneratorPage() {
         throw new Error('Failed to load candidate questions from bank.');
       }
       const data = await res.json();
-      const pool: Question[] = data.pool || [];
+      const pool: Question[] = data.questions || data.pool || [];
       setAvailablePool(pool);
 
       // Distribute and match questions
