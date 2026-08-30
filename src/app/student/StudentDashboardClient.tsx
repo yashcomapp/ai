@@ -469,7 +469,7 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', flexWrap: 'nowrap', gap: '6px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: '0', flexShrink: 0 }}>
                   <TrendingUp size={18} color="#2563eb" />
-                  <strong style={{ fontSize: '13px', color: '#1e40af', fontWeight: 800, letterSpacing: '0.2px', whiteSpace: 'nowrap' }}>Glance</strong>
+                  <strong style={{ fontSize: '14px', color: '#1e40af', fontWeight: 800, letterSpacing: '0.2px', whiteSpace: 'nowrap' }}>Glance</strong>
                 </div>
                 {/* Interactive Time Range Filter Dropdown */}
                 <select
@@ -552,7 +552,7 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
                 ) : (
                   <CheckCircle2 size={20} color="#059669" style={{ flexShrink: 0 }} />
                 )}
-                <h3 style={{ margin: 0, fontSize: '13px', fontWeight: 800, color: (needAttentionTopics.length > 0 || peerReviews.count > 0) ? '#92400e' : '#065f46', lineHeight: 1.3 }}>
+                <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 800, color: (needAttentionTopics.length > 0 || peerReviews.count > 0) ? '#92400e' : '#065f46', lineHeight: 1.3 }}>
                   {(needAttentionTopics.length > 0 || peerReviews.count > 0) 
                     ? `${needAttentionTopics.length + (peerReviews.count > 0 ? 1 : 0)} Action Item(s) Need Attention` 
                     : 'All Clear! You are fully on track!'}
@@ -616,7 +616,7 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
               flexDirection: 'column',
               gap: '8px'
             }}>
-              <h3 style={{ margin: 0, fontSize: '13px', fontWeight: 800, color: '#6b21a8', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 800, color: '#6b21a8', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <Rocket size={18} color="#7c3aed" /> Quick Navigation
               </h3>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
@@ -921,7 +921,7 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', borderBottom: '1.5px solid #99f6e4', paddingBottom: '6px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <BookOpen size={18} color="#115e59" />
-                <h3 style={{ fontSize: '13px', fontWeight: 800, margin: 0, color: '#115e59', whiteSpace: 'nowrap' }}>Today's Study & Practice</h3>
+                <h3 style={{ fontSize: '14px', fontWeight: 800, margin: 0, color: '#115e59', whiteSpace: 'nowrap' }}>Today's Study & Practice</h3>
               </div>
             </div>
 

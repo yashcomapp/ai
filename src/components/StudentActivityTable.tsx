@@ -110,14 +110,14 @@ export default function StudentActivityTable() {
   return (
     <div className="card" style={{
       background: 'var(--surface)',
-      padding: '24px',
-      borderRadius: 'var(--radius-lg)',
+      padding: '12px 14px',
+      borderRadius: 'var(--radius)',
       border: '1px solid var(--border-light)',
-      marginTop: '24px',
+      marginTop: '10px',
       boxShadow: 'var(--shadow-sm)'
     }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', marginBottom: '20px' }}>
-        <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text)', margin: 0 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '12px' }}>
+        <h3 style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text)', margin: 0 }}>
           🟢 Live Student Activity & Presence Monitor
         </h3>
         

@@ -1205,10 +1205,10 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
             flexWrap: 'nowrap'
           }}>
             {/* Left: Parent Greeting */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
               <div style={{
-                width: '28px',
-                height: '28px',
+                width: '30px',
+                height: '30px',
                 borderRadius: '50%',
                 background: 'var(--accent-soft)',
                 border: '1px solid var(--accent-ring)',
@@ -1217,13 +1217,13 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                 justifyContent: 'center',
                 flexShrink: 0
               }}>
-                <User size={15} color="var(--accent)" />
+                <User size={16} color="var(--accent)" />
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-                <span suppressHydrationWarning style={{ fontSize: '10.5px', fontWeight: 600, color: 'var(--text-muted)', lineHeight: 1.1 }}>
+                <span suppressHydrationWarning style={{ fontSize: '11.5px', fontWeight: 600, color: 'var(--text-muted)', lineHeight: 1.1 }}>
                   {getGreeting()}
                 </span>
-                <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text)', lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                <span style={{ fontSize: '14.5px', fontWeight: 800, color: 'var(--text)', lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {(user?.name || user?.displayName || 'Parent').replace(/\s*ji$/i, '')} ji
                 </span>
               </div>
@@ -1236,14 +1236,14 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
               background: 'var(--surface)',
               border: '1px solid var(--border-light)',
               borderRadius: 'var(--radius)',
-              padding: '4px 8px',
-              gap: '6px',
+              padding: '4px 10px',
+              gap: '8px',
               boxShadow: 'var(--shadow-sm)',
               position: 'relative'
             }}>
               <div style={{
-                width: '22px',
-                height: '22px',
+                width: '26px',
+                height: '26px',
                 borderRadius: '50%',
                 background: 'var(--accent-soft)',
                 border: '1px solid var(--accent-ring)',
@@ -1252,7 +1252,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                 justifyContent: 'center',
                 flexShrink: 0
               }}>
-                <GraduationCap size={13} color="var(--accent)" />
+                <GraduationCap size={15} color="var(--accent)" />
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', position: 'relative' }}>
@@ -1263,11 +1263,11 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                       background: 'transparent', 
                       border: 'none', 
                       color: 'var(--text)', 
-                      fontSize: '12px', 
-                      fontWeight: 700, 
+                      fontSize: '14px', 
+                      fontWeight: 800, 
                       outline: 'none', 
                       cursor: 'pointer',
-                      paddingRight: '14px',
+                      paddingRight: '16px',
                       appearance: 'none',
                       WebkitAppearance: 'none'
                     }}
@@ -1278,9 +1278,9 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                       </option>
                     ))}
                   </select>
-                  <ChevronDown size={12} color="var(--text-muted)" style={{ position: 'absolute', right: 0, pointerEvents: 'none' }} />
+                  <ChevronDown size={14} color="var(--text-muted)" style={{ position: 'absolute', right: 0, pointerEvents: 'none' }} />
                 </div>
-                <span style={{ fontSize: '9.5px', color: 'var(--text-muted)', marginTop: '-1px', fontWeight: 600 }}>
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '-1px', fontWeight: 600 }}>
                   {(() => {
                     const active = children.find(c => c.studentCode === selectedChildCode) || children[0];
                     if (active?.className && active.className.trim()) {
@@ -1324,7 +1324,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Moon size={22} color="#0f766e" />
-                <h3 style={{ margin: 0, fontSize: '13px', fontWeight: 800, color: '#115e59' }}>
+                <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 800, color: '#115e59' }}>
                   Daily 5-Min Parent-Kid Sync
                 </h3>
               </div>
@@ -1390,7 +1390,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', flexWrap: 'nowrap', gap: '6px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: '0', flexShrink: 0 }}>
                   <TrendingUp size={18} color="#2563eb" />
-                  <strong style={{ fontSize: '13px', color: '#1e40af', fontWeight: 800, letterSpacing: '0.2px', whiteSpace: 'nowrap' }}>Child at a Glance</strong>
+                  <strong style={{ fontSize: '14px', color: '#1e40af', fontWeight: 800, letterSpacing: '0.2px', whiteSpace: 'nowrap' }}>Child at a Glance</strong>
                 </div>
                 <span style={{
                   background: '#ffffff',
@@ -1462,7 +1462,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                   <CheckCircle2 size={22} color="#059669" />
                 )}
                 <div>
-                  <h3 style={{ margin: 0, fontSize: '13px', fontWeight: 800, color: pendingReviews.length > 0 ? '#92400e' : '#065f46' }}>
+                  <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 800, color: pendingReviews.length > 0 ? '#92400e' : '#065f46' }}>
                     {pendingReviews.length > 0 
                       ? `${pendingReviews.length} thing(s) need your attention` 
                       : 'All Clear!'}

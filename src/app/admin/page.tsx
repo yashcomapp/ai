@@ -446,7 +446,7 @@ export default function AdminDashboard() {
             {/* Quick Actions Panel */}
             <div className="card" style={{ background: '#ffffff', padding: '10px 12px', borderRadius: 'var(--radius)', border: '1px solid var(--border)', marginBottom: '10px', boxShadow: 'var(--shadow-sm)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '8px' }}>
-                <h3 style={{ fontSize: '13px', fontWeight: 800, margin: 0, color: 'var(--text)' }}>Quick Actions</h3>
+                <h3 style={{ fontSize: '14px', fontWeight: 800, margin: 0, color: 'var(--text)' }}>Quick Actions</h3>
               </div>
               <div className="admin-quick-actions-grid">
                 <button className="btn btn-secondary" style={{ width: '100%', fontSize: '11.5px', fontWeight: 600, padding: '6px 8px', whiteSpace: 'nowrap', borderRadius: 'var(--radius-sm)' }} onClick={() => router.push('/admin/exams')}>Exams Scheduler</button>

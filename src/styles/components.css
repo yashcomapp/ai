@@ -34,11 +34,16 @@
     align-items: center;
     justify-content: space-between;
     gap: 6px;
-    font-weight: 700;
+    font-weight: 800;
     font-size: 14px;
     color: var(--text);
 }
-.card-header h1,.card-header h2,.card-header h3 { font-size: 14px; font-weight: 700; color: var(--text); margin: 0; }
+.card-header h1, .card-header h2, .card-header h3, .card-header h4, .card-title { 
+    font-size: 14px; 
+    font-weight: 800; 
+    color: var(--text); 
+    margin: 0; 
+}
 .card-body { padding: 8px 10px; }
 .card-footer {
     padding: 6px 10px;
