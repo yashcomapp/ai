@@ -38,7 +38,9 @@ import {
   Sparkles,
   BarChart2,
   Receipt,
-  Video
+  Video,
+  GraduationCap,
+  ChevronDown
 } from 'lucide-react';
 import { getScoreColor } from '@/lib/dashboardMetrics';
 
@@ -1188,9 +1190,9 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
       </div>
 
       {/* Main Dashboard Container */}
-      <div className="dashboard-container" style={{ maxWidth: '1000px', width: '100%', margin: '0 auto', padding: '16px 14px 80px 14px' }}>
+      <div className="dashboard-container" style={{ maxWidth: '1000px', width: '100%', margin: '0 auto', padding: '4px 8px 30px 8px' }}>
 
-        {/* ROW 1: Parent Greeting & Child Selector in ONE single line */}
+        {/* ROW 1: Parent Greeting & Child Selector in ONE cohesive, polished bar */}
         {initialLoading ? (
           renderChildSelectorSkeleton()
         ) : children.length > 0 ? (
@@ -1202,47 +1204,83 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
             marginBottom: '8px',
             flexWrap: 'nowrap'
           }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
-              <span suppressHydrationWarning style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', lineHeight: '1.1' }}>
-                {getGreeting()}
-              </span>
-              <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text)', lineHeight: '1.2' }}>
-                {(user?.name || user?.displayName || 'Parent').replace(/\s*ji$/i, '')} ji
-              </span>
+            {/* Left: Parent Greeting */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
+              <div style={{
+                width: '28px',
+                height: '28px',
+                borderRadius: '50%',
+                background: 'var(--accent-soft)',
+                border: '1px solid var(--accent-ring)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0
+              }}>
+                <User size={15} color="var(--accent)" />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+                <span suppressHydrationWarning style={{ fontSize: '10.5px', fontWeight: 600, color: 'var(--text-muted)', lineHeight: 1.1 }}>
+                  {getGreeting()}
+                </span>
+                <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text)', lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {(user?.name || user?.displayName || 'Parent').replace(/\s*ji$/i, '')} ji
+                </span>
+              </div>
             </div>
 
-            {/* Child Selector Pill Container */}
+            {/* Right: Child Selector */}
             <div style={{
               display: 'flex',
               alignItems: 'center',
-              background: '#ffffff',
-              border: '1.5px solid #bfdbfe',
-              borderRadius: '20px',
-              padding: '4px 10px',
-              boxShadow: 'var(--shadow-sm)'
+              background: 'var(--surface)',
+              border: '1px solid var(--border-light)',
+              borderRadius: 'var(--radius)',
+              padding: '4px 8px',
+              gap: '6px',
+              boxShadow: 'var(--shadow-sm)',
+              position: 'relative'
             }}>
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <select 
-                  value={selectedChildCode}
-                  onChange={(e) => setSelectedChildCode(e.target.value)}
-                  style={{ 
-                    background: 'transparent', 
-                    border: 'none', 
-                    color: '#1e293b', 
-                    fontSize: '12px', 
-                    fontWeight: 700, 
-                    outline: 'none', 
-                    cursor: 'pointer',
-                    paddingRight: '8px'
-                  }}
-                >
-                  {children.map(c => (
-                    <option key={c.studentCode} value={c.studentCode} style={{ background: '#ffffff', color: '#1e293b' }}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-                <span style={{ fontSize: '9.5px', color: '#64748b', marginTop: '-2px', fontWeight: 600 }}>
+              <div style={{
+                width: '22px',
+                height: '22px',
+                borderRadius: '50%',
+                background: 'var(--accent-soft)',
+                border: '1px solid var(--accent-ring)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0
+              }}>
+                <GraduationCap size={13} color="var(--accent)" />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', position: 'relative' }}>
+                  <select 
+                    value={selectedChildCode}
+                    onChange={(e) => setSelectedChildCode(e.target.value)}
+                    style={{ 
+                      background: 'transparent', 
+                      border: 'none', 
+                      color: 'var(--text)', 
+                      fontSize: '12px', 
+                      fontWeight: 700, 
+                      outline: 'none', 
+                      cursor: 'pointer',
+                      paddingRight: '14px',
+                      appearance: 'none',
+                      WebkitAppearance: 'none'
+                    }}
+                  >
+                    {children.map(c => (
+                      <option key={c.studentCode} value={c.studentCode} style={{ background: 'var(--surface)', color: 'var(--text)' }}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown size={12} color="var(--text-muted)" style={{ position: 'absolute', right: 0, pointerEvents: 'none' }} />
+                </div>
+                <span style={{ fontSize: '9.5px', color: 'var(--text-muted)', marginTop: '-1px', fontWeight: 600 }}>
                   {(() => {
                     const active = children.find(c => c.studentCode === selectedChildCode) || children[0];
                     if (active?.className && active.className.trim()) {
