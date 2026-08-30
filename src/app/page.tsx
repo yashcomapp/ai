@@ -2,413 +2,350 @@ import React, { Suspense } from 'react';
 import Link from 'next/link';
 import LoginModal from '@/components/LoginModal';
 import Image from 'next/image';
-import { Outfit } from 'next/font/google';
-
-const outfit = Outfit({
-  subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-outfit',
-});
 
 export default function LoginPage() {
   return (
-    <div className={`landing-shell ${outfit.variable}`}>
+    <div className="landing-shell">
       <style dangerouslySetInnerHTML={{ __html: `
         .landing-shell {
-          font-family: var(--font-outfit), sans-serif;
-          background-color: #1a1e24;
-          background-image: linear-gradient(rgba(26, 30, 36, 0.7), rgba(26, 30, 36, 0.8)), url('/chalkboard.webp');
-          background-size: cover;
-          background-position: center;
-          background-repeat: no-repeat;
-          background-attachment: scroll;
-          color: #f1f5f9;
+          background-color: var(--bg);
+          color: var(--text);
           min-height: 100vh;
           display: flex;
           flex-direction: column;
           margin: 0;
           padding: 0;
           box-sizing: border-box;
-          justify-content: flex-start;
-          gap: 24px;
-          transition: background-color 0.3s ease, color 0.3s ease;
-
-          --bg-color: transparent;
-          --text-color: #f1f5f9;
-          --bg-grad: linear-gradient(rgba(26, 30, 36, 0.7), rgba(26, 30, 36, 0.8)), url('/chalkboard.webp');
-          --card-bg: rgba(30, 41, 59, 0.45);
-          --card-border: rgba(255, 255, 255, 0.15);
-          --accent-grad: linear-gradient(135deg, #cbd5e1, #94a3b8);
-          --text-accent: #e2e8f0;
-          --icon-color: #cbd5e1;
-          --text-sub: #e2e8f0;
-          --btn-shadow: rgba(255, 255, 255, 0.05);
-          --badge-bg: rgba(255, 255, 255, 0.08);
-          --badge-border: rgba(255, 255, 255, 0.1);
-          --badge-text: #f1f5f9;
-          --badge-dot: #ffffff;
+          font-family: var(--font-family);
+          position: relative;
         }
 
-        /* Header Style */
+        /* Header Bar */
         .landing-header {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          padding: 10px 24px;
-          background: rgba(26, 30, 36, 0.45);
-          border-bottom: 1px solid var(--card-border);
-          backdrop-filter: blur(8px);
+          padding: 8px 16px;
+          background: var(--surface);
+          border-bottom: 1px solid var(--border-light);
+          box-shadow: var(--shadow-xs);
           box-sizing: border-box;
-          height: 54px;
-          transition: border-color 0.3s ease;
+          height: 52px;
+          position: sticky;
+          top: 0;
+          z-index: 100;
         }
         .brand-container {
           display: flex;
           align-items: center;
           gap: 8px;
           text-decoration: none;
-          color: var(--text-color);
+          color: var(--text);
         }
         .brand-name {
-          font-family: var(--font-outfit), sans-serif;
-          font-size: 15px;
+          font-size: 14px;
           font-weight: 800;
-          letter-spacing: 1px;
+          color: var(--text);
+          letter-spacing: 0.2px;
         }
-        .btn-pill {
+        .btn-pill-login {
           background: var(--accent-grad);
           color: #ffffff;
           border: none;
-          padding: 8px 18px;
-          border-radius: 30px;
-          font-weight: 600;
+          padding: 6px 18px;
+          border-radius: var(--radius-pill);
+          font-weight: 800;
           font-size: 13px;
           cursor: pointer;
-          transition: transform 0.2s ease, box-shadow 0.2s ease;
-          box-shadow: 0 4px 10px var(--btn-shadow);
+          transition: all 0.2s ease;
+          box-shadow: var(--shadow-sm);
+          text-decoration: none;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
         }
-        .btn-pill:hover {
+        .btn-pill-login:hover {
           transform: translateY(-1px);
-          box-shadow: 0 6px 14px var(--btn-shadow);
+          box-shadow: var(--shadow-md);
         }
 
         /* Hero Section */
         .hero-section {
-          background: transparent;
-          color: #ffffff;
-          padding: 40px 20px 0px;
+          padding: 40px 16px 24px;
           text-align: center;
           display: flex;
           flex-direction: column;
           align-items: center;
           box-sizing: border-box;
-          transition: background 0.3s ease;
-          position: relative;
-          overflow: hidden;
+          max-width: 900px;
+          margin: 0 auto;
+          width: 100%;
+        }
+        .hero-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          background: var(--accent-soft);
+          border: 1px solid var(--accent-ring);
+          color: var(--accent);
+          font-size: 11px;
+          font-weight: 700;
+          padding: 4px 12px;
+          border-radius: var(--radius-pill);
+          margin-bottom: 16px;
         }
         .hero-title {
-          font-family: var(--font-outfit), sans-serif;
-          font-size: 54px;
-          font-weight: 700;
-          line-height: 1.25;
-          max-width: 750px;
-          margin: 0 0 12px;
-          color: rgba(255, 255, 255, 0.95);
-          text-shadow: 0 0 2px rgba(255, 255, 255, 0.4), 0 0 6px rgba(255, 255, 255, 0.2);
-          letter-spacing: 0.5px;
+          font-size: 38px;
+          font-weight: 900;
+          line-height: 1.2;
+          color: var(--text);
+          letter-spacing: -0.5px;
+          margin: 0 0 14px;
+          max-width: 720px;
+        }
+        .hero-title-accent {
+          background: var(--accent-grad);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
         }
         .hero-desc {
-          font-size: 14pt;
-          font-weight: 400;
-          max-width: 680px;
-          margin: 0 0 20px;
-          opacity: 0.9;
+          font-size: 14px;
+          font-weight: 500;
+          max-width: 620px;
+          margin: 0 0 24px;
           line-height: 1.5;
-          color: var(--text-sub);
+          color: var(--text-secondary);
+        }
+        .hero-actions {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 12px;
+          flex-wrap: wrap;
+        }
+        .btn-hero-primary {
+          background: var(--accent-grad);
+          color: #ffffff;
+          border: none;
+          padding: 10px 24px;
+          border-radius: var(--radius);
+          font-weight: 800;
+          font-size: 14px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+          text-decoration: none;
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+        }
+        .btn-hero-primary:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35);
+        }
+        .btn-hero-secondary {
+          background: var(--surface);
+          color: var(--text);
+          border: 1.5px solid var(--border);
+          padding: 10px 20px;
+          border-radius: var(--radius);
+          font-weight: 700;
+          font-size: 14px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          text-decoration: none;
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+        }
+        .btn-hero-secondary:hover {
+          background: var(--surface-2);
+          border-color: var(--border-light);
         }
 
-        /* Feature Section */
+        /* Features Section */
         .features-section {
-          padding: 0px 24px 30px;
-          text-align: center;
-          background-color: var(--bg-color);
+          padding: 20px 16px 40px;
+          max-width: 1000px;
+          width: 100%;
+          margin: 0 auto;
           box-sizing: border-box;
-          transition: background-color 0.3s ease;
+        }
+        .features-header {
+          text-align: center;
+          margin-bottom: 20px;
         }
         .features-heading {
-          font-family: var(--font-outfit), sans-serif;
-          font-size: 40px;
-          font-weight: 700;
-          color: rgba(255, 255, 255, 0.95);
-          line-height: 1.25;
+          font-size: 22px;
+          font-weight: 800;
+          color: var(--text);
+          line-height: 1.3;
+          margin: 0 0 6px;
+        }
+        .features-sub {
+          font-size: 13px;
+          color: var(--text-muted);
           margin: 0;
-          text-shadow: 0 0 2px rgba(255, 255, 255, 0.4), 0 0 6px rgba(255, 255, 255, 0.2);
         }
         .cards-grid {
           display: grid;
           grid-template-columns: repeat(3, 1fr);
-          gap: 16px;
-          max-width: 1000px;
-          margin: 16px auto 0;
+          gap: 12px;
         }
-        .feature-card {
-          background: var(--card-bg);
-          border: 1px solid var(--card-border);
-          border-radius: 16px;
-          padding: 16px 20px;
-          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-          text-align: left;
-          box-sizing: border-box;
-          transition: background 0.3s ease, border-color 0.3s ease;
+        .landing-card {
+          border-radius: var(--radius);
+          padding: 16px;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          box-shadow: var(--shadow-sm);
+          transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
-        .feature-card:hover {
+        .landing-card:hover {
           transform: translateY(-2px);
-          box-shadow: 0 12px 30px var(--btn-shadow);
+          box-shadow: var(--shadow-md);
         }
-        .card-title {
-          font-family: var(--font-outfit), sans-serif;
-          font-size: 26px;
+        .landing-card-header {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+        .landing-card-title {
+          font-size: 14px;
           font-weight: 800;
-          color: var(--text-accent);
-          margin-bottom: 6px;
+          margin: 0;
+          line-height: 1.2;
         }
-        .card-desc {
-          font-size: 13pt;
-          color: var(--text-sub);
-          line-height: 1.4;
+        .landing-card-desc {
+          font-size: 12.5px;
+          color: var(--text-secondary);
+          line-height: 1.45;
+          margin: 0;
         }
 
         /* Footer */
         .landing-footer {
-          padding: 12px 24px;
+          padding: 16px 20px;
           text-align: center;
-          background: var(--bg-color);
-          border-top: 1px solid var(--card-border);
-          font-size: 11pt;
-          color: var(--text-sub);
+          background: var(--surface);
+          border-top: 1px solid var(--border-light);
+          font-size: 11px;
+          color: var(--text-muted);
           box-sizing: border-box;
-          height: 38px;
-          transition: background-color 0.3s ease, border-color 0.3s ease;
           margin-top: auto;
-        }
-
-        /* Floating Login Modal Dialog Overlay */
-        .login-overlay {
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: rgba(11, 16, 32, 0.65);
-          backdrop-filter: blur(8px);
           display: flex;
           align-items: center;
           justify-content: center;
-          z-index: 9999;
-          animation: fadeIn 0.25s ease-out;
-        }
-        .login-modal {
-          background: var(--card-bg);
-          padding: 30px;
-          border-radius: 24px;
-          box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
-          width: 100%;
-          max-width: 400px;
-          border: 1px solid var(--card-border);
-          position: relative;
-          box-sizing: border-box;
-          animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        .close-btn {
-          position: absolute;
-          top: 16px;
-          right: 16px;
-          background: none;
-          border: none;
-          font-size: 20px;
-          cursor: pointer;
-          color: var(--text-sub);
         }
 
-        .login-modal h2 {
-          font-family: var(--font-outfit), sans-serif;
-          font-size: 20px;
-          font-weight: 800;
-          margin: 0;
-          color: #ffffff;
-          letter-spacing: 0.5px;
-        }
-        .login-modal .subtitle {
-          font-size: 12px;
-          color: var(--text-sub);
-          margin-bottom: 18px;
-          text-align: center;
-        }
-        .form-group {
-          margin-bottom: 14px;
-          text-align: left;
-        }
-        .form-group label {
-          display: block;
-          font-size: 11px;
-          font-weight: 600;
-          color: var(--text-sub);
-          margin-bottom: 4px;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-        }
-        .form-group input {
-          width: 100%;
-          padding: 10px 14px;
-          border: 1.5px solid var(--card-border);
-          border-radius: 10px;
-          background-color: var(--bg-color);
-          font-family: inherit;
-          font-size: 13px;
-          color: var(--text-color);
-          box-sizing: border-box;
-        }
-        .form-group input:focus {
-          outline: none;
-          border-color: var(--accent);
-        }
-        .role-badges {
-          display: flex;
-          justify-content: center;
-          gap: 6px;
-          margin-bottom: 14px;
-        }
-        .role-pill {
-          background-color: var(--bg-color);
-          border: 1px solid var(--card-border);
-          color: var(--text-accent);
-          font-size: 10px;
-          font-weight: 600;
-          padding: 3px 8px;
-          border-radius: 20px;
-        }
-        .btn-block {
-          width: 100%;
-          padding: 10px;
-          border-radius: 10px;
-          font-weight: 700;
-          font-size: 14px;
-        }
-
-        /* Animations */
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        @keyframes slideUp {
-          from { transform: translateY(20px); opacity: 0; }
-          to { transform: translateY(0); opacity: 1; }
-        }
-
-        /* Responsive Design Media Queries */
         @media (max-width: 768px) {
-          .landing-shell {
-            height: auto;
-            max-height: none;
-            overflow: auto;
-            background-attachment: scroll !important;
-            background-size: cover !important;
-            background-repeat: repeat-y !important;
-            background-position: top center !important;
-            gap: 16px !important;
-          }
           .hero-section {
-            padding: 20px 16px 0px !important;
+            padding: 24px 16px 16px;
           }
           .hero-title {
-            font-size: 32px !important;
-            margin-bottom: 8px !important;
+            font-size: 26px;
+            margin-bottom: 10px;
           }
           .hero-desc {
-            font-size: 13pt !important;
-            margin-bottom: 12px !important;
-            line-height: 1.4 !important;
-          }
-          .features-heading {
-            font-size: 26px !important;
+            font-size: 13px;
+            margin-bottom: 20px;
           }
           .cards-grid {
             grid-template-columns: 1fr;
-            gap: 10px !important;
-            margin-top: 12px !important;
+            gap: 10px;
           }
-          .feature-card {
-            padding: 14px 16px !important;
-          }
-          .card-title {
-            font-size: 20px !important;
-            margin-bottom: 4px !important;
-          }
-          .card-desc {
-            font-size: 12pt !important;
-            line-height: 1.4 !important;
-          }
-          .features-section {
-            padding: 0px 16px 20px !important;
-          }
-          .login-modal {
-            padding: 20px;
-            margin: 16px;
+          .features-heading {
+            font-size: 18px;
           }
         }
       ` }} />
 
-      {/* Header Navigation */}
+      {/* Top Navigation Bar */}
       <header className="landing-header">
-        <Link href="#" className="brand-container">
-          <Image src="/logo.png" alt="YASHCOM Logo" width={28} height={28} style={{ borderRadius: '50%', objectFit: 'cover' }} priority />
-          <span className="brand-name">YASHCOM - LEARN OS</span>
+        <Link href="/" className="brand-container">
+          <Image src="/logo.png" alt="YASHCOM Logo" width={26} height={26} style={{ borderRadius: '50%', objectFit: 'cover' }} priority />
+          <span className="brand-name">YASHCOM — LEARN OS</span>
         </Link>
         
-        <div className="header-actions-group">
-          <Link href="?login=true" className="btn-pill" style={{ textDecoration: 'none' }}>
-            Login
+        <div>
+          <Link href="?login=true" className="btn-pill-login">
+            Login →
           </Link>
         </div>
       </header>
 
       {/* Hero Section */}
       <section className="hero-section">
-        <h1 className="hero-title">Learning, Reimagined for Every Mind</h1>
+        <div className="hero-badge">
+          ✨ AI-Powered Learning Operating System
+        </div>
+        <h1 className="hero-title">
+          Learning, Reimagined for <span className="hero-title-accent">Every Mind</span>
+        </h1>
         <p className="hero-desc">
-          The world's first AI-powered Learning Operating System — built to help every student learn and excel in their own unique way.
+          Built to empower students with autonomous daily practice, adaptive diagnostic analytics, and real-time parent-teacher synergy.
         </p>
+
+        <div className="hero-actions">
+          <Link href="?login=true" className="btn-hero-primary">
+            <span>Sign In to Dashboard</span>
+            <span>→</span>
+          </Link>
+          <Link href="/register" className="btn-hero-secondary">
+            <span>New Student Registration</span>
+          </Link>
+        </div>
       </section>
 
-      {/* Feature / Stats Cards Section */}
+      {/* Features Grid */}
       <section id="features" className="features-section">
-        <h2 className="features-heading">
-          Every student learns <em style={{ fontStyle: 'italic' }}>differently.</em>
-        </h2>
-        <h2 className="features-heading" style={{ color: 'var(--text-accent)', marginTop: '2px' }}>Until now, education didn't.</h2>
+        <div className="features-header">
+          <h2 className="features-heading">Personalized Excellence for Every Learner</h2>
+          <p className="features-sub">Engineered to replace one-size-fits-all education with precision diagnostic intelligence.</p>
+        </div>
 
         <div className="cards-grid">
-          <div className="feature-card">
-            <div className="card-title">1 Billion+</div>
-            <div className="card-desc">learners underserved by one-size-fits-all education globally.</div>
+          {/* Card 1: Blue Accent Card */}
+          <div className="landing-card card-blue">
+            <div className="landing-card-header">
+              <span style={{ fontSize: '16px' }}>🎯</span>
+              <h3 className="landing-card-title" style={{ color: '#1e40af' }}>Adaptive Practice Engine</h3>
+            </div>
+            <p className="landing-card-desc">
+              Dynamic topic-level question pools with intelligent recovery cycles, automated cooldowns, and mistake-analysis.
+            </p>
           </div>
-          <div className="feature-card">
-            <div className="card-title">Your style.</div>
-            <div className="card-desc">Your style is unique — your operating system should be too.</div>
+
+          {/* Card 2: Purple Accent Card */}
+          <div className="landing-card card-purple">
+            <div className="landing-card-header">
+              <span style={{ fontSize: '16px' }}>⚡</span>
+              <h3 className="landing-card-title" style={{ color: '#6b21a8' }}>Learning Quotient (LQ)</h3>
+            </div>
+            <p className="landing-card-desc">
+              Real-time multi-dimensional scoring that measures mastery, consistency, effort, and integrity instead of raw marks.
+            </p>
           </div>
-          <div className="feature-card">
-            <div className="card-title">AI for you.</div>
-            <div className="card-desc">AI that adapts to YOU, not the other way around. Live diagnostics.</div>
+
+          {/* Card 3: Cyan Accent Card */}
+          <div className="landing-card card-cyan">
+            <div className="landing-card-header">
+              <span style={{ fontSize: '16px' }}>🤝</span>
+              <h3 className="landing-card-title" style={{ color: '#115e59' }}>5-Min Daily Parent Sync</h3>
+            </div>
+            <p className="landing-card-desc">
+              Structured nightly review rituals bringing parents, students, and teachers together on a shared progress ledger.
+            </p>
           </div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="landing-footer" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
-        <p>© 2026 Yashcom LearnOS. Empowering different minds to learn and grow.</p>
+      {/* Minimal Clean Footer */}
+      <footer className="landing-footer">
+        <p style={{ margin: 0 }}>© 2026 Yashcom Foundation • AI-Powered Learning Operating System</p>
       </footer>
 
-      {/* Suspended Client-side login modal overlay */}
+      {/* Client-side login modal overlay */}
       <Suspense fallback={null}>
         <LoginModal />
       </Suspense>

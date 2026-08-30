@@ -154,16 +154,159 @@ export default function LoginModal() {
 
   return (
     <>
+      <style jsx>{`
+        .login-overlay {
+          position: fixed;
+          inset: 0;
+          background: rgba(15, 23, 42, 0.45);
+          backdrop-filter: blur(10px);
+          -webkit-backdrop-filter: blur(10px);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 9999;
+          padding: 16px;
+          animation: modalFadeIn 0.2s ease-out;
+        }
+        .login-modal {
+          background: var(--surface);
+          padding: 24px 28px;
+          border-radius: var(--radius-lg);
+          box-shadow: var(--shadow-lg);
+          width: 100%;
+          max-width: 380px;
+          border: 1px solid var(--border-light);
+          position: relative;
+          box-sizing: border-box;
+          animation: modalSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .close-btn {
+          position: absolute;
+          top: 14px;
+          right: 14px;
+          background: var(--surface-2);
+          border: 1px solid var(--border-light);
+          border-radius: 50%;
+          width: 28px;
+          height: 28px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 16px;
+          cursor: pointer;
+          color: var(--text-muted);
+          transition: all 0.15s ease;
+        }
+        .close-btn:hover {
+          color: var(--text);
+          background: var(--surface-3);
+        }
+        .login-modal-header {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          margin-bottom: 4px;
+        }
+        .login-modal-title {
+          font-size: 15px;
+          font-weight: 800;
+          color: var(--text);
+          margin: 0;
+          letter-spacing: 0.2px;
+        }
+        .login-modal-subtitle {
+          font-size: 12px;
+          color: var(--text-muted);
+          margin: 0 0 16px;
+          text-align: center;
+        }
+        .role-badges {
+          display: flex;
+          justify-content: center;
+          gap: 6px;
+          margin-bottom: 16px;
+        }
+        .role-pill {
+          background: var(--bg-soft);
+          border: 1px solid var(--border-light);
+          color: var(--text-secondary);
+          font-size: 11px;
+          font-weight: 700;
+          padding: 3px 10px;
+          border-radius: var(--radius-pill);
+        }
+        .form-group {
+          margin-bottom: 12px;
+          text-align: left;
+        }
+        .form-group label {
+          display: block;
+          font-size: 11px;
+          font-weight: 700;
+          color: var(--text-secondary);
+          margin-bottom: 4px;
+          text-transform: uppercase;
+          letter-spacing: 0.3px;
+        }
+        .form-group input {
+          width: 100%;
+          padding: 9px 12px;
+          border: 1.5px solid var(--border);
+          border-radius: var(--radius-sm);
+          background: var(--surface-2);
+          font-size: 13px;
+          color: var(--text);
+          box-sizing: border-box;
+          outline: none;
+          transition: all 0.2s ease;
+        }
+        .form-group input:focus {
+          border-color: var(--accent);
+          background: var(--surface);
+          box-shadow: 0 0 0 3px var(--accent-ring);
+        }
+        .btn-login-submit {
+          width: 100%;
+          padding: 10px;
+          border-radius: var(--radius-sm);
+          font-weight: 800;
+          font-size: 14px;
+          background: var(--accent-grad);
+          color: #ffffff;
+          border: none;
+          cursor: pointer;
+          box-shadow: var(--shadow-sm);
+          transition: all 0.2s ease;
+          margin-top: 4px;
+        }
+        .btn-login-submit:hover:not(:disabled) {
+          transform: translateY(-1px);
+          box-shadow: var(--shadow-md);
+        }
+        .btn-login-submit:disabled {
+          opacity: 0.7;
+          cursor: not-allowed;
+        }
+        @keyframes modalFadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes modalSlideUp {
+          from { transform: translateY(16px); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
+        }
+      `}</style>
+
       <div className="login-overlay" onClick={handleClose}>
         <div className="login-modal" onClick={(e) => e.stopPropagation()}>
           <button className="close-btn" onClick={handleClose}>×</button>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '8px' }}>
-            <Image src="/logo.png" alt="YASHCOM Logo" width={28} height={28} style={{ borderRadius: '50%', objectFit: 'cover' }} priority />
-            <h2>YASHCOM - LEARN OS</h2>
+          
+          <div className="login-modal-header">
+            <Image src="/logo.png" alt="YASHCOM Logo" width={26} height={26} style={{ borderRadius: '50%', objectFit: 'cover' }} priority />
+            <h2 className="login-modal-title">YASHCOM — LEARN OS</h2>
           </div>
-          <div className="subtitle">Sign in to your learning dashboard profile</div>
-
-
+          <div className="login-modal-subtitle">Sign in to your learning dashboard profile</div>
 
           <form onSubmit={handleLoginSubmit}>
             <div className="role-badges">
@@ -173,10 +316,10 @@ export default function LoginModal() {
             </div>
 
             <div className="form-group">
-               <label>Email / Username</label>
+              <label>Email / Username</label>
               <input 
                 type="text" 
-                placeholder="Enter your email" 
+                placeholder="Enter your registered email" 
                 autoComplete="off"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -197,24 +340,23 @@ export default function LoginModal() {
 
             <button 
               type="submit" 
-              className="btn btn-primary btn-block" 
+              className="btn-login-submit" 
               disabled={isLoggingIn || redirecting}
-              style={{ background: 'var(--accent-grad)', color: '#fff', border: 'none', cursor: 'pointer' }}
             >
-              {redirecting ? 'Redirecting to Dashboard...' : (isLoggingIn ? 'Logging in...' : 'Login')}
+              {redirecting ? 'Redirecting to Dashboard...' : (isLoggingIn ? 'Logging in...' : 'Sign In →')}
             </button>
           </form>
 
           {(isLoggingIn || redirecting) && (
-            <div className="loading" style={{ display: 'block', marginTop: '12px', textAlign: 'center' }}>
+            <div className="loading" style={{ display: 'block', marginTop: '12px', textAlign: 'center', fontSize: '12px' }}>
               <div className="spinner"></div> {redirecting ? 'Redirecting to dashboard... Please wait a moment.' : 'Logging in...'}
             </div>
           )}
 
-          <div className="auth-foot" style={{ marginTop: '14px', display: 'flex', justifyContent: 'space-between', fontSize: '11px' }}>
+          <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'center', fontSize: '11.5px' }}>
             <a 
               href="#" 
-              style={{ color: 'var(--text-accent)', textDecoration: 'none', fontWeight: '500' }}
+              style={{ color: 'var(--accent)', textDecoration: 'none', fontWeight: '600' }}
               onClick={(e) => {
                 e.preventDefault();
                 setShowForgotPanel(!showForgotPanel);
@@ -225,73 +367,74 @@ export default function LoginModal() {
           </div>
 
           {showForgotPanel && (
-            <div style={{ marginTop: '14px', paddingTop: '14px', borderTop: '1px solid var(--card-border)', fontSize: '12px', color: 'var(--text-accent)', lineHeight: '1.5', textAlign: 'center' }}>
-              💡 <strong>Password Hint:</strong> Student & parent passwords are the student's birthdate in 6-digit <strong>DDMMYY</strong> format (e.g., September 15th, 2011 &rarr; <strong>150911</strong>, February 1st, 2012 &rarr; <strong>010212</strong>).
+            <div style={{ marginTop: '12px', padding: '10px 12px', background: 'var(--surface-2)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', fontSize: '11.5px', color: 'var(--text-secondary)', lineHeight: '1.45', textAlign: 'center' }}>
+              💡 <strong>Password Hint:</strong> Student &amp; parent passwords are the student's birthdate in 6-digit <strong>DDMMYY</strong> format (e.g., September 15th, 2011 &rarr; <strong>150911</strong>).
             </div>
           )}
 
-          <div className="auth-foot" style={{ marginTop: '18px', borderTop: '1px solid var(--card-border)', paddingTop: '12px', fontSize: '12px', textAlign: 'center', color: 'var(--text-sub)' }}>
-            <div>🆕 New user? <Link href="/register" style={{ color: 'var(--text-accent)', fontWeight: '600', textDecoration: 'none' }}>Register as a Student</Link></div>
-            <p style={{ margin: '4px 0 0', fontSize: '10px', color: 'var(--text-sub)' }}>Register once, then wait for admin approval</p>
+          <div style={{ marginTop: '16px', borderTop: '1px solid var(--border-light)', paddingTop: '12px', fontSize: '12px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+            <div>🆕 New user? <Link href="/register" style={{ color: 'var(--accent)', fontWeight: '700', textDecoration: 'none' }}>Register as a Student</Link></div>
+            <p style={{ margin: '4px 0 0', fontSize: '10.5px', color: 'var(--text-muted)' }}>Register once, then wait for admin approval</p>
           </div>
         </div>
       </div>
 
       {/* Concurrent Session Conflict Modal */}
       {showConflictModal && (
-        <div className="modal show" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0, 0, 0, 0.45)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', zIndex: 10000, position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, padding: '20px' }}>
-          <div className="modal-content" style={{ maxWidth: '420px', margin: 'auto', background: 'var(--surface-popover)', borderRadius: '16px', padding: '24px', border: '1px solid var(--border-popover)', boxShadow: 'var(--shadow-lg)' }}>
+        <div className="modal show" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(15, 23, 42, 0.45)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', zIndex: 10000, position: 'fixed', inset: 0, padding: '16px' }}>
+          <div className="modal-content" style={{ maxWidth: '400px', width: '100%', margin: 'auto', background: 'var(--surface)', borderRadius: 'var(--radius-lg)', padding: '20px', border: '1px solid var(--border-light)', boxShadow: 'var(--shadow-lg)' }}>
             <div className="modal-header">
-              <h4 style={{ margin: '0 0 12px', fontSize: '18px', color: 'var(--text)' }}>⚠️ Already Logged In Elsewhere</h4>
+              <h4 style={{ margin: '0 0 10px', fontSize: '15px', fontWeight: 800, color: 'var(--text)' }}>⚠️ Already Logged In Elsewhere</h4>
             </div>
-            <div className="modal-body" style={{ fontSize: '14px', color: 'var(--text-sub)' }}>
-              <p>This account is already logged in on another device or browser.</p>
-              <p style={{ marginTop: '8px', color: 'var(--text-sub)' }}>If you continue, that session will be logged out automatically.</p>
+            <div className="modal-body" style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.45' }}>
+              <p style={{ margin: 0 }}>This account is currently active on another device or browser session.</p>
+              <p style={{ marginTop: '6px', color: 'var(--text-secondary)' }}>If you continue, that session will be logged out automatically.</p>
             </div>
-            <div className="modal-footer" style={{ display: 'flex', gap: '8px', padding: '12px 0 0', borderTop: '1px solid var(--card-border)', marginTop: '16px' }}>
-              <button 
-                className="btn btn-primary" 
-                onClick={() => handleConflictResolve(true)}
-                style={{ background: 'var(--accent-grad)', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '8px', cursor: 'pointer' }}
-              >
-                Log Out Other Session &amp; Continue
-              </button>
+            <div className="modal-footer" style={{ display: 'flex', gap: '8px', padding: '12px 0 0', borderTop: '1px solid var(--border-light)', marginTop: '14px', justifyContent: 'flex-end' }}>
               <button 
                 className="btn btn-secondary" 
                 onClick={() => handleConflictResolve(false)}
-                style={{ padding: '8px 16px', borderRadius: '8px', cursor: 'pointer' }}
+                style={{ padding: '6px 14px', borderRadius: 'var(--radius-sm)', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
               >
                 Cancel
+              </button>
+              <button 
+                className="btn btn-primary" 
+                onClick={() => handleConflictResolve(true)}
+                style={{ background: 'var(--accent-grad)', color: '#fff', border: 'none', padding: '6px 14px', borderRadius: 'var(--radius-sm)', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
+              >
+                Log Out Other &amp; Continue
               </button>
             </div>
           </div>
         </div>
       )}
+
       {/* Login Error Popup Modal */}
       {showErrorPopup && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.45)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 40000 }}>
-          <div className="card" style={{ background: 'var(--surface-popover)', border: '1px solid var(--border-popover)', padding: '24px', borderRadius: 'var(--radius-lg)', maxWidth: '440px', width: '90%', display: 'flex', flexDirection: 'column', gap: '16px', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
-            <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 'bold', color: 'var(--danger)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.45)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 40000, padding: '16px' }}>
+          <div className="card" style={{ background: 'var(--surface)', border: '1px solid var(--border-light)', padding: '20px', borderRadius: 'var(--radius-lg)', maxWidth: '400px', width: '100%', display: 'flex', flexDirection: 'column', gap: '12px', boxShadow: 'var(--shadow-lg)' }}>
+            <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 800, color: 'var(--danger)', display: 'flex', alignItems: 'center', gap: '6px' }}>
               ⚠️ Login Error
             </h3>
             
-            <p style={{ margin: 0, fontSize: '13px', color: 'var(--text)', lineHeight: '1.5', whiteSpace: 'pre-line' }}>
+            <p style={{ margin: 0, fontSize: '12.5px', color: 'var(--text)', lineHeight: '1.5', whiteSpace: 'pre-line' }}>
               {popupErrorMsg}
             </p>
 
-            <div style={{ background: 'var(--surface-3)', padding: '10px 14px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <div style={{ background: 'var(--surface-2)', padding: '8px 12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', gap: '4px' }}>
               <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
                 <strong>Failed Attempts:</strong> {failureCount} / 3
               </div>
               
               {failureCount >= 3 && (
-                <div style={{ fontSize: '11px', color: 'var(--danger)', fontWeight: 700, borderTop: '1px solid var(--border-light)', paddingTop: '6px', marginTop: '4px' }}>
-                  💡 3 or more failed attempts! Please use the 'Forgot password?' option below to reset your password.
+                <div style={{ fontSize: '11px', color: 'var(--danger)', fontWeight: 700, borderTop: '1px solid var(--border-light)', paddingTop: '4px', marginTop: '2px' }}>
+                  💡 3 or more failed attempts! Please use the 'Forgot password?' option to reset your password.
                 </div>
               )}
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '4px' }}>
               <button 
                 type="button" 
                 className="btn btn-primary" 
@@ -301,7 +444,7 @@ export default function LoginModal() {
                     setShowForgotPanel(true);
                   }
                 }}
-                style={{ background: 'var(--accent-grad)', color: '#fff', border: 'none', padding: '8px 20px', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontWeight: 'bold' }}
+                style={{ background: 'var(--accent-grad)', color: '#fff', border: 'none', padding: '6px 18px', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontWeight: 800, fontSize: '12.5px' }}
               >
                 OK
               </button>
