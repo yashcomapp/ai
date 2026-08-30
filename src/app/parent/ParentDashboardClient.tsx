@@ -1374,29 +1374,27 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
               </div>
             </div>
 
-            {/* CARD 1: Child at a Glance (Clean Minimal Card matching Student Dashboard) */}
-            <div className="card" style={{
-              background: '#ffffff',
-              border: '1px solid var(--border)',
+            {/* CARD 1: Child at a Glance (Soothing Royal Blue Accent Card) */}
+            <div className="card card-blue" style={{
               borderRadius: 'var(--radius)',
               padding: '16px 20px',
-              marginBottom: '12px',
+              marginBottom: '14px',
               boxShadow: 'var(--shadow-sm)',
               position: 'relative'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexWrap: 'nowrap', gap: '8px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: '0', flexShrink: 0 }}>
-                  <TrendingUp size={16} color="var(--accent)" />
-                  <strong style={{ fontSize: '14px', color: 'var(--text)', fontWeight: 800, letterSpacing: '0.2px', whiteSpace: 'nowrap' }}>Child at a Glance</strong>
+                  <TrendingUp size={16} color="#2563eb" />
+                  <strong style={{ fontSize: '14px', color: '#1e40af', fontWeight: 800, letterSpacing: '0.2px', whiteSpace: 'nowrap' }}>Child at a Glance</strong>
                 </div>
                 <span style={{
-                  background: 'var(--surface-2)',
-                  color: 'var(--text-muted)',
+                  background: '#ffffff',
+                  color: '#1e40af',
                   fontSize: '11px',
-                  fontWeight: 600,
+                  fontWeight: 700,
                   padding: '4px 10px',
                   borderRadius: 'var(--radius-pill)',
-                  border: '1px solid var(--border)',
+                  border: '1.5px solid #bfdbfe',
                   whiteSpace: 'nowrap'
                 }}>
                   This Month
@@ -1404,37 +1402,37 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
               </div>
 
               {/* 3 Stats Grid */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', alignItems: 'center' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', alignItems: 'center' }}>
                 {/* Stat 1: Avg Exam Marks */}
                 <div 
                   onClick={() => router.push(`/parent/review?child=${selectedChildCode}`)}
-                  style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', justifyContent: 'center', gap: '4px', cursor: 'pointer', transition: 'opacity 0.2s' }}
+                  style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', justifyContent: 'center', gap: '4px', cursor: 'pointer', background: '#ffffff', padding: '12px 6px', borderRadius: '12px', border: '1.5px solid #bfdbfe', transition: 'all 0.2s', boxShadow: '0 1px 2px rgba(37,99,235,0.06)' }}
                   title="Click to view detailed exam reviews"
                 >
-                  <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text)', lineHeight: 1 }}>
+                  <div style={{ fontSize: '1.85rem', fontWeight: 800, color: '#1e40af', lineHeight: 1 }}>
                     {snapshot ? Math.round(snapshot.avgScore || 0) : 0}%
                   </div>
-                  <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', fontWeight: 600 }}>
+                  <div style={{ fontSize: '11.5px', color: '#475569', fontWeight: 700 }}>
                     Average Marks
                   </div>
                 </div>
 
                 {/* Stat 2: LQ Score */}
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', justifyContent: 'center', gap: '4px', borderLeft: '1px solid var(--border)', paddingLeft: '8px' }}>
-                  <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text)', lineHeight: 1 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', justifyContent: 'center', gap: '4px', background: '#ffffff', padding: '12px 6px', borderRadius: '12px', border: '1.5px solid #a7f3d0', boxShadow: '0 1px 2px rgba(5,150,105,0.06)' }}>
+                  <div style={{ fontSize: '1.85rem', fontWeight: 800, color: '#065f46', lineHeight: 1 }}>
                     {snapshot ? Math.round(snapshot.lqScore ?? snapshot.overallMastery ?? 0) : 0}%
                   </div>
-                  <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', fontWeight: 600 }}>
+                  <div style={{ fontSize: '11.5px', color: '#475569', fontWeight: 700 }}>
                     LQ Score
                   </div>
                 </div>
 
                 {/* Stat 3: Efforts % */}
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', justifyContent: 'center', gap: '4px', borderLeft: '1px solid var(--border)', paddingLeft: '8px' }}>
-                  <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text)', lineHeight: 1 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', justifyContent: 'center', gap: '4px', background: '#ffffff', padding: '12px 6px', borderRadius: '12px', border: '1.5px solid #fde68a', boxShadow: '0 1px 2px rgba(217,119,6,0.06)' }}>
+                  <div style={{ fontSize: '1.85rem', fontWeight: 800, color: '#92400e', lineHeight: 1 }}>
                     {snapshot ? Math.round(snapshot.effortsPercent ?? Math.min(100, Math.round(((snapshot as any)?.practicesCompletedCount || 0) / Math.max(1, (snapshot as any)?.totalTopicsCount || 24) * 100))) : 0}%
                   </div>
-                  <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', fontWeight: 600 }}>
+                  <div style={{ fontSize: '11.5px', color: '#475569', fontWeight: 700 }}>
                     Efforts %
                   </div>
                 </div>
@@ -1442,9 +1440,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
             </div>
 
             {/* CARD 2: Pending Reviews / Action Ledger */}
-            <div style={{
-              background: pendingReviews.length > 0 ? 'var(--danger-bg)' : 'var(--success-bg)',
-              border: pendingReviews.length > 0 ? '1px solid rgba(239, 68, 68, 0.25)' : '1px solid rgba(16, 185, 129, 0.25)',
+            <div className={pendingReviews.length > 0 ? "card card-amber" : "card card-emerald"} style={{
               borderRadius: 'var(--radius)',
               padding: '16px 20px',
               marginBottom: '16px',
@@ -1459,23 +1455,23 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                   width: '42px',
                   height: '42px',
                   borderRadius: '50%',
-                  background: pendingReviews.length > 0 ? 'rgba(239, 68, 68, 0.25)' : 'rgba(16, 185, 129, 0.25)',
+                  background: pendingReviews.length > 0 ? 'rgba(217, 119, 6, 0.2)' : 'rgba(5, 150, 105, 0.2)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   fontSize: '20px',
-                  color: pendingReviews.length > 0 ? '#ef4444' : '#10b981',
+                  color: pendingReviews.length > 0 ? '#d97706' : '#059669',
                   flexShrink: 0
                 }}>
                   {pendingReviews.length > 0 ? '❗️' : '✅'}
                 </div>
                 <div>
-                  <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 800, color: 'var(--text)' }}>
+                  <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 800, color: pendingReviews.length > 0 ? '#92400e' : '#065f46' }}>
                     {pendingReviews.length > 0 
                       ? `${pendingReviews.length} thing(s) need your attention` 
                       : 'All Clear!'}
                   </h3>
-                  <p style={{ margin: '2px 0 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>
+                  <p style={{ margin: '2px 0 0 0', fontSize: '12px', color: '#475569' }}>
                     {pendingReviews.length > 0 
                       ? `Submission pending for review • ${pendingReviews[0]?.subject || 'Mathematics'} • Submitted today` 
                       : 'All exam paper reviews are completed and up to date.'}
@@ -1486,12 +1482,9 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
               <div>
                 {pendingReviews.length > 0 ? (
                   <button
-                    className="btn"
+                    className="btn btn-primary"
                     onClick={() => router.push(`/parent/review?child=${selectedChildCode}${pendingReviews[0]?.id ? `&select=${pendingReviews[0].id}` : ''}`)}
                     style={{
-                      background: 'rgba(239, 68, 68, 0.2)',
-                      border: '1px solid #ef4444',
-                      color: '#ffffff',
                       padding: '8px 18px',
                       borderRadius: '20px',
                       fontSize: '12px',
@@ -1517,12 +1510,10 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
               </div>
             </div>
 
-            {/* CARD 3: Compact 1-Line Quick Actions Bento Card */}
-            <div className="card" style={{
-              background: 'var(--surface)',
-              border: '1px solid var(--border)',
+            {/* CARD 3: Compact 1-Line Quick Actions Bento Card (Lavender Purple) */}
+            <div className="card card-purple" style={{
               borderRadius: 'var(--radius)',
-              padding: '12px 14px',
+              padding: '14px 16px',
               marginBottom: '18px',
               boxShadow: 'var(--shadow-sm)'
             }}>
@@ -1537,8 +1528,8 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                 <div
                   onClick={() => router.push(`/parent/attendance?studentCode=${selectedChildCode}`)}
                   style={{
-                    background: 'rgba(255, 255, 255, 0.03)',
-                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    background: '#ffffff',
+                    border: '1.5px solid #bbf7d0',
                     borderRadius: 'var(--radius)',
                     padding: '8px 4px',
                     cursor: 'pointer',
@@ -1549,15 +1540,14 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                     textAlign: 'center',
                     gap: '4px',
                     transition: 'all 0.2s ease',
+                    boxShadow: '0 1px 2px rgba(5,150,105,0.05)'
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.background = 'rgba(52, 211, 153, 0.1)';
-                    e.currentTarget.style.borderColor = 'rgba(52, 211, 153, 0.35)';
+                    e.currentTarget.style.borderColor = '#059669';
                     e.currentTarget.style.transform = 'translateY(-2px)';
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
-                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+                    e.currentTarget.style.borderColor = '#bbf7d0';
                     e.currentTarget.style.transform = 'translateY(0)';
                   }}
                 >
@@ -1565,19 +1555,20 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                     width: '30px',
                     height: '30px',
                     borderRadius: '8px',
-                    background: 'rgba(52, 211, 153, 0.15)',
+                    background: '#ecfdf5',
+                    border: '1.5px solid #a7f3d0',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: '#34d399',
+                    color: '#059669',
                     flexShrink: 0
                   }}>
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                   </div>
-                  <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text)', lineHeight: 1.2, whiteSpace: 'nowrap' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 800, color: '#1e293b', lineHeight: 1.2, whiteSpace: 'nowrap' }}>
                     Attendance
                   </div>
-                  <div style={{ fontSize: '10px', color: '#34d399', fontWeight: 700, whiteSpace: 'nowrap' }}>
+                  <div style={{ fontSize: '10px', color: '#059669', fontWeight: 700, whiteSpace: 'nowrap' }}>
                     {attendanceData?.stats?.attendanceRate !== undefined ? `${attendanceData.stats.attendanceRate}%` : '100%'}
                   </div>
                 </div>
@@ -1586,8 +1577,8 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                 <div
                   onClick={() => router.push(`/exam-register?studentCode=${selectedChildCode}`)}
                   style={{
-                    background: 'rgba(255, 255, 255, 0.03)',
-                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    background: '#ffffff',
+                    border: '1.5px solid #e9d5ff',
                     borderRadius: 'var(--radius)',
                     padding: '8px 4px',
                     cursor: 'pointer',
@@ -1598,15 +1589,14 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                     textAlign: 'center',
                     gap: '4px',
                     transition: 'all 0.2s ease',
+                    boxShadow: '0 1px 2px rgba(124,58,237,0.05)'
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.background = 'rgba(192, 132, 252, 0.1)';
-                    e.currentTarget.style.borderColor = 'rgba(192, 132, 252, 0.35)';
+                    e.currentTarget.style.borderColor = '#7c3aed';
                     e.currentTarget.style.transform = 'translateY(-2px)';
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
-                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+                    e.currentTarget.style.borderColor = '#e9d5ff';
                     e.currentTarget.style.transform = 'translateY(0)';
                   }}
                 >
@@ -1614,19 +1604,20 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                     width: '30px',
                     height: '30px',
                     borderRadius: '8px',
-                    background: 'rgba(192, 132, 252, 0.15)',
+                    background: '#f5f3ff',
+                    border: '1.5px solid #ddd6fe',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: '#c084fc',
+                    color: '#7c3aed',
                     flexShrink: 0
                   }}>
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
                   </div>
-                  <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text)', lineHeight: 1.2, whiteSpace: 'nowrap' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 800, color: '#1e293b', lineHeight: 1.2, whiteSpace: 'nowrap' }}>
                     Exam Register
                   </div>
-                  <div style={{ fontSize: '10px', color: (childData?.snapshot?.absentExamsCount || data?.snapshot?.absentExamsCount || 0) > 0 ? '#f87171' : '#c084fc', fontWeight: 700, whiteSpace: 'nowrap' }}>
+                  <div style={{ fontSize: '10px', color: (childData?.snapshot?.absentExamsCount || data?.snapshot?.absentExamsCount || 0) > 0 ? '#ef4444' : '#7c3aed', fontWeight: 700, whiteSpace: 'nowrap' }}>
                     {(childData?.snapshot?.absentExamsCount || data?.snapshot?.absentExamsCount || 0) > 0 ? `${childData?.snapshot?.absentExamsCount || data?.snapshot?.absentExamsCount} Absent` : 'Active'}
                   </div>
                 </div>
@@ -1635,8 +1626,8 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                 <div
                   onClick={() => router.push(`/parent/fees?studentCode=${selectedChildCode}`)}
                   style={{
-                    background: 'rgba(255, 255, 255, 0.03)',
-                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    background: '#ffffff',
+                    border: '1.5px solid #fde68a',
                     borderRadius: 'var(--radius)',
                     padding: '8px 4px',
                     cursor: 'pointer',
@@ -1647,15 +1638,14 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                     textAlign: 'center',
                     gap: '4px',
                     transition: 'all 0.2s ease',
+                    boxShadow: '0 1px 2px rgba(217,119,6,0.05)'
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.background = 'rgba(251, 191, 36, 0.1)';
-                    e.currentTarget.style.borderColor = 'rgba(251, 191, 36, 0.35)';
+                    e.currentTarget.style.borderColor = '#d97706';
                     e.currentTarget.style.transform = 'translateY(-2px)';
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
-                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+                    e.currentTarget.style.borderColor = '#fde68a';
                     e.currentTarget.style.transform = 'translateY(0)';
                   }}
                 >
@@ -1663,19 +1653,20 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                     width: '30px',
                     height: '30px',
                     borderRadius: '8px',
-                    background: 'rgba(251, 191, 36, 0.15)',
+                    background: '#fffbeb',
+                    border: '1.5px solid #fde68a',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: '#fbbf24',
+                    color: '#d97706',
                     flexShrink: 0
                   }}>
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
                   </div>
-                  <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text)', lineHeight: 1.2, whiteSpace: 'nowrap' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 800, color: '#1e293b', lineHeight: 1.2, whiteSpace: 'nowrap' }}>
                     Fees & Dues
                   </div>
-                  <div style={{ fontSize: '10px', color: '#fbbf24', fontWeight: 700, whiteSpace: 'nowrap' }}>
+                  <div style={{ fontSize: '10px', color: '#d97706', fontWeight: 700, whiteSpace: 'nowrap' }}>
                     Receipts
                   </div>
                 </div>
@@ -1684,8 +1675,8 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                 <div
                   onClick={() => router.push('/parent/chat')}
                   style={{
-                    background: 'rgba(255, 255, 255, 0.03)',
-                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    background: '#ffffff',
+                    border: '1.5px solid #bae6fd',
                     borderRadius: 'var(--radius)',
                     padding: '8px 4px',
                     cursor: 'pointer',
@@ -1696,15 +1687,14 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                     textAlign: 'center',
                     gap: '4px',
                     transition: 'all 0.2s ease',
+                    boxShadow: '0 1px 2px rgba(2,132,199,0.05)'
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.background = 'rgba(96, 165, 250, 0.1)';
-                    e.currentTarget.style.borderColor = 'rgba(96, 165, 250, 0.35)';
+                    e.currentTarget.style.borderColor = '#0284c7';
                     e.currentTarget.style.transform = 'translateY(-2px)';
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)';
-                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+                    e.currentTarget.style.borderColor = '#bae6fd';
                     e.currentTarget.style.transform = 'translateY(0)';
                   }}
                 >
@@ -1712,19 +1702,20 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                     width: '30px',
                     height: '30px',
                     borderRadius: '8px',
-                    background: 'rgba(96, 165, 250, 0.15)',
+                    background: '#f0f9ff',
+                    border: '1.5px solid #bae6fd',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: '#60a5fa',
+                    color: '#0284c7',
                     flexShrink: 0
                   }}>
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
                   </div>
-                  <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text)', lineHeight: 1.2, whiteSpace: 'nowrap' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 800, color: '#1e293b', lineHeight: 1.2, whiteSpace: 'nowrap' }}>
                     Chat Desk
                   </div>
-                  <div style={{ fontSize: '10px', color: '#60a5fa', fontWeight: 700, whiteSpace: 'nowrap' }}>
+                  <div style={{ fontSize: '10px', color: '#0284c7', fontWeight: 700, whiteSpace: 'nowrap' }}>
                     Messages
                   </div>
                 </div>

@@ -452,20 +452,18 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
           </>
         ) : (
           <>
-            {/* CARD 1: Glance (Clean Minimal Card) */}
-            <div className="card" style={{
-              background: 'var(--surface)',
-              border: '1px solid var(--border)',
+            {/* CARD 1: Glance (Soothing Royal Blue Accent Card) */}
+            <div className="card card-blue" style={{
               borderRadius: 'var(--radius)',
               padding: '16px 20px',
-              marginBottom: '12px',
+              marginBottom: '14px',
               boxShadow: 'var(--shadow-sm)',
               position: 'relative'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexWrap: 'nowrap', gap: '8px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: '0', flexShrink: 0 }}>
-                  <TrendingUp size={16} color="var(--accent)" />
-                  <strong style={{ fontSize: '14px', color: 'var(--text)', fontWeight: 800, letterSpacing: '0.2px', whiteSpace: 'nowrap' }}>Glance</strong>
+                  <TrendingUp size={16} color="#2563eb" />
+                  <strong style={{ fontSize: '14px', color: '#1e40af', fontWeight: 800, letterSpacing: '0.2px', whiteSpace: 'nowrap' }}>Glance</strong>
                 </div>
                 {/* Interactive Time Range Filter Dropdown */}
                 <select
@@ -473,13 +471,13 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
                   value={timeFilter}
                   onChange={(e: any) => setTimeFilter(e.target.value)}
                   style={{
-                    background: 'var(--surface-2)',
-                    color: 'var(--text)',
+                    background: '#ffffff',
+                    color: '#1e293b',
                     fontSize: '11px',
                     fontWeight: 600,
                     padding: '4px 10px',
                     borderRadius: 'var(--radius-pill)',
-                    border: '1px solid var(--border)',
+                    border: '1.5px solid #bfdbfe',
                     outline: 'none',
                     cursor: 'pointer',
                     width: 'auto',
@@ -488,57 +486,55 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
                     flexShrink: 0
                   }}
                 >
-                  <option value="overall" style={{ background: 'var(--surface-2)', color: 'var(--text)' }}>Overall</option>
-                  <option value="month" style={{ background: 'var(--surface-2)', color: 'var(--text)' }}>This Month</option>
-                  <option value="week" style={{ background: 'var(--surface-2)', color: 'var(--text)' }}>This Week</option>
+                  <option value="overall">Overall</option>
+                  <option value="month">This Month</option>
+                  <option value="week">This Week</option>
                 </select>
               </div>
 
               {/* 3 Stats Grid */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', alignItems: 'center' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', alignItems: 'center' }}>
                 {/* Stat 1: Avg Exam Marks (Click opens results page) */}
                 <div 
                   onClick={() => router.push('/student/results')}
-                  style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', justifyContent: 'center', gap: '4px', cursor: 'pointer', transition: 'opacity 0.2s' }}
+                  style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', justifyContent: 'center', gap: '4px', cursor: 'pointer', background: '#ffffff', padding: '12px 6px', borderRadius: '12px', border: '1.5px solid #bfdbfe', transition: 'all 0.2s', boxShadow: '0 1px 2px rgba(37,99,235,0.06)' }}
                   title="Click to view detailed exam results"
                 >
-                  <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text)', lineHeight: 1 }}>
+                  <div style={{ fontSize: '1.85rem', fontWeight: 800, color: '#1e40af', lineHeight: 1 }}>
                     {resultsSummary?.examCount ? Math.round(resultsSummary.averageScore) : 0}%
                   </div>
-                  <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', fontWeight: 600 }}>
+                  <div style={{ fontSize: '11.5px', color: '#475569', fontWeight: 700 }}>
                     Average Marks
                   </div>
                 </div>
 
                 {/* Stat 2: LQ Score */}
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', justifyContent: 'center', gap: '4px', borderLeft: '1px solid var(--border)', paddingLeft: '8px' }}>
-                  <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text)', lineHeight: 1 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', justifyContent: 'center', gap: '4px', background: '#ffffff', padding: '12px 6px', borderRadius: '12px', border: '1.5px solid #a7f3d0', boxShadow: '0 1px 2px rgba(5,150,105,0.06)' }}>
+                  <div style={{ fontSize: '1.85rem', fontWeight: 800, color: '#065f46', lineHeight: 1 }}>
                     {Math.round(profile?.overallMastery || 0)}%
                   </div>
-                  <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', fontWeight: 600 }}>
+                  <div style={{ fontSize: '11.5px', color: '#475569', fontWeight: 700 }}>
                     LQ Score
                   </div>
                 </div>
 
                 {/* Stat 3: Efforts % */}
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', justifyContent: 'center', gap: '4px', borderLeft: '1px solid var(--border)', paddingLeft: '8px' }}>
-                  <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--text)', lineHeight: 1 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', justifyContent: 'center', gap: '4px', background: '#ffffff', padding: '12px 6px', borderRadius: '12px', border: '1.5px solid #fde68a', boxShadow: '0 1px 2px rgba(217,119,6,0.06)' }}>
+                  <div style={{ fontSize: '1.85rem', fontWeight: 800, color: '#92400e', lineHeight: 1 }}>
                     {Math.round((profile as any)?.effortsPercent ?? Math.min(100, Math.round((((profile as any)?.practicesCompletedCount || 0) / Math.max(1, (profile as any)?.totalTopicsCount || 24)) * 100)))}%
                   </div>
-                  <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', fontWeight: 600 }}>
+                  <div style={{ fontSize: '11.5px', color: '#475569', fontWeight: 700 }}>
                     Efforts %
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* CARD 2: Compact Action Needed / All Clear Ledger */}
-            <div style={{
-              background: (needAttentionTopics.length > 0 || peerReviews.count > 0) ? 'var(--danger-bg)' : 'var(--success-bg)',
-              border: (needAttentionTopics.length > 0 || peerReviews.count > 0) ? '1px solid rgba(239, 68, 68, 0.25)' : '1px solid rgba(16, 185, 129, 0.25)',
+            {/* CARD 2: Action Needed / All Clear Ledger */}
+            <div className={(needAttentionTopics.length > 0 || peerReviews.count > 0) ? "card card-amber" : "card card-emerald"} style={{
               borderRadius: 'var(--radius)',
-              padding: '12px 16px',
-              marginBottom: '12px',
+              padding: '14px 18px',
+              marginBottom: '14px',
               display: 'flex',
               flexDirection: 'column',
               gap: '10px'
@@ -549,32 +545,32 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
                   width: '28px',
                   height: '28px',
                   borderRadius: '50%',
-                  background: (needAttentionTopics.length > 0 || peerReviews.count > 0) ? 'rgba(239, 68, 68, 0.2)' : 'rgba(16, 185, 129, 0.2)',
+                  background: (needAttentionTopics.length > 0 || peerReviews.count > 0) ? 'rgba(217, 119, 6, 0.2)' : 'rgba(5, 150, 105, 0.2)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  color: (needAttentionTopics.length > 0 || peerReviews.count > 0) ? 'var(--danger)' : '#10b981',
+                  color: (needAttentionTopics.length > 0 || peerReviews.count > 0) ? '#d97706' : '#059669',
                   flexShrink: 0
                 }}>
-                  {(needAttentionTopics.length > 0 || peerReviews.count > 0) ? <AlertTriangle size={15} /> : <CheckCircle size={15} color="#10b981" />}
+                  {(needAttentionTopics.length > 0 || peerReviews.count > 0) ? <AlertTriangle size={15} /> : <CheckCircle size={15} color="#059669" />}
                 </div>
-                <h3 style={{ margin: 0, fontSize: '13.5px', fontWeight: 700, color: 'var(--text)' }}>
+                <h3 style={{ margin: 0, fontSize: '13.5px', fontWeight: 800, color: (needAttentionTopics.length > 0 || peerReviews.count > 0) ? '#92400e' : '#065f46' }}>
                   {(needAttentionTopics.length > 0 || peerReviews.count > 0) 
                     ? `${needAttentionTopics.length + (peerReviews.count > 0 ? 1 : 0)} Action Item(s) Need Attention` 
-                    : 'All Clear!'}
+                    : 'All Clear! Keep Up the Great Momentum!'}
                 </h3>
               </div>
 
               {/* Peer Review Alert */}
               {peerReviews.count > 0 && (
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--surface)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: '#ffffff', borderRadius: 'var(--radius-sm)', border: '1.5px solid #fde68a' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <ClipboardList size={16} color="var(--danger)" />
-                    <div style={{ fontWeight: 600, fontSize: '12.5px', color: 'var(--text)' }}>Peer Paper Review Pending</div>
+                    <ClipboardList size={16} color="#d97706" />
+                    <div style={{ fontWeight: 700, fontSize: '12.5px', color: '#92400e' }}>Peer Paper Review Pending</div>
                   </div>
                   <button 
                     className="btn btn-primary" 
-                    style={{ padding: '4px 12px', fontSize: '11px', borderRadius: 'var(--radius-sm)' }}
+                    style={{ padding: '5px 14px', fontSize: '11px', borderRadius: 'var(--radius-sm)', fontWeight: 700 }}
                     onClick={() => handleGoToPeerReview(peerReviews.firstExamId)}
                   >
                     Grade Paper
@@ -586,25 +582,25 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
               {needAttentionTopics.length > 0 && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   {needAttentionTopics.slice(0, 4).map((t: any) => (
-                    <div key={t.topicCode} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--surface)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', gap: '10px' }}>
+                    <div key={t.topicCode} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: '#ffffff', borderRadius: 'var(--radius-sm)', border: '1.5px solid #fde68a', gap: '10px' }}>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', flex: 1 }}>
-                        <div style={{ fontWeight: 600, fontSize: '12.5px', color: 'var(--text)' }}>{t.topicName}</div>
-                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <div style={{ fontWeight: 700, fontSize: '12.5px', color: '#1e293b' }}>{t.topicName}</div>
+                        <div style={{ fontSize: '11px', color: '#64748b', display: 'flex', alignItems: 'center', gap: '6px' }}>
                           <span>{t.subjectName || 'General'}</span>
                           <span>•</span>
                           {t.isAbsentExam ? (
-                            <span style={{ color: 'var(--danger)', fontWeight: 600 }}>Missed Exam</span>
+                            <span style={{ color: '#dc2626', fontWeight: 700 }}>Missed Exam</span>
                           ) : (
-                            <span style={{ color: 'var(--warning)', fontWeight: 600 }}>{t.mastery || 0}% Mastery</span>
+                            <span style={{ color: '#d97706', fontWeight: 700 }}>{t.mastery || 0}% Mastery</span>
                           )}
                         </div>
                       </div>
                       <button 
-                        className="btn btn-primary" 
-                        style={{ padding: '4px 12px', fontSize: '11px', fontWeight: 600, borderRadius: 'var(--radius-sm)' }}
-                        onClick={() => router.push(`/student/topic?topicCode=${t.topicCode}&category=needsAttention`)}
+                        className="btn btn-secondary btn-sm"
+                        style={{ padding: '4px 10px', fontSize: '11px', fontWeight: 700 }}
+                        onClick={() => router.push(`/student/topic/${encodeURIComponent(t.topicCode)}`)}
                       >
-                        Start Practice
+                        Revise
                       </button>
                     </div>
                   ))}
@@ -612,10 +608,8 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
               )}
             </div>
 
-            {/* CARD 3: Quick Navigation Hotspot Grid (Clean Professional Colorful Grid) */}
-            <div className="card" style={{
-              background: 'var(--surface)',
-              border: '1px solid var(--border)',
+            {/* CARD 3: Quick Navigation Hotspot Grid (Lavender Violet Card) */}
+            <div className="card card-purple" style={{
               borderRadius: 'var(--radius)',
               padding: '16px 20px',
               marginBottom: '16px',
@@ -624,8 +618,8 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
               flexDirection: 'column',
               gap: '12px'
             }}>
-              <h3 style={{ margin: 0, fontSize: '13.5px', fontWeight: 700, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Rocket size={16} color="#f472b6" /> Quick Navigation
+              <h3 style={{ margin: 0, fontSize: '13.5px', fontWeight: 800, color: '#6b21a8', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Rocket size={16} color="#7c3aed" /> Quick Navigation
               </h3>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
                 {/* Hotspot 1: Learn OS */}
@@ -637,21 +631,22 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
                     alignItems: 'center',
                     justifyContent: 'center',
                     padding: '14px 8px',
-                    background: 'var(--surface-2)',
-                    border: '1px solid var(--border)',
+                    background: '#ffffff',
+                    border: '1.5px solid #e9d5ff',
                     borderRadius: 'var(--radius-sm)',
                     cursor: 'pointer',
                     textAlign: 'center',
                     gap: '8px',
-                    transition: 'all 0.2s ease'
+                    transition: 'all 0.2s ease',
+                    boxShadow: '0 1px 2px rgba(124,58,237,0.05)'
                   }}
-                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#818cf8'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'translateY(0)'; }}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#7c3aed'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#e9d5ff'; e.currentTarget.style.transform = 'translateY(0)'; }}
                 >
-                  <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(99, 102, 241, 0.15)', border: '1px solid rgba(99, 102, 241, 0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Dumbbell size={20} color="#818cf8" />
+                  <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: '#f5f3ff', border: '1.5px solid #ddd6fe', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Dumbbell size={20} color="#7c3aed" />
                   </div>
-                  <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text)' }}>Learn OS</span>
+                  <span style={{ fontSize: '12px', fontWeight: 700, color: '#1e293b' }}>Learn OS</span>
                 </div>
 
                 {/* Hotspot 2: Attendance showing % */}
@@ -663,21 +658,22 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
                     alignItems: 'center',
                     justifyContent: 'center',
                     padding: '14px 8px',
-                    background: 'var(--surface-2)',
-                    border: '1px solid var(--border)',
+                    background: '#ffffff',
+                    border: '1.5px solid #bbf7d0',
                     borderRadius: 'var(--radius-sm)',
                     cursor: 'pointer',
                     textAlign: 'center',
                     gap: '8px',
-                    transition: 'all 0.2s ease'
+                    transition: 'all 0.2s ease',
+                    boxShadow: '0 1px 2px rgba(5,150,105,0.05)'
                   }}
-                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#34d399'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'translateY(0)'; }}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#059669'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#bbf7d0'; e.currentTarget.style.transform = 'translateY(0)'; }}
                 >
-                  <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Calendar size={20} color="#34d399" />
+                  <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: '#ecfdf5', border: '1.5px solid #a7f3d0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Calendar size={20} color="#059669" />
                   </div>
-                  <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text)' }}>
+                  <span style={{ fontSize: '12px', fontWeight: 700, color: '#1e293b' }}>
                     Attendance ({attendanceData?.stats?.attendanceRate !== undefined ? `${attendanceData.stats.attendanceRate}%` : '100%'})
                   </span>
                 </div>
@@ -691,21 +687,22 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
                     alignItems: 'center',
                     justifyContent: 'center',
                     padding: '14px 8px',
-                    background: 'var(--surface-2)',
-                    border: '1px solid var(--border)',
+                    background: '#ffffff',
+                    border: '1.5px solid #fde68a',
                     borderRadius: 'var(--radius-sm)',
                     cursor: 'pointer',
                     textAlign: 'center',
                     gap: '8px',
-                    transition: 'all 0.2s ease'
+                    transition: 'all 0.2s ease',
+                    boxShadow: '0 1px 2px rgba(217,119,6,0.05)'
                   }}
-                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#fbbf24'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'translateY(0)'; }}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#d97706'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#fde68a'; e.currentTarget.style.transform = 'translateY(0)'; }}
                 >
-                  <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(245, 158, 11, 0.15)', border: '1px solid rgba(245, 158, 11, 0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <ClipboardList size={20} color="#fbbf24" />
+                  <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: '#fffbeb', border: '1.5px solid #fde68a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <ClipboardList size={20} color="#d97706" />
                   </div>
-                  <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text)' }}>Exam Register</span>
+                  <span style={{ fontSize: '12px', fontWeight: 700, color: '#1e293b' }}>Exam Register</span>
                 </div>
 
                 {/* Hotspot 4: Live Chat */}
@@ -718,25 +715,26 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
                     alignItems: 'center',
                     justifyContent: 'center',
                     padding: '14px 8px',
-                    background: 'var(--surface-2)',
-                    border: '1px solid var(--border)',
+                    background: '#ffffff',
+                    border: '1.5px solid #bae6fd',
                     borderRadius: 'var(--radius-sm)',
                     cursor: 'pointer',
                     textAlign: 'center',
                     gap: '8px',
-                    transition: 'all 0.2s ease'
+                    transition: 'all 0.2s ease',
+                    boxShadow: '0 1px 2px rgba(2,132,199,0.05)'
                   }}
-                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#22d3ee'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'translateY(0)'; }}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#0284c7'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#bae6fd'; e.currentTarget.style.transform = 'translateY(0)'; }}
                 >
-                  <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(6, 182, 212, 0.15)', border: '1px solid rgba(6, 182, 212, 0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <MessageSquare size={20} color="#22d3ee" />
+                  <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: '#f0f9ff', border: '1.5px solid #bae6fd', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <MessageSquare size={20} color="#0284c7" />
                   </div>
-                  <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text)' }}>
+                  <span style={{ fontSize: '12px', fontWeight: 700, color: '#1e293b' }}>
                     Live Chat
                   </span>
                   {((chatRoomsData?.rooms || []).reduce((sum: number, r: any) => sum + (r.unreadCounts?.[(user as any)?.studentCode || ''] || 0), 0)) > 0 && (
-                    <span style={{ position: 'absolute', top: '6px', right: '6px', background: 'var(--danger)', color: '#fff', fontSize: '10px', fontWeight: 700, padding: '2px 6px', borderRadius: '10px' }}>
+                    <span style={{ position: 'absolute', top: '6px', right: '6px', background: '#e11d48', color: '#fff', fontSize: '10px', fontWeight: 700, padding: '2px 6px', borderRadius: '10px' }}>
                       {(chatRoomsData?.rooms || []).reduce((sum: number, r: any) => sum + (r.unreadCounts?.[(user as any)?.studentCode || ''] || 0), 0)}
                     </span>
                   )}
@@ -744,10 +742,10 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
               </div>
             </div>
         {/* ROW 2: Exams & Review Card (Full Width) */}
-        <div className="card" style={{ background: '#ffffff', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', overflow: 'hidden', marginBottom: '16px', minHeight: '240px', boxShadow: 'var(--shadow-sm)' }}>
-          <div className="exams-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 18px', borderBottom: '1px solid var(--border-light)' }}>
-            <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text)' }}>📝 Exams & Review</h3>
-            <div className="review-badge" style={{ background: 'var(--danger)', color: 'white', padding: '3px 10px', borderRadius: '30px', fontSize: '11.5px', fontWeight: 800, cursor: 'pointer' }}>
+        <div className="card card-academic" style={{ borderRadius: 'var(--radius-lg)', overflow: 'hidden', marginBottom: '16px', minHeight: '240px', boxShadow: 'var(--shadow-sm)' }}>
+          <div className="exams-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 18px', borderBottom: '1.5px solid #bfdbfe' }}>
+            <h3 style={{ fontSize: '15px', fontWeight: 800, color: '#1e40af' }}>📝 Exams & Review</h3>
+            <div className="review-badge" style={{ background: '#2563eb', color: 'white', padding: '3px 10px', borderRadius: '30px', fontSize: '11.5px', fontWeight: 800, cursor: 'pointer' }}>
               Pending: {resultsSummary?.pendingReviewCount || 0}
             </div>
           </div>
@@ -915,17 +913,15 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
 
         {/* Today's Study & Practice (Combined Card) */}
         {((exams.studyChips && exams.studyChips.length > 0) || (exams.dailyHomePractices && exams.dailyHomePractices.length > 0)) && (
-          <div className="card" style={{ 
-            background: 'var(--surface)', 
+          <div className="card card-cyan" style={{ 
             borderRadius: 'var(--radius-lg)', 
-            border: '2px solid var(--accent)', 
-            padding: '12px 16px', 
+            padding: '14px 18px', 
             marginBottom: '16px',
             boxShadow: 'var(--shadow-sm)'
           }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', borderBottom: '1px solid var(--border-light)', paddingBottom: '8px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', borderBottom: '1.5px solid #99f6e4', paddingBottom: '8px' }}>
               <div>
-                <h3 style={{ fontSize: '14px', fontWeight: 800, margin: 0, color: 'var(--accent)', whiteSpace: 'nowrap' }}>📚 Today's Study & Practice</h3>
+                <h3 style={{ fontSize: '14px', fontWeight: 800, margin: 0, color: '#115e59', whiteSpace: 'nowrap' }}>📚 Today's Study & Practice</h3>
               </div>
             </div>
 

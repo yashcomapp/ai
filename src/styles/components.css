@@ -50,16 +50,18 @@
     gap: 8px;
 }
 
-/* Color-Differentiated Card Layout Variants */
+/* Color-Differentiated Card Layout Variants (Full Soft Pastel Tints - Zero Eye Strain) */
 .card-blue,
 .card-academic,
 .card-exams {
-    border-left: 4px solid #2563eb !important;
+    background: #f0f7ff !important;
+    border: 1.5px solid #bfdbfe !important;
+    border-left: 4.5px solid #2563eb !important;
 }
 .card-blue .card-header,
 .card-academic .card-header,
 .card-exams .card-header {
-    background: #eff6ff !important;
+    background: #e0f0fe !important;
     border-bottom: 1.5px solid #bfdbfe !important;
     color: #1e40af !important;
 }
@@ -67,25 +69,29 @@
 .card-emerald,
 .card-mastery,
 .card-success {
-    border-left: 4px solid #059669 !important;
+    background: #f0fdf4 !important;
+    border: 1.5px solid #bbf7d0 !important;
+    border-left: 4.5px solid #059669 !important;
 }
 .card-emerald .card-header,
 .card-mastery .card-header,
 .card-success .card-header {
-    background: #ecfdf5 !important;
-    border-bottom: 1.5px solid #a7f3d0 !important;
-    color: #065f46 !important;
+    background: #dcfce7 !important;
+    border-bottom: 1.5px solid #bbf7d0 !important;
+    color: #166534 !important;
 }
 
 .card-amber,
 .card-pending,
 .card-attention {
-    border-left: 4px solid #d97706 !important;
+    background: #fffbeb !important;
+    border: 1.5px solid #fde68a !important;
+    border-left: 4.5px solid #d97706 !important;
 }
 .card-amber .card-header,
 .card-pending .card-header,
 .card-attention .card-header {
-    background: #fffbeb !important;
+    background: #fef3c7 !important;
     border-bottom: 1.5px solid #fde68a !important;
     color: #92400e !important;
 }
@@ -93,40 +99,99 @@
 .card-purple,
 .card-insights,
 .card-ai {
-    border-left: 4px solid #7c3aed !important;
+    background: #faf5ff !important;
+    border: 1.5px solid #e9d5ff !important;
+    border-left: 4.5px solid #7c3aed !important;
 }
 .card-purple .card-header,
 .card-insights .card-header,
 .card-ai .card-header {
-    background: #f5f3ff !important;
-    border-bottom: 1.5px solid #ddd6fe !important;
-    color: #5b21b6 !important;
+    background: #f3e8ff !important;
+    border-bottom: 1.5px solid #e9d5ff !important;
+    color: #6b21a8 !important;
 }
 
 .card-cyan,
 .card-practice,
 .card-schedule {
-    border-left: 4px solid #0284c7 !important;
+    background: #f0fdfa !important;
+    border: 1.5px solid #99f6e4 !important;
+    border-left: 4.5px solid #0284c7 !important;
 }
 .card-cyan .card-header,
 .card-practice .card-header,
 .card-schedule .card-header {
-    background: #f0f9ff !important;
-    border-bottom: 1.5px solid #bae6fd !important;
-    color: #075985 !important;
+    background: #ccfbf1 !important;
+    border-bottom: 1.5px solid #99f6e4 !important;
+    color: #115e59 !important;
 }
 
 .card-indigo,
 .card-overview,
 .card-attendance {
-    border-left: 4px solid #4f46e5 !important;
+    background: #f5f7ff !important;
+    border: 1.5px solid #c7d2fe !important;
+    border-left: 4.5px solid #4f46e5 !important;
 }
 .card-indigo .card-header,
 .card-overview .card-header,
 .card-attendance .card-header {
-    background: #eef2ff !important;
+    background: #e0e7ff !important;
     border-bottom: 1.5px solid #c7d2fe !important;
     color: #3730a3 !important;
+}
+
+.card-rose,
+.card-danger,
+.card-alert {
+    background: #fff1f2 !important;
+    border: 1.5px solid #fecdd3 !important;
+    border-left: 4.5px solid #e11d48 !important;
+}
+.card-rose .card-header,
+.card-danger .card-header,
+.card-alert .card-header {
+    background: #ffe4e6 !important;
+    border-bottom: 1.5px solid #fecdd3 !important;
+    color: #9f1239 !important;
+}
+
+/* Dark mode theme adaptations */
+[data-theme="dark"] .card-blue,
+[data-theme="dark"] .card-academic,
+[data-theme="dark"] .card-exams {
+    background: rgba(37, 99, 235, 0.12) !important;
+    border-color: rgba(37, 99, 235, 0.3) !important;
+}
+[data-theme="dark"] .card-emerald,
+[data-theme="dark"] .card-mastery,
+[data-theme="dark"] .card-success {
+    background: rgba(5, 150, 105, 0.12) !important;
+    border-color: rgba(5, 150, 105, 0.3) !important;
+}
+[data-theme="dark"] .card-amber,
+[data-theme="dark"] .card-pending,
+[data-theme="dark"] .card-attention {
+    background: rgba(217, 119, 6, 0.12) !important;
+    border-color: rgba(217, 119, 6, 0.3) !important;
+}
+[data-theme="dark"] .card-purple,
+[data-theme="dark"] .card-insights,
+[data-theme="dark"] .card-ai {
+    background: rgba(124, 58, 237, 0.12) !important;
+    border-color: rgba(124, 58, 237, 0.3) !important;
+}
+[data-theme="dark"] .card-cyan,
+[data-theme="dark"] .card-practice,
+[data-theme="dark"] .card-schedule {
+    background: rgba(2, 132, 199, 0.12) !important;
+    border-color: rgba(2, 132, 199, 0.3) !important;
+}
+[data-theme="dark"] .card-indigo,
+[data-theme="dark"] .card-overview,
+[data-theme="dark"] .card-attendance {
+    background: rgba(79, 70, 229, 0.12) !important;
+    border-color: rgba(79, 70, 229, 0.3) !important;
 }
 
 /* Card modifiers */
