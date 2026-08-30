@@ -136,14 +136,31 @@ interface ReviewItem {
 }
 
 export default function ParentDashboardClient({ initialData: serverInitialData }: { initialData?: ParentDashboardData }) {
-  const { user, firebaseUser, logout } = useAuth();
+  const { user, firebaseUser, loading: authLoading, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const router = useRouter();
   const { initFCM } = usePushNotifications();
   const [syncingPush, setSyncingPush] = useState(false);
 
   const defaultChildCode = serverInitialData?.childInfo?.studentCode || serverInitialData?.children?.[0]?.studentCode || '';
-  const [selectedChildCode, setSelectedChildCode] = useState<string>(defaultChildCode);
+  const [selectedChildCode, setSelectedChildCode] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        return localStorage.getItem('yc_parent_selected_child') || defaultChildCode;
+      } catch (e) {
+        return defaultChildCode;
+      }
+    }
+    return defaultChildCode;
+  });
+
+  useEffect(() => {
+    if (selectedChildCode && typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('yc_parent_selected_child', selectedChildCode);
+      } catch (e) {}
+    }
+  }, [selectedChildCode]);
   const [activeTab, setActiveTab] = useState<'pending' | 'approved'>('pending');
   const [activeModal, setActiveModal] = useState<string | null>(null);
   const [selectedReview, setSelectedReview] = useState<ReviewItem | null>(null);
@@ -357,36 +374,39 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
       background: 'var(--surface)',
       border: '1px solid var(--border-light)',
       borderRadius: 'var(--radius)',
-      padding: '12px 18px',
-      marginBottom: '18px',
+      padding: '8px 12px',
+      marginBottom: '8px',
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'center'
     }}>
-      <div style={{ width: '140px', height: '18px', background: 'var(--surface-2)', borderRadius: '4px' }}></div>
-      <div style={{ width: '160px', height: '36px', background: 'var(--surface-2)', borderRadius: '24px' }}></div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--surface-2)' }}></div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          <div style={{ width: '70px', height: '10px', background: 'var(--surface-3)', borderRadius: '3px' }}></div>
+          <div style={{ width: '100px', height: '14px', background: 'var(--surface-2)', borderRadius: '4px' }}></div>
+        </div>
+      </div>
+      <div style={{ width: '130px', height: '32px', background: 'var(--surface-2)', borderRadius: 'var(--radius-sm)' }}></div>
     </div>
   );
 
   const renderDailySyncSkeleton = () => (
     <div className="card skeleton-blink" style={{
       background: 'var(--surface)',
-      border: '1px solid var(--border)',
+      border: '1px solid var(--border-light)',
       borderRadius: 'var(--radius)',
-      padding: '14px 18px',
-      marginBottom: '16px',
+      padding: '10px 12px',
+      marginBottom: '8px',
       display: 'flex',
       justifyContent: 'space-between',
       alignItems: 'center'
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-        <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: 'var(--surface-2)' }}></div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          <div style={{ width: '180px', height: '14px', background: 'var(--surface-2)', borderRadius: '4px' }}></div>
-          <div style={{ width: '120px', height: '10px', background: 'var(--surface-3)', borderRadius: '4px' }}></div>
-        </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <div style={{ width: '18px', height: '18px', borderRadius: '50%', background: 'var(--surface-2)' }}></div>
+        <div style={{ width: '150px', height: '14px', background: 'var(--surface-2)', borderRadius: '4px' }}></div>
       </div>
-      <div style={{ width: '140px', height: '36px', background: 'var(--surface-2)', borderRadius: 'var(--radius)' }}></div>
+      <div style={{ width: '120px', height: '28px', background: 'var(--surface-2)', borderRadius: '8px' }}></div>
     </div>
   );
 
@@ -851,8 +871,8 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
   const subjectiveReviews = reviewsData?.subjectiveReviews || (selectedChildCode === defaultChildCode ? localReviewsCache?.subjectiveReviews : []) || [];
   const entranceReviews = reviewsData?.entranceReviews || (selectedChildCode === defaultChildCode ? localReviewsCache?.entranceReviews : []) || [];
 
-  const loading = (initialLoading && !initialData && !localCache) || (!selectedChildCode && children.length > 0 && !data);
-  const loadingChild = childLoading && !localCache && !data;
+  const isGlobalLoading = authLoading || (initialLoading && !initialData && !localCache) || (!initialData && !initialError);
+  const isChildDataLoading = isGlobalLoading || (childLoading && !data && !localCache);
   const error = initialError?.message || childError?.message || reviewsError?.message || '';
 
   const handleApprove = async () => {
@@ -1193,7 +1213,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
       <div className="dashboard-container" style={{ maxWidth: '1000px', width: '100%', margin: '0 auto', padding: '4px 8px 30px 8px' }}>
 
         {/* ROW 1: Parent Greeting & Child Selector in ONE unified top glass bar */}
-        {initialLoading ? (
+        {isGlobalLoading ? (
           renderChildSelectorSkeleton()
         ) : children.length > 0 ? (
           <div className="card" style={{
@@ -1300,7 +1320,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
           </div>
         ) : null}
 
-        {initialLoading || loadingChild ? (
+        {isChildDataLoading ? (
           <>
             {renderDailySyncSkeleton()}
             {renderSnapshotGridSkeleton()}
