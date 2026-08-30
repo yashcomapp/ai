@@ -227,6 +227,7 @@ function CreateQBContent() {
   // Question Type and Generation settings
   const [questionType, setQuestionType] = useState<'all_in_one' | 'objective' | 'subjective'>('all_in_one');
   const [examCategory, setExamCategory] = useState<'standard' | 'foundation'>('standard');
+  const [masterObjectiveRatio, setMasterObjectiveRatio] = useState<number>(70);
 
   useEffect(() => {
     const qtype = searchParams.get('questionType');
@@ -846,30 +847,44 @@ In addition to the topic-based questions:
         const k = topicKey(tp);
         const rawCnt = topicCounts[k] !== undefined ? topicCounts[k] : (tp.targetQuestions || defaultPerTopicCount);
         const cnt = typeof rawCnt === 'number' ? rawCnt : (parseInt(String(rawCnt), 10) || 30);
-        const objC = Math.max(1, Math.round(cnt * 0.73));
-        const subC = Math.max(1, cnt - objC);
         
-        const easyC = Math.max(1, Math.round(objC * 0.30));
-        const medC = Math.max(1, Math.round(objC * 0.50));
-        const hardC = Math.max(0, objC - easyC - medC);
+        let objC = 0;
+        let subC = 0;
+        if (masterObjectiveRatio >= 100) {
+          objC = cnt;
+          subC = 0;
+        } else if (masterObjectiveRatio <= 0) {
+          objC = 0;
+          subC = cnt;
+        } else {
+          objC = Math.max(1, Math.round(cnt * (masterObjectiveRatio / 100)));
+          subC = Math.max(1, cnt - objC);
+        }
+        
+        const easyC = objC > 0 ? Math.max(1, Math.round(objC * 0.30)) : 0;
+        const medC = objC > 0 ? Math.max(1, Math.round(objC * 0.50)) : 0;
+        const hardC = objC > 0 ? Math.max(0, objC - easyC - medC) : 0;
 
-        const m1C = Math.max(1, Math.round(subC * 0.35));
-        const m2C = Math.max(1, Math.round(subC * 0.40));
-        const m4C = Math.max(0, subC - m1C - m2C);
+        const m1C = subC > 0 ? Math.max(1, Math.round(subC * 0.35)) : 0;
+        const m2C = subC > 0 ? Math.max(1, Math.round(subC * 0.40)) : 0;
+        const m4C = subC > 0 ? Math.max(0, subC - m1C - m2C) : 0;
+
+        let objBlock = '';
+        if (objC > 0) {
+          objBlock = `\n  A) OBJECTIVE SUITE (${objC} Questions for Adaptive Practice & Exams):\n     • Easy (Foundation / Warmup): ${easyC} questions\n     • Medium (Standard Board Level): ${medC} questions\n     • Hard (HOTS / Traps): ${hardC} questions`;
+        }
+
+        let subBlock = '';
+        if (subC > 0) {
+          const letter = objC > 0 ? 'B' : 'A';
+          subBlock = `\n  ${letter}) SUBJECTIVE SUITE (${subC} Questions with Model Answer Solutions & Keywords):\n     • 1-Mark (Definitions / Laws / Formulas): ${m1C} questions (type: "subjective_define" or "subjective_laws")\n     • 2-Mark (Short Answer / Scientific Reasons): ${m2C} questions (type: "subjective_short" or "subjective_reason"${isCalculativeTopic ? ' or "numerical_short"' : ''})\n     • 4-Mark (Long Problems / Proofs / Derivations): ${m4C} questions (type: "subjective_long"${isCalculativeTopic ? ' or "numerical_long"' : ''})`;
+        }
 
         const cid = 'CTX-' + String(idx + 1).padStart(3, '0');
         topicBreakdownBlock += `
 ------------------------------------------------------------
 📍 TOPIC ${idx + 1}: ${tp.topic} (Code: ${tp.topicNumber || ''}) [contextId: "${cid}"]
-- Target Questions for this topic: EXACTLY ${cnt} Questions
-  A) OBJECTIVE SUITE (${objC} Questions for Adaptive Practice & Exams):
-     • Easy (Foundation / Warmup): ${easyC} questions
-     • Medium (Standard Board Level): ${medC} questions
-     • Hard (HOTS / Traps): ${hardC} questions
-  B) SUBJECTIVE SUITE (${subC} Questions with Model Answer Solutions & Keywords):
-     • 1-Mark (Definitions / Laws / Formulas): ${m1C} questions (type: "subjective_define" or "subjective_laws")
-     • 2-Mark (Short Answer / Scientific Reasons): ${m2C} questions (type: "subjective_short" or "subjective_reason"${isCalculativeTopic ? ' or "numerical_short"' : ''})
-     • 4-Mark (Long Problems / Proofs / Derivations): ${m4C} questions (type: "subjective_long"${isCalculativeTopic ? ' or "numerical_long"' : ''})`;
+- Target Questions for this topic: EXACTLY ${cnt} Questions${objBlock}${subBlock}`;
       });
 
       (window as any).lastPromptMeta = { mode: 'all_in_one', totalQs };
@@ -2119,12 +2134,13 @@ Return ONLY valid JSON. No extra text.`;
               </div>
             </div>
 
-            {/* Quick Topic Presets for Master Suite */}
+            {/* Quick Topic Presets & Ratio Customization for Master Suite */}
             {questionType === 'all_in_one' && (
-              <div style={{ marginTop: '14px', background: 'var(--bg-soft)', padding: '12px 14px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginBottom: '8px' }}>
+              <div style={{ marginTop: '14px', background: 'var(--bg-soft)', padding: '14px 16px', borderRadius: 'var(--radius)', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {/* Row 1: Volume Presets */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
                   <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--accent)' }}>
-                    ⚡ Master Suite Depth Presets (Questions per Topic):
+                    ⚡ Volume Presets (Questions per Topic):
                   </span>
                   <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                     <button
@@ -2168,24 +2184,109 @@ Return ONLY valid JSON. No extra text.`;
                     </button>
                   </div>
                 </div>
+
+                {/* Row 2: Objective vs Subjective Ratio Presets & Slider */}
+                <div style={{ borderTop: '1px dashed var(--border-light)', paddingTop: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--accent)' }}>
+                      ⚖️ Question Type Division Ratio:
+                    </span>
+                    <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
+                      <button
+                        type="button"
+                        className={`btn btn-sm ${masterObjectiveRatio === 85 ? 'btn-primary' : 'btn-secondary'}`}
+                        onClick={() => setMasterObjectiveRatio(85)}
+                        style={{ fontSize: '11px', padding: '2px 7px', borderRadius: '10px' }}
+                      >
+                        🎯 85% Obj / 15% Sub
+                      </button>
+                      <button
+                        type="button"
+                        className={`btn btn-sm ${masterObjectiveRatio === 70 ? 'btn-primary' : 'btn-secondary'}`}
+                        onClick={() => setMasterObjectiveRatio(70)}
+                        style={{ fontSize: '11px', padding: '2px 7px', borderRadius: '10px' }}
+                      >
+                        ⚖️ 70% Obj / 30% Sub
+                      </button>
+                      <button
+                        type="button"
+                        className={`btn btn-sm ${masterObjectiveRatio === 40 ? 'btn-primary' : 'btn-secondary'}`}
+                        onClick={() => setMasterObjectiveRatio(40)}
+                        style={{ fontSize: '11px', padding: '2px 7px', borderRadius: '10px' }}
+                      >
+                        📝 40% Obj / 60% Sub
+                      </button>
+                      <button
+                        type="button"
+                        className={`btn btn-sm ${masterObjectiveRatio === 100 ? 'btn-primary' : 'btn-secondary'}`}
+                        onClick={() => setMasterObjectiveRatio(100)}
+                        style={{ fontSize: '11px', padding: '2px 7px', borderRadius: '10px' }}
+                      >
+                        🔘 100% Obj
+                      </button>
+                      <button
+                        type="button"
+                        className={`btn btn-sm ${masterObjectiveRatio === 0 ? 'btn-primary' : 'btn-secondary'}`}
+                        onClick={() => setMasterObjectiveRatio(0)}
+                        style={{ fontSize: '11px', padding: '2px 7px', borderRadius: '10px' }}
+                      >
+                        📄 100% Sub
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Interactive Slider */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'var(--surface)', padding: '6px 12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text)', whiteSpace: 'nowrap', minWidth: '150px' }}>
+                      🎯 {masterObjectiveRatio}% Obj • 📝 {100 - masterObjectiveRatio}% Sub
+                    </span>
+                    <input 
+                      type="range"
+                      min={0}
+                      max={100}
+                      step={5}
+                      value={masterObjectiveRatio}
+                      onChange={(e) => setMasterObjectiveRatio(Number(e.target.value))}
+                      style={{ flex: 1, accentColor: 'var(--accent)', cursor: 'pointer', height: '6px' }}
+                    />
+                  </div>
+                </div>
                 
                 {/* Dynamic Breakdown Display */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '6px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '2px' }}>
                   {selectedTopics.map((top, idx) => {
                     const key = topicKey(top);
                     const count = topicCustomCounts[key] !== undefined ? Number(topicCustomCounts[key]) || defaultPerTopicCount : defaultPerTopicCount;
                     const c = typeof count === 'number' ? count : (parseInt(String(count), 10) || 30);
-                    const objC = Math.max(1, Math.round(c * 0.73));
-                    const subC = Math.max(1, c - objC);
-                    const easyC = Math.max(1, Math.round(objC * 0.30));
-                    const medC = Math.max(1, Math.round(objC * 0.50));
-                    const hardC = Math.max(0, objC - easyC - medC);
+                    
+                    let objC = 0;
+                    let subC = 0;
+                    if (masterObjectiveRatio >= 100) {
+                      objC = c;
+                      subC = 0;
+                    } else if (masterObjectiveRatio <= 0) {
+                      objC = 0;
+                      subC = c;
+                    } else {
+                      objC = Math.max(1, Math.round(c * (masterObjectiveRatio / 100)));
+                      subC = Math.max(1, c - objC);
+                    }
+
+                    const easyC = objC > 0 ? Math.max(1, Math.round(objC * 0.30)) : 0;
+                    const medC = objC > 0 ? Math.max(1, Math.round(objC * 0.50)) : 0;
+                    const hardC = objC > 0 ? Math.max(0, objC - easyC - medC) : 0;
+
+                    const m1C = subC > 0 ? Math.max(1, Math.round(subC * 0.35)) : 0;
+                    const m2C = subC > 0 ? Math.max(1, Math.round(subC * 0.40)) : 0;
+                    const m4C = subC > 0 ? Math.max(0, subC - m1C - m2C) : 0;
 
                     return (
                       <div key={idx} style={{ fontSize: '11px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--surface)', padding: '6px 10px', borderRadius: '4px', border: '1px solid var(--border-light)' }}>
                         <span>📍 <strong>Topic {idx + 1}:</strong> {top.topic} (<strong>{c} Qs</strong>)</span>
                         <span style={{ color: 'var(--text-muted)' }}>
-                          🎯 <strong>{objC} Objective</strong> ({easyC} Easy, {medC} Med, {hardC} Hard) + 📝 <strong>{subC} Subjective</strong> (1M/2M/4M)
+                          {objC > 0 && <span>🎯 <strong>{objC} Obj</strong> ({easyC}E / {medC}M / {hardC}H)</span>}
+                          {objC > 0 && subC > 0 && <span> + </span>}
+                          {subC > 0 && <span>📝 <strong>{subC} Sub</strong> ({m1C}x1M, {m2C}x2M, {m4C}x4M)</span>}
                         </span>
                       </div>
                     );
