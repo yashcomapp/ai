@@ -666,7 +666,7 @@ export function normalizeOptionText(str: string): string {
     .toLowerCase();
 }
 
-export function validateQuestion(q: any, questionType: 'objective' | 'subjective' | 'all_in_one'): string[] {
+export function validateQuestion(q: any, questionType: 'objective' | 'subjective' | 'all_in_one' | 'dual_track' | string): string[] {
   const errors: string[] = [];
   
   if (!q.text || !String(q.text).trim()) {

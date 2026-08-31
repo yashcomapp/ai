@@ -225,13 +225,14 @@ function CreateQBContent() {
   const [uploadedImageBase64, setUploadedImageBase64] = useState<string | null>(null);
 
   // Question Type and Generation settings
-  const [questionType, setQuestionType] = useState<'all_in_one' | 'objective' | 'subjective'>('all_in_one');
+  const [questionType, setQuestionType] = useState<'all_in_one' | 'dual_track' | 'objective' | 'subjective'>('all_in_one');
   const [examCategory, setExamCategory] = useState<'standard' | 'foundation'>('standard');
   const [masterObjectiveRatio, setMasterObjectiveRatio] = useState<number>(70);
+  const [dualTrackStandardRatio, setDualTrackStandardRatio] = useState<number>(70);
 
   useEffect(() => {
     const qtype = searchParams.get('questionType');
-    if (qtype === 'subjective' || qtype === 'objective' || qtype === 'all_in_one') {
+    if (qtype === 'subjective' || qtype === 'objective' || qtype === 'all_in_one' || qtype === 'dual_track') {
       setQuestionType(qtype as any);
     }
   }, [searchParams]);
@@ -618,10 +619,16 @@ function CreateQBContent() {
     return list.find(b => b.id === selectedBlueprintId) || list[0];
   };
 
-  const handleSwitchType = (type: 'all_in_one' | 'objective' | 'subjective') => {
+  const handleSwitchType = (type: 'all_in_one' | 'dual_track' | 'objective' | 'subjective') => {
     setQuestionType(type);
     if (type === 'subjective') {
       setSelectedBlueprintId('saturday_classroom');
+    } else if (type === 'dual_track') {
+      setSelectedBlueprintId('chapter_mastery');
+      setDefaultPerTopicCount(90);
+      const newCounts: Record<string, number> = {};
+      selectedTopics.forEach(t => { newCounts[topicKey(t)] = 90; });
+      setTopicCustomCounts(newCounts);
     } else {
       setSelectedBlueprintId('chapter_mastery');
     }
@@ -817,7 +824,7 @@ In addition to the topic-based questions:
   };
 
   // Compile prompt string
-  const compilePrompt = (type: 'all_in_one' | 'objective' | 'subjective') => {
+  const compilePrompt = (type: 'all_in_one' | 'dual_track' | 'objective' | 'subjective') => {
     if (!selectedBoard || !selectedClass || getSelectedSubjectsCount() === 0 || selectedTopics.length === 0) {
       return '';
     }
@@ -1018,6 +1025,161 @@ CRITICAL RULES & FORMATTING:
 3. Math expressions must be in LaTeX format using \\\\( ... \\\\) with double-escaped backslashes. Chemical formulas wrapped in \\\\ce{...}.
 4. NO placeholder options, NO synthetic dummy variables, NO repeated sentence loops.
 5. RANDOMIZE CORRECT OPTION POSITIONS: Distribute the correct answer position randomly and evenly across option index 0, 1, 2, and 3 (A, B, C, D). Do NOT always place the correct answer as the first item in "options".`;
+    }
+
+    if (type === 'dual_track') {
+      let topicBreakdownBlock = '';
+      promptTopics.forEach((tp, idx) => {
+        const k = topicKey(tp);
+        const rawCnt = topicCounts[k] !== undefined ? topicCounts[k] : (tp.targetQuestions || defaultPerTopicCount);
+        const cnt = typeof rawCnt === 'number' ? rawCnt : (parseInt(String(rawCnt), 10) || 90);
+        
+        let stdC = 0;
+        let fndC = 0;
+        if (dualTrackStandardRatio >= 100) {
+          stdC = cnt;
+          fndC = 0;
+        } else if (dualTrackStandardRatio <= 0) {
+          stdC = 0;
+          fndC = cnt;
+        } else {
+          stdC = Math.max(1, Math.round(cnt * (dualTrackStandardRatio / 100)));
+          fndC = Math.max(1, cnt - stdC);
+        }
+        
+        const stdEasy = stdC > 0 ? Math.max(1, Math.round(stdC * 0.30)) : 0;
+        const stdMed = stdC > 0 ? Math.max(1, Math.round(stdC * 0.50)) : 0;
+        const stdHard = stdC > 0 ? Math.max(0, stdC - stdEasy - stdMed) : 0;
+
+        const fndEasy = fndC > 0 ? Math.max(1, Math.round(fndC * 0.10)) : 0;
+        const fndMed = fndC > 0 ? Math.max(1, Math.round(fndC * 0.40)) : 0;
+        const fndHard = fndC > 0 ? Math.max(0, fndC - fndEasy - fndMed) : 0;
+
+        const cid = 'CTX-' + String(idx + 1).padStart(3, '0');
+        topicBreakdownBlock += `
+------------------------------------------------------------
+📍 TOPIC ${idx + 1}: ${tp.topic} (Code: ${tp.topicNumber || ''}) [contextId: "${cid}"]
+- Total Target: EXACTLY ${cnt} Questions
+  A) 📘 TRACK 1: STANDARD SUITE (${stdC} Questions, "examCategory": "standard"):
+     • Purpose: 30-Question Daily Topic Tests & Adaptive Practice Mastery
+     • Composition: ~60% Single Choice MCQ, ~15% Assertion-Reason, ~15% Multiple Correct MCQ, ~10% Numerical/Application
+     • Difficulty: ${stdEasy} Easy (LOTS/Recall) • ${stdMed} Medium (Standard Board Level) • ${stdHard} Hard (Tricky/Nuance)
+
+  B) 🏆 TRACK 2: FOUNDATION & OLYMPIAD MOCK SUITE (${fndC} Questions, "examCategory": "foundation"):
+     • Purpose: Reserved Foundation Mock Tests & HOTS Olympiad Benchmarking (Untouched by daily tests)
+     • Composition: ~60% Single Choice HOTS MCQ, ~20% Assertion-Reason HOTS, ~10% Multi-Concept MCQ, ~10% Deep Numerical
+     • Difficulty: ${fndEasy} Easy (Concept Check) • ${fndMed} Medium (Cross-topic Synthesis) • ${fndHard} Hard (Olympiad/HOTS Analysis)`;
+      });
+
+      (window as any).lastPromptMeta = { mode: 'dual_track', totalQs };
+
+      return `========================================
+ROLE AND DUAL-TRACK TOPIC SUITE GOAL
+========================================
+Act as an expert curriculum architect, textbook author, and senior exam paper setter for ${selectedBoard} Class ${selectedClass}.
+
+Your mission is to generate the COMPLETE DUAL-TRACK OBJECTIVE QUESTION SUITE for the selected topic(s) in a single unified JSON output array.
+This question suite fulfills TWO DISTINCT PURPOSES:
+1. 📘 TRACK 1: STANDARD SUITE ("examCategory": "standard") — For Daily 30-Q Topic Tests, Adaptive Practice, and Progressive Topic Mastery.
+2. 🏆 TRACK 2: FOUNDATION / OLYMPIAD SUITE ("examCategory": "foundation") — Reserved for Olympiad mocks and high-rigor HOTS testing (kept separate from daily tests).
+
+TOTAL QUESTIONS TO GENERATE: EXACTLY ${totalQs} questions across ${promptTopics.length} topic(s).
+${requirementsSection}
+========================================
+PER-TOPIC DUAL-TRACK BREAKDOWN & ALLOCATIONS:
+========================================
+${topicBreakdownBlock}
+
+========================================
+QUESTION GENERATION CONTEXT:
+========================================
+${ctx}
+
+========================================
+SUBJECT-ADAPTIVE RULES & SCIENTIFIC RIGOR:
+========================================
+${isMath ? `
+MATHEMATICS SPECIAL RULES:
+- Standard Track: ~70% Single Choice Calculation MCQs ("single_mcq"), ~20% Direct Numerical ("numerical" with clean numeric answer, no options), ~10% Assertion-Reason ("assertion_reason").
+- Foundation Track: Deep multi-step algebraic/geometric problem solving, application theorems, and non-routine Olympiad variants.
+- Specify "textbookPracticeSet" key where applicable (e.g. "Practice Set 1.2: Q3").
+` : `
+SCIENCE & GENERAL SPECIAL RULES:
+- For Quantitative/Physics/Chemistry Topics: Include clean numerical problems ("numerical") with realistic physical values, proper standard units, and step-by-step mathematical reasoning.
+- For Qualitative/Biology/Descriptive Topics (e.g. Cell, Diversity, Tissues, Plant Movements, Metal Properties, Heredity):
+  * ZERO FAKE MATH RULE: Strictly DO NOT generate synthetic arithmetic or fake calculations.
+  * Instead, generate deep Conceptual Single MCQs ("single_mcq"), Assertion & Reason ("assertion_reason"), and Multiple Correct ("multiple_mcq") testing deep scientific understanding.
+`}
+
+========================================
+MATHEMATICAL & LATEX FORMATTING RULES:
+========================================
+1. All math formulas, equations, variables, and units MUST be formatted with KaTeX:
+   - Inline Math: \\\\( F = G \\\\frac{m_1 m_2}{r^2} \\\\)
+   - Display Math: \\\\[ g = \\\\frac{GM}{R^2} \\\\]
+2. "correctAnswer" MUST verbatim match the exact string in "options".
+
+========================================
+UNIFIED JSON OUTPUT SCHEMA:
+========================================
+Return a single JSON array containing all ${totalQs} questions:
+
+[
+  {
+    "contextId": "CTX-001",
+    "type": "single_mcq",
+    "examCategory": "standard",
+    "text": "When the distance between two bodies is tripled, the gravitational force between them becomes:",
+    "options": ["\\\\( 3 \\\\) times", "\\\\( \\\\frac{1}{3} \\\\) times", "\\\\( 9 \\\\) times", "\\\\( \\\\frac{1}{9} \\\\) times"],
+    "correctAnswer": "\\\\( \\\\frac{1}{9} \\\\) times",
+    "solution": "According to Newton's Law of Gravitation, \\\\( F \\\\propto \\\\frac{1}{r^2} \\\\). When \\\\( r' = 3r \\\\), \\\\( F' = \\\\frac{F}{3^2} = \\\\frac{F}{9} \\\\).",
+    "difficulty": "easy",
+    "bloomLevel": "Understand",
+    "topicOrigin": "${selectedTopics[0]?.topic || ''}"
+  },
+  {
+    "contextId": "CTX-001",
+    "type": "assertion_reason",
+    "examCategory": "standard",
+    "text": "Read the statements and select the correct option.",
+    "assertion": "The value of acceleration due to gravity \\\\( g \\\\) is zero at the center of the Earth.",
+    "reason": "At the center of the Earth, the mass of Earth attracting a body from all sides cancels out symmetrically.",
+    "options": [
+      "Both Assertion and Reason are true, and Reason is the correct explanation of Assertion.",
+      "Both Assertion and Reason are true, but Reason is NOT the correct explanation of Assertion.",
+      "Assertion is true, but Reason is false.",
+      "Assertion is false, but Reason is true."
+    ],
+    "correctAnswer": "Both Assertion and Reason are true, and Reason is the correct explanation of Assertion.",
+    "solution": "At the center of the Earth, \\\\( r = 0 \\\\), hence effective gravitational field and \\\\( g \\\\) become zero.",
+    "difficulty": "medium",
+    "bloomLevel": "Analyze",
+    "topicOrigin": "${selectedTopics[0]?.topic || ''}"
+  },
+  {
+    "contextId": "CTX-001",
+    "type": "single_mcq",
+    "examCategory": "foundation",
+    "text": "A hypothetical planet has twice the average density of Earth and radius \\\\( R = 1.5 R_e \\\\). If the escape velocity on Earth is \\\\( v_e \\\\), the escape velocity on this planet will be:",
+    "options": ["\\\\( \\\\sqrt{3} v_e \\\\)", "\\\\( 3 v_e \\\\)", "\\\\( \\\\frac{\\\\sqrt{3}}{2} v_e \\\\)", "\\\\( 2.25 v_e \\\\)"],
+    "correctAnswer": "\\\\( \\\\sqrt{3} v_e \\\\)",
+    "solution": "Escape velocity \\\\( v_e = \\\\sqrt{\\\\frac{2GM}{R}} = \\\\sqrt{\\\\frac{8}{3} \\\\pi G \\\\rho R^2} \\\\propto R\\\\sqrt{\\\\rho} \\\\). Therefore \\\\( \\\\frac{v'}{v} = 1.5 \\\\times \\\\sqrt{2} = \\\\sqrt{2.25 \\\\times 2} = \\\\sqrt{4.5} \\\\approx 2.12 = \\\\sqrt{3} \\\\times 1.22 \\\\).",
+    "difficulty": "hard",
+    "bloomLevel": "Analyze",
+    "topicOrigin": "${selectedTopics[0]?.topic || ''}"
+  }
+]
+
+${buildImageInstruction()}
+
+========================================
+CRITICAL RULES & FORMATTING:
+========================================
+1. Return ONLY a single raw valid JSON array. DO NOT wrap with markdown commentary or intro/outro.
+2. Every item MUST include "contextId" matching the topic context (e.g. "CTX-001", "CTX-002", etc.).
+3. Math expressions must be in LaTeX format using \\\\( ... \\\\) with double-escaped backslashes.
+4. Set "examCategory" strictly to "standard" for Track 1 and "foundation" for Track 2.
+5. RANDOMIZE CORRECT OPTION POSITIONS: Distribute correct answers across options evenly.`;
     }
 
     if (type === 'objective') {
@@ -1684,7 +1846,7 @@ Return ONLY valid JSON. No extra text.`;
       const parsed = robustParseAIJson(text);
       let transformed: any[] = [];
 
-      if (questionType === 'objective') {
+      if (questionType === 'objective' || questionType === 'dual_track') {
         const arr = Array.isArray(parsed) ? parsed : (parsed.questions || []);
         if (!arr.length) throw new Error('No questions list found.');
         transformed = arr.map((q: any, i: number) => transformObjectiveQuestion(q, i));
@@ -2093,7 +2255,15 @@ Return ONLY valid JSON. No extra text.`;
                   onClick={() => handleSwitchType('all_in_one')}
                   style={{ borderRadius: '20px', fontWeight: questionType === 'all_in_one' ? 700 : 500 }}
                 >
-                  🌟 Master Suite (All-In-One)
+                  🌟 1. Master Suite (Obj + Sub)
+                </button>
+                <button 
+                  type="button"
+                  className={`btn btn-sm ${questionType === 'dual_track' ? 'btn-primary' : 'btn-secondary'}`}
+                  onClick={() => handleSwitchType('dual_track')}
+                  style={{ borderRadius: '20px', fontWeight: questionType === 'dual_track' ? 700 : 500 }}
+                >
+                  ⚡ 2. Dual-Track (Standard + Foundation)
                 </button>
                 <button 
                   type="button"
@@ -2101,7 +2271,7 @@ Return ONLY valid JSON. No extra text.`;
                   onClick={() => handleSwitchType('objective')}
                   style={{ borderRadius: '20px' }}
                 >
-                  🎯 Objective Only
+                  🎯 3. Objective Only
                 </button>
                 <button 
                   type="button"
@@ -2109,7 +2279,7 @@ Return ONLY valid JSON. No extra text.`;
                   onClick={() => handleSwitchType('subjective')}
                   style={{ borderRadius: '20px' }}
                 >
-                  📝 Subjective Only
+                  📝 4. Subjective Only
                 </button>
               </div>
 
@@ -2295,8 +2465,161 @@ Return ONLY valid JSON. No extra text.`;
               </div>
             )}
 
-            {/* Exam Blueprint Matcher (replaces legacy template selector when in individual mode) */}
-            {questionType !== 'all_in_one' && (
+            {/* Quick Topic Presets & Ratio Customization for Dual-Track Mode */}
+            {questionType === 'dual_track' && (
+              <div style={{ marginTop: '14px', background: 'var(--bg-soft)', padding: '14px 16px', borderRadius: 'var(--radius)', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {/* Row 1: Volume Presets */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--accent)' }}>
+                    ⚡ Dual-Track Volume Presets (Questions per Topic):
+                  </span>
+                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => {
+                        setDefaultPerTopicCount(120);
+                        const newCounts: Record<string, number> = {};
+                        selectedTopics.forEach(t => { newCounts[topicKey(t)] = 120; });
+                        setTopicCustomCounts(newCounts);
+                      }}
+                      style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '12px' }}
+                    >
+                      🏆 Exhaustive (120 Qs)
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => {
+                        setDefaultPerTopicCount(90);
+                        const newCounts: Record<string, number> = {};
+                        selectedTopics.forEach(t => { newCounts[topicKey(t)] = 90; });
+                        setTopicCustomCounts(newCounts);
+                      }}
+                      style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '12px' }}
+                    >
+                      🔥 Recommended (90 Qs: 60 Std + 30 Fnd)
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => {
+                        setDefaultPerTopicCount(60);
+                        const newCounts: Record<string, number> = {};
+                        selectedTopics.forEach(t => { newCounts[topicKey(t)] = 60; });
+                        setTopicCustomCounts(newCounts);
+                      }}
+                      style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '12px' }}
+                    >
+                      ⚡ Compact (60 Qs)
+                    </button>
+                  </div>
+                </div>
+
+                {/* Row 2: Standard vs Foundation Ratio Presets & Slider */}
+                <div style={{ borderTop: '1px dashed var(--border-light)', paddingTop: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--accent)' }}>
+                      ⚖️ Track Division Ratio:
+                    </span>
+                    <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
+                      <button
+                        type="button"
+                        className={`btn btn-sm ${dualTrackStandardRatio === 70 ? 'btn-primary' : 'btn-secondary'}`}
+                        onClick={() => setDualTrackStandardRatio(70)}
+                        style={{ fontSize: '11px', padding: '2px 7px', borderRadius: '10px' }}
+                      >
+                        ⚖️ 70% Std / 30% Fnd
+                      </button>
+                      <button
+                        type="button"
+                        className={`btn btn-sm ${dualTrackStandardRatio === 60 ? 'btn-primary' : 'btn-secondary'}`}
+                        onClick={() => setDualTrackStandardRatio(60)}
+                        style={{ fontSize: '11px', padding: '2px 7px', borderRadius: '10px' }}
+                      >
+                        🎯 60% Std / 40% Fnd
+                      </button>
+                      <button
+                        type="button"
+                        className={`btn btn-sm ${dualTrackStandardRatio === 80 ? 'btn-primary' : 'btn-secondary'}`}
+                        onClick={() => setDualTrackStandardRatio(80)}
+                        style={{ fontSize: '11px', padding: '2px 7px', borderRadius: '10px' }}
+                      >
+                        📘 80% Std / 20% Fnd
+                      </button>
+                      <button
+                        type="button"
+                        className={`btn btn-sm ${dualTrackStandardRatio === 50 ? 'btn-primary' : 'btn-secondary'}`}
+                        onClick={() => setDualTrackStandardRatio(50)}
+                        style={{ fontSize: '11px', padding: '2px 7px', borderRadius: '10px' }}
+                      >
+                        🔘 50% Std / 50% Fnd
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Interactive Slider */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'var(--surface)', padding: '6px 12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text)', whiteSpace: 'nowrap', minWidth: '180px' }}>
+                      📘 {dualTrackStandardRatio}% Standard • 🏆 {100 - dualTrackStandardRatio}% Foundation
+                    </span>
+                    <input 
+                      type="range"
+                      min={0}
+                      max={100}
+                      step={5}
+                      value={dualTrackStandardRatio}
+                      onChange={(e) => setDualTrackStandardRatio(Number(e.target.value))}
+                      style={{ flex: 1, accentColor: 'var(--accent)', cursor: 'pointer', height: '6px' }}
+                    />
+                  </div>
+                </div>
+                
+                {/* Dynamic Breakdown Display */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '2px' }}>
+                  {selectedTopics.map((top, idx) => {
+                    const key = topicKey(top);
+                    const count = topicCustomCounts[key] !== undefined ? Number(topicCustomCounts[key]) || defaultPerTopicCount : defaultPerTopicCount;
+                    const c = typeof count === 'number' ? count : (parseInt(String(count), 10) || 90);
+                    
+                    let stdC = 0;
+                    let fndC = 0;
+                    if (dualTrackStandardRatio >= 100) {
+                      stdC = c;
+                      fndC = 0;
+                    } else if (dualTrackStandardRatio <= 0) {
+                      stdC = 0;
+                      fndC = c;
+                    } else {
+                      stdC = Math.max(1, Math.round(c * (dualTrackStandardRatio / 100)));
+                      fndC = Math.max(1, c - stdC);
+                    }
+
+                    const stdEasy = stdC > 0 ? Math.max(1, Math.round(stdC * 0.30)) : 0;
+                    const stdMed = stdC > 0 ? Math.max(1, Math.round(stdC * 0.50)) : 0;
+                    const stdHard = stdC > 0 ? Math.max(0, stdC - stdEasy - stdMed) : 0;
+
+                    const fndEasy = fndC > 0 ? Math.max(1, Math.round(fndC * 0.10)) : 0;
+                    const fndMed = fndC > 0 ? Math.max(1, Math.round(fndC * 0.40)) : 0;
+                    const fndHard = fndC > 0 ? Math.max(0, fndC - fndEasy - fndMed) : 0;
+
+                    return (
+                      <div key={idx} style={{ fontSize: '11px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--surface)', padding: '6px 10px', borderRadius: '4px', border: '1px solid var(--border-light)' }}>
+                        <span>📍 <strong>Topic {idx + 1}:</strong> {top.topic} (<strong>{c} Qs</strong>)</span>
+                        <span style={{ color: 'var(--text-muted)' }}>
+                          {stdC > 0 && <span>📘 <strong>{stdC} Standard</strong> ({stdEasy}E / {stdMed}M / {stdHard}H)</span>}
+                          {stdC > 0 && fndC > 0 && <span> + </span>}
+                          {fndC > 0 && <span>🏆 <strong>{fndC} Foundation</strong> ({fndEasy}E / {fndMed}M / {fndHard}H HOTS)</span>}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Exam Blueprint Matcher (shown for individual objective/subjective modes) */}
+            {(questionType === 'objective' || questionType === 'subjective') && (
               <div style={{ marginTop: '16px', borderTop: '1px dashed var(--border-light)', paddingTop: '12px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                   <label style={{ fontSize: '12px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -2684,7 +3007,7 @@ Return ONLY valid JSON. No extra text.`;
                         </div>
 
                         {/* Subjective preview formatting */}
-                        {questionType === 'subjective' ? (
+                        {(questionType === 'subjective' || q.type?.startsWith('subjective_') || (q.marks && !q.options?.length && q.type !== 'numerical')) ? (
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: 'var(--surface)', padding: '10px', borderRadius: '6px', fontSize: '11px', border: '1px solid var(--border-light)' }}>
                             <span style={{ fontWeight: 'bold', color: 'var(--text)' }}>Verbatim textbook lines:</span>
                             {q.answerLines?.map((line: any, li: number) => (
