@@ -4,6 +4,7 @@ import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole } from '@/lib/auth';
 import { ReportCacheManager } from '@/lib/reportCache';
 import { chunkArray } from '@/lib/firestoreUtils';
+import { MasteryService } from '@/services/mastery.service';
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
@@ -490,6 +491,28 @@ export async function POST(req: NextRequest) {
         }).catch(e => console.warn(`Error writing teacher evaluation for question ${qr.questionId}:`, e.message))
       )
     );
+
+    // D. Process topic mastery updates for Class 10 students
+    try {
+      let questions: any[] = [];
+      if (Array.isArray(attempt.questionSnapshot) && attempt.questionSnapshot.length > 0) {
+        questions = attempt.questionSnapshot;
+      } else if (attempt.examId) {
+        const examSnap = await adminDb.collection('subjectiveExams').doc(attempt.examId).get();
+        if (examSnap.exists) {
+          questions = examSnap.data()?.questions || [];
+        }
+      }
+
+      await MasteryService.processSubjectiveMasteryUpdate({
+        studentCode: attempt.studentCode,
+        examId: attempt.examId,
+        questions,
+        questionReviews
+      });
+    } catch (masteryErr: any) {
+      console.warn('Could not update topic mastery from admin subjective review:', masteryErr?.message || masteryErr);
+    }
 
     return NextResponse.json({ success: true, message: 'Grades finalized successfully.' });
 

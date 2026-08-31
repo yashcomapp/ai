@@ -5,6 +5,7 @@ import { deriveTopicCodeFromQuestionCode } from '@/lib/questionTypes';
 import { ReportCacheManager } from '@/lib/reportCache';
 import { chunkArray } from '@/lib/firestoreUtils';
 import { getDateKeyIST } from '@/lib/dateUtils';
+import { MasteryService } from '@/services/mastery.service';
 
 export const dynamic = 'force-dynamic';
 
@@ -700,6 +701,28 @@ export async function POST(req: NextRequest) {
       });
 
       await batch.commit();
+
+      // Process topic mastery updates for Class 10 students
+      try {
+        let questions: any[] = [];
+        if (Array.isArray(aData.questionSnapshot) && aData.questionSnapshot.length > 0) {
+          questions = aData.questionSnapshot;
+        } else if (aData.examId) {
+          const examSnap = await adminDb.collection('subjectiveExams').doc(aData.examId).get();
+          if (examSnap.exists) {
+            questions = examSnap.data()?.questions || [];
+          }
+        }
+
+        await MasteryService.processSubjectiveMasteryUpdate({
+          studentCode: childStudentCode,
+          examId: aData.examId || reviewId,
+          questions,
+          questionReviews
+        });
+      } catch (masteryErr: any) {
+        console.warn('Could not update topic mastery from parent subjective review:', masteryErr?.message || masteryErr);
+      }
 
       if (aData.examId) {
         await ReportCacheManager.invalidateReport(`exam-report-objective-${aData.examId}`).catch(() => null);
