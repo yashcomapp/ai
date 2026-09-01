@@ -1064,32 +1064,32 @@ Return ONLY valid JSON. No markdown wrappers or extra commentary.`;
 
         {/* Selected Questions List */}
         {generatedQuestions.length > 0 && (
-          <div className="card" style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', padding: '20px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', borderBottom: '1px solid var(--border-light)', paddingBottom: '8px' }}>
-              <h3 style={{ fontSize: '14px', fontWeight: 700, margin: 0 }}>📝 Selected Exam Questions</h3>
-              <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>({generatedQuestions.length} selected)</span>
+          <div className="card" style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', padding: '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', borderBottom: '1px solid var(--border-light)', paddingBottom: '6px' }}>
+              <h3 style={{ fontSize: '13px', fontWeight: 700, margin: 0 }}>📝 Selected Exam Questions</h3>
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>({generatedQuestions.length} selected)</span>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {generatedQuestions.map((q, idx) => (
-                <div key={idx} style={{ background: 'var(--bg-soft)', borderLeft: '4px solid var(--accent)', padding: '16px 20px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', gap: '10px', width: '100%' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-light)', paddingBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                      <span style={{ fontWeight: 800, fontSize: '13px', color: 'var(--accent)' }}>Q{idx + 1}</span>
-                      <span style={{ fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '4px', background: 'var(--surface)', border: '1px solid var(--border-light)', color: 'var(--text)' }}>
+                <div key={idx} style={{ background: 'var(--review-card-bg)', border: '1.5px solid var(--review-card-border)', padding: '10px 12px', borderRadius: 'var(--radius-sm)', display: 'flex', flexDirection: 'column', gap: '6px', width: '100%' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-light)', paddingBottom: '4px', flexWrap: 'wrap', gap: '6px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                      <span style={{ fontWeight: 800, fontSize: '12px', color: 'var(--accent)' }}>Q{idx + 1}</span>
+                      <span style={{ fontSize: '10.5px', fontWeight: 700, padding: '1px 6px', borderRadius: '4px', background: 'var(--surface)', border: '1px solid var(--border-light)', color: 'var(--text)' }}>
                         {q.questionCode || 'AI_GENERATED'}
                       </span>
-                      <span style={{ fontSize: '10px', textTransform: 'uppercase', padding: '2px 6px', borderRadius: '4px', background: 'rgba(59, 130, 246, 0.1)', color: '#2563eb', fontWeight: 700 }}>
+                      <span style={{ fontSize: '9.5px', textTransform: 'uppercase', padding: '1px 6px', borderRadius: '4px', background: 'rgba(59, 130, 246, 0.1)', color: '#2563eb', fontWeight: 700 }}>
                         {q.type}
                       </span>
-                      <span style={{ fontSize: '10px', textTransform: 'capitalize', padding: '2px 6px', borderRadius: '4px', background: 'rgba(16, 185, 129, 0.1)', color: '#059669', fontWeight: 700 }}>
+                      <span style={{ fontSize: '9.5px', textTransform: 'capitalize', padding: '1px 6px', borderRadius: '4px', background: 'rgba(16, 185, 129, 0.1)', color: '#059669', fontWeight: 700 }}>
                         {q.difficulty}
                       </span>
-                      <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)' }}>
+                      <span style={{ fontSize: '10.5px', fontWeight: 700, color: 'var(--text-muted)' }}>
                         {q.marks || 4} Marks
                       </span>
                     </div>
-                    <button className="btn btn-secondary btn-sm" style={{ color: 'var(--danger)', borderColor: 'rgba(239, 68, 68, 0.3)', padding: '3px 10px', fontSize: '11px' }} onClick={() => handleRemoveQuestion(idx)}>
+                    <button className="btn btn-secondary btn-sm" style={{ color: 'var(--danger)', borderColor: 'rgba(239, 68, 68, 0.3)', padding: '2px 8px', fontSize: '10.5px' }} onClick={() => handleRemoveQuestion(idx)}>
                       🗑️ Remove
                     </button>
                   </div>
@@ -1097,38 +1097,39 @@ Return ONLY valid JSON. No markdown wrappers or extra commentary.`;
                   {/* Question Text */}
                   <div 
                     className="math-container" 
-                    style={{ fontSize: '14px', fontWeight: 600, lineHeight: 1.6, color: 'var(--text)', width: '100%', wordBreak: 'break-word' }} 
+                    style={{ fontSize: '12.5px', fontWeight: 'bold', lineHeight: '1.35', color: 'var(--text)', width: '100%', wordBreak: 'break-word', margin: '2px 0 4px 0' }} 
                   >
                     {preprocessMathText(q.text)}
                   </div>
                   
                   {/* Render Options if MCQ */}
                   {q.options && q.options.length > 0 && (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '10px', fontSize: '12px', color: 'var(--text)', width: '100%', marginTop: '4px' }}>
-                       {q.options.map((opt, oi) => (
-                         <div key={oi} style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', padding: '8px 12px', background: 'var(--surface)', borderRadius: '6px', border: '1px solid var(--border-light)' }}>
-                           <span style={{ fontWeight: 700, color: 'var(--accent)', flexShrink: 0 }}>{String.fromCharCode(65 + oi)}.</span> 
-                           <span className="math-container" style={{ flex: 1, wordBreak: 'break-word' }}>{preprocessMathText(opt)}</span>
-                         </div>
-                       ))}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '11.5px', color: 'var(--text)', width: '100%', marginBottom: '4px' }}>
+                       {q.options.map((opt, oi) => {
+                         const label = String.fromCharCode(65 + oi);
+                         const isCorrect = q.correctAnswers 
+                           ? (q.correctAnswers.includes(label) || q.correctAnswers.includes(opt)) 
+                           : (q.correctAnswer === label || q.correctAnswer === opt);
+                         return (
+                           <div key={oi} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '4px 8px', background: isCorrect ? 'var(--success-bg)' : 'var(--review-option-bg)', borderRadius: 'var(--radius-sm)', border: isCorrect ? '1.5px solid var(--success)' : '1px solid var(--review-option-border)', color: isCorrect ? 'var(--success)' : 'var(--text)', fontWeight: isCorrect ? 600 : 400 }}>
+                             <span style={{ fontWeight: 700, flexShrink: 0 }}>{isCorrect ? '✅ ' : ''}{label}.</span> 
+                             <span className="math-container" style={{ flex: 1, wordBreak: 'break-word' }}>{preprocessMathText(opt)}</span>
+                           </div>
+                         );
+                       })}
                     </div>
                   )}
 
                   {/* Correct Answers Banner */}
-                  {q.correctAnswer && (
-                    <div style={{ fontSize: '12px', color: 'var(--success)', fontWeight: 700, padding: '6px 12px', background: 'rgba(16, 185, 129, 0.08)', borderRadius: '6px', border: '1px solid rgba(16, 185, 129, 0.2)', width: '100%' }}>
-                      ✓ Correct Answer: <span className="math-container" style={{ fontWeight: 600 }}>{preprocessMathText(q.correctAnswer)}</span>
-                    </div>
-                  )}
-                  {q.correctAnswers && q.correctAnswers.length > 0 && (
-                    <div style={{ fontSize: '12px', color: 'var(--success)', fontWeight: 700, padding: '6px 12px', background: 'rgba(16, 185, 129, 0.08)', borderRadius: '6px', border: '1px solid rgba(16, 185, 129, 0.2)', width: '100%' }}>
-                      ✓ Correct Answers: <span className="math-container" style={{ fontWeight: 600 }}>{preprocessMathText(q.correctAnswers.join(', '))}</span>
+                  {(q.correctAnswer || (q.correctAnswers && q.correctAnswers.length > 0)) && (
+                    <div style={{ fontSize: '11.5px', color: 'var(--success)', fontWeight: 700, padding: '4px 8px', background: 'rgba(16, 185, 129, 0.08)', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(16, 185, 129, 0.2)', width: '100%' }}>
+                      ✓ Correct Answer: <span className="math-container" style={{ fontWeight: 600 }}>{preprocessMathText(q.correctAnswers && q.correctAnswers.length > 0 ? q.correctAnswers.join(', ') : q.correctAnswer)}</span>
                     </div>
                   )}
 
                   {/* Proctoring Settings */}
                   <div style={{ marginTop: '2px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', cursor: 'pointer', userSelect: 'none', color: 'var(--text)' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '10.5px', cursor: 'pointer', userSelect: 'none', color: 'var(--text-muted)' }}>
                       <input 
                         type="checkbox"
                         checked={!!(q as any).relaxProctoring}
@@ -1140,9 +1141,9 @@ Return ONLY valid JSON. No markdown wrappers or extra commentary.`;
                             return next;
                           });
                         }}
-                        style={{ cursor: 'pointer', width: '13px', height: '13px' }}
+                        style={{ cursor: 'pointer', width: '12px', height: '12px' }}
                       />
-                      <span>Relax Camera Proctoring (Numerical / Mathematical question requiring calculations)</span>
+                      <span>Relax Camera Proctoring (Calculations required)</span>
                     </label>
                   </div>
 

@@ -7,7 +7,18 @@ import { useRouter } from 'next/navigation';
 import Script from 'next/script';
 import { useMathRender } from '@/hooks/useMathRender';
 import { useToggleSet } from '@/hooks/useToggleSet';
-import { preprocessMathText, robustParseAIJson, parseAiSolutionsMap, parseTopicCode } from '@/lib/questionTypes';
+import { 
+  preprocessMathText, 
+  robustParseAIJson, 
+  parseAiSolutionsMap, 
+  parseTopicCode,
+  extractAssertionAndReason,
+  getRawOptionKey,
+  getRawOptionText,
+  isOptionCorrect,
+  getQuestionCorrectAnswer,
+  formatUserAnswerSummary
+} from '@/lib/questionTypes';
 import Image from 'next/image';
 interface Question {
   id?: string;
@@ -815,16 +826,16 @@ ${JSON.stringify(missingList, null, 2)}`;
       </header>
 
       {/* Main Content Area */}
-      <main style={{ flex: 1, padding: '24px 12px', maxWidth: '1100px', width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <main style={{ flex: 1, padding: '16px 12px', maxWidth: '1100px', width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '14px' }}>
         
         {/* Cascade Filters card */}
-        <div className="card" style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', padding: '20px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-light)', paddingBottom: '8px', marginBottom: '15px' }}>
+        <div className="card" style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', padding: '12px 14px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-light)', paddingBottom: '6px', marginBottom: '10px' }}>
             <h3 style={{ fontSize: '13px', fontWeight: 700, margin: 0 }}>🔍 Search Filters</h3>
-            <button className="btn btn-secondary" style={{ padding: '3px 10px', fontSize: '10px' }} onClick={handleResetFilters}>Reset All</button>
+            <button className="btn btn-secondary" style={{ padding: '2px 8px', fontSize: '10px' }} onClick={handleResetFilters}>Reset All</button>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '15px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '10px' }}>
             <div>
               <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '5px' }}>Board</label>
               <select 
@@ -999,7 +1010,7 @@ ${JSON.stringify(missingList, null, 2)}`;
               <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Loading question bank records...</span>
             </div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '12px' }}>
               {questions.length === 0 ? (
                 <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>
                   {(!filterBoard || !filterClass || !filterSubject)
@@ -1007,76 +1018,146 @@ ${JSON.stringify(missingList, null, 2)}`;
                     : 'No questions match selected filter queries.'}
                 </div>
               ) : (
-                questions.map((q, idx) => (
-                  <div key={q.questionCode} style={{ padding: '15px 20px', borderBottom: '1px solid var(--border-light)', display: 'flex', alignItems: 'flex-start', gap: '15px' }}>
-                    <input 
-                      type="checkbox" 
-                      checked={selectedCodes.has(q.questionCode)} 
-                      onChange={() => handleToggleSelectQuestion(q.questionCode)} 
-                      style={{ marginTop: '4px' }}
-                    />
-                    <div style={{ flex: 1 }}>
-                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center', marginBottom: '6px' }}>
-                        <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--accent)' }}>{q.questionCode}</span>
-                        <span className="badge badge-info" style={{ fontSize: '10px' }}>{q.type}</span>
-                        <span className="badge" style={{ fontSize: '10px', background: 'var(--bg-soft)', color: 'var(--text)' }}>{q.difficulty}</span>
-                        {q.usedInClassroomTest ? (
-                          <span className="badge" style={{ fontSize: '10px', background: 'rgba(107, 70, 193, 0.1)', color: 'var(--accent)', fontWeight: 700 }}>Used</span>
-                        ) : (
-                          <span className="badge" style={{ fontSize: '10px', background: 'rgba(16, 185, 129, 0.1)', color: 'var(--success)', fontWeight: 700 }}>Unused</span>
-                        )}
-                        <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Class {q.class} • Ch.{q.chapterNumber} • {q.subject}</span>
-                      </div>
-                      
-                      <div 
-                        className="math-container" 
-                        style={{ fontSize: '13px', fontWeight: 600, lineHeight: 1.5, marginBottom: '8px' }}
-                        dangerouslySetInnerHTML={{ __html: `${preprocessMathText(q.text)}${q.questionCode ? ` (${q.questionCode})` : ''}` }}
-                      />
+                questions.map((q, idx) => {
+                  return (
+                    <div 
+                      key={q.questionCode} 
+                      style={{ 
+                        width: '100%',
+                        padding: '10px 12px',
+                        borderRadius: 'var(--radius-sm)',
+                        border: '1.5px solid var(--review-card-border)',
+                        background: 'var(--review-card-bg)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '6px'
+                      }}
+                    >
+                      {/* Top Header Bar: Checkbox + Code + Tags on Left, Compact Actions on Right */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-light)', paddingBottom: '4px', fontSize: '11px', color: 'var(--text-muted)', flexWrap: 'wrap', gap: '6px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                          <input 
+                            type="checkbox" 
+                            checked={selectedCodes.has(q.questionCode)} 
+                            onChange={() => handleToggleSelectQuestion(q.questionCode)} 
+                            style={{ cursor: 'pointer' }}
+                          />
+                          <span style={{ fontWeight: 700, color: 'var(--accent)', fontSize: '11px' }}>{q.questionCode}</span>
+                          <span className="badge badge-info" style={{ fontSize: '9.5px', padding: '1px 6px', borderRadius: '4px' }}>{q.type}</span>
+                          <span className="badge" style={{ fontSize: '9.5px', padding: '1px 6px', borderRadius: '4px', background: 'var(--bg-soft)', color: 'var(--text)' }}>{q.difficulty}</span>
+                          {q.usedInClassroomTest ? (
+                            <span className="badge" style={{ fontSize: '9.5px', padding: '1px 6px', borderRadius: '4px', background: 'rgba(107, 70, 193, 0.1)', color: 'var(--accent)', fontWeight: 700 }}>Used</span>
+                          ) : (
+                            <span className="badge" style={{ fontSize: '9.5px', padding: '1px 6px', borderRadius: '4px', background: 'rgba(16, 185, 129, 0.1)', color: 'var(--success)', fontWeight: 700 }}>Unused</span>
+                          )}
+                          <span style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>Class {q.class} • Ch.{q.chapterNumber} • {q.subject}</span>
+                        </div>
 
+                        <div style={{ display: 'flex', gap: '4px', alignItems: 'center', marginLeft: 'auto' }}>
+                          <button className="btn btn-secondary" style={{ padding: '2px 8px', fontSize: '11px' }} onClick={() => handleOpenEditQuestion(q)}>✏️ Edit</button>
+                          <button className="btn btn-secondary" style={{ padding: '2px 8px', fontSize: '11px', color: 'var(--danger)', borderColor: 'rgba(220, 38, 38, 0.3)' }} onClick={() => handleDeleteQuestion(q.questionCode)}>🗑️ Delete</button>
+                        </div>
+                      </div>
+
+                      {/* Question Text / Assertion-Reason Content */}
+                      {q.type === 'assertion_reason' ? (() => {
+                        const { assertion, reason } = extractAssertionAndReason(q);
+                        return (
+                          <div style={{ marginBottom: '4px', fontSize: '12.5px' }}>
+                            {assertion && <p style={{ margin: '2px 0' }}><strong>Assertion (A):</strong> <span className="math-container" dangerouslySetInnerHTML={{ __html: preprocessMathText(assertion) }} /></p>}
+                            {reason && <p style={{ margin: '2px 0' }}><strong>Reason (R):</strong> <span className="math-container" dangerouslySetInnerHTML={{ __html: preprocessMathText(reason) }} /></p>}
+                          </div>
+                        );
+                      })() : (
+                        <p 
+                          className="math-container" 
+                          style={{ fontSize: '12.5px', margin: '2px 0 6px 0', fontWeight: 'bold', lineHeight: '1.35', color: 'var(--text)' }}
+                          dangerouslySetInnerHTML={{ __html: `${preprocessMathText(q.text)}${q.questionCode ? ` (${q.questionCode})` : ''}` }}
+                        />
+                      )}
+
+                      {/* Figure / Image */}
                       {q.imageUrl && (
-                        <div style={{ margin: '8px 0' }}>
+                        <div style={{ margin: '4px 0' }}>
                           <Image src={q.imageUrl} alt="Question figure" width={200} height={150} style={{ objectFit: 'contain', borderRadius: '4px', border: '1px solid var(--border-light)' }} />
                         </div>
                       )}
 
-                      {/* Render Options if MCQ */}
+                      {/* Render Options list breakdown (ScorecardModal style) */}
                       {q.options && q.options.length > 0 && (
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '8px' }}>
-                          {q.options.map((opt, oi) => (
-                            <div key={oi} style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                              <span>{String.fromCharCode(65 + oi)}.</span> 
-                              <span className="math-container" dangerouslySetInnerHTML={{ __html: preprocessMathText(opt) }} />
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '6px' }}>
+                          {q.options.map((opt, oi) => {
+                            const optKey = getRawOptionKey(opt);
+                            const optText = getRawOptionText(opt);
+                            const correctAns = getQuestionCorrectAnswer(q);
+                            const isCorrectOpt = isOptionCorrect(correctAns, optKey, oi, optText);
+
+                            let border = '1px solid var(--review-option-border)';
+                            let background = 'var(--review-option-bg)';
+                            let color = 'var(--text)';
+                            let prefix = '';
+
+                            if (isCorrectOpt) {
+                              border = '1.5px solid var(--success)';
+                              background = 'var(--success-bg)';
+                              color = 'var(--success)';
+                              prefix = '✅ ';
+                            }
+
+                            return (
+                              <div 
+                                key={oi}
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '6px',
+                                  padding: '4px 8px',
+                                  border,
+                                  borderRadius: 'var(--radius-sm)',
+                                  background,
+                                  color,
+                                  fontSize: '11.5px',
+                                  fontWeight: isCorrectOpt ? 600 : 400
+                                }}
+                              >
+                                <span style={{ fontWeight: 700, marginRight: '2px' }}>{prefix}{String.fromCharCode(65 + oi)}.</span>
+                                <span className="math-container" dangerouslySetInnerHTML={{ __html: preprocessMathText(optText) }} />
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {/* Correct Answer Summary Box */}
+                      {(() => {
+                        const correctDisplay = Array.isArray(q.correctAnswer)
+                          ? q.correctAnswer.map((ca: any) => formatUserAnswerSummary(q.options, ca)).join(', ')
+                          : (Array.isArray(q.correctAnswers) && q.correctAnswers.length > 0
+                              ? q.correctAnswers.map((ca: any) => formatUserAnswerSummary(q.options, ca)).join(', ')
+                              : (q.correctAnswer ? formatUserAnswerSummary(q.options, q.correctAnswer) : ''));
+
+                        return correctDisplay ? (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', fontSize: '11.5px', background: 'var(--surface-3)', padding: '5px 8px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)' }}>
+                            <div style={{ lineHeight: '1.3' }}>
+                              <strong style={{ color: 'var(--text-muted)', marginRight: '6px' }}>Correct Answer:</strong>
+                              <span className="math-container" style={{ color: 'var(--success)', fontWeight: 'bold' }}>
+                                {preprocessMathText(correctDisplay)}
+                              </span>
                             </div>
-                          ))}
-                        </div>
-                      )}
+                          </div>
+                        ) : null;
+                      })()}
 
-                      {/* Correct Answers */}
-                      {q.correctAnswer && (
-                        <div style={{ fontSize: '10px', color: 'var(--success)', fontWeight: 600, marginBottom: '5px' }}>
-                           ✓ Correct Answer: <span className="math-container" dangerouslySetInnerHTML={{ __html: preprocessMathText(q.correctAnswer) }} />
-                        </div>
-                      )}
-                      {q.correctAnswers && q.correctAnswers.length > 0 && (
-                        <div style={{ fontSize: '10px', color: 'var(--success)', fontWeight: 600, marginBottom: '5px' }}>
-                          ✓ Correct Answers: {q.correctAnswers.join(', ')}
-                        </div>
-                      )}
-
+                      {/* Explanation / Solution box */}
                       {q.solution && (
-                        <div style={{ fontSize: '10px', color: 'var(--text-muted)', background: 'var(--bg-soft)', padding: '6px', borderRadius: '4px', border: '1px solid var(--border-light)' }}>
-                           <strong>Explanation:</strong> <span className="math-container" dangerouslySetInnerHTML={{ __html: preprocessMathText(q.solution) }} />
+                        <div style={{ marginTop: '4px', fontSize: '11.5px', color: 'var(--text-muted)', borderTop: '1px dashed var(--border-light)', paddingTop: '6px' }}>
+                          <strong style={{ color: 'var(--text)' }}>Explanation:</strong>
+                          <p className="math-container" style={{ margin: '2px 0 0 0', lineHeight: '1.35' }} dangerouslySetInnerHTML={{ __html: preprocessMathText(q.solution) }} />
                         </div>
                       )}
                     </div>
-
-                    <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
-                      <button className="btn btn-secondary" style={{ padding: '3px 8px', fontSize: '11px' }} onClick={() => handleOpenEditQuestion(q)}>✏️ Edit</button>
-                      <button className="btn btn-secondary" style={{ padding: '3px 8px', fontSize: '11px', color: 'var(--danger)' }} onClick={() => handleDeleteQuestion(q.questionCode)}>🗑️ Delete</button>
-                    </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           )}

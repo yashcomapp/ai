@@ -1287,366 +1287,363 @@ Return ONLY a valid JSON object matching the schema below:
                     activeSubjectDoc.chapters.map((ch, chIdx) => {
                       const isExpanded = !!expandedChapters[chIdx];
                       return (
-                        <div key={`ch_${chIdx}`} style={{ border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', background: 'var(--bg-soft)', overflow: 'hidden', marginBottom: '8px' }}>
+                        <div key={`ch_${chIdx}`} style={{ border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', background: 'var(--surface)', overflow: 'hidden', marginBottom: '8px' }}>
                           
                           {/* Chapter Node header */}
-                          <div style={{ padding: '10px 15px', background: 'var(--surface)', borderBottom: isExpanded ? '1px solid var(--border-light)' : 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <div 
-                              style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', flex: 1 }}
-                              onClick={() => toggleChapterExpand(chIdx)}
-                            >
-                              <span style={{ fontSize: '12px', color: 'var(--accent)', marginRight: '4px', userSelect: 'none' }}>
-                                {isExpanded ? '▼' : '▶'}
-                              </span>
-                              <div>
-                                <span style={{ fontWeight: 800, fontSize: '13px', color: 'var(--accent)' }}>📗 Chapter {ch.number}:</span>{' '}
-                                <span style={{ fontWeight: 600, fontSize: '13px' }}>{ch.name}</span>
-                                <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginLeft: '10px' }}>
-                                  [
-                                  <span
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      if (activeSubjectDoc) {
-                                        router.push(`/admin/question-bank?board=${encodeURIComponent(activeSubjectDoc.board)}&class=${encodeURIComponent(activeSubjectDoc.class)}&subject=${encodeURIComponent(activeSubjectDoc.subject)}&chapter=${encodeURIComponent(ch.number)}`);
-                                      }
-                                    }}
-                                    title="Click to view questions in Question Bank"
-                                    style={{ cursor: 'pointer', textDecoration: 'underline', color: '#2980b9' }}
-                                  >
-                                    O - {ch.objectiveCount || 0}
-                                  </span>
-                                  {' | '}
-                                  S - {ch.subjectiveCount || 0} |{' '}
-                                  <span 
-                                    onClick={(e) => { 
-                                      e.stopPropagation(); 
-                                      if (ch.tests && ch.tests.length > 0) {
-                                        handleOpenTestsModal(ch.name || 'Chapter', ch.tests);
-                                      }
-                                    }}
-                                    style={{ 
-                                      cursor: (ch.tests && ch.tests.length > 0) ? 'pointer' : 'default',
-                                      textDecoration: (ch.tests && ch.tests.length > 0) ? 'underline' : 'none',
-                                      color: '#2980b9'
-                                    }}
-                                  >
-                                    O.Tests - {getObjectiveTestsCount(ch.tests)}
-                                  </span>
-                                  {' | '}
-                                  <span 
-                                    onClick={(e) => { 
-                                      e.stopPropagation(); 
-                                      if (ch.tests && ch.tests.length > 0) {
-                                        handleOpenTestsModal(ch.name || 'Chapter', ch.tests);
-                                      }
-                                    }}
-                                    style={{ 
-                                      cursor: (ch.tests && ch.tests.length > 0) ? 'pointer' : 'default',
-                                      textDecoration: (ch.tests && ch.tests.length > 0) ? 'underline' : 'none',
-                                      color: '#8e44ad'
-                                    }}
-                                  >
-                                    S.Tests - {getSubjectiveTestsCount(ch.tests)}
-                                  </span>
-                                  ]
+                          <div style={{ padding: '8px 12px', background: 'var(--surface)', borderBottom: isExpanded ? '1px solid var(--border-light)' : 'none', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            {/* Chapter Top Row: Title + Action Buttons */}
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                              <div 
+                                style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', flex: 1, minWidth: '180px' }}
+                                onClick={() => toggleChapterExpand(chIdx)}
+                              >
+                                <span style={{ fontSize: '11px', color: 'var(--accent)', marginRight: '2px', userSelect: 'none' }}>
+                                  {isExpanded ? '▼' : '▶'}
                                 </span>
-                                <small style={{ display: 'block', fontSize: '9px', color: 'var(--text-muted)' }}>{ch.chapterCode}</small>
-                                {Array.isArray(ch.chapterExercises) && ch.chapterExercises.map((ex: any, exIdx: number) => (
-                                  <span key={exIdx} style={{ display: 'inline-block', fontSize: '9px', fontWeight: 650, background: 'rgba(230, 126, 34, 0.1)', color: '#d35400', padding: '1px 6px', borderRadius: '4px', marginTop: '4px', marginRight: '6px', border: '1px solid rgba(230, 126, 34, 0.2)' }}>
-                                    📖 {ex.name} ({ex.questionCount || 8} Qs)
+                                <span style={{ fontWeight: 800, fontSize: '13px', color: 'var(--accent)' }}>📗 Ch.{ch.number}:</span>{' '}
+                                <span style={{ fontWeight: 600, fontSize: '13px', color: 'var(--text)' }}>{ch.name}</span>
+                                {ch.chapterCode && (
+                                  <span style={{ fontSize: '9px', padding: '1px 5px', borderRadius: '4px', background: 'var(--bg-soft)', color: 'var(--text-muted)', border: '1px solid var(--border-light)' }}>
+                                    {ch.chapterCode}
                                   </span>
-                                ))}
+                                )}
+                              </div>
+
+                              <div style={{ display: 'flex', gap: '4px', alignItems: 'center', marginLeft: 'auto' }}>
+                                <button className="btn btn-secondary" style={{ padding: '2px 6px', fontSize: '10px' }} onClick={(e) => { e.stopPropagation(); handleOpenEditChapter(chIdx, ch); }}>✏️ Edit</button>
+                                <button className="btn btn-secondary" style={{ padding: '2px 6px', fontSize: '10px', color: 'var(--danger)', borderColor: 'rgba(220, 38, 38, 0.3)' }} onClick={(e) => { e.stopPropagation(); handleDeleteChapter(chIdx); }}>🗑️</button>
+                                <button className="btn btn-primary" style={{ padding: '2px 8px', fontSize: '10px' }} onClick={(e) => { e.stopPropagation(); handleOpenAddTopic(chIdx); }}>+ Topic</button>
                               </div>
                             </div>
-                            <div style={{ display: 'flex', gap: '5px' }}>
-                              <button className="btn btn-secondary" style={{ padding: '2px 6px', fontSize: '10px' }} onClick={() => handleOpenEditChapter(chIdx, ch)}>✏️</button>
-                              <button className="btn btn-secondary" style={{ padding: '2px 6px', fontSize: '10px', color: 'var(--danger)' }} onClick={() => handleDeleteChapter(chIdx)}>🗑️</button>
-                              <button className="btn btn-primary" style={{ padding: '2px 8px', fontSize: '10px' }} onClick={() => handleOpenAddTopic(chIdx)}>+ Topic</button>
+
+                            {/* Chapter Meta / Stats Horizontal Bar (Exam Review style) */}
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center', fontSize: '10.5px', paddingLeft: '16px' }}>
+                              <span
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (activeSubjectDoc) {
+                                    router.push(`/admin/question-bank?board=${encodeURIComponent(activeSubjectDoc.board)}&class=${encodeURIComponent(activeSubjectDoc.class)}&subject=${encodeURIComponent(activeSubjectDoc.subject)}&chapter=${encodeURIComponent(ch.number)}`);
+                                  }
+                                }}
+                                title="Click to view questions in Question Bank"
+                                style={{ cursor: 'pointer', fontWeight: 650, background: 'rgba(52, 152, 219, 0.1)', color: '#2980b9', padding: '1px 6px', borderRadius: '4px', textDecoration: 'underline' }}
+                              >
+                                O - {ch.objectiveCount || 0}
+                              </span>
+                              <span style={{ fontWeight: 650, background: 'rgba(155, 89, 182, 0.1)', color: '#8e44ad', padding: '1px 6px', borderRadius: '4px' }}>
+                                S - {ch.subjectiveCount || 0}
+                              </span>
+                              <span 
+                                onClick={(e) => { 
+                                  e.stopPropagation(); 
+                                  if (ch.tests && ch.tests.length > 0) {
+                                    handleOpenTestsModal(ch.name || 'Chapter', ch.tests);
+                                  }
+                                }}
+                                style={{ 
+                                  cursor: (ch.tests && ch.tests.length > 0) ? 'pointer' : 'default',
+                                  textDecoration: (ch.tests && ch.tests.length > 0) ? 'underline' : 'none',
+                                  fontWeight: 650,
+                                  background: 'rgba(52, 152, 219, 0.08)',
+                                  color: '#2980b9',
+                                  padding: '1px 6px',
+                                  borderRadius: '4px'
+                                }}
+                              >
+                                O.Tests - {getObjectiveTestsCount(ch.tests)}
+                              </span>
+                              <span 
+                                onClick={(e) => { 
+                                  e.stopPropagation(); 
+                                  if (ch.tests && ch.tests.length > 0) {
+                                    handleOpenTestsModal(ch.name || 'Chapter', ch.tests);
+                                  }
+                                }}
+                                style={{ 
+                                  cursor: (ch.tests && ch.tests.length > 0) ? 'pointer' : 'default',
+                                  textDecoration: (ch.tests && ch.tests.length > 0) ? 'underline' : 'none',
+                                  fontWeight: 650,
+                                  background: 'rgba(155, 89, 182, 0.08)',
+                                  color: '#8e44ad',
+                                  padding: '1px 6px',
+                                  borderRadius: '4px'
+                                }}
+                              >
+                                S.Tests - {getSubjectiveTestsCount(ch.tests)}
+                              </span>
+                              {Array.isArray(ch.chapterExercises) && ch.chapterExercises.map((ex: any, exIdx: number) => (
+                                <span key={exIdx} style={{ fontSize: '9.5px', fontWeight: 650, background: 'rgba(230, 126, 34, 0.1)', color: '#d35400', padding: '1px 6px', borderRadius: '4px', border: '1px solid rgba(230, 126, 34, 0.2)' }}>
+                                  📖 {ex.name} ({ex.questionCount || 8} Qs)
+                                </span>
+                              ))}
                             </div>
                           </div>
 
-                          {/* Topics Node (collapsible) */}
+                          {/* Topics Container with responsive indentation and vertical guide line */}
                           {isExpanded && (
-                            <div style={{ padding: '10px 15px 10px 30px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                            <div style={{ padding: '6px 6px 6px 12px', borderLeft: '2.5px solid var(--accent-light, #e2e8f0)', marginLeft: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                               {(!ch.topics || ch.topics.length === 0) ? (
-                                <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic' }}>No topics added.</div>
+                                <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic', padding: '4px' }}>No topics added.</div>
                               ) : (
-                                ch.topics.map((topic: Topic, topIdx: number) => (
-                                  <div
-                                    key={`t_${topIdx}`}
-                                    draggable={true}
-                                    onDragStart={() => handleDragStart(chIdx, topIdx)}
-                                    onDragEnd={handleDragEnd}
-                                    onDragOver={(e) => handleDragOver(e, chIdx, topIdx)}
-                                    onDrop={(e) => handleDrop(e, chIdx, topIdx)}
-                                    style={{
-                                      background: 'var(--surface)',
-                                      border: (dragOverTopic?.chIdx === chIdx && dragOverTopic?.topIdx === topIdx)
-                                        ? '2px dashed var(--accent)'
-                                        : '1px solid var(--border-light)',
-                                      borderRadius: 'var(--radius-sm)',
-                                      overflow: 'hidden',
-                                      opacity: (draggedTopic?.chIdx === chIdx && draggedTopic?.topIdx === topIdx) ? 0.4 : 1,
-                                      cursor: 'grab',
-                                      transition: 'all 0.15s ease-in-out'
-                                    }}
-                                  >
-                                    
-                                    <div style={{ padding: '8px 12px', borderBottom: '1.2px dashed var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                      <div>
-                                        <span style={{ fontWeight: 700, fontSize: '12px' }}>📍 Topic {topic.number}:</span>{' '}
-                                        <span style={{ fontSize: '12px' }}>{topic.name}</span>
-                                        <div style={{ display: 'inline-flex', gap: '6px', marginLeft: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
-                                          <span 
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              if (activeSubjectDoc) {
-                                                router.push(`/admin/question-bank?board=${encodeURIComponent(activeSubjectDoc.board)}&class=${encodeURIComponent(activeSubjectDoc.class)}&subject=${encodeURIComponent(activeSubjectDoc.subject)}&chapter=${encodeURIComponent(ch.number)}&topic=${encodeURIComponent(topic.number)}`);
-                                              }
-                                            }}
-                                            title="Click to view questions in Question Bank"
-                                            style={{ fontSize: '10px', fontWeight: 650, background: 'rgba(52, 152, 219, 0.1)', color: '#2980b9', padding: '1px 6px', borderRadius: '4px', cursor: 'pointer', textDecoration: 'underline' }}
-                                          >
-                                            O - {topic.objectiveCount || 0}
-                                          </span>
-                                          <span style={{ fontSize: '10px', fontWeight: 650, background: 'rgba(155, 89, 182, 0.1)', color: '#8e44ad', padding: '1px 6px', borderRadius: '4px' }}>
-                                            S - {topic.subjectiveCount || 0}
-                                          </span>
-                                          {(() => {
-                                            const subs = Array.isArray(topic.subtopics) ? topic.subtopics : [];
-                                            const hasSubs = subs.length > 0;
-                                            const targetCount = hasSubs
-                                              ? subs.reduce((acc: number, s: any) => acc + (Number(typeof s === 'object' ? s.targetQuestions : 0) || 30), 0)
-                                              : (topic.targetQuestions || 30);
-                                            return (
-                                              <span style={{ fontSize: '10px', fontWeight: 700, background: 'rgba(243, 156, 18, 0.12)', color: '#d35400', padding: '1px 6px', borderRadius: '4px' }}>
-                                                🎯 Target: {targetCount} Qs {hasSubs ? `(Sum of ${subs.length} Subtopics)` : ''}
-                                              </span>
-                                            );
-                                          })()}
-                                          <span style={{ 
-                                            fontSize: '10px', 
-                                            fontWeight: 650, 
-                                            background: 'rgba(52, 152, 219, 0.1)', 
-                                            color: '#2980b9', 
-                                            padding: '1px 6px', 
-                                            borderRadius: '4px',
-                                            display: 'inline-flex',
-                                            alignItems: 'center',
-                                            gap: '4px'
-                                          }}>
-                                            <span
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                if (topic.tests && topic.tests.length > 0) {
-                                                  handleOpenTestsModal(topic.name || 'Topic', topic.tests);
-                                                }
-                                              }}
-                                              style={{
-                                                cursor: (topic.tests && topic.tests.length > 0) ? 'pointer' : 'default',
-                                                textDecoration: (topic.tests && topic.tests.length > 0) ? 'underline' : 'none'
-                                              }}
-                                            >
-                                              O.Tests - {getObjectiveTestsCount(topic.tests)}
+                                ch.topics.map((topic: Topic, topIdx: number) => {
+                                  const subs = Array.isArray(topic.subtopics) ? topic.subtopics : [];
+                                  const hasSubs = subs.length > 0;
+                                  const targetCount = hasSubs
+                                    ? subs.reduce((acc: number, s: any) => acc + (Number(typeof s === 'object' ? s.targetQuestions : 0) || 30), 0)
+                                    : (topic.targetQuestions || 30);
+
+                                  return (
+                                    <div
+                                      key={`t_${topIdx}`}
+                                      draggable={true}
+                                      onDragStart={() => handleDragStart(chIdx, topIdx)}
+                                      onDragEnd={handleDragEnd}
+                                      onDragOver={(e) => handleDragOver(e, chIdx, topIdx)}
+                                      onDrop={(e) => handleDrop(e, chIdx, topIdx)}
+                                      style={{
+                                        background: 'var(--surface)',
+                                        border: (dragOverTopic?.chIdx === chIdx && dragOverTopic?.topIdx === topIdx)
+                                          ? '2px dashed var(--accent)'
+                                          : '1px solid var(--border-light)',
+                                        borderRadius: 'var(--radius-sm)',
+                                        overflow: 'hidden',
+                                        opacity: (draggedTopic?.chIdx === chIdx && draggedTopic?.topIdx === topIdx) ? 0.4 : 1,
+                                        cursor: 'grab',
+                                        transition: 'all 0.15s ease-in-out',
+                                        display: 'flex',
+                                        flexDirection: 'column'
+                                      }}
+                                    >
+                                      {/* Topic Header: Title on Top, Actions on Right */}
+                                      <div style={{ padding: '6px 10px', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: 1, minWidth: '160px' }}>
+                                          <span style={{ fontWeight: 700, fontSize: '12px', color: 'var(--accent)' }}>📍 Topic {topic.number}:</span>
+                                          <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text)' }}>{topic.name}</span>
+                                          {topic.topicCode && (
+                                            <span style={{ fontSize: '8.5px', color: 'var(--text-muted)', background: 'var(--bg-soft)', padding: '1px 4px', borderRadius: '3px', border: '1px solid var(--border-light)' }}>
+                                              {topic.topicCode}
                                             </span>
-                                          </span>
-                                          <span style={{ 
-                                            fontSize: '10px', 
-                                            fontWeight: 650, 
-                                            background: 'rgba(155, 89, 182, 0.1)', 
-                                            color: '#8e44ad', 
-                                            padding: '1px 6px', 
-                                            borderRadius: '4px',
-                                            display: 'inline-flex',
-                                            alignItems: 'center',
-                                            gap: '4px'
-                                          }}>
-                                            <span
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                if (topic.tests && topic.tests.length > 0) {
-                                                  handleOpenTestsModal(topic.name || 'Topic', topic.tests);
-                                                }
-                                              }}
-                                              style={{
-                                                cursor: (topic.tests && topic.tests.length > 0) ? 'pointer' : 'default',
-                                                textDecoration: (topic.tests && topic.tests.length > 0) ? 'underline' : 'none'
-                                              }}
-                                            >
-                                              S.Tests - {getSubjectiveTestsCount(topic.tests)}
-                                            </span>
-                                          </span>
-                                          {Number(topic.testsCount || 0) > 0 && (
-                                            <button 
-                                              onClick={(e) => { e.stopPropagation(); handleResetTopicTests(topic.topicCode || ''); }} 
-                                              title="Reset test attempts/submissions for this topic" 
-                                              style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '10px', padding: '0 2px', display: 'flex', alignItems: 'center' }}
-                                            >
-                                              🔄
-                                            </button>
                                           )}
-                                          {Array.isArray(topic.textbookSets) && topic.textbookSets.map((set: any, sIdx: number) => {
-                                            const isTh = /theorem|proof/i.test(set.name || '') || /theorem|proof/i.test(set.type || '');
+                                        </div>
+                                        
+                                        <div style={{ display: 'flex', gap: '4px', alignItems: 'center', marginLeft: 'auto' }}>
+                                          <button className="btn btn-secondary" style={{ padding: '2px 5px', fontSize: '9px' }} onClick={() => handleOpenEditTopic(chIdx, topIdx, topic)}>✏️</button>
+                                          <button className="btn btn-secondary" style={{ padding: '2px 5px', fontSize: '9px', color: 'var(--danger)', borderColor: 'rgba(220, 38, 38, 0.3)' }} onClick={() => handleDeleteTopic(chIdx, topIdx)}>🗑️</button>
+                                          <button className="btn btn-primary" style={{ padding: '2px 7px', fontSize: '9px' }} onClick={() => handleOpenAddSubtopic(chIdx, topIdx)}>+ Subtopic</button>
+                                        </div>
+                                      </div>
+
+                                      {/* Topic Meta / Stats Horizontal Bar */}
+                                      <div style={{ padding: '4px 10px', background: 'var(--bg-soft)', borderBottom: (subs.length > 0) ? '1px dashed var(--border-light)' : 'none', display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center', fontSize: '10px' }}>
+                                        <span 
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            if (activeSubjectDoc) {
+                                              router.push(`/admin/question-bank?board=${encodeURIComponent(activeSubjectDoc.board)}&class=${encodeURIComponent(activeSubjectDoc.class)}&subject=${encodeURIComponent(activeSubjectDoc.subject)}&chapter=${encodeURIComponent(ch.number)}&topic=${encodeURIComponent(topic.number)}`);
+                                            }
+                                          }}
+                                          title="Click to view questions in Question Bank"
+                                          style={{ fontWeight: 650, background: 'rgba(52, 152, 219, 0.1)', color: '#2980b9', padding: '1px 6px', borderRadius: '4px', cursor: 'pointer', textDecoration: 'underline' }}
+                                        >
+                                          O - {topic.objectiveCount || 0}
+                                        </span>
+                                        <span style={{ fontWeight: 650, background: 'rgba(155, 89, 182, 0.1)', color: '#8e44ad', padding: '1px 6px', borderRadius: '4px' }}>
+                                          S - {topic.subjectiveCount || 0}
+                                        </span>
+                                        <span style={{ fontWeight: 700, background: 'rgba(243, 156, 18, 0.12)', color: '#d35400', padding: '1px 6px', borderRadius: '4px' }}>
+                                          🎯 Target: {targetCount} Qs {hasSubs ? `(${subs.length} Subs)` : ''}
+                                        </span>
+                                        <span 
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            if (topic.tests && topic.tests.length > 0) {
+                                              handleOpenTestsModal(topic.name || 'Topic', topic.tests);
+                                            }
+                                          }}
+                                          style={{
+                                            cursor: (topic.tests && topic.tests.length > 0) ? 'pointer' : 'default',
+                                            textDecoration: (topic.tests && topic.tests.length > 0) ? 'underline' : 'none',
+                                            fontWeight: 650,
+                                            background: 'rgba(52, 152, 219, 0.08)',
+                                            color: '#2980b9',
+                                            padding: '1px 6px',
+                                            borderRadius: '4px'
+                                          }}
+                                        >
+                                          O.Tests - {getObjectiveTestsCount(topic.tests)}
+                                        </span>
+                                        <span 
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            if (topic.tests && topic.tests.length > 0) {
+                                              handleOpenTestsModal(topic.name || 'Topic', topic.tests);
+                                            }
+                                          }}
+                                          style={{
+                                            cursor: (topic.tests && topic.tests.length > 0) ? 'pointer' : 'default',
+                                            textDecoration: (topic.tests && topic.tests.length > 0) ? 'underline' : 'none',
+                                            fontWeight: 650,
+                                            background: 'rgba(155, 89, 182, 0.08)',
+                                            color: '#8e44ad',
+                                            padding: '1px 6px',
+                                            borderRadius: '4px'
+                                          }}
+                                        >
+                                          S.Tests - {getSubjectiveTestsCount(topic.tests)}
+                                        </span>
+                                        {Number(topic.testsCount || 0) > 0 && (
+                                          <button 
+                                            onClick={(e) => { e.stopPropagation(); handleResetTopicTests(topic.topicCode || ''); }} 
+                                            title="Reset test attempts/submissions for this topic" 
+                                            style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '10px', padding: '0 2px', display: 'flex', alignItems: 'center' }}
+                                          >
+                                            🔄
+                                          </button>
+                                        )}
+                                        {Array.isArray(topic.textbookSets) && topic.textbookSets.map((set: any, sIdx: number) => {
+                                          const isTh = /theorem|proof/i.test(set.name || '') || /theorem|proof/i.test(set.type || '');
+                                          return (
+                                            <span key={sIdx} style={{ fontSize: '9.5px', fontWeight: 650, background: isTh ? 'rgba(241, 196, 15, 0.1)' : 'rgba(46, 204, 113, 0.1)', color: isTh ? '#d35400' : '#27ae60', padding: '1px 6px', borderRadius: '4px', border: isTh ? '1px solid rgba(241, 196, 15, 0.2)' : '1px solid rgba(46, 204, 113, 0.2)', display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                                              📖 {set.name} ({set.questionCount || 8} Qs) {isTh && '📐 Theorem'}
+                                            </span>
+                                          );
+                                        })}
+                                      </div>
+
+                                      {/* Subtopics List with minimal nesting */}
+                                      {subs.length > 0 && (
+                                        <div style={{ padding: '4px 6px 6px 10px', borderLeft: '2px solid var(--border-light)', marginLeft: '8px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                          {subs.map((sub: any, subIdx: number) => {
+                                            const subName = typeof sub === 'string' 
+                                              ? sub 
+                                              : (sub?.name || sub?.subtopic || sub?.title || sub?.text || '');
+                                            const subNumber = (typeof sub === 'object' && sub && sub.number) 
+                                              ? sub.number 
+                                              : `${topic.number}.${subIdx + 1}`;
+                                            const objCount = typeof sub === 'object' ? (sub.objectiveCount || 0) : 0;
+                                            const subjCount = typeof sub === 'object' ? (sub.subjectiveCount || 0) : 0;
+                                            const testsList = (typeof sub === 'object' && Array.isArray(sub.tests)) ? sub.tests : [];
+                                            
                                             return (
-                                              <span key={sIdx} style={{ fontSize: '10px', fontWeight: 650, background: isTh ? 'rgba(241, 196, 15, 0.1)' : 'rgba(46, 204, 113, 0.1)', color: isTh ? '#d35400' : '#27ae60', padding: '1px 6px', borderRadius: '4px', border: isTh ? '1px solid rgba(241, 196, 15, 0.2)' : '1px solid rgba(46, 204, 113, 0.2)', display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
-                                                📖 {set.name} ({set.questionCount || 8} Qs) {isTh && '📐 Theorem'}
-                                              </span>
+                                              <div 
+                                                key={`s_${subIdx}`} 
+                                                draggable={true}
+                                                onDragStart={(e) => { e.stopPropagation(); handleSubtopicDragStart(chIdx, topIdx, subIdx); }}
+                                                onDragEnd={(e) => { e.stopPropagation(); handleSubtopicDragEnd(); }}
+                                                onDragOver={(e) => handleSubtopicDragOver(e, chIdx, topIdx, subIdx)}
+                                                onDrop={(e) => handleSubtopicDrop(e, chIdx, topIdx, subIdx)}
+                                                style={{ 
+                                                  display: 'flex', 
+                                                  flexDirection: 'column',
+                                                  gap: '3px',
+                                                  background: 'var(--bg-soft)', 
+                                                  padding: '4px 8px', 
+                                                  borderRadius: 'var(--radius-sm)', 
+                                                  border: (dragOverSubtopic?.chIdx === chIdx && dragOverSubtopic?.topIdx === topIdx && dragOverSubtopic?.subIdx === subIdx)
+                                                    ? '2px dashed var(--accent)'
+                                                    : '1px solid var(--border-light)',
+                                                  opacity: (draggedSubtopic?.chIdx === chIdx && draggedSubtopic?.topIdx === topIdx && draggedSubtopic?.subIdx === subIdx) ? 0.4 : 1,
+                                                  cursor: 'grab',
+                                                  transition: 'all 0.15s ease-in-out'
+                                                }}
+                                              >
+                                                {/* Subtopic Row 1: Title + Action Toolbar */}
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px' }}>
+                                                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flex: 1, minWidth: 0 }}>
+                                                    <span style={{ fontWeight: 600, fontSize: '11px', color: 'var(--text-muted)', flexShrink: 0 }}>📌 {subNumber}:</span>
+                                                    <span style={{ fontSize: '11px', fontWeight: 500, color: 'var(--text)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{subName}</span>
+                                                  </div>
+                                                  <div style={{ display: 'flex', gap: '2px', alignItems: 'center', flexShrink: 0 }}>
+                                                    <button 
+                                                      className="btn btn-secondary" 
+                                                      style={{ padding: '1px 4px', fontSize: '8px', opacity: subIdx === 0 ? 0.35 : 1, cursor: subIdx === 0 ? 'not-allowed' : 'pointer' }} 
+                                                      disabled={subIdx === 0} 
+                                                      onClick={(e) => { e.stopPropagation(); handleMoveSubtopic(chIdx, topIdx, subIdx, 'up'); }} 
+                                                      title="Move Subtopic Up"
+                                                    >
+                                                      🔼
+                                                    </button>
+                                                    <button 
+                                                      className="btn btn-secondary" 
+                                                      style={{ padding: '1px 4px', fontSize: '8px', opacity: subIdx === (subs.length - 1) ? 0.35 : 1, cursor: subIdx === (subs.length - 1) ? 'not-allowed' : 'pointer' }} 
+                                                      disabled={subIdx === (subs.length - 1)} 
+                                                      onClick={(e) => { e.stopPropagation(); handleMoveSubtopic(chIdx, topIdx, subIdx, 'down'); }} 
+                                                      title="Move Subtopic Down"
+                                                    >
+                                                      🔽
+                                                    </button>
+                                                    <button className="btn btn-secondary" style={{ padding: '1px 4px', fontSize: '8px' }} onClick={() => handleOpenEditSubtopic(chIdx, topIdx, subIdx, sub)} title="Edit Subtopic">✏️</button>
+                                                    <button className="btn btn-secondary" style={{ padding: '1px 4px', fontSize: '8px', color: 'var(--danger)', borderColor: 'rgba(220, 38, 38, 0.3)' }} onClick={() => handleDeleteSubtopic(chIdx, topIdx, subIdx)} title="Delete Subtopic">🗑️</button>
+                                                  </div>
+                                                </div>
+
+                                                {/* Subtopic Row 2: Stats Chips */}
+                                                <div style={{ display: 'flex', gap: '4px', alignItems: 'center', flexWrap: 'wrap', fontSize: '9px' }}>
+                                                  <span style={{ fontWeight: 650, background: 'rgba(52, 152, 219, 0.08)', color: '#2980b9', padding: '1px 4px', borderRadius: '3px' }}>
+                                                    O - {objCount}
+                                                  </span>
+                                                  <span style={{ fontWeight: 650, background: 'rgba(155, 89, 182, 0.08)', color: '#8e44ad', padding: '1px 4px', borderRadius: '3px' }}>
+                                                    S - {subjCount}
+                                                  </span>
+                                                  <span style={{ fontWeight: 700, background: 'rgba(243, 156, 18, 0.12)', color: '#d35400', padding: '1px 4px', borderRadius: '3px' }}>
+                                                    🎯 Target: {typeof sub === 'object' ? (sub.targetQuestions || 30) : 30} Qs
+                                                  </span>
+                                                  <span 
+                                                    onClick={(e) => { 
+                                                      e.stopPropagation(); 
+                                                      if (testsList.length > 0) {
+                                                        handleOpenTestsModal(subName || 'Subtopic', testsList);
+                                                      }
+                                                    }}
+                                                    style={{ 
+                                                      cursor: (testsList.length > 0) ? 'pointer' : 'default',
+                                                      textDecoration: (testsList.length > 0) ? 'underline' : 'none',
+                                                      fontWeight: 650,
+                                                      background: 'rgba(52, 152, 219, 0.08)',
+                                                      color: '#2980b9',
+                                                      padding: '1px 4px',
+                                                      borderRadius: '3px'
+                                                    }}
+                                                  >
+                                                    O.Tests - {getObjectiveTestsCount(testsList)}
+                                                  </span>
+                                                  <span 
+                                                    onClick={(e) => { 
+                                                      e.stopPropagation(); 
+                                                      if (testsList.length > 0) {
+                                                        handleOpenTestsModal(subName || 'Subtopic', testsList);
+                                                      }
+                                                    }}
+                                                    style={{ 
+                                                      cursor: (testsList.length > 0) ? 'pointer' : 'default',
+                                                      textDecoration: (testsList.length > 0) ? 'underline' : 'none',
+                                                      fontWeight: 650,
+                                                      background: 'rgba(155, 89, 182, 0.08)',
+                                                      color: '#8e44ad',
+                                                      padding: '1px 4px',
+                                                      borderRadius: '3px'
+                                                    }}
+                                                  >
+                                                    S.Tests - {getSubjectiveTestsCount(testsList)}
+                                                  </span>
+                                                  {Number(sub?.testsCount || 0) > 0 && (
+                                                    <button 
+                                                      onClick={(e) => { e.stopPropagation(); handleResetTopicTests(sub?.subtopicCode || ''); }} 
+                                                      title="Reset test attempts/submissions for this subtopic" 
+                                                      style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '9px', padding: '0 1px', display: 'flex', alignItems: 'center' }}
+                                                    >
+                                                      🔄
+                                                    </button>
+                                                  )}
+                                                </div>
+                                              </div>
                                             );
                                           })}
                                         </div>
-                                        <small style={{ display: 'block', fontSize: '8px', color: 'var(--text-muted)', marginTop: '2px' }}>{topic.topicCode}</small>
-                                      </div>
-                                      <div style={{ display: 'flex', gap: '5px' }}>
-                                        <button className="btn btn-secondary" style={{ padding: '2px 5px', fontSize: '9px' }} onClick={() => handleOpenEditTopic(chIdx, topIdx, topic)}>✏️</button>
-                                        <button className="btn btn-secondary" style={{ padding: '2px 5px', fontSize: '9px', color: 'var(--danger)' }} onClick={() => handleDeleteTopic(chIdx, topIdx)}>🗑️</button>
-                                        <button className="btn btn-primary" style={{ padding: '2px 7px', fontSize: '9px' }} onClick={() => handleOpenAddSubtopic(chIdx, topIdx)}>+ Subtopic</button>
-                                      </div>
-                                    </div>
-
-                                    {/* Subtopics List */}
-                                    <div style={{ padding: '8px 12px 8px 30px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                      {(!topic.subtopics || topic.subtopics.length === 0) ? (
-                                        <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontStyle: 'italic' }}>No subtopics.</span>
-                                      ) : (
-                                        topic.subtopics.map((sub: any, subIdx: number) => {
-                                          const subName = typeof sub === 'string' 
-                                            ? sub 
-                                            : (sub?.name || sub?.subtopic || sub?.title || sub?.text || '');
-                                          const subNumber = (typeof sub === 'object' && sub && sub.number) 
-                                            ? sub.number 
-                                            : `${topic.number}.${subIdx + 1}`;
-                                          const objCount = typeof sub === 'object' ? (sub.objectiveCount || 0) : 0;
-                                          const subjCount = typeof sub === 'object' ? (sub.subjectiveCount || 0) : 0;
-                                          const testsList = (typeof sub === 'object' && Array.isArray(sub.tests)) ? sub.tests : [];
-                                          return (
-                                            <div 
-                                              key={`s_${subIdx}`} 
-                                              draggable={true}
-                                              onDragStart={(e) => { e.stopPropagation(); handleSubtopicDragStart(chIdx, topIdx, subIdx); }}
-                                              onDragEnd={(e) => { e.stopPropagation(); handleSubtopicDragEnd(); }}
-                                              onDragOver={(e) => handleSubtopicDragOver(e, chIdx, topIdx, subIdx)}
-                                              onDrop={(e) => handleSubtopicDrop(e, chIdx, topIdx, subIdx)}
-                                              style={{ 
-                                                display: 'flex', 
-                                                justifyContent: 'space-between', 
-                                                alignItems: 'center', 
-                                                background: 'var(--bg-soft)', 
-                                                padding: '5px 10px', 
-                                                borderRadius: '4px', 
-                                                border: (dragOverSubtopic?.chIdx === chIdx && dragOverSubtopic?.topIdx === topIdx && dragOverSubtopic?.subIdx === subIdx)
-                                                  ? '2px dashed var(--accent)'
-                                                  : '1.2px solid var(--border-light)',
-                                                opacity: (draggedSubtopic?.chIdx === chIdx && draggedSubtopic?.topIdx === topIdx && draggedSubtopic?.subIdx === subIdx) ? 0.4 : 1,
-                                                cursor: 'grab',
-                                                transition: 'all 0.15s ease-in-out'
-                                              }}
-                                            >
-                                              <div>
-                                                <span style={{ fontWeight: 600, fontSize: '11px', color: 'var(--text-muted)' }}>📌 Subtopic {subNumber}:</span>{' '}
-                                                <span style={{ fontSize: '11px' }}>{subName}</span>
-                                                <div style={{ display: 'inline-flex', gap: '6px', marginLeft: '12px', alignItems: 'center' }}>
-                                                  <span style={{ fontSize: '9px', fontWeight: 650, background: 'rgba(52, 152, 219, 0.08)', color: '#2980b9', padding: '1px 4px', borderRadius: '3px' }}>
-                                                    O - {objCount}
-                                                  </span>
-                                                  <span style={{ fontSize: '9px', fontWeight: 650, background: 'rgba(155, 89, 182, 0.08)', color: '#8e44ad', padding: '1px 4px', borderRadius: '3px' }}>
-                                                    S - {subjCount}
-                                                  </span>
-                                                  <span style={{ fontSize: '9px', fontWeight: 700, background: 'rgba(243, 156, 18, 0.12)', color: '#d35400', padding: '1px 4px', borderRadius: '3px' }}>
-                                                    🎯 Target: {typeof sub === 'object' ? (sub.targetQuestions || 30) : 30} Qs
-                                                  </span>
-                                                  <span style={{ 
-                                                     fontSize: '9px', 
-                                                     fontWeight: 650, 
-                                                     background: 'rgba(52, 152, 219, 0.08)', 
-                                                     color: '#2980b9', 
-                                                     padding: '1px 4px', 
-                                                     borderRadius: '3px', 
-                                                     display: 'inline-flex', 
-                                                     alignItems: 'center', 
-                                                     gap: '3px' 
-                                                   }}>
-                                                     <span 
-                                                       onClick={(e) => { 
-                                                         e.stopPropagation(); 
-                                                         if (testsList.length > 0) {
-                                                           handleOpenTestsModal(subName || 'Subtopic', testsList);
-                                                         }
-                                                       }}
-                                                       style={{ 
-                                                         cursor: (testsList.length > 0) ? 'pointer' : 'default',
-                                                         textDecoration: (testsList.length > 0) ? 'underline' : 'none'
-                                                       }}
-                                                     >
-                                                       O.Tests - {getObjectiveTestsCount(testsList)}
-                                                     </span>
-                                                   </span>
-                                                   <span style={{ 
-                                                     fontSize: '9px', 
-                                                     fontWeight: 650, 
-                                                     background: 'rgba(155, 89, 182, 0.08)', 
-                                                     color: '#8e44ad', 
-                                                     padding: '1px 4px', 
-                                                     borderRadius: '3px', 
-                                                     display: 'inline-flex', 
-                                                     alignItems: 'center', 
-                                                     gap: '3px' 
-                                                   }}>
-                                                     <span 
-                                                       onClick={(e) => { 
-                                                         e.stopPropagation(); 
-                                                         if (testsList.length > 0) {
-                                                           handleOpenTestsModal(subName || 'Subtopic', testsList);
-                                                         }
-                                                       }}
-                                                       style={{ 
-                                                         cursor: (testsList.length > 0) ? 'pointer' : 'default',
-                                                         textDecoration: (testsList.length > 0) ? 'underline' : 'none'
-                                                       }}
-                                                     >
-                                                       S.Tests - {getSubjectiveTestsCount(testsList)}
-                                                     </span>
-                                                   </span>
-                                                   {Number(sub?.testsCount || 0) > 0 && (
-                                                     <button 
-                                                       onClick={(e) => { e.stopPropagation(); handleResetTopicTests(sub?.subtopicCode || ''); }} 
-                                                       title="Reset test attempts/submissions for this subtopic" 
-                                                       style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '9px', padding: '0 1px', display: 'flex', alignItems: 'center' }}
-                                                     >
-                                                       🔄
-                                                     </button>
-                                                   )}
-                                                </div>
-                                              </div>
-                                              <div style={{ display: 'flex', gap: '3px', alignItems: 'center' }}>
-                                                <button 
-                                                  className="btn btn-secondary" 
-                                                  style={{ padding: '2px 4px', fontSize: '8px', opacity: subIdx === 0 ? 0.35 : 1, cursor: subIdx === 0 ? 'not-allowed' : 'pointer' }} 
-                                                  disabled={subIdx === 0} 
-                                                  onClick={(e) => { e.stopPropagation(); handleMoveSubtopic(chIdx, topIdx, subIdx, 'up'); }} 
-                                                  title="Move Subtopic Up"
-                                                >
-                                                  🔼
-                                                </button>
-                                                <button 
-                                                  className="btn btn-secondary" 
-                                                  style={{ padding: '2px 4px', fontSize: '8px', opacity: subIdx === (topic.subtopics?.length || 0) - 1 ? 0.35 : 1, cursor: subIdx === (topic.subtopics?.length || 0) - 1 ? 'not-allowed' : 'pointer' }} 
-                                                  disabled={subIdx === (topic.subtopics?.length || 0) - 1} 
-                                                  onClick={(e) => { e.stopPropagation(); handleMoveSubtopic(chIdx, topIdx, subIdx, 'down'); }} 
-                                                  title="Move Subtopic Down"
-                                                >
-                                                  🔽
-                                                </button>
-                                                <button className="btn btn-secondary" style={{ padding: '2px 4px', fontSize: '8px' }} onClick={() => handleOpenEditSubtopic(chIdx, topIdx, subIdx, sub)} title="Edit Subtopic">✏️</button>
-                                                <button className="btn btn-secondary" style={{ padding: '2px 4px', fontSize: '8px', color: 'var(--danger)' }} onClick={() => handleDeleteSubtopic(chIdx, topIdx, subIdx)} title="Delete Subtopic">🗑️</button>
-                                              </div>
-                                            </div>
-                                          );
-                                        })
                                       )}
                                     </div>
-
-                                  </div>
-                                ))
+                                  );
+                                })
                               )}
                             </div>
                           )}
