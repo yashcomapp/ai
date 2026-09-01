@@ -162,8 +162,28 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
 
   const [viewportHeight, setViewportHeight] = useState('100dvh');
 
-  // Track screen size for responsive layout and visual viewport height (mobile keyboard adjustments)
+  // Track screen size for responsive layout, visual viewport height (mobile keyboard adjustments), and chat zoom lock
   useEffect(() => {
+    // Lock viewport zooming strictly on the chat page to prevent keyboard/pinch viewport distortion
+    const meta = document.querySelector('meta[name="viewport"]');
+    const originalContent = meta ? meta.getAttribute('content') : '';
+    if (meta) {
+      meta.setAttribute('content', 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover');
+    }
+
+    const preventPinch = (e: TouchEvent) => {
+      if (e.touches && e.touches.length > 1) {
+        e.preventDefault();
+      }
+    };
+    const preventGesture = (e: Event) => {
+      e.preventDefault();
+    };
+
+    document.addEventListener('touchmove', preventPinch, { passive: false });
+    document.addEventListener('gesturestart', preventGesture);
+    document.addEventListener('gesturechange', preventGesture);
+
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
       if (window.visualViewport) {
@@ -178,6 +198,16 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
       window.visualViewport.addEventListener('scroll', handleResize);
     }
     return () => {
+      // Restore zooming when navigating away from chat
+      if (meta && originalContent) {
+        meta.setAttribute('content', originalContent);
+      } else if (meta) {
+        meta.setAttribute('content', 'width=device-width, initial-scale=1, maximum-scale=5, user-scalable=yes, viewport-fit=cover');
+      }
+      document.removeEventListener('touchmove', preventPinch);
+      document.removeEventListener('gesturestart', preventGesture);
+      document.removeEventListener('gesturechange', preventGesture);
+
       window.removeEventListener('resize', handleResize);
       if (window.visualViewport) {
         window.visualViewport.removeEventListener('resize', handleResize);
@@ -1188,7 +1218,7 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
   };
 
   return (
-    <div style={{ background: 'var(--surface-2)', height: viewportHeight, display: 'flex', flexDirection: 'column', color: 'var(--text)', fontFamily: 'Inter, system-ui, -apple-system, sans-serif', overflow: 'hidden', position: 'fixed', inset: 0, width: '100%', maxWidth: '100vw' }}>
+    <div style={{ background: 'var(--surface-2)', height: viewportHeight, display: 'flex', flexDirection: 'column', color: 'var(--text)', fontFamily: 'Inter, system-ui, -apple-system, sans-serif', overflow: 'hidden', position: 'fixed', inset: 0, width: '100%', maxWidth: '100vw', touchAction: 'pan-y' }}>
       <style dangerouslySetInnerHTML={{ __html: `
         /* Prevent accidental Touch-to-Search selection on touch devices */
         body, html, div, span, button, svg, h1, h2, h3, h4, h5, p, label {
