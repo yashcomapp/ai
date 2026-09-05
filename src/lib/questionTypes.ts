@@ -701,6 +701,22 @@ export function validateQuestion(q: any, questionType: 'objective' | 'subjective
   const isSubjective = questionType === 'subjective' || 
     (questionType === 'all_in_one' && (QUESTION_TYPE_MAP[type]?.category === 'subjective' || (q.marks && !q.options?.length && q.type !== 'numerical')));
 
+  // Check for phantom diagram / figure references without image
+  if (!q.imageUrl && !q.figureUrl) {
+    const phantomRegex = /\b(as shown in the (figure|diagram|image|illustration|graph|circuit)|refer to the (figure|diagram|image|table)|in the given (figure|diagram|graph|circuit)|shown in the diagram below|see figure below)\b/i;
+    if (phantomRegex.test(textStr)) {
+      errors.push('Phantom figure reference detected without an uploaded image. Remove diagram references or attach an image.');
+    }
+  }
+
+  // Check for duplicate options in MCQs
+  if (Array.isArray(q.options) && q.options.length >= 2) {
+    const normList = q.options.map((opt: any) => normalizeOptionText(opt)).filter(Boolean);
+    if (new Set(normList).size !== normList.length) {
+      errors.push('Duplicate options detected: two or more options are identical or near-identical.');
+    }
+  }
+
   if (!isSubjective) {
     if (type === 'single_mcq' || type === 'true_false') {
       if (!q.correctAnswer || !String(q.correctAnswer).trim()) {

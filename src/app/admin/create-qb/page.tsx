@@ -848,6 +848,43 @@ In addition to the topic-based questions:
       return /physic|motion|force|gravitat|light|reflection|refraction|electric|current|circuit|sound|work|energy|power|heat|thermodynamic|optics|lens|mirror|wave|mole concept|stoichiometr|density|pressure|floatation|kinematics|fluid|magnetic/i.test(text);
     });
 
+    const buildBatchInstruction = (total: number) => {
+      const batchSize = Math.min(15, total);
+      if (total <= 20) {
+        return `========================================
+GENERATION MODE (DIRECT COMPLETE SUITE):
+========================================
+TOTAL QUESTIONS TO GENERATE: EXACTLY ${total} questions across ${promptTopics.length} topic(s).
+Return all ${total} questions in a single complete, valid JSON array [...].`;
+      }
+
+      return `========================================
+INTERACTIVE CONVERSATIONAL BATCH PROTOCOL:
+========================================
+TOTAL SUITE TARGET: EXACTLY ${total} questions across ${promptTopics.length} topic(s).
+
+⚠️ CRITICAL BATCH RULE: DO NOT generate all ${total} questions in a single response!
+Generating all ${total} at once exceeds output token limits and truncates the JSON array.
+
+👉 GENERATE BATCH 1 NOW:
+1. Output EXACTLY the first ${batchSize} questions (Questions 1 to ${batchSize}) as a complete, valid JSON array [...].
+2. Focus on maximum conceptual clarity, authentic textbook problem patterns, and zero repetition.
+3. At the very end of your response, OUTSIDE the JSON code block, output:
+   "✅ BATCH 1 COMPLETE (Questions 1 to ${batchSize} of ${total}). Type 'NEXT' to generate Batch 2 (Questions ${batchSize + 1} to ${Math.min(batchSize * 2, total)})."
+
+When the user types "NEXT", you will immediately output the next batch of up to 15 questions in the exact same JSON format without repeating questions.`;
+    };
+
+    const buildNegativeConstraints = () => {
+      return `========================================
+CRITICAL NEGATIVE CONSTRAINTS (ZERO-TOLERANCE RULES):
+========================================
+1. ZERO PHANTOM FIGURES / DIAGRAMS: Strictly DO NOT generate questions referencing diagrams, figures, graphs, or tables (e.g. "as shown in the figure", "refer to diagram", "in the figure above", "from the table below", "fig 1.1"). Every question must be 100% self-contained in text unless an image is explicitly provided.
+2. ZERO DUMMY OR LAZY OPTIONS: Every distractor option must be a plausible, realistic scientific/mathematical choice. NEVER output "None of these", "All of the above", "Both A and B", "Option A", or placeholder text.
+3. STRICT MATH ESCAPING: Wrap all math expressions in \\( ... \\) with double-escaped backslashes. Wrap chemical formulas in \\ce{...}.
+4. RANDOMIZE CORRECT ANSWER KEYS: Distribute correct answers evenly across index 0, 1, 2, 3 (A, B, C, D). Do NOT always place the correct answer as Option A.`;
+    };
+
     if (type === 'all_in_one') {
       let topicBreakdownBlock = '';
       promptTopics.forEach((tp, idx) => {
@@ -906,7 +943,7 @@ This question suite will serve BOTH:
 1. Official Exam Blueprints (Daily Topic Tests, Chapter Tests, Saturday Classroom Peer-Reviewed Tests).
 2. Adaptive Student Practice Engine (Easy/Medium/Hard progressive mastery from Foundation to HOTS).
 
-TOTAL QUESTIONS TO GENERATE: EXACTLY ${totalQs} questions across ${promptTopics.length} topic(s).
+${buildBatchInstruction(totalQs)}
 ${requirementsSection}
 ========================================
 PER-TOPIC COMPREHENSIVE BREAKDOWN & QUOTAS:
@@ -1024,7 +1061,9 @@ CRITICAL RULES & FORMATTING:
 2. Every item MUST include "contextId" matching the topic context (e.g. "CTX-001", "CTX-002", etc.).
 3. Math expressions must be in LaTeX format using \\\\( ... \\\\) with double-escaped backslashes. Chemical formulas wrapped in \\\\ce{...}.
 4. NO placeholder options, NO synthetic dummy variables, NO repeated sentence loops.
-5. RANDOMIZE CORRECT OPTION POSITIONS: Distribute the correct answer position randomly and evenly across option index 0, 1, 2, and 3 (A, B, C, D). Do NOT always place the correct answer as the first item in "options".`;
+5. RANDOMIZE CORRECT OPTION POSITIONS: Distribute the correct answer position randomly and evenly across option index 0, 1, 2, and 3 (A, B, C, D). Do NOT always place the correct answer as the first item in "options".
+
+${buildNegativeConstraints()}`;
     }
 
     if (type === 'dual_track') {
@@ -1083,7 +1122,7 @@ This question suite fulfills TWO DISTINCT PURPOSES:
 1. 📘 TRACK 1: STANDARD SUITE ("examCategory": "standard") — For Daily 30-Q Topic Tests, Adaptive Practice, and Progressive Topic Mastery.
 2. 🏆 TRACK 2: FOUNDATION / OLYMPIAD SUITE ("examCategory": "foundation") — Reserved for Olympiad mocks and high-rigor HOTS testing (kept separate from daily tests).
 
-TOTAL QUESTIONS TO GENERATE: EXACTLY ${totalQs} questions across ${promptTopics.length} topic(s).
+${buildBatchInstruction(totalQs)}
 ${requirementsSection}
 ========================================
 PER-TOPIC DUAL-TRACK BREAKDOWN & ALLOCATIONS:
@@ -1179,7 +1218,9 @@ CRITICAL RULES & FORMATTING:
 2. Every item MUST include "contextId" matching the topic context (e.g. "CTX-001", "CTX-002", etc.).
 3. Math expressions must be in LaTeX format using \\\\( ... \\\\) with double-escaped backslashes.
 4. Set "examCategory" strictly to "standard" for Track 1 and "foundation" for Track 2.
-5. RANDOMIZE CORRECT OPTION POSITIONS: Distribute correct answers across options evenly.`;
+5. RANDOMIZE CORRECT OPTION POSITIONS: Distribute correct answers across options evenly.
+
+${buildNegativeConstraints()}`;
     }
 
     if (type === 'objective') {
@@ -1294,6 +1335,8 @@ EXAM DETAILS & BLUEPRINT:
 - Class: ${selectedClass}
 - Blueprint Style: ${blueprint.name} (${blueprint.description})
 
+${buildBatchInstruction(totalQs)}
+
 ========================================
 DIFFICULTY DISTRIBUTION:
 ========================================
@@ -1347,7 +1390,9 @@ CRITICAL JSON ESCAPING & MATH FORMATTING RULES:
 2. Any backslashes (\\) in LaTeX math expressions (like \\frac, \\propto, \\pi, \\theta, \\times, etc.) MUST be double-escaped as \\\\ (e.g. \\\\frac, \\\\propto, \\\\pi, \\\\theta). Never use a single backslash inside a JSON string.
 3. If using standard math delimiters, represent inline math as \\\\( ... \\\\) and block display math as \\\\[ ... \\\\] (always with double-escaped backslashes).
 4. Do NOT use raw control characters inside string values.
-5. All double quotes inside string values must be properly escaped as \\\".`;
+5. All double quotes inside string values must be properly escaped as \\\".
+
+${buildNegativeConstraints()}`;
     } else {
       let topicDistributionSummary = '\n\n========================================\nPER-TOPIC QUESTION ALLOCATION QUOTAS:\n========================================';
       promptTopics.forEach(tp => {
@@ -1835,7 +1880,7 @@ Return ONLY valid JSON. No extra text.`;
   };
 
   // Parse pasted JSON response from text input
-  const handleParseJSON = () => {
+  const handleParseJSON = (isAppend = false) => {
     const text = aiPasteText.trim();
     if (!text) {
       triggerAlert('Input Required', 'Please paste the AI JSON response array first.');
@@ -1845,34 +1890,46 @@ Return ONLY valid JSON. No extra text.`;
     try {
       const parsed = robustParseAIJson(text);
       let transformed: any[] = [];
+      const offset = isAppend ? generatedQuestions.length : 0;
 
       if (questionType === 'objective' || questionType === 'dual_track') {
         const arr = Array.isArray(parsed) ? parsed : (parsed.questions || []);
-        if (!arr.length) throw new Error('No questions list found.');
-        transformed = arr.map((q: any, i: number) => transformObjectiveQuestion(q, i));
+        if (!arr.length) throw new Error('No questions list found in JSON.');
+        transformed = arr.map((q: any, i: number) => transformObjectiveQuestion(q, offset + i));
       } else if (questionType === 'subjective') {
         const arr = parsed.questions || (Array.isArray(parsed) ? parsed : [parsed]);
-        if (!arr.length) throw new Error('No questions list found.');
+        if (!arr.length) throw new Error('No questions list found in JSON.');
         transformed = arr.map((q: any) => transformSubjectiveQuestion(q));
       } else {
         // all_in_one mode: smart hybrid detection
         const arr = Array.isArray(parsed) ? parsed : (parsed.questions || [parsed]);
-        if (!arr.length) throw new Error('No questions list found.');
+        if (!arr.length) throw new Error('No questions list found in JSON.');
         transformed = arr.map((q: any, i: number) => {
           const type = q.type || q.qtype || '';
           const isSub = type.startsWith('subjective_') || 
             type.startsWith('numerical_') || 
             (q.marks && !q.options?.length && type !== 'numerical') ||
             (q.answerLines?.length > 0 && !q.options?.length);
-          return isSub ? transformSubjectiveQuestion(q) : transformObjectiveQuestion(q, i);
+          return isSub ? transformSubjectiveQuestion(q) : transformObjectiveQuestion(q, offset + i);
         });
       }
 
-      setGeneratedQuestions(transformed);
-      
-      const validation = validateQuestionsForSave(transformed);
-      if (!validation.valid) {
-        triggerAlert('Success with Warnings', `✅ Successfully parsed ${transformed.length} questions, but ${validation.errors.length} issue(s) need attention. Review or fix/delete them below before saving.`);
+      if (isAppend) {
+        const combined = [...generatedQuestions, ...transformed];
+        setGeneratedQuestions(combined);
+        setAiPasteText('');
+        const validation = validateQuestionsForSave(combined);
+        if (!validation.valid) {
+          triggerAlert('Batch Appended with Warnings', `✅ Appended ${transformed.length} questions (Total: ${combined.length}), but ${validation.errors.length} issue(s) need attention.`);
+        } else {
+          triggerAlert('Batch Appended', `✅ Successfully appended ${transformed.length} questions! Total preview pool: ${combined.length} questions.`);
+        }
+      } else {
+        setGeneratedQuestions(transformed);
+        const validation = validateQuestionsForSave(transformed);
+        if (!validation.valid) {
+          triggerAlert('Success with Warnings', `✅ Successfully parsed ${transformed.length} questions, but ${validation.errors.length} issue(s) need attention. Review or fix/delete them below before saving.`);
+        }
       }
       
       setTimeout(() => {
@@ -2309,9 +2366,14 @@ Return ONLY valid JSON. No extra text.`;
               <div style={{ marginTop: '14px', background: 'var(--bg-soft)', padding: '14px 16px', borderRadius: 'var(--radius)', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {/* Row 1: Volume Presets */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-                  <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--accent)' }}>
-                    ⚡ Volume Presets (Questions per Topic):
-                  </span>
+                  <div>
+                    <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--accent)' }}>
+                      ⚡ 3-Tier Topic Depth Presets:
+                    </span>
+                    <span style={{ fontSize: '10px', color: 'var(--text-muted)', marginLeft: '6px' }}>
+                      (Select based on topic depth in syllabus)
+                    </span>
+                  </div>
                   <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                     <button
                       type="button"
@@ -2323,8 +2385,9 @@ Return ONLY valid JSON. No extra text.`;
                         setTopicCustomCounts(newCounts);
                       }}
                       style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '12px' }}
+                      title="Tier 1: Heavyweight calculation & core conceptual chapters (Quadratic Equations, Gravitation, Light, etc.)"
                     >
-                      🔥 Deep Mastery (50 Qs)
+                      🔥 Tier 1: Heavy Core (50 Qs)
                     </button>
                     <button
                       type="button"
@@ -2336,8 +2399,9 @@ Return ONLY valid JSON. No extra text.`;
                         setTopicCustomCounts(newCounts);
                       }}
                       style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '12px' }}
+                      title="Tier 2: Standard core topics tested in combined 2-topic tests (Ohm's Law, Acids & Bases, etc.)"
                     >
-                      ⚡ Standard (30 Qs)
+                      ⚡ Tier 2: Standard (30 Qs)
                     </button>
                     <button
                       type="button"
@@ -2349,8 +2413,9 @@ Return ONLY valid JSON. No extra text.`;
                         setTopicCustomCounts(newCounts);
                       }}
                       style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '12px' }}
+                      title="Tier 3: Minor / Factual subtopics tested in 3-topic combos (Corrosion & Rancidity, Discovery of Cell, etc.)"
                     >
-                      🎯 Compact Drill (20 Qs)
+                      🎯 Tier 3: Minor (20 Qs)
                     </button>
                   </div>
                 </div>
@@ -2470,48 +2535,56 @@ Return ONLY valid JSON. No extra text.`;
               <div style={{ marginTop: '14px', background: 'var(--bg-soft)', padding: '14px 16px', borderRadius: 'var(--radius)', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {/* Row 1: Volume Presets */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
-                  <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--accent)' }}>
-                    ⚡ Dual-Track Volume Presets (Questions per Topic):
-                  </span>
+                  <div>
+                    <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--accent)' }}>
+                      ⚡ 3-Tier Dual-Track Presets:
+                    </span>
+                    <span style={{ fontSize: '10px', color: 'var(--text-muted)', marginLeft: '6px' }}>
+                      (Standard + Foundation split by ratio)
+                    </span>
+                  </div>
                   <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                     <button
                       type="button"
                       className="btn btn-secondary btn-sm"
                       onClick={() => {
-                        setDefaultPerTopicCount(120);
+                        setDefaultPerTopicCount(55);
                         const newCounts: Record<string, number> = {};
-                        selectedTopics.forEach(t => { newCounts[topicKey(t)] = 120; });
+                        selectedTopics.forEach(t => { newCounts[topicKey(t)] = 55; });
                         setTopicCustomCounts(newCounts);
                       }}
                       style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '12px' }}
+                      title="Tier 1: Heavyweight calculation chapters (Quadratic, Gravitation, Light, etc.)"
                     >
-                      🏆 Exhaustive (120 Qs)
+                      🔥 Tier 1: Heavy Core (55 Qs)
                     </button>
                     <button
                       type="button"
                       className="btn btn-secondary btn-sm"
                       onClick={() => {
-                        setDefaultPerTopicCount(90);
+                        setDefaultPerTopicCount(35);
                         const newCounts: Record<string, number> = {};
-                        selectedTopics.forEach(t => { newCounts[topicKey(t)] = 90; });
+                        selectedTopics.forEach(t => { newCounts[topicKey(t)] = 35; });
                         setTopicCustomCounts(newCounts);
                       }}
                       style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '12px' }}
+                      title="Tier 2: Standard chapters tested in combined 2-topic tests (Ohm's Law, Acids & Bases, etc.)"
                     >
-                      🔥 Recommended (90 Qs: 60 Std + 30 Fnd)
+                      ⚡ Tier 2: Standard (35 Qs)
                     </button>
                     <button
                       type="button"
                       className="btn btn-secondary btn-sm"
                       onClick={() => {
-                        setDefaultPerTopicCount(60);
+                        setDefaultPerTopicCount(20);
                         const newCounts: Record<string, number> = {};
-                        selectedTopics.forEach(t => { newCounts[topicKey(t)] = 60; });
+                        selectedTopics.forEach(t => { newCounts[topicKey(t)] = 20; });
                         setTopicCustomCounts(newCounts);
                       }}
                       style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '12px' }}
+                      title="Tier 3: Minor / Factual subtopics tested in 3-topic combos (Corrosion & Rancidity, Discovery of Cell, etc.)"
                     >
-                      ⚡ Compact (60 Qs)
+                      🎯 Tier 3: Minor (20 Qs)
                     </button>
                   </div>
                 </div>
@@ -2751,10 +2824,42 @@ Return ONLY valid JSON. No extra text.`;
             </div>
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-            <button className="btn btn-primary" onClick={handleParseJSON} style={{ padding: '10px 24px' }}>
-              ⚙️ Parse &amp; Preview Questions
-            </button>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+            {generatedQuestions.length > 0 ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ background: 'rgba(52, 152, 219, 0.15)', color: '#2980b9', padding: '5px 12px', borderRadius: '14px', fontSize: '11px', fontWeight: 700 }}>
+                  📦 {generatedQuestions.length} Questions Loaded in Preview
+                </span>
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                  (Paste next batch and click "Append Next Batch")
+                </span>
+              </div>
+            ) : (
+              <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                💡 Tip: For 30–50 Qs, paste Batch 1, then type &apos;NEXT&apos; in chat and click &quot;Append Next Batch&quot;.
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: '8px', marginLeft: 'auto' }}>
+              {generatedQuestions.length > 0 && (
+                <button
+                  type="button"
+                  className="btn btn-success"
+                  onClick={() => handleParseJSON(true)}
+                  style={{ padding: '9px 18px', fontWeight: 700, fontSize: '12px' }}
+                >
+                  ➕ Append Next Batch
+                </button>
+              )}
+              <button 
+                type="button"
+                className={generatedQuestions.length > 0 ? "btn btn-secondary" : "btn btn-primary"} 
+                onClick={() => handleParseJSON(false)} 
+                style={{ padding: '9px 20px', fontWeight: 700, fontSize: '12px' }}
+              >
+                {generatedQuestions.length > 0 ? '🔄 Replace All Questions' : '⚙️ Parse & Preview Questions'}
+              </button>
+            </div>
           </div>
         </div>
 
