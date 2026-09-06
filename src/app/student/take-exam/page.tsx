@@ -916,6 +916,48 @@ function TakeExamContent() {
               </div>
             ) : (
               <>
+                {/* Exam Blueprint Card (SSOT Transparency) */}
+                {exam && (
+                  <div style={{
+                    background: 'var(--surface)',
+                    border: '1px solid var(--border-light)',
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '12px 14px',
+                    marginBottom: '16px',
+                    textAlign: 'left',
+                    boxShadow: 'var(--shadow-sm)'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                      <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text)' }}>
+                        📝 {exam.name}
+                      </span>
+                      <span style={{
+                        fontSize: '9.5px',
+                        fontWeight: 700,
+                        textTransform: 'uppercase',
+                        padding: '2px 6px',
+                        borderRadius: '4px',
+                        background: 'rgba(59, 130, 246, 0.12)',
+                        color: '#2563eb'
+                      }}>
+                        Exam Blueprint
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', fontSize: '11px', color: 'var(--text-muted)' }}>
+                      <span><strong>{questions.length || exam.questionsCount || 0}</strong> Questions</span>
+                      <span>•</span>
+                      <span><strong>{exam.duration || 30}</strong> Mins</span>
+                      <span>•</span>
+                      <span><strong>{exam.totalMarks || (questions.length ? questions.reduce((sum: number, q: any) => sum + (q.marks || 4), 0) : 0)}</strong> Total Marks</span>
+                      {exam.subject && (
+                        <>
+                          <span>•</span>
+                          <span><strong>{exam.subject}</strong></span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )}
                 <h2>⚙️ Pre-Exam Hardware Diagnostic</h2>
                 <p style={{ color: 'var(--text-muted)', fontSize: '13px', margin: '10px 0 16px' }}>Verify your camera and microphone are functioning before entering the proctored workspace.</p>
 

@@ -39,6 +39,7 @@ interface Topic {
   tests?: any[];
   textbookSets?: any[];
   targetQuestions?: number;
+  topicClassification?: 'micro' | 'conceptual' | 'calculative' | 'hots';
 }
 
 interface Subtopic {
@@ -50,6 +51,7 @@ interface Subtopic {
   testsCount?: number;
   tests?: any[];
   targetQuestions?: number;
+  topicClassification?: 'micro' | 'conceptual' | 'calculative' | 'hots';
 }
 
 const getObjectiveTestsCount = (tests: any[] | undefined) => {
@@ -167,7 +169,8 @@ export default function AdminSyllabusPage() {
     name: '',
     code: '',
     textbookSetsStr: '',
-    targetQuestions: 30 as number | string,
+    targetQuestions: 75 as number | string,
+    topicClassification: 'conceptual' as 'micro' | 'conceptual' | 'calculative' | 'hots',
     hasSubtopics: false,
     subtopicsSum: 0
   });
@@ -182,7 +185,8 @@ export default function AdminSyllabusPage() {
     number: '',
     name: '',
     code: '',
-    targetQuestions: 30 as number | string
+    targetQuestions: 30 as number | string,
+    topicClassification: 'conceptual' as 'micro' | 'conceptual' | 'calculative' | 'hots'
   });
 
   // AI syllabus generator state
@@ -705,7 +709,8 @@ export default function AdminSyllabusPage() {
       name: '',
       code: '',
       textbookSetsStr: '',
-      targetQuestions: 30,
+      targetQuestions: 75,
+      topicClassification: 'conceptual',
       hasSubtopics: false,
       subtopicsSum: 0
     });
@@ -728,7 +733,8 @@ export default function AdminSyllabusPage() {
       name: topic.name,
       code: topic.topicCode || '',
       textbookSetsStr: setsStr,
-      targetQuestions: hasSubtopics ? subtopicsSum : (topic.targetQuestions !== undefined ? Number(topic.targetQuestions) : 30),
+      targetQuestions: hasSubtopics ? subtopicsSum : (topic.targetQuestions !== undefined ? Number(topic.targetQuestions) : 75),
+      topicClassification: topic.topicClassification || (topic.targetQuestions <= 15 ? 'micro' : (topic.targetQuestions >= 100 ? 'calculative' : 'conceptual')),
       hasSubtopics,
       subtopicsSum
     });
@@ -736,7 +742,7 @@ export default function AdminSyllabusPage() {
 
   const handleSaveTopic = async () => {
     if (!activeSubjectDoc) return;
-    const { mode, chIdx, editIdx, number, name, textbookSetsStr, targetQuestions, hasSubtopics, subtopicsSum } = topicModal;
+    const { mode, chIdx, editIdx, number, name, textbookSetsStr, targetQuestions, hasSubtopics, subtopicsSum, topicClassification } = topicModal;
 
     if (!number || !name) {
       alert('Please fill out all topic fields.');
@@ -763,7 +769,7 @@ export default function AdminSyllabusPage() {
     }).filter(Boolean);
 
     const topics = Array.isArray(chapter.topics) ? [...chapter.topics] : [];
-    const finalTarget = hasSubtopics ? subtopicsSum : (Number(targetQuestions) || 30);
+    const finalTarget = hasSubtopics ? subtopicsSum : (Number(targetQuestions) || 75);
 
     if (mode === 'add') {
       topics.push({
@@ -772,7 +778,8 @@ export default function AdminSyllabusPage() {
         topicCode: code,
         subtopics: [],
         textbookSets: parsedSets,
-        targetQuestions: finalTarget
+        targetQuestions: finalTarget,
+        topicClassification
       });
     } else if (editIdx !== null) {
       topics[editIdx] = {
@@ -781,7 +788,8 @@ export default function AdminSyllabusPage() {
         name,
         topicCode: code,
         textbookSets: parsedSets,
-        targetQuestions: finalTarget
+        targetQuestions: finalTarget,
+        topicClassification
       };
     }
 
@@ -811,7 +819,8 @@ export default function AdminSyllabusPage() {
       number: nextSubNum,
       name: '',
       code: '',
-      targetQuestions: 30
+      targetQuestions: 30,
+      topicClassification: 'conceptual'
     });
   };
 
@@ -836,13 +845,14 @@ export default function AdminSyllabusPage() {
       number: subNumber,
       name: subName,
       code: (typeof sub === 'object' && (sub.subtopicCode || sub.code)) || '',
-      targetQuestions: targetQ
+      targetQuestions: targetQ,
+      topicClassification: (typeof sub === 'object' && sub.topicClassification) || (targetQ <= 15 ? 'micro' : (targetQ >= 45 ? 'calculative' : 'conceptual'))
     });
   };
 
   const handleSaveSubtopic = async () => {
     if (!activeSubjectDoc) return;
-    const { mode, chIdx, topIdx, editIdx, number, name, targetQuestions } = subtopicModal;
+    const { mode, chIdx, topIdx, editIdx, number, name, targetQuestions, topicClassification } = subtopicModal;
 
     if (!number || !name) {
       alert('Please fill out all subtopic fields.');
@@ -865,7 +875,8 @@ export default function AdminSyllabusPage() {
         number,
         name,
         subtopicCode: code,
-        targetQuestions: quotaVal
+        targetQuestions: quotaVal,
+        topicClassification
       });
     } else if (editIdx !== null) {
       const existingSub = typeof subtopics[editIdx] === 'object' ? subtopics[editIdx] : {};
@@ -874,7 +885,8 @@ export default function AdminSyllabusPage() {
         number,
         name,
         subtopicCode: code,
-        targetQuestions: quotaVal
+        targetQuestions: quotaVal,
+        topicClassification
       };
     }
 
@@ -1453,6 +1465,22 @@ Return ONLY a valid JSON object matching the schema below:
                                         <span style={{ fontWeight: 700, background: 'rgba(243, 156, 18, 0.12)', color: '#d35400', padding: '1px 6px', borderRadius: '4px' }}>
                                           🎯 Target: {targetCount} Qs {hasSubs ? `(${subs.length} Subs)` : ''}
                                         </span>
+                                        {topic.topicClassification && (
+                                          <span style={{
+                                            fontWeight: 700,
+                                            padding: '1px 6px',
+                                            borderRadius: '4px',
+                                            textTransform: 'uppercase',
+                                            fontSize: '9px',
+                                            background: topic.topicClassification === 'micro' ? 'rgba(16, 185, 129, 0.12)' : topic.topicClassification === 'calculative' ? 'rgba(239, 68, 68, 0.12)' : topic.topicClassification === 'hots' ? 'rgba(245, 158, 11, 0.12)' : 'rgba(59, 130, 246, 0.12)',
+                                            color: topic.topicClassification === 'micro' ? '#059669' : topic.topicClassification === 'calculative' ? '#dc2626' : topic.topicClassification === 'hots' ? '#d97706' : '#2563eb'
+                                          }}>
+                                            {topic.topicClassification === 'micro' && '🎯 Micro'}
+                                            {topic.topicClassification === 'conceptual' && '⚡ Conceptual'}
+                                            {topic.topicClassification === 'calculative' && '🔥 Calculative'}
+                                            {topic.topicClassification === 'hots' && '🏆 HOTS'}
+                                          </span>
+                                        )}
                                         <span 
                                           onClick={(e) => {
                                             e.stopPropagation();
@@ -1588,6 +1616,22 @@ Return ONLY a valid JSON object matching the schema below:
                                                   <span style={{ fontWeight: 700, background: 'rgba(243, 156, 18, 0.12)', color: '#d35400', padding: '1px 4px', borderRadius: '3px' }}>
                                                     🎯 Target: {typeof sub === 'object' ? (sub.targetQuestions || 30) : 30} Qs
                                                   </span>
+                                                  {typeof sub === 'object' && sub.topicClassification && (
+                                                     <span style={{
+                                                       fontWeight: 700,
+                                                       padding: '1px 5px',
+                                                       borderRadius: '3px',
+                                                       fontSize: '8.5px',
+                                                       textTransform: 'uppercase',
+                                                       background: sub.topicClassification === 'micro' ? 'rgba(16, 185, 129, 0.12)' : sub.topicClassification === 'calculative' ? 'rgba(239, 68, 68, 0.12)' : sub.topicClassification === 'hots' ? 'rgba(245, 158, 11, 0.12)' : 'rgba(59, 130, 246, 0.12)',
+                                                       color: sub.topicClassification === 'micro' ? '#059669' : sub.topicClassification === 'calculative' ? '#dc2626' : sub.topicClassification === 'hots' ? '#d97706' : '#2563eb'
+                                                     }}>
+                                                       {sub.topicClassification === 'micro' && '🎯 Micro'}
+                                                       {sub.topicClassification === 'conceptual' && '⚡ Conceptual'}
+                                                       {sub.topicClassification === 'calculative' && '🔥 Calculative'}
+                                                       {sub.topicClassification === 'hots' && '🏆 HOTS'}
+                                                     </span>
+                                                   )}
                                                   <span 
                                                     onClick={(e) => { 
                                                       e.stopPropagation(); 
@@ -1930,6 +1974,47 @@ Return ONLY a valid JSON object matching the schema below:
               />
             </div>
 
+            {/* Topic Classification Archetype (SSOT) */}
+            <div>
+              <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '5px' }}>
+                Topic Classification Archetype (SSOT)
+              </label>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', marginBottom: '8px' }}>
+                <button
+                  type="button"
+                  className={`btn btn-sm ${topicModal.topicClassification === 'micro' ? 'btn-primary' : 'btn-secondary'}`}
+                  style={{ fontSize: '10.5px', padding: '6px 8px', textAlign: 'left', fontWeight: topicModal.topicClassification === 'micro' ? 700 : 500 }}
+                  onClick={() => setTopicModal(p => ({ ...p, topicClassification: 'micro', targetQuestions: p.hasSubtopics ? p.targetQuestions : 30 }))}
+                >
+                  🎯 Micro (~30 Qs)
+                </button>
+                <button
+                  type="button"
+                  className={`btn btn-sm ${topicModal.topicClassification === 'conceptual' ? 'btn-primary' : 'btn-secondary'}`}
+                  style={{ fontSize: '10.5px', padding: '6px 8px', textAlign: 'left', fontWeight: topicModal.topicClassification === 'conceptual' ? 700 : 500 }}
+                  onClick={() => setTopicModal(p => ({ ...p, topicClassification: 'conceptual', targetQuestions: p.hasSubtopics ? p.targetQuestions : 75 }))}
+                >
+                  ⚡ Conceptual (~75 Qs)
+                </button>
+                <button
+                  type="button"
+                  className={`btn btn-sm ${topicModal.topicClassification === 'calculative' ? 'btn-primary' : 'btn-secondary'}`}
+                  style={{ fontSize: '10.5px', padding: '6px 8px', textAlign: 'left', fontWeight: topicModal.topicClassification === 'calculative' ? 700 : 500 }}
+                  onClick={() => setTopicModal(p => ({ ...p, topicClassification: 'calculative', targetQuestions: p.hasSubtopics ? p.targetQuestions : 140 }))}
+                >
+                  🔥 Calculative (~140 Qs)
+                </button>
+                <button
+                  type="button"
+                  className={`btn btn-sm ${topicModal.topicClassification === 'hots' ? 'btn-primary' : 'btn-secondary'}`}
+                  style={{ fontSize: '10.5px', padding: '6px 8px', textAlign: 'left', fontWeight: topicModal.topicClassification === 'hots' ? 700 : 500 }}
+                  onClick={() => setTopicModal(p => ({ ...p, topicClassification: 'hots', targetQuestions: p.hasSubtopics ? p.targetQuestions : 100 }))}
+                >
+                  🏆 HOTS (~100 Qs)
+                </button>
+              </div>
+            </div>
+
             {topicModal.hasSubtopics ? (
               <div style={{ background: 'var(--bg-soft)', padding: '10px 12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)' }}>
                 <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '3px' }}>Target Question Quota</label>
@@ -2013,13 +2098,54 @@ Return ONLY a valid JSON object matching the schema below:
               />
             </div>
 
+            {/* Subtopic Classification Archetype (SSOT) */}
+            <div>
+              <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '5px' }}>
+                Classification Archetype (SSOT)
+              </label>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', marginBottom: '8px' }}>
+                <button
+                  type="button"
+                  className={`btn btn-sm ${subtopicModal.topicClassification === 'micro' ? 'btn-primary' : 'btn-secondary'}`}
+                  style={{ fontSize: '10.5px', padding: '6px 8px', textAlign: 'left', fontWeight: subtopicModal.topicClassification === 'micro' ? 700 : 500 }}
+                  onClick={() => setSubtopicModal(p => ({ ...p, topicClassification: 'micro', targetQuestions: 15 }))}
+                >
+                  🎯 Micro (~15 Qs)
+                </button>
+                <button
+                  type="button"
+                  className={`btn btn-sm ${subtopicModal.topicClassification === 'conceptual' ? 'btn-primary' : 'btn-secondary'}`}
+                  style={{ fontSize: '10.5px', padding: '6px 8px', textAlign: 'left', fontWeight: subtopicModal.topicClassification === 'conceptual' ? 700 : 500 }}
+                  onClick={() => setSubtopicModal(p => ({ ...p, topicClassification: 'conceptual', targetQuestions: 30 }))}
+                >
+                  ⚡ Conceptual (~30 Qs)
+                </button>
+                <button
+                  type="button"
+                  className={`btn btn-sm ${subtopicModal.topicClassification === 'calculative' ? 'btn-primary' : 'btn-secondary'}`}
+                  style={{ fontSize: '10.5px', padding: '6px 8px', textAlign: 'left', fontWeight: subtopicModal.topicClassification === 'calculative' ? 700 : 500 }}
+                  onClick={() => setSubtopicModal(p => ({ ...p, topicClassification: 'calculative', targetQuestions: 50 }))}
+                >
+                  🔥 Calculative (~50 Qs)
+                </button>
+                <button
+                  type="button"
+                  className={`btn btn-sm ${subtopicModal.topicClassification === 'hots' ? 'btn-primary' : 'btn-secondary'}`}
+                  style={{ fontSize: '10.5px', padding: '6px 8px', textAlign: 'left', fontWeight: subtopicModal.topicClassification === 'hots' ? 700 : 500 }}
+                  onClick={() => setSubtopicModal(p => ({ ...p, topicClassification: 'hots', targetQuestions: 35 }))}
+                >
+                  🏆 HOTS (~35 Qs)
+                </button>
+              </div>
+            </div>
+
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px' }}>
                 <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>Target Question Quota</label>
                 <div style={{ display: 'flex', gap: '4px' }}>
-                  <button type="button" className="btn btn-secondary btn-sm" style={{ fontSize: '10px', padding: '1px 6px', borderRadius: '10px' }} onClick={() => setSubtopicModal(p => ({ ...p, targetQuestions: 50 }))}>🔥 Deep (50)</button>
-                  <button type="button" className="btn btn-secondary btn-sm" style={{ fontSize: '10px', padding: '1px 6px', borderRadius: '10px' }} onClick={() => setSubtopicModal(p => ({ ...p, targetQuestions: 30 }))}>⚡ Std (30)</button>
-                  <button type="button" className="btn btn-secondary btn-sm" style={{ fontSize: '10px', padding: '1px 6px', borderRadius: '10px' }} onClick={() => setSubtopicModal(p => ({ ...p, targetQuestions: 15 }))}>🎯 Light (15)</button>
+                  <button type="button" className="btn btn-secondary btn-sm" style={{ fontSize: '10px', padding: '1px 6px', borderRadius: '10px' }} onClick={() => setSubtopicModal(p => ({ ...p, targetQuestions: 50, topicClassification: 'calculative' }))}>🔥 Deep (50)</button>
+                  <button type="button" className="btn btn-secondary btn-sm" style={{ fontSize: '10px', padding: '1px 6px', borderRadius: '10px' }} onClick={() => setSubtopicModal(p => ({ ...p, targetQuestions: 30, topicClassification: 'conceptual' }))}>⚡ Std (30)</button>
+                  <button type="button" className="btn btn-secondary btn-sm" style={{ fontSize: '10px', padding: '1px 6px', borderRadius: '10px' }} onClick={() => setSubtopicModal(p => ({ ...p, targetQuestions: 15, topicClassification: 'micro' }))}>🎯 Light (15)</button>
                 </div>
               </div>
               <input 

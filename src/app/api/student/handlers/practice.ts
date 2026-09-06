@@ -5,6 +5,7 @@ import { QuestionRepository } from '@/repositories/question.repository';
 import { PracticeService } from '@/services/practice.service';
 import { shuffleArray } from '@/lib/questionTypes';
 import { getDateKeyIST } from '@/lib/dateUtils';
+import { getRequiredConfidence } from '@/lib/studentDb';
 
 export const dynamic = 'force-dynamic';
 
@@ -107,6 +108,21 @@ export async function GET(req: NextRequest) {
       dailyLockedUntil = mData.dailyLockedUntil ? (mData.dailyLockedUntil.toDate ? mData.dailyLockedUntil.toDate() : new Date(mData.dailyLockedUntil)) : null;
     }
 
+    let topicClassification = masterySnap.exists ? masterySnap.data()?.topicClassification : undefined;
+    let targetQuestions = masterySnap.exists ? masterySnap.data()?.targetQuestions : undefined;
+    if (!topicClassification || !targetQuestions) {
+      try {
+        const sSnap = await adminDb.collection('syllabusTopicIndex').doc(topicCode).get();
+        if (sSnap.exists) {
+          const sData = sSnap.data()!;
+          topicClassification = topicClassification || sData.topicClassification;
+          targetQuestions = targetQuestions || sData.targetQuestions;
+        }
+      } catch (e) {
+        // silent fallback
+      }
+    }
+
     const now = new Date();
 
     const todayIST = getDateKeyIST(now);
@@ -168,6 +184,8 @@ export async function GET(req: NextRequest) {
     const PRACTICE_OBJECTIVE_TYPES = ['single_mcq', 'multiple_mcq', 'assertion_reason', 'true_false', 'numerical', 'fill_blank', 'fill_blanks'];
     allQuestions = allQuestions.filter((q: any) => {
       if (!q.type || !PRACTICE_OBJECTIVE_TYPES.includes(q.type) || q.type.startsWith('subjective')) return false;
+      // ZERO-COLLISION: Exclude questions strictly designated for formal exams or mock tests
+      if (q.vault && q.vault !== 'practice') return false;
       if (examCategory === 'foundation' ? q.examCategory !== 'foundation' : (q.examCategory && q.examCategory !== 'standard')) return false;
       // MCQs must have at least 2 valid options to be served in practice mode
       if ((q.type === 'single_mcq' || q.type === 'multiple_mcq') && (!Array.isArray(q.options) || q.options.length < 2)) {
@@ -443,7 +461,8 @@ export async function GET(req: NextRequest) {
       };
     });
 
-    const isFullyMastered = (mastery >= 90 && questionsAttempted >= 20);
+    const reqConfidence = getRequiredConfidence(topicClassification, targetQuestions);
+    const isFullyMastered = (mastery >= 90 && questionsAttempted >= reqConfidence);
 
     return NextResponse.json({
       topicCode,

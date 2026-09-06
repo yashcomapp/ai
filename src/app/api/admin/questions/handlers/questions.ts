@@ -362,6 +362,8 @@ export async function POST(req: NextRequest) {
           keywords: item.keywords || [],
           marks: resolvedMarks,
           examCategory: item.examCategory || 'standard',
+          vault: item.vault || 'practice',
+          conceptTag: item.conceptTag || finalTopicName,
           createdAt: admin.firestore.FieldValue.serverTimestamp(),
           createdBy: createdByEmail,
           timesUsed: 0,
@@ -383,7 +385,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, count: processedItems.length, savedCount: processedItems.length });
     }
 
-    const { id, qtype, text, options, correctAnswer, correctAnswers, assertion, reason, solution, difficulty, bloomLevel, board, classNum, subjectName, chapterNumber, topicNumber, topic, topicName, textbookPracticeSet, textbookProblemSet, isSolvedExample, isTheorem, requiresFigure, imageUrl, keywords, examCategory } = body;
+    const { id, qtype, text, options, correctAnswer, correctAnswers, assertion, reason, solution, difficulty, bloomLevel, board, classNum, subjectName, chapterNumber, topicNumber, topic, topicName, textbookPracticeSet, textbookProblemSet, isSolvedExample, isTheorem, requiresFigure, imageUrl, keywords, examCategory, vault, conceptTag } = body;
 
     if (!text || !qtype || !board || !classNum || !subjectName) {
       return NextResponse.json({ message: 'Missing required parameters.' }, { status: 400 });
@@ -496,6 +498,8 @@ export async function POST(req: NextRequest) {
       keywords: keywords || [],
       marks: resolvedMarks,
       examCategory: examCategory || 'standard',
+      vault: vault || 'practice',
+      conceptTag: conceptTag || finalTopicName,
       updatedAt: admin.firestore.FieldValue.serverTimestamp()
     };
 

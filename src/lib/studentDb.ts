@@ -211,11 +211,12 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
       const mData = doc.data();
       const mastery = Number(mData.mastery || 0);
       const confidence = Number(mData.confidence || 0);
+      const reqConf = getRequiredConfidence(mData.topicClassification, mData.targetQuestions);
       overallMasterySum += mastery;
 
       if (mastery < 50) {
         needsAttentionTopicsCount += 1;
-      } else if (mastery >= 90 && confidence >= 20) {
+      } else if (mastery >= 90 && confidence >= reqConf) {
         masteredTopicsCount += 1;
       }
     });
@@ -838,16 +839,31 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
   }
 }
 
-function getTopicState(mastery: number, confidence: number): string {
+export function getRequiredConfidence(topicClassification?: string, targetQuestions?: number): number {
+  if (topicClassification === 'micro') return 5;
+  if (topicClassification === 'conceptual') return 10;
+  if (topicClassification === 'calculative') return 18;
+  if (topicClassification === 'hots') return 15;
+  
+  if (targetQuestions !== undefined) {
+    if (targetQuestions <= 20) return 5;
+    if (targetQuestions <= 40) return 10;
+    if (targetQuestions >= 100) return 18;
+    return 10;
+  }
+  return 10;
+}
+
+function getTopicState(mastery: number, confidence: number, requiredConfidence = 10): string {
   if (mastery < 25) return 'Started';
   if (mastery < 50) return 'Learning';
   if (mastery < 90) return 'Practicing';
-  if (mastery >= 90 && confidence >= 20) return 'Mastered';
+  if (mastery >= 90 && confidence >= requiredConfidence) return 'Mastered';
   return 'Practicing';
 }
 
-function calculatePriority(mastery: number, confidence: number): number {
-  return (100 - mastery) + Math.max(0, (20 - confidence) * 2);
+function calculatePriority(mastery: number, confidence: number, requiredConfidence = 10): number {
+  return (100 - mastery) + Math.max(0, (requiredConfidence - confidence) * 2);
 }
 
 export async function getStudentLearningData(userData: any) {
@@ -1106,17 +1122,19 @@ export async function getStudentLearningData(userData: any) {
     const mData = masteryMap.get(topicCode);
     if (!mData && !isAbsentExam) return;
 
+    const targetQuestions = Number(sData.targetQuestions || sData.totalQuestions || sData.questionCount || 30);
+    const topicClassification = sData.topicClassification || mData?.topicClassification || (targetQuestions <= 35 ? 'micro' : (targetQuestions >= 120 ? 'calculative' : 'conceptual'));
+    const reqConf = getRequiredConfidence(topicClassification, targetQuestions);
+
     const mastery = mData?.hasOwnProperty('mastery') ? Number(mData.mastery || 0) : 0;
     const confidence = mData?.hasOwnProperty('confidence') ? Number(mData.confidence || 0) : 0;
-    const priorityScore = isAbsentExam ? 999 : calculatePriority(mastery, confidence);
-    const state = getTopicState(mastery, confidence);
+    const priorityScore = isAbsentExam ? 999 : calculatePriority(mastery, confidence, reqConf);
+    const state = getTopicState(mastery, confidence, reqConf);
     const practiceCount = practiceCountMap.get(topicCode) || 0;
     const isRecoveryMastered = !!mData?.isRecoveryMastered;
     const attempts = mData?.questionsAttempted || mData?.attempts || 0;
     const subCode = sData.subjectCode || (topicCode ? topicCode.split('-')[2] : '') || '';
     const subName = sData.subjectName || getCanonicalSubjectName(subCode, topicCode, sData.chapterName);
-
-    const targetQuestions = Number(sData.targetQuestions || sData.totalQuestions || sData.questionCount || 30);
 
     const topicItem = {
       topicCode,
@@ -1129,6 +1147,8 @@ export async function getStudentLearningData(userData: any) {
       subjectName: subName,
       mastery,
       confidence,
+      requiredConfidence: reqConf,
+      topicClassification,
       priorityScore,
       isAbsentExam,
       isRecoveryMastered,
@@ -1147,7 +1167,7 @@ export async function getStudentLearningData(userData: any) {
     } else if (mastery < 90) {
       continuePractice.push({ ...topicItem, state: 'continuePractice' });
     } else {
-      if ((mastery >= 90 && confidence >= 20) || isRecoveryMastered) {
+      if ((mastery >= 90 && confidence >= reqConf) || isRecoveryMastered) {
         mastered.push({ ...topicItem, state: 'mastered' });
       } else {
         revision.push({ ...topicItem, state: 'revision' });

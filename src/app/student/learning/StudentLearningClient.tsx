@@ -31,6 +31,8 @@ interface TopicItem {
   practiceCount: number;
   targetQuestions?: number;
   totalQuestions?: number;
+  topicClassification?: string;
+  requiredConfidence?: number;
   isAbsentExam?: boolean;
   isRecoveryMastered?: boolean;
 }
@@ -461,7 +463,7 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                                           <th onClick={() => handleSort('mastery')} style={{ padding: '6px 8px', textAlign: 'center', width: '70px', cursor: 'pointer', userSelect: 'none' }}>
                                             Mastery {sortField === 'mastery' ? (sortDir === 'asc' ? '▲' : '▼') : '⇅'}
                                           </th>
-                                          <th style={{ padding: '6px 8px', textAlign: 'center', width: '80px' }}>Confidence</th>
+                                          <th style={{ padding: '6px 8px', textAlign: 'center', width: '80px' }} title="Topic-aware confidence threshold: Micro (5 Qs), Conceptual (10 Qs), HOTS (15 Qs), Calculative (18 Qs)">Confidence</th>
                                           <th onClick={() => handleSort('attempts')} style={{ padding: '6px 8px', textAlign: 'center', width: '110px', cursor: 'pointer', userSelect: 'none' }}>
                                             Practiced {sortField === 'attempts' ? (sortDir === 'asc' ? '▲' : '▼') : '⇅'}
                                           </th>
@@ -517,10 +519,11 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                                               expText = `${practiceCount}/5 practices done (${mastery}% accuracy). ${5 - practiceCount} practice(s) left to aim for 90%+ Mastered.`;
                                             }
                                           } else if (state === 'revision') {
-                                            const needed = Math.max(1, 20 - attempts);
+                                            const reqConf = topic.requiredConfidence || (topic.topicClassification === 'micro' ? 5 : (topic.topicClassification === 'calculative' ? 18 : (topic.topicClassification === 'hots' ? 15 : 10)));
+                                            const needed = Math.max(1, reqConf - attempts);
                                             expIcon = '📖';
                                             expColor = 'var(--accent)';
-                                            expText = `High accuracy (${mastery}%), but needs ${needed} more attempts to reach 20-question Confidence threshold for Mastered.`;
+                                            expText = `High accuracy (${mastery}%), but needs ${needed} more attempts to reach ${reqConf}-question Confidence threshold for Mastered.`;
                                           } else {
                                             if (isRecovery) {
                                               expIcon = '⚡';
@@ -538,6 +541,8 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                                             ? `/student/topic?topicCode=${topic.topicCode}&category=${topic.state}&mode=recovery`
                                             : `/student/topic?topicCode=${topic.topicCode}&category=${topic.state}`;
 
+                                          const targetQs = topic.totalQuestions || topic.targetQuestions || (topic.topicClassification === 'micro' ? 30 : topic.topicClassification === 'calculative' ? 140 : topic.topicClassification === 'hots' ? 100 : 75);
+
                                           return (
                                             <tr 
                                               key={topic.topicCode}
@@ -548,6 +553,23 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                                               <td style={{ padding: '8px', fontWeight: 600, color: 'var(--text)' }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                                                   <span>📍 {topic.topicName || topic.topicCode}</span>
+                                                  {topic.topicClassification && (
+                                                    <span style={{
+                                                      fontSize: '9px',
+                                                      fontWeight: 700,
+                                                      textTransform: 'uppercase',
+                                                      padding: '1px 5px',
+                                                      borderRadius: '4px',
+                                                      background: topic.topicClassification === 'micro' ? 'rgba(16, 185, 129, 0.12)' : topic.topicClassification === 'calculative' ? 'rgba(239, 68, 68, 0.12)' : topic.topicClassification === 'hots' ? 'rgba(245, 158, 11, 0.12)' : 'rgba(59, 130, 246, 0.12)',
+                                                      color: topic.topicClassification === 'micro' ? '#059669' : topic.topicClassification === 'calculative' ? '#dc2626' : topic.topicClassification === 'hots' ? '#d97706' : '#2563eb',
+                                                      border: `1px solid ${topic.topicClassification === 'micro' ? 'rgba(16, 185, 129, 0.3)' : topic.topicClassification === 'calculative' ? 'rgba(239, 68, 68, 0.3)' : topic.topicClassification === 'hots' ? 'rgba(245, 158, 11, 0.3)' : 'rgba(59, 130, 246, 0.3)'}`
+                                                    }}>
+                                                      {topic.topicClassification === 'micro' && '🎯 Micro (5 Qs to Master)'}
+                                                      {topic.topicClassification === 'conceptual' && '⚡ Conceptual (10 Qs to Master)'}
+                                                      {topic.topicClassification === 'calculative' && '🔥 Calculative (18 Qs to Master)'}
+                                                      {topic.topicClassification === 'hots' && '🏆 HOTS (15 Qs to Master)'}
+                                                    </span>
+                                                  )}
                                                   {isAbsent && (
                                                     <span style={{ fontSize: '9px', fontWeight: 700, padding: '1px 5px', borderRadius: '4px', background: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
                                                       Missed Exam
@@ -580,7 +602,7 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                                               </td>
                                               <td style={{ padding: '6px 8px', textAlign: 'center', color: 'var(--text)' }}>
                                                  {topic.practiceCount}/5 practices
-                                                 <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>({topic.attempts} / {topic.totalQuestions || topic.targetQuestions || 30} Qs max)</div>
+                                                 <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>({topic.attempts} / {targetQs} Qs)</div>
                                                </td>
                                               <td style={{ padding: '6px 8px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '11px' }}>
                                                 {formatDate(topic.lastAttempt)}

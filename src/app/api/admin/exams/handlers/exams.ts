@@ -5,6 +5,7 @@ import { verifyRole } from '@/lib/auth';
 import { ChunkedBatch } from '@/lib/firebase/batch';
 import { notifyNewExam } from '@/lib/notifications';
 import { getDateKeyIST } from '@/lib/dateUtils';
+import { getRequiredConfidence } from '@/lib/studentDb';
 export const dynamic = 'force-dynamic';
 
 const parseIST = (dateStr: string) => {
@@ -89,7 +90,11 @@ export async function GET(req: NextRequest) {
         let expColor = '#ef4444';
         let expText = '';
 
-        if ((mastery >= 90 && confidence >= 20) || isRecovery) {
+        const classification = sData.topicClassification || d.topicClassification;
+        const targetQ = sData.targetQuestions || d.targetQuestions;
+        const reqConfidence = getRequiredConfidence(classification, targetQ);
+
+        if ((mastery >= 90 && confidence >= reqConfidence) || isRecovery) {
           state = 'mastered';
           if (isRecovery) {
             expIcon = '⚡';
@@ -117,12 +122,12 @@ export async function GET(req: NextRequest) {
             expText
           });
         } else if (mastery >= 50) {
-          if (mastery >= 90 && confidence < 20) {
+          if (mastery >= 90 && confidence < reqConfidence) {
             state = 'revision';
-            const needed = Math.max(1, 20 - attempts);
+            const needed = Math.max(1, reqConfidence - attempts);
             expIcon = '📖';
             expColor = '#3b82f6';
-            expText = `High accuracy (${mastery}%), but needs ${needed} more attempts to reach 20-question Confidence threshold for Mastered.`;
+            expText = `High accuracy (${mastery}%), but needs ${needed} more attempts to reach ${reqConfidence}-question Confidence threshold for Mastered.`;
           } else if (isLimitReached) {
             state = 'continuePractice';
             expIcon = '⚡';
@@ -353,7 +358,8 @@ export async function GET(req: NextRequest) {
       if (!masteryGroup[code]) masteryGroup[code] = [];
       masteryGroup[code].push(val);
 
-      if (val >= 90 && conf >= 20) {
+      const reqConf = getRequiredConfidence(data.topicClassification, data.targetQuestions);
+      if (val >= 90 && conf >= reqConf) {
         masteredCount[code] = (masteredCount[code] || 0) + 1;
       } else if (val >= 50) {
         practicingCount[code] = (practicingCount[code] || 0) + 1;

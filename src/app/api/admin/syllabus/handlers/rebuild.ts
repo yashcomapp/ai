@@ -72,12 +72,14 @@ async function runIndexRebuild() {
         const topicName = topic.name || '';
         
         const topicCode = `${boardCode}-${classNum}-${subjectCode}-${chapterNum}-${topicNum}`;
+        validCodes.add(topicCode);
         const subtopics = Array.isArray(topic.subtopics) ? topic.subtopics : [];
         const hasSubs = subtopics.length > 0;
         const subtopicsSum = hasSubs
           ? subtopics.reduce((acc: number, s: any) => acc + (Number(s.targetQuestions) || 30), 0)
           : 0;
-        const topicTarget = hasSubs ? subtopicsSum : (Number(topic.targetQuestions) || 30);
+        const topicTarget = hasSubs ? subtopicsSum : (Number(topic.targetQuestions) || 75);
+        const topicClassification = topic.topicClassification || (topicTarget <= 35 ? 'micro' : (topicTarget >= 120 ? 'calculative' : 'conceptual'));
 
         const docRef = adminDb.collection('syllabusTopicIndex').doc(topicCode);
         batch.set(docRef, {
@@ -91,6 +93,7 @@ async function runIndexRebuild() {
           topicName,
           topicCode,
           targetQuestions: topicTarget,
+          topicClassification,
           hasSubtopics: hasSubs,
           createdAt: admin.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
@@ -107,6 +110,8 @@ async function runIndexRebuild() {
 
           const subCode = `${boardCode}-${classNum}-${subjectCode}-${chapterNum}-${subNum}`;
           validCodes.add(subCode);
+          const subTarget = Number(subtopic.targetQuestions) || 30;
+          const subClassification = subtopic.topicClassification || (subTarget <= 15 ? 'micro' : (subTarget >= 45 ? 'calculative' : 'conceptual'));
 
           const subRef = adminDb.collection('syllabusTopicIndex').doc(subCode);
           batch.set(subRef, {
@@ -120,7 +125,8 @@ async function runIndexRebuild() {
             topicName: subName,
             parentTopicCode: topicCode,
             topicCode: subCode,
-            targetQuestions: Number(subtopic.targetQuestions) || 30,
+            targetQuestions: subTarget,
+            topicClassification: subClassification,
             createdAt: admin.firestore.FieldValue.serverTimestamp()
           }, { merge: true });
 

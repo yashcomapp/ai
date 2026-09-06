@@ -227,6 +227,7 @@ function CreateQBContent() {
   // Question Type and Generation settings
   const [questionType, setQuestionType] = useState<'all_in_one' | 'dual_track' | 'objective' | 'subjective'>('all_in_one');
   const [examCategory, setExamCategory] = useState<'standard' | 'foundation'>('standard');
+  const [vault, setVault] = useState<'practice' | 'exam' | 'mock'>('practice');
   const [masterObjectiveRatio, setMasterObjectiveRatio] = useState<number>(70);
   const [dualTrackStandardRatio, setDualTrackStandardRatio] = useState<number>(70);
 
@@ -1359,6 +1360,8 @@ CRITICAL RULES & LEVEL/SOURCE FIDELITY:
 5. For multiple_mcq: "correctAnswers" MUST be an array of exact strings copied from "options".
 6. DO NOT generate: board, class, subject, chapter, chapterNumber, topic, topicNumber, questionCode.
 6b. You MUST include "examCategory": "${isFoundation ? 'foundation' : 'standard'}" key inside each question object.
+6c. ZERO-COLLISION VAULT: You MUST include "vault": "${vault}" key inside each question object.
+6d. CONCEPT TAG: You MUST include "conceptTag": "concise concept or subtopic name" inside each question object.
 7. Use \\( ... \\) for math expressions (KaTeX). Wrap chemical formulas inside \\ce{...}.
 8. Return ONLY a valid JSON array.
 ${isMath ? '9. For Mathematics, you MUST include a "textbookPracticeSet" key inside each question object containing the textbook reference (e.g., "Practice Set 1.2: Q3") or pattern source.' : ''}
@@ -1454,6 +1457,8 @@ OUTPUT FORMAT: Return ONLY a valid JSON array of objects with schema:
     "topicName": "Topic name from the context list",
     "type": "subjective_define / subjective_laws / subjective_short / subjective_reason / subjective_notes / subjective_long / numerical_short / numerical_long",
     "marks": 1,
+    "vault": "${vault}",
+    "conceptTag": "Specific concept or subtopic name",
     "text": "Question text here...",
     "solution": "Verbatim model answer with <mark>key terms</mark> highlighted...",
     "keywords": ["key term 1", "key term 2"],
@@ -1665,6 +1670,8 @@ Return ONLY valid JSON. No extra text.`;
       requiresFigure: !!q.requiresFigure || (q.text || '').toLowerCase().includes('figure') || (q.text || '').toLowerCase().includes('diagram') || (q.text || '').toLowerCase().includes('fig.'),
       imageUrl: q.imageUrl || '',
       examCategory: q.examCategory || examCategory,
+      vault: q.vault || vault,
+      conceptTag: q.conceptTag || finalTopicName,
       source: 'ai_generated',
       createdAt: new Date().toISOString(),
       createdBy: firebaseUser?.email || 'admin'
@@ -1711,6 +1718,8 @@ Return ONLY valid JSON. No extra text.`;
       requiresFigure: !!q.requiresFigure || (q.text || '').toLowerCase().includes('figure') || (q.text || '').toLowerCase().includes('diagram') || (q.text || '').toLowerCase().includes('fig.'),
       imageUrl: q.imageUrl || '',
       examCategory: q.examCategory || examCategory,
+      vault: q.vault || vault,
+      conceptTag: q.conceptTag || finalTopicName,
       source: 'ai_generated',
       createdAt: new Date().toISOString(),
       createdBy: firebaseUser?.email || 'admin'
@@ -1750,7 +1759,9 @@ Return ONLY valid JSON. No extra text.`;
         topicName: q.topicName || q.topic || '',
         keywords: q.keywords || [],
         textbookPracticeSet: q.textbookPracticeSet || '',
-        marks: Number(q.marks) || 0
+        marks: Number(q.marks) || 0,
+        vault: q.vault || vault,
+        conceptTag: q.conceptTag || q.topicName || q.topic || ''
       }));
 
       // Try instant atomic bulkSave API first
@@ -2322,24 +2333,57 @@ Return ONLY valid JSON. No extra text.`;
                 </button>
               </div>
 
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginLeft: 'auto' }}>
-                <span style={{ fontSize: '12px', fontWeight: 'bold' }}>Category:</span>
-                <button 
-                  type="button"
-                  className={`btn btn-sm ${examCategory === 'standard' ? 'btn-primary' : 'btn-secondary'}`}
-                  onClick={() => setExamCategory('standard')}
-                  style={{ borderRadius: '20px' }}
-                >
-                  📘 Standard
-                </button>
-                <button 
-                  type="button"
-                  className={`btn btn-sm ${examCategory === 'foundation' ? 'btn-success' : 'btn-secondary'}`}
-                  onClick={() => setExamCategory('foundation')}
-                  style={{ borderRadius: '20px' }}
-                >
-                  🏆 Foundation
-                </button>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginLeft: 'auto', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--text-muted)' }}>Vault (SSOT):</span>
+                  <button 
+                    type="button"
+                    className={`btn btn-sm ${vault === 'practice' ? 'btn-primary' : 'btn-secondary'}`}
+                    onClick={() => setVault('practice')}
+                    style={{ borderRadius: '20px', fontSize: '11px', padding: '2px 8px' }}
+                    title="Practice Vault: Strictly for self-paced practice and topic mastery (zero overlap with formal exams)"
+                  >
+                    🟢 Practice
+                  </button>
+                  <button 
+                    type="button"
+                    className={`btn btn-sm ${vault === 'exam' ? 'btn-primary' : 'btn-secondary'}`}
+                    onClick={() => setVault('exam')}
+                    style={{ borderRadius: '20px', fontSize: '11px', padding: '2px 8px' }}
+                    title="Exam Vault: Strictly for formal scheduled classroom tests and midterms"
+                  >
+                    🔵 Exam
+                  </button>
+                  <button 
+                    type="button"
+                    className={`btn btn-sm ${vault === 'mock' ? 'btn-primary' : 'btn-secondary'}`}
+                    onClick={() => setVault('mock')}
+                    style={{ borderRadius: '20px', fontSize: '11px', padding: '2px 8px' }}
+                    title="Mock Vault: Strictly for comprehensive terminal and board mock exams"
+                  >
+                    🟣 Mock
+                  </button>
+                </div>
+
+                <div style={{ display: 'flex', gap: '4px', alignItems: 'center', marginLeft: '6px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--text-muted)' }}>Category:</span>
+                  <button 
+                    type="button"
+                    className={`btn btn-sm ${examCategory === 'standard' ? 'btn-primary' : 'btn-secondary'}`}
+                    onClick={() => setExamCategory('standard')}
+                    style={{ borderRadius: '20px', fontSize: '11px', padding: '2px 8px' }}
+                  >
+                    📘 Standard
+                  </button>
+                  <button 
+                    type="button"
+                    className={`btn btn-sm ${examCategory === 'foundation' ? 'btn-success' : 'btn-secondary'}`}
+                    onClick={() => setExamCategory('foundation')}
+                    style={{ borderRadius: '20px', fontSize: '11px', padding: '2px 8px' }}
+                  >
+                    🏆 Foundation
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -2350,27 +2394,13 @@ Return ONLY valid JSON. No extra text.`;
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
                   <div>
                     <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--accent)' }}>
-                      ⚡ 3-Tier Topic Depth Presets:
+                      ⚡ 4-Archetype Volume Presets (SSOT):
                     </span>
                     <span style={{ fontSize: '10px', color: 'var(--text-muted)', marginLeft: '6px' }}>
-                      (Select based on topic depth in syllabus)
+                      (Target quota from Syllabus Index)
                     </span>
                   </div>
                   <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                    <button
-                      type="button"
-                      className="btn btn-secondary btn-sm"
-                      onClick={() => {
-                        setDefaultPerTopicCount(50);
-                        const newCounts: Record<string, number> = {};
-                        selectedTopics.forEach(t => { newCounts[topicKey(t)] = 50; });
-                        setTopicCustomCounts(newCounts);
-                      }}
-                      style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '12px' }}
-                      title="Tier 1: Heavyweight calculation & core conceptual chapters (Quadratic Equations, Gravitation, Light, etc.)"
-                    >
-                      🔥 Tier 1: Heavy Core (50 Qs)
-                    </button>
                     <button
                       type="button"
                       className="btn btn-secondary btn-sm"
@@ -2381,23 +2411,51 @@ Return ONLY valid JSON. No extra text.`;
                         setTopicCustomCounts(newCounts);
                       }}
                       style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '12px' }}
-                      title="Tier 2: Standard core topics tested in combined 2-topic tests (Ohm's Law, Acids & Bases, etc.)"
+                      title="Micro topics (~30 Qs quota: 5 Qs to master)"
                     >
-                      ⚡ Tier 2: Standard (30 Qs)
+                      🎯 Micro (30 Qs)
                     </button>
                     <button
                       type="button"
                       className="btn btn-secondary btn-sm"
                       onClick={() => {
-                        setDefaultPerTopicCount(20);
+                        setDefaultPerTopicCount(75);
                         const newCounts: Record<string, number> = {};
-                        selectedTopics.forEach(t => { newCounts[topicKey(t)] = 20; });
+                        selectedTopics.forEach(t => { newCounts[topicKey(t)] = 75; });
                         setTopicCustomCounts(newCounts);
                       }}
                       style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '12px' }}
-                      title="Tier 3: Minor / Factual subtopics tested in 3-topic combos (Corrosion & Rancidity, Discovery of Cell, etc.)"
+                      title="Conceptual topics (~75 Qs quota: 10 Qs to master)"
                     >
-                      🎯 Tier 3: Minor (20 Qs)
+                      ⚡ Conceptual (75 Qs)
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => {
+                        setDefaultPerTopicCount(140);
+                        const newCounts: Record<string, number> = {};
+                        selectedTopics.forEach(t => { newCounts[topicKey(t)] = 140; });
+                        setTopicCustomCounts(newCounts);
+                      }}
+                      style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '12px' }}
+                      title="Calculative / Heavyweight chapters (~140 Qs quota: 18 Qs to master)"
+                    >
+                      🔥 Calculative (140 Qs)
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => {
+                        setDefaultPerTopicCount(100);
+                        const newCounts: Record<string, number> = {};
+                        selectedTopics.forEach(t => { newCounts[topicKey(t)] = 100; });
+                        setTopicCustomCounts(newCounts);
+                      }}
+                      style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '12px' }}
+                      title="HOTS / Olympiad / Foundation topics (~100 Qs quota: 15 Qs to master)"
+                    >
+                      🏆 HOTS (100 Qs)
                     </button>
                   </div>
                 </div>
@@ -2519,7 +2577,7 @@ Return ONLY valid JSON. No extra text.`;
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
                   <div>
                     <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--accent)' }}>
-                      ⚡ 3-Tier Dual-Track Presets:
+                      ⚡ 4-Archetype Dual-Track Presets (SSOT):
                     </span>
                     <span style={{ fontSize: '10px', color: 'var(--text-muted)', marginLeft: '6px' }}>
                       (Standard + Foundation split by ratio)
@@ -2530,43 +2588,57 @@ Return ONLY valid JSON. No extra text.`;
                       type="button"
                       className="btn btn-secondary btn-sm"
                       onClick={() => {
-                        setDefaultPerTopicCount(55);
+                        setDefaultPerTopicCount(30);
                         const newCounts: Record<string, number> = {};
-                        selectedTopics.forEach(t => { newCounts[topicKey(t)] = 55; });
+                        selectedTopics.forEach(t => { newCounts[topicKey(t)] = 30; });
                         setTopicCustomCounts(newCounts);
                       }}
                       style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '12px' }}
-                      title="Tier 1: Heavyweight calculation chapters (Quadratic, Gravitation, Light, etc.)"
+                      title="Micro topics (~30 Qs quota)"
                     >
-                      🔥 Tier 1: Heavy Core (55 Qs)
+                      🎯 Micro (30 Qs)
                     </button>
                     <button
                       type="button"
                       className="btn btn-secondary btn-sm"
                       onClick={() => {
-                        setDefaultPerTopicCount(35);
+                        setDefaultPerTopicCount(75);
                         const newCounts: Record<string, number> = {};
-                        selectedTopics.forEach(t => { newCounts[topicKey(t)] = 35; });
+                        selectedTopics.forEach(t => { newCounts[topicKey(t)] = 75; });
                         setTopicCustomCounts(newCounts);
                       }}
                       style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '12px' }}
-                      title="Tier 2: Standard chapters tested in combined 2-topic tests (Ohm's Law, Acids & Bases, etc.)"
+                      title="Conceptual topics (~75 Qs quota)"
                     >
-                      ⚡ Tier 2: Standard (35 Qs)
+                      ⚡ Conceptual (75 Qs)
                     </button>
                     <button
                       type="button"
                       className="btn btn-secondary btn-sm"
                       onClick={() => {
-                        setDefaultPerTopicCount(20);
+                        setDefaultPerTopicCount(140);
                         const newCounts: Record<string, number> = {};
-                        selectedTopics.forEach(t => { newCounts[topicKey(t)] = 20; });
+                        selectedTopics.forEach(t => { newCounts[topicKey(t)] = 140; });
                         setTopicCustomCounts(newCounts);
                       }}
                       style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '12px' }}
-                      title="Tier 3: Minor / Factual subtopics tested in 3-topic combos (Corrosion & Rancidity, Discovery of Cell, etc.)"
+                      title="Calculative / Heavyweight chapters (~140 Qs quota)"
                     >
-                      🎯 Tier 3: Minor (20 Qs)
+                      🔥 Calculative (140 Qs)
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-sm"
+                      onClick={() => {
+                        setDefaultPerTopicCount(100);
+                        const newCounts: Record<string, number> = {};
+                        selectedTopics.forEach(t => { newCounts[topicKey(t)] = 100; });
+                        setTopicCustomCounts(newCounts);
+                      }}
+                      style={{ fontSize: '11px', padding: '3px 8px', borderRadius: '12px' }}
+                      title="HOTS / Olympiad / Foundation topics (~100 Qs quota)"
+                    >
+                      🏆 HOTS (100 Qs)
                     </button>
                   </div>
                 </div>
