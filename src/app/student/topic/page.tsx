@@ -1329,7 +1329,7 @@ function TopicPracticeContent() {
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                 <span className="badge badge-info" style={{ textTransform: 'uppercase', fontSize: '10px' }}>
-                  Q {currentQIndex + 1} of {data.questions.length}{data.maxQuestionsAvailable ? ` • Pool: ${data.maxQuestionsAvailable} Qs` : ''}
+                  Q {currentQIndex + 1} of {data.questions.length}
                 </span>
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                   <span className="badge badge-secondary" style={{ textTransform: 'uppercase', fontSize: '10px' }}>{q.difficulty} • {q.bloomLevel}</span>

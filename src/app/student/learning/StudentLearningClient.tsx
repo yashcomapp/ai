@@ -361,12 +361,23 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <span style={{ fontSize: '1.2rem' }}>ℹ️</span>
                   <div>
-                    <span style={{ fontWeight: 800, fontSize: '13px', color: 'var(--text)' }}>
-                      System Transparency: How Topic Mastery & Question Slabs Work
-                    </span>
-                    <span style={{ marginLeft: '8px', fontSize: '11px', color: 'var(--accent)', fontWeight: 600 }}>
-                      {showSlabGuide ? 'Hide Details ▲' : 'View Slabs & Rules ▼'}
-                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                      <span style={{ fontWeight: 800, fontSize: '13px', color: 'var(--text)' }}>
+                        System Transparency: Questions Required for Topic Mastery
+                      </span>
+                      <span style={{ fontSize: '11px', color: 'var(--accent)', fontWeight: 600 }}>
+                        {showSlabGuide ? 'Hide Rules ▲' : 'View Rules & Details ▼'}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      <span>🎯 <strong>Micro:</strong> 5 Qs</span>
+                      <span>•</span>
+                      <span>⚡ <strong>Conceptual:</strong> 10 Qs</span>
+                      <span>•</span>
+                      <span>🔥 <strong>Calculative:</strong> 18 Qs</span>
+                      <span>•</span>
+                      <span>🏆 <strong>HOTS:</strong> 15 Qs</span>
+                    </div>
                   </div>
                 </div>
                 <span style={{
@@ -398,7 +409,7 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                         Definitions, Units, Core Formulae
                       </div>
                       <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text)', marginTop: '4px' }}>
-                        Slab: <span style={{ color: '#059669' }}>5 Questions to Master</span> (~30 Qs pool)
+                        Required for Mastery: <span style={{ color: '#059669' }}>5 Questions</span>
                       </div>
                     </div>
 
@@ -410,7 +421,7 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                         Principles, Laws & Explanations
                       </div>
                       <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text)', marginTop: '4px' }}>
-                        Slab: <span style={{ color: '#2563eb' }}>10 Questions to Master</span> (~75 Qs pool)
+                        Required for Mastery: <span style={{ color: '#2563eb' }}>10 Questions</span>
                       </div>
                     </div>
 
@@ -422,7 +433,7 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                         Numericals, Multi-Step Problem Solving
                       </div>
                       <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text)', marginTop: '4px' }}>
-                        Slab: <span style={{ color: '#dc2626' }}>18 Questions to Master</span> (~140 Qs pool)
+                        Required for Mastery: <span style={{ color: '#dc2626' }}>18 Questions</span>
                       </div>
                     </div>
 
@@ -434,7 +445,7 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                         Complex Multi-Concept Keystones
                       </div>
                       <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text)', marginTop: '4px' }}>
-                        Slab: <span style={{ color: '#d97706' }}>15 Questions to Master</span> (~100 Qs pool)
+                        Required for Mastery: <span style={{ color: '#d97706' }}>15 Questions</span>
                       </div>
                     </div>
                   </div>
@@ -658,7 +669,7 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                                             ? `/student/topic?topicCode=${topic.topicCode}&category=${topic.state}&mode=recovery`
                                             : `/student/topic?topicCode=${topic.topicCode}&category=${topic.state}`;
 
-                                          const targetQs = topic.totalQuestions || topic.targetQuestions || (topic.topicClassification === 'micro' ? 30 : topic.topicClassification === 'calculative' ? 140 : topic.topicClassification === 'hots' ? 100 : 75);
+                                          const reqMasteryQs = topic.requiredConfidence || (topic.topicClassification === 'micro' ? 5 : topic.topicClassification === 'calculative' ? 18 : topic.topicClassification === 'hots' ? 15 : 10);
 
                                           return (
                                             <tr 
@@ -719,7 +730,7 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                                               </td>
                                               <td style={{ padding: '6px 8px', textAlign: 'center', color: 'var(--text)' }}>
                                                  {topic.practiceCount}/5 practices
-                                                 <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>({topic.attempts} / {targetQs} Qs)</div>
+                                                 <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>({topic.attempts} / {reqMasteryQs} to Master)</div>
                                                </td>
                                               <td style={{ padding: '6px 8px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '11px' }}>
                                                 {formatDate(topic.lastAttempt)}
