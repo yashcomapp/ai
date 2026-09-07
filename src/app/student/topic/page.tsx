@@ -32,12 +32,20 @@ interface QuestionItem {
 
 interface PracticeData {
   topicCode: string;
+  topicName?: string;
+  topicClassification?: string;
+  targetQuestions?: number;
+  requiredConfidence?: number;
+  dailySessions?: number;
+  practiceQuestionsAttempted?: number;
   totalQuestions: number;
   maxQuestionsAvailable?: number;
   totalTopicPool?: number;
   questions: QuestionItem[];
   masteryAtStart: number;
   idealTimeSeconds: number;
+  totalAttemptedCount?: number;
+  isRecoveryMode?: boolean;
 }
 
 function TopicPracticeContent() {
@@ -1093,8 +1101,69 @@ function TopicPracticeContent() {
         <div className="camera-modal" style={{ position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.65)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', zIndex: 20000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '40px 20px', overflowY: 'auto' }}>
           <div className="camera-modal-content" style={{ background: 'var(--surface-popover)', border: '1px solid var(--border-popover)', borderRadius: 'var(--radius)', padding: '30px', maxWidth: '500px', width: '90%', textAlign: 'center', boxShadow: 'var(--shadow-lg)', margin: '0 auto' }}>
             <h2>⚙️ System Hardware Pre-Check</h2>
-            <p style={{ color: 'var(--text-muted)', fontSize: '13px', margin: '10px 0 20px' }}>Verify your camera and microphone are working correctly before starting this proctored practice session.</p>
-            
+            <p style={{ color: 'var(--text-muted)', fontSize: '13px', margin: '10px 0 16px' }}>Verify your camera and microphone are working correctly before starting this proctored practice session.</p>
+
+            {/* Topic Blueprint & Slab Transparency Card */}
+            {data && (
+              <div style={{
+                background: 'var(--bg-soft)',
+                border: '1.5px solid var(--border-light)',
+                borderRadius: 'var(--radius-sm)',
+                padding: '12px 14px',
+                textAlign: 'left',
+                marginBottom: '16px'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', marginBottom: '8px', flexWrap: 'wrap' }}>
+                  <div style={{ fontWeight: 800, fontSize: '13px', color: 'var(--text)' }}>
+                    📍 {data.topicName || data.topicCode}
+                  </div>
+                  <span style={{
+                    fontSize: '10px',
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    padding: '2px 8px',
+                    borderRadius: '4px',
+                    background: data.topicClassification === 'micro' ? 'rgba(16, 185, 129, 0.15)' : data.topicClassification === 'calculative' ? 'rgba(239, 68, 68, 0.15)' : data.topicClassification === 'hots' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(59, 130, 246, 0.15)',
+                    color: data.topicClassification === 'micro' ? '#059669' : data.topicClassification === 'calculative' ? '#dc2626' : data.topicClassification === 'hots' ? '#d97706' : '#2563eb',
+                    border: `1px solid ${data.topicClassification === 'micro' ? 'rgba(16, 185, 129, 0.3)' : data.topicClassification === 'calculative' ? 'rgba(239, 68, 68, 0.3)' : data.topicClassification === 'hots' ? 'rgba(245, 158, 11, 0.3)' : 'rgba(59, 130, 246, 0.3)'}`
+                  }}>
+                    {data.topicClassification === 'micro' && '🎯 Micro (5 Qs to Master)'}
+                    {data.topicClassification === 'conceptual' && '⚡ Conceptual (10 Qs to Master)'}
+                    {data.topicClassification === 'calculative' && '🔥 Calculative (18 Qs to Master)'}
+                    {data.topicClassification === 'hots' && '🏆 HOTS (15 Qs to Master)'}
+                    {!data.topicClassification && '⚡ Standard (10 Qs to Master)'}
+                  </span>
+                </div>
+
+                {/* Progress bar towards Required Slab */}
+                <div style={{ marginBottom: '8px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '3px' }}>
+                    <span>Confidence Slab Progress</span>
+                    <strong>{data.totalAttemptedCount || 0} / {data.requiredConfidence || 10} Qs Practiced</strong>
+                  </div>
+                  <div style={{ height: '6px', background: 'var(--border-light)', borderRadius: '3px', overflow: 'hidden' }}>
+                    <div style={{
+                      height: '100%',
+                      background: 'var(--accent)',
+                      width: `${Math.min(100, Math.round(((data.totalAttemptedCount || 0) / Math.max(1, data.requiredConfidence || 10)) * 100))}%`,
+                      transition: 'width 0.3s ease'
+                    }}></div>
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', fontSize: '11px', color: 'var(--text-muted)' }}>
+                  <div>🎯 <strong>This Set:</strong> {data.questions?.length || 6} Questions</div>
+                  <div>⏳ <strong>Ideal Time:</strong> {Math.round((data.idealTimeSeconds || 450) / 60)} Mins</div>
+                  <div>📈 <strong>Current Mastery:</strong> {data.masteryAtStart || 0}%</div>
+                  <div>🛡️ <strong>Pacing:</strong> Session {(data.dailySessions || 0) + 1} of 3 today</div>
+                </div>
+
+                <div style={{ fontSize: '10.5px', color: 'var(--accent)', marginTop: '8px', fontWeight: 600, borderTop: '1px dashed var(--border-light)', paddingTop: '6px' }}>
+                  🔒 Dedicated Practice Vault (0% Exam Leakage) • Score ≥90% & reach slab to earn Mastered!
+                </div>
+              </div>
+            )}
+
             <div className="camera-preview" style={{ width: '100%', height: '240px', background: '#111', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', position: 'relative', marginBottom: '15px' }}>
               {cameraStream ? (
                 <video 

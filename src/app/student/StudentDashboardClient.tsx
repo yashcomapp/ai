@@ -591,6 +591,21 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
                           ) : (
                             <span style={{ color: '#d97706', fontWeight: 700 }}>{t.mastery || 0}% Mastery</span>
                           )}
+                          {t.topicClassification && (
+                            <>
+                              <span>•</span>
+                              <span style={{
+                                fontSize: '9.5px',
+                                fontWeight: 700,
+                                color: t.topicClassification === 'micro' ? '#059669' : t.topicClassification === 'calculative' ? '#dc2626' : t.topicClassification === 'hots' ? '#d97706' : '#2563eb'
+                              }}>
+                                {t.topicClassification === 'micro' && '🎯 Micro (5 Qs)'}
+                                {t.topicClassification === 'conceptual' && '⚡ Conceptual (10 Qs)'}
+                                {t.topicClassification === 'calculative' && '🔥 Calculative (18 Qs)'}
+                                {t.topicClassification === 'hots' && '🏆 HOTS (15 Qs)'}
+                              </span>
+                            </>
+                          )}
                         </div>
                       </div>
                       <button 

@@ -256,8 +256,15 @@ export async function GET(req: NextRequest) {
         };
       });
 
+      const recoveryReqConfidence = getRequiredConfidence(topicClassification, targetQuestions);
       return NextResponse.json({
         topicCode,
+        topicName,
+        topicClassification: topicClassification || (targetQuestions && targetQuestions <= 35 ? 'micro' : (targetQuestions && targetQuestions >= 120 ? 'calculative' : 'conceptual')),
+        targetQuestions: targetQuestions || 75,
+        requiredConfidence: recoveryReqConfidence,
+        dailySessions,
+        practiceQuestionsAttempted,
         isRecoveryMode: true,
         totalQuestions: sanitizedQuestions.length,
         maxQuestionsAvailable: allQuestions.length,
@@ -466,6 +473,12 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       topicCode,
+      topicName,
+      topicClassification: topicClassification || (targetQuestions && targetQuestions <= 35 ? 'micro' : (targetQuestions && targetQuestions >= 120 ? 'calculative' : 'conceptual')),
+      targetQuestions: targetQuestions || 75,
+      requiredConfidence: reqConfidence,
+      dailySessions,
+      practiceQuestionsAttempted,
       totalQuestions: sanitizedQuestions.length,
       maxQuestionsAvailable: allQuestions.length,
       totalTopicPool: allQuestions.length,

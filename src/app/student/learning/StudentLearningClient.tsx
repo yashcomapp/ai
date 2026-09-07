@@ -114,6 +114,7 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
   const [sortField, setSortField] = useState<'topicName' | 'mastery' | 'attempts' | 'lastAttempt'>('mastery');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
   const [pdfSelectorOpen, setPdfSelectorOpen] = useState(false);
+  const [showSlabGuide, setShowSlabGuide] = useState(false);
 
   const handleSort = (field: 'topicName' | 'mastery' | 'attempts' | 'lastAttempt') => {
     if (sortField === field) {
@@ -337,7 +338,122 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
             {renderSubjectListSkeleton()}
           </>
         ) : (
-          <>
+            {/* System Transparency & Mastery Slabs Guide Card */}
+            <div style={{
+              background: 'linear-gradient(135deg, rgba(37, 99, 235, 0.05), rgba(16, 185, 129, 0.05))',
+              border: '1.5px solid var(--border-light)',
+              borderRadius: 'var(--radius)',
+              padding: '10px 14px',
+              marginBottom: '12px',
+              boxShadow: 'var(--shadow-sm)'
+            }}>
+              <div 
+                onClick={() => setShowSlabGuide(!showSlabGuide)}
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'space-between', 
+                  cursor: 'pointer',
+                  userSelect: 'none'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '1.2rem' }}>ℹ️</span>
+                  <div>
+                    <span style={{ fontWeight: 800, fontSize: '13px', color: 'var(--text)' }}>
+                      System Transparency: How Topic Mastery & Question Slabs Work
+                    </span>
+                    <span style={{ marginLeft: '8px', fontSize: '11px', color: 'var(--accent)', fontWeight: 600 }}>
+                      {showSlabGuide ? 'Hide Details ▲' : 'View Slabs & Rules ▼'}
+                    </span>
+                  </div>
+                </div>
+                <span style={{
+                  fontSize: '10px',
+                  fontWeight: 700,
+                  background: 'var(--surface)',
+                  padding: '2px 8px',
+                  borderRadius: '12px',
+                  border: '1px solid var(--border)',
+                  color: 'var(--text-muted)'
+                }}>
+                  Zero-Collision Vaults
+                </span>
+              </div>
+
+              {showSlabGuide && (
+                <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px dashed var(--border-light)' }}>
+                  <div style={{ fontSize: '12px', color: 'var(--text)', marginBottom: '10px', lineHeight: 1.5 }}>
+                    To make your learning roadmap completely predictable and transparent, each topic is classified into one of <strong>4 Archetypes</strong>. To attain <strong style={{ color: '#10b981' }}>🏆 Mastered</strong>, you must achieve <strong>≥90%</strong> accuracy AND complete the topic's required <strong>Question Slab</strong>:
+                  </div>
+
+                  {/* 4 Archetypes Grid */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '8px', marginBottom: '12px' }}>
+                    <div style={{ padding: '8px 10px', borderRadius: '8px', background: 'var(--surface)', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
+                      <div style={{ fontWeight: 800, fontSize: '12px', color: '#059669', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <span>🎯 Micro Archetype</span>
+                      </div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                        Definitions, Units, Core Formulae
+                      </div>
+                      <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text)', marginTop: '4px' }}>
+                        Slab: <span style={{ color: '#059669' }}>5 Questions to Master</span> (~30 Qs pool)
+                      </div>
+                    </div>
+
+                    <div style={{ padding: '8px 10px', borderRadius: '8px', background: 'var(--surface)', border: '1px solid rgba(59, 130, 246, 0.3)' }}>
+                      <div style={{ fontWeight: 800, fontSize: '12px', color: '#2563eb', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <span>⚡ Conceptual Archetype</span>
+                      </div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                        Principles, Laws & Explanations
+                      </div>
+                      <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text)', marginTop: '4px' }}>
+                        Slab: <span style={{ color: '#2563eb' }}>10 Questions to Master</span> (~75 Qs pool)
+                      </div>
+                    </div>
+
+                    <div style={{ padding: '8px 10px', borderRadius: '8px', background: 'var(--surface)', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
+                      <div style={{ fontWeight: 800, fontSize: '12px', color: '#dc2626', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <span>🔥 Calculative Archetype</span>
+                      </div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                        Numericals, Multi-Step Problem Solving
+                      </div>
+                      <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text)', marginTop: '4px' }}>
+                        Slab: <span style={{ color: '#dc2626' }}>18 Questions to Master</span> (~140 Qs pool)
+                      </div>
+                    </div>
+
+                    <div style={{ padding: '8px 10px', borderRadius: '8px', background: 'var(--surface)', border: '1px solid rgba(245, 158, 11, 0.3)' }}>
+                      <div style={{ fontWeight: 800, fontSize: '12px', color: '#d97706', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <span>🏆 HOTS Archetype</span>
+                      </div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                        Complex Multi-Concept Keystones
+                      </div>
+                      <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text)', marginTop: '4px' }}>
+                        Slab: <span style={{ color: '#d97706' }}>15 Questions to Master</span> (~100 Qs pool)
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 3 Core Rules */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '8px', fontSize: '11px', color: 'var(--text-muted)' }}>
+                    <div style={{ padding: '6px 8px', background: 'var(--surface)', borderRadius: '6px', border: '1px solid var(--border-light)' }}>
+                      <strong style={{ color: 'var(--text)' }}>🛡️ Daily Pacing Cap:</strong> Max 3 practice sets (18 Qs) per topic/day to protect your focus and let concepts settle in.
+                    </div>
+                    <div style={{ padding: '6px 8px', background: 'var(--surface)', borderRadius: '6px', border: '1px solid var(--border-light)' }}>
+                      <strong style={{ color: 'var(--text)' }}>🔒 Zero-Collision Vaults:</strong> Questions in Practice are dedicated to self-study only and will never appear on scheduled exams.
+                    </div>
+                    <div style={{ padding: '6px 8px', background: 'var(--surface)', borderRadius: '6px', border: '1px solid var(--border-light)' }}>
+                      <strong style={{ color: 'var(--text)' }}>⚡ Guided Recovery:</strong> Completed 5 practices without 90%? A special 8-question Recovery Quiz (50% fresh + 50% missed) activates!
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* Search & Toolbars */}
             <div style={{ display: 'flex', gap: '8px', marginBottom: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
               <input 
