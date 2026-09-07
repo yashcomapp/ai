@@ -221,8 +221,8 @@ export async function POST(request: Request) {
       }
 
       if (utilityType === 'systemReset') {
-        // Clear all collections except syllabus, users, templates, config, batches
-        const protectedCollections = ['syllabus', 'users', 'templates', 'config', 'batches'];
+        // Clear all collections except syllabus, syllabusTopicIndex, users, templates, config, batches, _systemBackups
+        const protectedCollections = ['syllabus', 'syllabusTopicIndex', 'users', 'templates', 'config', 'batches', '_systemBackups'];
         const collections = await adminDb.listCollections();
         
         for (const col of collections) {
@@ -247,7 +247,7 @@ export async function POST(request: Request) {
           return NextResponse.json({ error: 'No collections selected' }, { status: 400 });
         }
 
-        const protectedCollections = ['syllabus', 'users', 'templates', 'config', 'batches'];
+        const protectedCollections = ['syllabus', 'syllabusTopicIndex', 'users', 'templates', 'config', 'batches', '_systemBackups'];
         for (const colName of selectedCollections) {
           if (!protectedCollections.includes(colName)) continue;
 
