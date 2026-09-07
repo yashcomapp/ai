@@ -338,6 +338,7 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
             {renderSubjectListSkeleton()}
           </>
         ) : (
+          <>
             {/* System Transparency & Mastery Slabs Guide Card */}
             <div style={{
               background: 'linear-gradient(135deg, rgba(37, 99, 235, 0.05), rgba(16, 185, 129, 0.05))',
