@@ -4,28 +4,13 @@ import { verifyRole } from '@/lib/auth';
 import { ChunkedBatch } from '@/lib/firebase/batch';
 import { invalidateCache } from '@/lib/firebase/cache';
 
-const ADMIN_PURGE_KEY = 'yashcom_purge_2026_sep7_9457cb76';
-
-async function checkAdminOrKey(req: NextRequest): Promise<boolean> {
-  const adminKeyHeader = req.headers.get('x-admin-key');
-  if (adminKeyHeader && adminKeyHeader === ADMIN_PURGE_KEY) {
-    return true;
-  }
-  const authHeader = req.headers.get('authorization') || req.headers.get('Authorization');
-  if (authHeader && authHeader === `Bearer ${ADMIN_PURGE_KEY}`) {
-    return true;
-  }
-  const adminUser = await verifyRole(req, 'admin');
-  return !!adminUser;
-}
-
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   try {
-    const isAuth = await checkAdminOrKey(req);
-    if (!isAuth) {
-      return NextResponse.json({ message: 'Unauthorized. Admin role or valid Admin Key required.' }, { status: 403 });
+    const adminUser = await verifyRole(req, 'admin');
+    if (!adminUser) {
+      return NextResponse.json({ message: 'Unauthorized. Admin role required.' }, { status: 403 });
     }
 
     const { searchParams } = new URL(req.url);
@@ -300,9 +285,9 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const isAuth = await checkAdminOrKey(req);
-    if (!isAuth) {
-      return NextResponse.json({ message: 'Unauthorized. Admin role or valid Admin Key required.' }, { status: 403 });
+    const adminUser = await verifyRole(req, 'admin');
+    if (!adminUser) {
+      return NextResponse.json({ message: 'Unauthorized. Admin role required.' }, { status: 403 });
     }
 
     const { action, payload } = await req.json();
