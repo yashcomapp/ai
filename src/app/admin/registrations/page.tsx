@@ -5,6 +5,8 @@ import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
+import { formatDateDMY } from '@/lib/dateUtils';
+import DateInputDMY from '@/components/DateInputDMY';
 const ExportPdfModal = dynamic(() => import('@/components/ExportPdfModal').then(m => ({ default: m.ExportPdfModal })), { ssr: false });
 
 interface Registration {
@@ -353,7 +355,7 @@ export default function RegistrationsPage() {
                       {reg.parentName}
                       <div style={{ color: 'var(--text-muted)', fontSize: '10px' }}>{reg.parentEmail}</div>
                     </td>
-                    <td style={{ padding: '10px' }}>{new Date(reg.createdAt).toLocaleDateString('en-IN')}</td>
+                    <td style={{ padding: '10px' }}>{formatDateDMY(reg.createdAt)}</td>
                     <td style={{ padding: '10px' }}>
                       <span className={`badge ${reg.status === 'approved' ? 'badge-success' : reg.status === 'rejected' ? 'badge-danger' : 'badge-warning'}`}>
                         {reg.status === 'approved' ? '✅ Approved' : reg.status === 'rejected' ? '❌ Rejected' : '⏳ Pending'}
@@ -395,7 +397,7 @@ export default function RegistrationsPage() {
                 <div><label style={{ display: 'block', fontSize: '10px', color: 'var(--text-muted)' }}>Temp ID</label><span style={{ color: 'var(--accent)', fontWeight: 'bold' }}>{selectedReg.tempId}</span></div>
                 <div><label style={{ display: 'block', fontSize: '10px', color: 'var(--text-muted)' }}>Email</label><span>{selectedReg.studentEmail}</span></div>
                 <div><label style={{ display: 'block', fontSize: '10px', color: 'var(--text-muted)' }}>Mobile</label><span>{selectedReg.studentMobile}</span></div>
-                <div><label style={{ display: 'block', fontSize: '10px', color: 'var(--text-muted)' }}>DOB</label><span>{selectedReg.dob}</span></div>
+                <div><label style={{ display: 'block', fontSize: '10px', color: 'var(--text-muted)' }}>DOB</label><span>{formatDateDMY(selectedReg.dob)}</span></div>
                 <div><label style={{ display: 'block', fontSize: '10px', color: 'var(--text-muted)' }}>Gender</label><span>{selectedReg.gender}</span></div>
                 <div><label style={{ display: 'block', fontSize: '10px', color: 'var(--text-muted)' }}>Blood Group</label><span>{selectedReg.bloodGroup}</span></div>
                 <div><label style={{ display: 'block', fontSize: '10px', color: 'var(--text-muted)' }}>Batch</label><span>{selectedReg.batchName}</span></div>
@@ -410,7 +412,7 @@ export default function RegistrationsPage() {
 
                 <div style={{ gridColumn: '1/-1', fontWeight: 'bold', color: 'var(--accent)', borderBottom: '1px solid var(--border-light)', paddingBottom: '4px', marginTop: '12px' }}>📋 STATUS</div>
                 <div><label style={{ display: 'block', fontSize: '10px', color: 'var(--text-muted)' }}>Status</label><span>{selectedReg.status}</span></div>
-                <div><label style={{ display: 'block', fontSize: '10px', color: 'var(--text-muted)' }}>Submitted</label><span>{new Date(selectedReg.createdAt).toLocaleString('en-IN')}</span></div>
+                <div><label style={{ display: 'block', fontSize: '10px', color: 'var(--text-muted)' }}>Submitted</label><span>{formatDateDMY(selectedReg.createdAt)}</span></div>
               </div>
             </div>
             <div className="modal-footer" style={{ display: 'flex', gap: '8px', padding: '12px 16px', borderTop: '1px solid var(--border-light)', justifyContent: 'flex-end' }}>
@@ -465,11 +467,10 @@ export default function RegistrationsPage() {
                 </div>
                 <div>
                   <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)' }}>DOB</label>
-                  <input 
-                    type="date" 
+                  <DateInputDMY 
                     value={editFields.dob}
-                    onChange={(e) => setEditFields(prev => ({ ...prev, dob: e.target.value }))}
-                    style={{ width: '100%', padding: '6px 10px', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', background: 'var(--surface)', color: 'var(--text)' }}
+                    onChange={(val) => setEditFields(prev => ({ ...prev, dob: val }))}
+                    style={{ width: '100%' }}
                   />
                 </div>
                 <div>

@@ -11,7 +11,7 @@ import { useMathRender } from '@/hooks/useMathRender';
 import { useScorecard } from '@/hooks/useScorecard';
 import { exportUniversalExamPDF } from '@/lib/pdfExport';
 import { isBlank } from '@/lib/questionTypes';
-import { toISTDateTimeLocalInput } from '@/lib/dateUtils';
+import { toISTDateTimeLocalInput, formatDateDMY } from '@/lib/dateUtils';
 
 interface Exam {
   id: string;
@@ -2189,7 +2189,7 @@ export default function AdminExamsPage() {
                                   </span>
                                 </td>
                                 <td style={{ padding: '12px 16px', color: 'var(--text-muted)' }}>
-                                  {stats.lastActive ? new Date(stats.lastActive).toLocaleDateString('en-IN') : 'Never'}
+                                  {stats.lastActive ? formatDateDMY(stats.lastActive) : 'Never'}
                                 </td>
                               </tr>
                             );
@@ -3121,7 +3121,7 @@ export default function AdminExamsPage() {
                                                       </span>
                                                     </td>
                                                     <td style={{ padding: '4px 6px', textAlign: 'center', color: 'var(--text-muted)' }}>
-                                                      {h.date ? new Date(h.date).toLocaleDateString('en-IN') : '-'}
+                                                      {h.date ? formatDateDMY(h.date) : '-'}
                                                     </td>
                                                     <td style={{ padding: '4px 6px', textAlign: 'center' }}>
                                                       <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: dotCol }} title={`Integrity level: ${level}`} />

@@ -5,6 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
 import { useRouter } from 'next/navigation';
 import { playNotificationSound } from '@/lib/audioUtils';
+import { formatDateDMY } from '@/lib/dateUtils';
 
 interface Batch {
   id: string;
@@ -974,7 +975,7 @@ export default function AdminNoticesPage() {
                       )}
                     </div>
                     <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
-                      {notice.createdAt ? new Date(notice.createdAt).toLocaleDateString('en-IN') : 'Draft'}
+                      {notice.createdAt ? formatDateDMY(notice.createdAt) : 'Draft'}
                     </span>
                   </div>
                   

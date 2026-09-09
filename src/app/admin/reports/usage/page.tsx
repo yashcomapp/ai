@@ -5,6 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
 import { useRouter } from 'next/navigation';
 import { useReports } from '@/hooks/useReports';
+import { formatDateDMY } from '@/lib/dateUtils';
 import dynamic from 'next/dynamic';
 const ExportPdfModal = dynamic(() => import('@/components/ExportPdfModal').then(m => ({ default: m.ExportPdfModal })), { ssr: false });
 // Client Firestore imports removed
@@ -63,7 +64,7 @@ export default function UsageReportPage() {
         if (data) {
           const evalsList = (data.evaluations || []).map((item: any) => ({
             ...item,
-            dateStr: item.createdAt ? new Date(item.createdAt).toLocaleDateString('en-IN') : item.date ? new Date(item.date).toLocaleDateString('en-IN') : '-'
+            dateStr: item.createdAt ? formatDateDMY(item.createdAt) : item.date ? formatDateDMY(item.date) : '-'
           }));
 
           setEvaluations(evalsList);

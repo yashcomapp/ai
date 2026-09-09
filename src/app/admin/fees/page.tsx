@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { formatDateDMY as formatDateStr, getDateKeyIST } from '@/lib/dateUtils';
+import DateInputDMY from '@/components/DateInputDMY';
 
 interface FeeTemplate {
   templateId: string;
@@ -720,14 +721,12 @@ export default function AdminFeesPage() {
                           />
                         </td>
                         <td style={{ padding: '12px 16px' }}>
-                          <input
-                            type="date"
+                          <DateInputDMY
                             value={inst.dueDate || ''}
-                            onChange={(e) => {
-                              const val = e.target.value;
+                            onChange={(val) => {
                               setCustomInstallments(prev => prev.map((item, i) => i === idx ? { ...item, dueDate: val } : item));
                             }}
-                            style={{ padding: '6px 10px', borderRadius: '4px', border: '1px solid var(--border-light)', background: 'var(--bg-soft)', color: 'var(--text)' }}
+                            style={{ width: '130px' }}
                           />
                         </td>
                         <td style={{ padding: '12px 16px' }}>
@@ -1129,13 +1128,13 @@ export default function AdminFeesPage() {
                 />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '140px 1fr 1fr', gap: '10px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   <label style={{ fontSize: '11px', fontWeight: 600 }}>Class</label>
                   <select
                     value={tmplClass}
                     onChange={(e) => setTmplClass(e.target.value)}
-                    style={{ padding: '8px 10px', borderRadius: '4px', border: '1px solid var(--border-light)', background: 'var(--bg-soft)', color: 'var(--text)' }}
+                    style={{ padding: '8px 10px', borderRadius: '4px', border: '1px solid var(--border-light)', background: 'var(--bg-soft)', color: 'var(--text)', width: '100%', minWidth: '120px' }}
                   >
                     <option value="8">Class 8</option>
                     <option value="9">Class 9</option>
@@ -1202,10 +1201,10 @@ export default function AdminFeesPage() {
                   );
                 })()}
 
-                <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                <div style={{ maxHeight: '360px', overflowY: 'auto' }}>
                   {tmplInstallments.map((inst, idx) => (
                     <div key={idx} style={{ display: 'flex', gap: '8px', padding: '10px 12px', borderBottom: '1px solid var(--border-light)', alignItems: 'center' }}>
-                      <span style={{ fontSize: '11px', fontWeight: 'bold', width: '60px' }}># {idx + 1}</span>
+                      <span style={{ fontSize: '11px', fontWeight: 'bold', width: '50px' }}># {idx + 1}</span>
                       
                       <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <span style={{ fontSize: '11px' }}>₹</span>
@@ -1219,20 +1218,17 @@ export default function AdminFeesPage() {
                             const val = raw === '' ? ('' as any) : Number(raw);
                             setTmplInstallments(prev => prev.map((item, i) => i === idx ? { ...item, amount: val } : item));
                           }}
-                          style={{ padding: '6px 8px', width: '100px', borderRadius: '4px', border: '1px solid var(--border-light)', background: 'var(--surface)', color: 'var(--text)', fontSize: '11px' }}
+                          style={{ padding: '6px 8px', width: '90px', borderRadius: '4px', border: '1px solid var(--border-light)', background: 'var(--surface)', color: 'var(--text)', fontSize: '11px' }}
                         />
                       </div>
 
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <input
-                          type="date"
-                          required
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flex: 1 }}>
+                        <DateInputDMY
                           value={inst.dueDate || ''}
-                          onChange={(e) => {
-                            const val = e.target.value;
+                          onChange={(val) => {
                             setTmplInstallments(prev => prev.map((item, i) => i === idx ? { ...item, dueDate: val } : item));
                           }}
-                          style={{ padding: '6px 8px', borderRadius: '4px', border: '1px solid var(--border-light)', background: 'var(--surface)', color: 'var(--text)', fontSize: '11px' }}
+                          style={{ width: '135px' }}
                         />
                       </div>
 
@@ -1310,12 +1306,11 @@ export default function AdminFeesPage() {
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   <label style={{ fontSize: '11px', fontWeight: 600 }}>Payment Date</label>
-                  <input
-                    type="date"
+                  <DateInputDMY
                     required
                     value={txDate}
-                    onChange={(e) => setTxDate(e.target.value)}
-                    style={{ padding: '8px 10px', borderRadius: '4px', border: '1px solid var(--border-light)', background: 'var(--bg-soft)', color: 'var(--text)' }}
+                    onChange={(val) => setTxDate(val)}
+                    style={{ width: '100%' }}
                   />
                 </div>
 
