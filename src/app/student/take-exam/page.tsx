@@ -944,11 +944,11 @@ function TakeExamContent() {
                       </span>
                     </div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', fontSize: '11px', color: 'var(--text-muted)' }}>
-                      <span><strong>{questions.length || exam.questionsCount || 0}</strong> Questions</span>
+                      <span><strong>{exam.questions?.length || 0}</strong> Questions</span>
                       <span>•</span>
                       <span><strong>{exam.duration || 30}</strong> Mins</span>
                       <span>•</span>
-                      <span><strong>{exam.totalMarks || (questions.length ? questions.reduce((sum: number, q: any) => sum + (q.marks || 4), 0) : 0)}</strong> Total Marks</span>
+                      <span><strong>{exam.totalMarks || (exam.questions?.length ? exam.questions.reduce((sum: number, q: any) => sum + (q.marks || 4), 0) : 0)}</strong> Total Marks</span>
                       {exam.subject && (
                         <>
                           <span>•</span>

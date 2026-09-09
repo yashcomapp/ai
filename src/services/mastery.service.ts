@@ -17,7 +17,7 @@ export class MasteryService {
     }
     if (topicCode) {
       const parsed = parseTopicCode(topicCode);
-      if (parsed && (parsed.cls === '10' || parsed.classNum === '10')) {
+      if (parsed && (parsed.classNum === '10' || parsed.class === '10' || parsed.class === 'Class 10')) {
         return true;
       }
     }

@@ -845,7 +845,7 @@ In addition to the topic-based questions:
     }
 
     const isCalculativeTopic = isMath || promptTopics.some(t => {
-      const text = `${t.subject || ''} ${t.chapter || ''} ${t.topic || ''}`.toLowerCase();
+      const text = `${t.subject || ''} ${t.chapterName || ''} ${t.topic || ''}`.toLowerCase();
       return /physic|motion|force|gravitat|light|reflection|refraction|electric|current|circuit|sound|work|energy|power|heat|thermodynamic|optics|lens|mirror|wave|mole concept|stoichiometr|density|pressure|floatation|kinematics|fluid|magnetic/i.test(text);
     });
 

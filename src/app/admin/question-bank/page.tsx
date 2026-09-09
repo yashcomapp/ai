@@ -1131,10 +1131,10 @@ ${JSON.stringify(missingList, null, 2)}`;
                       {/* Correct Answer Summary Box */}
                       {(() => {
                         const correctDisplay = Array.isArray(q.correctAnswer)
-                          ? q.correctAnswer.map((ca: any) => formatUserAnswerSummary(q.options, ca)).join(', ')
+                          ? q.correctAnswer.map((ca: any) => formatUserAnswerSummary(q.options || [], ca)).join(', ')
                           : (Array.isArray(q.correctAnswers) && q.correctAnswers.length > 0
-                              ? q.correctAnswers.map((ca: any) => formatUserAnswerSummary(q.options, ca)).join(', ')
-                              : (q.correctAnswer ? formatUserAnswerSummary(q.options, q.correctAnswer) : ''));
+                              ? q.correctAnswers.map((ca: any) => formatUserAnswerSummary(q.options || [], ca)).join(', ')
+                              : (q.correctAnswer ? formatUserAnswerSummary(q.options || [], q.correctAnswer) : ''));
 
                         return correctDisplay ? (
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', fontSize: '11.5px', background: 'var(--surface-3)', padding: '5px 8px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)' }}>
