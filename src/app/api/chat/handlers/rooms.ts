@@ -17,6 +17,43 @@ function isExistentCommunication(room: any): boolean {
   return true;
 }
 
+async function getBatchNamesMap(): Promise<Map<string, string>> {
+  try {
+    const batchesSnap = await adminDb.collection('batches').get();
+    const map = new Map<string, string>();
+    batchesSnap.docs.forEach(doc => {
+      const data = doc.data();
+      if (data?.name) {
+        map.set(doc.id, data.name.trim());
+      }
+    });
+    return map;
+  } catch (err) {
+    console.error('Error fetching batches map:', err);
+    return new Map();
+  }
+}
+
+function sanitizeAndHealRoomName(room: any, batchNamesMap: Map<string, string>): string {
+  if (room.type === 'group') {
+    let batchId = '';
+    if (room.roomId?.startsWith('room_batch_')) {
+      batchId = room.roomId.replace('room_batch_', '');
+    } else if (room.name?.startsWith('Class Batch ')) {
+      batchId = room.name.replace('Class Batch ', '').trim();
+    }
+    if (batchId && batchNamesMap.has(batchId)) {
+      const properName = batchNamesMap.get(batchId)!;
+      if (room.name !== properName) {
+        adminDb.collection('chatRooms').doc(room.id || room.roomId).update({ name: properName }).catch(() => {});
+        room.name = properName;
+      }
+      return properName;
+    }
+  }
+  return room.name || '';
+}
+
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
@@ -30,6 +67,9 @@ export async function GET(req: NextRequest) {
     const admin = role === 'admin' ? authResult : null;
     const student = role === 'student' ? authResult : null;
     const parent = role === 'parent' ? authResult : null;
+
+    // Load batch names map once for accurate human-readable naming
+    const batchNamesMap = await getBatchNamesMap();
 
     // Helper to get all inactive studentCodes and emails
     const inactiveUsersSnap = await adminDb.collection('users').where('status', '==', 'inactive').get();
@@ -69,6 +109,11 @@ export async function GET(req: NextRequest) {
           return false;
         }
         return true;
+      });
+
+      // Heal and ensure real batch names are displayed for all class groups
+      rooms.forEach(room => {
+        sanitizeAndHealRoomName(room, batchNamesMap);
       });
 
       // Sort with latest communication on top
@@ -120,16 +165,17 @@ export async function GET(req: NextRequest) {
           }));
         }
 
-        // 3. Batch Group Rooms initialization/sync
+        // 3. Batch Group Rooms initialization/sync with human-readable batch name
         for (const gRoomId of groupRoomIds) {
           const batchId = gRoomId.replace('room_batch_', '');
           const snap = roomSnaps.find(s => s.id === gRoomId);
+          const properBatchName = batchNamesMap.get(batchId) || 'Class Group';
           
           if (!snap || !snap.exists) {
             batchPromises.push(adminDb.collection('chatRooms').doc(gRoomId).set({
               roomId: gRoomId,
               type: 'group',
-              name: `Class Batch ${batchId}`,
+              name: properBatchName,
               participants: [sCodeUpper, 'admin'],
               unreadCounts: {
                 [sCodeUpper]: 0,
@@ -143,16 +189,22 @@ export async function GET(req: NextRequest) {
               const currentParts = gData.participants || [];
               const unreads = gData.unreadCounts || {};
               let updated = false;
+              const updatePayload: Record<string, any> = {};
+
               if (!currentParts.includes(sCodeUpper)) {
                 currentParts.push(sCodeUpper);
                 unreads[sCodeUpper] = 0;
+                updatePayload.participants = currentParts;
+                updatePayload.unreadCounts = unreads;
+                updated = true;
+              }
+              // If group name was stored as raw Class Batch ID, heal it
+              if (gData.name?.startsWith('Class Batch ') || gData.name === batchId) {
+                updatePayload.name = properBatchName;
                 updated = true;
               }
               if (updated) {
-                batchPromises.push(adminDb.collection('chatRooms').doc(gRoomId).update({
-                  participants: currentParts,
-                  unreadCounts: unreads
-                }));
+                batchPromises.push(adminDb.collection('chatRooms').doc(gRoomId).update(updatePayload));
               }
             }
           }
@@ -205,6 +257,9 @@ export async function GET(req: NextRequest) {
       
       let rooms = roomsQuery.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any[];
       rooms = rooms.filter(room => isExistentCommunication(room));
+      rooms.forEach(room => {
+        sanitizeAndHealRoomName(room, batchNamesMap);
+      });
       rooms.sort((a, b) => {
         const timeA = a.lastMessage?.timestamp ? new Date(a.lastMessage.timestamp).getTime() : (a.createdAt ? new Date(a.createdAt).getTime() : 0);
         const timeB = b.lastMessage?.timestamp ? new Date(b.lastMessage.timestamp).getTime() : (b.createdAt ? new Date(b.createdAt).getTime() : 0);
@@ -391,6 +446,9 @@ export async function GET(req: NextRequest) {
       
       let rooms = roomsQuery.docs.map((doc: any) => ({ id: doc.id, ...doc.data() }));
       rooms = rooms.filter(room => isExistentCommunication(room));
+      rooms.forEach(room => {
+        sanitizeAndHealRoomName(room, batchNamesMap);
+      });
       rooms.sort((a, b) => {
         const timeA = a.lastMessage?.timestamp ? new Date(a.lastMessage.timestamp).getTime() : (a.createdAt ? new Date(a.createdAt).getTime() : 0);
         const timeB = b.lastMessage?.timestamp ? new Date(b.lastMessage.timestamp).getTime() : (b.createdAt ? new Date(b.createdAt).getTime() : 0);
@@ -469,15 +527,23 @@ export async function POST(req: NextRequest) {
       }
       
       const { batchId, name } = body;
-      if (!batchId || !name) {
-        return NextResponse.json({ error: 'Missing batchId or name.' }, { status: 400 });
+      if (!batchId) {
+        return NextResponse.json({ error: 'Missing batchId.' }, { status: 400 });
       }
+
+      const batchSnap = await adminDb.collection('batches').doc(batchId).get();
+      const realBatchName = batchSnap.exists ? (batchSnap.data()?.name || '').trim() : '';
+      const finalGroupName = (name && !name.startsWith('Class Batch ')) ? name.trim() : (realBatchName || name || 'Class Group');
 
       const gRoomId = `room_batch_${batchId}`;
       const roomRef = adminDb.collection('chatRooms').doc(gRoomId);
       const roomSnap = await roomRef.get();
 
       if (roomSnap.exists) {
+        // If room exists but had a raw name, update it
+        if (roomSnap.data()?.name?.startsWith('Class Batch ') && realBatchName) {
+          await roomRef.update({ name: realBatchName });
+        }
         return NextResponse.json({ success: true, roomId: gRoomId, message: 'Group room already exists.' });
       }
 
@@ -511,7 +577,7 @@ export async function POST(req: NextRequest) {
       const newGroup = {
         roomId: gRoomId,
         type: 'group',
-        name,
+        name: finalGroupName,
         participants,
         unreadCounts,
         isMutedForStudents: false,

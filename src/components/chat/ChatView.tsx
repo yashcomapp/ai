@@ -808,6 +808,22 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
     }
   };
 
+  // Fetch all batches on mount to enable human-readable batch group naming
+  useEffect(() => {
+    const initBatchesList = async () => {
+      try {
+        const res = await fetch('/api/batches');
+        const data = await res.json();
+        if (data.batches) {
+          setBatchesList(data.batches);
+        }
+      } catch (e) {
+        console.error('Failed to pre-fetch batches list:', e);
+      }
+    };
+    initBatchesList();
+  }, []);
+
   // Fetch all students on mount to enable read receipt name resolutions
   useEffect(() => {
     const initStudentsList = async () => {
@@ -1134,6 +1150,30 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
      s.studentCode.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
+  const batchesMap = useMemo(() => {
+    const map = new Map<string, string>();
+    batchesList.forEach((b: any) => {
+      if (b.id && b.name) map.set(b.id, b.name.trim());
+    });
+    return map;
+  }, [batchesList]);
+
+  const getRoomDisplayName = (room: ChatRoom | undefined): string => {
+    if (!room) return '';
+    if (room.type === 'group') {
+      let batchId = '';
+      if (room.roomId?.startsWith('room_batch_')) {
+        batchId = room.roomId.replace('room_batch_', '');
+      } else if (room.name?.startsWith('Class Batch ')) {
+        batchId = room.name.replace('Class Batch ', '').trim();
+      }
+      if (batchId && batchesMap.has(batchId)) {
+        return batchesMap.get(batchId)!;
+      }
+    }
+    return room.name || '';
+  };
+
   // Filter conversations in sidebar: ONLY existent communications for DMs and sorted by latest message on top
   const filteredRooms = useMemo(() => {
     return rooms
@@ -1145,7 +1185,7 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
           const text = String(room.lastMessage.text).trim();
           if (!text || text.includes('Private direct message channel established')) return false;
         }
-        const displayName = room.name || '';
+        const displayName = getRoomDisplayName(room);
         return displayName.toLowerCase().includes(sidebarSearchQuery.toLowerCase());
       })
       .sort((a, b) => {
@@ -1153,7 +1193,7 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
         const timeB = b.lastMessage?.timestamp ? new Date(b.lastMessage.timestamp).getTime() : 0;
         return timeB - timeA;
       });
-  }, [rooms, activeTab, sidebarSearchQuery, activeRoomId]);
+  }, [rooms, activeTab, sidebarSearchQuery, activeRoomId, batchesMap]);
 
   // Aggregate unread badge counts
   const totalGroupUnread = useMemo(() => {
@@ -1167,14 +1207,18 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
   }, [rooms, adminUid]);
 
   const activeRoom = rooms.find(r => r.roomId === activeRoomId);
+  const activeDisplayName = getRoomDisplayName(activeRoom);
 
-  // Extract initials for group tags (e.g. "8th Foundation" -> "8F")
+  // Extract initials for group tags (e.g. "Class 8th" -> "8TH", "Class 9 CBSE" -> "9C")
   const getGroupInitials = (name: string) => {
-    if (!name) return 'G';
-    const cleaned = name.replace(/chat|group/gi, '').trim();
-    const parts = cleaned.split(' ');
+    if (!name) return 'CB';
+    const cleaned = name.replace(/batch|chat|group/gi, '').trim();
+    const parts = cleaned.split(' ').filter(p => p.trim() && p.toLowerCase() !== 'class');
     if (parts.length > 1) {
       return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    if (parts.length === 1) {
+      return parts[0].substring(0, 2).toUpperCase();
     }
     return name.substring(0, 2).toUpperCase();
   };
@@ -1184,9 +1228,9 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
     const cleaned = name.toLowerCase();
     
     let classNum = '';
-    if (cleaned.includes('8th') || cleaned.includes('class 8')) classNum = '8';
-    else if (cleaned.includes('9th') || cleaned.includes('class 9')) classNum = '9';
-    else if (cleaned.includes('10th') || cleaned.includes('class 10')) classNum = '10';
+    if (cleaned.includes('8th') || cleaned.includes('class 8') || cleaned.includes(' 8')) classNum = '8';
+    else if (cleaned.includes('9th') || cleaned.includes('class 9') || cleaned.includes(' 9')) classNum = '9';
+    else if (cleaned.includes('10th') || cleaned.includes('class 10') || cleaned.includes(' 10')) classNum = '10';
 
     if (classNum && studentsList && studentsList.length > 0) {
       const classStudents = studentsList.filter(s => {
@@ -1206,18 +1250,18 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
     }
 
     // Correct fallbacks corresponding to actual database document counts
-    if (cleaned.includes('8th')) return '14 Students • 14 Parents';
-    if (cleaned.includes('9th')) return '25 Students • 25 Parents';
-    if (cleaned.includes('10th')) return '22 Students • 21 Parents';
+    if (cleaned.includes('8th') || cleaned.includes('class 8')) return '14 Students • 14 Parents';
+    if (cleaned.includes('9th') || cleaned.includes('class 9')) return '25 Students • 25 Parents';
+    if (cleaned.includes('10th') || cleaned.includes('class 10')) return '22 Students • 21 Parents';
     
     return 'Class group conversation';
   };
 
   const getGroupBadgeColor = (name: string) => {
     const cleaned = name.toLowerCase();
-    if (cleaned.includes('8th')) return 'rgba(99, 102, 241, 0.2)';
-    if (cleaned.includes('9th')) return 'rgba(16, 185, 129, 0.2)';
-    if (cleaned.includes('10th')) return 'rgba(245, 158, 11, 0.2)';
+    if (cleaned.includes('8th') || cleaned.includes('class 8')) return 'rgba(99, 102, 241, 0.2)';
+    if (cleaned.includes('9th') || cleaned.includes('class 9')) return 'rgba(16, 185, 129, 0.2)';
+    if (cleaned.includes('10th') || cleaned.includes('class 10')) return 'rgba(245, 158, 11, 0.2)';
     return 'rgba(56, 189, 248, 0.2)';
   };
 
@@ -1460,7 +1504,7 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
                 const isActive = room.roomId === activeRoomId;
                 const unread = room.unreadCounts?.[adminUid] || 0;
                 const isDM = room.type === 'dm';
-                const displayName = room.name || '';
+                const displayName = getRoomDisplayName(room);
 
                 return (
                   <div
@@ -1502,7 +1546,7 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
                         width: '46px',
                         height: '46px',
                         borderRadius: '10px',
-                        background: getGroupBadgeColor(room.name),
+                        background: getGroupBadgeColor(displayName),
                         color: 'var(--text-on-accent)',
                         display: 'flex',
                         alignItems: 'center',
@@ -1511,7 +1555,7 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
                         fontSize: '15px',
                         flexShrink: 0
                       }}>
-                        {getGroupInitials(room.name)}
+                        {getGroupInitials(displayName)}
                       </div>
                     ) : (
                       <div style={{ position: 'relative', flexShrink: 0 }}>
@@ -1548,7 +1592,7 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '3px' }}>
                         <span style={{ fontSize: '12px', color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                           {room.type === 'group' 
-                            ? getGroupSubtext(room.name)
+                            ? getGroupSubtext(displayName)
                             : (room.lastMessage ? `${room.lastMessage.senderName}: ${room.lastMessage.text}` : 'Direct Conversation')}
                         </span>
                         {unread > 0 && (
@@ -1599,48 +1643,48 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
             <>
               {/* Active conversation Header */}
               <div style={{ 
-                padding: isMobile ? '6px 10px' : '10px 16px', 
-                borderBottom: '1px solid var(--border)', 
-                background: 'var(--surface-popover)', 
-                display: 'flex', 
-                flexDirection: isMobile ? 'column' : 'row',
-                alignItems: isMobile ? 'stretch' : 'center',
-                justifyContent: 'space-between',
-                gap: isMobile ? '4px' : '8px', 
-                zIndex: 5 
-              }}>
-                {/* Row 1: Back + Info */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0, width: '100%', justifyContent: 'space-between' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
-                    {isMobile && (
-                      <button 
-                        onClick={() => setActiveRoomId('')} 
-                        style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '14px', padding: '6px 4px 6px 0', color: 'var(--accent)', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '2px' }}
-                      >
-                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
-                      </button>
-                    )}
-                    <div style={{ position: 'relative', flexShrink: 0 }}>
-                      <div style={{
-                        width: isMobile ? '36px' : '42px',
-                        height: isMobile ? '36px' : '42px',
-                        borderRadius: activeRoom?.type === 'group' ? '10px' : '50%',
-                        background: activeRoom?.type === 'group' ? getGroupBadgeColor(activeRoom.name) : 'var(--accent)',
-                        color: 'var(--text-on-accent)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontWeight: 'bold',
-                        fontSize: isMobile ? '12px' : '14px'
-                      }}>
-                        {activeRoom?.type === 'group' ? getGroupInitials(activeRoom.name) : (activeRoom?.name ? activeRoom.name[0].toUpperCase() : 'S')}
-                      </div>
-                      <span style={{ position: 'absolute', bottom: '0px', right: '0px', width: '8px', height: '8px', borderRadius: '50%', background: 'var(--success)', border: '1.5px solid var(--surface-popover)' }} />
-                    </div>
-                    <div style={{ minWidth: 0, marginLeft: '2px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <h3 style={{ margin: 0, fontSize: isMobile ? '14px' : '15px', fontWeight: 600, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                        {activeRoom?.name}
-                      </h3>
+                    padding: isMobile ? '6px 10px' : '10px 16px', 
+                    borderBottom: '1px solid var(--border)', 
+                    background: 'var(--surface-popover)', 
+                    display: 'flex', 
+                    flexDirection: isMobile ? 'column' : 'row',
+                    alignItems: isMobile ? 'stretch' : 'center',
+                    justifyContent: 'space-between',
+                    gap: isMobile ? '4px' : '8px', 
+                    zIndex: 5 
+                  }}>
+                    {/* Row 1: Back + Info */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0, width: '100%', justifyContent: 'space-between' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+                        {isMobile && (
+                          <button 
+                            onClick={() => setActiveRoomId('')} 
+                            style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '14px', padding: '6px 4px 6px 0', color: 'var(--accent)', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '2px' }}
+                          >
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+                          </button>
+                        )}
+                        <div style={{ position: 'relative', flexShrink: 0 }}>
+                          <div style={{
+                            width: isMobile ? '36px' : '42px',
+                            height: isMobile ? '36px' : '42px',
+                            borderRadius: activeRoom?.type === 'group' ? '10px' : '50%',
+                            background: activeRoom?.type === 'group' ? getGroupBadgeColor(activeDisplayName) : 'var(--accent)',
+                            color: 'var(--text-on-accent)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontWeight: 'bold',
+                            fontSize: isMobile ? '12px' : '14px'
+                          }}>
+                            {activeRoom?.type === 'group' ? getGroupInitials(activeDisplayName) : (activeDisplayName ? activeDisplayName[0].toUpperCase() : 'S')}
+                          </div>
+                          <span style={{ position: 'absolute', bottom: '0px', right: '0px', width: '8px', height: '8px', borderRadius: '50%', background: 'var(--success)', border: '1.5px solid var(--surface-popover)' }} />
+                        </div>
+                        <div style={{ minWidth: 0, marginLeft: '2px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <h3 style={{ margin: 0, fontSize: isMobile ? '14px' : '15px', fontWeight: 600, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {activeDisplayName}
+                          </h3>
                       {isMessageSelectMode && (
                         <button
                           onClick={() => {
