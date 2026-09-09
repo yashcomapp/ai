@@ -4,6 +4,19 @@ import { verifyRole, verifyAnyRole } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
+function isExistentCommunication(room: any): boolean {
+  if (!room) return false;
+  if (room.type === 'group') return true;
+  if (room.type === 'dm') {
+    if (!room.lastMessage || !room.lastMessage.text) return false;
+    const text = String(room.lastMessage.text).trim();
+    if (!text) return false;
+    if (text.includes('Private direct message channel established')) return false;
+    return true;
+  }
+  return true;
+}
+
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
@@ -51,9 +64,9 @@ export async function GET(req: NextRequest) {
         });
         if (hasInactive) return false;
 
-        // For DM rooms: ONLY include existent communications (rooms with a lastMessage and message text)
-        if (room.type === 'dm') {
-          if (!room.lastMessage || !room.lastMessage.text) return false;
+        // For DM rooms: ONLY include existent communications (rooms with a genuine user message)
+        if (room.type === 'dm' && !isExistentCommunication(room)) {
+          return false;
         }
         return true;
       });
@@ -191,6 +204,7 @@ export async function GET(req: NextRequest) {
         .get();
       
       let rooms = roomsQuery.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any[];
+      rooms = rooms.filter(room => isExistentCommunication(room));
       rooms.sort((a, b) => {
         const timeA = a.lastMessage?.timestamp ? new Date(a.lastMessage.timestamp).getTime() : (a.createdAt ? new Date(a.createdAt).getTime() : 0);
         const timeB = b.lastMessage?.timestamp ? new Date(b.lastMessage.timestamp).getTime() : (b.createdAt ? new Date(b.createdAt).getTime() : 0);
@@ -300,11 +314,6 @@ export async function GET(req: NextRequest) {
               name: `${sName} (Direct Message)`,
               participants,
               unreadCounts,
-              lastMessage: {
-                text: 'Private direct message channel established with Teacher.',
-                senderName: 'System',
-                timestamp: new Date().toISOString()
-              },
               createdAt: new Date().toISOString()
             }));
           } else {
@@ -380,7 +389,13 @@ export async function GET(req: NextRequest) {
         .where('participants', 'array-contains', pKey)
         .get();
       
-      const rooms = roomsQuery.docs.map((doc: any) => ({ id: doc.id, ...doc.data() }));
+      let rooms = roomsQuery.docs.map((doc: any) => ({ id: doc.id, ...doc.data() }));
+      rooms = rooms.filter(room => isExistentCommunication(room));
+      rooms.sort((a, b) => {
+        const timeA = a.lastMessage?.timestamp ? new Date(a.lastMessage.timestamp).getTime() : (a.createdAt ? new Date(a.createdAt).getTime() : 0);
+        const timeB = b.lastMessage?.timestamp ? new Date(b.lastMessage.timestamp).getTime() : (b.createdAt ? new Date(b.createdAt).getTime() : 0);
+        return timeB - timeA;
+      });
       return NextResponse.json({ success: true, rooms });
     }
 
@@ -565,11 +580,6 @@ export async function POST(req: NextRequest) {
         unreadCounts: {
           [adminUid]: 0,
           [cleanCode]: 0
-        },
-        lastMessage: {
-          text: 'Private direct message channel established.',
-          senderName: 'System',
-          timestamp: new Date().toISOString()
         },
         createdAt: new Date().toISOString()
       };
