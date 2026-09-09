@@ -127,6 +127,9 @@ export async function GET(req: NextRequest) {
         email: d.email || '',
         batchId: d.batchId || '',
         classNum: d.class || d.classNum || '',
+        parentEmail: d.parentEmail || '',
+        parentName: d.parentName || '',
+        parentPhone: d.parentPhone || d.parentMobile || '',
         status: d.status || 'active'
       };
     }).filter(s => s.status === 'active');

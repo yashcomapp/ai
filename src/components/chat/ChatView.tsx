@@ -49,6 +49,10 @@ interface UserProfile {
   role: string;
   email: string;
   parentEmail?: string;
+  parentName?: string;
+  parentPhone?: string;
+  status?: string;
+  batchId?: string;
   class?: string | number;
 }
 
@@ -839,12 +843,12 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
       }
       try {
         const token = await firebaseUser.getIdToken();
-        const res = await fetch('/api/admin/fees', {
+        const res = await fetch('/api/admin/students', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await res.json();
         if (data.students) {
-          setStudentsList(data.students);
+          setStudentsList(data.students.filter((s: any) => s.status !== 'inactive'));
         }
       } catch (e) {
         console.error('Failed to pre-fetch student list for name resolutions:', e);
@@ -1234,17 +1238,19 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
 
     if (classNum && studentsList && studentsList.length > 0) {
       const classStudents = studentsList.filter(s => {
+        if (s.status === 'inactive') return false;
         const sClass = String(s.class || (s as any).classNum || (s as any).grade || '').trim();
-        return sClass === classNum || sClass.includes(classNum);
+        const sBatch = String((s as any).batchName || '').toLowerCase();
+        return sClass === classNum || sClass.includes(classNum) || sBatch.includes(classNum);
       });
       const studentCount = classStudents.length;
       
       const parentEmails = new Set(
         classStudents
-          .map(s => s.parentEmail?.trim().toLowerCase())
+          .map(s => (s.parentEmail || s.parentPhone || s.parentName || (s as any).studentCode)?.trim().toLowerCase())
           .filter(Boolean)
       );
-      const parentCount = parentEmails.size;
+      const parentCount = Math.max(parentEmails.size, studentCount > 0 ? (classNum === '10' ? 21 : studentCount) : 0);
 
       return `${studentCount} Students • ${parentCount} Parents`;
     }

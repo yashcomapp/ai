@@ -6,6 +6,8 @@ import { formatToDDMMYYYY, formatToYYYYMMDD } from '@/lib/dateUtils';
 interface DateInputDMYProps {
   value?: string; // Standard YYYY-MM-DD or DD/MM/YYYY
   onChange: (isoDate: string) => void;
+  onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+  inputRef?: React.Ref<HTMLInputElement>;
   placeholder?: string;
   disabled?: boolean;
   required?: boolean;
@@ -21,6 +23,8 @@ interface DateInputDMYProps {
 export default function DateInputDMY({
   value,
   onChange,
+  onKeyDown,
+  inputRef,
   placeholder = 'DD/MM/YYYY',
   disabled = false,
   required = false,
@@ -97,21 +101,25 @@ export default function DateInputDMY({
         position: 'relative',
         display: 'inline-flex',
         alignItems: 'center',
+        boxSizing: 'border-box',
         ...style
       }}
       className={className}
     >
       <input
+        ref={inputRef}
         type="text"
         value={displayText}
         onChange={handleTextChange}
+        onKeyDown={onKeyDown}
         placeholder={placeholder}
         disabled={disabled}
         required={required}
         maxLength={10}
         style={{
           width: '100%',
-          padding: '6px 30px 6px 8px',
+          boxSizing: 'border-box',
+          padding: '6px 28px 6px 8px',
           borderRadius: '4px',
           border: '1px solid var(--border-light)',
           background: 'var(--surface)',
@@ -146,6 +154,7 @@ export default function DateInputDMY({
         type="button"
         onClick={openCalendar}
         disabled={disabled}
+        tabIndex={-1}
         title="Pick date (DD/MM/YYYY)"
         style={{
           position: 'absolute',
