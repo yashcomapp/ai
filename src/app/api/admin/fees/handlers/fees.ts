@@ -221,6 +221,94 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, message: 'Student fee configuration saved.' });
     }
 
+    if (action === 'applyTemplateToBatch') {
+      const { templateId, classNum, batchId, onlyUnconfigured } = body;
+      if (!templateId) {
+        return NextResponse.json({ error: 'Missing templateId.' }, { status: 400 });
+      }
+
+      const tmplDoc = await adminDb.collection('feeTemplates').doc(templateId).get();
+      if (!tmplDoc.exists) {
+        return NextResponse.json({ error: 'Template not found.' }, { status: 404 });
+      }
+      const tmplData = tmplDoc.data()!;
+
+      const studentsSnap = await adminDb.collection('users')
+        .where('role', '==', 'student')
+        .get();
+
+      const targetStudents = studentsSnap.docs.map(doc => {
+        const d = doc.data();
+        return {
+          uid: doc.id,
+          name: d.name || '',
+          studentCode: (d.studentCode || '').trim().toUpperCase(),
+          batchId: d.batchId || '',
+          classNum: String(d.class || d.classNum || ''),
+          status: d.status || 'active'
+        };
+      }).filter(s => {
+        if (!s.studentCode || s.status !== 'active') return false;
+        if (batchId && s.batchId !== batchId) return false;
+        if (classNum && s.classNum !== String(classNum)) return false;
+        if (!batchId && !classNum && tmplData.classNum && s.classNum !== String(tmplData.classNum)) return false;
+        return true;
+      });
+
+      if (targetStudents.length === 0) {
+        return NextResponse.json({ error: 'No active students found matching criteria.' }, { status: 404 });
+      }
+
+      const existingFeesSnap = await adminDb.collection('studentFees').get();
+      const existingFeesSet = new Set(existingFeesSnap.docs.map(doc => doc.id.toUpperCase()));
+
+      const formattedInstallments = (tmplData.installments || []).map((inst: any, idx: number) => ({
+        installmentId: `inst_${idx + 1}`,
+        installmentNo: idx + 1,
+        amount: Number(inst.amount),
+        dueDate: String(inst.dueDate || ''),
+        status: 'pending',
+        paidAt: null
+      }));
+
+      let updatedCount = 0;
+      for (const student of targetStudents) {
+        if (onlyUnconfigured && existingFeesSet.has(student.studentCode)) {
+          continue;
+        }
+
+        const feeRef = adminDb.collection('studentFees').doc(student.studentCode);
+        const record = {
+          studentCode: student.studentCode,
+          studentName: student.name,
+          classNum: student.classNum,
+          batchId: student.batchId,
+          totalPackageAmount: Number(tmplData.totalPackageAmount),
+          discountAmount: 0,
+          netPayableAmount: Number(tmplData.totalPackageAmount),
+          registrationFee: {
+            amount: Number(tmplData.registrationFee || 0),
+            status: 'pending',
+            paidAt: null
+          },
+          installments: formattedInstallments,
+          templateId: tmplDoc.id,
+          templateName: tmplData.name || '',
+          updatedAt: new Date().toISOString()
+        };
+
+        await feeRef.set(record, { merge: false });
+        await recalculateStudentFeeStats(student.studentCode);
+        updatedCount++;
+      }
+
+      return NextResponse.json({ 
+        success: true, 
+        count: updatedCount, 
+        message: `Successfully applied "${tmplData.name}" to ${updatedCount} student(s).` 
+      });
+    }
+
     return NextResponse.json({ error: 'Invalid action.' }, { status: 400 });
   } catch (error: any) {
     console.error('API POST student fees error:', error);

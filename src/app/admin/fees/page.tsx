@@ -162,8 +162,59 @@ export default function AdminFeesPage() {
   const [txDate, setTxDate] = useState(() => getDateKeyIST());
   const [savingTx, setSavingTx] = useState(false);
 
+  // Mass Apply Template State
+  const [massTargetClass, setMassTargetClass] = useState('10');
+  const [massTargetTemplate, setMassTargetTemplate] = useState('');
+  const [massOnlyUnconfigured, setMassOnlyUnconfigured] = useState(false);
+  const [massApplying, setMassApplying] = useState(false);
+
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
+  // Mass apply template to entire class/batch
+  const handleMassApplyTemplate = async (templateId: string, classNum?: string, onlyUnconfigured = false) => {
+    const tmpl = templates.find(t => t.templateId === templateId);
+    if (!tmpl) {
+      alert('Please select a valid Blanket Template.');
+      return;
+    }
+    const targetClass = classNum || tmpl.classNum;
+    const countStudentsInClass = students.filter(s => String(s.classNum) === String(targetClass)).length;
+    
+    const confirmMsg = onlyUnconfigured
+      ? `Apply template "${tmpl.name}" to all UNCONFIGURED students in Class ${targetClass}?\n(Total students in class: ${countStudentsInClass})`
+      : `Apply template "${tmpl.name}" to ALL active students in Class ${targetClass}?\n(Total students to update: ${countStudentsInClass})`;
+    
+    if (!confirm(confirmMsg)) return;
+
+    setMassApplying(true);
+    setError('');
+    setSuccess('');
+    try {
+      const token = await firebaseUser!.getIdToken();
+      const res = await fetch('/api/admin/fees', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          action: 'applyTemplateToBatch',
+          templateId,
+          classNum: targetClass,
+          onlyUnconfigured
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to mass apply template');
+      setSuccess(data.message || `Successfully configured fees for Class ${targetClass}.`);
+      loadStudents();
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setMassApplying(false);
+    }
+  };
 
   // Fetch student sheets
   async function loadStudents() {
@@ -512,8 +563,71 @@ export default function AdminFeesPage() {
         {/* WORKSPACE 1: Student Sheets Override */}
         {activeTab === 'students' && !selectedStudent && (
           <div className="card" style={{ background: 'var(--surface)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
-            <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-light)' }}>
-              <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 'bold' }}>Active Students Ledgers</h3>
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 800 }}>Active Students Ledgers</h3>
+                <p style={{ margin: '2px 0 0 0', fontSize: '11px', color: 'var(--text-muted)' }}>
+                  Total {students.length} students across classes. Assign blanket structures or override individually.
+                </p>
+              </div>
+            </div>
+
+            {/* Quick Mass Apply Bar */}
+            <div style={{ padding: '12px 20px', background: 'var(--bg-soft)', borderBottom: '1px solid var(--border-light)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  ⚡ Mass-Assign Template to Class:
+                </span>
+                
+                <select
+                  value={massTargetClass}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setMassTargetClass(val);
+                    const match = templates.find(t => t.classNum === val);
+                    if (match) setMassTargetTemplate(match.templateId);
+                  }}
+                  style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid var(--border-light)', background: 'var(--surface)', color: 'var(--text)', fontSize: '12px', fontWeight: 600 }}
+                >
+                  <option value="8">Class 8</option>
+                  <option value="9">Class 9</option>
+                  <option value="10">Class 10</option>
+                  <option value="11">Class 11</option>
+                  <option value="12">Class 12</option>
+                </select>
+
+                <select
+                  value={massTargetTemplate}
+                  onChange={(e) => setMassTargetTemplate(e.target.value)}
+                  style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid var(--border-light)', background: 'var(--surface)', color: 'var(--text)', fontSize: '12px', minWidth: '200px' }}
+                >
+                  <option value="">-- Select Template --</option>
+                  {templates.map(t => (
+                    <option key={t.templateId} value={t.templateId}>
+                      {t.name} (Class {t.classNum} • ₹{t.totalPackageAmount} • {t.installments?.length || 0} splits)
+                    </option>
+                  ))}
+                </select>
+
+                <label style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', color: 'var(--text-muted)', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={massOnlyUnconfigured}
+                    onChange={(e) => setMassOnlyUnconfigured(e.target.checked)}
+                  />
+                  Only unconfigured students
+                </label>
+              </div>
+
+              <button
+                type="button"
+                className="btn btn-primary"
+                disabled={!massTargetTemplate || massApplying}
+                onClick={() => handleMassApplyTemplate(massTargetTemplate, massTargetClass, massOnlyUnconfigured)}
+                style={{ padding: '7px 16px', fontSize: '12px', fontWeight: 700, borderRadius: '6px' }}
+              >
+                {massApplying ? 'Applying...' : `⚡ Apply to All Class ${massTargetClass} Students`}
+              </button>
             </div>
             {loadingStudents ? (
               <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>Loading student sheets...</div>
@@ -842,19 +956,13 @@ export default function AdminFeesPage() {
                         <td style={{ padding: '14px 16px', fontSize: '13px' }}>{t.installments?.length || 0} Splits</td>
                         <td style={{ padding: '14px 16px', textAlign: 'right' }}>
                           <button
-                            onClick={async () => {
-                              if (!confirm('Are you sure you want to delete this template?')) return;
-                              const token = await firebaseUser!.getIdToken();
-                              await fetch('/api/admin/fees/templates', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                                body: JSON.stringify({ action: 'deleteTemplate', templateId: t.templateId })
-                              });
-                              loadTemplates();
-                            }}
-                            style={{ border: 'none', background: 'transparent', color: 'var(--danger)', cursor: 'pointer', fontSize: '1rem', marginRight: '8px' }}
+                            onClick={() => handleMassApplyTemplate(t.templateId, t.classNum, false)}
+                            disabled={massApplying}
+                            className="btn btn-primary"
+                            style={{ padding: '4px 10px', fontSize: '11px', fontWeight: 700, marginRight: '8px', borderRadius: '4px' }}
+                            title={`Apply ${t.name} to all active Class ${t.classNum} students`}
                           >
-                            🗑️
+                            ⚡ Apply to Class {t.classNum}
                           </button>
                           <button
                             onClick={() => {
@@ -870,9 +978,25 @@ export default function AdminFeesPage() {
                               setShowTemplateModal(true);
                             }}
                             className="btn btn-secondary"
-                            style={{ padding: '4px 8px', fontSize: '11px' }}
+                            style={{ padding: '4px 8px', fontSize: '11px', marginRight: '8px' }}
                           >
                             ✏️ Edit
+                          </button>
+                          <button
+                            onClick={async () => {
+                              if (!confirm('Are you sure you want to delete this template?')) return;
+                              const token = await firebaseUser!.getIdToken();
+                              await fetch('/api/admin/fees/templates', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                                body: JSON.stringify({ action: 'deleteTemplate', templateId: t.templateId })
+                              });
+                              loadTemplates();
+                            }}
+                            style={{ border: 'none', background: 'transparent', color: 'var(--danger)', cursor: 'pointer', fontSize: '1rem' }}
+                            title="Delete template"
+                          >
+                            🗑️
                           </button>
                         </td>
                       </tr>
