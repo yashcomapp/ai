@@ -1128,37 +1128,52 @@ export default function AdminFeesPage() {
 
       {/* Template Modal */}
       {showTemplateModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.55)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '16px' }}>
-          <div className="card" style={{ background: 'var(--surface-popover)', border: '1px solid var(--border-popover)', borderRadius: 'var(--radius-lg)', maxWidth: '740px', width: '100%', maxHeight: '94vh', display: 'flex', flexDirection: 'column', boxShadow: 'var(--shadow-lg)' }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.6)', backdropFilter: 'blur(5px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '16px' }}>
+          <div className="card" style={{ background: 'var(--surface-popover)', border: '1px solid var(--border-popover)', borderRadius: '12px', maxWidth: '680px', width: '100%', maxHeight: '92vh', display: 'flex', flexDirection: 'column', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.4)', overflow: 'hidden' }}>
             
-            <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 'bold' }}>
-                {selectedTemplate ? '✏️ Edit Template splits' : '➕ Create Blanket Template'}
-              </h3>
-              <button style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '1.3rem', color: 'var(--text-muted)' }} onClick={() => setShowTemplateModal(false)}>×</button>
+            {/* Modal Header */}
+            <div style={{ padding: '16px 22px', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--surface-popover)' }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: 'var(--text)' }}>
+                  {selectedTemplate ? '✏️ Edit Blanket Template' : '➕ Create Blanket Template'}
+                </h3>
+                <p style={{ margin: '2px 0 0 0', fontSize: '11px', color: 'var(--text-muted)' }}>
+                  Define standard package fees and installment due dates for a class
+                </p>
+              </div>
+              <button 
+                type="button"
+                style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '1.4rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px', borderRadius: '4px' }} 
+                onClick={() => setShowTemplateModal(false)}
+              >
+                ✕
+              </button>
             </div>
 
-            <form onSubmit={handleSaveTemplate} style={{ padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '14px', flex: 1 }}>
+            {/* Modal Form Body */}
+            <form onSubmit={handleSaveTemplate} style={{ padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: '16px', overflowY: 'auto', overflowX: 'hidden', flex: 1, boxSizing: 'border-box' }}>
               
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '11px', fontWeight: 600 }}>Template Name</label>
+              {/* Template Name */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                <label style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-muted)' }}>Template Name</label>
                 <input
                   type="text"
                   required
                   value={tmplName}
                   onChange={(e) => setTmplName(e.target.value)}
                   placeholder="e.g. Class 8th 2026-27"
-                  style={{ padding: '8px 10px', borderRadius: '4px', border: '1px solid var(--border-light)', background: 'var(--bg-soft)', color: 'var(--text)' }}
+                  style={{ padding: '8px 12px', height: '38px', borderRadius: '6px', border: '1px solid var(--border-light)', background: 'var(--bg-soft)', color: 'var(--text)', fontSize: '13px', boxSizing: 'border-box' }}
                 />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '140px 1fr 1fr', gap: '10px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '11px', fontWeight: 600 }}>Class</label>
+              {/* Class, Total, Registration Row */}
+              <div style={{ display: 'grid', gridTemplateColumns: '130px 1fr 1fr', gap: '12px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                  <label style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-muted)' }}>Class</label>
                   <select
                     value={tmplClass}
                     onChange={(e) => setTmplClass(e.target.value)}
-                    style={{ padding: '8px 10px', borderRadius: '4px', border: '1px solid var(--border-light)', background: 'var(--bg-soft)', color: 'var(--text)', width: '100%', minWidth: '120px' }}
+                    style={{ padding: '8px 10px', height: '38px', borderRadius: '6px', border: '1px solid var(--border-light)', background: 'var(--bg-soft)', color: 'var(--text)', fontSize: '13px', fontWeight: 600, width: '100%', boxSizing: 'border-box' }}
                   >
                     <option value="8">Class 8</option>
                     <option value="9">Class 9</option>
@@ -1167,8 +1182,9 @@ export default function AdminFeesPage() {
                     <option value="12">Class 12</option>
                   </select>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '11px', fontWeight: 600 }}>Total Package (₹)</label>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                  <label style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-muted)' }}>Total Package (₹)</label>
                   <input
                     type="number"
                     required
@@ -1177,11 +1193,13 @@ export default function AdminFeesPage() {
                       const raw = e.target.value;
                       setTmplTotal(raw === '' ? '' as any : Number(raw));
                     }}
-                    style={{ padding: '8px 10px', borderRadius: '4px', border: '1px solid var(--border-light)', background: 'var(--bg-soft)', color: 'var(--text)' }}
+                    placeholder="e.g. 25000"
+                    style={{ padding: '8px 12px', height: '38px', borderRadius: '6px', border: '1px solid var(--border-light)', background: 'var(--bg-soft)', color: 'var(--text)', fontSize: '13px', fontWeight: 600, boxSizing: 'border-box' }}
                   />
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '11px', fontWeight: 600 }}>Registration Fee (₹)</label>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                  <label style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-muted)' }}>Registration Fee (₹)</label>
                   <input
                     type="number"
                     value={tmplReg === 0 ? '' : (tmplReg ?? '')}
@@ -1189,99 +1207,187 @@ export default function AdminFeesPage() {
                       const raw = e.target.value;
                       setTmplReg(raw === '' ? '' as any : Number(raw));
                     }}
-                    style={{ padding: '8px 10px', borderRadius: '4px', border: '1px solid var(--border-light)', background: 'var(--bg-soft)', color: 'var(--text)' }}
+                    placeholder="e.g. 5000"
+                    style={{ padding: '8px 12px', height: '38px', borderRadius: '6px', border: '1px solid var(--border-light)', background: 'var(--bg-soft)', color: 'var(--text)', fontSize: '13px', fontWeight: 600, boxSizing: 'border-box' }}
                   />
                 </div>
               </div>
 
-              {/* Installment offsets */}
-              <div style={{ border: '1px solid var(--border-light)', borderRadius: 'var(--radius)', overflow: 'hidden' }}>
-                <div style={{ padding: '10px 12px', background: 'var(--bg-soft)', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              {/* Installments Splits Section */}
+              <div style={{ border: '1px solid var(--border-light)', borderRadius: '8px', overflow: 'hidden', background: 'var(--surface)' }}>
+                {/* Splits Header */}
+                <div style={{ padding: '10px 14px', background: 'var(--bg-soft)', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div>
-                    <h4 style={{ margin: 0, fontSize: '12px', fontWeight: 'bold' }}>Installments splits</h4>
-                    <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Press Tab on the last split date to automatically create the next split</span>
+                    <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text)' }}>Installment Splits</span>
+                    <span style={{ fontSize: '10px', color: 'var(--text-muted)', marginLeft: '8px' }}>(Press Tab on last date to add next split)</span>
                   </div>
-                  <button type="button" className="btn btn-secondary" onClick={addTmplInstRow} style={{ padding: '3px 10px', fontSize: '11px', fontWeight: 600 }}>
+                  <button 
+                    type="button" 
+                    className="btn btn-secondary" 
+                    onClick={addTmplInstRow} 
+                    style={{ padding: '4px 10px', fontSize: '11px', fontWeight: 600, borderRadius: '6px' }}
+                  >
                     ➕ Add Split
                   </button>
                 </div>
 
+                {/* Balance validation bar */}
                 {(() => {
                   const sumOfSplits = tmplInstallments.reduce((sum, inst) => sum + Number(inst.amount || 0), 0);
-                  const totalWithReg = sumOfSplits + tmplReg;
-                  const isMatch = totalWithReg === tmplTotal;
+                  const totalWithReg = sumOfSplits + Number(tmplReg || 0);
+                  const totalPkg = Number(tmplTotal || 0);
+                  const isMatch = totalPkg > 0 && totalWithReg === totalPkg;
+                  const diff = totalPkg - totalWithReg;
                   return (
                     <div style={{
-                      padding: '8px 12px',
+                      padding: '8px 14px',
                       fontSize: '11px',
                       fontWeight: 600,
-                      background: isMatch ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                      background: isMatch ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.08)',
                       color: isMatch ? 'var(--success)' : 'var(--danger)',
-                      borderBottom: '1px solid var(--border-light)'
+                      borderBottom: '1px solid var(--border-light)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between'
                     }}>
-                      {isMatch ? (
-                        <span>✓ Splits match total package (₹{tmplTotal}).</span>
-                      ) : (
-                        <span>⚠️ Sum of splits (₹{sumOfSplits}) + Reg Fee (₹{tmplReg}) = ₹{totalWithReg}. Difference from Total Package (₹{tmplTotal}): ₹{tmplTotal - totalWithReg}.</span>
+                      <span>
+                        {isMatch 
+                          ? `✓ Splits perfectly match Total Package (₹${totalPkg}).` 
+                          : `⚠️ Sum (₹${sumOfSplits}) + Reg Fee (₹${tmplReg || 0}) = ₹${totalWithReg}. Difference: ₹${diff}.`
+                        }
+                      </span>
+                      {diff > 0 && tmplInstallments.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setTmplInstallments(prev => {
+                              const copy = [...prev];
+                              const lastIdx = copy.length - 1;
+                              copy[lastIdx] = { ...copy[lastIdx], amount: Number(copy[lastIdx].amount || 0) + diff };
+                              return copy;
+                            });
+                          }}
+                          style={{ border: 'none', background: 'transparent', color: 'var(--accent)', cursor: 'pointer', fontSize: '10px', fontWeight: 700, textDecoration: 'underline' }}
+                        >
+                          Auto-balance +₹{diff}
+                        </button>
                       )}
                     </div>
                   );
                 })()}
 
-                <div style={{ maxHeight: '480px', overflowY: 'auto', overflowX: 'hidden' }}>
-                  {tmplInstallments.map((inst, idx) => (
-                    <div key={idx} style={{ display: 'flex', gap: '10px', padding: '10px 12px', borderBottom: '1px solid var(--border-light)', alignItems: 'center', boxSizing: 'border-box' }}>
-                      <span style={{ fontSize: '12px', fontWeight: 'bold', width: '45px', color: 'var(--text-muted)' }}># {idx + 1}</span>
-                      
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <span style={{ fontSize: '11px', fontWeight: 600 }}>₹</span>
-                        <input
-                          type="number"
-                          placeholder="Amount"
-                          required
-                          className="tmpl-inst-amount-input"
-                          value={inst.amount === 0 ? '' : (inst.amount ?? '')}
-                          onChange={(e) => {
-                            const raw = e.target.value;
-                            const val = raw === '' ? ('' as any) : Number(raw);
-                            setTmplInstallments(prev => prev.map((item, i) => i === idx ? { ...item, amount: val } : item));
-                          }}
-                          style={{ padding: '6px 8px', width: '110px', borderRadius: '4px', border: '1px solid var(--border-light)', background: 'var(--surface)', color: 'var(--text)', fontSize: '12px', fontWeight: 600 }}
-                        />
-                      </div>
-
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flex: 1, minWidth: '150px' }}>
-                        <DateInputDMY
-                          value={inst.dueDate || ''}
-                          onChange={(val) => {
-                            setTmplInstallments(prev => prev.map((item, i) => i === idx ? { ...item, dueDate: val } : item));
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Tab' && !e.shiftKey && idx === tmplInstallments.length - 1) {
-                              e.preventDefault();
-                              addTmplInstRow();
-                            }
-                          }}
-                          style={{ width: '100%', maxWidth: '200px' }}
-                        />
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() => setTmplInstallments(prev => prev.filter((_, i) => i !== idx))}
-                        style={{ border: 'none', background: 'transparent', color: 'var(--danger)', cursor: 'pointer', fontSize: '1.1rem', padding: '4px', marginLeft: 'auto' }}
-                        title="Delete split"
-                      >
-                        🗑️
-                      </button>
+                {/* Splits rows list */}
+                <div style={{ maxHeight: '380px', overflowY: 'auto', overflowX: 'hidden' }}>
+                  {tmplInstallments.length === 0 ? (
+                    <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '12px' }}>
+                      No installment splits added yet. Click <strong>+ Add Split</strong> to create one.
                     </div>
-                  ))}
+                  ) : (
+                    tmplInstallments.map((inst, idx) => (
+                      <div 
+                        key={idx} 
+                        style={{ 
+                          display: 'grid', 
+                          gridTemplateColumns: '40px 140px 1fr 36px', 
+                          gap: '10px', 
+                          padding: '8px 14px', 
+                          borderBottom: idx === tmplInstallments.length - 1 ? 'none' : '1px solid var(--border-light)', 
+                          alignItems: 'center',
+                          boxSizing: 'border-box'
+                        }}
+                      >
+                        {/* Index */}
+                        <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', background: 'var(--bg-soft)', borderRadius: '4px', padding: '3px 6px', textAlign: 'center' }}>
+                          #{idx + 1}
+                        </span>
+
+                        {/* Amount */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)' }}>₹</span>
+                          <input
+                            type="number"
+                            placeholder="Amount"
+                            required
+                            className="tmpl-inst-amount-input"
+                            value={inst.amount === 0 ? '' : (inst.amount ?? '')}
+                            onChange={(e) => {
+                              const raw = e.target.value;
+                              const val = raw === '' ? ('' as any) : Number(raw);
+                              setTmplInstallments(prev => prev.map((item, i) => i === idx ? { ...item, amount: val } : item));
+                            }}
+                            style={{ 
+                              width: '100%', 
+                              height: '36px', 
+                              padding: '6px 8px', 
+                              borderRadius: '6px', 
+                              border: '1px solid var(--border-light)', 
+                              background: 'var(--surface)', 
+                              color: 'var(--text)', 
+                              fontSize: '12px', 
+                              fontWeight: 600,
+                              boxSizing: 'border-box'
+                            }}
+                          />
+                        </div>
+
+                        {/* Due Date */}
+                        <div>
+                          <DateInputDMY
+                            value={inst.dueDate || ''}
+                            onChange={(val) => {
+                              setTmplInstallments(prev => prev.map((item, i) => i === idx ? { ...item, dueDate: val } : item));
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Tab' && !e.shiftKey && idx === tmplInstallments.length - 1) {
+                                e.preventDefault();
+                                addTmplInstRow();
+                              }
+                            }}
+                          />
+                        </div>
+
+                        {/* Delete Action */}
+                        <button
+                          type="button"
+                          onClick={() => setTmplInstallments(prev => prev.filter((_, i) => i !== idx))}
+                          style={{ 
+                            border: 'none', 
+                            background: 'transparent', 
+                            color: 'var(--danger)', 
+                            cursor: 'pointer', 
+                            fontSize: '1.1rem', 
+                            padding: '4px', 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'center',
+                            borderRadius: '4px'
+                          }}
+                          title="Delete split"
+                        >
+                          🗑️
+                        </button>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '10px' }}>
-                <button type="button" className="btn btn-secondary" onClick={() => setShowTemplateModal(false)}>Cancel</button>
-                <button type="submit" className="btn btn-primary" disabled={savingTmpl}>
+              {/* Modal Footer */}
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', paddingTop: '6px' }}>
+                <button 
+                  type="button" 
+                  className="btn btn-secondary" 
+                  onClick={() => setShowTemplateModal(false)}
+                  style={{ padding: '8px 16px', fontSize: '13px', borderRadius: '6px' }}
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  className="btn btn-primary" 
+                  disabled={savingTmpl}
+                  style={{ padding: '8px 20px', fontSize: '13px', borderRadius: '6px', fontWeight: 600 }}
+                >
                   {savingTmpl ? 'Saving...' : '💾 Save Template splits'}
                 </button>
               </div>

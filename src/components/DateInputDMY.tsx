@@ -102,6 +102,7 @@ export default function DateInputDMY({
         display: 'inline-flex',
         alignItems: 'center',
         boxSizing: 'border-box',
+        width: '100%',
         ...style
       }}
       className={className}
@@ -119,15 +120,18 @@ export default function DateInputDMY({
         style={{
           width: '100%',
           boxSizing: 'border-box',
-          padding: '6px 28px 6px 8px',
-          borderRadius: '4px',
+          height: '36px',
+          padding: '6px 30px 6px 10px',
+          borderRadius: '6px',
           border: '1px solid var(--border-light)',
           background: 'var(--surface)',
           color: 'var(--text)',
-          fontSize: '11px',
+          fontSize: '12px',
+          fontWeight: 500,
           fontFamily: 'monospace, inherit',
           letterSpacing: '0.3px',
-          ...style
+          outline: 'none',
+          transition: 'border-color 0.15s ease'
         }}
       />
 
@@ -158,15 +162,15 @@ export default function DateInputDMY({
         title="Pick date (DD/MM/YYYY)"
         style={{
           position: 'absolute',
-          right: '4px',
+          right: '6px',
           background: 'transparent',
           border: 'none',
           cursor: disabled ? 'not-allowed' : 'pointer',
-          padding: '2px 4px',
+          padding: '4px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          fontSize: '12px',
+          fontSize: '13px',
           color: 'var(--text-muted)'
         }}
       >
