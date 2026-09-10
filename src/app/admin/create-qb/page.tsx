@@ -29,107 +29,7 @@ interface Template {
   typeCounts?: { [key: string]: number };
 }
 
-interface ExamBlueprint {
-  id: string;
-  name: string;
-  icon: string;
-  type: 'objective' | 'subjective';
-  typeRatios: Record<string, number>;
-  difficulty: { easy: number; medium: number; hard: number };
-  examCategory?: 'standard' | 'foundation';
-  description: string;
-}
 
-const CANONICAL_QB_OBJECTIVE_BLUEPRINTS: ExamBlueprint[] = [
-  {
-    id: 'daily_topic',
-    name: 'Daily Topic Test',
-    icon: '⚡',
-    type: 'objective',
-    typeRatios: { single_mcq: 60, assertion_reason: 15, multiple_mcq: 15, numerical: 10 },
-    difficulty: { easy: 30, medium: 50, hard: 20 },
-    examCategory: 'standard',
-    description: '60% Single Choice • 15% Assertion-Reason • 15% Multi Choice • 10% Numerical (or conceptual MCQ for non-numerical topics)'
-  },
-  {
-    id: 'chapter_mastery',
-    name: 'Chapter Mastery',
-    icon: '📖',
-    type: 'objective',
-    typeRatios: { single_mcq: 60, assertion_reason: 15, multiple_mcq: 15, numerical: 10 },
-    difficulty: { easy: 20, medium: 50, hard: 30 },
-    examCategory: 'standard',
-    description: '60% Single Choice • 15% Assertion-Reason • 15% Multi Choice • 10% Numerical (20% Easy • 50% Med • 30% Hard)'
-  },
-  {
-    id: 'foundation_olympiad',
-    name: 'Foundation / Olympiad Mock',
-    icon: '🏆',
-    type: 'objective',
-    typeRatios: { single_mcq: 60, assertion_reason: 20, multiple_mcq: 10, numerical: 10 },
-    difficulty: { easy: 10, medium: 40, hard: 50 },
-    examCategory: 'foundation',
-    description: 'HOTS Application • 60% Single Choice • 20% Assertion-Reason • 10% Multi • 10% Numerical (50% Hard)'
-  },
-  {
-    id: 'quick_revision',
-    name: 'Quick Practice Quiz',
-    icon: '🎯',
-    type: 'objective',
-    typeRatios: { single_mcq: 65, assertion_reason: 20, numerical: 15 },
-    difficulty: { easy: 40, medium: 40, hard: 20 },
-    examCategory: 'standard',
-    description: '65% Single Choice • 20% Assertion-Reason • 15% Numerical (40% Easy • 40% Med • 20% Hard)'
-  },
-  {
-    id: 'custom_blueprint',
-    name: 'Custom Blueprint',
-    icon: '🛠️',
-    type: 'objective',
-    typeRatios: { single_mcq: 100 },
-    difficulty: { easy: 33, medium: 34, hard: 33 },
-    description: 'Standard MCQ mix with custom difficulty'
-  }
-];
-
-const CANONICAL_QB_SUBJECTIVE_BLUEPRINTS: ExamBlueprint[] = [
-  {
-    id: 'daily_subjective',
-    name: 'Daily Subjective Practice',
-    icon: '✍️',
-    type: 'subjective',
-    typeRatios: { subjective_short: 65, subjective_long: 35 },
-    difficulty: { easy: 30, medium: 50, hard: 20 },
-    description: '65% Short Answers (2 Marks) • 35% Long Answers (4 Marks)'
-  },
-  {
-    id: 'saturday_classroom',
-    name: 'Saturday Classroom Test',
-    icon: '🏫',
-    type: 'subjective',
-    typeRatios: { subjective_define: 20, subjective_short: 50, subjective_long: 30 },
-    difficulty: { easy: 20, medium: 50, hard: 30 },
-    description: '20% Definitions/Laws (1M) • 50% Short Answers (2M) • 30% Long/Numerical (4M)'
-  },
-  {
-    id: 'comprehensive_subjective',
-    name: 'Comprehensive Paper',
-    icon: '📚',
-    type: 'subjective',
-    typeRatios: { subjective_define: 15, subjective_laws: 15, subjective_short: 35, subjective_long: 25, numerical_long: 10 },
-    difficulty: { easy: 20, medium: 50, hard: 30 },
-    description: 'Definitions, Laws, Short Answers, Long Answers & Multi-step Numericals'
-  },
-  {
-    id: 'custom_subjective',
-    name: 'Custom Subjective',
-    icon: '🛠️',
-    type: 'subjective',
-    typeRatios: { subjective_short: 60, subjective_long: 40 },
-    difficulty: { easy: 33, medium: 34, hard: 33 },
-    description: 'Custom distribution of subjective question types'
-  }
-];
 
 interface SelectedSubjectData {
   selected: boolean;
@@ -204,8 +104,6 @@ function CreateQBContent() {
     emptySelectedSubjects: {}
   });
 
-  // Canonical Blueprint selection state
-  const [selectedBlueprintId, setSelectedBlueprintId] = useState<string>('chapter_mastery');
 
   // Topic Distribution and Custom Counts State
   const [weightageMode, setWeightageMode] = useState<'equal' | 'custom'>('equal');
@@ -613,18 +511,8 @@ function CreateQBContent() {
     setTopicCustomCounts(prev => ({ ...prev, [key]: val }));
   };
 
-  const getSelectedBlueprint = (): ExamBlueprint => {
-    const list = questionType === 'subjective' ? CANONICAL_QB_SUBJECTIVE_BLUEPRINTS : CANONICAL_QB_OBJECTIVE_BLUEPRINTS;
-    return list.find(b => b.id === selectedBlueprintId) || list[0];
-  };
-
   const handleSwitchType = (type: 'objective' | 'subjective') => {
     setQuestionType(type);
-    if (type === 'subjective') {
-      setSelectedBlueprintId('saturday_classroom');
-    } else {
-      setSelectedBlueprintId('chapter_mastery');
-    }
   };
 
   const getPromptTargetTopics = (): TopicItem[] => {
@@ -830,8 +718,7 @@ In addition to the topic-based questions:
 
     const subj = getSelectedSubjectsList()[0] || '';
     const isMath = /math|algebra|geometry|ganit/i.test(subj);
-    const blueprint = getSelectedBlueprint();
-    const isFoundation = examCategory === 'foundation' || blueprint.examCategory === 'foundation';
+    const isFoundation = examCategory === 'foundation';
     const totalQs = getTotalTargetQuestions() || 10;
     const topicCounts = getEffectiveTopicCounts();
     const ctx = buildTopicsContextBlock(topicCounts);
@@ -867,26 +754,15 @@ CRITICAL NEGATIVE CONSTRAINTS (ZERO-TOLERANCE RULES):
     };
 
     if (type === 'objective') {
-      const diff = blueprint.difficulty || { easy: 30, medium: 50, hard: 20 };
-      const easyC = Math.round((diff.easy / 100) * totalQs);
-      const medC = Math.round((diff.medium / 100) * totalQs);
+      const easyC = Math.round((isFoundation ? 0.10 : 0.30) * totalQs);
+      const medC = Math.round((isFoundation ? 0.40 : 0.50) * totalQs);
       const hardC = Math.max(0, totalQs - easyC - medC);
 
-      // Compute type counts based on blueprint type ratios (dynamically sanitize for qualitative topics)
+      // Distribute canonical question types (OSC, OTF, OAR, OMC, ONE):
       let typeBD = '', typeInst = '', reqTypes: any[] = [];
-      const rawRatios = blueprint.typeRatios || { single_mcq: 100 };
-      const ratios: Record<string, number> = {};
-      let shiftedPct = 0;
-      Object.entries(rawRatios).forEach(([tid, pct]) => {
-        if (tid === 'numerical' && !isCalculativeTopic) {
-          shiftedPct += pct;
-        } else {
-          ratios[tid] = pct;
-        }
-      });
-      if (shiftedPct > 0) {
-        ratios['single_mcq'] = (ratios['single_mcq'] || 0) + shiftedPct;
-      }
+      const ratios: Record<string, number> = isCalculativeTopic
+        ? { single_mcq: 50, numerical: 20, assertion_reason: 15, multiple_mcq: 10, true_false: 5 }
+        : { single_mcq: 60, assertion_reason: 20, multiple_mcq: 15, true_false: 5 };
 
       let allocatedCount = 0;
       const ratioEntries = Object.entries(ratios);
@@ -920,12 +796,12 @@ CRITICAL NEGATIVE CONSTRAINTS (ZERO-TOLERANCE RULES):
       });
 
       reqTypes.forEach(rt => {
-        typeInst += `\n\n--- Type: "${rt.id}" (${rt.count} questions across the exam) ---`;
-        if (rt.id === 'single_mcq') typeInst += `\nExample: { "contextId":"CTX-001","type":"${rt.id}","text":"Question text...","options":["Option A","Option B","Option C","Option D"],"correctAnswer":"Option B","solution":"Step-by-step reasoning...","difficulty":"easy/medium/hard","bloomLevel":"Understand","topicOrigin":"..." }`;
-        else if (rt.id === 'multiple_mcq') typeInst += `\nExample: { "contextId":"CTX-001","type":"${rt.id}","text":"Question with multiple correct options...","options":["Option A","Option B","Option C","Option D"],"correctAnswers":["Option A","Option C"],"solution":"Step-by-step explanation...","difficulty":"medium/hard","bloomLevel":"Apply","topicOrigin":"..." }`;
-        else if (rt.id === 'true_false') typeInst += `\nExample: { "contextId":"CTX-001","type":"${rt.id}","text":"Statement to evaluate","correctAnswer":"True","solution":"Reasoning...","difficulty":"easy/medium","bloomLevel":"Remember","topicOrigin":"..." }`;
-        else if (rt.id === 'assertion_reason') typeInst += `\nExample: { "contextId":"CTX-001","type":"${rt.id}","text":"Assertion (A): ...\\nReason (R): ...","correctAnswer":"A","solution":"Explain why both are true and R explains A...","difficulty":"medium/hard","bloomLevel":"Analyze","topicOrigin":"..." }\nNote: correctAnswer must be exactly one letter: "A" = both true & R explains A, "B" = both true & R does NOT explain A, "C" = A true & R false, "D" = A false & R true. Do NOT include options array for assertion_reason.`;
-        else if (rt.id === 'numerical') typeInst += `\nExample: { "contextId":"CTX-001","type":"${rt.id}","text":"Calculate the work done when a force of 10 N moves an object through 5 m in the direction of force.","correctAnswer":"50","solution":"Work = Force * Displacement = 10 * 5 = 50 J","difficulty":"medium","bloomLevel":"Apply","topicOrigin":"..." }\nNote: For numerical questions, correctAnswer MUST be a clean numeric string (integer or decimal, e.g. "50", "3.14"). Do NOT include options array for numerical type questions.`;
+        typeInst += `\n\n--- Type: "${rt.id}" (${rt.count} questions across the question bank) ---`;
+        if (rt.id === 'single_mcq') typeInst += `\nExample (OSC): { "contextId":"CTX-001","type":"${rt.id}","text":"Question text...","options":["Option A","Option B","Option C","Option D"],"correctAnswer":"Option B","solution":"Step-by-step reasoning...","difficulty":"easy/medium/hard","bloomLevel":"Understand","topicOrigin":"..." }`;
+        else if (rt.id === 'multiple_mcq') typeInst += `\nExample (OMC): { "contextId":"CTX-001","type":"${rt.id}","text":"Question with multiple correct options...","options":["Option A","Option B","Option C","Option D"],"correctAnswers":["Option A","Option C"],"solution":"Step-by-step explanation...","difficulty":"medium/hard","bloomLevel":"Apply","topicOrigin":"..." }`;
+        else if (rt.id === 'true_false') typeInst += `\nExample (OTF): { "contextId":"CTX-001","type":"${rt.id}","text":"Statement to evaluate","correctAnswer":"True","solution":"Reasoning...","difficulty":"easy/medium","bloomLevel":"Remember","topicOrigin":"..." }`;
+        else if (rt.id === 'assertion_reason') typeInst += `\nExample (OAR): { "contextId":"CTX-001","type":"${rt.id}","text":"Assertion (A): ...\\nReason (R): ...","correctAnswer":"A","solution":"Explain why both are true and R explains A...","difficulty":"medium/hard","bloomLevel":"Analyze","topicOrigin":"..." }\nNote: correctAnswer must be exactly one letter: "A" = both true & R explains A, "B" = both true & R does NOT explain A, "C" = A true & R false, "D" = A false & R true. Do NOT include options array for assertion_reason.`;
+        else if (rt.id === 'numerical') typeInst += `\nExample (ONE): { "contextId":"CTX-001","type":"${rt.id}","text":"Calculate the work done when a force of 10 N moves an object through 5 m in the direction of force.","correctAnswer":"50","solution":"Work = Force * Displacement = 10 * 5 = 50 J","difficulty":"medium","bloomLevel":"Apply","topicOrigin":"..." }\nNote: For numerical questions, correctAnswer MUST be a clean numeric string (integer or decimal, e.g. "50", "3.14"). Do NOT include options array for numerical type questions.`;
       });
 
       const roleBlock = isFoundation ? `========================================
@@ -971,23 +847,23 @@ MATHEMATICS SOURCE & PATTERN RULES:
 
       return `${roleBlock}
 ========================================
-EXAM DETAILS & BLUEPRINT:
+QUESTION BANK DETAILS:
 ========================================
 - Board: ${selectedBoard}
 - Class: ${selectedClass}
-- Blueprint Style: ${blueprint.name} (${blueprint.description})
+- Track: ${isFoundation ? 'Foundation / Olympiad (HOTS)' : 'Standard Curriculum'}
 
 ${buildBatchInstruction(totalQs)}
 
 ========================================
 DIFFICULTY DISTRIBUTION:
 ========================================
-- easy: ${easyC} questions (${diff.easy}%)
-- medium: ${medC} questions (${diff.medium}%)
-- hard: ${hardC} questions (${diff.hard}%)
+- easy: ${easyC} questions (${isFoundation ? '10%' : '30%'})
+- medium: ${medC} questions (${isFoundation ? '40%' : '50%'})
+- hard: ${hardC} questions (${isFoundation ? '50%' : '20%'})
 
 ========================================
-REQUIRED QUESTION TYPES (BLUEPRINT COMPOSITION):
+REQUIRED QUESTION TYPES (CANONICAL OBJECTIVE MIX):
 =======================================${typeBD}${topicDistributionSummary}
 
 ========================================
@@ -1075,7 +951,7 @@ Generate EXACTLY ${totalQs} subjective questions matching the per-topic quotas:
 Role & Goal:
 ========================================
 You are an expert CBSE & State Board Paper Setter.
-Generate authentic, high-yield subjective questions matching the Blueprint "${blueprint.name}":
+Generate authentic, high-yield subjective questions:
 - Board: ${selectedBoard}
 - Class: ${selectedClass}
 - Subject: ${subj}
@@ -2013,36 +1889,65 @@ Return ONLY valid JSON. No extra text.`;
               )}
             </div>
 
-            {/* Question Type & Category Choice Toggles (SSOT) */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '15px', alignItems: 'center', marginTop: '16px', borderTop: '1px solid var(--border-light)', paddingTop: '12px' }}>
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-                <span style={{ fontSize: '12px', fontWeight: 'bold' }}>Generator Mode:</span>
-                <button 
-                  type="button"
-                  className={`btn btn-sm ${questionType === 'objective' ? 'btn-primary' : 'btn-secondary'}`}
-                  onClick={() => handleSwitchType('objective')}
-                  style={{ borderRadius: '20px', fontWeight: questionType === 'objective' ? 700 : 500 }}
-                >
-                  🎯 Objective Question Bank (OSC, OTF, OAR, OMC, ONE)
-                </button>
-                <button 
-                  type="button"
-                  className={`btn btn-sm ${questionType === 'subjective' ? 'btn-primary' : 'btn-secondary'}`}
-                  onClick={() => handleSwitchType('subjective')}
-                  style={{ borderRadius: '20px', fontWeight: questionType === 'subjective' ? 700 : 500 }}
-                >
-                  📝 Subjective Question Bank (Definitions, Short &amp; Long)
-                </button>
+            {/* Question Type, Track & Vault Toggles (SSOT) */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginTop: '16px', borderTop: '1px solid var(--border-light)', paddingTop: '14px' }}>
+              
+              {/* Row 1: Generator Mode */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '12px', fontWeight: 'bold' }}>Generator Mode:</span>
+                  <button 
+                    type="button"
+                    className={`btn btn-sm ${questionType === 'objective' ? 'btn-primary' : 'btn-secondary'}`}
+                    onClick={() => handleSwitchType('objective')}
+                    style={{ borderRadius: '20px', fontWeight: questionType === 'objective' ? 700 : 500 }}
+                  >
+                    🎯 Objective Question Bank (OSC, OTF, OAR, OMC, ONE)
+                  </button>
+                  <button 
+                    type="button"
+                    className={`btn btn-sm ${questionType === 'subjective' ? 'btn-primary' : 'btn-secondary'}`}
+                    onClick={() => handleSwitchType('subjective')}
+                    style={{ borderRadius: '20px', fontWeight: questionType === 'subjective' ? 700 : 500 }}
+                  >
+                    📝 Subjective Question Bank (Definitions, Short &amp; Long)
+                  </button>
+                </div>
               </div>
 
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginLeft: 'auto', flexWrap: 'wrap' }}>
-                <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+              {/* Row 2: Track & Vault selection */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', background: 'var(--bg-soft)', padding: '10px 14px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)' }}>
+                {/* Track Selection */}
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--text-muted)' }}>Target Track:</span>
+                  <button 
+                    type="button"
+                    className={`btn btn-sm ${examCategory === 'standard' ? 'btn-primary' : 'btn-secondary'}`}
+                    onClick={() => setExamCategory('standard')}
+                    style={{ borderRadius: '16px', fontSize: '11px', padding: '3px 10px' }}
+                    title="Standard School &amp; Board Curriculum level (~30% Easy, ~50% Medium, ~20% Hard)"
+                  >
+                    📘 Standard Board Track
+                  </button>
+                  <button 
+                    type="button"
+                    className={`btn btn-sm ${examCategory === 'foundation' ? 'btn-success' : 'btn-secondary'}`}
+                    onClick={() => setExamCategory('foundation')}
+                    style={{ borderRadius: '16px', fontSize: '11px', padding: '3px 10px' }}
+                    title="Foundation &amp; Olympiad level HOTS (~10% Easy, ~40% Medium, ~50% Hard)"
+                  >
+                    🏆 Foundation &amp; Olympiad (HOTS)
+                  </button>
+                </div>
+
+                {/* Storage Vault */}
+                <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
                   <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--text-muted)' }}>Vault (SSOT):</span>
                   <button 
                     type="button"
                     className={`btn btn-sm ${vault === 'practice' ? 'btn-primary' : 'btn-secondary'}`}
                     onClick={() => setVault('practice')}
-                    style={{ borderRadius: '20px', fontSize: '11px', padding: '2px 8px' }}
+                    style={{ borderRadius: '16px', fontSize: '11px', padding: '3px 10px' }}
                     title="Practice Vault: Strictly for self-paced practice and topic mastery"
                   >
                     🟢 Practice
@@ -2051,7 +1956,7 @@ Return ONLY valid JSON. No extra text.`;
                     type="button"
                     className={`btn btn-sm ${vault === 'exam' ? 'btn-primary' : 'btn-secondary'}`}
                     onClick={() => setVault('exam')}
-                    style={{ borderRadius: '20px', fontSize: '11px', padding: '2px 8px' }}
+                    style={{ borderRadius: '16px', fontSize: '11px', padding: '3px 10px' }}
                     title="Exam Vault: Strictly for formal scheduled classroom tests and midterms"
                   >
                     🔵 Exam
@@ -2060,87 +1965,14 @@ Return ONLY valid JSON. No extra text.`;
                     type="button"
                     className={`btn btn-sm ${vault === 'mock' ? 'btn-primary' : 'btn-secondary'}`}
                     onClick={() => setVault('mock')}
-                    style={{ borderRadius: '20px', fontSize: '11px', padding: '2px 8px' }}
+                    style={{ borderRadius: '16px', fontSize: '11px', padding: '3px 10px' }}
                     title="Mock Vault: Strictly for comprehensive terminal and board mock exams"
                   >
                     🟣 Mock
                   </button>
                 </div>
-
-                <div style={{ display: 'flex', gap: '4px', alignItems: 'center', marginLeft: '6px' }}>
-                  <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--text-muted)' }}>Category:</span>
-                  <button 
-                    type="button"
-                    className={`btn btn-sm ${examCategory === 'standard' ? 'btn-primary' : 'btn-secondary'}`}
-                    onClick={() => setExamCategory('standard')}
-                    style={{ borderRadius: '20px', fontSize: '11px', padding: '2px 8px' }}
-                  >
-                    📘 Standard
-                  </button>
-                  <button 
-                    type="button"
-                    className={`btn btn-sm ${examCategory === 'foundation' ? 'btn-success' : 'btn-secondary'}`}
-                    onClick={() => setExamCategory('foundation')}
-                    style={{ borderRadius: '20px', fontSize: '11px', padding: '2px 8px' }}
-                  >
-                    🏆 Foundation
-                  </button>
-                </div>
               </div>
             </div>
-
-            {/* Exam Blueprint Matcher (shown for individual objective/subjective modes) */}
-            {(questionType === 'objective' || questionType === 'subjective') && (
-              <div style={{ marginTop: '16px', borderTop: '1px dashed var(--border-light)', paddingTop: '12px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                  <label style={{ fontSize: '12px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span>🎯 Exam Blueprint Matcher:</span>
-                    <span style={{ fontSize: '11px', fontWeight: 'normal', color: 'var(--text-muted)' }}>
-                      (Applies exam pedagogical composition &amp; difficulty to your {getTotalTargetQuestions()} questions)
-                    </span>
-                  </label>
-                </div>
-
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                  {(questionType === 'objective' ? CANONICAL_QB_OBJECTIVE_BLUEPRINTS : CANONICAL_QB_SUBJECTIVE_BLUEPRINTS).map(bp => {
-                    const isSelected = selectedBlueprintId === bp.id;
-                    return (
-                      <button
-                        key={bp.id}
-                        type="button"
-                        onClick={() => {
-                          setSelectedBlueprintId(bp.id);
-                          if (bp.examCategory) setExamCategory(bp.examCategory);
-                        }}
-                        style={{
-                          padding: '6px 12px',
-                          borderRadius: 'var(--radius-sm)',
-                          border: isSelected ? '1.5px solid var(--accent)' : '1px solid var(--border-light)',
-                          background: isSelected ? 'rgba(52, 152, 219, 0.15)' : 'var(--bg-soft)',
-                          color: isSelected ? 'var(--accent)' : 'var(--text)',
-                          fontWeight: isSelected ? 700 : 500,
-                          fontSize: '12px',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                          transition: 'all 0.15s ease'
-                        }}
-                        title={bp.description}
-                      >
-                        <span>{bp.icon}</span>
-                        <span>{bp.name}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* Active Blueprint Summary */}
-                <div style={{ marginTop: '8px', fontSize: '11px', color: 'var(--text-muted)', background: 'var(--bg-soft)', padding: '6px 10px', borderRadius: '4px', borderLeft: '3px solid var(--accent)' }}>
-                  <strong>Active Blueprint:</strong> {getSelectedBlueprint().name} — {getSelectedBlueprint().description}
-                </div>
-              </div>
-            )}
 
             {/* Subjective verbatim requirements warning */}
             {questionType === 'subjective' && (
