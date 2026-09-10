@@ -432,6 +432,10 @@ export default function AdminFeesPage() {
     });
 
     setTimeout(() => {
+      const scrollBox = document.getElementById('tmpl-splits-scroll-container');
+      if (scrollBox) {
+        scrollBox.scrollTop = scrollBox.scrollHeight;
+      }
       const amountInputs = document.querySelectorAll<HTMLInputElement>('.tmpl-inst-amount-input');
       if (amountInputs.length > 0) {
         const lastInput = amountInputs[amountInputs.length - 1];
@@ -1128,11 +1132,11 @@ export default function AdminFeesPage() {
 
       {/* Template Modal */}
       {showTemplateModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.6)', backdropFilter: 'blur(5px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '16px' }}>
-          <div className="card" style={{ background: 'var(--surface-popover)', border: '1px solid var(--border-popover)', borderRadius: '12px', maxWidth: '680px', width: '100%', maxHeight: '92vh', display: 'flex', flexDirection: 'column', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.4)', overflow: 'hidden' }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.65)', backdropFilter: 'blur(5px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '16px' }}>
+          <div className="card" style={{ background: 'var(--surface-popover)', border: '1px solid var(--border-popover)', borderRadius: '12px', maxWidth: '680px', width: '100%', maxHeight: '90vh', display: 'flex', flexDirection: 'column', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.4)', overflow: 'hidden' }}>
             
             {/* Modal Header */}
-            <div style={{ padding: '16px 22px', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--surface-popover)' }}>
+            <div style={{ padding: '16px 22px', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--surface-popover)', flexShrink: 0 }}>
               <div>
                 <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: 'var(--text)' }}>
                   {selectedTemplate ? '✏️ Edit Blanket Template' : '➕ Create Blanket Template'}
@@ -1151,229 +1155,243 @@ export default function AdminFeesPage() {
             </div>
 
             {/* Modal Form Body */}
-            <form onSubmit={handleSaveTemplate} style={{ padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: '16px', overflowY: 'auto', overflowX: 'hidden', flex: 1, boxSizing: 'border-box' }}>
-              
-              {/* Template Name */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                <label style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-muted)' }}>Template Name</label>
-                <input
-                  type="text"
-                  required
-                  value={tmplName}
-                  onChange={(e) => setTmplName(e.target.value)}
-                  placeholder="e.g. Class 8th 2026-27"
-                  style={{ padding: '8px 12px', height: '38px', borderRadius: '6px', border: '1px solid var(--border-light)', background: 'var(--bg-soft)', color: 'var(--text)', fontSize: '13px', boxSizing: 'border-box' }}
-                />
-              </div>
-
-              {/* Class, Total, Registration Row */}
-              <div style={{ display: 'grid', gridTemplateColumns: '130px 1fr 1fr', gap: '12px' }}>
+            <form onSubmit={handleSaveTemplate} style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, overflow: 'hidden' }}>
+              <div style={{ padding: '16px 22px', display: 'flex', flexDirection: 'column', gap: '14px', overflowY: 'auto', flex: 1, minHeight: 0, boxSizing: 'border-box' }}>
+                
+                {/* Template Name */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                  <label style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-muted)' }}>Class</label>
-                  <select
-                    value={tmplClass}
-                    onChange={(e) => setTmplClass(e.target.value)}
-                    style={{ padding: '8px 10px', height: '38px', borderRadius: '6px', border: '1px solid var(--border-light)', background: 'var(--bg-soft)', color: 'var(--text)', fontSize: '13px', fontWeight: 600, width: '100%', boxSizing: 'border-box' }}
-                  >
-                    <option value="8">Class 8</option>
-                    <option value="9">Class 9</option>
-                    <option value="10">Class 10</option>
-                    <option value="11">Class 11</option>
-                    <option value="12">Class 12</option>
-                  </select>
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                  <label style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-muted)' }}>Total Package (₹)</label>
+                  <label style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-muted)' }}>Template Name</label>
                   <input
-                    type="number"
+                    type="text"
                     required
-                    value={tmplTotal === 0 ? '' : (tmplTotal ?? '')}
-                    onChange={(e) => {
-                      const raw = e.target.value;
-                      setTmplTotal(raw === '' ? '' as any : Number(raw));
-                    }}
-                    placeholder="e.g. 25000"
-                    style={{ padding: '8px 12px', height: '38px', borderRadius: '6px', border: '1px solid var(--border-light)', background: 'var(--bg-soft)', color: 'var(--text)', fontSize: '13px', fontWeight: 600, boxSizing: 'border-box' }}
+                    value={tmplName}
+                    onChange={(e) => setTmplName(e.target.value)}
+                    placeholder="e.g. Class 8th 2026-27"
+                    style={{ padding: '8px 12px', height: '38px', borderRadius: '6px', border: '1px solid var(--border-light)', background: 'var(--bg-soft)', color: 'var(--text)', fontSize: '13px', boxSizing: 'border-box' }}
                   />
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                  <label style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-muted)' }}>Registration Fee (₹)</label>
-                  <input
-                    type="number"
-                    value={tmplReg === 0 ? '' : (tmplReg ?? '')}
-                    onChange={(e) => {
-                      const raw = e.target.value;
-                      setTmplReg(raw === '' ? '' as any : Number(raw));
-                    }}
-                    placeholder="e.g. 5000"
-                    style={{ padding: '8px 12px', height: '38px', borderRadius: '6px', border: '1px solid var(--border-light)', background: 'var(--bg-soft)', color: 'var(--text)', fontSize: '13px', fontWeight: 600, boxSizing: 'border-box' }}
-                  />
-                </div>
-              </div>
-
-              {/* Installments Splits Section */}
-              <div style={{ border: '1px solid var(--border-light)', borderRadius: '8px', overflow: 'hidden', background: 'var(--surface)' }}>
-                {/* Splits Header */}
-                <div style={{ padding: '10px 14px', background: 'var(--bg-soft)', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div>
-                    <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text)' }}>Installment Splits</span>
-                    <span style={{ fontSize: '10px', color: 'var(--text-muted)', marginLeft: '8px' }}>(Press Tab on last date to add next split)</span>
+                {/* Class, Total, Registration Row */}
+                <div style={{ display: 'grid', gridTemplateColumns: '130px 1fr 1fr', gap: '12px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-muted)' }}>Class</label>
+                    <select
+                      value={tmplClass}
+                      onChange={(e) => setTmplClass(e.target.value)}
+                      style={{ padding: '8px 10px', height: '38px', borderRadius: '6px', border: '1px solid var(--border-light)', background: 'var(--bg-soft)', color: 'var(--text)', fontSize: '13px', fontWeight: 600, width: '100%', boxSizing: 'border-box' }}
+                    >
+                      <option value="8">Class 8</option>
+                      <option value="9">Class 9</option>
+                      <option value="10">Class 10</option>
+                      <option value="11">Class 11</option>
+                      <option value="12">Class 12</option>
+                    </select>
                   </div>
-                  <button 
-                    type="button" 
-                    className="btn btn-secondary" 
-                    onClick={addTmplInstRow} 
-                    style={{ padding: '4px 10px', fontSize: '11px', fontWeight: 600, borderRadius: '6px' }}
-                  >
-                    ➕ Add Split
-                  </button>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-muted)' }}>Total Package (₹)</label>
+                    <input
+                      type="number"
+                      required
+                      value={tmplTotal === 0 ? '' : (tmplTotal ?? '')}
+                      onChange={(e) => {
+                        const raw = e.target.value;
+                        setTmplTotal(raw === '' ? '' as any : Number(raw));
+                      }}
+                      placeholder="e.g. 25000"
+                      style={{ padding: '8px 12px', height: '38px', borderRadius: '6px', border: '1px solid var(--border-light)', background: 'var(--bg-soft)', color: 'var(--text)', fontSize: '13px', fontWeight: 600, boxSizing: 'border-box' }}
+                    />
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-muted)' }}>Registration Fee (₹)</label>
+                    <input
+                      type="number"
+                      value={tmplReg === 0 ? '' : (tmplReg ?? '')}
+                      onChange={(e) => {
+                        const raw = e.target.value;
+                        setTmplReg(raw === '' ? '' as any : Number(raw));
+                      }}
+                      placeholder="e.g. 5000"
+                      style={{ padding: '8px 12px', height: '38px', borderRadius: '6px', border: '1px solid var(--border-light)', background: 'var(--bg-soft)', color: 'var(--text)', fontSize: '13px', fontWeight: 600, boxSizing: 'border-box' }}
+                    />
+                  </div>
                 </div>
 
-                {/* Balance validation bar */}
-                {(() => {
-                  const sumOfSplits = tmplInstallments.reduce((sum, inst) => sum + Number(inst.amount || 0), 0);
-                  const totalWithReg = sumOfSplits + Number(tmplReg || 0);
-                  const totalPkg = Number(tmplTotal || 0);
-                  const isMatch = totalPkg > 0 && totalWithReg === totalPkg;
-                  const diff = totalPkg - totalWithReg;
-                  return (
-                    <div style={{
-                      padding: '8px 14px',
-                      fontSize: '11px',
-                      fontWeight: 600,
-                      background: isMatch ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.08)',
-                      color: isMatch ? 'var(--success)' : 'var(--danger)',
-                      borderBottom: '1px solid var(--border-light)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between'
-                    }}>
-                      <span>
-                        {isMatch 
-                          ? `✓ Splits perfectly match Total Package (₹${totalPkg}).` 
-                          : `⚠️ Sum (₹${sumOfSplits}) + Reg Fee (₹${tmplReg || 0}) = ₹${totalWithReg}. Difference: ₹${diff}.`
-                        }
-                      </span>
-                      {diff > 0 && tmplInstallments.length > 0 && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setTmplInstallments(prev => {
-                              const copy = [...prev];
-                              const lastIdx = copy.length - 1;
-                              copy[lastIdx] = { ...copy[lastIdx], amount: Number(copy[lastIdx].amount || 0) + diff };
-                              return copy;
-                            });
-                          }}
-                          style={{ border: 'none', background: 'transparent', color: 'var(--accent)', cursor: 'pointer', fontSize: '10px', fontWeight: 700, textDecoration: 'underline' }}
-                        >
-                          Auto-balance +₹{diff}
-                        </button>
-                      )}
+                {/* Installments Splits Section */}
+                <div style={{ border: '1px solid var(--border-light)', borderRadius: '8px', overflow: 'hidden', background: 'var(--surface)', display: 'flex', flexDirection: 'column' }}>
+                  {/* Splits Header */}
+                  <div style={{ padding: '10px 14px', background: 'var(--bg-soft)', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
+                    <div>
+                      <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text)' }}>Installment Splits</span>
+                      <span style={{ fontSize: '10px', color: 'var(--text-muted)', marginLeft: '8px' }}>(Press Tab on last date to add next split)</span>
                     </div>
-                  );
-                })()}
+                    <button 
+                      type="button" 
+                      className="btn btn-secondary" 
+                      onClick={addTmplInstRow} 
+                      style={{ padding: '4px 10px', fontSize: '11px', fontWeight: 600, borderRadius: '6px' }}
+                    >
+                      ➕ Add Split
+                    </button>
+                  </div>
 
-                {/* Splits rows list */}
-                <div style={{ maxHeight: '380px', overflowY: 'auto', overflowX: 'hidden' }}>
-                  {tmplInstallments.length === 0 ? (
-                    <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '12px' }}>
-                      No installment splits added yet. Click <strong>+ Add Split</strong> to create one.
-                    </div>
-                  ) : (
-                    tmplInstallments.map((inst, idx) => (
-                      <div 
-                        key={idx} 
-                        style={{ 
-                          display: 'grid', 
-                          gridTemplateColumns: '40px 140px 1fr 36px', 
-                          gap: '10px', 
-                          padding: '8px 14px', 
-                          borderBottom: idx === tmplInstallments.length - 1 ? 'none' : '1px solid var(--border-light)', 
-                          alignItems: 'center',
-                          boxSizing: 'border-box'
-                        }}
-                      >
-                        {/* Index */}
-                        <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', background: 'var(--bg-soft)', borderRadius: '4px', padding: '3px 6px', textAlign: 'center' }}>
-                          #{idx + 1}
+                  {/* Balance validation bar */}
+                  {(() => {
+                    const sumOfSplits = tmplInstallments.reduce((sum, inst) => sum + Number(inst.amount || 0), 0);
+                    const totalWithReg = sumOfSplits + Number(tmplReg || 0);
+                    const totalPkg = Number(tmplTotal || 0);
+                    const isMatch = totalPkg > 0 && totalWithReg === totalPkg;
+                    const diff = totalPkg - totalWithReg;
+                    return (
+                      <div style={{
+                        padding: '8px 14px',
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        background: isMatch ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.08)',
+                        color: isMatch ? 'var(--success)' : 'var(--danger)',
+                        borderBottom: '1px solid var(--border-light)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        flexShrink: 0
+                      }}>
+                        <span>
+                          {isMatch 
+                            ? `✓ Splits perfectly match Total Package (₹${totalPkg}).` 
+                            : `⚠️ Sum (₹${sumOfSplits}) + Reg Fee (₹${tmplReg || 0}) = ₹${totalWithReg}. Difference: ₹${diff}.`
+                          }
                         </span>
-
-                        {/* Amount */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)' }}>₹</span>
-                          <input
-                            type="number"
-                            placeholder="Amount"
-                            required
-                            className="tmpl-inst-amount-input"
-                            value={inst.amount === 0 ? '' : (inst.amount ?? '')}
-                            onChange={(e) => {
-                              const raw = e.target.value;
-                              const val = raw === '' ? ('' as any) : Number(raw);
-                              setTmplInstallments(prev => prev.map((item, i) => i === idx ? { ...item, amount: val } : item));
+                        {diff > 0 && tmplInstallments.length > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setTmplInstallments(prev => {
+                                const copy = [...prev];
+                                const lastIdx = copy.length - 1;
+                                copy[lastIdx] = { ...copy[lastIdx], amount: Number(copy[lastIdx].amount || 0) + diff };
+                                return copy;
+                              });
                             }}
-                            style={{ 
-                              width: '100%', 
-                              height: '36px', 
-                              padding: '6px 8px', 
-                              borderRadius: '6px', 
-                              border: '1px solid var(--border-light)', 
-                              background: 'var(--surface)', 
-                              color: 'var(--text)', 
-                              fontSize: '12px', 
-                              fontWeight: 600,
-                              boxSizing: 'border-box'
-                            }}
-                          />
-                        </div>
-
-                        {/* Due Date */}
-                        <div>
-                          <DateInputDMY
-                            value={inst.dueDate || ''}
-                            onChange={(val) => {
-                              setTmplInstallments(prev => prev.map((item, i) => i === idx ? { ...item, dueDate: val } : item));
-                            }}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Tab' && !e.shiftKey && idx === tmplInstallments.length - 1) {
-                                e.preventDefault();
-                                addTmplInstRow();
-                              }
-                            }}
-                          />
-                        </div>
-
-                        {/* Delete Action */}
-                        <button
-                          type="button"
-                          onClick={() => setTmplInstallments(prev => prev.filter((_, i) => i !== idx))}
-                          style={{ 
-                            border: 'none', 
-                            background: 'transparent', 
-                            color: 'var(--danger)', 
-                            cursor: 'pointer', 
-                            fontSize: '1.1rem', 
-                            padding: '4px', 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            justifyContent: 'center',
-                            borderRadius: '4px'
-                          }}
-                          title="Delete split"
-                        >
-                          🗑️
-                        </button>
+                            style={{ border: 'none', background: 'transparent', color: 'var(--accent)', cursor: 'pointer', fontSize: '10px', fontWeight: 700, textDecoration: 'underline' }}
+                          >
+                            Auto-balance +₹{diff}
+                          </button>
+                        )}
                       </div>
-                    ))
-                  )}
+                    );
+                  })()}
+
+                  {/* Splits rows list with dedicated vertical scrolling */}
+                  <div 
+                    id="tmpl-splits-scroll-container"
+                    style={{ 
+                      maxHeight: '220px', 
+                      minHeight: '100px',
+                      overflowY: 'scroll', 
+                      overflowX: 'hidden',
+                      scrollbarWidth: 'thin',
+                      scrollbarGutter: 'stable',
+                      overscrollBehavior: 'contain'
+                    }}
+                  >
+                    {tmplInstallments.length === 0 ? (
+                      <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '12px' }}>
+                        No installment splits added yet. Click <strong>+ Add Split</strong> to create one.
+                      </div>
+                    ) : (
+                      tmplInstallments.map((inst, idx) => (
+                        <div 
+                          key={idx} 
+                          style={{ 
+                            display: 'grid', 
+                            gridTemplateColumns: '40px 140px 1fr 36px', 
+                            gap: '10px', 
+                            padding: '8px 14px', 
+                            borderBottom: idx === tmplInstallments.length - 1 ? 'none' : '1px solid var(--border-light)', 
+                            alignItems: 'center',
+                            boxSizing: 'border-box'
+                          }}
+                        >
+                          {/* Index */}
+                          <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', background: 'var(--bg-soft)', borderRadius: '4px', padding: '3px 6px', textAlign: 'center' }}>
+                            #{idx + 1}
+                          </span>
+
+                          {/* Amount */}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)' }}>₹</span>
+                            <input
+                              type="number"
+                              placeholder="Amount"
+                              required
+                              className="tmpl-inst-amount-input"
+                              value={inst.amount === 0 ? '' : (inst.amount ?? '')}
+                              onChange={(e) => {
+                                const raw = e.target.value;
+                                const val = raw === '' ? ('' as any) : Number(raw);
+                                setTmplInstallments(prev => prev.map((item, i) => i === idx ? { ...item, amount: val } : item));
+                              }}
+                              style={{ 
+                                width: '100%', 
+                                height: '36px', 
+                                padding: '6px 8px', 
+                                borderRadius: '6px', 
+                                border: '1px solid var(--border-light)', 
+                                background: 'var(--surface)', 
+                                color: 'var(--text)', 
+                                fontSize: '12px', 
+                                fontWeight: 600,
+                                boxSizing: 'border-box'
+                              }}
+                            />
+                          </div>
+
+                          {/* Due Date */}
+                          <div>
+                            <DateInputDMY
+                              value={inst.dueDate || ''}
+                              onChange={(val) => {
+                                setTmplInstallments(prev => prev.map((item, i) => i === idx ? { ...item, dueDate: val } : item));
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Tab' && !e.shiftKey && idx === tmplInstallments.length - 1) {
+                                  e.preventDefault();
+                                  addTmplInstRow();
+                                }
+                              }}
+                            />
+                          </div>
+
+                          {/* Delete Action */}
+                          <button
+                            type="button"
+                            onClick={() => setTmplInstallments(prev => prev.filter((_, i) => i !== idx))}
+                            style={{ 
+                              border: 'none', 
+                              background: 'transparent', 
+                              color: 'var(--danger)', 
+                              cursor: 'pointer', 
+                              fontSize: '1.1rem', 
+                              padding: '4px', 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              justifyContent: 'center',
+                              borderRadius: '4px'
+                            }}
+                            title="Delete split"
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      ))
+                    )}
+                  </div>
                 </div>
               </div>
 
-              {/* Modal Footer */}
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', paddingTop: '6px' }}>
+              {/* Modal Footer (Pinned at bottom) */}
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', padding: '14px 22px', borderTop: '1px solid var(--border-light)', background: 'var(--surface-popover)', flexShrink: 0 }}>
                 <button 
                   type="button" 
                   className="btn btn-secondary" 
