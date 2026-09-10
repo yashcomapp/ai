@@ -110,8 +110,8 @@ function CreateQBContent() {
   const [topicWeightageMode, setTopicWeightageMode] = useState<'custom_counts' | 'equal' | 'percentage'>('custom_counts');
   const [topicWeightageMap, setTopicWeightageMap] = useState<Record<string, number | string>>({});
   const [topicCustomCounts, setTopicCustomCounts] = useState<Record<string, number | string>>({});
-  const [defaultPerTopicCount, setDefaultPerTopicCount] = useState<number | string>(10);
-  const [totalBatchQuestions, setTotalBatchQuestions] = useState<number | string>(30);
+  const [defaultPerTopicCount, setDefaultPerTopicCount] = useState<number | string>(55);
+  const [totalBatchQuestions, setTotalBatchQuestions] = useState<number | string>(55);
 
 
 
@@ -758,92 +758,66 @@ CRITICAL NEGATIVE CONSTRAINTS (ZERO-TOLERANCE RULES):
       const medC = Math.round((isFoundation ? 0.40 : 0.50) * totalQs);
       const hardC = Math.max(0, totalQs - easyC - medC);
 
-      // Distribute canonical question types (OSC, OTF, OAR, OMC, ONE):
-      let typeBD = '', typeInst = '', reqTypes: any[] = [];
-      const ratios: Record<string, number> = isCalculativeTopic
-        ? { single_mcq: 50, numerical: 20, assertion_reason: 15, multiple_mcq: 10, true_false: 5 }
-        : { single_mcq: 60, assertion_reason: 20, multiple_mcq: 15, true_false: 5 };
+      // 5 Canonical Question Types across all levels:
+      const canonicalTypeGuide = `
+========================================
+5 CANONICAL OBJECTIVE QUESTION FORMATS (Used Across All Levels):
+========================================
+1. Single Choice MCQ ("single_mcq" / OSC): 4 options, exactly 1 correct answer.
+   Example: { "contextId":"CTX-001", "type":"single_mcq", "vault":"practice", "text":"Question text...", "options":["Option A","Option B","Option C","Option D"], "correctAnswer":"Option B", "solution":"Step-by-step reasoning...", "difficulty":"easy", "bloomLevel":"Remember", "conceptTag":"..." }
 
-      let allocatedCount = 0;
-      const ratioEntries = Object.entries(ratios);
+2. Multiple Choice MCQ ("multiple_mcq" / OMC): 4 options, 2 or more correct answers.
+   Example: { "contextId":"CTX-001", "type":"multiple_mcq", "vault":"exam", "text":"Which of the following are properties of...?", "options":["Option A","Option B","Option C","Option D"], "correctAnswers":["Option A","Option C"], "solution":"Detailed explanation...", "difficulty":"hard", "bloomLevel":"Analyze", "conceptTag":"..." }
 
-      ratioEntries.forEach(([tid, pct], idx) => {
-        let count = 0;
-        if (idx === ratioEntries.length - 1) {
-          count = Math.max(0, totalQs - allocatedCount);
-        } else {
-          count = Math.max(1, Math.round((pct / 100) * totalQs));
-          allocatedCount += count;
-        }
-        if (count > 0) {
-          reqTypes.push({ id: tid, count });
-          typeBD += `\n- ${tid}: ${count} questions`;
-        }
-      });
+3. True / False ("true_false" / OTF): Evaluates conceptual facts or rules.
+   Example: { "contextId":"CTX-001", "type":"true_false", "vault":"practice", "text":"Statement to evaluate...", "options":["True","False"], "correctAnswer":"True", "solution":"Why it is true/false...", "difficulty":"easy", "bloomLevel":"Remember", "conceptTag":"..." }
 
-      if (!reqTypes.length) {
-        reqTypes = [{ id: 'single_mcq', count: totalQs }];
-        typeBD = `\n- single_mcq: ${totalQs} questions (Single Correct MCQ)`;
-      }
+4. Assertion & Reason ("assertion_reason" / OAR): Evaluates logical cause-and-effect.
+   Example: { "contextId":"CTX-001", "type":"assertion_reason", "vault":"practice", "text":"Assertion (A): ...\\nReason (R): ...", "correctAnswer":"A", "solution":"Explain why both are true and R explains A...", "difficulty":"medium", "bloomLevel":"Analyze", "conceptTag":"..." }
+   * Canonical Answer Rules for OAR: "A" = Both true & R explains A | "B" = Both true & R does NOT explain A | "C" = A true & R false | "D" = A false & R true. Do NOT include options array for assertion_reason.
 
-      (window as any).lastPromptMeta = { mode: 'objective', totalQs, reqTypes: reqTypes.map(rt => ({ ...rt })) };
+5. Numerical Objective ("numerical" / ONE): Direct numerical answer input.
+   Example: { "contextId":"CTX-001", "type":"numerical", "vault":"practice", "text":"Calculate the value of... in standard units:", "correctAnswer":"24.5", "solution":"Step 1: Formula ... Step 2: Calculation = 24.5", "difficulty":"medium", "bloomLevel":"Apply", "conceptTag":"..." }
+   * Note: For numerical questions, correctAnswer MUST be a clean numeric string (integer or decimal). Do NOT include options array for numerical questions.
+`;
+
+      const vaultPartitionGuide = `
+========================================
+UNIVERSAL 3-VAULT PARTITION REQUIREMENT:
+========================================
+For each topic (55 Questions Total), generate and tag questions strictly into the 3 Storage Vaults:
+1. 🟢 PRACTICE VAULT ("vault": "practice") — EXACTLY 22 QUESTIONS:
+   - Dedicated for student self-paced practice across 3 attempts (18 Qs) + Guided Recovery diagnostic (4 Qs).
+   - Distribution: L1 Recall & Foundation (6 Qs) + L2 Conceptual Reasoning (8 Qs) + L3 Numerical & Application (8 Qs).
+   - Mix: OSC, OMC, OTF, OAR, ONE.
+
+2. 🔵 EXAM VAULT ("vault": "exam") — EXACTLY 25 QUESTIONS:
+   - Reserved exclusively for teacher classroom tests, unit tests, and midterms (must be fresh and unseen by students).
+   - Distribution: L1 Recall (6 Qs) + L2 Conceptual Reasoning (10 Qs) + L3 Numerical & Application (9 Qs).
+   - Mix: OSC, OMC, OTF, OAR, ONE.
+
+3. 🟣 MOCK VAULT ("vault": "mock") — EXACTLY 8 QUESTIONS:
+   - Reserved exclusively for Olympiad, Foundation, and full-length mock examinations.
+   - Distribution: L3 Advanced Application (3 Qs) + L4 HOTS & Critical Thinking (5 Qs).
+   - Mix: OMC, OAR, ONE, OSC.
+`;
+
+      (window as any).lastPromptMeta = { mode: 'objective', totalQs };
 
       let topicDistributionSummary = '\n\n========================================\nPER-TOPIC QUESTION ALLOCATION QUOTAS:\n========================================';
       promptTopics.forEach(tp => {
         const k = topicKey(tp);
-        const cnt = topicCounts[k] || 0;
-        topicDistributionSummary += `\n- ${tp.subject ? '[' + tp.subject + '] ' : ''}${tp.topic}: EXACTLY ${cnt} questions`;
+        const cnt = topicCounts[k] || 55;
+        topicDistributionSummary += `\n- ${tp.subject ? '[' + tp.subject + '] ' : ''}${tp.topic}: EXACTLY ${cnt} questions (22 Practice + 25 Exam + 8 Mock)`;
       });
 
-      reqTypes.forEach(rt => {
-        typeInst += `\n\n--- Type: "${rt.id}" (${rt.count} questions across the question bank) ---`;
-        if (rt.id === 'single_mcq') typeInst += `\nExample (OSC): { "contextId":"CTX-001","type":"${rt.id}","text":"Question text...","options":["Option A","Option B","Option C","Option D"],"correctAnswer":"Option B","solution":"Step-by-step reasoning...","difficulty":"easy/medium/hard","bloomLevel":"Understand","topicOrigin":"..." }`;
-        else if (rt.id === 'multiple_mcq') typeInst += `\nExample (OMC): { "contextId":"CTX-001","type":"${rt.id}","text":"Question with multiple correct options...","options":["Option A","Option B","Option C","Option D"],"correctAnswers":["Option A","Option C"],"solution":"Step-by-step explanation...","difficulty":"medium/hard","bloomLevel":"Apply","topicOrigin":"..." }`;
-        else if (rt.id === 'true_false') typeInst += `\nExample (OTF): { "contextId":"CTX-001","type":"${rt.id}","text":"Statement to evaluate","correctAnswer":"True","solution":"Reasoning...","difficulty":"easy/medium","bloomLevel":"Remember","topicOrigin":"..." }`;
-        else if (rt.id === 'assertion_reason') typeInst += `\nExample (OAR): { "contextId":"CTX-001","type":"${rt.id}","text":"Assertion (A): ...\\nReason (R): ...","correctAnswer":"A","solution":"Explain why both are true and R explains A...","difficulty":"medium/hard","bloomLevel":"Analyze","topicOrigin":"..." }\nNote: correctAnswer must be exactly one letter: "A" = both true & R explains A, "B" = both true & R does NOT explain A, "C" = A true & R false, "D" = A false & R true. Do NOT include options array for assertion_reason.`;
-        else if (rt.id === 'numerical') typeInst += `\nExample (ONE): { "contextId":"CTX-001","type":"${rt.id}","text":"Calculate the work done when a force of 10 N moves an object through 5 m in the direction of force.","correctAnswer":"50","solution":"Work = Force * Displacement = 10 * 5 = 50 J","difficulty":"medium","bloomLevel":"Apply","topicOrigin":"..." }\nNote: For numerical questions, correctAnswer MUST be a clean numeric string (integer or decimal, e.g. "50", "3.14"). Do NOT include options array for numerical type questions.`;
-      });
+      const roleBlock = `========================================
+ROLE AND PEDAGOGICAL OBJECTIVE
+========================================
+Act as an expert Master Educator and Curriculum Specialist under the ${selectedBoard} Class ${selectedClass} curriculum.
 
-      const roleBlock = isFoundation ? `========================================
-ROLE AND PEDAGOGICAL OBJECTIVE (FOUNDATION / OLYMPIAD)
-========================================
-Act as an expert competitive exam coach and paper setter preparing students for prestigious examinations such as Homi Bhabha Balvaidnyanik Competition (focusing on observation, experiment, and practical application), Science/Math Olympiads (SOF NSO, IMO, etc.), and JEE/NEET Foundation Courses.
-
-Generate EXACTLY ${totalQs} OBJECTIVE questions matching the per-topic quotas specified below.
-
-Generate questions that:
-- Remain conceptually mapped to the selected syllabus, chapter, and topic boundaries but are at a significantly higher analytical level.
-- Test deep conceptual application, multi-step problem solving, and logical deduction.
-${requirementsSection}
-========================================
-FOUNDATION LEVEL & QUESTION DESIGN RULES:
-========================================
-- Focus on higher-order thinking skills (HOTS) and conceptual puzzles rather than simple recall or direct textbook-verbatim matching.
-- For Science: Include observation-based scenarios, experimental design, or practical life applications.
-- For Math: Frame challenging word problems or non-trivial numeric relationships.
-- Distractors: Design highly plausible incorrect options that represent common conceptual misunderstandings or mathematical errors.
-- Explanation: Provide a comprehensive step-by-step logic description in the "solution" key explaining how to derive the correct option.` : `========================================
-ROLE AND PEDAGOGICAL OBJECTIVE (STANDARD SCHOOL / BOARD)
-========================================
-Act as an experienced Educator teaching students of Class ${selectedClass} under the ${selectedBoard} curriculum.
-
-Generate EXACTLY ${totalQs} OBJECTIVE questions matching the per-topic quotas specified below.
-
-Generate questions that:
-- Strictly remain within the selected syllabus, chapter, and topic boundaries.
-- Match the learning level expected for Class ${selectedClass}.
-${requirementsSection}
-${isMath ? `
-========================================
-MATHEMATICS SOURCE & PATTERN RULES:
-========================================
-- 80% of the questions generated MUST be selected directly and verbatim from the official textbook exercises, practice sets, problem sets, solved examples, or figure-it-out sections. Absolutely NO modified values, changed coefficients, or fake variables.
-- 20% of the questions generated MUST be designed on a similar pattern (using the same structural concept, method, and difficulty as textbook problems but with different numerical values/coefficients).
-- Specify the corresponding textbook reference or pattern source for each question in the "textbookPracticeSet" key:
-  * For CBSE Class 8 Mathematics (using Ganit Prakash): Use "Figure it out X.Y: Qz" (e.g., "Figure it out 1.1: Q2") or "Question Tag X.Y: Qz" based on the book's terminology.
-  * For other CBSE classes: Use "Exercise X.Y: Qz" (e.g., "Exercise 2.3: Q4").
-  * For Maharashtra State Board: Use "Practice Set X.Y: Qz" (e.g., "Practice Set 1.2: Q3") or "Problem Set X: Qz".
-` : ''}`;
+Generate a complete, scientifically balanced Question Suite of EXACTLY ${totalQs} OBJECTIVE questions matching the per-topic quotas specified below.
+${requirementsSection}`;
 
       return `${roleBlock}
 ========================================
@@ -852,19 +826,14 @@ QUESTION BANK DETAILS:
 - Board: ${selectedBoard}
 - Class: ${selectedClass}
 - Track: ${isFoundation ? 'Foundation / Olympiad (HOTS)' : 'Standard Curriculum'}
+- Total Questions: EXACTLY ${totalQs} (in ONE single complete JSON array)
 
 ${buildBatchInstruction(totalQs)}
 
-========================================
-DIFFICULTY DISTRIBUTION:
-========================================
-- easy: ${easyC} questions (${isFoundation ? '10%' : '30%'})
-- medium: ${medC} questions (${isFoundation ? '40%' : '50%'})
-- hard: ${hardC} questions (${isFoundation ? '50%' : '20%'})
+${vaultPartitionGuide}
 
-========================================
-REQUIRED QUESTION TYPES (CANONICAL OBJECTIVE MIX):
-=======================================${typeBD}${topicDistributionSummary}
+${canonicalTypeGuide}
+${topicDistributionSummary}
 
 ========================================
 QUESTION GENERATION CONTEXT & TOPIC QUOTAS:
@@ -876,41 +845,35 @@ MANDATORY CONTEXT ID RULE
 ========================================
 Use contextId CTX-001, CTX-002, etc. matching the context block. Do NOT repeat contextId.
 ${buildImageInstruction()}
-========================================
-FORMAT INSTRUCTIONS:
-=======================================${typeInst}
 
 ========================================
 CRITICAL RULES & LEVEL/SOURCE FIDELITY:
 ========================================
-1. STRICT BOARD & CLASS LEVEL ALIGNMENT: You MUST strictly align the question difficulty, vocabulary, and concepts with the official ${selectedBoard} Class ${selectedClass} curriculum. Do NOT generate questions using concepts, equations, or details from higher grade levels.
+1. STRICT BOARD & CLASS LEVEL ALIGNMENT: Align difficulty, vocabulary, and concepts with official ${selectedBoard} Class ${selectedClass} textbooks (NCERT / State Board).
 2. ZERO PLACEHOLDER & ZERO SYNTHETIC LOOPS POLICY:
-   - NEVER generate dummy/placeholder options like "Option A (Advanced...)", "Option B (Analytical...)", "Option A (Correct)", or "Option A". Every option MUST be a realistic, context-rich scientific or mathematical answer.
-   - NEVER generate generic synthetic variable loop questions like "Calculate resultant value when variable A is ... and variable B is ...". Every problem MUST describe an authentic real-world or textbook scenario.
-   - NEVER use programmatic question loops where the only difference between questions is incrementing numbers in a fixed sentence template.
-3. SOURCE TEXTBOOK & DIGEST FIDELITY: If any reference text, digest notes, textbook pages, or context is provided in the prompt (or via uploaded image), you MUST strictly extract and adapt questions directly from that material.
-4. "correctAnswer" for single_mcq and true_false MUST be an exact, verbatim copy of one of the strings in "options". NEVER "A"/"B"/"C"/"D".
-4a. RANDOMIZE CORRECT OPTION POSITIONS: Distribute the correct answer position randomly and evenly across option index 0, 1, 2, and 3 (A, B, C, D). Do NOT always place the correct answer as the first item in "options".
-4b. "correctAnswer" for assertion_reason MUST be exactly one of the letters "A", "B", "C", or "D".
-5. For multiple_mcq: "correctAnswers" MUST be an array of exact strings copied from "options".
-6. DO NOT generate: board, class, subject, chapter, chapterNumber, topic, topicNumber, questionCode.
-6b. You MUST include "examCategory": "${isFoundation ? 'foundation' : 'standard'}" key inside each question object.
-6c. ZERO-COLLISION VAULT: You MUST include "vault": "${vault}" key inside each question object.
-6d. CONCEPT TAG: You MUST include "conceptTag": "concise concept or subtopic name" inside each question object.
-7. Use \\( ... \\) for math expressions (KaTeX). Wrap chemical formulas inside \\ce{...}.
-8. Return ONLY a valid JSON array.
-${isMath ? '9. For Mathematics, you MUST include a "textbookPracticeSet" key inside each question object containing the textbook reference (e.g., "Practice Set 1.2: Q3") or pattern source.' : ''}
-10. STRICT ZERO FAKE NUMERICALS ON BIOLOGY & QUALITATIVE CONCEPTS:
-   - For Biology, life processes, human anatomy, nervous coordination (e.g., nerve impulses, reflex arcs, brain functions), ecology, cellular structure, plant science, or qualitative chemistry:
-     * NEVER invent synthetic physics formulas, speeds, arithmetic equations, or time-taken calculations (e.g., calculating nerve impulse velocity, time for reflex action in milliseconds, rate of enzyme reaction arithmetic).
-     * All questions for biological and qualitative topics MUST be pure conceptual MCQs, Assertion-Reason, Diagrams, or Scientific Reasons based on real textbook facts and mechanisms.
+   - NEVER generate dummy/placeholder options like "Option A", "None of these", or "All of the above". Every option MUST be an authentic, plausible scientific/mathematical choice.
+   - NEVER generate repetitive template clones differing only by 1-2 filler words. Every question must test a distinct sub-concept, scenario, or variation.
+3. RANDOMIZE CORRECT ANSWER KEY POSITIONS (ANTI-OPTION-A BIAS):
+   - Distribute the correct answer position randomly and evenly across options A, B, C, and D (roughly 25% for each position). NEVER place the correct answer as Option A in majority of questions.
+4. "correctAnswer" for single_mcq and true_false MUST be an exact verbatim string matching one of the items in "options".
+5. For multiple_mcq: "correctAnswers" MUST be an array of exact matching strings copied from "options".
+6. "correctAnswer" for assertion_reason MUST be exactly one of "A", "B", "C", or "D".
+7. For numerical: "correctAnswer" MUST be a clean numeric string (e.g. "24.5", "10", "3:1"). Specify required unit in question text.
+8. DOMAIN-ADAPTIVE RULE FOR BIOLOGY & DESCRIPTIVE TOPICS:
+   - For Biology, life processes, cells, tissues, human physiology, ecology, or qualitative science:
+     * Strictly DO NOT invent fake physics equations, imaginary speeds, or artificial arithmetic calculations.
+     * All numerical questions (ONE) on Biology topics MUST test authentic biological constants/ratios (e.g. chromosome counts, ATP yields, Mendelian ratios, 10% law). If no numbers exist, test multi-step biological process sequences using OSC/OMC/OAR.
+9. MANDATORY ATTRIBUTES: Each question object MUST include:
+   - "vault": "practice" | "exam" | "mock"
+   - "bloomLevel": "Remember" | "Understand" | "Apply" | "Analyze" | "Evaluate" | "Create"
+   - "difficulty": "easy" | "medium" | "hard"
+   - "examCategory": "${isFoundation ? 'foundation' : 'standard'}"
+   - "conceptTag": "concise subtopic or concept name"
+10. Strict KaTeX Math Formatting: Use \\( ... \\) for inline math and \\[ ... \\] for display math. Double-escape all backslashes (\\\\frac, \\\\pi, \\\\theta). Wrap chemical formulas in \\ce{...}.
 
-CRITICAL JSON ESCAPING & MATH FORMATTING RULES:
-1. Return ONLY the raw valid JSON array. DO NOT wrap it in any explanations, introduction, or extra text.
-2. Any backslashes (\\) in LaTeX math expressions (like \\frac, \\propto, \\pi, \\theta, \\times, etc.) MUST be double-escaped as \\\\ (e.g. \\\\frac, \\\\propto, \\\\pi, \\\\theta). Never use a single backslash inside a JSON string.
-3. If using standard math delimiters, represent inline math as \\\\( ... \\\\) and block display math as \\\\[ ... \\\\] (always with double-escaped backslashes).
-4. Do NOT use raw control characters inside string values.
-5. All double quotes inside string values must be properly escaped as \\\".
+CRITICAL JSON ESCAPING RULES:
+1. Return ONLY the raw valid JSON array [...]. No explanations, markdown preamble, or extra text.
+2. Ensure valid JSON escaping for all quotes (\\\") and double backslashes.
 
 ${buildNegativeConstraints()}`;
     } else {
