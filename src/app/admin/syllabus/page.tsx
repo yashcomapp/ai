@@ -2000,9 +2000,9 @@ Return ONLY a valid JSON object matching the schema below:
                   type="button"
                   className={`btn btn-sm ${topicModal.topicClassification === 'calculative' ? 'btn-primary' : 'btn-secondary'}`}
                   style={{ fontSize: '10.5px', padding: '6px 8px', textAlign: 'left', fontWeight: topicModal.topicClassification === 'calculative' ? 700 : 500 }}
-                  onClick={() => setTopicModal(p => ({ ...p, topicClassification: 'calculative', targetQuestions: p.hasSubtopics ? p.targetQuestions : 75 }))}
+                  onClick={() => setTopicModal(p => ({ ...p, topicClassification: 'calculative', targetQuestions: p.hasSubtopics ? p.targetQuestions : 50 }))}
                 >
-                  🔥 Calculative (~75 Qs)
+                  🔥 Calculative (~50 Qs)
                 </button>
                 <button
                   type="button"
@@ -2117,9 +2117,9 @@ Return ONLY a valid JSON object matching the schema below:
                   type="button"
                   className={`btn btn-sm ${subtopicModal.topicClassification === 'calculative' ? 'btn-primary' : 'btn-secondary'}`}
                   style={{ fontSize: '10.5px', padding: '6px 8px', textAlign: 'left', fontWeight: subtopicModal.topicClassification === 'calculative' ? 700 : 500 }}
-                  onClick={() => setSubtopicModal(p => ({ ...p, topicClassification: 'calculative', targetQuestions: 75 }))}
+                  onClick={() => setSubtopicModal(p => ({ ...p, topicClassification: 'calculative', targetQuestions: 50 }))}
                 >
-                  🔥 Calculative (~75 Qs)
+                  🔥 Calculative (~50 Qs)
                 </button>
                 <button
                   type="button"
