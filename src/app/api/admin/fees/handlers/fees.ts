@@ -103,18 +103,27 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const studentCode = searchParams.get('studentCode');
 
-    // 1. Fetch all student profiles
-    const studentsSnap = await adminDb.collection('users')
-      .where('role', '==', 'student')
-      .get();
+    // 1. Fetch all student profiles and batches
+    const [studentsSnap, batchesSnap] = await Promise.all([
+      adminDb.collection('users').where('role', '==', 'student').get(),
+      adminDb.collection('batches').get()
+    ]);
+    const batchMap = new Map<string, string>();
+    batchesSnap.docs.forEach(doc => {
+      batchMap.set(doc.id, doc.data().name || '');
+    });
+
     const students = studentsSnap.docs.map(doc => {
       const d = doc.data();
+      const bId = d.batchId || (Array.isArray(d.batchIds) && d.batchIds.length > 0 ? d.batchIds[0] : '');
+      const batchName = batchMap.get(bId) || '';
       return {
         uid: doc.id,
         name: d.name || '',
         studentCode: d.studentCode || '',
         email: d.email || '',
-        batchId: d.batchId || '',
+        batchId: bId,
+        batchName,
         classNum: d.class || d.classNum || '',
         parentEmail: d.parentEmail || '',
         parentName: d.parentName || '',

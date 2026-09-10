@@ -437,7 +437,8 @@ export default function AdminStudentsPage() {
                         <td style={{ padding: '12px 16px' }}>
                           <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
                             {(s.batchIds || []).map(bId => {
-                              const bName = batches.find(b => b.id === bId)?.name || bId;
+                              const bName = batches.find(b => b.id === bId)?.name;
+                              if (!bName) return null;
                               return (
                                 <span key={bId} style={{ fontSize: '10px', padding: '1px 6px', background: 'var(--bg-soft)', borderRadius: '4px', border: '1px solid var(--border-light)', whiteSpace: 'nowrap' }}>
                                   {bName}

@@ -20,6 +20,7 @@ interface StudentFeeRecord {
   studentCode: string;
   email: string;
   batchId: string;
+  batchName?: string;
   classNum: string;
   fee: {
     totalPackageAmount: number;
@@ -57,6 +58,71 @@ export default function AdminFeesPage() {
   const [bulkSelectedInstallment, setBulkSelectedInstallment] = useState<string>('inst_1');
   const [bulkPayments, setBulkPayments] = useState<Record<string, { checked: boolean; amount: number; method: string; ref: string; component: string }>>({});
   const [savingBulk, setSavingBulk] = useState(false);
+
+  // Sorting States
+  const [studentSortField, setStudentSortField] = useState<'name' | 'classNum' | 'netDues' | 'paid' | 'outstanding' | 'status'>('name');
+  const [studentSortDir, setStudentSortDir] = useState<'asc' | 'desc'>('asc');
+
+  const [tmplSortField, setTmplSortField] = useState<'name' | 'classNum' | 'totalPackageAmount' | 'splits'>('classNum');
+  const [tmplSortDir, setTmplSortDir] = useState<'asc' | 'desc'>('asc');
+
+  const [bulkSortField, setBulkSortField] = useState<'name' | 'status' | 'netDues' | 'paid' | 'outstanding'>('name');
+  const [bulkSortDir, setBulkSortDir] = useState<'asc' | 'desc'>('asc');
+
+  const handleStudentSort = (field: typeof studentSortField) => {
+    if (studentSortField === field) {
+      setStudentSortDir(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setStudentSortField(field);
+      setStudentSortDir('asc');
+    }
+  };
+
+  const handleTmplSort = (field: typeof tmplSortField) => {
+    if (tmplSortField === field) {
+      setTmplSortDir(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setTmplSortField(field);
+      setTmplSortDir('asc');
+    }
+  };
+
+  const handleBulkSort = (field: typeof bulkSortField) => {
+    if (bulkSortField === field) {
+      setBulkSortDir(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setBulkSortField(field);
+      setBulkSortDir('asc');
+    }
+  };
+
+  const renderSortHeader = (label: string, field: string, currentField: string, currentDir: 'asc' | 'desc', onSort: (f: any) => void, alignRight = false) => {
+    const isActive = currentField === field;
+    return (
+      <th
+        onClick={() => onSort(field)}
+        style={{
+          padding: '12px 16px',
+          fontSize: '11px',
+          fontWeight: 800,
+          color: isActive ? 'var(--accent)' : 'var(--text-muted)',
+          textTransform: 'uppercase',
+          cursor: 'pointer',
+          userSelect: 'none',
+          textAlign: alignRight ? 'right' : 'left',
+          transition: 'color 0.15s ease'
+        }}
+        title={`Click to sort by ${label}`}
+      >
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', justifyContent: alignRight ? 'flex-end' : 'flex-start' }}>
+          <span>{label}</span>
+          <span style={{ fontSize: '10px', opacity: isActive ? 1 : 0.4 }}>
+            {isActive ? (currentDir === 'asc' ? '▲' : '▼') : '↕'}
+          </span>
+        </div>
+      </th>
+    );
+  };
 
   // Helper to construct bulk transaction dropdowns
   const getComponentOptions = (s: StudentFeeRecord) => {
@@ -155,9 +221,6 @@ export default function AdminFeesPage() {
   const [savingTx, setSavingTx] = useState(false);
 
   // Mass Apply Template State
-  const [massTargetClass, setMassTargetClass] = useState('10');
-  const [massTargetTemplate, setMassTargetTemplate] = useState('');
-  const [massOnlyUnconfigured, setMassOnlyUnconfigured] = useState(false);
   const [massApplying, setMassApplying] = useState(false);
 
   const [error, setError] = useState('');
@@ -557,63 +620,6 @@ export default function AdminFeesPage() {
               </div>
             </div>
 
-            {/* Quick Mass Apply Bar */}
-            <div style={{ padding: '12px 20px', background: 'var(--bg-soft)', borderBottom: '1px solid var(--border-light)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-                <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  ⚡ Mass-Assign Template to Class:
-                </span>
-                
-                <select
-                  value={massTargetClass}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setMassTargetClass(val);
-                    const match = templates.find(t => t.classNum === val);
-                    if (match) setMassTargetTemplate(match.templateId);
-                  }}
-                  style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid var(--border-light)', background: 'var(--surface)', color: 'var(--text)', fontSize: '12px', fontWeight: 600 }}
-                >
-                  <option value="8">Class 8</option>
-                  <option value="9">Class 9</option>
-                  <option value="10">Class 10</option>
-                  <option value="11">Class 11</option>
-                  <option value="12">Class 12</option>
-                </select>
-
-                <select
-                  value={massTargetTemplate}
-                  onChange={(e) => setMassTargetTemplate(e.target.value)}
-                  style={{ padding: '6px 10px', borderRadius: '6px', border: '1px solid var(--border-light)', background: 'var(--surface)', color: 'var(--text)', fontSize: '12px', minWidth: '200px' }}
-                >
-                  <option value="">-- Select Template --</option>
-                  {templates.map(t => (
-                    <option key={t.templateId} value={t.templateId}>
-                      {t.name} (Class {t.classNum} • ₹{t.totalPackageAmount} • {t.installments?.length || 0} splits)
-                    </option>
-                  ))}
-                </select>
-
-                <label style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11px', color: 'var(--text-muted)', cursor: 'pointer' }}>
-                  <input
-                    type="checkbox"
-                    checked={massOnlyUnconfigured}
-                    onChange={(e) => setMassOnlyUnconfigured(e.target.checked)}
-                  />
-                  Only unconfigured students
-                </label>
-              </div>
-
-              <button
-                type="button"
-                className="btn btn-primary"
-                disabled={!massTargetTemplate || massApplying}
-                onClick={() => handleMassApplyTemplate(massTargetTemplate, massTargetClass, massOnlyUnconfigured)}
-                style={{ padding: '7px 16px', fontSize: '12px', fontWeight: 700, borderRadius: '6px' }}
-              >
-                {massApplying ? 'Applying...' : `⚡ Apply to All Class ${massTargetClass} Students`}
-              </button>
-            </div>
             {loadingStudents ? (
               <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>Loading student sheets...</div>
             ) : students.length === 0 ? (
@@ -623,61 +629,99 @@ export default function AdminFeesPage() {
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                   <thead>
                     <tr style={{ background: 'var(--bg-soft)', borderBottom: '1px solid var(--border-light)' }}>
-                      <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Student</th>
-                      <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Class/Batch</th>
-                      <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Net Dues</th>
-                      <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Paid</th>
-                      <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Outstanding</th>
-                      <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Status</th>
+                      {renderSortHeader('Student', 'name', studentSortField, studentSortDir, handleStudentSort)}
+                      {renderSortHeader('Class', 'classNum', studentSortField, studentSortDir, handleStudentSort)}
+                      {renderSortHeader('Net Dues', 'netDues', studentSortField, studentSortDir, handleStudentSort)}
+                      {renderSortHeader('Paid', 'paid', studentSortField, studentSortDir, handleStudentSort)}
+                      {renderSortHeader('Outstanding', 'outstanding', studentSortField, studentSortDir, handleStudentSort)}
+                      {renderSortHeader('Status', 'status', studentSortField, studentSortDir, handleStudentSort)}
                       <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', textAlign: 'right' }}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {students.map(s => (
-                      <tr key={s.studentCode} style={{ borderBottom: '1px solid var(--border-light)' }}>
-                        <td style={{ padding: '14px 16px', fontSize: '13px' }}>
-                          <div><strong>{s.name}</strong></div>
-                        </td>
-                        <td style={{ padding: '14px 16px', fontSize: '13px' }}>
-                          <div>Class {s.classNum}</div>
-                          <div style={{ fontSize: '11px', color: 'var(--text-muted)', wordBreak: 'break-all' }}>{s.batchId}</div>
-                        </td>
-                        <td style={{ padding: '14px 16px', fontSize: '13px', fontWeight: 700 }}>
-                          ₹{s.fee?.netPayableAmount !== undefined ? s.fee.netPayableAmount : '--'}
-                        </td>
-                        <td style={{ padding: '14px 16px', fontSize: '13px', color: 'var(--success)', fontWeight: 700 }}>
-                          ₹{s.fee?.totalPaidAmount !== undefined ? s.fee.totalPaidAmount : '--'}
-                        </td>
-                        <td style={{ padding: '14px 16px', fontSize: '13px', color: 'var(--danger)', fontWeight: 700 }}>
-                          ₹{s.fee?.outstandingAmount !== undefined ? s.fee.outstandingAmount : '--'}
-                        </td>
-                        <td style={{ padding: '14px 16px' }}>
-                          {s.fee?.hasOverdueInstallment ? (
-                            <span className="badge badge-danger" style={{ fontSize: '10px' }}>OVERDUE</span>
-                          ) : s.fee?.feeStatus === 'fully_paid' ? (
-                            <span className="badge badge-success" style={{ fontSize: '10px' }}>PAID</span>
-                          ) : s.fee?.feeStatus === 'partially_paid' ? (
-                            <span className="badge badge-info" style={{ fontSize: '10px' }}>PARTIAL</span>
-                          ) : (
-                            <span className="badge badge-secondary" style={{ fontSize: '10px' }}>UNCONFIGURED</span>
-                          )}
-                        </td>
-                        <td style={{ padding: '14px 16px', textAlign: 'right' }}>
-                          <button
-                            onClick={() => {
-                              setSelectedStudent(s);
-                              setCustomPackageTotal(s.fee?.totalPackageAmount || 0);
-                              setCustomDiscount(s.fee?.discountAmount || 0);
-                              setCustomInstallments(s.fee?.installments || []);
-                            }}
-                            className="btn btn-secondary"
-                            style={{ padding: '4px 8px', fontSize: '11px', fontWeight: 'bold' }}
-                          >
-                            ⚙️ Configure Installments
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
+                    {(() => {
+                      const sortedStudents = [...students].sort((a, b) => {
+                        let valA: any = '';
+                        let valB: any = '';
+                        if (studentSortField === 'name') {
+                          valA = (a.name || '').toLowerCase();
+                          valB = (b.name || '').toLowerCase();
+                        } else if (studentSortField === 'classNum') {
+                          valA = Number(a.classNum) || 0;
+                          valB = Number(b.classNum) || 0;
+                        } else if (studentSortField === 'netDues') {
+                          valA = Number(a.fee?.netPayableAmount ?? -1);
+                          valB = Number(b.fee?.netPayableAmount ?? -1);
+                        } else if (studentSortField === 'paid') {
+                          valA = Number(a.fee?.totalPaidAmount ?? -1);
+                          valB = Number(b.fee?.totalPaidAmount ?? -1);
+                        } else if (studentSortField === 'outstanding') {
+                          valA = Number(a.fee?.outstandingAmount ?? -1);
+                          valB = Number(b.fee?.outstandingAmount ?? -1);
+                        } else if (studentSortField === 'status') {
+                          const getStatusWeight = (s: StudentFeeRecord) => {
+                            if (!s.fee) return 1;
+                            if (s.fee.hasOverdueInstallment) return 4;
+                            if (s.fee.feeStatus === 'partially_paid') return 3;
+                            if (s.fee.feeStatus === 'fully_paid') return 2;
+                            return 0;
+                          };
+                          valA = getStatusWeight(a);
+                          valB = getStatusWeight(b);
+                        }
+                        if (valA < valB) return studentSortDir === 'asc' ? -1 : 1;
+                        if (valA > valB) return studentSortDir === 'asc' ? 1 : -1;
+                        return 0;
+                      });
+
+                      return sortedStudents.map(s => (
+                        <tr key={s.studentCode} style={{ borderBottom: '1px solid var(--border-light)' }}>
+                          <td style={{ padding: '14px 16px', fontSize: '13px' }}>
+                            <div><strong>{s.name}</strong></div>
+                          </td>
+                          <td style={{ padding: '14px 16px', fontSize: '13px' }}>
+                            <div style={{ fontWeight: 600 }}>Class {s.classNum}</div>
+                            {s.batchName && !s.batchName.includes(s.batchId) && (
+                              <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{s.batchName}</div>
+                            )}
+                          </td>
+                          <td style={{ padding: '14px 16px', fontSize: '13px', fontWeight: 700 }}>
+                            ₹{s.fee?.netPayableAmount !== undefined ? s.fee.netPayableAmount : '--'}
+                          </td>
+                          <td style={{ padding: '14px 16px', fontSize: '13px', color: 'var(--success)', fontWeight: 700 }}>
+                            ₹{s.fee?.totalPaidAmount !== undefined ? s.fee.totalPaidAmount : '--'}
+                          </td>
+                          <td style={{ padding: '14px 16px', fontSize: '13px', color: 'var(--danger)', fontWeight: 700 }}>
+                            ₹{s.fee?.outstandingAmount !== undefined ? s.fee.outstandingAmount : '--'}
+                          </td>
+                          <td style={{ padding: '14px 16px' }}>
+                            {s.fee?.hasOverdueInstallment ? (
+                              <span className="badge badge-danger" style={{ fontSize: '10px' }}>OVERDUE</span>
+                            ) : s.fee?.feeStatus === 'fully_paid' ? (
+                              <span className="badge badge-success" style={{ fontSize: '10px' }}>PAID</span>
+                            ) : s.fee?.feeStatus === 'partially_paid' ? (
+                              <span className="badge badge-info" style={{ fontSize: '10px' }}>PARTIAL</span>
+                            ) : (
+                              <span className="badge badge-secondary" style={{ fontSize: '10px' }}>UNCONFIGURED</span>
+                            )}
+                          </td>
+                          <td style={{ padding: '14px 16px', textAlign: 'right' }}>
+                            <button
+                              onClick={() => {
+                                setSelectedStudent(s);
+                                setCustomPackageTotal(s.fee?.totalPackageAmount || 0);
+                                setCustomDiscount(s.fee?.discountAmount || 0);
+                                setCustomInstallments(s.fee?.installments || []);
+                              }}
+                              className="btn btn-secondary"
+                              style={{ padding: '4px 8px', fontSize: '11px', fontWeight: 'bold' }}
+                            >
+                              ⚙️ Configure Installments
+                            </button>
+                          </td>
+                        </tr>
+                      ));
+                    })()}
                   </tbody>
                 </table>
               </div>
@@ -892,66 +936,89 @@ export default function AdminFeesPage() {
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                   <thead>
                     <tr style={{ background: 'var(--bg-soft)', borderBottom: '1px solid var(--border-light)' }}>
-                      <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Template Name</th>
-                      <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Class</th>
-                      <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Package Fee</th>
-                      <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Splits</th>
+                      {renderSortHeader('Template Name', 'name', tmplSortField, tmplSortDir, handleTmplSort)}
+                      {renderSortHeader('Class', 'classNum', tmplSortField, tmplSortDir, handleTmplSort)}
+                      {renderSortHeader('Package Fee', 'totalPackageAmount', tmplSortField, tmplSortDir, handleTmplSort)}
+                      {renderSortHeader('Splits', 'splits', tmplSortField, tmplSortDir, handleTmplSort)}
                       <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', textAlign: 'right' }}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {templates.map(t => (
-                      <tr key={t.templateId} style={{ borderBottom: '1px solid var(--border-light)' }}>
-                        <td style={{ padding: '14px 16px', fontSize: '13px', fontWeight: 'bold' }}>{t.name}</td>
-                        <td style={{ padding: '14px 16px', fontSize: '13px' }}>Class {t.classNum}</td>
-                        <td style={{ padding: '14px 16px', fontSize: '13px', fontWeight: 700 }}>₹{t.totalPackageAmount}</td>
-                        <td style={{ padding: '14px 16px', fontSize: '13px' }}>{t.installments?.length || 0} Splits</td>
-                        <td style={{ padding: '14px 16px', textAlign: 'right' }}>
-                          <button
-                            onClick={() => handleMassApplyTemplate(t.templateId, t.classNum, false)}
-                            disabled={massApplying}
-                            className="btn btn-primary"
-                            style={{ padding: '4px 10px', fontSize: '11px', fontWeight: 700, marginRight: '8px', borderRadius: '4px' }}
-                            title={`Apply ${t.name} to all active Class ${t.classNum} students`}
-                          >
-                            ⚡ Apply to Class {t.classNum}
-                          </button>
-                          <button
-                            onClick={() => {
-                              setSelectedTemplate(t);
-                              setTmplName(t.name);
-                              setTmplClass(t.classNum);
-                              setTmplTotal(t.totalPackageAmount);
-                              setTmplInstallments(t.installments.map(i => ({ 
-                                amount: i.amount, 
-                                dueDate: i.dueDate || (i.dueDateOffsetDays ? getDateKeyIST(new Date(new Date().getTime() + i.dueDateOffsetDays * 24 * 60 * 60 * 1000)) : '')
-                              })));
-                              setShowTemplateModal(true);
-                            }}
-                            className="btn btn-secondary"
-                            style={{ padding: '4px 8px', fontSize: '11px', marginRight: '8px' }}
-                          >
-                            ✏️ Edit
-                          </button>
-                          <button
-                            onClick={async () => {
-                              if (!confirm('Are you sure you want to delete this template?')) return;
-                              const token = await firebaseUser!.getIdToken();
-                              await fetch('/api/admin/fees/templates', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                                body: JSON.stringify({ action: 'deleteTemplate', templateId: t.templateId })
-                              });
-                              loadTemplates();
-                            }}
-                            style={{ border: 'none', background: 'transparent', color: 'var(--danger)', cursor: 'pointer', fontSize: '1rem' }}
-                            title="Delete template"
-                          >
-                            🗑️
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
+                    {(() => {
+                      const sortedTemplates = [...templates].sort((a, b) => {
+                        let valA: any = '';
+                        let valB: any = '';
+                        if (tmplSortField === 'name') {
+                          valA = (a.name || '').toLowerCase();
+                          valB = (b.name || '').toLowerCase();
+                        } else if (tmplSortField === 'classNum') {
+                          valA = Number(a.classNum) || 0;
+                          valB = Number(b.classNum) || 0;
+                        } else if (tmplSortField === 'totalPackageAmount') {
+                          valA = Number(a.totalPackageAmount) || 0;
+                          valB = Number(b.totalPackageAmount) || 0;
+                        } else if (tmplSortField === 'splits') {
+                          valA = a.installments?.length || 0;
+                          valB = b.installments?.length || 0;
+                        }
+                        if (valA < valB) return tmplSortDir === 'asc' ? -1 : 1;
+                        if (valA > valB) return tmplSortDir === 'asc' ? 1 : -1;
+                        return 0;
+                      });
+
+                      return sortedTemplates.map(t => (
+                        <tr key={t.templateId} style={{ borderBottom: '1px solid var(--border-light)' }}>
+                          <td style={{ padding: '14px 16px', fontSize: '13px', fontWeight: 'bold' }}>{t.name}</td>
+                          <td style={{ padding: '14px 16px', fontSize: '13px' }}>Class {t.classNum}</td>
+                          <td style={{ padding: '14px 16px', fontSize: '13px', fontWeight: 700 }}>₹{t.totalPackageAmount}</td>
+                          <td style={{ padding: '14px 16px', fontSize: '13px' }}>{t.installments?.length || 0} Splits</td>
+                          <td style={{ padding: '14px 16px', textAlign: 'right' }}>
+                            <button
+                              onClick={() => handleMassApplyTemplate(t.templateId, t.classNum, false)}
+                              disabled={massApplying}
+                              className="btn btn-primary"
+                              style={{ padding: '4px 10px', fontSize: '11px', fontWeight: 700, marginRight: '8px', borderRadius: '4px' }}
+                              title={`Apply ${t.name} to all active Class ${t.classNum} students`}
+                            >
+                              ⚡ Apply to Class {t.classNum}
+                            </button>
+                            <button
+                              onClick={() => {
+                                setSelectedTemplate(t);
+                                setTmplName(t.name);
+                                setTmplClass(t.classNum);
+                                setTmplTotal(t.totalPackageAmount);
+                                setTmplInstallments(t.installments.map(i => ({ 
+                                  amount: i.amount, 
+                                  dueDate: i.dueDate || (i.dueDateOffsetDays ? getDateKeyIST(new Date(new Date().getTime() + i.dueDateOffsetDays * 24 * 60 * 60 * 1000)) : '')
+                                })));
+                                setShowTemplateModal(true);
+                              }}
+                              className="btn btn-secondary"
+                              style={{ padding: '4px 8px', fontSize: '11px', marginRight: '8px' }}
+                            >
+                              ✏️ Edit
+                            </button>
+                            <button
+                              onClick={async () => {
+                                if (!confirm('Are you sure you want to delete this template?')) return;
+                                const token = await firebaseUser!.getIdToken();
+                                await fetch('/api/admin/fees/templates', {
+                                  method: 'POST',
+                                  headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                                  body: JSON.stringify({ action: 'deleteTemplate', templateId: t.templateId })
+                                });
+                                loadTemplates();
+                              }}
+                              style={{ border: 'none', background: 'transparent', color: 'var(--danger)', cursor: 'pointer', fontSize: '1rem' }}
+                              title="Delete template"
+                            >
+                              🗑️
+                            </button>
+                          </td>
+                        </tr>
+                      ));
+                    })()}
                   </tbody>
                 </table>
               </div>
@@ -1086,23 +1153,46 @@ export default function AdminFeesPage() {
                               }}
                             />
                           </th>
-                          <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Student</th>
-                          <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Ledger Status</th>
+                          {renderSortHeader('Student', 'name', bulkSortField, bulkSortDir, handleBulkSort)}
+                          {renderSortHeader('Ledger Status', 'status', bulkSortField, bulkSortDir, handleBulkSort)}
                           <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Amount to Pay (₹)</th>
                           <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Method</th>
                           <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Reference / Remarks</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {filteredStudents.map(s => {
-                          const sCode = s.studentCode;
-                          const payment = bulkPayments[sCode] || {
-                            checked: false,
-                            amount: 0,
-                            method: 'Cash',
-                            ref: '',
-                            component: selectedOpt.id
-                          };
+                        {(() => {
+                          const sortedFilteredStudents = [...filteredStudents].sort((a, b) => {
+                            let valA: any = '';
+                            let valB: any = '';
+                            if (bulkSortField === 'name') {
+                              valA = (a.name || '').toLowerCase();
+                              valB = (b.name || '').toLowerCase();
+                            } else if (bulkSortField === 'status') {
+                              const getStatusWeight = (s: StudentFeeRecord) => {
+                                if (!s.fee) return 1;
+                                if (s.fee.hasOverdueInstallment) return 4;
+                                if (s.fee.feeStatus === 'partially_paid') return 3;
+                                if (s.fee.feeStatus === 'fully_paid') return 2;
+                                return 0;
+                              };
+                              valA = getStatusWeight(a);
+                              valB = getStatusWeight(b);
+                            }
+                            if (valA < valB) return bulkSortDir === 'asc' ? -1 : 1;
+                            if (valA > valB) return bulkSortDir === 'asc' ? 1 : -1;
+                            return 0;
+                          });
+
+                          return sortedFilteredStudents.map(s => {
+                            const sCode = s.studentCode;
+                            const payment = bulkPayments[sCode] || {
+                              checked: false,
+                              amount: 0,
+                              method: 'Cash',
+                              ref: '',
+                              component: selectedOpt.id
+                            };
 
                           const updateField = (field: string, value: any) => {
                             setBulkPayments(prev => ({
@@ -1174,8 +1264,9 @@ export default function AdminFeesPage() {
                               </td>
                             </tr>
                           );
-                        })}
-                      </tbody>
+                        });
+                      })()}
+                    </tbody>
                     </table>
                   </div>
 
@@ -1580,7 +1671,7 @@ export default function AdminFeesPage() {
                             <strong>Log ID:</strong> {tx.transactionId}
                           </div>
                           <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                            <strong>Allocated to:</strong> {tx.installmentId === 'registration' ? 'Registration Fee' : tx.installmentId}
+                            <strong>Allocated to:</strong> {tx.installmentId?.startsWith('inst_') ? `Installment #${tx.installmentId.replace('inst_', '')}` : (tx.installmentId === 'registration' ? 'Installment #1' : (tx.installmentId || '--'))}
                           </div>
                           {tx.referenceNumber && (
                             <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
@@ -1596,7 +1687,7 @@ export default function AdminFeesPage() {
                           <button
                             onClick={() => {
                               setEditingTx(tx);
-                              setTxInstId(tx.installmentId || 'registration');
+                              setTxInstId(tx.installmentId || 'inst_1');
                               setTxAmount(tx.amountPaid);
                               setTxRef(tx.referenceNumber);
                               setTxMethod(tx.paymentMethod);
