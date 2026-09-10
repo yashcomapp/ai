@@ -27,40 +27,28 @@ async function syncStudentFees(studentCode: string) {
 
   // 3. Map transaction payments by installmentId
   const paymentsByInst: Record<string, number> = {};
-  let regPaidTotal = 0;
 
   transactions.forEach(tx => {
-    if (tx.installmentId === 'registration') {
-      regPaidTotal += Number(tx.amountPaid || 0);
-    } else if (tx.installmentId) {
+    if (tx.installmentId) {
       paymentsByInst[tx.installmentId] = (paymentsByInst[tx.installmentId] || 0) + Number(tx.amountPaid || 0);
     }
   });
 
-  // 4. Update registration status
-  const regFeeData = feeData.registrationFee || { amount: 0, status: 'pending' };
-  const regStatus = regPaidTotal >= Number(regFeeData.amount || 0) ? 'paid' : 'pending';
-  const updatedRegFee = {
-    ...regFeeData,
-    status: regStatus,
-    paidAt: regStatus === 'paid' ? (regFeeData.paidAt || new Date().toISOString()) : null
-  };
-
-  // 5. Update individual installments status
+  // 4. Update individual installments status
   const todayStr = getISTDateString();
   const installments = Array.isArray(feeData.installments) ? feeData.installments : [];
   let hasOverdueInstallment = false;
   let nextInstallmentDueDate: string | null = null;
 
-  const updatedInstallments = installments.map((inst: any) => {
-    const instId = inst.installmentId || `inst_${inst.installmentNo}`;
+  const updatedInstallments = installments.map((inst: any, idx: number) => {
+    const instId = inst.installmentId || `inst_${idx + 1}`;
     const paidForInst = paymentsByInst[instId] || 0;
     const targetAmount = Number(inst.amount || 0);
     
     let status = 'pending';
     let paidAt = inst.paidAt || null;
 
-    if (paidForInst >= targetAmount) {
+    if (paidForInst >= targetAmount && targetAmount > 0) {
       status = 'paid';
       paidAt = paidAt || new Date().toISOString();
     } else {
@@ -79,6 +67,7 @@ async function syncStudentFees(studentCode: string) {
     return {
       ...inst,
       installmentId: instId,
+      installmentNo: idx + 1,
       status,
       paidAt
     };
@@ -86,20 +75,19 @@ async function syncStudentFees(studentCode: string) {
 
   // Determine overall status
   let feeStatus = 'unpaid';
-  if (totalPaidAmount >= netPayableAmount) {
+  if (totalPaidAmount >= netPayableAmount && netPayableAmount > 0) {
     feeStatus = 'fully_paid';
   } else if (totalPaidAmount > 0) {
     feeStatus = 'partially_paid';
   }
 
-  // 6. Write synchronized results to studentFees document
+  // 5. Write synchronized results to studentFees document
   await feeRef.update({
     totalPaidAmount,
     outstandingAmount,
     feeStatus,
     hasOverdueInstallment,
     nextInstallmentDueDate,
-    registrationFee: updatedRegFee,
     installments: updatedInstallments,
     updatedAt: new Date().toISOString()
   });

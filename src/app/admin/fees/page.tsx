@@ -11,7 +11,6 @@ interface FeeTemplate {
   name: string;
   classNum: string;
   totalPackageAmount: number;
-  registrationFee: number;
   installments: { installmentNo: number; amount: number; dueDate?: string; dueDateOffsetDays?: number }[];
 }
 
@@ -30,7 +29,6 @@ interface StudentFeeRecord {
     outstandingAmount: number;
     feeStatus: string;
     hasOverdueInstallment: boolean;
-    registrationFee?: { amount: number; status: string; paidAt: string | null };
     installments?: { installmentId: string; installmentNo: number; amount: number; dueDate: string; status: string; paidAt: string | null }[];
   } | null;
 }
@@ -56,26 +54,23 @@ export default function AdminFeesPage() {
 
   // Bulk Entry State
   const [bulkClass, setBulkClass] = useState('8');
-  const [bulkSelectedInstallment, setBulkSelectedInstallment] = useState<string>('registration');
+  const [bulkSelectedInstallment, setBulkSelectedInstallment] = useState<string>('inst_1');
   const [bulkPayments, setBulkPayments] = useState<Record<string, { checked: boolean; amount: number; method: string; ref: string; component: string }>>({});
   const [savingBulk, setSavingBulk] = useState(false);
 
   // Helper to construct bulk transaction dropdowns
   const getComponentOptions = (s: StudentFeeRecord) => {
     const options: { id: string; label: string }[] = [];
-    if (s.fee?.registrationFee && s.fee.registrationFee.amount > 0) {
-      options.push({ id: 'registration', label: `Reg Fee (₹${s.fee.registrationFee.amount} - ${s.fee.registrationFee.status.toUpperCase()})` });
-    }
-    if (s.fee?.installments) {
+    if (s.fee?.installments && s.fee.installments.length > 0) {
       s.fee.installments.forEach(inst => {
         options.push({
           id: inst.installmentId || `inst_${inst.installmentNo}`,
-          label: `Inst #${inst.installmentNo} (₹${inst.amount} - ${inst.status.toUpperCase()})`
+          label: `Split #${inst.installmentNo} (₹${inst.amount} - ${inst.status.toUpperCase()})`
         });
       });
     }
     if (options.length === 0) {
-      options.push({ id: 'registration', label: 'Registration (Unconfigured)' });
+      options.push({ id: 'inst_1', label: 'Split #1 (Unconfigured)' });
     }
     return options;
   };
@@ -135,7 +130,6 @@ export default function AdminFeesPage() {
   const [tmplName, setTmplName] = useState('');
   const [tmplClass, setTmplClass] = useState('10');
   const [tmplTotal, setTmplTotal] = useState(0);
-  const [tmplReg, setTmplReg] = useState(0);
   const [tmplInstallments, setTmplInstallments] = useState<{ amount: number; dueDate: string }[]>([]);
   const [savingTmpl, setSavingTmpl] = useState(false);
 
@@ -145,8 +139,6 @@ export default function AdminFeesPage() {
   const [selectedStudent, setSelectedStudent] = useState<StudentFeeRecord | null>(null);
   const [customPackageTotal, setCustomPackageTotal] = useState(0);
   const [customDiscount, setCustomDiscount] = useState(0);
-  const [customRegAmount, setCustomRegAmount] = useState(0);
-  const [customRegStatus, setCustomRegStatus] = useState('pending');
   const [customInstallments, setCustomInstallments] = useState<{ installmentId?: string; amount: number; dueDate: string; status: string }[]>([]);
   const [savingCustomFee, setSavingCustomFee] = useState(false);
 
@@ -158,7 +150,7 @@ export default function AdminFeesPage() {
   const [txAmount, setTxAmount] = useState(0);
   const [txMethod, setTxMethod] = useState('Cash');
   const [txRef, setTxRef] = useState('');
-  const [txInstId, setTxInstId] = useState('registration');
+  const [txInstId, setTxInstId] = useState('inst_1');
   const [txDate, setTxDate] = useState(() => getDateKeyIST());
   const [savingTx, setSavingTx] = useState(false);
 
@@ -278,8 +270,6 @@ export default function AdminFeesPage() {
 
     setCustomPackageTotal(tmpl.totalPackageAmount);
     setCustomDiscount(0);
-    setCustomRegAmount(tmpl.registrationFee);
-    setCustomRegStatus('pending');
 
     const mapped = tmpl.installments.map(inst => {
       const dueDateStr = inst.dueDate || (inst.dueDateOffsetDays 
@@ -317,10 +307,6 @@ export default function AdminFeesPage() {
             batchId: selectedStudent.batchId,
             totalPackageAmount: customPackageTotal,
             discountAmount: customDiscount,
-            registrationFee: {
-              amount: customRegAmount,
-              status: customRegStatus
-            },
             installments: customInstallments
           }
         })
@@ -436,7 +422,6 @@ export default function AdminFeesPage() {
           name: tmplName,
           classNum: tmplClass,
           totalPackageAmount: tmplTotal,
-          registrationFee: tmplReg,
           installments: tmplInstallments.map((inst, idx) => ({
             installmentNo: idx + 1,
             amount: inst.amount,
@@ -467,9 +452,9 @@ export default function AdminFeesPage() {
   const addTmplInstRow = () => {
     setTmplInstallments(prev => {
       const currentSum = prev.reduce((sum, inst) => sum + Number(inst.amount || 0), 0);
-      const remaining = Math.max(0, Number(tmplTotal || 0) - Number(tmplReg || 0) - currentSum);
+      const remaining = Math.max(0, Number(tmplTotal || 0) - currentSum);
 
-      let nextDate = getDateKeyIST();
+      let nextDate = '2026-03-15';
       if (prev.length > 0 && prev[prev.length - 1].dueDate) {
         try {
           const lastD = new Date(prev[prev.length - 1].dueDate);
@@ -683,8 +668,6 @@ export default function AdminFeesPage() {
                               setSelectedStudent(s);
                               setCustomPackageTotal(s.fee?.totalPackageAmount || 0);
                               setCustomDiscount(s.fee?.discountAmount || 0);
-                              setCustomRegAmount(s.fee?.registrationFee?.amount || 0);
-                              setCustomRegStatus(s.fee?.registrationFee?.status || 'pending');
                               setCustomInstallments(s.fee?.installments || []);
                             }}
                             className="btn btn-secondary"
@@ -711,7 +694,7 @@ export default function AdminFeesPage() {
                   ⚙️ Customize Fees: {selectedStudent.name}
                 </h3>
                 <p style={{ margin: '2px 0 0 0', fontSize: '11px', color: 'var(--text-muted)' }}>
-                  Customize the totals, discounts, registration structure, and splits for: <strong>{selectedStudent.name}</strong>
+                  Customize the totals, discounts, and installment splits for: <strong>{selectedStudent.name}</strong>
                 </p>
               </div>
               <div style={{ display: 'flex', gap: '8px' }}>
@@ -773,33 +756,6 @@ export default function AdminFeesPage() {
               </div>
             </div>
 
-            {/* Registration Fee Block */}
-            <div style={{ background: 'var(--bg-soft)', padding: '16px', borderRadius: 'var(--radius)', border: '1px solid var(--border-light)', marginBottom: '24px' }}>
-              <h4 style={{ margin: '0 0 12px 0', fontSize: '13px', fontWeight: 'bold' }}>🔑 Registration Fee Split</h4>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <label style={{ fontSize: '11px', fontWeight: 600 }}>Registration Fee (₹)</label>
-                  <input
-                    type="number"
-                    value={customRegAmount}
-                    onChange={(e) => setCustomRegAmount(Number(e.target.value))}
-                    style={{ padding: '8px 10px', borderRadius: '4px', border: '1px solid var(--border-light)', background: 'var(--surface)', color: 'var(--text)' }}
-                  />
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <label style={{ fontSize: '11px', fontWeight: 600 }}>Default Status</label>
-                  <select
-                    value={customRegStatus}
-                    onChange={(e) => setCustomRegStatus(e.target.value)}
-                    style={{ padding: '8px 10px', borderRadius: '4px', border: '1px solid var(--border-light)', background: 'var(--surface)', color: 'var(--text)' }}
-                  >
-                    <option value="pending">Pending</option>
-                    <option value="paid">Paid</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
             {/* Installments listing */}
             <div style={{ border: '1px solid var(--border-light)', borderRadius: 'var(--radius)', overflow: 'hidden', marginBottom: '24px' }}>
               <div style={{ padding: '12px 16px', background: 'var(--bg-soft)', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -811,9 +767,8 @@ export default function AdminFeesPage() {
 
               {(() => {
                 const sumOfSplits = customInstallments.reduce((sum, inst) => sum + Number(inst.amount || 0), 0);
-                const totalWithReg = sumOfSplits + customRegAmount;
                 const netPayable = customPackageTotal - customDiscount;
-                const isMatch = totalWithReg === netPayable;
+                const isMatch = sumOfSplits === netPayable;
                 return (
                   <div style={{
                     padding: '8px 12px',
@@ -826,7 +781,7 @@ export default function AdminFeesPage() {
                     {isMatch ? (
                       <span>✓ Splits match Net Payable Dues (₹{netPayable}).</span>
                     ) : (
-                      <span>⚠️ Sum of splits (₹{sumOfSplits}) + Reg Fee (₹{customRegAmount}) = ₹{totalWithReg}. Difference from Net Payable Dues (₹{netPayable}): ₹{netPayable - totalWithReg}.</span>
+                      <span>⚠️ Sum of splits (₹{sumOfSplits}) does not match Net Payable Dues (₹{netPayable}). Difference: ₹{netPayable - sumOfSplits}.</span>
                     )}
                   </div>
                 );
@@ -921,7 +876,6 @@ export default function AdminFeesPage() {
                   setTmplName('');
                   setTmplClass('10');
                   setTmplTotal(0);
-                  setTmplReg(0);
                   setTmplInstallments([]);
                   setShowTemplateModal(true);
                 }}
@@ -941,7 +895,6 @@ export default function AdminFeesPage() {
                       <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Template Name</th>
                       <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Class</th>
                       <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Package Fee</th>
-                      <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Reg Fee</th>
                       <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Splits</th>
                       <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', textAlign: 'right' }}>Actions</th>
                     </tr>
@@ -952,7 +905,6 @@ export default function AdminFeesPage() {
                         <td style={{ padding: '14px 16px', fontSize: '13px', fontWeight: 'bold' }}>{t.name}</td>
                         <td style={{ padding: '14px 16px', fontSize: '13px' }}>Class {t.classNum}</td>
                         <td style={{ padding: '14px 16px', fontSize: '13px', fontWeight: 700 }}>₹{t.totalPackageAmount}</td>
-                        <td style={{ padding: '14px 16px', fontSize: '13px' }}>₹{t.registrationFee}</td>
                         <td style={{ padding: '14px 16px', fontSize: '13px' }}>{t.installments?.length || 0} Splits</td>
                         <td style={{ padding: '14px 16px', textAlign: 'right' }}>
                           <button
@@ -970,7 +922,6 @@ export default function AdminFeesPage() {
                               setTmplName(t.name);
                               setTmplClass(t.classNum);
                               setTmplTotal(t.totalPackageAmount);
-                              setTmplReg(t.registrationFee);
                               setTmplInstallments(t.installments.map(i => ({ 
                                 amount: i.amount, 
                                 dueDate: i.dueDate || (i.dueDateOffsetDays ? getDateKeyIST(new Date(new Date().getTime() + i.dueDateOffsetDays * 24 * 60 * 60 * 1000)) : '')
@@ -1046,28 +997,19 @@ export default function AdminFeesPage() {
               // Resolve template for this class to populate selectable installment amount/dates
               const classTemplate = templates.find(t => t.classNum === bulkClass);
               const bulkInstallmentOptions: { id: string; label: string; amount: number }[] = [];
-              if (classTemplate) {
-                if (classTemplate.registrationFee > 0) {
+              if (classTemplate && classTemplate.installments) {
+                classTemplate.installments.forEach((inst) => {
                   bulkInstallmentOptions.push({
-                    id: 'registration',
-                    label: `Registration Fee (₹${classTemplate.registrationFee})`,
-                    amount: classTemplate.registrationFee
+                    id: `inst_${inst.installmentNo}`,
+                    label: `Installment #${inst.installmentNo} (₹${inst.amount}${inst.dueDate ? ` - Due: ${formatDateStr(inst.dueDate)}` : ''})`,
+                    amount: inst.amount
                   });
-                }
-                if (classTemplate.installments) {
-                  classTemplate.installments.forEach((inst) => {
-                    bulkInstallmentOptions.push({
-                      id: `inst_${inst.installmentNo}`,
-                      label: `Installment #${inst.installmentNo} (₹${inst.amount}${inst.dueDate ? ` - Due: ${formatDateStr(inst.dueDate)}` : ''})`,
-                      amount: inst.amount
-                    });
-                  });
-                }
+                });
               }
               if (bulkInstallmentOptions.length === 0) {
                 bulkInstallmentOptions.push({
-                  id: 'registration',
-                  label: 'Registration Fee (₹0 - Unconfigured)',
+                  id: 'inst_1',
+                  label: 'Installment #1 (₹0 - Unconfigured)',
                   amount: 0
                 });
               }
@@ -1295,8 +1237,8 @@ export default function AdminFeesPage() {
                   />
                 </div>
 
-                {/* Class, Total, Registration Row */}
-                <div style={{ display: 'grid', gridTemplateColumns: '130px 1fr 1fr', gap: '12px' }}>
+                {/* Class & Total Row */}
+                <div style={{ display: 'grid', gridTemplateColumns: '130px 1fr', gap: '12px' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
                     <label style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-muted)' }}>Class</label>
                     <select
@@ -1326,20 +1268,6 @@ export default function AdminFeesPage() {
                       style={{ padding: '8px 12px', height: '38px', borderRadius: '6px', border: '1px solid var(--border-light)', background: 'var(--bg-soft)', color: 'var(--text)', fontSize: '13px', fontWeight: 600, boxSizing: 'border-box' }}
                     />
                   </div>
-
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                    <label style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-muted)' }}>Registration Fee (₹)</label>
-                    <input
-                      type="number"
-                      value={tmplReg === 0 ? '' : (tmplReg ?? '')}
-                      onChange={(e) => {
-                        const raw = e.target.value;
-                        setTmplReg(raw === '' ? '' as any : Number(raw));
-                      }}
-                      placeholder="e.g. 5000"
-                      style={{ padding: '8px 12px', height: '38px', borderRadius: '6px', border: '1px solid var(--border-light)', background: 'var(--bg-soft)', color: 'var(--text)', fontSize: '13px', fontWeight: 600, boxSizing: 'border-box' }}
-                    />
-                  </div>
                 </div>
 
                 {/* Installments Splits Section */}
@@ -1363,10 +1291,9 @@ export default function AdminFeesPage() {
                   {/* Balance validation bar */}
                   {(() => {
                     const sumOfSplits = tmplInstallments.reduce((sum, inst) => sum + Number(inst.amount || 0), 0);
-                    const totalWithReg = sumOfSplits + Number(tmplReg || 0);
                     const totalPkg = Number(tmplTotal || 0);
-                    const isMatch = totalPkg > 0 && totalWithReg === totalPkg;
-                    const diff = totalPkg - totalWithReg;
+                    const isMatch = totalPkg > 0 && sumOfSplits === totalPkg;
+                    const diff = totalPkg - sumOfSplits;
                     return (
                       <div style={{
                         padding: '8px 14px',
@@ -1383,7 +1310,7 @@ export default function AdminFeesPage() {
                         <span>
                           {isMatch 
                             ? `✓ Splits perfectly match Total Package (₹${totalPkg}).` 
-                            : `⚠️ Sum (₹${sumOfSplits}) + Reg Fee (₹${tmplReg || 0}) = ₹${totalWithReg}. Difference: ₹${diff}.`
+                            : `⚠️ Sum of splits (₹${sumOfSplits}) does not match Total Package (₹${totalPkg}). Difference: ₹${diff}.`
                           }
                         </span>
                         {diff > 0 && tmplInstallments.length > 0 && (
@@ -1566,7 +1493,6 @@ export default function AdminFeesPage() {
                     onChange={(e) => setTxInstId(e.target.value)}
                     style={{ padding: '8px 10px', borderRadius: '4px', border: '1px solid var(--border-light)', background: 'var(--bg-soft)', color: 'var(--text)' }}
                   >
-                    <option value="registration">Registration Fee</option>
                     {customInstallments.map((inst, idx) => (
                       <option key={idx} value={inst.installmentId || `inst_${idx + 1}`}>Installment {idx + 1} (₹{inst.amount})</option>
                     ))}

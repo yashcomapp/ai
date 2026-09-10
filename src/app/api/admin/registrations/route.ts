@@ -308,11 +308,6 @@ export async function POST(req: NextRequest) {
             totalPackageAmount: Number(tmpl.totalPackageAmount || 0),
             discountAmount: 0,
             netPayableAmount: netPayable,
-            registrationFee: {
-              amount: Number(tmpl.registrationFee || 0),
-              status: 'pending',
-              paidAt: null
-            },
             installments: formattedInstallments,
             totalPaidAmount: 0,
             outstandingAmount: netPayable,

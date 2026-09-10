@@ -24,38 +24,27 @@ async function recalculateStudentFeeStats(studentCode: string) {
   const outstandingAmount = Math.max(0, netPayableAmount - totalPaidAmount);
 
   const paymentsByInst: Record<string, number> = {};
-  let regPaidTotal = 0;
 
   transactions.forEach(tx => {
-    if (tx.installmentId === 'registration') {
-      regPaidTotal += Number(tx.amountPaid || 0);
-    } else if (tx.installmentId) {
+    if (tx.installmentId) {
       paymentsByInst[tx.installmentId] = (paymentsByInst[tx.installmentId] || 0) + Number(tx.amountPaid || 0);
     }
   });
-
-  const regFeeData = feeData.registrationFee || { amount: 0, status: 'pending' };
-  const regStatus = regPaidTotal >= Number(regFeeData.amount || 0) ? 'paid' : 'pending';
-  const updatedRegFee = {
-    ...regFeeData,
-    status: regStatus,
-    paidAt: regStatus === 'paid' ? (regFeeData.paidAt || new Date().toISOString()) : null
-  };
 
   const todayStr = getISTDateString();
   const installments = Array.isArray(feeData.installments) ? feeData.installments : [];
   let hasOverdueInstallment = false;
   let nextInstallmentDueDate: string | null = null;
 
-  const updatedInstallments = installments.map((inst: any) => {
-    const instId = inst.installmentId || `inst_${inst.installmentNo}`;
+  const updatedInstallments = installments.map((inst: any, idx: number) => {
+    const instId = inst.installmentId || `inst_${idx + 1}`;
     const paidForInst = paymentsByInst[instId] || 0;
     const targetAmount = Number(inst.amount || 0);
     
     let status = 'pending';
     let paidAt = inst.paidAt || null;
 
-    if (paidForInst >= targetAmount) {
+    if (paidForInst >= targetAmount && targetAmount > 0) {
       status = 'paid';
       paidAt = paidAt || new Date().toISOString();
     } else {
@@ -71,13 +60,14 @@ async function recalculateStudentFeeStats(studentCode: string) {
     return {
       ...inst,
       installmentId: instId,
+      installmentNo: idx + 1,
       status,
       paidAt
     };
   });
 
   let feeStatus = 'unpaid';
-  if (totalPaidAmount >= netPayableAmount) {
+  if (totalPaidAmount >= netPayableAmount && netPayableAmount > 0) {
     feeStatus = 'fully_paid';
   } else if (totalPaidAmount > 0) {
     feeStatus = 'partially_paid';
@@ -89,7 +79,6 @@ async function recalculateStudentFeeStats(studentCode: string) {
     feeStatus,
     hasOverdueInstallment,
     nextInstallmentDueDate,
-    registrationFee: updatedRegFee,
     installments: updatedInstallments,
     updatedAt: new Date().toISOString()
   });
@@ -203,11 +192,6 @@ export async function POST(req: NextRequest) {
         totalPackageAmount: Number(feeData.totalPackageAmount),
         discountAmount: Number(feeData.discountAmount || 0),
         netPayableAmount: netPayable,
-        registrationFee: {
-          amount: Number(feeData.registrationFee?.amount || 0),
-          status: feeData.registrationFee?.status || 'pending',
-          paidAt: feeData.registrationFee?.paidAt || null
-        },
         installments: formattedInstallments,
         updatedAt: new Date().toISOString()
       };
@@ -286,11 +270,6 @@ export async function POST(req: NextRequest) {
           totalPackageAmount: Number(tmplData.totalPackageAmount),
           discountAmount: 0,
           netPayableAmount: Number(tmplData.totalPackageAmount),
-          registrationFee: {
-            amount: Number(tmplData.registrationFee || 0),
-            status: 'pending',
-            paidAt: null
-          },
           installments: formattedInstallments,
           templateId: tmplDoc.id,
           templateName: tmplData.name || '',

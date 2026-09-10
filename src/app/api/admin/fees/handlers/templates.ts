@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
     const { action, templateId, templateData } = body;
 
     if (action === 'saveTemplate') {
-      const { name, classNum, totalPackageAmount, registrationFee, installments } = templateData;
+      const { name, classNum, totalPackageAmount, installments } = templateData;
       if (!name || !classNum || totalPackageAmount === undefined || !installments) {
         return NextResponse.json({ error: 'Missing required template fields.' }, { status: 400 });
       }
@@ -48,11 +48,11 @@ export async function POST(req: NextRequest) {
         name,
         classNum: String(classNum),
         totalPackageAmount: Number(totalPackageAmount),
-        registrationFee: Number(registrationFee || 0),
-        installments: installments.map((inst: any) => ({
-          installmentNo: Number(inst.installmentNo),
+        registrationFee: 0,
+        installments: installments.map((inst: any, idx: number) => ({
+          installmentNo: idx + 1,
           amount: Number(inst.amount),
-          dueDate: String(inst.dueDate || '')
+          dueDate: String(inst.dueDate || (idx === 0 ? '2026-03-15' : ''))
         })),
         updatedAt: new Date().toISOString()
       };

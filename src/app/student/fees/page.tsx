@@ -94,23 +94,6 @@ export default function StudentFeesPage() {
               </div>
             )}
 
-            {/* Registration Fee Box */}
-            {fee.registrationFee && (
-              <div className="card" style={{ background: 'var(--surface)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-lg)', padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <h4 style={{ margin: 0, fontSize: '13px', fontWeight: 'bold' }}>🔑 Registration Fee</h4>
-                  <p style={{ margin: '2px 0 0 0', fontSize: '11px', color: 'var(--text-muted)' }}>Initial seat booking rate</p>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <strong style={{ fontSize: '14px' }}>₹{fee.registrationFee.amount}</strong>
-                  {fee.registrationFee.status === 'paid' ? (
-                    <span className="badge badge-success" style={{ fontSize: '10px' }}>PAID</span>
-                  ) : (
-                    <span className="badge badge-secondary" style={{ fontSize: '10px' }}>PENDING</span>
-                  )}
-                </div>
-              </div>
-            )}
 
             {/* Installments schedule list */}
             <div className="card" style={{ background: 'var(--surface)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
@@ -174,7 +157,7 @@ export default function StudentFeesPage() {
                         <tr key={tx.transactionId} style={{ borderBottom: '1px solid var(--border-light)', fontSize: '13px' }}>
                           <td style={{ padding: '14px 16px', fontWeight: 'bold', fontFamily: 'monospace' }}>{tx.transactionId}</td>
                           <td style={{ padding: '14px 16px' }}>
-                            {tx.installmentId === 'registration' ? 'Registration Fee' : tx.installmentId}
+                            {tx.installmentId?.startsWith('inst_') ? `Installment ${tx.installmentId.replace('inst_', '')}` : (tx.installmentId === 'registration' ? 'Installment 1' : (tx.installmentId || '--'))}
                           </td>
                           <td style={{ padding: '14px 16px' }}>{tx.paymentMethod}</td>
                           <td style={{ padding: '14px 16px', color: 'var(--text-muted)' }}>{tx.referenceNumber || '--'}</td>
