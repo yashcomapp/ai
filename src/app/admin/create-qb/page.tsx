@@ -1889,88 +1889,26 @@ Return ONLY valid JSON. No extra text.`;
               )}
             </div>
 
-            {/* Question Type, Track & Vault Toggles (SSOT) */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginTop: '16px', borderTop: '1px solid var(--border-light)', paddingTop: '14px' }}>
-              
-              {/* Row 1: Generator Mode */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: '12px', fontWeight: 'bold' }}>Generator Mode:</span>
-                  <button 
-                    type="button"
-                    className={`btn btn-sm ${questionType === 'objective' ? 'btn-primary' : 'btn-secondary'}`}
-                    onClick={() => handleSwitchType('objective')}
-                    style={{ borderRadius: '20px', fontWeight: questionType === 'objective' ? 700 : 500 }}
-                  >
-                    🎯 Objective Question Bank (OSC, OTF, OAR, OMC, ONE)
-                  </button>
-                  <button 
-                    type="button"
-                    className={`btn btn-sm ${questionType === 'subjective' ? 'btn-primary' : 'btn-secondary'}`}
-                    onClick={() => handleSwitchType('subjective')}
-                    style={{ borderRadius: '20px', fontWeight: questionType === 'subjective' ? 700 : 500 }}
-                  >
-                    📝 Subjective Question Bank (Definitions, Short &amp; Long)
-                  </button>
-                </div>
-              </div>
-
-              {/* Row 2: Track & Vault selection */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', background: 'var(--bg-soft)', padding: '10px 14px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)' }}>
-                {/* Track Selection */}
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--text-muted)' }}>Target Track:</span>
-                  <button 
-                    type="button"
-                    className={`btn btn-sm ${examCategory === 'standard' ? 'btn-primary' : 'btn-secondary'}`}
-                    onClick={() => setExamCategory('standard')}
-                    style={{ borderRadius: '16px', fontSize: '11px', padding: '3px 10px' }}
-                    title="Standard School &amp; Board Curriculum level (~30% Easy, ~50% Medium, ~20% Hard)"
-                  >
-                    📘 Standard Board Track
-                  </button>
-                  <button 
-                    type="button"
-                    className={`btn btn-sm ${examCategory === 'foundation' ? 'btn-success' : 'btn-secondary'}`}
-                    onClick={() => setExamCategory('foundation')}
-                    style={{ borderRadius: '16px', fontSize: '11px', padding: '3px 10px' }}
-                    title="Foundation &amp; Olympiad level HOTS (~10% Easy, ~40% Medium, ~50% Hard)"
-                  >
-                    🏆 Foundation &amp; Olympiad (HOTS)
-                  </button>
-                </div>
-
-                {/* Storage Vault */}
-                <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--text-muted)' }}>Vault (SSOT):</span>
-                  <button 
-                    type="button"
-                    className={`btn btn-sm ${vault === 'practice' ? 'btn-primary' : 'btn-secondary'}`}
-                    onClick={() => setVault('practice')}
-                    style={{ borderRadius: '16px', fontSize: '11px', padding: '3px 10px' }}
-                    title="Practice Vault: Strictly for self-paced practice and topic mastery"
-                  >
-                    🟢 Practice
-                  </button>
-                  <button 
-                    type="button"
-                    className={`btn btn-sm ${vault === 'exam' ? 'btn-primary' : 'btn-secondary'}`}
-                    onClick={() => setVault('exam')}
-                    style={{ borderRadius: '16px', fontSize: '11px', padding: '3px 10px' }}
-                    title="Exam Vault: Strictly for formal scheduled classroom tests and midterms"
-                  >
-                    🔵 Exam
-                  </button>
-                  <button 
-                    type="button"
-                    className={`btn btn-sm ${vault === 'mock' ? 'btn-primary' : 'btn-secondary'}`}
-                    onClick={() => setVault('mock')}
-                    style={{ borderRadius: '16px', fontSize: '11px', padding: '3px 10px' }}
-                    title="Mock Vault: Strictly for comprehensive terminal and board mock exams"
-                  >
-                    🟣 Mock
-                  </button>
-                </div>
+            {/* Generator Mode Selector (SSOT) */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px', marginTop: '16px', borderTop: '1px solid var(--border-light)', paddingTop: '14px' }}>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '12px', fontWeight: 'bold' }}>Generator Mode:</span>
+                <button 
+                  type="button"
+                  className={`btn btn-sm ${questionType === 'objective' ? 'btn-primary' : 'btn-secondary'}`}
+                  onClick={() => handleSwitchType('objective')}
+                  style={{ borderRadius: '20px', fontWeight: questionType === 'objective' ? 700 : 500 }}
+                >
+                  🎯 Objective Question Bank (OSC, OTF, OAR, OMC, ONE)
+                </button>
+                <button 
+                  type="button"
+                  className={`btn btn-sm ${questionType === 'subjective' ? 'btn-primary' : 'btn-secondary'}`}
+                  onClick={() => handleSwitchType('subjective')}
+                  style={{ borderRadius: '20px', fontWeight: questionType === 'subjective' ? 700 : 500 }}
+                >
+                  📝 Subjective Question Bank (Definitions, Short &amp; Long)
+                </button>
               </div>
             </div>
 
