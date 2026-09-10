@@ -679,11 +679,8 @@ export default function AdminFeesPage() {
                           <td style={{ padding: '14px 16px', fontSize: '13px' }}>
                             <div><strong>{s.name}</strong></div>
                           </td>
-                          <td style={{ padding: '14px 16px', fontSize: '13px' }}>
-                            <div style={{ fontWeight: 600 }}>Class {s.classNum}</div>
-                            {s.batchName && !s.batchName.includes(s.batchId) && (
-                              <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{s.batchName}</div>
-                            )}
+                          <td style={{ padding: '14px 16px', fontSize: '13px', fontWeight: 600 }}>
+                            Class {s.classNum}
                           </td>
                           <td style={{ padding: '14px 16px', fontSize: '13px', fontWeight: 700 }}>
                             ₹{s.fee?.netPayableAmount !== undefined ? s.fee.netPayableAmount : '--'}
