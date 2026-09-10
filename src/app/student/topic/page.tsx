@@ -70,7 +70,7 @@ function TopicPracticeContent() {
   const [textbookStudyMessage, setTextbookStudyMessage] = useState('');
   const [textbookConfirmedCheck, setTextbookConfirmedCheck] = useState(false);
   const [confirmingTextbook, setConfirmingTextbook] = useState(false);
-  const [lockType, setLockType] = useState<'initial' | 'cooldown' | 'daily' | null>(null);
+  const [lockType, setLockType] = useState<'initial' | 'cooldown' | 'daily' | 'recovery_next_day' | 'recovery_awaiting_approval' | null>(null);
   const [showRecoveryPrompt, setShowRecoveryPrompt] = useState(false);
   const [recoveryMessage, setRecoveryMessage] = useState('');
 
@@ -217,6 +217,7 @@ function TopicPracticeContent() {
       if (pData) {
         if (pData.requireRecoveryMode || pData.allowRecovery) {
           setShowRecoveryPrompt(true);
+          setLockType(pData.lockType || null);
           setRecoveryMessage(pData.message || '');
           setLoading(false);
           return;
@@ -776,6 +777,15 @@ function TopicPracticeContent() {
   }
 
   if (showRecoveryPrompt) {
+    const isSameDayLocked = lockType === 'recovery_next_day';
+    const isAwaitingApproval = lockType === 'recovery_awaiting_approval';
+    const icon = isSameDayLocked ? '⏳' : isAwaitingApproval ? '👨‍🏫' : '🩺';
+    const title = isSameDayLocked 
+      ? 'Guided Recovery Diagnostic (Available Tomorrow)'
+      : isAwaitingApproval
+        ? 'Guided Recovery Diagnostic (Awaiting Approval)'
+        : 'Guided Recovery Diagnostic (8 Targeted Questions)';
+
     return (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '80vh', padding: '20px' }}>
         <div style={{ 
@@ -791,9 +801,9 @@ function TopicPracticeContent() {
           flexDirection: 'column',
           alignItems: 'center'
         }}>
-          <div style={{ fontSize: '3.5rem', marginBottom: '16px' }}>🩺</div>
+          <div style={{ fontSize: '3.5rem', marginBottom: '16px' }}>{icon}</div>
           <h3 style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text)', marginBottom: '12px' }}>
-            Guided Recovery Diagnostic / उपचारात्मक निदान
+            {title}
           </h3>
           <p style={{ fontSize: '14px', color: 'var(--text-muted)', lineHeight: '1.6', marginBottom: '24px' }}>
             {recoveryMessage || "You have completed extensive practice on this topic. Take the Guided Recovery Diagnostic (8 targeted questions) to strengthen core concepts and achieve Mastery."}
@@ -806,17 +816,38 @@ function TopicPracticeContent() {
             >
               🏠 Dashboard
             </button>
-            <button 
-              className="btn btn-primary" 
-              onClick={() => {
-                setShowRecoveryPrompt(false);
-                setLoading(true);
-                router.push(`/student/topic?topicCode=${topicCode}&category=${category}&mode=recovery`);
-              }}
-              style={{ flex: 1, fontWeight: 700 }}
-            >
-              🚀 Start Diagnostic (8 Qs)
-            </button>
+            {isSameDayLocked ? (
+              <button 
+                className="btn btn-secondary" 
+                disabled 
+                style={{ flex: 1, opacity: 0.6 }}
+              >
+                🔒 Available Tomorrow
+              </button>
+            ) : isAwaitingApproval ? (
+              <button 
+                className="btn btn-primary" 
+                onClick={() => {
+                  setLoading(true);
+                  fetchQuestions();
+                }}
+                style={{ flex: 1, fontWeight: 700 }}
+              >
+                🔄 Refresh Status
+              </button>
+            ) : (
+              <button 
+                className="btn btn-primary" 
+                onClick={() => {
+                  setShowRecoveryPrompt(false);
+                  setLoading(true);
+                  router.push(`/student/topic?topicCode=${topicCode}&category=${category}&mode=recovery`);
+                }}
+                style={{ flex: 1, fontWeight: 700 }}
+              >
+                🚀 Start Diagnostic (8 Qs)
+              </button>
+            )}
           </div>
         </div>
       </div>

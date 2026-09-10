@@ -1977,7 +1977,7 @@ Return ONLY a valid JSON object matching the schema below:
             {/* Topic Classification Archetype (SSOT) */}
             <div>
               <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '5px' }}>
-                Topic Classification Archetype (SSOT)
+                Classification Archetype (SSOT)
               </label>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', marginBottom: '8px' }}>
                 <button
@@ -1992,25 +1992,25 @@ Return ONLY a valid JSON object matching the schema below:
                   type="button"
                   className={`btn btn-sm ${topicModal.topicClassification === 'conceptual' ? 'btn-primary' : 'btn-secondary'}`}
                   style={{ fontSize: '10.5px', padding: '6px 8px', textAlign: 'left', fontWeight: topicModal.topicClassification === 'conceptual' ? 700 : 500 }}
-                  onClick={() => setTopicModal(p => ({ ...p, topicClassification: 'conceptual', targetQuestions: p.hasSubtopics ? p.targetQuestions : 75 }))}
+                  onClick={() => setTopicModal(p => ({ ...p, topicClassification: 'conceptual', targetQuestions: p.hasSubtopics ? p.targetQuestions : 50 }))}
                 >
-                  ⚡ Conceptual (~75 Qs)
+                  ⚡ Conceptual (~50 Qs)
                 </button>
                 <button
                   type="button"
                   className={`btn btn-sm ${topicModal.topicClassification === 'calculative' ? 'btn-primary' : 'btn-secondary'}`}
                   style={{ fontSize: '10.5px', padding: '6px 8px', textAlign: 'left', fontWeight: topicModal.topicClassification === 'calculative' ? 700 : 500 }}
-                  onClick={() => setTopicModal(p => ({ ...p, topicClassification: 'calculative', targetQuestions: p.hasSubtopics ? p.targetQuestions : 140 }))}
+                  onClick={() => setTopicModal(p => ({ ...p, topicClassification: 'calculative', targetQuestions: p.hasSubtopics ? p.targetQuestions : 75 }))}
                 >
-                  🔥 Calculative (~140 Qs)
+                  🔥 Calculative (~75 Qs)
                 </button>
                 <button
                   type="button"
                   className={`btn btn-sm ${topicModal.topicClassification === 'hots' ? 'btn-primary' : 'btn-secondary'}`}
                   style={{ fontSize: '10.5px', padding: '6px 8px', textAlign: 'left', fontWeight: topicModal.topicClassification === 'hots' ? 700 : 500 }}
-                  onClick={() => setTopicModal(p => ({ ...p, topicClassification: 'hots', targetQuestions: p.hasSubtopics ? p.targetQuestions : 100 }))}
+                  onClick={() => setTopicModal(p => ({ ...p, topicClassification: 'hots', targetQuestions: p.hasSubtopics ? p.targetQuestions : 60 }))}
                 >
-                  🏆 HOTS (~100 Qs)
+                  🏆 HOTS (~60 Qs)
                 </button>
               </div>
             </div>
@@ -2028,20 +2028,13 @@ Return ONLY a valid JSON object matching the schema below:
               </div>
             ) : (
               <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px' }}>
-                  <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>Target Question Quota</label>
-                  <div style={{ display: 'flex', gap: '4px' }}>
-                    <button type="button" className="btn btn-secondary btn-sm" style={{ fontSize: '10px', padding: '1px 6px', borderRadius: '10px' }} onClick={() => setTopicModal(p => ({ ...p, targetQuestions: 50 }))}>🔥 Deep (50)</button>
-                    <button type="button" className="btn btn-secondary btn-sm" style={{ fontSize: '10px', padding: '1px 6px', borderRadius: '10px' }} onClick={() => setTopicModal(p => ({ ...p, targetQuestions: 30 }))}>⚡ Std (30)</button>
-                    <button type="button" className="btn btn-secondary btn-sm" style={{ fontSize: '10px', padding: '1px 6px', borderRadius: '10px' }} onClick={() => setTopicModal(p => ({ ...p, targetQuestions: 15 }))}>🎯 Light (15)</button>
-                  </div>
-                </div>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '5px' }}>Target Question Quota</label>
                 <input 
                   type="number" 
                   value={topicModal.targetQuestions}
                   min={5}
-                  max={150}
-                  placeholder="e.g. 30"
+                  max={200}
+                  placeholder="e.g. 50"
                   onChange={(e) => setTopicModal(prev => ({ ...prev, targetQuestions: e.target.value === '' ? '' : (parseInt(e.target.value, 10) || '') }))}
                   style={{ width: '100%', padding: '8px', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', background: 'var(--surface)', color: 'var(--text)', fontSize: '12px' }}
                 />
@@ -2108,52 +2101,45 @@ Return ONLY a valid JSON object matching the schema below:
                   type="button"
                   className={`btn btn-sm ${subtopicModal.topicClassification === 'micro' ? 'btn-primary' : 'btn-secondary'}`}
                   style={{ fontSize: '10.5px', padding: '6px 8px', textAlign: 'left', fontWeight: subtopicModal.topicClassification === 'micro' ? 700 : 500 }}
-                  onClick={() => setSubtopicModal(p => ({ ...p, topicClassification: 'micro', targetQuestions: 15 }))}
+                  onClick={() => setSubtopicModal(p => ({ ...p, topicClassification: 'micro', targetQuestions: 30 }))}
                 >
-                  🎯 Micro (~15 Qs)
+                  🎯 Micro (~30 Qs)
                 </button>
                 <button
                   type="button"
                   className={`btn btn-sm ${subtopicModal.topicClassification === 'conceptual' ? 'btn-primary' : 'btn-secondary'}`}
                   style={{ fontSize: '10.5px', padding: '6px 8px', textAlign: 'left', fontWeight: subtopicModal.topicClassification === 'conceptual' ? 700 : 500 }}
-                  onClick={() => setSubtopicModal(p => ({ ...p, topicClassification: 'conceptual', targetQuestions: 30 }))}
+                  onClick={() => setSubtopicModal(p => ({ ...p, topicClassification: 'conceptual', targetQuestions: 50 }))}
                 >
-                  ⚡ Conceptual (~30 Qs)
+                  ⚡ Conceptual (~50 Qs)
                 </button>
                 <button
                   type="button"
                   className={`btn btn-sm ${subtopicModal.topicClassification === 'calculative' ? 'btn-primary' : 'btn-secondary'}`}
                   style={{ fontSize: '10.5px', padding: '6px 8px', textAlign: 'left', fontWeight: subtopicModal.topicClassification === 'calculative' ? 700 : 500 }}
-                  onClick={() => setSubtopicModal(p => ({ ...p, topicClassification: 'calculative', targetQuestions: 50 }))}
+                  onClick={() => setSubtopicModal(p => ({ ...p, topicClassification: 'calculative', targetQuestions: 75 }))}
                 >
-                  🔥 Calculative (~50 Qs)
+                  🔥 Calculative (~75 Qs)
                 </button>
                 <button
                   type="button"
                   className={`btn btn-sm ${subtopicModal.topicClassification === 'hots' ? 'btn-primary' : 'btn-secondary'}`}
                   style={{ fontSize: '10.5px', padding: '6px 8px', textAlign: 'left', fontWeight: subtopicModal.topicClassification === 'hots' ? 700 : 500 }}
-                  onClick={() => setSubtopicModal(p => ({ ...p, topicClassification: 'hots', targetQuestions: 35 }))}
+                  onClick={() => setSubtopicModal(p => ({ ...p, topicClassification: 'hots', targetQuestions: 60 }))}
                 >
-                  🏆 HOTS (~35 Qs)
+                  🏆 HOTS (~60 Qs)
                 </button>
               </div>
             </div>
 
             <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px' }}>
-                <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>Target Question Quota</label>
-                <div style={{ display: 'flex', gap: '4px' }}>
-                  <button type="button" className="btn btn-secondary btn-sm" style={{ fontSize: '10px', padding: '1px 6px', borderRadius: '10px' }} onClick={() => setSubtopicModal(p => ({ ...p, targetQuestions: 50, topicClassification: 'calculative' }))}>🔥 Deep (50)</button>
-                  <button type="button" className="btn btn-secondary btn-sm" style={{ fontSize: '10px', padding: '1px 6px', borderRadius: '10px' }} onClick={() => setSubtopicModal(p => ({ ...p, targetQuestions: 30, topicClassification: 'conceptual' }))}>⚡ Std (30)</button>
-                  <button type="button" className="btn btn-secondary btn-sm" style={{ fontSize: '10px', padding: '1px 6px', borderRadius: '10px' }} onClick={() => setSubtopicModal(p => ({ ...p, targetQuestions: 15, topicClassification: 'micro' }))}>🎯 Light (15)</button>
-                </div>
-              </div>
+              <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '5px' }}>Target Question Quota</label>
               <input 
                 type="number" 
                 value={subtopicModal.targetQuestions}
                 min={5}
-                max={150}
-                placeholder="e.g. 30"
+                max={200}
+                placeholder="e.g. 50"
                 onChange={(e) => setSubtopicModal(prev => ({ ...prev, targetQuestions: e.target.value === '' ? '' : (parseInt(e.target.value, 10) || '') }))}
                 style={{ width: '100%', padding: '8px', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', background: 'var(--surface)', color: 'var(--text)', fontSize: '12px' }}
               />

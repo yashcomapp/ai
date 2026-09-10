@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ message: 'Missing topicCode parameter.' }, { status: 400 });
     }
 
-    // Check if maximum 5 practices completed limit has been reached
+    // Check if maximum 3 practices completed limit has been reached
     const countSnap = await adminDb.collection('parentReviews')
       .where('studentCode', '==', studentCode)
       .where('topicCode', '==', topicCode)
@@ -50,14 +50,6 @@ export async function GET(req: NextRequest) {
       .count()
       .get();
     const completedPractices = countSnap.data().count;
-
-    if (completedPractices >= 5 && !isRecoveryMode) {
-      return NextResponse.json({
-        message: 'Maximum limit of 5 practices reached for this topic. Take the Guided Recovery Diagnostic (8 targeted questions) to strengthen core concepts and achieve Mastery.',
-        allowRecovery: true,
-        requireRecoveryMode: true
-      }, { status: 403 });
-    }
 
     // Silently close any existing in-progress practice attempts to allow seamless re-entry/retries
     const activeSnap = await adminDb.collection('practiceAttempts')
@@ -94,6 +86,9 @@ export async function GET(req: NextRequest) {
     let textbookReadConfirmed = false;
     let cooldownUntil: any = null;
     let dailyLockedUntil: any = null;
+    let lastPracticeDate: string = '';
+    let recoveryApproved = false;
+    let recoveryImmediateUnlocked = false;
 
     const masteryDocId = `${studentCode}_${topicCode}`;
     const masterySnap = await adminDb.collection('studentTopicMastery').doc(masteryDocId).get();
@@ -106,6 +101,9 @@ export async function GET(req: NextRequest) {
       textbookReadConfirmed = !!mData.textbookReadConfirmed;
       cooldownUntil = mData.cooldownUntil ? (mData.cooldownUntil.toDate ? mData.cooldownUntil.toDate() : new Date(mData.cooldownUntil)) : null;
       dailyLockedUntil = mData.dailyLockedUntil ? (mData.dailyLockedUntil.toDate ? mData.dailyLockedUntil.toDate() : new Date(mData.dailyLockedUntil)) : null;
+      lastPracticeDate = mData.lastPracticeDate || '';
+      recoveryApproved = !!mData.recoveryApproved;
+      recoveryImmediateUnlocked = !!mData.recoveryImmediateUnlocked;
     }
 
     let topicClassification = masterySnap.exists ? masterySnap.data()?.topicClassification : undefined;
@@ -124,11 +122,46 @@ export async function GET(req: NextRequest) {
     }
 
     const now = new Date();
-
     const todayIST = getDateKeyIST(now);
-    const isToday = masterySnap.exists ? (masterySnap.data()!.lastPracticeDate === todayIST) : false;
+    const isToday = lastPracticeDate === todayIST;
     const dailySessions = isToday ? (masterySnap.data()!.dailyPracticeSessionsCount || 0) : 0;
     const practiceQuestionsAttempted = masterySnap.exists ? (masterySnap.data()!.practiceQuestionsAttempted || 0) : 0;
+
+    const isPracticeLimitReached = completedPractices >= 3 || (practiceQuestionsAttempted >= 18 && mastery < 80);
+
+    // If practice limit reached and not in recovery mode, prompt to enter Guided Recovery Diagnostic
+    if (isPracticeLimitReached && !isRecoveryMode) {
+      return NextResponse.json({
+        message: 'Maximum limit of 3 practice sessions reached for this topic. Take the Guided Recovery Diagnostic (8 targeted questions) to strengthen core concepts and achieve Mastery.',
+        allowRecovery: true,
+        requireRecoveryMode: true
+      }, { status: 403 });
+    }
+
+    // If entering recovery mode: enforce Next-Day IST and Parent/Teacher Approval Gate
+    if (isRecoveryMode) {
+      const isNextCalendarDay = lastPracticeDate ? (todayIST > lastPracticeDate) : true;
+      
+      // 1. Same-Day Gate: Student must wait until tomorrow to allow overnight sleep consolidation
+      if (!isNextCalendarDay && !recoveryImmediateUnlocked) {
+        return NextResponse.json({
+          requireRecoveryMode: true,
+          allowRecovery: true,
+          lockType: 'recovery_next_day',
+          message: 'You have completed your 3 practice sessions for today. Please review your textbook notes today. Your Guided Recovery Diagnostic will be available tomorrow anytime.'
+        }, { status: 403 });
+      }
+
+      // 2. Parent / Teacher Approval Gate: Must be approved by parent or teacher
+      if (!recoveryApproved && !recoveryImmediateUnlocked) {
+        return NextResponse.json({
+          requireRecoveryMode: true,
+          allowRecovery: true,
+          lockType: 'recovery_awaiting_approval',
+          message: 'Your Guided Recovery Diagnostic is unlocked for today! Please ask your parent or teacher to confirm your textbook review to begin.'
+        }, { status: 403 });
+      }
+    }
 
     // GUARDRAIL 1: Daily Pacing Cap (Anti-Spam per Topic: Max 3 sessions = 18 questions/day per topic)
     if (dailySessions >= 3 && !isRecoveryMode) {
@@ -168,20 +201,11 @@ export async function GET(req: NextRequest) {
       }, { status: 403 });
     }
 
-    // GUARDRAIL 4: Guided Recovery Diagnostic Mode (After 24+ practice attempts without mastery, prompt for Recovery Diagnostic)
-    if (practiceQuestionsAttempted >= 24 && mastery < 80 && !isRecoveryMode && mode !== 'recovery') {
-      return NextResponse.json({
-        requireRecoveryMode: true,
-        message: "You have completed extensive practice on this topic. Take the Guided Recovery Diagnostic (8 targeted questions) to strengthen core concepts and achieve Mastery.",
-        allowRecovery: true
-      }, { status: 403 });
-    }
-
     const finalSize = isRecoveryMode ? 8 : (size || 6);
 
-    // 1.2 Fetch all questions for this topic
+    // 1.2 Fetch all questions for this topic (STRICTLY 5 Canonical Objective Types: OSC, OMC, OAR, OTF, ONE)
     let allQuestions: any[] = await getQuestionsByTopic(topicCode);
-    const PRACTICE_OBJECTIVE_TYPES = ['single_mcq', 'multiple_mcq', 'assertion_reason', 'true_false', 'numerical', 'fill_blank', 'fill_blanks'];
+    const PRACTICE_OBJECTIVE_TYPES = ['single_mcq', 'multiple_mcq', 'assertion_reason', 'true_false', 'numerical'];
     allQuestions = allQuestions.filter((q: any) => {
       if (!q.type || !PRACTICE_OBJECTIVE_TYPES.includes(q.type) || q.type.startsWith('subjective')) return false;
       // ZERO-COLLISION: Exclude questions strictly designated for formal exams or mock tests
@@ -517,6 +541,43 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { action, topicCode, category, answers, durationSpent, violations, sessionId, proctoringViolationTriggered, mode, isRecoveryMode, disputedQuestionIds } = body;
     const recoveryActive = !!isRecoveryMode || mode === 'recovery';
+
+    if (action === 'approveRecovery') {
+      const targetStudent = body.targetStudentCode || studentCode;
+      const targetTopic = topicCode || body.topicCode;
+      if (!targetTopic) {
+        return NextResponse.json({ message: 'Missing topicCode.' }, { status: 400 });
+      }
+      const masteryDocId = `${targetStudent}_${targetTopic}`;
+      await adminDb.collection('studentTopicMastery').doc(masteryDocId).set({
+        recoveryApproved: true,
+        recoveryApprovedAt: new Date(),
+        recoveryApprovedBy: student.decodedToken?.email || studentName
+      }, { merge: true });
+      return NextResponse.json({ 
+        success: true,
+        message: 'Recovery Diagnostic approved successfully.'
+      });
+    }
+
+    if (action === 'instantUnlockRecovery') {
+      const targetStudent = body.targetStudentCode || studentCode;
+      const targetTopic = topicCode || body.topicCode;
+      if (!targetTopic) {
+        return NextResponse.json({ message: 'Missing topicCode.' }, { status: 400 });
+      }
+      const masteryDocId = `${targetStudent}_${targetTopic}`;
+      await adminDb.collection('studentTopicMastery').doc(masteryDocId).set({
+        recoveryImmediateUnlocked: true,
+        recoveryApproved: true,
+        recoveryUnlockedAt: new Date(),
+        recoveryUnlockedBy: student.decodedToken?.email || studentName
+      }, { merge: true });
+      return NextResponse.json({ 
+        success: true,
+        message: 'Recovery Diagnostic instantly unlocked successfully.'
+      });
+    }
 
     if (action === 'confirmTextbook') {
       if (!topicCode) {

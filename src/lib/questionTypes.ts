@@ -300,7 +300,6 @@ export const QUESTION_TYPE_MAP: { [key: string]: { id: string; label: string; co
   multiple_mcq: { id: 'multiple_mcq', label: 'Multiple MCQ', code: 'OMC', category: 'objective', defaultMarks: 4 },
   true_false: { id: 'true_false', label: 'True/False', code: 'OTF', category: 'objective', defaultMarks: 4 },
   assertion_reason: { id: 'assertion_reason', label: 'Assertion-Reason', code: 'OAR', category: 'objective', defaultMarks: 4 },
-  fill_blanks: { id: 'fill_blanks', label: 'Fill Blanks', code: 'OFB', category: 'objective', defaultMarks: 4 },
   numerical: { id: 'numerical', label: 'Numerical (Obj)', code: 'ONE', category: 'objective', defaultMarks: 4 },
   numerical_short: { id: 'numerical_short', label: 'Num Short (2m)', code: 'SSN', category: 'subjective', defaultMarks: 2 },
   numerical_long: { id: 'numerical_long', label: 'Num Long (4m)', code: 'SLN', category: 'subjective', defaultMarks: 4 },
@@ -317,7 +316,6 @@ export const OBJECTIVE_QUESTION_TYPES = [
   { id: 'multiple_mcq', label: 'Multiple MCQ', code: 'OMC' },
   { id: 'true_false', label: 'True/False', code: 'OTF' },
   { id: 'assertion_reason', label: 'Assertion-Reason', code: 'OAR' },
-  { id: 'fill_blanks', label: 'Fill Blanks', code: 'OFB' },
   { id: 'numerical', label: 'Numerical (Obj)', code: 'ONE' }
 ];
 
