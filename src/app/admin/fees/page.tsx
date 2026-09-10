@@ -5,6 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { formatDateDMY as formatDateStr, getDateKeyIST } from '@/lib/dateUtils';
 import DateInputDMY from '@/components/DateInputDMY';
+import FeesJournal from '@/components/admin/FeesJournal';
 
 interface FeeTemplate {
   templateId: string;
@@ -51,7 +52,7 @@ export default function AdminFeesPage() {
   const router = useRouter();
 
   // Tabs
-  const [activeTab, setActiveTab] = useState<'students' | 'templates' | 'mass_entry'>('students');
+  const [activeTab, setActiveTab] = useState<'students' | 'templates' | 'mass_entry' | 'journal'>('students');
 
   // Bulk Entry State
   const [bulkClass, setBulkClass] = useState('8');
@@ -328,7 +329,19 @@ export default function AdminFeesPage() {
   useEffect(() => {
     loadStudents();
     loadTemplates();
+
+    if (typeof window !== 'undefined') {
+      const tabParam = new URLSearchParams(window.location.search).get('tab');
+      if (tabParam === 'journal' || tabParam === 'templates' || tabParam === 'mass_entry' || tabParam === 'students') {
+        setActiveTab(tabParam as any);
+      }
+    }
   }, [firebaseUser]);
+
+  const getIdToken = async () => {
+    if (!firebaseUser) return null;
+    return await firebaseUser.getIdToken();
+  };
 
   // Load transactions for student
   async function loadTransactions(studentCode: string) {
@@ -626,6 +639,21 @@ export default function AdminFeesPage() {
             }}
           >
             💰 Mass Fees Entry
+          </button>
+          <button
+            onClick={() => { setActiveTab('journal'); setSelectedStudent(null); }}
+            style={{
+              padding: '10px 20px',
+              border: 'none',
+              background: activeTab === 'journal' ? 'var(--surface)' : 'transparent',
+              borderBottom: activeTab === 'journal' ? '2px solid var(--accent)' : 'none',
+              color: activeTab === 'journal' ? 'var(--accent)' : 'var(--text-muted)',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              fontSize: '13px'
+            }}
+          >
+            📖 Fees Journal
           </button>
         </div>
 
@@ -1339,6 +1367,22 @@ export default function AdminFeesPage() {
               );
             })()}
           </div>
+        )}
+
+        {/* WORKSPACE 4: Fees Journal & Ledger */}
+        {activeTab === 'journal' && !selectedStudent && (
+          <FeesJournal
+            students={students}
+            loadingStudents={loadingStudents}
+            getIdToken={getIdToken}
+            onSelectStudent={(s) => {
+              setSelectedStudent(s);
+              setCustomPackageTotal(s.fee?.totalPackageAmount || 0);
+              setCustomDiscount(s.fee?.discountAmount || 0);
+              setCustomInstallments(s.fee?.installments || []);
+              setActiveTab('students');
+            }}
+          />
         )}
 
       </div>

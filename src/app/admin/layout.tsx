@@ -29,6 +29,7 @@ const ADMIN_SUBMENUS: { [key: string]: SubmenuItem[] } = {
     { icon: '💬', en: 'Live Chat Workspace', url: '/admin/chat' },
     { icon: '📅', en: 'Attendance Sheet', url: '/admin/attendance' },
     { icon: '🪙', en: 'Fees Manager', url: '/admin/fees' },
+    { icon: '📖', en: 'Fees Journal', url: '/admin/fees/journal' },
     { icon: '📝', en: 'Registrations', url: '/admin/registrations' },
     { icon: '👥', en: 'Students', url: '/admin/students' },
     { icon: '📦', en: 'Batches', url: '/admin/batches' }
