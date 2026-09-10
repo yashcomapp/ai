@@ -152,11 +152,21 @@ export async function POST(req: NextRequest) {
       const uniqueStudentCodes = new Set<string>();
 
       for (const pay of payments) {
-        const { studentCode, amountPaid, paymentMethod, referenceNumber, installmentId } = pay;
+        const { studentCode, amountPaid, paymentMethod, referenceNumber, installmentId, paymentDate } = pay;
         if (!studentCode || amountPaid === undefined || Number(amountPaid) <= 0 || !paymentMethod) continue;
 
         const cleanCode = studentCode.trim().toUpperCase();
         uniqueStudentCodes.add(cleanCode);
+
+        let txTimestamp = new Date().toISOString();
+        if (paymentDate) {
+          try {
+            const parsed = new Date(paymentDate);
+            if (!isNaN(parsed.getTime())) {
+              txTimestamp = parsed.toISOString();
+            }
+          } catch (e) {}
+        }
 
         const newTxRef = adminDb.collection('feeTransactions').doc();
         const newTx = {
@@ -168,7 +178,7 @@ export async function POST(req: NextRequest) {
           referenceNumber: referenceNumber || '',
           receiptUrl: '',
           recordedBy: admin.decodedToken?.email || 'admin',
-          timestamp: new Date().toISOString()
+          timestamp: txTimestamp
         };
 
         batch.set(newTxRef, newTx);

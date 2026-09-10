@@ -56,8 +56,28 @@ export default function AdminFeesPage() {
   // Bulk Entry State
   const [bulkClass, setBulkClass] = useState('8');
   const [bulkSelectedInstallment, setBulkSelectedInstallment] = useState<string>('inst_1');
+  const [bulkPaymentDate, setBulkPaymentDate] = useState<string>(() => getDateKeyIST());
   const [bulkPayments, setBulkPayments] = useState<Record<string, { checked: boolean; amount: number; method: string; ref: string; component: string }>>({});
   const [savingBulk, setSavingBulk] = useState(false);
+
+  // Helper to compute late days remark
+  const getLateRemarks = (dueDateStr?: string, paymentDateStr?: string) => {
+    if (!dueDateStr || !paymentDateStr) return '';
+    try {
+      const due = new Date(dueDateStr);
+      const pay = new Date(paymentDateStr);
+      if (isNaN(due.getTime()) || isNaN(pay.getTime())) return '';
+      
+      const dueUtc = Date.UTC(due.getFullYear(), due.getMonth(), due.getDate());
+      const payUtc = Date.UTC(pay.getFullYear(), pay.getMonth(), pay.getDate());
+      
+      const diffDays = Math.floor((payUtc - dueUtc) / (1000 * 60 * 60 * 24));
+      if (diffDays > 0) {
+        return `Late by ${diffDays} day${diffDays > 1 ? 's' : ''}`;
+      }
+    } catch (e) {}
+    return '';
+  };
 
   // Sorting States
   const [studentSortField, setStudentSortField] = useState<'name' | 'classNum' | 'netDues' | 'paid' | 'outstanding' | 'status'>('name');
@@ -149,7 +169,8 @@ export default function AdminFeesPage() {
         amountPaid: Number(data.amount),
         paymentMethod: data.method,
         referenceNumber: data.ref,
-        installmentId: data.component
+        installmentId: data.component,
+        paymentDate: bulkPaymentDate
       }));
 
     if (selectedList.length === 0) {
@@ -1060,20 +1081,21 @@ export default function AdminFeesPage() {
 
               // Resolve template for this class to populate selectable installment amount/dates
               const classTemplate = templates.find(t => t.classNum === bulkClass);
-              const bulkInstallmentOptions: { id: string; label: string; amount: number }[] = [];
+              const bulkInstallmentOptions: { id: string; label: string; amount: number; dueDate?: string }[] = [];
               if (classTemplate && classTemplate.installments) {
                 classTemplate.installments.forEach((inst) => {
                   bulkInstallmentOptions.push({
                     id: `inst_${inst.installmentNo}`,
-                    label: `Installment #${inst.installmentNo} (₹${inst.amount}${inst.dueDate ? ` - Due: ${formatDateStr(inst.dueDate)}` : ''})`,
-                    amount: inst.amount
+                    label: `#${inst.installmentNo} (₹${inst.amount}${inst.dueDate ? ` - Due: ${formatDateStr(inst.dueDate)}` : ''})`,
+                    amount: inst.amount,
+                    dueDate: inst.dueDate
                   });
                 });
               }
               if (bulkInstallmentOptions.length === 0) {
                 bulkInstallmentOptions.push({
                   id: 'inst_1',
-                  label: 'Installment #1 (₹0 - Unconfigured)',
+                  label: '#1 (₹0 - Unconfigured)',
                   amount: 0
                 });
               }
@@ -1091,23 +1113,27 @@ export default function AdminFeesPage() {
               return (
                 <div>
                   {/* Sourced Template Config bar */}
-                  <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', background: 'var(--bg-soft)', padding: '16px 20px', borderBottom: '1px solid var(--border-light)', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', background: 'var(--bg-soft)', padding: '16px 20px', borderBottom: '1px solid var(--border-light)', alignItems: 'center' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ fontSize: '12px', fontWeight: 'bold' }}>Select Installment:</span>
+                      <span style={{ fontSize: '12px', fontWeight: 'bold' }}>Select:</span>
                       <select
                         value={bulkSelectedInstallment}
                         onChange={(e) => {
                           const val = e.target.value;
                           setBulkSelectedInstallment(val);
                           const matchingOpt = bulkInstallmentOptions.find(o => o.id === val);
+                          const lateText = getLateRemarks(matchingOpt?.dueDate, bulkPaymentDate);
                           if (matchingOpt) {
                             setBulkPayments(prev => {
                               const next = { ...prev };
                               Object.keys(next).forEach(studentCode => {
+                                const currentRef = next[studentCode]?.ref || '';
+                                const autoRef = (!currentRef || currentRef.startsWith('Late by ')) ? lateText : currentRef;
                                 next[studentCode] = {
                                   ...next[studentCode],
                                   amount: next[studentCode].checked ? matchingOpt.amount : 0,
-                                  component: val
+                                  component: val,
+                                  ref: autoRef
                                 };
                               });
                               return next;
@@ -1121,6 +1147,32 @@ export default function AdminFeesPage() {
                         ))}
                       </select>
                     </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '12px', fontWeight: 'bold' }}>Payment Date:</span>
+                      <DateInputDMY
+                        value={bulkPaymentDate}
+                        onChange={(val) => {
+                          setBulkPaymentDate(val);
+                          const lateText = getLateRemarks(selectedOpt.dueDate, val);
+                          setBulkPayments(prev => {
+                            const next = { ...prev };
+                            Object.keys(next).forEach(studentCode => {
+                              const currentRef = next[studentCode]?.ref || '';
+                              if (!currentRef || currentRef.startsWith('Late by ')) {
+                                next[studentCode] = {
+                                  ...next[studentCode],
+                                  ref: lateText
+                                };
+                              }
+                            });
+                            return next;
+                          });
+                        }}
+                        style={{ width: '135px' }}
+                      />
+                    </div>
+
                     <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
                       Sourced Amount: <strong style={{ color: 'var(--accent)', fontSize: '13px' }}>₹{selectedOpt.amount}</strong>
                     </div>
@@ -1136,13 +1188,15 @@ export default function AdminFeesPage() {
                               onChange={(e) => {
                                 const checked = e.target.checked;
                                 const next = { ...bulkPayments };
+                                const lateText = getLateRemarks(selectedOpt.dueDate, bulkPaymentDate);
                                 filteredStudents.forEach(s => {
                                   const sCode = s.studentCode;
+                                  const currentRef = next[sCode]?.ref || '';
                                   next[sCode] = {
                                     checked,
                                     amount: checked ? selectedOpt.amount : 0,
                                     method: next[sCode]?.method || 'Cash',
-                                    ref: next[sCode]?.ref || '',
+                                    ref: checked && (!currentRef || currentRef.startsWith('Late by ')) ? lateText : (checked ? currentRef : ''),
                                     component: selectedOpt.id
                                   };
                                 });
@@ -1209,9 +1263,14 @@ export default function AdminFeesPage() {
                                   checked={payment.checked}
                                   onChange={(e) => {
                                     const checked = e.target.checked;
+                                    const lateText = getLateRemarks(selectedOpt.dueDate, bulkPaymentDate);
+                                    const currentRef = payment.ref || '';
                                     updateField('checked', checked);
                                     updateField('amount', checked ? selectedOpt.amount : 0);
                                     updateField('component', selectedOpt.id);
+                                    if (checked && (!currentRef || currentRef.startsWith('Late by '))) {
+                                      updateField('ref', lateText);
+                                    }
                                   }}
                                 />
                               </td>
