@@ -1139,6 +1139,22 @@ function AdminFeesContent() {
                 });
               }
 
+              // Helper to resolve specific installment amount for a student (supporting custom fee matrix)
+              const getStudentInstallmentAmount = (s: StudentFeeRecord, installmentId: string, defaultAmount: number): number => {
+                if (s.fee?.installments && s.fee.installments.length > 0) {
+                  const instNo = parseInt(installmentId.replace('inst_', ''), 10);
+                  const matched = s.fee.installments.find(i => 
+                    (i.installmentId && i.installmentId === installmentId) ||
+                    (i.installmentNo && i.installmentNo === instNo) ||
+                    (`inst_${i.installmentNo}` === installmentId)
+                  );
+                  if (matched && typeof matched.amount === 'number') {
+                    return matched.amount;
+                  }
+                }
+                return defaultAmount;
+              };
+
               const selectedOpt = bulkInstallmentOptions.find(o => o.id === bulkSelectedInstallment) || bulkInstallmentOptions[0];
 
               if (filteredStudents.length === 0) {
@@ -1161,19 +1177,22 @@ function AdminFeesContent() {
                           const val = e.target.value;
                           setBulkSelectedInstallment(val);
                           const matchingOpt = bulkInstallmentOptions.find(o => o.id === val);
-                          if (matchingOpt) {
-                            setBulkPayments(prev => {
-                              const next = { ...prev };
-                              Object.keys(next).forEach(studentCode => {
-                                next[studentCode] = {
-                                  ...next[studentCode],
-                                  amount: next[studentCode].checked ? matchingOpt.amount : 0,
+                          const defAmt = matchingOpt?.amount || 0;
+                          setBulkPayments(prev => {
+                            const next = { ...prev };
+                            filteredStudents.forEach(s => {
+                              const sCode = s.studentCode;
+                              if (next[sCode]) {
+                                const studentAmt = getStudentInstallmentAmount(s, val, defAmt);
+                                next[sCode] = {
+                                  ...next[sCode],
+                                  amount: next[sCode].checked ? studentAmt : 0,
                                   component: val
                                 };
-                              });
-                              return next;
+                              }
                             });
-                          }
+                            return next;
+                          });
                         }}
                         style={{ padding: '6px 12px', borderRadius: '4px', border: '1px solid var(--border-light)', background: 'var(--surface)', color: 'var(--text)', fontSize: '12px', fontWeight: 600 }}
                       >
@@ -1195,7 +1214,8 @@ function AdminFeesContent() {
                     </div>
 
                     <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                      Sourced Amount: <strong style={{ color: 'var(--accent)', fontSize: '13px' }}>₹{selectedOpt.amount}</strong>
+                      Standard Template Rate: <strong style={{ color: 'var(--accent)', fontSize: '13px' }}>₹{selectedOpt.amount}</strong>
+                      <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginLeft: '8px' }}>(Students with custom matrices auto-populate their individual rate)</span>
                     </div>
                   </div>
 
@@ -1211,9 +1231,10 @@ function AdminFeesContent() {
                                 const next = { ...bulkPayments };
                                 filteredStudents.forEach(s => {
                                   const sCode = s.studentCode;
+                                  const studentAmt = getStudentInstallmentAmount(s, selectedOpt.id, selectedOpt.amount);
                                   next[sCode] = {
                                     checked,
-                                    amount: checked ? selectedOpt.amount : 0,
+                                    amount: checked ? (next[sCode]?.amount > 0 ? next[sCode].amount : studentAmt) : 0,
                                     method: next[sCode]?.method || 'Cash',
                                     ref: next[sCode]?.ref || '',
                                     component: selectedOpt.id
@@ -1256,6 +1277,7 @@ function AdminFeesContent() {
 
                           return sortedFilteredStudents.map(s => {
                             const sCode = s.studentCode;
+                            const studentInstAmt = getStudentInstallmentAmount(s, selectedOpt.id, selectedOpt.amount);
                             const payment = bulkPayments[sCode] || {
                               checked: false,
                               amount: 0,
@@ -1274,6 +1296,8 @@ function AdminFeesContent() {
                             }));
                           };
 
+                          const isCustomized = s.fee?.installments && studentInstAmt !== selectedOpt.amount;
+
                           return (
                             <tr key={sCode} style={{ borderBottom: '1px solid var(--border-light)', background: payment.checked ? 'var(--bg-soft)' : 'transparent' }}>
                               <td style={{ padding: '14px 16px' }}>
@@ -1283,7 +1307,7 @@ function AdminFeesContent() {
                                   onChange={(e) => {
                                     const checked = e.target.checked;
                                     updateField('checked', checked);
-                                    updateField('amount', checked ? selectedOpt.amount : 0);
+                                    updateField('amount', checked ? (payment.amount > 0 ? payment.amount : studentInstAmt) : 0);
                                     updateField('component', selectedOpt.id);
                                   }}
                                 />
@@ -1302,13 +1326,38 @@ function AdminFeesContent() {
                                 )}
                               </td>
                               <td style={{ padding: '14px 16px' }}>
-                                <input
-                                  type="number"
-                                  disabled
-                                  value={payment.checked ? selectedOpt.amount : ''}
-                                  placeholder="--"
-                                  style={{ padding: '6px 8px', borderRadius: '4px', border: '1px solid var(--border-light)', background: 'var(--bg-soft)', color: 'var(--text-muted)', width: '100px', fontSize: '12px', cursor: 'not-allowed' }}
-                                />
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    disabled={!payment.checked}
+                                    value={payment.checked ? (payment.amount ?? '') : ''}
+                                    onChange={(e) => {
+                                      const raw = e.target.value;
+                                      const val = raw === '' ? 0 : Number(raw);
+                                      updateField('amount', val);
+                                    }}
+                                    placeholder={payment.checked ? '0' : '--'}
+                                    style={{
+                                      padding: '6px 8px',
+                                      borderRadius: '4px',
+                                      border: '1px solid var(--border-light)',
+                                      background: payment.checked ? 'var(--surface)' : 'var(--bg-soft)',
+                                      color: payment.checked ? 'var(--text)' : 'var(--text-muted)',
+                                      width: '90px',
+                                      fontSize: '12px',
+                                      fontWeight: 600
+                                    }}
+                                  />
+                                  {isCustomized && (
+                                    <span 
+                                      title={`Custom installment amount for ${s.name}: ₹${studentInstAmt} (Standard template rate is ₹{selectedOpt.amount})`}
+                                      style={{ fontSize: '10px', padding: '2px 6px', borderRadius: '4px', background: 'rgba(124, 58, 237, 0.15)', color: '#7c3aed', fontWeight: 700, whiteSpace: 'nowrap' }}
+                                    >
+                                      Custom ₹{studentInstAmt}
+                                    </span>
+                                  )}
+                                </div>
                               </td>
                               <td style={{ padding: '14px 16px' }}>
                                 <select
