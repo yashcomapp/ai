@@ -370,13 +370,11 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                       </span>
                     </div>
                     <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                      <span>🎯 <strong>Micro:</strong> 5 Qs</span>
+                      <span>📘 <strong>Minor:</strong> 6 Qs (Max 2 Sets)</span>
                       <span>•</span>
-                      <span>⚡ <strong>Conceptual:</strong> 10 Qs</span>
+                      <span>📙 <strong>Medium:</strong> 10 Qs (Max 3 Sets)</span>
                       <span>•</span>
-                      <span>🔥 <strong>Calculative:</strong> 18 Qs</span>
-                      <span>•</span>
-                      <span>🏆 <strong>HOTS:</strong> 15 Qs</span>
+                      <span>📕 <strong>Major:</strong> 15 Qs (Max 3 Sets)</span>
                     </div>
                   </div>
                 </div>
@@ -396,56 +394,44 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
               {showSlabGuide && (
                 <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px dashed var(--border-light)' }}>
                   <div style={{ fontSize: '12px', color: 'var(--text)', marginBottom: '10px', lineHeight: 1.5 }}>
-                    To make your learning roadmap completely predictable and transparent, each topic is classified into one of <strong>4 Archetypes</strong>. To attain <strong style={{ color: '#10b981' }}>🏆 Mastered</strong>, you must achieve <strong>≥90%</strong> accuracy AND complete the topic's required <strong>Question Slab</strong>:
+                    To make your learning roadmap completely predictable and transparent, each topic is classified into one of <strong>3 Topic Scopes</strong>. To attain <strong style={{ color: '#10b981' }}>🏆 Mastered</strong>, you must achieve <strong>≥90%</strong> accuracy AND complete the topic's required <strong>Mastery Questions</strong>:
                   </div>
 
-                  {/* 4 Archetypes Grid */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '8px', marginBottom: '12px' }}>
+                  {/* 3 Topic Scopes Grid */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '8px', marginBottom: '12px' }}>
                     <div style={{ padding: '8px 10px', borderRadius: '8px', background: 'var(--surface)', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
                       <div style={{ fontWeight: 800, fontSize: '12px', color: '#059669', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <span>🎯 Micro Archetype</span>
+                        <span>📘 Minor Topic</span>
                       </div>
                       <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                        Definitions, Units, Core Formulae
+                        Definitions, Basic Formulas, Units & Direct Facts (~30 Qs Quota)
                       </div>
                       <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text)', marginTop: '4px' }}>
-                        Required for Mastery: <span style={{ color: '#059669' }}>5 Questions</span>
+                        Mastery Requirement: <span style={{ color: '#059669' }}>6 Questions • Max 2 Practice Sets</span>
                       </div>
                     </div>
 
                     <div style={{ padding: '8px 10px', borderRadius: '8px', background: 'var(--surface)', border: '1px solid rgba(59, 130, 246, 0.3)' }}>
                       <div style={{ fontWeight: 800, fontSize: '12px', color: '#2563eb', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <span>⚡ Conceptual Archetype</span>
+                        <span>📙 Medium Topic</span>
                       </div>
                       <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                        Principles, Laws & Explanations
+                        Standard Concepts, Laws, Derivations & Direct Applications (~50 Qs Quota)
                       </div>
                       <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text)', marginTop: '4px' }}>
-                        Required for Mastery: <span style={{ color: '#2563eb' }}>10 Questions</span>
+                        Mastery Requirement: <span style={{ color: '#2563eb' }}>10 Questions • Max 3 Practice Sets</span>
                       </div>
                     </div>
 
                     <div style={{ padding: '8px 10px', borderRadius: '8px', background: 'var(--surface)', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
                       <div style={{ fontWeight: 800, fontSize: '12px', color: '#dc2626', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <span>🔥 Calculative Archetype</span>
+                        <span>📕 Major Topic</span>
                       </div>
                       <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                        Numericals, Multi-Step Problem Solving
+                        Complex Numericals, Multi-Step Problems & Keystone Concepts (~55 Qs Quota)
                       </div>
                       <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text)', marginTop: '4px' }}>
-                        Required for Mastery: <span style={{ color: '#dc2626' }}>18 Questions</span>
-                      </div>
-                    </div>
-
-                    <div style={{ padding: '8px 10px', borderRadius: '8px', background: 'var(--surface)', border: '1px solid rgba(245, 158, 11, 0.3)' }}>
-                      <div style={{ fontWeight: 800, fontSize: '12px', color: '#d97706', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <span>🏆 HOTS Archetype</span>
-                      </div>
-                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                        Complex Multi-Concept Keystones
-                      </div>
-                      <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text)', marginTop: '4px' }}>
-                        Required for Mastery: <span style={{ color: '#d97706' }}>15 Questions</span>
+                        Mastery Requirement: <span style={{ color: '#dc2626' }}>15 Questions • Max 3 Practice Sets</span>
                       </div>
                     </div>
                   </div>
@@ -688,14 +674,14 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                                                       textTransform: 'uppercase',
                                                       padding: '1px 5px',
                                                       borderRadius: '4px',
-                                                      background: topic.topicClassification === 'micro' ? 'rgba(16, 185, 129, 0.12)' : topic.topicClassification === 'calculative' ? 'rgba(239, 68, 68, 0.12)' : topic.topicClassification === 'hots' ? 'rgba(245, 158, 11, 0.12)' : 'rgba(59, 130, 246, 0.12)',
-                                                      color: topic.topicClassification === 'micro' ? '#059669' : topic.topicClassification === 'calculative' ? '#dc2626' : topic.topicClassification === 'hots' ? '#d97706' : '#2563eb',
-                                                      border: `1px solid ${topic.topicClassification === 'micro' ? 'rgba(16, 185, 129, 0.3)' : topic.topicClassification === 'calculative' ? 'rgba(239, 68, 68, 0.3)' : topic.topicClassification === 'hots' ? 'rgba(245, 158, 11, 0.3)' : 'rgba(59, 130, 246, 0.3)'}`
+                                                      background: (topic.topicClassification === 'minor' || topic.topicClassification === 'micro') ? 'rgba(16, 185, 129, 0.12)' : (topic.topicClassification === 'major' || topic.topicClassification === 'calculative' || topic.topicClassification === 'hots') ? 'rgba(239, 68, 68, 0.12)' : 'rgba(59, 130, 246, 0.12)',
+                                                      color: (topic.topicClassification === 'minor' || topic.topicClassification === 'micro') ? '#059669' : (topic.topicClassification === 'major' || topic.topicClassification === 'calculative' || topic.topicClassification === 'hots') ? '#dc2626' : '#2563eb',
+                                                      border: `1px solid ${(topic.topicClassification === 'minor' || topic.topicClassification === 'micro') ? 'rgba(16, 185, 129, 0.3)' : (topic.topicClassification === 'major' || topic.topicClassification === 'calculative' || topic.topicClassification === 'hots') ? 'rgba(239, 68, 68, 0.3)' : 'rgba(59, 130, 246, 0.3)'}`
                                                     }}>
-                                                      {topic.topicClassification === 'micro' && '🎯 Micro (5 Qs to Master)'}
-                                                      {topic.topicClassification === 'conceptual' && '⚡ Conceptual (10 Qs to Master)'}
-                                                      {topic.topicClassification === 'calculative' && '🔥 Calculative (18 Qs to Master)'}
-                                                      {topic.topicClassification === 'hots' && '🏆 HOTS (15 Qs to Master)'}
+                                                      {(topic.topicClassification === 'minor' || topic.topicClassification === 'micro') && '📘 Minor (6 Qs • Max 2 Sets)'}
+                                                      {(topic.topicClassification === 'medium' || topic.topicClassification === 'moderate' || topic.topicClassification === 'conceptual') && '📙 Medium (10 Qs • Max 3 Sets)'}
+                                                      {(topic.topicClassification === 'major' || topic.topicClassification === 'calculative' || topic.topicClassification === 'hots') && '📕 Major (15 Qs • Max 3 Sets)'}
+                                                      {topic.topicClassification !== 'minor' && topic.topicClassification !== 'micro' && topic.topicClassification !== 'medium' && topic.topicClassification !== 'moderate' && topic.topicClassification !== 'conceptual' && topic.topicClassification !== 'major' && topic.topicClassification !== 'calculative' && topic.topicClassification !== 'hots' && '📙 Standard (10 Qs • Max 3 Sets)'}
                                                     </span>
                                                   )}
                                                   {isAbsent && (

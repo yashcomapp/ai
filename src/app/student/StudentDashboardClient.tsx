@@ -575,12 +575,11 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
                               <span style={{
                                 fontSize: '9.5px',
                                 fontWeight: 700,
-                                color: t.topicClassification === 'micro' ? '#059669' : t.topicClassification === 'calculative' ? '#dc2626' : t.topicClassification === 'hots' ? '#d97706' : '#2563eb'
+                                color: (t.topicClassification === 'minor' || t.topicClassification === 'micro') ? '#059669' : (t.topicClassification === 'major' || t.topicClassification === 'calculative' || t.topicClassification === 'hots') ? '#dc2626' : '#2563eb'
                               }}>
-                                {t.topicClassification === 'micro' && '🎯 Micro (5 Qs to Master)'}
-                                {t.topicClassification === 'conceptual' && '⚡ Conceptual (10 Qs to Master)'}
-                                {t.topicClassification === 'calculative' && '🔥 Calculative (18 Qs to Master)'}
-                                {t.topicClassification === 'hots' && '🏆 HOTS (15 Qs to Master)'}
+                                {(t.topicClassification === 'minor' || t.topicClassification === 'micro') && '📘 Minor (6 Qs to Master • Max 2 Sets)'}
+                                {(t.topicClassification === 'medium' || t.topicClassification === 'moderate' || t.topicClassification === 'conceptual') && '📙 Medium (10 Qs to Master • Max 3 Sets)'}
+                                {(t.topicClassification === 'major' || t.topicClassification === 'calculative' || t.topicClassification === 'hots') && '📕 Major (15 Qs to Master • Max 3 Sets)'}
                               </span>
                             </>
                           )}

@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { formatDateDMY as formatDateStr, getDateKeyIST } from '@/lib/dateUtils';
 import DateInputDMY from '@/components/DateInputDMY';
 import FeesJournal from '@/components/admin/FeesJournal';
@@ -47,12 +47,23 @@ interface Transaction {
   timestamp: string;
 }
 
-export default function AdminFeesPage() {
+function AdminFeesContent() {
   const { firebaseUser } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get('tab');
 
   // Tabs
-  const [activeTab, setActiveTab] = useState<'students' | 'templates' | 'mass_entry' | 'journal'>('students');
+  const [activeTab, setActiveTab] = useState<'students' | 'templates' | 'mass_entry' | 'journal'>(() => {
+    if (tabParam === 'templates' || tabParam === 'mass_entry' || tabParam === 'journal') return tabParam;
+    return 'students';
+  });
+
+  useEffect(() => {
+    if (tabParam && (tabParam === 'students' || tabParam === 'templates' || tabParam === 'mass_entry' || tabParam === 'journal')) {
+      setActiveTab(tabParam);
+    }
+  }, [tabParam]);
 
   // Bulk Entry State
   const [bulkClass, setBulkClass] = useState('8');
@@ -1794,5 +1805,17 @@ export default function AdminFeesPage() {
       )}
 
     </div>
+  );
+}
+
+export default function AdminFeesPage() {
+  return (
+    <Suspense fallback={
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: 'var(--bg)' }}>
+        <div className="loading" style={{ display: 'block' }}>Loading...</div>
+      </div>
+    }>
+      <AdminFeesContent />
+    </Suspense>
   );
 }

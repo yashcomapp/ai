@@ -289,8 +289,8 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({
         topicCode,
         topicName,
-        topicClassification: topicClassification || (targetQuestions && targetQuestions <= 35 ? 'micro' : (targetQuestions && targetQuestions >= 120 ? 'calculative' : 'conceptual')),
-        targetQuestions: targetQuestions || 75,
+        topicClassification: topicClassification || (targetQuestions && targetQuestions <= 35 ? 'minor' : (targetQuestions && targetQuestions >= 55 ? 'major' : 'medium')),
+        targetQuestions: targetQuestions || 50,
         requiredConfidence: recoveryReqConfidence,
         dailySessions,
         practiceQuestionsAttempted,

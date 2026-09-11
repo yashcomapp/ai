@@ -78,8 +78,8 @@ async function runIndexRebuild() {
         const subtopicsSum = hasSubs
           ? subtopics.reduce((acc: number, s: any) => acc + (Number(s.targetQuestions) || 30), 0)
           : 0;
-        const topicTarget = hasSubs ? subtopicsSum : (Number(topic.targetQuestions) || 75);
-        const topicClassification = topic.topicClassification || (topicTarget <= 35 ? 'micro' : (topicTarget >= 120 ? 'calculative' : 'conceptual'));
+        const topicTarget = hasSubs ? subtopicsSum : (Number(topic.targetQuestions) || 50);
+        const topicClassification = topic.topicClassification || (topicTarget <= 35 ? 'minor' : (topicTarget >= 55 ? 'major' : 'medium'));
 
         const docRef = adminDb.collection('syllabusTopicIndex').doc(topicCode);
         batch.set(docRef, {
@@ -111,7 +111,7 @@ async function runIndexRebuild() {
           const subCode = `${boardCode}-${classNum}-${subjectCode}-${chapterNum}-${subNum}`;
           validCodes.add(subCode);
           const subTarget = Number(subtopic.targetQuestions) || 30;
-          const subClassification = subtopic.topicClassification || (subTarget <= 15 ? 'micro' : (subTarget >= 45 ? 'calculative' : 'conceptual'));
+          const subClassification = subtopic.topicClassification || (subTarget <= 35 ? 'minor' : (subTarget >= 55 ? 'major' : 'medium'));
 
           const subRef = adminDb.collection('syllabusTopicIndex').doc(subCode);
           batch.set(subRef, {

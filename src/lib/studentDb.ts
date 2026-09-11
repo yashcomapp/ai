@@ -1122,7 +1122,7 @@ export async function getStudentLearningData(userData: any) {
     if (!mData && !isAbsentExam) return;
 
     const targetQuestions = Number(sData.targetQuestions || sData.totalQuestions || sData.questionCount || 30);
-    const topicClassification = sData.topicClassification || mData?.topicClassification || (targetQuestions <= 35 ? 'micro' : (targetQuestions >= 120 ? 'calculative' : 'conceptual'));
+    const topicClassification = sData.topicClassification || mData?.topicClassification || (targetQuestions <= 35 ? 'minor' : (targetQuestions >= 55 ? 'major' : 'medium'));
     const reqConf = getRequiredConfidence(topicClassification, targetQuestions);
 
     const mastery = mData?.hasOwnProperty('mastery') ? Number(mData.mastery || 0) : 0;

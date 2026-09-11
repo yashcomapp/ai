@@ -39,7 +39,7 @@ interface Topic {
   tests?: any[];
   textbookSets?: any[];
   targetQuestions?: number;
-  topicClassification?: 'micro' | 'conceptual' | 'calculative' | 'hots';
+  topicClassification?: 'minor' | 'medium' | 'major' | string;
 }
 
 interface Subtopic {
@@ -51,7 +51,7 @@ interface Subtopic {
   testsCount?: number;
   tests?: any[];
   targetQuestions?: number;
-  topicClassification?: 'micro' | 'conceptual' | 'calculative' | 'hots';
+  topicClassification?: 'minor' | 'medium' | 'major' | string;
 }
 
 const getObjectiveTestsCount = (tests: any[] | undefined) => {
@@ -709,8 +709,8 @@ export default function AdminSyllabusPage() {
       name: '',
       code: '',
       textbookSetsStr: '',
-      targetQuestions: 75,
-      topicClassification: 'conceptual',
+      targetQuestions: 50,
+      topicClassification: 'medium',
       hasSubtopics: false,
       subtopicsSum: 0
     });
@@ -733,8 +733,8 @@ export default function AdminSyllabusPage() {
       name: topic.name,
       code: topic.topicCode || '',
       textbookSetsStr: setsStr,
-      targetQuestions: hasSubtopics ? subtopicsSum : (topic.targetQuestions !== undefined ? Number(topic.targetQuestions) : 75),
-      topicClassification: topic.topicClassification || (topic.targetQuestions <= 15 ? 'micro' : (topic.targetQuestions >= 100 ? 'calculative' : 'conceptual')),
+      targetQuestions: hasSubtopics ? subtopicsSum : (topic.targetQuestions !== undefined ? Number(topic.targetQuestions) : 50),
+      topicClassification: topic.topicClassification || (topic.targetQuestions <= 35 ? 'minor' : (topic.targetQuestions >= 55 ? 'major' : 'medium')),
       hasSubtopics,
       subtopicsSum
     });
@@ -769,7 +769,7 @@ export default function AdminSyllabusPage() {
     }).filter(Boolean);
 
     const topics = Array.isArray(chapter.topics) ? [...chapter.topics] : [];
-    const finalTarget = hasSubtopics ? subtopicsSum : (Number(targetQuestions) || 75);
+    const finalTarget = hasSubtopics ? subtopicsSum : (Number(targetQuestions) || 50);
 
     if (mode === 'add') {
       topics.push({
@@ -820,7 +820,7 @@ export default function AdminSyllabusPage() {
       name: '',
       code: '',
       targetQuestions: 30,
-      topicClassification: 'conceptual'
+      topicClassification: 'minor'
     });
   };
 
@@ -846,7 +846,7 @@ export default function AdminSyllabusPage() {
       name: subName,
       code: (typeof sub === 'object' && (sub.subtopicCode || sub.code)) || '',
       targetQuestions: targetQ,
-      topicClassification: (typeof sub === 'object' && sub.topicClassification) || (targetQ <= 15 ? 'micro' : (targetQ >= 45 ? 'calculative' : 'conceptual'))
+      topicClassification: (typeof sub === 'object' && sub.topicClassification) || (targetQ <= 35 ? 'minor' : (targetQ >= 55 ? 'major' : 'medium'))
     });
   };
 
@@ -1471,13 +1471,13 @@ Return ONLY a valid JSON object matching the schema below:
                                             borderRadius: '4px',
                                             textTransform: 'uppercase',
                                             fontSize: '9px',
-                                            background: topic.topicClassification === 'micro' ? 'rgba(16, 185, 129, 0.12)' : topic.topicClassification === 'calculative' ? 'rgba(239, 68, 68, 0.12)' : topic.topicClassification === 'hots' ? 'rgba(245, 158, 11, 0.12)' : 'rgba(59, 130, 246, 0.12)',
-                                            color: topic.topicClassification === 'micro' ? '#059669' : topic.topicClassification === 'calculative' ? '#dc2626' : topic.topicClassification === 'hots' ? '#d97706' : '#2563eb'
+                                            background: (topic.topicClassification === 'minor' || topic.topicClassification === 'micro') ? 'rgba(16, 185, 129, 0.12)' : (topic.topicClassification === 'major' || topic.topicClassification === 'calculative' || topic.topicClassification === 'hots') ? 'rgba(239, 68, 68, 0.12)' : 'rgba(59, 130, 246, 0.12)',
+                                            color: (topic.topicClassification === 'minor' || topic.topicClassification === 'micro') ? '#059669' : (topic.topicClassification === 'major' || topic.topicClassification === 'calculative' || topic.topicClassification === 'hots') ? '#dc2626' : '#2563eb'
                                           }}>
-                                            {topic.topicClassification === 'micro' && '🎯 Micro'}
-                                            {topic.topicClassification === 'conceptual' && '⚡ Conceptual'}
-                                            {topic.topicClassification === 'calculative' && '🔥 Calculative'}
-                                            {topic.topicClassification === 'hots' && '🏆 HOTS'}
+                                            {(topic.topicClassification === 'minor' || topic.topicClassification === 'micro') && '📘 Minor (~30 Qs)'}
+                                            {(topic.topicClassification === 'medium' || topic.topicClassification === 'moderate' || topic.topicClassification === 'conceptual') && '📙 Medium (~50 Qs)'}
+                                            {(topic.topicClassification === 'major' || topic.topicClassification === 'calculative' || topic.topicClassification === 'hots') && '📕 Major (~55 Qs)'}
+                                            {topic.topicClassification !== 'minor' && topic.topicClassification !== 'micro' && topic.topicClassification !== 'medium' && topic.topicClassification !== 'moderate' && topic.topicClassification !== 'conceptual' && topic.topicClassification !== 'major' && topic.topicClassification !== 'calculative' && topic.topicClassification !== 'hots' && '📙 Standard'}
                                           </span>
                                         )}
                                         <span 
@@ -1622,13 +1622,13 @@ Return ONLY a valid JSON object matching the schema below:
                                                        borderRadius: '3px',
                                                        fontSize: '8.5px',
                                                        textTransform: 'uppercase',
-                                                       background: sub.topicClassification === 'micro' ? 'rgba(16, 185, 129, 0.12)' : sub.topicClassification === 'calculative' ? 'rgba(239, 68, 68, 0.12)' : sub.topicClassification === 'hots' ? 'rgba(245, 158, 11, 0.12)' : 'rgba(59, 130, 246, 0.12)',
-                                                       color: sub.topicClassification === 'micro' ? '#059669' : sub.topicClassification === 'calculative' ? '#dc2626' : sub.topicClassification === 'hots' ? '#d97706' : '#2563eb'
+                                                       background: (sub.topicClassification === 'minor' || sub.topicClassification === 'micro') ? 'rgba(16, 185, 129, 0.12)' : (sub.topicClassification === 'major' || sub.topicClassification === 'calculative' || sub.topicClassification === 'hots') ? 'rgba(239, 68, 68, 0.12)' : 'rgba(59, 130, 246, 0.12)',
+                                                       color: (sub.topicClassification === 'minor' || sub.topicClassification === 'micro') ? '#059669' : (sub.topicClassification === 'major' || sub.topicClassification === 'calculative' || sub.topicClassification === 'hots') ? '#dc2626' : '#2563eb'
                                                      }}>
-                                                       {sub.topicClassification === 'micro' && '🎯 Micro'}
-                                                       {sub.topicClassification === 'conceptual' && '⚡ Conceptual'}
-                                                       {sub.topicClassification === 'calculative' && '🔥 Calculative'}
-                                                       {sub.topicClassification === 'hots' && '🏆 HOTS'}
+                                                       {(sub.topicClassification === 'minor' || sub.topicClassification === 'micro') && '📘 Minor (~30 Qs)'}
+                                                       {(sub.topicClassification === 'medium' || sub.topicClassification === 'moderate' || sub.topicClassification === 'conceptual') && '📙 Medium (~50 Qs)'}
+                                                       {(sub.topicClassification === 'major' || sub.topicClassification === 'calculative' || sub.topicClassification === 'hots') && '📕 Major (~55 Qs)'}
+                                                       {sub.topicClassification !== 'minor' && sub.topicClassification !== 'micro' && sub.topicClassification !== 'medium' && sub.topicClassification !== 'moderate' && sub.topicClassification !== 'conceptual' && sub.topicClassification !== 'major' && sub.topicClassification !== 'calculative' && sub.topicClassification !== 'hots' && '📙 Standard'}
                                                      </span>
                                                    )}
                                                   <span 
