@@ -1245,32 +1245,44 @@ Return ONLY valid JSON. No extra text.`;
       let successfulCount = 0;
 
       // Build payload array for single atomic bulkSave request
-      const formattedQuestions = questionsList.map(q => ({
-        qtype: q.type || 'single_mcq',
-        text: q.text,
-        options: q.options || [],
-        correctAnswer: q.correctAnswer || '',
-        correctAnswers: q.correctAnswers || [],
-        assertion: q.assertion || '',
-        reason: q.reason || '',
-        solution: q.solution || '',
-        answerLines: q.answerLines || [],
-        pyqInfo: q.pyqInfo || '',
-        difficulty: q.difficulty || 'medium',
-        bloomLevel: q.bloomLevel || 'Remember',
-        board: selectedBoard,
-        classNum: selectedClass,
-        subjectName: q.subject || getSelectedSubjectsList()[0] || '',
-        chapterNumber: q.chapterNumber || '1',
-        topicNumber: q.topicNumber || '1.1',
-        topic: q.topic || q.topicName || '',
-        topicName: q.topicName || q.topic || '',
-        keywords: q.keywords || [],
-        textbookPracticeSet: q.textbookPracticeSet || '',
-        marks: Number(q.marks) || 0,
-        vault: q.vault || vault,
-        conceptTag: q.conceptTag || q.topicName || q.topic || ''
-      }));
+      const formattedQuestions = questionsList.map(q => {
+        const bCode = boardCodes?.[selectedBoard] || (selectedBoard?.toUpperCase().includes('CBSE') ? 'CBSE' : 'MH');
+        const sName = q.subject || getSelectedSubjectsList()[0] || '';
+        const sCode = subjectCodes?.[sName] || 'MTH';
+        const chNum = String(q.chapterNumber || '1');
+        const tNum = String(q.topicNumber || '1.1');
+        const canonicalTopicCode = `${bCode}-${selectedClass}-${sCode}-${chNum}-${tNum}`;
+
+        return {
+          qtype: q.type || 'single_mcq',
+          text: q.text,
+          options: q.options || [],
+          correctAnswer: q.correctAnswer || '',
+          correctAnswers: q.correctAnswers || [],
+          assertion: q.assertion || '',
+          reason: q.reason || '',
+          solution: q.solution || '',
+          answerLines: q.answerLines || [],
+          pyqInfo: q.pyqInfo || '',
+          difficulty: q.difficulty || 'medium',
+          bloomLevel: q.bloomLevel || 'Remember',
+          board: selectedBoard,
+          boardCode: bCode,
+          classNum: selectedClass,
+          subjectName: sName,
+          subjectCode: sCode,
+          chapterNumber: chNum,
+          topicNumber: tNum,
+          topicCode: q.topicCode || canonicalTopicCode,
+          topic: q.topic || q.topicName || '',
+          topicName: q.topicName || q.topic || '',
+          keywords: q.keywords || [],
+          textbookPracticeSet: q.textbookPracticeSet || '',
+          marks: Number(q.marks) || 0,
+          vault: q.vault || vault,
+          conceptTag: q.conceptTag || q.topicName || q.topic || ''
+        };
+      });
 
       // Try instant atomic bulkSave API first
       let bulkSuccess = false;

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as admin from 'firebase-admin';
 import { adminDb } from '@/lib/firebase/admin';
-import { OBJECTIVE_QUESTION_TYPES, SUBJECTIVE_QUESTION_TYPES } from '@/lib/questionTypes';
+import { OBJECTIVE_QUESTION_TYPES, SUBJECTIVE_QUESTION_TYPES, cleanStringForMatch } from '@/lib/questionTypes';
 import { verifyRole } from '@/lib/auth';
 import { ChunkedBatch } from '@/lib/firebase/batch';
 export const dynamic = 'force-dynamic';
@@ -30,20 +30,16 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ message: 'Missing parameters (board, classNum, subject).' }, { status: 400 });
       }
 
-      // Query questions collection for matching board/class/subject + query existing exams to cross-check used questions
+      // Query questions collection for matching class + query existing exams to cross-check used questions
       const [questionsSnap, existingObjExamsSnap, existingSubjExamsSnap] = await Promise.all([
         adminDb.collection('questions')
-          .where('board', '==', board)
-          .where('class', '==', classNum)
-          .where('subject', '==', subject)
+          .where('class', 'in', [String(classNum), Number(classNum)].filter(v => v !== ''))
           .get(),
         adminDb.collection('exams')
-          .where('board', '==', board)
-          .where('class', '==', classNum)
+          .where('class', 'in', [String(classNum), Number(classNum)].filter(v => v !== ''))
           .get(),
         adminDb.collection('subjectiveExams')
-          .where('board', '==', board)
-          .where('class', '==', classNum)
+          .where('class', 'in', [String(classNum), Number(classNum)].filter(v => v !== ''))
           .get()
       ]);
 
@@ -76,8 +72,27 @@ export async function GET(req: NextRequest) {
       const SUBJECTIVE_TYPES = SUBJECTIVE_QUESTION_TYPES.map(t => t.id);
       const targetTypes = questionType === 'subjective' ? SUBJECTIVE_TYPES : OBJECTIVE_TYPES;
 
+      const boardLower = String(board).toLowerCase();
+      const subjectLower = String(subject).toLowerCase();
+
       const pool = questionsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() as any }))
         .filter(q => {
+          const b = String(q.board || '').toLowerCase();
+          const s = String(q.subject || '').toLowerCase();
+          const sc = String(q.subjectCode || '').toLowerCase();
+
+          const bMatch = !board || b === boardLower || 
+                         (boardLower.includes('cbse') && b.includes('cbse')) ||
+                         (boardLower.includes('mh') && (b.includes('mh') || b.includes('maharashtra'))) ||
+                         (boardLower.includes('maharashtra') && (b.includes('mh') || b.includes('maharashtra')));
+
+          const sMatch = !subject || s === subjectLower || 
+                         sc === subjectLower ||
+                         s.includes(subjectLower) ||
+                         subjectLower.includes(s);
+
+          if (!bMatch || !sMatch) return false;
+
           const typeMatch = targetTypes.includes(q.type);
           const isUsed = q.usedInClassroomTest === true || 
                          usedInExamsSet.has(String(q.id || '').trim()) || 
@@ -86,14 +101,39 @@ export async function GET(req: NextRequest) {
           const categoryMatch = (q.examCategory || 'standard') === examCategory;
 
           const searchTopics = topicNumbers.map(t => String(t).trim()).filter(Boolean);
-          const topicMatch = searchTopics.length === 0 || searchTopics.some(tNum => 
-            String(q.topicNumber || '').trim() === tNum ||
-            String(q.subtopicNumber || '').trim() === tNum ||
-            String(q.topicCode || '').trim() === tNum ||
-            String(q.subtopicCode || '').trim() === tNum ||
-            String(q.topicCode || '').endsWith(`-${tNum}`) ||
-            String(q.subtopicCode || '').endsWith(`-${tNum}`)
-          );
+          if (searchTopics.length === 0) return typeMatch && unusedMatch && categoryMatch;
+
+          const qTopNum = String(q.topicNumber || '').trim();
+          const qSubNum = String(q.subtopicNumber || '').trim();
+          const qTopCode = String(q.topicCode || '').trim();
+          const qSubCode = String(q.subtopicCode || '').trim();
+          const qTopicName = String(q.topic || q.topicName || '').trim().toLowerCase();
+          const qSubtopicName = String(q.subtopic || q.subtopicName || '').trim().toLowerCase();
+          const qConceptTag = String(q.conceptTag || '').trim().toLowerCase();
+          const qCode = String(q.questionCode || q.id || '').trim();
+
+          const topicMatch = searchTopics.some(tNum => {
+            const tLower = tNum.toLowerCase();
+            if (qTopNum === tNum || qSubNum === tNum || qTopCode === tNum || qSubCode === tNum) return true;
+            if (qTopCode.endsWith(`-${tNum}`) || qSubCode.endsWith(`-${tNum}`)) return true;
+            if (qTopCode.includes(`-${tNum}-`) || qSubCode.includes(`-${tNum}-`)) return true;
+            if (qCode.includes(`-${tNum}-`) || qCode.includes(`-${tNum}.`)) return true;
+
+            // Stripped subpart matches (e.g. searching 2.1 in 1.1 or vice versa)
+            if (tNum.includes('.')) {
+              const subPart = tNum.split('.').slice(1).join('.');
+              if (subPart && (qTopNum === subPart || qSubNum === subPart || qCode.includes(`-${subPart}-`))) return true;
+            }
+
+            // Name / Title / ConceptTag match
+            if (qTopicName && (qTopicName === tLower || qTopicName.includes(tLower) || tLower.includes(qTopicName))) return true;
+            if (qSubtopicName && (qSubtopicName === tLower || qSubtopicName.includes(tLower) || tLower.includes(qSubtopicName))) return true;
+            if (qConceptTag && (qConceptTag === tLower || qConceptTag.includes(tLower) || tLower.includes(qConceptTag))) return true;
+            if (cleanStringForMatch(qTopicName) && cleanStringForMatch(qTopicName) === cleanStringForMatch(tLower)) return true;
+            if (cleanStringForMatch(qConceptTag) && cleanStringForMatch(qConceptTag) === cleanStringForMatch(tLower)) return true;
+
+            return false;
+          });
 
           return typeMatch && unusedMatch && categoryMatch && topicMatch;
         });
@@ -132,14 +172,18 @@ export async function GET(req: NextRequest) {
                            (String(boardVal).toLowerCase().includes('mh') && (b.includes('mh') || b.includes('maharashtra')));
             const sMatch = s === String(subjectVal).toLowerCase() || 
                            sc === String(subjectData.subjectCode || '').toLowerCase() ||
-                           s.includes(String(subjectVal).toLowerCase());
+                           s.includes(String(subjectVal).toLowerCase()) ||
+                           String(subjectVal).toLowerCase().includes(s);
             if (!bMatch || !sMatch) return null;
 
             let chNum = String(q.chapterNumber || q.chapter || '').replace(/^Ch\.?\s*/i, '').trim();
             const topNum = String(q.topicNumber || '').trim();
             const subNum = String(q.subtopicNumber || '').trim();
-            const tCode = String(q.topicCode || q.topic || '').trim();
-            const sCode = String(q.subtopicCode || q.subtopic || '').trim();
+            const tCode = String(q.topicCode || '').trim();
+            const sCode = String(q.subtopicCode || '').trim();
+            const tName = String(q.topic || q.topicName || '').trim();
+            const sName = String(q.subtopic || q.subtopicName || '').trim();
+            const cTag = String(q.conceptTag || '').trim();
             const qtype = q.type || '';
             const isObjective = !qtype.startsWith('subjective');
 
@@ -152,7 +196,7 @@ export async function GET(req: NextRequest) {
               if (parts.length >= 4) { chNum = parts[3]; }
             }
 
-            return { id: doc.id, chNum, topNum, subNum, tCode, sCode, isObjective };
+            return { id: doc.id, chNum, topNum, subNum, tCode, sCode, tName, sName, cTag, isObjective };
           })
           .filter(Boolean) as any[];
       } catch (err) {
@@ -185,7 +229,25 @@ export async function GET(req: NextRequest) {
             if (!top || typeof top !== 'object') return;
             const topNumStr = String(top.number ?? '').trim();
             const cleanTopicCode = String(top.topicCode || `${canonicalTopicPrefix}-${chapNumStr}-${topNumStr}`).trim();
-            const subtopics = Array.isArray(top.subtopics) ? top.subtopics : [];
+            const topTitle = String(top.name || top.title || '').trim();
+            const cleanTopTitle = cleanStringForMatch(topTitle);
+
+            const rawSubtopics = Array.isArray(top.subtopics) ? top.subtopics : [];
+            const subtopics = rawSubtopics.map((sub: any, subIdx: number) => {
+              if (typeof sub === 'string') {
+                const subNum = `${topNumStr}.${subIdx + 1}`;
+                return {
+                  name: sub,
+                  number: subNum,
+                  subtopicNumber: subNum,
+                  subtopicCode: `${cleanTopicCode}.${subIdx + 1}`,
+                  objectiveCount: 0,
+                  subjectiveCount: 0
+                };
+              }
+              return sub;
+            });
+            top.subtopics = subtopics;
 
             const topicBranchQuestions = chapQuestions.filter(q => {
               if (!q) return false;
@@ -193,6 +255,8 @@ export async function GET(req: NextRequest) {
               const sCode = String(q.sCode || '');
               const subNum = String(q.subNum || '');
               const id = String(q.id || '');
+              const qTopicClean = cleanStringForMatch(q.tName);
+              const qConceptClean = cleanStringForMatch(q.cTag);
 
               if (q.topNum === topNumStr) return true;
               if (tCode === cleanTopicCode) return true;
@@ -204,6 +268,19 @@ export async function GET(req: NextRequest) {
               if (idParts.length >= 5 && (idParts[4] === topNumStr || idParts[4] === `${chapNumStr}.${topNumStr}`)) return true;
               if (sCode.includes(`-${topNumStr}.`)) return true;
               if (subNum.startsWith(`${topNumStr}.`)) return true;
+
+              // Title / Concept match
+              if (cleanTopTitle && (qTopicClean === cleanTopTitle || qTopicClean.includes(cleanTopTitle) || cleanTopTitle.includes(qTopicClean))) return true;
+              if (cleanTopTitle && (qConceptClean === cleanTopTitle || qConceptClean.includes(cleanTopTitle) || cleanTopTitle.includes(qConceptClean))) return true;
+
+              // Check if matches any of its subtopics
+              if (subtopics.some((st: any) => {
+                const stClean = cleanStringForMatch(st.name || st.title);
+                return stClean && (qTopicClean === stClean || qTopicClean.includes(stClean) || stClean.includes(qTopicClean) || qConceptClean === stClean);
+              })) {
+                return true;
+              }
+
               return false;
             });
 
@@ -212,11 +289,17 @@ export async function GET(req: NextRequest) {
                 if (!sub || typeof sub !== 'object') return;
                 const subNumStr = String(sub.number ?? '').trim();
                 const cleanSubCode = String(sub.subtopicCode || `${canonicalTopicPrefix}-${chapNumStr}-${subNumStr}`).trim();
+                const subTitle = String(sub.name || sub.title || '').trim();
+                const cleanSubTitle = cleanStringForMatch(subTitle);
+
                 const subQuestions = topicBranchQuestions.filter(q => {
                   if (!q) return false;
                   const sCode = String(q.sCode || '');
                   const subNum = String(q.subNum || '');
                   const id = String(q.id || '');
+                  const qTopicClean = cleanStringForMatch(q.tName);
+                  const qSubtopicClean = cleanStringForMatch(q.sName);
+                  const qConceptClean = cleanStringForMatch(q.cTag);
 
                   if (subNum && (subNum === subNumStr || subNum === `${topNumStr}.${subNumStr}` || subNum === `${chapNumStr}.${subNumStr}` || subNum === `${chapNumStr}.${topNumStr}.${subNumStr}` || subNum.endsWith(`.${subNumStr}`))) {
                     return true;
@@ -228,6 +311,12 @@ export async function GET(req: NextRequest) {
                   if (sParts.length >= 6 && (sParts[5] === subNumStr || sParts[5] === `${topNumStr}.${subNumStr}`)) return true;
                   const idParts = id.split(/[-_]/);
                   if (idParts.length >= 6 && (idParts[5] === subNumStr || idParts[5] === `${topNumStr}.${subNumStr}`)) return true;
+
+                  if (cleanSubTitle) {
+                    if (qTopicClean && (qTopicClean === cleanSubTitle || qTopicClean.includes(cleanSubTitle) || cleanSubTitle.includes(qTopicClean))) return true;
+                    if (qSubtopicClean && (qSubtopicClean === cleanSubTitle || qSubtopicClean.includes(cleanSubTitle) || cleanSubTitle.includes(qSubtopicClean))) return true;
+                    if (qConceptClean && (qConceptClean === cleanSubTitle || qConceptClean.includes(cleanSubTitle) || cleanSubTitle.includes(qConceptClean))) return true;
+                  }
 
                   return false;
                 });

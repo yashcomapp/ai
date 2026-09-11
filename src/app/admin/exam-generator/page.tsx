@@ -6,7 +6,7 @@ import { useTheme } from '@/context/ThemeContext';
 import { useRouter } from 'next/navigation';
 import Script from 'next/script';
 import { useMathRender } from '@/hooks/useMathRender';
-import { preprocessMathText, smartJsonParse, robustParseAIJson } from '@/lib/questionTypes';
+import { preprocessMathText, smartJsonParse, robustParseAIJson, cleanStringForMatch } from '@/lib/questionTypes';
 import { highlightModelAnswerKeywords } from '@/lib/pdfExport';
 import { SyllabusSelector } from '@/components/SyllabusSelector';
 import { useSyllabusSelector } from '@/hooks/useSyllabusSelector';
@@ -136,7 +136,18 @@ interface Question {
   marks?: number;
   keywords?: string[];
   topicNumber?: string;
+  topicCode?: string;
+  topic?: string;
+  topicName?: string;
+  subtopic?: string;
+  subtopicName?: string;
+  conceptTag?: string;
   chapterNumber?: string;
+  board?: string;
+  boardCode?: string;
+  class?: string | number;
+  subject?: string;
+  subjectCode?: string;
 }
 
 export default function AdminExamGeneratorPage() {
@@ -339,18 +350,22 @@ export default function AdminExamGeneratorPage() {
         const rawTopics = chItem.chapter.topics || [];
         const walk = (tList: any[]) => {
           tList.forEach(t => {
-            const label = (t.number ? `${t.number} ` : '') + (t.name || t);
+            const isObj = t && typeof t === 'object';
+            const label = isObj ? ((t.number ? `${t.number} ` : '') + (t.name || t.title || '')) : String(t);
+            const num = isObj ? (t.number || t.topicNumber || label) : label;
             allTopicsList.push({
               subject: chItem.subject,
               chapterName: chItem.chapterName,
               chapterNumber: chItem.chapterNumber,
               topic: label,
-              topicNumber: t.number || label,
-              objectiveCount: t.objectiveCount || 0,
-              subjectiveCount: t.subjectiveCount || 0,
-              hasSubtopics: Array.isArray(t.subtopics) && t.subtopics.length > 0
+              topicName: isObj ? (t.name || t.title || label) : label,
+              topicNumber: num,
+              topicCode: isObj ? (t.topicCode || t.subtopicCode || '') : '',
+              objectiveCount: isObj ? (t.objectiveCount || 0) : 0,
+              subjectiveCount: isObj ? (t.subjectiveCount || 0) : 0,
+              hasSubtopics: isObj && Array.isArray(t.subtopics) && t.subtopics.length > 0
             });
-            if (t.subtopics && t.subtopics.length > 0) walk(t.subtopics);
+            if (isObj && t.subtopics && t.subtopics.length > 0) walk(t.subtopics);
           });
         };
         walk(rawTopics);
@@ -369,6 +384,46 @@ export default function AdminExamGeneratorPage() {
     }
   };
 
+  // Helper: check if a question matches a selected topic or subtopic
+  const isQuestionMatchingTopic = (q: Question, t: any): boolean => {
+    if (!q || !t) return false;
+    const qTopNum = String(q.topicNumber || '').trim();
+    const qTopCode = String(q.topicCode || '').trim();
+    const qTopicName = String(q.topic || q.topicName || '').trim().toLowerCase();
+    const qSubtopicName = String(q.subtopic || q.subtopicName || '').trim().toLowerCase();
+    const qConceptTag = String(q.conceptTag || '').trim().toLowerCase();
+    const qCode = String(q.questionCode || q.id || '').trim();
+
+    const tTopNum = String(t.topicNumber || '').trim();
+    const tTopCode = String(t.topicCode || '').trim();
+    const tTopicName = String(t.topicName || t.topic || '').trim().toLowerCase();
+    const tTopicTitle = String(t.name || t.title || '').trim().toLowerCase();
+
+    if (tTopNum && (qTopNum === tTopNum || qTopNum.endsWith(`.${tTopNum}`) || tTopNum.endsWith(`.${qTopNum}`))) return true;
+    if (tTopCode && (qTopCode === tTopCode || qTopCode.endsWith(`-${tTopCode}`) || qCode.includes(`-${tTopCode}-`))) return true;
+
+    const targetNames = [tTopicName, tTopicTitle].filter(Boolean);
+    const questionNames = [qTopicName, qSubtopicName, qConceptTag].filter(Boolean);
+
+    for (const tName of targetNames) {
+      const tClean = cleanStringForMatch(tName);
+      for (const qName of questionNames) {
+        if (qName === tName || qName.includes(tName) || tName.includes(qName)) return true;
+        if (tClean && cleanStringForMatch(qName) === tClean) return true;
+      }
+    }
+
+    if (tTopNum) {
+      if (qCode.includes(`-${tTopNum}-`) || qCode.includes(`-${tTopNum}.`)) return true;
+      if (tTopNum.includes('.')) {
+        const parts = tTopNum.split('.');
+        if (parts.length >= 2 && qCode.includes(`-${parts[parts.length - 1]}-`)) return true;
+      }
+    }
+
+    return false;
+  };
+
   // Handle template selection change
   const handleTemplateChange = (id: string) => {
     setSelectedTemplateId(id);
@@ -383,22 +438,12 @@ export default function AdminExamGeneratorPage() {
     return Object.keys(syllabusIndex.subjects).sort();
   };
 
-
-
-
-
-
-
   const filteredTopics = useMemo(() => {
     const selectedChs = Array.from(selectedChapters).map(idx => availableChapters[idx]).filter(Boolean);
     return availableTopics.filter(top => 
       selectedChs.some(ch => ch.chapterNumber === top.chapterNumber && ch.subject === top.subject)
     );
   }, [selectedChapters, availableChapters, availableTopics]);
-
-
-
-
 
   // Distribute counts based on equal/custom weightages
   const distributeCountsByWeight = (count: number) => {
@@ -446,7 +491,9 @@ export default function AdminExamGeneratorPage() {
     setFetchingPool(true);
     try {
       const primarySubject = Array.from(selectedSubjects)[0] || '';
-      const topicNumbers = selectedTopics.map(t => t.topicNumber).join(',');
+      const topicNumbers = Array.from(new Set(
+        selectedTopics.flatMap(t => [t.topicNumber, t.topicName, t.topicCode, t.topic].filter(Boolean))
+      )).join(',');
       const examCategory = currentTemplate?.examCategory === 'foundation' ? 'foundation' : 'standard';
 
       const idToken = await firebaseUser.getIdToken();
@@ -494,7 +541,7 @@ export default function AdminExamGeneratorPage() {
           const candidates = pool.filter(q =>
             q.type === req.type && 
             q.difficulty === req.difficulty && 
-            String(q.topicNumber) === String(t.topicNumber) &&
+            isQuestionMatchingTopic(q, t) &&
             !usedCodes.has(q.questionCode || q.id || '') &&
             !selected.some(sel => areQuestionsTooSimilar(q, sel))
           );
@@ -510,7 +557,7 @@ export default function AdminExamGeneratorPage() {
             // Relax difficulty check, keep type and topic, and avoid near-duplicates
             const relaxed = pool.filter(q =>
               q.type === req.type && 
-              String(q.topicNumber) === String(t.topicNumber) &&
+              isQuestionMatchingTopic(q, t) &&
               !usedCodes.has(q.questionCode || q.id || '') &&
               !selected.some(sel => areQuestionsTooSimilar(q, sel))
             ).slice(0, stillNeeded);
