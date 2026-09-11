@@ -4,7 +4,7 @@ import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole } from '@/lib/auth';
 import { QuestionRepository } from '@/repositories/question.repository';
 import { ChunkedBatch } from '@/lib/firebase/batch';
-import { validateQuestion, normalizeBloomLevel, OBJECTIVE_QUESTION_TYPES, SUBJECTIVE_QUESTION_TYPES, QUESTION_TYPE_MAP } from '@/lib/questionTypes';
+import { validateQuestion, normalizeBloomLevel, OBJECTIVE_QUESTION_TYPES, SUBJECTIVE_QUESTION_TYPES, QUESTION_TYPE_MAP, cleanStringForMatch } from '@/lib/questionTypes';
 import { getFromCache, setInCache, invalidateCache } from '@/lib/firebase/cache';
 export const dynamic = 'force-dynamic';
 
@@ -144,8 +144,11 @@ export async function GET(req: NextRequest) {
         const qSubCode = String(q.subtopicCode || '').trim();
         const qTopicName = String(q.topic || q.topicName || '').trim().toLowerCase();
         const qSubtopicName = String(q.subtopic || q.subtopicName || '').trim().toLowerCase();
+        const qConceptTag = String(q.conceptTag || '').trim().toLowerCase();
         const qCode = String(q.questionCode || '').trim();
         const searchTop = String(topicNumber).trim();
+        const searchLower = searchTop.toLowerCase();
+        const cleanSearch = cleanStringForMatch(searchTop);
 
         // 1. Direct match on topicNumber or subtopicNumber or topicCode
         let matchesTop = qTopNum === searchTop || qSubNum === searchTop ||
@@ -153,7 +156,15 @@ export async function GET(req: NextRequest) {
           qTopCode.endsWith(`-${searchTop}`) || qSubCode.endsWith(`-${searchTop}`) ||
           qTopCode.includes(`-${searchTop}-`) || qSubCode.includes(`-${searchTop}-`);
 
-        // 2. If searchTop is prefixed with chapter number (e.g. "8.1.1" or "8.1" in Chapter 8)
+        // 2. Parent-child topic hierarchy (e.g. searching subtopic 2.1.1 under topic 2.1 or vice versa)
+        if (!matchesTop && searchTop.includes('.')) {
+          if (searchTop.startsWith(`${qTopNum}.`) || qTopNum.startsWith(`${searchTop}.`)) matchesTop = true;
+          const parts = searchTop.split('.');
+          const parentNum = parts.slice(0, 2).join('.');
+          if (qTopNum === parentNum || qTopCode.endsWith(`-${parentNum}`)) matchesTop = true;
+        }
+
+        // 3. If searchTop is prefixed with chapter number (e.g. "8.1.1" or "8.1" in Chapter 8)
         if (!matchesTop && cleanChapNum && searchTop.startsWith(`${cleanChapNum}.`)) {
           const stripped = searchTop.substring(cleanChapNum.length + 1); // e.g. "1.1" or "1"
           matchesTop = qTopNum === stripped || qSubNum === stripped ||
@@ -163,20 +174,25 @@ export async function GET(req: NextRequest) {
             qCode.includes(`-${cleanChapNum}-${stripped}.`);
         }
 
-        // 3. Match against question code pattern
+        // 4. Match against question code pattern
         if (!matchesTop) {
           if (qCode.includes(`-${searchTop}-`) || qCode.includes(`-${cleanChapNum}-${searchTop}-`) || qCode.includes(`-${searchTop}.`)) {
             matchesTop = true;
           }
         }
 
-        // 4. Match against topic or subtopic name if searchTop contains or matches topic text
+        // 5. Match against topic, subtopic name, or conceptTag
         if (!matchesTop) {
-          const searchLower = searchTop.toLowerCase();
           if (qTopicName && (qTopicName === searchLower || qTopicName.includes(searchLower) || searchLower.includes(qTopicName))) {
             matchesTop = true;
           }
           if (qSubtopicName && (qSubtopicName === searchLower || qSubtopicName.includes(searchLower) || searchLower.includes(qSubtopicName))) {
+            matchesTop = true;
+          }
+          if (qConceptTag && (qConceptTag === searchLower || qConceptTag.includes(searchLower) || searchLower.includes(qConceptTag))) {
+            matchesTop = true;
+          }
+          if (cleanSearch && (cleanStringForMatch(qTopicName) === cleanSearch || cleanStringForMatch(qSubtopicName) === cleanSearch || cleanStringForMatch(qConceptTag) === cleanSearch)) {
             matchesTop = true;
           }
         }
