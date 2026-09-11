@@ -263,7 +263,7 @@ const mh10Subjects = [
           createTopic('MH', '10', 'SCIT1', '8', '2', 'Ionic Compounds: Formation, Crystal Lattice & Properties', ['Electron transfer, strong electrostatic attraction force', 'High melting points, electrical conduction in liquid/molten state']),
           createTopic('MH', '10', 'SCIT1', '8', '3', 'Basic Principles of Metallurgy & Concentration of Ores', ['Minerals, ores, gangue matrix', 'Gravity separation: Wilfley table method & Hydraulic separation', 'Magnetic separation method (e.g. tin stone and magnetic wolframite)', 'Froth floatation method (for sulphide ores using pine oil and collectors)', 'Leaching method (Extraction of Aluminium from Bauxite using NaOH / Baeyer process)']),
           createTopic('MH', '10', 'SCIT1', '8', '4', 'Extraction of Reactive Metals: Electrolytic Reduction of Alumina (Hall-Heroult Process)', ['Purification of bauxite (Hall and Baeyer processes)', 'Electrolysis of molten alumina with Cryolite (Na3AlF6) and Fluorspar (CaF2)', 'Cathode: carbon lining (molten Al), Anode: graphite rods (O2 gas)']),
-          createTopic('MH', '10', 'SCIT1', '8', '5', 'Extraction of Moderately & Less Reactive Metals (Roasting & Calcination)', ['Roasting of zinc blende (2ZnS + 3O2 -> 2ZnO + 2SO2)', 'Calcination of calamine (ZnCO3 -> ZnO + CO2)', 'Reduction of ZnO using carbon coke (ZnO + C -> Zn + CO)']),
+          createTopic('MH', '10', 'SCIT1', '8', '5', 'Extraction of Moderately & Less Reactive Metals (Roasting & Calcination)', []),
           createTopic('MH', '10', 'SCIT1', '8', '6', 'Corrosion of Metals & Prevention Methods', [])
         ]
       },

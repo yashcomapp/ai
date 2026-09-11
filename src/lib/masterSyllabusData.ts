@@ -10468,11 +10468,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
             "number": "8.5",
             "name": "Extraction of Moderately & Less Reactive Metals (Roasting & Calcination)",
             "topicCode": "MH-10-SCIT1-8-8.5",
-            "subtopics": [
-              "Roasting of zinc blende (2ZnS + 3O2 -> 2ZnO + 2SO2)",
-              "Calcination of calamine (ZnCO3 -> ZnO + CO2)",
-              "Reduction of ZnO using carbon coke (ZnO + C -> Zn + CO)"
-            ],
+            "subtopics": [],
             "practiceSet": "Exercise 8.5",
             "theorems": [],
             "problemSet": "Problem Set 8"
