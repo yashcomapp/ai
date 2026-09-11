@@ -127,12 +127,17 @@ export async function GET(req: NextRequest) {
     const dailySessions = isToday ? (masterySnap.data()!.dailyPracticeSessionsCount || 0) : 0;
     const practiceQuestionsAttempted = masterySnap.exists ? (masterySnap.data()!.practiceQuestionsAttempted || 0) : 0;
 
-    const isPracticeLimitReached = completedPractices >= 3 || (practiceQuestionsAttempted >= 18 && mastery < 80);
+    const rawScope = String(topicClassification || '').toLowerCase().trim();
+    const isMinorTopic = rawScope === 'minor' || rawScope === 'micro' || (targetQuestions !== undefined && targetQuestions <= 20);
+    const maxSessionsAllowed = isMinorTopic ? 2 : 3;
+    const maxQuestionsAllowed = isMinorTopic ? 12 : 18;
+
+    const isPracticeLimitReached = completedPractices >= maxSessionsAllowed || (practiceQuestionsAttempted >= maxQuestionsAllowed && mastery < 80);
 
     // If practice limit reached and not in recovery mode, prompt to enter Guided Recovery Diagnostic
     if (isPracticeLimitReached && !isRecoveryMode) {
       return NextResponse.json({
-        message: 'Maximum limit of 3 practice sessions reached for this topic. Take the Guided Recovery Diagnostic (8 targeted questions) to strengthen core concepts and achieve Mastery.',
+        message: `Maximum limit of ${maxSessionsAllowed} practice sessions reached for this topic. Take the Guided Recovery Diagnostic (8 targeted questions) to strengthen core concepts and achieve Mastery.`,
         allowRecovery: true,
         requireRecoveryMode: true
       }, { status: 403 });
@@ -148,7 +153,7 @@ export async function GET(req: NextRequest) {
           requireRecoveryMode: true,
           allowRecovery: true,
           lockType: 'recovery_next_day',
-          message: 'You have completed your 3 practice sessions for today. Please review your textbook notes today. Your Guided Recovery Diagnostic will be available tomorrow anytime.'
+          message: `You have completed your ${maxSessionsAllowed} practice sessions for today. Please review your textbook notes today. Your Guided Recovery Diagnostic will be available tomorrow anytime.`
         }, { status: 403 });
       }
 
@@ -163,12 +168,12 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // GUARDRAIL 1: Daily Pacing Cap (Anti-Spam per Topic: Max 3 sessions = 18 questions/day per topic)
-    if (dailySessions >= 3 && !isRecoveryMode) {
+    // GUARDRAIL 1: Daily Pacing Cap (Anti-Spam per Topic: Max 2 sessions for minor, 3 for medium/major)
+    if (dailySessions >= maxSessionsAllowed && !isRecoveryMode) {
       return NextResponse.json({
         requireTextbookStudy: true,
         lockType: 'daily',
-        message: "You have completed 3 practice sessions on this topic today. Please review your textbook notes and return tomorrow with a fresh mind."
+        message: `You have completed ${maxSessionsAllowed} practice sessions on this topic today. Please review your textbook notes and return tomorrow with a fresh mind.`
       }, { status: 403 });
     }
 
@@ -494,13 +499,17 @@ export async function GET(req: NextRequest) {
 
     const reqConfidence = getRequiredConfidence(topicClassification, targetQuestions);
     const isFullyMastered = (mastery >= 90 && questionsAttempted >= reqConfidence);
+    const resolvedScope = isMinorTopic ? 'minor' : (rawScope === 'major' || rawScope === 'calculative' || rawScope === 'hots' ? 'major' : 'medium');
 
     return NextResponse.json({
       topicCode,
       topicName,
-      topicClassification: topicClassification || (targetQuestions && targetQuestions <= 35 ? 'micro' : (targetQuestions && targetQuestions >= 120 ? 'calculative' : 'conceptual')),
-      targetQuestions: targetQuestions || 75,
+      topicScope: resolvedScope,
+      topicClassification: resolvedScope,
+      targetQuestions: targetQuestions || (isMinorTopic ? 12 : (resolvedScope === 'medium' ? 22 : 34)),
       requiredConfidence: reqConfidence,
+      maxSessionsAllowed,
+      currentSetNumber: dailySessions + 1,
       dailySessions,
       practiceQuestionsAttempted,
       totalQuestions: sanitizedQuestions.length,

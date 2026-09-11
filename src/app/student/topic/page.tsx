@@ -33,9 +33,12 @@ interface QuestionItem {
 interface PracticeData {
   topicCode: string;
   topicName?: string;
+  topicScope?: string;
   topicClassification?: string;
   targetQuestions?: number;
   requiredConfidence?: number;
+  maxSessionsAllowed?: number;
+  currentSetNumber?: number;
   dailySessions?: number;
   practiceQuestionsAttempted?: number;
   totalQuestions: number;
@@ -1154,29 +1157,28 @@ function TopicPracticeContent() {
                     textTransform: 'uppercase',
                     padding: '2px 8px',
                     borderRadius: '4px',
-                    background: data.topicClassification === 'micro' ? 'rgba(16, 185, 129, 0.15)' : data.topicClassification === 'calculative' ? 'rgba(239, 68, 68, 0.15)' : data.topicClassification === 'hots' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(59, 130, 246, 0.15)',
-                    color: data.topicClassification === 'micro' ? '#059669' : data.topicClassification === 'calculative' ? '#dc2626' : data.topicClassification === 'hots' ? '#d97706' : '#2563eb',
-                    border: `1px solid ${data.topicClassification === 'micro' ? 'rgba(16, 185, 129, 0.3)' : data.topicClassification === 'calculative' ? 'rgba(239, 68, 68, 0.3)' : data.topicClassification === 'hots' ? 'rgba(245, 158, 11, 0.3)' : 'rgba(59, 130, 246, 0.3)'}`
+                    background: (data.topicScope === 'minor' || data.topicClassification === 'minor' || data.topicClassification === 'micro') ? 'rgba(16, 185, 129, 0.15)' : (data.topicScope === 'major' || data.topicClassification === 'major' || data.topicClassification === 'calculative' || data.topicClassification === 'hots') ? 'rgba(239, 68, 68, 0.15)' : 'rgba(59, 130, 246, 0.15)',
+                    color: (data.topicScope === 'minor' || data.topicClassification === 'minor' || data.topicClassification === 'micro') ? '#059669' : (data.topicScope === 'major' || data.topicClassification === 'major' || data.topicClassification === 'calculative' || data.topicClassification === 'hots') ? '#dc2626' : '#2563eb',
+                    border: `1px solid ${(data.topicScope === 'minor' || data.topicClassification === 'minor' || data.topicClassification === 'micro') ? 'rgba(16, 185, 129, 0.3)' : (data.topicScope === 'major' || data.topicClassification === 'major' || data.topicClassification === 'calculative' || data.topicClassification === 'hots') ? 'rgba(239, 68, 68, 0.3)' : 'rgba(59, 130, 246, 0.3)'}`
                   }}>
-                    {data.topicClassification === 'micro' && '🎯 Micro (5 Qs to Master)'}
-                    {data.topicClassification === 'conceptual' && '⚡ Conceptual (10 Qs to Master)'}
-                    {data.topicClassification === 'calculative' && '🔥 Calculative (18 Qs to Master)'}
-                    {data.topicClassification === 'hots' && '🏆 HOTS (15 Qs to Master)'}
-                    {!data.topicClassification && '⚡ Standard (10 Qs to Master)'}
+                    {(data.topicScope === 'minor' || data.topicClassification === 'minor' || data.topicClassification === 'micro') && '📘 Minor (6 Qs to Master • Max 2 Sets)'}
+                    {(data.topicScope === 'medium' || data.topicClassification === 'medium' || data.topicClassification === 'moderate' || data.topicClassification === 'conceptual') && '📙 Medium (10 Qs to Master • Max 3 Sets)'}
+                    {(data.topicScope === 'major' || data.topicClassification === 'major' || data.topicClassification === 'calculative' || data.topicClassification === 'hots') && '📕 Major (15 Qs to Master • Max 3 Sets)'}
+                    {!data.topicScope && !data.topicClassification && '📙 Standard (10 Qs to Master • Max 3 Sets)'}
                   </span>
                 </div>
 
                 {/* Progress bar towards Required Slab */}
                 <div style={{ marginBottom: '8px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '3px' }}>
-                    <span>Confidence Slab Progress</span>
-                    <strong>{data.totalAttemptedCount || 0} / {data.requiredConfidence || 10} Qs Practiced</strong>
+                    <span>Confidence Progress (Score ≥ 90% Needed)</span>
+                    <strong>{data.totalAttemptedCount || 0} / {data.requiredConfidence || (data.topicScope === 'minor' ? 6 : data.topicScope === 'major' ? 15 : 10)} Qs Practiced</strong>
                   </div>
                   <div style={{ height: '6px', background: 'var(--border-light)', borderRadius: '3px', overflow: 'hidden' }}>
                     <div style={{
                       height: '100%',
                       background: 'var(--accent)',
-                      width: `${Math.min(100, Math.round(((data.totalAttemptedCount || 0) / Math.max(1, data.requiredConfidence || 10)) * 100))}%`,
+                      width: `${Math.min(100, Math.round(((data.totalAttemptedCount || 0) / Math.max(1, data.requiredConfidence || (data.topicScope === 'minor' ? 6 : data.topicScope === 'major' ? 15 : 10))) * 100))}%`,
                       transition: 'width 0.3s ease'
                     }}></div>
                   </div>
@@ -1186,7 +1188,7 @@ function TopicPracticeContent() {
                   <div>🎯 <strong>This Set:</strong> {data.questions?.length || 6} Questions</div>
                   <div>⏳ <strong>Ideal Time:</strong> {Math.round((data.idealTimeSeconds || 450) / 60)} Mins</div>
                   <div>📈 <strong>Current Mastery:</strong> {data.masteryAtStart || 0}%</div>
-                  <div>🛡️ <strong>Pacing:</strong> Session {(data.dailySessions || 0) + 1} of 3 today</div>
+                  <div>🛡️ <strong>Pacing:</strong> Set {(data.dailySessions || 0) + 1} of {data.maxSessionsAllowed || (data.topicScope === 'minor' ? 2 : 3)}</div>
                 </div>
 
                 <div style={{ fontSize: '10.5px', color: 'var(--accent)', marginTop: '8px', fontWeight: 600, borderTop: '1px dashed var(--border-light)', paddingTop: '6px' }}>

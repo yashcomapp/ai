@@ -840,16 +840,15 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
 }
 
 export function getRequiredConfidence(topicClassification?: string, targetQuestions?: number): number {
-  if (topicClassification === 'micro') return 5;
-  if (topicClassification === 'conceptual') return 10;
-  if (topicClassification === 'calculative') return 18;
-  if (topicClassification === 'hots') return 15;
+  const cls = String(topicClassification || '').toLowerCase().trim();
+  if (cls === 'minor' || cls === 'micro') return 6;
+  if (cls === 'medium' || cls === 'moderate' || cls === 'conceptual') return 10;
+  if (cls === 'major' || cls === 'calculative' || cls === 'hots') return 15;
   
   if (targetQuestions !== undefined) {
-    if (targetQuestions <= 20) return 5;
+    if (targetQuestions <= 20) return 6;
     if (targetQuestions <= 40) return 10;
-    if (targetQuestions >= 100) return 18;
-    return 10;
+    return 15;
   }
   return 10;
 }
