@@ -647,7 +647,7 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                                               expText = `${practiceCount}/5 practices done (${mastery}% accuracy). ${5 - practiceCount} practice(s) left to aim for 90%+ Mastered.`;
                                             }
                                           } else if (state === 'revision') {
-                                            const reqConf = topic.requiredConfidence || (topic.topicClassification === 'micro' ? 5 : (topic.topicClassification === 'calculative' ? 18 : (topic.topicClassification === 'hots' ? 15 : 10)));
+                                            const reqConf = topic.requiredConfidence || (topic.topicClassification === 'minor' || topic.topicClassification === 'micro' ? 6 : (topic.topicClassification === 'major' || topic.topicClassification === 'calculative' || topic.topicClassification === 'hots' ? 15 : 10));
                                             const needed = Math.max(1, reqConf - attempts);
                                             expIcon = '📖';
                                             expColor = 'var(--accent)';
@@ -669,7 +669,7 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                                             ? `/student/topic?topicCode=${topic.topicCode}&category=${topic.state}&mode=recovery`
                                             : `/student/topic?topicCode=${topic.topicCode}&category=${topic.state}`;
 
-                                          const reqMasteryQs = topic.requiredConfidence || (topic.topicClassification === 'micro' ? 5 : topic.topicClassification === 'calculative' ? 18 : topic.topicClassification === 'hots' ? 15 : 10);
+                                          const reqMasteryQs = topic.requiredConfidence || (topic.topicClassification === 'minor' || topic.topicClassification === 'micro' ? 6 : topic.topicClassification === 'major' || topic.topicClassification === 'calculative' || topic.topicClassification === 'hots' ? 15 : 10);
 
                                           return (
                                             <tr 

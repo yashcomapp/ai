@@ -655,7 +655,7 @@ export default function FeesJournal({
               transition: 'all 0.15s ease'
             }}
           >
-            <span>🏢</span> Batch-wise Summary
+            <span>Batch-wise Summary</span>
           </button>
           
           <button
@@ -675,7 +675,7 @@ export default function FeesJournal({
               transition: 'all 0.15s ease'
             }}
           >
-            <span>📅</span> Date-wise Journal ({allTransactions.length})
+            <span>Date-wise Journal ({allTransactions.length})</span>
           </button>
           
           <button
@@ -695,7 +695,7 @@ export default function FeesJournal({
               transition: 'all 0.15s ease'
             }}
           >
-            <span>👤</span> Student-wise Balances ({students.length})
+            <span>Student-wise Balances ({students.length})</span>
           </button>
         </div>
 
@@ -1003,7 +1003,7 @@ export default function FeesJournal({
                       if (dateSortField === f) setDateSortDir(d => d === 'asc' ? 'desc' : 'asc');
                       else { setDateSortField(f); setDateSortDir('asc'); }
                     })}
-                    <th style={{ padding: '12px 14px', fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Ref / Receipt</th>
+                    <th style={{ padding: '12px 14px', fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Ref / Remarks</th>
                     <th style={{ padding: '12px 14px', fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Timeliness</th>
                     {renderSortHeader('Recorded By', 'recordedBy', dateSortField, dateSortDir, (f) => {
                       if (dateSortField === f) setDateSortDir(d => d === 'asc' ? 'desc' : 'asc');
@@ -1021,13 +1021,31 @@ export default function FeesJournal({
                       : (tx.installmentId === 'registration' ? 'Installment #1' : (tx.installmentId || 'Installment #1'));
                     const lateStr = getLateRemarks(tx.studentCode, tx.installmentId, tx.timestamp);
 
+                    // Clean time formatting helper: avoid false 05:30 AM artifact on date-only UTC timestamps
+                    const getTimeString = (ts: string) => {
+                      if (!ts) return null;
+                      try {
+                        const d = new Date(ts);
+                        if (isNaN(d.getTime())) return null;
+                        if (d.getUTCHours() === 0 && d.getUTCMinutes() === 0 && d.getUTCSeconds() === 0) {
+                          return null; // Date-only entry
+                        }
+                        return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                      } catch {
+                        return null;
+                      }
+                    };
+                    const timeStr = getTimeString(tx.timestamp);
+
                     return (
                       <tr key={tx.transactionId} style={{ borderBottom: '1px solid var(--border-light)' }}>
                         <td style={{ padding: '12px 14px', fontSize: '12px', whiteSpace: 'nowrap' }}>
                           <div style={{ fontWeight: 600 }}>{formatDateStr(tx.timestamp)}</div>
-                          <div style={{ fontSize: '10px', color: 'var(--text-faint)' }}>
-                            {new Date(tx.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </div>
+                          {timeStr && (
+                            <div style={{ fontSize: '10px', color: 'var(--text-faint)' }}>
+                              {timeStr}
+                            </div>
+                          )}
                         </td>
                         <td style={{ padding: '12px 14px', fontSize: '13px', fontWeight: 700 }}>
                           {onSelectStudent && student ? (
@@ -1058,8 +1076,12 @@ export default function FeesJournal({
                             {tx.paymentMethod}
                           </span>
                         </td>
-                        <td style={{ padding: '12px 14px', fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'monospace' }}>
-                          {tx.referenceNumber || '--'}
+                        <td style={{ padding: '12px 14px', fontSize: '12px', color: 'var(--text)' }}>
+                          {tx.referenceNumber ? (
+                            <span style={{ fontWeight: 600 }}>{tx.referenceNumber}</span>
+                          ) : (
+                            <span style={{ color: 'var(--text-faint)' }}>--</span>
+                          )}
                         </td>
                         <td style={{ padding: '12px 14px', fontSize: '11px' }}>
                           {lateStr.startsWith('Late') ? (

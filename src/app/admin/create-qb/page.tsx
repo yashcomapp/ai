@@ -539,66 +539,18 @@ function CreateQBContent() {
     return leafTopics.length > 0 ? leafTopics : selectedTopics;
   };
 
-  const getEffectiveTopicCounts = (): Record<string, number> => {
-    const map: Record<string, number> = {};
-    const fallbackCount = typeof defaultPerTopicCount === 'number' ? defaultPerTopicCount : (parseInt(String(defaultPerTopicCount), 10) || 30);
-    const promptTopics = getPromptTargetTopics();
-
-    if (topicWeightageMode === 'custom_counts') {
-      promptTopics.forEach(t => {
-        const k = topicKey(t);
-        let raw = topicCustomCounts[k];
-        if (raw === undefined) {
-          // If child subtopic not explicitly keyed, find parent topic count
-          const parent = selectedTopics.find(st => st.subject === t.subject && st.chapterNumber === t.chapterNumber && t.topicNumber.startsWith(st.topicNumber));
-          if (parent) {
-            raw = topicCustomCounts[topicKey(parent)];
-          }
-        }
-        const val = typeof raw === 'number' ? raw : (raw !== undefined && raw !== '' ? (parseInt(String(raw), 10) || fallbackCount) : (t.targetQuestions || fallbackCount));
-        map[k] = val;
-      });
-    } else if (topicWeightageMode === 'equal') {
-      promptTopics.forEach(t => {
-        const k = topicKey(t);
-        map[k] = fallbackCount;
-      });
-    } else {
-      // Percentage mode
-      const total = typeof totalBatchQuestions === 'number' ? totalBatchQuestions : (parseInt(String(totalBatchQuestions), 10) || 30);
-      const cleanWeightMap: Record<string, number> = {};
-      promptTopics.forEach(t => {
-        const k = topicKey(t);
-        const raw = topicWeightageMap[k];
-        cleanWeightMap[k] = typeof raw === 'number' ? raw : (parseInt(String(raw), 10) || 0);
-      });
-      return distributeCountsByWeightLib(
-        total,
-        promptTopics,
-        cleanWeightMap,
-        'custom',
-        topicKey
-      );
-    }
-    return map;
+  const getTotalTargetQuestions = (): number => {
+    return typeof defaultPerTopicCount === 'number' ? defaultPerTopicCount : (parseInt(String(defaultPerTopicCount), 10) || 55);
   };
 
-  const getTotalTargetQuestions = (): number => {
-    const fallbackCount = typeof defaultPerTopicCount === 'number' ? defaultPerTopicCount : (parseInt(String(defaultPerTopicCount), 10) || 30);
-
-    if (topicWeightageMode === 'custom_counts') {
-      return selectedTopics.reduce((sum, top) => {
-        const k = topicKey(top);
-        const raw = topicCustomCounts[k];
-        const val = typeof raw === 'number' ? raw : (raw !== undefined && raw !== '' ? (parseInt(String(raw), 10) || fallbackCount) : (top.targetQuestions || fallbackCount));
-        return sum + val;
-      }, 0);
-    }
-    if (topicWeightageMode === 'equal') {
-      return selectedTopics.length * fallbackCount;
-    }
-    const total = typeof totalBatchQuestions === 'number' ? totalBatchQuestions : (parseInt(String(totalBatchQuestions), 10) || 30);
-    return total;
+  const getEffectiveTopicCounts = (): Record<string, number> => {
+    const map: Record<string, number> = {};
+    const count = getTotalTargetQuestions();
+    const promptTopics = getPromptTargetTopics();
+    promptTopics.forEach(t => {
+      map[topicKey(t)] = count;
+    });
+    return map;
   };
 
   // Image Upload helper conversion
@@ -1479,9 +1431,6 @@ Return ONLY valid JSON. No extra text.`;
     );
   }
 
-  const { total: totalSubjectWeight } = getWeightageMap();
-  const totalTopicWeight = getTopicWeightageTotal();
-
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       {/* CDN Script Injections for KaTeX */}
@@ -1547,6 +1496,7 @@ Return ONLY valid JSON. No extra text.`;
           </div>
           
           {/* Subjects checkboxes */}
+          {/* Subjects checkboxes & Single Topic Selector */}
           <SyllabusSelector
             availableSubjects={availableSubjects}
             selectedSubjects={selectedSubjects}
@@ -1558,171 +1508,96 @@ Return ONLY valid JSON. No extra text.`;
             onDeselectAllChapters={handleDeselectAllChapters}
             availableTopics={currentAllTopics}
             selectedTopics={selectedTopics}
-            onToggleTopic={handleToggleTopic}
-            onSelectAllTopics={() => handleSelectAllTopics(currentAllTopics)}
-            onDeselectAllTopics={() => handleDeselectAllTopics(currentAllTopics)}
+            onToggleTopic={(topic) => {
+              setSelectedTopics([topic]);
+              const count = topic.targetQuestions || (defaultPerTopicCount ? Number(defaultPerTopicCount) : 55);
+              setDefaultPerTopicCount(count);
+              setTopicCustomCounts({ [topicKey(topic)]: count });
+            }}
+            onSelectAllTopics={() => {}}
+            onDeselectAllTopics={() => setSelectedTopics([])}
+            singleTopicSelect={true}
           />
 
-          {/* Topic Weightage Section */}
+          {/* Single Topic Target Question Quota */}
           {selectedTopics.length > 0 && (
             <div style={{ marginTop: '20px', borderTop: '1px solid var(--border-light)', paddingTop: '15px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
-                <h3 style={{ fontSize: '13px', fontWeight: 800, margin: 0, color: 'var(--accent)' }}>📊 Topic Question Count &amp; Weightage Distribution</h3>
-                <span style={{ fontSize: '12px', fontWeight: 700, background: 'rgba(52, 152, 219, 0.15)', color: '#2980b9', padding: '3px 10px', borderRadius: '12px' }}>
-                  🎯 Total Target: <strong>{getTotalTargetQuestions()} Questions</strong> across {selectedTopics.length} selected topics
+                <h3 style={{ fontSize: '13px', fontWeight: 800, margin: 0, color: 'var(--accent)' }}>Target Question Quota</h3>
+                <span style={{ fontSize: '12px', fontWeight: 700, background: 'rgba(52, 152, 219, 0.15)', color: 'var(--accent)', padding: '3px 10px', borderRadius: '12px' }}>
+                  Target: <strong>{getTotalTargetQuestions()} Questions</strong>
                 </span>
               </div>
 
-              {/* 4-Archetype Volume Presets Bar (SSOT) */}
-              <div style={{ background: 'var(--bg-soft)', padding: '10px 14px', borderRadius: 'var(--radius)', border: '1px solid var(--border-light)', marginBottom: '14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+              {/* Topic Scope Presets */}
+              <div style={{ background: 'var(--bg-soft)', padding: '12px 16px', borderRadius: 'var(--radius)', border: '1px solid var(--border-light)', marginBottom: '14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--accent)' }}>
-                    ⚡ 4-Archetype Quota Presets (SSOT):
+                  <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+                    Scope Presets:
                   </span>
                 </div>
-                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                   <button
                     type="button"
-                    className="btn btn-secondary btn-sm"
+                    className={`btn btn-sm ${Number(defaultPerTopicCount) === 30 ? 'btn-primary' : 'btn-secondary'}`}
                     onClick={() => {
                       setDefaultPerTopicCount(30);
-                      const newCounts: Record<string, number> = {};
-                      selectedTopics.forEach(t => { newCounts[topicKey(t)] = 30; });
-                      setTopicCustomCounts(newCounts);
-                      setTopicWeightageMode('custom_counts');
+                      if (selectedTopics[0]) {
+                        setTopicCustomCounts({ [topicKey(selectedTopics[0])]: 30 });
+                      }
                     }}
-                    style={{ fontSize: '11px', padding: '4px 10px', borderRadius: '12px' }}
-                    title="Micro topics (~30 Qs quota: 5 Qs to master)"
+                    style={{ fontSize: '11px', padding: '4px 12px', borderRadius: '12px' }}
+                    title="Minor topic: 2 Practice Sets • 6 Mastery Qs"
                   >
-                    🎯 Micro (~30 Qs)
+                    Minor Topic (30 Qs)
                   </button>
                   <button
                     type="button"
-                    className="btn btn-secondary btn-sm"
+                    className={`btn btn-sm ${Number(defaultPerTopicCount) === 50 ? 'btn-primary' : 'btn-secondary'}`}
                     onClick={() => {
                       setDefaultPerTopicCount(50);
-                      const newCounts: Record<string, number> = {};
-                      selectedTopics.forEach(t => { newCounts[topicKey(t)] = 50; });
-                      setTopicCustomCounts(newCounts);
-                      setTopicWeightageMode('custom_counts');
+                      if (selectedTopics[0]) {
+                        setTopicCustomCounts({ [topicKey(selectedTopics[0])]: 50 });
+                      }
                     }}
-                    style={{ fontSize: '11px', padding: '4px 10px', borderRadius: '12px' }}
-                    title="Conceptual topics (~50 Qs quota: 10 Qs to master)"
+                    style={{ fontSize: '11px', padding: '4px 12px', borderRadius: '12px' }}
+                    title="Medium topic: 3 Practice Sets • 10 Mastery Qs"
                   >
-                    ⚡ Conceptual (~50 Qs)
+                    Medium Topic (50 Qs)
                   </button>
                   <button
                     type="button"
-                    className="btn btn-secondary btn-sm"
+                    className={`btn btn-sm ${Number(defaultPerTopicCount) === 55 ? 'btn-primary' : 'btn-secondary'}`}
                     onClick={() => {
-                      setDefaultPerTopicCount(50);
-                      const newCounts: Record<string, number> = {};
-                      selectedTopics.forEach(t => { newCounts[topicKey(t)] = 50; });
-                      setTopicCustomCounts(newCounts);
-                      setTopicWeightageMode('custom_counts');
+                      setDefaultPerTopicCount(55);
+                      if (selectedTopics[0]) {
+                        setTopicCustomCounts({ [topicKey(selectedTopics[0])]: 55 });
+                      }
                     }}
-                    style={{ fontSize: '11px', padding: '4px 10px', borderRadius: '12px' }}
-                    title="Calculative topics (~50 Qs quota: 18 Qs to master)"
+                    style={{ fontSize: '11px', padding: '4px 12px', borderRadius: '12px' }}
+                    title="Major topic: 3 Practice Sets • 15 Mastery Qs (55 Qs in one go)"
                   >
-                    🔥 Calculative (~50 Qs)
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-secondary btn-sm"
-                    onClick={() => {
-                      setDefaultPerTopicCount(60);
-                      const newCounts: Record<string, number> = {};
-                      selectedTopics.forEach(t => { newCounts[topicKey(t)] = 60; });
-                      setTopicCustomCounts(newCounts);
-                      setTopicWeightageMode('custom_counts');
-                    }}
-                    style={{ fontSize: '11px', padding: '4px 10px', borderRadius: '12px' }}
-                    title="HOTS / Olympiad topics (~60 Qs quota: 15 Qs to master)"
-                  >
-                    🏆 HOTS (~60 Qs)
+                    Major Topic (55 Qs)
                   </button>
                 </div>
               </div>
-              
-              <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '15px', flexWrap: 'wrap' }}>
-                <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)' }}>Distribution Mode:</span>
-                <button 
-                  type="button"
-                  className={`btn btn-sm ${topicWeightageMode === 'custom_counts' ? 'btn-primary' : 'btn-secondary'}`}
-                  onClick={() => setTopicWeightageMode('custom_counts')}
-                  style={{ borderRadius: '20px', padding: '4px 12px', fontSize: '11px' }}
-                >
-                  🔢 Custom Count Per Topic
-                </button>
-                <button 
-                  type="button"
-                  className={`btn btn-sm ${topicWeightageMode === 'equal' ? 'btn-primary' : 'btn-secondary'}`}
-                  onClick={() => setTopicWeightageMode('equal')}
-                  style={{ borderRadius: '20px', padding: '4px 12px', fontSize: '11px' }}
-                >
-                  ⚖️ Equal Count ({defaultPerTopicCount} Qs/Topic)
-                </button>
-                <button 
-                  type="button"
-                  className={`btn btn-sm ${topicWeightageMode === 'percentage' ? 'btn-primary' : 'btn-secondary'}`}
-                  onClick={() => setTopicWeightageMode('percentage')}
-                  style={{ borderRadius: '20px', padding: '4px 12px', fontSize: '11px' }}
-                >
-                  📊 Percentage Weightage
-                </button>
-              </div>
 
-              {/* Mode 1: Custom Count Per Topic */}
-              {topicWeightageMode === 'custom_counts' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: 'var(--bg-soft)', padding: '12px', borderRadius: 'var(--radius-sm)' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 140px', gap: '10px', fontWeight: 'bold', fontSize: '11px', borderBottom: '1px dashed var(--border-light)', paddingBottom: '6px' }}>
-                    <span>Topic Name</span>
-                    <span style={{ textAlign: 'right' }}>Target Questions</span>
+              {/* Selected Topic Details & Count Input */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--bg-soft)', padding: '12px 16px', borderRadius: 'var(--radius-sm)', flexWrap: 'wrap', gap: '10px' }}>
+                <div>
+                  <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text)' }}>
+                    {selectedTopics[0]?.topic}
                   </div>
-                  {selectedTopics.map((top, idx) => {
-                    const key = topicKey(top);
-                    const currentCount = topicCustomCounts[key] !== undefined ? topicCustomCounts[key] : defaultPerTopicCount;
-                    return (
-                      <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1fr 140px', gap: '10px', alignItems: 'center', fontSize: '12px' }}>
-                        <span>📍 {top.topic}</span>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '6px' }}>
-                          <input 
-                            type="number"
-                            min={1}
-                            max={200}
-                            value={currentCount === undefined || currentCount === null ? '' : currentCount}
-                            onChange={(e) => {
-                              const raw = e.target.value;
-                              if (raw === '') {
-                                handleTopicCustomCountChange(top, '');
-                              } else {
-                                const val = parseInt(raw, 10);
-                                handleTopicCustomCountChange(top, isNaN(val) ? '' : Math.max(1, val));
-                              }
-                            }}
-                            onBlur={() => {
-                              if (currentCount === '' || currentCount === undefined || Number(currentCount) < 1) {
-                                handleTopicCustomCountChange(top, typeof defaultPerTopicCount === 'number' ? defaultPerTopicCount : 10);
-                              }
-                            }}
-                            style={{ width: '65px', padding: '4px 6px', textAlign: 'center', border: '1px solid var(--border-light)', borderRadius: '4px', background: 'var(--surface)', color: 'var(--text)', fontWeight: 600 }}
-                          />
-                          <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Qs</span>
-                        </div>
-                      </div>
-                    );
-                  })}
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                    {selectedTopics[0]?.chapterName} • {selectedTopics[0]?.subject}
+                  </div>
                 </div>
-              )}
-
-              {/* Mode 2: Equal Count */}
-              {topicWeightageMode === 'equal' && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '15px', background: 'var(--bg-soft)', padding: '12px', borderRadius: 'var(--radius-sm)', fontSize: '12px' }}>
-                  <span>Set questions per topic:</span>
-                  <input 
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)' }}>Questions to Generate:</label>
+                  <input
                     type="number"
-                    min={1}
-                    max={200}
+                    min={5}
+                    max={100}
                     value={defaultPerTopicCount}
                     onChange={(e) => {
                       const raw = e.target.value;
@@ -1730,99 +1605,26 @@ Return ONLY valid JSON. No extra text.`;
                         setDefaultPerTopicCount('');
                       } else {
                         const val = parseInt(raw, 10);
-                        setDefaultPerTopicCount(isNaN(val) ? '' : Math.max(1, val));
+                        const v = isNaN(val) ? '' : Math.max(1, val);
+                        setDefaultPerTopicCount(v);
+                        if (selectedTopics[0]) {
+                          setTopicCustomCounts({ [topicKey(selectedTopics[0])]: v });
+                        }
                       }
                     }}
                     onBlur={() => {
                       if (defaultPerTopicCount === '' || Number(defaultPerTopicCount) < 1) {
-                        setDefaultPerTopicCount(10);
+                        setDefaultPerTopicCount(55);
+                        if (selectedTopics[0]) {
+                          setTopicCustomCounts({ [topicKey(selectedTopics[0])]: 55 });
+                        }
                       }
                     }}
-                    style={{ width: '70px', padding: '4px 8px', textAlign: 'center', border: '1px solid var(--border-light)', borderRadius: '4px', background: 'var(--surface)', color: 'var(--text)', fontWeight: 700 }}
+                    style={{ width: '70px', padding: '6px 8px', textAlign: 'center', border: '1px solid var(--border-light)', borderRadius: '4px', background: 'var(--surface)', color: 'var(--text)', fontWeight: 700, fontSize: '13px' }}
                   />
-                  <span style={{ color: 'var(--text-muted)' }}>
-                    ({selectedTopics.length} topics × {defaultPerTopicCount || 0} = <strong>{selectedTopics.length * (Number(defaultPerTopicCount) || 0)} Total Questions</strong>)
-                  </span>
+                  <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)' }}>Qs</span>
                 </div>
-              )}
-
-              {/* Mode 3: Percentage Weightage */}
-              {topicWeightageMode === 'percentage' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', background: 'var(--bg-soft)', padding: '12px', borderRadius: 'var(--radius-sm)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-                    <span style={{ fontSize: '12px', fontWeight: 600 }}>Total Questions:</span>
-                    <input 
-                      type="number"
-                      min={5}
-                      max={500}
-                      value={totalBatchQuestions}
-                      onChange={(e) => {
-                        const raw = e.target.value;
-                        if (raw === '') {
-                          setTotalBatchQuestions('');
-                        } else {
-                          const val = parseInt(raw, 10);
-                          setTotalBatchQuestions(isNaN(val) ? '' : Math.max(1, val));
-                        }
-                      }}
-                      onBlur={() => {
-                        if (totalBatchQuestions === '' || Number(totalBatchQuestions) < 5) {
-                          setTotalBatchQuestions(30);
-                        }
-                      }}
-                      style={{ width: '70px', padding: '4px 8px', textAlign: 'center', border: '1px solid var(--border-light)', borderRadius: '4px', background: 'var(--surface)', color: 'var(--text)', fontWeight: 700 }}
-                    />
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 100px', gap: '10px', fontWeight: 'bold', fontSize: '11px', borderBottom: '1px dashed var(--border-light)', paddingBottom: '6px' }}>
-                    <span>Topic Name</span>
-                    <span style={{ textAlign: 'right' }}>Weight (%)</span>
-                  </div>
-                  {selectedTopics.map((top, idx) => {
-                    const key = topicKey(top);
-                    const currentWeight = topicWeightageMap[key] !== undefined ? topicWeightageMap[key] : Math.floor(100 / selectedTopics.length);
-                    return (
-                      <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1fr 100px', gap: '10px', alignItems: 'center', fontSize: '12px' }}>
-                        <span>📍 {top.topic}</span>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'flex-end' }}>
-                          <input 
-                            type="number"
-                            min={0}
-                            max={100}
-                            value={currentWeight === undefined || currentWeight === null ? '' : currentWeight}
-                            onChange={(e) => {
-                              const raw = e.target.value;
-                              if (raw === '') {
-                                handleTopicWeightChange(top, '');
-                              } else {
-                                const val = parseInt(raw, 10);
-                                handleTopicWeightChange(top, isNaN(val) ? '' : Math.max(0, Math.min(100, val)));
-                              }
-                            }}
-                            onBlur={() => {
-                              if (currentWeight === '' || currentWeight === undefined) {
-                                handleTopicWeightChange(top, 0);
-                              }
-                            }}
-                            style={{ width: '60px', padding: '4px', textAlign: 'right', border: '1px solid var(--border-light)', borderRadius: '4px', background: 'var(--surface)', color: 'var(--text)' }}
-                          />
-                          <span>%</span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 100px', gap: '10px', fontWeight: 'bold', fontSize: '12px', borderTop: '1px dashed var(--border-light)', paddingTop: '8px', marginTop: '5px' }}>
-                    <span>Total Weightage</span>
-                    <span style={{ textAlign: 'right', color: getTopicWeightageTotal() === 100 ? 'var(--success)' : 'var(--danger)' }}>
-                      {getTopicWeightageTotal()}%
-                    </span>
-                  </div>
-                  {getTopicWeightageTotal() !== 100 && (
-                    <p style={{ margin: '5px 0 0', fontSize: '11px', color: 'var(--danger)' }}>
-                      ⚠️ Total custom weightage must sum up to exactly 100%.
-                    </p>
-                  )}
-                </div>
-              )}
+              </div>
             </div>
           )}
         </div>

@@ -169,8 +169,8 @@ export default function AdminSyllabusPage() {
     name: '',
     code: '',
     textbookSetsStr: '',
-    targetQuestions: 75 as number | string,
-    topicClassification: 'conceptual' as 'micro' | 'conceptual' | 'calculative' | 'hots',
+    targetQuestions: 55 as number | string,
+    topicClassification: 'major' as 'minor' | 'medium' | 'major' | 'micro' | 'conceptual' | 'calculative' | 'hots' | string,
     hasSubtopics: false,
     subtopicsSum: 0
   });
@@ -186,7 +186,7 @@ export default function AdminSyllabusPage() {
     name: '',
     code: '',
     targetQuestions: 30 as number | string,
-    topicClassification: 'conceptual' as 'micro' | 'conceptual' | 'calculative' | 'hots'
+    topicClassification: 'minor' as 'minor' | 'medium' | 'major' | 'micro' | 'conceptual' | 'calculative' | 'hots' | string
   });
 
   // AI syllabus generator state
@@ -1973,43 +1973,35 @@ Return ONLY a valid JSON object matching the schema below:
               />
             </div>
 
-            {/* Topic Classification Archetype (SSOT) */}
+            {/* Topic Scope & Target Quota */}
             <div>
               <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '5px' }}>
-                Classification Archetype (SSOT)
+                Topic Scope & Target Quota
               </label>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', marginBottom: '8px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '6px', marginBottom: '8px' }}>
                 <button
                   type="button"
-                  className={`btn btn-sm ${topicModal.topicClassification === 'micro' ? 'btn-primary' : 'btn-secondary'}`}
-                  style={{ fontSize: '10.5px', padding: '6px 8px', textAlign: 'left', fontWeight: topicModal.topicClassification === 'micro' ? 700 : 500 }}
-                  onClick={() => setTopicModal(p => ({ ...p, topicClassification: 'micro', targetQuestions: p.hasSubtopics ? p.targetQuestions : 30 }))}
+                  className={`btn btn-sm ${topicModal.topicClassification === 'minor' ? 'btn-primary' : 'btn-secondary'}`}
+                  style={{ fontSize: '10.5px', padding: '6px 8px', textAlign: 'center', fontWeight: topicModal.topicClassification === 'minor' ? 700 : 500 }}
+                  onClick={() => setTopicModal(p => ({ ...p, topicClassification: 'minor', targetQuestions: p.hasSubtopics ? p.targetQuestions : 30 }))}
                 >
-                  🎯 Micro (~30 Qs)
+                  Minor (~30 Qs)
                 </button>
                 <button
                   type="button"
-                  className={`btn btn-sm ${topicModal.topicClassification === 'conceptual' ? 'btn-primary' : 'btn-secondary'}`}
-                  style={{ fontSize: '10.5px', padding: '6px 8px', textAlign: 'left', fontWeight: topicModal.topicClassification === 'conceptual' ? 700 : 500 }}
-                  onClick={() => setTopicModal(p => ({ ...p, topicClassification: 'conceptual', targetQuestions: p.hasSubtopics ? p.targetQuestions : 50 }))}
+                  className={`btn btn-sm ${topicModal.topicClassification === 'medium' || topicModal.topicClassification === 'conceptual' ? 'btn-primary' : 'btn-secondary'}`}
+                  style={{ fontSize: '10.5px', padding: '6px 8px', textAlign: 'center', fontWeight: topicModal.topicClassification === 'medium' || topicModal.topicClassification === 'conceptual' ? 700 : 500 }}
+                  onClick={() => setTopicModal(p => ({ ...p, topicClassification: 'medium', targetQuestions: p.hasSubtopics ? p.targetQuestions : 50 }))}
                 >
-                  ⚡ Conceptual (~50 Qs)
+                  Medium (~50 Qs)
                 </button>
                 <button
                   type="button"
-                  className={`btn btn-sm ${topicModal.topicClassification === 'calculative' ? 'btn-primary' : 'btn-secondary'}`}
-                  style={{ fontSize: '10.5px', padding: '6px 8px', textAlign: 'left', fontWeight: topicModal.topicClassification === 'calculative' ? 700 : 500 }}
-                  onClick={() => setTopicModal(p => ({ ...p, topicClassification: 'calculative', targetQuestions: p.hasSubtopics ? p.targetQuestions : 50 }))}
+                  className={`btn btn-sm ${topicModal.topicClassification === 'major' ? 'btn-primary' : 'btn-secondary'}`}
+                  style={{ fontSize: '10.5px', padding: '6px 8px', textAlign: 'center', fontWeight: topicModal.topicClassification === 'major' ? 700 : 500 }}
+                  onClick={() => setTopicModal(p => ({ ...p, topicClassification: 'major', targetQuestions: p.hasSubtopics ? p.targetQuestions : 55 }))}
                 >
-                  🔥 Calculative (~50 Qs)
-                </button>
-                <button
-                  type="button"
-                  className={`btn btn-sm ${topicModal.topicClassification === 'hots' ? 'btn-primary' : 'btn-secondary'}`}
-                  style={{ fontSize: '10.5px', padding: '6px 8px', textAlign: 'left', fontWeight: topicModal.topicClassification === 'hots' ? 700 : 500 }}
-                  onClick={() => setTopicModal(p => ({ ...p, topicClassification: 'hots', targetQuestions: p.hasSubtopics ? p.targetQuestions : 60 }))}
-                >
-                  🏆 HOTS (~60 Qs)
+                  Major (~55 Qs)
                 </button>
               </div>
             </div>
@@ -2090,43 +2082,35 @@ Return ONLY a valid JSON object matching the schema below:
               />
             </div>
 
-            {/* Subtopic Classification Archetype (SSOT) */}
+            {/* Subtopic Scope & Target Quota */}
             <div>
               <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '5px' }}>
-                Classification Archetype (SSOT)
+                Subtopic Scope & Target Quota
               </label>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', marginBottom: '8px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '6px', marginBottom: '8px' }}>
                 <button
                   type="button"
-                  className={`btn btn-sm ${subtopicModal.topicClassification === 'micro' ? 'btn-primary' : 'btn-secondary'}`}
-                  style={{ fontSize: '10.5px', padding: '6px 8px', textAlign: 'left', fontWeight: subtopicModal.topicClassification === 'micro' ? 700 : 500 }}
-                  onClick={() => setSubtopicModal(p => ({ ...p, topicClassification: 'micro', targetQuestions: 30 }))}
+                  className={`btn btn-sm ${subtopicModal.topicClassification === 'minor' ? 'btn-primary' : 'btn-secondary'}`}
+                  style={{ fontSize: '10.5px', padding: '6px 8px', textAlign: 'center', fontWeight: subtopicModal.topicClassification === 'minor' ? 700 : 500 }}
+                  onClick={() => setSubtopicModal(p => ({ ...p, topicClassification: 'minor', targetQuestions: 30 }))}
                 >
-                  🎯 Micro (~30 Qs)
+                  Minor (~30 Qs)
                 </button>
                 <button
                   type="button"
-                  className={`btn btn-sm ${subtopicModal.topicClassification === 'conceptual' ? 'btn-primary' : 'btn-secondary'}`}
-                  style={{ fontSize: '10.5px', padding: '6px 8px', textAlign: 'left', fontWeight: subtopicModal.topicClassification === 'conceptual' ? 700 : 500 }}
-                  onClick={() => setSubtopicModal(p => ({ ...p, topicClassification: 'conceptual', targetQuestions: 50 }))}
+                  className={`btn btn-sm ${subtopicModal.topicClassification === 'medium' || subtopicModal.topicClassification === 'conceptual' ? 'btn-primary' : 'btn-secondary'}`}
+                  style={{ fontSize: '10.5px', padding: '6px 8px', textAlign: 'center', fontWeight: subtopicModal.topicClassification === 'medium' || subtopicModal.topicClassification === 'conceptual' ? 700 : 500 }}
+                  onClick={() => setSubtopicModal(p => ({ ...p, topicClassification: 'medium', targetQuestions: 50 }))}
                 >
-                  ⚡ Conceptual (~50 Qs)
+                  Medium (~50 Qs)
                 </button>
                 <button
                   type="button"
-                  className={`btn btn-sm ${subtopicModal.topicClassification === 'calculative' ? 'btn-primary' : 'btn-secondary'}`}
-                  style={{ fontSize: '10.5px', padding: '6px 8px', textAlign: 'left', fontWeight: subtopicModal.topicClassification === 'calculative' ? 700 : 500 }}
-                  onClick={() => setSubtopicModal(p => ({ ...p, topicClassification: 'calculative', targetQuestions: 50 }))}
+                  className={`btn btn-sm ${subtopicModal.topicClassification === 'major' ? 'btn-primary' : 'btn-secondary'}`}
+                  style={{ fontSize: '10.5px', padding: '6px 8px', textAlign: 'center', fontWeight: subtopicModal.topicClassification === 'major' ? 700 : 500 }}
+                  onClick={() => setSubtopicModal(p => ({ ...p, topicClassification: 'major', targetQuestions: 55 }))}
                 >
-                  🔥 Calculative (~50 Qs)
-                </button>
-                <button
-                  type="button"
-                  className={`btn btn-sm ${subtopicModal.topicClassification === 'hots' ? 'btn-primary' : 'btn-secondary'}`}
-                  style={{ fontSize: '10.5px', padding: '6px 8px', textAlign: 'left', fontWeight: subtopicModal.topicClassification === 'hots' ? 700 : 500 }}
-                  onClick={() => setSubtopicModal(p => ({ ...p, topicClassification: 'hots', targetQuestions: 60 }))}
-                >
-                  🏆 HOTS (~60 Qs)
+                  Major (~55 Qs)
                 </button>
               </div>
             </div>

@@ -1150,18 +1150,14 @@ export default function AdminFeesPage() {
                           const val = e.target.value;
                           setBulkSelectedInstallment(val);
                           const matchingOpt = bulkInstallmentOptions.find(o => o.id === val);
-                          const lateText = getLateRemarks(matchingOpt?.dueDate, bulkPaymentDate);
                           if (matchingOpt) {
                             setBulkPayments(prev => {
                               const next = { ...prev };
                               Object.keys(next).forEach(studentCode => {
-                                const currentRef = next[studentCode]?.ref || '';
-                                const autoRef = (!currentRef || currentRef.startsWith('Late by ')) ? lateText : currentRef;
                                 next[studentCode] = {
                                   ...next[studentCode],
                                   amount: next[studentCode].checked ? matchingOpt.amount : 0,
-                                  component: val,
-                                  ref: autoRef
+                                  component: val
                                 };
                               });
                               return next;
@@ -1182,20 +1178,6 @@ export default function AdminFeesPage() {
                         value={bulkPaymentDate}
                         onChange={(val) => {
                           setBulkPaymentDate(val);
-                          const lateText = getLateRemarks(selectedOpt.dueDate, val);
-                          setBulkPayments(prev => {
-                            const next = { ...prev };
-                            Object.keys(next).forEach(studentCode => {
-                              const currentRef = next[studentCode]?.ref || '';
-                              if (!currentRef || currentRef.startsWith('Late by ')) {
-                                next[studentCode] = {
-                                  ...next[studentCode],
-                                  ref: lateText
-                                };
-                              }
-                            });
-                            return next;
-                          });
                         }}
                         style={{ width: '135px' }}
                       />
@@ -1216,15 +1198,13 @@ export default function AdminFeesPage() {
                               onChange={(e) => {
                                 const checked = e.target.checked;
                                 const next = { ...bulkPayments };
-                                const lateText = getLateRemarks(selectedOpt.dueDate, bulkPaymentDate);
                                 filteredStudents.forEach(s => {
                                   const sCode = s.studentCode;
-                                  const currentRef = next[sCode]?.ref || '';
                                   next[sCode] = {
                                     checked,
                                     amount: checked ? selectedOpt.amount : 0,
                                     method: next[sCode]?.method || 'Cash',
-                                    ref: checked && (!currentRef || currentRef.startsWith('Late by ')) ? lateText : (checked ? currentRef : ''),
+                                    ref: next[sCode]?.ref || '',
                                     component: selectedOpt.id
                                   };
                                 });
@@ -1291,14 +1271,9 @@ export default function AdminFeesPage() {
                                   checked={payment.checked}
                                   onChange={(e) => {
                                     const checked = e.target.checked;
-                                    const lateText = getLateRemarks(selectedOpt.dueDate, bulkPaymentDate);
-                                    const currentRef = payment.ref || '';
                                     updateField('checked', checked);
                                     updateField('amount', checked ? selectedOpt.amount : 0);
                                     updateField('component', selectedOpt.id);
-                                    if (checked && (!currentRef || currentRef.startsWith('Late by '))) {
-                                      updateField('ref', lateText);
-                                    }
                                   }}
                                 />
                               </td>

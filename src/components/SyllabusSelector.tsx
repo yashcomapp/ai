@@ -33,6 +33,7 @@ interface SyllabusSelectorProps<T extends { topic: string; subject?: string }> {
   onDeselectAllTopics: () => void;
   
   topicPlaceholder?: string;
+  singleTopicSelect?: boolean;
 }
 
 export function SyllabusSelector<T extends { topic: string; subject?: string }>({
@@ -49,7 +50,8 @@ export function SyllabusSelector<T extends { topic: string; subject?: string }>(
   onToggleTopic,
   onSelectAllTopics,
   onDeselectAllTopics,
-  topicPlaceholder = 'Select at least one chapter first.'
+  topicPlaceholder = 'Select at least one chapter first.',
+  singleTopicSelect = false
 }: SyllabusSelectorProps<T>) {
   
   const isSubjectChecked = (s: string) => {
@@ -196,26 +198,28 @@ export function SyllabusSelector<T extends { topic: string; subject?: string }>(
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
               <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>
-                Topics ({selectedTopics.length} selected)
+                {singleTopicSelect ? `Select Topic (1 Topic at a time for Question Bank generation)` : `Topics (${selectedTopics.length} selected)`}
               </label>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  style={{ padding: '2px 6px', fontSize: '10px' }}
-                  onClick={onSelectAllTopics}
-                >
-                  Select All
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  style={{ padding: '2px 6px', fontSize: '10px' }}
-                  onClick={onDeselectAllTopics}
-                >
-                  Deselect All
-                </button>
-              </div>
+              {!singleTopicSelect && (
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    style={{ padding: '2px 6px', fontSize: '10px' }}
+                    onClick={onSelectAllTopics}
+                  >
+                    Select All
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    style={{ padding: '2px 6px', fontSize: '10px' }}
+                    onClick={onDeselectAllTopics}
+                  >
+                    Deselect All
+                  </button>
+                </div>
+              )}
             </div>
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', maxHeight: '250px', overflowY: 'auto', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', padding: '10px', background: 'var(--bg-soft)' }}>
               {availableTopics.length === 0 ? (
@@ -239,12 +243,12 @@ export function SyllabusSelector<T extends { topic: string; subject?: string }>(
                           : (isChecked ? 'rgba(59, 130, 246, 0.1)' : 'var(--surface)'),
                         border: hasSubtopics
                           ? '1px dashed var(--border-light)'
-                          : (isChecked ? '1px solid var(--accent)' : '1px solid var(--border-light)'),
+                          : (isChecked ? '1.5px solid var(--accent)' : '1px solid var(--border-light)'),
                         borderRadius: 'var(--radius-sm)',
                         cursor: hasSubtopics ? 'not-allowed' : 'pointer',
                         fontSize: '12px',
-                        color: hasSubtopics ? 'var(--text-muted)' : 'var(--text)',
-                        fontWeight: hasSubtopics ? 700 : 400,
+                        color: hasSubtopics ? 'var(--text-muted)' : (isChecked ? 'var(--accent)' : 'var(--text)'),
+                        fontWeight: hasSubtopics ? 700 : (isChecked ? 700 : 400),
                         opacity: hasSubtopics ? 0.75 : 1,
                         whiteSpace: 'nowrap',
                         transition: 'all 0.2s ease'
@@ -252,7 +256,8 @@ export function SyllabusSelector<T extends { topic: string; subject?: string }>(
                       title={hasSubtopics ? 'This topic contains subtopics. Please select specific subtopics below.' : undefined}
                     >
                       <input
-                        type="checkbox"
+                        type={singleTopicSelect ? "radio" : "checkbox"}
+                        name={singleTopicSelect ? "qb_single_topic_selection" : undefined}
                         checked={!hasSubtopics && isChecked}
                         disabled={hasSubtopics}
                         onChange={() => {

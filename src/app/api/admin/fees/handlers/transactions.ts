@@ -131,6 +131,25 @@ export async function GET(req: NextRequest) {
   }
 }
 
+function parsePaymentTimestamp(paymentDate?: string, rawTimestamp?: string): string {
+  const now = new Date();
+  if (rawTimestamp && rawTimestamp.includes('T') && !rawTimestamp.endsWith('T00:00:00.000Z') && !rawTimestamp.endsWith('T00:00:00Z')) {
+    const p = new Date(rawTimestamp);
+    if (!isNaN(p.getTime())) return p.toISOString();
+  }
+  const dateStr = paymentDate || (rawTimestamp && rawTimestamp.split('T')[0]);
+  if (dateStr && dateStr.includes('-')) {
+    const parts = dateStr.split('-').map(Number);
+    if (parts.length === 3 && parts[0] && parts[1] && parts[2]) {
+      const d = new Date();
+      d.setFullYear(parts[0], parts[1] - 1, parts[2]);
+      d.setHours(now.getHours(), now.getMinutes(), now.getSeconds(), now.getMilliseconds());
+      return d.toISOString();
+    }
+  }
+  return now.toISOString();
+}
+
 export async function POST(req: NextRequest) {
   try {
     const admin = await verifyRole(req, 'admin');
@@ -158,15 +177,7 @@ export async function POST(req: NextRequest) {
         const cleanCode = studentCode.trim().toUpperCase();
         uniqueStudentCodes.add(cleanCode);
 
-        let txTimestamp = new Date().toISOString();
-        if (paymentDate) {
-          try {
-            const parsed = new Date(paymentDate);
-            if (!isNaN(parsed.getTime())) {
-              txTimestamp = parsed.toISOString();
-            }
-          } catch (e) {}
-        }
+        const txTimestamp = parsePaymentTimestamp(paymentDate);
 
         const newTxRef = adminDb.collection('feeTransactions').doc();
         const newTx = {
@@ -213,7 +224,7 @@ export async function POST(req: NextRequest) {
         referenceNumber: referenceNumber || '',
         receiptUrl: receiptUrl || '',
         recordedBy: admin.decodedToken?.email || 'admin',
-        timestamp: timestamp || new Date().toISOString()
+        timestamp: parsePaymentTimestamp(undefined, timestamp)
       };
 
       await newTxRef.set(newTx);
