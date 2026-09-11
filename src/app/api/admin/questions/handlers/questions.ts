@@ -140,14 +140,47 @@ export async function GET(req: NextRequest) {
       if (topicNumber) {
         const qTopNum = String(q.topicNumber || '').trim();
         const qSubNum = String(q.subtopicNumber || '').trim();
-        const qTopCode = String(q.topicCode || q.topic || '').trim();
-        const qSubCode = String(q.subtopicCode || q.subtopic || '').trim();
+        const qTopCode = String(q.topicCode || '').trim();
+        const qSubCode = String(q.subtopicCode || '').trim();
+        const qTopicName = String(q.topic || q.topicName || '').trim().toLowerCase();
+        const qSubtopicName = String(q.subtopic || q.subtopicName || '').trim().toLowerCase();
+        const qCode = String(q.questionCode || '').trim();
         const searchTop = String(topicNumber).trim();
 
-        const matchesTop = qTopNum === searchTop || qSubNum === searchTop ||
+        // 1. Direct match on topicNumber or subtopicNumber or topicCode
+        let matchesTop = qTopNum === searchTop || qSubNum === searchTop ||
           qTopCode === searchTop || qSubCode === searchTop ||
           qTopCode.endsWith(`-${searchTop}`) || qSubCode.endsWith(`-${searchTop}`) ||
           qTopCode.includes(`-${searchTop}-`) || qSubCode.includes(`-${searchTop}-`);
+
+        // 2. If searchTop is prefixed with chapter number (e.g. "8.1.1" or "8.1" in Chapter 8)
+        if (!matchesTop && cleanChapNum && searchTop.startsWith(`${cleanChapNum}.`)) {
+          const stripped = searchTop.substring(cleanChapNum.length + 1); // e.g. "1.1" or "1"
+          matchesTop = qTopNum === stripped || qSubNum === stripped ||
+            qTopNum.startsWith(`${stripped}.`) ||
+            qTopCode.endsWith(`-${stripped}`) || qTopCode.includes(`-${stripped}-`) ||
+            qCode.includes(`-${cleanChapNum}-${stripped}-`) ||
+            qCode.includes(`-${cleanChapNum}-${stripped}.`);
+        }
+
+        // 3. Match against question code pattern
+        if (!matchesTop) {
+          if (qCode.includes(`-${searchTop}-`) || qCode.includes(`-${cleanChapNum}-${searchTop}-`) || qCode.includes(`-${searchTop}.`)) {
+            matchesTop = true;
+          }
+        }
+
+        // 4. Match against topic or subtopic name if searchTop contains or matches topic text
+        if (!matchesTop) {
+          const searchLower = searchTop.toLowerCase();
+          if (qTopicName && (qTopicName === searchLower || qTopicName.includes(searchLower) || searchLower.includes(qTopicName))) {
+            matchesTop = true;
+          }
+          if (qSubtopicName && (qSubtopicName === searchLower || qSubtopicName.includes(searchLower) || searchLower.includes(qSubtopicName))) {
+            matchesTop = true;
+          }
+        }
+
         if (!matchesTop) return false;
       }
 

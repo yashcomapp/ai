@@ -774,8 +774,17 @@ export function validateQuestion(q: any, questionType: 'objective' | 'subjective
         errors.push('Correct answer for Assertion-Reason must be A, B, C, or D.');
       }
     } else if (type === 'numerical') {
-      if (!q.correctAnswer || isNaN(parseFloat(String(q.correctAnswer)))) {
-        errors.push('Numerical questions must specify a valid numeric correct answer (e.g. "42" or "3.14").');
+      if (!q.correctAnswer || !String(q.correctAnswer).trim()) {
+        errors.push('Numerical questions must specify a valid correct answer.');
+      } else if (Array.isArray(q.options) && q.options.length > 0) {
+        const isMatched = q.options.some((opt: any) => 
+          normalizeOptionText(opt) === normalizeOptionText(q.correctAnswer) ||
+          cleanStringForMatch(opt) === cleanStringForMatch(q.correctAnswer) ||
+          (!isNaN(parseFloat(String(opt))) && !isNaN(parseFloat(String(q.correctAnswer))) && Math.abs(parseFloat(String(opt)) - parseFloat(String(q.correctAnswer))) <= 0.05)
+        );
+        if (!isMatched) {
+          errors.push('Correct answer does not match any items in options list.');
+        }
       }
     }
   } else {

@@ -744,9 +744,9 @@ CRITICAL NEGATIVE CONSTRAINTS (ZERO-TOLERANCE RULES):
    Example: { "contextId":"CTX-001", "type":"assertion_reason", "vault":"practice", "text":"Assertion (A): ...\\nReason (R): ...", "correctAnswer":"A", "solution":"Explain why both are true and R explains A...", "difficulty":"medium", "bloomLevel":"Analyze", "conceptTag":"..." }
    * Canonical Answer Rules for OAR: "A" = Both true & R explains A | "B" = Both true & R does NOT explain A | "C" = A true & R false | "D" = A false & R true. Do NOT include options array for assertion_reason.
 
-5. Numerical Objective ("numerical" / ONE): Direct numerical answer input.
-   Example: { "contextId":"CTX-001", "type":"numerical", "vault":"practice", "text":"Calculate the value of... in standard units:", "correctAnswer":"24.5", "solution":"Step 1: Formula ... Step 2: Calculation = 24.5", "difficulty":"medium", "bloomLevel":"Apply", "conceptTag":"..." }
-   * Note: For numerical questions, correctAnswer MUST be a clean numeric string (integer or decimal). Do NOT include options array for numerical questions.
+5. Numerical Objective ("numerical" / ONE): Single Choice Numerical MCQ with 4 distinct numerical options and exactly 1 correct answer.
+   Example: { "contextId":"CTX-001", "type":"numerical", "vault":"practice", "text":"Calculate the value of... in standard units:", "options":["12.5","24.5","36.5","48.5"], "correctAnswer":"24.5", "solution":"Step 1: Formula ... Step 2: Calculation = 24.5", "difficulty":"medium", "bloomLevel":"Apply", "conceptTag":"..." }
+   * Note: Numerical Objective (ONE) questions must ALWAYS have exactly 4 numerical options and 1 correct answer so students select a single choice option without typing.
 ` : `
 ========================================
 4 CANONICAL OBJECTIVE QUESTION FORMATS (THEORY & CONCEPTUAL ONLY):
