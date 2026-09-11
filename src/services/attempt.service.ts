@@ -6,6 +6,7 @@ import { IntegrityService } from './integrity.service';
 import { AttemptRepository } from '@/repositories/attempt.repository';
 import { ProctoringViolations, QuestionDetail, ExamAttempt } from '@/types/attempt.types';
 import { deriveTopicCodeFromQuestionCode } from '@/lib/questionTypes';
+import { invalidateCache } from '@/lib/firebase/cache';
 
 export class AttemptService {
   /**
@@ -184,7 +185,7 @@ export class AttemptService {
       : null;
 
     // Execute atomic transaction
-    return await adminDb.runTransaction(async (tx) => {
+    const result = await adminDb.runTransaction(async (tx) => {
       // Step A: Idempotency Lock Check
       const attemptSnap = await tx.get(attemptRef);
       if (attemptSnap.exists) {
@@ -365,5 +366,13 @@ export class AttemptService {
         status: (wrongAnswers.length === 0 && unattempted.length === 0) ? 'pending' : 'student_review'
       };
     });
+
+    // Invalidate caches for this student & admin dashboard stats
+    try {
+      invalidateCache(studentCode);
+      invalidateCache('admin_dashboard_');
+    } catch (e) {}
+
+    return result;
   }
 }

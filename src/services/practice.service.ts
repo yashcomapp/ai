@@ -7,6 +7,7 @@ import { TopicMasteryRecord, TopicRecommendation } from '@/types/practice.types'
 import { IntegrityService } from '@/services/integrity.service';
 import { MasteryService } from '@/services/mastery.service';
 import { notifyReviewPending } from '@/lib/notifications';
+import { invalidateCache } from '@/lib/firebase/cache';
 
 const DIFFICULTY_WEIGHTS: Record<string, number> = { easy: 1, medium: 2, hard: 3 };
 const BLOOM_WEIGHTS: Record<string, number> = {
@@ -389,6 +390,12 @@ export class PracticeService {
         console.warn('Failed to write to parentReviews collection:', err);
       }
     }
+
+    // Invalidate caches for this student & admin dashboard stats
+    try {
+      invalidateCache(studentCode);
+      invalidateCache('admin_dashboard_');
+    } catch (e) {}
 
     return {
       score: correctCount,
