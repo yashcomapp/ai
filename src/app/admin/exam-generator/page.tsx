@@ -587,12 +587,13 @@ ${ctxBlock}
 ========================================
 CRITICAL PEDAGOGICAL & CONTENT RULES:
 ========================================
-1. STRICT BOARD & CLASS LEVEL: Strictly align difficulty and vocabulary with ${selectedBoard} Class ${selectedClass} curriculum.
+1. STRICT BOARD & CLASS LEVEL: Strictly align difficulty, calculations, and vocabulary with ${selectedBoard} Class ${selectedClass} curriculum.
 2. ZERO PLACEHOLDERS / SYNTHETIC LOOPS: Every question and option must be authentic, context-rich, and non-repetitive.
 3. MATH / CHEMICAL EXPRESSIONS: Format with LaTeX double-escaped backslashes \\\\( ... \\\\) and \\\\ce{...}.
 4. Tag each question object with "examCategory": "${examCategory}".
 5. Ensure "contextId" matches the topic context (e.g. "CTX-001", "CTX-002").
-${isMath ? '6. MATHEMATICS: 80% textbook verbatim exercises / practice sets, 20% pattern variants. Specify "textbookPracticeSet" key.' : '6. ZERO FAKE MATH: For qualitative topics (biology, concepts), do not generate synthetic arithmetic; focus on conceptual MCQs, Assertion & Reason, and marked keywords.'}
+${isMath ? '6. MATHEMATICS: 80% textbook verbatim exercises / practice sets, 20% pattern variants. Specify "textbookPracticeSet" key.' : '6. ZERO INVENTED NUMERICALS / ZERO FAKE STOICHIOMETRY: For non-mathematical or qualitative topics (biology, general science concepts), strictly DO NOT generate fake arithmetic or advanced stoichiometry (e.g. molar mass calculations of organic sugars like lactose/lactic acid, college mole conversions). Focus on authentic textbook-level concepts, mechanisms, and reasoning.'}
+7. ZERO OUT-OF-GRADE HALLUCINATIONS: Absolutely forbid college or higher secondary (Class 11/12/NEET/JEE) level stoichiometry or formulas for Class ${selectedClass}. Keep all questions strictly within the prescribed ${selectedBoard} Class ${selectedClass} textbook standard.
 
 ========================================
 OUTPUT SCHEMA SPECIFICATION:

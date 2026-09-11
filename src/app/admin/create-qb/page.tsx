@@ -126,6 +126,8 @@ function CreateQBContent() {
   const [questionType, setQuestionType] = useState<'objective' | 'subjective'>('objective');
   const [examCategory, setExamCategory] = useState<'standard' | 'foundation'>('standard');
   const [vault, setVault] = useState<'practice' | 'exam' | 'mock'>('practice');
+  const [includeNumericals, setIncludeNumericals] = useState<boolean>(false);
+  const [numericalsManuallyToggled, setNumericalsManuallyToggled] = useState<boolean>(false);
 
   useEffect(() => {
     const qtype = searchParams.get('questionType');
@@ -335,6 +337,17 @@ function CreateQBContent() {
       setSelectedTopics(matchedTopics);
     }
   }, [currentAllTopics, paramTopic]);
+
+  // Auto-detect whether selected subject/topics are mathematical or calculative physics to suggest numericals default
+  useEffect(() => {
+    if (numericalsManuallyToggled) return;
+    const subjs = Object.keys(selectedSubjects);
+    if (subjs.length === 0) return;
+    const primary = subjs[0] || '';
+    const isMath = /math|algebra|geometry|ganit/i.test(primary);
+    const isPhysics = /physic|motion|force|gravitat|light|electric|circuit|sound|work|energy|power|heat|kinematics|optics/i.test(primary);
+    setIncludeNumericals(isMath || isPhysics);
+  }, [selectedSubjects, numericalsManuallyToggled]);
 
 
 
@@ -686,6 +699,8 @@ In addition to the topic-based questions:
       return /physic|motion|force|gravitat|light|reflection|refraction|electric|current|circuit|sound|work|energy|power|heat|thermodynamic|optics|lens|mirror|wave|mole concept|stoichiometr|density|pressure|floatation|kinematics|fluid|magnetic/i.test(text);
     });
 
+    const allowNumericals = isMath || includeNumericals;
+
     const buildBatchInstruction = (total: number) => {
       return `========================================
 OUTPUT FORMAT (DIRECT SINGLE-SHOT COMPLETE SUITE):
@@ -702,7 +717,8 @@ CRITICAL NEGATIVE CONSTRAINTS (ZERO-TOLERANCE RULES):
 1. ZERO PHANTOM FIGURES / DIAGRAMS: Strictly DO NOT generate questions referencing diagrams, figures, graphs, or tables (e.g. "as shown in the figure", "refer to diagram", "in the figure above", "from the table below", "fig 1.1"). Every question must be 100% self-contained in text unless an image is explicitly provided.
 2. ZERO DUMMY OR LAZY OPTIONS: Every distractor option must be a plausible, realistic scientific/mathematical choice. NEVER output "None of these", "All of the above", "Both A and B", "Option A", or placeholder text.
 3. STRICT MATH ESCAPING: Wrap all math expressions in \\( ... \\) with double-escaped backslashes. Wrap chemical formulas in \\ce{...}.
-4. RANDOMIZE CORRECT ANSWER KEYS: Distribute correct answers evenly across index 0, 1, 2, 3 (A, B, C, D). Do NOT always place the correct answer as Option A.`;
+4. RANDOMIZE CORRECT ANSWER KEYS: Distribute correct answers evenly across index 0, 1, 2, 3 (A, B, C, D). Do NOT always place the correct answer as Option A.
+5. ZERO OUT-OF-GRADE / ZERO INVENTED STOICHIOMETRY: Strictly DO NOT invent complex organic molar mass conversions, college-level stoichiometry, or artificial calculations for Class ${selectedClass}. Keep all questions strictly within the prescribed ${selectedBoard} Class ${selectedClass} curriculum.`;
     };
 
     if (type === 'objective') {
@@ -710,8 +726,8 @@ CRITICAL NEGATIVE CONSTRAINTS (ZERO-TOLERANCE RULES):
       const medC = Math.round((isFoundation ? 0.40 : 0.50) * totalQs);
       const hardC = Math.max(0, totalQs - easyC - medC);
 
-      // 5 Canonical Question Types across all levels:
-      const canonicalTypeGuide = `
+      // Canonical Question Types across all levels:
+      const canonicalTypeGuide = allowNumericals ? `
 ========================================
 5 CANONICAL OBJECTIVE QUESTION FORMATS (Used Across All Levels):
 ========================================
@@ -731,9 +747,25 @@ CRITICAL NEGATIVE CONSTRAINTS (ZERO-TOLERANCE RULES):
 5. Numerical Objective ("numerical" / ONE): Direct numerical answer input.
    Example: { "contextId":"CTX-001", "type":"numerical", "vault":"practice", "text":"Calculate the value of... in standard units:", "correctAnswer":"24.5", "solution":"Step 1: Formula ... Step 2: Calculation = 24.5", "difficulty":"medium", "bloomLevel":"Apply", "conceptTag":"..." }
    * Note: For numerical questions, correctAnswer MUST be a clean numeric string (integer or decimal). Do NOT include options array for numerical questions.
+` : `
+========================================
+4 CANONICAL OBJECTIVE QUESTION FORMATS (THEORY & CONCEPTUAL ONLY):
+========================================
+1. Single Choice MCQ ("single_mcq" / OSC): 4 options, exactly 1 correct answer.
+   Example: { "contextId":"CTX-001", "type":"single_mcq", "vault":"practice", "text":"Question text...", "options":["Option A","Option B","Option C","Option D"], "correctAnswer":"Option B", "solution":"Step-by-step reasoning...", "difficulty":"easy", "bloomLevel":"Remember", "conceptTag":"..." }
+
+2. Multiple Choice MCQ ("multiple_mcq" / OMC): 4 options, 2 or more correct answers.
+   Example: { "contextId":"CTX-001", "type":"multiple_mcq", "vault":"exam", "text":"Which of the following are properties of...?", "options":["Option A","Option B","Option C","Option D"], "correctAnswers":["Option A","Option C"], "solution":"Detailed explanation...", "difficulty":"hard", "bloomLevel":"Analyze", "conceptTag":"..." }
+
+3. True / False ("true_false" / OTF): Evaluates conceptual facts or rules.
+   Example: { "contextId":"CTX-001", "type":"true_false", "vault":"practice", "text":"Statement to evaluate...", "options":["True","False"], "correctAnswer":"True", "solution":"Why it is true/false...", "difficulty":"easy", "bloomLevel":"Remember", "conceptTag":"..." }
+
+4. Assertion & Reason ("assertion_reason" / OAR): Evaluates logical cause-and-effect.
+   Example: { "contextId":"CTX-001", "type":"assertion_reason", "vault":"practice", "text":"Assertion (A): ...\\nReason (R): ...", "correctAnswer":"A", "solution":"Explain why both are true and R explains A...", "difficulty":"medium", "bloomLevel":"Analyze", "conceptTag":"..." }
+   * Canonical Answer Rules for OAR: "A" = Both true & R explains A | "B" = Both true & R does NOT explain A | "C" = A true & R false | "D" = A false & R true. Do NOT include options array for assertion_reason.
 `;
 
-      const vaultPartitionGuide = `
+      const vaultPartitionGuide = allowNumericals ? `
 ========================================
 UNIVERSAL 3-VAULT PARTITION REQUIREMENT:
 ========================================
@@ -752,6 +784,25 @@ For each topic (55 Questions Total), generate and tag questions strictly into th
    - Reserved exclusively for Olympiad, Foundation, and full-length mock examinations.
    - Distribution: L3 Advanced Application (3 Qs) + L4 HOTS & Critical Thinking (5 Qs).
    - Mix: OMC, OAR, ONE, OSC.
+` : `
+========================================
+UNIVERSAL 3-VAULT PARTITION REQUIREMENT (THEORY ONLY - ZERO NUMERICALS):
+========================================
+For each topic (55 Questions Total), generate and tag questions strictly into the 3 Storage Vaults:
+1. 🟢 PRACTICE VAULT ("vault": "practice") — EXACTLY 22 QUESTIONS:
+   - Dedicated for student self-paced practice across 3 attempts (18 Qs) + Guided Recovery diagnostic (4 Qs).
+   - Distribution: L1 Recall & Foundation (7 Qs) + L2 Conceptual Reasoning (9 Qs) + L3 Application & Mechanism (6 Qs).
+   - Mix: OSC, OMC, OTF, OAR. (NO ONE / NO NUMERICALS).
+
+2. 🔵 EXAM VAULT ("vault": "exam") — EXACTLY 25 QUESTIONS:
+   - Reserved exclusively for teacher classroom tests, unit tests, and midterms (must be fresh and unseen by students).
+   - Distribution: L1 Recall (8 Qs) + L2 Conceptual Reasoning (10 Qs) + L3 Applied Scenarios (7 Qs).
+   - Mix: OSC, OMC, OTF, OAR. (NO ONE / NO NUMERICALS).
+
+3. 🟣 MOCK VAULT ("vault": "mock") — EXACTLY 8 QUESTIONS:
+   - Reserved exclusively for Olympiad, Foundation, and full-length mock examinations.
+   - Distribution: L3 Multi-concept Application (3 Qs) + L4 Critical Thinking & Experimental Analysis (5 Qs).
+   - Mix: OMC, OAR, OSC. (NO ONE / NO NUMERICALS).
 `;
 
       (window as any).lastPromptMeta = { mode: 'objective', totalQs };
@@ -778,6 +829,7 @@ QUESTION BANK DETAILS:
 - Board: ${selectedBoard}
 - Class: ${selectedClass}
 - Track: ${isFoundation ? 'Foundation / Olympiad (HOTS)' : 'Standard Curriculum'}
+- Subject Mode: ${allowNumericals ? 'Numericals & Calculations Enabled' : 'Theory & Conceptual Only (Zero Numericals)'}
 - Total Questions: EXACTLY ${totalQs} (in ONE single complete JSON array)
 
 ${buildBatchInstruction(totalQs)}
@@ -811,10 +863,13 @@ CRITICAL RULES & LEVEL/SOURCE FIDELITY:
 5. For multiple_mcq: "correctAnswers" MUST be an array of exact matching strings copied from "options".
 6. "correctAnswer" for assertion_reason MUST be exactly one of "A", "B", "C", or "D".
 7. For numerical: "correctAnswer" MUST be a clean numeric string (e.g. "24.5", "10", "3:1"). Specify required unit in question text.
-8. DOMAIN-ADAPTIVE RULE FOR BIOLOGY & DESCRIPTIVE TOPICS:
-   - For Biology, life processes, cells, tissues, human physiology, ecology, or qualitative science:
-     * Strictly DO NOT invent fake physics equations, imaginary speeds, or artificial arithmetic calculations.
-     * All numerical questions (ONE) on Biology topics MUST test authentic biological constants/ratios (e.g. chromosome counts, ATP yields, Mendelian ratios, 10% law). If no numbers exist, test multi-step biological process sequences using OSC/OMC/OAR.
+8. ${allowNumericals ? `STRICT GRADE-LEVEL & SYLLABUS REALISM (Class ${selectedClass}):
+   - All numerical questions (ONE) MUST strictly match the formulas, concepts, and mathematical scope taught in prescribed ${selectedBoard} Class ${selectedClass} textbooks (NCERT / State Board).
+   - ZERO HIGHER-GRADE OR UNIVERSITY HALLUCINATIONS: Strictly forbid introducing complex organic stoichiometry (e.g. lactose molar mass 342 g/mol, fermentation conversion to lactic acid, advanced molarity conversions), multi-step chemical kinetics, or university-level formulas not taught in the Class ${selectedClass} textbook.
+   - NEVER invent artificial numerical calculations or fake arithmetic problems on purely qualitative concepts (e.g. cell biology, taxonomy, tissue functions, bacterial fermentation). Only generate numericals where authentic, textbook-standard numerical problems exist for this specific topic and grade.` : `NUMERICAL QUESTIONS STRICTLY FORBIDDEN / ZERO FAKE ARITHMETIC:
+   - Numericals (ONE) are DISABLED for this topic. Strictly DO NOT generate any "numerical" (ONE) or arithmetic calculation questions.
+   - Strictly DO NOT invent or fabricate artificial stoichiometry, chemical molar mass calculations (e.g. lactose molar mass 342 g/mol, lactic acid moles, organic reaction stoichiometry), fake speeds, or synthetic physics equations for qualitative/biological concepts (fermentation, lactobacilli, cell structure, tissues, classification, ecological relations).
+   - All questions MUST be purely conceptual, mechanistic, experimental, or factual questions using OSC, OMC, OTF, and OAR only.`}
 9. MANDATORY ATTRIBUTES: Each question object MUST include:
    - "vault": "practice" | "exam" | "mock"
    - "bloomLevel": "Remember" | "Understand" | "Apply" | "Analyze" | "Evaluate" | "Create"
@@ -858,6 +913,7 @@ Generate EXACTLY ${totalQs} subjective questions matching the per-topic quotas:
 - 2-Mark short specific / reasoned questions (type: "subjective_short" or "subjective_reason" or "subjective_notes", marks: 2).
 - 4-Mark long specific / analytical / derivation questions (type: "subjective_long", marks: 4).
 - Extract and prioritize Previous Year Questions (PYQs) and high-yield textbook concepts.
+${allowNumericals ? '- For calculative physics/chemistry subtopics, you may include "numerical_short" (2 marks) or "numerical_long" (4 marks) strictly adhering to Class ' + selectedClass + ' textbook formulas.' : '- ZERO INVENTED NUMERICALS: Strictly DO NOT generate numerical problems or calculation derivations for qualitative/theoretical topics. Focus on definitions, mechanisms, reasoning, and textbook explanations.'}
 `;
 
       (window as any).lastPromptMeta = { mode: 'subjective', totalQs };
@@ -870,6 +926,7 @@ Generate authentic, high-yield subjective questions:
 - Board: ${selectedBoard}
 - Class: ${selectedClass}
 - Subject: ${subj}
+- Subject Mode: ${allowNumericals ? 'Numericals & Calculations Allowed' : 'Theory & Qualitative Only (Zero Numericals)'}
 - Total Desired Questions: EXACTLY ${totalQs}
 ${topicDistributionSummary}
 ${requirementsSection}
@@ -889,6 +946,7 @@ STRICT SYLLABUS, LEVEL & SOURCE FIDELITY RULES:
 4. STEP-BY-STEP SOLUTION: Separate each logical answer sentence on a new numbered line (1., 2., 3...) inside the "solution" string.
 5. PYQ INFO: Add "pyqInfo" indicating year/exam (e.g. "CBSE Board 2020", "MSBSHSE 2022", "PYQ Style Practice").
 6. FORMULAS: Use \\( ... \\) for math expressions (KaTeX) and \\ce{...} for chemical formulas.
+7. ${allowNumericals ? `GRADE-APPROPRIATE NUMERICALS: Ensure any numerical calculations strictly adhere to ${selectedBoard} Class ${selectedClass} textbook problems. Absolutely no college/advanced stoichiometry.` : `ZERO INVENTED NUMERICALS: Strictly DO NOT generate numerical calculation problems for qualitative/biological concepts.`}
 ${buildImageInstruction()}
 
 ========================================
@@ -905,7 +963,7 @@ OUTPUT FORMAT: Return ONLY a valid JSON array of objects with schema:
   {
     "contextId": "CTX-001",
     "topicName": "Topic name from the context list",
-    "type": "subjective_define / subjective_laws / subjective_short / subjective_reason / subjective_notes / subjective_long / numerical_short / numerical_long",
+    "type": "${allowNumericals ? 'subjective_define / subjective_laws / subjective_short / subjective_reason / subjective_notes / subjective_long / numerical_short / numerical_long' : 'subjective_define / subjective_laws / subjective_short / subjective_reason / subjective_notes / subjective_long'}",
     "marks": 1,
     "vault": "${vault}",
     "conceptTag": "Specific concept or subtopic name",
@@ -1673,6 +1731,34 @@ Return ONLY valid JSON. No extra text.`;
                   📝 Subjective Question Bank (Definitions, Short &amp; Long)
                 </button>
               </div>
+            </div>
+
+            {/* Numericals / Calculation Questions Toggle */}
+            <div style={{ marginTop: '12px', padding: '10px 14px', background: includeNumericals ? 'rgba(52, 152, 219, 0.08)' : 'var(--bg-soft)', borderRadius: 'var(--radius-sm)', border: `1px solid ${includeNumericals ? 'var(--accent)' : 'var(--border-light)'}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
+              <label style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', cursor: 'pointer', margin: 0, flex: 1 }}>
+                <input
+                  type="checkbox"
+                  checked={includeNumericals}
+                  onChange={(e) => {
+                    setIncludeNumericals(e.target.checked);
+                    setNumericalsManuallyToggled(true);
+                  }}
+                  style={{ width: '16px', height: '16px', marginTop: '2px', cursor: 'pointer' }}
+                />
+                <div>
+                  <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text)' }}>
+                    Include Numericals &amp; Calculation Problems (ONE / Numerical Types)
+                  </div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                    {includeNumericals 
+                      ? `⚡ Numericals enabled. Prompt strictly enforces Class ${selectedClass || ''} textbook standard scope (no college/advanced stoichiometry).` 
+                      : '🛡️ Numericals disabled. Generates 100% conceptual, mechanistic, and qualitative questions (prevents AI hallucinating fake calculations on biology/theory topics).'}
+                  </div>
+                </div>
+              </label>
+              <span style={{ fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '12px', background: includeNumericals ? 'rgba(52, 152, 219, 0.2)' : 'var(--border-light)', color: includeNumericals ? 'var(--accent)' : 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                {includeNumericals ? 'Numericals ON' : 'Theory / Qualitative Only'}
+              </span>
             </div>
 
             {/* Subjective verbatim requirements warning */}

@@ -633,11 +633,12 @@ ${isMath ? `
   * For Maharashtra State Board: Use "Practice Set X.Y: Qz" (e.g., "Practice Set 1.2: Q3") or "Problem Set X: Qz".
 ` : ''}
 
-STRICT VERBATIM, PYQ TAGGING & INLINE HIGHLIGHT RULES:
-1. Answers MUST be verbatim from standard prescribed NCERT / State Board textbook. Absolutely NO paraphrasing.
-2. Embed key phrases inside HTML <mark>keyword</mark> tags directly within the model answer text string (e.g. "The <mark>latent heat of fusion</mark> is...").
-3. Separate each logical answer sentence on a new numbered line (1., 2., 3...).
-4. VERY IMPORTANT: You must add a "pyqInfo" property indicating which year and exam this question or a similar question appeared in (e.g., "CBSE Board 2020", "MSBSHSE 2022", "CBSE 2019 Compartment", "Board Exam 2023"). If it is a predicted/style question, write "PYQ Style Practice".
+STRICT VERBATIM, GRADE APPROPRIATENESS & PYQ TAGGING RULES:
+1. Answers MUST be verbatim from standard prescribed NCERT / State Board textbook for Class ${selectedClass}. Absolutely NO paraphrasing.
+2. ZERO INVENTED NUMERICALS / ZERO FAKE STOICHIOMETRY: For non-mathematical or qualitative topics (biology, general science), strictly DO NOT generate fake arithmetic or college/higher secondary stoichiometry (e.g. molar mass conversions of organic sugars like lactose/lactic acid, college mole calculations). All questions and calculations must strictly be suitable for Class ${selectedClass}.
+3. Embed key phrases inside HTML <mark>keyword</mark> tags directly within the model answer text string (e.g. "The <mark>latent heat of fusion</mark> is...").
+4. Separate each logical answer sentence on a new numbered line (1., 2., 3...).
+5. VERY IMPORTANT: You must add a "pyqInfo" property indicating which year and exam this question or a similar question appeared in (e.g., "CBSE Board 2020", "MSBSHSE 2022", "CBSE 2019 Compartment", "Board Exam 2023"). If it is a predicted/style question, write "PYQ Style Practice".
 
 CRITICAL JSON ESCAPING & MATH FORMATTING RULES:
 1. Return ONLY the raw valid JSON array/object. DO NOT wrap it in any explanations, introduction, or extra text.
@@ -709,10 +710,11 @@ ${isMath ? `
   * For Maharashtra State Board: Use "Practice Set X.Y: Qz" (e.g., "Practice Set 1.2: Q3") or "Problem Set X: Qz".
 ` : ''}
 
-STRICT VERBATIM & INLINE HIGHLIGHT RULES:
-1. Answers MUST be verbatim from standard prescribed NCERT / State Board textbook. Absolutely NO paraphrasing.
-2. Embed key phrases inside HTML <mark>keyword</mark> tags directly within the model answer text string (e.g. "The <mark>latent heat of fusion</mark> is the amount of heat...").
-3. Separate each logical answer sentence on a new numbered line (1., 2., 3...).
+STRICT VERBATIM & GRADE APPROPRIATENESS RULES:
+1. Answers MUST be verbatim from standard prescribed NCERT / State Board textbook for Class ${selectedClass}. Absolutely NO paraphrasing.
+2. ZERO INVENTED NUMERICALS / ZERO FAKE STOICHIOMETRY: For non-mathematical or qualitative topics (biology, general science), strictly DO NOT generate fake arithmetic or advanced stoichiometry (e.g. molar mass conversions of organic sugars like lactose/lactic acid, college mole calculations). All questions and calculations must strictly be suitable for Class ${selectedClass}.
+3. Embed key phrases inside HTML <mark>keyword</mark> tags directly within the model answer text string (e.g. "The <mark>latent heat of fusion</mark> is the amount of heat...").
+4. Separate each logical answer sentence on a new numbered line (1., 2., 3...).
 
 CRITICAL JSON ESCAPING & MATH FORMATTING RULES:
 1. Return ONLY the raw valid JSON array/object. DO NOT wrap it in any explanations, introduction, or extra text.
