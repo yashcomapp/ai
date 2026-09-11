@@ -30,7 +30,7 @@ interface Template {
 const CANONICAL_EXAM_PRESETS: Template[] = [
   {
     id: 'daily_topic_30',
-    name: '⚡ Daily Topic Objective Test (30 Questions • 45 Mins • 120 Marks)',
+    name: 'Daily Topic Objective Test (30 Questions • 45 Mins • 120 Marks)',
     totalQuestions: 30,
     duration: 45,
     positiveMarks: 4,
@@ -41,7 +41,7 @@ const CANONICAL_EXAM_PRESETS: Template[] = [
   },
   {
     id: 'chapter_mastery_30',
-    name: '📖 Chapter Mastery Test (30 Questions • 45 Mins • 120 Marks)',
+    name: 'Chapter Mastery Test (30 Questions • 45 Mins • 120 Marks)',
     totalQuestions: 30,
     duration: 45,
     positiveMarks: 4,
@@ -52,7 +52,7 @@ const CANONICAL_EXAM_PRESETS: Template[] = [
   },
   {
     id: 'foundation_olympiad_50',
-    name: '🏆 Foundation / Olympiad Mock (50 Questions • 60 Mins • 200 Marks)',
+    name: 'Foundation / Olympiad Mock (50 Questions • 60 Mins • 200 Marks)',
     totalQuestions: 50,
     duration: 60,
     positiveMarks: 4,
@@ -63,7 +63,7 @@ const CANONICAL_EXAM_PRESETS: Template[] = [
   },
   {
     id: 'quick_revision_15',
-    name: '🎯 Quick Practice Quiz (15 Questions • 20 Mins • 60 Marks)',
+    name: 'Quick Practice Quiz (15 Questions • 20 Mins • 60 Marks)',
     totalQuestions: 15,
     duration: 20,
     positiveMarks: 4,
@@ -74,7 +74,7 @@ const CANONICAL_EXAM_PRESETS: Template[] = [
   },
   {
     id: 'custom_blueprint',
-    name: '🛠️ Custom Blueprint (Configure Qs & Time)',
+    name: 'Custom Blueprint (Configure Qs & Time)',
     totalQuestions: 30,
     duration: 45,
     positiveMarks: 4,
@@ -85,7 +85,7 @@ const CANONICAL_EXAM_PRESETS: Template[] = [
 const CANONICAL_SUBJECTIVE_PRESETS: Template[] = [
   {
     id: 'daily_subjective_3',
-    name: '✍️ Daily Subjective Practice (3 Questions • 10 Mins • 8 Marks)',
+    name: 'Daily Subjective Practice (3 Questions • 10 Mins • 8 Marks)',
     totalQuestions: 3,
     duration: 10,
     positiveMarks: 2,
@@ -94,7 +94,7 @@ const CANONICAL_SUBJECTIVE_PRESETS: Template[] = [
   },
   {
     id: 'saturday_classroom_6',
-    name: '🏫 Saturday Classroom Test (6 Questions • 60 Mins • 20 Marks)',
+    name: 'Saturday Classroom Test (6 Questions • 60 Mins • 20 Marks)',
     totalQuestions: 6,
     duration: 60,
     positiveMarks: 4,
@@ -103,7 +103,7 @@ const CANONICAL_SUBJECTIVE_PRESETS: Template[] = [
   },
   {
     id: 'custom_subjective',
-    name: '🛠️ Custom Subjective Blueprint',
+    name: 'Custom Subjective Blueprint',
     totalQuestions: 6,
     duration: 45,
     positiveMarks: 2,
@@ -184,7 +184,6 @@ export default function AdminExamGeneratorPage() {
   const [selectedTemplateId, setSelectedTemplateId] = useState('daily_topic_30');
   const [currentTemplate, setCurrentTemplate] = useState<Template | null>(CANONICAL_EXAM_PRESETS[0]);
   const [questionType, setQuestionType] = useState<'objective' | 'subjective'>('objective');
-  const [isMock, setIsMock] = useState(false);
 
   const handleSwitchType = (type: 'objective' | 'subjective') => {
     setQuestionType(type);
@@ -198,7 +197,6 @@ export default function AdminExamGeneratorPage() {
     setAvailablePool([]);
     setGeneratedQuestions([]);
     setShortfalls([]);
-    setIsMock(false);
   };
 
   const isSubjectiveTemplate = (template: Template) => {
@@ -377,11 +375,6 @@ export default function AdminExamGeneratorPage() {
     const pool = questionType === 'subjective' ? CANONICAL_SUBJECTIVE_PRESETS : CANONICAL_EXAM_PRESETS;
     const tmpl = pool.find(t => t.id === id) || null;
     setCurrentTemplate(tmpl);
-    if (tmpl) {
-      setIsMock(tmpl.examCategory === 'foundation');
-    } else {
-      setIsMock(false);
-    }
   };
 
   // Boards and Classes derivation
@@ -454,7 +447,7 @@ export default function AdminExamGeneratorPage() {
     try {
       const primarySubject = Array.from(selectedSubjects)[0] || '';
       const topicNumbers = selectedTopics.map(t => t.topicNumber).join(',');
-      const examCategory = isMock ? 'foundation' : 'standard';
+      const examCategory = currentTemplate?.examCategory === 'foundation' ? 'foundation' : 'standard';
 
       const idToken = await firebaseUser.getIdToken();
       const res = await fetch(`/api/admin/exams/generate?action=fetchPool&board=${selectedBoard}&classNum=${selectedClass}&subject=${primarySubject}&topicNumbers=${encodeURIComponent(topicNumbers)}&questionType=${questionType}&examCategory=${examCategory}`, {
@@ -562,7 +555,7 @@ export default function AdminExamGeneratorPage() {
     const primaryTopic = selectedTopics[0];
     const subjectCode = primaryTopic.subject;
     const isMath = /math|algebra|geometry|ganit/i.test(subjectCode);
-    const examCategory = isMock ? 'foundation' : 'standard';
+    const examCategory = currentTemplate?.examCategory === 'foundation' ? 'foundation' : 'standard';
 
     let totalMissing = 0;
     shortfalls.forEach(s => { totalMissing += Number(s.count) || 0; });
@@ -750,7 +743,7 @@ Return ONLY valid JSON. No markdown wrappers or extra commentary.`;
           duration: currentTemplate.duration || 30,
           positiveMarks: currentTemplate.positiveMarks || 4,
           negativeMarks: currentTemplate.negativeMarks ?? 1,
-          examType: isMock ? 'entrance' : 'obj'
+          examType: currentTemplate.examCategory === 'foundation' ? 'entrance' : (questionType === 'subjective' ? 'subjective' : 'obj')
         })
       });
 
@@ -810,18 +803,18 @@ Return ONLY valid JSON. No markdown wrappers or extra commentary.`;
         <div className="card" style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-light)', paddingBottom: '6px', margin: 0 }}>
             <h3 style={{ fontSize: '13px', fontWeight: 800, margin: 0, textTransform: 'uppercase', letterSpacing: '0.4px', color: 'var(--text)' }}>
-              ⚙️ Exam Configuration
+              Exam Configuration
             </h3>
             {currentTemplate && (
               <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>
-                📋 {currentTemplate.totalQuestions} Qs • {currentTemplate.duration} mins • +{currentTemplate.positiveMarks}/-{currentTemplate.negativeMarks} Marks
+                {currentTemplate.totalQuestions} Qs • {currentTemplate.duration} mins • +{currentTemplate.positiveMarks}/-{currentTemplate.negativeMarks} Marks
               </span>
             )}
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '10px 14px', alignItems: 'end' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px 14px', alignItems: 'end' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '10px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '3px' }}>🎯 Question Type</label>
+              <label style={{ display: 'block', fontSize: '10px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '3px' }}>Question Type</label>
               <div style={{ display: 'flex', gap: '6px', alignItems: 'center', height: '32px' }}>
                 <button 
                   type="button"
@@ -842,27 +835,8 @@ Return ONLY valid JSON. No markdown wrappers or extra commentary.`;
               </div>
             </div>
 
-            {questionType === 'objective' && (
-              <div style={{ display: 'flex', alignItems: 'center', height: '32px' }}>
-                <label htmlFor="isMockCheckbox" style={{ fontSize: '11px', fontWeight: 800, color: 'var(--accent)', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '4px 8px', background: 'rgba(99, 102, 241, 0.1)', borderRadius: '6px', border: '1px solid rgba(99, 102, 241, 0.2)' }}>
-                  <input 
-                    type="checkbox" 
-                    id="isMockCheckbox"
-                    checked={isMock} 
-                    onChange={(e) => {
-                      setIsMock(e.target.checked);
-                      setGeneratedQuestions([]);
-                      setShortfalls([]);
-                    }} 
-                    style={{ width: '14px', height: '14px', cursor: 'pointer' }}
-                  />
-                  🏆 Mock (Foundation)
-                </label>
-              </div>
-            )}
-
             <div>
-              <label style={{ display: 'block', fontSize: '10px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '3px' }}>📋 Exam Blueprint / Preset</label>
+              <label style={{ display: 'block', fontSize: '10px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '3px' }}>Exam Blueprint / Preset</label>
               <select 
                 value={selectedTemplateId} 
                 onChange={(e) => handleTemplateChange(e.target.value)}
@@ -875,7 +849,7 @@ Return ONLY valid JSON. No markdown wrappers or extra commentary.`;
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '10px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '3px' }}>🏛️ Select Board</label>
+              <label style={{ display: 'block', fontSize: '10px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '3px' }}>Select Board</label>
               <select 
                 value={selectedBoard} 
                 onChange={(e) => handleBoardChange(e.target.value, () => { setGeneratedQuestions([]); setShortfalls([]); })}
@@ -889,7 +863,7 @@ Return ONLY valid JSON. No markdown wrappers or extra commentary.`;
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '10px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '3px' }}>🎓 Select Class</label>
+              <label style={{ display: 'block', fontSize: '10px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '3px' }}>Select Class</label>
               <select 
                 value={selectedClass} 
                 disabled={!selectedBoard}

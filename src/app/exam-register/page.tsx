@@ -168,10 +168,10 @@ function ExamRegisterContent() {
           {data && (
             <div style={{ textAlign: 'right' }}>
               <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text)' }}>
-                📋 Exam Attendance & Performance Register
+                Exam Attendance & Performance Register
               </div>
               <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                {data.studentName} ({data.studentCode}) • {data.batchName || 'Registered Student'}
+                {data.studentName} • {data.batchName || 'Registered Student'}
               </div>
             </div>
           )}
@@ -209,7 +209,7 @@ function ExamRegisterContent() {
                     {sortedExams.length === 0 ? (
                       <tr>
                         <td colSpan={4} style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
-                          📭 No completed or missed exams recorded for this batch.
+                          No completed or missed exams recorded for this batch.
                         </td>
                       </tr>
                     ) : (
@@ -248,13 +248,10 @@ function ExamRegisterContent() {
                                 style={{
                                   cursor: !isAbsent && record.examId ? 'pointer' : 'default',
                                   color: !isAbsent && record.examId ? 'var(--accent)' : 'var(--text)',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '4px'
+                                  textDecoration: !isAbsent && record.examId ? 'underline' : 'none'
                                 }}
                               >
-                                <span>{displayName}</span>
-                                {!isAbsent && <span style={{ fontSize: '10px', opacity: 0.8 }}>🔍</span>}
+                                {displayName}
                               </div>
                             </td>
                             <td style={{ padding: '12px 16px', textAlign: 'center' }}>
@@ -288,39 +285,31 @@ function ExamRegisterContent() {
             <div className="summary-grid">
               
               {/* Card 1: Total Exams */}
-              <div className="card glass summary-card">
-                <span style={{ fontSize: '1.8rem', lineHeight: 1 }}>📅</span>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                  <div style={{ fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>Total Exams</div>
-                  <div style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text)' }}>{data.summary.total}</div>
-                </div>
+              <div className="card glass summary-card" style={{ padding: '12px 14px' }}>
+                <div style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px' }}>Total Exams</div>
+                <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text)', margin: '2px 0' }}>{data.summary.total}</div>
+                <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Conducted to date</div>
               </div>
 
               {/* Card 2: Attended */}
-              <div className="card glass summary-card">
-                <span style={{ fontSize: '1.8rem', lineHeight: 1 }}>✅</span>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                  <div style={{ fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>Present</div>
-                  <div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#10b981' }}>{data.summary.present}</div>
-                </div>
+              <div className="card glass summary-card" style={{ padding: '12px 14px' }}>
+                <div style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px' }}>Present</div>
+                <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#10b981', margin: '2px 0' }}>{data.summary.present}</div>
+                <div style={{ fontSize: '10px', color: '#10b981', fontWeight: 600 }}>Attempted Exams</div>
               </div>
 
               {/* Card 3: Absent */}
-              <div className="card glass summary-card">
-                <span style={{ fontSize: '1.8rem', lineHeight: 1 }}>❌</span>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                  <div style={{ fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>Absent</div>
-                  <div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#ef4444' }}>{data.summary.absent}</div>
-                </div>
+              <div className="card glass summary-card" style={{ padding: '12px 14px' }}>
+                <div style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px' }}>Absent</div>
+                <div style={{ fontSize: '1.4rem', fontWeight: 800, color: data.summary.absent > 0 ? '#ef4444' : 'var(--text-muted)', margin: '2px 0' }}>{data.summary.absent}</div>
+                <div style={{ fontSize: '10px', color: data.summary.absent > 0 ? '#ef4444' : 'var(--text-muted)', fontWeight: 600 }}>Missed Sessions</div>
               </div>
 
               {/* Card 4: Average Grade */}
-              <div className="card glass summary-card">
-                <span style={{ fontSize: '1.8rem', lineHeight: 1 }}>📊</span>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                  <div style={{ fontSize: '9px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>Average Grade</div>
-                  <div style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--accent)' }}>{data.summary.present > 0 ? `${data.summary.averagePercentage}%` : '—'}</div>
-                </div>
+              <div className="card glass summary-card" style={{ padding: '12px 14px' }}>
+                <div style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px' }}>Average Grade</div>
+                <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--accent)', margin: '2px 0' }}>{data.summary.present > 0 ? `${data.summary.averagePercentage}%` : '—'}</div>
+                <div style={{ fontSize: '10px', color: 'var(--accent)', fontWeight: 600 }}>Performance Parity</div>
               </div>
 
             </div>

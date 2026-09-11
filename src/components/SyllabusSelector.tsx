@@ -73,14 +73,14 @@ export function SyllabusSelector<T extends { topic: string; subject?: string }>(
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
       {/* Subjects Selection */}
       {availableSubjects.length > 0 && (
         <div>
-          <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '5px' }}>
-            📖 Select Subjects
+          <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '3px' }}>
+            Select Subjects
           </label>
-          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', padding: '6px 0' }}>
+          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', padding: '2px 0' }}>
             {availableSubjects.map(s => {
               const isChecked = isSubjectChecked(s);
               return (
@@ -89,16 +89,16 @@ export function SyllabusSelector<T extends { topic: string; subject?: string }>(
                   style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '6px',
-                    padding: '4px 8px',
+                    gap: '5px',
+                    padding: '3px 7px',
                     background: isChecked ? 'var(--accent-soft)' : 'var(--surface)',
                     border: isChecked ? '1px solid var(--accent)' : '1px solid var(--border-light)',
                     borderRadius: 'var(--radius-sm)',
                     cursor: 'pointer',
-                    fontSize: '12px',
+                    fontSize: '11.5px',
                     color: 'var(--text)',
                     whiteSpace: 'nowrap',
-                    transition: 'all 0.2s ease'
+                    transition: 'all 0.15s ease'
                   }}
                 >
                   <input
@@ -116,14 +116,14 @@ export function SyllabusSelector<T extends { topic: string; subject?: string }>(
 
       {/* Chapters & Topics Layout */}
       {availableChapters.length > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           {/* Chapters selection */}
           <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
               <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>
                 Chapters ({selectedChapters.size} selected)
               </label>
-              <div style={{ display: 'flex', gap: '8px' }}>
+              <div style={{ display: 'flex', gap: '6px' }}>
                 <button
                   type="button"
                   className="btn btn-secondary"
@@ -142,7 +142,7 @@ export function SyllabusSelector<T extends { topic: string; subject?: string }>(
                 </button>
               </div>
             </div>
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', maxHeight: '250px', overflowY: 'auto', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', padding: '10px', background: 'var(--bg-soft)' }}>
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', maxHeight: '180px', overflowY: 'auto', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', padding: '6px 8px', background: 'var(--bg-soft)' }}>
               {availableChapters.map((ch, idx) => {
                 const isChecked = selectedChapters.has(idx);
                 return (
@@ -151,16 +151,16 @@ export function SyllabusSelector<T extends { topic: string; subject?: string }>(
                     style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '6px',
-                      padding: '4px 8px',
+                      gap: '5px',
+                      padding: '3px 7px',
                       background: isChecked ? 'var(--accent-soft)' : 'var(--surface)',
                       border: isChecked ? '1px solid var(--accent)' : '1px solid var(--border-light)',
                       borderRadius: 'var(--radius-sm)',
                       cursor: 'pointer',
-                      fontSize: '12px',
+                      fontSize: '11.5px',
                       color: 'var(--text)',
                       whiteSpace: 'nowrap',
-                      transition: 'all 0.2s ease'
+                      transition: 'all 0.15s ease'
                     }}
                   >
                     <input
@@ -171,16 +171,16 @@ export function SyllabusSelector<T extends { topic: string; subject?: string }>(
                     <span>Ch.{ch.chapterNumber}: {ch.chapterName}</span>
                     <span
                       style={{
-                        fontSize: '10px',
+                        fontSize: '9.5px',
                         fontWeight: 700,
-                        marginLeft: '4px',
-                        padding: '1px 6px',
-                        borderRadius: '6px',
+                        marginLeft: '3px',
+                        padding: '1px 5px',
+                        borderRadius: '4px',
                         background: isChecked ? 'var(--accent-ring)' : 'var(--border-light, rgba(255,255,255,0.08))',
                         border: '1px solid var(--border-light, rgba(255,255,255,0.1))',
                         display: 'inline-flex',
                         alignItems: 'center',
-                        gap: '3px'
+                        gap: '2px'
                       }}
                       title={`Objective Questions: ${ch.objectiveCount ?? ch.chapter?.objectiveCount ?? 0} | Subjective Questions: ${ch.subjectiveCount ?? ch.chapter?.subjectiveCount ?? 0}`}
                     >
@@ -196,12 +196,12 @@ export function SyllabusSelector<T extends { topic: string; subject?: string }>(
 
           {/* Topics selection */}
           <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
               <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>
                 {singleTopicSelect ? `Select Topic (1 Topic at a time for Question Bank generation)` : `Topics (${selectedTopics.length} selected)`}
               </label>
               {!singleTopicSelect && (
-                <div style={{ display: 'flex', gap: '8px' }}>
+                <div style={{ display: 'flex', gap: '6px' }}>
                   <button
                     type="button"
                     className="btn btn-secondary"
@@ -221,9 +221,9 @@ export function SyllabusSelector<T extends { topic: string; subject?: string }>(
                 </div>
               )}
             </div>
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', maxHeight: '250px', overflowY: 'auto', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', padding: '10px', background: 'var(--bg-soft)' }}>
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', maxHeight: '180px', overflowY: 'auto', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', padding: '6px 8px', background: 'var(--bg-soft)' }}>
               {availableTopics.length === 0 ? (
-                <div style={{ width: '100%', textAlign: 'center', padding: '20px', color: 'var(--text-muted)', fontSize: '11px' }}>
+                <div style={{ width: '100%', textAlign: 'center', padding: '14px', color: 'var(--text-muted)', fontSize: '11px' }}>
                   {topicPlaceholder}
                 </div>
               ) : (
@@ -236,8 +236,8 @@ export function SyllabusSelector<T extends { topic: string; subject?: string }>(
                       style={{
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '6px',
-                        padding: '4px 8px',
+                        gap: '5px',
+                        padding: '3px 7px',
                         background: hasSubtopics 
                           ? 'var(--bg-soft)' 
                           : (isChecked ? 'rgba(59, 130, 246, 0.1)' : 'var(--surface)'),
@@ -246,12 +246,12 @@ export function SyllabusSelector<T extends { topic: string; subject?: string }>(
                           : (isChecked ? '1.5px solid var(--accent)' : '1px solid var(--border-light)'),
                         borderRadius: 'var(--radius-sm)',
                         cursor: hasSubtopics ? 'not-allowed' : 'pointer',
-                        fontSize: '12px',
+                        fontSize: '11.5px',
                         color: hasSubtopics ? 'var(--text-muted)' : (isChecked ? 'var(--accent)' : 'var(--text)'),
                         fontWeight: hasSubtopics ? 700 : (isChecked ? 700 : 400),
                         opacity: hasSubtopics ? 0.75 : 1,
                         whiteSpace: 'nowrap',
-                        transition: 'all 0.2s ease'
+                        transition: 'all 0.15s ease'
                       }}
                       title={hasSubtopics ? 'This topic contains subtopics. Please select specific subtopics below.' : undefined}
                     >
@@ -272,16 +272,16 @@ export function SyllabusSelector<T extends { topic: string; subject?: string }>(
                       )}
                       <span
                         style={{
-                          fontSize: '10px',
+                          fontSize: '9.5px',
                           fontWeight: 700,
-                          marginLeft: '4px',
-                          padding: '1px 6px',
-                          borderRadius: '6px',
+                          marginLeft: '3px',
+                          padding: '1px 5px',
+                          borderRadius: '4px',
                           background: isChecked ? 'rgba(59, 130, 246, 0.25)' : 'var(--border-light, rgba(255,255,255,0.08))',
                           border: '1px solid var(--border-light, rgba(255,255,255,0.1))',
                           display: 'inline-flex',
                           alignItems: 'center',
-                          gap: '3px'
+                          gap: '2px'
                         }}
                         title={`Objective Questions: ${(top as any).objectiveCount ?? 0} | Subjective Questions: ${(top as any).subjectiveCount ?? 0}`}
                       >

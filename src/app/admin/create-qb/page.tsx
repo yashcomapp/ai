@@ -1453,21 +1453,21 @@ Return ONLY valid JSON. No extra text.`;
       </header>
 
       {/* Main Workspace */}
-      <main style={{ flex: 1, padding: '24px 12px', maxWidth: '1000px', width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <main style={{ flex: 1, padding: '12px 10px', maxWidth: '1080px', width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
         
         {/* Card 1: Syllabus Mapping Cascading Selects */}
-        <div className="card" style={{ background: 'var(--surface)', padding: '18px 24px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)' }}>
-          <h3 style={{ fontSize: '13px', fontWeight: 800, margin: '0 0 12px', textTransform: 'uppercase', color: 'var(--accent)' }}>Syllabus Mapping</h3>
+        <div className="card" style={{ background: 'var(--surface)', padding: '12px 14px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)' }}>
+          <h3 style={{ fontSize: '13px', fontWeight: 800, margin: '0 0 8px', textTransform: 'uppercase', color: 'var(--accent)' }}>Syllabus Mapping</h3>
           
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginBottom: '16px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '8px', marginBottom: '10px' }}>
             {/* Board */}
             <div>
-              <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '5px' }}>Board</label>
+              <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '3px' }}>Board</label>
               <select 
                 className="form-input" 
                 value={selectedBoard} 
                 onChange={(e) => handleBoardChange(e.target.value, () => { setTopicWeightageMap({}); clearImage(); })}
-                style={{ width: '100%', padding: '8px', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', background: 'var(--surface)', color: 'var(--text)', fontSize: '12px' }}
+                style={{ width: '100%', padding: '6px 8px', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', background: 'var(--surface)', color: 'var(--text)', fontSize: '12px' }}
               >
                 <option value="">— Select Board —</option>
                 {boards.map(b => (
@@ -1478,13 +1478,13 @@ Return ONLY valid JSON. No extra text.`;
 
             {/* Class */}
             <div>
-              <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '5px' }}>Class</label>
+              <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '3px' }}>Class</label>
               <select 
                 className="form-input" 
                 value={selectedClass} 
                 onChange={(e) => handleClassChange(e.target.value, () => { setTopicWeightageMap({}); clearImage(); })} 
                 disabled={!selectedBoard}
-                style={{ width: '100%', padding: '8px', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', background: 'var(--surface)', color: 'var(--text)', fontSize: '12px' }}
+                style={{ width: '100%', padding: '6px 8px', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', background: 'var(--surface)', color: 'var(--text)', fontSize: '12px' }}
               >
                 <option value="">— Select Class —</option>
                 {classes.map(c => (
@@ -1495,7 +1495,6 @@ Return ONLY valid JSON. No extra text.`;
 
           </div>
           
-          {/* Subjects checkboxes */}
           {/* Subjects checkboxes & Single Topic Selector */}
           <SyllabusSelector
             availableSubjects={availableSubjects}
@@ -1521,22 +1520,22 @@ Return ONLY valid JSON. No extra text.`;
 
           {/* Single Topic Target Question Quota */}
           {selectedTopics.length > 0 && (
-            <div style={{ marginTop: '20px', borderTop: '1px solid var(--border-light)', paddingTop: '15px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
-                <h3 style={{ fontSize: '13px', fontWeight: 800, margin: 0, color: 'var(--accent)' }}>Target Question Quota</h3>
-                <span style={{ fontSize: '12px', fontWeight: 700, background: 'rgba(52, 152, 219, 0.15)', color: 'var(--accent)', padding: '3px 10px', borderRadius: '12px' }}>
+            <div style={{ marginTop: '12px', borderTop: '1px solid var(--border-light)', paddingTop: '10px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '6px' }}>
+                <h3 style={{ fontSize: '12.5px', fontWeight: 800, margin: 0, color: 'var(--accent)' }}>Target Question Quota</h3>
+                <span style={{ fontSize: '11.5px', fontWeight: 700, background: 'rgba(52, 152, 219, 0.15)', color: 'var(--accent)', padding: '2px 8px', borderRadius: '12px' }}>
                   Target: <strong>{getTotalTargetQuestions()} Questions</strong>
                 </span>
               </div>
 
               {/* Topic Scope Presets */}
-              <div style={{ background: 'var(--bg-soft)', padding: '12px 16px', borderRadius: 'var(--radius)', border: '1px solid var(--border-light)', marginBottom: '14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
+              <div style={{ background: 'var(--bg-soft)', padding: '8px 12px', borderRadius: 'var(--radius)', border: '1px solid var(--border-light)', marginBottom: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+                  <span style={{ fontSize: '10.5px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)' }}>
                     Scope Presets:
                   </span>
                 </div>
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                   <button
                     type="button"
                     className={`btn btn-sm ${Number(defaultPerTopicCount) === 30 ? 'btn-primary' : 'btn-secondary'}`}
