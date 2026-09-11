@@ -8,6 +8,16 @@ export function preprocessMathText(text: any): string {
   if (text == null) return '';
   let str = String(text);
 
+  // Heal corruptions caused by swallowed backslashes in JSON (e.g. \t -> tab + imes => \times, \t -> tab + ext => \text, \x0C -> FF + rac => \frac)
+  str = str.replace(/\t\s*imes\b/g, '\\times ')
+           .replace(/\t\s*ext\{/g, '\\text{')
+           .replace(/\t\s*extbf\{/g, '\\textbf{')
+           .replace(/\t\s*heta\b/g, '\\theta ')
+           .replace(/\t\s*an\b/g, '\\tan ')
+           .replace(/\t\s*au\b/g, '\\tau ')
+           .replace(/\t\s*riangle\b/g, '\\triangle ')
+           .replace(/\n\s*eq\b/g, '\\neq ');
+
   // Normalize loose FormFeed and raw rac fractions from raw AI content
   str = str.replace(/\x0Crac/g, '\\frac')
            .replace(/(^|[^a-zA-Z\\])rac\{/g, '$1\\frac{');
@@ -436,14 +446,18 @@ export function robustParseAIJson(rawText: string): any {
       escapedStr += char;
     } else if (inString && char === '\\') {
       const nextChar = cleaned[i + 1];
+      const afterNext = cleaned[i + 2];
       if (nextChar === '"' || nextChar === '\\') {
         escapedStr += '\\' + nextChar;
         i++; // skip next char
-      } else if (nextChar === 'n') {
+      } else if (nextChar === 'n' && !/[a-zA-Z]/.test(afterNext || '')) {
         escapedStr += '\\n';
         i++;
-      } else if (nextChar === 't') {
+      } else if (nextChar === 't' && !/[a-zA-Z]/.test(afterNext || '')) {
         escapedStr += '\\t';
+        i++;
+      } else if (nextChar === 'r' && !/[a-zA-Z]/.test(afterNext || '')) {
+        escapedStr += '\\r';
         i++;
       } else {
         escapedStr += '\\\\';
@@ -546,14 +560,18 @@ export function parseAiSolutionsMap(rawText: string): Record<string, string> {
       escapedStr += char;
     } else if (inString && char === '\\') {
       const nextChar = cleaned[i + 1];
+      const afterNext = cleaned[i + 2];
       if (nextChar === '"' || nextChar === '\\') {
         escapedStr += '\\' + nextChar;
         i++;
-      } else if (nextChar === 'n') {
+      } else if (nextChar === 'n' && !/[a-zA-Z]/.test(afterNext || '')) {
         escapedStr += '\\n';
         i++;
-      } else if (nextChar === 't') {
+      } else if (nextChar === 't' && !/[a-zA-Z]/.test(afterNext || '')) {
         escapedStr += '\\t';
+        i++;
+      } else if (nextChar === 'r' && !/[a-zA-Z]/.test(afterNext || '')) {
+        escapedStr += '\\r';
         i++;
       } else {
         escapedStr += '\\\\';
