@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import * as admin from 'firebase-admin';
 import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole, verifyAnyRole } from '@/lib/auth';
-import { getCachedSyllabusList, invalidateCache } from '@/lib/firebase/cache';
+import { getCachedSyllabusList, getFromCache, setInCache, invalidateCache } from '@/lib/firebase/cache';
 export const dynamic = 'force-dynamic';
 
 const matchTopicCode = (examTopicCodes: any, cleanCode: string, number: string, chapNum: string) => {
@@ -46,6 +46,16 @@ export async function GET(req: NextRequest) {
     const subjectId = searchParams.get('subjectId') || '';
 
     if (subjectId) {
+      const cacheKey = `syllabus_subject_${subjectId}`;
+      const cached = getFromCache<any>(cacheKey);
+      if (cached) {
+        return NextResponse.json(cached, {
+          headers: {
+            'Cache-Control': 'private, max-age=30, stale-while-revalidate=60'
+          }
+        });
+      }
+
       const docSnap = await adminDb.collection('syllabus').doc(subjectId).get();
       if (!docSnap.exists) {
         return NextResponse.json({ message: 'Subject not found.' }, { status: 404 });
@@ -336,10 +346,18 @@ export async function GET(req: NextRequest) {
         console.warn('Syllabus chapter aggregation loop error bypassed:', loopErr);
       }
 
-      return NextResponse.json({ 
+      const responseData = { 
         id: docSnap.id, 
         ...subjectData,
         chapters
+      };
+
+      setInCache(cacheKey, responseData, 60000); // 60s cache
+
+      return NextResponse.json(responseData, {
+        headers: {
+          'Cache-Control': 'private, max-age=30, stale-while-revalidate=60'
+        }
       });
     }
 

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole } from '@/lib/auth';
 import { getDateKeyIST as getISTDateString } from '@/lib/dateUtils';
+import { getFromCache, setInCache } from '@/lib/firebase/cache';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,6 +15,16 @@ export async function GET(req: NextRequest) {
 
     const todayStr = getISTDateString();
     const adminUid = adminUser.decodedToken?.uid || 'admin';
+    const cacheKey = `admin_dashboard_${adminUid}_${todayStr}`;
+
+    const cached = getFromCache<any>(cacheKey);
+    if (cached) {
+      return NextResponse.json(cached, {
+        headers: {
+          'Cache-Control': 'private, max-age=15, stale-while-revalidate=30'
+        }
+      });
+    }
 
     // Fetch counts and recent registrations in parallel
     const [
@@ -110,7 +121,7 @@ export async function GET(req: NextRequest) {
       return Number(uCounts[adminUid] || uCounts['admin'] || 0) > 0;
     }).length;
 
-    return NextResponse.json({
+    const result = {
       stats: {
         totalStudents: studentsCount.data().count,
         totalBatches: batchesCount.data().count,
@@ -121,6 +132,14 @@ export async function GET(req: NextRequest) {
         unreadChatsCount
       },
       recentRegistrations: recentRegs
+    };
+
+    setInCache(cacheKey, result, 30000); // 30s in-memory cache
+
+    return NextResponse.json(result, {
+      headers: {
+        'Cache-Control': 'private, max-age=15, stale-while-revalidate=30'
+      }
     });
 
   } catch (error: any) {

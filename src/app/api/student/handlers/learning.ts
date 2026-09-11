@@ -16,7 +16,11 @@ export async function GET(req: NextRequest) {
     }
 
     const data = await getStudentLearningData(student.userData);
-    return NextResponse.json(data);
+    return NextResponse.json(data, {
+      headers: {
+        'Cache-Control': 'private, max-age=30, stale-while-revalidate=60'
+      }
+    });
 
   } catch (error: any) {
     console.error('API get learning path error:', error);

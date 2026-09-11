@@ -6,6 +6,7 @@ import { ReportCacheManager } from '@/lib/reportCache';
 import { chunkArray } from '@/lib/firestoreUtils';
 import { getDateKeyIST } from '@/lib/dateUtils';
 import { MasteryService } from '@/services/mastery.service';
+import { getFromCache, setInCache, invalidateCache } from '@/lib/firebase/cache';
 
 export const dynamic = 'force-dynamic';
 
@@ -125,6 +126,16 @@ export async function GET(req: NextRequest) {
       if (!childrenCodes.includes(studentCode)) {
         return NextResponse.json({ message: 'Access denied. Student is not mapped to parent.' }, { status: 403 });
       }
+    }
+
+    const cacheKey = `parent_reviews_${studentCode}`;
+    const cached = getFromCache<any>(cacheKey);
+    if (cached) {
+      return NextResponse.json(cached, {
+        headers: {
+          'Cache-Control': 'private, max-age=15, stale-while-revalidate=30'
+        }
+      });
     }
 
     // Fetch student profile to see if they are autonomous
@@ -407,12 +418,20 @@ export async function GET(req: NextRequest) {
       };
     });
 
-    return NextResponse.json({
+    const responseData = {
       objectiveReviews,
       practiceReviews,
       subjectiveReviews,
       entranceReviews,
       isAutonomousChild: isAutonomous
+    };
+
+    setInCache(cacheKey, responseData, 30000); // 30s in-memory cache
+
+    return NextResponse.json(responseData, {
+      headers: {
+        'Cache-Control': 'private, max-age=15, stale-while-revalidate=30'
+      }
     });
 
   } catch (error: any) {
@@ -757,6 +776,9 @@ export async function POST(req: NextRequest) {
     }
 
     if (success) {
+      // Invalidate in-memory parent reviews cache
+      invalidateCache(`parent_reviews_${childStudentCode}`);
+
       // Invalidate parent pending / sincerity report caches
       await ReportCacheManager.invalidateReport('parent-pending-report').catch(() => null);
       await ReportCacheManager.invalidateReport('parent-sincerity-report').catch(() => null);

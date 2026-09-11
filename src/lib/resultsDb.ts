@@ -1,6 +1,7 @@
 import { adminDb } from '@/lib/firebase/admin';
 import { IntegrityService } from '@/services/integrity.service';
 import { deriveTopicCodeFromQuestionCode } from '@/lib/questionTypes';
+import { getFromCache, setInCache } from '@/lib/firebase/cache';
 
 function determineExamType(data: any): string {
   if (data.examType === 'practice') return 'practice';
@@ -36,6 +37,10 @@ export async function getStudentResultsData(
   isListAutonomous: boolean,
   studentBatches: string[]
 ) {
+  const cacheKey = `student_results_${studentCode}`;
+  const cached = getFromCache<{ results: any[] }>(cacheKey);
+  if (cached) return cached;
+
   // 2. Fetch list of all results for this student (exams from reviews, practice from parentReviews, subjective from subjectiveAttempts)
   const [reviewsSnap, parentReviewsSnap, evaluationsSnap, assignmentsSnap, subjectiveAttemptsSnap] = await Promise.all([
     adminDb.collection('reviews').where('studentCode', '==', studentCode).get(),
@@ -342,5 +347,7 @@ export async function getStudentResultsData(
     return db - da;
   });
 
-  return { results };
+  const responseData = { results };
+  setInCache(cacheKey, responseData, 60000); // 60s cache
+  return responseData;
 }

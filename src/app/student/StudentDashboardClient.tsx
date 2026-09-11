@@ -218,36 +218,14 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
     }
   );
 
-  const { data: feesData } = useSWR<any>(
-    firebaseUser ? '/api/student/fees' : null,
-    fetcher,
-    { revalidateOnFocus: false, dedupingInterval: 60000 }
-  );
-
-  const { data: chatRoomsData } = useSWR<any>(
-    firebaseUser ? '/api/chat' : null,
-    fetcher,
-    {
-      revalidateOnFocus: false,
-      dedupingInterval: 60000
-    }
-  );
-
-  const { data: attendanceData } = useSWR<any>(
-    firebaseUser ? '/api/student/attendance' : null,
-    fetcher,
-    { revalidateOnFocus: false, dedupingInterval: 60000 }
-  );
-
-  const { data: learningData } = useSWR<any>(
-    firebaseUser && !(user as any)?.autonomous ? '/api/student/learning' : null,
-    fetcher,
-    { revalidateOnFocus: false, dedupingInterval: 30000 }
-  );
-
-  const needAttentionTopics = learningData?.needsAttention || [];
-
   const [dismissedOverdue, setDismissedOverdue] = useState(false);
+
+  const needAttentionTopics: any[] = (data as any)?.needsAttention || [];
+  const attendanceRate = (data as any)?.profile?.attendanceRate !== undefined 
+    ? `${(data as any).profile.attendanceRate}%` 
+    : ((data as any)?.stats?.attendanceRate !== undefined ? `${(data as any).stats.attendanceRate}%` : '100%');
+  const unreadChatsCount = (data as any)?.profile?.unreadChatsCount || (data as any)?.unreadChatsCount || 0;
+  const feeRecord = (data as any)?.profile?.feeRecord || (data as any)?.feeRecord || null;
 
   useEffect(() => {
     if (data) {
@@ -683,7 +661,7 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
                 >
                   <Calendar size={24} color="#059669" />
                   <span style={{ fontSize: '11px', fontWeight: 700, color: '#1e293b' }}>
-                    Attendance ({attendanceData?.stats?.attendanceRate !== undefined ? `${attendanceData.stats.attendanceRate}%` : '100%'})
+                    Attendance ({attendanceRate})
                   </span>
                 </div>
 
@@ -738,9 +716,9 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
                   <span style={{ fontSize: '11px', fontWeight: 700, color: '#1e293b' }}>
                     Live Chat
                   </span>
-                  {((chatRoomsData?.rooms || []).reduce((sum: number, r: any) => sum + (r.unreadCounts?.[(user as any)?.studentCode || ''] || 0), 0)) > 0 && (
+                  {unreadChatsCount > 0 && (
                     <span style={{ position: 'absolute', top: '4px', right: '4px', background: '#e11d48', color: '#fff', fontSize: '9px', fontWeight: 700, padding: '1px 5px', borderRadius: '8px' }}>
-                      {(chatRoomsData?.rooms || []).reduce((sum: number, r: any) => sum + (r.unreadCounts?.[(user as any)?.studentCode || ''] || 0), 0)}
+                      {unreadChatsCount}
                     </span>
                   )}
                 </div>
@@ -1046,7 +1024,7 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
         )}
       </div>
       {/* Dismissible Overdue Fees Overlay */}
-      {feesData?.feeRecord?.hasOverdueInstallment && !dismissedOverdue && (
+      {feeRecord?.hasOverdueInstallment && !dismissedOverdue && (
         <div style={{
           position: 'fixed',
           inset: 0,
@@ -1074,7 +1052,7 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
               Fee Installment Overdue
             </h2>
             <p style={{ fontSize: '13px', color: 'var(--text)', lineHeight: '1.6', margin: '0 0 20px 0' }}>
-              Your account has an outstanding overdue balance of <strong>₹{feesData?.feeRecord?.outstandingAmount}</strong>. Please check your dues schedule and complete payment.
+              Your account has an outstanding overdue balance of <strong>₹{feeRecord?.outstandingAmount}</strong>. Please check your dues schedule and complete payment.
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <button 

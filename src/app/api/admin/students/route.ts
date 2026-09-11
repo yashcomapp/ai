@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { adminDb, adminAuth } from '@/lib/firebase/admin';
 import { verifyRole } from '@/lib/auth';
 import { ChunkedBatch } from '@/lib/firebase/batch';
+import { getFromCache, setInCache, invalidateCache } from '@/lib/firebase/cache';
+
 export async function GET(request: Request) {
   try {
     const admin = await verifyRole(request, 'admin');
@@ -30,6 +32,16 @@ export async function GET(request: Request) {
       return NextResponse.json({ alerts });
     }
 
+    const cacheKey = 'admin_students_list';
+    const cached = getFromCache<any>(cacheKey);
+    if (cached) {
+      return NextResponse.json(cached, {
+        headers: {
+          'Cache-Control': 'private, max-age=15, stale-while-revalidate=30'
+        }
+      });
+    }
+
     // Fetch all students and batches in parallel
     const [snapshot, batchesSnapshot] = await Promise.all([
       adminDb.collection('users')
@@ -49,7 +61,14 @@ export async function GET(request: Request) {
       name: doc.data().name || doc.id
     }));
 
-    return NextResponse.json({ students, batches });
+    const responseData = { students, batches };
+    setInCache(cacheKey, responseData, 30000); // 30s in-memory cache
+
+    return NextResponse.json(responseData, {
+      headers: {
+        'Cache-Control': 'private, max-age=15, stale-while-revalidate=30'
+      }
+    });
   } catch (err: any) {
     console.error(err);
     return NextResponse.json({ error: err.message }, { status: 500 });
@@ -76,6 +95,7 @@ export async function POST(request: Request) {
     cleanUpdates.updatedAt = new Date();
 
     await adminDb.collection('users').doc(studentId).update(cleanUpdates);
+    invalidateCache('admin_students_list');
     
     return NextResponse.json({ success: true });
   } catch (err: any) {
@@ -137,6 +157,8 @@ export async function DELETE(request: Request) {
       console.warn(`Auth user delete failed or user does not exist in Auth: ${authErr.message}`);
     }
     
+    invalidateCache('admin_students_list');
+
     return NextResponse.json({ success: true });
   } catch (err: any) {
     console.error(err);

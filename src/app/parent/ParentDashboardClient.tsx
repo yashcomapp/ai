@@ -836,29 +836,8 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
     { 
       fallbackData: selectedChildCode === defaultChildCode ? (localReviewsCache || undefined) : undefined,
       revalidateOnFocus: false,
-      dedupingInterval: 2000 
+      dedupingInterval: 60000 
     }
-  );
-
-  const { data: feesData } = useSWR<any>(
-    firebaseUser && selectedChildCode ? `/api/student/fees?studentCode=${selectedChildCode}` : null,
-    fetcher,
-    { revalidateOnFocus: false, dedupingInterval: 60000 }
-  );
-
-  const { data: chatRoomsData } = useSWR<any>(
-    firebaseUser ? '/api/chat' : null,
-    fetcher,
-    {
-      revalidateOnFocus: false,
-      dedupingInterval: 60000
-    }
-  );
-
-  const { data: attendanceData } = useSWR<any>(
-    firebaseUser && selectedChildCode ? `/api/student/attendance?studentCode=${selectedChildCode}` : null,
-    fetcher,
-    { revalidateOnFocus: false, dedupingInterval: 60000 }
   );
 
   const [dismissedOverdue, setDismissedOverdue] = useState(false);
@@ -1581,7 +1560,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                     Attendance
                   </div>
                   <div style={{ fontSize: '9.5px', color: '#059669', fontWeight: 700, whiteSpace: 'nowrap' }}>
-                    {attendanceData?.stats?.attendanceRate !== undefined ? `${attendanceData.stats.attendanceRate}%` : '100%'}
+                    {(data as any)?.stats?.attendanceRate !== undefined ? `${(data as any).stats.attendanceRate}%` : ((data as any)?.profile?.attendanceRate !== undefined ? `${(data as any).profile.attendanceRate}%` : '100%')}
                   </div>
                 </div>
 
@@ -2043,7 +2022,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
         </div>
       )}
       {/* Dismissible Overdue Fees Overlay */}
-      {feesData?.feeRecord?.hasOverdueInstallment && !dismissedOverdue && (
+      {(data as any)?.feeRecord?.hasOverdueInstallment && !dismissedOverdue && (
         <div style={{
           position: 'fixed',
           inset: 0,
@@ -2071,7 +2050,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
               Fee Installment Overdue
             </h2>
             <p style={{ fontSize: '13px', color: 'var(--text)', lineHeight: '1.6', margin: '0 0 20px 0' }}>
-              Your child's account has an outstanding overdue balance of <strong>₹{feesData?.feeRecord?.outstandingAmount}</strong>. Please check the dues schedule and complete payment.
+              Your child's account has an outstanding overdue balance of <strong>₹{(data as any)?.feeRecord?.outstandingAmount}</strong>. Please check the dues schedule and complete payment.
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               <button 

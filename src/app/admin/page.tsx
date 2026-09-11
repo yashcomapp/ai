@@ -110,8 +110,8 @@ export default function AdminDashboard() {
     firebaseUser ? '/api/admin/dashboard' : null,
     fetcher,
     {
-      revalidateOnFocus: true,
-      dedupingInterval: 10000,
+      revalidateOnFocus: false,
+      dedupingInterval: 60000,
       keepPreviousData: true,
       fallbackData: localCache
     }

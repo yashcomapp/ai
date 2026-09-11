@@ -81,7 +81,7 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
     {
       fallbackData: initialData || localCache || undefined,
       revalidateOnFocus: false,
-      dedupingInterval: 5000
+      dedupingInterval: 60000
     }
   );
 

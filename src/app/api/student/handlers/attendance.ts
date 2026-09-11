@@ -76,7 +76,11 @@ export async function GET(req: NextRequest) {
     const cacheKey = `student_attendance_${sCodeUpper}`;
     const cachedData = getFromCache<any>(cacheKey);
     if (cachedData) {
-      return NextResponse.json(cachedData);
+      return NextResponse.json(cachedData, {
+        headers: {
+          'Cache-Control': 'private, max-age=15, stale-while-revalidate=30'
+        }
+      });
     }
 
     // 3. Fetch all daily attendance documents for the student's batches
@@ -132,7 +136,7 @@ export async function GET(req: NextRequest) {
       }
     });
 
-    return NextResponse.json({
+    const result = {
       success: true,
       stats: {
         totalDays: summary.totalDays,
@@ -147,6 +151,14 @@ export async function GET(req: NextRequest) {
       },
       dailyLogs,
       isCurrentlyOnLeaveToday
+    };
+
+    setInCache(cacheKey, result, 60000); // 60s cache
+
+    return NextResponse.json(result, {
+      headers: {
+        'Cache-Control': 'private, max-age=15, stale-while-revalidate=30'
+      }
     });
   } catch (error: any) {
     console.error('API GET student attendance error:', error);

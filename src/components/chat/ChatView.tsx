@@ -421,7 +421,7 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
       } catch (e) {
         console.error('Polling chat messages error:', e);
       }
-    }, 2000);
+    }, 6000);
 
     return () => clearInterval(interval);
   }, [activeRoomId, useApiPolling, firebaseUser]);

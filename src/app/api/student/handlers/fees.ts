@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole } from '@/lib/auth';
+import { getFromCache, setInCache } from '@/lib/firebase/cache';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,6 +36,15 @@ export async function GET(req: NextRequest) {
     }
 
     const sCodeUpper = studentCode.trim().toUpperCase();
+    const cacheKey = `student_fees_${sCodeUpper}`;
+    const cached = getFromCache<any>(cacheKey);
+    if (cached) {
+      return NextResponse.json(cached, {
+        headers: {
+          'Cache-Control': 'private, max-age=15, stale-while-revalidate=30'
+        }
+      });
+    }
 
     const [feeDoc, txsSnap] = await Promise.all([
       adminDb.collection('studentFees').doc(sCodeUpper).get(),
@@ -56,13 +66,17 @@ export async function GET(req: NextRequest) {
       return timeB - timeA;
     });
 
-    return NextResponse.json({
+    const responseData = {
       success: true,
       feeRecord,
       transactions
-    }, {
+    };
+
+    setInCache(cacheKey, responseData, 60000); // 60s cache
+
+    return NextResponse.json(responseData, {
       headers: {
-        'Cache-Control': 'private, max-age=10, stale-while-revalidate=20'
+        'Cache-Control': 'private, max-age=15, stale-while-revalidate=30'
       }
     });
   } catch (error: any) {

@@ -730,7 +730,11 @@ export async function GET(req: NextRequest) {
     const studentBatches = student?.userData?.batchIds || [];
 
     const data = await getStudentResultsData(studentCode, isListAutonomous, studentBatches);
-    return NextResponse.json(data);
+    return NextResponse.json(data, {
+      headers: {
+        'Cache-Control': 'private, max-age=15, stale-while-revalidate=30'
+      }
+    });
 
   } catch (error: any) {
     console.error('API get results error:', error);
