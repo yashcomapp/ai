@@ -122,16 +122,26 @@ export function normalizeOptionAnswer(value: any, options?: any[]): string {
   if (!value && value !== 0) return '';
   value = String(value).trim();
 
+  // 1. Direct letter match with optional prefix: "A", "B", "Option A", "(A)", "Option (B)", "A.", "A:"
+  const prefixMatch = value.match(/^(?:option\s+)?\(?([A-Z])\)?[:.\-\s]?$/i);
+  if (prefixMatch) {
+    const letter = prefixMatch[1].toUpperCase();
+    if (!options || !options.length) return letter;
+    const idx = letter.charCodeAt(0) - 65;
+    if (idx >= 0 && idx < options.length) return letter;
+  }
+
+  // 2. Match against options array by exact text, stripped text, and normalized alphanumeric text
   if (Array.isArray(options) && options.length) {
-    const letterMatch = value.match(/^([A-Z])$/i);
-    if (letterMatch) {
-      const idx = letterMatch[1].toUpperCase().charCodeAt(0) - 65;
-      if (idx >= 0 && idx < options.length) return letterMatch[1].toUpperCase();
-    }
     const norm = (s: any) => String(s ?? '').trim().toLowerCase();
+    const cleanNorm = (s: any) => String(s ?? '').toLowerCase().replace(/\\\(|\\\)|\\\[|\\\]|\$+/g, '').replace(/[^\w\d]/g, '').trim();
+    const valClean = cleanNorm(value);
+
     const idx = options.findIndex(opt => {
       const optText = (opt && typeof opt === 'object') ? (opt.text ?? opt.value ?? '') : opt;
-      return norm(optText) === norm(value);
+      if (norm(optText) === norm(value)) return true;
+      if (valClean && cleanNorm(optText) === valClean) return true;
+      return false;
     });
     if (idx !== -1) return String.fromCharCode(65 + idx);
   }
