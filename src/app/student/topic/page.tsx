@@ -973,7 +973,7 @@ function TopicPracticeContent() {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '20px', background: 'var(--bg)' }}>
         <div className="card results-card" style={{ maxWidth: '500px', width: '100%', textAlign: 'center', padding: '30px', background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)' }}>
-          <h2 style={{ fontSize: '1.6rem', marginBottom: '15px' }}>{isFullyMastered ? '🏆 Topic Mastered' : 'No Questions'}</h2>
+          <h2 style={{ fontSize: '1.6rem', marginBottom: '15px' }}>{isFullyMastered ? 'Topic Mastered' : 'No Questions'}</h2>
           <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginBottom: '20px' }}>
             {isFullyMastered
               ? 'Great job! You have achieved 100% mastery and successfully completed all practice questions for this topic.'
@@ -995,7 +995,7 @@ function TopicPracticeContent() {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '20px', background: 'var(--bg)' }}>
         <div className="card results-card" style={{ maxWidth: '600px', width: '100%', textAlign: 'center', padding: '30px', background: 'var(--surface)', borderRadius: 'var(--radius-lg)' }}>
-          <h2 style={{ fontSize: '1.8rem', marginBottom: '20px' }}>🏆 Practice Complete!</h2>
+          <h2 style={{ fontSize: '1.8rem', marginBottom: '20px' }}>Practice Complete!</h2>
           <div className="score-big" style={{ fontSize: '4rem', fontWeight: 800, color: 'var(--accent)', margin: '15px 0' }}>
             {finalResult.score}/{finalResult.totalQuestions}
           </div>
@@ -1134,7 +1134,7 @@ function TopicPracticeContent() {
       {!showUnlockModal && cameraModalOpen && (
         <div className="camera-modal" style={{ position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.65)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', zIndex: 20000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '40px 20px', overflowY: 'auto' }}>
           <div className="camera-modal-content" style={{ background: 'var(--surface-popover)', border: '1px solid var(--border-popover)', borderRadius: 'var(--radius)', padding: '30px', maxWidth: '500px', width: '90%', textAlign: 'center', boxShadow: 'var(--shadow-lg)', margin: '0 auto' }}>
-            <h2>⚙️ System Hardware Pre-Check</h2>
+            <h2>System Hardware Pre-Check</h2>
             <p style={{ color: 'var(--text-muted)', fontSize: '13px', margin: '10px 0 16px' }}>Verify your camera and microphone are working correctly before starting this proctored practice session.</p>
 
             {/* Topic Blueprint & Slab Transparency Card */}

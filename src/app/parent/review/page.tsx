@@ -790,7 +790,6 @@ export default function ParentReviewPanel() {
         {/* Inherited Child Name Header */}
         {!loading && children.length > 0 && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
-            <span style={{ fontSize: '1.1rem' }}>👦</span>
             <strong style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text)' }}>
               {children.find(c => c.code === selectedChild)?.name || 'Student'}
             </strong>

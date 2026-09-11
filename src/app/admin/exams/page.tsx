@@ -1121,7 +1121,6 @@ export default function AdminExamsPage() {
           <span className="brand" style={{ fontSize: '18px', fontWeight: 800, cursor: 'pointer' }} onClick={() => router.push('/admin')}>YASHCOM</span>
           <div>
             <h1 style={{ fontSize: '16px', margin: 0 }}>Manage Exams</h1>
-            <div className="subtitle hide-mobile" style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Admin Scheduling & Exams Moderation Control Panel</div>
           </div>
         </div>
         <div className="page-header-right" style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>

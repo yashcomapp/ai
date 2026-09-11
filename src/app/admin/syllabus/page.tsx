@@ -1152,7 +1152,6 @@ Return ONLY a valid JSON object matching the schema below:
           <span className="brand" style={{ fontSize: '18px', fontWeight: 800, cursor: 'pointer' }} onClick={() => router.push('/admin')}>YASHCOM</span>
           <div>
             <h1 style={{ fontSize: '16px', margin: 0 }}>Syllabus Manager</h1>
-            <div className="subtitle hide-mobile" style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Configure chapters, topics, and subtopics</div>
           </div>
         </div>
         <div className="page-header-right" style={{ display: 'flex', gap: '8px' }}>

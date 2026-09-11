@@ -585,7 +585,7 @@ export default function AdminFeesPage() {
         {/* Header Block */}
         <div className="card glass" style={{ padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
           <div>
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--accent)', margin: 0 }}>🪙 Fees Manager & Ledger</h2>
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--accent)', margin: 0 }}>Fees Manager & Ledger</h2>
           </div>
           <button className="btn btn-secondary" onClick={() => router.push('/admin')}>Back</button>
         </div>
@@ -608,7 +608,7 @@ export default function AdminFeesPage() {
               fontSize: '13px'
             }}
           >
-            👥 Student Dues override
+            Student Dues Override
           </button>
           <button
             onClick={() => { setActiveTab('templates'); setSelectedStudent(null); }}
@@ -623,7 +623,7 @@ export default function AdminFeesPage() {
               fontSize: '13px'
             }}
           >
-            📋 Blanket Templates
+            Blanket Templates
           </button>
           <button
             onClick={() => { setActiveTab('mass_entry'); setSelectedStudent(null); }}
@@ -638,7 +638,7 @@ export default function AdminFeesPage() {
               fontSize: '13px'
             }}
           >
-            💰 Mass Fees Entry
+            Mass Fees Entry
           </button>
           <button
             onClick={() => { setActiveTab('journal'); setSelectedStudent(null); }}
@@ -653,7 +653,7 @@ export default function AdminFeesPage() {
               fontSize: '13px'
             }}
           >
-            📖 Fees Journal
+            Fees Journal
           </button>
         </div>
 

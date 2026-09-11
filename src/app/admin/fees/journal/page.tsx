@@ -48,15 +48,12 @@ export default function FeesJournalPage() {
         <div className="card glass" style={{ padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
           <div>
             <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--accent)', margin: 0 }}>
-              📖 Fees Journal & Collection Ledger
+              Fees Journal & Collection Ledger
             </h2>
-            <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>
-              Comprehensive revenue reports, batch summaries, date-wise audit trails, and student balance sheets.
-            </p>
           </div>
           <div style={{ display: 'flex', gap: '8px' }}>
             <button className="btn btn-secondary" onClick={() => router.push('/admin/fees')}>
-              🪙 Fee Configurations
+              Fee Configurations
             </button>
             <button className="btn btn-secondary" onClick={() => router.push('/admin')}>
               Back

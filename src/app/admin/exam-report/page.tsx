@@ -1044,12 +1044,9 @@ function ExamReportContent() {
       {/* Header */}
       <header className="page-header glass" style={{ padding: '8px 12px', borderBottom: '1px solid var(--border-light)' }}>
         <div className="page-header-left">
-          <span className="brand" style={{ fontSize: '18px', fontWeight: 800 }}>📊 YASHCOM</span>
+          <span className="brand" style={{ fontSize: '18px', fontWeight: 800, cursor: 'pointer' }} onClick={() => router.push('/admin')}>YASHCOM</span>
           <div>
             <h1 style={{ fontSize: '16px', margin: 0 }}>Exam Report: {exam.name}</h1>
-            <div className="subtitle hide-mobile" style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-              Subject: {exam.subjectName || exam.subject || '—'} • Chapter: {exam.chapterNumber ? `${exam.chapterNumber}. ${exam.chapter || ''}` : (exam.chapter || '—')} • Topic: {exam.topicNames?.join(', ') || exam.topicCodes?.join(', ') || '—'} • Questions: {exam.questions?.length || 0} • Max Marks: {exam.totalMarks || 0}
-            </div>
           </div>
         </div>
         <div className="page-header-right" style={{ display: 'flex', gap: '10px' }}>

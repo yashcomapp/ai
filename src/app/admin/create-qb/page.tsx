@@ -1492,10 +1492,9 @@ Return ONLY valid JSON. No extra text.`;
       {/* Header */}
       <header className="page-header glass" style={{ padding: '8px 12px', borderBottom: '1px solid var(--border-light)' }}>
         <div className="page-header-left">
-          <span className="brand" style={{ fontSize: '18px', fontWeight: 800 }}>🤖 YASHCOM</span>
+          <span className="brand" style={{ fontSize: '18px', fontWeight: 800, cursor: 'pointer' }} onClick={() => router.push('/admin')}>YASHCOM</span>
           <div>
             <h1 style={{ fontSize: '16px', margin: 0 }}>Create Question Bank</h1>
-            <div className="subtitle hide-mobile" style={{ fontSize: '11px', color: 'var(--text-muted)' }}>AI-assisted bulk question generation and syllabus compiler</div>
           </div>
         </div>
         <div className="page-header-right" style={{ display: 'flex', gap: '10px' }}>

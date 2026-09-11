@@ -1726,7 +1726,7 @@ OUTPUT FORMAT: Return ONLY a valid JSON array of objects with schema:
       {/* Header */}
       <header className="page-header glass" style={{ padding: '8px 12px', borderBottom: '1px solid var(--border-light)' }}>
         <div className="page-header-left">
-          <span className="brand" style={{ fontSize: '18px', fontWeight: 800 }}>🏫 YASHCOM</span>
+          <span className="brand" style={{ fontSize: '18px', fontWeight: 800, cursor: 'pointer' }} onClick={() => router.push('/admin')}>YASHCOM</span>
           <div>
             <h1 style={{ fontSize: '16px', margin: 0 }}>Classroom Test & Weekly Suite Generator</h1>
           </div>

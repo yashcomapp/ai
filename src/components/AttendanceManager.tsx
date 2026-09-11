@@ -291,7 +291,7 @@ export default function AttendanceManager({ role }: AttendanceManagerProps) {
           
           {/* Section 1: Today's Daily Check-In */}
           <div>
-            <h3 style={{ margin: '0 0 10px 0', fontSize: '14px', fontWeight: 'bold' }}>✍️ Today's Daily Check-In for {displayName} ({formatDateStr(todayStr)})</h3>
+            <h3 style={{ margin: '0 0 10px 0', fontSize: '14px', fontWeight: 'bold' }}>Today's Daily Check-In for {displayName} ({formatDateStr(todayStr)})</h3>
             
             {isCurrentlyOnLeaveToday ? (
               <div style={{ padding: '12px', background: '#f3f4f6', border: '1px solid #d1d5db', color: '#374151', borderRadius: '6px', fontSize: '13px' }}>
@@ -368,7 +368,7 @@ export default function AttendanceManager({ role }: AttendanceManagerProps) {
                 padding: '16px',
                 background: 'rgba(239, 68, 68, 0.03)'
               }}>
-                <h3 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: 'bold', color: '#ef4444' }}>📢 Leave Request</h3>
+                <h3 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: 'bold', color: '#ef4444' }}>Leave Request</h3>
 
                 {declError && <div className="alert-box alert-box-danger" style={{ marginBottom: '12px', padding: '10px' }}>{declError}</div>}
                 {declSuccess && <div className="alert-box alert-box-success" style={{ marginBottom: '12px', padding: '10px' }}>{declSuccess}</div>}
@@ -502,7 +502,7 @@ export default function AttendanceManager({ role }: AttendanceManagerProps) {
             {/* Stats Overview: One Bento Card with 5 chips in a single line */}
             <div className="card glass" style={{ background: 'var(--surface)', padding: '18px 24px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.05em' }}>📊 Attendance Statistics Overview</span>
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.05em' }}>Attendance Statistics Overview</span>
                 <span style={{ fontSize: '11.5px', color: 'var(--text-muted)', fontWeight: 500 }}>Target: Keep aiming above 90%!</span>
               </div>
               

@@ -958,7 +958,7 @@ function TakeExamContent() {
                     </div>
                   </div>
                 )}
-                <h2>⚙️ Pre-Exam Hardware Diagnostic</h2>
+                <h2>Pre-Exam Hardware Diagnostic</h2>
                 <p style={{ color: 'var(--text-muted)', fontSize: '13px', margin: '10px 0 16px' }}>Verify your camera and microphone are functioning before entering the proctored workspace.</p>
 
             <div style={{ 

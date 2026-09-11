@@ -452,7 +452,7 @@ export default function AdminNoticesPage() {
           </style>
         </head>
         <body>
-          <h1>📢 Notice Delivery & Seen Status Report</h1>
+          <h1>Notice Delivery & Seen Status Report</h1>
           <h2>YASHCOM Learning OS</h2>
           
           <div class="info-box">
@@ -625,7 +625,7 @@ export default function AdminNoticesPage() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
         <div>
           <h1 style={{ fontSize: '20px', fontWeight: 800, margin: 0, background: 'linear-gradient(135deg, var(--accent), #818cf8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', whiteSpace: 'nowrap' }}>
-            📢 Notices & Announcements
+            Notices & Announcements
           </h1>
         </div>
       </div>
@@ -634,7 +634,7 @@ export default function AdminNoticesPage() {
         {/* Create Notice Form */}
         <div className="card" style={{ padding: '24px', background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '2px solid var(--border-glass)', boxShadow: 'var(--shadow-glass)' }}>
           <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            ✍️ Compose Notice
+            Compose Notice
           </h3>
           
           <form onSubmit={handlePublish} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>

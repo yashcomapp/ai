@@ -354,7 +354,6 @@ function TeacherFinalReviewContent() {
           <span className="brand" style={{ fontSize: '18px', fontWeight: 800, cursor: 'pointer' }} onClick={() => router.push('/admin')}>YASHCOM</span>
           <div>
             <h1 style={{ fontSize: '16px', margin: 0 }}>Teacher Final Review</h1>
-            <div className="subtitle hide-mobile" style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Moderate and canonicalize student subjective marks</div>
           </div>
         </div>
         <div className="page-header-right" style={{ display: 'flex', gap: '10px' }}>
@@ -380,7 +379,7 @@ function TeacherFinalReviewContent() {
         )}
 
         <div className="card" style={{ padding: '20px', background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', marginBottom: '20px' }}>
-          <h2 style={{ fontSize: '1.4rem', fontWeight: 800 }}>📝 {examName}</h2>
+          <h2 style={{ fontSize: '1.4rem', fontWeight: 800 }}>{examName}</h2>
           <div style={{ color: 'var(--text-muted)', fontSize: '12px', marginTop: '6px' }}>{examMeta}</div>
         </div>
 

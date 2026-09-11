@@ -803,8 +803,8 @@ _Empowering Conceptual Excellence_`;
         <div className="page-header-left" style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
           <span className="brand" style={{ fontWeight: 800, fontSize: '1.2rem', color: 'var(--accent)', cursor: 'pointer' }} onClick={() => router.push('/admin')}>YASHCOM</span>
           <nav style={{ display: 'flex', gap: '15px' }}>
-            <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--accent)', borderBottom: '2px solid var(--accent)', paddingBottom: '4px' }}>Learning Quotient (LQ) 📊</span>
-            <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-muted)', cursor: 'pointer' }} onClick={() => router.push('/admin/reports/parent-pending')}>Parent Sincerity 👨‍👩‍👧</span>
+            <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--accent)', borderBottom: '2px solid var(--accent)', paddingBottom: '4px' }}>Learning Quotient (LQ)</span>
+            <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-muted)', cursor: 'pointer' }} onClick={() => router.push('/admin/reports/parent-pending')}>Parent Sincerity</span>
           </nav>
         </div>
         <div className="page-header-right" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

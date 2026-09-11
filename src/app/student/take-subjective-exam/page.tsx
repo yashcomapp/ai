@@ -707,7 +707,7 @@ function TakeSubjectiveExamContent() {
               </div>
             ) : (
               <>
-                <h2 style={{ fontSize: '1.4rem', marginBottom: '10px' }}>⚙️ Hardware Diagnostic check</h2>
+                <h2 style={{ fontSize: '1.4rem', marginBottom: '10px' }}>Hardware Diagnostic Check</h2>
                 <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginBottom: '16px' }}>Please check that your webcam and microphone are working correctly before starting.</p>
 
             <div style={{ 

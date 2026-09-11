@@ -258,7 +258,6 @@ export default function LoginRegisterReportPage() {
           </button>
           <div>
             <h1 style={{ fontSize: '16px', margin: 0 }}>Login Activity Register</h1>
-            <div className="subtitle hide-mobile" style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Student &amp; Parent login presence and page tracking grouped by batch</div>
           </div>
         </div>
         <div className="page-header-right" style={{ display: 'flex', gap: '10px' }}>

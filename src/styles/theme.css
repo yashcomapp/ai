@@ -1239,13 +1239,10 @@ button:disabled {
     text-overflow: ellipsis;
 }
 
-.page-header .subtitle {
-    color: var(--text-muted);
-    font-size: 15.6px;
-    margin-top: 2px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+.page-header .subtitle,
+.header .subtitle,
+.subtitle {
+    display: none !important;
 }
 
 .page-header-left {

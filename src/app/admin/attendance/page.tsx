@@ -345,11 +345,11 @@ export default function AdminAttendancePage() {
         {/* Header Block */}
         <div className="card glass" style={{ padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
           <div>
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--accent)', margin: 0 }}>📅 Daily Attendance Sheet</h2>
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--accent)', margin: 0 }}>Daily Attendance Sheet</h2>
           </div>
           <div style={{ display: 'flex', gap: '8px' }}>
             <button className="btn btn-secondary" onClick={() => setShowLeaveModal(true)}>
-              🌴 Manage Long Leaves
+              Manage Long Leaves
             </button>
             <button className="btn btn-secondary" onClick={() => router.push('/admin')}>
               Back
@@ -375,7 +375,7 @@ export default function AdminAttendancePage() {
               gap: '6px'
             }}
           >
-            <span>📋 Classroom Attendance</span>
+            <span>Classroom Attendance</span>
           </button>
           <button
             onClick={() => setActiveTab('parent_sync')}
@@ -393,7 +393,7 @@ export default function AdminAttendancePage() {
               gap: '6px'
             }}
           >
-            <span>🌙 Parent-Child 5-Min Sync Attendance</span>
+            <span>Parent-Child 5-Min Sync Attendance</span>
             {syncData?.summary?.completedCount ? (
               <span style={{ fontSize: '11px', background: '#a855f7', color: '#fff', padding: '1px 6px', borderRadius: '10px', fontWeight: 800 }}>
                 {syncData.summary.completedCount}
