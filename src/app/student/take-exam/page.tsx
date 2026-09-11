@@ -5,7 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Script from 'next/script';
-import { stripOptionLabel, preprocessMathText, parseAnswerList, isOptionSelectedByUser, getRawOptionKey, getRawOptionText, extractAssertionAndReason } from '@/lib/questionTypes';
+import { stripOptionLabel, preprocessMathText, parseAnswerList, isOptionSelectedByUser, isOptionCorrect, getQuestionCorrectAnswer, getRawOptionKey, getRawOptionText, extractAssertionAndReason } from '@/lib/questionTypes';
 import { useMathRender } from '@/hooks/useMathRender';
 import { db } from '@/lib/firebase/firestore';
 import { useExamTimer } from '@/hooks/useExamTimer';
@@ -1617,11 +1617,9 @@ function TakeExamContent() {
                               const optKey = getRawOptionKey(opt);
                               const optText = getRawOptionText(opt);
                               
-                              const isCorrectOpt = Array.isArray(matchingQ.correctAnswer)
-                                ? matchingQ.correctAnswer.includes(optKey)
-                                : (matchingQ.correctAnswer === optKey || (Array.isArray(matchingQ.correctAnswers) && matchingQ.correctAnswers.includes(optKey)));
-                              
-                              const isUserOpt = isOptionSelectedByUser(qItem.userAnswer, optKey, oi, optText);
+                              const correctAns = getQuestionCorrectAnswer(matchingQ);
+                              const isCorrectOpt = isOptionCorrect(correctAns, optKey, oi, optText, matchingQ.options);
+                              const isUserOpt = isOptionSelectedByUser(qItem.userAnswer, optKey, oi, optText, matchingQ.options);
 
                               let border = '1px solid var(--review-option-border)';
                               let background = 'var(--review-option-bg)';

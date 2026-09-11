@@ -859,12 +859,10 @@ export function getQuestionCorrectAnswer(q: any): any {
   return null;
 }
 
-export function isOptionSelectedByUser(userAns: any, optKey: string, optIndex: number, optText?: string): boolean {
+export function isOptionSelectedByUser(userAns: any, optKey: string, optIndex: number, optText?: string, allOptions?: any[]): boolean {
   const list = parseAnswerList(userAns);
   if (list.length === 0) return false;
   const charCode = String.fromCharCode(65 + optIndex);
-  const idxStr = String(optIndex);
-  const oneBasedIdxStr = String(optIndex + 1);
   const cleanKey = cleanStringForMatch(optKey);
   const cleanText = cleanStringForMatch(optText);
 
@@ -872,30 +870,35 @@ export function isOptionSelectedByUser(userAns: any, optKey: string, optIndex: n
     if (item === undefined || item === null) return false;
     const itemStr = String(item).trim();
     const itemUpper = itemStr.toUpperCase();
-    const itemLower = itemStr.toLowerCase();
     const cleanItem = cleanStringForMatch(itemStr);
 
-    return (
-      itemStr === optKey ||
-      itemLower === String(optKey || '').toLowerCase() ||
-      (cleanKey && cleanItem === cleanKey) ||
-      (optText && (itemStr === optText || itemLower === String(optText || '').toLowerCase())) ||
-      (cleanText && cleanItem === cleanText) ||
-      itemStr === idxStr ||
-      itemStr === oneBasedIdxStr ||
-      itemUpper === charCode ||
-      (itemUpper.length === 1 && itemUpper.charCodeAt(0) - 65 === optIndex) ||
-      (optKey && (itemLower === `option_${String(optKey).toLowerCase()}` || itemLower === `option_${charCode.toLowerCase()}`))
-    );
+    if (itemStr === optKey || (optText && itemStr === optText)) return true;
+    if (optKey && String(optKey).toLowerCase() === itemStr.toLowerCase()) return true;
+    if (optText && String(optText).toLowerCase() === itemStr.toLowerCase()) return true;
+    if (cleanKey && cleanItem === cleanKey) return true;
+    if (cleanText && cleanItem === cleanText) return true;
+
+    if (itemUpper === charCode) return true;
+    if (optKey && (itemStr.toLowerCase() === 'option_' + charCode.toLowerCase() || itemStr.toLowerCase() === 'option_' + String(optKey).toLowerCase())) return true;
+
+    if (allOptions && Array.isArray(allOptions) && allOptions.length > 0) {
+      const normLetter = normalizeOptionAnswer(item, allOptions);
+      if (normLetter && normLetter === charCode) return true;
+    } else {
+      const idxStr = String(optIndex);
+      const oneBasedIdxStr = String(optIndex + 1);
+      if (itemStr === idxStr || itemStr === oneBasedIdxStr) return true;
+      if (itemUpper.length === 1 && itemUpper.charCodeAt(0) - 65 === optIndex) return true;
+    }
+
+    return false;
   });
 }
 
-export function isOptionCorrect(correctAns: any, optKey: string, optIndex: number, optText?: string): boolean {
+export function isOptionCorrect(correctAns: any, optKey: string, optIndex: number, optText?: string, allOptions?: any[]): boolean {
   const list = parseAnswerList(correctAns);
   if (list.length === 0) return false;
   const charCode = String.fromCharCode(65 + optIndex);
-  const idxStr = String(optIndex);
-  const oneBasedIdxStr = String(optIndex + 1);
   const cleanKey = cleanStringForMatch(optKey);
   const cleanText = cleanStringForMatch(optText);
 
@@ -903,21 +906,28 @@ export function isOptionCorrect(correctAns: any, optKey: string, optIndex: numbe
     if (item === undefined || item === null) return false;
     const itemStr = String(item).trim();
     const itemUpper = itemStr.toUpperCase();
-    const itemLower = itemStr.toLowerCase();
     const cleanItem = cleanStringForMatch(itemStr);
 
-    return (
-      itemStr === optKey ||
-      itemLower === String(optKey || '').toLowerCase() ||
-      (cleanKey && cleanItem === cleanKey) ||
-      (optText && (itemStr === optText || itemLower === String(optText || '').toLowerCase())) ||
-      (cleanText && cleanItem === cleanText) ||
-      itemStr === idxStr ||
-      itemStr === oneBasedIdxStr ||
-      itemUpper === charCode ||
-      (itemUpper.length === 1 && itemUpper.charCodeAt(0) - 65 === optIndex) ||
-      (optKey && (itemLower === `option_${String(optKey).toLowerCase()}` || itemLower === `option_${charCode.toLowerCase()}`))
-    );
+    if (itemStr === optKey || (optText && itemStr === optText)) return true;
+    if (optKey && String(optKey).toLowerCase() === itemStr.toLowerCase()) return true;
+    if (optText && String(optText).toLowerCase() === itemStr.toLowerCase()) return true;
+    if (cleanKey && cleanItem === cleanKey) return true;
+    if (cleanText && cleanItem === cleanText) return true;
+
+    if (itemUpper === charCode) return true;
+    if (optKey && (itemStr.toLowerCase() === 'option_' + charCode.toLowerCase() || itemStr.toLowerCase() === 'option_' + String(optKey).toLowerCase())) return true;
+
+    if (allOptions && Array.isArray(allOptions) && allOptions.length > 0) {
+      const normLetter = normalizeOptionAnswer(item, allOptions);
+      if (normLetter && normLetter === charCode) return true;
+    } else {
+      const idxStr = String(optIndex);
+      const oneBasedIdxStr = String(optIndex + 1);
+      if (itemStr === idxStr || itemStr === oneBasedIdxStr) return true;
+      if (itemUpper.length === 1 && itemUpper.charCodeAt(0) - 65 === optIndex) return true;
+    }
+
+    return false;
   });
 }
 

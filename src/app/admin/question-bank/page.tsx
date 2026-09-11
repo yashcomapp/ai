@@ -1089,7 +1089,7 @@ ${JSON.stringify(missingList, null, 2)}`;
                             const optKey = getRawOptionKey(opt);
                             const optText = getRawOptionText(opt);
                             const correctAns = getQuestionCorrectAnswer(q);
-                            const isCorrectOpt = isOptionCorrect(correctAns, optKey, oi, optText);
+                            const isCorrectOpt = isOptionCorrect(correctAns, optKey, oi, optText, q.options);
 
                             let border = '1px solid var(--review-option-border)';
                             let background = 'var(--review-option-bg)';

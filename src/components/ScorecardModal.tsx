@@ -331,8 +331,8 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
                               const optText = getRawOptionText(opt);
                               const correctAns = getQuestionCorrectAnswer(q);
                               
-                              let isCorrectOpt = isOptionCorrect(correctAns, optKey, oi, optText);
-                              const isUserOpt = isOptionSelectedByUser(q.userAnswer, optKey, oi, optText);
+                              let isCorrectOpt = isOptionCorrect(correctAns, optKey, oi, optText, q.options);
+                              const isUserOpt = isOptionSelectedByUser(q.userAnswer, optKey, oi, optText, q.options);
 
                               // Failsafe: if the question is overall evaluated as correct and user selected this option, it IS correct!
                               if (q.isCorrect && isUserOpt) {

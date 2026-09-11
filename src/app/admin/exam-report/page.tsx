@@ -2290,8 +2290,8 @@ const AuditQuestionOptions = React.memo(({
         const optKey = getRawOptionKey(opt);
         const optText = getRawOptionText(opt);
         
-        let isCorrectOpt = isOptionCorrect(correctAns, optKey, oi, optText);
-        const isUserOpt = isOptionSelectedByUser(userAnswer, optKey, oi, optText);
+        let isCorrectOpt = isOptionCorrect(correctAns, optKey, oi, optText, options);
+        const isUserOpt = isOptionSelectedByUser(userAnswer, optKey, oi, optText, options);
 
         // Failsafe: if the question was evaluated as correct and user selected this option, it IS correct!
         if (isCorrect && isUserOpt) {
