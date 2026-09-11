@@ -1410,6 +1410,7 @@ function AdminFeesContent() {
             students={students}
             loadingStudents={loadingStudents}
             getIdToken={getIdToken}
+            onRefreshStudents={loadStudents}
             onSelectStudent={(s) => {
               setSelectedStudent(s);
               setCustomPackageTotal(s.fee?.totalPackageAmount || 0);

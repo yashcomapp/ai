@@ -113,16 +113,34 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const studentCode = searchParams.get('studentCode');
 
-    let query = adminDb.collection('feeTransactions').orderBy('timestamp', 'desc');
+    let snap;
     if (studentCode) {
-      query = query.where('studentCode', '==', studentCode.trim().toUpperCase());
+      const sCodeUpper = studentCode.trim().toUpperCase();
+      snap = await adminDb.collection('feeTransactions')
+        .where('studentCode', '==', sCodeUpper)
+        .get();
+      
+      // Fallback if legacy documents were saved with exact casing
+      if (snap.empty && studentCode.trim() !== sCodeUpper) {
+        snap = await adminDb.collection('feeTransactions')
+          .where('studentCode', '==', studentCode.trim())
+          .get();
+      }
+    } else {
+      snap = await adminDb.collection('feeTransactions')
+        .get();
     }
 
-    const snap = await query.get();
-    const transactions = snap.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
+    const transactions = snap.docs
+      .map(doc => {
+        const d = doc.data();
+        return {
+          id: doc.id,
+          transactionId: d.transactionId || doc.id,
+          ...d
+        };
+      })
+      .sort((a: any, b: any) => new Date(b.timestamp || 0).getTime() - new Date(a.timestamp || 0).getTime());
 
     return NextResponse.json({ success: true, transactions });
   } catch (error: any) {
@@ -237,24 +255,41 @@ export async function POST(req: NextRequest) {
       if (!transactionId) {
         return NextResponse.json({ error: 'Missing transactionId.' }, { status: 400 });
       }
-      const { studentCode, installmentId, amountPaid, paymentMethod, referenceNumber, receiptUrl, timestamp } = transactionData;
-      if (!studentCode || amountPaid === undefined || !paymentMethod) {
+      const { studentCode, installmentId, amountPaid, paymentMethod, referenceNumber, receiptUrl, timestamp, paymentDate } = transactionData || {};
+      if (amountPaid === undefined || !paymentMethod) {
         return NextResponse.json({ error: 'Missing required transaction fields.' }, { status: 400 });
       }
 
-      const cleanCode = studentCode.trim().toUpperCase();
-      const txRef = adminDb.collection('feeTransactions').doc(transactionId);
+      let txRef = adminDb.collection('feeTransactions').doc(transactionId);
+      let txSnap = await txRef.get();
       
+      if (!txSnap.exists) {
+        const altQuery = await adminDb.collection('feeTransactions').where('transactionId', '==', transactionId).limit(1).get();
+        if (!altQuery.empty) {
+          txRef = altQuery.docs[0].ref;
+          txSnap = altQuery.docs[0];
+        } else {
+          return NextResponse.json({ error: 'Transaction not found.' }, { status: 404 });
+        }
+      }
+
+      const existingData = txSnap.data() || {};
+      const cleanCode = (studentCode || existingData.studentCode || '').trim().toUpperCase();
+      const updatedTimestamp = parsePaymentTimestamp(paymentDate, timestamp || existingData.timestamp);
+
       await txRef.update({
-        installmentId: installmentId || '',
+        studentCode: cleanCode,
+        installmentId: installmentId !== undefined ? installmentId : (existingData.installmentId || ''),
         amountPaid: Number(amountPaid),
         paymentMethod,
-        referenceNumber: referenceNumber || '',
-        receiptUrl: receiptUrl || '',
-        timestamp: timestamp || new Date().toISOString()
+        referenceNumber: referenceNumber !== undefined ? referenceNumber : (existingData.referenceNumber || ''),
+        receiptUrl: receiptUrl !== undefined ? receiptUrl : (existingData.receiptUrl || ''),
+        timestamp: updatedTimestamp
       });
 
-      await syncStudentFees(cleanCode);
+      if (cleanCode) {
+        await syncStudentFees(cleanCode);
+      }
       return NextResponse.json({ success: true, message: 'Transaction updated successfully.' });
     }
 
@@ -263,10 +298,16 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Missing transactionId.' }, { status: 400 });
       }
       
-      const txRef = adminDb.collection('feeTransactions').doc(transactionId);
-      const txSnap = await txRef.get();
+      let txRef = adminDb.collection('feeTransactions').doc(transactionId);
+      let txSnap = await txRef.get();
       if (!txSnap.exists) {
-        return NextResponse.json({ error: 'Transaction not found.' }, { status: 404 });
+        const altQuery = await adminDb.collection('feeTransactions').where('transactionId', '==', transactionId).limit(1).get();
+        if (!altQuery.empty) {
+          txRef = altQuery.docs[0].ref;
+          txSnap = altQuery.docs[0];
+        } else {
+          return NextResponse.json({ error: 'Transaction not found.' }, { status: 404 });
+        }
       }
 
       const cleanCode = txSnap.data()?.studentCode;

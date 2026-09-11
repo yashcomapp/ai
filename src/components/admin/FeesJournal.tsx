@@ -41,13 +41,15 @@ interface FeesJournalProps {
   loadingStudents: boolean;
   getIdToken: () => Promise<string | null>;
   onSelectStudent?: (student: StudentFeeRecord) => void;
+  onRefreshStudents?: () => void;
 }
 
 export default function FeesJournal({
   students,
   loadingStudents,
   getIdToken,
-  onSelectStudent
+  onSelectStudent,
+  onRefreshStudents
 }: FeesJournalProps) {
   // Sub-view Tab State
   const [subView, setSubView] = useState<'batch' | 'date' | 'student'>('batch');
@@ -55,6 +57,17 @@ export default function FeesJournal({
   // All Transactions State (for Date-wise Journal)
   const [allTransactions, setAllTransactions] = useState<Transaction[]>([]);
   const [loadingTransactions, setLoadingTransactions] = useState<boolean>(false);
+
+  // Transaction Editing & Deletion State
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+  const [editTxAmount, setEditTxAmount] = useState<number | ''>('');
+  const [editTxMethod, setEditTxMethod] = useState<string>('Cash');
+  const [editTxRef, setEditTxRef] = useState<string>('');
+  const [editTxInstId, setEditTxInstId] = useState<string>('inst_1');
+  const [editTxDate, setEditTxDate] = useState<string>(() => getDateKeyIST());
+  const [savingEditTx, setSavingEditTx] = useState<boolean>(false);
+  const [deletingTxId, setDeletingTxId] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string>('');
 
   // Filters - Date-wise Journal
   const [journalSearch, setJournalSearch] = useState('');
@@ -103,6 +116,99 @@ export default function FeesJournal({
   useEffect(() => {
     fetchAllTransactions();
   }, []);
+
+  // Handlers for Transaction Editing & Deletion
+  const handleOpenEditModal = (tx: Transaction) => {
+    setEditingTransaction(tx);
+    setEditTxAmount(tx.amountPaid || '');
+    setEditTxMethod(tx.paymentMethod || 'Cash');
+    setEditTxRef(tx.referenceNumber || '');
+    setEditTxInstId(tx.installmentId || 'inst_1');
+    setEditTxDate(getDateKeyIST(tx.timestamp));
+    setActionError('');
+  };
+
+  const handleSaveEditedTransaction = async () => {
+    if (!editingTransaction) return;
+    if (!editTxAmount || Number(editTxAmount) <= 0) {
+      setActionError('Please enter a valid payment amount (> 0).');
+      return;
+    }
+    setSavingEditTx(true);
+    setActionError('');
+    try {
+      const token = await getIdToken();
+      if (!token) throw new Error('Not authenticated');
+      const res = await fetch('/api/admin/fees/transactions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          action: 'edit',
+          transactionId: editingTransaction.transactionId,
+          studentCode: editingTransaction.studentCode,
+          amountPaid: Number(editTxAmount),
+          paymentMethod: editTxMethod,
+          referenceNumber: editTxRef,
+          installmentId: editTxInstId,
+          paymentDate: editTxDate
+        })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Failed to update transaction');
+      }
+      setEditingTransaction(null);
+      fetchAllTransactions();
+      if (onRefreshStudents) {
+        onRefreshStudents();
+      }
+    } catch (err: any) {
+      setActionError(err.message || 'Failed to edit transaction');
+    } finally {
+      setSavingEditTx(false);
+    }
+  };
+
+  const handleDeleteTransaction = async (tx: Transaction) => {
+    const student = studentMap.get(tx.studentCode?.toUpperCase());
+    const name = student?.name || tx.studentCode;
+    const confirmMsg = `Are you sure you want to delete this transaction?\n\nStudent: ${name}\nAmount: ₹${Number(tx.amountPaid || 0).toLocaleString('en-IN')}\nPayment Mode: ${tx.paymentMethod}\nDate: ${formatDateStr(tx.timestamp)}\n\nThis will permanently remove the transaction and update the student's fee balance.`;
+    if (!window.confirm(confirmMsg)) return;
+
+    setDeletingTxId(tx.transactionId);
+    try {
+      const token = await getIdToken();
+      if (!token) throw new Error('Not authenticated');
+      const res = await fetch('/api/admin/fees/transactions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          action: 'delete',
+          transactionId: tx.transactionId,
+          studentCode: tx.studentCode
+        })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        alert(data.error || 'Failed to delete transaction');
+        return;
+      }
+      fetchAllTransactions();
+      if (onRefreshStudents) {
+        onRefreshStudents();
+      }
+    } catch (err: any) {
+      alert(err.message || 'Failed to delete transaction');
+    } finally {
+      setDeletingTxId(null);
+    }
+  };
 
   // Map studentCode -> Student Profile
   const studentMap = useMemo(() => {
@@ -1009,6 +1115,7 @@ export default function FeesJournal({
                       if (dateSortField === f) setDateSortDir(d => d === 'asc' ? 'desc' : 'asc');
                       else { setDateSortField(f); setDateSortDir('asc'); }
                     })}
+                    <th style={{ padding: '12px 14px', fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', textAlign: 'right' }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1094,6 +1201,27 @@ export default function FeesJournal({
                         </td>
                         <td style={{ padding: '12px 14px', fontSize: '11px', color: 'var(--text-faint)' }}>
                           {tx.recordedBy}
+                        </td>
+                        <td style={{ padding: '12px 14px', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                          <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
+                            <button
+                              onClick={() => handleOpenEditModal(tx)}
+                              className="btn btn-secondary"
+                              style={{ padding: '4px 8px', fontSize: '11px', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                              title="Edit transaction details"
+                            >
+                              ✏️ Edit
+                            </button>
+                            <button
+                              onClick={() => handleDeleteTransaction(tx)}
+                              disabled={deletingTxId === tx.transactionId}
+                              className="btn btn-danger"
+                              style={{ padding: '4px 8px', fontSize: '11px', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                              title="Delete transaction and recalculate balance"
+                            >
+                              {deletingTxId === tx.transactionId ? '⏳' : '🗑️ Delete'}
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -1318,6 +1446,222 @@ export default function FeesJournal({
             </div>
           )}
 
+        </div>
+      )}
+
+      {/* Edit Transaction Modal */}
+      {editingTransaction && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.65)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          padding: '20px'
+        }}>
+          <div style={{
+            background: 'var(--surface)',
+            border: '1px solid var(--border-light)',
+            borderRadius: 'var(--radius-lg)',
+            width: '100%',
+            maxWidth: '480px',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+            overflow: 'hidden'
+          }}>
+            <div style={{
+              padding: '16px 20px',
+              borderBottom: '1px solid var(--border-light)',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 800 }}>✏️ Edit Fee Transaction</h3>
+                <p style={{ margin: '2px 0 0 0', fontSize: '11px', color: 'var(--text-muted)' }}>
+                  {studentMap.get(editingTransaction.studentCode?.toUpperCase())?.name || 'Student'} • Class {studentMap.get(editingTransaction.studentCode?.toUpperCase())?.classNum || '--'}
+                </p>
+              </div>
+              <button
+                onClick={() => setEditingTransaction(null)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  fontSize: '18px',
+                  color: 'var(--text-muted)',
+                  cursor: 'pointer',
+                  padding: '4px'
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              {actionError && (
+                <div style={{
+                  padding: '10px 14px',
+                  borderRadius: 'var(--radius)',
+                  background: 'rgba(239, 68, 68, 0.1)',
+                  border: '1px solid var(--danger)',
+                  color: 'var(--danger)',
+                  fontSize: '12px',
+                  fontWeight: 600
+                }}>
+                  {actionError}
+                </div>
+              )}
+
+              {/* Amount */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text)' }}>Amount Paid (₹) *</label>
+                <input
+                  type="number"
+                  value={editTxAmount}
+                  onChange={(e) => setEditTxAmount(e.target.value === '' ? '' : Number(e.target.value))}
+                  placeholder="e.g. 5000"
+                  style={{
+                    padding: '8px 12px',
+                    borderRadius: 'var(--radius)',
+                    border: '1px solid var(--border-light)',
+                    background: 'var(--bg-soft)',
+                    color: 'var(--text)',
+                    fontSize: '13px',
+                    fontWeight: 700
+                  }}
+                />
+              </div>
+
+              {/* Payment Method */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text)' }}>Payment Mode *</label>
+                <select
+                  value={editTxMethod}
+                  onChange={(e) => setEditTxMethod(e.target.value)}
+                  style={{
+                    padding: '8px 12px',
+                    borderRadius: 'var(--radius)',
+                    border: '1px solid var(--border-light)',
+                    background: 'var(--bg-soft)',
+                    color: 'var(--text)',
+                    fontSize: '13px'
+                  }}
+                >
+                  <option value="UPI">UPI / GPay / PhonePe</option>
+                  <option value="Cash">Cash</option>
+                  <option value="Cheque">Cheque</option>
+                  <option value="NetBanking">Net Banking / Bank Transfer</option>
+                  <option value="Card">Debit / Credit Card</option>
+                </select>
+              </div>
+
+              {/* Installment / Component */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text)' }}>Fee Component / Installment</label>
+                {(() => {
+                  const student = studentMap.get(editingTransaction.studentCode?.toUpperCase());
+                  const installments = student?.fee?.installments;
+                  if (installments && installments.length > 0) {
+                    return (
+                      <select
+                        value={editTxInstId}
+                        onChange={(e) => setEditTxInstId(e.target.value)}
+                        style={{
+                          padding: '8px 12px',
+                          borderRadius: 'var(--radius)',
+                          border: '1px solid var(--border-light)',
+                          background: 'var(--bg-soft)',
+                          color: 'var(--text)',
+                          fontSize: '13px'
+                        }}
+                      >
+                        {installments.map((inst, idx) => (
+                          <option key={inst.installmentId || idx} value={inst.installmentId || `inst_${inst.installmentNo}`}>
+                            Installment #{inst.installmentNo} (₹{inst.amount.toLocaleString('en-IN')})
+                          </option>
+                        ))}
+                      </select>
+                    );
+                  }
+                  return (
+                    <input
+                      type="text"
+                      value={editTxInstId}
+                      onChange={(e) => setEditTxInstId(e.target.value)}
+                      placeholder="inst_1"
+                      style={{
+                        padding: '8px 12px',
+                        borderRadius: 'var(--radius)',
+                        border: '1px solid var(--border-light)',
+                        background: 'var(--bg-soft)',
+                        color: 'var(--text)',
+                        fontSize: '13px'
+                      }}
+                    />
+                  );
+                })()}
+              </div>
+
+              {/* Payment Date */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text)' }}>Payment Date (IST)</label>
+                <DateInputDMY
+                  value={editTxDate}
+                  onChange={(val) => setEditTxDate(val)}
+                  style={{ width: '100%' }}
+                />
+              </div>
+
+              {/* Reference / Remarks */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text)' }}>Reference Number / Remarks</label>
+                <input
+                  type="text"
+                  value={editTxRef}
+                  onChange={(e) => setEditTxRef(e.target.value)}
+                  placeholder="e.g. UPI Ref, Cheque No., or Late Payment Note"
+                  style={{
+                    padding: '8px 12px',
+                    borderRadius: 'var(--radius)',
+                    border: '1px solid var(--border-light)',
+                    background: 'var(--bg-soft)',
+                    color: 'var(--text)',
+                    fontSize: '13px'
+                  }}
+                />
+              </div>
+            </div>
+
+            <div style={{
+              padding: '14px 20px',
+              borderTop: '1px solid var(--border-light)',
+              background: 'var(--bg-soft)',
+              display: 'flex',
+              justifyContent: 'flex-end',
+              gap: '10px'
+            }}>
+              <button
+                onClick={() => setEditingTransaction(null)}
+                disabled={savingEditTx}
+                className="btn btn-secondary"
+                style={{ padding: '8px 14px', fontSize: '12px', fontWeight: 600 }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveEditedTransaction}
+                disabled={savingEditTx}
+                className="btn btn-primary"
+                style={{ padding: '8px 18px', fontSize: '12px', fontWeight: 700 }}
+              >
+                {savingEditTx ? 'Saving Changes...' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
