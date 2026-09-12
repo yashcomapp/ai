@@ -1231,6 +1231,14 @@ function AdminFeesContent() {
                                 const next = { ...bulkPayments };
                                 filteredStudents.forEach(s => {
                                   const sCode = s.studentCode;
+                                  const matchingInst = s.fee?.installments?.find((inst: any) => inst.installmentId === selectedOpt.id || (inst.installmentNo && `inst_${inst.installmentNo}` === selectedOpt.id));
+                                  const isInstPaid = matchingInst?.status === 'paid';
+                                  
+                                  // Do not auto-select students who have already paid this installment
+                                  if (checked && isInstPaid) {
+                                    return;
+                                  }
+
                                   const studentAmt = getStudentInstallmentAmount(s, selectedOpt.id, selectedOpt.amount);
                                   next[sCode] = {
                                     checked,
@@ -1278,6 +1286,9 @@ function AdminFeesContent() {
                           return sortedFilteredStudents.map(s => {
                             const sCode = s.studentCode;
                             const studentInstAmt = getStudentInstallmentAmount(s, selectedOpt.id, selectedOpt.amount);
+                            const matchingInst = s.fee?.installments?.find((inst: any) => inst.installmentId === selectedOpt.id || (inst.installmentNo && `inst_${inst.installmentNo}` === selectedOpt.id));
+                            const isInstPaid = matchingInst?.status === 'paid';
+
                             const payment = bulkPayments[sCode] || {
                               checked: false,
                               amount: 0,
@@ -1299,11 +1310,13 @@ function AdminFeesContent() {
                           const isCustomized = s.fee?.installments && studentInstAmt !== selectedOpt.amount;
 
                           return (
-                            <tr key={sCode} style={{ borderBottom: '1px solid var(--border-light)', background: payment.checked ? 'var(--bg-soft)' : 'transparent' }}>
+                            <tr key={sCode} style={{ borderBottom: '1px solid var(--border-light)', background: isInstPaid ? 'rgba(16, 185, 129, 0.04)' : (payment.checked ? 'var(--bg-soft)' : 'transparent') }}>
                               <td style={{ padding: '14px 16px' }}>
                                 <input
                                   type="checkbox"
                                   checked={payment.checked}
+                                  disabled={isInstPaid}
+                                  title={isInstPaid ? 'This installment is already settled' : undefined}
                                   onChange={(e) => {
                                     const checked = e.target.checked;
                                     updateField('checked', checked);
@@ -1320,6 +1333,13 @@ function AdminFeesContent() {
                                   <div>
                                     <div>Outstanding: <strong style={{ color: 'var(--danger)' }}>₹{s.fee.outstandingAmount}</strong></div>
                                     <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Net: ₹{s.fee.netPayableAmount} | Paid: ₹{s.fee.totalPaidAmount}</div>
+                                    {isInstPaid && (
+                                      <div style={{ marginTop: '3px' }}>
+                                        <span style={{ background: '#dcfce7', color: '#15803d', padding: '2px 8px', borderRadius: '10px', fontSize: '10px', fontWeight: 700 }}>
+                                          ✓ {selectedOpt.label} Paid
+                                        </span>
+                                      </div>
+                                    )}
                                   </div>
                                 ) : (
                                   <span style={{ fontStyle: 'italic', color: 'var(--text-faint)' }}>Not Configured</span>

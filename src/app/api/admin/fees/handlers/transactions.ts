@@ -179,21 +179,47 @@ export async function POST(req: NextRequest) {
     const { action, transactionId, transactionData } = body;
 
     if (action === 'bulk') {
-      const { payments } = body; // payments: { studentCode, amountPaid, paymentMethod, referenceNumber, installmentId }[]
+      const { payments } = body; // payments: { studentCode, amountPaid, paymentMethod, referenceNumber, installmentId, paymentDate }[]
       if (!Array.isArray(payments) || payments.length === 0) {
         return NextResponse.json({ error: 'Missing or invalid payments array.' }, { status: 400 });
       }
 
+      // Preload existing transactions for these students to prevent double-posting the exact same installment
+      const uniqueStudentCodes = Array.from(new Set(
+        payments.map(p => (p.studentCode || '').trim().toUpperCase()).filter(Boolean)
+      ));
+
+      const existingTxsSnap = await adminDb.collection('feeTransactions')
+        .where('studentCode', 'in', uniqueStudentCodes.slice(0, 30))
+        .get();
+      
+      const existingTxSet = new Set<string>();
+      existingTxsSnap.docs.forEach(d => {
+        const data = d.data();
+        if (data.studentCode && data.installmentId) {
+          existingTxSet.add(`${data.studentCode.toUpperCase()}_${data.installmentId}_${data.amountPaid}`);
+        }
+      });
+
       const results = [];
       const batch = adminDb.batch();
-      const uniqueStudentCodes = new Set<string>();
+      const affectedStudentCodes = new Set<string>();
 
       for (const pay of payments) {
         const { studentCode, amountPaid, paymentMethod, referenceNumber, installmentId, paymentDate } = pay;
         if (!studentCode || amountPaid === undefined || Number(amountPaid) <= 0 || !paymentMethod) continue;
 
         const cleanCode = studentCode.trim().toUpperCase();
-        uniqueStudentCodes.add(cleanCode);
+
+        // Guard against duplicate insertion if same installment & amount is already recorded
+        const txKey = `${cleanCode}_${installmentId}_${Number(amountPaid)}`;
+        if (installmentId && existingTxSet.has(txKey)) {
+          console.warn(`Skipping duplicate transaction for ${cleanCode} ${installmentId} (₹${amountPaid})`);
+          continue;
+        }
+
+        affectedStudentCodes.add(cleanCode);
+        existingTxSet.add(txKey);
 
         const txTimestamp = parsePaymentTimestamp(paymentDate);
 
@@ -218,7 +244,7 @@ export async function POST(req: NextRequest) {
         await batch.commit();
         // Sync student fees in parallel for all unique student codes affected
         await Promise.all(
-          Array.from(uniqueStudentCodes).map(code => syncStudentFees(code))
+          Array.from(affectedStudentCodes).map(code => syncStudentFees(code))
         );
       }
 
