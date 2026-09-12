@@ -613,7 +613,7 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                                               expText = `5/5 practices done (${mastery}% accuracy). Take the Recovery Quiz (Fresh + Missed Qs) to achieve Mastered!`;
                                             } else if (isAbsent) {
                                               expIcon = '⚠️';
-                                              expColor = '#ef4444';
+                                              expColor = 'var(--danger)';
                                               expText = 'Missed scheduled exam. Practice questions to recover concept understanding.';
                                             } else if (attempts === 0) {
                                               expIcon = '⚪';
@@ -621,13 +621,13 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                                               expText = 'Not attempted yet. Start 1st practice to assess concept baseline.';
                                             } else {
                                               expIcon = '🚨';
-                                              expColor = '#ef4444';
+                                              expColor = 'var(--danger)';
                                               expText = `${practiceCount}/5 practices done (${mastery}% accuracy). ${5 - practiceCount} practice(s) left — focus on weak areas.`;
                                             }
                                           } else if (state === 'continuePractice') {
                                             if (topic.isExamStrong || (mastery >= 90 && practiceCount === 0)) {
                                               expIcon = '🔥';
-                                              expColor = '#f59e0b';
+                                              expColor = 'var(--warning)';
                                               expText = `🔥 High Exam Score (${mastery}%)! Complete 1 practice set (10–15 Qs) to achieve Certified Green Mastery & boost your Practice LQ!`;
                                             } else if (isLimitReached) {
                                               expIcon = '⚡';
@@ -691,7 +691,7 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                                                     </span>
                                                   )}
                                                   {isAbsent && (
-                                                    <span style={{ fontSize: '9px', fontWeight: 700, padding: '1px 5px', borderRadius: '4px', background: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
+                                                    <span style={{ fontSize: '9px', fontWeight: 700, padding: '1px 5px', borderRadius: '4px', background: 'var(--danger-bg)', color: 'var(--danger)', border: '1px solid rgba(248, 113, 113, 0.3)' }}>
                                                       Missed Exam
                                                     </span>
                                                   )}
@@ -701,7 +701,7 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                                                         ⚡ Recovery Mastered
                                                       </span>
                                                     ) : (
-                                                      <span style={{ fontSize: '9px', fontWeight: 700, padding: '1px 6px', borderRadius: '10px', background: 'linear-gradient(135deg, rgba(16,185,129,0.15), rgba(5,150,105,0.15))', color: '#10b981', border: '1px solid rgba(16,185,129,0.3)' }}>
+                                                      <span style={{ fontSize: '9px', fontWeight: 700, padding: '1px 6px', borderRadius: '10px', background: 'var(--success-bg)', color: 'var(--success)', border: '1px solid rgba(52, 211, 153, 0.3)' }}>
                                                         🌟 Certified Mastered
                                                       </span>
                                                     )

@@ -286,7 +286,7 @@ export default function FeesJournal({
       if (s.fee?.hasOverdueInstallment) {
         overdueCount++;
       }
-      if (s.fee?.feeStatus === 'fully_paid' || (net > 0 && paid >= net)) {
+      if (s.fee?.feeStatus === 'fully_paid' || s.fee?.feeStatus === 'exempted' || (net === 0 && s.fee) || (net > 0 && paid >= net)) {
         fullyPaidCount++;
       } else if (s.fee?.feeStatus === 'partially_paid' || (paid > 0 && paid < net)) {
         partiallyPaidCount++;
@@ -484,9 +484,9 @@ export default function FeesJournal({
       // Status filter
       if (studentStatusFilter !== 'ALL') {
         if (studentStatusFilter === 'overdue' && !s.fee?.hasOverdueInstallment) return false;
-        if (studentStatusFilter === 'fully_paid' && s.fee?.feeStatus !== 'fully_paid') return false;
+        if (studentStatusFilter === 'fully_paid' && s.fee?.feeStatus !== 'fully_paid' && s.fee?.feeStatus !== 'exempted' && s.fee?.netPayableAmount !== 0) return false;
         if (studentStatusFilter === 'partially_paid' && s.fee?.feeStatus !== 'partially_paid') return false;
-        if (studentStatusFilter === 'unpaid' && (s.fee?.feeStatus === 'fully_paid' || s.fee?.feeStatus === 'partially_paid')) return false;
+        if (studentStatusFilter === 'unpaid' && (s.fee?.feeStatus === 'fully_paid' || s.fee?.feeStatus === 'exempted' || s.fee?.netPayableAmount === 0 || s.fee?.feeStatus === 'partially_paid')) return false;
       }
 
       return true;
@@ -517,10 +517,10 @@ export default function FeesJournal({
         valB = Number(b.fee?.outstandingAmount ?? -1);
       } else if (studentSortField === 'status') {
         const getStatusWeight = (s: StudentFeeRecord) => {
-          if (!s.fee) return 0;
+          if (!s.fee || s.fee.totalPackageAmount === undefined) return 0;
           if (s.fee.hasOverdueInstallment) return 4;
           if (s.fee.feeStatus === 'partially_paid') return 3;
-          if (s.fee.feeStatus === 'fully_paid') return 2;
+          if (s.fee.feeStatus === 'fully_paid' || s.fee.feeStatus === 'exempted' || s.fee.netPayableAmount === 0) return 2;
           return 1;
         };
         valA = getStatusWeight(a);
@@ -638,7 +638,13 @@ export default function FeesJournal({
     const rows = filteredStudents.map(s => {
       const lastPayment = studentLastPaymentMap.get(s.studentCode?.toUpperCase());
       const lastPayStr = lastPayment ? formatDateStr(lastPayment) : 'No Payments';
-      const statusStr = s.fee?.hasOverdueInstallment ? 'OVERDUE' : (s.fee?.feeStatus?.toUpperCase() || 'UNCONFIGURED');
+      const statusStr = !s.fee || s.fee.totalPackageAmount === undefined 
+        ? 'UNCONFIGURED' 
+        : (s.fee.hasOverdueInstallment 
+            ? 'OVERDUE' 
+            : (s.fee.feeStatus === 'exempted' || s.fee.netPayableAmount === 0 
+                ? 'EXEMPTED' 
+                : (s.fee.feeStatus?.toUpperCase() || 'UNCONFIGURED')));
 
       return [
         `"${s.name}"`,
@@ -1401,14 +1407,18 @@ export default function FeesJournal({
                           ₹{s.fee?.outstandingAmount !== undefined ? s.fee.outstandingAmount.toLocaleString('en-IN') : '--'}
                         </td>
                         <td style={{ padding: '12px 14px' }}>
-                          {s.fee?.hasOverdueInstallment ? (
+                          {!s.fee || s.fee.totalPackageAmount === undefined ? (
+                            <span className="badge badge-secondary" style={{ fontSize: '10px' }}>UNCONFIGURED</span>
+                          ) : s.fee.hasOverdueInstallment ? (
                             <span className="badge badge-danger" style={{ fontSize: '10px' }}>OVERDUE</span>
-                          ) : s.fee?.feeStatus === 'fully_paid' ? (
+                          ) : s.fee.feeStatus === 'exempted' || s.fee.netPayableAmount === 0 ? (
+                            <span className="badge badge-success" style={{ fontSize: '10px' }}>EXEMPTED</span>
+                          ) : s.fee.feeStatus === 'fully_paid' || ((s.fee.totalPaidAmount || 0) >= s.fee.netPayableAmount && s.fee.netPayableAmount > 0) ? (
                             <span className="badge badge-success" style={{ fontSize: '10px' }}>PAID</span>
-                          ) : s.fee?.feeStatus === 'partially_paid' ? (
+                          ) : s.fee.feeStatus === 'partially_paid' || (s.fee.totalPaidAmount || 0) > 0 ? (
                             <span className="badge badge-info" style={{ fontSize: '10px' }}>PARTIAL</span>
                           ) : (
-                            <span className="badge badge-secondary" style={{ fontSize: '10px' }}>UNCONFIGURED</span>
+                            <span className="badge badge-warning" style={{ fontSize: '10px' }}>PENDING</span>
                           )}
                         </td>
                         <td style={{ padding: '12px 14px', fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>

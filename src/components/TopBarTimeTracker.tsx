@@ -70,22 +70,22 @@ export default function TopBarTimeTracker({ targetUid }: TopBarTimeTrackerProps)
 
   const getWeekTrendIcon = () => {
     if (stats.trend === 'up') {
-      return <span style={{ color: '#10b981', fontWeight: 800, marginLeft: '4px' }} title={`${stats.pctChange}% more than last week`}>▲</span>;
+      return <span style={{ color: 'var(--success)', fontWeight: 800, marginLeft: '4px' }} title={`${stats.pctChange}% more than last week`}>▲</span>;
     }
     if (stats.trend === 'down') {
-      return <span style={{ color: '#ef4444', fontWeight: 800, marginLeft: '4px' }} title={`${Math.abs(stats.pctChange)}% less than last week`}>▼</span>;
+      return <span style={{ color: 'var(--danger)', fontWeight: 800, marginLeft: '4px' }} title={`${Math.abs(stats.pctChange)}% less than last week`}>▼</span>;
     }
-    return <span style={{ color: '#6b7280', fontWeight: 800, marginLeft: '4px' }} title="About the same as last week">▪</span>;
+    return <span style={{ color: 'var(--text-muted)', fontWeight: 800, marginLeft: '4px' }} title="About the same as last week">▪</span>;
   };
 
   const getTodayTrendIcon = () => {
     if (stats.todayTrend === 'up') {
-      return <span style={{ color: '#10b981', fontWeight: 800, marginLeft: '4px' }} title={`${stats.todayPct}% more than yesterday`}>▲</span>;
+      return <span style={{ color: 'var(--success)', fontWeight: 800, marginLeft: '4px' }} title={`${stats.todayPct}% more than yesterday`}>▲</span>;
     }
     if (stats.todayTrend === 'down') {
-      return <span style={{ color: '#ef4444', fontWeight: 800, marginLeft: '4px' }} title={`${Math.abs(stats.todayPct)}% less than yesterday`}>▼</span>;
+      return <span style={{ color: 'var(--danger)', fontWeight: 800, marginLeft: '4px' }} title={`${Math.abs(stats.todayPct)}% less than yesterday`}>▼</span>;
     }
-    return <span style={{ color: '#6b7280', fontWeight: 800, marginLeft: '4px' }} title="About the same as yesterday">▪</span>;
+    return <span style={{ color: 'var(--text-muted)', fontWeight: 800, marginLeft: '4px' }} title="About the same as yesterday">▪</span>;
   };
 
   return (

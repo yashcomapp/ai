@@ -189,12 +189,12 @@ export function calculateUnifiedMetrics(input: UnifiedMetricsInput): UnifiedMetr
 
 /**
  * Single Source of Truth (SSOT) for UI score color coding across Student, Parent, and Admin views.
- * - Score >= 85%: Green (#10b981) - Mastered / High
- * - Score >= 60%: Amber (#f59e0b) - In Progress / Moderate
- * - Score < 60%:  Red (#ef4444)   - Needs Attention / Low
+ * - Score >= 85%: Mint / Emerald (#34d399) - Mastered / High
+ * - Score >= 60%: Warm Amber (#fbbf24)    - In Progress / Moderate
+ * - Score < 60%:  Soft Rose (#f87171)      - Needs Attention / Low
  */
 export function getScoreColor(score: number): string {
-  if (score >= 85) return '#10b981';
-  if (score >= 60) return '#f59e0b';
-  return '#ef4444';
+  if (score >= 85) return '#34d399';
+  if (score >= 60) return '#fbbf24';
+  return '#f87171';
 }

@@ -2082,16 +2082,16 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
           type === 'schedule' 
             ? { title: '📅 CLASS SCHEDULE UPDATE', color: 'var(--accent)', bg: 'var(--accent-soft)', text: 'var(--accent)', icon: '📅' }
             : type === 'fees'
-            ? { title: '💰 FEES REMINDER', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)', text: '#fbbf24', icon: '💰' }
+            ? { title: '💰 FEES REMINDER', color: 'var(--warning)', bg: 'var(--warning-bg)', text: 'var(--warning)', icon: '💰' }
             : type === 'exam_absent'
-            ? { title: '🚨 EXAM ABSENCE ALERT', color: '#ef4444', bg: 'rgba(239, 68, 68, 0.15)', text: '#f87171', icon: '🚨' }
+            ? { title: '🚨 EXAM ABSENCE ALERT', color: 'var(--danger)', bg: 'var(--danger-bg)', text: 'var(--danger-muted)', icon: '🚨' }
             : type === 'exam_excellent'
-            ? { title: '🏆 EXCELLENT EXAM RESULT', color: '#10b981', bg: 'rgba(16, 185, 129, 0.15)', text: '#34d399', icon: '🏆' }
+            ? { title: '🏆 EXCELLENT EXAM RESULT', color: 'var(--success)', bg: 'var(--success-bg)', text: 'var(--success)', icon: '🏆' }
             : type === 'exam_good'
             ? { title: '🌟 EXAM RESULT ANNOUNCEMENT', color: 'var(--accent)', bg: 'var(--accent-soft)', text: 'var(--accent)', icon: '🌟' }
             : type === 'exam_needs_improvement'
-            ? { title: '⚠️ EXAM RESULT - ATTENTION', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)', text: '#fbbf24', icon: '⚠️' }
-            : { title: '📢 IMPORTANT ANNOUNCEMENT', color: '#ef4444', bg: 'rgba(239, 68, 68, 0.15)', text: '#f87171', icon: '📢' };
+            ? { title: '⚠️ EXAM RESULT - ATTENTION', color: 'var(--warning)', bg: 'var(--warning-bg)', text: 'var(--warning)', icon: '⚠️' }
+            : { title: '📢 IMPORTANT ANNOUNCEMENT', color: 'var(--danger)', bg: 'var(--danger-bg)', text: 'var(--danger-muted)', icon: '📢' };
         
         const isAbsentNotice = type === 'exam_absent';
 
@@ -2332,8 +2332,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                   width: '8px',
                   height: '8px',
                   borderRadius: '50%',
-                  background: '#ef4444',
-                  boxShadow: '0 0 8px #ef4444',
+                  background: 'var(--danger)',
                   display: 'inline-block'
                 }} />
                 <span>Live Feed Active (Educator Monitored)</span>
@@ -2732,11 +2731,10 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                     width: '10px',
                     height: '10px',
                     borderRadius: '50%',
-                    background: syncSecondsRemaining > 0 ? '#ef4444' : '#10b981',
-                    boxShadow: syncSecondsRemaining > 0 ? '0 0 10px #ef4444' : '0 0 10px #10b981',
+                    background: syncSecondsRemaining > 0 ? 'var(--danger)' : 'var(--success)',
                     display: 'inline-block'
                   }} />
-                  <span style={{ fontSize: '11px', fontWeight: 800, color: syncSecondsRemaining > 0 ? '#fca5a5' : '#86efac', textTransform: 'uppercase', letterSpacing: '0.8px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 800, color: syncSecondsRemaining > 0 ? 'var(--danger-muted)' : 'var(--success)', textTransform: 'uppercase', letterSpacing: '0.8px' }}>
                     {syncSecondsRemaining > 0 ? 'Mandatory 5-Min Sync Timer' : '5-Min Goal Reached!'}
                   </span>
                 </div>

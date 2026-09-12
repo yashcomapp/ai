@@ -1280,9 +1280,9 @@ button:disabled {
 
 /* Style KaTeX Parse Error spans to be highly readable */
 .katex-error {
-    color: #ef4444 !important;
-    background: rgba(239, 68, 68, 0.08) !important;
-    border: 1px dashed rgba(239, 68, 68, 0.25) !important;
+    color: var(--danger) !important;
+    background: var(--danger-bg) !important;
+    border: 1px dashed rgba(248, 113, 113, 0.3) !important;
     padding: 1px 6px !important;
     border-radius: 4px !important;
     font-family: inherit !important;

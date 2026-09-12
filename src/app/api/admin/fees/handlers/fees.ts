@@ -67,7 +67,9 @@ async function recalculateStudentFeeStats(studentCode: string) {
   });
 
   let feeStatus = 'unpaid';
-  if (totalPaidAmount >= netPayableAmount && netPayableAmount > 0) {
+  if (netPayableAmount === 0) {
+    feeStatus = 'exempted';
+  } else if (totalPaidAmount >= netPayableAmount && netPayableAmount > 0) {
     feeStatus = 'fully_paid';
   } else if (totalPaidAmount > 0) {
     feeStatus = 'partially_paid';

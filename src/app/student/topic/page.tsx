@@ -1382,8 +1382,8 @@ function TopicPracticeContent() {
                       onClick={() => setReportModalOpen(true)}
                       style={{
                         background: 'transparent',
-                        border: '1px solid #ef4444',
-                        color: '#ef4444',
+                        border: '1px solid var(--danger)',
+                        color: 'var(--danger)',
                         borderRadius: '4px',
                         padding: '2px 8px',
                         fontSize: '10.5px',
@@ -1806,7 +1806,7 @@ function TopicPracticeContent() {
                 className="btn btn-primary" 
                 onClick={handleReportQuestion}
                 disabled={isSubmittingReport}
-                style={{ flex: 1, background: '#ef4444', borderColor: '#ef4444' }}
+                style={{ flex: 1, background: 'var(--danger)', borderColor: 'var(--danger)' }}
               >
                 {isSubmittingReport ? 'Reporting...' : 'Bypass & Report'}
               </button>
