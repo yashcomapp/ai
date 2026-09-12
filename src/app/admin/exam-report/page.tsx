@@ -1056,18 +1056,18 @@ function ExamReportContent() {
       </header>
 
       {/* Main Workspace */}
-      <main style={{ flex: 1, padding: '24px 12px', maxWidth: '1000px', width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <main style={{ flex: 1, padding: '10px 12px', maxWidth: '1000px', width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
         
         {/* Legacy-style Toolbar with Back & Export PDF & Broadcast Notices */}
-        <div className="report-toolbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
+        <div className="report-toolbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px', flexWrap: 'wrap', gap: '6px' }}>
           <button 
             className="btn btn-secondary" 
             onClick={() => router.push('/admin/exams')}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 600 }}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 600, padding: '5px 12px' }}
           >
             ← Back to Exams
           </button>
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div style={{ display: 'flex', gap: '6px' }}>
             <button 
               className="btn btn-secondary" 
               disabled={broadcastingNotices}
@@ -1094,14 +1094,14 @@ function ExamReportContent() {
                   setBroadcastingNotices(false);
                 }
               }}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 600, background: 'rgba(139, 92, 246, 0.15)', color: '#8b5cf6', border: '1px solid rgba(139, 92, 246, 0.3)' }}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 600, padding: '5px 12px', background: 'rgba(139, 92, 246, 0.15)', color: '#8b5cf6', border: '1px solid rgba(139, 92, 246, 0.3)' }}
             >
               {broadcastingNotices ? '⏳ Broadcasting...' : '📢 Broadcast Results'}
             </button>
             <button 
               className="btn btn-primary" 
               onClick={() => setPdfSelectorOpen(true)}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 600 }}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 600, padding: '5px 12px' }}
             >
               📄 Export PDF
             </button>
@@ -1109,69 +1109,69 @@ function ExamReportContent() {
         </div>
 
         {/* Live Interactive Content Area */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
 
           {/* Clickable summary stats */}
-          <div className="report-summary" style={{ display: 'flex', gap: '14px', flexWrap: 'wrap' }}>
+          <div className="report-summary" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             
             <div 
               className={`stat-summary-card ${activeFilter === 'all' ? 'active-filter' : ''}`}
               onClick={() => { setActiveFilter('all'); setFilterLabel('All Submissions'); }}
-              style={{ flex: 1, minWidth: '130px', cursor: 'pointer', background: 'var(--surface)', border: activeFilter === 'all' ? '2px solid var(--accent)' : '1px solid var(--border-light)', padding: '16px', borderRadius: 'var(--radius-lg)', textAlign: 'center' }}
+              style={{ flex: 1, minWidth: '110px', cursor: 'pointer', background: 'var(--surface)', border: activeFilter === 'all' ? '2px solid var(--accent)' : '1px solid var(--border-light)', padding: '8px 12px', borderRadius: 'var(--radius)', textAlign: 'center' }}
             >
-              <div className="stat-summary-number" style={{ fontSize: '24px', fontWeight: 800 }}>{attempts.length}</div>
-              <div className="stat-summary-label" style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Submissions</div>
+              <div className="stat-summary-number" style={{ fontSize: '20px', fontWeight: 800 }}>{attempts.length}</div>
+              <div className="stat-summary-label" style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>Submissions</div>
             </div>
 
             <div 
               className="stat-summary-card"
               onClick={() => setNotStartedOpen(true)}
-              style={{ flex: 1, minWidth: '130px', cursor: 'pointer', background: 'var(--surface)', border: '1px solid var(--border-light)', padding: '16px', borderRadius: 'var(--radius-lg)', textAlign: 'center' }}
+              style={{ flex: 1, minWidth: '110px', cursor: 'pointer', background: 'var(--surface)', border: '1px solid var(--border-light)', padding: '8px 12px', borderRadius: 'var(--radius)', textAlign: 'center' }}
             >
-              <div className="stat-summary-number" style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-muted)' }}>{notStartedStudents.length}</div>
-              <div className="stat-summary-label" style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Not Started</div>
+              <div className="stat-summary-number" style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-muted)' }}>{notStartedStudents.length}</div>
+              <div className="stat-summary-label" style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>Not Started</div>
             </div>
 
             <div 
               className="stat-summary-card"
-              style={{ flex: 1, minWidth: '130px', background: 'var(--surface)', border: '1px solid var(--border-light)', padding: '16px', borderRadius: 'var(--radius-lg)', textAlign: 'center' }}
+              style={{ flex: 1, minWidth: '110px', background: 'var(--surface)', border: '1px solid var(--border-light)', padding: '8px 12px', borderRadius: 'var(--radius)', textAlign: 'center' }}
             >
-              <div className="stat-summary-number" style={{ fontSize: '24px', fontWeight: 800 }}>{avgPercentage}%</div>
-              <div className="stat-summary-label" style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Average Score</div>
+              <div className="stat-summary-number" style={{ fontSize: '20px', fontWeight: 800 }}>{avgPercentage}%</div>
+              <div className="stat-summary-label" style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>Average Score</div>
             </div>
 
             <div 
               className={`stat-summary-card ${activeFilter === 'pending' ? 'active-filter' : ''}`}
               onClick={() => { setActiveFilter('pending'); setFilterLabel('Pending Review'); }}
-              style={{ flex: 1, minWidth: '130px', cursor: 'pointer', background: 'var(--surface)', border: activeFilter === 'pending' ? '2px solid var(--accent)' : '1px solid var(--border-light)', padding: '16px', borderRadius: 'var(--radius-lg)', textAlign: 'center' }}
+              style={{ flex: 1, minWidth: '110px', cursor: 'pointer', background: 'var(--surface)', border: activeFilter === 'pending' ? '2px solid var(--accent)' : '1px solid var(--border-light)', padding: '8px 12px', borderRadius: 'var(--radius)', textAlign: 'center' }}
             >
-              <div className="stat-summary-number" style={{ fontSize: '24px', fontWeight: 800, color: 'var(--warning)' }}>{pendingCount}</div>
-              <div className="stat-summary-label" style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Pending Review</div>
+              <div className="stat-summary-number" style={{ fontSize: '20px', fontWeight: 800, color: 'var(--warning)' }}>{pendingCount}</div>
+              <div className="stat-summary-label" style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>Pending Review</div>
             </div>
 
             <div 
               className={`stat-summary-card ${activeFilter === 'flagged' ? 'active-filter' : ''}`}
               onClick={() => { setActiveFilter('flagged'); setFilterLabel('Flagged (Proctoring)'); }}
-              style={{ flex: 1, minWidth: '130px', cursor: 'pointer', background: 'var(--surface)', border: activeFilter === 'flagged' ? '2px solid var(--accent)' : '1px solid var(--border-light)', padding: '16px', borderRadius: 'var(--radius-lg)', textAlign: 'center' }}
+              style={{ flex: 1, minWidth: '110px', cursor: 'pointer', background: 'var(--surface)', border: activeFilter === 'flagged' ? '2px solid var(--accent)' : '1px solid var(--border-light)', padding: '8px 12px', borderRadius: 'var(--radius)', textAlign: 'center' }}
             >
-              <div className="stat-summary-number" style={{ fontSize: '24px', fontWeight: 800, color: 'var(--danger)' }}>{totalFlaggedCount}</div>
-              <div className="stat-summary-label" style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Flagged (Proctoring)</div>
+              <div className="stat-summary-number" style={{ fontSize: '20px', fontWeight: 800, color: 'var(--danger)' }}>{totalFlaggedCount}</div>
+              <div className="stat-summary-label" style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>Flagged (Proctoring)</div>
             </div>
 
           </div>
 
           {/* Filter Notice banner */}
           {activeFilter && (
-            <div style={{ background: 'var(--badge-bg)', border: '1px solid var(--badge-border)', padding: '10px 16px', borderRadius: 'var(--radius)', fontSize: '13px', color: 'var(--accent)', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ background: 'var(--badge-bg)', border: '1px solid var(--badge-border)', padding: '6px 12px', borderRadius: 'var(--radius-sm)', fontSize: '12px', color: 'var(--accent)', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <span>Showing: {filterLabel}</span>
-              <button className="btn btn-secondary btn-sm" onClick={() => setActiveFilter(null)}>✕ Clear filter</button>
+              <button className="btn btn-secondary btn-sm" style={{ padding: '2px 8px', fontSize: '11px' }} onClick={() => setActiveFilter(null)}>✕ Clear filter</button>
             </div>
           )}
 
           {/* Section: Individual Reassignment for Absent Cases */}
-          <div className="card" style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div className="card" style={{ background: 'var(--surface)', borderRadius: 'var(--radius)', border: '1px solid var(--border-light)', padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ fontSize: '13px', fontWeight: 800, margin: 0, textTransform: 'uppercase', color: 'var(--accent)' }}>
+              <h3 style={{ fontSize: '12px', fontWeight: 800, margin: 0, textTransform: 'uppercase', color: 'var(--accent)' }}>
                 🔄 Individual Reassignment (Absent Cases)
               </h3>
               {notStartedStudents.length > 0 && (
@@ -1182,17 +1182,17 @@ function ExamReportContent() {
             </div>
             
             {notStartedStudents.length === 0 ? (
-              <div style={{ padding: '16px', background: 'var(--bg-soft)', borderRadius: 'var(--radius)', fontSize: '13px', color: 'var(--text-muted)', textAlign: 'center' }}>
+              <div style={{ padding: '10px', background: 'var(--bg-soft)', borderRadius: 'var(--radius-sm)', fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center' }}>
                 🎉 All assigned students have started or completed the exam. No absent cases found.
               </div>
             ) : (
               <>
-                <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>
+                <p style={{ fontSize: '11.5px', color: 'var(--text-muted)', margin: 0 }}>
                   Select absent students to schedule a make-up or reassign this exam specifically to them.
                 </p>
                 
                 {/* Select All Toggle */}
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', borderBottom: '1px solid var(--border-light)', paddingBottom: '8px', marginBottom: '4px' }}>
+                <div style={{ display: 'flex', gap: '6px', alignItems: 'center', borderBottom: '1px solid var(--border-light)', paddingBottom: '6px', marginBottom: '2px' }}>
                   <input 
                     type="checkbox" 
                     id="reassign-select-all"
@@ -1206,26 +1206,26 @@ function ExamReportContent() {
                     }}
                     style={{ cursor: 'pointer' }}
                   />
-                  <label htmlFor="reassign-select-all" style={{ fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', userSelect: 'none' }}>
+                  <label htmlFor="reassign-select-all" style={{ fontSize: '11.5px', fontWeight: 'bold', cursor: 'pointer', userSelect: 'none' }}>
                     Select All ({notStartedStudents.length})
                   </label>
                 </div>
                 
                 {/* Scrollable list of students */}
-                <div style={{ maxHeight: '150px', overflowY: 'auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '8px', padding: '4px' }}>
+                <div style={{ maxHeight: '120px', overflowY: 'auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '6px', padding: '2px' }}>
                   {notStartedStudents.map(s => (
                     <label 
                       key={s.code} 
                       style={{ 
                         display: 'flex', 
                         alignItems: 'center', 
-                        gap: '8px', 
-                        padding: '8px 12px', 
+                        gap: '6px', 
+                        padding: '4px 8px', 
                         background: 'var(--bg-soft)', 
-                        borderRadius: 'var(--radius)', 
-                        border: '1.5px solid var(--border-light)',
+                        borderRadius: 'var(--radius-sm)', 
+                        border: '1px solid var(--border-light)',
                         cursor: 'pointer',
-                        fontSize: '12px',
+                        fontSize: '11.5px',
                         fontWeight: 600,
                         userSelect: 'none',
                         transition: 'background 0.2s, border 0.2s'
@@ -1252,12 +1252,12 @@ function ExamReportContent() {
                   ))}
                 </div>
                 
-                <div style={{ display: 'flex', justifyContent: 'flex-start', marginTop: '4px' }}>
+                <div style={{ display: 'flex', justifyContent: 'flex-start', marginTop: '2px' }}>
                   <button 
                     className="btn btn-primary"
                     disabled={reassignSelectedStudents.size === 0}
                     onClick={openReassignModal}
-                    style={{ fontSize: '12px', padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '6px' }}
+                    style={{ fontSize: '11.5px', padding: '5px 12px', display: 'flex', alignItems: 'center', gap: '6px' }}
                   >
                     🔄 Setup Reassignment ({reassignSelectedStudents.size})
                   </button>
@@ -1267,19 +1267,19 @@ function ExamReportContent() {
           </div>
 
           {/* Section A: Student Roster Grid */}
-          <div className="card" style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', overflow: 'hidden' }}>
-            <h3 style={{ fontSize: '13px', fontWeight: 800, padding: '16px 20px 0', margin: 0, textTransform: 'uppercase', color: 'var(--accent)' }}>👤 Student Submissions</h3>
+          <div className="card" style={{ background: 'var(--surface)', borderRadius: 'var(--radius)', border: '1px solid var(--border-light)', overflow: 'hidden' }}>
+            <h3 style={{ fontSize: '12px', fontWeight: 800, padding: '10px 14px 0', margin: 0, textTransform: 'uppercase', color: 'var(--accent)' }}>👤 Student Submissions</h3>
             
-            <div style={{ overflowX: 'auto', marginTop: '10px' }}>
-              <table className="reviews-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left' }}>
+            <div style={{ overflowX: 'auto', marginTop: '6px' }}>
+              <table className="reviews-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12.5px', textAlign: 'left' }}>
                 <thead>
-                  <tr style={{ background: 'var(--bg-soft)', borderBottom: '1px solid var(--border-light)', color: 'var(--text-muted)', fontSize: '12px' }}>
-                    <th onClick={() => handleSortStudent('name')} style={{ padding: '12px 16px', cursor: 'pointer', whiteSpace: 'nowrap' }}>Student Name ⇅</th>
-                    <th onClick={() => handleSortStudent('score')} style={{ padding: '12px 16px', cursor: 'pointer', whiteSpace: 'nowrap' }}>Score ⇅</th>
-                    <th onClick={() => handleSortStudent('time')} style={{ padding: '12px 16px', cursor: 'pointer', whiteSpace: 'nowrap' }}>Time Taken ⇅</th>
-                    <th onClick={() => handleSortStudent('status')} style={{ padding: '12px 16px', cursor: 'pointer', whiteSpace: 'nowrap' }}>Status ⇅</th>
-                    <th onClick={() => handleSortStudent('date')} style={{ padding: '12px 16px', cursor: 'pointer', whiteSpace: 'nowrap' }}>Start Date/Time ⇅</th>
-                    <th style={{ padding: '12px 16px', textAlign: 'right', whiteSpace: 'nowrap' }}>Actions</th>
+                  <tr style={{ background: 'var(--bg-soft)', borderBottom: '1px solid var(--border-light)', color: 'var(--text-muted)', fontSize: '11.5px' }}>
+                    <th onClick={() => handleSortStudent('name')} style={{ padding: '7px 10px', cursor: 'pointer', whiteSpace: 'nowrap' }}>Student Name ⇅</th>
+                    <th onClick={() => handleSortStudent('score')} style={{ padding: '7px 10px', cursor: 'pointer', whiteSpace: 'nowrap' }}>Score ⇅</th>
+                    <th onClick={() => handleSortStudent('time')} style={{ padding: '7px 10px', cursor: 'pointer', whiteSpace: 'nowrap' }}>Time Taken ⇅</th>
+                    <th onClick={() => handleSortStudent('status')} style={{ padding: '7px 10px', cursor: 'pointer', whiteSpace: 'nowrap' }}>Status ⇅</th>
+                    <th onClick={() => handleSortStudent('date')} style={{ padding: '7px 10px', cursor: 'pointer', whiteSpace: 'nowrap' }}>Start Date/Time ⇅</th>
+                    <th style={{ padding: '7px 10px', textAlign: 'right', whiteSpace: 'nowrap' }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1288,24 +1288,24 @@ function ExamReportContent() {
                     <tr 
                       style={{ borderBottom: '1px solid var(--border-light)', background: 'rgba(239, 68, 68, 0.08)' }}
                     >
-                      <td colSpan={6} style={{ padding: '14px 16px', color: '#dc2626' }}>
-                        <div style={{ textAlign: 'center', fontWeight: 800, fontSize: '14px', marginBottom: '10px', color: '#dc2626' }}>
+                      <td colSpan={6} style={{ padding: '10px 12px', color: '#dc2626' }}>
+                        <div style={{ textAlign: 'center', fontWeight: 800, fontSize: '12.5px', marginBottom: '6px', color: '#dc2626' }}>
                           🔴 Absent Students ({notStartedStudents.length})
                         </div>
                         <div style={{ 
                           display: 'grid', 
                           gridTemplateColumns: 'repeat(3, 1fr)', 
-                          gap: '8px 16px',
-                          fontSize: '13px',
+                          gap: '6px 12px',
+                          fontSize: '12px',
                           fontWeight: 700,
                           color: '#dc2626'
                         }}>
                           {[...notStartedStudents]
                             .sort((a, b) => a.name.localeCompare(b.name))
                             .map(a => (
-                              <div key={a.code} style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: '#dc2626', fontWeight: 700, fontSize: '13px' }} title={`${a.name} - ${formatAbsentLogin(a.lastLoginAt)}`}>
+                              <div key={a.code} style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: '#dc2626', fontWeight: 700, fontSize: '12px' }} title={`${a.name} - ${formatAbsentLogin(a.lastLoginAt)}`}>
                                 • {a.name}{' '}
-                                <span style={{ fontSize: '10.5px', fontWeight: 400, opacity: 0.8, color: '#991b1b', marginLeft: '4px' }}>
+                                <span style={{ fontSize: '10px', fontWeight: 400, opacity: 0.8, color: '#991b1b', marginLeft: '4px' }}>
                                   {formatAbsentLogin(a.lastLoginAt)}
                                 </span>
                               </div>
@@ -1319,7 +1319,7 @@ function ExamReportContent() {
                   {/* Submitted Attempts */}
                   {filteredAttempts.length === 0 && ((activeFilter && activeFilter !== 'all') || notStartedStudents.length === 0) ? (
                     <tr>
-                      <td colSpan={6} style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>📭 No attempts matching the criteria.</td>
+                      <td colSpan={6} style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)' }}>📭 No attempts matching the criteria.</td>
                     </tr>
                   ) : (
                     filteredAttempts.map(a => {
@@ -1335,7 +1335,7 @@ function ExamReportContent() {
                           onClick={() => { setSelectedAttempt(a); setStudentModalOpen(true); }}
                           style={{ borderBottom: '1px solid var(--border-light)', cursor: 'pointer' }}
                         >
-                          <td style={{ padding: '12px 16px', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                          <td style={{ padding: '7px 10px', fontWeight: 600, whiteSpace: 'nowrap' }}>
                             {a.studentName}{students.find(s => s.studentCode === a.studentCode)?.autonomous ? ' ⭐' : ''}
                             {a.micAvailable === false && (
                               <span style={{ marginLeft: '6px', color: '#d97706', background: 'rgba(217, 119, 6, 0.1)', padding: '1px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 700 }} title="Microphone Bypassed / Offline">
@@ -1348,25 +1348,25 @@ function ExamReportContent() {
                               </span>
                             )}
                           </td>
-                          <td style={{ padding: '12px 16px', fontWeight: 700, color: scoreColor(a.percentage), whiteSpace: 'nowrap' }}>
+                          <td style={{ padding: '7px 10px', fontWeight: 700, color: scoreColor(a.percentage), whiteSpace: 'nowrap' }}>
                             {scoreVal} / {a.totalMarks} ({a.percentage}%)
                           </td>
-                          <td style={{ padding: '12px 16px', whiteSpace: 'nowrap' }}>{formatSeconds(getReviewTimeTaken(a))}</td>
-                          <td style={{ padding: '12px 16px', whiteSpace: 'nowrap' }}>
+                          <td style={{ padding: '7px 10px', whiteSpace: 'nowrap' }}>{formatSeconds(getReviewTimeTaken(a))}</td>
+                          <td style={{ padding: '7px 10px', whiteSpace: 'nowrap' }}>
                             <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                              <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: isPending ? '#fef3c7' : '#dbf3e1', color: isPending ? '#d97706' : '#1aa54e', fontWeight: 700 }}>
+                              <span style={{ fontSize: '10px', padding: '1px 6px', borderRadius: '8px', background: isPending ? '#fef3c7' : '#dbf3e1', color: isPending ? '#d97706' : '#1aa54e', fontWeight: 700 }}>
                                 {a.status}
                               </span>
-                              <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 500 }}>
+                              <span style={{ fontSize: '10.5px', color: 'var(--text-muted)', fontWeight: 500 }}>
                                 {formatDate(statusDate)}
                               </span>
                             </div>
                           </td>
-                          <td style={{ padding: '12px 16px', whiteSpace: 'nowrap' }}>{formatDate(startDate)}</td>
-                          <td style={{ padding: '12px 16px', textAlign: 'right', whiteSpace: 'nowrap' }} onClick={(e) => e.stopPropagation()}>
+                          <td style={{ padding: '7px 10px', whiteSpace: 'nowrap' }}>{formatDate(startDate)}</td>
+                          <td style={{ padding: '7px 10px', textAlign: 'right', whiteSpace: 'nowrap' }} onClick={(e) => e.stopPropagation()}>
                             <button 
                               className="btn btn-secondary btn-sm" 
-                              style={{ padding: '3px 8px', fontSize: '11px' }}
+                              style={{ padding: '2px 8px', fontSize: '11px' }}
                               onClick={() => handleResetAttempt(a.id, a.studentName)}
                             >
                               🔄 Reset
@@ -1382,25 +1382,26 @@ function ExamReportContent() {
           </div>
 
           {/* Section B: Auto-submitted Attempts */}
-          <div className="card" style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', overflow: 'hidden' }}>
-            <h3 style={{ fontSize: '13px', fontWeight: 800, padding: '16px 20px 0', margin: 0, textTransform: 'uppercase', color: 'var(--danger)' }}>
+          <div className="card" style={{ background: 'var(--surface)', borderRadius: 'var(--radius)', border: '1px solid var(--border-light)', overflow: 'hidden' }}>
+            <h3 style={{ fontSize: '12px', fontWeight: 800, padding: '10px 14px 0', margin: 0, textTransform: 'uppercase', color: 'var(--danger)' }}>
               🚨 Auto-Submitted / Abandoned Attempts ({attempts.filter(a => a.proctoringViolationTriggered || a.abandoned).length})
             </h3>
-            <div style={{ overflowX: 'auto', marginTop: '10px' }}>
-              <table className="reviews-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left' }}>
+            <div style={{ overflowX: 'auto', marginTop: '6px' }}>
+              <table className="reviews-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12.5px', textAlign: 'left' }}>
                 <thead>
-                  <tr style={{ background: 'var(--bg-soft)', borderBottom: '1px solid var(--border-light)', color: 'var(--text-muted)', fontSize: '12px' }}>
-                    <th style={{ padding: '12px 16px', whiteSpace: 'nowrap' }}>Student Name</th>
-                    <th style={{ padding: '12px 16px', whiteSpace: 'nowrap' }}>Score</th>
-                    <th style={{ padding: '12px 16px', whiteSpace: 'nowrap' }}>Tab Violations</th>
-                    <th style={{ padding: '12px 16px', whiteSpace: 'nowrap' }}>Auto-Submission Reason</th>
-                    <th style={{ padding: '12px 16px', whiteSpace: 'nowrap' }}>Date/Time</th>
+                  <tr style={{ background: 'var(--bg-soft)', borderBottom: '1px solid var(--border-light)', color: 'var(--text-muted)', fontSize: '11.5px' }}>
+                    <th style={{ padding: '7px 10px', whiteSpace: 'nowrap' }}>Student Name</th>
+                    <th style={{ padding: '7px 10px', whiteSpace: 'nowrap' }}>Score</th>
+                    <th style={{ padding: '7px 10px', whiteSpace: 'nowrap' }}>Tab Violations</th>
+                    <th style={{ padding: '7px 10px', whiteSpace: 'nowrap' }}>Auto-Submission Reason</th>
+                    <th style={{ padding: '7px 10px', whiteSpace: 'nowrap' }}>Date/Time</th>
+                    <th style={{ padding: '7px 10px', textAlign: 'right', whiteSpace: 'nowrap' }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {attempts.filter(a => a.proctoringViolationTriggered || a.abandoned).length === 0 ? (
                     <tr>
-                      <td colSpan={5} style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                      <td colSpan={6} style={{ padding: '16px', textAlign: 'center', color: 'var(--text-muted)' }}>
                         🟢 No auto-submitted or abandoned attempts for this exam.
                       </td>
                     </tr>
@@ -1438,7 +1439,7 @@ function ExamReportContent() {
                           onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--bg-soft)'; }}
                           onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
                         >
-                          <td style={{ padding: '12px 16px', fontWeight: 600 }}>
+                          <td style={{ padding: '7px 10px', fontWeight: 600 }}>
                             👤 {a.studentName}
                             {a.micAvailable === false && (
                               <span style={{ marginLeft: '6px', color: '#d97706', background: 'rgba(217, 119, 6, 0.1)', padding: '1px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 700 }} title="Microphone Bypassed / Offline">
@@ -1446,17 +1447,26 @@ function ExamReportContent() {
                               </span>
                             )}
                           </td>
-                          <td style={{ padding: '12px 16px', fontWeight: 700, color: 'var(--danger)' }}>
+                          <td style={{ padding: '7px 10px', fontWeight: 700, color: 'var(--danger)' }}>
                             {a.abandoned ? '0 (Abandoned)' : `${scoreVal} / ${a.totalMarks} (${a.percentage}%)`}
                           </td>
-                          <td style={{ padding: '12px 16px', fontWeight: 700 }}>
+                          <td style={{ padding: '7px 10px', fontWeight: 700 }}>
                             {a.abandoned ? '—' : `${a.tabViolations || 0} / 3`}
                           </td>
-                          <td style={{ padding: '12px 16px', color: 'var(--danger)', fontWeight: 600 }}>
+                          <td style={{ padding: '7px 10px', color: 'var(--danger)', fontWeight: 600 }}>
                             {getAutoSubmitReason(a)}
                           </td>
-                          <td style={{ padding: '12px 16px', whiteSpace: 'nowrap' }}>
+                          <td style={{ padding: '7px 10px', whiteSpace: 'nowrap' }}>
                             {completedAt ? completedAt.toLocaleString() : '—'}
+                          </td>
+                          <td style={{ padding: '7px 10px', textAlign: 'right', whiteSpace: 'nowrap' }} onClick={(e) => e.stopPropagation()}>
+                            <button 
+                              className="btn btn-secondary btn-sm" 
+                              style={{ padding: '2px 8px', fontSize: '11px' }}
+                              onClick={() => handleResetAttempt(a.id, a.studentName)}
+                            >
+                              🔄 Reset
+                            </button>
                           </td>
                         </tr>
                       );
@@ -1468,19 +1478,19 @@ function ExamReportContent() {
           </div>
 
           {/* Section C: Detailed Questions Breakdown cards */}
-          <div className="card" id="chipsCard" style={{ background: 'var(--surface)', padding: '18px 24px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-light)', paddingBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
-              <h3 style={{ fontSize: '13px', fontWeight: 800, margin: 0, textTransform: 'uppercase', color: 'var(--accent)' }}>📝 Question Insight Cards</h3>
+          <div className="card" id="chipsCard" style={{ background: 'var(--surface)', padding: '10px 14px', borderRadius: 'var(--radius)', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-light)', paddingBottom: '8px', flexWrap: 'wrap', gap: '6px' }}>
+              <h3 style={{ fontSize: '12px', fontWeight: 800, margin: 0, textTransform: 'uppercase', color: 'var(--accent)' }}>📝 Question Insight Cards</h3>
               
               <div style={{ display: 'flex', gap: '4px' }}>
-                <button className={`btn btn-sm ${questionSortMode === 'order' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setQuestionSortMode('order')} style={{ fontSize: '10px' }}>Order</button>
-                <button className={`btn btn-sm ${questionSortMode === 'correct' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setQuestionSortMode('correct')} style={{ fontSize: '10px' }}>Most Correct</button>
-                <button className={`btn btn-sm ${questionSortMode === 'incorrect' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setQuestionSortMode('incorrect')} style={{ fontSize: '10px' }}>Most Incorrect</button>
-                <button className={`btn btn-sm ${questionSortMode === 'unanswered' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setQuestionSortMode('unanswered')} style={{ fontSize: '10px' }}>Unanswered</button>
+                <button className={`btn btn-sm ${questionSortMode === 'order' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setQuestionSortMode('order')} style={{ fontSize: '10px', padding: '2px 8px' }}>Order</button>
+                <button className={`btn btn-sm ${questionSortMode === 'correct' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setQuestionSortMode('correct')} style={{ fontSize: '10px', padding: '2px 8px' }}>Most Correct</button>
+                <button className={`btn btn-sm ${questionSortMode === 'incorrect' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setQuestionSortMode('incorrect')} style={{ fontSize: '10px', padding: '2px 8px' }}>Most Incorrect</button>
+                <button className={`btn btn-sm ${questionSortMode === 'unanswered' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setQuestionSortMode('unanswered')} style={{ fontSize: '10px', padding: '2px 8px' }}>Unanswered</button>
               </div>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {questionsList.map((s, idx) => {
                 const total = s.correct + s.incorrect + s.unanswered;
                 const pctCorrect = total ? Math.round((s.correct / total) * 100) : 0;
@@ -1492,15 +1502,15 @@ function ExamReportContent() {
                   <div 
                     key={s.key} 
                     className="card pq-card" 
-                    style={{ background: 'var(--bg-soft)', borderLeft: '4px solid var(--accent)', padding: '16px', borderRadius: 'var(--radius)', border: '1.5px solid var(--border-light)', position: 'relative' }}
+                    style={{ background: 'var(--bg-soft)', borderLeft: '4px solid var(--accent)', padding: '10px 12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)', position: 'relative' }}
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px' }}>
-                      <div style={{ fontWeight: 600, fontSize: '13px' }} className="math-container">
+                      <div style={{ fontWeight: 600, fontSize: '12.5px' }} className="math-container">
                         Q{(s.idx ?? idx) + 1}. {preprocessMathText(questionTextRaw)}
                       </div>
                       <button 
                         className="btn btn-secondary btn-sm" 
-                        style={{ padding: '3px 10px', fontSize: '11px', flexShrink: 0 }}
+                        style={{ padding: '2px 8px', fontSize: '10.5px', flexShrink: 0 }}
                         onClick={() => {
                           setEditingQuestion(s);
                           setSelectedCorrectOption(s.correctAnswer);
@@ -1839,17 +1849,33 @@ function ExamReportContent() {
 
       {/* Modal 4: Per-student detailed attempt response logs (Standardized Review Scorecard Modal) */}
       {studentModalOpen && selectedAttempt && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.45)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)', zIndex: 20000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '10px 8px' }}>
-          <div className="modal-content" style={{ background: 'var(--surface-popover)', border: '1px solid var(--border-popover)', borderRadius: 'var(--radius-lg)', maxWidth: '850px', width: '100%', maxHeight: '92vh', display: 'flex', flexDirection: 'column', overflowY: 'hidden' }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.45)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)', zIndex: 20000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '8px' }}>
+          <div className="modal-content" style={{ background: 'var(--surface-popover)', border: '1px solid var(--border-popover)', borderRadius: 'var(--radius)', maxWidth: '850px', width: '100%', maxHeight: '92vh', display: 'flex', flexDirection: 'column', overflowY: 'hidden' }}>
             
-            <div className="modal-header" style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 'bold', color: 'var(--text)' }}>
+            <div className="modal-header" style={{ padding: '8px 12px', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h4 style={{ margin: 0, fontSize: '13px', fontWeight: 'bold', color: 'var(--text)' }}>
                 👤 Student Attempt Details: {selectedAttempt.studentName}{students.find(s => s.studentCode === selectedAttempt.studentCode)?.autonomous ? ' ⭐' : ''}
               </h4>
-              <button className="close-modal" onClick={() => { setStudentModalOpen(false); setSelectedAttempt(null); }} style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '1.2rem' }}>✕</button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <button 
+                  className="btn btn-secondary btn-sm" 
+                  style={{ padding: '2px 8px', fontSize: '11px', color: 'var(--danger)', borderColor: 'var(--danger)' }}
+                  onClick={async () => {
+                    const studentName = selectedAttempt.studentName;
+                    const attemptId = selectedAttempt.id;
+                    setStudentModalOpen(false);
+                    setSelectedAttempt(null);
+                    await handleResetAttempt(attemptId, studentName);
+                  }}
+                  title="Reset student attempt and allow retake"
+                >
+                  🔄 Reset
+                </button>
+                <button className="close-modal" onClick={() => { setStudentModalOpen(false); setSelectedAttempt(null); }} style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '1.1rem', padding: '2px 4px' }}>✕</button>
+              </div>
             </div>
 
-            <div className="modal-body" style={{ padding: '12px 14px', overflowY: 'auto', flex: 1 }}>
+            <div className="modal-body" style={{ padding: '8px 10px', overflowY: 'auto', flex: 1 }}>
               {/* Violation notice banner inside modal */}
               {(() => {
                 const tabV = selectedAttempt.tabViolations || 0;
@@ -1858,7 +1884,7 @@ function ExamReportContent() {
                 const totalV = tabV + faceV + multiV + lookV + headV;
                 if (totalV === 0) return null;
                 return (
-                  <div style={{ background: 'rgba(231,76,60,0.1)', border: '1px solid rgba(231,76,60,0.3)', padding: '8px 12px', borderRadius: '6px', fontSize: '11px', color: '#e74c3c', marginBottom: '10px' }}>
+                  <div style={{ background: 'rgba(231,76,60,0.1)', border: '1px solid rgba(231,76,60,0.3)', padding: '6px 10px', borderRadius: '4px', fontSize: '10.5px', color: '#e74c3c', marginBottom: '8px' }}>
                     <strong>⚠️ Proctoring Violations Detected:</strong> &nbsp;
                     {tabV > 0 && `Tab switches: ${tabV} • `}
                     {faceV > 0 && `No face: ${faceV} • `}
@@ -1872,13 +1898,13 @@ function ExamReportContent() {
               {/* Compact Horizontal Summary Bar */}
               <div style={{ 
                 background: 'var(--bg-soft)', 
-                padding: '8px 12px', 
+                padding: '6px 10px', 
                 borderRadius: 'var(--radius-sm)', 
                 display: 'flex', 
                 flexDirection: 'row', 
                 flexWrap: 'wrap', 
-                gap: '8px 16px', 
-                marginBottom: '10px',
+                gap: '6px 12px', 
+                marginBottom: '8px',
                 border: '1px solid var(--border-light)',
                 color: 'var(--text)'
               }}>
@@ -1911,11 +1937,11 @@ function ExamReportContent() {
 
               {selectedAttempt && (
                   <div>
-                    <div className="outcome-tabs" style={{ display: 'flex', gap: '6px', marginBottom: '10px', borderBottom: '1px solid var(--border-light)', paddingBottom: '8px' }}>
+                    <div className="outcome-tabs" style={{ display: 'flex', gap: '4px', marginBottom: '8px', borderBottom: '1px solid var(--border-light)', paddingBottom: '6px' }}>
                       <button 
                         onClick={() => setQuestionFilterTab('all')} 
                         style={{
-                          padding: '4px 10px',
+                          padding: '3px 8px',
                           fontSize: '11px',
                           fontWeight: 'bold',
                           borderRadius: 'var(--radius-sm)',
@@ -1930,7 +1956,7 @@ function ExamReportContent() {
                       <button 
                         onClick={() => setQuestionFilterTab('correct')} 
                         style={{
-                          padding: '4px 10px',
+                          padding: '3px 8px',
                           fontSize: '11px',
                           fontWeight: 'bold',
                           borderRadius: 'var(--radius-sm)',
@@ -1945,7 +1971,7 @@ function ExamReportContent() {
                       <button 
                         onClick={() => setQuestionFilterTab('incorrect')} 
                         style={{
-                          padding: '4px 10px',
+                          padding: '3px 8px',
                           fontSize: '11px',
                           fontWeight: 'bold',
                           borderRadius: 'var(--radius-sm)',
@@ -1960,7 +1986,7 @@ function ExamReportContent() {
                       <button 
                         onClick={() => setQuestionFilterTab('unanswered')} 
                         style={{
-                          padding: '4px 10px',
+                          padding: '3px 8px',
                           fontSize: '11px',
                           fontWeight: 'bold',
                           borderRadius: 'var(--radius-sm)',
@@ -1974,13 +2000,13 @@ function ExamReportContent() {
                       </button>
                     </div>
 
-                    <h5 style={{ fontSize: '12px', fontWeight: 'bold', marginBottom: '8px', paddingBottom: '2px', color: 'var(--text)' }}>
+                    <h5 style={{ fontSize: '11.5px', fontWeight: 'bold', marginBottom: '6px', paddingBottom: '2px', color: 'var(--text)' }}>
                       🔍 Question Audit List
                     </h5>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                       {filteredQDs.length === 0 ? (
-                        <div style={{ textAlign: 'center', padding: '16px 0', color: 'var(--text-faint)', fontSize: '12px' }}>📭 No questions match this filter.</div>
+                        <div style={{ textAlign: 'center', padding: '12px 0', color: 'var(--text-faint)', fontSize: '11.5px' }}>📭 No questions match this filter.</div>
                       ) : (
                         filteredQDs.map((qd: any, qIdx: number) => {
                           const isCorrect = qd.isCorrect;
@@ -1994,16 +2020,16 @@ function ExamReportContent() {
                               key={qd.questionId || qIdx} 
                               style={{
                                 width: '100%',
-                                padding: '10px 12px',
+                                padding: '8px 10px',
                                 borderRadius: 'var(--radius-sm)',
                                 border: '1.5px solid var(--review-card-border)',
                                 background: 'var(--review-card-bg)',
                                 display: 'flex',
                                 flexDirection: 'column',
-                                gap: '6px'
+                                gap: '4px'
                               }}
                             >
-                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-light)', paddingBottom: '4px', fontSize: '11px', color: 'var(--text-muted)' }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-light)', paddingBottom: '3px', fontSize: '10.5px', color: 'var(--text-muted)' }}>
                                 <div style={{ display: 'flex', alignItems: 'center' }}>
                                   <span style={{ fontWeight: 600 }}>Q{(() => {
                                     if (qd.qNumber != null && qd.qNumber !== '') return qd.qNumber;
@@ -2020,8 +2046,8 @@ function ExamReportContent() {
                                 </div>
                                 <span style={{ 
                                   fontWeight: 'bold', 
-                                  fontSize: '10px',
-                                  padding: '1px 6px',
+                                  fontSize: '9.5px',
+                                  padding: '1px 5px',
                                   borderRadius: '10px',
                                   background: isUnattempted ? 'var(--bg-soft)' : (isCorrect ? 'var(--success-bg)' : 'var(--danger-bg)'),
                                   color: isUnattempted ? 'var(--text-muted)' : (isCorrect ? 'var(--success)' : 'var(--danger)') 
@@ -2031,12 +2057,12 @@ function ExamReportContent() {
                               </div>
 
                               {bq?.type === 'assertion_reason' && bq.assertion && bq.reason ? (
-                                <div style={{ marginBottom: '8px', fontSize: '12.5px' }}>
+                                <div style={{ marginBottom: '6px', fontSize: '11.5px' }}>
                                   <p style={{ margin: '2px 0' }}><strong>Assertion (A):</strong> <span className="math-container">{preprocessMathText(bq.assertion)}</span></p>
                                   <p style={{ margin: '2px 0' }}><strong>Reason (R):</strong> <span className="math-container">{preprocessMathText(bq.reason)}</span></p>
                                 </div>
                               ) : (
-                                <p className="math-container" style={{ fontSize: '12.5px', margin: '0 0 6px 0', fontWeight: 'bold', lineHeight: '1.35' }}>
+                                <p className="math-container" style={{ fontSize: '11.5px', margin: '0 0 4px 0', fontWeight: 'bold', lineHeight: '1.3' }}>
                                   {preprocessMathText(qd.questionText || bq?.text || '')}
                                 </p>
                               )}
@@ -2052,8 +2078,8 @@ function ExamReportContent() {
                               ) : null}
 
                               {/* Answers Side-by-Side Grid */}
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '11.5px', background: 'var(--surface-3)', padding: '6px 8px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)' }}>
-                                <div style={{ lineHeight: '1.3' }}>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', fontSize: '11px', background: 'var(--surface-3)', padding: '5px 7px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)' }}>
+                                <div style={{ lineHeight: '1.25' }}>
                                   <strong style={{ color: 'var(--text-muted)', marginRight: '6px' }}>Student Answer:</strong>
                                   <span className="math-container" style={{ color: 'var(--text)', fontWeight: 600 }}>
                                     {preprocessMathText(
@@ -2063,7 +2089,7 @@ function ExamReportContent() {
                                     )}
                                   </span>
                                 </div>
-                                <div style={{ lineHeight: '1.3' }}>
+                                <div style={{ lineHeight: '1.25' }}>
                                   <strong style={{ color: 'var(--text-muted)', marginRight: '6px' }}>Correct Answer:</strong>
                                   <span className="math-container" style={{ color: 'var(--success)', fontWeight: 'bold' }}>
                                     {preprocessMathText(
@@ -2074,9 +2100,9 @@ function ExamReportContent() {
                               </div>
 
                               {explanation && (
-                                <div style={{ marginTop: '6px', fontSize: '11.5px', color: 'var(--text-muted)', borderTop: '1px dashed var(--border-light)', paddingTop: '6px' }}>
+                                <div style={{ marginTop: '4px', fontSize: '11px', color: 'var(--text-muted)', borderTop: '1px dashed var(--border-light)', paddingTop: '4px' }}>
                                   <strong>Solution Explanation:</strong>
-                                  <p className="math-container" style={{ margin: '2px 0 0 0', lineHeight: '1.35' }}>{preprocessMathText(explanation)}</p>
+                                  <p className="math-container" style={{ margin: '2px 0 0 0', lineHeight: '1.3' }}>{preprocessMathText(explanation)}</p>
                                 </div>
                               )}
                             </div>
@@ -2088,8 +2114,21 @@ function ExamReportContent() {
               )}
             </div>
 
-            <div className="modal-footer" style={{ padding: '10px 16px', borderTop: '1px solid var(--border-light)', display: 'flex', justifyContent: 'flex-end', gap: '10px', background: 'var(--surface)' }}>
-              <button className="btn btn-secondary" onClick={() => { setStudentModalOpen(false); setSelectedAttempt(null); }}>Close</button>
+            <div className="modal-footer" style={{ padding: '8px 12px', borderTop: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', background: 'var(--surface)' }}>
+              <button 
+                className="btn btn-secondary btn-sm" 
+                style={{ padding: '4px 10px', fontSize: '11px', color: 'var(--danger)', borderColor: 'var(--danger)', fontWeight: 700 }}
+                onClick={async () => {
+                  const studentName = selectedAttempt.studentName;
+                  const attemptId = selectedAttempt.id;
+                  setStudentModalOpen(false);
+                  setSelectedAttempt(null);
+                  await handleResetAttempt(attemptId, studentName);
+                }}
+              >
+                🔄 Reset Attempt
+              </button>
+              <button className="btn btn-secondary btn-sm" style={{ padding: '4px 10px', fontSize: '11px' }} onClick={() => { setStudentModalOpen(false); setSelectedAttempt(null); }}>Close</button>
             </div>
           </div>
         </div>

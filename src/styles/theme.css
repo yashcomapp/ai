@@ -297,12 +297,12 @@ a:hover {
     width: 100%;
     max-width: var(--content-max);
     margin: 0 auto;
-    padding: 14px 14px 90px;
+    padding: 8px 10px 60px;
 }
 
 @media (min-width: 768px) {
     .main-content {
-        padding: 16px 18px 90px;
+        padding: 10px 14px 60px;
     }
 }
 

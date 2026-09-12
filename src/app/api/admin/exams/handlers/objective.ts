@@ -348,11 +348,54 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === 'delete') {
-      await Promise.all([
+      let targetExamId = examId;
+      let targetStudentCode = '';
+
+      // Check reviews doc
+      const reviewSnap = await adminDb.collection('reviews').doc(attemptId).get();
+      if (reviewSnap.exists) {
+        const rData = reviewSnap.data() || {};
+        targetExamId = targetExamId || rData.examId;
+        targetStudentCode = rData.studentCode || '';
+      }
+
+      // Check examAttempts doc if not found
+      if (!targetExamId) {
+        const attemptSnap = await adminDb.collection('examAttempts').doc(attemptId).get();
+        if (attemptSnap.exists) {
+          const aData = attemptSnap.data() || {};
+          targetExamId = targetExamId || aData.examId;
+          targetStudentCode = targetStudentCode || aData.studentCode || '';
+        }
+      }
+
+      const deletePromises: Promise<any>[] = [
         adminDb.collection('reviews').doc(attemptId).delete(),
         adminDb.collection('examAttempts').doc(attemptId).delete()
-      ]);
-      return NextResponse.json({ message: 'Attempt deleted successfully.' });
+      ];
+
+      if (targetExamId && targetStudentCode) {
+        const compositeId = `${targetExamId}_${targetStudentCode}`;
+        if (compositeId !== attemptId) {
+          deletePromises.push(adminDb.collection('reviews').doc(compositeId).delete());
+          deletePromises.push(adminDb.collection('examAttempts').doc(compositeId).delete());
+        }
+
+        // Also delete any evaluations linked to this attempt
+        const evalSnap = await adminDb.collection('evaluations')
+          .where('examId', '==', targetExamId)
+          .where('studentCode', '==', targetStudentCode)
+          .get();
+        evalSnap.docs.forEach(d => deletePromises.push(d.ref.delete()));
+      }
+
+      await Promise.all(deletePromises);
+
+      if (targetExamId) {
+        await ReportCacheManager.invalidateReport(`exam-report-objective-${targetExamId}`);
+      }
+
+      return NextResponse.json({ message: 'Attempt reset/deleted successfully.' });
     }
 
     if (action === 'update') {
