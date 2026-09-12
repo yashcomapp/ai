@@ -1332,17 +1332,17 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
           }}
         >
           {/* Action buttons (DM & Group) */}
-          <div style={{ padding: '12px 20px', borderBottom: '1px solid var(--border)', display: 'flex', gap: '8px', background: 'var(--surface-popover)' }}>
+          <div style={{ padding: '8px 12px', borderBottom: '1px solid var(--border)', display: 'flex', gap: '6px', background: 'var(--surface-popover)' }}>
             <button 
               onClick={openDmDrawer} 
-              style={{ flex: 1, fontSize: '12px', padding: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', borderRadius: '8px', cursor: 'pointer', border: 'none', background: 'var(--accent)', color: 'var(--text-on-accent)', fontWeight: 600 }}
+              style={{ flex: 1, fontSize: '11.5px', padding: '6px 10px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', borderRadius: '6px', cursor: 'pointer', border: 'none', background: 'var(--accent)', color: 'var(--text-on-accent)', fontWeight: 600 }}
             >
               💬 Start DM
             </button>
             {role === 'admin' && (
               <button 
                 onClick={openGroupDrawer} 
-                style={{ flex: 1, fontSize: '12px', padding: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', borderRadius: '8px', cursor: 'pointer', border: '1px solid var(--border)', background: 'var(--surface-2)', color: 'var(--text)', fontWeight: 600 }}
+                style={{ flex: 1, fontSize: '11.5px', padding: '6px 10px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', borderRadius: '6px', cursor: 'pointer', border: '1px solid var(--border)', background: 'var(--surface-2)', color: 'var(--text)', fontWeight: 600 }}
               >
                 👥 New Group
               </button>
@@ -1350,17 +1350,17 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
           </div>
 
           {/* Messages Title with Actions */}
-          <div style={{ padding: '20px 20px 10px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h1 style={{ fontSize: '20px', fontWeight: 700, margin: 0, letterSpacing: '-0.3px', color: 'var(--text)' }}>Messages</h1>
-            <div style={{ display: 'flex', gap: '8px' }}>
+          <div style={{ padding: '10px 14px 4px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h1 style={{ fontSize: '16px', fontWeight: 700, margin: 0, letterSpacing: '-0.3px', color: 'var(--text)' }}>Messages</h1>
+            <div style={{ display: 'flex', gap: '6px' }}>
               <button
                 onClick={() => {
                   setIsConversationSelectMode(!isConversationSelectMode);
                   setSelectedRoomIds({});
                 }}
                 style={{
-                  padding: '6px 10px',
-                  borderRadius: '8px',
+                  padding: '4px 8px',
+                  borderRadius: '6px',
                   border: isConversationSelectMode ? '1px solid rgba(239, 68, 68, 0.4)' : '1px solid var(--border)',
                   background: isConversationSelectMode ? 'rgba(239, 68, 68, 0.15)' : 'var(--surface-2)',
                   color: isConversationSelectMode ? 'var(--danger)' : 'var(--text-muted)',
@@ -1380,30 +1380,30 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
           </div>
 
           {/* Filter Pills Tab Selector */}
-          <div style={{ padding: '10px 20px', display: 'flex', gap: '8px', background: 'var(--surface-popover)' }}>
+          <div style={{ padding: '6px 12px', display: 'flex', gap: '6px', background: 'var(--surface-popover)' }}>
             <button
               onClick={() => setActiveTab('group')}
               style={{
                 flex: 1,
-                padding: '8px 12px',
-                borderRadius: '8px',
+                padding: '5px 8px',
+                borderRadius: '6px',
                 border: 'none',
                 background: activeTab === 'group' ? 'var(--accent)' : 'var(--surface-2)',
                 color: activeTab === 'group' ? 'var(--text-on-accent)' : 'var(--text-muted)',
-                fontSize: '12.5px',
+                fontSize: '12px',
                 fontWeight: 600,
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '6px',
+                gap: '5px',
                 transition: 'all 0.2s'
               }}
             >
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 2.02 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 2.02 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
               <span>Class Groups</span>
               {totalGroupUnread > 0 && (
-                <span style={{ background: 'var(--danger)', color: '#ffffff', fontSize: '10px', fontWeight: 800, padding: '1px 6px', borderRadius: '10px', lineHeight: '14px' }}>
+                <span style={{ background: 'var(--danger)', color: '#ffffff', fontSize: '9.5px', fontWeight: 800, padding: '1px 5px', borderRadius: '8px', lineHeight: '13px' }}>
                   {totalGroupUnread}
                 </span>
               )}
@@ -1412,25 +1412,25 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
               onClick={() => setActiveTab('dm')}
               style={{
                 flex: 1,
-                padding: '8px 12px',
-                borderRadius: '8px',
+                padding: '5px 8px',
+                borderRadius: '6px',
                 border: 'none',
                 background: activeTab === 'dm' ? 'var(--accent)' : 'var(--surface-2)',
                 color: activeTab === 'dm' ? 'var(--text-on-accent)' : 'var(--text-muted)',
-                fontSize: '12.5px',
+                fontSize: '12px',
                 fontWeight: 600,
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '6px',
+                gap: '5px',
                 transition: 'all 0.2s'
               }}
             >
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
               <span>Direct Messages</span>
               {totalDmUnread > 0 && (
-                <span style={{ background: 'var(--danger)', color: '#ffffff', fontSize: '10px', fontWeight: 800, padding: '1px 6px', borderRadius: '10px', lineHeight: '14px' }}>
+                <span style={{ background: 'var(--danger)', color: '#ffffff', fontSize: '9.5px', fontWeight: 800, padding: '1px 5px', borderRadius: '8px', lineHeight: '13px' }}>
                   {totalDmUnread}
                 </span>
               )}
@@ -1438,10 +1438,10 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
           </div>
 
           {/* Search bar input bar */}
-          <div style={{ padding: '10px 20px', borderBottom: '1px solid var(--border)' }}>
+          <div style={{ padding: '6px 12px', borderBottom: '1px solid var(--border)' }}>
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-              <span style={{ position: 'absolute', left: '12px', display: 'flex', alignItems: 'center', color: 'var(--text-muted)' }}>
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+              <span style={{ position: 'absolute', left: '9px', display: 'flex', alignItems: 'center', color: 'var(--text-muted)' }}>
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
               </span>
               <input
                 type="text"
@@ -1450,12 +1450,12 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
                 onChange={(e) => setSidebarSearchQuery(e.target.value)}
                 style={{
                   width: '100%',
-                  padding: '10px 12px 10px 38px',
-                  borderRadius: '10px',
+                  padding: '6px 10px 6px 30px',
+                  borderRadius: '6px',
                   border: '1px solid var(--border)',
                   background: 'var(--surface-2)',
                   color: 'var(--text)',
-                  fontSize: '16px',
+                  fontSize: '13px',
                   outline: 'none',
                   transition: 'border-color 0.2s'
                 }}
@@ -1467,9 +1467,9 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
 
           {/* Bulk Delete Conversations bar */}
           {isConversationSelectMode && (
-            <div style={{ padding: '12px 20px', background: 'rgba(239, 68, 68, 0.08)', borderBottom: '1px solid rgba(239, 68, 68, 0.2)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div style={{ padding: '8px 12px', background: 'rgba(239, 68, 68, 0.08)', borderBottom: '1px solid rgba(239, 68, 68, 0.2)', display: 'flex', flexDirection: 'column', gap: '6px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--danger)' }}>
+                <span style={{ fontSize: '11.5px', fontWeight: 'bold', color: 'var(--danger)' }}>
                   {Object.values(selectedRoomIds).filter(Boolean).length} selected
                 </span>
                 <div style={{ display: 'flex', gap: '6px' }}>
@@ -1478,14 +1478,14 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
                       setIsConversationSelectMode(false);
                       setSelectedRoomIds({});
                     }}
-                    style={{ background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-muted)', padding: '4px 8px', fontSize: '11px', borderRadius: '6px', cursor: 'pointer' }}
+                    style={{ background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-muted)', padding: '3px 6px', fontSize: '10.5px', borderRadius: '4px', cursor: 'pointer' }}
                   >
                     Cancel
                   </button>
                   <button 
                     onClick={handleBulkDeleteConversations}
                     disabled={Object.values(selectedRoomIds).filter(Boolean).length === 0}
-                    style={{ background: 'var(--danger)', color: '#ffffff', border: 'none', padding: '4px 10px', fontSize: '11px', fontWeight: 'bold', borderRadius: '6px', cursor: 'pointer', opacity: Object.values(selectedRoomIds).filter(Boolean).length === 0 ? 0.5 : 1 }}
+                    style={{ background: 'var(--danger)', color: '#ffffff', border: 'none', padding: '3px 8px', fontSize: '10.5px', fontWeight: 'bold', borderRadius: '4px', cursor: 'pointer', opacity: Object.values(selectedRoomIds).filter(Boolean).length === 0 ? 0.5 : 1 }}
                   >
                     Delete Selected
                   </button>
@@ -1495,7 +1495,7 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
           )}
 
           {/* Section labels */}
-          <div style={{ padding: '12px 20px 4px 20px', fontSize: '10.5px', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.8px', textTransform: 'uppercase' }}>
+          <div style={{ padding: '8px 12px 3px 12px', fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.8px', textTransform: 'uppercase' }}>
             {activeTab === 'group' ? 'Class Groups' : 'Recent Conversations'}
           </div>
 
@@ -1523,14 +1523,14 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
                       }
                     }}
                     style={{
-                      padding: '12px 16px',
-                      borderRadius: '12px',
+                      padding: '8px 10px',
+                      borderRadius: '8px',
                       background: isActive ? 'var(--surface-3)' : 'transparent',
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '12px',
-                      marginBottom: '4px',
+                      gap: '10px',
+                      marginBottom: '2px',
                       transition: 'background 0.2s',
                       border: isConversationSelectMode && selectedRoomIds[room.roomId] ? '1px dashed var(--danger)' : (isActive ? '1px solid var(--border-light)' : '1px solid transparent')
                     }}
@@ -1542,23 +1542,23 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
                         type="checkbox" 
                         checked={!!selectedRoomIds[room.roomId]}
                         onChange={() => {}} // click on parent div handles toggling
-                        style={{ width: '16px', height: '16px', cursor: 'pointer', marginRight: '4px', accentColor: 'var(--danger)' }}
+                        style={{ width: '15px', height: '15px', cursor: 'pointer', marginRight: '2px', accentColor: 'var(--danger)' }}
                         onClick={(e) => e.stopPropagation()}
                       />
                     )}
                     {/* Circle/Square Avatar */}
                     {room.type === 'group' ? (
                       <div style={{
-                        width: '46px',
-                        height: '46px',
-                        borderRadius: '10px',
+                        width: '36px',
+                        height: '36px',
+                        borderRadius: '8px',
                         background: getGroupBadgeColor(displayName),
                         color: 'var(--text-on-accent)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         fontWeight: 'bold',
-                        fontSize: '15px',
+                        fontSize: '13px',
                         flexShrink: 0
                       }}>
                         {getGroupInitials(displayName)}
@@ -1566,8 +1566,8 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
                     ) : (
                       <div style={{ position: 'relative', flexShrink: 0 }}>
                         <div style={{
-                          width: '46px',
-                          height: '46px',
+                          width: '36px',
+                          height: '36px',
                           borderRadius: '50%',
                           background: 'var(--accent)',
                           color: 'var(--text-on-accent)',
@@ -1575,28 +1575,28 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
                           alignItems: 'center',
                           justifyContent: 'center',
                           fontWeight: 'bold',
-                          fontSize: '16px'
+                          fontSize: '13px'
                         }}>
                           {displayName[0] || 'S'}
                         </div>
-                        <span style={{ position: 'absolute', bottom: '1px', right: '1px', width: '12px', height: '12px', borderRadius: '50%', background: 'var(--success)', border: '2px solid var(--surface-popover)' }} />
+                        <span style={{ position: 'absolute', bottom: '0px', right: '0px', width: '9px', height: '9px', borderRadius: '50%', background: 'var(--success)', border: '1.5px solid var(--surface-popover)' }} />
                       </div>
                     )}
 
                     {/* Text summary info */}
                     <div style={{ minWidth: 0, flex: 1 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                        <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                           {displayName}
                         </span>
                         {room.lastMessage && (
-                          <span style={{ fontSize: '10.5px', color: unread > 0 ? 'var(--accent)' : 'var(--text-faint)', fontWeight: unread > 0 ? '600' : 'normal' }}>
+                          <span style={{ fontSize: '10px', color: unread > 0 ? 'var(--accent)' : 'var(--text-faint)', fontWeight: unread > 0 ? '600' : 'normal' }}>
                             {new Date(room.lastMessage.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </span>
                         )}
                       </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '3px' }}>
-                        <span style={{ fontSize: '12px', color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '2px' }}>
+                        <span style={{ fontSize: '11.5px', color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                           {room.type === 'group' 
                             ? getGroupSubtext(displayName)
                             : (room.lastMessage ? `${room.lastMessage.senderName}: ${room.lastMessage.text}` : 'Direct Conversation')}
@@ -1604,20 +1604,20 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
                         {unread > 0 && (
                           <span 
                             style={{ 
-                              fontSize: '11px', 
+                              fontSize: '10px', 
                               background: 'var(--danger)', 
                               color: '#ffffff', 
-                              minWidth: '20px', 
-                              height: '20px', 
+                              minWidth: '18px', 
+                              height: '18px', 
                               display: 'flex', 
                               alignItems: 'center', 
                               justifyContent: 'center', 
-                              borderRadius: '10px', 
-                              padding: '0 6px', 
+                              borderRadius: '9px', 
+                              padding: '0 5px', 
                               fontWeight: 800,
                               boxShadow: '0 2px 6px rgba(239, 68, 68, 0.45)',
                               flexShrink: 0,
-                              marginLeft: '6px'
+                              marginLeft: '4px'
                             }}
                             title={`${unread} unread messages`}
                           >
@@ -1649,7 +1649,7 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
             <>
               {/* Active conversation Header */}
               <div style={{ 
-                    padding: isMobile ? '6px 10px' : '10px 16px', 
+                    padding: isMobile ? '6px 8px' : '6px 12px', 
                     borderBottom: '1px solid var(--border)', 
                     background: 'var(--surface-popover)', 
                     display: 'flex', 
@@ -1660,35 +1660,35 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
                     zIndex: 5 
                   }}>
                     {/* Row 1: Back + Info */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0, width: '100%', justifyContent: 'space-between' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, width: '100%', justifyContent: 'space-between' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
                         {isMobile && (
                           <button 
                             onClick={() => setActiveRoomId('')} 
-                            style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '14px', padding: '6px 4px 6px 0', color: 'var(--accent)', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '2px' }}
+                            style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '13px', padding: '4px 2px', color: 'var(--accent)', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '2px' }}
                           >
-                            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
                           </button>
                         )}
                         <div style={{ position: 'relative', flexShrink: 0 }}>
                           <div style={{
-                            width: isMobile ? '36px' : '42px',
-                            height: isMobile ? '36px' : '42px',
-                            borderRadius: activeRoom?.type === 'group' ? '10px' : '50%',
+                            width: isMobile ? '30px' : '34px',
+                            height: isMobile ? '30px' : '34px',
+                            borderRadius: activeRoom?.type === 'group' ? '8px' : '50%',
                             background: activeRoom?.type === 'group' ? getGroupBadgeColor(activeDisplayName) : 'var(--accent)',
                             color: 'var(--text-on-accent)',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                             fontWeight: 'bold',
-                            fontSize: isMobile ? '12px' : '14px'
+                            fontSize: isMobile ? '11px' : '13px'
                           }}>
                             {activeRoom?.type === 'group' ? getGroupInitials(activeDisplayName) : (activeDisplayName ? activeDisplayName[0].toUpperCase() : 'S')}
                           </div>
-                          <span style={{ position: 'absolute', bottom: '0px', right: '0px', width: '8px', height: '8px', borderRadius: '50%', background: 'var(--success)', border: '1.5px solid var(--surface-popover)' }} />
+                          <span style={{ position: 'absolute', bottom: '0px', right: '0px', width: '7px', height: '7px', borderRadius: '50%', background: 'var(--success)', border: '1.5px solid var(--surface-popover)' }} />
                         </div>
-                        <div style={{ minWidth: 0, marginLeft: '2px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <h3 style={{ margin: 0, fontSize: isMobile ? '14px' : '15px', fontWeight: 600, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        <div style={{ minWidth: 0, marginLeft: '2px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <h3 style={{ margin: 0, fontSize: isMobile ? '13px' : '14px', fontWeight: 600, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                             {activeDisplayName}
                           </h3>
                       {isMessageSelectMode && (
@@ -1702,8 +1702,8 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
                             border: '1px solid rgba(239, 68, 68, 0.3)',
                             borderRadius: '4px',
                             color: 'var(--danger)',
-                            padding: '2px 6px',
-                            fontSize: '10px',
+                            padding: '2px 5px',
+                            fontSize: '9.5px',
                             fontWeight: 'bold',
                             cursor: 'pointer'
                           }}
@@ -1722,8 +1722,8 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
                         border: '1px solid rgba(239, 68, 68, 0.4)',
                         borderRadius: '6px',
                         color: 'var(--danger)',
-                        padding: '6px 10px',
-                        fontSize: '14px',
+                        padding: '4px 8px',
+                        fontSize: '12px',
                         cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
@@ -1739,17 +1739,17 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
                 {/* Row 2: Mute switches and buttons */}
                 <div style={{ 
                   display: 'flex', 
-                  gap: '8px', 
+                  gap: '6px', 
                   alignItems: 'center', 
                   justifyContent: 'space-between',
                   flexWrap: 'wrap',
                   width: isMobile ? '100%' : 'auto',
                   borderTop: isMobile ? '1px solid var(--border-light)' : 'none',
-                  paddingTop: isMobile ? '6px' : '0',
+                  paddingTop: isMobile ? '4px' : '0',
                   marginTop: isMobile ? '2px' : '0'
                 }}>
                   {activeRoom?.type === 'group' && (
-                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>
+                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center', fontSize: '10.5px', fontWeight: 600, color: 'var(--text-muted)' }}>
                       <span>Mute:</span>
                       <label style={{ display: 'flex', alignItems: 'center', gap: '3px', cursor: 'pointer', userSelect: 'none' }}>
                         <input
@@ -1780,15 +1780,15 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
                         style={{
                           background: 'rgba(239, 68, 68, 0.15)',
                           border: '1px solid rgba(239, 68, 68, 0.4)',
-                          borderRadius: '8px',
+                          borderRadius: '6px',
                           color: 'var(--danger)',
-                          padding: '5px 10px',
-                          fontSize: '11px',
+                          padding: '4px 8px',
+                          fontSize: '10.5px',
                           fontWeight: 'bold',
                           cursor: 'pointer',
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '4px',
+                          gap: '3px',
                           transition: 'all 0.2s'
                         }}
                       >
@@ -1804,19 +1804,19 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
                 <div style={{
                   background: 'var(--surface-3)',
                   borderBottom: '1px solid var(--border)',
-                  padding: '8px 20px',
+                  padding: '5px 12px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  gap: '12px',
+                  gap: '8px',
                   zIndex: 4
                 }}>
                   <div 
                     onClick={() => scrollToMessage(activeRoom.pinnedMessage!.messageId)}
-                    style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', overflow: 'hidden', flex: 1 }}
+                    style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', overflow: 'hidden', flex: 1 }}
                   >
-                    <span style={{ fontSize: '14px' }}>📌</span>
-                    <div style={{ fontSize: '12px', minWidth: 0 }}>
+                    <span style={{ fontSize: '12px' }}>📌</span>
+                    <div style={{ fontSize: '11px', minWidth: 0 }}>
                       <span style={{ color: 'var(--accent)', fontWeight: 600 }}>Pinned Message: </span>
                       <span style={{ color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'inline-block', maxWidth: '300px', verticalAlign: 'bottom' }}>
                         {activeRoom.pinnedMessage.text}
@@ -1825,7 +1825,7 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
                   </div>
                   <button
                     onClick={handleUnpinMessage}
-                    style={{ background: 'transparent', border: 'none', color: 'var(--danger)', fontSize: '13px', cursor: 'pointer', padding: '2px 6px' }}
+                    style={{ background: 'transparent', border: 'none', color: 'var(--danger)', fontSize: '11px', cursor: 'pointer', padding: '1px 4px' }}
                     title="Unpin Message"
                   >
                     ✕
@@ -1839,10 +1839,10 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
                   flex: 1, 
                   overflowY: 'auto', 
                   overflowX: 'hidden',
-                  padding: isMobile ? '10px 8px' : '24px 20px', 
+                  padding: isMobile ? '8px 8px' : '10px 14px', 
                   display: 'flex', 
                   flexDirection: 'column', 
-                  gap: '8px',
+                  gap: '6px',
                   background: 'var(--bg-soft)'
                 }}
               >
@@ -1972,18 +1972,18 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
                           style={{
                             background: isMe ? 'var(--accent)' : 'var(--surface)',
                             color: isMe ? 'var(--text-on-accent)' : 'var(--text)',
-                            padding: '10px 14px',
+                            padding: '7px 11px',
                             minWidth: 0,
                             width: '100%',
                             borderRadius: isMe 
-                              ? (isSameSender ? '16px 16px 16px 16px' : '16px 16px 4px 16px')
-                              : (isSameSender ? '16px 16px 16px 16px' : '16px 16px 16px 4px'),
+                              ? (isSameSender ? '12px 12px 12px 12px' : '12px 12px 3px 12px')
+                              : (isSameSender ? '12px 12px 12px 12px' : '12px 12px 12px 3px'),
                             border: isMe ? 'none' : '1px solid var(--border-light)',
-                            fontSize: '17px',
-                            lineHeight: '1.45',
+                            fontSize: '13.5px',
+                            lineHeight: '1.4',
                             position: 'relative',
                             wordBreak: 'break-word',
-                            boxShadow: isMe ? '0 2px 8px rgba(37,99,235,0.25)' : '0 2px 8px rgba(0,0,0,0.06)'
+                            boxShadow: isMe ? '0 1px 4px rgba(37,99,235,0.2)' : '0 1px 4px rgba(0,0,0,0.05)'
                           }}
                         >
                           {/* Quote message reference */}
@@ -1993,10 +1993,10 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
                               style={{
                                 background: isMe ? 'rgba(0,0,0,0.15)' : 'var(--surface-2)',
                                 borderLeft: isMe ? '3px solid #93c5fd' : '3px solid var(--accent)',
-                                padding: '6px 10px',
+                                padding: '4px 8px',
                                 borderRadius: '4px',
-                                marginBottom: '8px',
-                                fontSize: '11.5px',
+                                marginBottom: '4px',
+                                fontSize: '11px',
                                 cursor: 'pointer',
                                 display: 'flex',
                                 flexDirection: 'column',
@@ -2121,33 +2121,33 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
                             </div>
                           ) : (
                             <>
-                              <div className="selectable-text" style={{ wordBreak: 'break-word', whiteSpace: 'pre-wrap', fontSize: '17px' }} dangerouslySetInnerHTML={{ __html: renderMarkdown(msg.text, participantNames) }} />
+                              <div className="selectable-text" style={{ wordBreak: 'break-word', whiteSpace: 'pre-wrap', fontSize: '13.5px' }} dangerouslySetInnerHTML={{ __html: renderMarkdown(msg.text, participantNames) }} />
                               
                               {/* Attachment box */}
                               {hasAttachment && (
                                 <div style={{
-                                  marginTop: '10px',
+                                  marginTop: '6px',
                                   background: isMe ? 'rgba(0,0,0,0.15)' : 'var(--surface-2)',
-                                  borderRadius: '8px',
-                                  padding: '10px',
+                                  borderRadius: '6px',
+                                  padding: '6px 10px',
                                   display: 'flex',
                                   alignItems: 'center',
                                   justifyContent: 'space-between',
-                                  gap: '12px',
+                                  gap: '10px',
                                   border: isMe ? '1px solid rgba(255,255,255,0.2)' : '1px solid var(--border)',
-                                  minWidth: '240px'
+                                  minWidth: '220px'
                                 }}>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <div style={{ background: 'var(--danger)', width: '32px', height: '36px', borderRadius: '4px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '9px', color: '#ffffff' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <div style={{ background: 'var(--danger)', width: '28px', height: '30px', borderRadius: '4px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '8.5px', color: '#ffffff' }}>
                                       <span>FILE</span>
                                     </div>
                                     <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                      <span style={{ fontSize: '12px', fontWeight: 600, color: isMe ? 'var(--text-on-accent)' : 'var(--text)', maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{msg.text.split(' ').pop()}</span>
-                                      <span style={{ fontSize: '10px', color: isMe ? 'rgba(255,255,255,0.75)' : 'var(--text-muted)', marginTop: '2px' }}>Attachment Link</span>
+                                      <span style={{ fontSize: '11.5px', fontWeight: 600, color: isMe ? 'var(--text-on-accent)' : 'var(--text)', maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{msg.text.split(' ').pop()}</span>
+                                      <span style={{ fontSize: '9.5px', color: isMe ? 'rgba(255,255,255,0.75)' : 'var(--text-muted)', marginTop: '1px' }}>Attachment Link</span>
                                     </div>
                                   </div>
                                   <a href={msg.text.includes('(') ? msg.text.substring(msg.text.indexOf('(') + 1, msg.text.indexOf(')')) : msg.text} target="_blank" rel="noopener noreferrer" style={{ color: isMe ? '#93c5fd' : 'var(--accent)', cursor: 'pointer', display: 'flex', alignItems: 'center' }} title="Download file">
-                                    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg>
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg>
                                   </a>
                                 </div>
                               )}
@@ -2156,7 +2156,7 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
 
                           {/* Quick reactions summary inside the bubble */}
                           {!msg.isDeleted && msg.reactions && (
-                            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '8px' }}>
+                            <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginTop: '4px' }}>
                               {msg.reactions.thumbsup && msg.reactions.thumbsup.length > 0 && (
                                 <span 
                                   onClick={(e) => {
@@ -2168,20 +2168,20 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
                                     });
                                   }}
                                   style={{
-                                    fontSize: '11px',
+                                    fontSize: '10.5px',
                                     background: msg.reactions.thumbsup.includes(adminUid) ? 'var(--accent-soft)' : (isMe ? 'rgba(0,0,0,0.12)' : 'var(--surface-2)'),
                                     border: msg.reactions.thumbsup.includes(adminUid) ? '1px solid var(--accent)' : (isMe ? '1px solid rgba(255,255,255,0.2)' : '1px solid var(--border-light)'),
-                                    padding: '2px 6px',
-                                    borderRadius: '10px',
+                                    padding: '1px 5px',
+                                    borderRadius: '8px',
                                     cursor: 'pointer',
                                     display: 'inline-flex',
                                     alignItems: 'center',
-                                    gap: '3px',
+                                    gap: '2px',
                                     userSelect: 'none'
                                   }}
                                   title={`Reacted by: ${msg.reactions.thumbsup.map(uid => participantNames[uid] || uid).join(', ')}`}
                                 >
-                                  👍 <span style={{ color: isMe ? 'rgba(255,255,255,0.85)' : 'var(--text-muted)', fontSize: '10px' }}>{msg.reactions.thumbsup.length}</span>
+                                  👍 <span style={{ color: isMe ? 'rgba(255,255,255,0.85)' : 'var(--text-muted)', fontSize: '9.5px' }}>{msg.reactions.thumbsup.length}</span>
                                 </span>
                               )}
                               {msg.reactions.pray && msg.reactions.pray.length > 0 && (
@@ -2195,20 +2195,20 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
                                     });
                                   }}
                                   style={{
-                                    fontSize: '11px',
+                                    fontSize: '10.5px',
                                     background: msg.reactions.pray.includes(adminUid) ? 'var(--accent-soft)' : (isMe ? 'rgba(0,0,0,0.12)' : 'var(--surface-2)'),
                                     border: msg.reactions.pray.includes(adminUid) ? '1px solid var(--accent)' : (isMe ? '1px solid rgba(255,255,255,0.2)' : '1px solid var(--border-light)'),
-                                    padding: '2px 6px',
-                                    borderRadius: '10px',
+                                    padding: '1px 5px',
+                                    borderRadius: '8px',
                                     cursor: 'pointer',
                                     display: 'inline-flex',
                                     alignItems: 'center',
-                                    gap: '3px',
+                                    gap: '2px',
                                     userSelect: 'none'
                                   }}
                                   title={`Reacted by: ${msg.reactions.pray.map(uid => participantNames[uid] || uid).join(', ')}`}
                                 >
-                                  🙏 <span style={{ color: isMe ? 'rgba(255,255,255,0.85)' : 'var(--text-muted)', fontSize: '10px' }}>{msg.reactions.pray.length}</span>
+                                  🙏 <span style={{ color: isMe ? 'rgba(255,255,255,0.85)' : 'var(--text-muted)', fontSize: '9.5px' }}>{msg.reactions.pray.length}</span>
                                 </span>
                               )}
                             </div>
@@ -2220,16 +2220,16 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
                             justifyContent: 'flex-end', 
                             alignItems: 'center', 
                             gap: '4px', 
-                            fontSize: '11px', 
+                            fontSize: '10.5px', 
                             color: isMe ? 'rgba(255,255,255,0.75)' : 'var(--text-faint)', 
-                            marginTop: '8px',
+                            marginTop: '4px',
                             textAlign: 'right',
                             flexWrap: 'wrap'
                           }}>
                             {starredMessageIds[msg.messageId] && (
-                              <span style={{ color: '#eab308', marginRight: '4px', fontSize: '13px' }} title="Starred Message">★</span>
+                              <span style={{ color: '#eab308', marginRight: '3px', fontSize: '11px' }} title="Starred Message">★</span>
                             )}
-                            {msg.isEdited && <span style={{ fontStyle: 'italic', fontSize: '10px', color: isMe ? 'rgba(255,255,255,0.75)' : 'var(--text-faint)', marginRight: '4px' }}>edited</span>}
+                            {msg.isEdited && <span style={{ fontStyle: 'italic', fontSize: '9.5px', color: isMe ? 'rgba(255,255,255,0.75)' : 'var(--text-faint)', marginRight: '3px' }}>edited</span>}
                             <span>{new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
 
                             {/* Quick reactions */}
@@ -2399,33 +2399,33 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
                   </div>
                 </div>
               ) : (
-                <form onSubmit={handleSendMessage} style={{ position: 'relative', padding: '14px 20px', background: 'var(--surface-popover)', display: 'flex', flexDirection: 'column', gap: '8px', zIndex: 5, borderTop: '1px solid var(--border)' }}>
+                <form onSubmit={handleSendMessage} style={{ position: 'relative', padding: isMobile ? '6px 8px' : '6px 12px', background: 'var(--surface-popover)', display: 'flex', flexDirection: 'column', gap: '4px', zIndex: 5, borderTop: '1px solid var(--border)' }}>
                 
                 {/* Mention / Tag Suggestions dropdown */}
                 {showMentionSuggestions && mentionCandidates.length > 0 && (
                   <div style={{
                     position: 'absolute',
                     bottom: '105%',
-                    left: '20px',
-                    width: '280px',
+                    left: '12px',
+                    width: '260px',
                     background: 'var(--surface-popover)',
                     border: '1px solid var(--border)',
                     borderRadius: '8px',
                     boxShadow: '0 -4px 12px rgba(0,0,0,0.15)',
-                    maxHeight: '160px',
+                    maxHeight: '150px',
                     overflowY: 'auto',
                     zIndex: 1000,
-                    padding: '6px 0',
-                    marginBottom: '8px'
+                    padding: '4px 0',
+                    marginBottom: '4px'
                   }}>
                     {mentionCandidates.map((cand: any) => (
                       <div
                         key={cand.id}
                         onClick={() => selectMention(cand.name)}
                         style={{
-                          padding: '8px 12px',
+                          padding: '6px 10px',
                           cursor: 'pointer',
-                          fontSize: '13px',
+                          fontSize: '12px',
                           color: 'var(--text)',
                           display: 'flex',
                           justifyContent: 'space-between',
@@ -2435,7 +2435,7 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
                         onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                       >
                         <span style={{ fontWeight: 600 }}>{cand.name}</span>
-                        <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{cand.id}</span>
+                        <span style={{ fontSize: '9.5px', color: 'var(--text-muted)' }}>{cand.id}</span>
                       </div>
                     ))}
                   </div>
@@ -2448,40 +2448,40 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     background: 'var(--surface-3)',
-                    borderLeft: '4px solid var(--accent)',
-                    padding: '8px 14px',
-                    borderRadius: '8px',
-                    marginBottom: '4px'
+                    borderLeft: '3px solid var(--accent)',
+                    padding: '4px 10px',
+                    borderRadius: '6px',
+                    marginBottom: '2px'
                   }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', fontSize: '12px', overflow: 'hidden' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', fontSize: '11px', overflow: 'hidden' }}>
                       <span style={{ color: 'var(--accent)', fontWeight: 600 }}>Replying to {replyingTo.senderName}</span>
-                      <span style={{ color: 'var(--text-muted)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '300px' }}>
+                      <span style={{ color: 'var(--text-muted)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '280px' }}>
                         {replyingTo.text}
                       </span>
                     </div>
                     <button 
                       type="button" 
                       onClick={() => setReplyingTo(null)}
-                      style={{ background: 'transparent', border: 'none', color: 'var(--danger)', fontSize: '14px', cursor: 'pointer', padding: '4px' }}
+                      style={{ background: 'transparent', border: 'none', color: 'var(--danger)', fontSize: '12px', cursor: 'pointer', padding: '2px 4px' }}
                     >
                       ✕
                     </button>
                   </div>
                 )}
 
-                <div style={{ display: 'flex', gap: '10px', alignItems: 'center', width: '100%' }}>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', width: '100%' }}>
                   {/* Attachment clip and smiley inside a single pill input wrapper */}
                   <div style={{
                     flex: 1,
                     minWidth: '0',
                     background: 'var(--surface)',
                     border: '1px solid var(--border)',
-                    borderRadius: '24px',
-                    padding: '6px 14px',
+                    borderRadius: '18px',
+                    padding: '2px 10px',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '10px',
-                    minHeight: '42px',
+                    gap: '6px',
+                    minHeight: '34px',
                     height: 'auto'
                   }}>
                     <div 
@@ -2489,20 +2489,20 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
                       style={{ color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', position: 'relative' }} 
                       title="Attach file or insert link"
                     >
-                      <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M16.5 6v11.5c0 2.21-1.79 4-4 4s-4-1.79-4-4V5c0-3.31 2.69-6 6-6s6 2.69 6 6v10.5c0 4.42-3.58 8-8 8s-8-3.58-8-8V6h2v9.5c0 3.31 2.69 6 6 6s6-2.69 6-6V5c0-2.21-1.79-4-4-4s-4 1.79-4 4v12.5c0 1.1.9 2 2 2s2-.9 2-2V6h2z"/></svg>
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M16.5 6v11.5c0 2.21-1.79 4-4 4s-4-1.79-4-4V5c0-3.31 2.69-6 6-6s6 2.69 6 6v10.5c0 4.42-3.58 8-8 8s-8-3.58-8-8V6h2v9.5c0 3.31 2.69 6 6 6s6-2.69 6-6V5c0-2.21-1.79-4-4-4s-4 1.79-4 4v12.5c0 1.1.9 2 2 2s2-.9 2-2V6h2z"/></svg>
                       
                       {showAttachmentMenu && (
                         <div style={{
                           position: 'absolute',
-                          bottom: '40px',
+                          bottom: '36px',
                           left: '0',
                           background: 'var(--surface-popover)',
                           border: '1px solid var(--border)',
                           borderRadius: '8px',
-                          padding: '6px 0',
+                          padding: '4px 0',
                           display: 'flex',
                           flexDirection: 'column',
-                          width: '140px',
+                          width: '130px',
                           boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
                           zIndex: 100
                         }}>
@@ -2517,13 +2517,13 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
                               background: 'transparent',
                               border: 'none',
                               color: 'var(--text)',
-                              padding: '6px 12px',
+                              padding: '5px 10px',
                               textAlign: 'left',
-                              fontSize: '12px',
+                              fontSize: '11.5px',
                               cursor: 'pointer',
                               display: 'flex',
                               alignItems: 'center',
-                              gap: '6px',
+                              gap: '5px',
                               width: '100%'
                             }}
                             onMouseEnter={(e) => e.currentTarget.style.background = 'var(--surface-2)'}
@@ -2542,13 +2542,13 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
                               background: 'transparent',
                               border: 'none',
                               color: 'var(--text)',
-                              padding: '6px 12px',
+                              padding: '5px 10px',
                               textAlign: 'left',
-                              fontSize: '12px',
+                              fontSize: '11.5px',
                               cursor: 'pointer',
                               display: 'flex',
                               alignItems: 'center',
-                              gap: '6px',
+                              gap: '5px',
                               width: '100%'
                             }}
                             onMouseEnter={(e) => e.currentTarget.style.background = 'var(--surface-2)'}
@@ -2567,13 +2567,13 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
                               background: 'transparent',
                               border: 'none',
                               color: 'var(--text)',
-                              padding: '6px 12px',
+                              padding: '5px 10px',
                               textAlign: 'left',
-                              fontSize: '12px',
+                              fontSize: '11.5px',
                               cursor: 'pointer',
                               display: 'flex',
                               alignItems: 'center',
-                              gap: '6px',
+                              gap: '5px',
                               width: '100%'
                             }}
                             onMouseEnter={(e) => e.currentTarget.style.background = 'var(--surface-2)'}
@@ -2594,6 +2594,7 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
                     value={inputText}
                     onChange={(e) => handleInputChange(e.target.value)}
                     placeholder="Type a message..."
+                    rows={1}
                     style={{
                       flex: 1,
                       width: '100%',
@@ -2601,14 +2602,15 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
                       border: 'none',
                       background: 'transparent',
                       color: 'var(--text)',
-                      fontSize: '16px',
+                      fontSize: '13.5px',
                       resize: 'none',
-                      height: 'auto',
-                      minHeight: '24px',
-                      maxHeight: '120px',
+                      height: '20px',
+                      minHeight: '20px',
+                      maxHeight: '80px',
                       outline: 'none',
-                      lineHeight: '1.4',
-                      padding: '2px 0',
+                      lineHeight: '1.3',
+                      padding: '1px 0',
+                      margin: 0,
                       overflowY: 'auto'
                     }}
                     onBlur={() => {
@@ -2618,17 +2620,17 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
                     }}
                   />
                   <div style={{ color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center' }} title="Emojis">
-                    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 14H11v-2h2v2zm0-4H11V7h2v5z"/></svg>
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 14H11v-2h2v2zm0-4H11V7h2v5z"/></svg>
                   </div>
                 </div>
 
                 <button 
                   type="submit" 
                   style={{ 
-                    height: '42px', 
+                    height: '34px', 
                     borderRadius: '50%', 
-                    width: '42px', 
-                    minWidth: '42px', 
+                    width: '34px', 
+                    minWidth: '34px', 
                     padding: '0', 
                     display: 'flex', 
                     alignItems: 'center', 
@@ -2637,14 +2639,14 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
                     border: 'none', 
                     color: '#ffffff', 
                     cursor: 'pointer',
-                    boxShadow: '0 2px 8px rgba(79, 70, 229, 0.45)',
+                    boxShadow: '0 2px 6px rgba(79, 70, 229, 0.35)',
                     transition: 'transform 0.1s'
                   }}
                   onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.95)'}
                   onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1)'}
                   title="Send message"
                 >
-                  <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" style={{ transform: 'rotate(45deg)' }}><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" style={{ transform: 'rotate(45deg)' }}><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
                 </button>
                 </div>
               </form>
