@@ -1704,23 +1704,20 @@ Return ONLY valid JSON. No extra text.`;
             <h3 style={{ fontSize: '13px', fontWeight: 800, margin: '0 0 12px', textTransform: 'uppercase', color: 'var(--accent)' }}>Workspace Settings &amp; Generator Actions</h3>
 
             {/* Optional Textbook/Diagram Image Upload */}
-            <div style={{ marginTop: '10px', borderTop: '1px dashed var(--border-light)', paddingTop: '12px' }}>
-              <label style={{ fontSize: '12px', fontWeight: 'bold', display: 'block', marginBottom: '6px' }}>🖼️ Upload Textbook/Diagram Image (optional)</label>
-              <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '0 0 10px' }}>
-                If you have textbook content, question lists, or diagrams, upload them here to instruct the AI model to parse and extract them.
-              </p>
+            <div style={{ marginTop: '10px', borderTop: '1px dashed var(--border-light)', paddingTop: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
+              <label style={{ fontSize: '12px', fontWeight: 'bold', margin: 0 }}>🖼️ Upload Textbook/Diagram Image (optional)</label>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center' }}>
                 <input type="file" id="questionImageInput" accept="image/*" onChange={handleImageSelected} style={{ fontSize: '12px' }} />
                 {uploadedImageBase64 && (
-                <button className="btn btn-secondary btn-sm" onClick={clearImage}>✕ Clear</button>
+                  <button className="btn btn-secondary btn-sm" onClick={clearImage}>✕ Clear</button>
                 )}
               </div>
-              {uploadedImageBase64 && (
-                <div style={{ marginTop: '10px' }}>
-                  <img src={uploadedImageBase64} alt="Selected source preview" style={{ maxWidth: '240px', maxHeight: '180px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)' }} />
-                </div>
-              )}
             </div>
+            {uploadedImageBase64 && (
+              <div style={{ marginTop: '10px' }}>
+                <img src={uploadedImageBase64} alt="Selected source preview" style={{ maxWidth: '240px', maxHeight: '180px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)' }} />
+              </div>
+            )}
 
             {/* Generator Mode Selector (SSOT) */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px', marginTop: '16px', borderTop: '1px solid var(--border-light)', paddingTop: '14px' }}>
@@ -1732,7 +1729,7 @@ Return ONLY valid JSON. No extra text.`;
                   onClick={() => handleSwitchType('objective')}
                   style={{ borderRadius: '20px', fontWeight: questionType === 'objective' ? 700 : 500 }}
                 >
-                  🎯 Objective Question Bank (OSC, OTF, OAR, OMC, ONE)
+                  🎯 Objective
                 </button>
                 <button 
                   type="button"
@@ -1740,14 +1737,14 @@ Return ONLY valid JSON. No extra text.`;
                   onClick={() => handleSwitchType('subjective')}
                   style={{ borderRadius: '20px', fontWeight: questionType === 'subjective' ? 700 : 500 }}
                 >
-                  📝 Subjective Question Bank (Definitions, Short &amp; Long)
+                  📝 Subjective
                 </button>
               </div>
             </div>
 
             {/* Numericals / Calculation Questions Toggle */}
             <div style={{ marginTop: '12px', padding: '10px 14px', background: includeNumericals ? 'rgba(52, 152, 219, 0.08)' : 'var(--bg-soft)', borderRadius: 'var(--radius-sm)', border: `1px solid ${includeNumericals ? 'var(--accent)' : 'var(--border-light)'}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
-              <label style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', cursor: 'pointer', margin: 0, flex: 1 }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', margin: 0, flex: 1 }}>
                 <input
                   type="checkbox"
                   checked={includeNumericals}
@@ -1755,17 +1752,10 @@ Return ONLY valid JSON. No extra text.`;
                     setIncludeNumericals(e.target.checked);
                     setNumericalsManuallyToggled(true);
                   }}
-                  style={{ width: '16px', height: '16px', marginTop: '2px', cursor: 'pointer' }}
+                  style={{ width: '16px', height: '16px', cursor: 'pointer' }}
                 />
-                <div>
-                  <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text)' }}>
-                    Include Numericals &amp; Calculation Problems (ONE / Numerical Types)
-                  </div>
-                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                    {includeNumericals 
-                      ? `⚡ Numericals enabled. Prompt strictly enforces Class ${selectedClass || ''} textbook standard scope (no college/advanced stoichiometry).` 
-                      : '🛡️ Numericals disabled. Generates 100% conceptual, mechanistic, and qualitative questions (prevents AI hallucinating fake calculations on biology/theory topics).'}
-                  </div>
+                <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text)' }}>
+                  Include Numericals &amp; Calculation Problems (ONE / Numerical Types)
                 </div>
               </label>
               <span style={{ fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '12px', background: includeNumericals ? 'rgba(52, 152, 219, 0.2)' : 'var(--border-light)', color: includeNumericals ? 'var(--accent)' : 'var(--text-muted)', whiteSpace: 'nowrap' }}>
