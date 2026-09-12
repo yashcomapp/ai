@@ -1833,7 +1833,10 @@ function TakeExamContent() {
                               wrongAnswerReasons: selectedReasons
                             })
                           });
-                          if (!res.ok) throw new Error('Failed to update submission status');
+                          if (!res.ok) {
+                            const errData = await res.json().catch(() => null);
+                            throw new Error(errData?.message || 'Failed to update submission status');
+                          }
                           
                           setReviewModalOpen(false);
                           setShowResultModal(true);

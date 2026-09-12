@@ -8,8 +8,8 @@ import { GET as getSettings, POST as postSettings } from '../handlers/settings';
 import { POST as postDisputes } from '../handlers/disputes';
 import { GET as getExamRegister, POST as postExamRegister } from '../handlers/examRegister';
 import { GET as getAttendance } from '../handlers/attendance';
-import { GET as getAttendanceDeclare, POST as postAttendanceDeclare } from '../handlers/attendanceDeclare';
-import { GET as getExams, POST as postExams } from '../handlers/exams';
+import { GET as getAttendanceDeclare, POST as postAttendanceDeclare, DELETE as deleteAttendanceDeclare } from '../handlers/attendanceDeclare';
+import { GET as getExams, POST as postExams, PUT as putExams } from '../handlers/exams';
 import { GET as getExamsSubjective, POST as postExamsSubjective } from '../handlers/examsSubjective';
 import { POST as postExamsPeerReview } from '../handlers/examsPeerReview';
 
@@ -79,6 +79,40 @@ export async function POST(req: NextRequest, { params }: { params: { slug?: stri
     }
   } catch (error: any) {
     console.error('API Student Dispatcher POST Error:', error);
+    return NextResponse.json({ message: error.message || 'Internal Server Error' }, { status: 500 });
+  }
+}
+
+export async function PUT(req: NextRequest, { params }: { params: { slug?: string[] } | Promise<{ slug?: string[] }> }) {
+  try {
+    const resolvedParams = await Promise.resolve(params);
+    const subroute = (resolvedParams.slug || []).join('/');
+
+    switch (subroute) {
+      case 'exams':
+        return await putExams(req);
+      default:
+        return NextResponse.json({ message: `Unknown student PUT route: ${subroute}` }, { status: 404 });
+    }
+  } catch (error: any) {
+    console.error('API Student Dispatcher PUT Error:', error);
+    return NextResponse.json({ message: error.message || 'Internal Server Error' }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: NextRequest, { params }: { params: { slug?: string[] } | Promise<{ slug?: string[] }> }) {
+  try {
+    const resolvedParams = await Promise.resolve(params);
+    const subroute = (resolvedParams.slug || []).join('/');
+
+    switch (subroute) {
+      case 'attendance/declare':
+        return await deleteAttendanceDeclare(req);
+      default:
+        return NextResponse.json({ message: `Unknown student DELETE route: ${subroute}` }, { status: 404 });
+    }
+  } catch (error: any) {
+    console.error('API Student Dispatcher DELETE Error:', error);
     return NextResponse.json({ message: error.message || 'Internal Server Error' }, { status: 500 });
   }
 }
