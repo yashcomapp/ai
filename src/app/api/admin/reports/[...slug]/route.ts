@@ -742,6 +742,7 @@ async function handleParentPending(req: NextRequest) {
 
   const nowMs = Date.now();
   const records: any[] = [];
+  const existingReviewKeys = new Set<string>();
   const purgeBatch = adminDb.batch();
   let purgeCount = 0;
 
@@ -753,26 +754,34 @@ async function handleParentPending(req: NextRequest) {
       return;
     }
 
+    const isDailySync = rawType === 'daily_5min_sync' || rawType === 'sync';
+
+    // 24h Purge Policy: Expired Daily Sync verification logs are completely purged from Firestore
+    if (data.expiresAt && data.expiresAt < nowMs) {
+      if (isDailySync) {
+        purgeBatch.delete(doc.ref);
+        purgeCount++;
+        return;
+      } else if (data.photoThumbnail) {
+        // For exam reviews, purge the photo thumbnail to save storage while keeping the review log
+        purgeBatch.update(doc.ref, {
+          photoThumbnail: null,
+          photoPurged: true
+        });
+        purgeCount++;
+      }
+    }
+
     const studentInfo = activeStudentsMap.get(data.studentCode);
     if (!studentInfo) return;
 
-    let photo = data.photoThumbnail || null;
-    let isPurged = Boolean(data.photoPurged);
-
-    if (data.expiresAt && data.expiresAt < nowMs && photo) {
-      purgeBatch.update(doc.ref, {
-        photoThumbnail: null,
-        photoPurged: true
-      });
-      purgeCount++;
-      photo = null;
-      isPurged = true;
-    }
+    let photo = (data.expiresAt && data.expiresAt < nowMs) ? null : (data.photoThumbnail || null);
+    let isPurged = Boolean(data.photoPurged) || Boolean(data.expiresAt && data.expiresAt < nowMs);
 
     let displayType = 'Exam Review';
     let displayExamName = data.examName || 'Exam Paper Review';
 
-    if (rawType === 'daily_5min_sync' || rawType === 'sync') {
+    if (isDailySync) {
       displayType = 'Sync Session';
       displayExamName = data.examName || 'Daily 5-Min Parent-Kid Sync';
     } else if (rawType === 'objective') {
@@ -784,6 +793,29 @@ async function handleParentPending(req: NextRequest) {
     } else if (rawType === 'entrance' || rawType === 'mock') {
       displayType = 'Mock Exam';
       displayExamName = data.examName || 'Mock Entrance Exam Review';
+    }
+
+    // Register all identifier keys to prevent duplicate "Camera bypassed" rows from evaluations
+    if (data.studentCode) {
+      existingReviewKeys.add(`${data.studentCode}_${doc.id}`);
+      existingReviewKeys.add(doc.id);
+      if (data.reviewId) {
+        existingReviewKeys.add(`${data.studentCode}_${data.reviewId}`);
+        existingReviewKeys.add(data.reviewId);
+        if (typeof data.reviewId === 'string' && data.reviewId.includes(',')) {
+          data.reviewId.split(',').forEach((subId: string) => {
+            const trimmed = subId.trim();
+            if (trimmed) {
+              existingReviewKeys.add(`${data.studentCode}_${trimmed}`);
+              existingReviewKeys.add(trimmed);
+            }
+          });
+        }
+      }
+      if (data.examId) {
+        existingReviewKeys.add(`${data.studentCode}_${data.examId}`);
+        existingReviewKeys.add(data.examId);
+      }
     }
 
     records.push({
@@ -803,7 +835,6 @@ async function handleParentPending(req: NextRequest) {
     });
   });
 
-  const existingExamIds = new Set(records.map(r => `${r.studentCode}_${r.id}`));
   evalSnap.docs.forEach((doc: any) => {
     const data = doc.data();
     
@@ -814,25 +845,36 @@ async function handleParentPending(req: NextRequest) {
     const studentInfo = activeStudentsMap.get(data.studentCode);
     if (!studentInfo) return;
 
-    const actor = (data.reviewedByActor === 'student' || data.evaluatorType === 'student') ? 'student' : 'parent';
-    const key = `${data.studentCode}_${doc.id}`;
-    if (!existingExamIds.has(key)) {
-      records.push({
-        id: doc.id,
-        studentCode: data.studentCode,
-        studentName: studentInfo.name || data.studentName || 'Student',
-        className: studentInfo.className,
-        batchIds: studentInfo.batchIds,
-        examName: data.examName || (data.modelAnswerVersion === 'objective' ? 'Objective Exam Review' : 'Subjective Exam Review'),
-        type: data.modelAnswerVersion === 'objective' ? 'Objective Exam' : 'Subjective Exam',
-        reviewedByActor: actor,
-        reviewedByEmail: data.evaluatorName || '',
-        photoThumbnail: null,
-        photoPurged: false,
-        expiresAt: null,
-        timestamp: data.createdAt?.toDate?.()?.toISOString?.() || new Date().toISOString()
-      });
+    const evalDocId = doc.id;
+    const legacyId = data.legacyId || '';
+    const examId = data.examId || '';
+
+    // Strictly deduplicate: if captured in parentSincerityLogs, skip duplicate entry
+    if (
+      existingReviewKeys.has(`${data.studentCode}_${evalDocId}`) ||
+      existingReviewKeys.has(evalDocId) ||
+      (legacyId && (existingReviewKeys.has(`${data.studentCode}_${legacyId}`) || existingReviewKeys.has(legacyId))) ||
+      (examId && (existingReviewKeys.has(`${data.studentCode}_${examId}`) || existingReviewKeys.has(examId)))
+    ) {
+      return;
     }
+
+    const actor = (data.reviewedByActor === 'student' || data.evaluatorType === 'student') ? 'student' : 'parent';
+    records.push({
+      id: doc.id,
+      studentCode: data.studentCode,
+      studentName: studentInfo.name || data.studentName || 'Student',
+      className: studentInfo.className,
+      batchIds: studentInfo.batchIds,
+      examName: data.examName || (data.modelAnswerVersion === 'objective' ? 'Objective Exam Review' : 'Subjective Exam Review'),
+      type: data.modelAnswerVersion === 'objective' ? 'Objective Exam' : 'Subjective Exam',
+      reviewedByActor: actor,
+      reviewedByEmail: data.evaluatorName || '',
+      photoThumbnail: null,
+      photoPurged: false,
+      expiresAt: null,
+      timestamp: data.createdAt?.toDate?.()?.toISOString?.() || new Date().toISOString()
+    });
   });
 
   if (purgeCount > 0) {
