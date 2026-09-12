@@ -12,17 +12,35 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [theme, setTheme] = useState<Theme>('light');
+  const [theme, setTheme] = useState<Theme>('dark');
 
   useEffect(() => {
-    setTheme('light');
-    document.documentElement.setAttribute('data-theme', 'light');
-    document.documentElement.classList.remove('dark');
-    document.documentElement.classList.add('light');
+    const storedTheme = (localStorage.getItem('los_theme') as Theme) || 'dark';
+    setTheme(storedTheme);
+    document.documentElement.setAttribute('data-theme', storedTheme);
+    if (storedTheme === 'dark') {
+      document.documentElement.classList.add('dark');
+      document.documentElement.classList.remove('light');
+    } else {
+      document.documentElement.classList.add('light');
+      document.documentElement.classList.remove('dark');
+    }
   }, []);
 
   const toggleTheme = () => {
-    // Locked to sleek unified dark theme
+    setTheme(prev => {
+      const nextTheme = prev === 'dark' ? 'light' : 'dark';
+      localStorage.setItem('los_theme', nextTheme);
+      document.documentElement.setAttribute('data-theme', nextTheme);
+      if (nextTheme === 'dark') {
+        document.documentElement.classList.add('dark');
+        document.documentElement.classList.remove('light');
+      } else {
+        document.documentElement.classList.add('light');
+        document.documentElement.classList.remove('dark');
+      }
+      return nextTheme;
+    });
   };
 
   return (

@@ -3,63 +3,63 @@
    Liquid Glass Surfaces, Specular Highlights & Cupertino Ergonomics
    ============================================================ */
 
-/* ---------- 1. DESIGN SYSTEM VARIABLES (Modern Educational Focused Palette) ---------- */
+/* ---------- 1. DESIGN SYSTEM VARIABLES (Option 2: Matte Obsidian Charcoal & Warm Amber) ---------- */
 :root,
-html[data-theme="light"],
-html.light {
-    --bg: #f8fafc;
-    --bg-soft: #f1f5f9;
-    --bg-grad: #f8fafc;
+html[data-theme="dark"],
+html.dark {
+    --bg: #121215;
+    --bg-soft: #18181c;
+    --bg-grad: #121215;
 
-    /* Clean Elevated White & Light Slate Surfaces */
-    --surface: #ffffff;
-    --surface-2: #f8fafc;
-    --surface-3: #f1f5f9;
-    --surface-tint: rgba(37, 99, 235, 0.02);
-    --surface-glass: #ffffff;
-    --surface-popover: #ffffff;
-    --border-popover: rgba(0, 0, 0, 0.12);
+    /* Elevated Matte Charcoal & Zinc Surfaces */
+    --surface: #1b1b20;
+    --surface-2: #22222a;
+    --surface-3: #2a2a34;
+    --surface-tint: rgba(245, 158, 11, 0.03);
+    --surface-glass: rgba(27, 27, 32, 0.85);
+    --surface-popover: #1f1f26;
+    --border-popover: rgba(255, 255, 255, 0.12);
 
-    /* Crisp Defined High-Contrast Borders */
-    --border: #cbd5e1;
-    --border-light: #e2e8f0;
-    --border-glass: #cbd5e1;
+    /* Clean Subtle Low-Glare Borders */
+    --border: rgba(255, 255, 255, 0.10);
+    --border-light: rgba(255, 255, 255, 0.06);
+    --border-glass: rgba(255, 255, 255, 0.12);
 
-    /* Crisp High-Contrast Typography */
-    --text: #0f172a;
-    --text-2: #334155;
-    --text-secondary: #475569;
-    --text-muted: #64748b;
-    --text-faint: #94a3b8;
+    /* Ergonomic Warm Typography (Anti-Halation & Zero Glare) */
+    --text: #edeef0;
+    --text-2: #d4d4d8;
+    --text-secondary: #a1a1aa;
+    --text-muted: #71717a;
+    --text-faint: #52525b;
 
-    /* Primary Accent - Focused Intellectual Royal Indigo */
-    --accent: #2563eb;
-    --accent-dark: #1d4ed8;
-    --accent-grad: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-    --accent-soft: rgba(37, 99, 235, 0.08);
-    --accent-ring: rgba(37, 99, 235, 0.25);
-    --accent-tint: rgba(37, 99, 235, 0.04);
-    --accent-light: rgba(37, 99, 235, 0.06);
+    /* Primary Accent - Warm Amber Focus (Low-Stress Alertness) */
+    --accent: #f59e0b;
+    --accent-dark: #d97706;
+    --accent-grad: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    --accent-soft: rgba(245, 158, 11, 0.12);
+    --accent-ring: rgba(245, 158, 11, 0.25);
+    --accent-tint: rgba(245, 158, 11, 0.05);
+    --accent-light: rgba(245, 158, 11, 0.08);
 
     /* Rich Educational Category & Status Colors */
-    --success: #059669;
-    --warning: #d97706;
-    --danger: #dc2626;
-    --info: #0284c7;
-    --purple: #7c3aed;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --info: #38bdf8;
+    --purple: #a855f7;
 
-    --success-bg: #ecfdf5;
-    --warning-bg: #fffbeb;
-    --danger-bg: #fef2f2;
-    --info-bg: #f0f9ff;
-    --purple-bg: #f5f3ff;
+    --success-bg: rgba(16, 185, 129, 0.12);
+    --warning-bg: rgba(245, 158, 11, 0.12);
+    --danger-bg: rgba(239, 68, 68, 0.12);
+    --info-bg: rgba(56, 189, 248, 0.12);
+    --purple-bg: rgba(168, 85, 247, 0.12);
 
-    --review-card-bg: #ffffff;
-    --review-card-border: #cbd5e1;
-    --review-option-bg: #f8fafc;
-    --review-option-border: #cbd5e1;
+    --review-card-bg: #1b1b20;
+    --review-card-border: rgba(255, 255, 255, 0.09);
+    --review-option-bg: #22222a;
+    --review-option-border: rgba(255, 255, 255, 0.07);
 
-    --text-on-accent: #ffffff;
+    --text-on-accent: #121215;
 
     /* Professional Typography & Canonical Type Scale (SSOT) */
     --font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', var(--font-inter), 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
@@ -101,15 +101,15 @@ html.light {
     --glass-blur: blur(12px);
 
     /* Layered Soft Natural Drop Shadows */
-    --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.03);
-    --shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
-    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03);
-    --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
-    --shadow-glass: 0 2px 10px rgba(0, 0, 0, 0.04);
-    --card-hover-shadow: 0 8px 25px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.03);
+    --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.35);
+    --shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.40);
+    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.50);
+    --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.60);
+    --shadow-glass: 0 4px 16px rgba(0, 0, 0, 0.40);
+    --card-hover-shadow: 0 8px 24px rgba(0, 0, 0, 0.55);
 
     /* Focus */
-    --focus-ring: 0 0 0 3px rgba(37, 99, 235, 0.25);
+    --focus-ring: 0 0 0 3px rgba(245, 158, 11, 0.25);
 
     /* Smooth Transition */
     --ease: cubic-bezier(0.16, 1, 0.3, 1);
@@ -127,53 +127,56 @@ html.light {
     --z-tooltip: 6000;
 }
 
-/* Optional Dark Mode fallback */
-html[data-theme="dark"],
-html.dark {
-    --bg: #0d0f12;
-    --bg-soft: #13161a;
-    --bg-grad: #0d0f12;
-    --surface: #171a1f;
-    --surface-2: #1c2026;
-    --surface-3: #222730;
-    --surface-tint: rgba(255, 255, 255, 0.02);
-    --surface-glass: rgba(23, 26, 31, 0.85);
-    --surface-popover: #181c22;
-    --border-popover: rgba(255, 255, 255, 0.10);
-    --border: rgba(255, 255, 255, 0.09);
-    --border-light: rgba(255, 255, 255, 0.05);
-    --border-glass: rgba(255, 255, 255, 0.12);
-    --text: #f1f5f9;
-    --text-2: #e2e8f0;
-    --text-secondary: #cbd5e1;
-    --text-muted: #94a3b8;
-    --text-faint: #64748b;
-    --accent: #38bdf8;
-    --accent-dark: #0284c7;
-    --accent-grad: linear-gradient(135deg, #38bdf8 0%, #0284c7 100%);
-    --accent-soft: rgba(56, 189, 248, 0.12);
-    --accent-ring: rgba(56, 189, 248, 0.25);
-    --accent-tint: rgba(56, 189, 248, 0.05);
-    --accent-light: rgba(56, 189, 248, 0.08);
-    --success: #34d399;
-    --warning: #fbbf24;
-    --danger: #f87171;
-    --info: #38bdf8;
-    --success-bg: rgba(52, 211, 153, 0.12);
-    --warning-bg: rgba(251, 191, 36, 0.12);
-    --danger-bg: rgba(248, 113, 113, 0.12);
-    --info-bg: rgba(56, 189, 248, 0.12);
-    --review-card-bg: #171a1f;
-    --review-card-border: rgba(255, 255, 255, 0.09);
-    --review-option-bg: #1c2026;
-    --review-option-border: rgba(255, 255, 255, 0.06);
-    --text-on-accent: #171a1f;
-    --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.30);
-    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.40);
-    --shadow-md: 0 4px 12px -2px rgba(0, 0, 0, 0.50);
-    --shadow-lg: 0 10px 24px -4px rgba(0, 0, 0, 0.60);
-    --shadow-glass: 0 4px 16px rgba(0, 0, 0, 0.40);
-    --card-hover-shadow: 0 8px 24px rgba(0, 0, 0, 0.50);
+/* Light Theme Variables */
+html[data-theme="light"],
+html.light {
+    --bg: #f8fafc;
+    --bg-soft: #f1f5f9;
+    --bg-grad: #f8fafc;
+    --surface: #ffffff;
+    --surface-2: #f8fafc;
+    --surface-3: #f1f5f9;
+    --surface-tint: rgba(37, 99, 235, 0.02);
+    --surface-glass: #ffffff;
+    --surface-popover: #ffffff;
+    --border-popover: rgba(0, 0, 0, 0.12);
+    --border: #cbd5e1;
+    --border-light: #e2e8f0;
+    --border-glass: #cbd5e1;
+    --text: #0f172a;
+    --text-2: #334155;
+    --text-secondary: #475569;
+    --text-muted: #64748b;
+    --text-faint: #94a3b8;
+    --accent: #2563eb;
+    --accent-dark: #1d4ed8;
+    --accent-grad: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    --accent-soft: rgba(37, 99, 235, 0.08);
+    --accent-ring: rgba(37, 99, 235, 0.25);
+    --accent-tint: rgba(37, 99, 235, 0.04);
+    --accent-light: rgba(37, 99, 235, 0.06);
+    --success: #059669;
+    --warning: #d97706;
+    --danger: #dc2626;
+    --info: #0284c7;
+    --purple: #7c3aed;
+    --success-bg: #ecfdf5;
+    --warning-bg: #fffbeb;
+    --danger-bg: #fef2f2;
+    --info-bg: #f0f9ff;
+    --purple-bg: #f5f3ff;
+    --review-card-bg: #ffffff;
+    --review-card-border: #cbd5e1;
+    --review-option-bg: #f8fafc;
+    --review-option-border: #cbd5e1;
+    --text-on-accent: #ffffff;
+    --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.03);
+    --shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.06), 0 1px 4px rgba(0, 0, 0, 0.03);
+    --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
+    --shadow-glass: 0 2px 10px rgba(0, 0, 0, 0.04);
+    --card-hover-shadow: 0 8px 25px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.03);
+    --focus-ring: 0 0 0 3px rgba(37, 99, 235, 0.25);
 }
 
 /* ---------- 3. BASE RESET & VIEWPORT LOCK ---------- */

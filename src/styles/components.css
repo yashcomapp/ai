@@ -14,7 +14,7 @@
    1. CARD SYSTEM — Apple Frosted Glass & Cupertino Squircles
    ============================================================ */
 .card {
-    background: #ffffff;
+    background: var(--surface);
     border: 1.5px solid var(--border);
     border-radius: var(--radius);
     box-shadow: var(--shadow-sm);
