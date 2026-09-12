@@ -8,6 +8,7 @@ import { IntegrityService } from '@/services/integrity.service';
 import { MasteryService } from '@/services/mastery.service';
 import { notifyReviewPending } from '@/lib/notifications';
 import { invalidateCache } from '@/lib/firebase/cache';
+import { evaluateSessionSincerity } from '@/lib/practiceTimeUtils';
 
 const DIFFICULTY_WEIGHTS: Record<string, number> = { easy: 1, medium: 2, hard: 3 };
 const BLOOM_WEIGHTS: Record<string, number> = {
@@ -309,6 +310,17 @@ export class PracticeService {
         const validQuestionsCount = Math.max(1, evaluations.length - disputedCount);
         const scorePercent = Math.round((correctCount / validQuestionsCount) * 100);
 
+        // Evaluate Time Sincerity and Pacing Velocity
+        const sincerity = evaluateSessionSincerity({
+          questions: evaluations,
+          durationSpent: Number(durationSpent || 0),
+          scorePercent
+        });
+
+        if (sincerity.isSolvedTooFast && suspiciousLevel === 'green') {
+          suspiciousLevel = 'yellow';
+        }
+
         // Query existing parentReviews count for this student to determine the sequential practiceNumber
         let practiceNumber = 1;
         try {
@@ -336,6 +348,15 @@ export class PracticeService {
           masteryBefore: existingMastery,
           masteryAfter: finalMastery,
           masteryChange: finalMastery - existingMastery,
+          durationSpent: Number(durationSpent || 0),
+          idealTimeSeconds: sincerity.idealTimeSeconds,
+          minRealisticTimeSeconds: sincerity.minRealisticTimeSeconds,
+          sincerityPacingScore: sincerity.sincerityPacingScore,
+          isFastFluency: sincerity.isFastFluency,
+          isSolvedTooFast: sincerity.isSolvedTooFast,
+          feedbackBadge: sincerity.feedbackBadge || null,
+          parentAdvisory: sincerity.parentAdvisory || null,
+          parentAdvisoryMr: sincerity.parentAdvisoryMr || null,
           suspiciousLevel,
           strengths: strengths.slice(0, 3),
           needsAttention: needsAttention.slice(0, 3),

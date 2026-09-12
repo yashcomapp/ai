@@ -650,7 +650,17 @@ function TopicPracticeContent() {
     setSubmittedAnswers(submitted);
 
     if (!isCorrect) {
-      setExplanationTimer(30);
+      const qType = String(q.type || '').toLowerCase();
+      const qText = String(q.text || q.assertion || '');
+      const isMath = qText.includes('\\frac') || qText.includes('\\sqrt') || qText.includes('\\int') || qText.includes('=');
+      
+      let timerSec = 20; // 20s for factual recall
+      if (qType.includes('numerical') || isMath || qType === 'one' || qType === 'ssn' || qType === 'sln') {
+        timerSec = 40; // 40s for calculative / derivation problems
+      } else if (qType === 'assertion_reason' || qType === 'oar' || qType.includes('multi') || qText.length > 150) {
+        timerSec = 30; // 30s for conceptual & multi-statement logic
+      }
+      setExplanationTimer(timerSec);
     }
   };
 

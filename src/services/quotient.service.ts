@@ -9,6 +9,7 @@ import {
   ScoreResult, 
   StudentObservation 
 } from '@/types/quotient.types';
+import { evaluateSessionSincerity } from '@/lib/practiceTimeUtils';
 
 export const MASTERY_THRESHOLDS = {
   MASTERED_MASTERY: 90,
@@ -141,13 +142,43 @@ export class PracticeQualityCalculator implements ParameterCalculator {
         details: { 
           totalQuestionsAttempted: 0, 
           topicsAttemptedCount: 0, 
-          averageQuestionsPerTopic: 0 
+          averageQuestionsPerTopic: 0,
+          pacingScore: 0,
+          efficiencyScore: 0
         } 
       };
     }
 
     const totalQuestionsAttempted = parentReviews.reduce((sum: number, rev: any) => sum + (rev.totalQuestions || 0), 0);
 
+    // 1. Calculate Pacing / Sincerity Score from all practice reviews
+    let totalPacingScore = 0;
+    let rushedCount = 0;
+    let fluencyCount = 0;
+
+    parentReviews.forEach((rev: any) => {
+      let pacing = rev.sincerityPacingScore;
+      if (typeof pacing !== 'number') {
+        const sincerity = evaluateSessionSincerity({
+          questions: rev.questions || rev.questionDetails || [],
+          durationSpent: Number(rev.durationSpent || (rev.totalQuestions ? rev.totalQuestions * 35 : 180)),
+          scorePercent: Number(rev.scorePercent || 100)
+        });
+        pacing = sincerity.sincerityPacingScore;
+        if (sincerity.isSolvedTooFast) rushedCount++;
+        if (sincerity.isFastFluency) fluencyCount++;
+      } else {
+        if (rev.isSolvedTooFast) rushedCount++;
+        if (rev.isFastFluency) fluencyCount++;
+      }
+      totalPacingScore += pacing;
+    });
+
+    const averagePacingScore = parentReviews.length > 0
+      ? Math.round(totalPacingScore / parentReviews.length)
+      : 100;
+
+    // 2. Calculate Mastery Efficiency Score per topic
     const topicPracticeMap = new Map<string, number>();
     parentReviews.forEach((rev: any) => {
       const tCode = rev.topicCode;
@@ -165,25 +196,28 @@ export class PracticeQualityCalculator implements ParameterCalculator {
       }
     });
 
-    let totalQualityScore = 0;
+    let totalEfficiencyScore = 0;
     topicPracticeMap.forEach((q, topicCode) => {
       const mastery = masteryMap.get(topicCode) || 0;
       const confidence = confidenceMap.get(topicCode) || 0;
       
-      let topicQuality = 0;
+      let topicEfficiency = 0;
       if (mastery >= MASTERY_THRESHOLDS.MASTERED_MASTERY && confidence >= MASTERY_THRESHOLDS.MASTERED_CONFIDENCE) {
         const excess = Math.max(0, q - 20);
-        topicQuality = Math.max(30, 100 - excess * 1.5);
+        topicEfficiency = Math.max(40, 100 - excess * 1.5);
       } else {
         const excess = Math.max(0, q - 20);
-        topicQuality = Math.max(0, mastery - excess * 1.5);
+        topicEfficiency = Math.max(0, mastery - excess * 1.5);
       }
-      totalQualityScore += topicQuality;
+      totalEfficiencyScore += topicEfficiency;
     });
 
-    const qualityScore = topicPracticeMap.size > 0 
-      ? Math.round(totalQualityScore / topicPracticeMap.size)
-      : 0;
+    const averageEfficiencyScore = topicPracticeMap.size > 0 
+      ? Math.round(totalEfficiencyScore / topicPracticeMap.size)
+      : 100;
+
+    // Quality Score = 60% Pacing Sincerity + 40% Mastery Efficiency
+    const qualityScore = Math.max(0, Math.min(100, Math.round(averagePacingScore * 0.60 + averageEfficiencyScore * 0.40)));
 
     const averageQuestionsPerTopic = topicPracticeMap.size > 0
       ? Math.round((totalQuestionsAttempted / topicPracticeMap.size) * 10) / 10
@@ -194,7 +228,11 @@ export class PracticeQualityCalculator implements ParameterCalculator {
       details: {
         totalQuestionsAttempted,
         topicsAttemptedCount: topicPracticeMap.size,
-        averageQuestionsPerTopic
+        averageQuestionsPerTopic,
+        pacingScore: averagePacingScore,
+        efficiencyScore: averageEfficiencyScore,
+        rushedCount,
+        fluencyCount
       }
     };
   }

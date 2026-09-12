@@ -40,6 +40,15 @@ interface ReviewItem {
   unattemptedQuestions?: any[];
   wrongAnswerReasons?: any;
   proctoringViolationTriggered?: boolean;
+  durationSpent?: number;
+  idealTimeSeconds?: number;
+  minRealisticTimeSeconds?: number;
+  sincerityPacingScore?: number;
+  isFastFluency?: boolean;
+  isSolvedTooFast?: boolean;
+  feedbackBadge?: string;
+  parentAdvisory?: string;
+  parentAdvisoryMr?: string;
 }
 
 export default function ParentReviewPanel() {
@@ -1008,17 +1017,47 @@ export default function ParentReviewPanel() {
 
               {/* Practice Sets List */}
               <h5 style={{ fontSize: '13px', fontWeight: 800, margin: '0 0 10px 0', color: 'var(--text)' }}>📝 Attempted Practice Sets:</h5>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '220px', overflowY: 'auto' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '250px', overflowY: 'auto' }}>
                 {selectedDayGroup.items.map((item: any) => (
-                  <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', background: 'var(--bg-soft)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)' }}>
-                    <div>
-                      <strong style={{ fontSize: '12.5px', color: 'var(--text)', display: 'block' }}>{item.name}</strong>
-                      <span style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>Subject: {item.subject} • Chapter: {item.chapter}</span>
+                  <div key={item.id} style={{ display: 'flex', flexDirection: 'column', gap: '6px', padding: '10px 12px', background: 'var(--bg-soft)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                          <strong style={{ fontSize: '12.5px', color: 'var(--text)' }}>{item.name}</strong>
+                          {item.feedbackBadge && (
+                            <span style={{
+                              fontSize: '10px',
+                              fontWeight: 700,
+                              padding: '2px 6px',
+                              borderRadius: '4px',
+                              background: item.isSolvedTooFast ? 'rgba(239, 68, 68, 0.15)' : 'rgba(16, 185, 129, 0.15)',
+                              color: item.isSolvedTooFast ? '#ef4444' : '#10b981',
+                              border: `1px solid ${item.isSolvedTooFast ? 'rgba(239, 68, 68, 0.3)' : 'rgba(16, 185, 129, 0.3)'}`
+                            }}>
+                              {item.feedbackBadge}
+                            </span>
+                          )}
+                        </div>
+                        <span style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>Subject: {item.subject} • Chapter: {item.chapter}</span>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <strong style={{ fontSize: '13px', color: 'var(--accent)' }}>{item.scorePercent}%</strong>
+                        <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{item.correctCount}/{item.totalQuestions} Qs</div>
+                      </div>
                     </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <strong style={{ fontSize: '13px', color: 'var(--accent)' }}>{item.scorePercent}%</strong>
-                      <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{item.correctCount}/{item.totalQuestions} Qs</div>
-                    </div>
+                    {item.parentAdvisory && (
+                      <div style={{
+                        fontSize: '11px',
+                        lineHeight: 1.4,
+                        color: item.isSolvedTooFast ? '#fca5a5' : 'var(--text-muted)',
+                        background: item.isSolvedTooFast ? 'rgba(239, 68, 68, 0.08)' : 'rgba(255, 255, 255, 0.03)',
+                        padding: '6px 8px',
+                        borderRadius: '4px',
+                        borderLeft: `3px solid ${item.isSolvedTooFast ? '#ef4444' : 'var(--accent)'}`
+                      }}>
+                        💬 {item.parentAdvisory}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
