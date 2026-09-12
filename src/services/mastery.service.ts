@@ -167,6 +167,7 @@ export class MasteryService {
     if (!resolvedClass) {
       try {
         const userSnap = await adminDb.collection('users')
+          .where('role', '==', 'student')
           .where('studentCode', '==', studentCode)
           .limit(1)
           .get();

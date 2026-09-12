@@ -52,6 +52,7 @@ export class ReviewService {
       const allAssignsQuery = adminDb.collection('peerAssignments').where('examId', '==', examId);
       const examRef = adminDb.collection('subjectiveExams').doc(examId);
       const revieweeUserQuery = adminDb.collection('users')
+        .where('role', '==', 'student')
         .where('studentCode', '==', revieweeCode)
         .limit(1);
 
