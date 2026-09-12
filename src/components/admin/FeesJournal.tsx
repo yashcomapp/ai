@@ -1394,10 +1394,10 @@ export default function FeesJournal({
                         <td style={{ padding: '12px 14px', fontSize: '13px', fontWeight: 700, textAlign: 'right' }}>
                           ₹{s.fee?.netPayableAmount !== undefined ? s.fee.netPayableAmount.toLocaleString('en-IN') : '--'}
                         </td>
-                        <td style={{ padding: '12px 14px', fontSize: '13px', color: 'var(--success)', fontWeight: 700, textAlign: 'right' }}>
+                        <td style={{ padding: '12px 14px', fontSize: '13px', color: 'var(--text)', fontWeight: 600, textAlign: 'right' }}>
                           ₹{s.fee?.totalPaidAmount !== undefined ? s.fee.totalPaidAmount.toLocaleString('en-IN') : '--'}
                         </td>
-                        <td style={{ padding: '12px 14px', fontSize: '13px', color: 'var(--danger)', fontWeight: 700, textAlign: 'right' }}>
+                        <td style={{ padding: '12px 14px', fontSize: '13px', color: (s.fee?.outstandingAmount || 0) > 0 && s.fee?.hasOverdueInstallment ? 'var(--danger-muted)' : 'var(--text)', fontWeight: 700, textAlign: 'right' }}>
                           ₹{s.fee?.outstandingAmount !== undefined ? s.fee.outstandingAmount.toLocaleString('en-IN') : '--'}
                         </td>
                         <td style={{ padding: '12px 14px' }}>

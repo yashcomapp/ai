@@ -617,11 +617,11 @@
     color: var(--text-2);
     border: 1px solid var(--border);
 }
-.badge-primary { background: var(--accent-soft); color: var(--accent); border-color: transparent; }
-.badge-success { background: var(--success-bg); color: var(--success); border-color: transparent; }
-.badge-danger  { background: var(--danger-bg);  color: var(--danger);  border-color: transparent; }
-.badge-warning { background: var(--warning-bg); color: var(--warning); border-color: transparent; }
-.badge-info    { background: var(--info-bg);    color: var(--info);    border-color: transparent; }
+.badge-primary { background: var(--accent-soft); color: var(--accent); border: 1px solid var(--accent-ring); }
+.badge-success { background: var(--success-bg); color: var(--success); border: 1px solid rgba(52, 211, 153, 0.22); }
+.badge-danger  { background: var(--danger-bg);  color: var(--danger);  border: 1px solid rgba(248, 113, 113, 0.22); }
+.badge-warning { background: var(--warning-bg); color: var(--warning); border: 1px solid rgba(251, 191, 36, 0.22); }
+.badge-info    { background: var(--info-bg);    color: var(--info);    border: 1px solid rgba(56, 189, 248, 0.22); }
 
 .role-pill {
     display: inline-flex;

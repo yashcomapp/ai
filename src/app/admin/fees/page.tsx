@@ -745,10 +745,10 @@ function AdminFeesContent() {
                           <td style={{ padding: '14px 16px', fontSize: '13px', fontWeight: 700 }}>
                             ₹{s.fee?.netPayableAmount !== undefined ? s.fee.netPayableAmount : '--'}
                           </td>
-                          <td style={{ padding: '14px 16px', fontSize: '13px', color: 'var(--success)', fontWeight: 700 }}>
+                          <td style={{ padding: '14px 16px', fontSize: '13px', color: 'var(--text)', fontWeight: 600 }}>
                             ₹{s.fee?.totalPaidAmount !== undefined ? s.fee.totalPaidAmount : '--'}
                           </td>
-                          <td style={{ padding: '14px 16px', fontSize: '13px', color: 'var(--danger)', fontWeight: 700 }}>
+                          <td style={{ padding: '14px 16px', fontSize: '13px', color: (s.fee?.outstandingAmount || 0) > 0 && s.fee?.hasOverdueInstallment ? 'var(--danger-muted)' : 'var(--text)', fontWeight: 700 }}>
                             ₹{s.fee?.outstandingAmount !== undefined ? s.fee.outstandingAmount : '--'}
                           </td>
                           <td style={{ padding: '14px 16px' }}>
