@@ -749,9 +749,12 @@ export async function getParentDashboardData(
   const inProgressTopicCodes = new Set<string>();
 
   masteriesList.forEach(m => {
-    const mLevel = Number(m.masteryLevel) || 0;
+    const mLevel = Number(m.masteryLevel || m.mastery) || 0;
     const conf = Number(m.confidence) || 0;
-    const isMastered = (mLevel >= 90 && conf >= 20) || m.isRecoveryMastered === true;
+    const practiceQuestions = Number(m.practiceQuestionsAttempted || 0);
+    const practiceCount = Number(m.practiceCount || 0);
+    const hasPractice = practiceQuestions >= 12 || practiceCount >= 1 || (conf >= 20 && !m.examQuestionsAttempted) || m.isRecoveryMastered === true;
+    const isMastered = (mLevel >= 90 && conf >= 20 && hasPractice) || m.isRecoveryMastered === true;
     const sData = syllabusMap.get(m.topicCode);
     const displayName = sData ? `${sData.chapterName} — ${sData.topicName}` : (m.topicName || m.topicCode || 'Topic');
 

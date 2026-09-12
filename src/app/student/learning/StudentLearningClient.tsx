@@ -35,6 +35,8 @@ interface TopicItem {
   requiredConfidence?: number;
   isAbsentExam?: boolean;
   isRecoveryMastered?: boolean;
+  isExamStrong?: boolean;
+  practiceQuestionsAttempted?: number;
 }
 
 interface LearningPathData {
@@ -623,7 +625,11 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                                               expText = `${practiceCount}/5 practices done (${mastery}% accuracy). ${5 - practiceCount} practice(s) left — focus on weak areas.`;
                                             }
                                           } else if (state === 'continuePractice') {
-                                            if (isLimitReached) {
+                                            if (topic.isExamStrong || (mastery >= 90 && practiceCount === 0)) {
+                                              expIcon = '🔥';
+                                              expColor = '#f59e0b';
+                                              expText = `🔥 High Exam Score (${mastery}%)! Complete 1 practice set (10–15 Qs) to achieve Certified Green Mastery & boost your Practice LQ!`;
+                                            } else if (isLimitReached) {
                                               expIcon = '⚡';
                                               expColor = 'var(--accent)';
                                               expText = `5/5 practices done (${mastery}% accuracy). Take the Recovery Quiz (Fresh + Missed Qs) to achieve Mastered!`;

@@ -9,7 +9,11 @@ export interface TopicMasteryRecord {
   weightedPointsEarned: number;
   weightedPointsPossible: number;
   lastExamCode: string;
-  questionHistory: { questionId: string; seenAt: any; wasCorrect: boolean }[];
+  questionHistory?: { questionId: string; seenAt: any; wasCorrect: boolean }[];
+  isRecoveryMastered?: boolean;
+  practiceQuestionsAttempted?: number;
+  examQuestionsAttempted?: number;
+  practiceCount?: number;
   createdAt: any;
   updatedAt?: any;
 }

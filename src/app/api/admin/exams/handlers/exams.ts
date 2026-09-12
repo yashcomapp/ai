@@ -46,10 +46,14 @@ export async function GET(req: NextRequest) {
       ]);
 
       const practiceCountMap = new Map<string, number>();
+      const practiceQuestionsMap = new Map<string, number>();
       parentReviewsSnap.docs.forEach(doc => {
-        const tCode = doc.data().topicCode;
+        const data = doc.data();
+        const tCode = data.topicCode;
         if (tCode) {
           practiceCountMap.set(tCode, (practiceCountMap.get(tCode) || 0) + 1);
+          const qCount = Number(data.questionsCount || data.totalQuestions || (Array.isArray(data.questions) ? data.questions.length : (data.questionDetails?.length || 0)));
+          practiceQuestionsMap.set(tCode, (practiceQuestionsMap.get(tCode) || 0) + qCount);
         }
       });
 
@@ -81,8 +85,11 @@ export async function GET(req: NextRequest) {
         const mastery = Number(d.mastery || 0);
         const confidence = Number(d.confidence || 0);
         const practiceCount = practiceCountMap.get(tCode) || 0;
+        const practiceQuestions = Number(d.practiceQuestionsAttempted || practiceQuestionsMap.get(tCode) || 0);
         const attempts = d.questionsAttempted || d.attempts || 0;
         const isRecovery = !!d.isRecoveryMastered;
+        const hasPracticeBaseline = practiceQuestions >= 12 || practiceCount >= 1 || isRecovery;
+        const isExamStrong = mastery >= 90 && !hasPracticeBaseline;
         const isLimitReached = practiceCount >= 5;
 
         let state = 'needsAttention';
@@ -94,7 +101,7 @@ export async function GET(req: NextRequest) {
         const targetQ = sData.targetQuestions || d.targetQuestions;
         const reqConfidence = getRequiredConfidence(classification, targetQ);
 
-        if ((mastery >= 90 && confidence >= reqConfidence) || isRecovery) {
+        if ((mastery >= 90 && confidence >= reqConfidence && hasPracticeBaseline) || isRecovery) {
           state = 'mastered';
           if (isRecovery) {
             expIcon = '⚡';
@@ -121,8 +128,13 @@ export async function GET(req: NextRequest) {
             expColor,
             expText
           });
-        } else if (mastery >= 50) {
-          if (mastery >= 90 && confidence < reqConfidence) {
+        } else if (mastery >= 50 || isExamStrong) {
+          if (isExamStrong) {
+            state = 'continuePractice';
+            expIcon = '🔥';
+            expColor = '#f59e0b';
+            expText = `🔥 High Exam Score (${mastery}%)! Complete 1 practice set (10–15 Qs) to achieve Certified Green Mastery & boost Practice LQ!`;
+          } else if (mastery >= 90 && confidence < reqConfidence) {
             state = 'revision';
             const needed = Math.max(1, reqConfidence - attempts);
             expIcon = '📖';

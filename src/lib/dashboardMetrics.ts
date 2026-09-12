@@ -133,6 +133,9 @@ export function calculateUnifiedMetrics(input: UnifiedMetricsInput): UnifiedMetr
     const mastery = Number(t.mastery || 0);
     const confidence = Number(t.confidence || 0);
     const isRecovery = !!t.isRecoveryMastered;
+    const practiceQuestions = Number(t.practiceQuestionsAttempted || 0);
+    const practiceCount = Number(t.practiceCount || 0);
+    const hasPracticeBaseline = practiceQuestions >= 12 || practiceCount >= 1 || (confidence >= 20 && !t.examQuestionsAttempted) || isRecovery;
 
     if (isRecovery && mastery >= 90) {
       recoveryMasteredCount += 1;
@@ -142,7 +145,7 @@ export function calculateUnifiedMetrics(input: UnifiedMetricsInput): UnifiedMetr
 
       if (mastery < 50) {
         needsAttentionTopicsCount += 1;
-      } else if (mastery >= 90 && confidence >= 20) {
+      } else if (mastery >= 90 && confidence >= 20 && hasPracticeBaseline) {
         certifiedMasteredCount += 1;
       }
     }

@@ -853,11 +853,10 @@ export function getRequiredConfidence(topicClassification?: string, targetQuesti
   return 10;
 }
 
-function getTopicState(mastery: number, confidence: number, requiredConfidence = 10): string {
+function getTopicState(mastery: number, confidence: number, requiredConfidence = 10, hasPracticeBaseline = true): string {
   if (mastery < 25) return 'Started';
   if (mastery < 50) return 'Learning';
-  if (mastery < 90) return 'Practicing';
-  if (mastery >= 90 && confidence >= requiredConfidence) return 'Mastered';
+  if (mastery >= 90 && confidence >= requiredConfidence && hasPracticeBaseline) return 'Mastered';
   return 'Practicing';
 }
 
@@ -1099,10 +1098,14 @@ export async function getStudentLearningData(userData: any) {
   }
 
   const practiceCountMap = new Map<string, number>();
+  const practiceQuestionsMap = new Map<string, number>();
   parentReviewsSnap.docs.forEach(doc => {
-    const tCode = doc.data().topicCode;
+    const data = doc.data();
+    const tCode = data.topicCode;
     if (tCode) {
       practiceCountMap.set(tCode, (practiceCountMap.get(tCode) || 0) + 1);
+      const qCount = Number(data.questionsCount || data.totalQuestions || (Array.isArray(data.questions) ? data.questions.length : (data.questionDetails?.length || 0)));
+      practiceQuestionsMap.set(tCode, (practiceQuestionsMap.get(tCode) || 0) + qCount);
     }
   });
 
@@ -1128,9 +1131,13 @@ export async function getStudentLearningData(userData: any) {
     const mastery = mData?.hasOwnProperty('mastery') ? Number(mData.mastery || 0) : 0;
     const confidence = mData?.hasOwnProperty('confidence') ? Number(mData.confidence || 0) : 0;
     const priorityScore = isAbsentExam ? 999 : calculatePriority(mastery, confidence, reqConf);
-    const state = getTopicState(mastery, confidence, reqConf);
     const practiceCount = practiceCountMap.get(topicCode) || 0;
+    const practiceQuestionsAttempted = Number(mData?.practiceQuestionsAttempted || practiceQuestionsMap.get(topicCode) || 0);
     const isRecoveryMastered = !!mData?.isRecoveryMastered;
+    const hasPracticeBaseline = practiceQuestionsAttempted >= 12 || practiceCount >= 1 || isRecoveryMastered;
+    const isExamStrong = mastery >= 90 && !hasPracticeBaseline;
+    const isCertifiedMastered = ((mastery >= 90 && confidence >= reqConf && hasPracticeBaseline) || isRecoveryMastered);
+    const state = getTopicState(mastery, confidence, reqConf, hasPracticeBaseline);
     const attempts = mData?.questionsAttempted || mData?.attempts || 0;
     const subCode = sData.subjectCode || (topicCode ? topicCode.split('-')[2] : '') || '';
     const subName = sData.subjectName || getCanonicalSubjectName(subCode, topicCode, sData.chapterName);
@@ -1151,6 +1158,8 @@ export async function getStudentLearningData(userData: any) {
       priorityScore,
       isAbsentExam,
       isRecoveryMastered,
+      isExamStrong,
+      practiceQuestionsAttempted,
       lastAttempt: mData?.updatedAt?.toDate ? mData.updatedAt.toDate().toISOString() : mData?.updatedAt || mData?.lastAttempt || null,
       attempts,
       lastScore: mData?.lastScore || 0,
@@ -1163,10 +1172,10 @@ export async function getStudentLearningData(userData: any) {
     // If a student already has >=50% mastery on a topic, historical absent exams do not override their progress.
     if (mastery < 50 || (attempts === 0 && isAbsentExam)) {
       needsAttention.push({ ...topicItem, state: 'needsAttention' });
-    } else if (mastery < 90) {
+    } else if (mastery < 90 || isExamStrong) {
       continuePractice.push({ ...topicItem, state: 'continuePractice' });
     } else {
-      if ((mastery >= 90 && confidence >= reqConf) || isRecoveryMastered) {
+      if (isCertifiedMastered) {
         mastered.push({ ...topicItem, state: 'mastered' });
       } else {
         revision.push({ ...topicItem, state: 'revision' });

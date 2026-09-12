@@ -201,6 +201,7 @@ export class PracticeQualityCalculator implements ParameterCalculator {
 }
 
 // Strategy 3: Topic Health (Mastery Ratios)
+// Strategy 3: Topic Health (Continuous Mastery & Retention)
 export class TopicHealthCalculator implements ParameterCalculator {
   id = 'topicHealth';
   name = 'Topic Health';
@@ -209,54 +210,46 @@ export class TopicHealthCalculator implements ParameterCalculator {
   calculate(data: StudentData): ScoreResult {
     const { practiceRecords, assignedTopics } = data;
     
-    // If no assigned topics are resolved, fallback to the old behavior using practiceRecords
+    // If no assigned topics are resolved, fallback using practiceRecords
     if (!assignedTopics || assignedTopics.length === 0) {
       if (practiceRecords.length === 0) {
         return { score: 0, details: { totalTopics: 0, masteredCount: 0, attentionCount: 0 } };
       }
-      const totalTopics = Math.max(15, practiceRecords.length);
-      let weightedMasteredCount = 0;
+      const totalTopics = practiceRecords.length;
+      let totalMasteryEarned = 0;
       let attentionCount = 0;
+      let masteredCount = 0;
       practiceRecords.forEach(rec => {
-        const mastery = rec.mastery || 0;
-        const confidence = rec.confidence || 0;
-        if (mastery >= MASTERY_THRESHOLDS.MASTERED_MASTERY && confidence >= MASTERY_THRESHOLDS.MASTERED_CONFIDENCE) {
-          weightedMasteredCount += 1.0;
-        } else if (mastery >= MASTERY_THRESHOLDS.MEDIUM_HIGH_MASTERY) {
-          weightedMasteredCount += 0.8;
-        } else if (mastery >= MASTERY_THRESHOLDS.MEDIUM_MASTERY) {
-          weightedMasteredCount += 0.5;
-        } else {
-          attentionCount++;
+        const mastery = Number(rec.mastery || 0);
+        const confidence = Number(rec.confidence || 0);
+        const isRecovery = Boolean(rec.isRecoveryMastered);
+        if (isRecovery || (mastery >= 90 && confidence >= 20)) {
+          masteredCount++;
         }
+        if (mastery < 50) attentionCount++;
+        const confidenceFactor = Math.min(1, Math.max(0.5, confidence / 20));
+        totalMasteryEarned += mastery * confidenceFactor;
       });
-
-      // Compensate attentionCount for unattempted baseline topics (if practiceRecords.length < 15)
-      if (practiceRecords.length < 15) {
-        attentionCount += (15 - practiceRecords.length);
-      }
-
-      const masteryRatio = weightedMasteredCount / totalTopics;
-      const attentionRatio = attentionCount / totalTopics;
-      const score = Math.max(0, Math.round((masteryRatio - 0.25 * attentionRatio) * 100));
+      const score = Math.max(0, Math.min(100, Math.round(totalMasteryEarned / totalTopics)));
       return {
         score,
         details: {
           totalTopics,
-          weightedMasteredCount: Math.round(weightedMasteredCount * 10) / 10,
+          masteredCount,
           attentionCount,
-          masteryRatio: Math.round(masteryRatio * 100),
-          attentionRatio: Math.round(attentionRatio * 100),
+          masteryRatio: totalTopics > 0 ? Math.round((masteredCount / totalTopics) * 100) : 0,
+          attentionRatio: totalTopics > 0 ? Math.round((attentionCount / totalTopics) * 100) : 0,
           fallbackUsed: true
         }
       };
     }
 
     const totalTopics = assignedTopics.length;
-    let weightedMasteredCount = 0;
+    let totalMasteryEarned = 0;
     let attentionCount = 0;
+    let masteredCount = 0;
 
-    // Create a lookup map of attempted practice records by topicCode using all-time practice records (fallback to filtered if not provided)
+    // Create a lookup map of attempted practice records by topicCode using all-time practice records
     const practiceMap = new Map();
     const recordsToUse = data.allPracticeRecords || practiceRecords;
     recordsToUse.forEach((rec: any) => {
@@ -269,37 +262,44 @@ export class TopicHealthCalculator implements ParameterCalculator {
     assignedTopics.forEach((topicCode: string) => {
       const record = practiceMap.get(topicCode);
       if (record) {
-        const mastery = record.mastery || 0;
-        const confidence = record.confidence || 0;
-        if (mastery >= MASTERY_THRESHOLDS.MASTERED_MASTERY && confidence >= MASTERY_THRESHOLDS.MASTERED_CONFIDENCE) {
-          weightedMasteredCount += 1.0;
-        } else if (mastery >= MASTERY_THRESHOLDS.MEDIUM_HIGH_MASTERY) {
-          weightedMasteredCount += 0.8;
-        } else if (mastery >= MASTERY_THRESHOLDS.MEDIUM_MASTERY) {
-          weightedMasteredCount += 0.5;
-        } else {
+        const mastery = Number(record.mastery || 0);
+        const confidence = Number(record.confidence || 0);
+        const isRecovery = Boolean(record.isRecoveryMastered);
+
+        if (isRecovery || (mastery >= 90 && confidence >= 20)) {
+          masteredCount++;
+        }
+
+        if (mastery < 50) {
           attentionCount++;
         }
+
+        // Continuous confidence scaling: scales proportionally up to 1.0 at 20 questions
+        const confidenceFactor = Math.min(1, Math.max(0.5, confidence / 20));
+        const effectiveTopicScore = mastery * confidenceFactor;
+        totalMasteryEarned += effectiveTopicScore;
       } else {
-        // Not even started or opened: counts as 0% mastery, so it needs attention!
+        // Not even started or opened: counts as 0% mastery, needs attention
         attentionCount++;
       }
     });
 
-    const masteryRatio = weightedMasteredCount / totalTopics;
-    const attentionRatio = attentionCount / totalTopics;
-
-    // Deduct penalty of 0.25 * attentionRatio (discourages leaving topics below 50% / unattempted)
-    const score = Math.max(0, Math.round((masteryRatio - 0.25 * attentionRatio) * 100));
+    const averageTopicHealth = totalTopics > 0 ? (totalMasteryEarned / totalTopics) : 0;
+    const attentionRatio = totalTopics > 0 ? (attentionCount / totalTopics) : 0;
+    
+    // Penalize heavily unattempted topics proportionally
+    const penalty = attentionRatio > 0.5 ? (attentionRatio - 0.5) * 20 : 0;
+    const score = Math.max(0, Math.min(100, Math.round(averageTopicHealth - penalty)));
 
     return {
       score,
       details: {
         totalTopics,
-        weightedMasteredCount: Math.round(weightedMasteredCount * 10) / 10,
+        masteredCount,
         attentionCount,
-        masteryRatio: Math.round(masteryRatio * 100),
-        attentionRatio: Math.round(attentionRatio * 100),
+        masteryRatio: totalTopics > 0 ? Math.round((masteredCount / totalTopics) * 100) : 0,
+        attentionRatio: totalTopics > 0 ? Math.round((attentionRatio) * 100) : 0,
+        averageMastery: Math.round(averageTopicHealth),
         fallbackUsed: false
       }
     };
