@@ -73,7 +73,7 @@ export async function GET(req: NextRequest) {
       const targetTypes = questionType === 'subjective' ? SUBJECTIVE_TYPES : OBJECTIVE_TYPES;
 
       const boardLower = String(board).toLowerCase();
-      const subjectLower = String(subject).toLowerCase();
+      const searchSubjects = subject.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
 
       const pool = questionsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() as any }))
         .filter(q => {
@@ -86,10 +86,9 @@ export async function GET(req: NextRequest) {
                          (boardLower.includes('mh') && (b.includes('mh') || b.includes('maharashtra'))) ||
                          (boardLower.includes('maharashtra') && (b.includes('mh') || b.includes('maharashtra')));
 
-          const sMatch = !subject || s === subjectLower || 
-                         sc === subjectLower ||
-                         s.includes(subjectLower) ||
-                         subjectLower.includes(s);
+          const sMatch = searchSubjects.length === 0 || searchSubjects.some(subLower => 
+            s === subLower || sc === subLower || s.includes(subLower) || subLower.includes(s)
+          );
 
           if (!bMatch || !sMatch) return false;
 
@@ -98,7 +97,9 @@ export async function GET(req: NextRequest) {
                          usedInExamsSet.has(String(q.id || '').trim()) || 
                          usedInExamsSet.has(String(q.questionCode || '').trim());
           const unusedMatch = !isUsed;
-          const categoryMatch = (q.examCategory || 'standard') === examCategory;
+          const categoryMatch = !examCategory || 
+                                examCategory === 'mock' || 
+                                (examCategory === 'foundation' ? (q.examCategory === 'foundation' || q.difficulty === 'hard' || (q.examCategory || 'standard') === 'standard') : (q.examCategory || 'standard') === examCategory);
 
           const searchTopics = topicNumbers.map(t => String(t).trim()).filter(Boolean);
           if (searchTopics.length === 0) return typeMatch && unusedMatch && categoryMatch;
@@ -537,6 +538,8 @@ export async function POST(req: NextRequest) {
         topicCodes: topicCodes || [],
         isMixed: !!isMixed,
         examType: examType || (isAllSubjective ? 'subjective' : 'obj'),
+        examCategory: body.examCategory || templateDetails?.examCategory || 'standard',
+        isMasteryExempt: body.isMasteryExempt ?? (body.examCategory === 'mock' || body.examCategory === 'foundation' || templateDetails?.examCategory === 'mock' || templateDetails?.examCategory === 'foundation'),
         totalMarks: Number(totalMarks) || 0,
         questionCount: Array.isArray(questionCodes) ? questionCodes.length : 0,
         status: 'active',

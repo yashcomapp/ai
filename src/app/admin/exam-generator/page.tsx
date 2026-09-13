@@ -24,7 +24,7 @@ interface Template {
   typeCounts?: { [key: string]: number };
   objectiveDistribution?: { [key: string]: number };
   subjectiveDistribution?: { [key: string]: number };
-  examCategory?: 'standard' | 'foundation';
+  examCategory?: 'standard' | 'foundation' | 'mock';
 }
 
 const CANONICAL_EXAM_PRESETS: Template[] = [
@@ -49,6 +49,28 @@ const CANONICAL_EXAM_PRESETS: Template[] = [
     difficulty: { easy: 20, medium: 50, hard: 30 },
     objectiveDistribution: { single_choice: 18, assertion_reason: 4, multiple_choice: 4, numerical: 4 },
     examCategory: 'standard'
+  },
+  {
+    id: 'full_chapter_mock_30',
+    name: 'Full Chapter Mock Test (30 Questions • 45 Mins • 120 Marks)',
+    totalQuestions: 30,
+    duration: 45,
+    positiveMarks: 4,
+    negativeMarks: 1,
+    difficulty: { easy: 25, medium: 50, hard: 25 },
+    objectiveDistribution: { single_choice: 20, assertion_reason: 5, multiple_choice: 3, numerical: 2 },
+    examCategory: 'mock'
+  },
+  {
+    id: 'combined_portions_mock_60',
+    name: 'Combined Syllabus / Term Mock (60 Questions • 90 Mins • 240 Marks)',
+    totalQuestions: 60,
+    duration: 90,
+    positiveMarks: 4,
+    negativeMarks: 1,
+    difficulty: { easy: 20, medium: 50, hard: 30 },
+    objectiveDistribution: { single_choice: 40, assertion_reason: 10, multiple_choice: 5, numerical: 5 },
+    examCategory: 'mock'
   },
   {
     id: 'foundation_olympiad_50',
@@ -490,14 +512,14 @@ export default function AdminExamGeneratorPage() {
 
     setFetchingPool(true);
     try {
-      const primarySubject = Array.from(selectedSubjects)[0] || '';
+      const allSubjects = Array.from(selectedSubjects).join(',');
       const topicNumbers = Array.from(new Set(
         selectedTopics.flatMap(t => [t.topicNumber, t.topicName, t.topicCode, t.topic].filter(Boolean))
       )).join(',');
-      const examCategory = currentTemplate?.examCategory === 'foundation' ? 'foundation' : 'standard';
+      const examCategory = currentTemplate?.examCategory || 'standard';
 
       const idToken = await firebaseUser.getIdToken();
-      const res = await fetch(`/api/admin/exams/generate?action=fetchPool&board=${selectedBoard}&classNum=${selectedClass}&subject=${primarySubject}&topicNumbers=${encodeURIComponent(topicNumbers)}&questionType=${questionType}&examCategory=${examCategory}`, {
+      const res = await fetch(`/api/admin/exams/generate?action=fetchPool&board=${selectedBoard}&classNum=${selectedClass}&subject=${encodeURIComponent(allSubjects)}&topicNumbers=${encodeURIComponent(topicNumbers)}&questionType=${questionType}&examCategory=${examCategory}`, {
         headers: {
           'Authorization': `Bearer ${idToken}`
         }
@@ -791,6 +813,8 @@ Return ONLY valid JSON. No markdown wrappers or extra commentary.`;
           duration: currentTemplate.duration || 30,
           positiveMarks: currentTemplate.positiveMarks || 4,
           negativeMarks: currentTemplate.negativeMarks ?? 1,
+          examCategory: currentTemplate.examCategory || 'standard',
+          isMasteryExempt: currentTemplate.examCategory === 'mock' || currentTemplate.examCategory === 'foundation',
           examType: currentTemplate.examCategory === 'foundation' ? 'entrance' : (questionType === 'subjective' ? 'subjective' : 'obj')
         })
       });

@@ -214,8 +214,16 @@ export class AttemptService {
         }
       }
 
-      // Step C: Read Topic Masteries in parallel (skip for entrance exams)
-      const topicMasteryRefs = examData.examType === 'entrance' ? [] : Object.keys(topicBuckets).map(tCode => ({
+      // Step C: Read Topic Masteries in parallel (skip for entrance, mock, foundation, or exempt exams)
+      const isMasteryExempt = examData.examType === 'entrance' ||
+                              examData.examCategory === 'mock' ||
+                              examData.examCategory === 'foundation' ||
+                              examData.vault === 'mock' ||
+                              examData.vault === 'foundation' ||
+                              examData.isMasteryExempt === true ||
+                              examData.isMock === true;
+
+      const topicMasteryRefs = isMasteryExempt ? [] : Object.keys(topicBuckets).map(tCode => ({
         tCode,
         ref: adminDb.collection('studentTopicMastery').doc(`${studentCode}_${tCode}`)
       }));
@@ -239,6 +247,8 @@ export class AttemptService {
         examId: examId,
         examName: examData.name || 'Untitled Exam',
         examType: examData.examType || 'obj',
+        examCategory: examData.examCategory || (isMasteryExempt ? 'mock' : 'standard'),
+        isMasteryExempt: !!isMasteryExempt,
         subject: examSubject,
         chapter: examChapter,
         studentCode: studentCode,
@@ -266,6 +276,8 @@ export class AttemptService {
         examId: examId,
         examName: examData.name || 'Untitled Exam',
         examType: examData.examType || 'obj',
+        examCategory: examData.examCategory || (isMasteryExempt ? 'mock' : 'standard'),
+        isMasteryExempt: !!isMasteryExempt,
         subject: examSubject,
         chapter: examChapter,
         studentCode: studentCode,
