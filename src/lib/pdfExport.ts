@@ -14,6 +14,117 @@ async function getAuthHeaders(): Promise<Record<string, string>> {
   return {};
 }
 
+function sanitizeElementForLightPrint(element: HTMLElement) {
+  // Remove interactive and non-printable elements
+  element.querySelectorAll('button, .btn, input[type="button"], input[type="submit"], [role="button"], .no-print, [data-no-print]').forEach(btn => {
+    btn.remove();
+  });
+
+  // Remove action headers and action columns in tables if labeled Actions
+  element.querySelectorAll('th, td').forEach(cell => {
+    const txt = (cell.textContent || '').trim().toLowerCase();
+    if (txt === 'actions' || txt === 'action') {
+      const cellIndex = (cell as HTMLTableCellElement).cellIndex;
+      const table = cell.closest('table');
+      if (table && cellIndex !== undefined && cellIndex >= 0) {
+        table.querySelectorAll('tr').forEach(row => {
+          if (row.cells && row.cells[cellIndex]) {
+            row.cells[cellIndex].remove();
+          }
+        });
+      }
+    }
+  });
+
+  // Replace check boxes with clean symbols
+  element.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+    const inputCb = cb as HTMLInputElement;
+    const span = document.createElement('span');
+    span.style.cssText = 'font-size: 12px; font-weight: bold; margin-right: 4px; color: #1e293b;';
+    span.innerHTML = inputCb.checked ? '☑ ' : '☐ ';
+    inputCb.parentNode?.replaceChild(span, inputCb);
+  });
+
+  // Replace inputs and select dropdowns with plain text
+  element.querySelectorAll('input[type="text"], input[type="number"], input[type="email"], select, textarea').forEach(input => {
+    const formEl = input as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
+    let val = formEl.value || '';
+    if (formEl.tagName.toLowerCase() === 'select') {
+      const sel = formEl as HTMLSelectElement;
+      val = sel.options[sel.selectedIndex]?.text || val;
+    }
+    const span = document.createElement('span');
+    span.style.cssText = 'font-weight: 600; color: #0f172a; font-size: inherit;';
+    span.innerText = val;
+    formEl.parentNode?.replaceChild(span, formEl);
+  });
+
+  // Recursively clean dark inline styles and overflow restrictions
+  const allElements = element.querySelectorAll<HTMLElement>('*');
+  const elementsToClean = [element, ...Array.from(allElements)];
+
+  elementsToClean.forEach(el => {
+    // Expand scroll containers for full print visibility
+    if (el.style) {
+      if (el.style.maxHeight || el.style.overflow || el.style.overflowY || el.style.overflowX) {
+        el.style.maxHeight = 'none';
+        el.style.overflow = 'visible';
+        el.style.overflowY = 'visible';
+        el.style.overflowX = 'visible';
+      }
+
+      // Remove dark backgrounds
+      const bg = (el.style.background || el.style.backgroundColor || '').toLowerCase();
+      if (
+        bg.includes('var(--bg') || 
+        bg.includes('var(--surface') || 
+        bg.includes('#0') || 
+        bg.includes('#1') || 
+        bg.includes('#2') || 
+        bg.includes('#3') ||
+        bg.includes('rgb(1') || 
+        bg.includes('rgb(2') || 
+        bg.includes('rgb(3') ||
+        bg.includes('rgba(0') || 
+        bg.includes('rgba(1') || 
+        bg.includes('rgba(2') || 
+        bg.includes('rgba(3')
+      ) {
+        el.style.background = 'transparent';
+        el.style.backgroundColor = 'transparent';
+      }
+
+      // Reset light text colors that would be invisible on white paper
+      const color = (el.style.color || '').toLowerCase();
+      if (
+        color.includes('var(--text') ||
+        color.includes('#fff') || 
+        color.includes('#eee') || 
+        color.includes('#f0') || 
+        color.includes('#f8') ||
+        color.includes('#fa') ||
+        color.includes('rgb(24') || 
+        color.includes('rgb(25') ||
+        color.includes('rgba(255')
+      ) {
+        el.style.color = '#0f172a';
+      }
+
+      // Reset dark or transparent borders
+      const border = (el.style.border || el.style.borderColor || '').toLowerCase();
+      if (border.includes('var(--border') || border.includes('rgba(255')) {
+        el.style.borderColor = '#e2e8f0';
+      }
+
+      // Clear dark glass shadows and filters
+      el.style.boxShadow = 'none';
+      el.style.textShadow = 'none';
+      el.style.backdropFilter = 'none';
+      (el.style as any).webkitBackdropFilter = 'none';
+    }
+  });
+}
+
 export async function exportToPDF(params: {
   filename: string;
   title: string;
@@ -31,47 +142,184 @@ export async function exportToPDF(params: {
     });
   }
 
+  const wrapper = document.createElement('div');
+  wrapper.style.cssText = 'position: absolute; left: -9999px; top: 0; width: 0; height: 0; overflow: hidden;';
+  document.body.appendChild(wrapper);
+
   const printContainer = document.createElement('div');
   printContainer.id = 'pdf-print-container';
   printContainer.className = 'math-container';
-  printContainer.style.cssText = 'font-family:Arial,sans-serif;background:#ffffff;color:#000000;padding:20px;';
+  printContainer.style.cssText = `
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+    padding: 24px !important;
+    width: 210mm !important;
+    min-height: 297mm !important;
+    box-sizing: border-box !important;
+    line-height: 1.5 !important;
+  `;
+  wrapper.appendChild(printContainer);
 
   const styleOverride = document.createElement('style');
   styleOverride.innerHTML = `
-    #pdf-print-container, #pdf-print-container *:not(.score-cell):not(.stat-val):not(.correct-option) {
-      color: #000000 !important;
-      text-shadow: none !important;
-    }
     #pdf-print-container {
+      --bg: #ffffff !important;
+      --bg-soft: #f8fafc !important;
+      --surface: #ffffff !important;
+      --surface-popover: #ffffff !important;
+      --surface-hover: #f1f5f9 !important;
+      --text: #0f172a !important;
+      --text-muted: #475569 !important;
+      --text-faint: #64748b !important;
+      --border: #e2e8f0 !important;
+      --border-light: #e2e8f0 !important;
+      --border-popover: #cbd5e1 !important;
+      --primary: #2563eb !important;
+      --primary-hover: #1d4ed8 !important;
+      --accent: #0284c7 !important;
+      --success: #16a34a !important;
+      --success-muted: #15803d !important;
+      --warning: #d97706 !important;
+      --warning-muted: #b45309 !important;
+      --danger: #dc2626 !important;
+      --danger-muted: #b91c1c !important;
+      --info: #0284c7 !important;
+      --info-muted: #0369a1 !important;
       background: #ffffff !important;
+      color: #0f172a !important;
+    }
+    #pdf-print-container * {
+      box-sizing: border-box !important;
+      text-shadow: none !important;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+    #pdf-print-container .card, 
+    #pdf-print-container .glass,
+    #pdf-print-container [class*="card"] {
+      background: #ffffff !important;
+      border: 1px solid #e2e8f0 !important;
+      box-shadow: none !important;
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+      border-radius: 8px !important;
+      padding: 14px !important;
+      margin-bottom: 16px !important;
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
     }
     #pdf-print-container table {
       width: 100% !important;
       border-collapse: collapse !important;
-      margin-bottom: 20px !important;
+      margin-bottom: 16px !important;
+      background: #ffffff !important;
+      font-size: 11px !important;
+    }
+    #pdf-print-container tr {
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
+      border-bottom: 1px solid #e2e8f0 !important;
     }
     #pdf-print-container th {
-      background: #f4f4f4 !important;
-      color: #000000 !important;
-      border: 1px solid #ddd !important;
-      padding: 8px !important;
-      font-size: 12px !important;
+      background: #f1f5f9 !important;
+      color: #1e293b !important;
+      font-weight: 700 !important;
+      border: 1px solid #cbd5e1 !important;
+      padding: 8px 10px !important;
+      text-align: left !important;
+      font-size: 11px !important;
+      text-transform: uppercase !important;
+      letter-spacing: 0.3px !important;
     }
     #pdf-print-container td {
-      border: 1px solid #ddd !important;
-      padding: 8px !important;
+      border: 1px solid #e2e8f0 !important;
+      padding: 8px 10px !important;
       font-size: 11px !important;
+      color: #0f172a !important;
+      background: #ffffff !important;
+      vertical-align: middle !important;
+    }
+    #pdf-print-container tbody tr:nth-child(even) td {
+      background: #f8fafc !important;
+    }
+    #pdf-print-container .badge,
+    #pdf-print-container [class*="badge"] {
+      display: inline-block !important;
+      padding: 2px 8px !important;
+      border-radius: 4px !important;
+      font-size: 10px !important;
+      font-weight: 700 !important;
+      text-transform: uppercase !important;
+      letter-spacing: 0.3px !important;
+      border: 1px solid #cbd5e1 !important;
+      background: #f1f5f9 !important;
+      color: #334155 !important;
+    }
+    #pdf-print-container .badge-success,
+    #pdf-print-container [class*="badge-success"] {
+      background: #dcfce7 !important;
+      color: #15803d !important;
+      border-color: #bbf7d0 !important;
+    }
+    #pdf-print-container .badge-danger,
+    #pdf-print-container [class*="badge-danger"] {
+      background: #fee2e2 !important;
+      color: #b91c1c !important;
+      border-color: #fecaca !important;
+    }
+    #pdf-print-container .badge-warning,
+    #pdf-print-container [class*="badge-warning"] {
+      background: #fef3c7 !important;
+      color: #b45309 !important;
+      border-color: #fde68a !important;
+    }
+    #pdf-print-container .badge-info,
+    #pdf-print-container [class*="badge-info"],
+    #pdf-print-container .badge-primary,
+    #pdf-print-container [class*="badge-primary"] {
+      background: #e0f2fe !important;
+      color: #0369a1 !important;
+      border-color: #bae6fd !important;
+    }
+    #pdf-print-container .badge-secondary,
+    #pdf-print-container [class*="badge-secondary"] {
+      background: #f1f5f9 !important;
+      color: #475569 !important;
+      border-color: #e2e8f0 !important;
+    }
+    #pdf-print-container h1, 
+    #pdf-print-container h2, 
+    #pdf-print-container h3, 
+    #pdf-print-container h4, 
+    #pdf-print-container h5, 
+    #pdf-print-container h6 {
+      color: #0f172a !important;
+      font-weight: 700 !important;
+    }
+    #pdf-print-container p, 
+    #pdf-print-container span, 
+    #pdf-print-container div, 
+    #pdf-print-container strong {
+      color: inherit;
+    }
+    #pdf-print-container .katex {
+      color: #0f172a !important;
     }
   `;
   printContainer.appendChild(styleOverride);
 
-  // Title Header block
+  // Title Header block with Yashcom Branding
   const titleHeader = document.createElement('div');
   titleHeader.innerHTML = `
-    <div style="border-bottom: 2px solid #000000; padding-bottom: 8px; margin-bottom: 20px; text-align: center; font-family: system-ui, sans-serif;">
-      <h2 style="margin: 0; color: #1aa54e; font-size: 20px; text-align: center;">${params.title}</h2>
-      <div style="font-size: 11px; color: #555; margin-top: 4px; text-align: center;">
-        Generated on: ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2.5px solid #2563eb; padding-bottom: 10px; margin-bottom: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+      <div>
+        <div style="font-size: 20px; font-weight: 800; color: #1e3a8a; letter-spacing: -0.5px;">YASHCOM LEARNING OS</div>
+        <div style="font-size: 10px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px;">Conceptual Excellence & Academic Administration</div>
+      </div>
+      <div style="text-align: right;">
+        <div style="font-size: 14px; font-weight: 700; color: #0f172a;">${params.title}</div>
+        <div style="font-size: 10px; color: #64748b; margin-top: 2px;">Generated: ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}</div>
       </div>
     </div>
   `;
@@ -83,32 +331,15 @@ export async function exportToPDF(params: {
     const el = document.getElementById(sec.elementId);
     if (el) {
       const clone = el.cloneNode(true) as HTMLElement;
-      
-      // Remove interactive elements
-      clone.querySelectorAll('button, .btn, input[type="button"], input[type="submit"]').forEach(btn => {
-        btn.remove();
-      });
-      // Replace check boxes with characters
-      clone.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-        const inputCb = cb as HTMLInputElement;
-        const span = document.createElement('span');
-        span.innerHTML = inputCb.checked ? '☑ ' : '☐ ';
-        inputCb.parentNode?.replaceChild(span, inputCb);
-      });
-      // Replace inputs with text
-      clone.querySelectorAll('input[type="text"], input[type="number"], select').forEach(input => {
-        const textInput = input as HTMLInputElement;
-        const span = document.createElement('span');
-        span.innerText = textInput.value || '';
-        textInput.parentNode?.replaceChild(span, textInput);
-      });
+      sanitizeElementForLightPrint(clone);
 
       const sectionWrapper = document.createElement('div');
       sectionWrapper.style.marginBottom = '25px';
+      sectionWrapper.style.pageBreakInside = 'avoid';
       
       const sectionTitle = document.createElement('h3');
       sectionTitle.innerText = sec.name;
-      sectionTitle.style.cssText = 'border-bottom: 1px solid #ddd; padding-bottom: 4px; margin-bottom: 12px; font-size: 14px; color: #333;';
+      sectionTitle.style.cssText = 'border-bottom: 1.5px solid #cbd5e1; padding-bottom: 6px; margin-bottom: 14px; font-size: 13px; color: #1e3a8a; text-transform: uppercase; letter-spacing: 0.5px;';
       sectionWrapper.appendChild(sectionTitle);
       sectionWrapper.appendChild(clone);
       
@@ -116,7 +347,15 @@ export async function exportToPDF(params: {
     }
   });
 
-  document.body.appendChild(printContainer);
+  // Footer Note
+  const footerNote = document.createElement('div');
+  footerNote.innerHTML = `
+    <div style="border-top: 1px dashed #cbd5e1; margin-top: 30px; padding-top: 8px; display: flex; justify-content: space-between; font-size: 9px; color: #94a3b8; font-weight: 600;">
+      <span>Official Record &bull; YASHCOM Foundation</span>
+      <span>Confidential Student Dossier &bull; Printed via LOS Next</span>
+    </div>
+  `;
+  printContainer.appendChild(footerNote);
 
   // Render Math Formulas with KaTeX if present
   if (w.renderMathInElement) {
@@ -124,15 +363,18 @@ export async function exportToPDF(params: {
   }
 
   const opt = {
-    margin:       [0.15, 0.3, 0.15, 0.3], // Minimal top & bottom margins
-    filename:     params.filename,
+    margin:       [0.3, 0.35, 0.3, 0.35],
+    filename:     params.filename.endsWith('.pdf') ? params.filename : `${params.filename}.pdf`,
     image:        { type: 'jpeg', quality: 0.98 },
-    html2canvas:  { scale: 2, useCORS: true },
+    html2canvas:  { scale: 2, useCORS: true, scrollY: 0, scrollX: 0 },
     jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
   };
 
-  await w.html2pdf().from(printContainer).set(opt).save();
-  document.body.removeChild(printContainer);
+  try {
+    await w.html2pdf().from(printContainer).set(opt).save();
+  } finally {
+    document.body.removeChild(wrapper);
+  }
 }
 
 export async function exportSubjectiveExamDirectPdf(exam: any, questions: any[]) {

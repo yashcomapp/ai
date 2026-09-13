@@ -708,34 +708,98 @@ function ExamReportContent() {
       }
     }
 
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = 'position: absolute; left: -9999px; top: 0; width: 0; height: 0; overflow: hidden;';
+    document.body.appendChild(wrapper);
+
     const printContainer = document.createElement('div');
     printContainer.id = 'pdf-print-container';
     printContainer.className = 'math-container';
-    printContainer.style.cssText = 'font-family:Arial,sans-serif;background:#ffffff;color:#000000;padding:20px;';
+    printContainer.style.cssText = `
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+      background: #ffffff !important;
+      color: #0f172a !important;
+      padding: 24px !important;
+      width: 210mm !important;
+      box-sizing: border-box !important;
+      line-height: 1.5 !important;
+    `;
+    wrapper.appendChild(printContainer);
 
     const styleOverride = document.createElement('style');
     styleOverride.innerHTML = `
-      #pdf-print-container, #pdf-print-container *:not(.score-cell):not(.stat-val) {
-        color: #000000 !important;
-        text-shadow: none !important;
-      }
       #pdf-print-container {
+        --bg: #ffffff !important;
+        --bg-soft: #f8fafc !important;
+        --surface: #ffffff !important;
+        --surface-popover: #ffffff !important;
+        --surface-hover: #f1f5f9 !important;
+        --text: #0f172a !important;
+        --text-muted: #475569 !important;
+        --text-faint: #64748b !important;
+        --border: #e2e8f0 !important;
+        --border-light: #e2e8f0 !important;
+        --border-popover: #cbd5e1 !important;
+        --primary: #2563eb !important;
+        --primary-hover: #1d4ed8 !important;
+        --accent: #0284c7 !important;
+        --success: #16a34a !important;
+        --success-muted: #15803d !important;
+        --warning: #d97706 !important;
+        --warning-muted: #b45309 !important;
+        --danger: #dc2626 !important;
+        --danger-muted: #b91c1c !important;
+        --info: #0284c7 !important;
+        --info-muted: #0369a1 !important;
         background: #ffffff !important;
+        color: #0f172a !important;
+      }
+      #pdf-print-container * {
+        box-sizing: border-box !important;
+        text-shadow: none !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      #pdf-print-container table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+        margin-bottom: 16px !important;
+        background: #ffffff !important;
+        font-size: 11px !important;
+      }
+      #pdf-print-container tr {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
       }
       #pdf-print-container th {
-        background: #f4f4f4 !important;
-        color: #000000 !important;
+        background: #f1f5f9 !important;
+        color: #1e293b !important;
+        font-weight: 700 !important;
+        border: 1px solid #cbd5e1 !important;
+        padding: 8px 10px !important;
+        text-align: left !important;
+        font-size: 11px !important;
       }
       #pdf-print-container td {
-        border-bottom: 1px solid #eee !important;
+        border: 1px solid #e2e8f0 !important;
+        padding: 8px 10px !important;
+        font-size: 11px !important;
+        color: #0f172a !important;
+        background: #ffffff !important;
+      }
+      #pdf-print-container tbody tr:nth-child(even) td {
+        background: #f8fafc !important;
       }
       #pdf-print-container .correct-option {
-        background: rgba(26, 165, 78, 0.08) !important;
-        border: 1.5px solid #1aa54e !important;
+        background: #dcfce7 !important;
+        border: 1.5px solid #16a34a !important;
+        color: #15803d !important;
+        font-weight: bold !important;
       }
       #pdf-print-container .explanation-box {
-        background: #fffde7 !important;
-        border: 1px solid #ffe082 !important;
+        background: #fffbeb !important;
+        border: 1px solid #fde68a !important;
+        color: #92400e !important;
       }
     `;
     printContainer.appendChild(styleOverride);
@@ -1011,7 +1075,9 @@ function ExamReportContent() {
       };
 
       html2pdf().from(printContainer).set(opt).save().then(() => {
-        document.body.removeChild(printContainer);
+        if (wrapper && wrapper.parentNode) {
+          document.body.removeChild(wrapper);
+        }
         setPdfSelectorOpen(false);
       });
     }, 500);
