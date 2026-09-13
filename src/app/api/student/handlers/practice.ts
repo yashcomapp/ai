@@ -6,6 +6,7 @@ import { PracticeService } from '@/services/practice.service';
 import { shuffleArray } from '@/lib/questionTypes';
 import { getDateKeyIST } from '@/lib/dateUtils';
 import { getRequiredConfidence } from '@/lib/studentDb';
+import { filterDistinctCandidates, areQuestionsTooSimilar } from '@/lib/questionSimilarity';
 
 export const dynamic = 'force-dynamic';
 
@@ -251,16 +252,16 @@ export async function GET(req: NextRequest) {
       const targetIncorrect = Math.min(4, incorrectQs.length);
       const targetFresh = Math.min(4, freshQs.length);
 
-      const pickedIncorrect = incorrectQs.slice(0, targetIncorrect);
-      const pickedFresh = freshQs.slice(0, targetFresh);
+      const pickedIncorrect = filterDistinctCandidates(incorrectQs).slice(0, targetIncorrect);
+      const pickedFresh = filterDistinctCandidates(freshQs, pickedIncorrect).slice(0, targetFresh);
 
       let combined = [...pickedIncorrect, ...pickedFresh];
 
       if (combined.length < targetSize) {
-        const remainingNeeded = targetSize - combined.length;
-        const currentIds = new Set(combined.map((q: any) => q.id));
-        const pool = [...freshQs, ...incorrectQs, ...otherQs].filter((q: any) => !currentIds.has(q.id));
-        combined.push(...pool.slice(0, remainingNeeded));
+        const pool = [...freshQs, ...incorrectQs, ...otherQs];
+        const remaining = filterDistinctCandidates(pool, combined);
+        const needed = targetSize - combined.length;
+        combined.push(...remaining.slice(0, needed));
       }
 
       const recoveryQuestions = shuffleArray(combined);
@@ -392,26 +393,49 @@ export async function GET(req: NextRequest) {
       newPool: any[],
       wrongPool: any[],
       correctPool: any[],
-      diffLabel: string
+      existingSelected: any[]
     ) => {
       if (needed <= 0) return [];
       const selected: any[] = [];
+      const currentSelected = [...existingSelected];
 
       const newCount = Math.round(needed * categoryDist.new / 100);
       const wrongCount = Math.round(needed * categoryDist.wrong / 100);
       const correctCount = needed - newCount - wrongCount;
 
-      selected.push(...shuffle(newPool).slice(0, newCount));
-      selected.push(...shuffle(wrongPool).slice(0, wrongCount));
-      selected.push(...shuffle(correctPool).slice(0, correctCount));
+      const pickFromPool = (pool: any[], count: number) => {
+        if (count <= 0) return;
+        const distinct = filterDistinctCandidates(shuffle(pool), currentSelected);
+        const picked = distinct.slice(0, count);
+        selected.push(...picked);
+        currentSelected.push(...picked);
+      };
+
+      pickFromPool(newPool, newCount);
+      pickFromPool(wrongPool, wrongCount);
+      pickFromPool(correctPool, correctCount);
+
+      // If still need more to reach 'needed' from this difficulty
+      if (selected.length < needed) {
+        const pool = [...newPool, ...wrongPool, ...correctPool];
+        const distinct = filterDistinctCandidates(shuffle(pool), currentSelected);
+        const extra = distinct.slice(0, needed - selected.length);
+        selected.push(...extra);
+        currentSelected.push(...extra);
+      }
+
       return selected;
     };
 
-    const easyQuestions = selectForDifficulty(easyNeeded, eligibleNewByDiff.easy, eligibleWrongByDiff.easy, eligibleCorrectByDiff.easy, 'easy');
-    const mediumQuestions = selectForDifficulty(mediumNeeded, eligibleNewByDiff.medium, eligibleWrongByDiff.medium, eligibleCorrectByDiff.medium, 'medium');
-    const hardQuestions = selectForDifficulty(hardNeeded, eligibleNewByDiff.hard, eligibleWrongByDiff.hard, eligibleCorrectByDiff.hard, 'hard');
+    const finalQuestions: any[] = [];
+    const easyQuestions = selectForDifficulty(easyNeeded, eligibleNewByDiff.easy, eligibleWrongByDiff.easy, eligibleCorrectByDiff.easy, finalQuestions);
+    finalQuestions.push(...easyQuestions);
 
-    let finalQuestions = [...easyQuestions, ...mediumQuestions, ...hardQuestions];
+    const mediumQuestions = selectForDifficulty(mediumNeeded, eligibleNewByDiff.medium, eligibleWrongByDiff.medium, eligibleCorrectByDiff.medium, finalQuestions);
+    finalQuestions.push(...mediumQuestions);
+
+    const hardQuestions = selectForDifficulty(hardNeeded, eligibleNewByDiff.hard, eligibleWrongByDiff.hard, eligibleCorrectByDiff.hard, finalQuestions);
+    finalQuestions.push(...hardQuestions);
 
     if (finalQuestions.length < finalSize) {
       const allEligible = [
@@ -420,27 +444,26 @@ export async function GET(req: NextRequest) {
         ...eligibleCorrectByDiff.easy, ...eligibleCorrectByDiff.medium, ...eligibleCorrectByDiff.hard
       ];
       if (allEligible.length > 0) {
-        const shuffleAll = shuffle(allEligible);
+        const distinctEligible = filterDistinctCandidates(shuffle(allEligible), finalQuestions);
         const additionalNeeded = finalSize - finalQuestions.length;
-        finalQuestions.push(...shuffleAll.slice(0, additionalNeeded));
+        finalQuestions.push(...distinctEligible.slice(0, additionalNeeded));
       }
       
       // Secondary fallback: pull from all available topic questions (including seen/unseen)
       if (finalQuestions.length < finalSize && allQuestions.length > 0) {
-        const currentIds = new Set(finalQuestions.map((q: any) => q.id));
-        const pool = allQuestions.filter((q: any) => !currentIds.has(q.id));
-        if (pool.length > 0) {
+        const distinctAll = filterDistinctCandidates(shuffle(allQuestions), finalQuestions);
+        if (distinctAll.length > 0) {
           const additionalNeeded = finalSize - finalQuestions.length;
-          finalQuestions.push(...shuffle(pool).slice(0, additionalNeeded));
+          finalQuestions.push(...distinctAll.slice(0, additionalNeeded));
         }
       }
     }
 
     // Shuffle final questions
-    finalQuestions = shuffle(finalQuestions);
+    let finalDeduplicatedQuestions = filterDistinctCandidates(shuffle(finalQuestions));
 
     // Strip answers or pass them selectively. For topic practice mode, the client needs correctAnswer/correctAnswers for immediate feedback.
-    const sanitizedQuestions = finalQuestions.map((q: any) => {
+    const sanitizedQuestions = finalDeduplicatedQuestions.map((q: any) => {
       let assertion = q.assertion || '';
       let reason = q.reason || '';
       let options = q.options || [];

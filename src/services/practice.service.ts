@@ -266,9 +266,9 @@ export class PracticeService {
         const syllabusSnap = await adminDb.collection('syllabusTopicIndex').doc(topicCode).get();
         if (syllabusSnap.exists) {
           const sData = syllabusSnap.data()!;
-          topicName = sData.topicName || topicName;
-          subjectName = sData.subjectName || subjectName;
-          chapterName = sData.chapterName || chapterName;
+          topicName = sData.topicName || sData.title || sData.name || topicName;
+          subjectName = sData.subjectName || sData.subject || subjectName;
+          chapterName = sData.chapterName || sData.chapterTitle || sData.chapter || (sData.chapterNumber ? (String(sData.chapterNumber).startsWith('Chapter') ? String(sData.chapterNumber) : `Chapter ${sData.chapterNumber}`) : chapterName);
         }
 
         const strengths: string[] = [];

@@ -41,20 +41,37 @@ async function recalculateStudentFeeStats(studentCode: string) {
     const paidForInst = paymentsByInst[instId] || 0;
     const targetAmount = Number(inst.amount || 0);
     
-    let status = 'pending';
+    let status = inst.status || 'pending';
     let paidAt = inst.paidAt || null;
 
     if (paidForInst >= targetAmount && targetAmount > 0) {
       status = 'paid';
       paidAt = paidAt || new Date().toISOString();
+    } else if (inst.status === 'paid' || inst.statusOverride === 'paid') {
+      status = 'paid';
+      paidAt = paidAt || new Date().toISOString();
+    } else if (inst.status === 'overdue' || inst.statusOverride === 'overdue') {
+      status = 'overdue';
+      hasOverdueInstallment = true;
+    } else if (inst.status === 'pending' || inst.statusOverride === 'pending') {
+      status = 'pending';
+      if (!nextInstallmentDueDate || (inst.dueDate && inst.dueDate < nextInstallmentDueDate)) {
+        nextInstallmentDueDate = inst.dueDate;
+      }
     } else {
       if (inst.dueDate && inst.dueDate < todayStr) {
         status = 'overdue';
         hasOverdueInstallment = true;
+      } else {
+        status = 'pending';
       }
       if (!nextInstallmentDueDate || (inst.dueDate && inst.dueDate < nextInstallmentDueDate)) {
         nextInstallmentDueDate = inst.dueDate;
       }
+    }
+
+    if (status === 'overdue') {
+      hasOverdueInstallment = true;
     }
 
     return {
@@ -67,11 +84,12 @@ async function recalculateStudentFeeStats(studentCode: string) {
   });
 
   let feeStatus = 'unpaid';
+  const allPaid = updatedInstallments.length > 0 && updatedInstallments.every((i: any) => i.status === 'paid');
   if (netPayableAmount === 0) {
     feeStatus = 'exempted';
-  } else if (totalPaidAmount >= netPayableAmount && netPayableAmount > 0) {
+  } else if ((totalPaidAmount >= netPayableAmount && netPayableAmount > 0) || allPaid) {
     feeStatus = 'fully_paid';
-  } else if (totalPaidAmount > 0) {
+  } else if (totalPaidAmount > 0 || updatedInstallments.some((i: any) => i.status === 'paid')) {
     feeStatus = 'partially_paid';
   }
 

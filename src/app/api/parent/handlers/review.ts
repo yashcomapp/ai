@@ -313,17 +313,17 @@ export async function GET(req: NextRequest) {
       const resolvedActor = data.reviewedByActor || evalMap.get(doc.id)?.reviewedByActor || (status === 'approved' ? 'parent' : null);
       
       const sData = syllabusMap.get(data.topicCode || '');
-      let displayName = data.topicName || 'Practice Set';
-      if (!displayName || displayName === data.topicCode) {
-        displayName = sData?.topicName || displayName;
+      let displayName = data.topicName;
+      if (!displayName || displayName === data.topicCode || displayName === 'Practice Set' || displayName.startsWith('MH-') || displayName.startsWith('CBSE-')) {
+        displayName = sData?.topicName || sData?.title || sData?.name || displayName || 'Practice Set';
       }
-      let displaySubject = data.subjectName || 'General';
+      let displaySubject = data.subjectName;
       if (!displaySubject || displaySubject === 'General') {
-        displaySubject = sData?.subjectName || displaySubject;
+        displaySubject = sData?.subjectName || sData?.subject || displaySubject || 'General';
       }
-      let displayChapter = data.chapterName || 'General';
-      if (!displayChapter || displayChapter === 'General') {
-        displayChapter = sData?.chapterName || displayChapter;
+      let displayChapter = data.chapterName;
+      if (!displayChapter || displayChapter === 'General' || displayChapter === '-') {
+        displayChapter = sData?.chapterName || sData?.chapterTitle || sData?.chapter || (sData?.chapterNumber ? (String(sData.chapterNumber).startsWith('Chapter') ? String(sData.chapterNumber) : `Chapter ${sData.chapterNumber}`) : displayChapter) || 'General';
       }
 
       const start = data.startedAt?.toDate ? data.startedAt.toDate() : (data.startedAt ? new Date(data.startedAt) : null);
