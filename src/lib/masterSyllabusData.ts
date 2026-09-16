@@ -5168,6 +5168,101 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
             "problemSet": "Problem Set 12"
           }
         ]
+      },
+      {
+        "number": "13",
+        "name": "Class 7 Science Foundation Core",
+        "topics": [
+          {
+            "number": "13.1",
+            "name": "Living World, Cell Biology & Human Body Systems (7th Review)",
+            "topicCode": "CBSE-9-SCIE-13-13.1",
+            "subtopics": [
+              "Adaptations in plants and animals across habitats",
+              "Structure of plant and animal tissues & cell organelles",
+              "Nutrition, digestive process & respiration in living organisms",
+              "Circulation and transportation of substances in animals & plants"
+            ],
+            "practiceSet": "Exercise 13.1",
+            "theorems": [],
+            "problemSet": "Problem Set 13"
+          },
+          {
+            "number": "13.2",
+            "name": "Motion, Force, Work, Heat & Static Electricity (7th Review)",
+            "topicCode": "CBSE-9-SCIE-13-13.2",
+            "subtopics": [
+              "Types of motion: oscillatory, periodic, circular & speed calculations",
+              "Force, work done & mechanical advantage of simple machines",
+              "Heat transfer mechanisms (conduction, convection, radiation) & thermometers",
+              "Static electric charges: frictional electricity, electroscope & lightning phenomena"
+            ],
+            "practiceSet": "Exercise 13.2",
+            "theorems": [],
+            "problemSet": "Problem Set 13"
+          },
+          {
+            "number": "13.3",
+            "name": "Properties of Matter, Chemical Changes & Natural Resources (7th Review)",
+            "topicCode": "CBSE-9-SCIE-13-13.3",
+            "subtopics": [
+              "Physical vs chemical changes and indicators of chemical reactions",
+              "Elements, compounds & molecular formulae basics",
+              "Acids, bases and neutralisation in daily life",
+              "Natural resources: air, water, soil properties & conservation"
+            ],
+            "practiceSet": "Exercise 13.3",
+            "theorems": [],
+            "problemSet": "Problem Set 13"
+          }
+        ]
+      },
+      {
+        "number": "14",
+        "name": "Science General Knowledge & Discoveries",
+        "topics": [
+          {
+            "number": "14.1",
+            "name": "Indian Scientific Institutions & Space Missions",
+            "topicCode": "CBSE-9-SCIE-14-14.1",
+            "subtopics": [
+              "Indian Space Research Organisation (ISRO) & Satish Dhawan Space Centre",
+              "Key missions: Chandrayaan lunar missions, Mangalyaan Mars Orbiter, Aditya-L1 solar observatory, Gaganyaan",
+              "Atomic & Defense Research: BARC (Homi Bhabha), DRDO (APJ Abdul Kalam), TIFR, CSIR labs",
+              "Astronomical facilities in India: GMRT (Pune), IUCAA, ARIES Nainital, Hanle Observatory Ladakh"
+            ],
+            "practiceSet": "Exercise 14.1",
+            "theorems": [],
+            "problemSet": "Problem Set 14"
+          },
+          {
+            "number": "14.2",
+            "name": "Famous Scientists, Inventions & Nobel Breakthroughs",
+            "topicCode": "CBSE-9-SCIE-14-14.2",
+            "subtopics": [
+              "Eminent Indian scientists: Dr. Homi J. Bhabha, Sir C.V. Raman (Raman Effect), Jagadish Chandra Bose, Srinivasa Ramanujan, Satyendra Nath Bose",
+              "Global pioneer scientists: Isaac Newton, Albert Einstein, Marie Curie, Galileo Galilei, Michael Faraday, Louis Pasteur, Alexander Fleming",
+              "Major Nobel Prize winning discoveries in Physics, Chemistry, and Physiology",
+              "Everyday scientific inventions: light bulb, telephone, x-rays, penicillin, semiconductor transistors, lasers"
+            ],
+            "practiceSet": "Exercise 14.2",
+            "theorems": [],
+            "problemSet": "Problem Set 14"
+          },
+          {
+            "number": "14.3",
+            "name": "Environmental Milestones, Biodiversity Treaties & Emerging Science",
+            "topicCode": "CBSE-9-SCIE-14-14.3",
+            "subtopics": [
+              "International ecological agreements: Montreal Protocol (ozone protection), Paris Climate Accord, Kyoto Protocol, Ramsar Wetlands Convention",
+              "India flagship conservation initiatives: Project Tiger, Project Elephant, Devrai sacred groves, Chipko movement",
+              "Modern science frontiers: Nanotechnology, CRISPR gene editing, Artificial Intelligence in diagnostics, Quantum computing, Renewable green hydrogen"
+            ],
+            "practiceSet": "Exercise 14.3",
+            "theorems": [],
+            "problemSet": "Problem Set 14"
+          }
+        ]
       }
     ]
   },
@@ -7128,6 +7223,101 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
             "practiceSet": "Exercise 18.4",
             "theorems": [],
             "problemSet": "Problem Set 18"
+          }
+        ]
+      },
+      {
+        "number": "19",
+        "name": "Class 7 Science Foundation Core",
+        "topics": [
+          {
+            "number": "19.1",
+            "name": "Living World, Cell Biology & Human Body Systems (7th Review)",
+            "topicCode": "MH-9-SCIT-19-19.1",
+            "subtopics": [
+              "Adaptations in plants and animals across habitats",
+              "Structure of plant and animal tissues & cell organelles",
+              "Nutrition, digestive process & respiration in living organisms",
+              "Circulation and transportation of substances in animals & plants"
+            ],
+            "practiceSet": "Exercise 19.1",
+            "theorems": [],
+            "problemSet": "Problem Set 19"
+          },
+          {
+            "number": "19.2",
+            "name": "Motion, Force, Work, Heat & Static Electricity (7th Review)",
+            "topicCode": "MH-9-SCIT-19-19.2",
+            "subtopics": [
+              "Types of motion: oscillatory, periodic, circular & speed calculations",
+              "Force, work done & mechanical advantage of simple machines",
+              "Heat transfer mechanisms (conduction, convection, radiation) & thermometers",
+              "Static electric charges: frictional electricity, electroscope & lightning phenomena"
+            ],
+            "practiceSet": "Exercise 19.2",
+            "theorems": [],
+            "problemSet": "Problem Set 19"
+          },
+          {
+            "number": "19.3",
+            "name": "Properties of Matter, Chemical Changes & Natural Resources (7th Review)",
+            "topicCode": "MH-9-SCIT-19-19.3",
+            "subtopics": [
+              "Physical vs chemical changes and indicators of chemical reactions",
+              "Elements, compounds & molecular formulae basics",
+              "Acids, bases and neutralisation in daily life",
+              "Natural resources: air, water, soil properties & conservation"
+            ],
+            "practiceSet": "Exercise 19.3",
+            "theorems": [],
+            "problemSet": "Problem Set 19"
+          }
+        ]
+      },
+      {
+        "number": "20",
+        "name": "Science General Knowledge & Discoveries",
+        "topics": [
+          {
+            "number": "20.1",
+            "name": "Indian Scientific Institutions & Space Missions",
+            "topicCode": "MH-9-SCIT-20-20.1",
+            "subtopics": [
+              "Indian Space Research Organisation (ISRO) & Satish Dhawan Space Centre",
+              "Key missions: Chandrayaan lunar missions, Mangalyaan Mars Orbiter, Aditya-L1 solar observatory, Gaganyaan",
+              "Atomic & Defense Research: BARC (Homi Bhabha), DRDO (APJ Abdul Kalam), TIFR, CSIR labs",
+              "Astronomical facilities in India: GMRT (Pune), IUCAA, ARIES Nainital, Hanle Observatory Ladakh"
+            ],
+            "practiceSet": "Exercise 20.1",
+            "theorems": [],
+            "problemSet": "Problem Set 20"
+          },
+          {
+            "number": "20.2",
+            "name": "Famous Scientists, Inventions & Nobel Breakthroughs",
+            "topicCode": "MH-9-SCIT-20-20.2",
+            "subtopics": [
+              "Eminent Indian scientists: Dr. Homi J. Bhabha, Sir C.V. Raman (Raman Effect), Jagadish Chandra Bose, Srinivasa Ramanujan, Satyendra Nath Bose",
+              "Global pioneer scientists: Isaac Newton, Albert Einstein, Marie Curie, Galileo Galilei, Michael Faraday, Louis Pasteur, Alexander Fleming",
+              "Major Nobel Prize winning discoveries in Physics, Chemistry, and Physiology",
+              "Everyday scientific inventions: light bulb, telephone, x-rays, penicillin, semiconductor transistors, lasers"
+            ],
+            "practiceSet": "Exercise 20.2",
+            "theorems": [],
+            "problemSet": "Problem Set 20"
+          },
+          {
+            "number": "20.3",
+            "name": "Environmental Milestones, Biodiversity Treaties & Emerging Science",
+            "topicCode": "MH-9-SCIT-20-20.3",
+            "subtopics": [
+              "International ecological agreements: Montreal Protocol (ozone protection), Paris Climate Accord, Kyoto Protocol, Ramsar Wetlands Convention",
+              "India flagship conservation initiatives: Project Tiger, Project Elephant, Devrai sacred groves, Chipko movement",
+              "Modern science frontiers: Nanotechnology, CRISPR gene editing, Artificial Intelligence in diagnostics, Quantum computing, Renewable green hydrogen"
+            ],
+            "practiceSet": "Exercise 20.3",
+            "theorems": [],
+            "problemSet": "Problem Set 20"
           }
         ]
       }

@@ -265,6 +265,24 @@ const cbse9Subjects = [
           createTopic('CBSE', '9', 'SCIE', '12', '4', 'Crop Protection Management: Weeds, Insect Pests & Diseases', ['Weeds (Xanthium, Parthenium, Cyperinus)', 'Insect pests (chewing, sucking, boring insects)', 'Biopesticides and preventive grain storage measures']),
           createTopic('CBSE', '9', 'SCIE', '12', '5', 'Animal Husbandry: Cattle Farming, Poultry, Fish Production & Apiculture', ['Cattle farming: Milk producers (milch) vs Draught animals (Bos indicus, Bos bubalis)', 'Poultry farming: Broilers (meat) vs Layers (eggs)', 'Fish production: Capture fishing, Aquaculture, Composite fish culture (Catla, Rohu, Mrigal, Grass carp)', 'Apiculture: Honey bee varieties (Apis cerana indica, Apis mellifera) and pasturage'])
         ]
+      },
+      {
+        number: '13',
+        name: 'Class 7 Science Foundation Core',
+        topics: [
+          createTopic('CBSE', '9', 'SCIE', '13', '1', 'Living World, Cell Biology & Human Body Systems (7th Review)', ['Adaptations in plants and animals across habitats', 'Structure of plant and animal tissues & cell organelles', 'Nutrition, digestive process & respiration in living organisms', 'Circulation and transportation of substances in animals & plants']),
+          createTopic('CBSE', '9', 'SCIE', '13', '2', 'Motion, Force, Work, Heat & Static Electricity (7th Review)', ['Types of motion: oscillatory, periodic, circular & speed calculations', 'Force, work done & mechanical advantage of simple machines', 'Heat transfer mechanisms (conduction, convection, radiation) & thermometers', 'Static electric charges: frictional electricity, electroscope & lightning phenomena']),
+          createTopic('CBSE', '9', 'SCIE', '13', '3', 'Properties of Matter, Chemical Changes & Natural Resources (7th Review)', ['Physical vs chemical changes and indicators of chemical reactions', 'Elements, compounds & molecular formulae basics', 'Acids, bases and neutralisation in daily life', 'Natural resources: air, water, soil properties & conservation'])
+        ]
+      },
+      {
+        number: '14',
+        name: 'Science General Knowledge & Discoveries',
+        topics: [
+          createTopic('CBSE', '9', 'SCIE', '14', '1', 'Indian Scientific Institutions & Space Missions', ['Indian Space Research Organisation (ISRO) & Satish Dhawan Space Centre', 'Key missions: Chandrayaan lunar missions, Mangalyaan Mars Orbiter, Aditya-L1 solar observatory, Gaganyaan', 'Atomic & Defense Research: BARC (Homi Bhabha), DRDO (APJ Abdul Kalam), TIFR, CSIR labs', 'Astronomical facilities in India: GMRT (Pune), IUCAA, ARIES Nainital, Hanle Observatory Ladakh']),
+          createTopic('CBSE', '9', 'SCIE', '14', '2', 'Famous Scientists, Inventions & Nobel Breakthroughs', ['Eminent Indian scientists: Dr. Homi J. Bhabha, Sir C.V. Raman (Raman Effect), Jagadish Chandra Bose, Srinivasa Ramanujan, Satyendra Nath Bose', 'Global pioneer scientists: Isaac Newton, Albert Einstein, Marie Curie, Galileo Galilei, Michael Faraday, Louis Pasteur, Alexander Fleming', 'Major Nobel Prize winning discoveries in Physics, Chemistry, and Physiology', 'Everyday scientific inventions: light bulb, telephone, x-rays, penicillin, semiconductor transistors, lasers']),
+          createTopic('CBSE', '9', 'SCIE', '14', '3', 'Environmental Milestones, Biodiversity Treaties & Emerging Science', ['International ecological agreements: Montreal Protocol (ozone protection), Paris Climate Accord, Kyoto Protocol, Ramsar Wetlands Convention', 'India flagship conservation initiatives: Project Tiger, Project Elephant, Devrai sacred groves, Chipko movement', 'Modern science frontiers: Nanotechnology, CRISPR gene editing, Artificial Intelligence in diagnostics, Quantum computing, Renewable green hydrogen'])
+        ]
       }
     ]
   }

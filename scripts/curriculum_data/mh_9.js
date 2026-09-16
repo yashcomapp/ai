@@ -374,6 +374,24 @@ const mh9Subjects = [
           createTopic('MH', '9', 'SCIT', '18', '3', 'Radio Telescopes: GMRT (Giant Metrewave Radio Telescope at Pune)', ['GMRT array of 30 parabolic dishes at Narayangaon near Pune (Prof. Govind Swarup)']),
           createTopic('MH', '9', 'SCIT', '18', '4', 'Space Telescopes: Hubble Space Telescope & Chandra X-ray Observatory', ['Atmospheric absorption and distortion avoidance', 'Hubble visual telescope and Chandra X-ray space observatory (Subrahmanyan Chandrasekhar)'])
         ]
+      },
+      {
+        number: '19',
+        name: 'Class 7 Science Foundation Core',
+        topics: [
+          createTopic('MH', '9', 'SCIT', '19', '1', 'Living World, Cell Biology & Human Body Systems (7th Review)', ['Adaptations in plants and animals across habitats', 'Structure of plant and animal tissues & cell organelles', 'Nutrition, digestive process & respiration in living organisms', 'Circulation and transportation of substances in animals & plants']),
+          createTopic('MH', '9', 'SCIT', '19', '2', 'Motion, Force, Work, Heat & Static Electricity (7th Review)', ['Types of motion: oscillatory, periodic, circular & speed calculations', 'Force, work done & mechanical advantage of simple machines', 'Heat transfer mechanisms (conduction, convection, radiation) & thermometers', 'Static electric charges: frictional electricity, electroscope & lightning phenomena']),
+          createTopic('MH', '9', 'SCIT', '19', '3', 'Properties of Matter, Chemical Changes & Natural Resources (7th Review)', ['Physical vs chemical changes and indicators of chemical reactions', 'Elements, compounds & molecular formulae basics', 'Acids, bases and neutralisation in daily life', 'Natural resources: air, water, soil properties & conservation'])
+        ]
+      },
+      {
+        number: '20',
+        name: 'Science General Knowledge & Discoveries',
+        topics: [
+          createTopic('MH', '9', 'SCIT', '20', '1', 'Indian Scientific Institutions & Space Missions', ['Indian Space Research Organisation (ISRO) & Satish Dhawan Space Centre', 'Key missions: Chandrayaan lunar missions, Mangalyaan Mars Orbiter, Aditya-L1 solar observatory, Gaganyaan', 'Atomic & Defense Research: BARC (Homi Bhabha), DRDO (APJ Abdul Kalam), TIFR, CSIR labs', 'Astronomical facilities in India: GMRT (Pune), IUCAA, ARIES Nainital, Hanle Observatory Ladakh']),
+          createTopic('MH', '9', 'SCIT', '20', '2', 'Famous Scientists, Inventions & Nobel Breakthroughs', ['Eminent Indian scientists: Dr. Homi J. Bhabha, Sir C.V. Raman (Raman Effect), Jagadish Chandra Bose, Srinivasa Ramanujan, Satyendra Nath Bose', 'Global pioneer scientists: Isaac Newton, Albert Einstein, Marie Curie, Galileo Galilei, Michael Faraday, Louis Pasteur, Alexander Fleming', 'Major Nobel Prize winning discoveries in Physics, Chemistry, and Physiology', 'Everyday scientific inventions: light bulb, telephone, x-rays, penicillin, semiconductor transistors, lasers']),
+          createTopic('MH', '9', 'SCIT', '20', '3', 'Environmental Milestones, Biodiversity Treaties & Emerging Science', ['International ecological agreements: Montreal Protocol (ozone protection), Paris Climate Accord, Kyoto Protocol, Ramsar Wetlands Convention', 'India flagship conservation initiatives: Project Tiger, Project Elephant, Devrai sacred groves, Chipko movement', 'Modern science frontiers: Nanotechnology, CRISPR gene editing, Artificial Intelligence in diagnostics, Quantum computing, Renewable green hydrogen'])
+        ]
       }
     ]
   }
