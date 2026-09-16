@@ -293,7 +293,7 @@ export default function AdminDashboard() {
             }}>
               {/* Card 1: Academic & Attendance Stats */}
               <div className="card" style={{
-                background: '#ffffff',
+                background: 'var(--surface)',
                 padding: '8px 10px',
                 borderRadius: 'var(--radius)',
                 border: '1px solid var(--border)',
@@ -317,13 +317,13 @@ export default function AdminDashboard() {
                     transition: 'all 0.18s ease',
                     border: '1px solid var(--border)'
                   }}
-                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#cbd5e1'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
                   onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'translateY(0)'; }}
                 >
                   <span style={{ fontSize: '11.5px', fontWeight: 600, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                     Batches (Students)
                   </span>
-                  <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#7c3aed' }}>
+                  <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#c084fc' }}>
                     {stats.totalBatches} ({stats.totalStudents})
                   </span>
                 </div>
@@ -342,13 +342,13 @@ export default function AdminDashboard() {
                     transition: 'all 0.18s ease',
                     border: '1px solid var(--border)'
                   }}
-                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#cbd5e1'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
                   onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'translateY(0)'; }}
                 >
                   <span style={{ fontSize: '11.5px', fontWeight: 600, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                     Exams - Practice
                   </span>
-                  <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#0d9488' }}>
+                  <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#34d399' }}>
                     {stats.activeExams} - {stats.cumulativePractice}
                   </span>
                 </div>
@@ -367,13 +367,13 @@ export default function AdminDashboard() {
                     transition: 'all 0.18s ease',
                     border: '1px solid var(--border)'
                   }}
-                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#cbd5e1'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
                   onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'translateY(0)'; }}
                 >
                   <span style={{ fontSize: '11.5px', fontWeight: 600, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                     Attendance
                   </span>
-                  <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#2563eb' }}>
+                  <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#38bdf8' }}>
                     {stats.todayAttendanceRate !== null ? `${stats.todayAttendanceRate}%` : '--'}
                   </span>
                 </div>
@@ -381,7 +381,7 @@ export default function AdminDashboard() {
 
               {/* Card 2: Communication & Accounts Stats */}
               <div className="card" style={{
-                background: '#ffffff',
+                background: 'var(--surface)',
                 padding: '8px 10px',
                 borderRadius: 'var(--radius)',
                 border: '1px solid var(--border)',
@@ -405,13 +405,13 @@ export default function AdminDashboard() {
                     transition: 'all 0.18s ease',
                     border: '1px solid var(--border)'
                   }}
-                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#cbd5e1'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
                   onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'translateY(0)'; }}
                 >
                   <span style={{ fontSize: '11.5px', fontWeight: 600, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                     Chat
                   </span>
-                  <span style={{ fontSize: '12.5px', fontWeight: 800, color: stats.unreadChatsCount > 0 ? '#dc2626' : 'var(--text-muted)' }}>
+                  <span style={{ fontSize: '12.5px', fontWeight: 800, color: stats.unreadChatsCount > 0 ? '#f87171' : 'var(--text-muted)' }}>
                     {stats.unreadChatsCount} Rooms
                   </span>
                 </div>
@@ -430,13 +430,13 @@ export default function AdminDashboard() {
                     transition: 'all 0.18s ease',
                     border: '1px solid var(--border)'
                   }}
-                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#cbd5e1'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
                   onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'translateY(0)'; }}
                 >
                   <span style={{ fontSize: '11.5px', fontWeight: 600, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                     Fees Pending
                   </span>
-                  <span style={{ fontSize: '12.5px', fontWeight: 800, color: stats.overdueFeesCount > 0 ? '#dc2626' : '#059669' }}>
+                  <span style={{ fontSize: '12.5px', fontWeight: 800, color: stats.overdueFeesCount > 0 ? '#f87171' : '#34d399' }}>
                     {stats.overdueFeesCount} Accounts
                   </span>
                 </div>
@@ -444,21 +444,21 @@ export default function AdminDashboard() {
             </div>
 
             {/* Quick Actions Panel */}
-            <div className="card" style={{ background: '#ffffff', padding: '10px 12px', borderRadius: 'var(--radius)', border: '1px solid var(--border)', marginBottom: '10px', boxShadow: 'var(--shadow-sm)' }}>
+            <div className="card" style={{ background: 'var(--surface)', padding: '10px 12px', borderRadius: 'var(--radius)', border: '1px solid var(--border)', marginBottom: '10px', boxShadow: 'var(--shadow-sm)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '8px' }}>
                 <h3 style={{ fontSize: '14px', fontWeight: 800, margin: 0, color: 'var(--text)' }}>Quick Actions</h3>
               </div>
               <div className="admin-quick-actions-grid">
-                <button className="btn btn-secondary" style={{ width: '100%', fontSize: '11.5px', fontWeight: 600, padding: '6px 8px', whiteSpace: 'nowrap', borderRadius: 'var(--radius-sm)' }} onClick={() => router.push('/admin/exams')}>Exams Scheduler</button>
-                <button className="btn btn-secondary" style={{ width: '100%', fontSize: '11.5px', fontWeight: 600, padding: '6px 8px', whiteSpace: 'nowrap', borderRadius: 'var(--radius-sm)' }} onClick={() => router.push('/admin/exam-generator')}>Exam Generator</button>
-                <button className="btn btn-secondary" style={{ width: '100%', fontSize: '11.5px', fontWeight: 600, padding: '6px 8px', whiteSpace: 'nowrap', borderRadius: 'var(--radius-sm)' }} onClick={() => router.push('/admin/question-bank')}>Question Bank</button>
-                <button className="btn btn-secondary" style={{ width: '100%', fontSize: '11.5px', fontWeight: 600, padding: '6px 8px', whiteSpace: 'nowrap', borderRadius: 'var(--radius-sm)' }} onClick={() => router.push('/admin/syllabus')}>Syllabus Manager</button>
-                <button className="btn btn-secondary" style={{ width: '100%', fontSize: '11.5px', fontWeight: 600, padding: '6px 8px', whiteSpace: 'nowrap', borderRadius: 'var(--radius-sm)' }} onClick={() => router.push('/admin/live-exam-monitor')}>Live Monitor</button>
-                <button className="btn btn-secondary" style={{ width: '100%', fontSize: '11.5px', fontWeight: 600, padding: '6px 8px', whiteSpace: 'nowrap', borderRadius: 'var(--radius-sm)' }} onClick={() => router.push('/admin/notices')}>Notices Manager</button>
-                <button className="btn btn-secondary" style={{ width: '100%', fontSize: '11.5px', fontWeight: 600, padding: '6px 8px', whiteSpace: 'nowrap', borderRadius: 'var(--radius-sm)' }} onClick={() => router.push('/admin/attendance')}>Attendance Sheet</button>
-                <button className="btn btn-secondary" style={{ width: '100%', fontSize: '11.5px', fontWeight: 600, padding: '6px 8px', whiteSpace: 'nowrap', borderRadius: 'var(--radius-sm)' }} onClick={() => router.push('/admin/fees')}>Fees Manager</button>
-                <button className="btn btn-secondary" style={{ width: '100%', fontSize: '11.5px', fontWeight: 600, padding: '6px 8px', whiteSpace: 'nowrap', borderRadius: 'var(--radius-sm)' }} onClick={() => router.push('/admin/chat')}>Live Chat Center</button>
-                <button className="btn btn-secondary" style={{ width: '100%', fontSize: '11.5px', fontWeight: 600, padding: '6px 8px', whiteSpace: 'nowrap', borderRadius: 'var(--radius-sm)' }} onClick={() => router.push('/admin/batches')}>Batches & Students</button>
+                <button className="btn btn-secondary" style={{ width: '100%', fontSize: '11.5px', fontWeight: 600, padding: '6px 8px', whiteSpace: 'nowrap', borderRadius: 'var(--radius-sm)', background: 'var(--surface-2)', color: 'var(--text)', border: '1px solid var(--border)' }} onClick={() => router.push('/admin/exams')}>Exams Scheduler</button>
+                <button className="btn btn-secondary" style={{ width: '100%', fontSize: '11.5px', fontWeight: 600, padding: '6px 8px', whiteSpace: 'nowrap', borderRadius: 'var(--radius-sm)', background: 'var(--surface-2)', color: 'var(--text)', border: '1px solid var(--border)' }} onClick={() => router.push('/admin/exam-generator')}>Exam Generator</button>
+                <button className="btn btn-secondary" style={{ width: '100%', fontSize: '11.5px', fontWeight: 600, padding: '6px 8px', whiteSpace: 'nowrap', borderRadius: 'var(--radius-sm)', background: 'var(--surface-2)', color: 'var(--text)', border: '1px solid var(--border)' }} onClick={() => router.push('/admin/question-bank')}>Question Bank</button>
+                <button className="btn btn-secondary" style={{ width: '100%', fontSize: '11.5px', fontWeight: 600, padding: '6px 8px', whiteSpace: 'nowrap', borderRadius: 'var(--radius-sm)', background: 'var(--surface-2)', color: 'var(--text)', border: '1px solid var(--border)' }} onClick={() => router.push('/admin/syllabus')}>Syllabus Manager</button>
+                <button className="btn btn-secondary" style={{ width: '100%', fontSize: '11.5px', fontWeight: 600, padding: '6px 8px', whiteSpace: 'nowrap', borderRadius: 'var(--radius-sm)', background: 'var(--surface-2)', color: 'var(--text)', border: '1px solid var(--border)' }} onClick={() => router.push('/admin/live-exam-monitor')}>Live Monitor</button>
+                <button className="btn btn-secondary" style={{ width: '100%', fontSize: '11.5px', fontWeight: 600, padding: '6px 8px', whiteSpace: 'nowrap', borderRadius: 'var(--radius-sm)', background: 'var(--surface-2)', color: 'var(--text)', border: '1px solid var(--border)' }} onClick={() => router.push('/admin/notices')}>Notices Manager</button>
+                <button className="btn btn-secondary" style={{ width: '100%', fontSize: '11.5px', fontWeight: 600, padding: '6px 8px', whiteSpace: 'nowrap', borderRadius: 'var(--radius-sm)', background: 'var(--surface-2)', color: 'var(--text)', border: '1px solid var(--border)' }} onClick={() => router.push('/admin/attendance')}>Attendance Sheet</button>
+                <button className="btn btn-secondary" style={{ width: '100%', fontSize: '11.5px', fontWeight: 600, padding: '6px 8px', whiteSpace: 'nowrap', borderRadius: 'var(--radius-sm)', background: 'var(--surface-2)', color: 'var(--text)', border: '1px solid var(--border)' }} onClick={() => router.push('/admin/fees')}>Fees Manager</button>
+                <button className="btn btn-secondary" style={{ width: '100%', fontSize: '11.5px', fontWeight: 600, padding: '6px 8px', whiteSpace: 'nowrap', borderRadius: 'var(--radius-sm)', background: 'var(--surface-2)', color: 'var(--text)', border: '1px solid var(--border)' }} onClick={() => router.push('/admin/chat')}>Live Chat Center</button>
+                <button className="btn btn-secondary" style={{ width: '100%', fontSize: '11.5px', fontWeight: 600, padding: '6px 8px', whiteSpace: 'nowrap', borderRadius: 'var(--radius-sm)', background: 'var(--surface-2)', color: 'var(--text)', border: '1px solid var(--border)' }} onClick={() => router.push('/admin/batches')}>Batches & Students</button>
               </div>
             </div>
 

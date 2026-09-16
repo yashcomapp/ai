@@ -793,6 +793,39 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
   // Toggle message reaction handler
   const handleToggleReaction = async (messageId: string, reactionType: 'thumbsup' | 'pray') => {
     if (!activeRoomId) return;
+
+    // Optimistic UI update
+    setMessages(prev => prev.map(m => {
+      if (m.messageId !== messageId) return m;
+      const reactions = { ...(m.reactions || {}) };
+      let thumbsupList = Array.isArray(reactions.thumbsup) ? [...reactions.thumbsup] : [];
+      let prayList = Array.isArray(reactions.pray) ? [...reactions.pray] : [];
+
+      if (reactionType === 'thumbsup') {
+        if (thumbsupList.includes(adminUid)) {
+          thumbsupList = thumbsupList.filter(u => u !== adminUid);
+        } else {
+          thumbsupList.push(adminUid);
+          prayList = prayList.filter(u => u !== adminUid);
+        }
+      } else if (reactionType === 'pray') {
+        if (prayList.includes(adminUid)) {
+          prayList = prayList.filter(u => u !== adminUid);
+        } else {
+          prayList.push(adminUid);
+          thumbsupList = thumbsupList.filter(u => u !== adminUid);
+        }
+      }
+
+      return {
+        ...m,
+        reactions: {
+          thumbsup: thumbsupList,
+          pray: prayList
+        }
+      };
+    }));
+
     try {
       const token = await firebaseUser!.getIdToken();
       const res = await fetch(`/api/chat/messages?roomId=${activeRoomId}&messageId=${messageId}`, {
@@ -1314,7 +1347,26 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
           </span>
         </div>
         <div className="page-header-right" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <button className="btn btn-secondary logout-btn" onClick={() => logout()} style={{ fontSize: '1rem', padding: '6px 10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Logout">🚪</button>
+          <button 
+            className="page-header-btn" 
+            onClick={() => logout()} 
+            style={{ 
+              background: 'rgba(255,255,255,0.05)', 
+              border: '1px solid var(--border)', 
+              borderRadius: '50%', 
+              width: '36px', 
+              height: '36px', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              color: '#f87171', 
+              cursor: 'pointer',
+              flexShrink: 0
+            }} 
+            title="Logout"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          </button>
         </div>
       </div>
 
