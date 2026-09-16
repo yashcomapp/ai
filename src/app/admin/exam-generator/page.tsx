@@ -84,6 +84,17 @@ const CANONICAL_EXAM_PRESETS: Template[] = [
     examCategory: 'foundation'
   },
   {
+    id: 'homi_bhabha_9_100',
+    name: 'Dr. Homi Bhabha Science Mock (100 Questions • 90 Mins • 100 Marks)',
+    totalQuestions: 100,
+    duration: 90,
+    positiveMarks: 1,
+    negativeMarks: 0,
+    difficulty: { easy: 20, medium: 50, hard: 30 },
+    objectiveDistribution: { single_choice: 94, numerical: 6 },
+    examCategory: 'foundation'
+  },
+  {
     id: 'quick_revision_15',
     name: 'Quick Practice Quiz (15 Questions • 20 Mins • 60 Marks)',
     totalQuestions: 15,
