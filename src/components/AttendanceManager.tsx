@@ -287,22 +287,22 @@ export default function AttendanceManager({ role }: AttendanceManagerProps) {
         )}
 
         {/* Unified Attendance Check-In & Leave Declaration Card */}
-        <div className="card" style={{ background: 'var(--surface)', padding: '20px', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-lg)', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <div className="card" style={{ background: 'var(--surface)', padding: '20px', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', display: 'flex', flexDirection: 'column', gap: '20px' }}>
           
           {/* Section 1: Today's Daily Check-In */}
           <div>
-            <h3 style={{ margin: '0 0 10px 0', fontSize: '14px', fontWeight: 'bold' }}>Today's Daily Check-In for {displayName} ({formatDateStr(todayStr)})</h3>
+            <h3 style={{ margin: '0 0 10px 0', fontSize: '14px', fontWeight: 'bold', color: 'var(--text)' }}>Today's Daily Check-In for {displayName} ({formatDateStr(todayStr)})</h3>
             
             {isCurrentlyOnLeaveToday ? (
-              <div style={{ padding: '12px', background: '#f3f4f6', border: '1px solid #d1d5db', color: '#374151', borderRadius: '6px', fontSize: '13px' }}>
+              <div style={{ padding: '12px', background: 'var(--surface-2)', border: '1px solid var(--border)', color: 'var(--text-muted)', borderRadius: '6px', fontSize: '13px' }}>
                 🌴 <strong>{displayName} is on approved leave today.</strong> No daily check-in is required.
               </div>
             ) : todayLog && todayLog.selfMarked ? (
-              <div style={{ padding: '12px', background: '#ecfdf5', border: '1px solid #10b981', color: '#065f46', borderRadius: '6px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{ color: '#10b981', fontSize: '16px', fontWeight: 'bold' }}>✓</span> {role === 'student' ? 'You' : 'Parent/Student'} voluntarily marked today's attendance as <strong>{todayLog.status.toUpperCase()}</strong>. This submission is now locked.
+              <div style={{ padding: '12px', background: 'var(--success-bg)', border: '1px solid var(--success)', color: 'var(--success)', borderRadius: '6px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ color: 'var(--success)', fontSize: '16px', fontWeight: 'bold' }}>✓</span> {role === 'student' ? 'You' : 'Parent/Student'} voluntarily marked today's attendance as <strong>{todayLog.status.toUpperCase()}</strong>. This submission is now locked.
               </div>
             ) : todayLog && todayLog.status !== 'not_marked' ? (
-              <div style={{ padding: '12px', background: 'var(--accent-soft)', border: '1px solid var(--accent-ring)', color: 'var(--accent)', borderRadius: '6px', fontSize: '13px' }}>
+              <div style={{ padding: '12px', background: 'var(--accent-soft)', border: '1px solid var(--border)', color: 'var(--accent)', borderRadius: '6px', fontSize: '13px' }}>
                 Verified Attendance marked by Teacher today: <strong>{todayLog.status.toUpperCase()}</strong>.
               </div>
             ) : (

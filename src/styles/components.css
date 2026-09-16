@@ -191,35 +191,96 @@
     background: rgba(37, 99, 235, 0.12) !important;
     border-color: rgba(37, 99, 235, 0.3) !important;
 }
+[data-theme="dark"] .card-blue .card-header,
+[data-theme="dark"] .card-academic .card-header,
+[data-theme="dark"] .card-exams .card-header {
+    background: rgba(37, 99, 235, 0.2) !important;
+    border-bottom-color: rgba(37, 99, 235, 0.3) !important;
+    color: #93c5fd !important;
+}
+
 [data-theme="dark"] .card-emerald,
 [data-theme="dark"] .card-mastery,
 [data-theme="dark"] .card-success {
     background: rgba(5, 150, 105, 0.12) !important;
     border-color: rgba(5, 150, 105, 0.3) !important;
 }
+[data-theme="dark"] .card-emerald .card-header,
+[data-theme="dark"] .card-mastery .card-header,
+[data-theme="dark"] .card-success .card-header {
+    background: rgba(5, 150, 105, 0.2) !important;
+    border-bottom-color: rgba(5, 150, 105, 0.3) !important;
+    color: #86efac !important;
+}
+
 [data-theme="dark"] .card-amber,
 [data-theme="dark"] .card-pending,
 [data-theme="dark"] .card-attention {
     background: rgba(217, 119, 6, 0.12) !important;
     border-color: rgba(217, 119, 6, 0.3) !important;
 }
+[data-theme="dark"] .card-amber .card-header,
+[data-theme="dark"] .card-pending .card-header,
+[data-theme="dark"] .card-attention .card-header {
+    background: rgba(217, 119, 6, 0.2) !important;
+    border-bottom-color: rgba(217, 119, 6, 0.3) !important;
+    color: #fcd34d !important;
+}
+
 [data-theme="dark"] .card-purple,
 [data-theme="dark"] .card-insights,
 [data-theme="dark"] .card-ai {
     background: rgba(124, 58, 237, 0.12) !important;
     border-color: rgba(124, 58, 237, 0.3) !important;
 }
+[data-theme="dark"] .card-purple .card-header,
+[data-theme="dark"] .card-insights .card-header,
+[data-theme="dark"] .card-ai .card-header {
+    background: rgba(124, 58, 237, 0.2) !important;
+    border-bottom-color: rgba(124, 58, 237, 0.3) !important;
+    color: #d8b4fe !important;
+}
+
 [data-theme="dark"] .card-cyan,
 [data-theme="dark"] .card-practice,
 [data-theme="dark"] .card-schedule {
     background: rgba(2, 132, 199, 0.12) !important;
     border-color: rgba(2, 132, 199, 0.3) !important;
 }
+[data-theme="dark"] .card-cyan .card-header,
+[data-theme="dark"] .card-practice .card-header,
+[data-theme="dark"] .card-schedule .card-header {
+    background: rgba(2, 132, 199, 0.2) !important;
+    border-bottom-color: rgba(2, 132, 199, 0.3) !important;
+    color: #67e8f9 !important;
+}
+
 [data-theme="dark"] .card-indigo,
 [data-theme="dark"] .card-overview,
 [data-theme="dark"] .card-attendance {
     background: rgba(79, 70, 229, 0.12) !important;
     border-color: rgba(79, 70, 229, 0.3) !important;
+}
+[data-theme="dark"] .card-indigo .card-header,
+[data-theme="dark"] .card-overview .card-header,
+[data-theme="dark"] .card-attendance .card-header {
+    background: rgba(79, 70, 229, 0.2) !important;
+    border-bottom-color: rgba(79, 70, 229, 0.3) !important;
+    color: #a5b4fc !important;
+}
+
+[data-theme="dark"] .card-rose,
+[data-theme="dark"] .card-danger,
+[data-theme="dark"] .card-alert {
+    background: rgba(225, 29, 72, 0.12) !important;
+    border-color: rgba(225, 29, 72, 0.3) !important;
+}
+[data-theme="dark"] .card-rose .card-header,
+[data-theme="dark"] .card-danger .card-header,
+[data-theme="dark"] .card-alert .card-header {
+    background: rgba(225, 29, 72, 0.2) !important;
+    border-bottom-color: rgba(225, 29, 72, 0.3) !important;
+    color: #fda4af !important;
 }
 
 /* Card modifiers */

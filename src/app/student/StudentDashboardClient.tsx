@@ -447,7 +447,7 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', flexWrap: 'nowrap', gap: '6px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <TrendingUp size={18} color="#1e40af" />
-                  <h3 style={{ fontSize: '14px', fontWeight: 800, margin: 0, color: '#1e40af', lineHeight: 1.2, whiteSpace: 'nowrap' }}>Glance</h3>
+                  <h3 style={{ fontSize: '14px', fontWeight: 800, margin: 0, color: 'var(--accent)', lineHeight: 1.2, whiteSpace: 'nowrap' }}>Glance</h3>
                 </div>
                 {/* Interactive Time Range Filter Dropdown */}
                 <select
@@ -455,13 +455,13 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
                   value={timeFilter}
                   onChange={(e: any) => setTimeFilter(e.target.value)}
                   style={{
-                    background: '#ffffff',
-                    color: '#1e293b',
+                    background: 'var(--surface-2)',
+                    color: 'var(--text)',
                     fontSize: '11px',
                     fontWeight: 600,
                     padding: '3px 8px',
                     borderRadius: 'var(--radius-pill)',
-                    border: '1.5px solid #bfdbfe',
+                    border: '1px solid var(--border)',
                     outline: 'none',
                     cursor: 'pointer',
                     width: 'auto',
@@ -481,33 +481,33 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
                 {/* Stat 1: Avg Exam Marks (Click opens results page) */}
                 <div 
                   onClick={() => router.push('/student/results')}
-                  style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', justifyContent: 'center', gap: '2px', cursor: 'pointer', background: '#ffffff', padding: '8px 4px', borderRadius: '10px', border: '1.5px solid #bfdbfe', transition: 'all 0.2s', boxShadow: '0 1px 2px rgba(37,99,235,0.06)' }}
+                  style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', justifyContent: 'center', gap: '2px', cursor: 'pointer', background: 'var(--surface-2)', padding: '8px 4px', borderRadius: '10px', border: '1px solid var(--border)', transition: 'all 0.2s', boxShadow: 'var(--shadow-sm)' }}
                   title="Click to view detailed exam results"
                 >
-                  <div style={{ fontSize: '1.55rem', fontWeight: 800, color: '#1e40af', lineHeight: 1 }}>
+                  <div style={{ fontSize: '1.55rem', fontWeight: 800, color: '#38bdf8', lineHeight: 1 }}>
                     {resultsSummary?.examCount ? Math.round(resultsSummary.averageScore) : 0}%
                   </div>
-                  <div style={{ fontSize: '11px', color: '#475569', fontWeight: 700 }}>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700 }}>
                     Average Marks
                   </div>
                 </div>
 
                 {/* Stat 2: LQ Score */}
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', justifyContent: 'center', gap: '2px', background: '#ffffff', padding: '8px 4px', borderRadius: '10px', border: '1.5px solid #a7f3d0', boxShadow: '0 1px 2px rgba(5,150,105,0.06)' }}>
-                  <div style={{ fontSize: '1.55rem', fontWeight: 800, color: '#065f46', lineHeight: 1 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', justifyContent: 'center', gap: '2px', background: 'var(--surface-2)', padding: '8px 4px', borderRadius: '10px', border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
+                  <div style={{ fontSize: '1.55rem', fontWeight: 800, color: '#34d399', lineHeight: 1 }}>
                     {Math.round(profile?.overallMastery || 0)}%
                   </div>
-                  <div style={{ fontSize: '11px', color: '#475569', fontWeight: 700 }}>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700 }}>
                     LQ Score
                   </div>
                 </div>
 
                 {/* Stat 3: Efforts % */}
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', justifyContent: 'center', gap: '2px', background: '#ffffff', padding: '8px 4px', borderRadius: '10px', border: '1.5px solid #fde68a', boxShadow: '0 1px 2px rgba(217,119,6,0.06)' }}>
-                  <div style={{ fontSize: '1.55rem', fontWeight: 800, color: '#92400e', lineHeight: 1 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', justifyContent: 'center', gap: '2px', background: 'var(--surface-2)', padding: '8px 4px', borderRadius: '10px', border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
+                  <div style={{ fontSize: '1.55rem', fontWeight: 800, color: '#fbbf24', lineHeight: 1 }}>
                     {Math.round((profile as any)?.effortsPercent ?? Math.min(100, Math.round((((profile as any)?.practicesCompletedCount || 0) / Math.max(1, (profile as any)?.totalTopicsCount || 24)) * 100)))}%
                   </div>
-                  <div style={{ fontSize: '11px', color: '#475569', fontWeight: 700 }}>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700 }}>
                     Efforts %
                   </div>
                 </div>
@@ -526,11 +526,11 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
               {/* Compact Header */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 {(needAttentionTopics.length > 0 || peerReviews.count > 0) ? (
-                  <AlertTriangle size={18} color="#92400e" style={{ flexShrink: 0 }} />
+                  <AlertTriangle size={18} color="#fbbf24" style={{ flexShrink: 0 }} />
                 ) : (
-                  <CheckCircle2 size={18} color="#065f46" style={{ flexShrink: 0 }} />
+                  <CheckCircle2 size={18} color="#34d399" style={{ flexShrink: 0 }} />
                 )}
-                <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 800, color: (needAttentionTopics.length > 0 || peerReviews.count > 0) ? '#92400e' : '#065f46', lineHeight: 1.2 }}>
+                <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 800, color: (needAttentionTopics.length > 0 || peerReviews.count > 0) ? '#fbbf24' : '#34d399', lineHeight: 1.2 }}>
                   {(needAttentionTopics.length > 0 || peerReviews.count > 0) 
                     ? `${needAttentionTopics.length + (peerReviews.count > 0 ? 1 : 0)} Action Item(s) Need Attention` 
                     : 'All Clear! You are fully on track!'}
@@ -539,10 +539,10 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
 
               {/* Peer Review Alert */}
               {peerReviews.count > 0 && (
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 10px', background: '#ffffff', borderRadius: 'var(--radius-sm)', border: '1.5px solid #fde68a' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 10px', background: 'var(--surface-2)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <ClipboardList size={16} color="#d97706" />
-                    <div style={{ fontWeight: 700, fontSize: '12px', color: '#92400e' }}>Peer Paper Review Pending</div>
+                    <ClipboardList size={16} color="var(--warning)" />
+                    <div style={{ fontWeight: 700, fontSize: '12px', color: 'var(--text)' }}>Peer Paper Review Pending</div>
                   </div>
                   <button 
                     className="btn btn-primary" 
@@ -558,16 +558,16 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
               {needAttentionTopics.length > 0 && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   {needAttentionTopics.slice(0, 4).map((t: any) => (
-                    <div key={t.topicCode} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 10px', background: '#ffffff', borderRadius: 'var(--radius-sm)', border: '1.5px solid #fde68a', gap: '8px' }}>
+                    <div key={t.topicCode} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 10px', background: 'var(--surface-2)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', gap: '8px' }}>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', flex: 1 }}>
-                        <div style={{ fontWeight: 700, fontSize: '12px', color: '#1e293b' }}>{t.topicName}</div>
-                        <div style={{ fontSize: '10.5px', color: '#64748b', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <div style={{ fontWeight: 700, fontSize: '12px', color: 'var(--text)' }}>{t.topicName}</div>
+                        <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                           <span>{t.subjectName || 'General'}</span>
                           <span>•</span>
                           {t.isAbsentExam ? (
-                            <span style={{ color: '#dc2626', fontWeight: 700 }}>Missed Exam</span>
+                            <span style={{ color: 'var(--danger)', fontWeight: 700 }}>Missed Exam</span>
                           ) : (
-                            <span style={{ color: '#d97706', fontWeight: 700 }}>{t.mastery || 0}% Mastery</span>
+                            <span style={{ color: 'var(--warning)', fontWeight: 700 }}>{t.mastery || 0}% Mastery</span>
                           )}
                           {t.topicClassification && (
                             <>
@@ -608,8 +608,8 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
               flexDirection: 'column',
               gap: '8px'
             }}>
-              <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 800, color: '#6b21a8', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Rocket size={18} color="#7c3aed" /> Quick Navigation
+              <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 800, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Rocket size={18} color="var(--primary)" /> Quick Navigation
               </h3>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
                 {/* Hotspot 1: Learn OS */}
@@ -621,20 +621,20 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
                     alignItems: 'center',
                     justifyContent: 'center',
                     padding: '8px 4px',
-                    background: '#ffffff',
-                    border: '1.5px solid #e9d5ff',
+                    background: 'var(--surface)',
+                    border: '1.5px solid var(--border)',
                     borderRadius: 'var(--radius-sm)',
                     cursor: 'pointer',
                     textAlign: 'center',
                     gap: '4px',
                     transition: 'all 0.2s ease',
-                    boxShadow: '0 1px 2px rgba(124,58,237,0.05)'
+                    boxShadow: 'var(--shadow-sm)'
                   }}
-                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#7c3aed'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#e9d5ff'; e.currentTarget.style.transform = 'translateY(0)'; }}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--primary)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'translateY(0)'; }}
                 >
-                  <Dumbbell size={24} color="#7c3aed" />
-                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#1e293b' }}>Learn OS</span>
+                  <Dumbbell size={24} color="var(--primary)" />
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text)' }}>Learn OS</span>
                 </div>
 
                 {/* Hotspot 2: Attendance showing % */}
@@ -646,20 +646,20 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
                     alignItems: 'center',
                     justifyContent: 'center',
                     padding: '8px 4px',
-                    background: '#ffffff',
-                    border: '1.5px solid #bbf7d0',
+                    background: 'var(--surface)',
+                    border: '1.5px solid var(--border)',
                     borderRadius: 'var(--radius-sm)',
                     cursor: 'pointer',
                     textAlign: 'center',
                     gap: '4px',
                     transition: 'all 0.2s ease',
-                    boxShadow: '0 1px 2px rgba(5,150,105,0.05)'
+                    boxShadow: 'var(--shadow-sm)'
                   }}
-                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#059669'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#bbf7d0'; e.currentTarget.style.transform = 'translateY(0)'; }}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--success)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'translateY(0)'; }}
                 >
-                  <Calendar size={24} color="#059669" />
-                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#1e293b' }}>
+                  <Calendar size={24} color="var(--success)" />
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text)' }}>
                     Attendance ({attendanceRate})
                   </span>
                 </div>
@@ -673,20 +673,20 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
                     alignItems: 'center',
                     justifyContent: 'center',
                     padding: '8px 4px',
-                    background: '#ffffff',
-                    border: '1.5px solid #fde68a',
+                    background: 'var(--surface)',
+                    border: '1.5px solid var(--border)',
                     borderRadius: 'var(--radius-sm)',
                     cursor: 'pointer',
                     textAlign: 'center',
                     gap: '4px',
                     transition: 'all 0.2s ease',
-                    boxShadow: '0 1px 2px rgba(217,119,6,0.05)'
+                    boxShadow: 'var(--shadow-sm)'
                   }}
-                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#d97706'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#fde68a'; e.currentTarget.style.transform = 'translateY(0)'; }}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--warning)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'translateY(0)'; }}
                 >
-                  <ClipboardList size={24} color="#d97706" />
-                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#1e293b' }}>Exam Register</span>
+                  <ClipboardList size={24} color="var(--warning)" />
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text)' }}>Exam Register</span>
                 </div>
 
                 {/* Hotspot 4: Live Chat */}
@@ -699,24 +699,24 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
                     alignItems: 'center',
                     justifyContent: 'center',
                     padding: '8px 4px',
-                    background: '#ffffff',
-                    border: '1.5px solid #bae6fd',
+                    background: 'var(--surface)',
+                    border: '1.5px solid var(--border)',
                     borderRadius: 'var(--radius-sm)',
                     cursor: 'pointer',
                     textAlign: 'center',
                     gap: '4px',
                     transition: 'all 0.2s ease',
-                    boxShadow: '0 1px 2px rgba(2,132,199,0.05)'
+                    boxShadow: 'var(--shadow-sm)'
                   }}
-                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#0284c7'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#bae6fd'; e.currentTarget.style.transform = 'translateY(0)'; }}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--info)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'translateY(0)'; }}
                 >
-                  <MessageSquare size={24} color="#0284c7" />
-                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#1e293b' }}>
+                  <MessageSquare size={24} color="var(--info)" />
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text)' }}>
                     Live Chat
                   </span>
                   {unreadChatsCount > 0 && (
-                    <span style={{ position: 'absolute', top: '4px', right: '4px', background: '#e11d48', color: '#fff', fontSize: '9px', fontWeight: 700, padding: '1px 5px', borderRadius: '8px' }}>
+                    <span style={{ position: 'absolute', top: '4px', right: '4px', background: 'var(--danger)', color: '#fff', fontSize: '9px', fontWeight: 700, padding: '1px 5px', borderRadius: '8px' }}>
                       {unreadChatsCount}
                     </span>
                   )}
@@ -726,19 +726,19 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
 
         {/* ROW 2: Exams & Review Card (Full Width) */}
         <div className="card card-academic" style={{ borderRadius: 'var(--radius)', overflow: 'hidden', marginBottom: '8px', boxShadow: 'var(--shadow-sm)' }}>
-          <div className="exams-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', borderBottom: '1.5px solid #bfdbfe' }}>
+          <div className="exams-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', borderBottom: '1px solid var(--border)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <FileText size={18} color="#1e40af" />
-              <h3 style={{ fontSize: '14px', fontWeight: 800, color: '#1e40af', margin: 0 }}>Exams & Review</h3>
+              <FileText size={18} color="var(--primary)" />
+              <h3 style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text)', margin: 0 }}>Exams & Review</h3>
             </div>
-            <div className="review-badge" style={{ background: '#2563eb', color: 'white', padding: '2px 8px', borderRadius: '20px', fontSize: '11px', fontWeight: 800, cursor: 'pointer' }}>
+            <div className="review-badge" style={{ background: 'var(--primary)', color: 'white', padding: '2px 8px', borderRadius: '20px', fontSize: '11px', fontWeight: 800, cursor: 'pointer' }}>
               Pending: {resultsSummary?.pendingReviewCount || 0}
             </div>
           </div>
 
           {/* Peer Review Container */}
           {peerReviews.count > 0 && (
-            <div className="peer-review-link-container" style={{ display: 'block', padding: '6px 12px', borderBottom: '1px solid var(--border-light)', background: 'var(--success-bg)' }}>
+            <div className="peer-review-link-container" style={{ display: 'block', padding: '6px 12px', borderBottom: '1px solid var(--border)', background: 'var(--success-bg)' }}>
               <a className="peer-review-link" onClick={() => handleGoToPeerReview(peerReviews.firstExamId)} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: 'var(--success)', fontSize: '12px', fontWeight: 700, textDecoration: 'none', cursor: 'pointer' }}>
                 <RotateCcw size={14} color="var(--success)" />
                 <span>Peer Review Pending</span>
@@ -750,27 +750,27 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
 
           {/* Exam Tabs (Obj, Sub, Mock) */}
           {(user as any)?.autonomous !== true ? (
-            <div className="exam-tabs" style={{ display: 'flex', borderBottom: '1.5px solid #bfdbfe', background: '#f8fafc', padding: '6px 8px', gap: '6px' }}>
+            <div className="exam-tabs" style={{ display: 'flex', borderBottom: '1px solid var(--border)', background: 'var(--surface-2)', padding: '6px 8px', gap: '6px' }}>
               <div 
                 className={`exam-tab ${examTab === 'objective' ? 'active' : ''}`} 
                 onClick={() => setExamTab('objective')}
-                style={{ flex: 1, textAlign: 'center', padding: '6px 0', fontSize: '12px', fontWeight: 800, cursor: 'pointer', borderRadius: '6px', background: examTab === 'objective' ? '#eff6ff' : '#ffffff', color: examTab === 'objective' ? '#2563eb' : '#475569', boxShadow: examTab === 'objective' ? '0 1px 2px rgba(37,99,235,0.08)' : 'none', border: examTab === 'objective' ? '2px solid #2563eb' : '1.5px solid #94a3b8', transition: 'all 0.18s ease' }}
+                style={{ flex: 1, textAlign: 'center', padding: '6px 0', fontSize: '12px', fontWeight: 800, cursor: 'pointer', borderRadius: '6px', background: examTab === 'objective' ? 'var(--surface)' : 'transparent', color: examTab === 'objective' ? 'var(--primary)' : 'var(--text-muted)', boxShadow: examTab === 'objective' ? 'var(--shadow-sm)' : 'none', border: examTab === 'objective' ? '2px solid var(--primary)' : '1px solid var(--border)', transition: 'all 0.18s ease' }}
               >
-                Obj <span className="tab-count" style={{ background: examTab === 'objective' ? '#2563eb' : '#64748b', color: '#ffffff', borderRadius: '8px', padding: '1px 5px', fontSize: '10px', fontWeight: 800, marginLeft: '3px' }}>{exams.pendingObjectiveExams.length + exams.scheduledObjectiveExams.length}</span>
+                Obj <span className="tab-count" style={{ background: examTab === 'objective' ? 'var(--primary)' : 'var(--surface-3, var(--border))', color: '#ffffff', borderRadius: '8px', padding: '1px 5px', fontSize: '10px', fontWeight: 800, marginLeft: '3px' }}>{exams.pendingObjectiveExams.length + exams.scheduledObjectiveExams.length}</span>
               </div>
               <div 
                 className={`exam-tab ${examTab === 'subjective' ? 'active' : ''}`} 
                 onClick={() => setExamTab('subjective')}
-                style={{ flex: 1, textAlign: 'center', padding: '6px 0', fontSize: '12px', fontWeight: 800, cursor: 'pointer', borderRadius: '6px', background: examTab === 'subjective' ? '#f5f3ff' : '#ffffff', color: examTab === 'subjective' ? '#7c3aed' : '#475569', boxShadow: examTab === 'subjective' ? '0 1px 2px rgba(124,58,237,0.08)' : 'none', border: examTab === 'subjective' ? '2px solid #7c3aed' : '1.5px solid #94a3b8', transition: 'all 0.18s ease' }}
+                style={{ flex: 1, textAlign: 'center', padding: '6px 0', fontSize: '12px', fontWeight: 800, cursor: 'pointer', borderRadius: '6px', background: examTab === 'subjective' ? 'var(--surface)' : 'transparent', color: examTab === 'subjective' ? 'var(--secondary, #a855f7)' : 'var(--text-muted)', boxShadow: examTab === 'subjective' ? 'var(--shadow-sm)' : 'none', border: examTab === 'subjective' ? '2px solid var(--secondary, #a855f7)' : '1px solid var(--border)', transition: 'all 0.18s ease' }}
               >
-                Sub <span className="tab-count" style={{ background: examTab === 'subjective' ? '#7c3aed' : '#64748b', color: '#ffffff', borderRadius: '8px', padding: '1px 5px', fontSize: '10px', fontWeight: 800, marginLeft: '3px' }}>{exams.pendingSubjectiveExams.length + exams.scheduledSubjectiveExams.length}</span>
+                Sub <span className="tab-count" style={{ background: examTab === 'subjective' ? 'var(--secondary, #a855f7)' : 'var(--surface-3, var(--border))', color: '#ffffff', borderRadius: '8px', padding: '1px 5px', fontSize: '10px', fontWeight: 800, marginLeft: '3px' }}>{exams.pendingSubjectiveExams.length + exams.scheduledSubjectiveExams.length}</span>
               </div>
               <div 
                 className={`exam-tab ${examTab === 'mock' ? 'active' : ''}`} 
                 onClick={() => setExamTab('mock')}
-                style={{ flex: 1, textAlign: 'center', padding: '6px 0', fontSize: '12px', fontWeight: 800, cursor: 'pointer', borderRadius: '6px', background: examTab === 'mock' ? '#fffbeb' : '#ffffff', color: examTab === 'mock' ? '#d97706' : '#475569', boxShadow: examTab === 'mock' ? '0 1px 2px rgba(217,119,6,0.08)' : 'none', border: examTab === 'mock' ? '2px solid #d97706' : '1.5px solid #94a3b8', transition: 'all 0.18s ease' }}
+                style={{ flex: 1, textAlign: 'center', padding: '6px 0', fontSize: '12px', fontWeight: 800, cursor: 'pointer', borderRadius: '6px', background: examTab === 'mock' ? 'var(--surface)' : 'transparent', color: examTab === 'mock' ? 'var(--warning)' : 'var(--text-muted)', boxShadow: examTab === 'mock' ? 'var(--shadow-sm)' : 'none', border: examTab === 'mock' ? '2px solid var(--warning)' : '1px solid var(--border)', transition: 'all 0.18s ease' }}
               >
-                Mock <span className="tab-count" style={{ background: examTab === 'mock' ? '#d97706' : '#64748b', color: '#ffffff', borderRadius: '8px', padding: '1px 5px', fontSize: '10px', fontWeight: 800, marginLeft: '3px' }}>{(exams.pendingEntranceExams?.length || 0) + (exams.scheduledEntranceExams?.length || 0)}</span>
+                Mock <span className="tab-count" style={{ background: examTab === 'mock' ? 'var(--warning)' : 'var(--surface-3, var(--border))', color: '#ffffff', borderRadius: '8px', padding: '1px 5px', fontSize: '10px', fontWeight: 800, marginLeft: '3px' }}>{(exams.pendingEntranceExams?.length || 0) + (exams.scheduledEntranceExams?.length || 0)}</span>
               </div>
             </div>
           ) : null}
@@ -783,7 +783,7 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
               ) : (
                 <>
                   {exams.pendingObjectiveExams.map((exam) => (
-                    <div key={exam.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', background: '#ffffff', borderRadius: '8px', border: '1px solid var(--border)', boxShadow: '0 1px 2px rgba(0,0,0,0.03)' }}>
+                    <div key={exam.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', background: 'var(--surface-2)', borderRadius: '8px', border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
                       <div style={{ flex: 1, minWidth: 0, paddingRight: '8px' }}>
                         <div className="pending-exam-name" style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={exam.name}>{exam.name}</div>
                         <div className="pending-exam-details" style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '1px' }}>
@@ -796,7 +796,7 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
                     </div>
                   ))}
                   {exams.scheduledObjectiveExams.map((exam) => (
-                    <div key={exam.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', background: '#ffffff', borderRadius: '8px', border: '1px solid var(--border)', opacity: 0.85 }}>
+                    <div key={exam.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', background: 'var(--surface-2)', borderRadius: '8px', border: '1px solid var(--border)', opacity: 0.85 }}>
                       <div style={{ flex: 1, minWidth: 0, paddingRight: '8px' }}>
                         <div className="pending-exam-name" style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={exam.name}>{exam.name}</div>
                         <div className="pending-exam-details" style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '1px' }}>
@@ -825,7 +825,7 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
               ) : (
                 <>
                   {exams.pendingSubjectiveExams.map((exam) => (
-                    <div key={exam.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', background: '#ffffff', borderRadius: '8px', border: '1px solid var(--border)', boxShadow: '0 1px 2px rgba(0,0,0,0.03)' }}>
+                    <div key={exam.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', background: 'var(--surface-2)', borderRadius: '8px', border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
                       <div style={{ flex: 1, minWidth: 0, paddingRight: '8px' }}>
                         <div className="pending-exam-name" style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={exam.name}>{exam.name}</div>
                         <div className="pending-exam-details" style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '1px' }}>
@@ -838,9 +838,9 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
                     </div>
                   ))}
                   {exams.scheduledSubjectiveExams.map((exam) => (
-                    <div key={exam.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', background: 'var(--bg-soft)', borderRadius: '8px', border: '1px solid var(--border-light)', opacity: 0.8 }}>
+                    <div key={exam.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', background: 'var(--surface-2)', borderRadius: '8px', border: '1px solid var(--border)', opacity: 0.85 }}>
                       <div style={{ flex: 1, minWidth: 0, paddingRight: '8px' }}>
-                        <div className="pending-exam-name" style={{ fontSize: '13px', fontWeight: 'bold', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={exam.name}>{exam.name}</div>
+                        <div className="pending-exam-name" style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={exam.name}>{exam.name}</div>
                         <div className="pending-exam-details" style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
                           {exam.subject} • {exam.questionsCount} Qs • {exam.totalTime} mins • {exam.totalMarks} Marks • Mode: {exam.mode}
                           <div style={{ marginTop: '2px', color: 'var(--warning)', fontWeight: 600, fontSize: '10.5px', display: 'flex', alignItems: 'center', gap: '3px' }}>
