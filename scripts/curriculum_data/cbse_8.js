@@ -156,7 +156,7 @@ const cbse8Subjects = [
     ]
   },
 
-  // 3. Curiosity Science (CURI)
+    // 3. Curiosity Science (CURI)
   {
     docId: 'cbse_8_curi',
     board: 'CBSE',
@@ -167,139 +167,136 @@ const cbse8Subjects = [
     chapters: [
       {
         number: '1',
-        name: 'Crop Production and Management',
+        name: "Exploring the Investigative World of Science",
         topics: [
-          createTopic('CBSE', '8', 'CURI', '1', '1', 'Agricultural Practices: Kharif vs Rabi Crops', ['Definition of crop', 'Kharif crops (sown in rainy season e.g. paddy, maize)', 'Rabi crops (sown in winter season e.g. wheat, gram, pea)']),
-          createTopic('CBSE', '8', 'CURI', '1', '2', 'Soil Preparation, Ploughing & Sowing Methods', ['Tilling and ploughing tools (plough, hoe, cultivator)', 'Selection of healthy seeds', 'Traditional tools vs modern seed drills']),
-          createTopic('CBSE', '8', 'CURI', '1', '3', 'Adding Manure and Fertilisers & Crop Rotation', ['Organic manure vs chemical fertilisers (NPK, Urea)', 'Advantages of manure on soil texture and water retention', 'Crop rotation and leguminous plants with Rhizobium']),
-          createTopic('CBSE', '8', 'CURI', '1', '4', 'Irrigation Systems: Traditional vs Modern (Drip & Sprinkler)', ['Traditional methods (moat, chain pump, dheli, rahat)', 'Sprinkler system for uneven land', 'Drip system for water conservation in arid regions']),
-          createTopic('CBSE', '8', 'CURI', '1', '5', 'Protection from Weeds, Harvesting, Threshing & Storage', ['Weeds and weedicides (e.g. 2,4-D)', 'Harvesting tools (sickle, combine harvester)', 'Threshing and winnowing', 'Grain silos, granaries, and buffer stock storage'])
+          createTopic('CBSE', '8', 'CURI', '1', '1', "Science Begins with Curiosity", ["Everyday observations that spark curiosity (puffed puri, sliced apple browning, morning dew)","Spirit of scientific inquiry: Asking \"Why?\" and \"How?\"","Observation as the starting point of scientific inquiry"]),
+          createTopic('CBSE', '8', 'CURI', '1', '2', "What is Scientific Investigation?", ["Formulating focused, testable scientific questions","Systematic observation, variable identification, and controlled experiments","Data collection, evidence evaluation, and drawing conclusions","Scientific tools, measurements, and honest documentation"])
         ]
       },
       {
         number: '2',
-        name: 'Microorganisms: Friend and Foe',
+        name: "The Invisible Living World: Beyond Our Naked Eye",
         topics: [
-          createTopic('CBSE', '8', 'CURI', '2', '1', 'Classification of Microorganisms & Habitats', ['Bacteria, Fungi, Protozoa, Algae', 'Viruses: obligate intracellular nature', 'Habitats: ice cold to hot springs, desert to marshy land']),
-          createTopic('CBSE', '8', 'CURI', '2', '2', 'Friendly Microbes: Food Production, Fermentation & Antibiotics', ['Lactobacillus in curd and cheese', 'Yeast in bread and alcohol fermentation', 'Commercial antibiotics (Penicillin, Streptomycin, Tetracycline)', 'Vaccine production and antibodies']),
-          createTopic('CBSE', '8', 'CURI', '2', '3', 'Harmful Microorganisms: Human, Plant & Animal Diseases', ['Communicable diseases and pathogen modes of transmission', 'Carriers: Female Anopheles (Malaria), Aedes (Dengue)', 'Plant diseases: Citrus canker, Rust of wheat, Yellow vein mosaic', 'Anthrax disease in animals']),
-          createTopic('CBSE', '8', 'CURI', '2', '4', 'Food Preservation Methods & Pasteurisation', ['Chemical preservatives (sodium benzoate, metabisulphite)', 'Common salt, sugar, oil, and vinegar preservation', 'Heat and cold treatments', 'Pasteurisation method (Louis Pasteur)']),
-          createTopic('CBSE', '8', 'CURI', '2', '5', 'Nitrogen Fixation & the Nitrogen Cycle', ['Atmospheric nitrogen fixation by Rhizobium & blue-green algae', 'Lightning nitrogen fixation', 'Nitrification, assimilation, and denitrification steps in nitrogen cycle'])
+          createTopic('CBSE', '8', 'CURI', '2', '1', "What is a Cell?", ["Cell as the fundamental structural and functional unit of life","History of cell discovery: Robert Hooke cork slice observation (1665)","Antonie van Leeuwenhoek: discovery of living microorganisms in water","Compound microscope and slide preparation techniques (onion peel with safranin, cheek cells with methylene blue)","Essential cell components: Cell membrane, cytoplasm, nucleus, cell wall, and plastids"]),
+          createTopic('CBSE', '8', 'CURI', '2', '2', "What Are the Levels of Organisation in the Body of a Living Organism?", ["Unicellular organisms (Amoeba, Paramecium, Chlamydomonas)","Multicellular organisms and division of labour","Hierarchy: Cell → Tissue → Organ → Organ System → Organism"]),
+          createTopic('CBSE', '8', 'CURI', '2', '3', "What Are Microorganisms?", ["Microscopic organisms invisible to the naked eye","Major groups of microorganisms: Bacteria, Fungi, Protozoa, and Algae","Habitats of microbes: pond water, soil suspensions, extreme heat, and ice","Viruses: characteristics and reproduction inside host cells"]),
+          createTopic('CBSE', '8', 'CURI', '2', '4', "How Are We Connected to Microbes?", ["Beneficial microbes: Curd making (Lactobacillus), baking and brewing fermentation (Yeast)","Production of antibiotics (Penicillin) and vaccines","Decomposition of organic matter and nutrient recycling (Nitrogen fixation)","Harmful microbes (Pathogens): infectious diseases in humans, animals, and crops","Food spoilage and food preservation techniques (salting, sugar, oil, vinegar, pasteurization)"]),
+          createTopic('CBSE', '8', 'CURI', '2', '5', "Why is Cell Considered to Be a Basic Unit of Life?", ["Independent existence and essential life processes occurring inside a single cell","Cell division for growth and repair","Synthesis of biomolecules and energy generation in cells"])
         ]
       },
       {
         number: '3',
-        name: 'Coal and Petroleum',
+        name: "Health: The Ultimate Treasure",
         topics: [
-          createTopic('CBSE', '8', 'CURI', '3', '1', 'Exhaustible vs Inexhaustible Natural Resources', ['Inexhaustible resources (sunlight, air)', 'Exhaustible resources (coal, petroleum, minerals)']),
-          createTopic('CBSE', '8', 'CURI', '3', '2', 'Coal: Carbonisation, Coke, Coal Tar and Coal Gas', ['Formation of coal from dead vegetation (Carbonisation)', 'Coke properties and uses in steel extraction', 'Coal tar and chemical products', 'Coal gas as industrial fuel']),
-          createTopic('CBSE', '8', 'CURI', '3', '3', 'Petroleum: Refining & Fractional Distillation Products', ['Formation and drilling of petroleum oil', 'Fractional distillation column', 'Fractions: Petrol, Diesel, Kerosene, LPG, Lubricating oil, Paraffin wax, Bitumen']),
-          createTopic('CBSE', '8', 'CURI', '3', '4', 'Natural Gas (CNG) & Conservation of Fossil Fuels', ['Compressed Natural Gas advantages and pipeline network', 'PCRA tips for saving petrol and diesel'])
+          createTopic('CBSE', '8', 'CURI', '3', '1', "Health: Is It More Than Not Falling Sick?", ["Definition of health: complete physical, mental, and social well-being","Being healthy vs being merely disease-free","Dimensions of wellness and emotional balance"]),
+          createTopic('CBSE', '8', 'CURI', '3', '2', "How Can We Stay Healthy?", ["Balanced diet and nutritional requirements across growing age","Personal hygiene, regular handwashing, and oral healthcare","Physical exercise, yoga, outdoor activities, and correct posture","Adequate sleep, relaxation, and mental peace","Safe drinking water and clean surroundings"]),
+          createTopic('CBSE', '8', 'CURI', '3', '3', "How Do We Know That We Are Unwell?", ["Body signals, symptoms, and clinical signs of illness (fever, fatigue, pain, cough)","Difference between symptoms (subjective feeling) and signs (objective indication)","When to seek medical advice and diagnostic testing"]),
+          createTopic('CBSE', '8', 'CURI', '3', '4', "Diseases: What Are the Causes and Types?", ["Classification into Communicable (Infectious) and Non-communicable (Non-infectious) diseases","Causative agents: bacteria, viruses, fungi, protozoa, and parasitic worms","Modes of disease transmission: airborne droplets, contaminated water/food, vectors (mosquitoes, flies), direct contact","Lifestyle diseases, nutritional deficiency disorders, and genetic conditions"]),
+          createTopic('CBSE', '8', 'CURI', '3', '5', "How to Prevent and Control Diseases?", ["Body defense mechanisms and the immune system (innate and acquired immunity)","Vaccination and immunization: principle, memory cells, and Universal Immunization Programme","Proper use of antibiotics and avoiding self-medication","Vector control: preventing mosquito breeding, proper sanitation, and community hygiene"])
         ]
       },
       {
         number: '4',
-        name: 'Combustion and Flame',
+        name: "Electricity: Magnetic and Heating Effects",
         topics: [
-          createTopic('CBSE', '8', 'CURI', '4', '1', 'Combustion Definition & Essential Conditions for Burning', ['Combustible vs non-combustible substances', 'Presence of oxygen/air necessity', 'Ignition temperature definition']),
-          createTopic('CBSE', '8', 'CURI', '4', '2', 'Types of Combustion: Rapid, Spontaneous & Explosion', ['Rapid combustion (LPG burner)', 'Spontaneous combustion (white phosphorus, coal dust)', 'Explosion (fireworks, sudden gas expansion)']),
-          createTopic('CBSE', '8', 'CURI', '4', '3', 'Structure of a Candle Flame (Three Zones)', ['Innermost dark zone (unburnt wax vapors)', 'Middle luminous yellow zone (incomplete combustion)', 'Outermost non-luminous blue zone (complete combustion & hottest)']),
-          createTopic('CBSE', '8', 'CURI', '4', '4', 'Fuel Efficiency, Calorific Value & Harmful Effects of Burning', ['Calorific value (kJ/kg)', 'Ideal fuel characteristics', 'Harmful combustion products: carbon monoxide poisoning, acid rain (SO2, NO2), global warming (CO2)'])
+          createTopic('CBSE', '8', 'CURI', '4', '1', "Does an Electric Current Have a Magnetic Effect?", ["Deflection of a magnetic compass needle near a current-carrying wire (Oersted discovery)","Magnetic field around a straight current-carrying wire","4.1.1 Electromagnets: winding insulated wire on an iron core, polarity, and factors affecting strength (number of turns, current)","Applications of electromagnets: Electric bell mechanism, magnetic cranes, electric motors"]),
+          createTopic('CBSE', '8', 'CURI', '4', '2', "Does a Current Carrying Wire Get Hot?", ["Electrical resistance and heating effect in conductors","Experiments with nichrome wire and factors affecting heat produced (current, resistance, time)","Heating appliances: electric iron, room heater, water geyser, toaster, electric kettle","Electrical safety devices: Electric fuse (working principle, low melting point alloy) and Miniature Circuit Breakers (MCBs)"]),
+          createTopic('CBSE', '8', 'CURI', '4', '3', "How Does a Battery Generate Electricity?", ["Chemical origin of electric current: conversion of chemical energy to electrical energy","4.3.1 Voltaic (Galvanic) Cells: Luigi Galvani, Alessandro Volta, simple copper-zinc cell setup","4.3.2 Dry Cells: structure, carbon rod cathode, zinc container anode, ammonium chloride electrolyte paste","4.3.3 Rechargeable Batteries: lead-acid, lithium-ion, and sustainable energy storage"])
         ]
       },
       {
         number: '5',
-        name: 'Conservation of Plants and Animals',
+        name: "Exploring Forces",
         topics: [
-          createTopic('CBSE', '8', 'CURI', '5', '1', 'Deforestation: Causes and Consequences', ['Agricultural expansion, logging, urbanisation', 'Desertification, soil erosion, and disrupted water cycle']),
-          createTopic('CBSE', '8', 'CURI', '5', '2', 'Biosphere Reserves, National Parks & Wildlife Sanctuaries', ['Panchmarhi Biosphere Reserve', 'Core, buffer, and transition zones', 'In-situ vs ex-situ conservation']),
-          createTopic('CBSE', '8', 'CURI', '5', '3', 'Flora, Fauna & Endemic Species', ['Flora and fauna definitions', 'Endemic species of Panchmarhi (sal, wild mango, Indian giant squirrel)']),
-          createTopic('CBSE', '8', 'CURI', '5', '4', 'Endangered Species, Red Data Book, Migration & Reforestation', ['Threatened vs endangered vs extinct species', 'IUCN Red Data Book records', 'Bird migration reasons', 'Reforestation practices and Forest Conservation Act'])
+          createTopic('CBSE', '8', 'CURI', '5', '1', "What is a Force?", ["Force as a push or a pull acting on an object","Everyday examples: kicking, pulling, lifting, opening, pushing","Forces arise due to interaction between two or more bodies"]),
+          createTopic('CBSE', '8', 'CURI', '5', '2', "What Can a Force Do to the Bodies on Which It is Applied?", ["Changing state of motion: moving a stationary body or stopping a moving body","Changing the speed (speeding up or slowing down) of an object","Changing the direction of motion of a moving body","Changing the shape and dimensions of an object (elastic deformation of spring, clay, sponge)"]),
+          createTopic('CBSE', '8', 'CURI', '5', '3', "Are Forces an Interaction Between Two or More Objects?", ["Forces require interaction between at least two bodies","Magnitude and direction of force","Net force calculation: forces acting in same direction add up; opposing forces subtract","Balanced forces (net force = 0) vs Unbalanced forces (produces acceleration)","SI unit of force: Newton (N)"]),
+          createTopic('CBSE', '8', 'CURI', '5', '4', "What Are the Different Types of Forces?", ["Contact Forces: Muscular force (muscles of animals/humans), Frictional force (opposing relative motion between contacting surfaces)","Non-Contact Forces: Magnetic force (action at a distance between poles), Electrostatic force (force exerted by a charged body), Gravitational force (universal attraction between masses)"]),
+          createTopic('CBSE', '8', 'CURI', '5', '5', "Weight and Its Measurement", ["Mass (amount of matter in kilograms) vs Weight (gravitational force W = m × g in Newtons)","Variation of weight with gravitational acceleration","Working principle and calibration of a Spring Balance"]),
+          createTopic('CBSE', '8', 'CURI', '5', '6', "Floating and Sinking", ["Upthrust / Buoyant force exerted by liquids on immersed objects","Relationship between density of object, density of fluid, and buoyant force","Why an iron nail sinks while a massive iron ship floats","Apparent weight loss in fluids and applications of buoyancy"])
         ]
       },
       {
         number: '6',
-        name: 'Reproduction in Animals',
+        name: "Pressure, Winds, Storms, and Cyclones",
         topics: [
-          createTopic('CBSE', '8', 'CURI', '6', '1', 'Modes of Reproduction: Sexual vs Asexual', ['Basic difference between sexual and asexual modes', 'Importance of reproduction in species continuity']),
-          createTopic('CBSE', '8', 'CURI', '6', '2', 'Male and Female Reproductive Systems in Humans', ['Male organs: Testes, sperm ducts, penis, sperm structure', 'Female organs: Ovaries, oviducts (fallopian tubes), uterus, ovum']),
-          createTopic('CBSE', '8', 'CURI', '6', '3', 'Fertilisation: Internal vs External Fertilisation', ['Zygote formation', 'Internal fertilisation in humans, cows, hens', 'External fertilisation in frogs and fish']),
-          createTopic('CBSE', '8', 'CURI', '6', '4', 'Embryo Development, Viviparous vs Oviparous Animals', ['Cleavage, blastocyst, implantation in uterine wall, foetus formation', 'Viviparous (give birth) vs Oviparous (lay eggs)']),
-          createTopic('CBSE', '8', 'CURI', '6', '5', 'Metamorphosis in Frog & Asexual Reproduction (Budding, Binary Fission)', ['Tadpole to adult metamorphosis under thyroxine control', 'Budding in Hydra', 'Binary fission in Amoeba', 'Cloning of Dolly the sheep'])
+          createTopic('CBSE', '8', 'CURI', '6', '1', "Pressure", ["Definition of pressure: Force per unit area (Pressure = Force / Area)","SI unit of pressure: Pascal (Pa = N/m²)","Effect of contact surface area on pressure (broad shoulder straps, pointed drawing pins, sharp knives, wide tyres of tractors)"]),
+          createTopic('CBSE', '8', 'CURI', '6', '2', "Pressure Exerted by Air", ["Atmospheric pressure: weight of the air column extending above Earth surface","Demonstrations of atmospheric pressure: rubber sucker adhesion, crushed tin can experiment","Pressure exerted by liquids and gases on container walls and variation with depth"]),
+          createTopic('CBSE', '8', 'CURI', '6', '3', "Formation of Wind", ["Wind as moving air caused by atmospheric pressure differences","Air expands on heating and becomes lighter/less dense (warm air rises)","Convection currents in the atmosphere","Uneven heating of land and water: Land breeze and Sea breeze","Global wind circulation patterns due to uneven solar heating of equator and poles"]),
+          createTopic('CBSE', '8', 'CURI', '6', '4', "High-Speed Winds Result in Lowering of Air Pressure", ["Scientific relationship: high wind speed leads to reduced pressure (Bernoulli principle)","Experimental demonstrations: blowing over a paper strip, blowing between suspended ping-pong balls","Lifting of tin roofs during high-speed storms"]),
+          createTopic('CBSE', '8', 'CURI', '6', '5', "Storms, Thunderstorms, and Lightning", ["Formation of thunderstorms: rising warm moist air, condensation, updrafts, and raindrops","Separation of electric charges in storm clouds and lightning discharge","Safety precautions and lightning conductors on tall buildings"]),
+          createTopic('CBSE', '8', 'CURI', '6', '6', "Cyclone", ["Structure and life cycle of a cyclone: low-pressure eye, spiraling high-speed winds, and eyewall","Factors contributing to cyclone development: wind speed, wind direction, temperature, and humidity","Destruction caused by cyclones: storm surges, coastal flooding, and structural damage","Cyclone warning systems (satellites and Doppler radars), evacuation, and disaster preparedness"])
         ]
       },
       {
         number: '7',
-        name: 'Reaching the Age of Adolescence',
+        name: "Particulate Nature of Matter",
         topics: [
-          createTopic('CBSE', '8', 'CURI', '7', '1', 'Adolescence, Puberty & Physical Body Changes', ['Growth spurt, increase in height', 'Change in body shape and voice (Adam apple)', 'Sweat and sebaceous gland activation']),
-          createTopic('CBSE', '8', 'CURI', '7', '2', 'Secondary Sexual Characteristics & Hormonal Control', ['Testosterone and estrogen roles', 'Endocrine system and pituitary master gland hormones']),
-          createTopic('CBSE', '8', 'CURI', '7', '3', 'Reproductive Phase of Life & Menstrual Cycle', ['Menarche and Menopause', 'Uterine thickening, ovulation, and menstruation cycle']),
-          createTopic('CBSE', '8', 'CURI', '7', '4', 'Sex Determination in Humans & Other Endocrine Hormones', ['XY sex chromosomes in males, XX in females', 'Thyroid (Thyroxine), Pancreas (Insulin), Adrenal (Adrenaline) glands', 'Metamorphosis hormones in insects (juvenile hormone, ecdysone)']),
-          createTopic('CBSE', '8', 'CURI', '7', '5', 'Nutritional Needs of Adolescents & Reproductive Hygiene', ['Balanced diet and iron-rich foods', 'Personal hygiene, drug abuse prevention, HIV/AIDS awareness'])
+          createTopic('CBSE', '8', 'CURI', '7', '1', "What is Matter Composed of?", ["Matter is made up of exceedingly tiny constituent particles (atoms and molecules)","Experiments demonstrating continuous space between particles (interparticle spaces)","Continuous motion of particles and diffusion (food aroma, potassium permanganate in water)","Forces of attraction between particles (cohesive forces)"]),
+          createTopic('CBSE', '8', 'CURI', '7', '2', "What Decides Different States of Matter?", ["7.2.1 Solid state: closely packed particles, fixed shape and volume, high rigidity, low compressibility","7.2.2 Liquid state: loosely packed particles, definite volume, variable shape taking container contour, fluidity","7.2.3 Gaseous state: widely spaced particles, indefinite shape and volume, high compressibility, filling entire space"]),
+          createTopic('CBSE', '8', 'CURI', '7', '3', "How Does the Interparticle Spacing Differ in the Three States of Matter?", ["Quantitative comparison of interparticle spaces across solids, liquids, and gases","Compressibility of gases vs liquids and solids (syringe piston experiment)","Effect of temperature on kinetic energy and interparticle spacing","Changes of state: melting, boiling, evaporation, condensation, and sublimation"])
         ]
       },
       {
         number: '8',
-        name: 'Force and Pressure',
+        name: "Nature of Matter: Elements, Compounds, and Mixtures",
         topics: [
-          createTopic('CBSE', '8', 'CURI', '8', '1', 'Force: A Push or a Pull & Resultant Forces', ['Forces due to interaction', 'Adding forces in same direction, subtracting opposing forces', 'Net resultant force and equilibrium']),
-          createTopic('CBSE', '8', 'CURI', '8', '2', 'Effects of Force on State of Motion & Shape', ['Changing speed of object', 'Changing direction of motion', 'Changing physical shape of flexible objects']),
-          createTopic('CBSE', '8', 'CURI', '8', '3', 'Contact Forces: Muscular Force & Friction Force', ['Muscular force action in living organisms', 'Frictional force opposing relative motion']),
-          createTopic('CBSE', '8', 'CURI', '8', '4', 'Non-Contact Forces: Magnetic, Electrostatic & Gravitational', ['Magnetic attraction and repulsion', 'Electrostatic force using charged comb/straw', 'Universal gravitational pull of Earth']),
-          createTopic('CBSE', '8', 'CURI', '8', '5', 'Pressure: Formula (P = F/A) & Liquid/Atmospheric Pressure', ['Pressure definition and SI unit Pascal (N/m²)', 'Dependence of pressure on surface contact area (sharp knife vs blunt)', 'Liquid pressure increases with depth & exerts equal sideways pressure', 'Atmospheric pressure measurement and Magdeburg hemispheres experiment'])
+          createTopic('CBSE', '8', 'CURI', '8', '1', "What Are Mixtures?", ["Definition of mixture: physical combination of two or more substances in any variable ratio","Homogeneous mixtures (uniform composition e.g. air, sugar syrup, alloys)","Heterogeneous mixtures (non-uniform composition e.g. salad, muddy water, chalk in water)","Retaining of individual properties by constituent substances"]),
+          createTopic('CBSE', '8', 'CURI', '8', '2', "What Are Pure Substances?", ["Pure substance definition: single type of particle with fixed physical and chemical constants","Sharp melting and boiling points as indicators of purity","Differences between pure substances and mixtures"]),
+          createTopic('CBSE', '8', 'CURI', '8', '3', "What Are the Types of Pure Substances?", ["8.3.1 Elements: simplest pure substances consisting of one type of atom, chemical symbols","Classification of elements: Metals (lustre, malleability, ductility, conductivity), Non-metals, and Metalloids","8.3.2 Compounds: chemical combination of two or more elements in a definite mass ratio (e.g. water H₂O, carbon dioxide CO₂, sodium chloride NaCl)","Chemical bonds and breakdown of compounds by chemical/electrical methods only"]),
+          createTopic('CBSE', '8', 'CURI', '8', '4', "How Do We Use Elements, Compounds, and Mixtures?", ["Industrial and everyday applications of metals (copper wiring, iron structures, gold jewellery)","Applications of non-metals (oxygen for respiration, nitrogen in fertilisers, chlorine for water purification)","Importance of compounds and common mixtures in technology, pharmaceuticals, and agriculture"]),
+          createTopic('CBSE', '8', 'CURI', '8', '5', "What Are Minerals?", ["Naturally occurring inorganic substances found in Earth crust with definite crystal structures","Ores as minerals from which metals are extracted economically","Conservation of mineral resources and sustainable mining practices"])
         ]
       },
       {
         number: '9',
-        name: 'Friction',
+        name: "The Amazing World of Solutes, Solvents, and Solutions",
         topics: [
-          createTopic('CBSE', '8', 'CURI', '9', '1', 'Force of Friction & Microscopic Irregularities', ['Friction opposes relative motion between surfaces in contact', 'Interlocking of microscopic irregularities on surfaces', 'Rough vs smooth surfaces']),
-          createTopic('CBSE', '8', 'CURI', '9', '2', 'Factors Affecting Friction: Normal Force & Surface Texture', ['Effect of pressing forces (normal reaction)', 'Spring balance measurement of friction']),
-          createTopic('CBSE', '8', 'CURI', '9', '3', 'Static, Sliding & Rolling Friction (Hierarchy Comparison)', ['Static friction (maximum limiting friction)', 'Sliding friction is less than static friction', 'Rolling friction is much smaller than sliding friction']),
-          createTopic('CBSE', '8', 'CURI', '9', '4', 'Friction: A Necessary Evil (Advantages & Disadvantages)', ['Advantages: Walking, writing, braking automobiles', 'Disadvantages: Wear and tear of shoes/tires, energy loss as heat']),
-          createTopic('CBSE', '8', 'CURI', '9', '5', 'Methods of Increasing & Decreasing Friction & Fluid Drag', ['Increasing: Treaded tires, grooved soles, spikes for athletes', 'Decreasing: Lubricants (oil, grease, graphite), ball bearings', 'Fluid friction (Drag) and streamlined shapes in airplanes, fish, birds'])
+          createTopic('CBSE', '8', 'CURI', '9', '1', "What Are Solute, Solvent, and Solution?", ["Definition of a solution as a homogeneous mixture of solute and solvent","Solute (dissolved substance in smaller amount) vs Solvent (dissolving medium in larger amount)","Water as the universal solvent and aqueous vs non-aqueous solutions","Different solution types: solid-in-liquid, liquid-in-liquid, gas-in-liquid (aerated drinks)"]),
+          createTopic('CBSE', '8', 'CURI', '9', '2', "How Much Solute Can a Fixed Amount of Solvent Dissolve?", ["Unsaturated vs Saturated solutions at a specific temperature","Definition of Solubility: maximum grams of solute dissolved in 100g of solvent at a given temperature","Effect of temperature on solubility of solid solutes in liquids","Supersaturated solutions and crystallization","Preparation of standard Oral Rehydration Solution (ORS)"]),
+          createTopic('CBSE', '8', 'CURI', '9', '3', "Solubility of Gases", ["Dissolution of atmospheric gases (oxygen and carbon dioxide) in water","Vital importance of dissolved oxygen for aquatic animals and plants","Effect of temperature and pressure on solubility of gases (effervescence in soda bottles, thermal pollution effects)"]),
+          createTopic('CBSE', '8', 'CURI', '9', '4', "Density and Floating or Sinking in Liquids", ["Concept of density: Mass per unit volume (Density = Mass / Volume)","Comparison of densities of different liquids (oil, water, glycerin, honey)","Density column experiments and understanding floatation based on relative density","Effect of dissolved solutes (like salt) on liquid density and buoyancy (swimming in Dead Sea)"])
         ]
       },
       {
         number: '10',
-        name: 'Sound',
+        name: "Light: Mirrors and Lenses",
         topics: [
-          createTopic('CBSE', '8', 'CURI', '10', '1', 'Sound Produced by Vibrating Bodies & Musical Instruments', ['Vibrating tuning fork, rubber band, string', 'Vocal cords (larynx) in humans', 'Wind, percussion, string musical instruments']),
-          createTopic('CBSE', '8', 'CURI', '10', '2', 'Sound Needs a Medium for Propagation (Vacuum Bell Jar Experiment)', ['Propagation through solids, liquids, gases', 'Speed of sound comparison in different media', 'Cannot travel through vacuum']),
-          createTopic('CBSE', '8', 'CURI', '10', '3', 'Human Ear Anatomy & Hearing Mechanism', ['Outer ear (pinna, ear canal)', 'Middle ear (tympanic membrane/eardrum, three tiny bones)', 'Inner ear (cochlea) and auditory nerve to brain']),
-          createTopic('CBSE', '8', 'CURI', '10', '4', 'Amplitude, Time Period, Frequency, Loudness & Pitch', ['Oscillation and frequency (Hertz, Hz)', 'Loudness is proportional to square of amplitude (Decibels, dB)', 'Pitch/shrillness is determined by frequency']),
-          createTopic('CBSE', '8', 'CURI', '10', '5', 'Audible vs Inaudible Sounds & Noise Pollution Control', ['Audible range: 20 Hz to 20,000 Hz', 'Infrasonic (<20 Hz) and Ultrasonic (>20 kHz) sounds', 'Noise vs music, health hazards of noise pollution, tree belt mitigation'])
+          createTopic('CBSE', '8', 'CURI', '10', '1', "What Are Spherical Mirrors?", ["Curved reflecting surfaces of a spherical shell","Concave mirror (converging mirror, inner surface reflecting) vs Convex mirror (diverging mirror, outer surface reflecting)","Spoon reflection demonstration (inner scooped face vs outer curved back)","Geometric terms: Pole (P), Centre of Curvature (C), Radius of Curvature (R), Principal Axis, Principal Focus (F), and Focal Length (f = R/2)"]),
+          createTopic('CBSE', '8', 'CURI', '10', '2', "Characteristics of Images Formed by Spherical Mirrors", ["Real images (procurable on screen, inverted) vs Virtual images (cannot be formed on screen, erect)","Magnified, diminished, and same-size images","Ray diagrams and image characteristics formed by concave mirrors at various object positions","Image formation by convex mirrors (always virtual, erect, and diminished)","Practical uses: Concave mirrors in torches, dentist examination, solar cookers; Convex mirrors as vehicle rear-view mirrors and wide-angle street mirrors"]),
+          createTopic('CBSE', '8', 'CURI', '10', '3', "Laws of Reflection", ["Incident ray, point of incidence, normal, and reflected ray","First Law: Angle of incidence (∠i) = Angle of reflection (∠r)","Second Law: Incident ray, normal, and reflected ray all lie in the same plane","Regular reflection vs Diffuse / irregular reflection on rough surfaces","Image properties in a plane mirror: virtual, erect, laterally inverted, equidistant"]),
+          createTopic('CBSE', '8', 'CURI', '10', '4', "Refraction of Light and Spherical Lenses", ["Phenomenon of refraction: bending of light when passing between different transparent media","Convex Lens (converging lens, thicker in middle) and Concave Lens (diverging lens, thinner in middle)","Optical centre (O), principal axis, principal focus (F), and focal length of lenses","Image formation by convex lenses (real and inverted vs virtual and magnified)","Image formation by concave lenses (always virtual, erect, diminished)","Applications: magnifying glasses, corrective spectacles, microscopes, telescopes, cameras"]),
+          createTopic('CBSE', '8', 'CURI', '10', '5', "Dispersion of Light and Rainbow Formation", ["Splitting of white sunlight into its seven constituent colors (Dispersion of light)","Glass prism experiment and the visible spectrum (VIBGYOR)","Recombination of colors using Newton disc","Formation of rainbow in the sky by tiny raindrops acting as natural prisms"])
         ]
       },
       {
         number: '11',
-        name: 'Chemical Effects of Electric Current',
+        name: "Keeping Time with the Skies",
         topics: [
-          createTopic('CBSE', '8', 'CURI', '11', '1', 'Electrical Conductivity of Liquids & Electrolytes', ['Good conductors vs poor conductors', 'Testing distilled water vs salt/acid/base solutions', 'LED and magnetic compass tester sensitivity']),
-          createTopic('CBSE', '8', 'CURI', '11', '2', 'Chemical Effects of Current (Electrolysis of Water)', ['William Nicholson electrolysis experiment (1800)', 'Oxygen gas at positive anode, Hydrogen gas at negative cathode', 'Color changes in potato conduction test']),
-          createTopic('CBSE', '8', 'CURI', '11', '3', 'Electroplating Principles, Setup & Industrial Applications', ['Electroplating definition using copper sulphate electrolyte', 'Cathode (object to be plated), Anode (pure metal plate)', 'Chromium plating on car rims/taps, Gold/silver plating on jewellery, Tin cans, Zinc galvanisation'])
+          createTopic('CBSE', '8', 'CURI', '11', '1', "How Does the Moon Appearance Change and Why?", ["Phases of the Moon: New Moon (Amavasya), Waxing Crescent, First Quarter, Waxing Gibbous, Full Moon (Purnima), Waning phases","Revolution of the Moon around Earth and sunlight reflection","Synodic lunar month (29.5 days) and the concept of Tithis in Indian astronomy"]),
+          createTopic('CBSE', '8', 'CURI', '11', '2', "How Did Calendars Come into Existence?", ["Historical evolution of timekeeping using astronomical cycles","Lunar calendars based strictly on lunar phase cycles","Solar calendars based on Earth revolution around the Sun (365.25 days, Gregorian calendar)","Luni-solar calendars: intercalary months (Adhik Maas / Mala Masa) reconciling solar and lunar years","The Indian National Calendar (Saka calendar)"]),
+          createTopic('CBSE', '8', 'CURI', '11', '3', "Are Festivals Related to Astronomical Phenomena?", ["Connection between cultural festivals and celestial alignments","Festivals celebrated on Full Moon (Raksha Bandhan, Guru Purnima, Buddha Purnima, Holi)","Festivals celebrated on New Moon (Diwali) or specific Crescent phases (Eid-ul-Fitr)","Solstices, equinoxes, and harvest festivals (Makar Sankranti, Pongal, Bihu, Baisakhi)"]),
+          createTopic('CBSE', '8', 'CURI', '11', '4', "Why Do We Launch Artificial Satellites in Space?", ["Difference between natural satellites (the Moon) and human-made artificial satellites","Satellite orbits: Low Earth Orbit (LEO), Polar Orbit, and Geostationary Orbit (GEO)","Critical applications: Weather forecasting, cyclone tracking, telecommunication, GPS navigation, remote sensing, and disaster management","India space achievements: ISRO missions (Aryabhata, INSAT, IRS, Chandrayaan, Mangalyaan, Aditya-L1)"])
         ]
       },
       {
         number: '12',
-        name: 'Some Natural Phenomena',
+        name: "How Nature Works in Harmony",
         topics: [
-          createTopic('CBSE', '8', 'CURI', '12', '1', 'Static Electricity & Charging by Friction', ['Rubbing glass rod with silk, plastic comb with hair', 'Positive and negative charge conventions', 'Like charges repel, unlike charges attract']),
-          createTopic('CBSE', '8', 'CURI', '12', '2', 'Electroscope & Transfer of Electric Charge', ['Gold-leaf electroscope construction and working', 'Earthing / grounding definition']),
-          createTopic('CBSE', '8', 'CURI', '12', '3', 'Lightning: Story of Lightning, Safety & Lightning Conductors', ['Benjamin Franklin kite experiment', 'Cloud charge accumulation and electric discharge', 'Lightning safety outdoors and indoors', 'Lightning conductor installation on buildings']),
-          createTopic('CBSE', '8', 'CURI', '12', '4', 'Earthquakes: Tectonic Plates, Seismic Waves & Richter Scale', ['Fault zones and tectonic plate boundaries', 'Epicentre, focus, and seismic waves recorded by seismograph', 'Richter scale logarithmic measurement', 'Earthquake safe structural design and safety protocols'])
+          createTopic('CBSE', '8', 'CURI', '12', '1', "How Do We Experience and Interpret Our Surroundings?", ["Concept of Habitat: natural dwelling environment fulfilling an organism life needs","Terrestrial habitats (forests, grasslands, deserts, mountains) and Aquatic habitats (ponds, rivers, oceans, wetlands)","Biotic components (producers, consumers, decomposers) and Abiotic components (sunlight, air, water, soil, temperature)","Dynamic interactions between biotic and abiotic factors"]),
+          createTopic('CBSE', '8', 'CURI', '12', '2', "Who All Live Together in Nature?", ["Organism: single living individual","Population: group of individuals of the same species living in a habitat","Community: interacting populations of different species sharing a habitat","Ecosystem: biological community together with its physical abiotic environment","Symbiotic relationships, mutualism, and pollination partnerships (insects, birds, and flowering plants)"]),
+          createTopic('CBSE', '8', 'CURI', '12', '3', "Does Every Organism in a Community Matter?", ["Trophic levels: Producers (autotrophs), Primary consumers (herbivores), Secondary & Tertiary consumers (carnivores/omnivores), Decomposers","Food Chains and interwoven Food Webs","Ecological interdependency and cascade effects: impact of removing keystone species (e.g. dragonflies, bees, apex predators) on community equilibrium","Nutrient recycling and energy flow through ecosystems"]),
+          createTopic('CBSE', '8', 'CURI', '12', '4', "Balance in Nature and Conservation", ["Biodiversity importance for ecological stability, resilience, and climate regulation","Human disruptions: habitat fragmentation, deforestation, pollution, invasive alien species, overexploitation","Threatened and endangered species (IUCN Red List awareness)","Conservation measures: In-situ (National Parks, Wildlife Sanctuaries, Biosphere Reserves) and Ex-situ (Botanical gardens, Seed banks, Zoos)","Traditional Indian ecological heritage: Sacred groves (Devrai), community forest reserves, Chipko conservation movement"])
         ]
       },
       {
         number: '13',
-        name: 'Light',
+        name: "Our Home: Earth, a Unique Life Sustaining Planet",
         topics: [
-          createTopic('CBSE', '8', 'CURI', '13', '1', 'Laws of Reflection & Normal Angle Geometry', ['Angle of incidence = Angle of reflection (∠i = ∠r)', 'Incident ray, normal, and reflected ray lie in same plane', 'Regular vs diffused/irregular reflection']),
-          createTopic('CBSE', '8', 'CURI', '13', '2', 'Image Formation by Plane Mirror & Lateral Inversion', ['Virtual, erect, same-size image at same distance behind mirror', 'Lateral inversion (left appears right and right appears left)']),
-          createTopic('CBSE', '8', 'CURI', '13', '3', 'Multiple Images, Kaleidoscope & Periscope', ['Formula for number of images: n = (360/θ) - 1', 'Kaleidoscope construction and symmetrical patterns', 'Periscope working using two plane mirrors at 45°']),
-          createTopic('CBSE', '8', 'CURI', '13', '4', 'Refraction & Dispersion of Light by Glass Prism', ['Splitting of white light into 7 colors (VIBGYOR)', 'Rainbow formation as natural dispersion']),
-          createTopic('CBSE', '8', 'CURI', '13', '5', 'Human Eye Anatomy, Defects (Myopia/Hypermetropia) & Care', ['Cornea, iris, pupil, eye lens, retina, rods & cones, blind spot', 'Persistence of vision (1/16th second)', 'Near point (25 cm) and eye hygiene', 'Braille system for visually impaired (Louis Braille)'])
+          createTopic('CBSE', '8', 'CURI', '13', '1', "Why is Earth a Unique Planet?", ["Earth as the only known cradle of life in the universe","Habitable Zone (\"Goldilocks Zone\") positioning from the Sun","Optimal temperature ranges enabling liquid water existence","Life-sustaining crust, rocks, minerals, and fertile soil layer"]),
+          createTopic('CBSE', '8', 'CURI', '13', '2', "What Do the Planets of Our Solar System Look Like?", ["Comparative physical conditions of Solar System planets (Mercury, Venus, Mars, Jupiter, Saturn, Uranus, Neptune)","Hostile environments: runaway greenhouse heat on Venus, arid low-pressure cold of Mars, crushing pressures on gas giants","Why Earth uniquely supports complex multicellular life"]),
+          createTopic('CBSE', '8', 'CURI', '13', '3', "What Makes the Earth Suitable for Life to Exist?", ["Earth interconnected spheres: Geosphere (Lithosphere), Hydrosphere, Cryosphere (polar ice and glaciers), Atmosphere, and Biosphere","Life-sustaining biogeochemical cycles: Water Cycle, Carbon Cycle, Oxygen Cycle, and Nitrogen Cycle","Atmospheric shield: Ozone layer filtering solar ultraviolet radiation and greenhouse effect maintaining global warmth","Earth geomagnetic field (magnetosphere) shielding solar winds and cosmic radiation"]),
+          createTopic('CBSE', '8', 'CURI', '13', '4', "Protecting Our Living Planet and Sustainability", ["Anthropogenic threats: Global warming, climate change, ocean acidification, plastic pollution, and loss of topsoil","Sustainable resource stewardship: Conservation of freshwater, transitioning to renewable energy (solar, wind, biomass)","Circular economy and the 5 R (Refuse, Reduce, Reuse, Repurpose, Recycle)","Individual and collective civic action for environmental preservation and planetary health"])
         ]
       }
     ]

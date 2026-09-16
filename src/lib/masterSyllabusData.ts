@@ -828,9 +828,9 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
             "name": "Science Begins with Curiosity",
             "topicCode": "CBSE-8-CURI-1-1.1",
             "subtopics": [
-              "Everyday observations that spark curiosity (puffed puri, sliced apple turning brown)",
-              "The spirit of scientific inquiry: Asking 'Why?' and 'How?'",
-              "Observation as the starting point of scientific discovery"
+              "Everyday observations that spark curiosity (puffed puri, sliced apple browning, morning dew)",
+              "Spirit of scientific inquiry: Asking \"Why?\" and \"How?\"",
+              "Observation as the starting point of scientific inquiry"
             ],
             "practiceSet": "Exercise 1.1",
             "theorems": [],
@@ -841,9 +841,8 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
             "name": "What is Scientific Investigation?",
             "topicCode": "CBSE-8-CURI-1-1.2",
             "subtopics": [
-              "Formulating focused and testable questions",
-              "Making and recording systematic observations",
-              "Designing controlled experiments: changing one variable at a time",
+              "Formulating focused, testable scientific questions",
+              "Systematic observation, variable identification, and controlled experiments",
               "Data collection, evidence evaluation, and drawing conclusions",
               "Scientific tools, measurements, and honest documentation"
             ],
@@ -862,10 +861,11 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
             "name": "What is a Cell?",
             "topicCode": "CBSE-8-CURI-2-2.1",
             "subtopics": [
-              "Cell as the basic structural and functional unit of life",
-              "History of cell discovery: Robert Hooke and cork slice observation (1665)",
-              "Antonie van Leeuwenhoek: microscopy and discovery of living microorganisms",
-              "Magnification tools and development of modern compound microscopes"
+              "Cell as the fundamental structural and functional unit of life",
+              "History of cell discovery: Robert Hooke cork slice observation (1665)",
+              "Antonie van Leeuwenhoek: discovery of living microorganisms in water",
+              "Compound microscope and slide preparation techniques (onion peel with safranin, cheek cells with methylene blue)",
+              "Essential cell components: Cell membrane, cytoplasm, nucleus, cell wall, and plastids"
             ],
             "practiceSet": "Exercise 2.1",
             "theorems": [],
@@ -873,12 +873,12 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           },
           {
             "number": "2.2",
-            "name": "Levels of Organisation in Living Organisms",
+            "name": "What Are the Levels of Organisation in the Body of a Living Organism?",
             "topicCode": "CBSE-8-CURI-2-2.2",
             "subtopics": [
               "Unicellular organisms (Amoeba, Paramecium, Chlamydomonas)",
               "Multicellular organisms and division of labour",
-              "Hierarchical organisation: Cell → Tissue → Organ → Organ System → Organism"
+              "Hierarchy: Cell → Tissue → Organ → Organ System → Organism"
             ],
             "practiceSet": "Exercise 2.2",
             "theorems": [],
@@ -886,14 +886,13 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           },
           {
             "number": "2.3",
-            "name": "Structure of Plant and Animal Cells",
+            "name": "What Are Microorganisms?",
             "topicCode": "CBSE-8-CURI-2-2.3",
             "subtopics": [
-              "Microscopic observation of onion peel cells (Plant cell slide preparation with Safranin)",
-              "Microscopic observation of human cheek cells (Animal cell slide preparation with Methylene Blue)",
-              "Cell Membrane (Plasma Membrane), Cytoplasm, and Nucleus (Nuclear membrane & Nucleolus)",
-              "Plant-specific cell parts: Cell Wall, Chloroplasts (Plastids), and Large Central Vacuole",
-              "Comparison of Plant vs Animal Cells"
+              "Microscopic organisms invisible to the naked eye",
+              "Major groups of microorganisms: Bacteria, Fungi, Protozoa, and Algae",
+              "Habitats of microbes: pond water, soil suspensions, extreme heat, and ice",
+              "Viruses: characteristics and reproduction inside host cells"
             ],
             "practiceSet": "Exercise 2.3",
             "theorems": [],
@@ -901,12 +900,14 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           },
           {
             "number": "2.4",
-            "name": "The Diverse World of Microorganisms",
+            "name": "How Are We Connected to Microbes?",
             "topicCode": "CBSE-8-CURI-2-2.4",
             "subtopics": [
-              "Major groups of microorganisms: Bacteria, Fungi, Protozoa, and Algae",
-              "Habitats of microbes: pond water, soil, extreme heat, ice, and inside living bodies",
-              "Viruses: microscopic entities on the borderline of living and non-living"
+              "Beneficial microbes: Curd making (Lactobacillus), baking and brewing fermentation (Yeast)",
+              "Production of antibiotics (Penicillin) and vaccines",
+              "Decomposition of organic matter and nutrient recycling (Nitrogen fixation)",
+              "Harmful microbes (Pathogens): infectious diseases in humans, animals, and crops",
+              "Food spoilage and food preservation techniques (salting, sugar, oil, vinegar, pasteurization)"
             ],
             "practiceSet": "Exercise 2.4",
             "theorems": [],
@@ -914,14 +915,12 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           },
           {
             "number": "2.5",
-            "name": "Microorganisms in Daily Life: Useful and Harmful",
+            "name": "Why is Cell Considered to Be a Basic Unit of Life?",
             "topicCode": "CBSE-8-CURI-2-2.5",
             "subtopics": [
-              "Useful microbes: Curd and cheese making (Lactobacillus), Fermentation in bread & beverage industries (Yeast)",
-              "Commercial production of antibiotics (Penicillin) and vaccines",
-              "Decomposition of organic waste and increasing soil fertility (Nitrogen fixers)",
-              "Harmful microbes: Pathogens causing communicable diseases in humans, plants, and animals",
-              "Food spoilage, food preservation methods (salting, sugar, oil, vinegar, pasteurisation)"
+              "Independent existence and essential life processes occurring inside a single cell",
+              "Cell division for growth and repair",
+              "Synthesis of biomolecules and energy generation in cells"
             ],
             "practiceSet": "Exercise 2.5",
             "theorems": [],
@@ -938,9 +937,9 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
             "name": "Health: Is It More Than Not Falling Sick?",
             "topicCode": "CBSE-8-CURI-3-3.1",
             "subtopics": [
-              "Comprehensive definition of health (WHO standard): Physical, Mental, and Social well-being",
-              "Differences between being healthy and being disease-free",
-              "Dimensions of holistic wellness"
+              "Definition of health: complete physical, mental, and social well-being",
+              "Being healthy vs being merely disease-free",
+              "Dimensions of wellness and emotional balance"
             ],
             "practiceSet": "Exercise 3.1",
             "theorems": [],
@@ -951,11 +950,11 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
             "name": "How Can We Stay Healthy?",
             "topicCode": "CBSE-8-CURI-3-3.2",
             "subtopics": [
-              "Balanced diet and essential nutrients (carbohydrates, proteins, fats, vitamins, minerals, water, roughage)",
-              "Personal hygiene, dental care, and handwashing protocols",
-              "Physical exercise, outdoor games, yoga, and posture",
-              "Rest, sleep cycles, and mental relaxation",
-              "Safe drinking water and community sanitation"
+              "Balanced diet and nutritional requirements across growing age",
+              "Personal hygiene, regular handwashing, and oral healthcare",
+              "Physical exercise, yoga, outdoor activities, and correct posture",
+              "Adequate sleep, relaxation, and mental peace",
+              "Safe drinking water and clean surroundings"
             ],
             "practiceSet": "Exercise 3.2",
             "theorems": [],
@@ -963,16 +962,42 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           },
           {
             "number": "3.3",
-            "name": "Diseases, Prevention, and Immunity",
+            "name": "How Do We Know That We Are Unwell?",
             "topicCode": "CBSE-8-CURI-3-3.3",
             "subtopics": [
-              "Communicable (infectious) vs Non-communicable (lifestyle/deficiency) diseases",
-              "Modes of disease transmission: air-borne, water-borne, food-borne, and vector-borne (mosquitoes, flies)",
-              "The human immune system and antibodies",
-              "Vaccination and immunization: principles, importance, and pulse polio program",
-              "Lifestyle disorders, stress management, and avoiding substance abuse"
+              "Body signals, symptoms, and clinical signs of illness (fever, fatigue, pain, cough)",
+              "Difference between symptoms (subjective feeling) and signs (objective indication)",
+              "When to seek medical advice and diagnostic testing"
             ],
             "practiceSet": "Exercise 3.3",
+            "theorems": [],
+            "problemSet": "Problem Set 3"
+          },
+          {
+            "number": "3.4",
+            "name": "Diseases: What Are the Causes and Types?",
+            "topicCode": "CBSE-8-CURI-3-3.4",
+            "subtopics": [
+              "Classification into Communicable (Infectious) and Non-communicable (Non-infectious) diseases",
+              "Causative agents: bacteria, viruses, fungi, protozoa, and parasitic worms",
+              "Modes of disease transmission: airborne droplets, contaminated water/food, vectors (mosquitoes, flies), direct contact",
+              "Lifestyle diseases, nutritional deficiency disorders, and genetic conditions"
+            ],
+            "practiceSet": "Exercise 3.4",
+            "theorems": [],
+            "problemSet": "Problem Set 3"
+          },
+          {
+            "number": "3.5",
+            "name": "How to Prevent and Control Diseases?",
+            "topicCode": "CBSE-8-CURI-3-3.5",
+            "subtopics": [
+              "Body defense mechanisms and the immune system (innate and acquired immunity)",
+              "Vaccination and immunization: principle, memory cells, and Universal Immunization Programme",
+              "Proper use of antibiotics and avoiding self-medication",
+              "Vector control: preventing mosquito breeding, proper sanitation, and community hygiene"
+            ],
+            "practiceSet": "Exercise 3.5",
             "theorems": [],
             "problemSet": "Problem Set 3"
           }
@@ -984,13 +1009,13 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
         "topics": [
           {
             "number": "4.1",
-            "name": "Magnetic Effect of Electric Current",
+            "name": "Does an Electric Current Have a Magnetic Effect?",
             "topicCode": "CBSE-8-CURI-4-4.1",
             "subtopics": [
-              "Deflection of magnetic compass needle near a current-carrying wire",
-              "Hans Christian Oersted's discovery (1820)",
-              "Magnetic field around a straight current-carrying conductor",
-              "Building simple electric circuit testers"
+              "Deflection of a magnetic compass needle near a current-carrying wire (Oersted discovery)",
+              "Magnetic field around a straight current-carrying wire",
+              "4.1.1 Electromagnets: winding insulated wire on an iron core, polarity, and factors affecting strength (number of turns, current)",
+              "Applications of electromagnets: Electric bell mechanism, magnetic cranes, electric motors"
             ],
             "practiceSet": "Exercise 4.1",
             "theorems": [],
@@ -998,13 +1023,13 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           },
           {
             "number": "4.2",
-            "name": "Electromagnets: Construction, Polarity, and Applications",
+            "name": "Does a Current Carrying Wire Get Hot?",
             "topicCode": "CBSE-8-CURI-4-4.2",
             "subtopics": [
-              "Making an electromagnet: winding insulated wire around an iron nail/core",
-              "Polarity of an electromagnet (North and South magnetic poles)",
-              "Factors affecting strength of electromagnet (number of turns, current strength, soft iron core)",
-              "Everyday applications of electromagnets: Electric bell mechanism, electric motors, magnetic cranes, loudspeakers"
+              "Electrical resistance and heating effect in conductors",
+              "Experiments with nichrome wire and factors affecting heat produced (current, resistance, time)",
+              "Heating appliances: electric iron, room heater, water geyser, toaster, electric kettle",
+              "Electrical safety devices: Electric fuse (working principle, low melting point alloy) and Miniature Circuit Breakers (MCBs)"
             ],
             "practiceSet": "Exercise 4.2",
             "theorems": [],
@@ -1012,14 +1037,13 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           },
           {
             "number": "4.3",
-            "name": "Heating Effect of Electric Current & Electrical Safety",
+            "name": "How Does a Battery Generate Electricity?",
             "topicCode": "CBSE-8-CURI-4-4.3",
             "subtopics": [
-              "Production of heat due to electrical resistance in conductors",
-              "Experiments with nichrome wire heating",
-              "Heating elements in household appliances (electric iron, room heater, geyser, toaster, kettle)",
-              "Electric fuse: working principle, low melting point wire, preventing overloads and short circuits",
-              "Miniature Circuit Breakers (MCBs) vs traditional fuses"
+              "Chemical origin of electric current: conversion of chemical energy to electrical energy",
+              "4.3.1 Voltaic (Galvanic) Cells: Luigi Galvani, Alessandro Volta, simple copper-zinc cell setup",
+              "4.3.2 Dry Cells: structure, carbon rod cathode, zinc container anode, ammonium chloride electrolyte paste",
+              "4.3.3 Rechargeable Batteries: lead-acid, lithium-ion, and sustainable energy storage"
             ],
             "practiceSet": "Exercise 4.3",
             "theorems": [],
@@ -1037,7 +1061,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
             "topicCode": "CBSE-8-CURI-5-5.1",
             "subtopics": [
               "Force as a push or a pull acting on an object",
-              "Everyday actions involving force: lifting, opening, kicking, hitting, pulling",
+              "Everyday examples: kicking, pulling, lifting, opening, pushing",
               "Forces arise due to interaction between two or more bodies"
             ],
             "practiceSet": "Exercise 5.1",
@@ -1046,13 +1070,13 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           },
           {
             "number": "5.2",
-            "name": "Effects of Force on Bodies",
+            "name": "What Can a Force Do to the Bodies on Which It is Applied?",
             "topicCode": "CBSE-8-CURI-5-5.2",
             "subtopics": [
-              "Changing state of motion: moving a stationary object, stopping a moving object",
-              "Changing the speed of a moving body (acceleration/deceleration)",
+              "Changing state of motion: moving a stationary body or stopping a moving body",
+              "Changing the speed (speeding up or slowing down) of an object",
               "Changing the direction of motion of a moving body",
-              "Changing the shape and dimensions of an object (deformation of sponge, clay, spring)"
+              "Changing the shape and dimensions of an object (elastic deformation of spring, clay, sponge)"
             ],
             "practiceSet": "Exercise 5.2",
             "theorems": [],
@@ -1060,13 +1084,13 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           },
           {
             "number": "5.3",
-            "name": "Magnitude, Direction, and Net Force",
+            "name": "Are Forces an Interaction Between Two or More Objects?",
             "topicCode": "CBSE-8-CURI-5-5.3",
             "subtopics": [
-              "Magnitude and direction as vector properties of force",
-              "Forces applied in the same direction: addition of forces",
-              "Forces applied in opposite directions: subtraction and resultant force",
-              "Balanced vs Unbalanced forces",
+              "Forces require interaction between at least two bodies",
+              "Magnitude and direction of force",
+              "Net force calculation: forces acting in same direction add up; opposing forces subtract",
+              "Balanced forces (net force = 0) vs Unbalanced forces (produces acceleration)",
               "SI unit of force: Newton (N)"
             ],
             "practiceSet": "Exercise 5.3",
@@ -1075,11 +1099,11 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           },
           {
             "number": "5.4",
-            "name": "Types of Forces: Contact and Non-Contact Forces",
+            "name": "What Are the Different Types of Forces?",
             "topicCode": "CBSE-8-CURI-5-5.4",
             "subtopics": [
-              "Contact Forces: Muscular force (action by muscles of animals/humans), Frictional force (opposing relative motion between surfaces)",
-              "Non-Contact Forces: Magnetic force (attraction/repulsion at a distance), Electrostatic force (force exerted by a charged body), Gravitational force (universal attractive force exerted by masses)"
+              "Contact Forces: Muscular force (muscles of animals/humans), Frictional force (opposing relative motion between contacting surfaces)",
+              "Non-Contact Forces: Magnetic force (action at a distance between poles), Electrostatic force (force exerted by a charged body), Gravitational force (universal attraction between masses)"
             ],
             "practiceSet": "Exercise 5.4",
             "theorems": [],
@@ -1087,15 +1111,28 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           },
           {
             "number": "5.5",
-            "name": "Mass, Weight, and Buoyancy",
+            "name": "Weight and Its Measurement",
             "topicCode": "CBSE-8-CURI-5-5.5",
             "subtopics": [
-              "Mass (quantity of matter) vs Weight (gravitational pull of Earth: W = m × g)",
-              "Measurement of weight using a spring balance",
-              "Upthrust / Buoyant force exerted by liquids on immersed objects",
-              "Principles governing floating and sinking in fluids (apparent weight loss)"
+              "Mass (amount of matter in kilograms) vs Weight (gravitational force W = m × g in Newtons)",
+              "Variation of weight with gravitational acceleration",
+              "Working principle and calibration of a Spring Balance"
             ],
             "practiceSet": "Exercise 5.5",
+            "theorems": [],
+            "problemSet": "Problem Set 5"
+          },
+          {
+            "number": "5.6",
+            "name": "Floating and Sinking",
+            "topicCode": "CBSE-8-CURI-5-5.6",
+            "subtopics": [
+              "Upthrust / Buoyant force exerted by liquids on immersed objects",
+              "Relationship between density of object, density of fluid, and buoyant force",
+              "Why an iron nail sinks while a massive iron ship floats",
+              "Apparent weight loss in fluids and applications of buoyancy"
+            ],
+            "practiceSet": "Exercise 5.6",
             "theorems": [],
             "problemSet": "Problem Set 5"
           }
@@ -1107,12 +1144,12 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
         "topics": [
           {
             "number": "6.1",
-            "name": "Pressure: Concept and Calculations",
+            "name": "Pressure",
             "topicCode": "CBSE-8-CURI-6-6.1",
             "subtopics": [
-              "Definition of pressure: Force acting per unit area (Pressure = Force / Area)",
+              "Definition of pressure: Force per unit area (Pressure = Force / Area)",
               "SI unit of pressure: Pascal (Pa = N/m²)",
-              "Relationship between surface contact area and pressure (broad bag straps, pointed pins, cutting edge of knives, camel's wide feet in sand)"
+              "Effect of contact surface area on pressure (broad shoulder straps, pointed drawing pins, sharp knives, wide tyres of tractors)"
             ],
             "practiceSet": "Exercise 6.1",
             "theorems": [],
@@ -1120,14 +1157,12 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           },
           {
             "number": "6.2",
-            "name": "Pressure Exerted by Liquids and Gases (Atmospheric Pressure)",
+            "name": "Pressure Exerted by Air",
             "topicCode": "CBSE-8-CURI-6-6.2",
             "subtopics": [
-              "Liquids exert pressure on the bottom and lateral walls of containers",
-              "Liquid pressure increases with depth below the surface",
-              "Liquids exert equal pressure at the same depth in all directions",
-              "Atmospheric pressure: weight of the air column above Earth's surface",
-              "Demonstration of atmospheric pressure with rubber suckers and crushed can experiment"
+              "Atmospheric pressure: weight of the air column extending above Earth surface",
+              "Demonstrations of atmospheric pressure: rubber sucker adhesion, crushed tin can experiment",
+              "Pressure exerted by liquids and gases on container walls and variation with depth"
             ],
             "practiceSet": "Exercise 6.2",
             "theorems": [],
@@ -1135,12 +1170,14 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           },
           {
             "number": "6.3",
-            "name": "High-Speed Winds and Air Expansion",
+            "name": "Formation of Wind",
             "topicCode": "CBSE-8-CURI-6-6.3",
             "subtopics": [
-              "Air expands on heating and becomes lighter (warm air rises, cooler air moves in to replace it)",
-              "High-speed winds are accompanied by reduced air pressure (Bernoulli's principle demonstrations: blowing over paper strip, blowing between two balloons)",
-              "Convection currents in air"
+              "Wind as moving air caused by atmospheric pressure differences",
+              "Air expands on heating and becomes lighter/less dense (warm air rises)",
+              "Convection currents in the atmosphere",
+              "Uneven heating of land and water: Land breeze and Sea breeze",
+              "Global wind circulation patterns due to uneven solar heating of equator and poles"
             ],
             "practiceSet": "Exercise 6.3",
             "theorems": [],
@@ -1148,13 +1185,12 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           },
           {
             "number": "6.4",
-            "name": "Wind Circulation and Global Weather Patterns",
+            "name": "High-Speed Winds Result in Lowering of Air Pressure",
             "topicCode": "CBSE-8-CURI-6-6.4",
             "subtopics": [
-              "Uneven heating of Earth between the equator and the poles",
-              "Uneven heating of land and water: Land breeze and Sea breeze",
-              "Summer monsoon winds bringing rainfall and winter monsoon circulation",
-              "Wind direction and anemometers"
+              "Scientific relationship: high wind speed leads to reduced pressure (Bernoulli principle)",
+              "Experimental demonstrations: blowing over a paper strip, blowing between suspended ping-pong balls",
+              "Lifting of tin roofs during high-speed storms"
             ],
             "practiceSet": "Exercise 6.4",
             "theorems": [],
@@ -1162,16 +1198,28 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           },
           {
             "number": "6.5",
-            "name": "Thunderstorms, Cyclones, and Safety Measures",
+            "name": "Storms, Thunderstorms, and Lightning",
             "topicCode": "CBSE-8-CURI-6-6.5",
             "subtopics": [
-              "Development of thunderstorms: rising warm moist air, condensation, and lightning",
-              "Structure and formation of cyclones: low pressure eye, high-speed rotating wind walls",
-              "Destruction caused by cyclones, storm surges, and high tides",
-              "Advanced cyclone warning systems (satellite and radar monitoring)",
-              "Do's and Don'ts during storms and cyclone emergencies"
+              "Formation of thunderstorms: rising warm moist air, condensation, updrafts, and raindrops",
+              "Separation of electric charges in storm clouds and lightning discharge",
+              "Safety precautions and lightning conductors on tall buildings"
             ],
             "practiceSet": "Exercise 6.5",
+            "theorems": [],
+            "problemSet": "Problem Set 6"
+          },
+          {
+            "number": "6.6",
+            "name": "Cyclone",
+            "topicCode": "CBSE-8-CURI-6-6.6",
+            "subtopics": [
+              "Structure and life cycle of a cyclone: low-pressure eye, spiraling high-speed winds, and eyewall",
+              "Factors contributing to cyclone development: wind speed, wind direction, temperature, and humidity",
+              "Destruction caused by cyclones: storm surges, coastal flooding, and structural damage",
+              "Cyclone warning systems (satellites and Doppler radars), evacuation, and disaster preparedness"
+            ],
+            "practiceSet": "Exercise 6.6",
             "theorems": [],
             "problemSet": "Problem Set 6"
           }
@@ -1186,10 +1234,10 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
             "name": "What is Matter Composed of?",
             "topicCode": "CBSE-8-CURI-7-7.1",
             "subtopics": [
-              "Matter is made up of extremely tiny particles (atoms and molecules)",
-              "Continuous space between particles (interparticle spaces)",
-              "Continuous random motion of particles (diffusion of ink in water, fragrance of incense stick)",
-              "Forces of attraction between particles (intermolecular cohesive forces)"
+              "Matter is made up of exceedingly tiny constituent particles (atoms and molecules)",
+              "Experiments demonstrating continuous space between particles (interparticle spaces)",
+              "Continuous motion of particles and diffusion (food aroma, potassium permanganate in water)",
+              "Forces of attraction between particles (cohesive forces)"
             ],
             "practiceSet": "Exercise 7.1",
             "theorems": [],
@@ -1200,10 +1248,9 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
             "name": "What Decides Different States of Matter?",
             "topicCode": "CBSE-8-CURI-7-7.2",
             "subtopics": [
-              "Solid state: tightly packed particles, fixed shape, fixed volume, negligible compressibility, high density",
-              "Liquid state: moderately spaced particles, definite volume, no fixed shape (takes shape of container), fluidity",
-              "Gaseous state: widely separated particles, no fixed shape, no fixed volume, high compressibility, filling container completely",
-              "Comparative table of physical properties across states of matter"
+              "7.2.1 Solid state: closely packed particles, fixed shape and volume, high rigidity, low compressibility",
+              "7.2.2 Liquid state: loosely packed particles, definite volume, variable shape taking container contour, fluidity",
+              "7.2.3 Gaseous state: widely spaced particles, indefinite shape and volume, high compressibility, filling entire space"
             ],
             "practiceSet": "Exercise 7.2",
             "theorems": [],
@@ -1211,14 +1258,13 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           },
           {
             "number": "7.3",
-            "name": "Interconversion and Changes in States of Matter",
+            "name": "How Does the Interparticle Spacing Differ in the Three States of Matter?",
             "topicCode": "CBSE-8-CURI-7-7.3",
             "subtopics": [
-              "Effect of temperature on kinetic energy of particles",
-              "Melting (fusion) and Melting Point; Freezing (solidification)",
-              "Boiling (vaporisation) and Boiling Point; Condensation (liquefaction)",
-              "Sublimation (solid to gas directly e.g. camphor, ammonium chloride) and Deposition",
-              "Evaporation: surface phenomenon, cooling effect of evaporation, factors affecting rate of evaporation (surface area, temperature, humidity, wind speed)"
+              "Quantitative comparison of interparticle spaces across solids, liquids, and gases",
+              "Compressibility of gases vs liquids and solids (syringe piston experiment)",
+              "Effect of temperature on kinetic energy and interparticle spacing",
+              "Changes of state: melting, boiling, evaporation, condensation, and sublimation"
             ],
             "practiceSet": "Exercise 7.3",
             "theorems": [],
@@ -1235,10 +1281,10 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
             "name": "What Are Mixtures?",
             "topicCode": "CBSE-8-CURI-8-8.1",
             "subtopics": [
-              "Definition of mixture: physical combination of two or more substances in any proportion",
-              "Homogeneous mixtures (uniform composition and appearance throughout e.g. air, lemonade, salt solution)",
-              "Heterogeneous mixtures (non-uniform composition with visible boundaries e.g. sand in water, oil and water, soil)",
-              "Characteristics and retaining properties of constituent components in mixtures"
+              "Definition of mixture: physical combination of two or more substances in any variable ratio",
+              "Homogeneous mixtures (uniform composition e.g. air, sugar syrup, alloys)",
+              "Heterogeneous mixtures (non-uniform composition e.g. salad, muddy water, chalk in water)",
+              "Retaining of individual properties by constituent substances"
             ],
             "practiceSet": "Exercise 8.1",
             "theorems": [],
@@ -1246,15 +1292,12 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           },
           {
             "number": "8.2",
-            "name": "What Are Pure Substances? Elements and Compounds",
+            "name": "What Are Pure Substances?",
             "topicCode": "CBSE-8-CURI-8-8.2",
             "subtopics": [
-              "Definition of pure substances: fixed chemical composition and sharp melting/boiling points",
-              "Elements: substances made of only one kind of atom, cannot be broken down chemically",
-              "Classification of elements: Metals (lustrous, malleable, ductile, good conductors), Non-metals, and Metalloids",
-              "Chemical symbols of common elements (H, O, C, N, Na, Fe, Cu, Au, Ag, Cl)",
-              "Compounds: pure substances formed by chemical combination of two or more elements in a fixed mass ratio (e.g. water H2O, carbon dioxide CO2, common salt NaCl)",
-              "Key differences between Compounds and Mixtures"
+              "Pure substance definition: single type of particle with fixed physical and chemical constants",
+              "Sharp melting and boiling points as indicators of purity",
+              "Differences between pure substances and mixtures"
             ],
             "practiceSet": "Exercise 8.2",
             "theorems": [],
@@ -1262,17 +1305,41 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           },
           {
             "number": "8.3",
-            "name": "Separation of Components of Mixtures",
+            "name": "What Are the Types of Pure Substances?",
             "topicCode": "CBSE-8-CURI-8-8.3",
             "subtopics": [
-              "Physical methods of separation based on difference in properties",
-              "Handpicking, Sieving, Winnowing, and Threshing",
-              "Sedimentation, Decantation, and Filtration",
-              "Evaporation, Crystallisation, and Distillation (separating miscible liquids)",
-              "Magnetic separation and Centrifugation (separating dense and light particles)",
-              "Paper Chromatography (separating dyes in ink)"
+              "8.3.1 Elements: simplest pure substances consisting of one type of atom, chemical symbols",
+              "Classification of elements: Metals (lustre, malleability, ductility, conductivity), Non-metals, and Metalloids",
+              "8.3.2 Compounds: chemical combination of two or more elements in a definite mass ratio (e.g. water H₂O, carbon dioxide CO₂, sodium chloride NaCl)",
+              "Chemical bonds and breakdown of compounds by chemical/electrical methods only"
             ],
             "practiceSet": "Exercise 8.3",
+            "theorems": [],
+            "problemSet": "Problem Set 8"
+          },
+          {
+            "number": "8.4",
+            "name": "How Do We Use Elements, Compounds, and Mixtures?",
+            "topicCode": "CBSE-8-CURI-8-8.4",
+            "subtopics": [
+              "Industrial and everyday applications of metals (copper wiring, iron structures, gold jewellery)",
+              "Applications of non-metals (oxygen for respiration, nitrogen in fertilisers, chlorine for water purification)",
+              "Importance of compounds and common mixtures in technology, pharmaceuticals, and agriculture"
+            ],
+            "practiceSet": "Exercise 8.4",
+            "theorems": [],
+            "problemSet": "Problem Set 8"
+          },
+          {
+            "number": "8.5",
+            "name": "What Are Minerals?",
+            "topicCode": "CBSE-8-CURI-8-8.5",
+            "subtopics": [
+              "Naturally occurring inorganic substances found in Earth crust with definite crystal structures",
+              "Ores as minerals from which metals are extracted economically",
+              "Conservation of mineral resources and sustainable mining practices"
+            ],
+            "practiceSet": "Exercise 8.5",
             "theorems": [],
             "problemSet": "Problem Set 8"
           }
@@ -1287,10 +1354,10 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
             "name": "What Are Solute, Solvent, and Solution?",
             "topicCode": "CBSE-8-CURI-9-9.1",
             "subtopics": [
-              "Definition of a solution as a homogeneous mixture of two or more substances",
-              "Components of a solution: Solute (substance dissolved) and Solvent (medium that dissolves solute)",
-              "Aqueous solutions (water as universal solvent) vs Non-aqueous solutions (alcohol, acetone)",
-              "Solid-in-liquid, liquid-in-liquid, gas-in-liquid, and gas-in-gas solutions (alloys, soda water, air)"
+              "Definition of a solution as a homogeneous mixture of solute and solvent",
+              "Solute (dissolved substance in smaller amount) vs Solvent (dissolving medium in larger amount)",
+              "Water as the universal solvent and aqueous vs non-aqueous solutions",
+              "Different solution types: solid-in-liquid, liquid-in-liquid, gas-in-liquid (aerated drinks)"
             ],
             "practiceSet": "Exercise 9.1",
             "theorems": [],
@@ -1298,14 +1365,14 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           },
           {
             "number": "9.2",
-            "name": "How Much Solute Can a Fixed Amount of Solvent Dissolve? (Solubility)",
+            "name": "How Much Solute Can a Fixed Amount of Solvent Dissolve?",
             "topicCode": "CBSE-8-CURI-9-9.2",
             "subtopics": [
-              "Unsaturated solution vs Saturated solution at a given temperature",
-              "Concept of Solubility: maximum mass of solute dissolved in 100g of solvent at a specific temperature",
-              "Factors affecting solubility: temperature, nature of solute and solvent, and stirring/agitation",
-              "Effect of temperature increase on solubility of solids in liquids vs gases in liquids",
-              "Practical application: preparing an Oral Rehydration Solution (ORS) at home"
+              "Unsaturated vs Saturated solutions at a specific temperature",
+              "Definition of Solubility: maximum grams of solute dissolved in 100g of solvent at a given temperature",
+              "Effect of temperature on solubility of solid solutes in liquids",
+              "Supersaturated solutions and crystallization",
+              "Preparation of standard Oral Rehydration Solution (ORS)"
             ],
             "practiceSet": "Exercise 9.2",
             "theorems": [],
@@ -1313,15 +1380,28 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           },
           {
             "number": "9.3",
-            "name": "Solutions, Suspensions, and Colloids",
+            "name": "Solubility of Gases",
             "topicCode": "CBSE-8-CURI-9-9.3",
             "subtopics": [
-              "True Solutions: particle size < 1 nm, homogeneous, transparent, do not scatter light, pass through filter paper",
-              "Suspensions: particle size > 100 nm, heterogeneous, opaque/translucent, particles settle down on standing, separable by filtration",
-              "Colloids: intermediate particle size (1 nm to 100 nm), heterogeneous appearance of homogeneity, do not settle, Tyndall effect (scattering of a light beam)",
-              "Everyday examples of colloids: milk, fog, smoke, jelly, paint"
+              "Dissolution of atmospheric gases (oxygen and carbon dioxide) in water",
+              "Vital importance of dissolved oxygen for aquatic animals and plants",
+              "Effect of temperature and pressure on solubility of gases (effervescence in soda bottles, thermal pollution effects)"
             ],
             "practiceSet": "Exercise 9.3",
+            "theorems": [],
+            "problemSet": "Problem Set 9"
+          },
+          {
+            "number": "9.4",
+            "name": "Density and Floating or Sinking in Liquids",
+            "topicCode": "CBSE-8-CURI-9-9.4",
+            "subtopics": [
+              "Concept of density: Mass per unit volume (Density = Mass / Volume)",
+              "Comparison of densities of different liquids (oil, water, glycerin, honey)",
+              "Density column experiments and understanding floatation based on relative density",
+              "Effect of dissolved solutes (like salt) on liquid density and buoyancy (swimming in Dead Sea)"
+            ],
+            "practiceSet": "Exercise 9.4",
             "theorems": [],
             "problemSet": "Problem Set 9"
           }
@@ -1336,11 +1416,10 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
             "name": "What Are Spherical Mirrors?",
             "topicCode": "CBSE-8-CURI-10-10.1",
             "subtopics": [
-              "Curved reflecting surfaces of a hollow glass sphere",
-              "Concave mirror (inner curved surface reflecting / converging mirror)",
-              "Convex mirror (outer bulging surface reflecting / diverging mirror)",
-              "Demonstration of curved reflection using the inside and outside of a shiny metallic spoon",
-              "Key terminology: Pole (P), Centre of Curvature (C), Radius of Curvature (R), Principal Axis, Principal Focus (F), and Focal Length (f = R/2)"
+              "Curved reflecting surfaces of a spherical shell",
+              "Concave mirror (converging mirror, inner surface reflecting) vs Convex mirror (diverging mirror, outer surface reflecting)",
+              "Spoon reflection demonstration (inner scooped face vs outer curved back)",
+              "Geometric terms: Pole (P), Centre of Curvature (C), Radius of Curvature (R), Principal Axis, Principal Focus (F), and Focal Length (f = R/2)"
             ],
             "practiceSet": "Exercise 10.1",
             "theorems": [],
@@ -1351,11 +1430,11 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
             "name": "Characteristics of Images Formed by Spherical Mirrors",
             "topicCode": "CBSE-8-CURI-10-10.2",
             "subtopics": [
-              "Real image (formed by actual intersection of rays, can be captured on screen) vs Virtual image (cannot be obtained on screen)",
-              "Inverted image vs Erect image, Magnified vs Diminished image",
-              "Image formation by concave mirror at varying object distances (infinity, beyond C, at C, between C & F, at F, between F & P)",
-              "Image formation by convex mirror (always virtual, erect, and diminished)",
-              "Everyday uses: Concave mirrors in dental surgery, torches, headlights, solar cookers; Convex mirrors in vehicle rear-view mirrors and security surveillance"
+              "Real images (procurable on screen, inverted) vs Virtual images (cannot be formed on screen, erect)",
+              "Magnified, diminished, and same-size images",
+              "Ray diagrams and image characteristics formed by concave mirrors at various object positions",
+              "Image formation by convex mirrors (always virtual, erect, and diminished)",
+              "Practical uses: Concave mirrors in torches, dentist examination, solar cookers; Convex mirrors as vehicle rear-view mirrors and wide-angle street mirrors"
             ],
             "practiceSet": "Exercise 10.2",
             "theorems": [],
@@ -1363,14 +1442,14 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           },
           {
             "number": "10.3",
-            "name": "Laws of Reflection and Plane Mirrors",
+            "name": "Laws of Reflection",
             "topicCode": "CBSE-8-CURI-10-10.3",
             "subtopics": [
-              "Ray of light, Incident ray, Point of incidence, Reflected ray, and Normal line",
-              "First Law of Reflection: Angle of incidence (∠i) = Angle of reflection (∠r)",
-              "Second Law of Reflection: Incident ray, normal, and reflected ray all lie in the same plane",
-              "Regular (specular) reflection vs Diffuse (irregular) reflection on rough surfaces",
-              "Image in a plane mirror: virtual, erect, same size, same distance behind mirror, and laterally inverted"
+              "Incident ray, point of incidence, normal, and reflected ray",
+              "First Law: Angle of incidence (∠i) = Angle of reflection (∠r)",
+              "Second Law: Incident ray, normal, and reflected ray all lie in the same plane",
+              "Regular reflection vs Diffuse / irregular reflection on rough surfaces",
+              "Image properties in a plane mirror: virtual, erect, laterally inverted, equidistant"
             ],
             "practiceSet": "Exercise 10.3",
             "theorems": [],
@@ -1381,11 +1460,12 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
             "name": "Refraction of Light and Spherical Lenses",
             "topicCode": "CBSE-8-CURI-10-10.4",
             "subtopics": [
-              "Refraction: bending of light when passing from one transparent medium to another",
-              "Convex Lens (converging lens, thicker at center) and Concave Lens (diverging lens, thinner at center)",
-              "Optical centre, Principal axis, Principal focus, and Focal length of lenses",
-              "Image characteristics formed by convex lenses (real/virtual, magnified/diminished) and concave lenses",
-              "Practical applications of lenses: Magnifying glasses, reading spectacles, microscopes, telescopes, camera lenses"
+              "Phenomenon of refraction: bending of light when passing between different transparent media",
+              "Convex Lens (converging lens, thicker in middle) and Concave Lens (diverging lens, thinner in middle)",
+              "Optical centre (O), principal axis, principal focus (F), and focal length of lenses",
+              "Image formation by convex lenses (real and inverted vs virtual and magnified)",
+              "Image formation by concave lenses (always virtual, erect, diminished)",
+              "Applications: magnifying glasses, corrective spectacles, microscopes, telescopes, cameras"
             ],
             "practiceSet": "Exercise 10.4",
             "theorems": [],
@@ -1393,13 +1473,13 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           },
           {
             "number": "10.5",
-            "name": "Dispersion of Light and Spectrum",
+            "name": "Dispersion of Light and Rainbow Formation",
             "topicCode": "CBSE-8-CURI-10-10.5",
             "subtopics": [
-              "Splitting of white sunlight into seven constituent colors (Dispersion of light)",
-              "Passing white light through a triangular glass prism to form a spectrum (VIBGYOR: Violet, Indigo, Blue, Green, Yellow, Orange, Red)",
-              "Newton's colour disc and recombination of colors into white light",
-              "Formation of rainbow in the sky by tiny suspended raindrops acting as natural prisms"
+              "Splitting of white sunlight into its seven constituent colors (Dispersion of light)",
+              "Glass prism experiment and the visible spectrum (VIBGYOR)",
+              "Recombination of colors using Newton disc",
+              "Formation of rainbow in the sky by tiny raindrops acting as natural prisms"
             ],
             "practiceSet": "Exercise 10.5",
             "theorems": [],
@@ -1413,12 +1493,12 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
         "topics": [
           {
             "number": "11.1",
-            "name": "How Does the Moon's Appearance Change and Why?",
+            "name": "How Does the Moon Appearance Change and Why?",
             "topicCode": "CBSE-8-CURI-11-11.1",
             "subtopics": [
-              "11.1.1 Phases of the Moon: New Moon (Amavasya), Waxing Crescent, First Quarter, Waxing Gibbous, Full Moon (Purnima), Waning phases",
-              "11.1.2 Locating the Moon in the night sky over a month",
-              "11.1.3 Making sense of our observations: Moon's revolution around Earth, non-luminous Moon reflecting sunlight, Lunar month (29.5 days) and Tithis"
+              "Phases of the Moon: New Moon (Amavasya), Waxing Crescent, First Quarter, Waxing Gibbous, Full Moon (Purnima), Waning phases",
+              "Revolution of the Moon around Earth and sunlight reflection",
+              "Synodic lunar month (29.5 days) and the concept of Tithis in Indian astronomy"
             ],
             "practiceSet": "Exercise 11.1",
             "theorems": [],
@@ -1429,10 +1509,11 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
             "name": "How Did Calendars Come into Existence?",
             "topicCode": "CBSE-8-CURI-11-11.2",
             "subtopics": [
-              "11.2.1 Lunar calendars: tracking months by lunar cycles and phases",
-              "11.2.2 Solar calendars: tracking years by Earth's revolution around the Sun (Gregorian calendar)",
-              "11.2.3 Luni-solar calendars: intercalary months (Adhik Maas) reconciling solar and lunar years",
-              "11.2.4 The Indian National Calendar (Saka calendar) and cultural festivals linked to astronomy"
+              "Historical evolution of timekeeping using astronomical cycles",
+              "Lunar calendars based strictly on lunar phase cycles",
+              "Solar calendars based on Earth revolution around the Sun (365.25 days, Gregorian calendar)",
+              "Luni-solar calendars: intercalary months (Adhik Maas / Mala Masa) reconciling solar and lunar years",
+              "The Indian National Calendar (Saka calendar)"
             ],
             "practiceSet": "Exercise 11.2",
             "theorems": [],
@@ -1440,14 +1521,13 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           },
           {
             "number": "11.3",
-            "name": "Stars, Constellations, and Celestial Navigation",
+            "name": "Are Festivals Related to Astronomical Phenomena?",
             "topicCode": "CBSE-8-CURI-11-11.3",
             "subtopics": [
-              "Apparent daily motion of celestial objects from East to West due to Earth's West-to-East rotation",
-              "Pole Star (Dhruva Tara): stationary position above North Pole and its use in navigation",
-              "Recognizing major constellations in night sky: Ursa Major (Great Bear / Saptarshi), Orion (The Hunter), Cassiopeia, Leo Major",
-              "Finding Pole Star using pointer stars of Ursa Major; Finding Sirius (brightest star) using Orion's belt",
-              "Sundials and historical time measurement using Sun shadows (Jantar Mantar)"
+              "Connection between cultural festivals and celestial alignments",
+              "Festivals celebrated on Full Moon (Raksha Bandhan, Guru Purnima, Buddha Purnima, Holi)",
+              "Festivals celebrated on New Moon (Diwali) or specific Crescent phases (Eid-ul-Fitr)",
+              "Solstices, equinoxes, and harvest festivals (Makar Sankranti, Pongal, Bihu, Baisakhi)"
             ],
             "practiceSet": "Exercise 11.3",
             "theorems": [],
@@ -1455,14 +1535,13 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           },
           {
             "number": "11.4",
-            "name": "Our Solar System and Celestial Bodies",
+            "name": "Why Do We Launch Artificial Satellites in Space?",
             "topicCode": "CBSE-8-CURI-11-11.4",
             "subtopics": [
-              "The Sun as central star and gravitational anchor",
-              "Eight planets in order: Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus, Neptune",
-              "Asteroids and Asteroid Belt between Mars and Jupiter",
-              "Comets, eccentric orbits, and glowing tails; Meteors (shooting stars) and Meteorites",
-              "Artificial Satellites: polar and geostationary orbits, space exploration and Indian space missions (ISRO Chandrayaan, Mangalyaan, Aditya-L1)"
+              "Difference between natural satellites (the Moon) and human-made artificial satellites",
+              "Satellite orbits: Low Earth Orbit (LEO), Polar Orbit, and Geostationary Orbit (GEO)",
+              "Critical applications: Weather forecasting, cyclone tracking, telecommunication, GPS navigation, remote sensing, and disaster management",
+              "India space achievements: ISRO missions (Aryabhata, INSAT, IRS, Chandrayaan, Mangalyaan, Aditya-L1)"
             ],
             "practiceSet": "Exercise 11.4",
             "theorems": [],
@@ -1479,10 +1558,10 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
             "name": "How Do We Experience and Interpret Our Surroundings?",
             "topicCode": "CBSE-8-CURI-12-12.1",
             "subtopics": [
-              "Concept of Habitat: specific natural environment providing food, water, shelter, and breeding space",
-              "Aquatic habitats (freshwater ponds, rivers, oceans) vs Terrestrial habitats (forests, grasslands, deserts, mountains)",
-              "Biotic components (plants, animals, microorganisms) and Abiotic components (sunlight, air, water, soil, temperature)",
-              "Dynamic interactions between biotic and abiotic factors sustaining an ecosystem"
+              "Concept of Habitat: natural dwelling environment fulfilling an organism life needs",
+              "Terrestrial habitats (forests, grasslands, deserts, mountains) and Aquatic habitats (ponds, rivers, oceans, wetlands)",
+              "Biotic components (producers, consumers, decomposers) and Abiotic components (sunlight, air, water, soil, temperature)",
+              "Dynamic interactions between biotic and abiotic factors"
             ],
             "practiceSet": "Exercise 12.1",
             "theorems": [],
@@ -1490,13 +1569,14 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           },
           {
             "number": "12.2",
-            "name": "Who All Live Together in Nature? (Populations & Communities)",
+            "name": "Who All Live Together in Nature?",
             "topicCode": "CBSE-8-CURI-12-12.2",
             "subtopics": [
-              "Organism: individual living entity",
-              "Population: group of individuals of the same species living in a habitat at a given time",
-              "Community: all interacting populations of different species sharing the same habitat",
-              "Ecosystem: integrated biological community interacting with its physical abiotic environment"
+              "Organism: single living individual",
+              "Population: group of individuals of the same species living in a habitat",
+              "Community: interacting populations of different species sharing a habitat",
+              "Ecosystem: biological community together with its physical abiotic environment",
+              "Symbiotic relationships, mutualism, and pollination partnerships (insects, birds, and flowering plants)"
             ],
             "practiceSet": "Exercise 12.2",
             "theorems": [],
@@ -1504,14 +1584,13 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           },
           {
             "number": "12.3",
-            "name": "Does Every Organism in a Community Matter? (Interdependence & Food Webs)",
+            "name": "Does Every Organism in a Community Matter?",
             "topicCode": "CBSE-8-CURI-12-12.3",
             "subtopics": [
-              "Producers (Autotrophs): green plants capturing solar energy via photosynthesis",
-              "Consumers (Heterotrophs): Herbivores (primary), Carnivores (secondary/tertiary), Omnivores",
-              "Decomposers and Scavengers: recycling organic matter and returning nutrients to soil",
-              "Food Chains and complex Food Webs illustrating interdependency",
-              "Cascade effects in ecosystems: how removing or altering one species impacts the entire community (e.g. dragonflies, bees, fish, and plant pollination in pond ecosystem)"
+              "Trophic levels: Producers (autotrophs), Primary consumers (herbivores), Secondary & Tertiary consumers (carnivores/omnivores), Decomposers",
+              "Food Chains and interwoven Food Webs",
+              "Ecological interdependency and cascade effects: impact of removing keystone species (e.g. dragonflies, bees, apex predators) on community equilibrium",
+              "Nutrient recycling and energy flow through ecosystems"
             ],
             "practiceSet": "Exercise 12.3",
             "theorems": [],
@@ -1519,14 +1598,14 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           },
           {
             "number": "12.4",
-            "name": "Conservation of Biodiversity and Ecological Harmony",
+            "name": "Balance in Nature and Conservation",
             "topicCode": "CBSE-8-CURI-12-12.4",
             "subtopics": [
-              "Biodiversity definition and its importance for ecosystem stability and resilience",
-              "Threats to ecosystems: Habitat destruction, deforestation, invasive species, overexploitation, and pollution",
-              "Endangered species and IUCN Red List awareness",
-              "In-situ and Ex-situ conservation: Wildlife Sanctuaries, National Parks, Biosphere Reserves, Botanical gardens, Seed banks",
-              "Traditional Indian conservation practices: Sacred groves (Devrai), community forest stewardship, Chipko movement heritage"
+              "Biodiversity importance for ecological stability, resilience, and climate regulation",
+              "Human disruptions: habitat fragmentation, deforestation, pollution, invasive alien species, overexploitation",
+              "Threatened and endangered species (IUCN Red List awareness)",
+              "Conservation measures: In-situ (National Parks, Wildlife Sanctuaries, Biosphere Reserves) and Ex-situ (Botanical gardens, Seed banks, Zoos)",
+              "Traditional Indian ecological heritage: Sacred groves (Devrai), community forest reserves, Chipko conservation movement"
             ],
             "practiceSet": "Exercise 12.4",
             "theorems": [],
@@ -1540,14 +1619,13 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
         "topics": [
           {
             "number": "13.1",
-            "name": "Why Is Earth a Unique Planet?",
+            "name": "Why is Earth a Unique Planet?",
             "topicCode": "CBSE-8-CURI-13-13.1",
             "subtopics": [
-              "Earth as the only known planet harbouring life in the universe",
-              "Optimal distance from the Sun: The Habitable Zone ('Goldilocks Zone')",
-              "Moderate temperatures supporting biochemical reactions",
-              "Abundance of liquid water on surface and in underground reservoirs",
-              "Protective atmospheric blanket containing oxygen, nitrogen, and carbon dioxide"
+              "Earth as the only known cradle of life in the universe",
+              "Habitable Zone (\"Goldilocks Zone\") positioning from the Sun",
+              "Optimal temperature ranges enabling liquid water existence",
+              "Life-sustaining crust, rocks, minerals, and fertile soil layer"
             ],
             "practiceSet": "Exercise 13.1",
             "theorems": [],
@@ -1558,9 +1636,9 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
             "name": "What Do the Planets of Our Solar System Look Like?",
             "topicCode": "CBSE-8-CURI-13-13.2",
             "subtopics": [
-              "Comparative planetary analysis: Mercury, Venus, Mars, Jupiter, Saturn, Uranus, Neptune",
-              "Extreme surface conditions: scorching heat on Venus (runaway greenhouse effect), freezing arid deserts of Mars, crushing gas pressures of Jupiter",
-              "Why other planetary environments cannot support life as we know it"
+              "Comparative physical conditions of Solar System planets (Mercury, Venus, Mars, Jupiter, Saturn, Uranus, Neptune)",
+              "Hostile environments: runaway greenhouse heat on Venus, arid low-pressure cold of Mars, crushing pressures on gas giants",
+              "Why Earth uniquely supports complex multicellular life"
             ],
             "practiceSet": "Exercise 13.2",
             "theorems": [],
@@ -1568,14 +1646,13 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           },
           {
             "number": "13.3",
-            "name": "What Makes the Earth Suitable for Life to Exist? (Earth's Interacting Spheres)",
+            "name": "What Makes the Earth Suitable for Life to Exist?",
             "topicCode": "CBSE-8-CURI-13-13.3",
             "subtopics": [
-              "Earth's five interconnected spheres: Geosphere (Lithosphere), Hydrosphere, Cryosphere (ice and glaciers), Atmosphere, and Biosphere",
+              "Earth interconnected spheres: Geosphere (Lithosphere), Hydrosphere, Cryosphere (polar ice and glaciers), Atmosphere, and Biosphere",
               "Life-sustaining biogeochemical cycles: Water Cycle, Carbon Cycle, Oxygen Cycle, and Nitrogen Cycle",
-              "Ozone layer shield absorbing harmful ultraviolet solar radiation",
-              "Earth's magnetic field (magnetosphere) deflecting solar winds and cosmic rays",
-              "Soil as a living dynamic interface supporting plant life and agriculture"
+              "Atmospheric shield: Ozone layer filtering solar ultraviolet radiation and greenhouse effect maintaining global warmth",
+              "Earth geomagnetic field (magnetosphere) shielding solar winds and cosmic radiation"
             ],
             "practiceSet": "Exercise 13.3",
             "theorems": [],
@@ -1583,14 +1660,13 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           },
           {
             "number": "13.4",
-            "name": "Protecting Our Living Planet and Environmental Stewardship",
+            "name": "Protecting Our Living Planet and Sustainability",
             "topicCode": "CBSE-8-CURI-13-13.4",
             "subtopics": [
-              "Human impact on Earth's systems: Anthropogenic climate change, Greenhouse gas emissions, Global warming",
-              "Environmental degradation: Air pollution, Water pollution, Soil erosion, and Plastic waste menace",
-              "Depletion of natural non-renewable resources and ecological footprint",
-              "Renewable clean energy solutions: Solar, Wind, Hydroelectric, and Biomass energy",
-              "Sustainable living practices: The 5 R's (Refuse, Reduce, Reuse, Repurpose, Recycle), Water harvesting, Tree planting, Individual responsibility for planetary health"
+              "Anthropogenic threats: Global warming, climate change, ocean acidification, plastic pollution, and loss of topsoil",
+              "Sustainable resource stewardship: Conservation of freshwater, transitioning to renewable energy (solar, wind, biomass)",
+              "Circular economy and the 5 R (Refuse, Reduce, Reuse, Repurpose, Recycle)",
+              "Individual and collective civic action for environmental preservation and planetary health"
             ],
             "practiceSet": "Exercise 13.4",
             "theorems": [],
