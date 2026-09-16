@@ -19,9 +19,8 @@ async function recalculateStudentFeeStats(studentCode: string) {
     .get();
   const transactions = txSnap.docs.map(doc => doc.data());
 
-  const totalPaidAmount = transactions.reduce((sum, tx) => sum + Number(tx.amountPaid || 0), 0);
+  const totalTxPaidAmount = transactions.reduce((sum, tx) => sum + Number(tx.amountPaid || 0), 0);
   const netPayableAmount = Number(feeData.netPayableAmount || feeData.totalPackageAmount || 0);
-  const outstandingAmount = Math.max(0, netPayableAmount - totalPaidAmount);
 
   const paymentsByInst: Record<string, number> = {};
 
@@ -83,6 +82,12 @@ async function recalculateStudentFeeStats(studentCode: string) {
     };
   });
 
+  const directPaidSum = updatedInstallments
+    .filter((i: any) => i.status === 'paid')
+    .reduce((sum: number, i: any) => sum + Number(i.amount || 0), 0);
+  const totalPaidAmount = Math.max(totalTxPaidAmount, directPaidSum);
+  const outstandingAmount = Math.max(0, netPayableAmount - totalPaidAmount);
+
   let feeStatus = 'unpaid';
   const allPaid = updatedInstallments.length > 0 && updatedInstallments.every((i: any) => i.status === 'paid');
   if (netPayableAmount === 0) {
@@ -105,6 +110,7 @@ async function recalculateStudentFeeStats(studentCode: string) {
 
   const studentQuery = await adminDb.collection('users')
     .where('studentCode', '==', studentCodeUpper)
+    .where('role', '==', 'student')
     .get();
   if (!studentQuery.empty) {
     await studentQuery.docs[0].ref.update({

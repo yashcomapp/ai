@@ -21,9 +21,8 @@ async function syncStudentFees(studentCode: string) {
   const transactions = txSnap.docs.map(doc => doc.data());
 
   // 2. Sum overall paid totals
-  const totalPaidAmount = transactions.reduce((sum, tx) => sum + Number(tx.amountPaid || 0), 0);
+  const totalTxPaidAmount = transactions.reduce((sum, tx) => sum + Number(tx.amountPaid || 0), 0);
   const netPayableAmount = Number(feeData.netPayableAmount || feeData.totalPackageAmount || 0);
-  const outstandingAmount = Math.max(0, netPayableAmount - totalPaidAmount);
 
   // 3. Map transaction payments by installmentId
   const paymentsByInst: Record<string, number> = {};
@@ -90,6 +89,12 @@ async function syncStudentFees(studentCode: string) {
     };
   });
 
+  const directPaidSum = updatedInstallments
+    .filter((i: any) => i.status === 'paid')
+    .reduce((sum: number, i: any) => sum + Number(i.amount || 0), 0);
+  const totalPaidAmount = Math.max(totalTxPaidAmount, directPaidSum);
+  const outstandingAmount = Math.max(0, netPayableAmount - totalPaidAmount);
+
   // Determine overall status
   let feeStatus = 'unpaid';
   const allPaid = updatedInstallments.length > 0 && updatedInstallments.every((i: any) => i.status === 'paid');
@@ -115,6 +120,7 @@ async function syncStudentFees(studentCode: string) {
   // 7. Also sync user profile feeStatus field for backward-compatibility
   const studentQuery = await adminDb.collection('users')
     .where('studentCode', '==', studentCodeUpper)
+    .where('role', '==', 'student')
     .get();
   if (!studentQuery.empty) {
     await studentQuery.docs[0].ref.update({
