@@ -605,48 +605,68 @@ export default function AdminClassroomTestPage() {
     const uniqueTopics = currentChapterTopics;
     const isMath = /math|algebra|geometry|ganit/i.test(subj);
 
+    const isCBSE = /^cbse/i.test(selectedBoard);
+    const isMH = /^(mh|maharashtra)/i.test(selectedBoard);
+
+    const boardFullName = isCBSE 
+      ? 'Central Board of Secondary Education (CBSE / NCERT)' 
+      : (isMH ? 'Maharashtra State Board of Secondary and Higher Secondary Education (MSBSHSE / Balbharti)' : `${selectedBoard} Board`);
+
+    const officialTextbook = isCBSE
+      ? `Prescribed NCERT Textbook & NCERT Exemplar for CBSE Class ${selectedClass}`
+      : (isMH ? `Official Balbharti State Board Textbook & State Question Bank for Class ${selectedClass}` : `Official ${selectedBoard} Class ${selectedClass} Textbook`);
+
+    const pyqGuideline = isCBSE
+      ? `Strictly past CBSE Board Exams (e.g., "CBSE Board 2023", "CBSE All India 2020", "CBSE Compartment 2019", "CBSE Sample Paper 2024"). DO NOT include State Board or Maharashtra Board questions.`
+      : (isMH ? `Strictly past Maharashtra State Board Exams (e.g., "MSBSHSE March 2022", "MSBSHSE July 2020", "MSBSHSE March 2019", "State Board Question Bank"). DO NOT include CBSE or NCERT questions.` : `Past Board Examination Questions for ${selectedBoard}.`);
+
+    const exclusionRule = isCBSE
+      ? `STRICT EXCLUSION: Do NOT generate questions from Maharashtra State Board (Balbharti), ICSE, or other state boards.`
+      : (isMH ? `STRICT EXCLUSION: Do NOT generate questions from CBSE (NCERT), ICSE, or other national boards.` : '');
+
+    const samplePyq = isCBSE ? 'CBSE Board 2022' : (isMH ? 'MSBSHSE March 2020' : `${selectedBoard} Board 2021`);
+    const sampleSource = isCBSE ? 'NCERT Exercise Q3' : (isMH ? 'Balbharti Exercise Q2(a)' : 'Textbook Exercise Q1');
+
     const promptText = `
-Role & Goal: You are an expert CBSE & State Board Paper Setter. 
-Generate authentic, high-yield Previous Year Questions (PYQs) and PYQ-style subjective questions for:
-- Board: ${selectedBoard}
+ROLE & GOAL:
+You are an official Senior Paper Setter and Curriculum Author for the ${boardFullName}.
+Generate authentic, high-yield Previous Year Questions (PYQs) and textbook subjective questions exclusively for:
+- Board: ${selectedBoard} (${boardFullName})
 - Class: ${selectedClass}
 - Subject: ${subj}
 - Chapter ${chNum}: ${chName}
+- Target Scope: 5 to 10 high-yield questions total
+- Source Authority: ${officialTextbook}
+${exclusionRule ? `- ${exclusionRule}` : ''}
 
 Topics to cover (${uniqueTopics.length}):
 ${uniqueTopics.map((t, idx) => `${idx + 1}. ${t}`).join('\n')}
 
 COMPREHENSIVE QUESTION GENERATION REQUIREMENTS:
-For each topic listed above, you must generate a comprehensive set of questions to ensure complete coverage:
-- For Science / other subjects: You MUST extract and generate EVERY SINGLE question matching each topic from the official Digest (Navneet, Target, etc.) and textbook. Do NOT skip or omit any questions.
-- You MUST pull and include ALL past Board Exam Questions (PYQs) for each topic from the last 10 years, tagging their exact exam year (e.g., "MSBSHSE 2019", "CBSE 2020") in the "pyqInfo" field.
-- Generate a thorough variety of question types for each topic:
-  * 1-Mark short/definitions/fill-in/state laws (type: "subjective_define", marks: 1)
-  * 2-Mark short specific / scientific reasons / distinguish between / short notes (type: "subjective_short", marks: 2)
-  * 4-Mark long specific / detailed explanations / diagram-based / experimental setups (type: "subjective_long", marks: 4)
-- Aim to generate at least 8 to 15 questions per topic to ensure maximum textbook and digest coverage.
+For each topic listed above, generate a focused set of authentic questions (5 to 10 questions total across the test):
+- 1-Mark short/definitions/fill-in/state laws (type: "subjective_define", marks: 1)
+- 2-Mark short specific / scientific reasons / distinguish between / short notes (type: "subjective_short", marks: 2)
+- 4-Mark long specific / detailed explanations / diagram-based / experimental setups (type: "subjective_long", marks: 4)
+- 100% BOARD-SPECIFIC EXCLUSIVITY: All questions, terminology, and expected answers MUST strictly belong to ${selectedBoard}. ${pyqGuideline}
+- ABSOLUTELY ZERO INVENTED / SYNTHETIC QUESTIONS: Every single question MUST be an authentic, real question sourced directly from official ${officialTextbook} (Chapter-End Exercises, In-Text questions ${isMH ? 'like "Can you tell?", "Use your brain power", "Think about it"' : ''}) or actual past ${selectedBoard} Board Exam papers. Strictly DO NOT make up fictional hypothetical scenarios.
 ${isMath ? `
-- For Mathematics, 80% of the generated questions/problems MUST be taken directly and verbatim from the official textbook exercises, practice sets, problem sets, solved examples, or figure-it-out sections (absolutely no modified numbers, coefficients, or variables). The remaining 20% of the questions/problems MUST be designed on a similar pattern (using the exact same structural concept, method, and difficulty as textbook problems but with altered values).
-- You MUST specify the corresponding textbook reference or pattern source for each question in the "textbookPracticeSet" key:
-  * For CBSE Class 8 Mathematics (using Ganit Prakash): Use "Figure it out X.Y: Qz" (e.g., "Figure it out 1.1: Q2") or "Question Tag X.Y: Qz" based on the book's terminology.
-  * For other CBSE classes: Use "Exercise X.Y: Qz" (e.g., "Exercise 2.3: Q4").
-  * For Maharashtra State Board: Use "Practice Set X.Y: Qz" (e.g., "Practice Set 1.2: Q3") or "Problem Set X: Qz".
+- For Mathematics, 100% of the questions MUST be taken directly from the official textbook exercises, practice sets, problem sets, or solved examples.
+- Specify the exact textbook reference in "sourceSection" (e.g., "${isMH ? 'Practice Set 2.1: Q3' : 'Exercise 3.2: Q4'}").
 ` : ''}
 
-STRICT VERBATIM, GRADE APPROPRIATENESS & PYQ TAGGING RULES:
-1. Answers MUST be verbatim from standard prescribed NCERT / State Board textbook for Class ${selectedClass}. Absolutely NO paraphrasing.
-2. ZERO INVENTED NUMERICALS / ZERO FAKE STOICHIOMETRY: For non-mathematical or qualitative topics (biology, general science), strictly DO NOT generate fake arithmetic or college/higher secondary stoichiometry (e.g. molar mass conversions of organic sugars like lactose/lactic acid, college mole calculations). All questions and calculations must strictly be suitable for Class ${selectedClass}.
+STRICT VERBATIM & KEYWORD HIGHLIGHTING RULES:
+1. Answers MUST be 100% verbatim from standard prescribed ${officialTextbook}. Absolutely NO paraphrasing.
+2. ZERO INVENTED NUMERICALS: For non-mathematical or qualitative topics (biology, general science), strictly DO NOT generate fake arithmetic or college-level stoichiometry.
 3. Embed key phrases inside HTML <mark>keyword</mark> tags directly within the model answer text string (e.g. "The <mark>latent heat of fusion</mark> is...").
-4. Separate each logical answer sentence on a new numbered line (1., 2., 3...).
-5. VERY IMPORTANT: You must add a "pyqInfo" property indicating which year and exam this question or a similar question appeared in (e.g., "CBSE Board 2020", "MSBSHSE 2022", "CBSE 2019 Compartment", "Board Exam 2023"). If it is a predicted/style question, write "PYQ Style Practice".
+4. Separate each logical answer point on a new numbered line (1., 2., 3...).
+5. Add "pyqInfo" with authentic board year (e.g., "${samplePyq}").
+6. Add "sourceSection" indicating exact location (e.g., "${sampleSource}").
 
 CRITICAL JSON ESCAPING & MATH FORMATTING RULES:
 1. Return ONLY the raw valid JSON array/object. DO NOT wrap it in any explanations, introduction, or extra text.
-2. Any backslashes (\) in LaTeX math expressions (like \frac, \propto, \pi, \theta, \times, etc.) MUST be double-escaped as \\ (e.g. \\frac, \\propto, \\pi, \\theta). Never use a single backslash inside a JSON string.
-3. If using standard math delimiters, represent inline math as \\( ... \\) and block display math as \\\\[ ... \\\\] (always with double-escaped backslashes).
-4. Do NOT use raw control characters, actual tab characters, or actual unescaped newlines inside the JSON string values. Use literal "\n" sequence for newlines inside string values.
-5. All double quotes inside string values must be properly escaped as \".
-6. Ensure there are no trailing commas at the end of lists, arrays, or objects.
+2. Any backslashes (\\) in LaTeX math expressions MUST be double-escaped as \\\\ (e.g. \\\\frac, \\\\propto, \\\\pi, \\\\theta).
+3. If using standard math delimiters, represent inline math as \\\\( ... \\\\) and block display math as \\\\[ ... \\\\] (always with double-escaped backslashes).
+4. Do NOT use raw control characters inside string values.
 
 OUTPUT FORMAT: Return ONLY a valid JSON array of objects with schema:
 [
@@ -654,10 +674,11 @@ OUTPUT FORMAT: Return ONLY a valid JSON array of objects with schema:
     "topicName": "One of the topic names listed in 'Topics to cover' above that this question belongs to",
     "type": "${isMath ? 'numerical_short' : 'subjective_define'}",
     "marks": ${isMath ? 2 : 1},
-    "text": "Question text here...",
-    "solution": "Verbatim model answer with <mark>key terms</mark> highlighted...",
+    "sourceSection": "${sampleSource}",
+    "text": "Exact authentic question text...",
+    "solution": "1. Verbatim model answer with <mark>key terms</mark> highlighted...",
     "keywords": ["key term 1", "key term 2"],
-    "pyqInfo": "CBSE Board 2020"${isMath ? `,\n    "textbookPracticeSet": "Exercise 1.1: Complete set",\n    "isTheorem": false` : ''}
+    "pyqInfo": "${samplePyq}"
   }
 ]
     `.trim();
@@ -682,47 +703,68 @@ OUTPUT FORMAT: Return ONLY a valid JSON array of objects with schema:
     const uniqueTopics = Array.from(new Set(activeTopics.length > 0 ? activeTopics : currentChapterTopics));
     const isMath = /math|algebra|geometry|ganit/i.test(subj);
 
+    const isCBSE = /^cbse/i.test(selectedBoard);
+    const isMH = /^(mh|maharashtra)/i.test(selectedBoard);
+
+    const boardFullName = isCBSE 
+      ? 'Central Board of Secondary Education (CBSE / NCERT)' 
+      : (isMH ? 'Maharashtra State Board of Secondary and Higher Secondary Education (MSBSHSE / Balbharti)' : `${selectedBoard} Board`);
+
+    const officialTextbook = isCBSE
+      ? `Prescribed NCERT Textbook & NCERT Exemplar for CBSE Class ${selectedClass}`
+      : (isMH ? `Official Balbharti State Board Textbook & State Question Bank for Class ${selectedClass}` : `Official ${selectedBoard} Class ${selectedClass} Textbook`);
+
+    const pyqGuideline = isCBSE
+      ? `Strictly past CBSE Board Exams (e.g., "CBSE Board 2023", "CBSE All India 2020", "CBSE Compartment 2019", "CBSE Sample Paper 2024"). DO NOT include State Board or Maharashtra Board questions.`
+      : (isMH ? `Strictly past Maharashtra State Board Exams (e.g., "MSBSHSE March 2022", "MSBSHSE July 2020", "MSBSHSE March 2019", "State Board Question Bank"). DO NOT include CBSE or NCERT questions.` : `Past Board Examination Questions for ${selectedBoard}.`);
+
+    const exclusionRule = isCBSE
+      ? `STRICT EXCLUSION: Do NOT generate questions from Maharashtra State Board (Balbharti), ICSE, or other state boards.`
+      : (isMH ? `STRICT EXCLUSION: Do NOT generate questions from CBSE (NCERT), ICSE, or other national boards.` : '');
+
+    const samplePyq = isCBSE ? 'CBSE Board 2022' : (isMH ? 'MSBSHSE March 2020' : `${selectedBoard} Board 2021`);
+    const sampleSource = isCBSE ? 'NCERT Exercise Q3' : (isMH ? 'Balbharti Exercise Q2(a)' : 'Textbook Exercise Q1');
+
     const promptText = `
-Role & Goal: You are a Subjective Question Generator for an Indian Secondary School Question Bank.
-Generate textbook-verbatim subjective questions for:
-- Board: ${selectedBoard}
+ROLE & GOAL:
+You are an official Senior Paper Setter and Curriculum Author for the ${boardFullName}.
+Generate authentic, textbook-verbatim subjective questions exclusively for:
+- Board: ${selectedBoard} (${boardFullName})
 - Class: ${selectedClass}
 - Subject: ${subj}
 - Chapter ${chNum}: ${chName}
+- Target Scope: 5 to 10 high-yield questions total
+- Source Authority: ${officialTextbook}
+${exclusionRule ? `- ${exclusionRule}` : ''}
 
 Topics to cover (${uniqueTopics.length}):
 ${uniqueTopics.map((t, idx) => `${idx + 1}. ${t}`).join('\n')}
 
 COMPREHENSIVE QUESTION GENERATION REQUIREMENTS:
-For each topic listed above, you must generate a comprehensive set of questions to ensure complete coverage:
-- For Science / other subjects: You MUST extract and generate EVERY SINGLE question matching each topic from the official Digest (Navneet, Target, etc.) and textbook. Do NOT skip or omit any questions.
-- You MUST pull and include ALL past Board Exam Questions (PYQs) for each topic from the last 10 years, tagging their exact exam year (e.g., "MSBSHSE 2019", "CBSE 2020") in the "pyqInfo" field.
-- Generate a thorough variety of question types for each topic:
-  * 1-Mark short/definitions/fill-in/state laws (type: "subjective_define", marks: 1)
-  * 2-Mark short specific / scientific reasons / distinguish between / short notes (type: "subjective_short", marks: 2)
-  * 4-Mark long specific / detailed explanations / diagram-based / experimental setups (type: "subjective_long", marks: 4)
-- Aim to generate at least 8 to 15 questions per topic to ensure maximum textbook and digest coverage.
+For each topic listed above, generate a focused set of authentic questions (5 to 10 questions total across the test):
+- 1-Mark short/definitions/fill-in/state laws (type: "subjective_define", marks: 1)
+- 2-Mark short specific / scientific reasons / distinguish between / short notes (type: "subjective_short", marks: 2)
+- 4-Mark long specific / detailed explanations / diagram-based / experimental setups (type: "subjective_long", marks: 4)
+- 100% BOARD-SPECIFIC EXCLUSIVITY: All questions, terminology, and expected answers MUST strictly belong to ${selectedBoard}. ${pyqGuideline}
+- ABSOLUTELY ZERO INVENTED / SYNTHETIC QUESTIONS: Every single question MUST be an authentic, real question sourced directly from official ${officialTextbook} (Chapter-End Exercises, In-Text questions ${isMH ? 'like "Can you tell?", "Use your brain power", "Think about it"' : ''}) or actual past ${selectedBoard} Board Exam papers. Strictly DO NOT make up fictional hypothetical scenarios.
 ${isMath ? `
-- For Mathematics, 80% of the generated questions/problems MUST be taken directly and verbatim from the official textbook exercises, practice sets, problem sets, solved examples, or figure-it-out sections (absolutely no modified numbers, coefficients, or variables). The remaining 20% of the questions/problems MUST be designed on a similar pattern (using the exact same structural concept, method, and difficulty as textbook problems but with altered values).
-- You MUST specify the corresponding textbook reference or pattern source for each question in the "textbookPracticeSet" key:
-  * For CBSE Class 8 Mathematics (using Ganit Prakash): Use "Figure it out X.Y: Qz" (e.g., "Figure it out 1.1: Q2") or "Question Tag X.Y: Qz" based on the book's terminology.
-  * For other CBSE classes: Use "Exercise X.Y: Qz" (e.g., "Exercise 2.3: Q4").
-  * For Maharashtra State Board: Use "Practice Set X.Y: Qz" (e.g., "Practice Set 1.2: Q3") or "Problem Set X: Qz".
+- For Mathematics, 100% of the questions MUST be taken directly from the official textbook exercises, practice sets, problem sets, or solved examples.
+- Specify the exact textbook reference in "sourceSection" (e.g., "${isMH ? 'Practice Set 2.1: Q3' : 'Exercise 3.2: Q4'}").
 ` : ''}
 
-STRICT VERBATIM & GRADE APPROPRIATENESS RULES:
-1. Answers MUST be verbatim from standard prescribed NCERT / State Board textbook for Class ${selectedClass}. Absolutely NO paraphrasing.
-2. ZERO INVENTED NUMERICALS / ZERO FAKE STOICHIOMETRY: For non-mathematical or qualitative topics (biology, general science), strictly DO NOT generate fake arithmetic or advanced stoichiometry (e.g. molar mass conversions of organic sugars like lactose/lactic acid, college mole calculations). All questions and calculations must strictly be suitable for Class ${selectedClass}.
-3. Embed key phrases inside HTML <mark>keyword</mark> tags directly within the model answer text string (e.g. "The <mark>latent heat of fusion</mark> is the amount of heat...").
-4. Separate each logical answer sentence on a new numbered line (1., 2., 3...).
+STRICT VERBATIM & KEYWORD HIGHLIGHTING RULES:
+1. Answers MUST be 100% verbatim from standard prescribed ${officialTextbook}. Absolutely NO paraphrasing.
+2. ZERO INVENTED NUMERICALS: For non-mathematical or qualitative topics (biology, general science), strictly DO NOT generate fake arithmetic or college-level stoichiometry.
+3. Embed key phrases inside HTML <mark>keyword</mark> tags directly within the model answer text string.
+4. Separate each logical answer point on a new numbered line (1., 2., 3...).
+5. Add "pyqInfo" with authentic board year (e.g., "${samplePyq}").
+6. Add "sourceSection" indicating exact location (e.g., "${sampleSource}").
 
 CRITICAL JSON ESCAPING & MATH FORMATTING RULES:
 1. Return ONLY the raw valid JSON array/object. DO NOT wrap it in any explanations, introduction, or extra text.
-2. Any backslashes (\) in LaTeX math expressions (like \frac, \propto, \pi, \theta, \times, etc.) MUST be double-escaped as \\ (e.g. \\frac, \\propto, \\pi, \\theta). Never use a single backslash inside a JSON string.
-3. If using standard math delimiters, represent inline math as \\( ... \\) and block display math as \\\\[ ... \\\\] (always with double-escaped backslashes).
-4. Do NOT use raw control characters, actual tab characters, or actual unescaped newlines inside the JSON string values. Use literal "\n" sequence for newlines inside string values.
-5. All double quotes inside string values must be properly escaped as \".
-6. Ensure there are no trailing commas at the end of lists, arrays, or objects.
+2. Any backslashes (\\) in LaTeX math expressions MUST be double-escaped as \\\\ (e.g. \\\\frac, \\\\propto, \\\\pi, \\\\theta).
+3. If using standard math delimiters, represent inline math as \\\\( ... \\\\) and block display math as \\\\[ ... \\\\] (always with double-escaped backslashes).
+4. Do NOT use raw control characters inside string values.
 
 OUTPUT FORMAT: Return ONLY a valid JSON array of objects with schema:
 [
@@ -730,9 +772,11 @@ OUTPUT FORMAT: Return ONLY a valid JSON array of objects with schema:
     "topicName": "${uniqueTopics[0] || 'General'}",
     "type": "${isMath ? 'numerical_short' : 'subjective_define'}",
     "marks": ${isMath ? 2 : 1},
-    "text": "Question text here...",
-    "solution": "Verbatim model answer with <mark>key terms</mark> highlighted...",
-    "keywords": ["key term 1", "key term 2"]${isMath ? `,\n    "textbookPracticeSet": "Exercise 1.1: Complete set",\n    "isTheorem": false` : ''}
+    "sourceSection": "${sampleSource}",
+    "text": "Exact authentic question text...",
+    "solution": "1. Verbatim model answer with <mark>key terms</mark> highlighted...",
+    "keywords": ["key term 1", "key term 2"],
+    "pyqInfo": "${samplePyq}"
   }
 ]
     `.trim();

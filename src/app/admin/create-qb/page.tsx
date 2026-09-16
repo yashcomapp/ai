@@ -526,6 +526,23 @@ function CreateQBContent() {
 
   const handleSwitchType = (type: 'objective' | 'subjective') => {
     setQuestionType(type);
+    if (type === 'subjective') {
+      const currentVal = Number(defaultPerTopicCount) || 55;
+      if (currentVal > 20) {
+        setDefaultPerTopicCount(10);
+        if (selectedTopics[0]) {
+          setTopicCustomCounts({ [topicKey(selectedTopics[0])]: 10 });
+        }
+      }
+    } else {
+      const currentVal = Number(defaultPerTopicCount) || 10;
+      if (currentVal < 30) {
+        setDefaultPerTopicCount(55);
+        if (selectedTopics[0]) {
+          setTopicCustomCounts({ [topicKey(selectedTopics[0])]: 55 });
+        }
+      }
+    }
   };
 
   const getPromptTargetTopics = (): TopicItem[] => {
@@ -887,47 +904,71 @@ ${buildNegativeConstraints()}`;
       let topicDistributionSummary = '\n\n========================================\nPER-TOPIC QUESTION ALLOCATION QUOTAS:\n========================================';
       promptTopics.forEach(tp => {
         const k = topicKey(tp);
-        const cnt = topicCounts[k] || 0;
+        const cnt = topicCounts[k] || 10;
         topicDistributionSummary += `\n- ${tp.subject ? '[' + tp.subject + '] ' : ''}${tp.topic}: EXACTLY ${cnt} questions`;
       });
 
+      const isCBSE = /^cbse/i.test(selectedBoard);
+      const isMH = /^(mh|maharashtra)/i.test(selectedBoard);
+
+      const boardFullName = isCBSE 
+        ? 'Central Board of Secondary Education (CBSE / NCERT)' 
+        : (isMH ? 'Maharashtra State Board of Secondary and Higher Secondary Education (MSBSHSE / Balbharti)' : `${selectedBoard} Board`);
+
+      const officialTextbook = isCBSE
+        ? `Prescribed NCERT Textbook & NCERT Exemplar for CBSE Class ${selectedClass}`
+        : (isMH ? `Official Balbharti State Board Textbook & State Question Bank for Class ${selectedClass}` : `Official ${selectedBoard} Class ${selectedClass} Textbook`);
+
+      const pyqGuideline = isCBSE
+        ? `Strictly past CBSE Board Exams (e.g., "CBSE Board 2023", "CBSE All India 2020", "CBSE Compartment 2019", "CBSE Sample Paper 2024"). DO NOT include State Board or Maharashtra Board questions.`
+        : (isMH ? `Strictly past Maharashtra State Board Exams (e.g., "MSBSHSE March 2022", "MSBSHSE July 2020", "MSBSHSE March 2019", "State Board Question Bank"). DO NOT include CBSE or NCERT questions.` : `Past Board Examination Questions for ${selectedBoard}.`);
+
+      const exclusionRule = isCBSE
+        ? `STRICT EXCLUSION: Do NOT generate questions from Maharashtra State Board (Balbharti), ICSE, or other state boards.`
+        : (isMH ? `STRICT EXCLUSION: Do NOT generate questions from CBSE (NCERT), ICSE, or other national boards.` : '');
+
+      const samplePyq = isCBSE ? 'CBSE Board 2022' : (isMH ? 'MSBSHSE March 2020' : `${selectedBoard} Board 2021`);
+      const sampleSource = isCBSE ? 'NCERT Exercise Q3' : (isMH ? 'Balbharti Exercise Q2(a)' : 'Textbook Exercise Q1');
+
+      const defCount = Math.max(1, Math.round(totalQs * 0.25));
+      const shortCount = Math.max(2, Math.round(totalQs * 0.50));
+      const longCount = Math.max(1, totalQs - defCount - shortCount);
+
       const questionBreakdownInstruction = isMath ? `
 ========================================
-QUESTION BREAKDOWN REQUIREMENTS (MATHEMATICS):
+MATHEMATICS SUBJECTIVE REQUIREMENTS (${totalQs} Questions Total):
 ========================================
-Generate EXACTLY ${totalQs} subjective mathematics questions distributed according to the per-topic quotas:
-- Generate 1-Mark short questions/formulas (type: "subjective_define", marks: 1, simple definitions, formulas, or units).
-- Generate 2-Mark short specific / reasoned problems (type: "numerical_short" or "subjective_short", marks: 2, 2-4 step solution).
-- Generate 4-Mark long analytical / derivation problems (type: "numerical_long" or "subjective_long", marks: 4, multi-step calculation or proof).
-- 80% of the generated questions MUST be taken directly and verbatim from official textbook exercises, practice sets, problem sets, or figure-it-out sections. The remaining 20% MUST be designed on a similar pattern.
-- You MUST specify the corresponding textbook reference or pattern source for each question in the "textbookPracticeSet" key:
-  * For CBSE Class 8 Mathematics: "Figure it out X.Y: Qz" or "Question Tag X.Y: Qz".
-  * For other CBSE classes: "Exercise X.Y: Qz".
-  * For Maharashtra State Board: "Practice Set X.Y: Qz" or "Problem Set X: Qz".
+Generate EXACTLY ${totalQs} authentic subjective mathematics questions strictly sourced from ${boardFullName}:
+- 1-Mark short questions/formulas (type: "subjective_define", marks: 1, ${defCount} questions: direct formulas, statements of theorems, or definitions).
+- 2-Mark short specific / reasoned problems (type: "numerical_short" or "subjective_short", marks: 2, ${shortCount} questions: 2-4 step calculations or proofs).
+- 4-Mark long analytical / derivation problems (type: "numerical_long" or "subjective_long", marks: 4, ${longCount} questions: multi-step comprehensive problems, geometric proofs, or word problems).
+- 100% AUTHENTIC TEXTBOOK PROBLEMS: Every question MUST be drawn directly from official ${officialTextbook} (${isMH ? 'Practice Sets, Problem Sets, and Solved Examples' : 'Exercises, In-text problems, and Solved Examples'}).
+- Reference tagging: Specify the exact source in "sourceSection" (e.g., "${isMH ? 'Practice Set 2.1: Q3' : 'Exercise 3.2: Q4'}").
 ` : `
 ========================================
-QUESTION BREAKDOWN REQUIREMENTS (SCIENCE / GENERAL):
+SCIENCE & GENERAL SUBJECTIVE REQUIREMENTS (${totalQs} Questions Total):
 ========================================
-Generate EXACTLY ${totalQs} subjective questions matching the per-topic quotas:
-- 1-Mark short questions (type: "subjective_define" or "subjective_laws", marks: 1, Definitions, Laws, Principles, Statements).
-- 2-Mark short specific / reasoned questions (type: "subjective_short" or "subjective_reason" or "subjective_notes", marks: 2).
-- 4-Mark long specific / analytical / derivation questions (type: "subjective_long", marks: 4).
-- Extract and prioritize Previous Year Questions (PYQs) and high-yield textbook concepts.
-${allowNumericals ? '- For calculative physics/chemistry subtopics, you may include "numerical_short" (2 marks) or "numerical_long" (4 marks) strictly adhering to Class ' + selectedClass + ' textbook formulas.' : '- ZERO INVENTED NUMERICALS: Strictly DO NOT generate numerical problems or calculation derivations for qualitative/theoretical topics. Focus on definitions, mechanisms, reasoning, and textbook explanations.'}
+Generate EXACTLY ${totalQs} authentic subjective questions strictly sourced from ${boardFullName}:
+- 1-Mark Definition / Laws / Principles (type: "subjective_define" or "subjective_laws", marks: 1, ${defCount} questions).
+- 2-Mark Short Answers / Scientific Reasons / Distinguish Between / Short Notes (type: "subjective_short" or "subjective_reason" or "subjective_notes", marks: 2, ${shortCount} questions).
+- 4-Mark Long Answers / Detailed Mechanisms / Experimental Setups / Derivations (type: "subjective_long", marks: 4, ${longCount} questions).
+${allowNumericals ? `- For calculative physics/chemistry topics, include authentic textbook numericals ("numerical_short" 2M / "numerical_long" 4M) strictly matching ${officialTextbook}.` : '- ZERO INVENTED NUMERICALS: For qualitative/theoretical topics, strictly DO NOT generate any numerical problems. Focus exclusively on authentic conceptual questions.'}
 `;
 
       (window as any).lastPromptMeta = { mode: 'subjective', totalQs };
 
       return `========================================
-Role & Goal:
+ROLE AND TARGET BOARD SPECIFICATION:
 ========================================
-You are an expert CBSE & State Board Paper Setter.
-Generate authentic, high-yield subjective questions:
-- Board: ${selectedBoard}
-- Class: ${selectedClass}
+You are an official Senior Paper Setter and Curriculum Author for the ${boardFullName}.
+
+Your mission is to generate EXACTLY ${totalQs} authentic, textbook-verbatim subjective questions exclusively for:
+- Target Board: ${selectedBoard} (${boardFullName})
+- Target Class: ${selectedClass}
 - Subject: ${subj}
-- Subject Mode: ${allowNumericals ? 'Numericals & Calculations Allowed' : 'Theory & Qualitative Only (Zero Numericals)'}
-- Total Desired Questions: EXACTLY ${totalQs}
+- Target Scope: 5 to 10 focused high-yield questions (${totalQs} Qs specified)
+- Source Authority: ${officialTextbook}
+${exclusionRule ? `- ${exclusionRule}` : ''}
 ${topicDistributionSummary}
 ${requirementsSection}
 ${questionBreakdownInstruction}
@@ -938,21 +979,36 @@ QUESTION GENERATION CONTEXT & TOPIC QUOTAS:
 ${ctx}
 
 ========================================
-STRICT SYLLABUS, LEVEL & SOURCE FIDELITY RULES:
+CRITICAL BOARD FIDELITY & ZERO-INVENTION RULES:
 ========================================
-1. STRICT BOARD & CLASS LEVEL ALIGNMENT: Align difficulty and expected answer depth with official ${selectedBoard} Class ${selectedClass} curriculum.
-2. ANSWERS VERBATIM: Answers MUST be verbatim from standard prescribed NCERT / State Board textbooks. Absolutely NO paraphrasing.
-3. KEYWORD HIGHLIGHTING: Embed key phrases inside HTML <mark>keyword</mark> tags directly within the model answer text string.
-4. STEP-BY-STEP SOLUTION: Separate each logical answer sentence on a new numbered line (1., 2., 3...) inside the "solution" string.
-5. PYQ INFO: Add "pyqInfo" indicating year/exam (e.g. "CBSE Board 2020", "MSBSHSE 2022", "PYQ Style Practice").
-6. FORMULAS: Use \\( ... \\) for math expressions (KaTeX) and \\ce{...} for chemical formulas.
-7. ${allowNumericals ? `GRADE-APPROPRIATE NUMERICALS: Ensure any numerical calculations strictly adhere to ${selectedBoard} Class ${selectedClass} textbook problems. Absolutely no college/advanced stoichiometry.` : `ZERO INVENTED NUMERICALS: Strictly DO NOT generate numerical calculation problems for qualitative/biological concepts.`}
+1. 100% BOARD-SPECIFIC EXCLUSIVITY:
+   - All questions, terminology, notations, and expected model answers MUST strictly belong to ${selectedBoard}.
+   - ${pyqGuideline}
+   - NEVER mix or blend questions from other boards.
+
+2. ABSOLUTELY ZERO INVENTED / SYNTHETIC QUESTIONS:
+   - Every single question generated MUST be an authentic, real question sourced directly from official ${officialTextbook} (Chapter-End Exercises, In-Text questions ${isMH ? 'like "Can you tell?", "Use your brain power", "Think about it"' : ''}) or actual past ${selectedBoard} Board Exam papers.
+   - Strictly DO NOT make up fictional hypothetical scenarios, imaginary stories, or artificial questions to fill counts.
+
+3. ANSWERS VERBATIM & KEYWORD HIGHLIGHTING:
+   - Answers MUST be 100% verbatim from standard prescribed ${officialTextbook}. Absolutely NO paraphrasing.
+   - Embed key technical phrases inside HTML <mark>keyword</mark> tags directly within the model answer text string (e.g. "The <mark>acceleration due to gravity</mark> is...").
+   - Separate each logical answer point on a new numbered line (1., 2., 3...) inside the "solution" string.
+
+4. ACCURATE METADATA TAGGING:
+   - Add "pyqInfo" with authentic board year (e.g., "${samplePyq}").
+   - Add "sourceSection" indicating exact location (e.g., "${sampleSource}").
+
+5. FORMULAS & KaTeX FORMATTING:
+   - Use \\( ... \\) for inline math expressions with double-escaped backslashes (\\\\frac, \\\\times).
+   - Wrap chemical formulas in \\ce{...} or standard notation.
+
 ${buildImageInstruction()}
 
 ========================================
-CRITICAL JSON ESCAPING & MATH FORMATTING RULES:
+CRITICAL JSON ESCAPING RULES:
 ========================================
-1. Return ONLY the raw valid JSON array. DO NOT wrap in extra explanations.
+1. Return ONLY the raw valid JSON array [...]. No explanations, markdown preamble, or extra text.
 2. Double-escape backslashes in LaTeX (\\\\frac, \\\\pi, \\\\theta).
 3. Do NOT use raw control characters inside string values.
 
@@ -967,10 +1023,11 @@ OUTPUT FORMAT: Return ONLY a valid JSON array of objects with schema:
     "marks": 1,
     "vault": "${vault}",
     "conceptTag": "Specific concept or subtopic name",
-    "text": "Question text here...",
-    "solution": "Verbatim model answer with <mark>key terms</mark> highlighted...",
+    "sourceSection": "${sampleSource}",
+    "text": "Exact authentic question text...",
+    "solution": "1. Verbatim point one with <mark>key term</mark>\\n2. Verbatim point two...",
     "keywords": ["key term 1", "key term 2"],
-    "pyqInfo": "CBSE Board 2020"
+    "pyqInfo": "${samplePyq}"
   }
 ]
 
@@ -1602,52 +1659,115 @@ Return ONLY valid JSON. No extra text.`;
               <div style={{ background: 'var(--bg-soft)', padding: '8px 12px', borderRadius: 'var(--radius)', border: '1px solid var(--border-light)', marginBottom: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <span style={{ fontSize: '10.5px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)' }}>
-                    Scope Presets:
+                    {questionType === 'subjective' ? 'Subjective Presets:' : 'Objective Presets:'}
                   </span>
                 </div>
                 <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                  <button
-                    type="button"
-                    className={`btn btn-sm ${Number(defaultPerTopicCount) === 30 ? 'btn-primary' : 'btn-secondary'}`}
-                    onClick={() => {
-                      setDefaultPerTopicCount(30);
-                      if (selectedTopics[0]) {
-                        setTopicCustomCounts({ [topicKey(selectedTopics[0])]: 30 });
-                      }
-                    }}
-                    style={{ fontSize: '11px', padding: '4px 12px', borderRadius: '12px' }}
-                    title="Minor topic: 2 Practice Sets • 6 Mastery Qs"
-                  >
-                    Minor Topic (30 Qs)
-                  </button>
-                  <button
-                    type="button"
-                    className={`btn btn-sm ${Number(defaultPerTopicCount) === 50 ? 'btn-primary' : 'btn-secondary'}`}
-                    onClick={() => {
-                      setDefaultPerTopicCount(50);
-                      if (selectedTopics[0]) {
-                        setTopicCustomCounts({ [topicKey(selectedTopics[0])]: 50 });
-                      }
-                    }}
-                    style={{ fontSize: '11px', padding: '4px 12px', borderRadius: '12px' }}
-                    title="Medium topic: 3 Practice Sets • 10 Mastery Qs"
-                  >
-                    Medium Topic (50 Qs)
-                  </button>
-                  <button
-                    type="button"
-                    className={`btn btn-sm ${Number(defaultPerTopicCount) === 55 ? 'btn-primary' : 'btn-secondary'}`}
-                    onClick={() => {
-                      setDefaultPerTopicCount(55);
-                      if (selectedTopics[0]) {
-                        setTopicCustomCounts({ [topicKey(selectedTopics[0])]: 55 });
-                      }
-                    }}
-                    style={{ fontSize: '11px', padding: '4px 12px', borderRadius: '12px' }}
-                    title="Major topic: 3 Practice Sets • 15 Mastery Qs (55 Qs in one go)"
-                  >
-                    Major Topic (55 Qs)
-                  </button>
+                  {questionType === 'subjective' ? (
+                    <>
+                      <button
+                        type="button"
+                        className={`btn btn-sm ${Number(defaultPerTopicCount) === 5 ? 'btn-primary' : 'btn-secondary'}`}
+                        onClick={() => {
+                          setDefaultPerTopicCount(5);
+                          if (selectedTopics[0]) {
+                            setTopicCustomCounts({ [topicKey(selectedTopics[0])]: 5 });
+                          }
+                        }}
+                        style={{ fontSize: '11px', padding: '4px 10px', borderRadius: '12px' }}
+                        title="Core in-text & basic definitions: 5 Questions"
+                      >
+                        🎯 Core (5 Qs)
+                      </button>
+                      <button
+                        type="button"
+                        className={`btn btn-sm ${Number(defaultPerTopicCount) === 8 ? 'btn-primary' : 'btn-secondary'}`}
+                        onClick={() => {
+                          setDefaultPerTopicCount(8);
+                          if (selectedTopics[0]) {
+                            setTopicCustomCounts({ [topicKey(selectedTopics[0])]: 8 });
+                          }
+                        }}
+                        style={{ fontSize: '11px', padding: '4px 10px', borderRadius: '12px' }}
+                        title="Standard Subjective Suite: 8 Questions"
+                      >
+                        ⚡ Standard (8 Qs)
+                      </button>
+                      <button
+                        type="button"
+                        className={`btn btn-sm ${Number(defaultPerTopicCount) === 10 ? 'btn-primary' : 'btn-secondary'}`}
+                        onClick={() => {
+                          setDefaultPerTopicCount(10);
+                          if (selectedTopics[0]) {
+                            setTopicCustomCounts({ [topicKey(selectedTopics[0])]: 10 });
+                          }
+                        }}
+                        style={{ fontSize: '11px', padding: '4px 10px', borderRadius: '12px' }}
+                        title="Comprehensive Chapter Exercise & PYQs: 10 Questions"
+                      >
+                        📚 Comprehensive (10 Qs)
+                      </button>
+                      <button
+                        type="button"
+                        className={`btn btn-sm ${Number(defaultPerTopicCount) === 15 ? 'btn-primary' : 'btn-secondary'}`}
+                        onClick={() => {
+                          setDefaultPerTopicCount(15);
+                          if (selectedTopics[0]) {
+                            setTopicCustomCounts({ [topicKey(selectedTopics[0])]: 15 });
+                          }
+                        }}
+                        style={{ fontSize: '11px', padding: '4px 10px', borderRadius: '12px' }}
+                        title="Full Topic Suite with Numericals & PYQs: 15 Questions"
+                      >
+                        🏆 Full Suite (15 Qs)
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        className={`btn btn-sm ${Number(defaultPerTopicCount) === 30 ? 'btn-primary' : 'btn-secondary'}`}
+                        onClick={() => {
+                          setDefaultPerTopicCount(30);
+                          if (selectedTopics[0]) {
+                            setTopicCustomCounts({ [topicKey(selectedTopics[0])]: 30 });
+                          }
+                        }}
+                        style={{ fontSize: '11px', padding: '4px 12px', borderRadius: '12px' }}
+                        title="Minor topic: 2 Practice Sets • 6 Mastery Qs"
+                      >
+                        Minor Topic (30 Qs)
+                      </button>
+                      <button
+                        type="button"
+                        className={`btn btn-sm ${Number(defaultPerTopicCount) === 50 ? 'btn-primary' : 'btn-secondary'}`}
+                        onClick={() => {
+                          setDefaultPerTopicCount(50);
+                          if (selectedTopics[0]) {
+                            setTopicCustomCounts({ [topicKey(selectedTopics[0])]: 50 });
+                          }
+                        }}
+                        style={{ fontSize: '11px', padding: '4px 12px', borderRadius: '12px' }}
+                        title="Medium topic: 3 Practice Sets • 10 Mastery Qs"
+                      >
+                        Medium Topic (50 Qs)
+                      </button>
+                      <button
+                        type="button"
+                        className={`btn btn-sm ${Number(defaultPerTopicCount) === 55 ? 'btn-primary' : 'btn-secondary'}`}
+                        onClick={() => {
+                          setDefaultPerTopicCount(55);
+                          if (selectedTopics[0]) {
+                            setTopicCustomCounts({ [topicKey(selectedTopics[0])]: 55 });
+                          }
+                        }}
+                        style={{ fontSize: '11px', padding: '4px 12px', borderRadius: '12px' }}
+                        title="Major topic: 3 Practice Sets • 15 Mastery Qs (55 Qs in one go)"
+                      >
+                        Major Topic (55 Qs)
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
 
