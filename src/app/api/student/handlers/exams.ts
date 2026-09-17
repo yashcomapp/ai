@@ -184,11 +184,10 @@ export async function GET(req: NextRequest) {
     }
 
     // Strict block if there are pending reviews (either objective self-reflection, pending parent review, or classmate peer reviews)
-    const [pendingObj, pendingSub, pendingPeer] = await Promise.all([
+    const [pendingObj, pendingSub, pendingPeer, evalSnaps] = await Promise.all([
       adminDb.collection('reviews')
         .where('studentCode', '==', studentCode)
         .where('status', 'in', ['student_review', 'pending'])
-        .limit(1)
         .get(),
       adminDb.collection('subjectiveAttempts')
         .where('studentCode', '==', studentCode)
@@ -199,13 +198,39 @@ export async function GET(req: NextRequest) {
         .where('reviewerStudentCode', '==', studentCode)
         .where('status', '==', 'pending')
         .limit(1)
+        .get(),
+      adminDb.collection('evaluations')
+        .where('studentCode', '==', studentCode)
+        .where('evaluatorType', '==', 'parent')
         .get()
     ]);
 
-    if (!pendingObj.empty || !pendingSub.empty || !pendingPeer.empty) {
+    const evalMap = new Set<string>();
+    evalSnaps.docs.forEach(doc => {
+      const data = doc.data();
+      if (data.attemptId) evalMap.add(data.attemptId);
+      if (data.legacyId) evalMap.add(data.legacyId);
+      if (data.examId) evalMap.add(data.examId);
+      evalMap.add(doc.id);
+    });
+
+    let genuinelyPendingObj: admin.firestore.DocumentSnapshot | null = null;
+    for (const revDoc of pendingObj.docs) {
+      const data = revDoc.data();
+      const isApprovedByEval = evalMap.has(revDoc.id) || (data.examId && evalMap.has(data.examId));
+      if (isApprovedByEval) {
+        // Auto-heal status in Firestore
+        revDoc.ref.update({ status: 'approved' }).catch(() => null);
+      } else {
+        genuinelyPendingObj = revDoc;
+        break;
+      }
+    }
+
+    if (genuinelyPendingObj || !pendingSub.empty || !pendingPeer.empty) {
       let pendingType = 'a pending review';
-      if (!pendingObj.empty) {
-        const revDoc = pendingObj.docs[0].data();
+      if (genuinelyPendingObj) {
+        const revDoc = genuinelyPendingObj.data()!;
         pendingType = revDoc.status === 'student_review' 
           ? 'an objective exam self-reflection' 
           : 'a pending parent sign-off on your previous exam';
@@ -244,14 +269,21 @@ export async function GET(req: NextRequest) {
 
     if (pastAssignedExams.length > 0) {
       for (const pastExam of pastAssignedExams) {
-        const [attemptSnap, subAttemptSnap, reasonSnap] = await Promise.all([
+        const [attemptSnap, subAttemptSnap, reasonSnap, queryAttemptSnap, queryReviewSnap, querySubSnap] = await Promise.all([
           adminDb.collection('examAttempts').doc(`${pastExam.examId}_${studentCode}`).get(),
           adminDb.collection('subjectiveAttempts').doc(`${pastExam.examId}_${studentCode}`).get(),
-          adminDb.collection('examAbsenceReasons').doc(`${studentCode}_${pastExam.examId}`).get()
+          adminDb.collection('examAbsenceReasons').doc(`${studentCode}_${pastExam.examId}`).get(),
+          adminDb.collection('examAttempts').where('studentCode', '==', studentCode).where('examId', '==', pastExam.examId).limit(1).get(),
+          adminDb.collection('reviews').where('studentCode', '==', studentCode).where('examId', '==', pastExam.examId).limit(1).get(),
+          adminDb.collection('subjectiveAttempts').where('studentCode', '==', studentCode).where('examId', '==', pastExam.examId).limit(1).get()
         ]);
 
         const attempted = (attemptSnap.exists && attemptSnap.data()?.status !== 'precheck') ||
-                          (subAttemptSnap.exists && subAttemptSnap.data()?.status !== 'precheck');
+                          (subAttemptSnap.exists && subAttemptSnap.data()?.status !== 'precheck') ||
+                          (!queryAttemptSnap.empty && queryAttemptSnap.docs[0].data()?.status !== 'precheck') ||
+                          (!queryReviewSnap.empty && queryReviewSnap.docs[0].data()?.status !== 'precheck') ||
+                          (!querySubSnap.empty && querySubSnap.docs[0].data()?.status !== 'precheck') ||
+                          evalMap.has(pastExam.examId);
 
         if (!attempted) {
           const isReasonAcknowledged = reasonSnap.exists && (reasonSnap.data()?.acknowledgedByParent === true || !!reasonSnap.data()?.reason);

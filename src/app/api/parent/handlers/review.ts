@@ -253,14 +253,39 @@ export async function GET(req: NextRequest) {
     const absentReviews: any[] = [];
     if (pastAssignedExams.length > 0) {
       for (const pastExam of pastAssignedExams) {
-        const [attemptSnap, subAttemptSnap, reasonSnap] = await Promise.all([
+        // Check if student already has a review, attempt, or evaluation for this exam
+        const hasObjReview = objSnaps.docs.some(d => {
+          const dData = d.data();
+          return dData.examId === pastExam.examId || d.id === `${pastExam.examId}_${studentCode}` || d.id.includes(pastExam.examId);
+        });
+        const hasSubjAttempt = subjSnaps.docs.some(d => {
+          const dData = d.data();
+          return dData.examId === pastExam.examId || d.id === `${pastExam.examId}_${studentCode}` || d.id.includes(pastExam.examId);
+        });
+        const hasEvaluation = evalSnaps.docs.some(d => {
+          const dData = d.data();
+          return dData.examId === pastExam.examId || (dData.legacyId && dData.legacyId.includes(pastExam.examId));
+        });
+
+        if (hasObjReview || hasSubjAttempt || hasEvaluation) {
+          // Student was NOT absent, skip adding absent review
+          continue;
+        }
+
+        const [attemptSnap, subAttemptSnap, reasonSnap, queryAttemptSnap, queryReviewSnap, querySubSnap] = await Promise.all([
           adminDb.collection('examAttempts').doc(`${pastExam.examId}_${studentCode}`).get(),
           adminDb.collection('subjectiveAttempts').doc(`${pastExam.examId}_${studentCode}`).get(),
-          adminDb.collection('examAbsenceReasons').doc(`${studentCode}_${pastExam.examId}`).get()
+          adminDb.collection('examAbsenceReasons').doc(`${studentCode}_${pastExam.examId}`).get(),
+          adminDb.collection('examAttempts').where('studentCode', '==', studentCode).where('examId', '==', pastExam.examId).limit(1).get(),
+          adminDb.collection('reviews').where('studentCode', '==', studentCode).where('examId', '==', pastExam.examId).limit(1).get(),
+          adminDb.collection('subjectiveAttempts').where('studentCode', '==', studentCode).where('examId', '==', pastExam.examId).limit(1).get()
         ]);
 
         const attempted = (attemptSnap.exists && attemptSnap.data()?.status !== 'precheck') ||
-                          (subAttemptSnap.exists && subAttemptSnap.data()?.status !== 'precheck');
+                          (subAttemptSnap.exists && subAttemptSnap.data()?.status !== 'precheck') ||
+                          (!queryAttemptSnap.empty && queryAttemptSnap.docs[0].data()?.status !== 'precheck') ||
+                          (!queryReviewSnap.empty && queryReviewSnap.docs[0].data()?.status !== 'precheck') ||
+                          (!querySubSnap.empty && querySubSnap.docs[0].data()?.status !== 'precheck');
 
         if (!attempted) {
           const isReasonAcknowledged = reasonSnap.exists && (reasonSnap.data()?.acknowledgedByParent === true || !!reasonSnap.data()?.reason);
@@ -351,6 +376,12 @@ export async function GET(req: NextRequest) {
                            (data.examId && evalMap.has(data.examId)) || 
                            (data.examCode && evalMap.has(data.examCode)) ||
                            (data.examId && evalMap.has(`${data.examId}_${studentCode}`));
+        
+        // Auto-heal status in Firestore if parent evaluation exists but review status is not approved
+        if (isReviewed && data.status !== 'approved') {
+          adminDb.collection('reviews').doc(doc.id).update({ status: 'approved' }).catch(() => null);
+        }
+
         const resolvedActor = data.reviewedByActor || evalMap.get(doc.id)?.reviewedByActor || (isReviewed ? 'parent' : null);
         return {
           id: doc.id,
@@ -618,7 +649,7 @@ export async function POST(req: NextRequest) {
         feedback: `Objective review approved by parent`,
         rubricUsed: null,
         modelAnswerVersion: 'objective',
-        examId: rData.examData?.id || null,
+        examId: rData.examId || rData.examData?.id || null,
         attemptId: null,
         createdAt: new Date(),
         updatedAt: new Date(),
