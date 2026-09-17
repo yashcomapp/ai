@@ -185,26 +185,8 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ message: 'Access Denied: You are not assigned to take this exam.' }, { status: 403 });
     }
 
-    // Strict block if there are pending reviews (either objective self-reflection or classmate peer reviews)
-    const [pendingObj, pendingSub] = await Promise.all([
-      adminDb.collection('reviews')
-        .where('studentCode', '==', studentCode)
-        .where('status', '==', 'student_review')
-        .limit(1)
-        .get(),
-      adminDb.collection('subjectiveAttempts')
-        .where('studentCode', '==', studentCode)
-        .where('status', '==', 'peer_review_pending')
-        .limit(1)
-        .get()
-    ]);
+    // Reviews notification/advisory (never hard-block scheduled daily tests)
 
-    if (!pendingObj.empty || !pendingSub.empty) {
-      return NextResponse.json({
-        status: 'blocked_by_pending_review',
-        message: 'You have pending exam reviews (either an objective exam self-reflection or a classmate peer-grading assignment) that need your attention. Please complete all pending reviews before starting your next exam.'
-      }, { status: 403 });
-    }
 
     // Enforce re-attempt prevention on close/reload for Objective exams
     const attemptRef = adminDb.collection('examAttempts').doc(`${examId}_${studentCode}`);

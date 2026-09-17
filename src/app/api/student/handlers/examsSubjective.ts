@@ -197,26 +197,8 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    // B. Standard Exam Taking Mode
-    const [pendingObj, pendingSub] = await Promise.all([
-      adminDb.collection('reviews')
-        .where('studentCode', '==', studentCode)
-        .where('status', '==', 'student_review')
-        .limit(1)
-        .get(),
-      adminDb.collection('peerAssignments')
-        .where('reviewerStudentCode', '==', studentCode)
-        .where('status', '==', 'pending')
-        .limit(1)
-        .get()
-    ]);
+    // Reviews notification/advisory (never hard-block scheduled tests)
 
-    if (!pendingObj.empty || !pendingSub.empty) {
-      return NextResponse.json({
-        status: 'blocked',
-        message: 'You have pending exam reviews (either an objective exam self-reflection or a classmate peer-grading assignment) that need your attention. Please complete all pending reviews before starting your next exam.'
-      });
-    }
 
     const examSnap = await adminDb.collection('subjectiveExams').doc(examId).get();
     if (!examSnap.exists) {
