@@ -149,7 +149,7 @@ export async function GET(req: NextRequest) {
     }
 
     const secureExam = {
-      id: examSnap.id,
+      id: examData.id || examId,
       name: examData.name || 'Untitled Exam',
       duration: examData.duration || 30, // in minutes
       negativeMarks: examData.negativeMarks || 0,
