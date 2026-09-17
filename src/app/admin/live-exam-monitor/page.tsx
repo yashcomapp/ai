@@ -85,11 +85,12 @@ export default function AdminLiveMonitorPage() {
   const activeCallRef = useRef<{ close: () => void } | null>(null);
   const localAudioStreamRef = useRef<MediaStream | null>(null);
 
-  // Periodic ticker to recalculate time-ago labels
+  // Periodic ticker to recalculate time-ago labels (pauses when tab is hidden)
   useEffect(() => {
     const timer = setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
       setTickerTime(Date.now());
-    }, 5000);
+    }, 10000);
     return () => clearInterval(timer);
   }, []);
 

@@ -227,11 +227,14 @@ export default function AdminQuestionBankPage() {
   }, [firebaseUser]);
 
   useEffect(() => {
-    if (firebaseUser) {
+    if (!firebaseUser) return;
+    const debounceTimer = setTimeout(() => {
       setCurrentPage(1);
       setLastCodesHistory(['']);
       fetchQuestionsList();
-    }
+    }, 250);
+
+    return () => clearTimeout(debounceTimer);
   }, [firebaseUser, filterBoard, filterClass, filterSubject, filterChapter, filterTopic, filterCategory, filterType, filterUsage, itemsPerPage]);
 
   // Handle Page click navigation

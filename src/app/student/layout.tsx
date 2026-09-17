@@ -70,8 +70,17 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
     };
 
     checkCurfew();
-    const interval = setInterval(checkCurfew, 15000);
-    return () => clearInterval(interval);
+    const interval = setInterval(checkCurfew, 60000);
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        checkCurfew();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [user]);
 
   // Hide the menu entirely during active exam taking or proctored practice sessions
