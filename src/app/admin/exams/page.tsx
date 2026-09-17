@@ -350,6 +350,9 @@ export default function AdminExamsPage() {
     id: string;
     collection: string;
     examName: string;
+    targetType: 'batch' | 'student' | 'mixed';
+    selectedBatches: Set<string>;
+    selectedStudents: Set<string>;
     openMode: 'immediate' | 'scheduled' | 'fixed-slot';
     startAtStr: string;
     endAtStr: string;
@@ -362,6 +365,9 @@ export default function AdminExamsPage() {
     id: '',
     collection: '',
     examName: '',
+    targetType: 'batch',
+    selectedBatches: new Set(),
+    selectedStudents: new Set(),
     openMode: 'immediate',
     startAtStr: '',
     endAtStr: '',
@@ -759,6 +765,20 @@ export default function AdminExamsPage() {
     setAssignModal(prev => ({ ...prev, selectedStudents: next }));
   };
 
+  const handleToggleBatchEdit = (batchId: string) => {
+    const next = new Set(editModal.selectedBatches);
+    if (next.has(batchId)) next.delete(batchId);
+    else next.add(batchId);
+    setEditModal(prev => ({ ...prev, selectedBatches: next }));
+  };
+
+  const handleToggleStudentEdit = (code: string) => {
+    const next = new Set(editModal.selectedStudents);
+    if (next.has(code)) next.delete(code);
+    else next.add(code);
+    setEditModal(prev => ({ ...prev, selectedStudents: next }));
+  };
+
   // Edit Assignment Action
   const handleOpenEdit = (examId: string, examName: string, collection: string) => {
     const activeAssign = assignments.find(a => a.examId === examId && a.collection === collection);
@@ -776,6 +796,9 @@ export default function AdminExamsPage() {
       id: activeAssign.id,
       collection,
       examName,
+      targetType: (activeAssign.targetType as any) || 'batch',
+      selectedBatches: new Set(activeAssign.targetBatches || []),
+      selectedStudents: new Set(activeAssign.targetStudents || []),
       openMode: activeAssign.openMode as any,
       startAtStr: activeAssign.startAt ? toISTString(activeAssign.startAt) : '',
       endAtStr: activeAssign.endAt ? toISTString(activeAssign.endAt) : '',
@@ -885,7 +908,15 @@ export default function AdminExamsPage() {
 
   const handleSaveEditedAssignment = async () => {
     if (!firebaseUser) return;
-    const { id, collection, openMode, startAtStr, endAtStr, attemptLimit, examDuration, lateEntryRestriction } = editModal;
+    const { id, collection, targetType, selectedBatches, selectedStudents, openMode, startAtStr, endAtStr, attemptLimit, examDuration, lateEntryRestriction } = editModal;
+
+    const batchesArr = Array.from(selectedBatches);
+    const studentsArr = Array.from(selectedStudents);
+
+    if (batchesArr.length === 0 && studentsArr.length === 0) {
+      alert('Please select at least one batch or student for the assignment.');
+      return;
+    }
 
     if (openMode !== 'immediate' && (!startAtStr || !endAtStr)) {
       alert('Please fill out scheduled start and end dates.');
@@ -917,6 +948,9 @@ export default function AdminExamsPage() {
         body: JSON.stringify({
           id,
           collection,
+          targetType,
+          targetBatches: batchesArr,
+          targetStudents: studentsArr,
           openMode,
           startAtStr,
           endAtStr,
@@ -930,11 +964,11 @@ export default function AdminExamsPage() {
         throw new Error('Failed to update assignment.');
       }
 
-      alert('✅ Assignment schedule updated!');
+      alert('✅ Assignment schedule and target audience updated!');
       setEditModal(prev => ({ ...prev, show: false }));
       await loadData();
     } catch (err: any) {
-      alert(err.message || 'Error editing schedule.');
+      alert(err.message || 'Error editing assignment.');
     }
   };
 
@@ -2546,10 +2580,114 @@ export default function AdminExamsPage() {
       {/* Modal: Edit Assignment Schedule */}
       {editModal.show && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.45)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', zIndex: 20000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ background: 'var(--surface-popover)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-popover)', maxWidth: '450px', width: '90%', padding: '24px', display: 'flex', flexDirection: 'column', gap: '15px', boxShadow: 'var(--shadow-lg)' }}>
+          <div style={{ background: 'var(--surface-popover)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-popover)', maxWidth: '550px', width: '90%', maxHeight: '90vh', overflowY: 'auto', padding: '24px', display: 'flex', flexDirection: 'column', gap: '15px', boxShadow: 'var(--shadow-lg)' }}>
             <h3 style={{ fontSize: '16px', fontWeight: 800, margin: 0 }}>
               ✏️ Edit Assignment: {editModal.examName}
             </h3>
+
+            {/* Target Audience Section */}
+            <div style={{ background: 'var(--surface-sunken)', padding: '12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-light)' }}>
+              <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '8px' }}>Target Audience</label>
+              
+              <div style={{ display: 'flex', gap: '15px', marginBottom: '10px' }}>
+                <label style={{ fontSize: '12px' }}>
+                  <input 
+                    type="radio" 
+                    name="editTargetType" 
+                    checked={editModal.targetType === 'batch'} 
+                    onChange={() => setEditModal(prev => ({ ...prev, targetType: 'batch' }))} 
+                  /> Batches Only
+                </label>
+                <label style={{ fontSize: '12px' }}>
+                  <input 
+                    type="radio" 
+                    name="editTargetType" 
+                    checked={editModal.targetType === 'student'} 
+                    onChange={() => setEditModal(prev => ({ ...prev, targetType: 'student' }))} 
+                  /> Students Only
+                </label>
+                <label style={{ fontSize: '12px' }}>
+                  <input 
+                    type="radio" 
+                    name="editTargetType" 
+                    checked={editModal.targetType === 'mixed'} 
+                    onChange={() => setEditModal(prev => ({ ...prev, targetType: 'mixed' }))} 
+                  /> Mixed Audience
+                </label>
+              </div>
+
+              {/* Batches selections */}
+              {(editModal.targetType === 'batch' || editModal.targetType === 'mixed') && (
+                <div style={{ marginBottom: '10px' }}>
+                  <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '3px' }}>Select Target Batches:</label>
+                  <div style={{ maxHeight: '100px', overflowY: 'auto', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', padding: '5px' }}>
+                    {batches.map(b => (
+                      <label key={b.id} style={{ display: 'block', fontSize: '12px', padding: '2px 0' }}>
+                        <input 
+                          type="checkbox" 
+                          checked={editModal.selectedBatches.has(b.id)} 
+                          onChange={() => handleToggleBatchEdit(b.id)} 
+                        /> 📦 {b.name}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Student selections grouped by batch */}
+              {(editModal.targetType === 'student' || editModal.targetType === 'mixed') && (
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '3px' }}>Select Target Students (Grouped by Batch):</label>
+                  <div style={{ maxHeight: '180px', overflowY: 'auto', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', padding: '5px' }}>
+                    {(() => {
+                      const { grouped, unassigned } = getStudentsGroupedByBatch();
+                      const elements: React.ReactNode[] = [];
+
+                      Object.entries(grouped).forEach(([bid, group]) => {
+                        if (group.list.length === 0) return;
+                        elements.push(
+                          <div key={`edit-group-hdr-${bid}`} style={{ fontWeight: 'bold', fontSize: '11px', color: 'var(--accent)', marginTop: '8px', paddingBottom: '2px', borderBottom: '1px dashed var(--border-light)' }}>
+                            📦 {group.batchName}
+                          </div>
+                        );
+                        group.list.forEach(s => {
+                          elements.push(
+                            <label key={`edit-${bid}-${s.studentCode}`} style={{ display: 'block', fontSize: '12px', padding: '2px 0', marginLeft: '12px' }}>
+                              <input 
+                                type="checkbox" 
+                                checked={editModal.selectedStudents.has(s.studentCode)} 
+                                onChange={() => handleToggleStudentEdit(s.studentCode)} 
+                              /> 👤 {s.name}
+                            </label>
+                          );
+                        });
+                      });
+
+                      if (unassigned.length > 0) {
+                        elements.push(
+                          <div key="edit-group-hdr-unassigned" style={{ fontWeight: 'bold', fontSize: '11px', color: 'var(--text-muted)', marginTop: '8px', paddingBottom: '2px', borderBottom: '1px dashed var(--border-light)' }}>
+                            👤 Unassigned / No Batch
+                          </div>
+                        );
+                        unassigned.forEach(s => {
+                          elements.push(
+                            <label key={`edit-unassigned-${s.studentCode}`} style={{ display: 'block', fontSize: '12px', padding: '2px 0', marginLeft: '12px' }}>
+                              <input 
+                                type="checkbox" 
+                                checked={editModal.selectedStudents.has(s.studentCode)} 
+                                onChange={() => handleToggleStudentEdit(s.studentCode)} 
+                              /> 👤 {s.name}
+                            </label>
+                          );
+                        });
+                      }
+
+                      return elements.length > 0 ? elements : <div style={{ fontSize: '11px', color: 'var(--text-muted)', padding: '10px 0' }}>No students found.</div>;
+                    })()}
+                  </div>
+                </div>
+              )}
+            </div>
 
             <div>
               <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '5px' }}>Availability Slot</label>

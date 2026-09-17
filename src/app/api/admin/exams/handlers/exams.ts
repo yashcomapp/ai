@@ -727,7 +727,20 @@ export async function PUT(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { id, collection, openMode, startAtStr, endAtStr, attemptLimit, examDuration, status, lateEntryRestriction } = body;
+    const { 
+      id, 
+      collection, 
+      openMode, 
+      startAtStr, 
+      endAtStr, 
+      attemptLimit, 
+      examDuration, 
+      status, 
+      lateEntryRestriction,
+      targetType,
+      targetBatches,
+      targetStudents
+    } = body;
 
     if (!id || !collection) {
       return NextResponse.json({ message: 'Missing parameters (id, collection).' }, { status: 400 });
@@ -778,6 +791,16 @@ export async function PUT(req: NextRequest) {
 
     if (examDuration) {
       updates.examDuration = Number(examDuration);
+    }
+
+    if (targetType) {
+      updates.targetType = targetType;
+    }
+    if (Array.isArray(targetBatches)) {
+      updates.targetBatches = targetBatches;
+    }
+    if (Array.isArray(targetStudents)) {
+      updates.targetStudents = targetStudents;
     }
 
     await assignRef.update(updates);
