@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { db } from '@/lib/firebase/firestore';
 import { collection, query, orderBy, limit, onSnapshot, doc, deleteDoc } from 'firebase/firestore';
 import { renderMarkdown } from '@/lib/markdown';
+import { getDateKeyIST, formatDateIST } from '@/lib/dateUtils';
 
 interface ChatRoom {
   roomId: string;
@@ -79,6 +80,7 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
   const [isMobile, setIsMobile] = useState(false);
   const [useApiPolling, setUseApiPolling] = useState(false);
   const [useRoomsApiPolling, setUseRoomsApiPolling] = useState(false);
+  const [showOlderGroupMessages, setShowOlderGroupMessages] = useState(false);
 
   // Mute control states
   const [muteStudents, setMuteStudents] = useState(false);
@@ -394,6 +396,7 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
       console.error('Failed to load starred messages:', e);
     }
     setReplyingTo(null);
+    setShowOlderGroupMessages(false);
   }, [activeRoomId]);
 
   // Fallback API Polling when direct client-side firestore is denied/unavailable
@@ -1086,7 +1089,23 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
   };
 
   const scrollToMessage = (messageId: string) => {
-    const el = messageRefs.current[messageId];
+    let el = messageRefs.current[messageId];
+    if (!el && !showOlderGroupMessages) {
+      setShowOlderGroupMessages(true);
+      setTimeout(() => {
+        const target = messageRefs.current[messageId];
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          target.style.backgroundColor = 'rgba(96, 165, 250, 0.25)';
+          setTimeout(() => {
+            target.style.backgroundColor = '';
+          }, 1500);
+        } else {
+          alert('Message not loaded in view.');
+        }
+      }, 150);
+      return;
+    }
     if (el) {
       el.scrollIntoView({ behavior: 'smooth', block: 'center' });
       el.style.backgroundColor = 'rgba(96, 165, 250, 0.25)';
@@ -1902,54 +1921,149 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
               >
 
                 {(() => {
-                  let lastDateStr = '';
                   const feedMessages = [...messages, ...pendingMessages].filter(msg => !msg.isDeleted);
-                  
-                  return feedMessages.map((msg, index) => {
-                    const isMe = msg.senderId === adminUid;
-                    const prevMsg = index > 0 ? feedMessages[index - 1] : null;
-                    const isSameSender = prevMsg && prevMsg.senderId === msg.senderId;
-                    const readersCount = Object.keys(msg.readBy || {}).filter(k => k !== msg.senderId).length;
+                  const isGroupChat = activeRoom?.type === 'group';
+                  const todayKey = getDateKeyIST();
+                  const yesterdayObj = new Date();
+                  yesterdayObj.setDate(yesterdayObj.getDate() - 1);
+                  const yesterdayKey = getDateKeyIST(yesterdayObj);
 
-                    // Render File attachment mock wrapper if it is a pdf / document
-                    const hasAttachment = msg.text.toLowerCase().includes('.pdf') || msg.text.toLowerCase().includes('.doc') || msg.text.toLowerCase().includes('.xlsx');
-                    
-                    // Day segregation separators logic
-                    let dateDivider = null;
-                    if (msg.createdAt) {
-                      const msgDate = new Date(msg.createdAt);
-                      if (!isNaN(msgDate.getTime())) {
-                        const dateStr = msgDate.toDateString();
-                        if (dateStr !== lastDateStr) {
-                          lastDateStr = dateStr;
-                          
-                          const today = new Date();
-                          const yesterday = new Date();
-                          yesterday.setDate(today.getDate() - 1);
-                          
-                          const day = String(msgDate.getDate()).padStart(2, '0');
-                          const month = String(msgDate.getMonth() + 1).padStart(2, '0');
-                          let displayDate = `${day}/${month}/${msgDate.getFullYear()}`;
-                          if (dateStr === today.toDateString()) {
-                            displayDate = 'Today';
-                          } else if (dateStr === yesterday.toDateString()) {
-                            displayDate = 'Yesterday';
-                          }
-                          
-                          dateDivider = (
-                            <div style={{ display: 'flex', justifyContent: 'center', margin: '16px 0', width: '100%' }}>
-                              <span style={{ fontSize: '11px', background: 'var(--surface-popover)', border: '1px solid var(--border-light)', padding: '4px 12px', borderRadius: '20px', color: 'var(--text-muted)', fontWeight: 600, letterSpacing: '0.3px', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
-                                {displayDate}
-                              </span>
-                            </div>
-                          );
-                        }
-                      }
+                  // Partition messages into today vs older messages
+                  const olderMessages: Message[] = [];
+                  const todayMessages: Message[] = [];
+
+                  feedMessages.forEach(msg => {
+                    const msgKey = msg.createdAt ? getDateKeyIST(msg.createdAt) : todayKey;
+                    if (msgKey === todayKey) {
+                      todayMessages.push(msg);
+                    } else {
+                      olderMessages.push(msg);
                     }
+                  });
 
-                    return (
-                      <React.Fragment key={msg.messageId}>
-                        {dateDivider}
+                  const isCollapsed = isGroupChat && !showOlderGroupMessages && olderMessages.length > 0;
+                  const visibleMessages = isCollapsed ? todayMessages : feedMessages;
+
+                  let lastDateStr = '';
+
+                  return (
+                    <>
+                      {/* Collapsible toggle bar for group chats */}
+                      {isGroupChat && olderMessages.length > 0 && (
+                        <div style={{ display: 'flex', justifyContent: 'center', margin: '8px 0 4px 0', width: '100%' }}>
+                          {!showOlderGroupMessages ? (
+                            <button
+                              type="button"
+                              onClick={() => setShowOlderGroupMessages(true)}
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                padding: '6px 16px',
+                                background: 'var(--surface-2)',
+                                border: '1px solid var(--border)',
+                                borderRadius: '20px',
+                                fontSize: '12px',
+                                fontWeight: 600,
+                                color: 'var(--accent)',
+                                cursor: 'pointer',
+                                boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
+                                transition: 'all 0.2s'
+                              }}
+                            >
+                              <span>📜</span>
+                              <span>View Earlier Messages ({olderMessages.length} prior)</span>
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setShowOlderGroupMessages(false)}
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                padding: '4px 12px',
+                                background: 'var(--surface-popover)',
+                                border: '1px solid var(--border-light)',
+                                borderRadius: '16px',
+                                fontSize: '11px',
+                                fontWeight: 600,
+                                color: 'var(--text-muted)',
+                                cursor: 'pointer',
+                                boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
+                              }}
+                            >
+                              <span>▲</span>
+                              <span>Collapse Earlier Messages</span>
+                            </button>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Empty state for today in group chat if no messages today but older messages exist */}
+                      {isCollapsed && todayMessages.length === 0 && (
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '36px 16px', textAlign: 'center', gap: '8px' }}>
+                          <span style={{ fontSize: '28px' }}>💬</span>
+                          <div style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text)' }}>No messages sent today</div>
+                          <div style={{ fontSize: '12px', color: 'var(--text-muted)', maxWidth: '320px' }}>
+                            Earlier conversation history ({olderMessages.length} messages) is collapsed to keep group chat snappy.
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setShowOlderGroupMessages(true)}
+                            style={{
+                              marginTop: '8px',
+                              padding: '6px 16px',
+                              background: 'var(--accent)',
+                              color: 'var(--text-on-accent)',
+                              border: 'none',
+                              borderRadius: '8px',
+                              fontSize: '12px',
+                              fontWeight: 600,
+                              cursor: 'pointer'
+                            }}
+                          >
+                            📜 View Previous History ({olderMessages.length})
+                          </button>
+                        </div>
+                      )}
+
+                      {visibleMessages.map((msg, index) => {
+                        const isMe = msg.senderId === adminUid;
+                        const prevMsg = index > 0 ? visibleMessages[index - 1] : null;
+                        const isSameSender = prevMsg && prevMsg.senderId === msg.senderId;
+                        const readersCount = Object.keys(msg.readBy || {}).filter(k => k !== msg.senderId).length;
+
+                        // Render File attachment mock wrapper if it is a pdf / document
+                        const hasAttachment = msg.text.toLowerCase().includes('.pdf') || msg.text.toLowerCase().includes('.doc') || msg.text.toLowerCase().includes('.xlsx');
+                        
+                        // Day segregation separators logic
+                        let dateDivider = null;
+                        if (msg.createdAt) {
+                          const msgKey = getDateKeyIST(msg.createdAt);
+                          if (msgKey !== lastDateStr) {
+                            lastDateStr = msgKey;
+                            
+                            let displayDate = formatDateIST(msg.createdAt);
+                            if (msgKey === todayKey) {
+                              displayDate = 'Today';
+                            } else if (msgKey === yesterdayKey) {
+                              displayDate = 'Yesterday';
+                            }
+                            
+                            dateDivider = (
+                              <div style={{ display: 'flex', justifyContent: 'center', margin: '16px 0', width: '100%' }}>
+                                <span style={{ fontSize: '11px', background: 'var(--surface-popover)', border: '1px solid var(--border-light)', padding: '4px 12px', borderRadius: '20px', color: 'var(--text-muted)', fontWeight: 600, letterSpacing: '0.3px', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+                                  {displayDate}
+                                </span>
+                              </div>
+                            );
+                          }
+                        }
+
+                        return (
+                          <React.Fragment key={msg.messageId}>
+                            {dateDivider}
                         <div
                           ref={(el) => { messageRefs.current[msg.messageId] = el; }}
                           onTouchStart={() => handleLongPressStart(msg.messageId)}
@@ -2420,8 +2534,10 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
                     </div>
                   </React.Fragment>
                 );
-              });
-            })()}
+              })}
+            </>
+          );
+        })()}
             <div ref={messagesEndRef} />
               </div>
 
