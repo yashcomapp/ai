@@ -197,8 +197,41 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    // Reviews notification/advisory (never hard-block scheduled tests)
+    // B. Strict block if there are pending reviews (either objective self-reflection, pending parent review, or classmate peer reviews)
+    const [pendingObj, pendingSub, pendingPeer] = await Promise.all([
+      adminDb.collection('reviews')
+        .where('studentCode', '==', studentCode)
+        .where('status', 'in', ['student_review', 'pending'])
+        .limit(1)
+        .get(),
+      adminDb.collection('subjectiveAttempts')
+        .where('studentCode', '==', studentCode)
+        .where('status', '==', 'peer_review_pending')
+        .limit(1)
+        .get(),
+      adminDb.collection('peerAssignments')
+        .where('reviewerStudentCode', '==', studentCode)
+        .where('status', '==', 'pending')
+        .limit(1)
+        .get()
+    ]);
 
+    if (!pendingObj.empty || !pendingSub.empty || !pendingPeer.empty) {
+      let pendingType = 'a pending review';
+      if (!pendingObj.empty) {
+        const revDoc = pendingObj.docs[0].data();
+        pendingType = revDoc.status === 'student_review' 
+          ? 'an objective exam self-reflection' 
+          : 'a pending parent sign-off on your previous exam';
+      } else if (!pendingSub.empty || !pendingPeer.empty) {
+        pendingType = 'a classmate peer-grading assignment';
+      }
+
+      return NextResponse.json({
+        status: 'blocked',
+        message: `You have ${pendingType} that needs attention. Please ensure all pending reviews are completed before starting your next exam.`
+      }, { status: 403 });
+    }
 
     const examSnap = await adminDb.collection('subjectiveExams').doc(examId).get();
     if (!examSnap.exists) {
