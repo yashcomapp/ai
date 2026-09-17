@@ -28,7 +28,6 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: 'YASHCOM Learning OS - Dashboard',
   description: 'AI Powered Learning Journey and Exam System',
-  manifest: '/manifest.json',
 };
 
 export default function RootLayout({
@@ -39,7 +38,6 @@ export default function RootLayout({
   return (
     <html lang="en" data-theme="dark" className={`${inter.variable} dark`}>
       <head>
-        <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#121215" />
         <link rel="icon" href="/icons/favicon-32.png?v=2" sizes="32x32" />
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png?v=2" />
