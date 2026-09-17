@@ -1258,7 +1258,7 @@ function ExamReportContent() {
                 🔄 Individual Reassignment (Absent Cases)
               </h3>
               {notStartedStudents.length > 0 && (
-                <span className="badge badge-danger" style={{ background: 'rgba(239, 68, 68, 0.15)', color: '#dc2626', fontWeight: 700, padding: '2px 8px', borderRadius: '10px', fontSize: '11px' }}>
+                <span className="badge badge-danger" style={{ background: 'var(--danger-bg, rgba(234, 108, 117, 0.10))', color: 'var(--danger, #ea6c75)', border: '1px solid var(--danger-border, rgba(234, 108, 117, 0.22))', fontWeight: 700, padding: '2px 8px', borderRadius: '10px', fontSize: '11px' }}>
                   {notStartedStudents.length} Absent
                 </span>
               )}
@@ -1366,13 +1366,13 @@ function ExamReportContent() {
                   </tr>
                 </thead>
                 <tbody>
-                  {/* Absent Students (pinned to top in red color, single merged row) */}
+                  {/* Absent Students (pinned to top in soft WhatsApp coral-rose color, single merged row) */}
                   {(!activeFilter || activeFilter === 'all') && notStartedStudents.length > 0 && (
                     <tr 
-                      style={{ borderBottom: '1px solid var(--border-light)', background: 'rgba(239, 68, 68, 0.08)' }}
+                      style={{ borderBottom: '1px solid var(--border-light)', background: 'var(--danger-bg, rgba(234, 108, 117, 0.10))' }}
                     >
-                      <td colSpan={6} style={{ padding: '10px 12px', color: '#dc2626' }}>
-                        <div style={{ textAlign: 'center', fontWeight: 800, fontSize: '12.5px', marginBottom: '6px', color: '#dc2626' }}>
+                      <td colSpan={6} style={{ padding: '10px 14px', color: 'var(--danger, #ea6c75)' }}>
+                        <div style={{ textAlign: 'center', fontWeight: 800, fontSize: '12.5px', marginBottom: '6px', color: 'var(--danger, #ea6c75)', letterSpacing: '0.2px' }}>
                           🔴 Absent Students ({notStartedStudents.length})
                         </div>
                         <div style={{ 
@@ -1380,15 +1380,15 @@ function ExamReportContent() {
                           gridTemplateColumns: 'repeat(3, 1fr)', 
                           gap: '6px 12px',
                           fontSize: '12px',
-                          fontWeight: 700,
-                          color: '#dc2626'
+                          fontWeight: 600,
+                          color: 'var(--danger, #ea6c75)'
                         }}>
                           {[...notStartedStudents]
                             .sort((a, b) => a.name.localeCompare(b.name))
                             .map(a => (
-                              <div key={a.code} style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: '#dc2626', fontWeight: 700, fontSize: '12px' }} title={`${a.name} - ${formatAbsentLogin(a.lastLoginAt)}`}>
+                              <div key={a.code} style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--danger, #ea6c75)', fontWeight: 600, fontSize: '12px' }} title={`${a.name} - ${formatAbsentLogin(a.lastLoginAt)}`}>
                                 • {a.name}{' '}
-                                <span style={{ fontSize: '10px', fontWeight: 400, opacity: 0.8, color: '#991b1b', marginLeft: '4px' }}>
+                                <span style={{ fontSize: '10px', fontWeight: 500, color: 'var(--danger-muted, #fca5a5)', opacity: 0.9, marginLeft: '4px' }}>
                                   {formatAbsentLogin(a.lastLoginAt)}
                                 </span>
                               </div>
