@@ -838,7 +838,12 @@ async function handleParentPending(req: NextRequest) {
   evalSnap.docs.forEach((doc: any) => {
     const data = doc.data();
     
-    if (data.source?.includes('practice') || data.modelAnswerVersion === 'practice') {
+    if (
+      data.source?.includes('practice') || 
+      data.modelAnswerVersion === 'practice' ||
+      data.source === 'absence_acknowledgement' ||
+      data.modelAnswerVersion === 'absence'
+    ) {
       return;
     }
 
