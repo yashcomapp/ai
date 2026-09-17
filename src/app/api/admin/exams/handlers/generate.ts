@@ -518,15 +518,60 @@ export async function POST(req: NextRequest) {
         return result || clean.substring(0, 18);
       };
 
-      // Helper to get clean topic number (e.g., "11.1.1" -> "11.1", "5.1" -> "5.1")
-      const cleanTopicNum = (rawTopic: string) => {
-        if (!rawTopic) return '1.1';
-        const parts = String(rawTopic).split('.');
-        if (parts.length >= 2) return `${parts[0]}.${parts[1]}`;
-        return rawTopic;
+      // Helper to format topic(s) part cleanly for single, consecutive, and multi-topic exams
+      const formatTopicPart = (rawTopicCodes?: string[], chNum?: string) => {
+        if (!rawTopicCodes || rawTopicCodes.length === 0) {
+          return chNum ? `Ch${chNum}` : '1.1';
+        }
+
+        const cleanList = Array.from(new Set(
+          rawTopicCodes.map(t => {
+            const parts = String(t).trim().split('.');
+            if (parts.length >= 2) return `${parts[0]}.${parts[1]}`;
+            return String(t).trim();
+          }).filter(Boolean)
+        ));
+
+        if (cleanList.length === 0) {
+          return chNum ? `Ch${chNum}` : '1.1';
+        }
+
+        if (cleanList.length === 1) {
+          return cleanList[0];
+        }
+
+        if (cleanList.length === 2) {
+          const [t1, t2] = cleanList;
+          const [c1, s1] = t1.split('.').map(Number);
+          const [c2, s2] = t2.split('.').map(Number);
+          if (c1 === c2 && s2 === s1 + 1) {
+            return `${t1}-${t2}`;
+          }
+          return `${t1}+${t2}`;
+        }
+
+        // 3+ topics
+        const chaptersInvolved = Array.from(new Set(cleanList.map(t => t.split('.')[0])));
+        if (chaptersInvolved.length === 1) {
+          const ch = chaptersInvolved[0];
+          const subNums = cleanList.map(t => Number(t.split('.')[1])).filter(n => !isNaN(n)).sort((a, b) => a - b);
+          const isConsecutive = subNums.every((val, idx) => idx === 0 || val === subNums[idx - 1] + 1);
+          if (isConsecutive && subNums.length >= 2) {
+            const minSub = subNums[0];
+            const maxSub = subNums[subNums.length - 1];
+            return `${ch}.${minSub}-${ch}.${maxSub}`;
+          }
+          return `Ch${ch}`;
+        }
+
+        if (chaptersInvolved.length <= 3) {
+          return chaptersInvolved.map(c => `Ch${c}`).join('+');
+        }
+
+        return 'Mixed';
       };
 
-      const topicPart = cleanTopicNum((Array.isArray(topicCodes) && topicCodes[0]) || chapterNumber || '1.1');
+      const topicPart = formatTopicPart(topicCodes, chapterNumber);
       const chapTrunc = truncateChapter(chapter || subjectName || 'Exam');
       const examId = `${seq3digit}-${boardCode}-${classNum}-${chapTrunc}-${topicPart}-${dateStrYY}`;
 
