@@ -3,6 +3,7 @@ import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole } from '@/lib/auth';
 import { getDateKeyIST as getISTDateString } from '@/lib/dateUtils';
 import { getFromCache, setInCache } from '@/lib/firebase/cache';
+import { isDemoUser } from '@/lib/studentDb';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,7 +29,7 @@ export async function GET(req: NextRequest) {
 
     // Fetch counts and recent registrations in parallel
     const [
-      studentsCount,
+      studentsSnap,
       batchesCount,
       activeExamsCount,
       overdueCountSnap,
@@ -36,7 +37,7 @@ export async function GET(req: NextRequest) {
       chatRoomsSnap,
       recentRegsSnap
     ] = await Promise.all([
-      adminDb.collection('users').where('role', '==', 'student').count().get(),
+      adminDb.collection('users').where('role', '==', 'student').get(),
       adminDb.collection('batches').count().get(),
       adminDb.collection('exams').where('status', '==', 'active').count().get(),
       adminDb.collection('studentFees').where('hasOverdueInstallment', '==', true).count().get(),
@@ -121,9 +122,13 @@ export async function GET(req: NextRequest) {
       return Number(uCounts[adminUid] || uCounts['admin'] || 0) > 0;
     }).length;
 
+    const totalStudents = studentsSnap.docs
+      .map(d => d.data())
+      .filter(s => s.status !== 'inactive' && !isDemoUser(s)).length;
+
     const result = {
       stats: {
-        totalStudents: studentsCount.data().count,
+        totalStudents,
         totalBatches: batchesCount.data().count,
         cumulativePractice: cumulativePracticeCount,
         activeExams: activeExamsCount.data().count,

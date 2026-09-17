@@ -328,18 +328,29 @@ function ExamReportContent() {
     return matchedTexts.join(', ');
   };
 
+  const isDemo = (s: any) => {
+    if (!s) return false;
+    const name = String(s.name || s.studentName || '').trim().toLowerCase();
+    const email = String(s.email || '').trim().toLowerCase();
+    const code = String(s.studentCode || s.code || '').trim().toUpperCase();
+    return name === 'student user' || name === 'parent user' || name === 'test parent' || name === 'test student' || email === 's@c.com' || email === 'p@c.com' || (code === 'ST-2026-000001' && (name === 'student user' || email === 's@c.com'));
+  };
+
   // Calculate assigned but not started students CORRECTLY
-  const startedCodes = new Set(attempts.map(r => r.studentCode).filter(Boolean));
+  const startedCodes = new Set(attempts.map(r => (r.studentCode || '').trim().toUpperCase()).filter(Boolean));
   const assignedCodes = new Set<string>();
 
   assignments.forEach(ba => {
-    (ba.targetStudents || []).forEach((code: string) => assignedCodes.add(code));
+    (ba.targetStudents || []).forEach((code: string) => {
+      if (code) assignedCodes.add(code.trim().toUpperCase());
+    });
     const targetBatches = ba.targetBatches || [];
     if (targetBatches.length > 0) {
       students.forEach(s => {
+        if (isDemo(s)) return;
         const sBatchIds = s.batchIds && s.batchIds.length ? s.batchIds : (s.batchId ? [s.batchId] : []);
         if (s.studentCode && sBatchIds.some((b: string) => targetBatches.includes(b))) {
-          assignedCodes.add(s.studentCode);
+          assignedCodes.add(s.studentCode.trim().toUpperCase());
         }
       });
     }
@@ -348,10 +359,10 @@ function ExamReportContent() {
   const notStartedStudents: { code: string; name: string; lastLoginAt?: string | null; lastActiveAt?: string | null }[] = [];
   Array.from(assignedCodes).forEach(code => {
     if (!startedCodes.has(code)) {
-      const s = students.find(x => x.studentCode === code);
-      if (s) {
+      const s = students.find(x => (x.studentCode || '').trim().toUpperCase() === code);
+      if (s && !isDemo(s)) {
         notStartedStudents.push({ 
-          code, 
+          code: s.studentCode || code, 
           name: s.name,
           lastLoginAt: s.lastLoginAt,
           lastActiveAt: s.lastActiveAt

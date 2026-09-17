@@ -1,5 +1,6 @@
 import { adminDb } from '@/lib/firebase/admin';
 import { StudentProfile, StudentTopicMastery, WeeklyIntegrity } from '@/types/user.types';
+import { isDemoUser } from '@/lib/studentDb';
 
 export class StudentRepository {
   private static masteryCollection = adminDb.collection('studentTopicMastery');
@@ -68,7 +69,7 @@ export class StudentRepository {
         role: 'student' as const,
         status: data.status || 'active'
       };
-    }).filter(s => s.status !== 'inactive');
+    }).filter(s => s.status !== 'inactive' && !isDemoUser(s));
   }
 
   /**
@@ -107,6 +108,6 @@ export class StudentRepository {
         role: 'parent' as const,
         status: data.status || 'active'
       };
-    }).filter(p => p.status !== 'inactive');
+    }).filter(p => p.status !== 'inactive' && !isDemoUser(p));
   }
 }

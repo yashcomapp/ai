@@ -10,6 +10,7 @@ import {
   StudentObservation 
 } from '@/types/quotient.types';
 import { evaluateSessionSincerity } from '@/lib/practiceTimeUtils';
+import { isDemoUser } from '@/lib/studentDb';
 
 export const MASTERY_THRESHOLDS = {
   MASTERED_MASTERY: 90,
@@ -895,18 +896,18 @@ export class QuotientService {
     const studentBatchesMap = new Map<string, string[]>();
     usersSnap.docs.forEach(doc => {
       const data = doc.data();
-      if (data.studentCode) {
+      if (data.studentCode && !isDemoUser(data)) {
         const bIds = data.batchIds || (data.batchId ? [data.batchId] : []);
         studentBatchesMap.set(data.studentCode, bIds);
       }
     });
 
-    const rawAttempts = attemptsSnap.docs.map((doc: any) => doc.data()).filter((att: any) => att.examType !== 'entrance');
-    const rawAssignments = assignmentsSnap.docs.map((doc: any) => doc.data()).filter((ass: any) => ass.examType !== 'entrance');
-    const rawPractice = practiceSnap.docs.map((doc: any) => doc.data());
-    const rawIntegrity = integritySnap.docs.map((doc: any) => doc.data());
-    const rawObservations = observationsSnap.docs.map((doc: any) => doc.data());
-    const rawReviews = parentReviewsSnap.docs.map((doc: any) => doc.data());
+    const rawAttempts = attemptsSnap.docs.map((doc: any) => doc.data()).filter((att: any) => att.examType !== 'entrance' && !isDemoUser(att));
+    const rawAssignments = assignmentsSnap.docs.map((doc: any) => doc.data()).filter((ass: any) => ass.examType !== 'entrance' && !isDemoUser(ass));
+    const rawPractice = practiceSnap.docs.map((doc: any) => doc.data()).filter((p: any) => !isDemoUser(p));
+    const rawIntegrity = integritySnap.docs.map((doc: any) => doc.data()).filter((i: any) => !isDemoUser(i));
+    const rawObservations = observationsSnap.docs.map((doc: any) => doc.data()).filter((o: any) => !isDemoUser(o));
+    const rawReviews = parentReviewsSnap.docs.map((doc: any) => doc.data()).filter((r: any) => !isDemoUser(r));
 
     const groupByStudent = (list: any[]) => {
       const map: Record<string, any[]> = {};

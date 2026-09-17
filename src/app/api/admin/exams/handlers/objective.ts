@@ -6,6 +6,7 @@ import { ChunkedBatch } from '@/lib/firebase/batch';
 import { evaluateQuestionAnswer } from '@/lib/questionTypes';
 import { getCachedSyllabus } from '@/lib/firebase/cache';
 import { ReportCacheManager } from '@/lib/reportCache';
+import { isDemoUser } from '@/lib/studentDb';
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
@@ -122,7 +123,7 @@ export async function GET(req: NextRequest) {
         completedAt: completedAt ? (completedAt.toISOString ? completedAt.toISOString() : new Date(completedAt).toISOString()) : null,
         reviewedAt: reviewedAt ? (reviewedAt.toISOString ? reviewedAt.toISOString() : new Date(reviewedAt).toISOString()) : null
       };
-    });
+    }).filter(a => !isDemoUser(a));
 
     const assignments = assignmentsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     const students = studentsSnap.docs.map(doc => {
@@ -131,6 +132,7 @@ export async function GET(req: NextRequest) {
         id: doc.id,
         studentCode: data.studentCode || '',
         name: data.name || '',
+        email: data.email || '',
         batchId: data.batchId || null,
         batchIds: data.batchIds || [],
         autonomous: data.autonomous || false,
@@ -138,7 +140,7 @@ export async function GET(req: NextRequest) {
         lastLoginAt: data.lastLoginAt ? (data.lastLoginAt.toDate ? data.lastLoginAt.toDate().toISOString() : new Date(data.lastLoginAt).toISOString()) : null,
         lastActiveAt: data.lastActiveAt ? (data.lastActiveAt.toDate ? data.lastActiveAt.toDate().toISOString() : new Date(data.lastActiveAt).toISOString()) : null
       };
-    }).filter(s => s.status !== 'inactive');
+    }).filter(s => s.status !== 'inactive' && !isDemoUser(s));
 
     const batches = batchesSnap.docs.map(doc => ({ id: doc.id, name: doc.data().name || doc.id }));
 

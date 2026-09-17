@@ -1,5 +1,6 @@
 import { adminDb } from '@/lib/firebase/admin';
 import * as admin from 'firebase-admin';
+import { isDemoUser } from '@/lib/studentDb';
 
 export class ReportService {
 
@@ -24,20 +25,22 @@ export class ReportService {
     let parentReviews = 0;
     let studentReviews = 0;
 
-    const evaluations = evaluationsSnap.docs.map(doc => {
-      const data = doc.data();
-      if (data.reviewedByActor === 'student') {
-        studentReviews++;
-      } else if (data.reviewedByActor === 'parent' || data.evaluatorType === 'parent') {
-        parentReviews++;
-      }
-      return {
-        id: doc.id,
-        ...data,
-        createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : data.createdAt || null,
-        date: data.date?.toDate ? data.date.toDate() : data.date || null
-      };
-    });
+    const evaluations = evaluationsSnap.docs
+      .map(doc => {
+        const data = doc.data();
+        if (data.reviewedByActor === 'student') {
+          studentReviews++;
+        } else if (data.reviewedByActor === 'parent' || data.evaluatorType === 'parent') {
+          parentReviews++;
+        }
+        return {
+          id: doc.id,
+          ...data,
+          createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : data.createdAt || null,
+          date: data.date?.toDate ? data.date.toDate() : data.date || null
+        };
+      })
+      .filter(e => !isDemoUser(e));
 
     return {
       stats: {
@@ -86,7 +89,7 @@ export class ReportService {
         class: data.class || '',
         status: data.status || 'active'
       };
-    }).filter(s => s.status !== 'inactive');
+    }).filter(s => s.status !== 'inactive' && !isDemoUser(s));
 
     return {
       totalScores,

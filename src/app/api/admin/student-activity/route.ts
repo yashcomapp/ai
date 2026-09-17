@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb, adminAuth } from '@/lib/firebase/admin';
 import { verifyRole } from '@/lib/auth';
+import { isDemoUser } from '@/lib/studentDb';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,13 +35,14 @@ export async function GET(req: NextRequest) {
         currentPageAt: data.currentPageAt?.toDate ? data.currentPageAt.toDate().toISOString() : data.currentPageAt || null,
         cumulativeSeconds: data.cumulativeSeconds || 0
       };
-    }).filter(s => s.status !== 'inactive');
+    }).filter(s => s.status !== 'inactive' && !isDemoUser(s));
 
     const activeStudentCodes = new Set(studentsActivity.map(s => s.studentCode.toLowerCase()));
 
     // 3. Map parents data
     const parentsActivity = parentsSnap.docs.map(doc => {
       const data = doc.data();
+      if (isDemoUser(data)) return null;
       const uid = doc.id;
       const baseName = data.name || data.displayName || 'Unknown';
       const pCodes = data.studentCodes || (data.studentCode ? [data.studentCode] : []);

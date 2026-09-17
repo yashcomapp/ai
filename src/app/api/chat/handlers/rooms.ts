@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole, verifyAnyRole } from '@/lib/auth';
+import { isDemoUser } from '@/lib/studentDb';
 
 export const dynamic = 'force-dynamic';
 
@@ -71,15 +72,17 @@ export async function GET(req: NextRequest) {
     // Load batch names map once for accurate human-readable naming
     const batchNamesMap = await getBatchNamesMap();
 
-    // Helper to get all inactive studentCodes and emails
-    const inactiveUsersSnap = await adminDb.collection('users').where('status', '==', 'inactive').get();
+    // Helper to get all inactive and demo studentCodes and emails
+    const allUsersSnap = await adminDb.collection('users').get();
     const inactiveCodes = new Set<string>();
     const inactiveEmails = new Set<string>();
-    inactiveUsersSnap.docs.forEach(d => {
+    allUsersSnap.docs.forEach(d => {
       const data = d.data();
-      if (data.studentCode) inactiveCodes.add(data.studentCode.trim().toUpperCase());
-      if (data.email) inactiveEmails.add(data.email.toLowerCase().trim());
-      if (data.parentEmail) inactiveEmails.add(data.parentEmail.toLowerCase().trim());
+      if (data.status === 'inactive' || isDemoUser(data)) {
+        if (data.studentCode) inactiveCodes.add(data.studentCode.trim().toUpperCase());
+        if (data.email) inactiveEmails.add(data.email.toLowerCase().trim());
+        if (data.parentEmail) inactiveEmails.add(data.parentEmail.toLowerCase().trim());
+      }
     });
 
     if (admin) {

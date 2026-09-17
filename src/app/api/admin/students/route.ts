@@ -3,6 +3,7 @@ import { adminDb, adminAuth } from '@/lib/firebase/admin';
 import { verifyRole } from '@/lib/auth';
 import { ChunkedBatch } from '@/lib/firebase/batch';
 import { getFromCache, setInCache, invalidateCache } from '@/lib/firebase/cache';
+import { isDemoUser } from '@/lib/studentDb';
 
 export async function GET(request: Request) {
   try {
@@ -51,10 +52,12 @@ export async function GET(request: Request) {
         .get()
     ]);
       
-    const students = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
+    const students = snapshot.docs
+      .map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }))
+      .filter(s => !isDemoUser(s));
     
     const batches = batchesSnapshot.docs.map(doc => ({
       id: doc.id,

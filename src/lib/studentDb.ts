@@ -4,6 +4,49 @@ import { getDateKeyIST } from '@/lib/dateUtils';
 import { calculateUnifiedMetrics } from '@/lib/dashboardMetrics';
 import { deriveTopicCodeFromQuestionCode, getCanonicalSubjectName } from '@/lib/questionTypes';
 
+/**
+ * Checks if a user or student profile is a demo / placeholder account
+ */
+export function isDemoUser(user: any): boolean {
+  if (!user) return false;
+  if (user.isDemo === true) return true;
+  if (user.role === 'demo') return true;
+
+  const name = String(user.name || user.studentName || '').trim().toLowerCase();
+  const email = String(user.email || user.parentEmail || '').trim().toLowerCase();
+  const studentCode = String(user.studentCode || '').trim().toUpperCase();
+
+  // Known demo names & placeholder accounts
+  if (
+    name === 'student user' ||
+    name === 'parent user' ||
+    name === 'test parent' ||
+    name === 'test student' ||
+    name === 'demo student' ||
+    name === 'demo user'
+  ) {
+    return true;
+  }
+
+  // Known demo emails
+  if (
+    email === 's@c.com' ||
+    email === 'p@c.com' ||
+    email === 'parent@yashcom.test' ||
+    email.endsWith('@demo.com') ||
+    email.endsWith('.test')
+  ) {
+    return true;
+  }
+
+  // Known demo student code mapping
+  if (studentCode === 'ST-2026-000001' && (name === 'student user' || email === 's@c.com')) {
+    return true;
+  }
+
+  return false;
+}
+
 function resolveTopicNames(syllabusList: any, examData: any) {
   const targetTopicCodes = examData.topicCodes || [];
   const targetChapterNum = examData.chapterNumber || '';

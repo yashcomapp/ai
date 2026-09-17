@@ -5,7 +5,7 @@ import { verifyRole } from '@/lib/auth';
 import { ChunkedBatch } from '@/lib/firebase/batch';
 import { notifyNewExam } from '@/lib/notifications';
 import { getDateKeyIST } from '@/lib/dateUtils';
-import { getRequiredConfidence } from '@/lib/studentDb';
+import { getRequiredConfidence, isDemoUser } from '@/lib/studentDb';
 export const dynamic = 'force-dynamic';
 
 const parseIST = (dateStr: string) => {
@@ -257,15 +257,17 @@ export async function GET(req: NextRequest) {
         id: doc.id,
         studentCode: data.studentCode || '',
         name: data.name || '',
+        email: data.email || '',
         rollNumber: data.rollNumber || '',
         batchIds: data.batchIds || [],
         batchId: data.batchId || null,
         status: data.status || 'active'
       };
-    }).filter(s => !!s.studentCode && s.status !== 'inactive');
+    }).filter(s => !!s.studentCode && s.status !== 'inactive' && !isDemoUser(s));
 
     const parents = parentsSnap.docs.map(doc => {
       const data = doc.data();
+      if (isDemoUser(data)) return null;
       const pEmail = data.email || '';
       const pName = data.name || '';
       const pCodes = data.studentCodes || (data.studentCode ? [data.studentCode] : []);

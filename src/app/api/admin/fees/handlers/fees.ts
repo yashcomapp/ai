@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole } from '@/lib/auth';
 import { getDateKeyIST as getISTDateString } from '@/lib/dateUtils';
+import { isDemoUser } from '@/lib/studentDb';
 
 export const dynamic = 'force-dynamic';
 
@@ -156,7 +157,7 @@ export async function GET(req: NextRequest) {
         parentPhone: d.parentPhone || d.parentMobile || '',
         status: d.status || 'active'
       };
-    }).filter(s => s.status === 'active');
+    }).filter(s => s.status === 'active' && !isDemoUser(s));
 
     // 2. Fetch existing student fees records
     const feesSnap = await adminDb.collection('studentFees').get();

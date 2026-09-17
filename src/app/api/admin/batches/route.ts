@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole } from '@/lib/auth';
 import { ChunkedBatch } from '@/lib/firebase/batch';
+import { isDemoUser } from '@/lib/studentDb';
+
 export async function GET(request: Request) {
   try {
     const admin = await verifyRole(request, 'admin');
@@ -20,15 +22,19 @@ export async function GET(request: Request) {
     const studentsSnap = await adminDb.collection('users')
       .where('role', '==', 'student')
       .get();
-    const students = studentsSnap.docs.map(doc => ({
-      id: doc.id,
-      name: doc.data().name || '',
-      email: doc.data().email || '',
-      studentCode: doc.data().studentCode || '',
-      rollNumber: doc.data().rollNumber || '',
-      feeStatus: doc.data().feeStatus || 'pending',
-      batchIds: doc.data().batchIds || []
-    }));
+    const students = studentsSnap.docs
+      .map(doc => ({
+        id: doc.id,
+        name: doc.data().name || '',
+        email: doc.data().email || '',
+        studentCode: doc.data().studentCode || '',
+        rollNumber: doc.data().rollNumber || '',
+        feeStatus: doc.data().feeStatus || 'pending',
+        batchIds: doc.data().batchIds || [],
+        status: doc.data().status || 'active',
+        isDemo: doc.data().isDemo
+      }))
+      .filter(s => !isDemoUser(s));
 
     return NextResponse.json({ batches, students });
   } catch (err: any) {
