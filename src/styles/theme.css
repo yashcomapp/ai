@@ -21,16 +21,16 @@ html.dark {
     --border-popover: rgba(255, 255, 255, 0.12);
 
     /* Clean Subtle Low-Glare Borders */
-    --border: rgba(255, 255, 255, 0.10);
-    --border-light: rgba(255, 255, 255, 0.06);
-    --border-glass: rgba(255, 255, 255, 0.12);
+    --border: rgba(255, 255, 255, 0.08);
+    --border-light: rgba(255, 255, 255, 0.045);
+    --border-glass: rgba(255, 255, 255, 0.09);
 
-    /* Ergonomic Warm Typography (Anti-Halation & Zero Glare) */
-    --text: #edeef0;
-    --text-2: #d4d4d8;
-    --text-secondary: #a1a1aa;
-    --text-muted: #71717a;
-    --text-faint: #52525b;
+    /* Ergonomic Warm Typography (Anti-Halation & Zero Glare - Soft Matte Parchment Ivory) */
+    --text: #d8dadf;
+    --text-2: #b8bcc6;
+    --text-secondary: #9499a6;
+    --text-muted: #737885;
+    --text-faint: #545863;
 
     /* Primary Accent - Warm Amber Focus (Low-Stress Alertness) */
     --accent: #f59e0b;
