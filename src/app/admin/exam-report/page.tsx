@@ -1112,8 +1112,14 @@ function ExamReportContent() {
         <div className="page-header-left">
           <span className="brand" style={{ fontSize: '18px', fontWeight: 800, cursor: 'pointer' }} onClick={() => router.push('/admin')}>YASHCOM</span>
           <div>
-            <h1 style={{ fontSize: '16px', margin: 0 }}>Exam Report: {exam.name}</h1>
+            <h1 style={{ fontSize: '16px', margin: 0, display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              Exam Report: {exam.name || exam.subjectName || exam.id}
+              <span className="badge" style={{ fontSize: '11px', fontWeight: 600, padding: '2px 8px', background: 'var(--surface-3)', border: '1px solid var(--border-light)', borderRadius: '6px' }}>
+                {exam.id}
+              </span>
+            </h1>
           </div>
+
         </div>
         <div className="page-header-right" style={{ display: 'flex', gap: '10px' }}>
           

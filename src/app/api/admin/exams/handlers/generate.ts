@@ -509,21 +509,15 @@ export async function POST(req: NextRequest) {
       const seq3digit = String(nextSeq).padStart(3, '0');
       const examId = `${boardCode}-${classNum}-${subjectCode}-${examTypeCode}-${chapterPart}-${dateStr}-${nextSeq}`;
 
-      const getTwoWords = (chName: string) => {
-        if (!chName) return '';
-        const clean = chName.replace(/[^a-zA-Z0-9\s-]/g, '').trim();
-        const words = clean.split(/\s+/).filter(w => w.length > 0 && w.toLowerCase() !== 'and');
-        if (words.length >= 2) return `${words[0]} ${words[1]}`;
-        return words[0] || '';
-      };
-      
-      const twoWords = getTwoWords(chapter || '');
-      const chapterDisplayPart = twoWords || chapterPart;
-      const dateStrYY = `${String(now.getDate()).padStart(2,'0')}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getFullYear()).substring(2, 4)}`;
+      const canonicalChapterTitle = chapter 
+        ? (chapterNumber ? `Ch ${chapterNumber}: ${chapter}` : chapter)
+        : (subjectName || subjectCode || examId);
 
       const examData: any = {
         examId,
-        name: name || `${seq3digit}-${classNum}-${subjectCode}-${chapterDisplayPart}-${isAllSubjective ? 'Sub' : 'Obj'}-${dateStrYY}`,
+        id: examId,
+        name: name || canonicalChapterTitle,
+        title: name || canonicalChapterTitle,
         sequence: nextSeq,
         sequence3digit: seq3digit,
         board,
@@ -531,6 +525,7 @@ export async function POST(req: NextRequest) {
         class: classNum,
         subjectCode,
         subjects: subjects || [subjectName],
+
         subjectWeightage: subjectWeightage || {},
         weightageMode: weightageMode || 'equal',
         chapter: chapter || '',

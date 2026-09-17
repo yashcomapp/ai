@@ -2182,24 +2182,44 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                   dangerouslySetInnerHTML={{ __html: (activeOverlayNotice.body || '').replace(/(<\/div>|<\/p>|<\/li>)\s*\r?\n/gi, '$1').replace(/\r?\n\s*(<div[^>]*>|<p[^>]*>|<ul[^>]*>|<ol[^>]*>|<li[^>]*>)/gi, '$1').replace(/\r?\n/g, '<br/>') }}
                 />
 
-                {/* Interactive Absence Reason Form for Parent */}
+                {/* Interactive Absence Reason Form for Parent with Firm Hindi Advisory */}
                 {isAbsentNotice && (
                   <div style={{
                     marginTop: '16px',
                     padding: '14px',
-                    background: 'rgba(239, 68, 68, 0.1)',
+                    background: 'rgba(239, 68, 68, 0.08)',
                     borderRadius: '8px',
-                    border: '1px solid rgba(239, 68, 68, 0.3)',
+                    border: '1.5px solid rgba(239, 68, 68, 0.35)',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '10px'
+                    gap: '12px'
                   }}>
+                    {/* Polite & Firm Parental Advisory in Hindi */}
+                    <div style={{
+                      padding: '12px 14px',
+                      background: 'rgba(239, 68, 68, 0.12)',
+                      borderRadius: '8px',
+                      borderLeft: '4px solid #ef4444',
+                      color: 'var(--text)',
+                      fontSize: '13px',
+                      lineHeight: '1.6'
+                    }}>
+                      <div style={{ fontWeight: 800, color: '#ef4444', marginBottom: '6px', fontSize: '13.5px' }}>
+                        ⚠️ अभिभावक कृपया ध्यान दें (Parental Advisory):
+                      </div>
+                      <div>
+                        आदरणीय अभिभावक, बिना किसी ठोस कारण के नियमित निर्धारित परीक्षा छोड़ना बच्चे के शैक्षणिक अनुशासन, निरंतरता और भविष्य के परीक्षा परिणामों के लिए अत्यंत हानिकारक है। कृपया अपने बच्चे के साथ दृढ़ता बरतें और सुनिश्चित करें कि वे प्रत्येक निर्धारित परीक्षा में समय पर उपस्थित हों। अगली परीक्षा देने के लिए कृपया इस अनुपस्थिति की समीक्षा और पुष्टि करें।
+                      </div>
+                    </div>
+
                     <div style={{ fontWeight: 800, fontSize: '13px', color: '#f87171' }}>
-                      ⚠️ Please select reason for absence:
+                      📋 अनुपस्थिति का कारण चुनें (Select reason for absence):
                     </div>
                     {[
-                      '⏰ Got up Late',
-                      '💬 Other Reason'
+                      '⏰ Got up Late / नींद नहीं खुली',
+                      '🤒 Health / Medical Issue / अस्वस्थता',
+                      '🚗 Family Emergency / पारिवारिक कारण',
+                      '💬 Other Reason / अन्य कारण'
                     ].map((reasonOption) => (
                       <label key={reasonOption} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', cursor: 'pointer', fontWeight: 600 }}>
                         <input 
@@ -2212,10 +2232,10 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                         {reasonOption}
                       </label>
                     ))}
-                    {(absenceReason === '💬 Other Reason' || absenceReason === 'other') && (
+                    {(absenceReason === '💬 Other Reason / अन्य कारण' || absenceReason === '💬 Other Reason' || absenceReason === 'other') && (
                       <input 
                         type="text" 
-                        placeholder="Please specify details..." 
+                        placeholder="कृपया विवरण दर्ज करें (Please specify details)..." 
                         value={absenceRemarks} 
                         onChange={(e) => setAbsenceRemarks(e.target.value)} 
                         style={{
@@ -2239,7 +2259,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                   className="btn btn-primary" 
                   onClick={() => {
                     if (isAbsentNotice && !absenceReason) {
-                      alert('Please select a reason for absence before dismissing.');
+                      alert('Please select a reason for absence before submitting.');
                       return;
                     }
                     handleDismissOverlayNotice(activeOverlayNotice.id, absenceReason, absenceRemarks);
@@ -2256,8 +2276,9 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                     cursor: 'pointer'
                   }}
                 >
-                  {isAbsentNotice ? 'Submit Reason & Dismiss' : 'I Understand & Dismiss'}
+                  {isAbsentNotice ? 'मैंने समझ लिया — समीक्षा पूर्ण करें और परीक्षा अनलॉक करें' : 'I Understand & Dismiss'}
                 </button>
+
               </div>
             </div>
           </div>

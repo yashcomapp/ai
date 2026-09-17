@@ -233,6 +233,71 @@ export async function GET(req: NextRequest) {
       }, { status: 403 });
     }
 
+    // Strict block if the student was absent for a past scheduled exam and parent has not reviewed/acknowledged
+    const now = new Date();
+    const studentBatchIds = student.userData?.batchIds || [];
+    const [allObjAssignmentsSnap, allSubAssignmentsSnap] = await Promise.all([
+      adminDb.collection('batchAssignments').where('status', '==', 'active').get(),
+      adminDb.collection('subjectiveAssignments').where('status', '==', 'active').get()
+    ]);
+
+    const pastAssignedExams: Array<{ examId: string; endAt: Date }> = [];
+    const collectPast = (snap: admin.firestore.QuerySnapshot) => {
+      snap.docs.forEach(doc => {
+        const data = doc.data();
+        if (data.examId === examId) return;
+        const targetType = data.targetType;
+        const isTargeted = targetType === 'student'
+          ? (Array.isArray(data.targetStudents) && data.targetStudents.includes(studentCode))
+          : (Array.isArray(data.targetBatches) && data.targetBatches.some((b: string) => studentBatchIds.includes(b)));
+
+        if (isTargeted && data.endAt) {
+          const endAtDate = data.endAt.toDate ? data.endAt.toDate() : new Date(data.endAt);
+          if (now > endAtDate) {
+            pastAssignedExams.push({ examId: data.examId, endAt: endAtDate });
+          }
+        }
+      });
+    };
+
+    collectPast(allObjAssignmentsSnap);
+    collectPast(allSubAssignmentsSnap);
+
+    if (pastAssignedExams.length > 0) {
+      for (const pastExam of pastAssignedExams) {
+        const [attemptSnap, subAttemptSnap, reasonSnap] = await Promise.all([
+          adminDb.collection('examAttempts').doc(`${pastExam.examId}_${studentCode}`).get(),
+          adminDb.collection('subjectiveAttempts').doc(`${pastExam.examId}_${studentCode}`).get(),
+          adminDb.collection('examAbsenceReasons').doc(`${studentCode}_${pastExam.examId}`).get()
+        ]);
+
+        const attempted = (attemptSnap.exists && attemptSnap.data()?.status !== 'precheck') ||
+                          (subAttemptSnap.exists && subAttemptSnap.data()?.status !== 'precheck');
+
+        if (!attempted) {
+          const isReasonAcknowledged = reasonSnap.exists && (reasonSnap.data()?.acknowledgedByParent === true || !!reasonSnap.data()?.reason);
+          if (!isReasonAcknowledged) {
+            let pastExamTitle = pastExam.examId;
+            try {
+              const eDoc = await adminDb.collection('exams').doc(pastExam.examId).get();
+              if (eDoc.exists) {
+                pastExamTitle = eDoc.data()?.name || eDoc.data()?.title || pastExam.examId;
+              } else {
+                const sDoc = await adminDb.collection('subjectiveExams').doc(pastExam.examId).get();
+                if (sDoc.exists) pastExamTitle = sDoc.data()?.name || sDoc.data()?.title || pastExam.examId;
+              }
+            } catch {}
+
+            return NextResponse.json({
+              status: 'blocked',
+              message: `You were absent for scheduled exam '${pastExamTitle}'. You are blocked from taking new exams until your parent reviews and acknowledges this absence in the Parent Portal.`
+            }, { status: 403 });
+          }
+        }
+      }
+    }
+
+
     const examSnap = await adminDb.collection('subjectiveExams').doc(examId).get();
     if (!examSnap.exists) {
       return NextResponse.json({ message: 'Exam not found.' }, { status: 404 });
@@ -240,11 +305,12 @@ export async function GET(req: NextRequest) {
     const examData = examSnap.data()!;
 
     // Validate if student is assigned to this subjective exam
-    const studentBatchIds = student.userData?.batchIds || [];
     const assignmentQuery = await adminDb.collection('subjectiveAssignments')
       .where('examId', '==', examId)
       .where('status', '==', 'active')
       .get();
+
+
 
     let isAssigned = assignmentQuery.docs.some(doc => {
       const data = doc.data();

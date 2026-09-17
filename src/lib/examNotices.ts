@@ -183,14 +183,16 @@ ${pct >= 80 ? '🌟 Outstanding performance! Keep up the excellent work.' : pct 
         const pastAbsences = (absenceCountMap.get(code) || 0) + 1;
         const recordedReason = recordedReasonMap.get(code);
 
-        body = `🚨 EXAM ABSENCE ALERT
+        body = `🚨 परीक्षा अनुपस्थिति सूचना (EXAM ABSENCE ALERT)
 
 • Exam: ${examTitle} (${examDateStr})
-• Status: ABSENT (Did not start exam)
-${recordedReason ? `• Recorded Reason: ${recordedReason}\n` : ''}⚠️ Total Exam Absences So Far: ${pastAbsences} Exam${pastAbsences > 1 ? 's' : ''}
+• Status: ABSENT (परीक्षा में उपस्थित नहीं हुए)
+${recordedReason ? `• Recorded Reason: ${recordedReason}\n` : ''}⚠️ कुल अनुपस्थित परीक्षाएं (Total Absences): ${pastAbsences} Exam${pastAbsences > 1 ? 's' : ''}
 
-Please review or update the reason for absence in your Exam Register.`;
+⚠️ अभिभावक कृपया ध्यान दें (Parental Advisory):
+आदरणीय अभिभावक, बिना किसी ठोस कारण के नियमित निर्धारित परीक्षा छोड़ना बच्चे के शैक्षणिक अनुशासन, निरंतरता और परीक्षा परिणामों के लिए अत्यंत हानिकारक है। कृपया अपने बच्चे के साथ दृढ़ता बरतें और सुनिश्चित करें कि वे प्रत्येक परीक्षा में समय पर उपस्थित हों। अगली परीक्षा देने के लिए कृपया इस अनुपस्थिति की समीक्षा और पुष्टि करें।`;
       }
+
 
       // Only record ABSENT notices in Sent Announcement History for reference (do not log result announcements)
       if (!isPresent) {
