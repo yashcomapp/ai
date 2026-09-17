@@ -274,6 +274,7 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
     if (!useRoomsApiPolling || !firebaseUser) return;
 
     const interval = setInterval(async () => {
+      if (typeof document !== 'undefined' && document.hidden) return;
       try {
         const token = await firebaseUser.getIdToken();
         const res = await fetch('/api/chat', {
@@ -288,7 +289,7 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
       } catch (e) {
         console.error('Polling chat rooms list error:', e);
       }
-    }, 8000);
+    }, 35000);
 
     return () => clearInterval(interval);
   }, [useRoomsApiPolling, firebaseUser]);
@@ -400,6 +401,7 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
     if (!activeRoomId || !useApiPolling || !firebaseUser) return;
 
     const interval = setInterval(async () => {
+      if (typeof document !== 'undefined' && document.hidden) return;
       try {
         const token = await firebaseUser.getIdToken();
         const res = await fetch(`/api/chat/messages?roomId=${activeRoomId}`, {
@@ -421,7 +423,7 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
       } catch (e) {
         console.error('Polling chat messages error:', e);
       }
-    }, 6000);
+    }, 30000);
 
     return () => clearInterval(interval);
   }, [activeRoomId, useApiPolling, firebaseUser]);

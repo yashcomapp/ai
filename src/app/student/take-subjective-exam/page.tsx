@@ -110,6 +110,18 @@ function TakeSubjectiveExamContent() {
 
   const [remainingSecondsState, setRemainingSecondsState] = useState(0);
   const [submitting, setSubmitting] = useState(false);
+  const [submitCooldown, setSubmitCooldown] = useState(0);
+  const [submitErrorMessage, setSubmitErrorMessage] = useState('');
+
+  // Submit cooldown timer
+  useEffect(() => {
+    if (submitCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setSubmitCooldown(prev => Math.max(0, prev - 1));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [submitCooldown]);
+
   const [examSubmitted, setExamSubmitted] = useState(false);
   const [autoSubmittedReason, setAutoSubmittedReason] = useState<string | null>(null);
 
@@ -420,8 +432,9 @@ function TakeSubjectiveExamContent() {
   };
 
   const handleSubmitExam = async (proctoringViolationTriggered?: boolean) => {
-    if (!firebaseUser || submitting) return;
+    if (!firebaseUser || submitting || submitCooldown > 0) return;
     setSubmitting(true);
+    setSubmitErrorMessage('');
     setBlockingMessage('Submitting your exam, please wait...');
     stopWebcamAction();
 
@@ -463,8 +476,9 @@ function TakeSubjectiveExamContent() {
       setBlockingMessage('');
       setExamSubmitted(true);
     } catch (err: any) {
-      console.error(err);
-      alert(err.message || 'Error submitting exam.');
+      console.error('Submit subjective exam error:', err);
+      setSubmitCooldown(20);
+      setSubmitErrorMessage(`⚠️ ${err.message || 'Error submitting exam'}. Your answers are safe. Please wait a moment before retrying.`);
       setSubmitting(false);
       setBlockingMessage('');
     }
@@ -1022,9 +1036,30 @@ function TakeSubjectiveExamContent() {
               </button>
             ) : (
               started && (
-                <button className="btn btn-primary" onClick={() => handleSubmitExam()} disabled={submitting} style={{ width: '100%', padding: '14px', fontSize: '15px' }}>
-                  {submitting ? 'Submitting exam...' : '📝 Submit Exam (Wrote on Paper)'}
-                </button>
+                <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                  <button 
+                    className="btn btn-primary" 
+                    onClick={() => handleSubmitExam()} 
+                    disabled={submitting || submitCooldown > 0} 
+                    style={{ 
+                      width: '100%', 
+                      padding: '14px', 
+                      fontSize: '15px', 
+                      opacity: (submitting || submitCooldown > 0) ? 0.6 : 1,
+                      cursor: (submitting || submitCooldown > 0) ? 'not-allowed' : 'pointer'
+                    }}
+                  >
+                    {submitCooldown > 0 
+                      ? `⏳ Please wait ${submitCooldown}s to retry (Saved)` 
+                      : (submitting ? 'Submitting exam...' : '📝 Submit Exam (Wrote on Paper)')
+                    }
+                  </button>
+                  {submitErrorMessage && (
+                    <div style={{ fontSize: '12px', color: '#e74c3c', textAlign: 'center', fontWeight: 600 }}>
+                      {submitErrorMessage}
+                    </div>
+                  )}
+                </div>
               )
             )}
           </div>

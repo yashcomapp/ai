@@ -104,6 +104,19 @@ function TakeExamContent() {
   }, [cameraModalOpen]);
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
   const [blockingMessage, setBlockingMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitCooldown, setSubmitCooldown] = useState(0);
+  const [submitErrorMessage, setSubmitErrorMessage] = useState('');
+
+  // Submit cooldown timer
+  useEffect(() => {
+    if (submitCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setSubmitCooldown(prev => Math.max(0, prev - 1));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [submitCooldown]);
+
   const [wrongAnswers, setWrongAnswers] = useState<any[]>([]);
   const [unattemptedQuestions, setUnattemptedQuestions] = useState<any[]>([]);
   const [reviewedQuestions, setReviewedQuestions] = useState<Set<number>>(new Set());
@@ -584,7 +597,7 @@ function TakeExamContent() {
     };
   }, []);
 
-  // 4. Autosave state changes
+  // 4a. Immediate Local Storage Autosave (Instant on device, zero server cost)
   useEffect(() => {
     if (!exam || examSubmitted || cameraModalOpen) return;
     try {
@@ -599,10 +612,16 @@ function TakeExamContent() {
       };
       localStorage.setItem(getSaveKey(), JSON.stringify(state));
     } catch {}
+  }, [userAnswers, currentQIndex, timeRemaining, tabViolations, proctoringViolations, exam, examSubmitted, cameraModalOpen, examId]);
+
+  // 4b. Throttled Server Autosave (Every 90s debounced, only when answers change)
+  useEffect(() => {
+    if (!exam || examSubmitted || cameraModalOpen || !firebaseUser) return;
+    if (!userAnswers || userAnswers.length === 0) return;
 
     const timer = setTimeout(async () => {
       try {
-        const idToken = await firebaseUser!.getIdToken();
+        const idToken = await firebaseUser.getIdToken();
         await fetch('/api/student/exams', {
           method: 'POST',
           headers: {
@@ -616,12 +635,12 @@ function TakeExamContent() {
           })
         });
       } catch (e) {
-        console.warn("DB Autosave failed:", e);
+        console.warn("DB Autosave failed (cached locally):", e);
       }
-    }, 10000);
+    }, 90000);
 
     return () => clearTimeout(timer);
-  }, [userAnswers, currentQIndex, timeRemaining, tabViolations, proctoringViolations, exam, examSubmitted, cameraModalOpen, examId, firebaseUser]);
+  }, [userAnswers, exam, examSubmitted, cameraModalOpen, examId, firebaseUser]);
 
   // 5. LateX rendering trigger on current question
 
@@ -659,6 +678,9 @@ function TakeExamContent() {
 
 
   const submitExamAction = async (finalTabViolations?: number, proctoringViolationTriggered?: boolean) => {
+    if (isSubmitting || submitCooldown > 0) return;
+    setIsSubmitting(true);
+    setSubmitErrorMessage('');
     stopAllProctoring();
     setBlockingMessage('Submitting exam... Please do not close this window.');
     
@@ -723,8 +745,12 @@ function TakeExamContent() {
         setShowResultModal(true);
       }
     } catch (err: any) {
-      alert(`Error submitting: ${err.message || 'Connection lost'}. We have saved your progress locally. Please reload to try again.`);
+      console.error('Submit exam error:', err);
+      setSubmitCooldown(20);
+      setSubmitErrorMessage(`⚠️ ${err.message || 'Connection lost'}. All answers are securely saved on your device. Please wait a moment before retrying.`);
       setBlockingMessage('');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -1396,9 +1422,29 @@ function TakeExamContent() {
             </button>
             
             {currentQIndex === exam.questions.length - 1 ? (
-              <button className="btn btn-danger" onClick={() => submitExamAction()}>
-                📋 Submit Exam
-              </button>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
+                <button 
+                  className="btn btn-danger" 
+                  disabled={isSubmitting || submitCooldown > 0}
+                  onClick={() => submitExamAction()}
+                  style={{ 
+                    opacity: (isSubmitting || submitCooldown > 0) ? 0.6 : 1,
+                    cursor: (isSubmitting || submitCooldown > 0) ? 'not-allowed' : 'pointer',
+                    minWidth: '160px',
+                    fontWeight: 700
+                  }}
+                >
+                  {submitCooldown > 0 
+                    ? `⏳ Retry in ${submitCooldown}s (Saved)` 
+                    : (isSubmitting ? 'Submitting...' : '📋 Submit Exam')
+                  }
+                </button>
+                {submitErrorMessage && (
+                  <div style={{ fontSize: '11px', color: '#e74c3c', maxWidth: '300px', textAlign: 'right', fontWeight: 600 }}>
+                    {submitErrorMessage}
+                  </div>
+                )}
+              </div>
             ) : (
               <button 
                 className="btn btn-primary" 
