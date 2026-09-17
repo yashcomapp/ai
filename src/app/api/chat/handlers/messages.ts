@@ -367,9 +367,14 @@ export async function POST(req: NextRequest) {
         }
       });
 
-      if (updatedCount > 0) {
-        await batch.commit();
-      }
+      // Atomically reset unread counter on the room document as well
+      batch.update(
+        roomRef,
+        new admin.firestore.FieldPath('unreadCounts', userKey),
+        0
+      );
+
+      await batch.commit();
 
       return NextResponse.json({ success: true, updatedCount });
     }

@@ -303,21 +303,6 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
       return;
     }
 
-    // Reset unread count on server
-    const resetUnread = async () => {
-      try {
-        const token = await firebaseUser!.getIdToken();
-        await fetch('/api/chat', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-          body: JSON.stringify({ action: 'resetUnread', roomId: activeRoomId })
-        });
-      } catch (e) {
-        console.error(e);
-      }
-    };
-    resetUnread();
-
     const fetchInitialMessages = async () => {
       try {
         const token = await firebaseUser!.getIdToken();
