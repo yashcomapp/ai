@@ -137,12 +137,77 @@ export function useLiveExam({
   const candidatesUnsubscribeRef = useRef<(() => void) | null>(null);
   const activeStreamRef = useRef<MediaStream | null>(null);
 
+  const lastSyncTimeRef = useRef<number>(0);
+  const pendingUpdatesRef = useRef<any>(null);
+  const syncTimeoutRef = useRef<any>(null);
+  const prevMetricsRef = useRef<{
+    qIdx: number;
+    ansCount: number;
+    tab: number;
+    noFace: number;
+    multipleFaces: number;
+    lookingAway: number;
+    headMovement: number;
+  }>({
+    qIdx: 0,
+    ansCount: 0,
+    tab: 0,
+    noFace: 0,
+    multipleFaces: 0,
+    lookingAway: 0,
+    headMovement: 0
+  });
+
   const sanitizeForRtdbPath = (s: string) => {
     return String(s).replace(/[.$#\[\]/]/g, '_');
   };
 
   const getSessionDocId = () => {
     return `${sanitizeForRtdbPath(examId || '')}_${sanitizeForRtdbPath(studentCode || '')}`;
+  };
+
+  const flushLiveProctoringSession = async (updates: any) => {
+    if (mock) return;
+    if (!liveSessionDocRef.current || !liveSessionActiveRef.current) return;
+    try {
+      lastSyncTimeRef.current = Date.now();
+      await updateLiveSession(liveSessionDocRef.current, updates);
+    } catch (err: any) {
+      console.warn('Failed to update live session:', err.message);
+    }
+  };
+
+  const queueLiveProctoringSession = (updates: any, isUrgent = false) => {
+    if (mock) return;
+    if (!liveSessionDocRef.current || !liveSessionActiveRef.current) return;
+
+    pendingUpdatesRef.current = { ...(pendingUpdatesRef.current || {}), ...updates };
+
+    const now = Date.now();
+    const elapsedSinceLastSync = now - lastSyncTimeRef.current;
+    const THROTTLE_MS = 10000; // 10s cooldown for incremental non-critical changes (like awayTime counter)
+
+    if (isUrgent || elapsedSinceLastSync >= THROTTLE_MS) {
+      if (syncTimeoutRef.current) {
+        clearTimeout(syncTimeoutRef.current);
+        syncTimeoutRef.current = null;
+      }
+      const dataToFlush = pendingUpdatesRef.current;
+      pendingUpdatesRef.current = null;
+      flushLiveProctoringSession(dataToFlush);
+    } else {
+      if (!syncTimeoutRef.current) {
+        const delay = Math.max(1000, THROTTLE_MS - elapsedSinceLastSync);
+        syncTimeoutRef.current = setTimeout(() => {
+          syncTimeoutRef.current = null;
+          if (pendingUpdatesRef.current && liveSessionActiveRef.current) {
+            const dataToFlush = pendingUpdatesRef.current;
+            pendingUpdatesRef.current = null;
+            flushLiveProctoringSession(dataToFlush);
+          }
+        }, delay);
+      }
+    }
   };
 
   const initLiveProctoringSession = async (stream?: MediaStream | null) => {
@@ -153,6 +218,7 @@ export function useLiveExam({
     const docRef = getLiveSessionRef(sId);
     liveSessionDocRef.current = docRef;
     liveSessionActiveRef.current = true;
+    lastSyncTimeRef.current = Date.now();
 
     const initialData = {
       id: sId,
@@ -181,17 +247,22 @@ export function useLiveExam({
     try {
       await createLiveSession(sId, initialData);
       
+      // Fallback heartbeat only if no other metrics have synced in the last 30 seconds
       const heartbeatInterval = setInterval(async () => {
         if (!liveSessionActiveRef.current) {
           clearInterval(heartbeatInterval);
           return;
         }
-        try {
-          await updateLiveSession(docRef, {});
-        } catch (e) {
-          console.warn('Heartbeat update failed:', e);
+        const timeSinceSync = Date.now() - lastSyncTimeRef.current;
+        if (timeSinceSync >= 30000) {
+          try {
+            await updateLiveSession(docRef, {});
+            lastSyncTimeRef.current = Date.now();
+          } catch (e) {
+            console.warn('Heartbeat update failed:', e);
+          }
         }
-      }, 10000);
+      }, 30000);
 
       if (stream) {
         setupWebRTCSignaling(stream);
@@ -202,19 +273,33 @@ export function useLiveExam({
   };
 
   const updateLiveProctoringSession = async (updates: any) => {
-    if (mock) return;
-    if (!liveSessionDocRef.current || !liveSessionActiveRef.current) return;
-    try {
-      await updateLiveSession(liveSessionDocRef.current, updates);
-    } catch (err: any) {
-      console.warn('Failed to update live session:', err.message);
-    }
+    queueLiveProctoringSession(updates, true);
   };
 
   // Keep live metrics updated periodically when props change
   useEffect(() => {
     if (liveSessionActiveRef.current) {
-      updateLiveProctoringSession({
+      const prev = prevMetricsRef.current;
+      const isUrgent = 
+        currentQuestionIndex !== prev.qIdx ||
+        answeredCount !== prev.ansCount ||
+        tabViolations > prev.tab ||
+        (proctoringViolations.noFace || 0) > prev.noFace ||
+        (proctoringViolations.multipleFaces || 0) > prev.multipleFaces ||
+        (proctoringViolations.lookingAway || 0) > prev.lookingAway ||
+        (proctoringViolations.headMovement || 0) > prev.headMovement;
+
+      prevMetricsRef.current = {
+        qIdx: currentQuestionIndex,
+        ansCount: answeredCount,
+        tab: tabViolations,
+        noFace: proctoringViolations.noFace || 0,
+        multipleFaces: proctoringViolations.multipleFaces || 0,
+        lookingAway: proctoringViolations.lookingAway || 0,
+        headMovement: proctoringViolations.headMovement || 0
+      };
+
+      queueLiveProctoringSession({
         currentQuestionIndex,
         answeredCount,
         violations: {
@@ -225,7 +310,7 @@ export function useLiveExam({
           headMovementCount: proctoringViolations.headMovement,
           awayTimeTotal
         }
-      });
+      }, isUrgent);
     }
   }, [currentQuestionIndex, answeredCount, tabViolations, proctoringViolations, awayTimeTotal]);
 
@@ -330,14 +415,21 @@ export function useLiveExam({
   };
 
   const cleanupProctoring = () => {
+    if (syncTimeoutRef.current) {
+      clearTimeout(syncTimeoutRef.current);
+      syncTimeoutRef.current = null;
+    }
     liveSessionActiveRef.current = false;
     cleanupWebRTC();
     if (mock) return;
 
     if (liveSessionDocRef.current) {
-      updateLiveSession(liveSessionDocRef.current, {
-        status: 'completed'
-      }).catch(err => console.warn('Could not update live proctoring status:', err.message));
+      const finalUpdates = {
+        status: 'completed',
+        ...(pendingUpdatesRef.current || {})
+      };
+      pendingUpdatesRef.current = null;
+      updateLiveSession(liveSessionDocRef.current, finalUpdates).catch(err => console.warn('Could not update live proctoring status:', err.message));
     }
 
     if (rtdb) {

@@ -4,9 +4,18 @@ export function stripOptionLabel(text: any): string {
   return String(text).replace(/^\s*\(?[A-Da-d]\)?[).:]\s*/, '');
 }
 
+const MATH_PREPROCESS_CACHE = new Map<string, string>();
+const RICH_TEXT_CACHE = new Map<string, string>();
+const MAX_MATH_CACHE_SIZE = 3000;
+
 export function preprocessMathText(text: any): string {
   if (text == null) return '';
-  let str = String(text);
+  const key = String(text);
+  if (MATH_PREPROCESS_CACHE.has(key)) {
+    return MATH_PREPROCESS_CACHE.get(key)!;
+  }
+
+  let str = key;
 
   // Heal corruptions caused by swallowed backslashes in JSON (e.g. \t -> tab + imes => \times, \t -> tab + ext => \text, \x0C -> FF + rac => \frac)
   str = str.replace(/\t\s*imes\b/g, '\\times ')
@@ -95,10 +104,22 @@ export function preprocessMathText(text: any): string {
     str = str.replace(`§§MATHBLOCK${idx}§§`, block);
   });
 
+  if (MATH_PREPROCESS_CACHE.size >= MAX_MATH_CACHE_SIZE) {
+    const firstKey = MATH_PREPROCESS_CACHE.keys().next().value;
+    if (firstKey !== undefined) MATH_PREPROCESS_CACHE.delete(firstKey);
+  }
+  MATH_PREPROCESS_CACHE.set(key, str);
+
   return str;
 }
 
 export function formatRichText(text: any): string {
+  if (text == null) return '';
+  const key = String(text);
+  if (RICH_TEXT_CACHE.has(key)) {
+    return RICH_TEXT_CACHE.get(key)!;
+  }
+
   const processedMath = preprocessMathText(text);
   let str = String(processedMath);
 
@@ -113,6 +134,12 @@ export function formatRichText(text: any): string {
 
   // Convert markdown underline (__text__) to HTML <u>
   str = str.replace(/__([^_]+)__/g, '<u>$1</u>');
+
+  if (RICH_TEXT_CACHE.size >= MAX_MATH_CACHE_SIZE) {
+    const firstKey = RICH_TEXT_CACHE.keys().next().value;
+    if (firstKey !== undefined) RICH_TEXT_CACHE.delete(firstKey);
+  }
+  RICH_TEXT_CACHE.set(key, str);
 
   return str;
 }
