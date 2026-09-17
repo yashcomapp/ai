@@ -24,12 +24,10 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ message: 'Missing exam ID' }, { status: 400 });
     }
 
-    const examSnap = await adminDb.collection('exams').doc(examId).get();
-    if (!examSnap.exists) {
+    const examData = await ExamRepository.getById(examId);
+    if (!examData) {
       return NextResponse.json({ message: 'Exam not found' }, { status: 404 });
     }
-
-    const examData = examSnap.data() || {};
     
     // 1. Gather candidate question IDs/codes from all possible fields (questionCodes, questionIds, questions)
     let candidateCodes: string[] = [];
@@ -477,14 +475,15 @@ export async function POST(req: NextRequest) {
     // 2. Fetch all question documents
     const questions = await ExamRepository.getQuestionsForExam(questionCodes);
 
+    const canonicalExamId = examData.id || examData.examId || examId;
     const studentName = student.userData?.name || 'Student';
 
-    // 3. Pre-fetch assignments matching examId
+    // 3. Pre-fetch assignments matching canonicalExamId or submitted examId
     let assignmentsSnap: admin.firestore.QuerySnapshot | null = null;
     if (studentCode) {
       try {
         assignmentsSnap = await adminDb.collection('batchAssignments')
-          .where('examId', '==', examId)
+          .where('examId', 'in', Array.from(new Set([canonicalExamId, examId])))
           .get();
       } catch (err: any) {
         console.warn('Pre-fetching assignments failed:', err.message);
@@ -496,7 +495,7 @@ export async function POST(req: NextRequest) {
       studentCode,
       studentId: student.decodedToken.uid,
       studentName,
-      examId,
+      examId: canonicalExamId,
       examData,
       questions,
       userAnswers,

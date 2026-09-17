@@ -8,12 +8,42 @@ export class ExamRepository {
   private static assignmentsCollection = adminDb.collection('batchAssignments');
 
   /**
-   * Fetch exam by ID
+   * Fetch exam by ID (supports direct canonical lookup, alias docs, and legacy exam IDs)
    */
   static async getById(examId: string): Promise<Exam | null> {
+    if (!examId) return null;
     const doc = await this.examsCollection.doc(examId).get();
-    if (!doc.exists) return null;
-    return { id: doc.id, ...doc.data() } as Exam;
+    if (doc.exists) {
+      const data = doc.data() || {};
+      const canonicalId = data.examId || data.id || doc.id;
+      return { id: canonicalId, ...data, examId: canonicalId } as Exam;
+    }
+
+    // Fallback 1: Query by legacyExamIds array
+    const legacySnap = await this.examsCollection
+      .where('legacyExamIds', 'array-contains', examId)
+      .limit(1)
+      .get();
+    if (!legacySnap.empty) {
+      const lDoc = legacySnap.docs[0];
+      const data = lDoc.data() || {};
+      const canonicalId = data.examId || data.id || lDoc.id;
+      return { id: canonicalId, ...data, examId: canonicalId } as Exam;
+    }
+
+    // Fallback 2: Query by legacyExamId field
+    const legacyFieldSnap = await this.examsCollection
+      .where('legacyExamId', '==', examId)
+      .limit(1)
+      .get();
+    if (!legacyFieldSnap.empty) {
+      const lDoc = legacyFieldSnap.docs[0];
+      const data = lDoc.data() || {};
+      const canonicalId = data.examId || data.id || lDoc.id;
+      return { id: canonicalId, ...data, examId: canonicalId } as Exam;
+    }
+
+    return null;
   }
 
   /**
