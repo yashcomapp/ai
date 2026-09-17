@@ -220,6 +220,80 @@ export async function GET(req: NextRequest) {
       });
     });
 
+    // Query past scheduled assignments to identify unacknowledged absent exams
+    const studentUser = studentUserSnap.docs[0]?.data();
+    const studentBatchIds = studentUser?.batchIds || (studentUser?.batchId ? [studentUser?.batchId] : []);
+    const now = new Date();
+
+    const [allObjAssignSnap, allSubAssignSnap] = await Promise.all([
+      adminDb.collection('batchAssignments').where('status', '==', 'active').get(),
+      adminDb.collection('subjectiveAssignments').where('status', '==', 'active').get()
+    ]);
+
+    const pastAssignedExams: Array<{ examId: string; endAt: Date; collection: string; title: string }> = [];
+    const collectPast = (snap: admin.firestore.QuerySnapshot, col: string) => {
+      snap.docs.forEach(doc => {
+        const data = doc.data();
+        const targetType = data.targetType;
+        const isTargeted = targetType === 'student'
+          ? (Array.isArray(data.targetStudents) && data.targetStudents.includes(studentCode))
+          : (Array.isArray(data.targetBatches) && data.targetBatches.some((b: string) => studentBatchIds.includes(b)));
+
+        if (isTargeted && data.endAt) {
+          const endAtDate = data.endAt.toDate ? data.endAt.toDate() : new Date(data.endAt);
+          if (now > endAtDate) {
+            pastAssignedExams.push({ examId: data.examId, endAt: endAtDate, collection: col, title: data.title || data.examId });
+          }
+        }
+      });
+    };
+    collectPast(allObjAssignSnap, 'batchAssignments');
+    collectPast(allSubAssignSnap, 'subjectiveAssignments');
+
+    const absentReviews: any[] = [];
+    if (pastAssignedExams.length > 0) {
+      for (const pastExam of pastAssignedExams) {
+        const [attemptSnap, subAttemptSnap, reasonSnap] = await Promise.all([
+          adminDb.collection('examAttempts').doc(`${pastExam.examId}_${studentCode}`).get(),
+          adminDb.collection('subjectiveAttempts').doc(`${pastExam.examId}_${studentCode}`).get(),
+          adminDb.collection('examAbsenceReasons').doc(`${studentCode}_${pastExam.examId}`).get()
+        ]);
+
+        const attempted = (attemptSnap.exists && attemptSnap.data()?.status !== 'precheck') ||
+                          (subAttemptSnap.exists && subAttemptSnap.data()?.status !== 'precheck');
+
+        if (!attempted) {
+          const isReasonAcknowledged = reasonSnap.exists && (reasonSnap.data()?.acknowledgedByParent === true || !!reasonSnap.data()?.reason);
+          let pastExamTitle = pastExam.examId;
+          let subject = 'General';
+          let chapter = '-';
+          try {
+            const eDoc = await adminDb.collection(pastExam.collection === 'batchAssignments' ? 'exams' : 'subjectiveExams').doc(pastExam.examId).get();
+            if (eDoc.exists) {
+              const eData = eDoc.data()!;
+              pastExamTitle = eData.name || eData.title || pastExam.examId;
+              subject = eData.subject || eData.subjectName || (eData.subjects ? eData.subjects[0] : 'General');
+              chapter = eData.chapter || eData.chapterName || '-';
+            }
+          } catch {}
+
+          absentReviews.push({
+            id: `absent_${pastExam.examId}_${studentCode}`,
+            examId: pastExam.examId,
+            type: 'absent_exam',
+            name: `${pastExamTitle} (Missed / अनुपस्थित)`,
+            subject,
+            chapter,
+            date: pastExam.endAt.toISOString(),
+            status: isReasonAcknowledged ? 'approved' : 'pending',
+            isAbsent: true,
+            reason: reasonSnap.exists ? reasonSnap.data()?.reason : null,
+            reviewedByActor: isReasonAcknowledged ? 'parent' : null
+          });
+        }
+      }
+    }
+
     // Batch query syllabusTopicIndex for all resolved topic codes
     const syllabusMap = new Map<string, any>();
     const uniqueTopicCodes = Array.from(allTopicCodes);
@@ -303,7 +377,7 @@ export async function GET(req: NextRequest) {
       })
       .filter(Boolean) as any[];
 
-    const objectiveReviews = allObjectiveMapped.filter(r => r.examType !== 'entrance');
+    const objectiveReviews = [...absentReviews, ...allObjectiveMapped.filter(r => r.examType !== 'entrance')];
     const entranceReviews = allObjectiveMapped.filter(r => r.examType === 'entrance');
 
     // 2. Map Practice reviews
@@ -788,6 +862,44 @@ export async function POST(req: NextRequest) {
       };
 
       await reviewDocRef.set(syncData, { merge: true });
+      success = true;
+    } else if (type === 'absent_exam' || type === 'absence_acknowledgement') {
+      const targetExamId = body.examId || (reviewId ? reviewId.replace('absent_', '').replace(`_${childStudentCode}`, '') : '');
+      if (targetExamId && childStudentCode) {
+        const reasonDocRef = adminDb.collection('examAbsenceReasons').doc(`${childStudentCode}_${targetExamId}`);
+        await reasonDocRef.set({
+          studentCode: childStudentCode,
+          examId: targetExamId,
+          acknowledgedByParent: true,
+          acknowledgedAt: new Date(),
+          acknowledgedBy: parentEmail,
+          reason: body.reason || 'Acknowledged by parent via Parent Portal',
+          remarks: body.remarks || '',
+          updatedAt: new Date()
+        }, { merge: true });
+
+        const evaluationData = {
+          studentCode: childStudentCode,
+          studentName: childName,
+          questionId: null,
+          evaluatorType: 'parent',
+          evaluatorId: parentReviewerCode,
+          evaluatorName: parentEmail,
+          marksAwarded: 0,
+          maxMarks: 0,
+          feedback: `Exam absence acknowledged by parent: ${body.reason || 'Acknowledged'}`,
+          rubricUsed: null,
+          modelAnswerVersion: 'absence',
+          examId: targetExamId,
+          attemptId: null,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          source: 'absence_acknowledgement',
+          legacyId: reviewId,
+          reviewedByActor: actor
+        };
+        await adminDb.collection('evaluations').add(evaluationData);
+      }
       success = true;
     }
 

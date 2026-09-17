@@ -934,10 +934,16 @@ export default function ParentReviewPanel() {
                         </div>
                       </div>
                       <div style={{ textTransform: 'uppercase' }}>
-                        <div style={{ textAlign: 'right' }}>
-                          <div style={{ fontWeight: 'bold', fontSize: '13px' }}>{item.percentage}%</div>
-                          <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{item.score}/{item.totalMarks}</div>
-                        </div>
+                        {item.type === 'absent_exam' ? (
+                          <span className="badge badge-warning" style={{ background: '#fef3c7', color: '#b45309', border: '1px solid #fde68a', fontWeight: 800, fontSize: '11px', padding: '4px 8px', borderRadius: '4px' }}>
+                            ⚠️ Absent / गैरहजर
+                          </span>
+                        ) : (
+                          <div style={{ textAlign: 'right' }}>
+                            <div style={{ fontWeight: 'bold', fontSize: '13px' }}>{item.percentage}%</div>
+                            <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{item.score}/{item.totalMarks}</div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))
@@ -1274,8 +1280,115 @@ export default function ParentReviewPanel() {
         </div>
       )}
 
+      {/* Absence Acknowledgment Modal */}
+      {selectedReview && selectedReview.type === 'absent_exam' && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(6px)', zIndex: 11000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+          <div style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', maxWidth: '480px', width: '100%', padding: '24px', border: '1px solid var(--border-light)', boxShadow: 'var(--shadow-lg)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ fontSize: '16px', fontWeight: 800, margin: 0, color: 'var(--warning)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                ⚠️ Missed Exam Acknowledgment
+              </h3>
+              <button onClick={() => setSelectedReview(null)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '18px', color: 'var(--text-muted)' }}>✕</button>
+            </div>
+
+            <div style={{ background: 'var(--bg-soft)', padding: '12px 16px', borderRadius: 'var(--radius)', fontSize: '12.5px', marginBottom: '16px', lineHeight: 1.5 }}>
+              <div><strong>Child:</strong> {children.find(c => c.code === selectedChild)?.name || 'Student'}</div>
+              <div><strong>Exam:</strong> {selectedReview.name.replace(' (Missed / अनुपस्थित)', '')}</div>
+              <div><strong>Subject:</strong> {selectedReview.subject}</div>
+              <div><strong>Scheduled Date:</strong> {formatDate(selectedReview.date)}</div>
+              <div style={{ color: 'var(--danger)', fontWeight: 700, marginTop: '4px' }}>Status: Absent / गैरहजर</div>
+            </div>
+
+            <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '14px' }}>
+              Your child was absent for this scheduled test. Please select or enter the reason for absence below to acknowledge and unblock your child for new tests.
+            </p>
+
+            {selectedReview.status === 'pending' ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '4px' }}>Reason for Absence / गैरहजरीचे कारण:</label>
+                  <select 
+                    id="absenceReasonSelect"
+                    defaultValue="Health / Illness / तब्येत बरी नव्हती"
+                    style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid var(--border-light)', background: 'var(--surface-2)', color: 'var(--text)', fontSize: '12.5px' }}
+                  >
+                    <option value="Health / Illness / तब्येत बरी नव्हती">Health / Illness / तब्येत बरी नव्हती</option>
+                    <option value="Family Function / Event / कौटुंबिक कार्यक्रम">Family Function / Event / कौटुंबिक कार्यक्रम</option>
+                    <option value="School Exam / Activity Conflict / शाळेची परीक्षा किंवा उपक्रम">School Exam / Activity Conflict / शाळेची परीक्षा किंवा उपक्रम</option>
+                    <option value="Network / Device Issue / इंटरनेट किंवा मोबाईल अडचण">Network / Device Issue / इंटरनेट किंवा मोबाईल अडचण</option>
+                    <option value="Missed Time Slot / Forgot / वेळ चुकली किंवा विसरलो">Missed Time Slot / Forgot / वेळ चुकली किंवा विसरलो</option>
+                    <option value="Other Valid Reason / इतर कारण">Other Valid Reason / इतर कारण</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '4px' }}>Remarks / अधिक माहिती (Optional):</label>
+                  <input 
+                    type="text" 
+                    id="absenceRemarksInput"
+                    placeholder="Enter short details if any..." 
+                    style={{ width: '100%', padding: '8px 10px', borderRadius: '6px', border: '1px solid var(--border-light)', background: 'var(--surface-2)', color: 'var(--text)', fontSize: '12.5px' }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
+                  <button className="btn btn-secondary" onClick={() => setSelectedReview(null)}>Cancel</button>
+                  <button 
+                    className="btn btn-primary" 
+                    disabled={approving}
+                    onClick={async () => {
+                      if (!firebaseUser || !selectedReview) return;
+                      const reasonElem = document.getElementById('absenceReasonSelect') as HTMLSelectElement;
+                      const remarksElem = document.getElementById('absenceRemarksInput') as HTMLInputElement;
+                      const reason = reasonElem?.value || 'Acknowledged by parent';
+                      const remarks = remarksElem?.value || '';
+
+                      setApproving(true);
+                      try {
+                        const token = await firebaseUser.getIdToken();
+                        const res = await fetch('/api/parent/review', {
+                          method: 'POST',
+                          headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                          },
+                          body: JSON.stringify({
+                            type: 'absent_exam',
+                            examId: selectedReview.examId,
+                            reviewId: selectedReview.id,
+                            childStudentCode: selectedChild,
+                            reason,
+                            remarks,
+                            reviewedByActor: 'parent'
+                          })
+                        });
+                        if (!res.ok) throw new Error('Failed to submit absence acknowledgment');
+                        alert('✅ Absence acknowledged successfully! Your child is now unblocked for new exams.');
+                        setSelectedReview(null);
+                        await loadReviewsForChild(selectedChild);
+                      } catch (err: any) {
+                        alert(err.message || 'Error acknowledging absence');
+                      } finally {
+                        setApproving(false);
+                      }
+                    }}
+                    style={{ background: 'var(--accent)', padding: '8px 16px', fontWeight: 800 }}
+                  >
+                    {approving ? 'Submitting...' : '✅ Acknowledge & Unblock Student'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div style={{ textAlign: 'center', padding: '15px', background: 'rgba(34, 197, 94, 0.1)', color: '#34d399', borderRadius: 'var(--radius)', fontWeight: 700 }}>
+                ✓ Absence already acknowledged by parent.
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Review Dialog Modal (Objective/Practice scorecards) */}
-      {selectedReview && selectedReview.type !== 'subjective' && (
+      {selectedReview && selectedReview.type !== 'subjective' && selectedReview.type !== 'absent_exam' && (
         <ScorecardModal 
           scorecard={scorecard as any}
           loading={scorecardLoading}

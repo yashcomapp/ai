@@ -121,7 +121,7 @@ interface ReviewItem {
   name: string;
   examName?: string;
   subject?: string;
-  type: 'objective' | 'practice' | 'subjective' | 'entrance';
+  type: 'objective' | 'practice' | 'subjective' | 'entrance' | 'absent_exam';
   date: string;
   scorePercent?: number;
   percentage?: number;
@@ -1475,7 +1475,9 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                   </h3>
                   <p style={{ margin: '1px 0 0 0', fontSize: '11px', color: 'var(--text-muted)' }}>
                     {pendingReviews.length > 0 
-                      ? `Submission pending for review • ${pendingReviews[0]?.subject || 'Mathematics'} • Submitted today` 
+                      ? (pendingReviews[0]?.type === 'absent_exam'
+                          ? `Exam absence pending acknowledgment • ${pendingReviews[0]?.name}`
+                          : `Submission pending for review • ${pendingReviews[0]?.subject || 'Mathematics'} • Submitted today`)
                       : 'All exam paper reviews are completed and up to date.'}
                   </p>
                 </div>
@@ -1497,7 +1499,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                       gap: '4px'
                     }}
                   >
-                    <span>Review Now</span>
+                    <span>{pendingReviews[0]?.type === 'absent_exam' ? 'Acknowledge Now' : 'Review Now'}</span>
                     <span>→</span>
                   </button>
                 ) : (
