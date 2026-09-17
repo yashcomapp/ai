@@ -577,7 +577,7 @@ export async function POST(req: NextRequest) {
     }
 
     const actor = reviewedByActor === 'student' ? 'student' : 'parent';
-    const expiresAt = actor === 'parent' && photoThumbnail ? (Date.now() + 24 * 60 * 60 * 1000) : null;
+    const expiresAt = Date.now() + 24 * 60 * 60 * 1000;
 
     // Verify access
     const childrenCodes = await resolveChildrenCodes(parent.userData);
@@ -951,7 +951,7 @@ export async function POST(req: NextRequest) {
         reviewedByActor: actor,
         reviewedByEmail: parentEmail,
         photoThumbnail: actor === 'parent' ? (photoThumbnail || null) : null,
-        expiresAt: actor === 'parent' && photoThumbnail ? expiresAt : null,
+        expiresAt: expiresAt,
         photoPurged: false,
         timestamp: new Date().toISOString(),
         createdAt: new Date()

@@ -741,6 +741,7 @@ async function handleParentPending(req: NextRequest) {
   }));
 
   const nowMs = Date.now();
+  const oneDayAgo = nowMs - 24 * 60 * 60 * 1000;
   const records: any[] = [];
   const existingReviewKeys = new Set<string>();
   const purgeBatch = adminDb.batch();
@@ -754,29 +755,23 @@ async function handleParentPending(req: NextRequest) {
       return;
     }
 
-    const isDailySync = rawType === 'daily_5min_sync' || rawType === 'sync';
+    const recordTime = data.timestamp || (data.createdAt?.toDate?.()?.toISOString?.()) || null;
+    const recordTimestampMs = recordTime ? new Date(recordTime).getTime() : 0;
+    const isExpired = Boolean(data.expiresAt && data.expiresAt < nowMs) || (recordTimestampMs > 0 && recordTimestampMs < oneDayAgo);
 
-    // 24h Purge Policy: Expired Daily Sync verification logs are completely purged from Firestore
-    if (data.expiresAt && data.expiresAt < nowMs) {
-      if (isDailySync) {
-        purgeBatch.delete(doc.ref);
-        purgeCount++;
-        return;
-      } else if (data.photoThumbnail) {
-        // For exam reviews, purge the photo thumbnail to save storage while keeping the review log
-        purgeBatch.update(doc.ref, {
-          photoThumbnail: null,
-          photoPurged: true
-        });
-        purgeCount++;
-      }
+    // 24h Purge Policy: All sincerity logs older than 24h are completely purged from Firestore & excluded from report
+    if (isExpired) {
+      purgeBatch.delete(doc.ref);
+      purgeCount++;
+      return;
     }
 
     const studentInfo = activeStudentsMap.get(data.studentCode);
     if (!studentInfo) return;
 
-    let photo = (data.expiresAt && data.expiresAt < nowMs) ? null : (data.photoThumbnail || null);
-    let isPurged = Boolean(data.photoPurged) || Boolean(data.expiresAt && data.expiresAt < nowMs);
+    const isDailySync = rawType === 'daily_5min_sync' || rawType === 'sync';
+    let photo = data.photoThumbnail || null;
+    let isPurged = Boolean(data.photoPurged);
 
     let displayType = 'Exam Review';
     let displayExamName = data.examName || 'Exam Paper Review';
@@ -847,6 +842,13 @@ async function handleParentPending(req: NextRequest) {
       return;
     }
 
+    const evalTime = data.createdAt?.toDate?.()?.toISOString?.() || data.timestamp || null;
+    const evalTimestampMs = evalTime ? new Date(evalTime).getTime() : 0;
+    // Exclude evaluations older than 24h from the 24h sincerity report
+    if (evalTimestampMs > 0 && evalTimestampMs < oneDayAgo) {
+      return;
+    }
+
     const studentInfo = activeStudentsMap.get(data.studentCode);
     if (!studentInfo) return;
 
@@ -892,7 +894,6 @@ async function handleParentPending(req: NextRequest) {
   const parentVerifiedCount = records.filter(r => r.reviewedByActor === 'parent').length;
   const studentSoloCount = records.filter(r => r.reviewedByActor === 'student').length;
   const parentSincerityRate = totalReviews > 0 ? Math.round((parentVerifiedCount / totalReviews) * 100) : 100;
-  const oneDayAgo = nowMs - 24 * 60 * 60 * 1000;
   const verifiedTodayCount = records.filter(r => r.reviewedByActor === 'parent' && new Date(r.timestamp).getTime() >= oneDayAgo).length;
 
   const result = {
