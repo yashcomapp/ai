@@ -1529,15 +1529,16 @@ Return ONLY valid JSON. No extra text.`;
     if (generatedQuestions.length === 0) return;
     const validation = validateQuestionsForSave(generatedQuestions);
     if (!validation.valid) {
-      triggerAlert('Validation Issues', `❌ Cannot save — ${validation.errors.length} issues found. Fix or delete them first:\n\n${validation.errors.slice(0, 5).join('\n')}`);
+      triggerConfirm(
+        'Validation Issues Detected',
+        `⚠️ ${validation.errors.length} issue(s) were found in the parsed questions:\n\n${validation.errors.slice(0, 5).join('\n')}\n\nDo you want to proceed and save them anyway?`,
+        () => executeBulkSave(generatedQuestions)
+      );
       return;
     }
 
-    triggerConfirm(
-      'Save to Question Bank',
-      `Save all ${generatedQuestions.length} parsed questions to the Question Bank?`,
-      () => executeBulkSave(generatedQuestions)
-    );
+    // No issues found: save immediately without unnecessary confirmation prompt
+    executeBulkSave(generatedQuestions);
   };
 
   const handleDeletePreviewQuestion = (idx: number) => {
