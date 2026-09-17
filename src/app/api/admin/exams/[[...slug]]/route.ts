@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { GET as getExams, POST as postExams, DELETE as deleteExams } from '../handlers/exams';
+import { GET as getExams, POST as postExams, PUT as putExams, DELETE as deleteExams } from '../handlers/exams';
 import { GET as getGenerate, POST as postGenerate } from '../handlers/generate';
 import { GET as getLottery, POST as postLottery } from '../handlers/lottery';
 import { GET as getObjective, POST as postObjective } from '../handlers/objective';
@@ -62,6 +62,23 @@ export async function POST(req: NextRequest, { params }: { params: { slug?: stri
     }
   } catch (error: any) {
     console.error('API Admin Exams Dispatcher POST Error:', error);
+    return NextResponse.json({ message: error.message || 'Internal Server Error' }, { status: 500 });
+  }
+}
+
+export async function PUT(req: NextRequest, { params }: { params: { slug?: string[] } | Promise<{ slug?: string[] }> }) {
+  try {
+    const resolvedParams = await Promise.resolve(params);
+    const subroute = (resolvedParams.slug || []).join('/');
+
+    switch (subroute) {
+      case '':
+        return await putExams(req);
+      default:
+        return NextResponse.json({ message: `Unknown exam PUT route: ${subroute}` }, { status: 404 });
+    }
+  } catch (error: any) {
+    console.error('API Admin Exams Dispatcher PUT Error:', error);
     return NextResponse.json({ message: error.message || 'Internal Server Error' }, { status: 500 });
   }
 }
