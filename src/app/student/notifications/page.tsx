@@ -109,6 +109,7 @@ export default function StudentSeenNotificationsPage() {
   }, [firebaseUser]);
 
   const handleMarkAsSeen = (id: string) => {
+    if (seenNoticeIds.includes(id)) return;
     try {
       const updated = [...seenNoticeIds, id];
       setSeenNoticeIds(updated);

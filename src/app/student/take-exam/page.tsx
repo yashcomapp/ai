@@ -96,6 +96,7 @@ function TakeExamContent() {
   // UI state
   const [isMounted, setIsMounted] = useState(false);
   const [cameraModalOpen, setCameraModalOpen] = useState(true);
+  const [isStartingExam, setIsStartingExam] = useState(false);
 
   useEffect(() => {
     if (!cameraModalOpen && !startTimeRef.current) {
@@ -648,6 +649,8 @@ function TakeExamContent() {
 
 
   const handleProceedToExam = async () => {
+    if (isStartingExam) return;
+    setIsStartingExam(true);
     try {
       const idToken = await firebaseUser!.getIdToken();
       const res = await fetch('/api/student/exams', {
@@ -670,6 +673,8 @@ function TakeExamContent() {
     } catch (e) {
       console.error("Failed to set in-progress status:", e);
       alert('❌ Failed to establish exam session with server. Please check your internet connection and try again.');
+    } finally {
+      setIsStartingExam(false);
     }
   };
 
@@ -1047,8 +1052,13 @@ function TakeExamContent() {
                 {permissionBlocked ? '❌ Hardware Blocked (Retry)' : 'Test Camera & Microphone'}
               </button>
             ) : (
-              <button className="btn btn-success" onClick={handleProceedToExam} style={{ marginTop: '15px', width: '100%' }}>
-                Start Exam / Proceed
+              <button 
+                className="btn btn-success" 
+                onClick={handleProceedToExam} 
+                disabled={isStartingExam}
+                style={{ marginTop: '15px', width: '100%' }}
+              >
+                {isStartingExam ? 'Starting Exam...' : 'Start Exam / Proceed'}
               </button>
             )}
               </>

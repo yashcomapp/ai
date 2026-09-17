@@ -110,6 +110,7 @@ function TakeSubjectiveExamContent() {
 
   const [remainingSecondsState, setRemainingSecondsState] = useState(0);
   const [submitting, setSubmitting] = useState(false);
+  const [isStartingExam, setIsStartingExam] = useState(false);
   const [submitCooldown, setSubmitCooldown] = useState(0);
   const [submitErrorMessage, setSubmitErrorMessage] = useState('');
 
@@ -382,6 +383,8 @@ function TakeSubjectiveExamContent() {
 
 
   const handleProceedToExam = async () => {
+    if (isStartingExam) return;
+    setIsStartingExam(true);
     try {
       const idToken = await firebaseUser!.getIdToken();
       const res = await fetch('/api/student/exams/subjective', {
@@ -400,6 +403,8 @@ function TakeSubjectiveExamContent() {
     } catch (e) {
       console.error("Failed to set in-progress status:", e);
       alert('❌ Failed to establish exam session with server. Please check your internet connection and try again.');
+    } finally {
+      setIsStartingExam(false);
     }
   };
 
@@ -784,8 +789,13 @@ function TakeSubjectiveExamContent() {
                 {permissionBlocked ? '❌ Hardware Blocked (Retry)' : 'Test Camera & Microphone'}
               </button>
             ) : (
-              <button className="btn btn-success" onClick={handleProceedToExam} style={{ marginTop: '20px', width: '100%' }}>
-                Start Exam / Proceed
+              <button 
+                className="btn btn-success" 
+                onClick={handleProceedToExam} 
+                disabled={isStartingExam}
+                style={{ marginTop: '20px', width: '100%' }}
+              >
+                {isStartingExam ? 'Starting Exam...' : 'Start Exam / Proceed'}
               </button>
             )}
               </>

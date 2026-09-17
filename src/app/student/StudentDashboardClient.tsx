@@ -115,26 +115,29 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
     }
     
     // Mark as seen locally
-    if (!seenNoticeIds.includes(noticeId)) {
+    const alreadySeen = seenNoticeIds.includes(noticeId);
+    if (!alreadySeen) {
       const updated = [...seenNoticeIds, noticeId];
       setSeenNoticeIds(updated);
       localStorage.setItem('yc_seenNotices', JSON.stringify(updated));
       window.dispatchEvent(new Event('yc_seen_notices_changed'));
     }
     
-    // Call the seen API
-    try {
-      const token = await firebaseUser!.getIdToken();
-      await fetch('/api/notices/seen', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ noticeId })
-      });
-    } catch (err) {
-      console.warn('Failed to report notice seen status:', err);
+    // Call the seen API only if not already recorded locally
+    if (!alreadySeen && firebaseUser) {
+      try {
+        const token = await firebaseUser.getIdToken();
+        await fetch('/api/notices/seen', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ noticeId })
+        });
+      } catch (err) {
+        console.warn('Failed to report notice seen status:', err);
+      }
     }
     
     // Check if there are other unread overlay notices and display them sequentially
@@ -164,6 +167,7 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
   }, [user, examTab]);
 
   const handleMarkNoticeAsSeen = async (id: string) => {
+    if (seenNoticeIds.includes(id)) return;
     try {
       const updated = [...seenNoticeIds, id];
       setSeenNoticeIds(updated);

@@ -589,26 +589,29 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
     }
     
     // Mark as seen locally
-    if (!seenNoticeIds.includes(noticeId)) {
+    const alreadySeen = seenNoticeIds.includes(noticeId);
+    if (!alreadySeen) {
       const updated = [...seenNoticeIds, noticeId];
       setSeenNoticeIds(updated);
       localStorage.setItem('yc_seenNotices', JSON.stringify(updated));
       window.dispatchEvent(new Event('yc_seen_notices_changed'));
     }
     
-    // Call the seen API
-    try {
-      const token = await firebaseUser!.getIdToken();
-      await fetch('/api/notices/seen', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ noticeId, reason, remarks })
-      });
-    } catch (err) {
-      console.warn('Failed to report notice seen status:', err);
+    // Call the seen API only if not already seen OR an absence reason/remarks was provided
+    if ((!alreadySeen || reason || remarks) && firebaseUser) {
+      try {
+        const token = await firebaseUser.getIdToken();
+        await fetch('/api/notices/seen', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ noticeId, reason, remarks })
+        });
+      } catch (err) {
+        console.warn('Failed to report notice seen status:', err);
+      }
     }
 
     // Reset absence form state
@@ -636,6 +639,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
   }, []);
 
   const handleMarkNoticeAsSeen = async (id: string) => {
+    if (seenNoticeIds.includes(id)) return;
     try {
       const updated = [...seenNoticeIds, id];
       setSeenNoticeIds(updated);

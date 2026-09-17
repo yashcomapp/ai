@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 
 export function usePractice() {
   const [loading, setLoading] = useState(false);
+  const isBusyRef = useRef(false);
   const [questions, setQuestions] = useState<any[]>([]);
   const [masteryAtStart, setMasteryAtStart] = useState(0);
   const [idealTimeSeconds, setIdealTimeSeconds] = useState(0);
@@ -16,6 +17,8 @@ export function usePractice() {
     examCategory?: string;
     mode?: string;
   }) => {
+    if (isBusyRef.current) return null;
+    isBusyRef.current = true;
     setLoading(true);
     setError(null);
     try {
@@ -44,6 +47,7 @@ export function usePractice() {
       setError(err.message || 'Failed to load practice questions.');
       throw err; // Re-throw to propagate to component state
     } finally {
+      isBusyRef.current = false;
       setLoading(false);
     }
   };
@@ -57,6 +61,8 @@ export function usePractice() {
     mode?: string;
     isRecoveryMode?: boolean;
   }) => {
+    if (isBusyRef.current) return null;
+    isBusyRef.current = true;
     setLoading(true);
     setError(null);
     try {
@@ -82,6 +88,7 @@ export function usePractice() {
       setError(err.message || 'Submission grading failed.');
       return null;
     } finally {
+      isBusyRef.current = false;
       setLoading(false);
     }
   };

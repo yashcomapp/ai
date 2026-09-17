@@ -80,6 +80,10 @@ function TopicPracticeContent() {
   // Setup practice status
   const [started, setStarted] = useState(false);
   const [finished, setFinished] = useState(false);
+  const finishedRef = useRef(false);
+  const isFetchingRef = useRef(false);
+  const isSubmittingPracticeRef = useRef(false);
+  const [isSubmittingPractice, setIsSubmittingPractice] = useState(false);
   const [currentQIndex, setCurrentQIndex] = useState(0);
   const [sessionId] = useState(() => `sess_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
   const [userAnswers, setUserAnswers] = useState<string[]>([]);
@@ -206,7 +210,9 @@ function TopicPracticeContent() {
 
   // Fetch practice questions
   const fetchQuestions = async () => {
-    if (!firebaseUser || !topicCode) return;
+    if (!firebaseUser || !topicCode || isFetchingRef.current) return;
+    isFetchingRef.current = true;
+    setLoading(true);
     try {
       const idToken = await firebaseUser.getIdToken();
       const pData = await startSession({
@@ -246,6 +252,7 @@ function TopicPracticeContent() {
       console.error(err);
       setError(err.message || 'Error generating practice set');
     } finally {
+      isFetchingRef.current = false;
       setLoading(false);
     }
   };
@@ -452,7 +459,6 @@ function TopicPracticeContent() {
     }
   });
   const proctorIntervalRef = useRef<any>(null);
-  const finishedRef = useRef(false);
 
 
   useEffect(() => {
@@ -676,7 +682,9 @@ function TopicPracticeContent() {
 
   // Submit complete practice set
   const handleFinishPractice = async (proctoringViolationTriggered?: boolean) => {
-    if (!firebaseUser || !data) return;
+    if (!firebaseUser || !data || isSubmittingPracticeRef.current || finishedRef.current) return;
+    isSubmittingPracticeRef.current = true;
+    setIsSubmittingPractice(true);
     setLoading(true);
     stopWebcam();
 
@@ -726,6 +734,8 @@ function TopicPracticeContent() {
       console.error(err);
       setError(err.message || 'Error submitting practice session');
     } finally {
+      isSubmittingPracticeRef.current = false;
+      setIsSubmittingPractice(false);
       setLoading(false);
     }
   };
@@ -1682,12 +1692,14 @@ function TopicPracticeContent() {
                 <button 
                   className="btn btn-primary" 
                   onClick={handleNext}
-                  disabled={!feedbackCorrect && explanationTimer > 0}
+                  disabled={isSubmittingPractice || (!feedbackCorrect && explanationTimer > 0)}
                   style={{ width: '160px' }}
                 >
-                  {!feedbackCorrect && explanationTimer > 0 
-                    ? `Wait (${explanationTimer}s)` 
-                    : (currentQIndex === data.questions.length - 1 ? 'Finish Set →' : 'Next Question →')}
+                  {isSubmittingPractice
+                    ? 'Submitting...'
+                    : (!feedbackCorrect && explanationTimer > 0 
+                      ? `Wait (${explanationTimer}s)` 
+                      : (currentQIndex === data.questions.length - 1 ? 'Finish Set →' : 'Next Question →'))}
                 </button>
               )}
             </div>
@@ -1735,12 +1747,14 @@ function TopicPracticeContent() {
             <button 
               className="btn btn-primary" 
               onClick={handleNext} 
-              disabled={!feedbackCorrect && explanationTimer > 0}
+              disabled={isSubmittingPractice || (!feedbackCorrect && explanationTimer > 0)}
               style={{ width: '100%', padding: '14px', fontSize: '16px', fontWeight: 800, borderRadius: 'var(--radius-sm)' }}
             >
-              {feedbackCorrect 
-                ? 'Continue →' 
-                : (explanationTimer > 0 ? `Read Explanation (${explanationTimer}s)` : '✓ I Understand')}
+              {isSubmittingPractice
+                ? 'Submitting Practice...'
+                : (feedbackCorrect 
+                  ? 'Continue →' 
+                  : (explanationTimer > 0 ? `Read Explanation (${explanationTimer}s)` : '✓ I Understand'))}
             </button>
           </div>
         </div>
