@@ -474,12 +474,8 @@ export async function POST(req: NextRequest) {
         isAllSubjective = questionDocs.length > 0 && !hasObjective && examType !== 'obj' && examType !== 'objective';
       }
 
-      const examTypeCode = isAllSubjective ? 'SUBJ' : (examType === 'entrance' ? 'ENTR' : 'OBJ');
-      const cleanTopic = String((Array.isArray(topicCodes) && topicCodes[0]) || chapterNumber || '1_1').replace(/\./g, '_');
-      const chapterPart = isMixed ? `${cleanTopic}_M` : cleanTopic;
-      
       const now = new Date();
-      const dateStr = `${String(now.getDate()).padStart(2,'0')}${String(now.getMonth()+1).padStart(2,'0')}${now.getFullYear()}`;
+      const dateStrYY = `${String(now.getDate()).padStart(2,'0')}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getFullYear()).slice(-2)}`;
 
       // Generate atomic sequence ID using class-only counter
       const counterId = `class-${classNum}`;
@@ -507,17 +503,38 @@ export async function POST(req: NextRequest) {
       });
 
       const seq3digit = String(nextSeq).padStart(3, '0');
-      const examId = `${boardCode}-${classNum}-${subjectCode}-${examTypeCode}-${chapterPart}-${dateStr}-${nextSeq}`;
 
-      const canonicalChapterTitle = chapter 
-        ? (chapterNumber ? `Ch ${chapterNumber}: ${chapter}` : chapter)
-        : (subjectName || subjectCode || examId);
+      // Helper to truncate chapter name cleanly (SSOT: max ~18 chars, clean word break)
+      const truncateChapter = (chap: string) => {
+        if (!chap) return 'General';
+        const clean = chap.replace(/^Ch\s*\d+\s*:\s*/i, '').trim();
+        if (clean.length <= 18) return clean;
+        const words = clean.split(/\s+/);
+        let result = '';
+        for (const w of words) {
+          if ((result + ' ' + w).trim().length > 18) break;
+          result = (result + ' ' + w).trim();
+        }
+        return result || clean.substring(0, 18);
+      };
+
+      // Helper to get clean topic number (e.g., "11.1.1" -> "11.1", "5.1" -> "5.1")
+      const cleanTopicNum = (rawTopic: string) => {
+        if (!rawTopic) return '1.1';
+        const parts = String(rawTopic).split('.');
+        if (parts.length >= 2) return `${parts[0]}.${parts[1]}`;
+        return rawTopic;
+      };
+
+      const topicPart = cleanTopicNum((Array.isArray(topicCodes) && topicCodes[0]) || chapterNumber || '1.1');
+      const chapTrunc = truncateChapter(chapter || subjectName || 'Exam');
+      const examId = `${seq3digit}-${boardCode}-${classNum}-${chapTrunc}-${topicPart}-${dateStrYY}`;
 
       const examData: any = {
         examId,
         id: examId,
-        name: name || canonicalChapterTitle,
-        title: name || canonicalChapterTitle,
+        name: examId,
+        title: examId,
         sequence: nextSeq,
         sequence3digit: seq3digit,
         board,

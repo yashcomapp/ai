@@ -20,11 +20,16 @@ const parseIST = (dateStr: string) => {
 const updateExamNameWithAssignedDate = (currentName: string, assignedDate: Date): string => {
   if (!currentName || !assignedDate) return currentName;
   const [year, month, day] = getDateKeyIST(assignedDate).split('-');
-  const newDateStr = `${day}${month}${year}`;
+  const newDateStr6 = `${day}${month}${year.slice(-2)}`;
+  const newDateStr8 = `${day}${month}${year}`;
 
-  const dateRegex = /-\d{8}$/;
-  if (dateRegex.test(currentName)) {
-    return currentName.replace(dateRegex, `-${newDateStr}`);
+  const dateRegex6 = /-\d{6}$/;
+  if (dateRegex6.test(currentName)) {
+    return currentName.replace(dateRegex6, `-${newDateStr6}`);
+  }
+  const dateRegex8 = /-\d{8}$/;
+  if (dateRegex8.test(currentName)) {
+    return currentName.replace(dateRegex8, `-${newDateStr8}`);
   }
   return currentName;
 };
