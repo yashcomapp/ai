@@ -908,10 +908,10 @@ export function getRequiredConfidence(topicClassification?: string, targetQuesti
   return 10;
 }
 
-function getTopicState(mastery: number, confidence: number, requiredConfidence = 10, hasPracticeBaseline = true): string {
+function getTopicState(mastery: number, confidence: number, requiredConfidence = 10): string {
   if (mastery < 25) return 'Started';
   if (mastery < 50) return 'Learning';
-  if (mastery >= 90 && confidence >= requiredConfidence && hasPracticeBaseline) return 'Mastered';
+  if (mastery >= 90 && confidence >= requiredConfidence) return 'Mastered';
   return 'Practicing';
 }
 
@@ -1264,10 +1264,10 @@ export async function getStudentLearningData(userData: any) {
     });
 
     const isRecoveryMastered = !!mData?.isRecoveryMastered;
-    const hasPracticeBaseline = practiceQuestionsAttempted >= 12 || practiceCount >= 1 || isRecoveryMastered;
-    const isExamStrong = mastery >= 90 && !hasPracticeBaseline;
-    const isCertifiedMastered = ((mastery >= 90 && confidence >= reqConf && hasPracticeBaseline) || isRecoveryMastered);
-    const state = getTopicState(mastery, confidence, reqConf, hasPracticeBaseline);
+    const isFullConfidence = confidence >= reqConf;
+    const isCertifiedMastered = (mastery >= 90 && isFullConfidence) || isRecoveryMastered;
+    const isExamStrong = mastery >= 90 && !isFullConfidence;
+    const state = isCertifiedMastered ? 'mastered' : (isExamStrong ? 'revision' : (mastery >= 50 ? 'continuePractice' : 'needsAttention'));
     const attempts = mData?.questionsAttempted || mData?.attempts || 0;
     const subCode = sData.subjectCode || (topicCode ? topicCode.split('-')[2] : '') || '';
     const subName = sData.subjectName || getCanonicalSubjectName(subCode, topicCode, sData.chapterName);
@@ -1302,7 +1302,7 @@ export async function getStudentLearningData(userData: any) {
     // If a student already has >=50% mastery on a topic, historical absent exams do not override their progress.
     if (mastery < 50 || (attempts === 0 && isAbsentExam)) {
       needsAttention.push({ ...topicItem, state: 'needsAttention' });
-    } else if (mastery < 90 || isExamStrong) {
+    } else if (mastery < 90) {
       continuePractice.push({ ...topicItem, state: 'continuePractice' });
     } else {
       if (isCertifiedMastered) {

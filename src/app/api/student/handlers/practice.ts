@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const topicCode = searchParams.get('topicCode') || '';
     const category = searchParams.get('category') || 'needsAttention';
-    const size = Number(searchParams.get('size') || '6');
+    const size = Number(searchParams.get('size') || '5');
     const examCategory = searchParams.get('examCategory') || 'standard';
     const mode = searchParams.get('mode') || '';
     const isRecoveryMode = mode === 'recovery';
