@@ -592,7 +592,7 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
                       <button 
                         className="btn btn-secondary btn-sm"
                         style={{ padding: '3px 8px', fontSize: '10.5px', fontWeight: 700 }}
-                        onClick={() => router.push(`/student/topic/${encodeURIComponent(t.topicCode)}`)}
+                        onClick={() => router.push(`/student/topic?topicCode=${encodeURIComponent(t.topicCode)}&category=needsAttention`)}
                       >
                         Revise
                       </button>

@@ -2,7 +2,7 @@ import { adminDb } from '@/lib/firebase/admin';
 import { getCachedSyllabus, getFromCache, setInCache } from '@/lib/firebase/cache';
 import { getDateKeyIST } from '@/lib/dateUtils';
 import { calculateUnifiedMetrics } from '@/lib/dashboardMetrics';
-import { deriveTopicCodeFromQuestionCode, getCanonicalSubjectName } from '@/lib/questionTypes';
+import { deriveTopicCodeFromQuestionCode, getCanonicalSubjectName, parseTopicCode } from '@/lib/questionTypes';
 
 /**
  * Checks if a user or student profile is a demo / placeholder account
@@ -856,10 +856,22 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
       active: isMeetingActive
     };
 
+    // 7.9 Fetch Needs Attention topics for action items card
+    let needsAttentionTopicsList: any[] = [];
+    try {
+      const learningData = await getStudentLearningData(userData);
+      if (learningData && Array.isArray(learningData.needsAttention)) {
+        needsAttentionTopicsList = learningData.needsAttention;
+      }
+    } catch (e) {
+      console.warn('Failed to load learning data for dashboard needsAttention:', e);
+    }
+
     // 8. Return aggregated response
     return {
       profile,
       resultsSummary,
+      needsAttention: needsAttentionTopicsList,
       peerReviews: {
         count: peerReviewsCount,
         firstExamId: firstPeerReviewExamId
@@ -1135,10 +1147,60 @@ export async function getStudentLearningData(userData: any) {
     ));
     extraSnaps.forEach(extraSnap => {
       extraSnap.docs.forEach((doc: any) => {
-        syllabusTopics.push(doc.data());
+        const d = doc.data();
+        if (d.topicCode && !currentTopicCodes.has(d.topicCode)) {
+          syllabusTopics.push(d);
+          currentTopicCodes.add(d.topicCode);
+        }
       });
     });
   }
+
+  // Synthesize any remaining topic codes that exist in mastery or absent exams but are absent in syllabusTopicIndex
+  const currentIndexedMap = new Map(syllabusTopics.map((t: any) => [t.topicCode, t]));
+  const allEncounteredCodes = new Set([...masteryMap.keys(), ...absentTopicCodes]);
+  
+  allEncounteredCodes.forEach(tCode => {
+    if (!tCode || currentIndexedMap.has(tCode)) return;
+
+    const mData = masteryMap.get(tCode);
+    const parsed = parseTopicCode(tCode);
+    
+    // Find matching parent topic if any (e.g. CBSE-8-CURI-5-5.1 for CBSE-8-CURI-5-5.1.1)
+    let parentTopic = null;
+    const lastDot = tCode.lastIndexOf('.');
+    if (lastDot !== -1) {
+      const parentCode = tCode.substring(0, lastDot);
+      parentTopic = currentIndexedMap.get(parentCode) || syllabusTopics.find((t: any) => t.topicCode === parentCode);
+    }
+    if (!parentTopic) {
+      parentTopic = syllabusTopics.find((t: any) => t.topicCode && tCode.startsWith(t.topicCode));
+    }
+
+    const subCode = parsed.subjectCode || parentTopic?.subjectCode || (tCode.includes('-') ? tCode.split('-')[2] : '') || '';
+    const subName = parentTopic?.subjectName || getCanonicalSubjectName(subCode, tCode, parentTopic?.chapterName);
+    const chapName = mData?.chapterName || parentTopic?.chapterName || (parsed.chapterNumber ? `Chapter ${parsed.chapterNumber}` : 'General');
+    const chapNum = parsed.chapterNumber || parentTopic?.chapterNumber || '';
+    const topName = mData?.topicName || (parentTopic ? `${parentTopic.topicName} (${parsed.topicNumber || tCode})` : (mData?.name || `Topic ${parsed.topicNumber || tCode}`));
+
+    const synthesizedTopic = {
+      topicCode: tCode,
+      topicName: topName,
+      topicNumber: parsed.topicNumber || parentTopic?.topicNumber || '',
+      chapterCode: parentTopic?.chapterCode || (chapNum ? `${parsed.boardCode || ''}-${parsed.classNum || ''}-${subCode}-${chapNum}` : ''),
+      chapterName: chapName,
+      chapterNumber: chapNum,
+      subjectCode: subCode,
+      subjectName: subName,
+      classCode: `${parsed.boardCode || ''}-${parsed.classNum || ''}`,
+      targetQuestions: parentTopic?.targetQuestions || 30,
+      totalQuestions: parentTopic?.totalQuestions || 30
+    };
+
+    syllabusTopics.push(synthesizedTopic);
+    currentIndexedMap.set(tCode, synthesizedTopic);
+    currentTopicCodes.add(tCode);
+  });
 
   const practiceCountMap = new Map<string, number>();
   const practiceQuestionsMap = new Map<string, number>();
@@ -1164,7 +1226,18 @@ export async function getStudentLearningData(userData: any) {
     processedTopics.add(topicCode);
 
     const isAbsentExam = absentTopicCodes.has(topicCode);
-    const mData = masteryMap.get(topicCode);
+    let mData = masteryMap.get(topicCode);
+
+    // If direct mData is missing, check if any subtopics exist in masteryMap
+    if (!mData) {
+      const childMasteries = Array.from(masteryMap.entries())
+        .filter(([k]) => k.startsWith(topicCode + '.') || k.startsWith(topicCode + '-'));
+      if (childMasteries.length > 0 && !isAbsentExam) {
+        // Child topics are already added as discrete items in syllabusTopics, so skip the empty parent container
+        return;
+      }
+    }
+
     if (!mData && !isAbsentExam) return;
 
     const targetQuestions = Number(sData.targetQuestions || sData.totalQuestions || sData.questionCount || 30);
@@ -1174,8 +1247,22 @@ export async function getStudentLearningData(userData: any) {
     const mastery = mData?.hasOwnProperty('mastery') ? Number(mData.mastery || 0) : 0;
     const confidence = mData?.hasOwnProperty('confidence') ? Number(mData.confidence || 0) : 0;
     const priorityScore = isAbsentExam ? 999 : calculatePriority(mastery, confidence, reqConf);
-    const practiceCount = practiceCountMap.get(topicCode) || 0;
-    const practiceQuestionsAttempted = Number(mData?.practiceQuestionsAttempted || practiceQuestionsMap.get(topicCode) || 0);
+
+    // Aggregate practice counts matching exact topicCode or prefix
+    let practiceCount = practiceCountMap.get(topicCode) || 0;
+    let practiceQuestionsAttempted = Number(mData?.practiceQuestionsAttempted || practiceQuestionsMap.get(topicCode) || 0);
+
+    practiceCountMap.forEach((cnt, k) => {
+      if (k !== topicCode && (k.startsWith(topicCode + '.') || topicCode.startsWith(k + '.'))) {
+        practiceCount += cnt;
+      }
+    });
+    practiceQuestionsMap.forEach((cnt, k) => {
+      if (k !== topicCode && (k.startsWith(topicCode + '.') || topicCode.startsWith(k + '.'))) {
+        practiceQuestionsAttempted += cnt;
+      }
+    });
+
     const isRecoveryMastered = !!mData?.isRecoveryMastered;
     const hasPracticeBaseline = practiceQuestionsAttempted >= 12 || practiceCount >= 1 || isRecoveryMastered;
     const isExamStrong = mastery >= 90 && !hasPracticeBaseline;

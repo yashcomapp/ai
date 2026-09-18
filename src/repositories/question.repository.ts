@@ -137,6 +137,7 @@ export class QuestionRepository {
     } catch (e) {
       console.warn('getQuestionsByTopic: topicCode query failed', e);
     }
+
     // Path 1.5: query by prefix scan (for questions stored with topic code as prefix)
     const prefixScanResult = await this.queryByQuestionCodePrefix(topicCode);
     if (prefixScanResult.length > 0) return prefixScanResult;
@@ -157,15 +158,14 @@ export class QuestionRepository {
       return deriveTopicCodeFromQuestionCode(qCode);
     };
 
-    // Path 3: robust subject prefix scan + in-memory matching (exact code only)
+    // Path 3: robust subject prefix scan + in-memory matching (exact code + subtopic hierarchy)
     try {
       const parts = topicCode.split('-');
       if (parts.length >= 3) {
         const subjectPrefix = `${parts[0]}-${parts[1]}-${parts[2]}-`;
-        const nextPrefix = `${parts[0]}-${parts[1]}-${parts[2]}.`;
         const listSnap = await this.collection
           .where('questionCode', '>=', subjectPrefix)
-          .where('questionCode', '<', nextPrefix)
+          .where('questionCode', '<=', subjectPrefix + '\uffff')
           .limit(1000)
           .get();
           
@@ -174,7 +174,13 @@ export class QuestionRepository {
           listSnap.docs.forEach(doc => {
             const data = doc.data();
             const qCode = data.questionCode || '';
-            if (parseCode(qCode) === topicCode) {
+            const derived = parseCode(qCode);
+            if (
+              derived === topicCode ||
+              derived.startsWith(topicCode + '.') ||
+              topicCode.startsWith(derived + '.') ||
+              (data.topicCode && (data.topicCode === topicCode || data.topicCode.startsWith(topicCode + '.') || topicCode.startsWith(data.topicCode + '.')))
+            ) {
               matched.push({ id: doc.id, ...data } as QuestionItem);
             }
           });
@@ -183,6 +189,16 @@ export class QuestionRepository {
       }
     } catch (e) {
       console.warn('getQuestionsByTopic: subject prefix query and in-memory filter failed', e);
+    }
+
+    // Path 4: Subtopic fallback — if topicCode is e.g. CBSE-8-CURI-5-5.1.1, fallback to parent CBSE-8-CURI-5-5.1
+    const lastDotIdx = topicCode.lastIndexOf('.');
+    if (lastDotIdx !== -1) {
+      const parentCode = topicCode.substring(0, lastDotIdx);
+      if (parentCode.includes('-')) {
+        const parentResults = await this.resolveQuestionsByTopic(parentCode);
+        if (parentResults.length > 0) return parentResults;
+      }
     }
 
     // Path 5: legacy range scan fallback
@@ -205,11 +221,10 @@ export class QuestionRepository {
 
   private static async queryByQuestionCodePrefix(topicCode: string): Promise<QuestionItem[]> {
     try {
-      const prefix = topicCode + '-';
-      const nextStr = topicCode + '.';
+      const prefix = topicCode;
       const byNewCode = await this.collection
         .where('questionCode', '>=', prefix)
-        .where('questionCode', '<', nextStr)
+        .where('questionCode', '<=', prefix + '\uffff')
         .limit(500)
         .get();
       if (!byNewCode.empty) return byNewCode.docs.map(d => ({ id: d.id, ...d.data() } as QuestionItem));
