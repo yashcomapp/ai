@@ -413,11 +413,11 @@ export async function GET(req: NextRequest) {
         const confidence = record.confidence;
         
         let topicQuality = 0;
-        if (mastery >= 90 && confidence >= 20) {
-          const excess = Math.max(0, q - 20);
+        if (mastery >= 90 && confidence >= 10) {
+          const excess = Math.max(0, q - 15);
           topicQuality = Math.max(30, 100 - excess * 1.5);
         } else {
-          const excess = Math.max(0, q - 20);
+          const excess = Math.max(0, q - 15);
           topicQuality = Math.max(0, mastery - excess * 1.5);
         }
         totalQualityScore += topicQuality;

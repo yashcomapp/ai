@@ -14,7 +14,7 @@ import { isDemoUser } from '@/lib/studentDb';
 
 export const MASTERY_THRESHOLDS = {
   MASTERED_MASTERY: 90,
-  MASTERED_CONFIDENCE: 20,
+  MASTERED_CONFIDENCE: 10,
   MEDIUM_HIGH_MASTERY: 70,
   MEDIUM_MASTERY: 50,
   WEAK_MASTERY: 50
@@ -204,10 +204,10 @@ export class PracticeQualityCalculator implements ParameterCalculator {
       
       let topicEfficiency = 0;
       if (mastery >= MASTERY_THRESHOLDS.MASTERED_MASTERY && confidence >= MASTERY_THRESHOLDS.MASTERED_CONFIDENCE) {
-        const excess = Math.max(0, q - 20);
+        const excess = Math.max(0, q - 15);
         topicEfficiency = Math.max(40, 100 - excess * 1.5);
       } else {
-        const excess = Math.max(0, q - 20);
+        const excess = Math.max(0, q - 15);
         topicEfficiency = Math.max(0, mastery - excess * 1.5);
       }
       totalEfficiencyScore += topicEfficiency;
@@ -262,11 +262,11 @@ export class TopicHealthCalculator implements ParameterCalculator {
         const mastery = Number(rec.mastery || 0);
         const confidence = Number(rec.confidence || 0);
         const isRecovery = Boolean(rec.isRecoveryMastered);
-        if (isRecovery || (mastery >= 90 && confidence >= 20)) {
+        if (isRecovery || (mastery >= 90 && confidence >= 10)) {
           masteredCount++;
         }
         if (mastery < 50) attentionCount++;
-        const confidenceFactor = Math.min(1, Math.max(0.5, confidence / 20));
+        const confidenceFactor = Math.min(1, Math.max(0.5, confidence / 10));
         totalMasteryEarned += mastery * confidenceFactor;
       });
       const score = Math.max(0, Math.min(100, Math.round(totalMasteryEarned / totalTopics)));
@@ -305,7 +305,7 @@ export class TopicHealthCalculator implements ParameterCalculator {
         const confidence = Number(record.confidence || 0);
         const isRecovery = Boolean(record.isRecoveryMastered);
 
-        if (isRecovery || (mastery >= 90 && confidence >= 20)) {
+        if (isRecovery || (mastery >= 90 && confidence >= 10)) {
           masteredCount++;
         }
 
@@ -313,8 +313,8 @@ export class TopicHealthCalculator implements ParameterCalculator {
           attentionCount++;
         }
 
-        // Continuous confidence scaling: scales proportionally up to 1.0 at 20 questions
-        const confidenceFactor = Math.min(1, Math.max(0.5, confidence / 20));
+        // Continuous confidence scaling: scales proportionally up to 1.0 at 10 questions
+        const confidenceFactor = Math.min(1, Math.max(0.5, confidence / 10));
         const effectiveTopicScore = mastery * confidenceFactor;
         totalMasteryEarned += effectiveTopicScore;
       } else {

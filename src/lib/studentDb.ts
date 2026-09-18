@@ -259,7 +259,7 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
 
       if (mastery < 50) {
         needsAttentionTopicsCount += 1;
-      } else if (mastery >= 90 && confidence >= reqConf) {
+      } else if (mastery >= 90 && (confidence >= reqConf || mData.isRecoveryMastered)) {
         masteredTopicsCount += 1;
       }
     });

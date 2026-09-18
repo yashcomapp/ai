@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
       const mData = doc.data();
       const mastery = Number(mData.mastery || 0);
       const confidence = Number(mData.confidence || 0);
-      if (mastery >= 90 && confidence >= 20) {
+      if (mastery >= 90 && (confidence >= 6 || mData.isRecoveryMastered)) {
         masteredTopics += 1;
       } else if (mastery < 50) {
         weakTopicsCount += 1;
