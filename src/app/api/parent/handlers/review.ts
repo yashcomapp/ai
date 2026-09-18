@@ -348,9 +348,6 @@ export async function GET(req: NextRequest) {
         // Skip practice sessions stored in reviews collection
         if (data.examType === 'practice') return null;
 
-        // Strictly exclude exams where the student has not yet completed self-review
-        if (data.status === 'student_review') return null;
-
         let topicName = '';
         const examTopics = new Set<string>();
         const qCodes = data.questionCodes || [];
@@ -611,9 +608,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ message: 'Access Denied. Review document does not match this child.' }, { status: 403 });
       }
 
-      if (rData.status === 'student_review') {
-        return NextResponse.json({ message: 'Exam cannot be approved until the student completes self-review and submits to parents.' }, { status: 400 });
-      }
+
 
       if (rData.status === 'approved') {
         return NextResponse.json({ success: true, message: 'Review successfully approved!' });
