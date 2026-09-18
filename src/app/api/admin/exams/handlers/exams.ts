@@ -93,8 +93,10 @@ export async function GET(req: NextRequest) {
         const practiceQuestions = Number(d.practiceQuestionsAttempted || practiceQuestionsMap.get(tCode) || 0);
         const attempts = d.questionsAttempted || d.attempts || 0;
         const isRecovery = !!d.isRecoveryMastered;
-        const hasPracticeBaseline = practiceQuestions >= 12 || practiceCount >= 1 || isRecovery;
-        const isExamStrong = mastery >= 90 && !hasPracticeBaseline;
+        const classification = sData.topicClassification || d.topicClassification;
+        const targetQ = sData.targetQuestions || d.targetQuestions;
+        const reqConfidence = getRequiredConfidence(classification, targetQ);
+        const isFullConfidence = confidence >= reqConfidence;
         const isLimitReached = practiceCount >= 5;
 
         let state = 'needsAttention';
@@ -102,11 +104,7 @@ export async function GET(req: NextRequest) {
         let expColor = '#ef4444';
         let expText = '';
 
-        const classification = sData.topicClassification || d.topicClassification;
-        const targetQ = sData.targetQuestions || d.targetQuestions;
-        const reqConfidence = getRequiredConfidence(classification, targetQ);
-
-        if ((mastery >= 90 && confidence >= reqConfidence && hasPracticeBaseline) || isRecovery) {
+        if ((mastery >= 90 && isFullConfidence) || isRecovery) {
           state = 'mastered';
           if (isRecovery) {
             expIcon = '⚡';
@@ -115,7 +113,7 @@ export async function GET(req: NextRequest) {
           } else {
             expIcon = '⭐';
             expColor = '#10b981';
-            expText = `Mastered on 1st attempt (${mastery}% accuracy across ${attempts} verified questions).`;
+            expText = `Mastered (${mastery}% accuracy across ${attempts} verified questions).`;
           }
           mastered.push({
             topicCode: tCode,
@@ -133,28 +131,38 @@ export async function GET(req: NextRequest) {
             expColor,
             expText
           });
-        } else if (mastery >= 50 || isExamStrong) {
-          if (isExamStrong) {
-            state = 'continuePractice';
-            expIcon = '🔥';
-            expColor = '#f59e0b';
-            expText = `🔥 High Exam Score (${mastery}%)! Complete 1 practice set (10–15 Qs) to achieve Certified Green Mastery & boost Practice LQ!`;
-          } else if (mastery >= 90 && confidence < reqConfidence) {
-            state = 'revision';
-            const needed = Math.max(1, reqConfidence - attempts);
-            expIcon = '📖';
-            expColor = '#3b82f6';
-            expText = `High accuracy (${mastery}%), but needs ${needed} more attempts to reach ${reqConfidence}-question Confidence threshold for Mastered.`;
-          } else if (isLimitReached) {
-            state = 'continuePractice';
+        } else if (mastery >= 90 && !isFullConfidence) {
+          state = 'revision';
+          const needed = Math.max(1, reqConfidence - attempts);
+          expIcon = '📖';
+          expColor = '#3b82f6';
+          expText = `High accuracy (${mastery}%), but needs ${needed} more verified question(s) to reach full confidence for Mastered.`;
+          practicing.push({
+            topicCode: tCode,
+            topicName: sData.topicName || d.topicName || tCode,
+            subjectName: sData.subjectName || 'General',
+            chapterName: sData.chapterName || 'General',
+            chapterNumber: sData.chapterNumber || '',
+            topicNumber: sData.topicNumber || '',
+            mastery,
+            confidence,
+            practiceCount,
+            attempts,
+            state,
+            expIcon,
+            expColor,
+            expText
+          });
+        } else if (mastery >= 50) {
+          state = 'continuePractice';
+          if (isLimitReached) {
             expIcon = '⚡';
             expColor = '#8b5cf6';
             expText = `5/5 practices done (${mastery}% accuracy). Take the Recovery Quiz (Fresh + Missed Qs) to achieve Mastered!`;
           } else {
-            state = 'continuePractice';
             expIcon = '📈';
             expColor = '#f59e0b';
-            expText = `${practiceCount}/5 practices done (${mastery}% accuracy). ${5 - practiceCount} practice(s) left to aim for 90%+ Mastered.`;
+            expText = `${practiceCount}/5 practices done (${mastery}% accuracy). Complete 1 micro-set (5 Qs) to aim for 90%+ Mastered.`;
           }
           practicing.push({
             topicCode: tCode,

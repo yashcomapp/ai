@@ -625,25 +625,21 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                                               expText = `${practiceCount}/5 practices done (${mastery}% accuracy). ${5 - practiceCount} practice(s) left — focus on weak areas.`;
                                             }
                                           } else if (state === 'continuePractice') {
-                                            if (topic.isExamStrong || (mastery >= 90 && practiceCount === 0)) {
-                                              expIcon = '🔥';
-                                              expColor = 'var(--warning)';
-                                              expText = `🔥 High Exam Score (${mastery}%)! Complete 1 practice set (10–15 Qs) to achieve Certified Green Mastery & boost your Practice LQ!`;
-                                            } else if (isLimitReached) {
+                                            if (isLimitReached) {
                                               expIcon = '⚡';
                                               expColor = 'var(--accent)';
                                               expText = `5/5 practices done (${mastery}% accuracy). Take the Recovery Quiz (Fresh + Missed Qs) to achieve Mastered!`;
                                             } else {
                                               expIcon = '📈';
                                               expColor = '#f59e0b';
-                                              expText = `${practiceCount}/5 practices done (${mastery}% accuracy). ${5 - practiceCount} practice(s) left to aim for 90%+ Mastered.`;
+                                              expText = `${practiceCount}/5 practices done (${mastery}% accuracy). Complete 1 micro-set (5 Qs) to aim for 90%+ Mastered.`;
                                             }
                                           } else if (state === 'revision') {
                                             const reqConf = topic.requiredConfidence || (topic.topicClassification === 'minor' || topic.topicClassification === 'micro' ? 6 : (topic.topicClassification === 'major' || topic.topicClassification === 'calculative' || topic.topicClassification === 'hots' ? 15 : 10));
                                             const needed = Math.max(1, reqConf - attempts);
                                             expIcon = '📖';
                                             expColor = 'var(--accent)';
-                                            expText = `High accuracy (${mastery}%), but needs ${needed} more attempts to reach ${reqConf}-question Confidence threshold for Mastered.`;
+                                            expText = `High accuracy (${mastery}%), but needs ${needed} more verified question(s) to reach full confidence for Mastered.`;
                                           } else {
                                             if (isRecovery) {
                                               expIcon = '⚡';
@@ -652,7 +648,7 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                                             } else {
                                               expIcon = '⭐';
                                               expColor = '#10b981';
-                                              expText = `Mastered on 1st attempt (${mastery}% accuracy across ${attempts} verified questions).`;
+                                              expText = `Mastered (${mastery}% accuracy across ${attempts} verified questions).`;
                                             }
                                           }
 
