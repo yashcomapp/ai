@@ -34,6 +34,7 @@ import {
   RotateCcw
 } from 'lucide-react';
 import { getScoreColor } from '@/lib/dashboardMetrics';
+import StudentSelfReflectionModal from '@/components/StudentSelfReflectionModal';
 
 interface ExamItem {
   id: string;
@@ -99,6 +100,7 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
   const [showSeenNotices, setShowSeenNotices] = useState(false);
   const [isAnnouncementsExpanded, setIsAnnouncementsExpanded] = useState(false);
   const [activeOverlayNotice, setActiveOverlayNotice] = useState<any | null>(null);
+  const [activeReflectionExam, setActiveReflectionExam] = useState<{ examId: string; examName?: string } | null>(null);
 
   const handleDismissOverlayNotice = async (noticeId: string) => {
     const userId = firebaseUser?.uid || 'student';
@@ -423,9 +425,13 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
   const profile = activeData?.profile;
   const resultsSummary = activeData?.resultsSummary;
   const peerReviews = activeData?.peerReviews || { count: 0, firstExamId: null };
+  const pendingSelfReviews: any[] = (activeData as any)?.pendingSelfReviews || [];
+  const pendingAbsences: any[] = (activeData as any)?.pendingAbsences || [];
   const exams = activeData?.exams || { pendingObjectiveExams: [], scheduledObjectiveExams: [], pendingSubjectiveExams: [], scheduledSubjectiveExams: [], dailyHomePractices: [], studyChips: [] };
   const greeting = getGreeting();
   const firstName = profile?.name ? profile.name.split(' ')[0] : '';
+  const hasActionItems = pendingSelfReviews.length > 0 || pendingAbsences.length > 0 || needAttentionTopics.length > 0 || peerReviews.count > 0;
+  const totalActionCount = pendingSelfReviews.length + pendingAbsences.length + (peerReviews.count > 0 ? 1 : 0) + needAttentionTopics.length;
 
   return (
     <div className="page-wrapper" style={{
@@ -519,7 +525,7 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
             </div>
 
             {/* CARD 2: Action Needed / All Clear Ledger */}
-            <div className={(needAttentionTopics.length > 0 || peerReviews.count > 0) ? "card card-amber" : "card card-emerald"} style={{
+            <div className={hasActionItems ? "card card-amber" : "card card-emerald"} style={{
               borderRadius: 'var(--radius)',
               padding: '10px 12px',
               marginBottom: '8px',
@@ -529,19 +535,71 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
             }}>
               {/* Compact Header */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                {(needAttentionTopics.length > 0 || peerReviews.count > 0) ? (
+                {hasActionItems ? (
                   <AlertTriangle size={18} color="#fbbf24" style={{ flexShrink: 0 }} />
                 ) : (
                   <CheckCircle2 size={18} color="#34d399" style={{ flexShrink: 0 }} />
                 )}
-                <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 800, color: (needAttentionTopics.length > 0 || peerReviews.count > 0) ? '#fbbf24' : '#34d399', lineHeight: 1.2 }}>
-                  {(needAttentionTopics.length > 0 || peerReviews.count > 0) 
-                    ? `${needAttentionTopics.length + (peerReviews.count > 0 ? 1 : 0)} Action Item(s) Need Attention` 
+                <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 800, color: hasActionItems ? '#fbbf24' : '#34d399', lineHeight: 1.2 }}>
+                  {hasActionItems 
+                    ? `${totalActionCount} Action Item(s) Need Attention` 
                     : 'All Clear! You are fully on track!'}
                 </h3>
               </div>
 
-              {/* Peer Review Alert */}
+              {/* 1. Pending Self-Reflection Reviews (Highest Priority Action Item) */}
+              {pendingSelfReviews.length > 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  {pendingSelfReviews.map((r: any) => (
+                    <div key={r.id || r.examId} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: 'rgba(239, 68, 68, 0.12)', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(239, 68, 68, 0.3)', gap: '8px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
+                        <span style={{ fontSize: '18px' }}>📝</span>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                          <div style={{ fontWeight: 800, fontSize: '12px', color: '#f87171' }}>
+                            Exam Self-Reflection Required: {r.examName || r.examId}
+                          </div>
+                          <div style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>
+                            Score: {r.score}/{r.totalMarks} ({r.percentage}%) • Complete mistake review to unblock exams
+                          </div>
+                        </div>
+                      </div>
+                      <button 
+                        className="btn btn-primary" 
+                        style={{ padding: '4px 12px', fontSize: '11px', borderRadius: 'var(--radius-sm)', fontWeight: 800, whiteSpace: 'nowrap', background: '#ef4444', color: '#ffffff', border: 'none' }}
+                        onClick={() => setActiveReflectionExam({ examId: r.examId, examName: r.examName })}
+                      >
+                        Reflect & Unlock
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* 2. Missed Exam Absences Pending Parent Sign-Off */}
+              {pendingAbsences.length > 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  {pendingAbsences.map((a: any) => (
+                    <div key={a.id || a.examId} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: 'rgba(245, 158, 11, 0.12)', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(245, 158, 11, 0.3)', gap: '8px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
+                        <span style={{ fontSize: '18px' }}>⚠️</span>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                          <div style={{ fontWeight: 800, fontSize: '12px', color: '#fbbf24' }}>
+                            Missed Exam: Parent Acknowledgment Pending
+                          </div>
+                          <div style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>
+                            {a.name} ({a.subject || 'General'}) • Parent must acknowledge absence in Parent Portal to unlock exams
+                          </div>
+                        </div>
+                      </div>
+                      <span style={{ padding: '3px 8px', fontSize: '10px', borderRadius: '4px', background: 'rgba(245, 158, 11, 0.2)', color: '#fbbf24', fontWeight: 700, whiteSpace: 'nowrap' }}>
+                        Sign-off Pending
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* 3. Peer Review Alert */}
               {peerReviews.count > 0 && (
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 10px', background: 'var(--surface-2)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -558,7 +616,7 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
                 </div>
               )}
 
-              {/* Need Attention Topics List */}
+              {/* 4. Need Attention Topics List */}
               {needAttentionTopics.length > 0 && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   {needAttentionTopics.slice(0, 4).map((t: any) => (
@@ -1214,6 +1272,20 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
           </div>
         );
       })()}
+
+      {activeReflectionExam && (
+        <StudentSelfReflectionModal
+          examId={activeReflectionExam.examId}
+          examName={activeReflectionExam.examName}
+          onClose={() => setActiveReflectionExam(null)}
+          onSuccess={() => {
+            setActiveReflectionExam(null);
+            if (typeof window !== 'undefined') {
+              window.location.reload();
+            }
+          }}
+        />
+      )}
     </div>
   );
 }

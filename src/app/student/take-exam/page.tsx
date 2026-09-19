@@ -808,10 +808,38 @@ function TakeExamContent() {
   }
 
   if (error || !exam) {
+    const isBlockedNotice = error.includes('pending review') || error.includes('self-reflection') || error.includes('missed') || error.includes('parent') || error.includes('blocked');
     return (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: 'var(--bg)', padding: '20px' }}>
-        <div className="alert-box alert-box-danger" style={{ display: 'block', maxWidth: '500px' }}>{error || 'Exam configurations failed to load.'}</div>
-        <button className="btn btn-primary" onClick={() => router.push('/student')} style={{ marginTop: '20px' }}>Go Back</button>
+        <div style={{
+          maxWidth: '520px',
+          width: '100%',
+          textAlign: 'center',
+          padding: '32px 24px',
+          background: 'var(--surface)',
+          borderRadius: 'var(--radius-lg, 16px)',
+          border: '1px solid var(--border-light, #334155)',
+          boxShadow: 'var(--shadow-lg, 0 10px 15px -3px rgba(0, 0, 0, 0.5))',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '14px'
+        }}>
+          <div style={{ fontSize: '3.5rem' }}>{isBlockedNotice ? '🔒' : '⚠️'}</div>
+          <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text, #f8fafc)', margin: 0 }}>
+            {isBlockedNotice ? 'Action Required to Unlock Exam' : 'Exam Unavailable'}
+          </h3>
+          <p style={{ fontSize: '14px', color: 'var(--text-muted, #94a3b8)', lineHeight: '1.6', margin: 0 }}>
+            {error || 'Exam configurations failed to load.'}
+          </p>
+          <button 
+            className="btn btn-primary" 
+            onClick={() => router.push('/student')} 
+            style={{ padding: '10px 24px', borderRadius: '8px', fontWeight: 700, marginTop: '8px' }}
+          >
+            🏠 Return to Dashboard & Complete Actions
+          </button>
+        </div>
       </div>
     );
   }

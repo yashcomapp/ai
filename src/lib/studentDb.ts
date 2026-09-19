@@ -295,6 +295,8 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
       }
     });
 
+    const absentExamsList: any[] = [];
+
     // 1. Calculate absences from formal assignments (Type A)
     uniqueAssignments.forEach(ass => {
       if (now > ass.endAt) {
@@ -308,6 +310,13 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
         });
         if (!attemptedInObj && !attemptedInSub && !attemptedInEval) {
           absentExamsCount++;
+          absentExamsList.push({
+            examId: ass.examId,
+            name: ass.examName || ass.name || ass.examId,
+            subject: ass.subject || 'General',
+            chapter: ass.chapter || '',
+            endAt: ass.endAt
+          });
         }
       }
     });
@@ -325,6 +334,13 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
           const attempted = attemptsSnapshot.docs.some(a => a.data().examId === doc.id);
           if (!attempted) {
             absentExamsCount++;
+            absentExamsList.push({
+              examId: doc.id,
+              name: cleanSubjectiveExamName(examData) || resolveTopicNames(syllabusList, examData) || examData.name || 'Classroom Test',
+              subject: examData.subjects?.[0] || examData.subject || 'General',
+              chapter: examData.chapter || examData.chapterName || '',
+              endAt: scheduledDateStr
+            });
           }
         }
       }
@@ -345,6 +361,13 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
           const attempted = attemptsSnapshot.docs.some(a => a.data().examId === doc.id);
           if (!attempted) {
             absentExamsCount++;
+            absentExamsList.push({
+              examId: doc.id,
+              name: cleanSubjectiveExamName(examData) || resolveTopicNames(syllabusList, examData) || examData.name || 'Home Practice',
+              subject: examData.subjects?.[0] || examData.subject || 'General',
+              chapter: examData.chapter || examData.chapterName || '',
+              endAt: untilDate
+            });
           }
         }
       }
@@ -860,39 +883,71 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
     let needsAttentionTopicsList: any[] = [];
     try {
       const learningData = await getStudentLearningData(userData);
-      if (learningData && Array.isArray(learningData.needsAttention)) {
-        needsAttentionTopicsList = learningData.needsAttention;
-      }
+      needsAttentionTopicsList = learningData?.needsAttention || [];
     } catch (e) {
-      console.warn('Failed to load learning data for dashboard needsAttention:', e);
+      console.warn('Failed to load learning data for dashboard:', e);
     }
 
-    // 8. Return aggregated response
-    return {
-      profile,
-      resultsSummary,
-      needsAttention: needsAttentionTopicsList,
-      peerReviews: {
-        count: peerReviewsCount,
-        firstExamId: firstPeerReviewExamId
-      },
-      exams: {
-        pendingObjectiveExams,
-        scheduledObjectiveExams,
-        pendingSubjectiveExams,
-        scheduledSubjectiveExams,
-        pendingEntranceExams,
-        scheduledEntranceExams,
-        dailyHomePractices,
-        studyChips
-      },
-      zoomClass
-    };
-  } catch (error: any) {
-    console.error('getDashboardData error:', error);
-    throw error;
+    // 7.10 Fetch pending self-reflection reviews (exams needing student mistake review)
+    const pendingSelfReviewsList: any[] = [];
+    reviews.forEach((r: any) => {
+      if (r.status === 'student_review') {
+          pendingSelfReviewsList.push({
+            id: r.id,
+            examId: r.examId,
+            examName: r.examName || r.name || r.examId,
+            score: r.score || 0,
+            totalMarks: r.totalMarks || 0,
+            percentage: r.percentage || 0,
+            wrongCount: (r.wrongAnswers || []).length,
+            unansweredCount: (r.unattemptedQuestions || []).length
+          });
+        }
+      });
+
+      // 7.11 Fetch unacknowledged absent exams that block taking new exams
+      const pendingAbsencesList: any[] = [];
+      if (absentExamsList.length > 0) {
+        absentExamsList.forEach((a: any) => {
+          pendingAbsencesList.push({
+            id: a.examId,
+            examId: a.examId,
+            name: a.name,
+            subject: a.subject,
+            chapter: a.chapter,
+            endAt: a.endAt
+          });
+        });
+      }
+
+      // 8. Return aggregated response
+      return {
+        profile,
+        resultsSummary,
+        needsAttention: needsAttentionTopicsList,
+        pendingSelfReviews: pendingSelfReviewsList,
+        pendingAbsences: pendingAbsencesList,
+        peerReviews: {
+          count: peerReviewsCount,
+          firstExamId: firstPeerReviewExamId
+        },
+        exams: {
+          pendingObjectiveExams,
+          scheduledObjectiveExams,
+          pendingSubjectiveExams,
+          scheduledSubjectiveExams,
+          pendingEntranceExams,
+          scheduledEntranceExams,
+          dailyHomePractices,
+          studyChips
+        },
+        zoomClass
+      };
+    } catch (error: any) {
+      console.error('getDashboardData error:', error);
+      throw error;
+    }
   }
-}
 
 export function getRequiredConfidence(topicClassification?: string, targetQuestions?: number): number {
   const cls = String(topicClassification || '').toLowerCase().trim();
