@@ -299,9 +299,9 @@ export default function StudentResults({ initialData }: { initialData?: { result
   };
 
   const getProgressColor = (pct: number) => {
-    if (pct < 40) return '#f44336';
-    if (pct < 70) return '#ff9800';
-    return '#4caf50';
+    if (pct < 40) return 'var(--danger)';
+    if (pct < 70) return 'var(--warning)';
+    return 'var(--success)';
   };
 
   const toggleChapter = (subjectName: string, chapterName: string) => {

@@ -1168,8 +1168,8 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                 position: 'absolute',
                 top: '-2px',
                 right: '-2px',
-                background: '#ef4444',
-                color: '#ffffff',
+                background: 'var(--danger)',
+                color: 'white',
                 fontSize: '10px',
                 fontWeight: 800,
                 width: '18px',
@@ -1197,7 +1197,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
               display: 'flex', 
               alignItems: 'center', 
               justifyContent: 'center', 
-              color: '#ef4444', 
+              color: 'var(--danger)', 
               cursor: 'pointer'
             }}
             title="Logout"
@@ -1972,8 +1972,8 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                       nType === 'schedule' 
                         ? { border: '4px solid var(--accent)', badgeBg: 'var(--accent-soft)', badgeColor: 'var(--accent)', label: '📅 Schedule' }
                         : nType === 'fees'
-                        ? { border: '4px solid #f59e0b', badgeBg: 'rgba(245, 158, 11, 0.1)', badgeColor: '#f59e0b', label: '💰 Fees' }
-                        : { border: '4px solid #ef4444', badgeBg: 'rgba(239, 68, 68, 0.1)', badgeColor: '#ef4444', label: '📢 Announcement' };
+                        ? { border: '4px solid var(--warning)', badgeBg: 'var(--warning-bg)', badgeColor: 'var(--warning)', label: '💰 Fees' }
+                        : { border: '4px solid var(--danger)', badgeBg: 'var(--danger-bg)', badgeColor: 'var(--danger)', label: '📢 Announcement' };
 
                     return (
                       <div key={notice.id} style={{ padding: '12px 16px', background: 'var(--bg-soft)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)', borderLeft: config.border, opacity: isSeen ? 0.75 : 1, position: 'relative' }}>
@@ -2887,7 +2887,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text)' }}>📹 Live Camera Feed</span>
-                  <span style={{ fontSize: '9px', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', background: '#ef4444', color: '#fff' }}>
+                  <span style={{ fontSize: '9px', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', background: 'var(--danger)', color: '#fff' }}>
                     LIVE
                   </span>
                 </div>

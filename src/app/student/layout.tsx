@@ -240,7 +240,7 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
               display: 'flex', 
               alignItems: 'center', 
               justifyContent: 'center', 
-              color: '#ef4444', 
+              color: 'var(--danger)', 
               cursor: 'pointer',
               flexShrink: 0
             }}

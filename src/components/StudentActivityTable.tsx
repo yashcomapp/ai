@@ -224,8 +224,8 @@ export default function StudentActivityTable() {
                             width: '8px',
                             height: '8px',
                             borderRadius: '50%',
-                            background: isLive ? '#10b981' : '#d1d5db',
-                            boxShadow: isLive ? '0 0 8px #10b981' : 'none',
+                            background: isLive ? 'var(--success)' : 'var(--text-muted)',
+                            boxShadow: isLive ? '0 0 8px var(--success)' : 'none',
                             display: 'inline-block'
                           }}
                         />

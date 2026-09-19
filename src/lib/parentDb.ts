@@ -6,6 +6,7 @@ import { calculateUnifiedMetrics } from '@/lib/dashboardMetrics';
 import { calculateProctoringIntegrityScore } from '@/lib/proctoring';
 import { calculateSrsSchedule } from '@/lib/srsRotation';
 import { getRequiredConfidence } from '@/lib/studentDb';
+import { getFromCache, setInCache } from '@/lib/firebase/cache';
 
 export async function getParentDashboardData(
   parentEmail: string,
@@ -13,6 +14,10 @@ export async function getParentDashboardData(
   selectedStudentCode: string | null,
   rangeDays: number = 7
 ) {
+  const cacheKey = `parent_dashboard_fn_${parentEmail || 'unknown'}_${selectedStudentCode || 'all'}_${rangeDays}`;
+  const cached = getFromCache<any>(cacheKey);
+  if (cached) return cached;
+
   // Resolve child list
   let studentCodes: string[] = [];
   if (Array.isArray(parentData?.studentCodes)) {
@@ -814,7 +819,7 @@ export async function getParentDashboardData(
 
   const needsAttentionYesterdayCount = needsAttentionTopicsList.length + recoveredTodayTopicsList.length;
 
-  return {
+  const result = {
     childInfo: {
       uid: childUid,
       studentCode: targetStudentCode,
@@ -895,4 +900,7 @@ export async function getParentDashboardData(
       };
     })
   };
+
+  setInCache(cacheKey, result, 20000); // 20s in-memory TTL
+  return result;
 }

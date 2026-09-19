@@ -1177,7 +1177,7 @@ function TopicPracticeContent() {
               </div>
             )}
 
-            <div className="camera-preview" style={{ width: '100%', height: '240px', background: '#111', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', position: 'relative', marginBottom: '15px' }}>
+            <div className="camera-preview" style={{ width: '100%', height: '240px', background: 'var(--bg-card)', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', position: 'relative', marginBottom: '15px' }}>
               {cameraStream ? (
                 <video 
                   ref={(el) => {
@@ -1286,10 +1286,10 @@ function TopicPracticeContent() {
       )}
 
       {/* Proctoring Bar */}
-      <div className="proctor-bar" style={{ display: (started && !finished) ? 'block' : 'none', background: '#1a1d29', color: 'white', padding: '8px 20px', borderBottom: '2px solid var(--warning)' }}>
+      <div className="proctor-bar" style={{ display: (started && !finished) ? 'block' : 'none', background: 'var(--surface)', color: 'var(--text)', padding: '8px 20px', borderBottom: '2px solid var(--warning)' }}>
         <div className="proctor-top-row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '15px', flexWrap: 'wrap' }}>
           <div className="camera-feed" style={{ display: 'flex', alignItems: 'center', gap: '10px', position: 'relative', flexShrink: 0 }}>
-             <video ref={videoRef} autoPlay playsInline muted style={{ width: '100px', height: '75px', borderRadius: 'var(--radius-sm)', border: '2px solid var(--success)', background: '#111', objectFit: 'cover' }}></video>
+             <video ref={videoRef} autoPlay playsInline muted style={{ width: '100px', height: '75px', borderRadius: 'var(--radius-sm)', border: '2px solid var(--success)', background: 'var(--bg-card)', objectFit: 'cover' }}></video>
             <div>
               <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Integrity Status:</div>
               <span className="badge badge-success" style={{ marginTop: '4px', fontSize: '9px', background: 'var(--success)' }}>

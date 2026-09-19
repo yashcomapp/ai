@@ -747,7 +747,7 @@ function TakeSubjectiveExamContent() {
               </ul>
             </div>
             
-            <div style={{ width: '100%', height: '220px', background: '#111', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', position: 'relative' }}>
+            <div style={{ width: '100%', height: '220px', background: 'var(--bg-card)', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', position: 'relative' }}>
               {cameraStream ? (
                 <video 
                   ref={(el) => {
@@ -845,9 +845,9 @@ function TakeSubjectiveExamContent() {
                       width: '120px',
                       padding: '4px 6px',
                       borderRadius: '6px',
-                      background: 'rgba(46, 204, 113, 0.15)',
-                      border: '1px solid #2ecc71',
-                      color: '#2ecc71',
+                      background: 'var(--success-bg)',
+                      border: '1px solid var(--success)',
+                      color: 'var(--success)',
                       fontSize: '11px',
                       fontWeight: 'bold',
                       textAlign: 'center',

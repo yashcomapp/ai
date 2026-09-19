@@ -1039,7 +1039,7 @@ function TakeExamContent() {
               </ul>
             </div>
             
-            <div className="camera-preview" style={{ width: '100%', height: '240px', background: '#111', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', position: 'relative' }}>
+            <div className="camera-preview" style={{ width: '100%', height: '240px', background: 'var(--bg-card)', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', position: 'relative' }}>
               {cameraStream ? (
                 <video 
                   ref={(el) => {

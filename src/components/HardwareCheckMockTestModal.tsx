@@ -431,7 +431,7 @@ export default function HardwareCheckMockTestModal({ isOpen, onClose }: Hardware
                   autoPlay 
                   playsInline 
                   muted 
-                  style={{ width: '100%', height: '75px', borderRadius: 'var(--radius-sm)', border: '2px solid var(--success)', background: '#111', objectFit: 'cover' }}
+                  style={{ width: '100%', height: '75px', borderRadius: 'var(--radius-sm)', border: '2px solid var(--success)', background: 'var(--bg-card)', objectFit: 'cover' }}
                 />
                 <div>
                   <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Integrity Status:</div>

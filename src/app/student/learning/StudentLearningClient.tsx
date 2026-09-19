@@ -171,9 +171,9 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
   };
 
   const getProgressColor = (mastery: number) => {
-    if (mastery < 40) return '#f44336';
-    if (mastery < 70) return '#ff9800';
-    return '#4caf50';
+    if (mastery < 40) return 'var(--danger)';
+    if (mastery < 70) return 'var(--warning)';
+    return 'var(--success)';
   };
 
   const toggleChapter = (subjectName: string, chapterName: string) => {
@@ -781,7 +781,7 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                                                     fontSize: '10px', 
                                                     fontWeight: 600, 
                                                     border: 'none', 
-                                                    background: isRecoveryAction ? 'var(--accent-grad)' : (isSrsAction ? 'linear-gradient(135deg, #0284c7, #38bdf8)' : 'var(--accent-grad)'), 
+                                                    background: 'var(--accent-grad)', 
                                                     color: 'white', 
                                                     cursor: 'pointer' 
                                                   }}

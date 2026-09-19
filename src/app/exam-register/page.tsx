@@ -76,8 +76,8 @@ function ExamRegisterContent() {
   const getPercentageStyle = (record: ExamRecord) => {
     if (record.status === 'absent') {
       return {
-        color: '#ef4444',
-        background: 'rgba(239, 68, 68, 0.1)',
+        color: 'var(--danger)',
+        background: 'var(--danger-bg)',
         padding: '3px 8px',
         borderRadius: '12px',
         fontWeight: 700,
@@ -266,7 +266,7 @@ function ExamRegisterContent() {
                                     {record.absenceReason}
                                   </span>
                                 ) : (
-                                  <span style={{ color: '#ef4444', fontSize: '11.5px', fontWeight: 600 }}>Absent</span>
+                                  <span style={{ color: 'var(--danger)', fontSize: '11.5px', fontWeight: 600 }}>Absent</span>
                                 )
                               ) : (
                                 <span style={{ color: 'var(--text-muted)', fontSize: '11px' }}>—</span>

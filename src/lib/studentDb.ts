@@ -142,6 +142,10 @@ function cleanSubjectiveExamName(examData: any) {
 export async function getDashboardData(uid: string, userData: any, rangeDays: number = 7) {
   try {
     let studentCode = userData.studentCode || '';
+    const cacheKey = `student_dashboard_fn_${uid}_${studentCode || 'unknown'}_${rangeDays}`;
+    const cached = getFromCache<any>(cacheKey);
+    if (cached) return cached;
+
     const batchIds: string[] = [...(userData.batchIds || [])];
     if (userData.batchId && !batchIds.includes(userData.batchId)) {
       batchIds.push(userData.batchId);
@@ -927,7 +931,7 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
       }
 
       // 8. Return aggregated response
-      return {
+      const result = {
         profile,
         resultsSummary,
         needsAttention: needsAttentionTopicsList,
@@ -950,6 +954,9 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
         },
         zoomClass
       };
+
+      setInCache(cacheKey, result, 20000); // 20s in-memory TTL
+      return result;
     } catch (error: any) {
       console.error('getDashboardData error:', error);
       throw error;

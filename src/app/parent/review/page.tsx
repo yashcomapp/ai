@@ -936,7 +936,7 @@ export default function ParentReviewPanel() {
                       </div>
                       <div style={{ textTransform: 'uppercase' }}>
                         {item.type === 'absent_exam' ? (
-                          <span className="badge badge-warning" style={{ background: '#fef3c7', color: '#b45309', border: '1px solid #fde68a', fontWeight: 800, fontSize: '11px', padding: '4px 8px', borderRadius: '4px' }}>
+                          <span className="badge badge-warning" style={{ background: 'var(--warning-bg)', color: 'var(--warning)', border: '1px solid rgba(245, 158, 11, 0.3)', fontWeight: 800, fontSize: '11px', padding: '4px 8px', borderRadius: '4px' }}>
                             ⚠️ Absent / गैरहजर
                           </span>
                         ) : (

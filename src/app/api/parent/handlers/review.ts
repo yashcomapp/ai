@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import * as admin from 'firebase-admin';
 import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole } from '@/lib/auth';
 import { deriveTopicCodeFromQuestionCode } from '@/lib/questionTypes';
@@ -252,70 +253,110 @@ export async function GET(req: NextRequest) {
 
     const absentReviews: any[] = [];
     if (pastAssignedExams.length > 0) {
-      for (const pastExam of pastAssignedExams) {
-        // Check if student already has a review, attempt, or evaluation for this exam
+      // 1. Filter out past exams already covered by student's obj reviews, subj attempts, or evaluations
+      const unverifiedPastExams = pastAssignedExams.filter(pe => {
         const hasObjReview = objSnaps.docs.some(d => {
           const dData = d.data();
-          return dData.examId === pastExam.examId || d.id === `${pastExam.examId}_${studentCode}` || d.id.includes(pastExam.examId);
+          return dData.examId === pe.examId || d.id === `${pe.examId}_${studentCode}` || d.id.includes(pe.examId);
         });
         const hasSubjAttempt = subjSnaps.docs.some(d => {
           const dData = d.data();
-          return dData.examId === pastExam.examId || d.id === `${pastExam.examId}_${studentCode}` || d.id.includes(pastExam.examId);
+          return dData.examId === pe.examId || d.id === `${pe.examId}_${studentCode}` || d.id.includes(pe.examId);
         });
         const hasEvaluation = evalSnaps.docs.some(d => {
           const dData = d.data();
-          return dData.examId === pastExam.examId || (dData.legacyId && dData.legacyId.includes(pastExam.examId));
+          return dData.examId === pe.examId || (dData.legacyId && dData.legacyId.includes(pe.examId));
+        });
+        return !hasObjReview && !hasSubjAttempt && !hasEvaluation;
+      });
+
+      if (unverifiedPastExams.length > 0) {
+        // Batched lookup for attempt, subAttempt, and reason docs
+        const docRefs: admin.firestore.DocumentReference[] = [];
+        const examDocRefs: admin.firestore.DocumentReference[] = [];
+        unverifiedPastExams.forEach(pe => {
+          docRefs.push(adminDb.collection('examAttempts').doc(`${pe.examId}_${studentCode}`));
+          docRefs.push(adminDb.collection('subjectiveAttempts').doc(`${pe.examId}_${studentCode}`));
+          docRefs.push(adminDb.collection('examAbsenceReasons').doc(`${studentCode}_${pe.examId}`));
+          examDocRefs.push(adminDb.collection(pe.collection === 'batchAssignments' ? 'exams' : 'subjectiveExams').doc(pe.examId));
         });
 
-        if (hasObjReview || hasSubjAttempt || hasEvaluation) {
-          // Student was NOT absent, skip adding absent review
-          continue;
-        }
-
-        const [attemptSnap, subAttemptSnap, reasonSnap, queryAttemptSnap, queryReviewSnap, querySubSnap] = await Promise.all([
-          adminDb.collection('examAttempts').doc(`${pastExam.examId}_${studentCode}`).get(),
-          adminDb.collection('subjectiveAttempts').doc(`${pastExam.examId}_${studentCode}`).get(),
-          adminDb.collection('examAbsenceReasons').doc(`${studentCode}_${pastExam.examId}`).get(),
-          adminDb.collection('examAttempts').where('studentCode', '==', studentCode).where('examId', '==', pastExam.examId).limit(1).get(),
-          adminDb.collection('reviews').where('studentCode', '==', studentCode).where('examId', '==', pastExam.examId).limit(1).get(),
-          adminDb.collection('subjectiveAttempts').where('studentCode', '==', studentCode).where('examId', '==', pastExam.examId).limit(1).get()
+        const [allDocs, allExamDocs] = await Promise.all([
+          docRefs.length > 0 ? adminDb.getAll(...docRefs).catch(() => []) : [],
+          examDocRefs.length > 0 ? adminDb.getAll(...examDocRefs).catch(() => []) : []
         ]);
 
-        const attempted = (attemptSnap.exists && attemptSnap.data()?.status !== 'precheck') ||
-                          (subAttemptSnap.exists && subAttemptSnap.data()?.status !== 'precheck') ||
-                          (!queryAttemptSnap.empty && queryAttemptSnap.docs[0].data()?.status !== 'precheck') ||
-                          (!queryReviewSnap.empty && queryReviewSnap.docs[0].data()?.status !== 'precheck') ||
-                          (!querySubSnap.empty && querySubSnap.docs[0].data()?.status !== 'precheck');
+        const docMap = new Map<string, any>();
+        allDocs.forEach(d => {
+          if (d && d.exists) docMap.set(`${d.ref.parent.id}/${d.id}`, d.data());
+        });
 
-        if (!attempted) {
-          const isReasonAcknowledged = reasonSnap.exists && (reasonSnap.data()?.acknowledgedByParent === true || !!reasonSnap.data()?.reason);
-          let pastExamTitle = pastExam.examId;
-          let subject = 'General';
-          let chapter = '-';
-          try {
-            const eDoc = await adminDb.collection(pastExam.collection === 'batchAssignments' ? 'exams' : 'subjectiveExams').doc(pastExam.examId).get();
-            if (eDoc.exists) {
-              const eData = eDoc.data()!;
-              pastExamTitle = eData.name || eData.title || pastExam.examId;
-              subject = eData.subject || eData.subjectName || (eData.subjects ? eData.subjects[0] : 'General');
-              chapter = eData.chapter || eData.chapterName || '-';
-            }
-          } catch {}
+        const examDataMap = new Map<string, any>();
+        allExamDocs.forEach(d => {
+          if (d && d.exists) examDataMap.set(d.id, d.data());
+        });
 
-          absentReviews.push({
-            id: `absent_${pastExam.examId}_${studentCode}`,
-            examId: pastExam.examId,
-            type: 'absent_exam',
-            name: `${pastExamTitle} (Missed / अनुपस्थित)`,
-            subject,
-            chapter,
-            date: pastExam.endAt.toISOString(),
-            status: isReasonAcknowledged ? 'approved' : 'pending',
-            isAbsent: true,
-            reason: reasonSnap.exists ? reasonSnap.data()?.reason : null,
-            reviewedByActor: isReasonAcknowledged ? 'parent' : null
+        // Batch queries for any un-keyed matches
+        const candidateExamIds = unverifiedPastExams.map(pe => pe.examId);
+        const attemptedExamIds = new Set<string>();
+
+        const chunkedExamIds = chunkArray(candidateExamIds, 30);
+        for (const chunk of chunkedExamIds) {
+          const [qAttSnap, qRevSnap, qSubSnap] = await Promise.all([
+            adminDb.collection('examAttempts')
+              .where('studentCode', '==', studentCode)
+              .where('examId', 'in', chunk)
+              .get(),
+            adminDb.collection('reviews')
+              .where('studentCode', '==', studentCode)
+              .where('examId', 'in', chunk)
+              .get(),
+            adminDb.collection('subjectiveAttempts')
+              .where('studentCode', '==', studentCode)
+              .where('examId', 'in', chunk)
+              .get()
+          ]);
+          qAttSnap.docs.forEach(d => {
+            if (d.data()?.status !== 'precheck') attemptedExamIds.add(d.data().examId);
+          });
+          qRevSnap.docs.forEach(d => {
+            if (d.data()?.status !== 'precheck') attemptedExamIds.add(d.data().examId);
+          });
+          qSubSnap.docs.forEach(d => {
+            if (d.data()?.status !== 'precheck') attemptedExamIds.add(d.data().examId);
           });
         }
+
+        unverifiedPastExams.forEach(pastExam => {
+          const directAtt = docMap.get(`examAttempts/${pastExam.examId}_${studentCode}`);
+          const directSub = docMap.get(`subjectiveAttempts/${pastExam.examId}_${studentCode}`);
+          const attempted = (directAtt && directAtt.status !== 'precheck') ||
+                            (directSub && directSub.status !== 'precheck') ||
+                            attemptedExamIds.has(pastExam.examId);
+
+          if (!attempted) {
+            const reasonData = docMap.get(`examAbsenceReasons/${studentCode}_${pastExam.examId}`);
+            const isReasonAcknowledged = reasonData && (reasonData.acknowledgedByParent === true || !!reasonData.reason);
+            const eData = examDataMap.get(pastExam.examId);
+            const pastExamTitle = eData?.name || eData?.title || pastExam.examId;
+            const subject = eData?.subject || eData?.subjectName || (eData?.subjects ? eData.subjects[0] : 'General');
+            const chapter = eData?.chapter || eData?.chapterName || '-';
+
+            absentReviews.push({
+              id: `absent_${pastExam.examId}_${studentCode}`,
+              examId: pastExam.examId,
+              type: 'absent_exam',
+              name: `${pastExamTitle} (Missed / अनुपस्थित)`,
+              subject,
+              chapter,
+              date: pastExam.endAt.toISOString(),
+              status: isReasonAcknowledged ? 'approved' : 'pending',
+              isAbsent: true,
+              reason: reasonData?.reason || null,
+              reviewedByActor: isReasonAcknowledged ? 'parent' : null
+            });
+          }
+        });
       }
     }
 
