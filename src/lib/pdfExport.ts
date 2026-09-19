@@ -1121,18 +1121,18 @@ export async function exportStudentMonthlyReportPDF(params: {
           </div>
         </div>
 
-        <!-- Pillar 3: Topic Health -->
+        <!-- Pillar 3: Topic Health & SRS Retention -->
         <div style="border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px 10px; background: #ffffff;">
           <div style="display: flex; justify-content: space-between; font-size: 10.5px; font-weight: 700; margin-bottom: 4px;">
-            <span>🩺 3. Topic Health</span>
+            <span>🩺 3. Topic Health & SRS Retention</span>
             <span style="color: ${getScoreColor(healthComp.score)}">${healthComp.score} / 100</span>
           </div>
           <div style="width: 100%; height: 6px; background: #f1f5f9; border-radius: 3px; overflow: hidden; margin-bottom: 4px;">
             <div style="width: ${healthComp.score}%; height: 100%; background: ${getScoreColor(healthComp.score)}; border-radius: 3px;"></div>
           </div>
           <div style="display: flex; justify-content: space-between; font-size: 8.5px; color: #64748b; font-weight: 600;">
-            <span>Mastered Ratio: ${healthComp.details?.masteryRatio ?? 0}%</span>
-            <span>Attention Topics: ${healthComp.details?.attentionCount ?? 0}</span>
+            <span>Mastered Ratio: ${healthComp.details?.masteryRatio ?? 0}% (Attn: ${healthComp.details?.attentionCount ?? 0})</span>
+            <span>🧠 Retention: ${healthComp.details?.averageRetention ?? 100}% (Due: ${healthComp.details?.srsDueCount ?? 0})</span>
           </div>
         </div>
 

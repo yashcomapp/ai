@@ -206,13 +206,17 @@ export default function LearningQuotientReportPage() {
       }
     }
 
-    // 3. Topic Health comment
+    // 3. Topic Health & SRS Retention comment
     if (healthComp.score >= 80) {
       sentences.push(`Their subject topic health is excellent, showing consistent mastery across assigned coursework.`);
     } else if (healthComp.details?.attentionCount > 0) {
       sentences.push(`Currently, there are ${healthComp.details.attentionCount} focus topic(s) requiring immediate attention and review to achieve complete mastery.`);
     } else {
       sentences.push(`Concept mastery is stable, but they should proactively review newly assigned chapters.`);
+    }
+
+    if (healthComp.details?.srsDueCount > 0) {
+      sentences.push(`${healthComp.details.srsDueCount} topic(s) are due for a quick memory refresher workout to preserve long-term retention.`);
     }
 
     // 4. Proctoring Integrity comment
@@ -415,8 +419,8 @@ Here is the ${durationLabel} Performance & Learning Quotient (LQ) summary for *$
      : `└ _No exams completed in this period_`}
 🏋️ *2. Practice Engagement (Efficiency):* *${practiceComp.score}/100*
    └ _Attempted: ${practiceComp.details?.totalQuestionsAttempted ?? 0} Qs, Topics: ${practiceComp.details?.topicsAttemptedCount ?? 0}, Avg Qs/Topic: ${practiceComp.details?.averageQuestionsPerTopic ?? 0}_
-🩺 *3. Topic Health:* *${healthComp.score}/100*
-   └ _Mastery Ratio: ${healthComp.details?.masteryRatio ?? 0}%, Attention Topics: ${healthComp.details?.attentionCount ?? 0}_
+🩺 *3. Topic Health & SRS Retention:* *${healthComp.score}/100*
+   └ _Mastery: ${healthComp.details?.masteryRatio ?? 0}%, Retention: ${healthComp.details?.averageRetention ?? 100}% (Due: ${healthComp.details?.srsDueCount ?? 0})_
 🛡️ *4. Proctoring Integrity:* *${integrityComp.score}/100*
    └ _Integrity Index: ${integrityComp.score}%, Avg Infractions: ${integrityComp.details?.averageWeeklyViolations ?? 0}/wk_
 👥 *5. Classroom Observations:* *${obsComp.score !== null ? obsComp.score + '/100' : 'N/A'}*
@@ -709,8 +713,8 @@ Here is the ${durationLabel} Performance & Learning Quotient (LQ) summary for *$
      : `└ _No exams completed in this period_`}
 🏋️ *2. Practice Engagement (Efficiency):* *${practiceComp.score}/100*
    └ _Attempted: ${practiceComp.details?.totalQuestionsAttempted ?? 0} Qs, Topics: ${practiceComp.details?.topicsAttemptedCount ?? 0}, Avg Qs/Topic: ${practiceComp.details?.averageQuestionsPerTopic ?? 0}_
-🩺 *3. Topic Health:* *${healthComp.score}/100*
-   └ _Mastery Ratio: ${healthComp.details?.masteryRatio ?? 0}%, Attention Topics: ${healthComp.details?.attentionCount ?? 0}_
+🩺 *3. Topic Health & SRS Retention:* *${healthComp.score}/100*
+   └ _Mastery: ${healthComp.details?.masteryRatio ?? 0}%, Retention: ${healthComp.details?.averageRetention ?? 100}% (Due: ${healthComp.details?.srsDueCount ?? 0})_
 🛡️ *4. Proctoring Integrity:* *${integrityComp.score}/100*
    └ _Integrity Index: ${integrityComp.score}%, Avg Infractions: ${integrityComp.details?.averageWeeklyViolations ?? 0}/wk_
 👥 *5. Classroom Observations:* *${obsComp.score !== null ? obsComp.score + '/100' : 'N/A'}*
@@ -1678,7 +1682,7 @@ _Empowering Conceptual Excellence_`;
                         <span>
                           {comp.parameterId === 'exam' && `Attendance: ${comp.details.attendanceRate}%, Absent: ${comp.details.absent}`}
                           {comp.parameterId === 'practice' && `Attempted: ${comp.details.totalQuestionsAttempted} Qs, Topics: ${comp.details.topicsAttemptedCount}, Engagement: ${comp.details.engagementScore}%, Quality: ${comp.details.qualityScore}%`}
-                          {comp.parameterId === 'topicHealth' && `Mastered: ${comp.details.masteryRatio}%, Attention: ${comp.details.attentionRatio}%`}
+                          {comp.parameterId === 'topicHealth' && `Mastered: ${comp.details.masteryRatio}%, Retention: ${comp.details.averageRetention ?? 100}%, Attention: ${comp.details.attentionRatio}%`}
                           {comp.parameterId === 'integrity' && `Avg Infractions: ${comp.details.averageWeeklyViolations} / week`}
                           {comp.parameterId === 'observations' && `Logs: ${comp.details.observationCount} observations`}
                         </span>

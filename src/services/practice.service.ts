@@ -218,7 +218,8 @@ export class PracticeService {
         updatedData.recoveryCompletedAt = new Date();
       }
 
-      if (category === 'revision') {
+      const isMasteredTopic = Boolean(existing?.isRecoveryMastered || (existing && existing.mastery >= 90));
+      if (category === 'revision' || (isMasteredTopic && sessionAccuracy >= 80)) {
         const currentStage = Number(existing?.srsStage || 0);
         if (sessionAccuracy >= 80) {
           // Passed SRS review with flying colors -> advance to next spaced interval stage
