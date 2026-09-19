@@ -693,7 +693,7 @@ function TeacherFinalReviewContent() {
                           {(parentVal || peerVal || activeAttempt?.parentScore !== undefined || activeAttempt?.peerScore !== undefined) && (
                             <div style={{ display: 'flex', gap: '12px', marginBottom: '14px', fontSize: '11.5px', flexWrap: 'wrap' }}>
                               {(parentVal || activeAttempt?.parentScore !== undefined) && (
-                                <div style={{ background: 'var(--surface)', padding: '6px 12px', borderRadius: '4px', border: '1px solid #16a34a44', color: '#16a34a', fontWeight: 'bold' }}>
+                                <div style={{ background: 'var(--surface)', padding: '6px 12px', borderRadius: '4px', border: '1px solid var(--success-border)', color: 'var(--success)', fontWeight: 'bold' }}>
                                   👨‍👩‍👦 Parent Graded: {parentVal ? `${parentVal.marksAwarded}/${parentVal.maxMarks}` : `Overall ${activeAttempt?.parentScore}/${activeAttempt?.totalMarks || activeQuestions.reduce((a, b) => a + (b.marks || 0), 0)}`}
                                   {parentVal?.feedback && <span style={{ display: 'block', fontWeight: 'normal', fontSize: '10.5px', color: 'var(--text-muted)' }}>"{parentVal.feedback}"</span>}
                                 </div>

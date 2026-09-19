@@ -603,7 +603,7 @@ export default function BatchesManager() {
                       <div style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'flex', gap: '8px', marginTop: '2px' }}>
                         <span>{s.email}</span>
                         {s.rollNumber && <span style={{ fontWeight: 700, color: 'var(--accent)' }}>• ID: {s.rollNumber}</span>}
-                        <span style={{ fontSize: '10px', padding: '1px 5px', borderRadius: '4px', background: s.feeStatus === 'paid' ? '#dbf3e1' : '#eee', color: s.feeStatus === 'paid' ? '#1aa54e' : '#888' }}>
+                        <span style={{ fontSize: '10px', padding: '1px 5px', borderRadius: '4px', background: s.feeStatus === 'paid' ? 'var(--success-bg)' : 'var(--surface-3)', color: s.feeStatus === 'paid' ? 'var(--success)' : 'var(--text-muted)' }}>
                           {s.feeStatus || 'pending'}
                         </span>
                       </div>

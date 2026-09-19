@@ -405,7 +405,7 @@ export default function StudentsManager() {
                         </div>
                       </td>
                       <td style={{ padding: '12px 16px' }}>
-                        <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: isActive ? '#dbf3e1' : '#eee', color: isActive ? '#1aa54e' : '#888', fontWeight: 700 }}>
+                        <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: isActive ? 'var(--success-bg)' : 'var(--surface-3)', color: isActive ? 'var(--success)' : 'var(--text-muted)', fontWeight: 700 }}>
                           {isActive ? 'Active' : 'Inactive'}
                         </span>
                       </td>

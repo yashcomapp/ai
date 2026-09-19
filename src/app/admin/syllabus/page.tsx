@@ -1337,11 +1337,11 @@ Return ONLY a valid JSON object matching the schema below:
                                   }
                                 }}
                                 title="Click to view questions in Question Bank"
-                                style={{ cursor: 'pointer', fontWeight: 650, background: 'rgba(52, 152, 219, 0.1)', color: '#2980b9', padding: '1px 6px', borderRadius: '4px', textDecoration: 'underline' }}
+                                style={{ cursor: 'pointer', fontWeight: 650, background: 'rgba(52, 152, 219, 0.1)', color: 'var(--info)', padding: '1px 6px', borderRadius: '4px', textDecoration: 'underline' }}
                               >
                                 O - {ch.objectiveCount || 0}
                               </span>
-                              <span style={{ fontWeight: 650, background: 'rgba(155, 89, 182, 0.1)', color: '#8e44ad', padding: '1px 6px', borderRadius: '4px' }}>
+                              <span style={{ fontWeight: 650, background: 'rgba(155, 89, 182, 0.1)', color: 'var(--purple)', padding: '1px 6px', borderRadius: '4px' }}>
                                 S - {ch.subjectiveCount || 0}
                               </span>
                               <span 
@@ -1356,7 +1356,7 @@ Return ONLY a valid JSON object matching the schema below:
                                   textDecoration: (ch.tests && ch.tests.length > 0) ? 'underline' : 'none',
                                   fontWeight: 650,
                                   background: 'rgba(52, 152, 219, 0.08)',
-                                  color: '#2980b9',
+                                  color: 'var(--info)',
                                   padding: '1px 6px',
                                   borderRadius: '4px'
                                 }}
@@ -1375,7 +1375,7 @@ Return ONLY a valid JSON object matching the schema below:
                                   textDecoration: (ch.tests && ch.tests.length > 0) ? 'underline' : 'none',
                                   fontWeight: 650,
                                   background: 'rgba(155, 89, 182, 0.08)',
-                                  color: '#8e44ad',
+                                  color: 'var(--purple)',
                                   padding: '1px 6px',
                                   borderRadius: '4px'
                                 }}
@@ -1383,7 +1383,7 @@ Return ONLY a valid JSON object matching the schema below:
                                 S.Tests - {getSubjectiveTestsCount(ch.tests)}
                               </span>
                               {Array.isArray(ch.chapterExercises) && ch.chapterExercises.map((ex: any, exIdx: number) => (
-                                <span key={exIdx} style={{ fontSize: '9.5px', fontWeight: 650, background: 'rgba(230, 126, 34, 0.1)', color: '#d35400', padding: '1px 6px', borderRadius: '4px', border: '1px solid rgba(230, 126, 34, 0.2)' }}>
+                                <span key={exIdx} style={{ fontSize: '9.5px', fontWeight: 650, background: 'var(--warning-bg)', color: 'var(--warning)', padding: '1px 6px', borderRadius: '4px', border: '1px solid rgba(245, 158, 11, 0.2)' }}>
                                   📖 {ex.name} ({ex.questionCount || 8} Qs)
                                 </span>
                               ))}
@@ -1392,7 +1392,7 @@ Return ONLY a valid JSON object matching the schema below:
 
                           {/* Topics Container with responsive indentation and vertical guide line */}
                           {isExpanded && (
-                            <div style={{ padding: '6px 6px 6px 12px', borderLeft: '2.5px solid var(--accent-light, #e2e8f0)', marginLeft: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            <div style={{ padding: '6px 6px 6px 12px', borderLeft: '2.5px solid var(--accent-light, var(--border-light))', marginLeft: '10px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                               {(!ch.topics || ch.topics.length === 0) ? (
                                 <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic', padding: '4px' }}>No topics added.</div>
                               ) : (
@@ -1454,14 +1454,14 @@ Return ONLY a valid JSON object matching the schema below:
                                             }
                                           }}
                                           title="Click to view questions in Question Bank"
-                                          style={{ fontWeight: 650, background: 'rgba(52, 152, 219, 0.1)', color: '#2980b9', padding: '1px 6px', borderRadius: '4px', cursor: 'pointer', textDecoration: 'underline' }}
+                                          style={{ fontWeight: 650, background: 'rgba(52, 152, 219, 0.1)', color: 'var(--info)', padding: '1px 6px', borderRadius: '4px', cursor: 'pointer', textDecoration: 'underline' }}
                                         >
                                           O - {topic.objectiveCount || 0}
                                         </span>
-                                        <span style={{ fontWeight: 650, background: 'rgba(155, 89, 182, 0.1)', color: '#8e44ad', padding: '1px 6px', borderRadius: '4px' }}>
+                                        <span style={{ fontWeight: 650, background: 'rgba(155, 89, 182, 0.1)', color: 'var(--purple)', padding: '1px 6px', borderRadius: '4px' }}>
                                           S - {topic.subjectiveCount || 0}
                                         </span>
-                                        <span style={{ fontWeight: 700, background: 'rgba(243, 156, 18, 0.12)', color: '#d35400', padding: '1px 6px', borderRadius: '4px' }}>
+                                        <span style={{ fontWeight: 700, background: 'var(--warning-bg)', color: 'var(--warning)', padding: '1px 6px', borderRadius: '4px' }}>
                                           🎯 Target: {targetCount} Qs {hasSubs ? `(${subs.length} Subs)` : ''}
                                         </span>
                                         {topic.topicClassification && (
@@ -1492,7 +1492,7 @@ Return ONLY a valid JSON object matching the schema below:
                                             textDecoration: (topic.tests && topic.tests.length > 0) ? 'underline' : 'none',
                                             fontWeight: 650,
                                             background: 'rgba(52, 152, 219, 0.08)',
-                                            color: '#2980b9',
+                                            color: 'var(--info)',
                                             padding: '1px 6px',
                                             borderRadius: '4px'
                                           }}
@@ -1511,7 +1511,7 @@ Return ONLY a valid JSON object matching the schema below:
                                             textDecoration: (topic.tests && topic.tests.length > 0) ? 'underline' : 'none',
                                             fontWeight: 650,
                                             background: 'rgba(155, 89, 182, 0.08)',
-                                            color: '#8e44ad',
+                                            color: 'var(--purple)',
                                             padding: '1px 6px',
                                             borderRadius: '4px'
                                           }}
@@ -1530,7 +1530,7 @@ Return ONLY a valid JSON object matching the schema below:
                                         {Array.isArray(topic.textbookSets) && topic.textbookSets.map((set: any, sIdx: number) => {
                                           const isTh = /theorem|proof/i.test(set.name || '') || /theorem|proof/i.test(set.type || '');
                                           return (
-                                            <span key={sIdx} style={{ fontSize: '9.5px', fontWeight: 650, background: isTh ? 'rgba(241, 196, 15, 0.1)' : 'rgba(46, 204, 113, 0.1)', color: isTh ? '#d35400' : '#27ae60', padding: '1px 6px', borderRadius: '4px', border: isTh ? '1px solid rgba(241, 196, 15, 0.2)' : '1px solid rgba(46, 204, 113, 0.2)', display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                                            <span key={sIdx} style={{ fontSize: '9.5px', fontWeight: 650, background: isTh ? 'var(--warning-bg)' : 'var(--success-bg)', color: isTh ? 'var(--warning)' : 'var(--success)', padding: '1px 6px', borderRadius: '4px', border: isTh ? '1px solid rgba(245, 158, 11, 0.2)' : '1px solid rgba(16, 185, 129, 0.2)', display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
                                               📖 {set.name} ({set.questionCount || 8} Qs) {isTh && '📐 Theorem'}
                                             </span>
                                           );
@@ -1606,13 +1606,13 @@ Return ONLY a valid JSON object matching the schema below:
 
                                                 {/* Subtopic Row 2: Stats Chips */}
                                                 <div style={{ display: 'flex', gap: '4px', alignItems: 'center', flexWrap: 'wrap', fontSize: '9px' }}>
-                                                  <span style={{ fontWeight: 650, background: 'rgba(52, 152, 219, 0.08)', color: '#2980b9', padding: '1px 4px', borderRadius: '3px' }}>
+                                                  <span style={{ fontWeight: 650, background: 'rgba(52, 152, 219, 0.08)', color: 'var(--info)', padding: '1px 4px', borderRadius: '3px' }}>
                                                     O - {objCount}
                                                   </span>
-                                                  <span style={{ fontWeight: 650, background: 'rgba(155, 89, 182, 0.08)', color: '#8e44ad', padding: '1px 4px', borderRadius: '3px' }}>
+                                                  <span style={{ fontWeight: 650, background: 'rgba(155, 89, 182, 0.08)', color: 'var(--purple)', padding: '1px 4px', borderRadius: '3px' }}>
                                                     S - {subjCount}
                                                   </span>
-                                                  <span style={{ fontWeight: 700, background: 'rgba(243, 156, 18, 0.12)', color: '#d35400', padding: '1px 4px', borderRadius: '3px' }}>
+                                                  <span style={{ fontWeight: 700, background: 'var(--warning-bg)', color: 'var(--warning)', padding: '1px 4px', borderRadius: '3px' }}>
                                                     🎯 Target: {typeof sub === 'object' ? (sub.targetQuestions || 30) : 30} Qs
                                                   </span>
                                                   {typeof sub === 'object' && sub.topicClassification && (
@@ -1643,7 +1643,7 @@ Return ONLY a valid JSON object matching the schema below:
                                                       textDecoration: (testsList.length > 0) ? 'underline' : 'none',
                                                       fontWeight: 650,
                                                       background: 'rgba(52, 152, 219, 0.08)',
-                                                      color: '#2980b9',
+                                                      color: 'var(--info)',
                                                       padding: '1px 4px',
                                                       borderRadius: '3px'
                                                     }}
@@ -1662,7 +1662,7 @@ Return ONLY a valid JSON object matching the schema below:
                                                       textDecoration: (testsList.length > 0) ? 'underline' : 'none',
                                                       fontWeight: 650,
                                                       background: 'rgba(155, 89, 182, 0.08)',
-                                                      color: '#8e44ad',
+                                                      color: 'var(--purple)',
                                                       padding: '1px 4px',
                                                       borderRadius: '3px'
                                                     }}
@@ -1792,7 +1792,7 @@ Return ONLY a valid JSON object matching the schema below:
                     <div key={ci} style={{ fontSize: '12px', marginLeft: '10px', marginBottom: '5px' }}>
                       🟢 <strong>Ch.{ch.number}: {ch.name}</strong>
                       {ch.chapterExercises && Array.isArray(ch.chapterExercises) && ch.chapterExercises.map((ex: any, exIdx: number) => (
-                        <span key={exIdx} style={{ fontSize: '9px', fontWeight: 650, background: 'rgba(230, 126, 34, 0.1)', color: '#d35400', padding: '1px 5px', borderRadius: '4px', marginLeft: '5px' }}>
+                        <span key={exIdx} style={{ fontSize: '9px', fontWeight: 650, background: 'var(--warning-bg)', color: 'var(--warning)', padding: '1px 5px', borderRadius: '4px', marginLeft: '5px' }}>
                           📖 {ex.name} ({ex.questionCount || 8} Qs)
                         </span>
                       ))}
@@ -1800,7 +1800,7 @@ Return ONLY a valid JSON object matching the schema below:
                         <div key={ti} style={{ fontSize: '11px', marginLeft: '20px', color: 'var(--text)', marginBottom: '3px' }}>
                           • Topic {t.number}: {t.name}
                           {t.textbookSets && Array.isArray(t.textbookSets) && t.textbookSets.map((set: any, sIdx: number) => (
-                            <span key={sIdx} style={{ fontSize: '9px', fontWeight: 650, background: 'rgba(46, 204, 113, 0.1)', color: '#27ae60', padding: '1px 5px', borderRadius: '4px', marginLeft: '5px' }}>
+                            <span key={sIdx} style={{ fontSize: '9px', fontWeight: 650, background: 'var(--success-bg)', color: 'var(--success)', padding: '1px 5px', borderRadius: '4px', marginLeft: '5px' }}>
                               📖 {set.name} ({set.questionCount || 8} Qs)
                             </span>
                           ))}
@@ -2009,7 +2009,7 @@ Return ONLY a valid JSON object matching the schema below:
             {topicModal.hasSubtopics ? (
               <div style={{ background: 'var(--bg-soft)', padding: '10px 12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)' }}>
                 <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '3px' }}>Target Question Quota</label>
-                <div style={{ fontSize: '12px', fontWeight: 700, color: '#d35400', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--warning)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <span>🎯 {topicModal.subtopicsSum} Qs</span>
                   <span style={{ fontSize: '10.5px', fontWeight: 'normal', color: 'var(--text-muted)' }}>(Sum of {activeSubjectDoc?.chapters?.[topicModal.chIdx]?.topics?.[topicModal.editIdx || 0]?.subtopics?.length || 0} subtopics)</span>
                 </div>
@@ -2180,8 +2180,8 @@ Return ONLY a valid JSON object matching the schema below:
                       fontWeight: 700, 
                       padding: '2px 8px', 
                       borderRadius: '10px', 
-                      background: test.type === 'subjective' ? 'rgba(46, 204, 113, 0.15)' : 'rgba(52, 152, 219, 0.15)', 
-                      color: test.type === 'subjective' ? '#2ecc71' : '#3498db',
+                      background: test.type === 'subjective' ? 'var(--success-bg)' : 'var(--info-bg)', 
+                      color: test.type === 'subjective' ? 'var(--success)' : 'var(--info)',
                       textTransform: 'uppercase' 
                     }}
                   >

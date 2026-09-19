@@ -818,19 +818,19 @@ function TakeExamContent() {
           textAlign: 'center',
           padding: '32px 24px',
           background: 'var(--surface)',
-          borderRadius: 'var(--radius-lg, 16px)',
-          border: '1px solid var(--border-light, #334155)',
-          boxShadow: 'var(--shadow-lg, 0 10px 15px -3px rgba(0, 0, 0, 0.5))',
+          borderRadius: 'var(--radius-lg)',
+          border: '1px solid var(--border-light)',
+          boxShadow: 'var(--shadow-lg)',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           gap: '14px'
         }}>
           <div style={{ fontSize: '3.5rem' }}>{isBlockedNotice ? '🔒' : '⚠️'}</div>
-          <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text, #f8fafc)', margin: 0 }}>
+          <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text)', margin: 0 }}>
             {isBlockedNotice ? 'Action Required to Unlock Exam' : 'Exam Unavailable'}
           </h3>
-          <p style={{ fontSize: '14px', color: 'var(--text-muted, #94a3b8)', lineHeight: '1.6', margin: 0 }}>
+          <p style={{ fontSize: '14px', color: 'var(--text-muted)', lineHeight: '1.6', margin: 0 }}>
             {error || 'Exam configurations failed to load.'}
           </p>
           <button 
@@ -938,7 +938,7 @@ function TakeExamContent() {
           top: '20px',
           left: '50%',
           transform: 'translateX(-50%)',
-          background: '#d35400',
+          background: 'var(--warning)',
           color: 'white',
           padding: '12px 24px',
           borderRadius: '8px',
@@ -1124,7 +1124,7 @@ function TakeExamContent() {
               height: '48px',
               borderRadius: '6px',
               overflow: 'hidden',
-              border: `2px solid ${faceStatusClass === 'success' ? '#2ecc71' : '#e67e22'}`,
+              border: `2px solid ${faceStatusClass === 'success' ? 'var(--success)' : 'var(--warning)'}`,
               boxShadow: '0 2px 6px rgba(0,0,0,0.5)'
             }}>
               <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'cover' }}></video>
@@ -1132,9 +1132,9 @@ function TakeExamContent() {
             <div style={{
               padding: '2px 4px',
               borderRadius: '4px',
-              background: faceStatusClass === 'success' ? 'rgba(46, 204, 113, 0.15)' : 'rgba(230, 126, 34, 0.15)',
-              border: `1px solid ${faceStatusClass === 'success' ? '#2ecc71' : '#e67e22'}`,
-              color: faceStatusClass === 'success' ? '#2ecc71' : '#e67e22',
+              background: faceStatusClass === 'success' ? 'var(--success-bg)' : 'var(--warning-bg)',
+              border: `1px solid ${faceStatusClass === 'success' ? 'var(--success)' : 'var(--warning)'}`,
+              color: faceStatusClass === 'success' ? 'var(--success)' : 'var(--warning)',
               fontSize: '9px',
               fontWeight: 'bold',
               textAlign: 'center',
@@ -1173,9 +1173,9 @@ function TakeExamContent() {
               <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'white' }}>{proctoringViolations.multipleFaces}</span>
             </div>
             {/* Timer */}
-            <div style={{ background: timeRemaining <= 120 ? 'rgba(231, 76, 60, 0.15)' : 'rgba(255,255,255,0.03)', border: `1px solid ${timeRemaining <= 120 ? '#e74c3c' : 'rgba(255,255,255,0.05)'}`, borderRadius: '6px', padding: '4px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '60px' }}>
-              <span style={{ fontSize: '9px', color: timeRemaining <= 120 ? '#e74c3c' : 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>Time</span>
-              <span style={{ fontSize: '11px', fontWeight: 'bold', color: timeRemaining <= 120 ? '#e74c3c' : 'white' }}>{formattedTime}</span>
+            <div style={{ background: timeRemaining <= 120 ? 'rgba(239, 68, 68, 0.15)' : 'rgba(255,255,255,0.03)', border: `1px solid ${timeRemaining <= 120 ? 'var(--danger)' : 'rgba(255,255,255,0.05)'}`, borderRadius: '6px', padding: '4px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '60px' }}>
+              <span style={{ fontSize: '9px', color: timeRemaining <= 120 ? 'var(--danger)' : 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>Time</span>
+              <span style={{ fontSize: '11px', fontWeight: 'bold', color: timeRemaining <= 120 ? 'var(--danger)' : 'white' }}>{formattedTime}</span>
             </div>
           </div>
         </div>
@@ -1239,7 +1239,7 @@ function TakeExamContent() {
                   </button>
                 )}
                 {disputedQuestionIds.has(currentQuestion.id || currentQuestion.questionCode || String(currentQIndex)) && (
-                  <span style={{ fontSize: '10.5px', color: '#f59e0b', fontWeight: 'bold' }}>
+                  <span style={{ fontSize: '10.5px', color: 'var(--warning)', fontWeight: 'bold' }}>
                     ⚠️ Bypassed
                   </span>
                 )}
@@ -1678,8 +1678,8 @@ function TakeExamContent() {
                              fontSize: '10px',
                              padding: '2px 8px',
                              borderRadius: '12px',
-                             background: isUnanswered ? 'rgba(255,255,255,0.1)' : 'rgba(244, 67, 54, 0.2)',
-                             color: isUnanswered ? 'var(--text-muted)' : '#f44336' 
+                             background: isUnanswered ? 'rgba(255,255,255,0.1)' : 'var(--danger-bg)',
+                             color: isUnanswered ? 'var(--text-muted)' : 'var(--danger)' 
                            }}>
                              {isUnanswered ? 'Unattempted' : 'Incorrect'}
                            </span>
@@ -1890,9 +1890,9 @@ function TakeExamContent() {
                     fontSize: '13px', 
                     textAlign: 'center', 
                     borderRadius: 'var(--radius-sm)',
-                    background: isAllReviewed ? 'rgba(46, 204, 113, 0.15)' : 'rgba(243, 156, 18, 0.15)',
-                    color: isAllReviewed ? '#2e7d32' : '#d35400',
-                    border: isAllReviewed ? '1px solid #2e7d32' : '1px solid #d35400',
+                    background: isAllReviewed ? 'var(--success-bg)' : 'var(--warning-bg)',
+                    color: isAllReviewed ? 'var(--success)' : 'var(--warning)',
+                    border: isAllReviewed ? '1px solid var(--success)' : '1px solid var(--warning)',
                     fontWeight: 'bold'
                   }}>
                     {isAllReviewed 

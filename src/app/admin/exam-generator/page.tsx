@@ -1266,7 +1266,7 @@ Return ONLY valid JSON. No markdown wrappers or extra commentary.`;
               <div>
                 <h3 style={{ fontSize: '15px', fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <span>⚡ In-Place AI Question Generator</span>
-                  <span style={{ fontSize: '11px', background: 'rgba(230, 126, 34, 0.15)', color: '#d35400', padding: '2px 8px', borderRadius: '12px' }}>
+                  <span style={{ fontSize: '11px', background: 'var(--warning-bg)', color: 'var(--warning)', padding: '2px 8px', borderRadius: '12px' }}>
                     {shortfalls.reduce((s, r) => s + r.count, 0)} Questions Missing
                   </span>
                 </h3>

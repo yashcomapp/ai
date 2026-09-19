@@ -465,7 +465,7 @@ export default function AdminIntegrityScoreManagerPage() {
                     </div>
 
                     {/* Reset Panels */}
-                    <div style={{ background: '#fef2f2', border: '1px solid #fee2e2', borderRadius: 'var(--radius)', padding: '15px' }}>
+                    <div style={{ background: 'var(--danger-bg)', border: '1px solid var(--danger-border)', borderRadius: 'var(--radius)', padding: '15px' }}>
                       <h4 style={{ fontSize: '11px', fontWeight: 800, color: 'var(--danger)', margin: '0 0 10px' }}>⚠️ Integrity Score Overrides</h4>
                       
                       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>

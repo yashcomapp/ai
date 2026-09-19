@@ -887,9 +887,9 @@ function TakeSubjectiveExamContent() {
                     </div>
                   )}
                   {/* Time */}
-                  <div style={{ background: remainingSeconds <= 120 ? 'rgba(231, 76, 60, 0.15)' : 'rgba(255,255,255,0.03)', border: `1px solid ${remainingSeconds <= 120 ? '#e74c3c' : 'rgba(255,255,255,0.05)'}`, borderRadius: '10px', padding: '8px', textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                    <div style={{ fontSize: '11px', color: remainingSeconds <= 120 ? '#e74c3c' : 'rgba(255,255,255,0.4)', marginBottom: '4px' }}>⏱️ Remaining</div>
-                    <span style={{ fontSize: '20px', fontWeight: 'bold', color: remainingSeconds <= 120 ? '#e74c3c' : 'white' }}>{formatDuration(remainingSeconds)}</span>
+                  <div style={{ background: remainingSeconds <= 120 ? 'var(--danger-bg)' : 'rgba(255,255,255,0.03)', border: `1px solid ${remainingSeconds <= 120 ? 'var(--danger-border)' : 'rgba(255,255,255,0.05)'}`, borderRadius: '10px', padding: '8px', textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                    <div style={{ fontSize: '11px', color: remainingSeconds <= 120 ? 'var(--danger)' : 'rgba(255,255,255,0.4)', marginBottom: '4px' }}>⏱️ Remaining</div>
+                    <span style={{ fontSize: '20px', fontWeight: 'bold', color: remainingSeconds <= 120 ? 'var(--danger)' : 'white' }}>{formatDuration(remainingSeconds)}</span>
                   </div>
                 </div>
               </div>

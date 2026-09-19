@@ -159,7 +159,7 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
                 </div>
                 <div style={{ fontSize: '11px', lineHeight: '1.3' }}>
                   <strong style={{ color: 'var(--text-muted)' }}>Integrity:</strong>{' '}
-                  <span style={{ fontWeight: 600, color: scorecard.integrityScore < 70 ? '#f44336' : scorecard.integrityScore < 90 ? '#ff9800' : '#4caf50' }}>
+                  <span style={{ fontWeight: 600, color: scorecard.integrityScore < 70 ? 'var(--danger)' : scorecard.integrityScore < 90 ? 'var(--warning)' : 'var(--success)' }}>
                     {scorecard.integrityScore} / 100
                   </span>
                 </div>

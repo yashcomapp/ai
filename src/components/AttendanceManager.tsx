@@ -363,12 +363,12 @@ export default function AttendanceManager({ role }: AttendanceManagerProps) {
             <>
               {/* Section 2: Leave Request (Future Dates) with Red Border */}
               <div style={{
-                border: '2px solid #ef4444',
+                border: '2px solid var(--danger-border, var(--danger))',
                 borderRadius: 'var(--radius-md)',
                 padding: '16px',
-                background: 'rgba(239, 68, 68, 0.03)'
+                background: 'var(--danger-bg)'
               }}>
-                <h3 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: 'bold', color: '#ef4444' }}>Leave Request</h3>
+                <h3 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: 'bold', color: 'var(--danger)' }}>Leave Request</h3>
 
                 {declError && <div className="alert-box alert-box-danger" style={{ marginBottom: '12px', padding: '10px' }}>{declError}</div>}
                 {declSuccess && <div className="alert-box alert-box-success" style={{ marginBottom: '12px', padding: '10px' }}>{declSuccess}</div>}
@@ -526,9 +526,9 @@ export default function AttendanceManager({ role }: AttendanceManagerProps) {
                 </div>
 
                 {/* Chip 4: Half Days */}
-                <div style={{ flex: '1 1 150px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(249, 115, 22, 0.08)', padding: '10px 16px', borderRadius: '30px', border: '1px solid rgba(249, 115, 22, 0.25)' }}>
+                <div style={{ flex: '1 1 150px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--warning-bg)', padding: '10px 16px', borderRadius: '30px', border: '1px solid var(--warning-border)' }}>
                   <span style={{ fontSize: '11.5px', fontWeight: 600, color: 'var(--text-muted)' }}>Half Days</span>
-                  <span style={{ fontSize: '15px', fontWeight: 900, color: '#f97316' }}>{stats.halfDays || 0} Days</span>
+                  <span style={{ fontSize: '15px', fontWeight: 900, color: 'var(--warning)' }}>{stats.halfDays || 0} Days</span>
                 </div>
 
                 {/* Chip 5: Leaves */}
@@ -631,10 +631,10 @@ export default function AttendanceManager({ role }: AttendanceManagerProps) {
                         <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--info)' }} /> Leave
                       </span>
                       <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#f97316' }} /> Half Day
+                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--warning)' }} /> Half Day
                       </span>
                       <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#94a3b8' }} /> Not Marked
+                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--text-muted)' }} /> Not Marked
                       </span>
                     </div>
 

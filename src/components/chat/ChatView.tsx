@@ -1365,7 +1365,7 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
               display: 'flex', 
               alignItems: 'center', 
               justifyContent: 'center', 
-              color: '#f87171', 
+              color: 'var(--danger)', 
               cursor: 'pointer',
               flexShrink: 0
             }} 
@@ -2145,7 +2145,7 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
                               onClick={() => scrollToMessage(msg.replyToId!)}
                               style={{
                                 background: isMe ? 'rgba(0,0,0,0.15)' : 'var(--surface-2)',
-                                borderLeft: isMe ? '3px solid #93c5fd' : '3px solid var(--accent)',
+                                borderLeft: isMe ? '3px solid var(--info)' : '3px solid var(--accent)',
                                 padding: '4px 8px',
                                 borderRadius: '4px',
                                 marginBottom: '4px',
@@ -2156,7 +2156,7 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
                                 gap: '2px'
                               }}
                             >
-                              <div style={{ fontWeight: 600, color: isMe ? '#93c5fd' : 'var(--accent)' }}>{msg.replyToSenderName}</div>
+                              <div style={{ fontWeight: 600, color: isMe ? 'var(--info)' : 'var(--accent)' }}>{msg.replyToSenderName}</div>
                               <div style={{ color: isMe ? 'rgba(255,255,255,0.85)' : 'var(--text-muted)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
                                 {msg.replyToText}
                               </div>
@@ -2221,7 +2221,7 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
                                       style={{
                                         position: 'relative',
                                         background: hasVotedThis ? (isMe ? 'rgba(255,255,255,0.2)' : 'var(--accent-soft)') : (isMe ? 'rgba(0,0,0,0.12)' : 'var(--surface-2)'),
-                                        border: hasVotedThis ? (isMe ? '1px solid #93c5fd' : '1px solid var(--accent)') : (isMe ? '1px solid rgba(255,255,255,0.2)' : '1px solid var(--border-light)'),
+                                        border: hasVotedThis ? (isMe ? '1px solid var(--info)' : '1px solid var(--accent)') : (isMe ? '1px solid rgba(255,255,255,0.2)' : '1px solid var(--border-light)'),
                                         borderRadius: '8px',
                                         padding: '8px 12px',
                                         cursor: 'pointer',
@@ -2299,7 +2299,7 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
                                       <span style={{ fontSize: '9.5px', color: isMe ? 'rgba(255,255,255,0.75)' : 'var(--text-muted)', marginTop: '1px' }}>Attachment Link</span>
                                     </div>
                                   </div>
-                                  <a href={msg.text.includes('(') ? msg.text.substring(msg.text.indexOf('(') + 1, msg.text.indexOf(')')) : msg.text} target="_blank" rel="noopener noreferrer" style={{ color: isMe ? '#93c5fd' : 'var(--accent)', cursor: 'pointer', display: 'flex', alignItems: 'center' }} title="Download file">
+                                  <a href={msg.text.includes('(') ? msg.text.substring(msg.text.indexOf('(') + 1, msg.text.indexOf(')')) : msg.text} target="_blank" rel="noopener noreferrer" style={{ color: isMe ? 'var(--info)' : 'var(--accent)', cursor: 'pointer', display: 'flex', alignItems: 'center' }} title="Download file">
                                     <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg>
                                   </a>
                                 </div>
@@ -2380,7 +2380,7 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
                             flexWrap: 'wrap'
                           }}>
                             {starredMessageIds[msg.messageId] && (
-                              <span style={{ color: '#eab308', marginRight: '3px', fontSize: '11px' }} title="Starred Message">★</span>
+                              <span style={{ color: 'var(--warning)', marginRight: '3px', fontSize: '11px' }} title="Starred Message">★</span>
                             )}
                             {msg.isEdited && <span style={{ fontStyle: 'italic', fontSize: '9.5px', color: isMe ? 'rgba(255,255,255,0.75)' : 'var(--text-faint)', marginRight: '3px' }}>edited</span>}
                             <span>{new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
@@ -2434,7 +2434,7 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
                                   e.stopPropagation();
                                   toggleStarMessage(msg.messageId);
                                 }}
-                                style={{ color: starredMessageIds[msg.messageId] ? '#eab308' : (isMe ? 'rgba(255,255,255,0.7)' : 'var(--text-faint)'), cursor: 'pointer', marginLeft: '10px', display: 'inline-flex', alignItems: 'center', padding: '2px' }}
+                                style={{ color: starredMessageIds[msg.messageId] ? 'var(--warning)' : (isMe ? 'rgba(255,255,255,0.7)' : 'var(--text-faint)'), cursor: 'pointer', marginLeft: '10px', display: 'inline-flex', alignItems: 'center', padding: '2px' }}
                                 title={starredMessageIds[msg.messageId] ? "Unstar Message" : "Star Message"}
                               >
                                 <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
@@ -2464,7 +2464,7 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
                                   if (isPinned) handleUnpinMessage();
                                   else handlePinMessage(msg.messageId);
                                 }}
-                                style={{ color: activeRoom?.pinnedMessage?.messageId === msg.messageId ? (isMe ? '#93c5fd' : 'var(--accent)') : (isMe ? 'rgba(255,255,255,0.7)' : 'var(--text-faint)'), cursor: 'pointer', marginLeft: '8px', display: 'inline-flex', alignItems: 'center', fontSize: '15px' }}
+                                style={{ color: activeRoom?.pinnedMessage?.messageId === msg.messageId ? (isMe ? 'var(--info)' : 'var(--accent)') : (isMe ? 'rgba(255,255,255,0.7)' : 'var(--text-faint)'), cursor: 'pointer', marginLeft: '8px', display: 'inline-flex', alignItems: 'center', fontSize: '15px' }}
                                 title={activeRoom?.pinnedMessage?.messageId === msg.messageId ? "Unpin Message" : "Pin Message"}
                               >
                                 📌
@@ -2479,7 +2479,7 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
                                   setEditingMessageId(msg.messageId);
                                   setEditingText(msg.text);
                                 }}
-                                style={{ color: isMe ? '#93c5fd' : 'var(--accent)', cursor: 'pointer', marginLeft: '8px', display: 'inline-flex', alignItems: 'center', padding: '2px' }}
+                                style={{ color: isMe ? 'var(--info)' : 'var(--accent)', cursor: 'pointer', marginLeft: '8px', display: 'inline-flex', alignItems: 'center', padding: '2px' }}
                                 title="Edit message"
                               >
                                 <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
@@ -2507,7 +2507,7 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
                                 title="View Read Receipts"
                               >
                                 {readersCount > 0 ? (
-                                  <svg viewBox="0 0 16 15" width="16" height="15" fill="#93c5fd"><path d="M15.01 3.3l-5.5 5.5-2.76-2.77-.88.88 3.64 3.64 6.38-6.37-.88-.88zm-5.56 5.5l-.89-.89-.88.88 1.77 1.77 1-.99-.88-.88-.12.12zm-3.8-1.92l-.88-.88-2.77 2.76-1.39-1.39-.88.88 2.27 2.27 3.65-3.64z"/></svg>
+                                  <svg viewBox="0 0 16 15" width="16" height="15" fill="var(--info)"><path d="M15.01 3.3l-5.5 5.5-2.76-2.77-.88.88 3.64 3.64 6.38-6.37-.88-.88zm-5.56 5.5l-.89-.89-.88.88 1.77 1.77 1-.99-.88-.88-.12.12zm-3.8-1.92l-.88-.88-2.77 2.76-1.39-1.39-.88.88 2.27 2.27 3.65-3.64z"/></svg>
                                 ) : (
                                   <svg viewBox="0 0 16 15" width="16" height="15" fill="rgba(255,255,255,0.6)"><path d="M15.01 3.3l-5.5 5.5-2.76-2.77-.88.88 3.64 3.64 6.38-6.37-.88-.88zm-5.56 5.5l-.89-.89-.88.88 1.77 1.77 1-.99-.88-.88-.12.12zm-3.8-1.92l-.88-.88-2.77 2.76-1.39-1.39-.88.88 2.27 2.27 3.65-3.64z"/></svg>
                                 )}
@@ -3255,7 +3255,7 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '16px' }}>
           <div style={{ background: 'var(--surface-popover)', border: '1px solid var(--border)', borderRadius: '12px', maxWidth: '480px', width: '100%', maxHeight: '85vh', display: 'flex', flexDirection: 'column', boxShadow: '0 4px 24px rgba(0,0,0,0.3)', color: 'var(--text)' }}>
             <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: 'var(--warning, #facc15)' }}>★ Starred Messages</h3>
+              <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: 'var(--warning)' }}>★ Starred Messages</h3>
               <button style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '1.5rem', color: 'var(--text-muted)', lineHeight: 1 }} onClick={() => setShowStarredModal(false)}>×</button>
             </div>
             <div style={{ flex: 1, overflowY: 'auto', padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -3359,7 +3359,7 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
               )}
               {showReactorsModal.pray.length > 0 && (
                 <div>
-                  <h4 style={{ fontSize: '13px', fontWeight: 650, color: 'var(--warning, #f59e0b)', margin: '0 0 8px 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <h4 style={{ fontSize: '13px', fontWeight: 650, color: 'var(--warning)', margin: '0 0 8px 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
                     🙏 Folded Hands ({showReactorsModal.pray.length})
                   </h4>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', paddingLeft: '8px' }}>

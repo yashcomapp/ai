@@ -2122,7 +2122,7 @@ function ExamReportContent() {
                                     return actualIdx !== -1 ? actualIdx + 1 : qIdx + 1;
                                   })()} ({bq?.difficulty?.toUpperCase() || 'MEDIUM'} • {bq?.bloomLevel || 'Understand'} • Time: {formatSeconds(qd.timeSpentSeconds || 0)})</span>
                                   {studentReason && (
-                                    <span style={{ background: 'rgba(230,126,34,0.12)', color: '#d35400', padding: '1px 5px', borderRadius: '4px', fontSize: '9px', fontWeight: 'bold', marginLeft: '6px' }}>
+                                    <span style={{ background: 'var(--warning-bg)', color: 'var(--warning)', padding: '1px 5px', borderRadius: '4px', fontSize: '9px', fontWeight: 'bold', marginLeft: '6px' }}>
                                       ⚠️ Reason: {studentReason}
                                     </span>
                                   )}
