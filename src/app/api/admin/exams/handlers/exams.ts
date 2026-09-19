@@ -109,11 +109,11 @@ export async function GET(req: NextRequest) {
         }
 
         const parsed = parseTopicCode(tCode);
-        const subCode = sData?.subjectCode || parsed.subjectCode || (tCode.includes('-') ? tCode.split('-')[2] : '') || '';
+        const subCode = sData?.subjectCode || parsed?.subjectCode || (tCode.includes('-') ? tCode.split('-')[2] : '') || '';
         const subName = sData?.subjectName || getCanonicalSubjectName(subCode, tCode, sData?.chapterName);
-        const chapName = d.chapterName || sData?.chapterName || (parsed.chapterNumber ? `Chapter ${parsed.chapterNumber}` : 'General');
-        const chapNum = parsed.chapterNumber || sData?.chapterNumber || '';
-        const topName = d.topicName || (sData?.topicName ? (parentTopic ? `${sData.topicName} (${parsed.topicNumber || tCode})` : sData.topicName) : (d.name || `Topic ${parsed.topicNumber || tCode}`));
+        const chapName = d.chapterName || sData?.chapterName || (parsed?.chapterNumber ? `Chapter ${parsed.chapterNumber}` : 'General');
+        const chapNum = parsed?.chapterNumber || sData?.chapterNumber || '';
+        const topName = d.topicName || (sData?.topicName ? (parentTopic ? `${sData.topicName} (${parsed?.topicNumber || tCode})` : sData.topicName) : (d.name || `Topic ${parsed?.topicNumber || tCode}`));
 
         const mastery = Number(d.mastery || 0);
         const confidence = Number(d.confidence || 0);
@@ -149,7 +149,7 @@ export async function GET(req: NextRequest) {
             subjectName: subName,
             chapterName: chapName,
             chapterNumber: chapNum,
-            topicNumber: parsed.topicNumber || sData?.topicNumber || '',
+            topicNumber: parsed?.topicNumber || sData?.topicNumber || '',
             mastery,
             confidence,
             practiceCount,
@@ -171,7 +171,7 @@ export async function GET(req: NextRequest) {
             subjectName: subName,
             chapterName: chapName,
             chapterNumber: chapNum,
-            topicNumber: parsed.topicNumber || sData?.topicNumber || '',
+            topicNumber: parsed?.topicNumber || sData?.topicNumber || '',
             mastery,
             confidence,
             practiceCount,
@@ -198,7 +198,7 @@ export async function GET(req: NextRequest) {
             subjectName: subName,
             chapterName: chapName,
             chapterNumber: chapNum,
-            topicNumber: parsed.topicNumber || sData?.topicNumber || '',
+            topicNumber: parsed?.topicNumber || sData?.topicNumber || '',
             mastery,
             confidence,
             practiceCount,
@@ -229,7 +229,7 @@ export async function GET(req: NextRequest) {
             subjectName: subName,
             chapterName: chapName,
             chapterNumber: chapNum,
-            topicNumber: parsed.topicNumber || sData?.topicNumber || '',
+            topicNumber: parsed?.topicNumber || sData?.topicNumber || '',
             mastery,
             confidence,
             practiceCount,

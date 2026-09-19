@@ -290,8 +290,8 @@ export function useLiveExam({
         (proctoringViolations.headMovement || 0) > prev.headMovement;
 
       prevMetricsRef.current = {
-        qIdx: currentQuestionIndex,
-        ansCount: answeredCount,
+        qIdx: currentQuestionIndex ?? 0,
+        ansCount: answeredCount ?? 0,
         tab: tabViolations,
         noFace: proctoringViolations.noFace || 0,
         multipleFaces: proctoringViolations.multipleFaces || 0,

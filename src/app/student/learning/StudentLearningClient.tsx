@@ -421,24 +421,24 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                         Definitions, Basic Formulas, Units & Direct Facts (~30 Qs Quota)
                       </div>
                       <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text)', marginTop: '4px' }}>
-                        Mastery Requirement: <span style={{ color: '#059669' }}>6 Questions • Max 2 Practice Sets</span>
+                        Mastery Requirement: <span style={{ color: 'var(--success)' }}>6 Questions • Max 2 Practice Sets</span>
                       </div>
                     </div>
 
-                    <div style={{ padding: '8px 10px', borderRadius: '8px', background: 'var(--surface)', border: '1px solid rgba(59, 130, 246, 0.3)' }}>
-                      <div style={{ fontWeight: 800, fontSize: '12px', color: '#2563eb', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <div style={{ padding: '8px 10px', borderRadius: '8px', background: 'var(--surface)', border: '1px solid rgba(56, 189, 248, 0.3)' }}>
+                      <div style={{ fontWeight: 800, fontSize: '12px', color: 'var(--info)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <span>📙 Medium Topic</span>
                       </div>
                       <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
                         Standard Concepts, Laws, Derivations & Direct Applications (~50 Qs Quota)
                       </div>
                       <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text)', marginTop: '4px' }}>
-                        Mastery Requirement: <span style={{ color: '#2563eb' }}>10 Questions • Max 3 Practice Sets</span>
+                        Mastery Requirement: <span style={{ color: 'var(--info)' }}>10 Questions • Max 3 Practice Sets</span>
                       </div>
                     </div>
 
-                    <div style={{ padding: '8px 10px', borderRadius: '8px', background: 'var(--surface)', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
-                      <div style={{ fontWeight: 800, fontSize: '12px', color: '#dc2626', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <div style={{ padding: '8px 10px', borderRadius: '8px', background: 'var(--surface)', border: '1px solid rgba(248, 113, 113, 0.3)' }}>
+                      <div style={{ fontWeight: 800, fontSize: '12px', color: 'var(--danger)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <span>📕 Major Topic</span>
                       </div>
                       <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
@@ -643,14 +643,14 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                                               expText = `5/5 practices done (${mastery}% accuracy). Take the Recovery Quiz (Fresh + Missed Qs) to achieve Mastered!`;
                                             } else {
                                               expIcon = '📈';
-                                              expColor = '#f59e0b';
+                                              expColor = 'var(--warning)';
                                               expText = `${practiceCount}/5 practices done (${mastery}% accuracy). Complete 1 micro-set (5 Qs) to aim for 90%+ Mastered.`;
                                             }
                                           } else if (state === 'revision') {
                                             if (topic.isSrsDue) {
                                               const srs = topic.srsSchedule;
                                               expIcon = '🧠';
-                                              expColor = '#2563eb';
+                                              expColor = 'var(--info)';
                                               if (srs?.daysOverdue && srs.daysOverdue > 0) {
                                                 expText = `Spaced Repetition Overdue (${srs.daysOverdue}d ago) • Est. Retention: ${srs.estimatedRetention}% • ${srs.stageLabel}`;
                                               } else {
@@ -671,7 +671,7 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                                             } else {
                                               const srs = topic.srsSchedule;
                                               expIcon = '⭐';
-                                              expColor = '#10b981';
+                                              expColor = 'var(--success)';
                                               if (srs) {
                                                 expText = `Mastered (${mastery}% accuracy) • Memory Fresh (${srs.estimatedRetention}%) • Next review in ${srs.daysUntilDue} day(s)`;
                                               } else {
@@ -709,9 +709,9 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                                                       textTransform: 'uppercase',
                                                       padding: '1px 5px',
                                                       borderRadius: '4px',
-                                                      background: (topic.topicClassification === 'minor' || topic.topicClassification === 'micro') ? 'rgba(16, 185, 129, 0.12)' : (topic.topicClassification === 'major' || topic.topicClassification === 'calculative' || topic.topicClassification === 'hots') ? 'rgba(239, 68, 68, 0.12)' : 'rgba(59, 130, 246, 0.12)',
-                                                      color: (topic.topicClassification === 'minor' || topic.topicClassification === 'micro') ? '#059669' : (topic.topicClassification === 'major' || topic.topicClassification === 'calculative' || topic.topicClassification === 'hots') ? '#dc2626' : '#2563eb',
-                                                      border: `1px solid ${(topic.topicClassification === 'minor' || topic.topicClassification === 'micro') ? 'rgba(16, 185, 129, 0.3)' : (topic.topicClassification === 'major' || topic.topicClassification === 'calculative' || topic.topicClassification === 'hots') ? 'rgba(239, 68, 68, 0.3)' : 'rgba(59, 130, 246, 0.3)'}`
+                                                      background: (topic.topicClassification === 'minor' || topic.topicClassification === 'micro') ? 'var(--success-bg)' : (topic.topicClassification === 'major' || topic.topicClassification === 'calculative' || topic.topicClassification === 'hots') ? 'var(--danger-bg)' : 'var(--info-bg)',
+                                                      color: (topic.topicClassification === 'minor' || topic.topicClassification === 'micro') ? 'var(--success)' : (topic.topicClassification === 'major' || topic.topicClassification === 'calculative' || topic.topicClassification === 'hots') ? 'var(--danger)' : 'var(--info)',
+                                                      border: `1px solid ${(topic.topicClassification === 'minor' || topic.topicClassification === 'micro') ? 'rgba(52, 211, 153, 0.3)' : (topic.topicClassification === 'major' || topic.topicClassification === 'calculative' || topic.topicClassification === 'hots') ? 'rgba(248, 113, 113, 0.3)' : 'rgba(56, 189, 248, 0.3)'}`
                                                     }}>
                                                       {(topic.topicClassification === 'minor' || topic.topicClassification === 'micro') && '📘 Minor (6 Qs • Max 2 Sets)'}
                                                       {(topic.topicClassification === 'medium' || topic.topicClassification === 'moderate' || topic.topicClassification === 'conceptual') && '📙 Medium (10 Qs • Max 3 Sets)'}
@@ -725,7 +725,7 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                                                     </span>
                                                   )}
                                                   {topic.isSrsDue && (
-                                                    <span style={{ fontSize: '9px', fontWeight: 700, padding: '1px 6px', borderRadius: '10px', background: 'rgba(59, 130, 246, 0.15)', color: '#2563eb', border: '1px solid rgba(59, 130, 246, 0.35)' }}>
+                                                    <span style={{ fontSize: '9px', fontWeight: 700, padding: '1px 6px', borderRadius: '10px', background: 'var(--info-bg)', color: 'var(--info)', border: '1px solid rgba(56, 189, 248, 0.35)' }}>
                                                       🧠 SRS Due • {topic.srsSchedule?.stageLabel || 'Workout'}
                                                     </span>
                                                   )}
@@ -756,7 +756,7 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                                               </td>
                                               <td style={{ padding: '6px 8px', textAlign: 'center', color: 'var(--text)' }}>
                                                  {topic.isSrsDue && topic.srsSchedule ? (
-                                                   <span style={{ fontSize: '11px', fontWeight: 700, color: '#2563eb' }}>
+                                                   <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--info)' }}>
                                                      {topic.srsSchedule.stageLabel}
                                                    </span>
                                                  ) : (
@@ -778,7 +778,7 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                                                     fontSize: '10px', 
                                                     fontWeight: 600, 
                                                     border: 'none', 
-                                                    background: isRecoveryAction ? 'var(--accent-grad)' : (isSrsAction ? 'linear-gradient(135deg, #2563eb, #3b82f6)' : 'var(--accent-grad)'), 
+                                                    background: isRecoveryAction ? 'var(--accent-grad)' : (isSrsAction ? 'linear-gradient(135deg, #0284c7, #38bdf8)' : 'var(--accent-grad)'), 
                                                     color: 'white', 
                                                     cursor: 'pointer' 
                                                   }}

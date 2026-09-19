@@ -231,8 +231,8 @@ export async function GET(req: NextRequest) {
     ]);
 
     const pastAssignedExams: Array<{ examId: string; endAt: Date; collection: string; title: string }> = [];
-    const collectPast = (snap: admin.firestore.QuerySnapshot, col: string) => {
-      snap.docs.forEach(doc => {
+    const collectPast = (snap: any, col: string) => {
+      snap.docs.forEach((doc: any) => {
         const data = doc.data();
         const targetType = data.targetType;
         const isTargeted = targetType === 'student'

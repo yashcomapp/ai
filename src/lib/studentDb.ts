@@ -1236,22 +1236,22 @@ export async function getStudentLearningData(userData: any) {
       parentTopic = syllabusTopics.find((t: any) => t.topicCode && tCode.startsWith(t.topicCode));
     }
 
-    const subCode = parsed.subjectCode || parentTopic?.subjectCode || (tCode.includes('-') ? tCode.split('-')[2] : '') || '';
+    const subCode = parsed?.subjectCode || parentTopic?.subjectCode || (tCode.includes('-') ? tCode.split('-')[2] : '') || '';
     const subName = parentTopic?.subjectName || getCanonicalSubjectName(subCode, tCode, parentTopic?.chapterName);
-    const chapName = mData?.chapterName || parentTopic?.chapterName || (parsed.chapterNumber ? `Chapter ${parsed.chapterNumber}` : 'General');
-    const chapNum = parsed.chapterNumber || parentTopic?.chapterNumber || '';
-    const topName = mData?.topicName || (parentTopic ? `${parentTopic.topicName} (${parsed.topicNumber || tCode})` : (mData?.name || `Topic ${parsed.topicNumber || tCode}`));
+    const chapName = mData?.chapterName || parentTopic?.chapterName || (parsed?.chapterNumber ? `Chapter ${parsed.chapterNumber}` : 'General');
+    const chapNum = parsed?.chapterNumber || parentTopic?.chapterNumber || '';
+    const topName = mData?.topicName || (parentTopic ? `${parentTopic.topicName} (${parsed?.topicNumber || tCode})` : (mData?.name || `Topic ${parsed?.topicNumber || tCode}`));
 
     const synthesizedTopic = {
       topicCode: tCode,
       topicName: topName,
-      topicNumber: parsed.topicNumber || parentTopic?.topicNumber || '',
-      chapterCode: parentTopic?.chapterCode || (chapNum ? `${parsed.boardCode || ''}-${parsed.classNum || ''}-${subCode}-${chapNum}` : ''),
+      topicNumber: parsed?.topicNumber || parentTopic?.topicNumber || '',
+      chapterCode: parentTopic?.chapterCode || (chapNum ? `${parsed?.boardCode || ''}-${parsed?.classNum || ''}-${subCode}-${chapNum}` : ''),
       chapterName: chapName,
       chapterNumber: chapNum,
       subjectCode: subCode,
       subjectName: subName,
-      classCode: `${parsed.boardCode || ''}-${parsed.classNum || ''}`,
+      classCode: `${parsed?.boardCode || ''}-${parsed?.classNum || ''}`,
       targetQuestions: parentTopic?.targetQuestions || 30,
       totalQuestions: parentTopic?.totalQuestions || 30
     };
@@ -1326,6 +1326,13 @@ export async function getStudentLearningData(userData: any) {
       mData?.lastRevisedAt || (mData?.updatedAt?.toDate ? mData.updatedAt.toDate().toISOString() : mData?.updatedAt) || mData?.lastAttempt || null,
       mData?.srsStage !== undefined ? Number(mData.srsStage) : 0
     );
+
+    const subCode = sData.subjectCode || mData?.subjectCode || (topicCode.includes('-') ? topicCode.split('-')[2] : '') || '';
+    const subName = sData.subjectName || mData?.subjectName || getCanonicalSubjectName(subCode, topicCode, sData.chapterName);
+    const attempts = Number(mData?.attempts || mData?.attemptCount || 0);
+    const isRecoveryMastered = Boolean(mData?.isRecoveryMastered);
+    const isExamStrong = Boolean(mData?.isExamStrong);
+    const isCertifiedMastered = isRecoveryMastered || (mastery >= 90 && confidence >= reqConf);
 
     const topicItem = {
       topicCode,

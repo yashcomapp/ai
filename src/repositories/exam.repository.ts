@@ -16,7 +16,7 @@ export class ExamRepository {
     if (doc.exists) {
       const data = doc.data() || {};
       const canonicalId = data.examId || data.id || doc.id;
-      return { id: canonicalId, ...data, examId: canonicalId } as Exam;
+      return { id: canonicalId, ...data, examId: canonicalId } as unknown as Exam;
     }
 
     // Fallback 1: Query by legacyExamIds array
@@ -28,7 +28,7 @@ export class ExamRepository {
       const lDoc = legacySnap.docs[0];
       const data = lDoc.data() || {};
       const canonicalId = data.examId || data.id || lDoc.id;
-      return { id: canonicalId, ...data, examId: canonicalId } as Exam;
+      return { id: canonicalId, ...data, examId: canonicalId } as unknown as Exam;
     }
 
     // Fallback 2: Query by legacyExamId field
@@ -40,7 +40,7 @@ export class ExamRepository {
       const lDoc = legacyFieldSnap.docs[0];
       const data = lDoc.data() || {};
       const canonicalId = data.examId || data.id || lDoc.id;
-      return { id: canonicalId, ...data, examId: canonicalId } as Exam;
+      return { id: canonicalId, ...data, examId: canonicalId } as unknown as Exam;
     }
 
     return null;

@@ -996,8 +996,9 @@ function TakeExamContent() {
                         textTransform: 'uppercase',
                         padding: '2px 6px',
                         borderRadius: '4px',
-                        background: 'rgba(59, 130, 246, 0.12)',
-                        color: '#2563eb'
+                        background: 'var(--info-bg)',
+                        color: 'var(--info)',
+                        border: '1px solid rgba(56, 189, 248, 0.3)'
                       }}>
                         Exam Blueprint
                       </span>

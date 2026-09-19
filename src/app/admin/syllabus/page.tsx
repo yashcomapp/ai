@@ -1471,8 +1471,8 @@ Return ONLY a valid JSON object matching the schema below:
                                             borderRadius: '4px',
                                             textTransform: 'uppercase',
                                             fontSize: '9px',
-                                            background: (topic.topicClassification === 'minor' || topic.topicClassification === 'micro') ? 'rgba(16, 185, 129, 0.12)' : (topic.topicClassification === 'major' || topic.topicClassification === 'calculative' || topic.topicClassification === 'hots') ? 'rgba(239, 68, 68, 0.12)' : 'rgba(59, 130, 246, 0.12)',
-                                            color: (topic.topicClassification === 'minor' || topic.topicClassification === 'micro') ? '#059669' : (topic.topicClassification === 'major' || topic.topicClassification === 'calculative' || topic.topicClassification === 'hots') ? '#dc2626' : '#2563eb'
+                                            background: (topic.topicClassification === 'minor' || topic.topicClassification === 'micro') ? 'var(--success-bg)' : (topic.topicClassification === 'major' || topic.topicClassification === 'calculative' || topic.topicClassification === 'hots') ? 'var(--danger-bg)' : 'var(--info-bg)',
+                                            color: (topic.topicClassification === 'minor' || topic.topicClassification === 'micro') ? 'var(--success)' : (topic.topicClassification === 'major' || topic.topicClassification === 'calculative' || topic.topicClassification === 'hots') ? 'var(--danger)' : 'var(--info)'
                                           }}>
                                             {(topic.topicClassification === 'minor' || topic.topicClassification === 'micro') && '📘 Minor (~30 Qs)'}
                                             {(topic.topicClassification === 'medium' || topic.topicClassification === 'moderate' || topic.topicClassification === 'conceptual') && '📙 Medium (~50 Qs)'}
@@ -1622,8 +1622,8 @@ Return ONLY a valid JSON object matching the schema below:
                                                        borderRadius: '3px',
                                                        fontSize: '8.5px',
                                                        textTransform: 'uppercase',
-                                                       background: (sub.topicClassification === 'minor' || sub.topicClassification === 'micro') ? 'rgba(16, 185, 129, 0.12)' : (sub.topicClassification === 'major' || sub.topicClassification === 'calculative' || sub.topicClassification === 'hots') ? 'rgba(239, 68, 68, 0.12)' : 'rgba(59, 130, 246, 0.12)',
-                                                       color: (sub.topicClassification === 'minor' || sub.topicClassification === 'micro') ? '#059669' : (sub.topicClassification === 'major' || sub.topicClassification === 'calculative' || sub.topicClassification === 'hots') ? '#dc2626' : '#2563eb'
+                                                       background: (sub.topicClassification === 'minor' || sub.topicClassification === 'micro') ? 'var(--success-bg)' : (sub.topicClassification === 'major' || sub.topicClassification === 'calculative' || sub.topicClassification === 'hots') ? 'var(--danger-bg)' : 'var(--info-bg)',
+                                                       color: (sub.topicClassification === 'minor' || sub.topicClassification === 'micro') ? 'var(--success)' : (sub.topicClassification === 'major' || sub.topicClassification === 'calculative' || sub.topicClassification === 'hots') ? 'var(--danger)' : 'var(--info)'
                                                      }}>
                                                        {(sub.topicClassification === 'minor' || sub.topicClassification === 'micro') && '📘 Minor (~30 Qs)'}
                                                        {(sub.topicClassification === 'medium' || sub.topicClassification === 'moderate' || sub.topicClassification === 'conceptual') && '📙 Medium (~50 Qs)'}

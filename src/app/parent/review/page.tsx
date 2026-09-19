@@ -15,6 +15,7 @@ import { formatDateIST, getDateKeyIST, formatDateTimeIST } from '@/lib/dateUtils
 
 interface ReviewItem {
   id: string;
+  examId?: string;
   type: string;
   name: string;
   subject: string;

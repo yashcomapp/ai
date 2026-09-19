@@ -78,209 +78,216 @@
     gap: 6px;
 }
 
-/* Color-Differentiated Card Layout Variants (Full Soft Pastel Tints - Zero Eye Strain) */
+/* Color-Differentiated Card Layout Variants (Soft Subtle Accents - Zero Eye Strain & Zero Glare) */
 .card-blue,
 .card-academic,
 .card-exams {
-    background: #f0f7ff !important;
-    border: 1.5px solid #bfdbfe !important;
-    border-left: 4.5px solid #2563eb !important;
+    background: var(--surface) !important;
+    border: 1px solid var(--border) !important;
+    border-left: 3.5px solid var(--info) !important;
 }
 .card-blue .card-header,
 .card-academic .card-header,
 .card-exams .card-header {
-    background: #e0f0fe !important;
-    border-bottom: 1.5px solid #bfdbfe !important;
-    color: #1e40af !important;
+    background: transparent !important;
+    border-bottom: 1px solid var(--border-light) !important;
+    color: var(--text) !important;
 }
 
 .card-emerald,
 .card-mastery,
 .card-success {
-    background: #f0fdf4 !important;
-    border: 1.5px solid #bbf7d0 !important;
-    border-left: 4.5px solid #059669 !important;
+    background: var(--surface) !important;
+    border: 1px solid var(--border) !important;
+    border-left: 3.5px solid var(--success) !important;
 }
 .card-emerald .card-header,
 .card-mastery .card-header,
 .card-success .card-header {
-    background: #dcfce7 !important;
-    border-bottom: 1.5px solid #bbf7d0 !important;
-    color: #166534 !important;
+    background: transparent !important;
+    border-bottom: 1px solid var(--border-light) !important;
+    color: var(--text) !important;
 }
 
 .card-amber,
 .card-pending,
 .card-attention {
-    background: #fffbeb !important;
-    border: 1.5px solid #fde68a !important;
-    border-left: 4.5px solid #d97706 !important;
+    background: var(--surface) !important;
+    border: 1px solid var(--border) !important;
+    border-left: 3.5px solid var(--warning) !important;
 }
 .card-amber .card-header,
 .card-pending .card-header,
 .card-attention .card-header {
-    background: #fef3c7 !important;
-    border-bottom: 1.5px solid #fde68a !important;
-    color: #92400e !important;
+    background: transparent !important;
+    border-bottom: 1px solid var(--border-light) !important;
+    color: var(--text) !important;
 }
 
 .card-purple,
 .card-insights,
 .card-ai {
-    background: #faf5ff !important;
-    border: 1.5px solid #e9d5ff !important;
-    border-left: 4.5px solid #7c3aed !important;
+    background: var(--surface) !important;
+    border: 1px solid var(--border) !important;
+    border-left: 3.5px solid var(--purple) !important;
 }
 .card-purple .card-header,
 .card-insights .card-header,
 .card-ai .card-header {
-    background: #f3e8ff !important;
-    border-bottom: 1.5px solid #e9d5ff !important;
-    color: #6b21a8 !important;
+    background: transparent !important;
+    border-bottom: 1px solid var(--border-light) !important;
+    color: var(--text) !important;
 }
 
 .card-cyan,
 .card-practice,
 .card-schedule {
-    background: #f0fdfa !important;
-    border: 1.5px solid #99f6e4 !important;
-    border-left: 4.5px solid #0284c7 !important;
+    background: var(--surface) !important;
+    border: 1px solid var(--border) !important;
+    border-left: 3.5px solid var(--info) !important;
 }
 .card-cyan .card-header,
 .card-practice .card-header,
 .card-schedule .card-header {
-    background: #ccfbf1 !important;
-    border-bottom: 1.5px solid #99f6e4 !important;
-    color: #115e59 !important;
+    background: transparent !important;
+    border-bottom: 1px solid var(--border-light) !important;
+    color: var(--text) !important;
 }
 
 .card-indigo,
 .card-overview,
 .card-attendance {
-    background: #f5f7ff !important;
-    border: 1.5px solid #c7d2fe !important;
-    border-left: 4.5px solid #4f46e5 !important;
+    background: var(--surface) !important;
+    border: 1px solid var(--border) !important;
+    border-left: 3.5px solid #818cf8 !important;
 }
 .card-indigo .card-header,
 .card-overview .card-header,
 .card-attendance .card-header {
-    background: #e0e7ff !important;
-    border-bottom: 1.5px solid #c7d2fe !important;
-    color: #3730a3 !important;
+    background: transparent !important;
+    border-bottom: 1px solid var(--border-light) !important;
+    color: var(--text) !important;
 }
 
 .card-rose,
 .card-danger,
 .card-alert {
-    background: #fff1f2 !important;
-    border: 1.5px solid #fecdd3 !important;
-    border-left: 4.5px solid #e11d48 !important;
+    background: var(--surface) !important;
+    border: 1px solid var(--border) !important;
+    border-left: 3.5px solid var(--danger) !important;
 }
 .card-rose .card-header,
 .card-danger .card-header,
 .card-alert .card-header {
-    background: #ffe4e6 !important;
-    border-bottom: 1.5px solid #fecdd3 !important;
-    color: #9f1239 !important;
+    background: transparent !important;
+    border-bottom: 1px solid var(--border-light) !important;
+    color: var(--text) !important;
 }
 
 /* Dark mode theme adaptations (Zero Glare & Zero Halation) */
 [data-theme="dark"] .card-blue,
 [data-theme="dark"] .card-academic,
 [data-theme="dark"] .card-exams {
-    background: rgba(56, 189, 248, 0.08) !important;
-    border-color: rgba(56, 189, 248, 0.22) !important;
+    background: var(--surface) !important;
+    border-color: var(--border) !important;
+    border-left-color: var(--info) !important;
 }
 [data-theme="dark"] .card-blue .card-header,
 [data-theme="dark"] .card-academic .card-header,
 [data-theme="dark"] .card-exams .card-header {
-    background: rgba(56, 189, 248, 0.14) !important;
-    border-bottom-color: rgba(56, 189, 248, 0.22) !important;
-    color: #7dd3fc !important;
+    background: transparent !important;
+    border-bottom-color: var(--border-light) !important;
+    color: var(--text) !important;
 }
 
 [data-theme="dark"] .card-emerald,
 [data-theme="dark"] .card-mastery,
 [data-theme="dark"] .card-success {
-    background: rgba(52, 211, 153, 0.08) !important;
-    border-color: rgba(52, 211, 153, 0.22) !important;
+    background: var(--surface) !important;
+    border-color: var(--border) !important;
+    border-left-color: var(--success) !important;
 }
 [data-theme="dark"] .card-emerald .card-header,
 [data-theme="dark"] .card-mastery .card-header,
 [data-theme="dark"] .card-success .card-header {
-    background: rgba(52, 211, 153, 0.14) !important;
-    border-bottom-color: rgba(52, 211, 153, 0.22) !important;
-    color: #86efac !important;
+    background: transparent !important;
+    border-bottom-color: var(--border-light) !important;
+    color: var(--text) !important;
 }
 
 [data-theme="dark"] .card-amber,
 [data-theme="dark"] .card-pending,
 [data-theme="dark"] .card-attention {
-    background: rgba(251, 191, 36, 0.08) !important;
-    border-color: rgba(251, 191, 36, 0.22) !important;
+    background: var(--surface) !important;
+    border-color: var(--border) !important;
+    border-left-color: var(--warning) !important;
 }
 [data-theme="dark"] .card-amber .card-header,
 [data-theme="dark"] .card-pending .card-header,
 [data-theme="dark"] .card-attention .card-header {
-    background: rgba(251, 191, 36, 0.14) !important;
-    border-bottom-color: rgba(251, 191, 36, 0.22) !important;
-    color: #fde047 !important;
+    background: transparent !important;
+    border-bottom-color: var(--border-light) !important;
+    color: var(--text) !important;
 }
 
 [data-theme="dark"] .card-purple,
 [data-theme="dark"] .card-insights,
 [data-theme="dark"] .card-ai {
-    background: rgba(192, 132, 252, 0.08) !important;
-    border-color: rgba(192, 132, 252, 0.22) !important;
+    background: var(--surface) !important;
+    border-color: var(--border) !important;
+    border-left-color: var(--purple) !important;
 }
 [data-theme="dark"] .card-purple .card-header,
 [data-theme="dark"] .card-insights .card-header,
 [data-theme="dark"] .card-ai .card-header {
-    background: rgba(192, 132, 252, 0.14) !important;
-    border-bottom-color: rgba(192, 132, 252, 0.22) !important;
-    color: #d8b4fe !important;
+    background: transparent !important;
+    border-bottom-color: var(--border-light) !important;
+    color: var(--text) !important;
 }
 
 [data-theme="dark"] .card-cyan,
 [data-theme="dark"] .card-practice,
 [data-theme="dark"] .card-schedule {
-    background: rgba(45, 212, 191, 0.08) !important;
-    border-color: rgba(45, 212, 191, 0.22) !important;
+    background: var(--surface) !important;
+    border-color: var(--border) !important;
+    border-left-color: var(--info) !important;
 }
 [data-theme="dark"] .card-cyan .card-header,
 [data-theme="dark"] .card-practice .card-header,
 [data-theme="dark"] .card-schedule .card-header {
-    background: rgba(45, 212, 191, 0.14) !important;
-    border-bottom-color: rgba(45, 212, 191, 0.22) !important;
-    color: #99f6e4 !important;
+    background: transparent !important;
+    border-bottom-color: var(--border-light) !important;
+    color: var(--text) !important;
 }
 
 [data-theme="dark"] .card-indigo,
 [data-theme="dark"] .card-overview,
 [data-theme="dark"] .card-attendance {
-    background: rgba(129, 140, 248, 0.08) !important;
-    border-color: rgba(129, 140, 248, 0.22) !important;
+    background: var(--surface) !important;
+    border-color: var(--border) !important;
+    border-left-color: #818cf8 !important;
 }
 [data-theme="dark"] .card-indigo .card-header,
 [data-theme="dark"] .card-overview .card-header,
 [data-theme="dark"] .card-attendance .card-header {
-    background: rgba(129, 140, 248, 0.14) !important;
-    border-bottom-color: rgba(129, 140, 248, 0.22) !important;
-    color: #c7d2fe !important;
+    background: transparent !important;
+    border-bottom-color: var(--border-light) !important;
+    color: var(--text) !important;
 }
 
 [data-theme="dark"] .card-rose,
 [data-theme="dark"] .card-danger,
 [data-theme="dark"] .card-alert {
-    background: rgba(234, 108, 117, 0.08) !important;
-    border-color: rgba(234, 108, 117, 0.22) !important;
+    background: var(--surface) !important;
+    border-color: var(--border) !important;
+    border-left-color: var(--danger) !important;
 }
 [data-theme="dark"] .card-rose .card-header,
 [data-theme="dark"] .card-danger .card-header,
 [data-theme="dark"] .card-alert .card-header {
-    background: rgba(234, 108, 117, 0.14) !important;
-    border-bottom-color: rgba(234, 108, 117, 0.22) !important;
-    color: #fca5a5 !important;
+    background: transparent !important;
+    border-bottom-color: var(--border-light) !important;
+    color: var(--text) !important;
 }
 
 /* Card modifiers */
@@ -1199,24 +1206,24 @@ html[data-theme="dark"] .selection-list {
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
-    background: #ffffff;
-    border: 2px solid #64748b;
-    color: #1e293b;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    color: var(--text);
     font-family: inherit;
     transition: all 0.18s ease;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 .filter-chip:hover {
-    border-color: #2563eb;
-    color: #2563eb;
-    background: #f0f7ff;
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--bg-soft);
 }
 .filter-chip.active {
-    background: #2563eb;
-    color: #ffffff;
-    border-color: #1d4ed8;
-    font-weight: 800;
-    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
+    background: var(--accent);
+    color: var(--text-on-accent);
+    border-color: var(--accent);
+    font-weight: 700;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 }
 .search-box {
     width: 100%;
@@ -2109,30 +2116,30 @@ button, a, .brand, .tab, .btn, [role="button"], .settings-toggle, .theme-toggle,
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    background: #ffffff;
-    border: 2px solid #64748b;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
     border-radius: 999px;
     padding: 6px 14px;
     font-size: 13px;
     font-weight: 600;
-    color: #1e293b;
+    color: var(--text);
     white-space: nowrap;
     cursor: pointer;
     transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 .filter-pill-chip:hover {
-    border-color: #2563eb;
-    color: #2563eb;
-    background: #eff6ff;
+    border-color: var(--accent);
+    color: var(--accent);
+    background: var(--bg-soft);
 }
 .filter-pill-chip.active,
 .filter-pill-chip[data-active="true"] {
-    background: #2563eb;
-    border-color: #1d4ed8;
-    color: #ffffff;
-    font-weight: 800;
-    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--text-on-accent);
+    font-weight: 700;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 /* 2. Elevated Educational Listing Card */

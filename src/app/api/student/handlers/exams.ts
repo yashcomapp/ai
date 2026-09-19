@@ -34,11 +34,11 @@ export async function GET(req: NextRequest) {
     if (Array.isArray(examData.questionCodes) && examData.questionCodes.length > 0) {
       candidateCodes.push(...examData.questionCodes);
     }
-    if (Array.isArray(examData.questionIds) && examData.questionIds.length > 0) {
-      candidateCodes.push(...examData.questionIds);
+    if (Array.isArray((examData as any).questionIds) && (examData as any).questionIds.length > 0) {
+      candidateCodes.push(...(examData as any).questionIds);
     }
-    if (Array.isArray(examData.questions) && examData.questions.length > 0) {
-      examData.questions.forEach((q: any) => {
+    if (Array.isArray((examData as any).questions) && (examData as any).questions.length > 0) {
+      (examData as any).questions.forEach((q: any) => {
         if (typeof q === 'string') candidateCodes.push(q);
         else if (q && typeof q === 'object') {
           if (q.id) candidateCodes.push(q.id);
@@ -75,8 +75,8 @@ export async function GET(req: NextRequest) {
     });
 
     // Check if any question was already embedded in examData.questions as full objects
-    if (Array.isArray(examData.questions) && examData.questions.length > 0) {
-      examData.questions.forEach((q: any) => {
+    if (Array.isArray((examData as any).questions) && (examData as any).questions.length > 0) {
+      (examData as any).questions.forEach((q: any) => {
         if (q && typeof q === 'object' && (q.text || q.questionText)) {
           const qKey = q.id || q.questionCode;
           if (qKey && !questionMap.has(qKey)) {
@@ -507,7 +507,7 @@ export async function POST(req: NextRequest) {
     // 2. Fetch all question documents
     const questions = await ExamRepository.getQuestionsForExam(questionCodes);
 
-    const canonicalExamId = examData.id || examData.examId || examId;
+    const canonicalExamId = examData.id || (examData as any).examId || examId;
     const studentName = student.userData?.name || 'Student';
 
     // 3. Pre-fetch assignments matching canonicalExamId or submitted examId

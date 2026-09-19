@@ -1135,10 +1135,10 @@ Return ONLY valid JSON. No markdown wrappers or extra commentary.`;
                       <span style={{ fontSize: '10.5px', fontWeight: 700, padding: '1px 6px', borderRadius: '4px', background: 'var(--surface)', border: '1px solid var(--border-light)', color: 'var(--text)' }}>
                         {q.questionCode || 'AI_GENERATED'}
                       </span>
-                      <span style={{ fontSize: '9.5px', textTransform: 'uppercase', padding: '1px 6px', borderRadius: '4px', background: 'rgba(59, 130, 246, 0.1)', color: '#2563eb', fontWeight: 700 }}>
+                      <span style={{ fontSize: '9.5px', textTransform: 'uppercase', padding: '1px 6px', borderRadius: '4px', background: 'var(--info-bg)', color: 'var(--info)', fontWeight: 700, border: '1px solid rgba(56, 189, 248, 0.3)' }}>
                         {q.type}
                       </span>
-                      <span style={{ fontSize: '9.5px', textTransform: 'capitalize', padding: '1px 6px', borderRadius: '4px', background: 'rgba(16, 185, 129, 0.1)', color: '#059669', fontWeight: 700 }}>
+                      <span style={{ fontSize: '9.5px', textTransform: 'capitalize', padding: '1px 6px', borderRadius: '4px', background: 'var(--success-bg)', color: 'var(--success)', fontWeight: 700, border: '1px solid rgba(52, 211, 153, 0.3)' }}>
                         {q.difficulty}
                       </span>
                       <span style={{ fontSize: '10.5px', fontWeight: 700, color: 'var(--text-muted)' }}>
