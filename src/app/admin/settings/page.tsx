@@ -505,7 +505,7 @@ export default function AdminSettingsPage() {
                 className="btn btn-secondary" 
                 onClick={handleRestoreBackup} 
                 disabled={!restoreJson || processing}
-                style={{ background: restoreJson ? 'var(--success)' : 'var(--border)', color: '#fff', border: 'none' }}
+                style={{ background: restoreJson ? 'var(--success)' : 'var(--border)', color: 'var(--text-white, #ffffff)', border: 'none' }}
               >
                 Restore Selected JSON File
               </button>
@@ -521,7 +521,7 @@ export default function AdminSettingsPage() {
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
                   <h4 style={{ fontSize: '13px', fontWeight: 800, margin: 0, color: 'var(--purple)' }}>⚡ Question Bank SSOT Harmonizer</h4>
-                  <span style={{ fontSize: '10px', background: 'var(--purple)', color: '#fff', padding: '2px 6px', borderRadius: '4px', fontWeight: 800 }}>SSOT</span>
+                  <span style={{ fontSize: '10px', background: 'var(--purple)', color: 'var(--text-white, #ffffff)', padding: '2px 6px', borderRadius: '4px', fontWeight: 800 }}>SSOT</span>
                 </div>
                 <p style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.4, margin: '0 0 10px' }}>
                   Standardizes legacy subject codes (e.g. <code>GANI</code> &rarr; <code>MGP1</code>), aligns Firestore document IDs to canonical <code>questionCode</code>, fixes KaTeX math delimiters, and verifies syllabus topic mapping.
@@ -607,7 +607,7 @@ export default function AdminSettingsPage() {
               </div>
               <button 
                 className="btn btn-secondary" 
-                style={{ background: 'var(--warning)', color: '#fff', border: 'none', fontSize: '11px', padding: '6px 12px' }}
+                style={{ background: 'var(--warning)', color: 'var(--text-white, #ffffff)', border: 'none', fontSize: '11px', padding: '6px 12px' }}
                 onClick={handleResetProtected}
                 disabled={processing || !Object.values(selectedProtected).some(Boolean)}
               >

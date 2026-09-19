@@ -135,7 +135,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           height: 52px;
           border-radius: 50%;
           background: var(--accent-grad);
-          color: #ffffff;
+          color: var(--text-white, #ffffff);
           border: none;
           box-shadow: var(--shadow-lg);
           font-size: 24px;
@@ -200,7 +200,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         }
         .nav-item.active {
           background: var(--accent);
-          color: #ffffff;
+          color: var(--text-white, #ffffff);
         }
         .nav-icon {
           font-size: 16px;

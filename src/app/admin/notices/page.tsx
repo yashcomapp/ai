@@ -927,7 +927,7 @@ export default function AdminNoticesPage() {
                 padding: '12px',
                 borderRadius: 'var(--radius-md)',
                 background: 'var(--accent)',
-                color: '#ffffff',
+                color: 'var(--text-white, #ffffff)',
                 border: 'none',
                 fontWeight: 'bold',
                 cursor: 'pointer',
@@ -1187,7 +1187,7 @@ export default function AdminNoticesPage() {
                       onClick={() => setShowPdfOptionsModal(true)}
                       style={{
                         background: 'var(--accent)',
-                        color: '#ffffff',
+                        color: 'var(--text-white, #ffffff)',
                         border: 'none',
                         borderRadius: 'var(--radius-sm)',
                         padding: '6px 12px',
@@ -1408,7 +1408,7 @@ export default function AdminNoticesPage() {
                   handleExportPDF();
                 }}
                 disabled={!pdfPrintStudents && !pdfPrintParents}
-                style={{ fontSize: '12px', padding: '6px 16px', background: 'var(--accent)', color: '#ffffff', fontWeight: 'bold' }}
+                style={{ fontSize: '12px', padding: '6px 16px', background: 'var(--accent)', color: 'var(--text-white, #ffffff)', fontWeight: 'bold' }}
               >
                 🖨️ Print / Export PDF
               </button>

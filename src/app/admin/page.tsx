@@ -203,7 +203,7 @@ export default function AdminDashboard() {
               flexShrink: 0
             }}
           >
-            <Bell size={16} color="#fbbf24" />
+            <Bell size={16} color="var(--warning)" />
           </button>
 
           {/* Live Chat */}
@@ -225,7 +225,7 @@ export default function AdminDashboard() {
               flexShrink: 0
             }}
           >
-            <MessageSquare size={16} color="#38bdf8" />
+            <MessageSquare size={16} color="var(--info)" />
           </button>
 
           {/* Settings */}
@@ -247,7 +247,7 @@ export default function AdminDashboard() {
               flexShrink: 0
             }}
           >
-            <Settings size={16} color="#94a3b8" />
+            <Settings size={16} color="var(--text-muted)" />
           </button>
 
           {/* Logout Button */}
@@ -263,7 +263,7 @@ export default function AdminDashboard() {
               display: 'flex', 
               alignItems: 'center', 
               justifyContent: 'center', 
-              color: '#f87171', 
+              color: 'var(--danger)', 
               cursor: 'pointer',
               flexShrink: 0
             }}
@@ -323,7 +323,7 @@ export default function AdminDashboard() {
                   <span style={{ fontSize: '11.5px', fontWeight: 600, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                     Batches (Students)
                   </span>
-                  <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#c084fc' }}>
+                  <span style={{ fontSize: '12.5px', fontWeight: 800, color: 'var(--purple)' }}>
                     {stats.totalBatches} ({stats.totalStudents})
                   </span>
                 </div>
@@ -348,7 +348,7 @@ export default function AdminDashboard() {
                   <span style={{ fontSize: '11.5px', fontWeight: 600, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                     Exams - Practice
                   </span>
-                  <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#34d399' }}>
+                  <span style={{ fontSize: '12.5px', fontWeight: 800, color: 'var(--success)' }}>
                     {stats.activeExams} - {stats.cumulativePractice}
                   </span>
                 </div>
@@ -373,7 +373,7 @@ export default function AdminDashboard() {
                   <span style={{ fontSize: '11.5px', fontWeight: 600, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                     Attendance
                   </span>
-                  <span style={{ fontSize: '12.5px', fontWeight: 800, color: '#38bdf8' }}>
+                  <span style={{ fontSize: '12.5px', fontWeight: 800, color: 'var(--info)' }}>
                     {stats.todayAttendanceRate !== null ? `${stats.todayAttendanceRate}%` : '--'}
                   </span>
                 </div>
@@ -411,7 +411,7 @@ export default function AdminDashboard() {
                   <span style={{ fontSize: '11.5px', fontWeight: 600, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                     Chat
                   </span>
-                  <span style={{ fontSize: '12.5px', fontWeight: 800, color: stats.unreadChatsCount > 0 ? '#f87171' : 'var(--text-muted)' }}>
+                  <span style={{ fontSize: '12.5px', fontWeight: 800, color: stats.unreadChatsCount > 0 ? 'var(--danger)' : 'var(--text-muted)' }}>
                     {stats.unreadChatsCount} Rooms
                   </span>
                 </div>
@@ -436,7 +436,7 @@ export default function AdminDashboard() {
                   <span style={{ fontSize: '11.5px', fontWeight: 600, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                     Fees Pending
                   </span>
-                  <span style={{ fontSize: '12.5px', fontWeight: 800, color: stats.overdueFeesCount > 0 ? '#f87171' : '#34d399' }}>
+                  <span style={{ fontSize: '12.5px', fontWeight: 800, color: stats.overdueFeesCount > 0 ? 'var(--danger)' : 'var(--success)' }}>
                     {stats.overdueFeesCount} Accounts
                   </span>
                 </div>

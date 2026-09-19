@@ -971,7 +971,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
           <button 
             className="btn btn-primary" 
             onClick={logout} 
-            style={{ background: 'var(--danger)', color: '#ffffff', border: 'none', padding: '10px 20px', borderRadius: 'var(--radius-md)', fontWeight: 'bold', cursor: 'pointer' }}
+            style={{ background: 'var(--danger)', color: 'var(--text-white, #ffffff)', border: 'none', padding: '10px 20px', borderRadius: 'var(--radius-md)', fontWeight: 'bold', cursor: 'pointer' }}
           >
             🚪 Back to Login
           </button>
@@ -1389,7 +1389,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                   >
                     {isSyncTimeSlot() ? (
                       <>
-                        <Video size={14} color="#ffffff" />
+                        <Video size={14} color="var(--text-white, #ffffff)" />
                         <span>Start 5-Min Sync</span>
                       </>
                     ) : (
@@ -2009,7 +2009,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                                   fontSize: '10px',
                                   fontWeight: 600,
                                   cursor: 'pointer',
-                                  color: '#ffffff'
+                                  color: 'var(--text-white, #ffffff)'
                                 }}
                               >
                                 Read
@@ -2342,7 +2342,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                     fontWeight: 'bold',
                     fontSize: '14px',
                     background: typeConfig.color,
-                    color: '#ffffff',
+                    color: 'var(--text-white, #ffffff)',
                     border: 'none',
                     cursor: 'pointer'
                   }}
@@ -2393,10 +2393,10 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
               </div>
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: '#ffffff' }}>
+                  <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: 'var(--text-white, #ffffff)' }}>
                     Daily 5-Min Parent-Kid Sync
                   </h3>
-                  <span style={{ fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '12px', background: 'rgba(20, 184, 166, 0.2)', color: '#5eead4', border: '1px solid rgba(20, 184, 166, 0.4)' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '12px', background: 'rgba(20, 184, 166, 0.2)', color: 'var(--accent)', border: '1px solid rgba(20, 184, 166, 0.4)' }}>
                     9:30 PM – 10:30 PM IST Slot
                   </span>
                 </div>
@@ -2437,7 +2437,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                   gap: '6px',
                   background: 'linear-gradient(135deg, rgba(15, 118, 110, 0.25), rgba(20, 184, 166, 0.25))',
                   border: '1px solid rgba(20, 184, 166, 0.5)',
-                  color: '#ccfbf1',
+                  color: 'var(--accent)',
                   borderRadius: '20px',
                   padding: '6px 14px',
                   fontSize: '12px',
@@ -2445,7 +2445,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                   letterSpacing: '0.5px'
                 }}>
                   <span>🔒 Mandatory:</span>
-                  <span style={{ color: '#ffffff', fontFamily: 'monospace', fontSize: '13px' }}>{formatSyncTimer(syncSecondsRemaining)} left</span>
+                  <span style={{ color: 'var(--text-white, #ffffff)', fontFamily: 'monospace', fontSize: '13px' }}>{formatSyncTimer(syncSecondsRemaining)} left</span>
                 </div>
               ) : (
                 <button 
@@ -2453,7 +2453,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                   style={{
                     background: 'rgba(255, 255, 255, 0.1)',
                     border: '1px solid rgba(255, 255, 255, 0.2)',
-                    color: '#ffffff',
+                    color: 'var(--text-white, #ffffff)',
                     padding: '8px 16px',
                     borderRadius: '20px',
                     fontSize: '13px',
@@ -2506,7 +2506,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                     <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                       Step 1 · 60-Second Check
                     </span>
-                    <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#ffffff', margin: '4px 0 2px' }}>
+                    <h2 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-white, #ffffff)', margin: '4px 0 2px' }}>
                       Today&apos;s Study Effort ({formatDateIST(new Date().toISOString())})
                     </h2>
                     <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0 }}>
@@ -2519,7 +2519,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                     {/* Card 1: Today's Practice Time */}
                     <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 'var(--radius)', padding: '14px', textAlign: 'center' }}>
                       <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>⏱️ Studied Today</div>
-                      <div style={{ fontSize: '24px', fontWeight: 800, color: '#2dd4bf', marginTop: '4px' }}>
+                      <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--accent)', marginTop: '4px' }}>
                         {childData?.todayStats?.todayMinutes || Math.round((childData?.snapshot?.todaySeconds || 0) / 60)}m
                       </div>
                       <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>Active Practice & Exams</div>
@@ -2571,7 +2571,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                     onClick={() => setDailySyncStep(2)}
                     style={{
                       background: 'var(--accent-grad)',
-                      color: '#ffffff',
+                      color: 'var(--text-white, #ffffff)',
                       fontWeight: 700,
                       padding: '12px',
                       borderRadius: 'var(--radius)',
@@ -2594,11 +2594,11 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                     <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                       Step 2 · 3-Minute Discussion
                     </span>
-                    <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#ffffff', margin: '4px 0 2px' }}>
+                    <h2 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-white, #ffffff)', margin: '4px 0 2px' }}>
                       Diagnostic Topic Movement & Tricky Questions
                     </h2>
                     <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0 }}>
-                      Review which weak topics were practiced and removed from Needs Attention today.
+                      Review progress and talk through today&apos;s trickiest question.
                     </p>
                   </div>
 
@@ -2616,48 +2616,48 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                       📊 Topic Mastery Diagnostic Movement
                     </h4>
 
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px' }}>
-                        {/* Box 1: Needs Attention Yesterday */}
-                        <div style={{ background: 'var(--danger-bg)', border: '1px solid var(--danger-border)', borderRadius: '8px', padding: '12px' }}>
-                          <div style={{ fontSize: '11px', color: 'var(--danger)', fontWeight: 700 }}>🔴 In Needs Attention (Yesterday)</div>
-                          <div style={{ fontSize: '22px', fontWeight: 800, color: 'var(--danger)', marginTop: '2px' }}>
-                            {childData?.topicDiagnostics?.needsAttentionYesterdayCount || childData?.snapshot?.needsAttentionCount || 0} topics
-                          </div>
-                        </div>
-
-                        {/* Box 2: Practiced & Removed Today */}
-                        <div style={{ background: 'var(--success-bg)', border: '1px solid var(--success-border)', borderRadius: '8px', padding: '12px' }}>
-                          <div style={{ fontSize: '11px', color: 'var(--success)', fontWeight: 700 }}>🟢 Practiced & Recovered Today</div>
-                          <div style={{ fontSize: '22px', fontWeight: 800, color: 'var(--success)', marginTop: '2px' }}>
-                            {childData?.topicDiagnostics?.recoveredTodayCount || 0} topics removed
-                          </div>
-                        </div>
-
-                        {/* Box 3: Remaining in Needs Attention */}
-                        <div style={{ background: 'var(--warning-bg)', border: '1px solid var(--warning-border)', borderRadius: '8px', padding: '12px' }}>
-                          <div style={{ fontSize: '11px', color: 'var(--warning)', fontWeight: 700 }}>🟡 Remaining Needs Attention</div>
-                          <div style={{ fontSize: '22px', fontWeight: 800, color: 'var(--warning)', marginTop: '2px' }}>
-                            {childData?.topicDiagnostics?.needsAttentionRemainingCount || 0} topics
-                          </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px' }}>
+                      {/* Box 1: Needs Attention Yesterday */}
+                      <div style={{ background: 'var(--danger-bg)', border: '1px solid var(--danger-border)', borderRadius: '8px', padding: '12px' }}>
+                        <div style={{ fontSize: '11px', color: 'var(--danger)', fontWeight: 700 }}>🔴 In Needs Attention (Yesterday)</div>
+                        <div style={{ fontSize: '22px', fontWeight: 800, color: 'var(--danger)', marginTop: '2px' }}>
+                          {childData?.topicDiagnostics?.needsAttentionYesterdayCount || childData?.snapshot?.needsAttentionCount || 0} topics
                         </div>
                       </div>
 
-                      {/* Recovered topics tags */}
-                      {(childData?.topicDiagnostics?.recoveredTodayTopics || []).length > 0 && (
-                        <div style={{ marginTop: '4px' }}>
-                          <div style={{ fontSize: '11px', color: 'var(--success)', fontWeight: 700, marginBottom: '6px' }}>
-                            ✨ Topics successfully practiced and graduated today:
-                          </div>
-                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                            {childData?.topicDiagnostics?.recoveredTodayTopics.map((t, idx) => (
-                              <span key={idx} style={{ fontSize: '11px', padding: '3px 10px', borderRadius: '12px', background: 'var(--success-bg)', color: 'var(--success)', border: '1px solid var(--success-border)', fontWeight: 600 }}>
-                                ✅ {t}
-                              </span>
-                            ))}
-                          </div>
+                      {/* Box 2: Practiced & Removed Today */}
+                      <div style={{ background: 'var(--success-bg)', border: '1px solid var(--success-border)', borderRadius: '8px', padding: '12px' }}>
+                        <div style={{ fontSize: '11px', color: 'var(--success)', fontWeight: 700 }}>🟢 Practiced & Recovered Today</div>
+                        <div style={{ fontSize: '22px', fontWeight: 800, color: 'var(--success)', marginTop: '2px' }}>
+                          {childData?.topicDiagnostics?.recoveredTodayCount || 0} topics removed
                         </div>
-                      )}
+                      </div>
+
+                      {/* Box 3: Remaining in Needs Attention */}
+                      <div style={{ background: 'var(--warning-bg)', border: '1px solid var(--warning-border)', borderRadius: '8px', padding: '12px' }}>
+                        <div style={{ fontSize: '11px', color: 'var(--warning)', fontWeight: 700 }}>🟡 Remaining Needs Attention</div>
+                        <div style={{ fontSize: '22px', fontWeight: 800, color: 'var(--warning)', marginTop: '2px' }}>
+                          {childData?.topicDiagnostics?.needsAttentionRemainingCount || 0} topics
+                        </div>
+                      </div>
                     </div>
+
+                    {/* Recovered topics tags */}
+                    {(childData?.topicDiagnostics?.recoveredTodayTopics || []).length > 0 && (
+                      <div style={{ marginTop: '4px' }}>
+                        <div style={{ fontSize: '11px', color: 'var(--success)', fontWeight: 700, marginBottom: '6px' }}>
+                          ✨ Topics successfully practiced and graduated today:
+                        </div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                          {childData?.topicDiagnostics?.recoveredTodayTopics.map((t, idx) => (
+                            <span key={idx} style={{ fontSize: '11px', padding: '3px 10px', borderRadius: '12px', background: 'var(--success-bg)', color: 'var(--success)', border: '1px solid var(--success-border)', fontWeight: 600 }}>
+                              ✅ {t}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
 
                   {/* Tricky Question Spotlight */}
                   <div style={{
@@ -2676,11 +2676,11 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                       <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Daily Mistake Review</span>
                     </div>
 
-                    <div style={{ fontSize: '13px', color: '#ffffff', fontWeight: 600, lineHeight: '1.4' }}>
+                    <div style={{ fontSize: '13px', color: 'var(--text-white, #ffffff)', fontWeight: 600, lineHeight: '1.4' }}>
                       &ldquo;When solving numerical problems or multi-step derivations, double-check sign inversions and unit conversions.&rdquo;
                     </div>
 
-                    <div style={{ fontSize: '12px', color: '#cbd5e1', background: 'rgba(0,0,0,0.3)', padding: '10px 12px', borderRadius: '6px', lineHeight: '1.4' }}>
+                    <div style={{ fontSize: '12px', color: 'var(--text-muted)', background: 'rgba(0,0,0,0.3)', padding: '10px 12px', borderRadius: '6px', lineHeight: '1.4' }}>
                       💡 <strong>Discussion Question for Parent:</strong> Ask {activeChildName}: <em>&ldquo;Which question gave you the most trouble today? How did you figure out the solution?&rdquo;</em>
                     </div>
                   </div>
@@ -2702,7 +2702,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                       style={{
                         flex: 2,
                         background: 'var(--accent-grad)',
-                        color: '#ffffff',
+                        color: 'var(--text-white, #ffffff)',
                         fontWeight: 700,
                         padding: '12px',
                         borderRadius: 'var(--radius)',
@@ -2724,7 +2724,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                     <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                       Step 3 · Final Signoff
                     </span>
-                    <h2 style={{ fontSize: '20px', fontWeight: 800, color: '#ffffff', margin: '4px 0 2px' }}>
+                    <h2 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-white, #ffffff)', margin: '4px 0 2px' }}>
                       Parent Verification & Signoff
                     </h2>
                     <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0 }}>
@@ -2756,7 +2756,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                             transition: 'all 0.2s'
                           }}
                         >
-                          <div style={{ fontSize: '14px', fontWeight: 800, color: '#ffffff' }}>{r.label}</div>
+                          <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-white, #ffffff)' }}>{r.label}</div>
                           <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>{r.desc}</div>
                         </div>
                       ))}
@@ -2780,7 +2780,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                         background: syncSecondsRemaining > 0
                           ? 'rgba(255, 255, 255, 0.08)'
                           : 'linear-gradient(135deg, #10b981, #059669)',
-                        color: syncSecondsRemaining > 0 ? 'var(--text-muted)' : '#ffffff',
+                        color: syncSecondsRemaining > 0 ? 'var(--text-muted)' : 'var(--text-white, #ffffff)',
                         fontWeight: 800,
                         padding: '12px',
                         borderRadius: 'var(--radius)',
@@ -2808,7 +2808,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
               {/* PROMINENT 5-MINUTE COUNTDOWN CARD */}
               <div style={{
                 background: 'linear-gradient(135deg, #0b2426 0%, #061012 100%)',
-                border: syncSecondsRemaining > 0 ? '2px solid var(--accent)' : '2px solid #10b981',
+                border: syncSecondsRemaining > 0 ? '2px solid var(--accent)' : '2px solid var(--success)',
                 borderRadius: 'var(--radius-lg)',
                 padding: '18px',
                 textAlign: 'center',
@@ -2837,7 +2837,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                   fontWeight: 900,
                   fontFamily: 'monospace',
                   letterSpacing: '3px',
-                  color: syncSecondsRemaining > 0 ? '#ffffff' : '#4ade80',
+                  color: syncSecondsRemaining > 0 ? 'var(--text-white, #ffffff)' : 'var(--success)',
                   textShadow: syncSecondsRemaining > 0 ? '0 0 20px rgba(20, 184, 166, 0.4)' : '0 0 20px rgba(16, 185, 129, 0.6)',
                   lineHeight: '1',
                   margin: '4px 0'
@@ -2865,7 +2865,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                   }} />
                 </div>
 
-                <div style={{ fontSize: '11.5px', color: syncSecondsRemaining > 0 ? '#cbd5e1' : '#86efac', fontWeight: 600, marginTop: '2px', lineHeight: '1.4' }}>
+                <div style={{ fontSize: '11.5px', color: syncSecondsRemaining > 0 ? 'var(--text-muted)' : 'var(--success)', fontWeight: 600, marginTop: '2px', lineHeight: '1.4' }}>
                   {syncSecondsRemaining > 0 ? (
                     <>🔒 <strong>Active Discussion Required:</strong> Screen locked for 5 minutes. No logout or exit allowed.</>
                   ) : (
@@ -2887,7 +2887,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text)' }}>📹 Live Camera Feed</span>
-                  <span style={{ fontSize: '9px', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', background: 'var(--danger)', color: '#fff' }}>
+                  <span style={{ fontSize: '9px', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', background: 'var(--danger)', color: 'var(--text-white, #ffffff)' }}>
                     LIVE
                   </span>
                 </div>

@@ -1813,7 +1813,7 @@ function TakeExamContent() {
                                       flex: 1,
                                       border: isSelected ? '1px solid var(--accent)' : '1px solid var(--border)',
                                       background: isSelected ? 'var(--accent-grad)' : 'var(--surface)',
-                                      color: isSelected ? '#ffffff' : 'var(--text)',
+                                      color: isSelected ? 'var(--text-white, #ffffff)' : 'var(--text)',
                                       cursor: isUnderstood ? 'not-allowed' : 'pointer',
                                       whiteSpace: 'nowrap'
                                     }}
@@ -1844,7 +1844,7 @@ function TakeExamContent() {
                                       flex: 1,
                                       border: isSelected ? '1px solid var(--accent)' : '1px solid var(--border)',
                                       background: isSelected ? 'var(--accent-grad)' : 'var(--surface)',
-                                      color: isSelected ? '#ffffff' : 'var(--text)',
+                                      color: isSelected ? 'var(--text-white, #ffffff)' : 'var(--text)',
                                       cursor: isUnderstood ? 'not-allowed' : 'pointer',
                                       whiteSpace: 'nowrap'
                                     }}

@@ -1781,7 +1781,7 @@ OUTPUT FORMAT: Return ONLY a valid JSON array of objects with schema:
           <button 
             className="btn btn-secondary btn-sm"
             onClick={handleOpenManager}
-            style={{ fontSize: '11px', fontWeight: 700, padding: '4px 10px', background: '#fef2f2', color: '#b91c1c', border: '1px solid #fca5a5' }}
+            style={{ fontSize: '11px', fontWeight: 700, padding: '4px 10px', background: 'var(--danger-bg)', color: 'var(--danger)', border: '1px solid var(--danger-border)' }}
           >
             🗑️ Manage & Delete Scheduled Suites
           </button>
@@ -2099,7 +2099,7 @@ OUTPUT FORMAT: Return ONLY a valid JSON array of objects with schema:
                   <button 
                     className="btn btn-secondary btn-sm"
                     onClick={handleGeneratePromptForChapter}
-                    style={{ fontSize: '11px', fontWeight: 700, padding: '6px 14px', background: '#7c3aed', color: '#fff', border: 'none' }}
+                    style={{ fontSize: '11px', fontWeight: 700, padding: '6px 14px', background: 'var(--purple)', color: 'var(--text-white, #ffffff)', border: 'none' }}
                   >
                     🔧 Generate & Copy AI Prompt
                   </button>
@@ -2109,7 +2109,7 @@ OUTPUT FORMAT: Return ONLY a valid JSON array of objects with schema:
                 {qbStatus && (
                   <div 
                     id="qb-status-banner"
-                    style={{ padding: '8px 12px', background: qbStatus.startsWith('❌') ? '#fef2f2' : '#f0fdf4', border: `1px solid ${qbStatus.startsWith('❌') ? '#fca5a5' : '#bbf7d0'}`, borderRadius: '4px', fontSize: '11px', color: qbStatus.startsWith('❌') ? '#b91c1c' : '#166534', fontWeight: 600, whiteSpace: 'pre-line' }}
+                    style={{ padding: '8px 12px', background: qbStatus.startsWith('❌') ? 'var(--danger-bg)' : 'var(--success-bg)', border: `1px solid ${qbStatus.startsWith('❌') ? 'var(--danger-border)' : 'var(--success-border)'}`, borderRadius: '4px', fontSize: '11px', color: qbStatus.startsWith('❌') ? 'var(--danger)' : 'var(--success)', fontWeight: 600, whiteSpace: 'pre-line' }}
                   >
                     {qbStatus}
                   </div>
@@ -2180,7 +2180,7 @@ OUTPUT FORMAT: Return ONLY a valid JSON array of objects with schema:
                               <button 
                                 className="btn btn-secondary btn-sm" 
                                 onClick={() => setPreviewQuestions(prev => prev.filter((_, i) => i !== idx))}
-                                style={{ background: '#fef2f2', color: '#b91c1c', border: '1px solid #fca5a5', fontSize: '10px', padding: '2px 6px' }}
+                                style={{ background: 'var(--danger-bg)', color: 'var(--danger)', border: '1px solid var(--danger-border)', fontSize: '10px', padding: '2px 6px' }}
                               >
                                 🗑️ Delete
                               </button>
@@ -2269,7 +2269,7 @@ OUTPUT FORMAT: Return ONLY a valid JSON array of objects with schema:
 
                           {/* Live Standard KaTeX Highlight Preview */}
                           <div className="math-container" style={{ background: 'var(--surface)', padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border-light)', fontSize: '11px', lineHeight: 1.5, whiteSpace: 'pre-line' }}>
-                            <strong style={{ color: '#065f46', fontSize: '10px', display: 'block', marginBottom: '2px' }}>💡 Live KaTeX Model Answer Highlight Preview:</strong>
+                            <strong style={{ color: 'var(--success)', fontSize: '10px', display: 'block', marginBottom: '2px' }}>💡 Live KaTeX Model Answer Highlight Preview:</strong>
                             <div 
                               dangerouslySetInnerHTML={{ 
                                 __html: preprocessMathText(highlightModelAnswerKeywords(q.solution, q.keywords)) 
@@ -2309,7 +2309,7 @@ OUTPUT FORMAT: Return ONLY a valid JSON array of objects with schema:
                 <button 
                   className="btn btn-secondary btn-sm"
                   onClick={handleGeneratePYQPrompt}
-                  style={{ fontSize: '11px', fontWeight: 700, padding: '6px 14px', background: '#7c3aed', color: '#fff', border: 'none' }}
+                  style={{ fontSize: '11px', fontWeight: 700, padding: '6px 14px', background: 'var(--purple)', color: 'var(--text-white, #ffffff)', border: 'none' }}
                 >
                   🔧 Generate & Copy PYQ Prompt
                 </button>
@@ -2319,7 +2319,7 @@ OUTPUT FORMAT: Return ONLY a valid JSON array of objects with schema:
               {qbStatus && (
                 <div 
                   id="qb-status-banner"
-                  style={{ padding: '8px 12px', background: qbStatus.startsWith('❌') ? '#fef2f2' : '#f0fdf4', border: `1px solid ${qbStatus.startsWith('❌') ? '#fca5a5' : '#bbf7d0'}`, borderRadius: '4px', fontSize: '11px', color: qbStatus.startsWith('❌') ? '#b91c1c' : '#166534', fontWeight: 600, whiteSpace: 'pre-line' }}
+                  style={{ padding: '8px 12px', background: qbStatus.startsWith('❌') ? 'var(--danger-bg)' : 'var(--success-bg)', border: `1px solid ${qbStatus.startsWith('❌') ? 'var(--danger-border)' : 'var(--success-border)'}`, borderRadius: '4px', fontSize: '11px', color: qbStatus.startsWith('❌') ? 'var(--danger)' : 'var(--success)', fontWeight: 600, whiteSpace: 'pre-line' }}
                 >
                   {qbStatus}
                 </div>
@@ -2354,7 +2354,7 @@ OUTPUT FORMAT: Return ONLY a valid JSON array of objects with schema:
               <button 
                 className="btn btn-secondary btn-sm"
                 onClick={handleParseQuestions}
-                style={{ fontSize: '11px', fontWeight: 700, padding: '8px', background: 'var(--accent-grad)', color: '#fff', border: 'none' }}
+                style={{ fontSize: '11px', fontWeight: 700, padding: '8px', background: 'var(--accent-grad)', color: 'var(--text-white, #ffffff)', border: 'none' }}
               >
                 📥 Parse JSON Questions
               </button>
@@ -2389,7 +2389,7 @@ OUTPUT FORMAT: Return ONLY a valid JSON array of objects with schema:
                             <button 
                               className="btn btn-secondary btn-sm" 
                               onClick={() => setPreviewQuestions(prev => prev.filter((_, i) => i !== idx))}
-                              style={{ background: '#fef2f2', color: '#b91c1c', border: '1px solid #fca5a5', fontSize: '10px', padding: '2px 6px' }}
+                              style={{ background: 'var(--danger-bg)', color: 'var(--danger)', border: '1px solid var(--danger-border)', fontSize: '10px', padding: '2px 6px' }}
                             >
                               🗑️ Delete
                             </button>
@@ -2498,7 +2498,7 @@ OUTPUT FORMAT: Return ONLY a valid JSON array of objects with schema:
 
                         {/* Live Standard KaTeX Highlight Preview */}
                         <div className="math-container" style={{ background: 'var(--surface)', padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border-light)', fontSize: '11px', lineHeight: 1.5, whiteSpace: 'pre-line' }}>
-                          <strong style={{ color: '#065f46', fontSize: '10px', display: 'block', marginBottom: '2px' }}>💡 Live KaTeX Model Answer Highlight Preview:</strong>
+                          <strong style={{ color: 'var(--success)', fontSize: '10px', display: 'block', marginBottom: '2px' }}>💡 Live KaTeX Model Answer Highlight Preview:</strong>
                           <div 
                             dangerouslySetInnerHTML={{ 
                               __html: preprocessMathText(highlightModelAnswerKeywords(q.solution, q.keywords)) 
@@ -2536,7 +2536,7 @@ OUTPUT FORMAT: Return ONLY a valid JSON array of objects with schema:
 
         {/* Error Container */}
         {errorMsg && (
-          <div className="card" style={{ background: '#fef2f2', border: '1px solid #fca5a5', padding: '16px 20px', borderRadius: 'var(--radius)', color: '#b91c1c' }}>
+          <div className="card" style={{ background: 'var(--danger-bg)', border: '1px solid var(--danger-border)', padding: '16px 20px', borderRadius: 'var(--radius)', color: 'var(--danger)' }}>
             <h3 style={{ fontSize: '13px', fontWeight: 800, margin: 0 }}>❌ Generation Failed</h3>
             <p style={{ fontSize: '12px', margin: '4px 0 0' }}>{errorMsg}</p>
           </div>
@@ -2775,7 +2775,7 @@ OUTPUT FORMAT: Return ONLY a valid JSON array of objects with schema:
                               <button 
                                 className="btn btn-secondary btn-sm"
                                 onClick={() => handleDeleteSuiteGroup(allGroupIds)}
-                                style={{ background: '#fef2f2', color: '#b91c1c', border: '1px solid #fca5a5', fontSize: '11px', padding: '4px 10px' }}
+                                style={{ background: 'var(--danger-bg)', color: 'var(--danger)', border: '1px solid var(--danger-border)', fontSize: '11px', padding: '4px 10px' }}
                               >
                                 🗑️ Delete Entire Week
                               </button>

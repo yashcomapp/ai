@@ -50,7 +50,7 @@ export default function LoginPage() {
         }
         .btn-pill-login {
           background: var(--accent-grad);
-          color: #ffffff;
+          color: var(--text-white, #ffffff);
           border: none;
           padding: 6px 18px;
           border-radius: var(--radius-pill);
@@ -125,7 +125,7 @@ export default function LoginPage() {
         }
         .btn-hero-primary {
           background: var(--accent-grad);
-          color: #ffffff;
+          color: var(--text-white, #ffffff);
           border: none;
           padding: 10px 24px;
           border-radius: var(--radius);

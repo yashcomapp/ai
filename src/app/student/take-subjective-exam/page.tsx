@@ -608,7 +608,7 @@ function TakeSubjectiveExamContent() {
               ? (error || 'Autonomous mode is active on your account. Subjective Home Exam sessions are restricted for Autonomous Student profiles.')
               : (error || 'Could not load subjective exam.')}
           </p>
-          <button className="btn btn-primary" onClick={() => router.push('/student')} style={{ background: 'var(--accent)', color: '#ffffff', border: 'none', padding: '10px 20px', borderRadius: 'var(--radius-md)', fontWeight: 'bold', cursor: 'pointer' }}>
+          <button className="btn btn-primary" onClick={() => router.push('/student')} style={{ background: 'var(--accent)', color: 'var(--text-white, #ffffff)', border: 'none', padding: '10px 20px', borderRadius: 'var(--radius-md)', fontWeight: 'bold', cursor: 'pointer' }}>
             🏠 Back to Dashboard
           </button>
         </div>

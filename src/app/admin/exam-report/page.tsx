@@ -692,10 +692,10 @@ function ExamReportContent() {
   };
 
   const scoreColor = (pct: number) => {
-    if (pct >= 80) return '#1aa54e';
-    if (pct >= 60) return '#7cb305';
-    if (pct >= 40) return '#e2a800';
-    return '#e2483a';
+    if (pct >= 80) return 'var(--success, #1aa54e)';
+    if (pct >= 60) return 'var(--accent, #7cb305)';
+    if (pct >= 40) return 'var(--warning, #e2a800)';
+    return 'var(--danger, #e2483a)';
   };
 
   // Clones chosen sections to a clean offscreen element for print-optimized A4 generation
@@ -1177,7 +1177,7 @@ function ExamReportContent() {
                   setBroadcastingNotices(false);
                 }
               }}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 600, padding: '5px 12px', background: 'rgba(139, 92, 246, 0.15)', color: '#8b5cf6', border: '1px solid rgba(139, 92, 246, 0.3)' }}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 600, padding: '5px 12px', background: 'var(--purple-bg, rgba(139, 92, 246, 0.15))', color: 'var(--purple, #8b5cf6)', border: '1px solid var(--purple-border, rgba(139, 92, 246, 0.3))' }}
             >
               {broadcastingNotices ? '⏳ Broadcasting...' : '📢 Broadcast Results'}
             </button>
@@ -1421,7 +1421,7 @@ function ExamReportContent() {
                           <td style={{ padding: '7px 10px', fontWeight: 600, whiteSpace: 'nowrap' }}>
                             {a.studentName}{students.find(s => s.studentCode === a.studentCode)?.autonomous ? ' ⭐' : ''}
                             {a.micAvailable === false && (
-                              <span style={{ marginLeft: '6px', color: '#d97706', background: 'rgba(217, 119, 6, 0.1)', padding: '1px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 700 }} title="Microphone Bypassed / Offline">
+                              <span style={{ marginLeft: '6px', color: 'var(--warning)', background: 'var(--warning-bg, rgba(217, 119, 6, 0.1))', padding: '1px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 700 }} title="Microphone Bypassed / Offline">
                                 🎙️ Bypassed
                               </span>
                             )}
@@ -1437,7 +1437,7 @@ function ExamReportContent() {
                           <td style={{ padding: '7px 10px', whiteSpace: 'nowrap' }}>{formatSeconds(getReviewTimeTaken(a))}</td>
                           <td style={{ padding: '7px 10px', whiteSpace: 'nowrap' }}>
                             <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                              <span style={{ fontSize: '10px', padding: '1px 6px', borderRadius: '8px', background: isPending ? '#fef3c7' : '#dbf3e1', color: isPending ? '#d97706' : '#1aa54e', fontWeight: 700 }}>
+                              <span style={{ fontSize: '10px', padding: '1px 6px', borderRadius: '8px', background: isPending ? 'var(--warning-bg, #fef3c7)' : 'var(--success-bg, #dbf3e1)', color: isPending ? 'var(--warning)' : 'var(--success)', fontWeight: 700 }}>
                                 {a.status}
                               </span>
                               <span style={{ fontSize: '10.5px', color: 'var(--text-muted)', fontWeight: 500 }}>
@@ -1525,7 +1525,7 @@ function ExamReportContent() {
                           <td style={{ padding: '7px 10px', fontWeight: 600 }}>
                             👤 {a.studentName}
                             {a.micAvailable === false && (
-                              <span style={{ marginLeft: '6px', color: '#d97706', background: 'rgba(217, 119, 6, 0.1)', padding: '1px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 700 }} title="Microphone Bypassed / Offline">
+                              <span style={{ marginLeft: '6px', color: 'var(--warning)', background: 'var(--warning-bg, rgba(217, 119, 6, 0.1))', padding: '1px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 700 }} title="Microphone Bypassed / Offline">
                                 🎙️ Bypassed
                               </span>
                             )}
@@ -1605,7 +1605,7 @@ function ExamReportContent() {
                     </div>
 
                     <div className="pq-bar-track" style={{ height: '6px', borderRadius: '3px', background: 'var(--bg)', overflow: 'hidden', marginTop: '8px' }}>
-                      <div className="pq-bar-fill" style={{ height: '100%', background: '#1aa54e', width: `${pctCorrect}%` }}></div>
+                      <div className="pq-bar-fill" style={{ height: '100%', background: 'var(--success)', width: `${pctCorrect}%` }}></div>
                     </div>
 
                     <div style={{ fontSize: '11px', margin: '8px 0 12px', color: 'var(--text-muted)' }}>
@@ -1637,9 +1637,9 @@ function ExamReportContent() {
                                 justifyContent: 'space-between', 
                                 alignItems: 'center', 
                                 padding: '6px 10px', 
-                                border: isCorrectOpt ? '1.5px solid #1aa54e' : '1px solid var(--border-light)', 
+                                border: isCorrectOpt ? '1.5px solid var(--success)' : '1px solid var(--border-light)', 
                                 borderRadius: '8px',
-                                background: isCorrectOpt ? 'rgba(26,165,78,0.07)' : 'var(--surface)',
+                                background: isCorrectOpt ? 'var(--success-bg, rgba(26,165,78,0.07))' : 'var(--surface)',
                                 fontSize: '12px'
                               }}
                             >
@@ -1661,7 +1661,7 @@ function ExamReportContent() {
                       </div>
                     ) : (
                       s.correctAnswer && (
-                        <div style={{ padding: '8px 12px', border: '1.5px solid #1aa54e', borderRadius: '8px', background: 'rgba(26,165,78,0.07)', fontSize: '12px', fontWeight: 600, marginBottom: '10px' }} className="math-container">
+                        <div style={{ padding: '8px 12px', border: '1.5px solid var(--success)', borderRadius: '8px', background: 'var(--success-bg, rgba(26,165,78,0.07))', fontSize: '12px', fontWeight: 600, marginBottom: '10px' }} className="math-container">
                           ✅ Correct Answer: {Array.isArray(s.correctAnswer) ? s.correctAnswer.join(', ') : String(s.correctAnswer)}
                         </div>
                       )
@@ -1669,7 +1669,7 @@ function ExamReportContent() {
 
                     {/* Explicit summary of the correct answer when options list is rendered */}
                     {s.options && s.options.length > 0 && s.correctAnswer && (
-                      <div style={{ fontSize: '12px', color: '#1aa54e', fontWeight: 700, margin: '8px 0' }}>
+                      <div style={{ fontSize: '12px', color: 'var(--success)', fontWeight: 700, margin: '8px 0' }}>
                         ℹ️ Correct Answer: Option {Array.isArray(s.correctAnswer) ? s.correctAnswer.join(', ') : String(s.correctAnswer)}
                       </div>
                     )}
@@ -1827,7 +1827,7 @@ function ExamReportContent() {
                     key={i} 
                     style={{ 
                       padding: '8px 12px', 
-                      background: isCorrect ? 'rgba(46,204,113,0.1)' : (isWrong ? 'rgba(231,76,60,0.1)' : 'var(--bg-soft)'), 
+                      background: isCorrect ? 'var(--success-bg, rgba(46,204,113,0.1))' : (isWrong ? 'var(--danger-bg, rgba(231,76,60,0.1))' : 'var(--bg-soft)'), 
                       borderRadius: '6px', 
                       fontSize: '12px',
                       display: 'flex',
@@ -1836,7 +1836,7 @@ function ExamReportContent() {
                     }}
                   >
                     <span>{st.name}</span>
-                    <span style={{ fontWeight: 700, color: isCorrect ? '#2ecc71' : (isWrong ? '#e74c3c' : 'inherit') }}>{label} ({formatSeconds(st.timeSpentSeconds)})</span>
+                    <span style={{ fontWeight: 700, color: isCorrect ? 'var(--success)' : (isWrong ? 'var(--danger)' : 'inherit') }}>{label} ({formatSeconds(st.timeSpentSeconds)})</span>
                   </div>
                 );
               })}
@@ -1967,7 +1967,7 @@ function ExamReportContent() {
                 const totalV = tabV + faceV + multiV + lookV + headV;
                 if (totalV === 0) return null;
                 return (
-                  <div style={{ background: 'rgba(231,76,60,0.1)', border: '1px solid rgba(231,76,60,0.3)', padding: '6px 10px', borderRadius: '4px', fontSize: '10.5px', color: '#e74c3c', marginBottom: '8px' }}>
+                  <div style={{ background: 'var(--danger-bg, rgba(231,76,60,0.1))', border: '1px solid var(--danger-border, rgba(231,76,60,0.3))', padding: '6px 10px', borderRadius: '4px', fontSize: '10.5px', color: 'var(--danger)', marginBottom: '8px' }}>
                     <strong>⚠️ Proctoring Violations Detected:</strong> &nbsp;
                     {tabV > 0 && `Tab switches: ${tabV} • `}
                     {faceV > 0 && `No face: ${faceV} • `}

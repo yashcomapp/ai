@@ -821,7 +821,7 @@ ${JSON.stringify(missingList, null, 2)}`;
           <button className="btn btn-secondary" onClick={() => triggerDuplicatesScan('filtered')}>🔍 Find Duplicates</button>
           <button className="btn btn-secondary" onClick={handleOpenAuditModal}>⚡ Explanations Audit</button>
           <button className="btn btn-secondary" onClick={handleOpenNumericalAuditModal}>🔢 Audit Numerical</button>
-          <button className="btn btn-secondary" onClick={handleOpenDisputesModal} style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.3)' }}>🚩 Reported Issues</button>
+          <button className="btn btn-secondary" onClick={handleOpenDisputesModal} style={{ background: 'var(--danger-bg)', color: 'var(--danger)', borderColor: 'var(--danger-border)' }}>🚩 Reported Issues</button>
           <button className="btn btn-primary" onClick={handleOpenAddQuestion}>+ Add Question</button>
           <button className="btn btn-secondary" title="Logout" onClick={logout}>🚪</button>
         </div>
@@ -1196,7 +1196,7 @@ ${JSON.stringify(missingList, null, 2)}`;
                       borderRadius: '16px',
                       border: 'none',
                       background: duplicateScanScope === 'filtered' ? 'var(--accent)' : 'transparent',
-                      color: duplicateScanScope === 'filtered' ? '#ffffff' : 'var(--text-muted)',
+                      color: duplicateScanScope === 'filtered' ? 'var(--text-white, #ffffff)' : 'var(--text-muted)',
                       cursor: 'pointer'
                     }}
                   >
@@ -1212,7 +1212,7 @@ ${JSON.stringify(missingList, null, 2)}`;
                       borderRadius: '16px',
                       border: 'none',
                       background: duplicateScanScope === 'all' ? 'var(--accent)' : 'transparent',
-                      color: duplicateScanScope === 'all' ? '#ffffff' : 'var(--text-muted)',
+                      color: duplicateScanScope === 'all' ? 'var(--text-white, #ffffff)' : 'var(--text-muted)',
                       cursor: 'pointer'
                     }}
                   >
@@ -1718,16 +1718,16 @@ ${JSON.stringify(missingList, null, 2)}`;
                           {numericalCandidates.slice(0, 50).map((c, idx) => (
                             <tr key={c.id || idx} style={{ borderBottom: '1px solid var(--border-light)' }}>
                               <td style={{ padding: '8px 12px', fontFamily: 'monospace', fontWeight: 600 }}>{c.questionCode}</td>
-                              <td style={{ padding: '8px 12px', color: '#d97706', fontWeight: 700 }}>{c.type}</td>
+                              <td style={{ padding: '8px 12px', color: 'var(--warning)', fontWeight: 700 }}>{c.type}</td>
                               <td style={{ padding: '8px 12px', maxWidth: '300px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.text}</td>
-                              <td style={{ padding: '8px 12px', fontWeight: 700, color: '#1aa54e' }}>{c.correctAnswer}</td>
+                              <td style={{ padding: '8px 12px', fontWeight: 700, color: 'var(--success)' }}>{c.correctAnswer}</td>
                             </tr>
                           ))}
                         </tbody>
                       </table>
                     </div>
                   ) : (
-                    <div style={{ textAlign: 'center', padding: '24px', color: '#1aa54e', fontWeight: 700 }}>
+                    <div style={{ textAlign: 'center', padding: '24px', color: 'var(--success)', fontWeight: 700 }}>
                       🎉 All non-numerical marked questions are clean! No unclassified numerical questions found.
                     </div>
                   )}
@@ -1757,7 +1757,7 @@ ${JSON.stringify(missingList, null, 2)}`;
           <div className="card" style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', maxWidth: '950px', width: '95%', maxHeight: '88vh', display: 'flex', flexDirection: 'column', border: '1px solid var(--border-light)', overflow: 'hidden' }}>
             <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-soft)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: '#ef4444' }}>🚩 Student Reported Questions &amp; Proof Queue</h3>
+                <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: 'var(--danger)' }}>🚩 Student Reported Questions &amp; Proof Queue</h3>
                 <span className="badge badge-danger" style={{ fontSize: '11px' }}>{disputesList.filter(d => d.status === 'pending').length} Pending</span>
               </div>
               <button className="btn btn-secondary btn-sm" onClick={() => setShowDisputesModal(false)}>✕</button>
@@ -1779,7 +1779,7 @@ ${JSON.stringify(missingList, null, 2)}`;
                       key={disp.id}
                       style={{
                         background: 'var(--bg-soft)',
-                        border: `1px solid ${disp.status === 'approved' ? '#10b981' : disp.status === 'rejected' ? 'var(--border-light)' : '#ef4444'}`,
+                        border: `1px solid ${disp.status === 'approved' ? 'var(--success)' : disp.status === 'rejected' ? 'var(--border-light)' : 'var(--danger)'}`,
                         borderRadius: 'var(--radius)',
                         padding: '16px',
                         display: 'flex',
@@ -1819,13 +1819,13 @@ ${JSON.stringify(missingList, null, 2)}`;
                             <>
                               <button 
                                 className="btn btn-primary btn-sm"
-                                style={{ background: '#ef4444', borderColor: '#ef4444' }}
+                                style={{ background: 'var(--danger)', borderColor: 'var(--danger)' }}
                                 onClick={() => handleResolveDispute(disp.id, 'approve')}
                               >
                                 🛡️ Approve &amp; Quarantine Question
                               </button>
                               <button 
-                                className="btn btn-secondary btn-sm"
+                                className="btn btn-secondary btn-sm" 
                                 onClick={() => handleResolveDispute(disp.id, 'reject')}
                               >
                                 ✕ Dismiss
@@ -1836,7 +1836,7 @@ ${JSON.stringify(missingList, null, 2)}`;
                       </div>
 
                       <div style={{ background: 'var(--surface)', padding: '10px 14px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)', fontSize: '12.5px' }}>
-                        <div style={{ color: '#ef4444', fontWeight: 700, marginBottom: '4px' }}>
+                        <div style={{ color: 'var(--danger)', fontWeight: 700, marginBottom: '4px' }}>
                           Reason: {disp.reason ? disp.reason.replace(/_/g, ' ').toUpperCase() : 'DEFECTIVE QUESTION'}
                         </div>
                         {disp.notes && (
@@ -1869,17 +1869,17 @@ ${JSON.stringify(missingList, null, 2)}`;
           style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.92)', zIndex: 35000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}
           onClick={() => setSelectedDisputeScreenshot(null)}
         >
-          <div style={{ position: 'relative', maxWidth: '800px', width: '100%', maxHeight: '90vh', background: '#171a1f', borderRadius: '12px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.2)', display: 'flex', flexDirection: 'column' }} onClick={(e) => e.stopPropagation()}>
-            <div style={{ padding: '12px 16px', background: '#222730', borderBottom: '1px solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ color: '#fff', fontSize: '13px', fontWeight: 700 }}>📷 Student Question Proof Snapshot</span>
+          <div style={{ position: 'relative', maxWidth: '800px', width: '100%', maxHeight: '90vh', background: 'var(--surface-popover)', borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--border-popover)', display: 'flex', flexDirection: 'column' }} onClick={(e) => e.stopPropagation()}>
+            <div style={{ padding: '12px 16px', background: 'var(--bg-soft)', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ color: 'var(--text)', fontSize: '13px', fontWeight: 700 }}>📷 Student Question Proof Snapshot</span>
               <button className="btn btn-secondary btn-sm" onClick={() => setSelectedDisputeScreenshot(null)}>✕ Close</button>
             </div>
-            <div style={{ padding: '16px', overflowY: 'auto', display: 'flex', justifyContent: 'center', background: '#0b0f19' }}>
+            <div style={{ padding: '16px', overflowY: 'auto', display: 'flex', justifyContent: 'center', background: 'var(--bg)' }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img 
                 src={selectedDisputeScreenshot} 
                 alt="Student Proof Snapshot" 
-                style={{ maxWidth: '100%', maxHeight: '75vh', objectFit: 'contain', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)' }} 
+                style={{ maxWidth: '100%', maxHeight: '75vh', objectFit: 'contain', borderRadius: '8px', border: '1px solid var(--border-light)' }} 
               />
             </div>
           </div>
