@@ -6,6 +6,7 @@ import { ChunkedBatch } from '@/lib/firebase/batch';
 import { notifyNewExam } from '@/lib/notifications';
 import { getDateKeyIST } from '@/lib/dateUtils';
 import { getRequiredConfidence, isDemoUser } from '@/lib/studentDb';
+import { getCanonicalSubjectName, parseTopicCode } from '@/lib/questionTypes';
 export const dynamic = 'force-dynamic';
 
 const parseIST = (dateStr: string) => {
@@ -63,12 +64,21 @@ export async function GET(req: NextRequest) {
       });
 
       const topicCodes = Array.from(new Set(masterySnap.docs.map(d => d.data().topicCode).filter(Boolean)));
+      const queryCodesSet = new Set<string>(topicCodes);
+      topicCodes.forEach(tc => {
+        const lastDot = tc.lastIndexOf('.');
+        if (lastDot !== -1) {
+          queryCodesSet.add(tc.substring(0, lastDot));
+        }
+      });
+      const allQueryCodes = Array.from(queryCodesSet);
+
       const syllabusMap = new Map<string, any>();
 
-      if (topicCodes.length > 0) {
+      if (allQueryCodes.length > 0) {
         const chunks = [];
-        for (let i = 0; i < topicCodes.length; i += 30) {
-          chunks.push(topicCodes.slice(i, i + 30));
+        for (let i = 0; i < allQueryCodes.length; i += 30) {
+          chunks.push(allQueryCodes.slice(i, i + 30));
         }
         const snaps = await Promise.all(
           chunks.map(chunk => adminDb.collection('syllabusTopicIndex').where('topicCode', 'in', chunk).get())
@@ -85,7 +95,25 @@ export async function GET(req: NextRequest) {
       masterySnap.docs.forEach(doc => {
         const d = doc.data();
         const tCode = d.topicCode;
-        const sData = syllabusMap.get(tCode) || {};
+        let sData = syllabusMap.get(tCode);
+        let parentTopic = null;
+        if (!sData && tCode) {
+          const lastDot = tCode.lastIndexOf('.');
+          if (lastDot !== -1) {
+            const parentCode = tCode.substring(0, lastDot);
+            parentTopic = syllabusMap.get(parentCode);
+          }
+        }
+        if (!sData && parentTopic) {
+          sData = parentTopic;
+        }
+
+        const parsed = parseTopicCode(tCode);
+        const subCode = sData?.subjectCode || parsed.subjectCode || (tCode.includes('-') ? tCode.split('-')[2] : '') || '';
+        const subName = sData?.subjectName || getCanonicalSubjectName(subCode, tCode, sData?.chapterName);
+        const chapName = d.chapterName || sData?.chapterName || (parsed.chapterNumber ? `Chapter ${parsed.chapterNumber}` : 'General');
+        const chapNum = parsed.chapterNumber || sData?.chapterNumber || '';
+        const topName = d.topicName || (sData?.topicName ? (parentTopic ? `${sData.topicName} (${parsed.topicNumber || tCode})` : sData.topicName) : (d.name || `Topic ${parsed.topicNumber || tCode}`));
 
         const mastery = Number(d.mastery || 0);
         const confidence = Number(d.confidence || 0);
@@ -93,8 +121,8 @@ export async function GET(req: NextRequest) {
         const practiceQuestions = Number(d.practiceQuestionsAttempted || practiceQuestionsMap.get(tCode) || 0);
         const attempts = d.questionsAttempted || d.attempts || 0;
         const isRecovery = !!d.isRecoveryMastered;
-        const classification = sData.topicClassification || d.topicClassification;
-        const targetQ = sData.targetQuestions || d.targetQuestions;
+        const classification = sData?.topicClassification || d.topicClassification;
+        const targetQ = sData?.targetQuestions || d.targetQuestions;
         const reqConfidence = getRequiredConfidence(classification, targetQ);
         const isFullConfidence = confidence >= reqConfidence;
         const isLimitReached = practiceCount >= 5;
@@ -117,11 +145,11 @@ export async function GET(req: NextRequest) {
           }
           mastered.push({
             topicCode: tCode,
-            topicName: sData.topicName || d.topicName || tCode,
-            subjectName: sData.subjectName || 'General',
-            chapterName: sData.chapterName || 'General',
-            chapterNumber: sData.chapterNumber || '',
-            topicNumber: sData.topicNumber || '',
+            topicName: topName,
+            subjectName: subName,
+            chapterName: chapName,
+            chapterNumber: chapNum,
+            topicNumber: parsed.topicNumber || sData?.topicNumber || '',
             mastery,
             confidence,
             practiceCount,
@@ -139,11 +167,11 @@ export async function GET(req: NextRequest) {
           expText = `High accuracy (${mastery}%), but needs ${needed} more verified question(s) to reach full confidence for Mastered.`;
           practicing.push({
             topicCode: tCode,
-            topicName: sData.topicName || d.topicName || tCode,
-            subjectName: sData.subjectName || 'General',
-            chapterName: sData.chapterName || 'General',
-            chapterNumber: sData.chapterNumber || '',
-            topicNumber: sData.topicNumber || '',
+            topicName: topName,
+            subjectName: subName,
+            chapterName: chapName,
+            chapterNumber: chapNum,
+            topicNumber: parsed.topicNumber || sData?.topicNumber || '',
             mastery,
             confidence,
             practiceCount,
@@ -166,11 +194,11 @@ export async function GET(req: NextRequest) {
           }
           practicing.push({
             topicCode: tCode,
-            topicName: sData.topicName || d.topicName || tCode,
-            subjectName: sData.subjectName || 'General',
-            chapterName: sData.chapterName || 'General',
-            chapterNumber: sData.chapterNumber || '',
-            topicNumber: sData.topicNumber || '',
+            topicName: topName,
+            subjectName: subName,
+            chapterName: chapName,
+            chapterNumber: chapNum,
+            topicNumber: parsed.topicNumber || sData?.topicNumber || '',
             mastery,
             confidence,
             practiceCount,
@@ -197,11 +225,11 @@ export async function GET(req: NextRequest) {
           }
           needsAttention.push({
             topicCode: tCode,
-            topicName: sData.topicName || d.topicName || tCode,
-            subjectName: sData.subjectName || 'General',
-            chapterName: sData.chapterName || 'General',
-            chapterNumber: sData.chapterNumber || '',
-            topicNumber: sData.topicNumber || '',
+            topicName: topName,
+            subjectName: subName,
+            chapterName: chapName,
+            chapterNumber: chapNum,
+            topicNumber: parsed.topicNumber || sData?.topicNumber || '',
             mastery,
             confidence,
             practiceCount,
