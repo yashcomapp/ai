@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyRole } from '@/lib/auth';
 import { getDashboardData } from '@/lib/studentDb';
+import { getFromCache, setInCache } from '@/lib/firebase/cache';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,11 +14,24 @@ export async function GET(req: NextRequest) {
 
     const { uid } = student.decodedToken;
     const userData = student.userData || {};
+    const studentCode = userData.studentCode || uid;
 
     const { searchParams } = new URL(req.url);
     const rangeDays = parseInt(searchParams.get('rangeDays') || '7', 10);
 
+    const cacheKey = `student_dashboard_${studentCode}_${rangeDays}`;
+    const cached = getFromCache<any>(cacheKey);
+    if (cached) {
+      return NextResponse.json(cached, {
+        headers: {
+          'Cache-Control': 'private, max-age=15, stale-while-revalidate=30'
+        }
+      });
+    }
+
     const data = await getDashboardData(uid, userData, rangeDays);
+    setInCache(cacheKey, data, 20000); // 20s in-memory cache
+
     return NextResponse.json(data, {
       headers: {
         'Cache-Control': 'private, max-age=15, stale-while-revalidate=30'
