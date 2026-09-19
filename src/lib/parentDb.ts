@@ -765,8 +765,7 @@ export async function getParentDashboardData(
     const practiceQuestions = Number(m.practiceQuestionsAttempted || 0);
     const practiceCount = Number(m.practiceCount || 0);
     const reqConf = getRequiredConfidence(sData?.topicClassification || m.topicClassification, sData?.targetQuestions || m.targetQuestions);
-    const hasPractice = practiceQuestions >= 6 || practiceCount >= 1 || (conf >= reqConf && !m.examQuestionsAttempted) || m.isRecoveryMastered === true;
-    const isMastered = (mLevel >= 90 && conf >= reqConf && hasPractice) || m.isRecoveryMastered === true;
+    const isMastered = (mLevel >= 90 && conf >= reqConf) || m.isRecoveryMastered === true;
     const displayName = sData ? `${sData.chapterName} — ${sData.topicName}` : (m.topicName || m.topicCode || 'Topic');
     const subjectName = sData?.subjectName || m.subjectName || 'General';
 
