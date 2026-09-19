@@ -144,8 +144,7 @@ export function calculateUnifiedMetrics(input: UnifiedMetricsInput): UnifiedMetr
     : 0;
 
   // --- 2. Topic Mastery / LQ Score (With SRS Retention Modulation) ---
-  let certifiedMasteredCount = 0;
-  let recoveryMasteredCount = 0;
+  let masteredTopicsCount = 0;
   let needsAttentionTopicsCount = 0;
   let srsDueTopicsCount = 0;
   let srsOverdueTopicsCount = 0;
@@ -188,22 +187,16 @@ export function calculateUnifiedMetrics(input: UnifiedMetricsInput): UnifiedMetr
     const retentionFactor = 0.70 + 0.30 * (retention / 100);
     const effectiveMastery = Math.round(mastery * retentionFactor);
 
-    if (isRecovery && mastery >= 90) {
-      recoveryMasteredCount += 1;
-    } else {
-      certifiedNominalSum += mastery;
-      certifiedEffectiveSum += effectiveMastery;
-      certifiedTopicsCount += 1;
+    certifiedNominalSum += mastery;
+    certifiedEffectiveSum += effectiveMastery;
+    certifiedTopicsCount += 1;
 
-      if (mastery < 50) {
-        needsAttentionTopicsCount += 1;
-      } else if (mastery >= 90 && isFullConfidence) {
-        certifiedMasteredCount += 1;
-      }
+    if (isRecovery || (mastery >= 90 && isFullConfidence)) {
+      masteredTopicsCount += 1;
+    } else if (mastery < 50) {
+      needsAttentionTopicsCount += 1;
     }
   });
-
-  const masteredTopicsCount = certifiedMasteredCount + recoveryMasteredCount;
 
   // Nominal Mastery: Pure syllabus accuracy without decay
   const overallMastery = certifiedTopicsCount > 0
