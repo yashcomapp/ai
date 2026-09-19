@@ -11,6 +11,7 @@ import {
 } from '@/types/quotient.types';
 import { evaluateSessionSincerity } from '@/lib/practiceTimeUtils';
 import { isDemoUser } from '@/lib/studentDb';
+import { calculateSrsSchedule } from '@/lib/srsRotation';
 
 export const MASTERY_THRESHOLDS = {
   MASTERED_MASTERY: 90,
@@ -249,25 +250,41 @@ export class TopicHealthCalculator implements ParameterCalculator {
   calculate(data: StudentData): ScoreResult {
     const { practiceRecords, assignedTopics } = data;
     
+    // Helper to calculate retention factor
+    const getRetentionFactor = (rec: any): { retention: number; factor: number; isDue: boolean } => {
+      const lastTime = rec.lastRevisedAt || (rec.updatedAt?.toDate ? rec.updatedAt.toDate() : rec.updatedAt) || rec.lastAttempt;
+      const sched = calculateSrsSchedule(lastTime, Number(rec.srsStage || 0));
+      const retention = sched.estimatedRetention;
+      const factor = 0.70 + 0.30 * (retention / 100);
+      return { retention, factor, isDue: sched.isDueForRevision };
+    };
+
     // If no assigned topics are resolved, fallback using practiceRecords
     if (!assignedTopics || assignedTopics.length === 0) {
       if (practiceRecords.length === 0) {
-        return { score: 0, details: { totalTopics: 0, masteredCount: 0, attentionCount: 0 } };
+        return { score: 0, details: { totalTopics: 0, masteredCount: 0, attentionCount: 0, srsDueCount: 0, averageRetention: 100 } };
       }
       const totalTopics = practiceRecords.length;
       let totalMasteryEarned = 0;
       let attentionCount = 0;
       let masteredCount = 0;
+      let srsDueCount = 0;
+      let totalRetentionSum = 0;
+
       practiceRecords.forEach(rec => {
         const mastery = Number(rec.mastery || 0);
         const confidence = Number(rec.confidence || 0);
         const isRecovery = Boolean(rec.isRecoveryMastered);
+        const { retention, factor, isDue } = getRetentionFactor(rec);
+        if (isDue) srsDueCount++;
+        totalRetentionSum += retention;
+
         if (isRecovery || (mastery >= 90 && confidence >= 10)) {
           masteredCount++;
         }
         if (mastery < 50) attentionCount++;
         const confidenceFactor = Math.min(1, Math.max(0.5, confidence / 10));
-        totalMasteryEarned += mastery * confidenceFactor;
+        totalMasteryEarned += mastery * confidenceFactor * factor;
       });
       const score = Math.max(0, Math.min(100, Math.round(totalMasteryEarned / totalTopics)));
       return {
@@ -276,6 +293,8 @@ export class TopicHealthCalculator implements ParameterCalculator {
           totalTopics,
           masteredCount,
           attentionCount,
+          srsDueCount,
+          averageRetention: Math.round(totalRetentionSum / totalTopics),
           masteryRatio: totalTopics > 0 ? Math.round((masteredCount / totalTopics) * 100) : 0,
           attentionRatio: totalTopics > 0 ? Math.round((attentionCount / totalTopics) * 100) : 0,
           fallbackUsed: true
@@ -287,6 +306,8 @@ export class TopicHealthCalculator implements ParameterCalculator {
     let totalMasteryEarned = 0;
     let attentionCount = 0;
     let masteredCount = 0;
+    let srsDueCount = 0;
+    let totalRetentionSum = 0;
 
     // Create a lookup map of attempted practice records by topicCode using all-time practice records
     const practiceMap = new Map();
@@ -304,6 +325,9 @@ export class TopicHealthCalculator implements ParameterCalculator {
         const mastery = Number(record.mastery || 0);
         const confidence = Number(record.confidence || 0);
         const isRecovery = Boolean(record.isRecoveryMastered);
+        const { retention, factor, isDue } = getRetentionFactor(record);
+        if (isDue) srsDueCount++;
+        totalRetentionSum += retention;
 
         if (isRecovery || (mastery >= 90 && confidence >= 10)) {
           masteredCount++;
@@ -313,13 +337,14 @@ export class TopicHealthCalculator implements ParameterCalculator {
           attentionCount++;
         }
 
-        // Continuous confidence scaling: scales proportionally up to 1.0 at 10 questions
+        // Continuous confidence & SRS retention scaling
         const confidenceFactor = Math.min(1, Math.max(0.5, confidence / 10));
-        const effectiveTopicScore = mastery * confidenceFactor;
+        const effectiveTopicScore = mastery * confidenceFactor * factor;
         totalMasteryEarned += effectiveTopicScore;
       } else {
         // Not even started or opened: counts as 0% mastery, needs attention
         attentionCount++;
+        totalRetentionSum += 100;
       }
     });
 
@@ -336,6 +361,8 @@ export class TopicHealthCalculator implements ParameterCalculator {
         totalTopics,
         masteredCount,
         attentionCount,
+        srsDueCount,
+        averageRetention: totalTopics > 0 ? Math.round(totalRetentionSum / totalTopics) : 100,
         masteryRatio: totalTopics > 0 ? Math.round((masteredCount / totalTopics) * 100) : 0,
         attentionRatio: totalTopics > 0 ? Math.round((attentionRatio) * 100) : 0,
         averageMastery: Math.round(averageTopicHealth),

@@ -421,8 +421,11 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
     const profile = {
       overallMastery: unifiedMetrics.overallMastery,
       lqScore: unifiedMetrics.lqScore,
+      averageRetention: unifiedMetrics.averageRetention,
       masteredTopics: unifiedMetrics.masteredTopicsCount,
       needsAttentionTopics: unifiedMetrics.needsAttentionTopicsCount,
+      srsDueTopicsCount: unifiedMetrics.srsDueTopicsCount,
+      srsOverdueTopicsCount: unifiedMetrics.srsOverdueTopicsCount,
       absentExamsCount,
       practicesCompletedCount: unifiedMetrics.practicesCompletedCount,
       totalTopicsCount: unifiedMetrics.totalTopicsCount,

@@ -515,10 +515,13 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
                 {/* Stat 2: LQ Score */}
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', justifyContent: 'center', gap: '2px', background: 'var(--surface-2)', padding: '8px 4px', borderRadius: '10px', border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
                   <div style={{ fontSize: '1.55rem', fontWeight: 800, color: 'var(--success)', lineHeight: 1 }}>
-                    {Math.round(profile?.overallMastery || 0)}%
+                    {Math.round((profile as any)?.lqScore ?? profile?.overallMastery ?? 0)}%
                   </div>
                   <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 700 }}>
                     LQ Score
+                  </div>
+                  <div style={{ fontSize: '9.5px', color: 'var(--text-secondary)', fontWeight: 600 }}>
+                    🧠 {(profile as any)?.averageRetention || 100}% Retention
                   </div>
                 </div>
 

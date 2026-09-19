@@ -31,7 +31,23 @@
 export interface UnifiedMetricsInput {
   objectiveReviews?: Array<{ percentage?: number | string; score?: number; totalMarks?: number; status?: string; [key: string]: any }>;
   subjectiveEvaluations?: Array<{ percentage?: number | string; totalMarksAwarded?: number; totalMaxMarks?: number; [key: string]: any }>;
-  topicMasteries?: Array<{ mastery?: number | string; confidence?: number | string; [key: string]: any }>;
+  topicMasteries?: Array<{ 
+    mastery?: number | string; 
+    confidence?: number | string; 
+    srsStage?: number;
+    lastRevisedAt?: string | number | Date | null;
+    updatedAt?: any;
+    lastAttempt?: string | number | Date | null;
+    srsSchedule?: {
+      estimatedRetention?: number;
+      isDueForRevision?: boolean;
+      daysOverdue?: number;
+      daysUntilDue?: number;
+      srsStage?: number;
+      stageLabel?: string;
+    };
+    [key: string]: any;
+  }>;
   practiceReviews?: Array<{ scorePercent?: number | string; totalQuestions?: number; [key: string]: any }>;
   integrityScore?: number;
   totalCoveredTopics?: number;
@@ -46,11 +62,14 @@ export interface UnifiedMetricsResult {
   subjectiveAvg: number;
   practiceAvg: number;
 
-  // 2. Mastery / LQ Score
-  overallMastery: number;
-  lqScore: number;
+  // 2. Mastery / LQ Score (SRS Retention Integrated)
+  overallMastery: number;       // Nominal Curriculum Mastery (0-100%)
+  lqScore: number;              // True Retained Learning Quotient (0-100%)
+  averageRetention: number;     // Average Memory Retention Index (0-100%)
   masteredTopicsCount: number;
   needsAttentionTopicsCount: number;
+  srsDueTopicsCount: number;
+  srsOverdueTopicsCount: number;
 
   // 3. Efforts
   effortsPercent: number;
@@ -122,12 +141,17 @@ export function calculateUnifiedMetrics(input: UnifiedMetricsInput): UnifiedMetr
     ? Math.round(practicePercentages.reduce((sum, p) => sum + p, 0) / practicePercentages.length)
     : 0;
 
-  // --- 2. Topic Mastery / LQ Score ---
+  // --- 2. Topic Mastery / LQ Score (With SRS Retention Modulation) ---
   let certifiedMasteredCount = 0;
   let recoveryMasteredCount = 0;
   let needsAttentionTopicsCount = 0;
-  let certifiedMasterySum = 0;
+  let srsDueTopicsCount = 0;
+  let srsOverdueTopicsCount = 0;
+
+  let certifiedNominalSum = 0;
+  let certifiedEffectiveSum = 0;
   let certifiedTopicsCount = 0;
+  let totalRetentionSum = 0;
 
   topicMasteries.forEach(t => {
     const mastery = Number(t.mastery || 0);
@@ -136,10 +160,50 @@ export function calculateUnifiedMetrics(input: UnifiedMetricsInput): UnifiedMetr
     const reqConf = Number(t.requiredConfidence || 10);
     const isFullConfidence = confidence >= reqConf || confidence >= 10;
 
+    // Resolve SRS retention and review status
+    let retention = 100;
+    let isDue = false;
+    let isOverdue = false;
+
+    if (t.srsSchedule) {
+      retention = typeof t.srsSchedule.estimatedRetention === 'number' ? t.srsSchedule.estimatedRetention : 100;
+      isDue = Boolean(t.srsSchedule.isDueForRevision);
+      isOverdue = Number(t.srsSchedule.daysOverdue || 0) > 0;
+    } else {
+      const lastTime = t.lastRevisedAt || (t.updatedAt?.toDate ? t.updatedAt.toDate() : t.updatedAt) || t.lastAttempt;
+      if (lastTime) {
+        const lastMs = typeof lastTime === 'number' ? lastTime : new Date(lastTime).getTime();
+        if (!isNaN(lastMs)) {
+          const daysPassed = (Date.now() - lastMs) / (1000 * 60 * 60 * 24);
+          const stage = Number(t.srsStage || 0);
+          const intervals = [4, 7, 14, 30, 60, 90];
+          const targetInterval = intervals[Math.min(intervals.length - 1, stage)] || 4;
+          if (daysPassed > targetInterval) {
+            isDue = true;
+            const overdue = daysPassed - targetInterval;
+            isOverdue = overdue > 0;
+            retention = Math.max(35, Math.round(75 - (overdue / targetInterval) * 35));
+          } else {
+            retention = Math.round(100 - (daysPassed / targetInterval) * 25);
+          }
+        }
+      }
+    }
+
+    if (isDue) srsDueTopicsCount++;
+    if (isOverdue) srsOverdueTopicsCount++;
+    totalRetentionSum += retention;
+
+    // Pedagogical Retention Modulation:
+    // Retention Factor scales gently: 100% -> 1.0, 75% -> 0.925, 40% -> 0.82
+    const retentionFactor = 0.70 + 0.30 * (retention / 100);
+    const effectiveMastery = Math.round(mastery * retentionFactor);
+
     if (isRecovery && mastery >= 90) {
       recoveryMasteredCount += 1;
     } else {
-      certifiedMasterySum += mastery;
+      certifiedNominalSum += mastery;
+      certifiedEffectiveSum += effectiveMastery;
       certifiedTopicsCount += 1;
 
       if (mastery < 50) {
@@ -152,12 +216,19 @@ export function calculateUnifiedMetrics(input: UnifiedMetricsInput): UnifiedMetr
 
   const masteredTopicsCount = certifiedMasteredCount + recoveryMasteredCount;
 
-  // Official Institutional LQ is derived from Certified Masteries & Exams (0 inflation from brute-force recovery)
+  // Nominal Mastery: Pure syllabus accuracy without decay
   const overallMastery = certifiedTopicsCount > 0
-    ? Math.round(certifiedMasterySum / certifiedTopicsCount)
+    ? Math.round(certifiedNominalSum / certifiedTopicsCount)
     : (topicMasteries.length > 0 ? Math.round(topicMasteries.reduce((s, t) => s + Number(t.mastery || 0), 0) / topicMasteries.length) : (averageMarks > 0 ? averageMarks : 0));
 
-  const lqScore = overallMastery;
+  // True Retained LQ: Holistic mastery modulated by active retention
+  const lqScore = certifiedTopicsCount > 0
+    ? Math.round(certifiedEffectiveSum / certifiedTopicsCount)
+    : overallMastery;
+
+  const averageRetention = topicMasteries.length > 0
+    ? Math.round(totalRetentionSum / topicMasteries.length)
+    : 100;
 
   // --- 3. Efforts Calculation ---
   // Denominator: number of topics on which exams/tests have actually been conducted/assigned
@@ -176,8 +247,11 @@ export function calculateUnifiedMetrics(input: UnifiedMetricsInput): UnifiedMetr
     practiceAvg,
     overallMastery,
     lqScore,
+    averageRetention,
     masteredTopicsCount,
     needsAttentionTopicsCount,
+    srsDueTopicsCount,
+    srsOverdueTopicsCount,
     effortsPercent,
     practicesCompletedCount,
     totalTopicsCount: safeTotalTopics,

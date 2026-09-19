@@ -4,6 +4,7 @@ import { getDateKeyIST } from '@/lib/dateUtils';
 import { chunkArray } from '@/lib/firestoreUtils';
 import { calculateUnifiedMetrics } from '@/lib/dashboardMetrics';
 import { calculateProctoringIntegrityScore } from '@/lib/proctoring';
+import { calculateSrsSchedule } from '@/lib/srsRotation';
 
 export async function getParentDashboardData(
   parentEmail: string,
@@ -747,6 +748,14 @@ export async function getParentDashboardData(
   const needsAttentionTopicsList: string[] = [];
   const masteredTopicCodes = new Set<string>();
   const inProgressTopicCodes = new Set<string>();
+  const srsDueTopicsList: Array<{
+    topicCode: string;
+    topicName: string;
+    subjectName: string;
+    stageLabel: string;
+    estimatedRetention: number;
+    daysOverdue: number;
+  }> = [];
 
   masteriesList.forEach(m => {
     const mLevel = Number(m.masteryLevel || m.mastery) || 0;
@@ -757,9 +766,23 @@ export async function getParentDashboardData(
     const isMastered = (mLevel >= 90 && conf >= 20 && hasPractice) || m.isRecoveryMastered === true;
     const sData = syllabusMap.get(m.topicCode);
     const displayName = sData ? `${sData.chapterName} — ${sData.topicName}` : (m.topicName || m.topicCode || 'Topic');
+    const subjectName = sData?.subjectName || m.subjectName || 'General';
+
+    const lastTime = m.lastRevisedAt || (m.updatedAt?.toDate ? m.updatedAt.toDate() : m.updatedAt) || m.lastAttempt;
+    const srsSched = calculateSrsSchedule(lastTime, Number(m.srsStage || 0));
 
     if (isMastered) {
       masteredTopicCodes.add(m.topicCode);
+      if (srsSched.isDueForRevision) {
+        srsDueTopicsList.push({
+          topicCode: m.topicCode,
+          topicName: displayName,
+          subjectName,
+          stageLabel: srsSched.stageLabel,
+          estimatedRetention: srsSched.estimatedRetention,
+          daysOverdue: srsSched.daysOverdue
+        });
+      }
     } else if (mLevel >= 50) {
       inProgressTopicCodes.add(m.topicCode);
     } else {
@@ -805,6 +828,12 @@ export async function getParentDashboardData(
       todayAverageScore,
       streakDays
     },
+    srsStats: {
+      retentionScore: unifiedMetrics.averageRetention,
+      srsDueTopicsCount: srsDueTopicsList.length,
+      srsOverdueTopicsCount: unifiedMetrics.srsOverdueTopicsCount,
+      srsDueTopics: srsDueTopicsList
+    },
     topicDiagnostics: {
       needsAttentionYesterdayCount,
       needsAttentionYesterdayTopics: [...needsAttentionTopicsList, ...recoveredTodayTopicsList],
@@ -833,7 +862,9 @@ export async function getParentDashboardData(
       subjectiveAvgScore: unifiedMetrics.subjectiveAvg,
       practiceAvgScore: unifiedMetrics.practiceAvg,
       overallMastery: unifiedMetrics.overallMastery,
-      lqScore: unifiedMetrics.lqScore, // Unified true LQ/Mastery score
+      lqScore: unifiedMetrics.lqScore, // Unified true Retained LQ score
+      averageRetention: unifiedMetrics.averageRetention,
+      srsDueTopicsCount: srsDueTopicsList.length,
       effortsPercent: unifiedMetrics.effortsPercent, // Unified efforts percentage
       totalSessions: unifiedMetrics.examCount + unifiedMetrics.practicesCompletedCount,
       practicesCompletedCount: unifiedMetrics.practicesCompletedCount,
