@@ -459,7 +459,7 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                       <strong style={{ color: 'var(--text)' }}>🔒 Zero-Collision Vaults:</strong> Questions in Practice are dedicated to self-study only and will never appear on scheduled exams.
                     </div>
                     <div style={{ padding: '6px 8px', background: 'var(--surface)', borderRadius: '6px', border: '1px solid var(--border-light)' }}>
-                      <strong style={{ color: 'var(--text)' }}>⚡ Guided Recovery:</strong> Completed 5 practices without 90%? A special 8-question Recovery Quiz (50% fresh + 50% missed) activates!
+                      <strong style={{ color: 'var(--text)' }}>⚡ Guided Recovery:</strong> Completed all practice sets (2-3 sets) without 90%? A special 8-question Recovery Quiz (50% fresh + 50% missed) activates!
                     </div>
                   </div>
                 </div>
@@ -612,41 +612,44 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                                           const isRecovery = !!topic.isRecoveryMastered;
                                           const state = topic.state;
 
-                                          let expIcon = '⚪';
-                                          let expColor = 'var(--text-muted)';
-                                          let expText = '';
-                                          const practiceCount = topic.practiceCount || 0;
-                                          const isLimitReached = practiceCount >= 5;
+                                           let expIcon = '⚪';
+                                           let expColor = 'var(--text-muted)';
+                                           let expText = '';
+                                           const practiceCount = topic.practiceCount || 0;
+                                           const rawScope = String(topic.topicClassification || '').toLowerCase().trim();
+                                           const isMinorTopic = rawScope === 'minor' || rawScope === 'micro' || (topic.targetQuestions !== undefined && topic.targetQuestions <= 20);
+                                           const maxPractices = isMinorTopic ? 2 : 3;
+                                           const isLimitReached = practiceCount >= maxPractices;
 
-                                          if (state === 'needsAttention') {
-                                            if (isLimitReached) {
-                                              expIcon = '⚡';
-                                              expColor = 'var(--accent)';
-                                              expText = `5/5 practices done (${mastery}% accuracy). Take the Recovery Quiz (Fresh + Missed Qs) to achieve Mastered!`;
-                                            } else if (isAbsent) {
-                                              expIcon = '⚠️';
-                                              expColor = 'var(--danger)';
-                                              expText = 'Missed scheduled exam. Practice questions to recover concept understanding.';
-                                            } else if (attempts === 0) {
-                                              expIcon = '⚪';
-                                              expColor = 'var(--text-muted)';
-                                              expText = 'Not attempted yet. Start 1st practice to assess concept baseline.';
-                                            } else {
-                                              expIcon = '🚨';
-                                              expColor = 'var(--danger)';
-                                              expText = `${practiceCount}/5 practices done (${mastery}% accuracy). ${5 - practiceCount} practice(s) left — focus on weak areas.`;
-                                            }
-                                          } else if (state === 'continuePractice') {
-                                            if (isLimitReached) {
-                                              expIcon = '⚡';
-                                              expColor = 'var(--accent)';
-                                              expText = `5/5 practices done (${mastery}% accuracy). Take the Recovery Quiz (Fresh + Missed Qs) to achieve Mastered!`;
-                                            } else {
-                                              expIcon = '📈';
-                                              expColor = 'var(--warning)';
-                                              expText = `${practiceCount}/5 practices done (${mastery}% accuracy). Complete 1 micro-set (5 Qs) to aim for 90%+ Mastered.`;
-                                            }
-                                          } else if (state === 'revision') {
+                                           if (state === 'needsAttention') {
+                                             if (isLimitReached) {
+                                               expIcon = '⚡';
+                                               expColor = 'var(--accent)';
+                                               expText = `${maxPractices}/${maxPractices} practices done (${mastery}% accuracy). Take the Recovery Quiz (Fresh + Missed Qs) to achieve Mastered!`;
+                                             } else if (isAbsent) {
+                                               expIcon = '⚠️';
+                                               expColor = 'var(--danger)';
+                                               expText = 'Missed scheduled exam. Practice questions to recover concept understanding.';
+                                             } else if (attempts === 0) {
+                                               expIcon = '⚪';
+                                               expColor = 'var(--text-muted)';
+                                               expText = 'Not attempted yet. Start 1st practice to assess concept baseline.';
+                                             } else {
+                                               expIcon = '🚨';
+                                               expColor = 'var(--danger)';
+                                               expText = `${practiceCount}/${maxPractices} practices done (${mastery}% accuracy). ${Math.max(0, maxPractices - practiceCount)} practice(s) left — focus on weak areas.`;
+                                             }
+                                           } else if (state === 'continuePractice') {
+                                             if (isLimitReached) {
+                                               expIcon = '⚡';
+                                               expColor = 'var(--accent)';
+                                               expText = `${maxPractices}/${maxPractices} practices done (${mastery}% accuracy). Take the Recovery Quiz (Fresh + Missed Qs) to achieve Mastered!`;
+                                             } else {
+                                               expIcon = '📈';
+                                               expColor = 'var(--warning)';
+                                               expText = `${practiceCount}/${maxPractices} practices done (${mastery}% accuracy). Complete 1 practice set (6 Qs) to aim for 90%+ Mastered.`;
+                                             }
+                                           } else if (state === 'revision') {
                                             if (topic.isSrsDue) {
                                               const srs = topic.srsSchedule;
                                               expIcon = '🧠';
@@ -760,10 +763,10 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                                                      {topic.srsSchedule.stageLabel}
                                                    </span>
                                                  ) : (
-                                                   <>
-                                                     {topic.practiceCount}/5 practices
-                                                     <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>({topic.attempts} / {reqMasteryQs} to Master)</div>
-                                                   </>
+                                                    <>
+                                                      {topic.practiceCount}/{maxPractices} practices
+                                                      <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>({topic.attempts} / {reqMasteryQs} to Master)</div>
+                                                    </>
                                                  )}
                                                </td>
                                               <td style={{ padding: '6px 8px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '11px' }}>

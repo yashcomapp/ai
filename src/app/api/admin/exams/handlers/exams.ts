@@ -125,7 +125,10 @@ export async function GET(req: NextRequest) {
         const targetQ = sData?.targetQuestions || d.targetQuestions;
         const reqConfidence = getRequiredConfidence(classification, targetQ);
         const isFullConfidence = confidence >= reqConfidence;
-        const isLimitReached = practiceCount >= 5;
+        const rawScope = String(classification || '').toLowerCase().trim();
+        const isMinorTopic = rawScope === 'minor' || rawScope === 'micro' || (targetQ !== undefined && targetQ <= 20);
+        const maxPractices = isMinorTopic ? 2 : 3;
+        const isLimitReached = practiceCount >= maxPractices;
 
         let state = 'needsAttention';
         let expIcon = '🚨';
@@ -186,11 +189,11 @@ export async function GET(req: NextRequest) {
           if (isLimitReached) {
             expIcon = '⚡';
             expColor = '#8b5cf6';
-            expText = `5/5 practices done (${mastery}% accuracy). Take the Recovery Quiz (Fresh + Missed Qs) to achieve Mastered!`;
+            expText = `${maxPractices}/${maxPractices} practices done (${mastery}% accuracy). Take the Recovery Quiz (Fresh + Missed Qs) to achieve Mastered!`;
           } else {
             expIcon = '📈';
             expColor = '#f59e0b';
-            expText = `${practiceCount}/5 practices done (${mastery}% accuracy). Complete 1 micro-set (5 Qs) to aim for 90%+ Mastered.`;
+            expText = `${practiceCount}/${maxPractices} practices done (${mastery}% accuracy). Complete 1 practice set (6 Qs) to aim for 90%+ Mastered.`;
           }
           practicing.push({
             topicCode: tCode,
@@ -213,7 +216,7 @@ export async function GET(req: NextRequest) {
           if (isLimitReached) {
             expIcon = '⚡';
             expColor = '#8b5cf6';
-            expText = `5/5 practices done (${mastery}% accuracy). Take the Recovery Quiz (Fresh + Missed Qs) to achieve Mastered!`;
+            expText = `${maxPractices}/${maxPractices} practices done (${mastery}% accuracy). Take the Recovery Quiz (Fresh + Missed Qs) to achieve Mastered!`;
           } else if (attempts === 0) {
             expIcon = '⚪';
             expColor = '#94a3b8';
@@ -221,7 +224,7 @@ export async function GET(req: NextRequest) {
           } else {
             expIcon = '🚨';
             expColor = '#ef4444';
-            expText = `${practiceCount}/5 practices done (${mastery}% accuracy). ${5 - practiceCount} practice(s) left — focus on weak areas.`;
+            expText = `${practiceCount}/${maxPractices} practices done (${mastery}% accuracy). ${Math.max(0, maxPractices - practiceCount)} practice(s) left — focus on weak areas.`;
           }
           needsAttention.push({
             topicCode: tCode,
