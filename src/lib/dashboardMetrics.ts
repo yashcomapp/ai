@@ -28,6 +28,8 @@
  * ==============================================================================
  */
 
+import { calculateSrsSchedule } from '@/lib/srsRotation';
+
 export interface UnifiedMetricsInput {
   objectiveReviews?: Array<{ percentage?: number | string; score?: number; totalMarks?: number; status?: string; [key: string]: any }>;
   subjectiveEvaluations?: Array<{ percentage?: number | string; totalMarksAwarded?: number; totalMaxMarks?: number; [key: string]: any }>;
@@ -171,23 +173,10 @@ export function calculateUnifiedMetrics(input: UnifiedMetricsInput): UnifiedMetr
       isOverdue = Number(t.srsSchedule.daysOverdue || 0) > 0;
     } else {
       const lastTime = t.lastRevisedAt || (t.updatedAt?.toDate ? t.updatedAt.toDate() : t.updatedAt) || t.lastAttempt;
-      if (lastTime) {
-        const lastMs = typeof lastTime === 'number' ? lastTime : new Date(lastTime).getTime();
-        if (!isNaN(lastMs)) {
-          const daysPassed = (Date.now() - lastMs) / (1000 * 60 * 60 * 24);
-          const stage = Number(t.srsStage || 0);
-          const intervals = [4, 7, 14, 30, 60, 90];
-          const targetInterval = intervals[Math.min(intervals.length - 1, stage)] || 4;
-          if (daysPassed > targetInterval) {
-            isDue = true;
-            const overdue = daysPassed - targetInterval;
-            isOverdue = overdue > 0;
-            retention = Math.max(35, Math.round(75 - (overdue / targetInterval) * 35));
-          } else {
-            retention = Math.round(100 - (daysPassed / targetInterval) * 25);
-          }
-        }
-      }
+      const sched = calculateSrsSchedule(lastTime, Number(t.srsStage || 0));
+      retention = sched.estimatedRetention;
+      isDue = sched.isDueForRevision;
+      isOverdue = sched.daysOverdue > 0;
     }
 
     if (isDue) srsDueTopicsCount++;

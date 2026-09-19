@@ -55,9 +55,17 @@ export function calculateSrsSchedule(
     if (typeof lastAttemptTime === 'number') {
       lastAttemptMs = lastAttemptTime;
     } else if (typeof lastAttemptTime === 'string') {
-      lastAttemptMs = new Date(lastAttemptTime).getTime() || now;
+      const parsed = new Date(lastAttemptTime).getTime();
+      lastAttemptMs = !isNaN(parsed) ? parsed : now;
     } else if (lastAttemptTime instanceof Date) {
       lastAttemptMs = lastAttemptTime.getTime();
+    } else if (typeof (lastAttemptTime as any)?.toDate === 'function') {
+      lastAttemptMs = (lastAttemptTime as any).toDate().getTime();
+    } else if (typeof (lastAttemptTime as any)?.seconds === 'number') {
+      lastAttemptMs = (lastAttemptTime as any).seconds * 1000;
+    } else {
+      const parsed = new Date(lastAttemptTime as any).getTime();
+      lastAttemptMs = !isNaN(parsed) ? parsed : now;
     }
   }
 
@@ -132,9 +140,17 @@ export function selectSrsQuestions(
   const attemptMap = new Map<string, { lastSeen: number; isWrong: boolean }>();
   attemptLogs.forEach(log => {
     const keys = [log.questionId, log.questionCode].filter(Boolean) as string[];
-    const ts = typeof log.timestamp === 'number'
-      ? log.timestamp
-      : (log.timestamp ? new Date(log.timestamp).getTime() : 0);
+    let ts = 0;
+    if (typeof log.timestamp === 'number') {
+      ts = log.timestamp;
+    } else if (typeof (log.timestamp as any)?.toDate === 'function') {
+      ts = (log.timestamp as any).toDate().getTime();
+    } else if (typeof (log.timestamp as any)?.seconds === 'number') {
+      ts = (log.timestamp as any).seconds * 1000;
+    } else if (log.timestamp) {
+      const parsed = new Date(log.timestamp).getTime();
+      ts = !isNaN(parsed) ? parsed : 0;
+    }
     const isWrong = log.isCorrect === false;
 
     keys.forEach(k => {
