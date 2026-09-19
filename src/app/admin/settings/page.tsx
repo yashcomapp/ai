@@ -505,7 +505,7 @@ export default function AdminSettingsPage() {
                 className="btn btn-secondary" 
                 onClick={handleRestoreBackup} 
                 disabled={!restoreJson || processing}
-                style={{ background: restoreJson ? 'var(--success)' : '#ccc', color: '#fff', border: 'none' }}
+                style={{ background: restoreJson ? 'var(--success)' : 'var(--border)', color: '#fff', border: 'none' }}
               >
                 Restore Selected JSON File
               </button>
@@ -680,8 +680,8 @@ export default function AdminSettingsPage() {
               <h4 style={{ fontSize: '13px', fontWeight: 800, margin: '0', color: 'var(--accent)' }}>📋 Console Logs</h4>
               <div 
                 style={{ 
-                  background: '#1e1e1e', 
-                  color: '#fff', 
+                  background: 'var(--bg-soft)', 
+                  color: 'var(--text)', 
                   padding: '12px', 
                   borderRadius: 'var(--radius-md)', 
                   fontFamily: 'monospace', 

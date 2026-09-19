@@ -463,18 +463,18 @@ export default function AdminAttendancePage() {
                               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                 {/* Declaration status indicators */}
                                 {student.isLeaveApproved ? (
-                                  <span style={{ fontSize: '14px', cursor: 'help', color: '#eab308', fontWeight: 'bold' }} title="Approved Leave">🌴</span>
+                                  <span style={{ fontSize: '14px', cursor: 'help', color: 'var(--warning)', fontWeight: 'bold' }} title="Approved Leave">🌴</span>
                                 ) : student.pendingLeave ? (
                                   <span style={{ fontSize: '14px', cursor: 'help' }} title="Pending Leave Request">⏳</span>
                                 ) : student.selfMarked ? (
-                                  <span style={{ fontSize: '16px', cursor: 'help', color: '#22c55e', fontWeight: 'bold' }} title={`Voluntary declaration: Self-marked by ${student.selfMarkedBy || 'student'} at ${student.selfMarkedAt ? new Date(student.selfMarkedAt).toLocaleTimeString() : ''}`}>✓</span>
+                                  <span style={{ fontSize: '16px', cursor: 'help', color: 'var(--success)', fontWeight: 'bold' }} title={`Voluntary declaration: Self-marked by ${student.selfMarkedBy || 'student'} at ${student.selfMarkedAt ? new Date(student.selfMarkedAt).toLocaleTimeString() : ''}`}>✓</span>
                                 ) : (
                                   <span style={{ fontSize: '14px', cursor: 'help' }} title="Not Declared">⚠️</span>
                                 )}
                                 <strong>{student.name}</strong>
                               </div>
                               {student.pendingLeave && (
-                                <span style={{ fontSize: '10.5px', color: '#eab308', fontWeight: 600, marginLeft: '22px' }}>
+                                <span style={{ fontSize: '10.5px', color: 'var(--warning)', fontWeight: 600, marginLeft: '22px' }}>
                                   📅 Pending Leave: {formatDateStr(student.pendingLeave.startDate)} to {formatDateStr(student.pendingLeave.endDate)}
                                   {student.pendingLeave.remarks && ` (${student.pendingLeave.remarks})`}
                                 </span>
@@ -498,7 +498,7 @@ export default function AdminAttendancePage() {
                                         fontSize: '10.5px',
                                         borderRadius: '4px',
                                         fontWeight: 'bold',
-                                        background: '#2ecc71',
+                                        background: 'var(--success)',
                                         border: 'none',
                                         color: '#fff',
                                         cursor: 'pointer'
@@ -514,7 +514,7 @@ export default function AdminAttendancePage() {
                                         fontSize: '10.5px',
                                         borderRadius: '4px',
                                         fontWeight: 'bold',
-                                        background: '#e74c3c',
+                                        background: 'var(--danger)',
                                         border: 'none',
                                         color: '#fff',
                                         cursor: 'pointer'
@@ -567,7 +567,7 @@ export default function AdminAttendancePage() {
                                     onClick={() => handleStatusChange(student.studentCode, 'late')}
                                     style={{
                                       border: 'none',
-                                      background: student.status === 'late' ? '#f39c12' : 'var(--bg-soft)',
+                                      background: student.status === 'late' ? 'var(--warning)' : 'var(--bg-soft)',
                                       color: student.status === 'late' ? '#fff' : 'var(--text-muted)',
                                       width: '26px',
                                       height: '26px',
@@ -586,7 +586,7 @@ export default function AdminAttendancePage() {
                                     onClick={() => handleStatusChange(student.studentCode, 'leave')}
                                     style={{
                                       border: 'none',
-                                      background: student.status === 'leave' ? '#3498db' : 'var(--bg-soft)',
+                                      background: student.status === 'leave' ? 'var(--accent)' : 'var(--bg-soft)',
                                       color: student.status === 'leave' ? '#fff' : 'var(--text-muted)',
                                       width: '26px',
                                       height: '26px',
@@ -605,7 +605,7 @@ export default function AdminAttendancePage() {
                                     onClick={() => handleStatusChange(student.studentCode, 'half_day')}
                                     style={{
                                       border: 'none',
-                                      background: student.status === 'half_day' ? '#9b59b6' : 'var(--bg-soft)',
+                                      background: student.status === 'half_day' ? 'var(--purple)' : 'var(--bg-soft)',
                                       color: student.status === 'half_day' ? '#fff' : 'var(--text-muted)',
                                       width: '26px',
                                       height: '26px',
@@ -693,7 +693,7 @@ export default function AdminAttendancePage() {
                   className="btn btn-primary btn-sm"
                   onClick={() => setPdfModalOpen(true)}
                   disabled={syncLoading || !syncData || syncData.records.length === 0}
-                  style={{ background: 'linear-gradient(135deg, #a855f7, #6366f1)', border: 'none' }}
+                  style={{ background: 'linear-gradient(135deg, var(--purple), var(--accent))', border: 'none' }}
                 >
                   📄 Export PDF (No Photos)
                 </button>
@@ -717,7 +717,7 @@ export default function AdminAttendancePage() {
                 <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>🔴 Pending / Missed</div>
               </div>
               <div className="card" style={{ background: 'var(--surface)', padding: '16px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', textAlign: 'center' }}>
-                <div style={{ fontSize: '20px', fontWeight: 800, color: '#a855f7' }}>{syncData?.summary?.syncPercentage ?? 0}%</div>
+                <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--purple)' }}>{syncData?.summary?.syncPercentage ?? 0}%</div>
                 <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>📊 Sincerity Rate</div>
               </div>
             </div>
@@ -759,11 +759,11 @@ export default function AdminAttendancePage() {
                           <td style={{ padding: '10px 14px', color: 'var(--text-muted)', fontSize: '12px' }}>{rec.batchName} ({rec.className})</td>
                           <td style={{ padding: '10px 14px' }}>
                             {rec.status === 'completed' ? (
-                              <span style={{ background: 'rgba(34, 197, 94, 0.15)', color: '#16a34a', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700 }}>
+                              <span style={{ background: 'rgba(34, 197, 94, 0.15)', color: 'var(--success)', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700 }}>
                                 🟢 Verified
                               </span>
                             ) : (
-                              <span style={{ background: 'rgba(239, 68, 68, 0.15)', color: '#dc2626', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700 }}>
+                              <span style={{ background: 'rgba(239, 68, 68, 0.15)', color: 'var(--danger)', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700 }}>
                                 ⏳ Pending
                               </span>
                             )}

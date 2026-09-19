@@ -1886,7 +1886,7 @@ Return ONLY valid JSON. No extra text.`;
 
             {/* Subjective verbatim requirements warning */}
             {questionType === 'subjective' && (
-              <div style={{ marginTop: '16px', padding: '12px', background: 'rgba(243, 156, 18, 0.15)', color: '#f39c12', borderRadius: 'var(--radius-sm)', borderLeft: '4px solid #f39c12' }}>
+              <div style={{ marginTop: '16px', padding: '12px', background: 'rgba(245, 158, 11, 0.15)', color: 'var(--warning)', borderRadius: 'var(--radius-sm)', borderLeft: '4px solid var(--warning)' }}>
                 <p style={{ margin: '0 0 6px', fontWeight: 'bold', fontSize: '12px' }}>⚠️ Verbatim Textbook Requirements for Subjective Questions:</p>
                 <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '11px' }}>
                   <li>Answers must exactly match prescribed textbook vocabulary.</li>
@@ -1967,7 +1967,7 @@ Return ONLY valid JSON. No extra text.`;
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
             {generatedQuestions.length > 0 ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ background: 'rgba(52, 152, 219, 0.15)', color: '#2980b9', padding: '5px 12px', borderRadius: '14px', fontSize: '11px', fontWeight: 700 }}>
+                <span style={{ background: 'rgba(59, 130, 246, 0.15)', color: 'var(--accent)', padding: '5px 12px', borderRadius: '14px', fontSize: '11px', fontWeight: 700 }}>
                   📦 {generatedQuestions.length} Questions Loaded in Preview
                 </span>
                 <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
@@ -2033,7 +2033,7 @@ Return ONLY valid JSON. No extra text.`;
                         borderRadius: '16px',
                         border: 'none',
                         background: previewFilter === 'all' ? 'var(--accent)' : 'transparent',
-                        color: previewFilter === 'all' ? '#ffffff' : 'var(--text-muted)',
+                        color: previewFilter === 'all' ? 'var(--text-white, #ffffff)' : 'var(--text-muted)',
                         cursor: 'pointer',
                         transition: 'all 0.2s'
                       }}
@@ -2049,8 +2049,8 @@ Return ONLY valid JSON. No extra text.`;
                         fontWeight: 600,
                         borderRadius: '16px',
                         border: 'none',
-                        background: previewFilter === 'issues' ? '#e74c3c' : 'transparent',
-                        color: previewFilter === 'issues' ? '#ffffff' : (validation.invalidIndices.size > 0 ? '#e74c3c' : 'var(--text-muted)'),
+                        background: previewFilter === 'issues' ? 'var(--danger)' : 'transparent',
+                        color: previewFilter === 'issues' ? 'var(--text-white, #ffffff)' : (validation.invalidIndices.size > 0 ? 'var(--danger)' : 'var(--text-muted)'),
                         cursor: 'pointer',
                         transition: 'all 0.2s',
                         display: 'flex',
@@ -2088,12 +2088,12 @@ Return ONLY valid JSON. No extra text.`;
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', background: 'var(--bg-soft)', padding: '10px 14px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)', fontSize: '11px', alignItems: 'center' }}>
                     <span style={{ fontWeight: 700, color: 'var(--accent)' }}>📊 Suite Composition:</span>
                     {objList.length > 0 && (
-                      <span style={{ background: 'rgba(52, 152, 219, 0.15)', color: '#2980b9', padding: '3px 8px', borderRadius: '12px', fontWeight: 600 }}>
+                      <span style={{ background: 'rgba(59, 130, 246, 0.15)', color: 'var(--accent)', padding: '3px 8px', borderRadius: '12px', fontWeight: 600 }}>
                         🎯 <strong>{objList.length} Objective</strong> ({easyC} Easy, {medC} Med, {hardC} Hard)
                       </span>
                     )}
                     {subList.length > 0 && (
-                      <span style={{ background: 'rgba(46, 204, 113, 0.15)', color: '#27ae60', padding: '3px 8px', borderRadius: '12px', fontWeight: 600 }}>
+                      <span style={{ background: 'rgba(16, 185, 129, 0.15)', color: 'var(--success)', padding: '3px 8px', borderRadius: '12px', fontWeight: 600 }}>
                         📝 <strong>{subList.length} Subjective</strong> ({m1C} × 1M, {m2C} × 2M, {m4C} × 4M)
                       </span>
                     )}
@@ -2103,16 +2103,16 @@ Return ONLY valid JSON. No extra text.`;
 
               {/* TOP VALIDATION ISSUES ACTION BANNER */}
               {!validation.valid && (
-                <div style={{ padding: '12px 16px', borderRadius: 'var(--radius-sm)', background: 'rgba(231, 76, 60, 0.12)', border: '1.5px solid #e74c3c', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ padding: '12px 16px', borderRadius: 'var(--radius-sm)', background: 'rgba(239, 68, 68, 0.12)', border: '1.5px solid var(--danger)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#e74c3c', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <div style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--danger)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <span>⚠️ {validation.errors.length} validation issue{validation.errors.length > 1 ? 's' : ''} require attention before saving:</span>
                     </div>
                     {previewFilter !== 'issues' && (
                       <button
                         type="button"
                         onClick={() => setPreviewFilter('issues')}
-                        style={{ background: '#e74c3c', color: '#ffffff', border: 'none', borderRadius: '4px', padding: '3px 8px', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}
+                        style={{ background: 'var(--danger)', color: 'var(--text-white, #ffffff)', border: 'none', borderRadius: '4px', padding: '3px 8px', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}
                       >
                         🔍 Show only problematic questions
                       </button>
@@ -2131,15 +2131,15 @@ Return ONLY valid JSON. No extra text.`;
                             const el = document.getElementById(`preview-q-${item.index}`);
                             if (el) {
                               el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                              el.style.boxShadow = '0 0 15px rgba(231, 76, 60, 0.6)';
+                              el.style.boxShadow = '0 0 15px rgba(239, 68, 68, 0.6)';
                               setTimeout(() => { el.style.boxShadow = ''; }, 2000);
                             }
                           }, 50);
                         }}
                         style={{
                           background: 'var(--surface)',
-                          border: '1px solid #e74c3c',
-                          color: '#e74c3c',
+                          border: '1px solid var(--danger)',
+                          color: 'var(--danger)',
                           padding: '4px 8px',
                           borderRadius: '4px',
                           fontSize: '11px',
@@ -2171,11 +2171,11 @@ Return ONLY valid JSON. No extra text.`;
                       key={idx} 
                       id={`preview-q-${idx}`}
                       style={{ 
-                        background: hasErrors ? 'rgba(231, 76, 60, 0.04)' : 'var(--bg-soft)', 
+                        background: hasErrors ? 'rgba(239, 68, 68, 0.04)' : 'var(--bg-soft)', 
                         padding: '12px', 
                         borderRadius: 'var(--radius-sm)', 
-                        borderLeft: hasErrors ? '5px solid #e74c3c' : '4px solid var(--accent)',
-                        border: hasErrors ? '1.5px solid rgba(231, 76, 60, 0.4)' : '1px solid var(--border-light)',
+                        borderLeft: hasErrors ? '5px solid var(--danger)' : '4px solid var(--accent)',
+                        border: hasErrors ? '1.5px solid rgba(239, 68, 68, 0.4)' : '1px solid var(--border-light)',
                         display: 'flex', 
                         justifyContent: 'space-between', 
                         alignItems: 'start', 
@@ -2186,7 +2186,7 @@ Return ONLY valid JSON. No extra text.`;
                       <div style={{ flex: 1 }}>
                         {/* Inline Error Callout on Question Card */}
                         {hasErrors && (
-                          <div style={{ padding: '6px 10px', background: 'rgba(231, 76, 60, 0.15)', border: '1px solid #e74c3c', borderRadius: '4px', color: '#e74c3c', fontSize: '11px', fontWeight: 600, marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <div style={{ padding: '6px 10px', background: 'rgba(239, 68, 68, 0.15)', border: '1px solid var(--danger)', borderRadius: '4px', color: 'var(--danger)', fontSize: '11px', fontWeight: 600, marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                             <span>⚠️ Issue:</span>
                             <span>{qErrors.join(' | ')}</span>
                           </div>
@@ -2198,7 +2198,7 @@ Return ONLY valid JSON. No extra text.`;
                         </div>
                         
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '8px' }}>
-                          <label style={{ fontSize: '10px', fontWeight: 700, color: hasErrors ? '#e74c3c' : 'var(--text-muted)', textTransform: 'uppercase' }}>
+                          <label style={{ fontSize: '10px', fontWeight: 700, color: hasErrors ? 'var(--danger)' : 'var(--text-muted)', textTransform: 'uppercase' }}>
                             Question {idx + 1}:
                           </label>
                           <textarea
@@ -2215,7 +2215,7 @@ Return ONLY valid JSON. No extra text.`;
                               width: '100%',
                               minHeight: '44px',
                               background: 'var(--surface)',
-                              border: hasErrors ? '1.5px solid #e74c3c' : '1px solid var(--border-light)',
+                              border: hasErrors ? '1.5px solid var(--danger)' : '1px solid var(--border-light)',
                               borderRadius: '4px',
                               padding: '6px 8px',
                               fontSize: '12px',
@@ -2310,8 +2310,8 @@ Return ONLY valid JSON. No extra text.`;
                                         display: 'flex', 
                                         flexDirection: 'column', 
                                         gap: '4px',
-                                        background: isCorrect ? 'rgba(46, 204, 113, 0.08)' : 'var(--surface)',
-                                        border: isCorrect ? '1.5px solid #2ecc71' : '1px solid var(--border-light)',
+                                        background: isCorrect ? 'rgba(16, 185, 129, 0.08)' : 'var(--surface)',
+                                        border: isCorrect ? '1.5px solid var(--success)' : '1px solid var(--border-light)',
                                         borderRadius: '6px',
                                         padding: '6px 8px',
                                         transition: 'all 0.2s'
@@ -2345,13 +2345,13 @@ Return ONLY valid JSON. No extra text.`;
                                             width: '18px',
                                             height: '18px',
                                             borderRadius: q.type === 'multiple_mcq' ? '4px' : '50%',
-                                            border: isCorrect ? '2px solid #2ecc71' : '2px solid var(--text-muted)',
-                                            background: isCorrect ? '#2ecc71' : 'transparent',
+                                            border: isCorrect ? '2px solid var(--success)' : '2px solid var(--text-muted)',
+                                            background: isCorrect ? 'var(--success)' : 'transparent',
                                             display: 'flex',
                                             alignItems: 'center',
                                             justifyContent: 'center',
                                             cursor: 'pointer',
-                                            color: '#ffffff',
+                                            color: 'var(--text-white, #ffffff)',
                                             fontSize: '10px',
                                             fontWeight: 'bold',
                                             userSelect: 'none'

@@ -836,7 +836,7 @@ function TakeSubjectiveExamContent() {
                       height: '90px',
                       borderRadius: '12px',
                       overflow: 'hidden',
-                      border: '3px solid #2ecc71',
+                      border: '3px solid var(--success)',
                       boxShadow: '0 4px 12px rgba(0,0,0,0.5)'
                     }}>
                       <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', height: '100%', objectFit: 'cover' }}></video>

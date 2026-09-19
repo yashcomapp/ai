@@ -407,7 +407,7 @@ export default function AdminLiveMonitorPage() {
 
     if (totalViol > 0) {
       return (
-        <span className={`viol-pill ${totalViol >= 5 ? 'high' : ''}`} style={{ background: totalViol >= 5 ? '#fde2e1' : 'var(--bg-soft)', color: totalViol >= 5 ? '#c0392b' : 'var(--text)', padding: '2px 8px', borderRadius: '10px', fontSize: '11px', whiteSpace: 'nowrap' }}>
+        <span className={`viol-pill ${totalViol >= 5 ? 'high' : ''}`} style={{ background: totalViol >= 5 ? 'rgba(239, 68, 68, 0.15)' : 'var(--bg-soft)', color: totalViol >= 5 ? 'var(--danger)' : 'var(--text)', padding: '2px 8px', borderRadius: '10px', fontSize: '11px', whiteSpace: 'nowrap' }}>
           ⚠️ {totalViol}
         </span>
       );
@@ -472,7 +472,7 @@ export default function AdminLiveMonitorPage() {
                 >
                   <span>Live Exams</span>
                   {examCount > 0 && (
-                    <span style={{ fontSize: '11px', background: '#ef4444', color: '#fff', padding: '1px 6px', borderRadius: '10px', fontWeight: 800 }}>
+                    <span style={{ fontSize: '11px', background: 'var(--danger)', color: '#fff', padding: '1px 6px', borderRadius: '10px', fontWeight: 800 }}>
                       {examCount}
                     </span>
                   )}
@@ -487,8 +487,8 @@ export default function AdminLiveMonitorPage() {
                     cursor: 'pointer',
                     background: 'none',
                     fontWeight: 700,
-                    borderBottom: activeTab === 'sync' ? '2.5px solid #a855f7' : 'none',
-                    color: activeTab === 'sync' ? '#a855f7' : 'var(--text-muted)',
+                    borderBottom: activeTab === 'sync' ? '2.5px solid var(--purple)' : 'none',
+                    color: activeTab === 'sync' ? 'var(--purple)' : 'var(--text-muted)',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '6px'
@@ -498,8 +498,8 @@ export default function AdminLiveMonitorPage() {
                   {syncCount > 0 ? (
                     <span style={{
                       fontSize: '11px',
-                      background: 'linear-gradient(135deg, #a855f7, #6366f1)',
-                      color: '#ffffff',
+                      background: 'linear-gradient(135deg, var(--purple), var(--accent))',
+                      color: 'var(--text-white, #ffffff)',
                       padding: '1px 7px',
                       borderRadius: '10px',
                       fontWeight: 800,
@@ -584,11 +584,11 @@ export default function AdminLiveMonitorPage() {
                     const progressPct = s.totalQuestions ? Math.round(((s.answeredCount || 0) / s.totalQuestions) * 100) : 0;
 
                     return (
-                      <tr key={s.id} style={{ borderBottom: '1px solid var(--border-light)', background: stale ? 'rgba(184,134,11,0.04)' : 'transparent' }}>
+                      <tr key={s.id} style={{ borderBottom: '1px solid var(--border-light)', background: stale ? 'rgba(245, 158, 11, 0.04)' : 'transparent' }}>
                         <td style={{ padding: '12px 16px', fontWeight: 600 }}>
                           👤 {s.studentName || 'Student'}{(s as any).autonomous ? ' ⭐' : ''}
                           {s.micAvailable === false && (
-                            <span style={{ marginLeft: '6px', color: '#d97706', background: 'rgba(217, 119, 6, 0.1)', padding: '1px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 700 }} title="Microphone Offline / Bypassed">
+                            <span style={{ marginLeft: '6px', color: 'var(--warning)', background: 'rgba(245, 158, 11, 0.1)', padding: '1px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 700 }} title="Microphone Offline / Bypassed">
                               🎙️ Offline
                             </span>
                           )}
@@ -597,7 +597,7 @@ export default function AdminLiveMonitorPage() {
                           {s.examName || s.examId} <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>({s.examType})</span>
                         </td>
                         <td style={{ padding: '12px 16px' }}>
-                          <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: stale ? '#fbe8c6' : '#dbf3e1', color: stale ? '#b8860b' : '#1aa54e', fontWeight: 700 }}>
+                          <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: stale ? 'rgba(245, 158, 11, 0.15)' : 'rgba(16, 185, 129, 0.15)', color: stale ? 'var(--warning)' : 'var(--success)', fontWeight: 700 }}>
                             {stale ? '⚠️ Stale' : '🟢 In Progress'}
                           </span>
                         </td>
@@ -683,9 +683,9 @@ export default function AdminLiveMonitorPage() {
                     display: 'flex', 
                     alignItems: 'center', 
                     gap: '6px',
-                    background: isTalking ? '#dc2626' : undefined,
-                    color: isTalking ? '#ffffff' : undefined,
-                    borderColor: isTalking ? '#b91c1c' : undefined
+                    background: isTalking ? 'var(--danger)' : undefined,
+                    color: isTalking ? 'var(--text-white, #ffffff)' : undefined,
+                    borderColor: isTalking ? 'var(--danger)' : undefined
                   }}
                 >
                   {isTalking ? '🛑 Stop Talking' : '🎙️ Talk to Student'}
@@ -695,11 +695,11 @@ export default function AdminLiveMonitorPage() {
               {/* Status explanation pill */}
               <div style={{ fontSize: '11px', textAlign: 'center', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 {isTalking ? (
-                  <span style={{ color: '#dc2626', fontWeight: 700 }}>
+                  <span style={{ color: 'var(--danger)', fontWeight: 700 }}>
                     🔴 Your mic is LIVE — speaking to student
                   </span>
                 ) : !isSpeakerMuted ? (
-                  <span style={{ color: '#16a34a', fontWeight: 600 }}>
+                  <span style={{ color: 'var(--success)', fontWeight: 600 }}>
                     🟢 Listening to student audio (Your mic is muted)
                   </span>
                 ) : (

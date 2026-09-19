@@ -174,6 +174,12 @@ async function handleLearningQuotientGet(req: NextRequest) {
   const duration = searchParams.get('duration') || 'monthly';
 
   if (studentCode) {
+    const singleCacheKey = `single-lq-${studentCode}-${duration}`;
+    const cachedSingle = await ReportCacheManager.getReport<any>(singleCacheKey);
+    if (cachedSingle) {
+      return NextResponse.json(cachedSingle);
+    }
+
     const quotientData = await QuotientService.calculateStudentQuotient(studentCode, duration);
     
     let parentMobile = '';
@@ -216,13 +222,22 @@ async function handleLearningQuotientGet(req: NextRequest) {
       }
     }
 
-    return NextResponse.json({
+    const singleResult = {
       success: true,
       quotientData,
       parentMobile,
       parentName,
       studentMobile
-    });
+    };
+
+    await ReportCacheManager.setReport(singleCacheKey, singleResult, 60);
+    return NextResponse.json(singleResult);
+  }
+
+  const fullBulkCacheKey = `bulk-lq-full-report-${duration}`;
+  const cachedFullBulk = await ReportCacheManager.getReport<any>(fullBulkCacheKey);
+  if (cachedFullBulk) {
+    return NextResponse.json(cachedFullBulk);
   }
 
   const [students, batchesSnap, parameters] = await Promise.all([
@@ -349,12 +364,15 @@ async function handleLearningQuotientGet(req: NextRequest) {
     }
   });
 
-  return NextResponse.json({
+  const fullBulkResult = {
     success: true,
     batches,
     parameters,
     students: studentsWithLQ
-  });
+  };
+
+  await ReportCacheManager.setReport(fullBulkCacheKey, fullBulkResult, 60);
+  return NextResponse.json(fullBulkResult);
 }
 
 async function handleLearningQuotientPost(req: NextRequest) {

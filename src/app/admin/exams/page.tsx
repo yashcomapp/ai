@@ -1326,7 +1326,7 @@ export default function AdminExamsPage() {
                             <tr key={exam.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
                               <td style={{ padding: '12px 16px', fontWeight: 600 }}>
                                 {exam.name}
-                                <span style={{ marginLeft: '8px', fontSize: '9px', fontWeight: 700, background: 'rgba(52, 152, 219, 0.1)', color: '#2980b9', padding: '2px 6px', borderRadius: '4px' }}>
+                                <span style={{ marginLeft: '8px', fontSize: '9px', fontWeight: 700, background: 'rgba(59, 130, 246, 0.1)', color: 'var(--accent)', padding: '2px 6px', borderRadius: '4px' }}>
                                   Class {getExamClass(exam)}
                                 </span>
                               </td>
@@ -1335,11 +1335,11 @@ export default function AdminExamsPage() {
                               <td style={{ padding: '12px 16px' }}>
                                  <div style={{ display: 'flex', gap: '6px', flexDirection: 'row', alignItems: 'center' }}>
                                    {status === 'active' ? (
-                                     <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: 'rgba(46, 204, 113, 0.15)', color: '#2ecc71', fontWeight: 700, whiteSpace: 'nowrap' }}>
+                                     <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: 'rgba(16, 185, 129, 0.15)', color: 'var(--success)', fontWeight: 700, whiteSpace: 'nowrap' }}>
                                        🟢 Active / Open
                                      </span>
                                    ) : (
-                                     <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: 'rgba(231, 76, 60, 0.15)', color: '#e74c3c', fontWeight: 700, whiteSpace: 'nowrap' }}>
+                                     <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: 'rgba(239, 68, 68, 0.15)', color: 'var(--danger)', fontWeight: 700, whiteSpace: 'nowrap' }}>
                                        🛑 Stopped / Disabled
                                      </span>
                                    )}
@@ -1355,7 +1355,7 @@ export default function AdminExamsPage() {
                                    {activeAssign && activeAssign.openMode !== 'scheduled' && (
                                      <button 
                                        className={`btn ${status === 'active' ? 'btn-secondary' : 'btn-primary'}`} 
-                                       style={{ padding: '4px 10px', fontSize: '11px', background: status === 'active' ? '#e74c3c' : '#2ecc71', color: 'white', border: 'none' }} 
+                                       style={{ padding: '4px 10px', fontSize: '11px', background: status === 'active' ? 'var(--danger)' : 'var(--success)', color: 'white', border: 'none' }} 
                                        onClick={() => toggleAssignmentStatus(activeAssign.id, 'batchAssignments', status === 'active' ? 'disabled' : 'active')}
                                      >
                                        {status === 'active' ? '🛑 Stop' : '🟢 Start'}
@@ -1520,11 +1520,11 @@ export default function AdminExamsPage() {
                                                             <td style={{ padding: '10px 14px' }}>
                                                                <div style={{ display: 'flex', gap: '6px', flexDirection: 'row', alignItems: 'center' }}>
                                                                  {status === 'active' ? (
-                                                                   <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: 'rgba(46, 204, 113, 0.15)', color: '#2ecc71', fontWeight: 700, whiteSpace: 'nowrap' }}>
+                                                                   <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: 'rgba(16, 185, 129, 0.15)', color: 'var(--success)', fontWeight: 700, whiteSpace: 'nowrap' }}>
                                                                      🟢 Active / Open
                                                                    </span>
                                                                  ) : (
-                                                                   <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: 'rgba(231, 76, 60, 0.15)', color: '#e74c3c', fontWeight: 700, whiteSpace: 'nowrap' }}>
+                                                                   <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: 'rgba(239, 68, 68, 0.15)', color: 'var(--danger)', fontWeight: 700, whiteSpace: 'nowrap' }}>
                                                                      🛑 Stopped / Disabled
                                                                    </span>
                                                                  )}
@@ -1540,7 +1540,7 @@ export default function AdminExamsPage() {
                                                                  {activeAssign && activeAssign.openMode !== 'scheduled' && (
                                                                    <button 
                                                                      className={`btn ${status === 'active' ? 'btn-secondary' : 'btn-primary'}`} 
-                                                                     style={{ padding: '4px 10px', fontSize: '11px', background: status === 'active' ? '#e74c3c' : '#2ecc71', color: 'white', border: 'none' }} 
+                                                                     style={{ padding: '4px 10px', fontSize: '11px', background: status === 'active' ? 'var(--danger)' : 'var(--success)', color: 'white', border: 'none' }} 
                                                                      onClick={() => toggleAssignmentStatus(activeAssign.id, 'batchAssignments', status === 'active' ? 'disabled' : 'active')}
                                                                    >
                                                                      {status === 'active' ? '🛑 Stop' : '🟢 Start'}
@@ -1733,7 +1733,7 @@ export default function AdminExamsPage() {
                             <tr key={exam.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
                               <td style={{ padding: '12px 16px', fontWeight: 600 }}>
                                 {exam.name}
-                                <span style={{ marginLeft: '8px', fontSize: '9px', fontWeight: 700, background: 'rgba(52, 152, 219, 0.1)', color: '#2980b9', padding: '2px 6px', borderRadius: '4px' }}>
+                                <span style={{ marginLeft: '8px', fontSize: '9px', fontWeight: 700, background: 'rgba(59, 130, 246, 0.1)', color: 'var(--accent)', padding: '2px 6px', borderRadius: '4px' }}>
                                   Class {getExamClass(exam)}
                                 </span>
                               </td>
@@ -1760,11 +1760,11 @@ export default function AdminExamsPage() {
                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                                    <div style={{ display: 'flex', gap: '6px', flexDirection: 'row', alignItems: 'center' }}>
                                      {status === 'active' ? (
-                                       <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: 'rgba(46, 204, 113, 0.15)', color: '#2ecc71', fontWeight: 700, whiteSpace: 'nowrap' }}>
+                                       <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: 'rgba(16, 185, 129, 0.15)', color: 'var(--success)', fontWeight: 700, whiteSpace: 'nowrap' }}>
                                          🟢 Active / Open
                                        </span>
                                      ) : (
-                                       <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: 'rgba(231, 76, 60, 0.15)', color: '#e74c3c', fontWeight: 700, whiteSpace: 'nowrap' }}>
+                                       <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: 'rgba(239, 68, 68, 0.15)', color: 'var(--danger)', fontWeight: 700, whiteSpace: 'nowrap' }}>
                                          🛑 Stopped / Disabled
                                        </span>
                                      )}
@@ -1784,7 +1784,7 @@ export default function AdminExamsPage() {
                                    {activeAssign && activeAssign.openMode !== 'scheduled' && (
                                      <button 
                                        className={`btn ${status === 'active' ? 'btn-secondary' : 'btn-primary'}`} 
-                                       style={{ padding: '4px 8px', fontSize: '10px', background: status === 'active' ? '#e74c3c' : '#2ecc71', color: 'white', border: 'none' }} 
+                                       style={{ padding: '4px 8px', fontSize: '10px', background: status === 'active' ? 'var(--danger)' : 'var(--success)', color: 'white', border: 'none' }} 
                                        onClick={() => toggleAssignmentStatus(activeAssign.id, 'subjectiveAssignments', status === 'active' ? 'disabled' : 'active')}
                                      >
                                        {status === 'active' ? '🛑 Stop' : '🟢 Start'}
@@ -1968,13 +1968,13 @@ export default function AdminExamsPage() {
                                                             <td style={{ padding: '10px 14px', fontSize: '11px', color: 'var(--text-muted)' }}>{getAssignedNames(exam.id, exam.batchId)}</td>
                                                             <td style={{ padding: '10px 14px' }}>
                                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                                                 <div style={{ display: 'flex', gap: '6px', flexDirection: 'row', alignItems: 'center' }}>
+                                                                  <div style={{ display: 'flex', gap: '6px', flexDirection: 'row', alignItems: 'center' }}>
                                                                    {status === 'active' ? (
-                                                                     <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: 'rgba(46, 204, 113, 0.15)', color: '#2ecc71', fontWeight: 700, whiteSpace: 'nowrap' }}>
+                                                                     <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: 'rgba(16, 185, 129, 0.15)', color: 'var(--success)', fontWeight: 700, whiteSpace: 'nowrap' }}>
                                                                        🟢 Active / Open
                                                                      </span>
                                                                    ) : (
-                                                                     <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: 'rgba(231, 76, 60, 0.15)', color: '#e74c3c', fontWeight: 700, whiteSpace: 'nowrap' }}>
+                                                                     <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: 'rgba(239, 68, 68, 0.15)', color: 'var(--danger)', fontWeight: 700, whiteSpace: 'nowrap' }}>
                                                                        🛑 Stopped / Disabled
                                                                      </span>
                                                                    )}
@@ -1984,9 +1984,6 @@ export default function AdminExamsPage() {
                                                                      </span>
                                                                    )}
                                                                  </div>
-                                                                 <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                                                                   Assigned: {getLatestAssignmentDate(exam.id, exam.assignedAt, exam)}
-                                                                 </div>
                                                                </div>
                                                              </td>
                                                              <td style={{ padding: '10px 14px', textAlign: 'right' }}>
@@ -1994,7 +1991,7 @@ export default function AdminExamsPage() {
                                                                  {activeAssign && activeAssign.openMode !== 'scheduled' && (
                                                                    <button 
                                                                      className={`btn ${status === 'active' ? 'btn-secondary' : 'btn-primary'}`} 
-                                                                     style={{ padding: '4px 8px', fontSize: '10px', background: status === 'active' ? '#e74c3c' : '#2ecc71', color: 'white', border: 'none' }} 
+                                                                     style={{ padding: '4px 10px', fontSize: '11px', background: status === 'active' ? 'var(--danger)' : 'var(--success)', color: 'white', border: 'none' }} 
                                                                      onClick={() => toggleAssignmentStatus(activeAssign.id, 'subjectiveAssignments', status === 'active' ? 'disabled' : 'active')}
                                                                    >
                                                                      {status === 'active' ? '🛑 Stop' : '🟢 Start'}
@@ -2181,7 +2178,7 @@ export default function AdminExamsPage() {
                                       <div style={{
                                         width: `${mastery.avgMastery}%`,
                                         height: '100%',
-                                        background: mastery.avgMastery >= 90 ? 'var(--success)' : mastery.avgMastery >= 50 ? '#d97706' : 'var(--danger)'
+                                        background: mastery.avgMastery >= 90 ? 'var(--success)' : mastery.avgMastery >= 50 ? 'var(--warning)' : 'var(--danger)'
                                       }} />
                                     </div>
                                   </div>
@@ -2193,7 +2190,7 @@ export default function AdminExamsPage() {
                                       <div style={{
                                         width: `${quality}%`,
                                         height: '100%',
-                                        background: quality >= 80 ? 'var(--success)' : quality >= 50 ? '#d97706' : 'var(--danger)'
+                                        background: quality >= 80 ? 'var(--success)' : quality >= 50 ? 'var(--warning)' : 'var(--danger)'
                                       }} />
                                     </div>
                                   </div>
@@ -2208,7 +2205,7 @@ export default function AdminExamsPage() {
                                   </span>
                                   <span 
                                     onClick={(e) => openTopicStatusModal(student, 'practicing', e)} 
-                                    style={{ color: '#d97706', fontWeight: 700, marginLeft: '6px', cursor: 'pointer', padding: '3px 8px', borderRadius: '6px', background: 'rgba(217,119,6,0.12)', border: '1px solid rgba(217,119,6,0.25)', transition: 'all 0.15s' }} 
+                                    style={{ color: 'var(--warning)', fontWeight: 700, marginLeft: '6px', cursor: 'pointer', padding: '3px 8px', borderRadius: '6px', background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.25)', transition: 'all 0.15s' }} 
                                     title="Click to view Practicing / In Progress Topics (50-89% or low confidence)"
                                   >
                                     🟡 {mastery.practicing}
@@ -2997,17 +2994,17 @@ export default function AdminExamsPage() {
                             </td>
                             <td style={{ padding: '10px 14px', textAlign: 'center' }}>
                               {item.status === 'aligned' && (
-                                <span style={{ padding: '3px 8px', borderRadius: '12px', fontSize: '10px', fontWeight: 700, background: 'rgba(46, 204, 113, 0.15)', color: '#2ecc71', border: '1px solid rgba(46, 204, 113, 0.3)' }}>
+                                <span style={{ padding: '3px 8px', borderRadius: '12px', fontSize: '10px', fontWeight: 700, background: 'rgba(16, 185, 129, 0.15)', color: 'var(--success)', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
                                   Aligned
                                 </span>
                               )}
                               {item.status === 'parent_higher' && (
-                                <span style={{ padding: '3px 8px', borderRadius: '12px', fontSize: '10px', fontWeight: 700, background: 'rgba(231, 76, 60, 0.15)', color: '#e74c3c', border: '1px solid rgba(231, 76, 60, 0.3)' }}>
+                                <span style={{ padding: '3px 8px', borderRadius: '12px', fontSize: '10px', fontWeight: 700, background: 'rgba(239, 68, 68, 0.15)', color: 'var(--danger)', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
                                   Parent Higher ⚠️
                                 </span>
                               )}
                               {item.status === 'peer_higher' && (
-                                <span style={{ padding: '3px 8px', borderRadius: '12px', fontSize: '10px', fontWeight: 700, background: 'rgba(52, 152, 219, 0.15)', color: '#3498db', border: '1px solid rgba(52, 152, 219, 0.3)' }}>
+                                <span style={{ padding: '3px 8px', borderRadius: '12px', fontSize: '10px', fontWeight: 700, background: 'rgba(59, 130, 246, 0.15)', color: 'var(--accent)', border: '1px solid rgba(59, 130, 246, 0.3)' }}>
                                   Classroom Higher
                                 </span>
                               )}
@@ -3080,9 +3077,9 @@ export default function AdminExamsPage() {
                 };
 
                 const getProgressCol = (pct: number) => {
-                  if (pct < 40) return '#f44336';
-                  if (pct < 70) return '#ff9800';
-                  return '#4caf50';
+                  if (pct < 40) return 'var(--danger)';
+                  if (pct < 70) return 'var(--warning)';
+                  return 'var(--success)';
                 };
 
                 const toggleModalSubject = (subjName: string) => {
@@ -3240,7 +3237,7 @@ export default function AdminExamsPage() {
                                               {sortedTopics.map((h, hIdx) => {
                                                 const score = Math.round(h.scorePercent || 0);
                                                 const level = h.suspiciousLevel || 'green';
-                                                const dotCol = level === 'red' ? '#f44336' : (level === 'yellow' ? '#ff9800' : '#4caf50');
+                                                const dotCol = level === 'red' ? 'var(--danger)' : (level === 'yellow' ? 'var(--warning)' : 'var(--success)');
 
                                                 return (
                                                   <tr key={h.id || hIdx} style={{ borderBottom: '1px solid var(--border-light)', height: '36px' }}>
@@ -3249,8 +3246,8 @@ export default function AdminExamsPage() {
                                                     </td>
                                                     <td style={{ padding: '4px 6px', textAlign: 'center', fontWeight: 'bold' }}>
                                                       <span style={{
-                                                        color: score < 40 ? '#f44336' : (score < 70 ? '#ff9800' : '#4caf50'),
-                                                        background: score < 40 ? 'rgba(244,67,54,0.1)' : (score < 70 ? 'rgba(255,152,0,0.1)' : 'rgba(76,175,80,0.1)'),
+                                                        color: score < 40 ? 'var(--danger)' : (score < 70 ? 'var(--warning)' : 'var(--success)'),
+                                                        background: score < 40 ? 'rgba(239,68,68,0.1)' : (score < 70 ? 'rgba(245,158,11,0.1)' : 'rgba(16,185,129,0.1)'),
                                                         padding: '2px 6px',
                                                         borderRadius: '4px'
                                                       }}>
@@ -3354,7 +3351,7 @@ export default function AdminExamsPage() {
                       border: 'none',
                       cursor: 'pointer',
                       background: topicStatusModal.activeTab === 'mastered' ? 'rgba(16,185,129,0.15)' : 'transparent',
-                      color: topicStatusModal.activeTab === 'mastered' ? '#10b981' : 'var(--text-muted)',
+                      color: topicStatusModal.activeTab === 'mastered' ? 'var(--success)' : 'var(--text-muted)',
                       boxShadow: topicStatusModal.activeTab === 'mastered' ? 'var(--shadow-sm)' : 'none'
                     }}
                   >
@@ -3369,8 +3366,8 @@ export default function AdminExamsPage() {
                       fontWeight: topicStatusModal.activeTab === 'practicing' ? 700 : 500,
                       border: 'none',
                       cursor: 'pointer',
-                      background: topicStatusModal.activeTab === 'practicing' ? 'rgba(217,119,6,0.15)' : 'transparent',
-                      color: topicStatusModal.activeTab === 'practicing' ? '#d97706' : 'var(--text-muted)',
+                      background: topicStatusModal.activeTab === 'practicing' ? 'rgba(245,158,11,0.15)' : 'transparent',
+                      color: topicStatusModal.activeTab === 'practicing' ? 'var(--warning)' : 'var(--text-muted)',
                       boxShadow: topicStatusModal.activeTab === 'practicing' ? 'var(--shadow-sm)' : 'none'
                     }}
                   >
@@ -3386,7 +3383,7 @@ export default function AdminExamsPage() {
                       border: 'none',
                       cursor: 'pointer',
                       background: topicStatusModal.activeTab === 'needsAttention' ? 'rgba(239,68,68,0.15)' : 'transparent',
-                      color: topicStatusModal.activeTab === 'needsAttention' ? '#ef4444' : 'var(--text-muted)',
+                      color: topicStatusModal.activeTab === 'needsAttention' ? 'var(--danger)' : 'var(--text-muted)',
                       boxShadow: topicStatusModal.activeTab === 'needsAttention' ? 'var(--shadow-sm)' : 'none'
                     }}
                   >
@@ -3459,7 +3456,7 @@ export default function AdminExamsPage() {
                     {list.map((t, idx) => {
                       const isMastered = t.state === 'mastered';
                       const isPracticing = t.state === 'continuePractice' || t.state === 'revision';
-                      const statusColor = isMastered ? '#10b981' : isPracticing ? '#f59e0b' : '#ef4444';
+                      const statusColor = isMastered ? 'var(--success)' : isPracticing ? 'var(--warning)' : 'var(--danger)';
                       const statusBg = isMastered ? 'rgba(16,185,129,0.06)' : isPracticing ? 'rgba(245,158,11,0.06)' : 'rgba(239,68,68,0.06)';
                       const statusBorder = isMastered ? 'rgba(16,185,129,0.25)' : isPracticing ? 'rgba(245,158,11,0.25)' : 'rgba(239,68,68,0.25)';
 

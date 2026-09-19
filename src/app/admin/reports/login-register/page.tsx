@@ -270,7 +270,7 @@ export default function LoginRegisterReportPage() {
       {/* Main Workspace */}
       <main style={{ flex: 1, padding: '24px 12px', maxWidth: '1000px', width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
         {error && (
-          <div style={{ background: '#fee2e2', border: '1px solid #fecaca', padding: '12px', borderRadius: '4px', color: '#b91c1c', fontSize: '12px' }}>
+          <div style={{ background: 'rgba(239, 68, 68, 0.12)', border: '1px solid var(--danger)', padding: '12px', borderRadius: '4px', color: 'var(--danger)', fontSize: '12px' }}>
             {error}
           </div>
         )}
@@ -416,7 +416,7 @@ export default function LoginRegisterReportPage() {
                                   padding: '2px 8px', 
                                   borderRadius: '4px', 
                                   background: isStudent ? 'rgba(59, 130, 246, 0.15)' : 'rgba(168, 85, 247, 0.15)', 
-                                  color: isStudent ? '#3b82f6' : '#a855f7',
+                                  color: isStudent ? 'var(--accent)' : 'var(--purple)',
                                   fontWeight: 700 
                                 }}>
                                   {isStudent ? 'Student' : 'Parent'}
@@ -429,7 +429,7 @@ export default function LoginRegisterReportPage() {
                                     width: '8px', 
                                     height: '8px', 
                                     borderRadius: '50%', 
-                                    background: isOnline ? '#1aa54e' : '#888' 
+                                    background: isOnline ? 'var(--success)' : 'var(--text-muted)' 
                                   }} />
                                   <span>{formatLastActive(m.lastActiveAt)}</span>
                                 </div>
@@ -499,7 +499,7 @@ export default function LoginRegisterReportPage() {
                                   padding: '2px 8px', 
                                   borderRadius: '4px', 
                                   background: isStudent ? 'rgba(59, 130, 246, 0.15)' : 'rgba(168, 85, 247, 0.15)', 
-                                  color: isStudent ? '#3b82f6' : '#a855f7',
+                                  color: isStudent ? 'var(--accent)' : 'var(--purple)',
                                   fontWeight: 700 
                                 }}>
                                   {isStudent ? 'Student' : 'Parent'}
@@ -511,8 +511,8 @@ export default function LoginRegisterReportPage() {
                                   fontSize: '10px', 
                                   padding: '2px 8px', 
                                   borderRadius: '4px', 
-                                  background: isLogin ? 'rgba(26, 165, 78, 0.15)' : 'rgba(239, 68, 68, 0.15)', 
-                                  color: isLogin ? '#1aa54e' : '#ef4444',
+                                  background: isLogin ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)', 
+                                  color: isLogin ? 'var(--success)' : 'var(--danger)',
                                   fontWeight: 700 
                                 }}>
                                   {isLogin ? '🔑 LOGIN' : '🚪 LOGOUT'}

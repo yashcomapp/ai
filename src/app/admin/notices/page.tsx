@@ -960,8 +960,8 @@ export default function AdminNoticesPage() {
                       {notice.type && (
                         <span style={{
                           fontSize: '9.5px',
-                          background: notice.type === 'schedule' ? 'rgba(59, 130, 246, 0.15)' : notice.type === 'fees' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(139, 92, 246, 0.15)',
-                          color: notice.type === 'schedule' ? '#60a5fa' : notice.type === 'fees' ? '#fbbf24' : '#a78bfa',
+                          background: notice.type === 'schedule' ? 'rgba(59, 130, 246, 0.15)' : notice.type === 'fees' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(168, 85, 247, 0.15)',
+                          color: notice.type === 'schedule' ? 'var(--accent)' : notice.type === 'fees' ? 'var(--warning)' : 'var(--purple)',
                           padding: '1px 5px',
                           borderRadius: '4px',
                           fontWeight: 800,
@@ -971,7 +971,7 @@ export default function AdminNoticesPage() {
                         </span>
                       )}
                       {notice.isOverlay && (
-                        <span style={{ fontSize: '9px', background: 'rgba(239, 68, 68, 0.15)', color: '#f87171', padding: '1px 5px', borderRadius: '4px', fontWeight: 600 }}>🚨 OVERLAY</span>
+                        <span style={{ fontSize: '9px', background: 'rgba(239, 68, 68, 0.15)', color: 'var(--danger)', padding: '1px 5px', borderRadius: '4px', fontWeight: 600 }}>🚨 OVERLAY</span>
                       )}
                     </div>
                     <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
@@ -1034,7 +1034,7 @@ export default function AdminNoticesPage() {
           <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent)' }}>
             🛠️ System Access & Maintenance Mode
           </h3>
-          <span style={{ fontSize: '11px', fontWeight: 700, padding: '4px 10px', borderRadius: '12px', background: maintenanceMode ? 'rgba(239, 68, 68, 0.15)' : 'rgba(16, 185, 129, 0.15)', color: maintenanceMode ? '#f87171' : '#34d399', border: maintenanceMode ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid rgba(16, 185, 129, 0.3)' }}>
+          <span style={{ fontSize: '11px', fontWeight: 700, padding: '4px 10px', borderRadius: '12px', background: maintenanceMode ? 'rgba(239, 68, 68, 0.15)' : 'rgba(16, 185, 129, 0.15)', color: maintenanceMode ? 'var(--danger)' : 'var(--success)', border: maintenanceMode ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid rgba(16, 185, 129, 0.3)' }}>
             {maintenanceMode ? '🚨 Maintenance Mode ACTIVE' : '🟢 System Access ACTIVE'}
           </span>
         </div>
@@ -1258,9 +1258,9 @@ export default function AdminNoticesPage() {
                               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                 <span style={{ color: 'var(--text)', fontWeight: 500 }}>{stud.autonomous ? '# ' : ''}{stud.name} (S)</span>
                                 {stud.hasPushRegistered ? (
-                                  <span style={{ fontSize: '10px', background: 'rgba(16, 185, 129, 0.1)', color: '#059669', padding: '1px 5px', borderRadius: '4px', fontWeight: 600 }}>📲 Push Active</span>
+                                  <span style={{ fontSize: '10px', background: 'rgba(16, 185, 129, 0.1)', color: 'var(--success)', padding: '1px 5px', borderRadius: '4px', fontWeight: 600 }}>📲 Push Active</span>
                                 ) : (
-                                  <span style={{ fontSize: '10px', background: 'rgba(239, 68, 68, 0.1)', color: '#dc2626', padding: '1px 5px', borderRadius: '4px', fontWeight: 600 }}>📴 Push Disabled</span>
+                                  <span style={{ fontSize: '10px', background: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)', padding: '1px 5px', borderRadius: '4px', fontWeight: 600 }}>📴 Push Disabled</span>
                                 )}
                               </div>
                               {stud.seen ? (
@@ -1309,9 +1309,9 @@ export default function AdminNoticesPage() {
                                     {parent.autonomous ? '# ' : ''}{parent.studentName} (P)
                                   </span>
                                   {parent.hasPushRegistered ? (
-                                    <span style={{ fontSize: '10px', background: 'rgba(16, 185, 129, 0.1)', color: '#059669', padding: '1px 5px', borderRadius: '4px', fontWeight: 600 }}>📲 Push Active</span>
+                                    <span style={{ fontSize: '10px', background: 'rgba(16, 185, 129, 0.1)', color: 'var(--success)', padding: '1px 5px', borderRadius: '4px', fontWeight: 600 }}>📲 Push Active</span>
                                   ) : (
-                                    <span style={{ fontSize: '10px', background: 'rgba(239, 68, 68, 0.1)', color: '#dc2626', padding: '1px 5px', borderRadius: '4px', fontWeight: 600 }}>📴 Push Disabled</span>
+                                    <span style={{ fontSize: '10px', background: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)', padding: '1px 5px', borderRadius: '4px', fontWeight: 600 }}>📴 Push Disabled</span>
                                   )}
                                 </div>
                                 {parent.seen ? (

@@ -1058,7 +1058,7 @@ _Empowering Conceptual Excellence_`;
                 </div>
 
                 {singleObsMsg && (
-                  <div style={{ fontSize: '11px', fontWeight: 700, color: singleObsMsg.includes('✅') ? 'var(--success)' : '#f43f5e' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 700, color: singleObsMsg.includes('✅') ? 'var(--success)' : 'var(--danger)' }}>
                     {singleObsMsg}
                   </div>
                 )}
@@ -1367,7 +1367,7 @@ _Empowering Conceptual Excellence_`;
                   </div>
 
                   {bulkMsg && (
-                    <div style={{ fontSize: '11px', fontWeight: 700, color: bulkMsg.includes('✅') ? 'var(--success)' : '#f43f5e' }}>
+                    <div style={{ fontSize: '11px', fontWeight: 700, color: bulkMsg.includes('✅') ? 'var(--success)' : 'var(--danger)' }}>
                       {bulkMsg}
                     </div>
                   )}
@@ -1431,7 +1431,7 @@ _Empowering Conceptual Excellence_`;
                               className="btn btn-secondary"
                               onClick={() => handleDeleteParameter(p.id)}
                               disabled={paramLoading}
-                              style={{ padding: '4px 8px', fontSize: '10px', color: '#f43f5e', border: '1px solid #f43f5e25', background: '#f43f5e10' }}
+                              style={{ padding: '4px 8px', fontSize: '10px', color: 'var(--danger)', border: '1px solid rgba(239, 68, 68, 0.25)', background: 'rgba(239, 68, 68, 0.1)' }}
                             >
                               🗑️ Delete
                             </button>
@@ -1443,7 +1443,7 @@ _Empowering Conceptual Excellence_`;
                 </div>
 
                 {paramMsg && (
-                  <div style={{ fontSize: '11px', fontWeight: 700, color: paramMsg.includes('✅') ? 'var(--success)' : '#f43f5e' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 700, color: paramMsg.includes('✅') ? 'var(--success)' : 'var(--danger)' }}>
                     {paramMsg}
                   </div>
                 )}
@@ -1809,7 +1809,7 @@ _Empowering Conceptual Excellence_`;
                     </div>
                   </div>
                 ) : (
-                  <div style={{ color: '#f43f5e', fontSize: '12px', textAlign: 'center', padding: '10px' }}>
+                  <div style={{ color: 'var(--danger)', fontSize: '12px', textAlign: 'center', padding: '10px' }}>
                     ⚠️ Failed to load scores. You can still skip or attempt to send.
                   </div>
                 )}

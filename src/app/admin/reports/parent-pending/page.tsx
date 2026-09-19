@@ -338,7 +338,7 @@ export default function ParentPendingReportPage() {
                             padding: '2px 8px', 
                             borderRadius: '12px', 
                             background: r.type === 'Sync Session' ? 'rgba(168, 85, 247, 0.15)' : 'var(--bg-soft)', 
-                            color: r.type === 'Sync Session' ? '#a855f7' : 'var(--text-muted)',
+                            color: r.type === 'Sync Session' ? 'var(--purple)' : 'var(--text-muted)',
                             display: 'inline-flex',
                             alignItems: 'center',
                             gap: '3px',
@@ -351,7 +351,7 @@ export default function ParentPendingReportPage() {
                         {/* Actor Badge */}
                         <td style={{ padding: '12px 16px' }}>
                           {isParent ? (
-                            <span style={{ background: '#dcfce7', color: '#15803d', padding: '4px 10px', borderRadius: '12px', fontSize: '11px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                            <span style={{ background: 'rgba(16, 185, 129, 0.15)', color: 'var(--success)', padding: '4px 10px', borderRadius: '12px', fontSize: '11px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                               👨‍👩‍👧 Parent Verified
                             </span>
                           ) : (
@@ -388,7 +388,7 @@ export default function ParentPendingReportPage() {
                                 title="Click to enlarge verification photo"
                               />
                               {expiryLabel && (
-                                <span style={{ fontSize: '9px', color: '#b45309', fontWeight: 600 }}>
+                                <span style={{ fontSize: '9px', color: 'var(--warning)', fontWeight: 600 }}>
                                   ⏳ {expiryLabel}
                                 </span>
                               )}

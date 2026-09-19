@@ -1339,7 +1339,7 @@ function AdminFeesContent() {
                                     <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Net: ₹{s.fee.netPayableAmount} | Paid: ₹{s.fee.totalPaidAmount}</div>
                                     {isInstPaid && (
                                       <div style={{ marginTop: '3px' }}>
-                                        <span style={{ background: '#dcfce7', color: '#15803d', padding: '2px 8px', borderRadius: '10px', fontSize: '10px', fontWeight: 700 }}>
+                                        <span style={{ background: 'rgba(16, 185, 129, 0.15)', color: 'var(--success)', padding: '2px 8px', borderRadius: '10px', fontSize: '10px', fontWeight: 700 }}>
                                           ✓ {selectedOpt.label} Paid
                                         </span>
                                       </div>
@@ -1376,7 +1376,7 @@ function AdminFeesContent() {
                                   {isCustomized && (
                                     <span 
                                       title={`Custom installment amount for ${s.name}: ₹${studentInstAmt} (Standard template rate is ₹{selectedOpt.amount})`}
-                                      style={{ fontSize: '10px', padding: '2px 6px', borderRadius: '4px', background: 'rgba(124, 58, 237, 0.15)', color: '#7c3aed', fontWeight: 700, whiteSpace: 'nowrap' }}
+                                      style={{ fontSize: '10px', padding: '2px 6px', borderRadius: '4px', background: 'rgba(168, 85, 247, 0.15)', color: 'var(--purple)', fontWeight: 700, whiteSpace: 'nowrap' }}
                                     >
                                       Custom ₹{studentInstAmt}
                                     </span>
