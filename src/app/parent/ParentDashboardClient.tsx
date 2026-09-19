@@ -2412,13 +2412,13 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px',
-                background: 'rgba(239, 68, 68, 0.15)',
-                border: '1px solid rgba(239, 68, 68, 0.3)',
+                background: 'var(--danger-bg)',
+                border: '1px solid var(--danger-border)',
                 padding: '6px 12px',
                 borderRadius: '20px',
                 fontSize: '12px',
                 fontWeight: 700,
-                color: '#f87171'
+                color: 'var(--danger)'
               }}>
                 <span style={{
                   width: '8px',
@@ -2526,27 +2526,27 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                     </div>
 
                     {/* Card 2: Sessions Completed Today */}
-                    <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 'var(--radius)', padding: '14px', textAlign: 'center' }}>
+                    <div style={{ background: 'var(--surface-2)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius)', padding: '14px', textAlign: 'center' }}>
                       <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>📝 Completed Today</div>
-                      <div style={{ fontSize: '24px', fontWeight: 800, color: '#34d399', marginTop: '4px' }}>
+                      <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--success)', marginTop: '4px' }}>
                         {childData?.todayStats?.todaySessionsCount || 0}
                       </div>
                       <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>Tests / Practice Sets</div>
                     </div>
 
                     {/* Card 3: Questions Solved Today */}
-                    <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 'var(--radius)', padding: '14px', textAlign: 'center' }}>
+                    <div style={{ background: 'var(--surface-2)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius)', padding: '14px', textAlign: 'center' }}>
                       <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>🎯 Questions Today</div>
-                      <div style={{ fontSize: '24px', fontWeight: 800, color: '#2dd4bf', marginTop: '4px' }}>
+                      <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--accent)', marginTop: '4px' }}>
                         {childData?.todayStats?.todayQuestionsCount || 0}
                       </div>
                       <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>Problems Attempted</div>
                     </div>
 
                     {/* Card 4: Today's Average Score */}
-                    <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 'var(--radius)', padding: '14px', textAlign: 'center' }}>
+                    <div style={{ background: 'var(--surface-2)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius)', padding: '14px', textAlign: 'center' }}>
                       <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>📊 Today&apos;s Accuracy</div>
-                      <div style={{ fontSize: '24px', fontWeight: 800, color: (childData?.todayStats?.todayAverageScore || 0) >= 70 ? '#34d399' : '#f59e0b', marginTop: '4px' }}>
+                      <div style={{ fontSize: '24px', fontWeight: 800, color: (childData?.todayStats?.todayAverageScore || 0) >= 70 ? 'var(--success)' : 'var(--warning)', marginTop: '4px' }}>
                         {childData?.todayStats?.todayAverageScore !== undefined ? `${childData.todayStats.todayAverageScore}%` : '0%'}
                       </div>
                       <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>Today&apos;s Average Score</div>
@@ -2555,12 +2555,12 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
 
                   {/* Encouragement Card */}
                   <div style={{
-                    background: 'linear-gradient(135deg, rgba(15, 118, 110, 0.25), rgba(6, 22, 24, 0.4))',
-                    border: '1px solid rgba(20, 184, 166, 0.3)',
+                    background: 'var(--accent-soft)',
+                    border: '1px solid var(--accent-border, var(--border-light))',
                     borderRadius: 'var(--radius)',
                     padding: '14px 18px',
                     fontSize: '13px',
-                    color: '#ccfbf1',
+                    color: 'var(--text)',
                     lineHeight: '1.5'
                   }}>
                     💬 <strong>Parent Encouragement Prompt:</strong> Tell {activeChildName}: <em>&ldquo;I saw you spent {childData?.todayStats?.todayMinutes || 25} minutes practicing today. Great job keeping your {childData?.todayStats?.streakDays || childData?.snapshot?.streakDays || 1}-day streak alive!&rdquo;</em>
@@ -2604,65 +2604,65 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
 
                   {/* Diagnostic Topic Movement Breakdown */}
                   <div style={{
-                    background: 'rgba(255, 255, 255, 0.03)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    background: 'var(--surface-2)',
+                    border: '1px solid var(--border-light)',
                     borderRadius: 'var(--radius)',
                     padding: '16px',
                     display: 'flex',
                     flexDirection: 'column',
                     gap: '14px'
                   }}>
-                    <h4 style={{ margin: 0, fontSize: '13px', fontWeight: 800, color: '#e2e8f0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    <h4 style={{ margin: 0, fontSize: '13px', fontWeight: 800, color: 'var(--text)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                       📊 Topic Mastery Diagnostic Movement
                     </h4>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px' }}>
-                      {/* Box 1: Needs Attention Yesterday */}
-                      <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.25)', borderRadius: '8px', padding: '12px' }}>
-                        <div style={{ fontSize: '11px', color: '#fca5a5', fontWeight: 700 }}>🔴 In Needs Attention (Yesterday)</div>
-                        <div style={{ fontSize: '22px', fontWeight: 800, color: '#f87171', marginTop: '2px' }}>
-                          {childData?.topicDiagnostics?.needsAttentionYesterdayCount || childData?.snapshot?.needsAttentionCount || 0} topics
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px' }}>
+                        {/* Box 1: Needs Attention Yesterday */}
+                        <div style={{ background: 'var(--danger-bg)', border: '1px solid var(--danger-border)', borderRadius: '8px', padding: '12px' }}>
+                          <div style={{ fontSize: '11px', color: 'var(--danger)', fontWeight: 700 }}>🔴 In Needs Attention (Yesterday)</div>
+                          <div style={{ fontSize: '22px', fontWeight: 800, color: 'var(--danger)', marginTop: '2px' }}>
+                            {childData?.topicDiagnostics?.needsAttentionYesterdayCount || childData?.snapshot?.needsAttentionCount || 0} topics
+                          </div>
+                        </div>
+
+                        {/* Box 2: Practiced & Removed Today */}
+                        <div style={{ background: 'var(--success-bg)', border: '1px solid var(--success-border)', borderRadius: '8px', padding: '12px' }}>
+                          <div style={{ fontSize: '11px', color: 'var(--success)', fontWeight: 700 }}>🟢 Practiced & Recovered Today</div>
+                          <div style={{ fontSize: '22px', fontWeight: 800, color: 'var(--success)', marginTop: '2px' }}>
+                            {childData?.topicDiagnostics?.recoveredTodayCount || 0} topics removed
+                          </div>
+                        </div>
+
+                        {/* Box 3: Remaining in Needs Attention */}
+                        <div style={{ background: 'var(--warning-bg)', border: '1px solid var(--warning-border)', borderRadius: '8px', padding: '12px' }}>
+                          <div style={{ fontSize: '11px', color: 'var(--warning)', fontWeight: 700 }}>🟡 Remaining Needs Attention</div>
+                          <div style={{ fontSize: '22px', fontWeight: 800, color: 'var(--warning)', marginTop: '2px' }}>
+                            {childData?.topicDiagnostics?.needsAttentionRemainingCount || 0} topics
+                          </div>
                         </div>
                       </div>
 
-                      {/* Box 2: Practiced & Removed Today */}
-                      <div style={{ background: 'rgba(34, 197, 94, 0.1)', border: '1px solid rgba(34, 197, 94, 0.25)', borderRadius: '8px', padding: '12px' }}>
-                        <div style={{ fontSize: '11px', color: '#86efac', fontWeight: 700 }}>🟢 Practiced & Recovered Today</div>
-                        <div style={{ fontSize: '22px', fontWeight: 800, color: '#4ade80', marginTop: '2px' }}>
-                          {childData?.topicDiagnostics?.recoveredTodayCount || 0} topics removed
+                      {/* Recovered topics tags */}
+                      {(childData?.topicDiagnostics?.recoveredTodayTopics || []).length > 0 && (
+                        <div style={{ marginTop: '4px' }}>
+                          <div style={{ fontSize: '11px', color: 'var(--success)', fontWeight: 700, marginBottom: '6px' }}>
+                            ✨ Topics successfully practiced and graduated today:
+                          </div>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                            {childData?.topicDiagnostics?.recoveredTodayTopics.map((t, idx) => (
+                              <span key={idx} style={{ fontSize: '11px', padding: '3px 10px', borderRadius: '12px', background: 'var(--success-bg)', color: 'var(--success)', border: '1px solid var(--success-border)', fontWeight: 600 }}>
+                                ✅ {t}
+                              </span>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-
-                      {/* Box 3: Remaining in Needs Attention */}
-                      <div style={{ background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.25)', borderRadius: '8px', padding: '12px' }}>
-                        <div style={{ fontSize: '11px', color: '#fde68a', fontWeight: 700 }}>🟡 Remaining Needs Attention</div>
-                        <div style={{ fontSize: '22px', fontWeight: 800, color: '#f59e0b', marginTop: '2px' }}>
-                          {childData?.topicDiagnostics?.needsAttentionRemainingCount || 0} topics
-                        </div>
-                      </div>
+                      )}
                     </div>
-
-                    {/* Recovered topics tags */}
-                    {(childData?.topicDiagnostics?.recoveredTodayTopics || []).length > 0 && (
-                      <div style={{ marginTop: '4px' }}>
-                        <div style={{ fontSize: '11px', color: '#86efac', fontWeight: 700, marginBottom: '6px' }}>
-                          ✨ Topics successfully practiced and graduated today:
-                        </div>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-                          {childData?.topicDiagnostics?.recoveredTodayTopics.map((t, idx) => (
-                            <span key={idx} style={{ fontSize: '11px', padding: '3px 10px', borderRadius: '12px', background: 'rgba(34, 197, 94, 0.2)', color: '#4ade80', border: '1px solid rgba(34, 197, 94, 0.4)', fontWeight: 600 }}>
-                              ✅ {t}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
 
                   {/* Tricky Question Spotlight */}
                   <div style={{
-                    background: 'rgba(255, 255, 255, 0.03)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    background: 'var(--surface-2)',
+                    border: '1px solid var(--border-light)',
                     borderRadius: 'var(--radius)',
                     padding: '16px',
                     display: 'flex',
@@ -2670,7 +2670,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                     gap: '10px'
                   }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: '10px', fontWeight: 700, background: 'rgba(239, 68, 68, 0.2)', color: '#f87171', padding: '2px 8px', borderRadius: '10px' }}>
+                      <span style={{ fontSize: '10px', fontWeight: 700, background: 'var(--danger-bg)', color: 'var(--danger)', padding: '2px 8px', borderRadius: '10px' }}>
                         Tricky Question Spotlight
                       </span>
                       <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Daily Mistake Review</span>

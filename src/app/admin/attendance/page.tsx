@@ -386,8 +386,8 @@ export default function AdminAttendancePage() {
               background: 'none',
               fontWeight: 700,
               fontSize: '14px',
-              borderBottom: activeTab === 'parent_sync' ? '2.5px solid #a855f7' : 'none',
-              color: activeTab === 'parent_sync' ? '#a855f7' : 'var(--text-muted)',
+              borderBottom: activeTab === 'parent_sync' ? '2.5px solid var(--purple)' : 'none',
+              color: activeTab === 'parent_sync' ? 'var(--purple)' : 'var(--text-muted)',
               display: 'flex',
               alignItems: 'center',
               gap: '6px'
@@ -395,7 +395,7 @@ export default function AdminAttendancePage() {
           >
             <span>Parent-Child 5-Min Sync Attendance</span>
             {syncData?.summary?.completedCount ? (
-              <span style={{ fontSize: '11px', background: '#a855f7', color: '#fff', padding: '1px 6px', borderRadius: '10px', fontWeight: 800 }}>
+              <span style={{ fontSize: '11px', background: 'var(--purple)', color: '#fff', padding: '1px 6px', borderRadius: '10px', fontWeight: 800 }}>
                 {syncData.summary.completedCount}
               </span>
             ) : null}

@@ -436,9 +436,9 @@ export default function DailyPracticeSummaryPage() {
                 <tbody>
                   {/* Absent / Did Not Practice Section (Pinned to top, matching objective exam layout) */}
                   {inactiveList.length > 0 && (
-                    <tr style={{ borderBottom: '1px solid var(--border-light)', background: 'rgba(239, 68, 68, 0.08)' }}>
-                      <td colSpan={7} style={{ padding: '14px 16px', color: '#dc2626' }}>
-                        <div style={{ textAlign: 'center', fontWeight: 800, fontSize: '14px', marginBottom: '10px', color: '#dc2626' }}>
+                    <tr style={{ borderBottom: '1px solid var(--border-light)', background: 'var(--danger-bg)' }}>
+                      <td colSpan={7} style={{ padding: '14px 16px', color: 'var(--danger)' }}>
+                        <div style={{ textAlign: 'center', fontWeight: 800, fontSize: '14px', marginBottom: '10px', color: 'var(--danger)' }}>
                           🔴 Did Not Practice Today ({inactiveList.length})
                         </div>
                         <div style={{ 
@@ -447,12 +447,12 @@ export default function DailyPracticeSummaryPage() {
                           gap: '8px 16px',
                           fontSize: '13px',
                           fontWeight: 700,
-                          color: '#dc2626'
+                          color: 'var(--danger)'
                         }}>
                           {[...inactiveList]
                             .sort((a, b) => a.name.localeCompare(b.name))
                             .map(a => (
-                              <div key={a.studentCode} style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: '#dc2626', fontWeight: 700, fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <div key={a.studentCode} style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--danger)', fontWeight: 700, fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                                 <span>• {a.name}</span>
                                 {getLockTag(a)}
                               </div>

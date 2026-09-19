@@ -517,11 +517,11 @@ export default function AdminSettingsPage() {
         {activeTab === 'utils' && (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '16px' }}>
             {/* ⚡ SSOT Question Bank Harmonizer */}
-            <div className="card" style={{ background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(168, 85, 247, 0.08) 100%)', padding: '20px', borderRadius: 'var(--radius-lg)', border: '1.5px solid rgba(168, 85, 247, 0.3)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '12px' }}>
+            <div className="card" style={{ background: 'var(--surface-2)', padding: '20px', borderRadius: 'var(--radius-lg)', border: '1.5px solid var(--border-light)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '12px' }}>
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                  <h4 style={{ fontSize: '13px', fontWeight: 800, margin: 0, color: '#a855f7' }}>⚡ Question Bank SSOT Harmonizer</h4>
-                  <span style={{ fontSize: '10px', background: '#a855f7', color: '#fff', padding: '2px 6px', borderRadius: '4px', fontWeight: 800 }}>SSOT</span>
+                  <h4 style={{ fontSize: '13px', fontWeight: 800, margin: 0, color: 'var(--purple)' }}>⚡ Question Bank SSOT Harmonizer</h4>
+                  <span style={{ fontSize: '10px', background: 'var(--purple)', color: '#fff', padding: '2px 6px', borderRadius: '4px', fontWeight: 800 }}>SSOT</span>
                 </div>
                 <p style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.4, margin: '0 0 10px' }}>
                   Standardizes legacy subject codes (e.g. <code>GANI</code> &rarr; <code>MGP1</code>), aligns Firestore document IDs to canonical <code>questionCode</code>, fixes KaTeX math delimiters, and verifies syllabus topic mapping.
@@ -551,7 +551,7 @@ export default function AdminSettingsPage() {
                   className="btn btn-primary btn-sm" 
                   onClick={() => handleHarmonizeQuestions(true)} 
                   disabled={harmonizing}
-                  style={{ flex: 1, fontSize: '11px', background: 'linear-gradient(135deg, #a855f7, #6366f1)', border: 'none' }}
+                  style={{ flex: 1, fontSize: '11px', background: 'var(--accent-grad)', border: 'none' }}
                 >
                   {harmonizing ? 'Harmonizing...' : '⚡ Apply SSOT Upgrade'}
                 </button>
@@ -577,24 +577,24 @@ export default function AdminSettingsPage() {
             </div>
 
             {/* DANGER: Session System Reset */}
-            <div className="card" style={{ background: '#fef2f2', padding: '20px', borderRadius: 'var(--radius-lg)', border: '1px solid #fee2e2', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '10px' }}>
+            <div className="card" style={{ background: 'var(--danger-bg)', padding: '20px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--danger-border)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '10px' }}>
               <div>
                 <h4 style={{ fontSize: '13px', fontWeight: 800, margin: '0 0 4px', color: 'var(--danger)' }}>🚨 New academic session reset</h4>
-                <p style={{ fontSize: '11px', color: '#b91c1c', lineHeight: 1.4 }}>DANGER: Instantly purges all past proctor logs, student scores histories, and exam attempt sheets to prepare for a fresh term.</p>
+                <p style={{ fontSize: '11px', color: 'var(--danger)', lineHeight: 1.4 }}>DANGER: Instantly purges all past proctor logs, student scores histories, and exam attempt sheets to prepare for a fresh term.</p>
               </div>
               <button className="btn btn-primary btn-sm" style={{ background: 'var(--danger)', border: 'none' }} onClick={() => handleRunUtility('systemReset')} disabled={processing}>DANGER: Reset Database</button>
             </div>
 
             {/* Reset Protected Collections Card */}
-            <div className="card" style={{ background: '#fffbeb', padding: '20px', borderRadius: 'var(--radius-lg)', border: '1px solid #fef3c7', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '10px' }}>
+            <div className="card" style={{ background: 'var(--warning-bg)', padding: '20px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--warning-border)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '10px' }}>
               <div>
-                <h4 style={{ fontSize: '13px', fontWeight: 800, margin: '0 0 4px', color: '#d97706' }}>⚠️ Reset protected tables</h4>
-                <p style={{ fontSize: '11px', color: '#b45309', lineHeight: 1.4, marginBottom: '8px' }}>
+                <h4 style={{ fontSize: '13px', fontWeight: 800, margin: '0 0 4px', color: 'var(--warning)' }}>⚠️ Reset protected tables</h4>
+                <p style={{ fontSize: '11px', color: 'var(--warning)', lineHeight: 1.4, marginBottom: '8px' }}>
                   Select which protected database tables you want to clear:
                 </p>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 12px' }}>
                   {Object.keys(selectedProtected).map((col) => (
-                    <label key={col} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', cursor: 'pointer', color: '#78350f', fontWeight: 600 }}>
+                    <label key={col} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', cursor: 'pointer', color: 'var(--text-secondary)', fontWeight: 600 }}>
                       <input
                         type="checkbox"
                         checked={selectedProtected[col]}
@@ -607,7 +607,7 @@ export default function AdminSettingsPage() {
               </div>
               <button 
                 className="btn btn-secondary" 
-                style={{ background: '#f59e0b', color: '#fff', border: 'none', fontSize: '11px', padding: '6px 12px' }}
+                style={{ background: 'var(--warning)', color: '#fff', border: 'none', fontSize: '11px', padding: '6px 12px' }}
                 onClick={handleResetProtected}
                 disabled={processing || !Object.values(selectedProtected).some(Boolean)}
               >
@@ -694,13 +694,13 @@ export default function AdminSettingsPage() {
                 }}
               >
                 {cleanupLogs.length === 0 ? (
-                  <span style={{ color: '#888' }}>Ready to start. Click "Find All Orphaned" to begin scanning.</span>
+                  <span style={{ color: 'var(--text-muted)' }}>Ready to start. Click "Find All Orphaned" to begin scanning.</span>
                 ) : (
                   cleanupLogs.map((log, index) => {
-                    let color = '#fff';
-                    if (log.includes('❌') || log.includes('Failed') || log.includes('error')) color = '#f87171';
-                    else if (log.includes('✅') || log.includes('Success') || log.includes('cleaned')) color = '#4ade80';
-                    else if (log.includes('⚠️') || log.includes('warning') || log.includes('Finding') || log.includes('Scanning')) color = '#fbbf24';
+                    let color = 'var(--text)';
+                    if (log.includes('❌') || log.includes('Failed') || log.includes('error')) color = 'var(--danger)';
+                    else if (log.includes('✅') || log.includes('Success') || log.includes('cleaned')) color = 'var(--success)';
+                    else if (log.includes('⚠️') || log.includes('warning') || log.includes('Finding') || log.includes('Scanning')) color = 'var(--warning)';
                     return (
                       <div key={index} style={{ color }}>{log}</div>
                     );

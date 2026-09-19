@@ -330,7 +330,7 @@ export default function HardwareCheckMockTestModal({ isOpen, onClose }: Hardware
             <div style={{
               width: '100%',
               height: '200px',
-              background: '#171a1f',
+              background: 'var(--surface)',
               borderRadius: '8px',
               overflow: 'hidden',
               display: 'flex',

@@ -875,7 +875,7 @@ export default function ParentReviewPanel() {
                           <td style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 700 }}>{group.setsDone} sets</td>
                           <td style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 700 }}>{group.totalQuestions} Qs</td>
                           <td style={{ padding: '12px 16px', textAlign: 'center', color: 'var(--text-muted)' }}>{Math.floor(group.totalTimeSeconds / 60)}m {group.totalTimeSeconds % 60}s</td>
-                          <td style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 800, color: group.accuracy >= 75 ? '#34d399' : group.accuracy >= 50 ? '#fbbf24' : '#f87171' }}>
+                          <td style={{ padding: '12px 16px', textAlign: 'center', fontWeight: 800, color: group.accuracy >= 75 ? 'var(--success)' : group.accuracy >= 50 ? 'var(--warning)' : 'var(--danger)' }}>
                             {group.accuracy}%
                           </td>
                           <td style={{ padding: '12px 16px', textAlign: 'right' }}>
@@ -891,7 +891,7 @@ export default function ParentReviewPanel() {
                                 Approve Day
                               </button>
                             ) : (
-                              <span style={{ fontSize: '10.5px', color: '#fbbf24', fontWeight: 600 }}>
+                              <span style={{ fontSize: '10.5px', color: 'var(--warning)', fontWeight: 600 }}>
                                 ⏳ Available at 10:30 PM
                               </span>
                             )}
@@ -1018,7 +1018,7 @@ export default function ParentReviewPanel() {
                 </div>
                 <div style={{ padding: '12px', background: 'var(--bg-soft)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)' }}>
                   <span style={{ fontSize: '10px', color: 'var(--text-muted)', display: 'block', fontWeight: 600 }}>ACCURACY</span>
-                  <strong style={{ fontSize: '18px', color: selectedDayGroup.accuracy >= 75 ? '#34d399' : '#fbbf24' }}>{selectedDayGroup.accuracy}%</strong>
+                  <strong style={{ fontSize: '18px', color: selectedDayGroup.accuracy >= 75 ? 'var(--success)' : 'var(--warning)' }}>{selectedDayGroup.accuracy}%</strong>
                 </div>
               </div>
 
@@ -1037,9 +1037,9 @@ export default function ParentReviewPanel() {
                               fontWeight: 700,
                               padding: '2px 6px',
                               borderRadius: '4px',
-                              background: item.isSolvedTooFast ? 'rgba(239, 68, 68, 0.15)' : 'rgba(16, 185, 129, 0.15)',
-                              color: item.isSolvedTooFast ? '#ef4444' : '#10b981',
-                              border: `1px solid ${item.isSolvedTooFast ? 'rgba(239, 68, 68, 0.3)' : 'rgba(16, 185, 129, 0.3)'}`
+                              background: item.isSolvedTooFast ? 'var(--danger-bg)' : 'var(--success-bg)',
+                              color: item.isSolvedTooFast ? 'var(--danger)' : 'var(--success)',
+                              border: `1px solid ${item.isSolvedTooFast ? 'var(--danger-border)' : 'var(--success-border)'}`
                             }}>
                               {item.feedbackBadge}
                             </span>
@@ -1056,11 +1056,11 @@ export default function ParentReviewPanel() {
                       <div style={{
                         fontSize: '11px',
                         lineHeight: 1.4,
-                        color: item.isSolvedTooFast ? '#fca5a5' : 'var(--text-muted)',
-                        background: item.isSolvedTooFast ? 'rgba(239, 68, 68, 0.08)' : 'rgba(255, 255, 255, 0.03)',
+                        color: item.isSolvedTooFast ? 'var(--danger)' : 'var(--text-muted)',
+                        background: item.isSolvedTooFast ? 'var(--danger-bg)' : 'var(--surface-2)',
                         padding: '6px 8px',
                         borderRadius: '4px',
-                        borderLeft: `3px solid ${item.isSolvedTooFast ? '#ef4444' : 'var(--accent)'}`
+                        borderLeft: `3px solid ${item.isSolvedTooFast ? 'var(--danger)' : 'var(--accent)'}`
                       }}>
                         💬 {item.parentAdvisory}
                       </div>
@@ -1072,7 +1072,7 @@ export default function ParentReviewPanel() {
               {/* Action Button */}
               <div style={{ marginTop: '20px' }}>
                 {selectedDayGroup.isApproved ? (
-                  <div style={{ textAlign: 'center', padding: '10px', background: 'rgba(34, 197, 94, 0.1)', color: '#34d399', fontWeight: 700, borderRadius: 'var(--radius-sm)' }}>
+                  <div style={{ textAlign: 'center', padding: '10px', background: 'var(--success-bg)', color: 'var(--success)', fontWeight: 700, borderRadius: 'var(--radius-sm)' }}>
                     ✓ Entire Day Practice Approved
                   </div>
                 ) : isPracticeDigestAvailable(selectedDayGroup.dateKey) ? (
@@ -1088,7 +1088,7 @@ export default function ParentReviewPanel() {
                     ✅ Approve All Practices for {selectedDayGroup.dateFormatted}
                   </button>
                 ) : (
-                  <div style={{ textAlign: 'center', padding: '10px', background: 'rgba(245, 158, 11, 0.1)', color: '#fbbf24', fontSize: '12px', fontWeight: 600, borderRadius: 'var(--radius-sm)' }}>
+                  <div style={{ textAlign: 'center', padding: '10px', background: 'var(--warning-bg)', color: 'var(--warning)', fontSize: '12px', fontWeight: 600, borderRadius: 'var(--radius-sm)' }}>
                     ⏳ Today's practice is in progress. Full day digest will open for approval at 10:30 PM.
                   </div>
                 )}
@@ -1380,7 +1380,7 @@ export default function ParentReviewPanel() {
                 </div>
               </div>
             ) : (
-              <div style={{ textAlign: 'center', padding: '15px', background: 'rgba(34, 197, 94, 0.1)', color: '#34d399', borderRadius: 'var(--radius)', fontWeight: 700 }}>
+              <div style={{ textAlign: 'center', padding: '15px', background: 'var(--success-bg)', color: 'var(--success)', borderRadius: 'var(--radius)', fontWeight: 700 }}>
                 ✓ Absence already acknowledged by parent.
               </div>
             )}

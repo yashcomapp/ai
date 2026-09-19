@@ -879,9 +879,9 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
               <div 
                 className={`exam-tab ${examTab === 'subjective' ? 'active' : ''}`} 
                 onClick={() => setExamTab('subjective')}
-                style={{ flex: 1, textAlign: 'center', padding: '6px 0', fontSize: '12px', fontWeight: 800, cursor: 'pointer', borderRadius: '6px', background: examTab === 'subjective' ? 'var(--surface)' : 'transparent', color: examTab === 'subjective' ? 'var(--secondary, #a855f7)' : 'var(--text-muted)', boxShadow: examTab === 'subjective' ? 'var(--shadow-sm)' : 'none', border: examTab === 'subjective' ? '2px solid var(--secondary, #a855f7)' : '1px solid var(--border)', transition: 'all 0.18s ease' }}
+                style={{ flex: 1, textAlign: 'center', padding: '6px 0', fontSize: '12px', fontWeight: 800, cursor: 'pointer', borderRadius: '6px', background: examTab === 'subjective' ? 'var(--surface)' : 'transparent', color: examTab === 'subjective' ? 'var(--secondary)' : 'var(--text-muted)', boxShadow: examTab === 'subjective' ? 'var(--shadow-sm)' : 'none', border: examTab === 'subjective' ? '2px solid var(--secondary)' : '1px solid var(--border)', transition: 'all 0.18s ease' }}
               >
-                Sub <span className="tab-count" style={{ background: examTab === 'subjective' ? 'var(--secondary, #a855f7)' : 'var(--surface-3, var(--border))', color: '#ffffff', borderRadius: '8px', padding: '1px 5px', fontSize: '10px', fontWeight: 800, marginLeft: '3px' }}>{exams.pendingSubjectiveExams.length + exams.scheduledSubjectiveExams.length}</span>
+                Sub <span className="tab-count" style={{ background: examTab === 'subjective' ? 'var(--secondary)' : 'var(--surface-3)', color: '#ffffff', borderRadius: '8px', padding: '1px 5px', fontSize: '10px', fontWeight: 800, marginLeft: '3px' }}>{exams.pendingSubjectiveExams.length + exams.scheduledSubjectiveExams.length}</span>
               </div>
               <div 
                 className={`exam-tab ${examTab === 'mock' ? 'active' : ''}`} 

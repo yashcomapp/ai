@@ -277,17 +277,17 @@ export function SyllabusSelector<T extends { topic: string; subject?: string }>(
                           marginLeft: '3px',
                           padding: '1px 5px',
                           borderRadius: '4px',
-                          background: isChecked ? 'rgba(59, 130, 246, 0.25)' : 'var(--border-light, rgba(255,255,255,0.08))',
-                          border: '1px solid var(--border-light, rgba(255,255,255,0.1))',
+                          background: isChecked ? 'var(--accent-soft)' : 'var(--surface-2)',
+                          border: '1px solid var(--border-light)',
                           display: 'inline-flex',
                           alignItems: 'center',
                           gap: '2px'
                         }}
                         title={`Objective Questions: ${(top as any).objectiveCount ?? 0} | Subjective Questions: ${(top as any).subjectiveCount ?? 0}`}
                       >
-                        <span style={{ color: '#38bdf8' }}>O: {(top as any).objectiveCount ?? 0}</span>
+                        <span style={{ color: 'var(--info)' }}>O: {(top as any).objectiveCount ?? 0}</span>
                         <span style={{ opacity: 0.4 }}>|</span>
-                        <span style={{ color: '#c084fc' }}>S: {(top as any).subjectiveCount ?? 0}</span>
+                        <span style={{ color: 'var(--purple)' }}>S: {(top as any).subjectiveCount ?? 0}</span>
                       </span>
                     </label>
                   );

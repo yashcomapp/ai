@@ -1999,7 +1999,7 @@ OUTPUT FORMAT: Return ONLY a valid JSON array of objects with schema:
                   <button 
                     className="btn btn-secondary btn-sm" 
                     onClick={handleClearAllTopics}
-                    style={{ fontSize: '11px', padding: '4px 10px', color: '#dc2626', borderColor: '#fca5a5' }}
+                    style={{ fontSize: '11px', padding: '4px 10px', color: 'var(--danger)', borderColor: 'var(--danger-border)' }}
                     title="Deselect all topics to select manually"
                   >
                     🧹 Clear / Deselect All
@@ -2016,8 +2016,8 @@ OUTPUT FORMAT: Return ONLY a valid JSON array of objects with schema:
                   <div 
                     key={day.dayName} 
                     style={{ 
-                      border: `1px solid ${day.isSaturday ? 'var(--success)' : (day.active ? 'var(--border-light)' : '#fca5a5')}`,
-                      background: day.isSaturday ? 'rgba(16, 185, 129, 0.05)' : (day.active ? 'var(--surface)' : '#fef2f2'),
+                      border: `1px solid ${day.isSaturday ? 'var(--success)' : (day.active ? 'var(--border-light)' : 'var(--danger-border)')}`,
+                      background: day.isSaturday ? 'var(--success-bg)' : (day.active ? 'var(--surface)' : 'var(--danger-bg)'),
                       borderRadius: 'var(--radius)',
                       padding: '12px',
                       display: 'flex',
@@ -2037,7 +2037,7 @@ OUTPUT FORMAT: Return ONLY a valid JSON array of objects with schema:
                         alignItems: 'center', 
                         gap: '4px', 
                         fontWeight: 700, 
-                        color: day.active ? 'var(--success)' : '#dc2626',
+                        color: day.active ? 'var(--success)' : 'var(--danger)',
                         opacity: day.date < new Date().toLocaleDateString('en-CA') ? 0.6 : 1
                       }}>
                         <input 
@@ -2055,7 +2055,7 @@ OUTPUT FORMAT: Return ONLY a valid JSON array of objects with schema:
                         <div>
                           <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '4px' }}>Topics Covered:</div>
                           {currentChapterTopics.length === 0 ? (
-                            <div style={{ fontSize: '11px', color: '#94a3b8', fontStyle: 'italic' }}>No topics loaded for chapter</div>
+                            <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic' }}>No topics loaded for chapter</div>
                           ) : (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', maxHeight: '120px', overflowY: 'auto' }}>
                               {currentChapterTopics.map(topName => (
@@ -2072,7 +2072,7 @@ OUTPUT FORMAT: Return ONLY a valid JSON array of objects with schema:
                           )}
                         </div>
                       ) : (
-                        <div style={{ fontSize: '11px', color: '#dc2626', fontWeight: 600, textAlign: 'center', padding: '10px 0' }}>
+                        <div style={{ fontSize: '11px', color: 'var(--danger)', fontWeight: 600, textAlign: 'center', padding: '10px 0' }}>
                           ☕ Holiday / Break Day (No Test Scheduled)
                         </div>
                       )

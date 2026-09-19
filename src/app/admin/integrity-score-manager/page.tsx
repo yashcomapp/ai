@@ -450,8 +450,8 @@ export default function AdminIntegrityScoreManagerPage() {
                                       fontSize: '9px',
                                       padding: '2px 6px',
                                       borderRadius: '4px',
-                                      background: h.score >= 75 ? '#dbf3e1' : (h.score >= 60 ? '#fef3c7' : '#fee2e2'),
-                                      color: h.score >= 75 ? '#1aa54e' : (h.score >= 60 ? '#d97706' : '#dc2626'),
+                                      background: h.score >= 75 ? 'var(--success-bg)' : (h.score >= 60 ? 'var(--warning-bg)' : 'var(--danger-bg)'),
+                                      color: h.score >= 75 ? 'var(--success)' : (h.score >= 60 ? 'var(--warning)' : 'var(--danger)'),
                                       fontWeight: 700
                                     }}>{h.level.toUpperCase()}</span>
                                   </td>

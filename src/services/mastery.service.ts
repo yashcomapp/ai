@@ -261,11 +261,14 @@ export class MasteryService {
         tx.set(m.ref, updatedData, { merge: true });
       });
     } else {
-      // Run in standalone batch write
+      // Run in standalone batch write with batched read
+      const docRefs = topicCodes.map(tCode => adminDb.collection('studentTopicMastery').doc(`${studentCode}_${tCode}`));
+      const snaps = docRefs.length > 0 ? await adminDb.getAll(...docRefs) : [];
       const batch = adminDb.batch();
-      for (const tCode of topicCodes) {
-        const ref = adminDb.collection('studentTopicMastery').doc(`${studentCode}_${tCode}`);
-        const snap = await ref.get();
+
+      snaps.forEach((snap, idx) => {
+        const tCode = topicCodes[idx];
+        const ref = docRefs[idx];
         const existing = snap.exists ? snap.data()! : null;
         const initialData = existing ? { ...existing } : {
           studentCode,
@@ -289,7 +292,7 @@ export class MasteryService {
         );
 
         batch.set(ref, updatedData, { merge: true });
-      }
+      });
       await batch.commit();
     }
 

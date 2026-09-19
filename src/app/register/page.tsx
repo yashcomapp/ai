@@ -257,7 +257,7 @@ export default function RegisterPage() {
                   {getSelectedBatchDescription()}
                 </div>
               )}
-              {validationErrors.batchId && <div className="field-error show" style={{ fontSize: '0.75rem', color: '#dc2626', marginTop: '4px' }}>{validationErrors.batchId}</div>}
+              {validationErrors.batchId && <div className="field-error show" style={{ fontSize: '0.75rem', color: 'var(--danger)', marginTop: '4px' }}>{validationErrors.batchId}</div>}
             </div>
 
             {/* STUDENT DETAILS */}
@@ -278,7 +278,7 @@ export default function RegisterPage() {
                   onBlur={handleBlur}
                   className={validationErrors.studentName ? 'invalid' : ''}
                 />
-                {validationErrors.studentName && <div className="field-error show" style={{ fontSize: '0.75rem', color: '#dc2626', marginTop: '4px' }}>{validationErrors.studentName}</div>}
+                {validationErrors.studentName && <div className="field-error show" style={{ fontSize: '0.75rem', color: 'var(--danger)', marginTop: '4px' }}>{validationErrors.studentName}</div>}
               </div>
             </div>
 
@@ -293,7 +293,7 @@ export default function RegisterPage() {
                   onBlur={handleBlur}
                   className={validationErrors.dob ? 'invalid' : ''}
                 />
-                {validationErrors.dob && <div className="field-error show" style={{ fontSize: '0.75rem', color: '#dc2626', marginTop: '4px' }}>{validationErrors.dob}</div>}
+                {validationErrors.dob && <div className="field-error show" style={{ fontSize: '0.75rem', color: 'var(--danger)', marginTop: '4px' }}>{validationErrors.dob}</div>}
               </div>
             </div>
 
@@ -312,7 +312,7 @@ export default function RegisterPage() {
                   <option value="Female">Female</option>
                   <option value="Other">Other</option>
                 </select>
-                {validationErrors.gender && <div className="field-error show" style={{ fontSize: '0.75rem', color: '#dc2626', marginTop: '4px' }}>{validationErrors.gender}</div>}
+                {validationErrors.gender && <div className="field-error show" style={{ fontSize: '0.75rem', color: 'var(--danger)', marginTop: '4px' }}>{validationErrors.gender}</div>}
               </div>
               <div className="form-group">
                 <label>Email Address <span className="req" style={{ color: 'var(--danger)' }}>*</span></label>
@@ -327,7 +327,7 @@ export default function RegisterPage() {
                   className={validationErrors.studentEmail ? 'invalid' : ''}
                 />
                 <div className="batch-note" style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>This will be your login username</div>
-                {validationErrors.studentEmail && <div className="field-error show" style={{ fontSize: '0.75rem', color: '#dc2626', marginTop: '4px' }}>{validationErrors.studentEmail}</div>}
+                {validationErrors.studentEmail && <div className="field-error show" style={{ fontSize: '0.75rem', color: 'var(--danger)', marginTop: '4px' }}>{validationErrors.studentEmail}</div>}
               </div>
             </div>
 
@@ -345,7 +345,7 @@ export default function RegisterPage() {
                   onBlur={handleBlur}
                   className={validationErrors.studentMobile ? 'invalid' : ''}
                 />
-                {validationErrors.studentMobile && <div className="field-error show" style={{ fontSize: '0.75rem', color: '#dc2626', marginTop: '4px' }}>{validationErrors.studentMobile}</div>}
+                {validationErrors.studentMobile && <div className="field-error show" style={{ fontSize: '0.75rem', color: 'var(--danger)', marginTop: '4px' }}>{validationErrors.studentMobile}</div>}
               </div>
               <div className="form-group">
                 <label>Blood Group <span className="req" style={{ color: 'var(--danger)' }}>*</span></label>
@@ -362,7 +362,7 @@ export default function RegisterPage() {
                   <option value="O+">O+</option><option value="O-">O-</option>
                   <option value="AB+">AB+</option><option value="AB-">AB-</option>
                 </select>
-                {validationErrors.bloodGroup && <div className="field-error show" style={{ fontSize: '0.75rem', color: '#dc2626', marginTop: '4px' }}>{validationErrors.bloodGroup}</div>}
+                {validationErrors.bloodGroup && <div className="field-error show" style={{ fontSize: '0.75rem', color: 'var(--danger)', marginTop: '4px' }}>{validationErrors.bloodGroup}</div>}
               </div>
             </div>
 
@@ -377,7 +377,7 @@ export default function RegisterPage() {
                 onBlur={handleBlur}
                 className={validationErrors.address ? 'invalid' : ''}
               />
-              {validationErrors.address && <div className="field-error show" style={{ fontSize: '0.75rem', color: '#dc2626', marginTop: '4px' }}>{validationErrors.address}</div>}
+              {validationErrors.address && <div className="field-error show" style={{ fontSize: '0.75rem', color: 'var(--danger)', marginTop: '4px' }}>{validationErrors.address}</div>}
             </div>
 
             {/* PARENT INFO */}
@@ -397,7 +397,7 @@ export default function RegisterPage() {
                   onBlur={handleBlur}
                   className={validationErrors.parentName ? 'invalid' : ''}
                 />
-                {validationErrors.parentName && <div className="field-error show" style={{ fontSize: '0.75rem', color: '#dc2626', marginTop: '4px' }}>{validationErrors.parentName}</div>}
+                {validationErrors.parentName && <div className="field-error show" style={{ fontSize: '0.75rem', color: 'var(--danger)', marginTop: '4px' }}>{validationErrors.parentName}</div>}
               </div>
               <div className="form-group">
                 <label>Relation</label>
@@ -428,7 +428,7 @@ export default function RegisterPage() {
                   onBlur={handleBlur}
                   className={validationErrors.parentMobile ? 'invalid' : ''}
                 />
-                {validationErrors.parentMobile && <div className="field-error show" style={{ fontSize: '0.75rem', color: '#dc2626', marginTop: '4px' }}>{validationErrors.parentMobile}</div>}
+                {validationErrors.parentMobile && <div className="field-error show" style={{ fontSize: '0.75rem', color: 'var(--danger)', marginTop: '4px' }}>{validationErrors.parentMobile}</div>}
               </div>
               <div className="form-group">
                 <label>Parent Email <span className="req" style={{ color: 'var(--danger)' }}>*</span></label>
@@ -442,7 +442,7 @@ export default function RegisterPage() {
                   className={validationErrors.parentEmail ? 'invalid' : ''}
                 />
                 <div className="batch-note" style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>Used for parent login</div>
-                {validationErrors.parentEmail && <div className="field-error show" style={{ fontSize: '0.75rem', color: '#dc2626', marginTop: '4px' }}>{validationErrors.parentEmail}</div>}
+                {validationErrors.parentEmail && <div className="field-error show" style={{ fontSize: '0.75rem', color: 'var(--danger)', marginTop: '4px' }}>{validationErrors.parentEmail}</div>}
               </div>
             </div>
 
