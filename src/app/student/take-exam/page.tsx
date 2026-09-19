@@ -359,7 +359,8 @@ function TakeExamContent() {
     isNumerical: isNumerical,
     onViolation: (type) => {
       if (type === 'tab_switch') {
-        setTabViolations(prev => prev + 1);
+        // Tab switch violations are strictly managed and debounced by useLiveExam SSOT hook
+        return;
       } else if (type === 'no_face') {
         setProctoringViolations(prev => ({ ...prev, noFace: prev.noFace + 1 }));
       } else if (type === 'multiple_faces') {

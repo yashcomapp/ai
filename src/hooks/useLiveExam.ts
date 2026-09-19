@@ -54,6 +54,9 @@ export function useLiveExam({
   const lastViolationTimeRef = useRef<number>(0);
   const startTimeRef = useRef<number>(0);
 
+  const isCurrentlyAwayRef = useRef<boolean>(false);
+  const lastReturnTimeRef = useRef<number>(0);
+
   const [proctoringViolations, setProctoringViolations] = useState({
     noFace: 0,
     multipleFaces: 0,
@@ -67,7 +70,7 @@ export function useLiveExam({
 
   useEffect(() => {
     if (!started) return;
-    if (!examId || !studentCode) return;
+    if (!examId || !studentCode || (examType as any) === 'sync') return;
 
     if (!startTimeRef.current) {
       startTimeRef.current = Date.now();
@@ -75,25 +78,38 @@ export function useLiveExam({
 
     const recordViolation = (type: string) => {
       const now = Date.now();
-      if (now - startTimeRef.current < 5000) {
-        // Ignore transient setup-phase blurs in the first 5 seconds
+      // 1. Startup grace period: ignore transient layout/permission/focus shifts in first 8s
+      if (now - startTimeRef.current < 8000) {
         return;
       }
-      if (now - lastViolationTimeRef.current < 1500) {
-        // Coalesce events within 1.5 seconds to avoid double-counting
+      // 2. Continuous departure check: if user is already away (e.g. active phone call), do NOT double-count
+      if (isCurrentlyAwayRef.current) {
         return;
       }
+      // 3. Coalescing cooldown: 10s cooldown from incident start, 5s cooldown from return stabilization
+      if (now - lastViolationTimeRef.current < 10000 || (lastReturnTimeRef.current > 0 && now - lastReturnTimeRef.current < 5000)) {
+        return;
+      }
+
+      isCurrentlyAwayRef.current = true;
       lastViolationTimeRef.current = now;
-      setTabViolations(prev => prev + 1);
       lastActiveRef.current = now;
+      setTabViolations(prev => prev + 1);
     };
 
     const handleVisibilityChange = () => {
       if (document.hidden) {
         recordViolation('tab-hidden');
       } else {
-        const awayMs = Date.now() - lastActiveRef.current;
-        setAwayTimeTotal(prev => prev + Math.round(awayMs / 1000));
+        const now = Date.now();
+        if (isCurrentlyAwayRef.current) {
+          const awayMs = now - lastActiveRef.current;
+          if (awayMs > 0) {
+            setAwayTimeTotal(prev => prev + Math.round(awayMs / 1000));
+          }
+          isCurrentlyAwayRef.current = false;
+          lastReturnTimeRef.current = now;
+        }
       }
     };
 
@@ -102,8 +118,15 @@ export function useLiveExam({
     };
 
     const handleFocus = () => {
-      const awayMs = Date.now() - lastActiveRef.current;
-      setAwayTimeTotal(prev => prev + Math.round(awayMs / 1000));
+      const now = Date.now();
+      if (isCurrentlyAwayRef.current) {
+        const awayMs = now - lastActiveRef.current;
+        if (awayMs > 0) {
+          setAwayTimeTotal(prev => prev + Math.round(awayMs / 1000));
+        }
+        isCurrentlyAwayRef.current = false;
+        lastReturnTimeRef.current = now;
+      }
     };
 
     const handleFullscreenChange = () => {
@@ -129,7 +152,7 @@ export function useLiveExam({
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
       document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
     };
-  }, [started, examId, studentCode]);
+  }, [started, examId, studentCode, examType]);
 
   const liveSessionDocRef = useRef<any>(null);
   const liveSessionActiveRef = useRef<boolean>(false);

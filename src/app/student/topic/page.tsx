@@ -481,47 +481,7 @@ function TopicPracticeContent() {
 
 
 
-  // Tab switching & split-screen focus proctoring
-  useEffect(() => {
-    if (!started || finished) return;
 
-    const handleVisibilityChange = () => {
-      if (startTimeRef.current && Date.now() - startTimeRef.current < 5000) {
-        return;
-      }
-      if (document.hidden) {
-        setTabViolations(prev => prev + 1);
-        lastActiveRef.current = Date.now();
-      } else {
-        const awayMs = Date.now() - lastActiveRef.current;
-        setTotalAwaySeconds(prev => prev + Math.round(awayMs / 1000));
-      }
-    };
-
-    const handleBlur = () => {
-      if (startTimeRef.current && Date.now() - startTimeRef.current < 5000) {
-        return;
-      }
-      setIsWindowFocused(false);
-      setTabViolations(prev => prev + 1);
-    };
-
-    const handleFocus = () => {
-      setIsWindowFocused(true);
-      const awayMs = Date.now() - lastActiveRef.current;
-      setTotalAwaySeconds(prev => prev + Math.round(awayMs / 1000));
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('blur', handleBlur);
-    window.addEventListener('focus', handleFocus);
-
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('blur', handleBlur);
-      window.removeEventListener('focus', handleFocus);
-    };
-  }, [started, finished]);
 
   useEffect(() => {
     if (!started || finished) return;
