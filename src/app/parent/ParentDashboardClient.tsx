@@ -1329,16 +1329,16 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
               boxShadow: 'var(--shadow-sm)'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <Moon size={18} color="#115e59" />
-                <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 800, color: '#115e59', lineHeight: 1.2 }}>
+                <Moon size={18} color="var(--accent)" />
+                <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 800, color: 'var(--text)', lineHeight: 1.2 }}>
                   Daily 5-Min Parent-Kid Sync
                 </h3>
               </div>
 
               <div>
                 {dailySyncDoneToday ? (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: '#ecfdf5', border: '1.5px solid #a7f3d0', padding: '6px 10px', borderRadius: 'var(--radius)', color: '#059669', fontWeight: 700, fontSize: '11px' }}>
-                    <CheckCircle2 size={14} color="#059669" />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'var(--success-bg)', border: '1px solid rgba(52, 211, 153, 0.3)', padding: '6px 10px', borderRadius: 'var(--radius)', color: 'var(--success)', fontWeight: 700, fontSize: '11px' }}>
+                    <CheckCircle2 size={14} color="var(--success)" />
                     <span>Verified for Today!</span>
                   </div>
                 ) : (
@@ -1356,16 +1356,16 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                       setDailySyncOpen(true);
                     }}
                     style={{
-                      background: isSyncTimeSlot() ? '#0284c7' : '#ffffff',
-                      color: isSyncTimeSlot() ? '#ffffff' : '#64748b',
+                      background: isSyncTimeSlot() ? 'var(--accent)' : 'var(--surface-2)',
+                      color: isSyncTimeSlot() ? 'var(--text-on-accent)' : 'var(--text-muted)',
                       fontWeight: 700,
                       fontSize: '12px',
                       padding: '6px 12px',
                       borderRadius: '8px',
-                      border: isSyncTimeSlot() ? 'none' : '1.5px solid #99f6e4',
+                      border: '1px solid var(--border)',
                       cursor: isSyncTimeSlot() ? 'pointer' : 'not-allowed',
                       opacity: isSyncTimeSlot() ? 1 : 0.85,
-                      boxShadow: isSyncTimeSlot() ? '0 2px 8px rgba(2, 132, 199, 0.25)' : 'none',
+                      boxShadow: isSyncTimeSlot() ? 'var(--shadow-sm)' : 'none',
                       display: 'flex',
                       alignItems: 'center',
                       gap: '5px'
@@ -1930,15 +1930,15 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                               })() : ''}
                             </span>
                             {isSeen ? (
-                              <span style={{ fontSize: '10px', color: '#16a34a', fontWeight: 700 }}>
+                              <span style={{ fontSize: '10px', color: 'var(--success)', fontWeight: 700 }}>
                                 ✓ Read
                               </span>
                             ) : (
                               <button 
                                 onClick={() => handleMarkNoticeAsSeen(notice.id)}
                                 style={{
-                                  background: '#ef4444',
-                                  border: '1px solid #dc2626',
+                                  background: 'var(--danger)',
+                                  border: '1px solid var(--danger-border)',
                                   borderRadius: 'var(--radius-sm)',
                                   padding: '2px 8px',
                                   fontSize: '10px',
@@ -2203,14 +2203,14 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                     {/* Polite & Firm Parental Advisory in Hindi */}
                     <div style={{
                       padding: '12px 14px',
-                      background: 'rgba(239, 68, 68, 0.12)',
+                      background: 'var(--danger-bg)',
                       borderRadius: '8px',
-                      borderLeft: '4px solid #ef4444',
+                      borderLeft: '4px solid var(--danger)',
                       color: 'var(--text)',
                       fontSize: '13px',
                       lineHeight: '1.6'
                     }}>
-                      <div style={{ fontWeight: 800, color: '#ef4444', marginBottom: '6px', fontSize: '13.5px' }}>
+                      <div style={{ fontWeight: 800, color: 'var(--danger)', marginBottom: '6px', fontSize: '13.5px' }}>
                         ⚠️ अभिभावक कृपया ध्यान दें (Parental Advisory):
                       </div>
                       <div>
@@ -2218,7 +2218,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                       </div>
                     </div>
 
-                    <div style={{ fontWeight: 800, fontSize: '13px', color: '#f87171' }}>
+                    <div style={{ fontWeight: 800, fontSize: '13px', color: 'var(--danger)' }}>
                       📋 अनुपस्थिति का कारण चुनें (Select reason for absence):
                     </div>
                     {[

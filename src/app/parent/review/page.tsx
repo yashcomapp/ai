@@ -1131,7 +1131,7 @@ export default function ParentReviewPanel() {
                     </div>
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                      <div className="info-box blue" style={{ fontSize: '11px', background: '#eef8ff', borderLeft: '4px solid var(--accent)', padding: '10px 14px', borderRadius: '4px', color: '#1d4ed8', marginBottom: '10px' }}>
+                      <div className="info-box blue" style={{ fontSize: '11px', background: 'var(--info-bg)', borderLeft: '4px solid var(--accent)', padding: '10px 14px', borderRadius: '4px', color: 'var(--text)', border: '1px solid var(--border)', marginBottom: '10px' }}>
                         💡 <strong>Parent Evaluation Mode:</strong> Please check your child's physical paper/notebook against the Model Answer Key (with highlighted keywords) shown below and award marks for each question.
                       </div>
 

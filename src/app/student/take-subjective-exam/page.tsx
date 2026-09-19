@@ -730,14 +730,14 @@ function TakeSubjectiveExamContent() {
                 <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginBottom: '16px' }}>Please check that your webcam and microphone are working correctly before starting.</p>
 
             <div style={{ 
-              background: 'rgba(239, 68, 68, 0.08)', 
-              border: '1px dashed rgba(239, 68, 68, 0.3)', 
+              background: 'var(--danger-bg)', 
+              border: '1px dashed var(--danger-border)', 
               borderRadius: 'var(--radius-sm)', 
               padding: '12px 16px', 
               marginBottom: '16px', 
               textAlign: 'left' 
             }}>
-              <strong style={{ fontSize: '12px', color: '#ef4444', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+              <strong style={{ fontSize: '12px', color: 'var(--danger)', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
                 ⚠️ Proctored Exam Rules & Violation Limits
               </strong>
               <ul style={{ margin: 0, paddingLeft: '16px', fontSize: '11px', color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', gap: '4px', lineHeight: '1.4' }}>
@@ -761,7 +761,7 @@ function TakeSubjectiveExamContent() {
                   style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                 />
               ) : (
-                <div style={{ color: '#555', fontSize: '12px' }}>Webcam Feed Offline</div>
+                <div style={{ color: 'var(--text-muted)', fontSize: '12px' }}>Webcam Feed Offline</div>
               )}
             </div>
 
@@ -1065,7 +1065,7 @@ function TakeSubjectiveExamContent() {
                     }
                   </button>
                   {submitErrorMessage && (
-                    <div style={{ fontSize: '12px', color: '#e74c3c', textAlign: 'center', fontWeight: 600 }}>
+                    <div style={{ fontSize: '12px', color: 'var(--danger)', textAlign: 'center', fontWeight: 600 }}>
                       {submitErrorMessage}
                     </div>
                   )}
@@ -1104,11 +1104,11 @@ function TakeSubjectiveExamContent() {
             </h2>
             {autoSubmittedReason && (
               <div style={{
-                background: 'rgba(231, 76, 60, 0.1)',
-                border: '1px solid rgba(231, 76, 60, 0.3)',
+                background: 'var(--danger-bg)',
+                border: '1px solid var(--danger-border)',
                 borderRadius: '8px',
                 padding: '12px',
-                color: '#e74c3c',
+                color: 'var(--danger)',
                 fontSize: '13px',
                 fontWeight: 600,
                 margin: '5px 0'

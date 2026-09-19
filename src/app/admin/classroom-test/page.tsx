@@ -2142,10 +2142,10 @@ OUTPUT FORMAT: Return ONLY a valid JSON array of objects with schema:
                 </div>
 
                 <button 
-                  className="btn btn-secondary btn-sm"
+                  className="btn btn-primary btn-sm"
                   onClick={handleParseQuestions}
                   disabled={!qbPasteJson.trim()}
-                  style={{ alignSelf: 'flex-end', padding: '8px 18px', fontSize: '12px', fontWeight: 700, background: '#3b82f6', color: '#fff', border: 'none' }}
+                  style={{ alignSelf: 'flex-end', padding: '8px 18px', fontSize: '12px', fontWeight: 700 }}
                 >
                   ⚡ Parse & Preview Questions for Review
                 </button>
@@ -2819,11 +2819,11 @@ OUTPUT FORMAT: Return ONLY a valid JSON array of objects with schema:
                                       {/* Type */}
                                       <td style={{ padding: '12px 14px' }}>
                                         {isSat ? (
-                                          <span style={{ background: '#f5f3ff', color: '#7c3aed', padding: '2px 8px', borderRadius: '12px', fontSize: '10px', fontWeight: 700, border: '1px solid #ddd6fe' }}>
+                                          <span style={{ background: 'var(--accent-bg)', color: 'var(--accent)', padding: '2px 8px', borderRadius: '12px', fontSize: '10px', fontWeight: 700, border: '1px solid var(--border)' }}>
                                             🏫 Classroom Test
                                           </span>
                                         ) : (
-                                          <span style={{ background: '#eff6ff', color: '#2563eb', padding: '2px 8px', borderRadius: '12px', fontSize: '10px', fontWeight: 700, border: '1px solid #bfdbfe' }}>
+                                          <span style={{ background: 'var(--info-bg)', color: 'var(--info)', padding: '2px 8px', borderRadius: '12px', fontSize: '10px', fontWeight: 700, border: '1px solid var(--border)' }}>
                                             🏠 Home Practice
                                           </span>
                                         )}
@@ -2849,11 +2849,11 @@ OUTPUT FORMAT: Return ONLY a valid JSON array of objects with schema:
                                         {isSat ? (
                                           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-start' }}>
                                             {satAssign ? (
-                                              <span style={{ background: 'var(--success-tint)', color: 'var(--success)', fontSize: '10px', padding: '2px 6px', borderRadius: '4px', fontWeight: 800 }}>
+                                              <span style={{ background: 'var(--success-bg)', color: 'var(--success)', fontSize: '10px', padding: '2px 6px', borderRadius: '4px', fontWeight: 800 }}>
                                                 Active: {toISTString(satAssign.startAt).replace('T', ' ')} to {toISTString(satAssign.endAt).split('T')[1]}
                                               </span>
                                             ) : (
-                                              <span style={{ background: 'var(--warning-tint)', color: 'var(--warning)', fontSize: '10px', padding: '2px 6px', borderRadius: '4px', fontWeight: 800 }}>
+                                              <span style={{ background: 'var(--warning-bg)', color: 'var(--warning)', fontSize: '10px', padding: '2px 6px', borderRadius: '4px', fontWeight: 800 }}>
                                                 Pending Activation
                                               </span>
                                             )}
@@ -2874,7 +2874,7 @@ OUTPUT FORMAT: Return ONLY a valid JSON array of objects with schema:
                                       <td style={{ padding: '12px 14px', textAlign: 'center' }}>
                                         <button
                                           onClick={() => handleDeleteSuiteGroup([item.id])}
-                                          style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '14px', padding: '4px' }}
+                                          style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', fontSize: '14px', padding: '4px' }}
                                           title="Delete this test"
                                         >
                                           🗑️
@@ -2896,7 +2896,7 @@ OUTPUT FORMAT: Return ONLY a valid JSON array of objects with schema:
                         <div>
                           <h4 style={{ margin: '0 0 12px 0', fontSize: '13px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <span>🚀 Ongoing Weekly Suites</span>
-                            <span style={{ background: 'rgba(59, 130, 246, 0.12)', color: '#2563eb', padding: '2px 8px', borderRadius: '12px', fontSize: '10px', fontWeight: 700 }}>
+                            <span style={{ background: 'var(--info-bg)', color: 'var(--info)', padding: '2px 8px', borderRadius: '12px', fontSize: '10px', fontWeight: 700 }}>
                               {ongoingGroups.length}
                             </span>
                           </h4>

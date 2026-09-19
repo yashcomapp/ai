@@ -309,7 +309,7 @@ export default function LoginPage() {
           <div className="landing-card card-blue">
             <div className="landing-card-header">
               <span style={{ fontSize: '16px' }}>🎯</span>
-              <h3 className="landing-card-title" style={{ color: '#1e40af' }}>Adaptive Practice Engine</h3>
+              <h3 className="landing-card-title">Adaptive Practice Engine</h3>
             </div>
             <p className="landing-card-desc">
               Dynamic topic-level question pools with intelligent recovery cycles, automated cooldowns, and mistake-analysis.
@@ -320,7 +320,7 @@ export default function LoginPage() {
           <div className="landing-card card-purple">
             <div className="landing-card-header">
               <span style={{ fontSize: '16px' }}>⚡</span>
-              <h3 className="landing-card-title" style={{ color: '#6b21a8' }}>Learning Quotient (LQ)</h3>
+              <h3 className="landing-card-title">Learning Quotient (LQ)</h3>
             </div>
             <p className="landing-card-desc">
               Real-time multi-dimensional scoring that measures mastery, consistency, effort, and integrity instead of raw marks.
@@ -331,7 +331,7 @@ export default function LoginPage() {
           <div className="landing-card card-cyan">
             <div className="landing-card-header">
               <span style={{ fontSize: '16px' }}>🤝</span>
-              <h3 className="landing-card-title" style={{ color: '#115e59' }}>5-Min Daily Parent Sync</h3>
+              <h3 className="landing-card-title">5-Min Daily Parent Sync</h3>
             </div>
             <p className="landing-card-desc">
               Structured nightly review rituals bringing parents, students, and teachers together on a shared progress ledger.

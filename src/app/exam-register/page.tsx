@@ -89,33 +89,33 @@ function ExamRegisterContent() {
     const pct = record.percentage;
     if (pct >= 75) {
       return {
-        color: '#10b981',
-        background: 'rgba(16, 185, 129, 0.1)',
+        color: 'var(--success)',
+        background: 'var(--success-bg)',
         padding: '3px 8px',
         borderRadius: '12px',
         fontWeight: 700,
         fontSize: '11px',
-        border: '1px solid rgba(16, 185, 129, 0.2)'
+        border: '1px solid rgba(52, 211, 153, 0.25)'
       };
     } else if (pct >= 50) {
       return {
-        color: '#f59e0b',
-        background: 'rgba(245, 158, 11, 0.1)',
+        color: 'var(--warning)',
+        background: 'var(--warning-bg)',
         padding: '3px 8px',
         borderRadius: '12px',
         fontWeight: 700,
         fontSize: '11px',
-        border: '1px solid rgba(245, 158, 11, 0.2)'
+        border: '1px solid rgba(251, 191, 36, 0.25)'
       };
     } else {
       return {
-        color: '#f97316',
-        background: 'rgba(249, 115, 22, 0.1)',
+        color: 'var(--danger)',
+        background: 'var(--danger-bg)',
         padding: '3px 8px',
         borderRadius: '12px',
         fontWeight: 700,
         fontSize: '11px',
-        border: '1px solid rgba(249, 115, 22, 0.2)'
+        border: '1px solid rgba(248, 113, 113, 0.25)'
       };
     }
   };
@@ -294,15 +294,15 @@ function ExamRegisterContent() {
               {/* Card 2: Attended */}
               <div className="card glass summary-card" style={{ padding: '12px 14px' }}>
                 <div style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px' }}>Present</div>
-                <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#10b981', margin: '2px 0' }}>{data.summary.present}</div>
-                <div style={{ fontSize: '10px', color: '#10b981', fontWeight: 600 }}>Attempted Exams</div>
+                <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--success)', margin: '2px 0' }}>{data.summary.present}</div>
+                <div style={{ fontSize: '10px', color: 'var(--success)', fontWeight: 600 }}>Attempted Exams</div>
               </div>
 
               {/* Card 3: Absent */}
               <div className="card glass summary-card" style={{ padding: '12px 14px' }}>
                 <div style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px' }}>Absent</div>
-                <div style={{ fontSize: '1.4rem', fontWeight: 800, color: data.summary.absent > 0 ? '#ef4444' : 'var(--text-muted)', margin: '2px 0' }}>{data.summary.absent}</div>
-                <div style={{ fontSize: '10px', color: data.summary.absent > 0 ? '#ef4444' : 'var(--text-muted)', fontWeight: 600 }}>Missed Sessions</div>
+                <div style={{ fontSize: '1.4rem', fontWeight: 800, color: data.summary.absent > 0 ? 'var(--danger)' : 'var(--text-muted)', margin: '2px 0' }}>{data.summary.absent}</div>
+                <div style={{ fontSize: '10px', color: data.summary.absent > 0 ? 'var(--danger)' : 'var(--text-muted)', fontWeight: 600 }}>Missed Sessions</div>
               </div>
 
               {/* Card 4: Average Grade */}

@@ -1023,10 +1023,10 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
             marginBottom: '8px',
             boxShadow: 'var(--shadow-sm)'
           }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', borderBottom: '1.5px solid #99f6e4', paddingBottom: '6px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', borderBottom: '1px solid var(--border-light)', paddingBottom: '6px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <BookOpen size={18} color="#115e59" />
-                <h3 style={{ fontSize: '14px', fontWeight: 800, margin: 0, color: '#115e59', whiteSpace: 'nowrap' }}>Today's Study & Practice</h3>
+                <BookOpen size={18} color="var(--accent)" />
+                <h3 style={{ fontSize: '14px', fontWeight: 800, margin: 0, color: 'var(--text)', whiteSpace: 'nowrap' }}>Today's Study & Practice</h3>
               </div>
             </div>
 
@@ -1036,13 +1036,13 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
                 <div key={chip.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', paddingBottom: exams.dailyHomePractices?.length ? '8px' : '0', borderBottom: exams.dailyHomePractices?.length ? '1px dashed var(--border-light)' : 'none' }}>
                   <div style={{ flex: '1 1 240px' }}>
                     <div style={{ fontWeight: 800, fontSize: '12.5px', lineHeight: 1.3, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <BookOpen size={15} color="#0f766e" style={{ flexShrink: 0 }} />
+                      <BookOpen size={15} color="var(--accent)" style={{ flexShrink: 0 }} />
                       <span>{chip.isTomorrow ? "Tomorrow's Study Sheet" : (chip.dayName ? `${chip.dayName} Study Sheet` : "Today's Study Sheet")} — {chip.topics && chip.topics.length > 0 ? chip.topics.join(', ') : chip.chapterName}</span>
                     </div>
                     <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', marginTop: '1px' }}>
                       {chip.subject} • <strong>{chip.totalQuestions} Questions</strong>
                       {chip.isTomorrow && (
-                        <span className="badge" style={{ background: '#22c55e', color: 'white', marginLeft: '6px', padding: '1px 5px', borderRadius: '4px', fontSize: '9px', fontWeight: 700 }}>Early Access</span>
+                        <span className="badge" style={{ background: 'var(--success-bg)', color: 'var(--success)', border: '1px solid rgba(52, 211, 153, 0.3)', marginLeft: '6px', padding: '1px 5px', borderRadius: '4px', fontSize: '9px', fontWeight: 700 }}>Early Access</span>
                       )}
                     </div>
                   </div>

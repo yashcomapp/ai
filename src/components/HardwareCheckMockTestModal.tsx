@@ -309,14 +309,14 @@ export default function HardwareCheckMockTestModal({ isOpen, onClose }: Hardware
             </p>
 
             <div style={{ 
-              background: 'rgba(239, 68, 68, 0.08)', 
-              border: '1px dashed rgba(239, 68, 68, 0.3)', 
+              background: 'var(--danger-bg)', 
+              border: '1px dashed var(--danger-border)', 
               borderRadius: 'var(--radius-sm)', 
               padding: '12px 16px', 
               marginBottom: '16px', 
               textAlign: 'left' 
             }}>
-              <strong style={{ fontSize: '12px', color: '#ef4444', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+              <strong style={{ fontSize: '12px', color: 'var(--danger)', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
                 ⚠️ Proctored Exam Rules & Simulation Info
               </strong>
               <ul style={{ margin: 0, paddingLeft: '16px', fontSize: '11px', color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', gap: '4px', lineHeight: '1.4' }}>
@@ -423,7 +423,7 @@ export default function HardwareCheckMockTestModal({ isOpen, onClose }: Hardware
         {step === 'test' && (
           <div>
             {/* Simulation Proctoring Bar */}
-            <div className="proctor-bar" style={{ background: '#1a1d29', color: 'white', padding: '12px 20px', borderBottom: '2px solid var(--warning)', borderRadius: '8px', margin: '-24px -24px 20px -24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '15px', flexWrap: 'wrap' }}>
+            <div className="proctor-bar" style={{ background: 'var(--surface-2)', color: 'var(--text)', padding: '12px 20px', borderBottom: '2px solid var(--warning)', borderRadius: '8px', margin: '-24px -24px 20px -24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '15px', flexWrap: 'wrap' }}>
               <div className="camera-feed" style={{ display: 'flex', alignItems: 'center', gap: '10px', position: 'relative', flexShrink: 0 }}>
                 <video 
                   ref={videoRef} 
@@ -433,7 +433,7 @@ export default function HardwareCheckMockTestModal({ isOpen, onClose }: Hardware
                   style={{ width: '100%', height: '75px', borderRadius: 'var(--radius-sm)', border: '2px solid var(--success)', background: '#111', objectFit: 'cover' }}
                 />
                 <div>
-                  <div style={{ fontSize: '10px', color: '#999' }}>Integrity Status:</div>
+                  <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Integrity Status:</div>
                   <span className="badge badge-success" style={{ marginTop: '4px', fontSize: '9px', background: 'var(--success)' }}>
                     Active Proctoring (Mock)
                   </span>

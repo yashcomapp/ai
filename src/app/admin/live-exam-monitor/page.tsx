@@ -528,7 +528,7 @@ export default function AdminLiveMonitorPage() {
                 >
                   <span>Practice Activity</span>
                   {practiceCount > 0 && (
-                    <span style={{ fontSize: '11px', background: '#3b82f6', color: '#fff', padding: '1px 6px', borderRadius: '10px', fontWeight: 800 }}>
+                    <span style={{ fontSize: '11px', background: 'var(--accent)', color: '#fff', padding: '1px 6px', borderRadius: '10px', fontWeight: 800 }}>
                       {practiceCount}
                     </span>
                   )}

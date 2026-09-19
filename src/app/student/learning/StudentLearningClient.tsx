@@ -408,13 +408,13 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
               {showSlabGuide && (
                 <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px dashed var(--border-light)' }}>
                   <div style={{ fontSize: '12px', color: 'var(--text)', marginBottom: '10px', lineHeight: 1.5 }}>
-                    To make your learning roadmap completely predictable and transparent, each topic is classified into one of <strong>3 Topic Scopes</strong>. To attain <strong style={{ color: '#10b981' }}>🏆 Mastered</strong>, you must achieve <strong>≥90%</strong> accuracy AND complete the topic's required <strong>Mastery Questions</strong>:
+                    To make your learning roadmap completely predictable and transparent, each topic is classified into one of <strong>3 Topic Scopes</strong>. To attain <strong style={{ color: 'var(--success)' }}>🏆 Mastered</strong>, you must achieve <strong>≥90%</strong> accuracy AND complete the topic's required <strong>Mastery Questions</strong>:
                   </div>
 
                   {/* 3 Topic Scopes Grid */}
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '8px', marginBottom: '12px' }}>
-                    <div style={{ padding: '8px 10px', borderRadius: '8px', background: 'var(--surface)', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
-                      <div style={{ fontWeight: 800, fontSize: '12px', color: '#059669', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <div style={{ padding: '8px 10px', borderRadius: '8px', background: 'var(--surface)', border: '1px solid rgba(52, 211, 153, 0.3)' }}>
+                      <div style={{ fontWeight: 800, fontSize: '12px', color: 'var(--success)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                         <span>📘 Minor Topic</span>
                       </div>
                       <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
@@ -445,7 +445,7 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                         Complex Numericals, Multi-Step Problems & Keystone Concepts (~55 Qs Quota)
                       </div>
                       <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text)', marginTop: '4px' }}>
-                        Mastery Requirement: <span style={{ color: '#dc2626' }}>15 Questions • Max 3 Practice Sets</span>
+                        Mastery Requirement: <span style={{ color: 'var(--danger)' }}>15 Questions • Max 3 Practice Sets</span>
                       </div>
                     </div>
                   </div>

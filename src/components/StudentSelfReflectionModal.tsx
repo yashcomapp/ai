@@ -281,23 +281,23 @@ export default function StudentSelfReflectionModal({
                 color: 'var(--text, #f8fafc)',
                 fontSize: '11.5px'
               }}>
-                <div><strong style={{ color: 'var(--text-muted, #94a3b8)' }}>Exam:</strong> {reviewData?.examName || examName || examId}</div>
-                <div><strong style={{ color: 'var(--text-muted, #94a3b8)' }}>Score:</strong> {reviewData?.score} / {reviewData?.totalMarks} ({reviewData?.percentage}%)</div>
-                <div><strong style={{ color: 'var(--text-muted, #94a3b8)' }}>Mistakes to Reflect:</strong> <span style={{ color: '#ef4444', fontWeight: 700 }}>{totalToReview}</span></div>
+                <div><strong style={{ color: 'var(--text-muted)' }}>Exam:</strong> {reviewData?.examName || examName || examId}</div>
+                <div><strong style={{ color: 'var(--text-muted)' }}>Score:</strong> {reviewData?.score} / {reviewData?.totalMarks} ({reviewData?.percentage}%)</div>
+                <div><strong style={{ color: 'var(--text-muted)' }}>Mistakes to Reflect:</strong> <span style={{ color: 'var(--danger)', fontWeight: 700 }}>{totalToReview}</span></div>
               </div>
 
               {/* Filter Tabs Bar */}
-              <div style={{ display: 'flex', gap: '8px', marginBottom: '14px', borderBottom: '1px solid var(--border-light, #334155)', paddingBottom: '10px' }}>
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '14px', borderBottom: '1px solid var(--border-light)', paddingBottom: '10px' }}>
                 <button
                   onClick={() => setFilterTab('all')}
                   style={{
                     padding: '5px 12px',
                     fontSize: '11px',
                     fontWeight: 'bold',
-                    borderRadius: 'var(--radius-sm, 6px)',
-                    border: filterTab === 'all' ? '1px solid var(--accent, #3b82f6)' : '1px solid var(--border-light, #334155)',
-                    background: filterTab === 'all' ? 'rgba(59, 130, 246, 0.15)' : 'transparent',
-                    color: filterTab === 'all' ? '#60a5fa' : 'var(--text-muted, #94a3b8)',
+                    borderRadius: 'var(--radius-sm)',
+                    border: filterTab === 'all' ? '1px solid var(--accent)' : '1px solid var(--border-light)',
+                    background: filterTab === 'all' ? 'var(--accent-soft)' : 'transparent',
+                    color: filterTab === 'all' ? 'var(--accent)' : 'var(--text-muted)',
                     cursor: 'pointer'
                   }}
                 >
@@ -493,9 +493,9 @@ export default function StudentSelfReflectionModal({
                                       fontSize: '10px',
                                       padding: '4px 8px',
                                       flex: 1,
-                                      border: isSelected ? '1px solid #3b82f6' : '1px solid var(--border-light, #334155)',
-                                      background: isSelected ? '#3b82f6' : 'transparent',
-                                      color: isSelected ? '#ffffff' : 'var(--text, #f8fafc)',
+                                      border: isSelected ? '1px solid var(--accent)' : '1px solid var(--border-light)',
+                                      background: isSelected ? 'var(--accent)' : 'var(--surface-2)',
+                                      color: isSelected ? 'var(--text-on-accent)' : 'var(--text)',
                                       cursor: isUnderstood ? 'not-allowed' : 'pointer',
                                       whiteSpace: 'nowrap'
                                     }}
@@ -523,9 +523,9 @@ export default function StudentSelfReflectionModal({
                                       fontSize: '10px',
                                       padding: '4px 8px',
                                       flex: 1,
-                                      border: isSelected ? '1px solid #3b82f6' : '1px solid var(--border-light, #334155)',
-                                      background: isSelected ? '#3b82f6' : 'transparent',
-                                      color: isSelected ? '#ffffff' : 'var(--text, #f8fafc)',
+                                      border: isSelected ? '1px solid var(--accent)' : '1px solid var(--border-light)',
+                                      background: isSelected ? 'var(--accent)' : 'var(--surface-2)',
+                                      color: isSelected ? 'var(--text-on-accent)' : 'var(--text)',
                                       cursor: isUnderstood ? 'not-allowed' : 'pointer',
                                       whiteSpace: 'nowrap'
                                     }}
@@ -553,9 +553,9 @@ export default function StudentSelfReflectionModal({
                             padding: '5px 14px',
                             alignSelf: 'flex-start',
                             marginTop: '6px',
-                            background: isUnderstood ? 'rgba(46, 204, 113, 0.2)' : selectedReasons[qItem.globalIdx] ? '#3b82f6' : '#334155',
-                            color: isUnderstood ? '#4ade80' : '#ffffff',
-                            border: 'none',
+                            background: isUnderstood ? 'var(--success-bg)' : selectedReasons[qItem.globalIdx] ? 'var(--accent)' : 'var(--surface-3)',
+                            color: isUnderstood ? 'var(--success)' : (selectedReasons[qItem.globalIdx] ? 'var(--text-on-accent)' : 'var(--text-muted)'),
+                            border: isUnderstood ? '1px solid rgba(52, 211, 153, 0.3)' : 'none',
                             borderRadius: '6px',
                             cursor: (isUnderstood || !selectedReasons[qItem.globalIdx]) ? 'default' : 'pointer'
                           }}

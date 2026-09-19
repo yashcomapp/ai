@@ -542,12 +542,13 @@ export default function AdminIntegrityScoreManagerPage() {
                 <button className="btn btn-secondary btn-sm" style={{ padding: '2px 6px', fontSize: '9px' }} onClick={() => setLogs(['[System] Log cleared.'])}>Clear</button>
               </div>
               <div style={{
-                background: 'black',
-                color: '#00ff00',
+                background: 'var(--bg-soft, #1e293b)',
+                color: 'var(--success, #4ade80)',
                 padding: '10px',
                 fontFamily: 'monospace',
                 fontSize: '10px',
-                borderRadius: '4px',
+                borderRadius: 'var(--radius-sm)',
+                border: '1px solid var(--border-light)',
                 maxHeight: '130px',
                 overflowY: 'auto',
                 lineHeight: 1.4

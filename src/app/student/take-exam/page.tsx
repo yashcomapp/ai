@@ -1022,14 +1022,14 @@ function TakeExamContent() {
                 <p style={{ color: 'var(--text-muted)', fontSize: '13px', margin: '10px 0 16px' }}>Verify your camera and microphone are functioning before entering the proctored workspace.</p>
 
             <div style={{ 
-              background: 'rgba(239, 68, 68, 0.08)', 
-              border: '1px dashed rgba(239, 68, 68, 0.3)', 
+              background: 'var(--danger-bg)', 
+              border: '1px dashed var(--danger-border)', 
               borderRadius: 'var(--radius-sm)', 
               padding: '12px 16px', 
               marginBottom: '16px', 
               textAlign: 'left' 
             }}>
-              <strong style={{ fontSize: '12px', color: '#ef4444', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+              <strong style={{ fontSize: '12px', color: 'var(--danger)', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
                 ⚠️ Proctored Exam Rules & Violation Limits
               </strong>
               <ul style={{ margin: 0, paddingLeft: '16px', fontSize: '11px', color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', gap: '4px', lineHeight: '1.4' }}>
@@ -1053,7 +1053,7 @@ function TakeExamContent() {
                   style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                 />
               ) : (
-                <div style={{ color: '#666' }}>Webcam Feed Offline</div>
+                <div style={{ color: 'var(--text-muted)' }}>Webcam Feed Offline</div>
               )}
             </div>
 
@@ -1479,7 +1479,7 @@ function TakeExamContent() {
                   }
                 </button>
                 {submitErrorMessage && (
-                  <div style={{ fontSize: '11px', color: '#e74c3c', maxWidth: '300px', textAlign: 'right', fontWeight: 600 }}>
+                  <div style={{ fontSize: '11px', color: 'var(--danger)', maxWidth: '300px', textAlign: 'right', fontWeight: 600 }}>
                     {submitErrorMessage}
                   </div>
                 )}
@@ -1515,7 +1515,7 @@ function TakeExamContent() {
 
             <div className="modal-body" style={{ padding: '24px', overflowY: 'auto', flex: 1 }}>
               {autoSubmittedReason && (
-                <div style={{ background: 'rgba(231, 76, 60, 0.1)', border: '1px solid rgba(231, 76, 60, 0.3)', borderRadius: '8px', padding: '12px', color: '#e74c3c', fontSize: '13px', fontWeight: 600, marginBottom: '20px' }}>
+                <div style={{ background: 'var(--danger-bg)', border: '1px solid var(--danger-border)', borderRadius: '8px', padding: '12px', color: 'var(--danger)', fontSize: '13px', fontWeight: 600, marginBottom: '20px' }}>
                   🚨 {autoSubmittedReason}
                 </div>
               )}
@@ -1667,7 +1667,7 @@ function TakeExamContent() {
                                  return actualIdx !== -1 ? actualIdx + 1 : qItem.globalIdx + 1;
                                })()} ({matchingQ?.difficulty?.toUpperCase() || 'MEDIUM'} • {matchingQ?.bloomLevel || 'Understand'})</span>
                              {currentReason && (
-                               <span style={{ background: 'rgba(230,126,34,0.12)', color: '#d35400', padding: '2px 6px', borderRadius: '4px', fontSize: '9px', fontWeight: 'bold', marginLeft: '8px' }}>
+                               <span style={{ background: 'var(--warning-bg)', color: 'var(--warning)', border: '1px solid rgba(251, 191, 36, 0.25)', padding: '2px 6px', borderRadius: '4px', fontSize: '9px', fontWeight: 'bold', marginLeft: '8px' }}>
                                  ⚠️ Reason: {currentReason}
                                </span>
                              )}
@@ -1950,7 +1950,7 @@ function TakeExamContent() {
             <div style={{ fontSize: '50px' }}>🎉</div>
             <h2 style={{ fontSize: '20px', fontWeight: 800, margin: 0, color: 'var(--text)' }}>Exam Completed!</h2>
             {autoSubmittedReason && (
-              <div style={{ background: 'rgba(231, 76, 60, 0.1)', border: '1px solid rgba(231, 76, 60, 0.3)', borderRadius: '8px', padding: '12px', color: '#e74c3c', fontSize: '13px', fontWeight: 600, margin: '5px 0' }}>
+              <div style={{ background: 'var(--danger-bg)', border: '1px solid var(--danger-border)', borderRadius: '8px', padding: '12px', color: 'var(--danger)', fontSize: '13px', fontWeight: 600, margin: '5px 0' }}>
                 🚨 {autoSubmittedReason}
               </div>
             )}

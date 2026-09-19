@@ -560,7 +560,7 @@ export default function StudentsManager() {
                 {batches.map(b => {
                   const checked = editFormData.batchIds.includes(b.id);
                   return (
-                    <label key={b.id} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '11px', fontWeight: 600, padding: '3px 8px', borderRadius: '4px', background: checked ? 'rgba(59, 130, 246, 0.2)' : 'transparent', border: checked ? '1px solid #3b82f6' : '1px solid transparent', cursor: 'pointer' }}>
+                    <label key={b.id} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '11px', fontWeight: 600, padding: '3px 8px', borderRadius: '4px', background: checked ? 'var(--accent-bg)' : 'transparent', border: checked ? '1px solid var(--accent)' : '1px solid transparent', color: checked ? 'var(--accent)' : 'var(--text)', cursor: 'pointer' }}>
                       <input 
                         type="checkbox" 
                         checked={checked}

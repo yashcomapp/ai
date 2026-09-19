@@ -293,7 +293,7 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
                               const reason = getReasonForQuestion(q, scorecard);
                               if (!reason) return null;
                               return (
-                                <span style={{ background: 'rgba(230,126,34,0.12)', color: '#d35400', padding: '1px 5px', borderRadius: '4px', fontSize: '9px', fontWeight: 'bold', marginLeft: '6px' }}>
+                                <span style={{ background: 'var(--warning-bg)', color: 'var(--warning)', border: '1px solid rgba(251, 191, 36, 0.25)', padding: '1px 5px', borderRadius: '4px', fontSize: '9px', fontWeight: 'bold', marginLeft: '6px' }}>
                                   ⚠️ Reason: {reason}
                                 </span>
                               );

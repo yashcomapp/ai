@@ -1232,7 +1232,7 @@ function TopicPracticeContent() {
                   style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                 />
               ) : (
-                <div style={{ color: '#666' }}>Webcam Feed Offline</div>
+                <div style={{ color: 'var(--text-muted)' }}>Webcam Feed Offline</div>
               )}
             </div>
 
@@ -1331,7 +1331,7 @@ function TopicPracticeContent() {
           <div className="camera-feed" style={{ display: 'flex', alignItems: 'center', gap: '10px', position: 'relative', flexShrink: 0 }}>
              <video ref={videoRef} autoPlay playsInline muted style={{ width: '100px', height: '75px', borderRadius: 'var(--radius-sm)', border: '2px solid var(--success)', background: '#111', objectFit: 'cover' }}></video>
             <div>
-              <div style={{ fontSize: '10px', color: '#999' }}>Integrity Status:</div>
+              <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Integrity Status:</div>
               <span className="badge badge-success" style={{ marginTop: '4px', fontSize: '9px', background: 'var(--success)' }}>
                 Active Proctoring
               </span>
@@ -1409,7 +1409,7 @@ function TopicPracticeContent() {
                     </button>
                   )}
                   {disputedQuestionIds.has(q.id) && (
-                    <span style={{ fontSize: '10.5px', color: '#f59e0b', fontWeight: 'bold' }}>
+                    <span style={{ fontSize: '10.5px', color: 'var(--warning)', fontWeight: 'bold' }}>
                       ⚠️ Bypassed
                     </span>
                   )}

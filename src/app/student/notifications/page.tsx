@@ -174,8 +174,8 @@ export default function StudentSeenNotificationsPage() {
       nType === 'schedule' 
         ? { border: '4px solid var(--accent)', badgeBg: 'var(--accent-soft)', badgeColor: 'var(--accent)', label: '📅 Schedule' }
         : nType === 'fees'
-        ? { border: '4px solid #f59e0b', badgeBg: 'rgba(245, 158, 11, 0.1)', badgeColor: '#f59e0b', label: '💰 Fees' }
-        : { border: '4px solid #94a3b8', badgeBg: 'rgba(148, 163, 184, 0.1)', badgeColor: '#64748b', label: '📢 Announcement' };
+        ? { border: '4px solid var(--warning)', badgeBg: 'var(--warning-bg)', badgeColor: 'var(--warning)', label: '💰 Fees' }
+        : { border: '4px solid var(--border)', badgeBg: 'var(--surface-2)', badgeColor: 'var(--text-muted)', label: '📢 Announcement' };
 
     return (
       <div 
@@ -374,7 +374,7 @@ export default function StudentSeenNotificationsPage() {
             <button 
               className="btn btn-secondary btn-sm"
               onClick={handleClearAllSeen}
-              style={{ fontSize: '11px', fontWeight: 700, padding: '6px 14px', background: '#fee2e2', color: '#b91c1c', border: '1px solid #fca5a5' }}
+              style={{ fontSize: '11px', fontWeight: 700, padding: '6px 14px', background: 'var(--danger-bg)', color: 'var(--danger)', border: '1px solid var(--danger-border)' }}
             >
               🗑️ Clear Read Archive
             </button>
