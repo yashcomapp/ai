@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import * as admin from 'firebase-admin';
 import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole } from '@/lib/auth';
+import { getRequiredConfidence } from '@/lib/studentDb';
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
@@ -42,7 +43,8 @@ export async function GET(req: NextRequest) {
       const mData = doc.data();
       const mastery = Number(mData.mastery || 0);
       const confidence = Number(mData.confidence || 0);
-      if (mastery >= 90 && (confidence >= 6 || mData.isRecoveryMastered)) {
+      const reqConf = getRequiredConfidence(mData.topicClassification, mData.targetQuestions);
+      if (mastery >= 90 && (confidence >= reqConf || mData.isRecoveryMastered)) {
         masteredTopics += 1;
       } else if (mastery < 50) {
         weakTopicsCount += 1;

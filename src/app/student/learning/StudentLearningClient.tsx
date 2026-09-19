@@ -591,7 +591,7 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                                           <th onClick={() => handleSort('mastery')} style={{ padding: '6px 8px', textAlign: 'center', width: '70px', cursor: 'pointer', userSelect: 'none' }}>
                                             Mastery {sortField === 'mastery' ? (sortDir === 'asc' ? '▲' : '▼') : '⇅'}
                                           </th>
-                                          <th style={{ padding: '6px 8px', textAlign: 'center', width: '80px' }} title="Topic-aware confidence threshold: Micro (5 Qs), Conceptual (10 Qs), HOTS (15 Qs), Calculative (18 Qs)">Confidence</th>
+                                          <th style={{ padding: '6px 8px', textAlign: 'center', width: '80px' }} title="Topic-aware confidence threshold: Minor/Micro (6 Qs), Medium/Conceptual (10 Qs), Major/HOTS (15 Qs)">Confidence</th>
                                           <th onClick={() => handleSort('attempts')} style={{ padding: '6px 8px', textAlign: 'center', width: '110px', cursor: 'pointer', userSelect: 'none' }}>
                                             Practiced {sortField === 'attempts' ? (sortDir === 'asc' ? '▲' : '▼') : '⇅'}
                                           </th>

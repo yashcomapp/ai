@@ -391,8 +391,8 @@ export async function GET(req: NextRequest) {
       map.set(tCode, (map.get(tCode) || 0) + (data.totalQuestions || 0));
     });
 
-    // Map of studentCode -> Map of topicCode -> { mastery, confidence }
-    const studentTopicMasteryMap: Record<string, Map<string, { mastery: number, confidence: number }>> = {};
+    // Map of studentCode -> Map of topicCode -> { mastery, confidence, reqConf }
+    const studentTopicMasteryMap: Record<string, Map<string, { mastery: number, confidence: number, reqConf?: number }>> = {};
 
     masterySnap.docs.forEach(doc => {
       const data = doc.data();
@@ -403,17 +403,18 @@ export async function GET(req: NextRequest) {
       const conf = Number(data.confidence || 0);
       const tCode = data.topicCode;
 
+      const reqConf = getRequiredConfidence(data.topicClassification, data.targetQuestions);
+
       if (tCode) {
         if (!studentTopicMasteryMap[code]) {
           studentTopicMasteryMap[code] = new Map();
         }
-        studentTopicMasteryMap[code].set(tCode, { mastery: val, confidence: conf });
+        studentTopicMasteryMap[code].set(tCode, { mastery: val, confidence: conf, reqConf });
       }
 
       if (!masteryGroup[code]) masteryGroup[code] = [];
       masteryGroup[code].push(val);
 
-      const reqConf = getRequiredConfidence(data.topicClassification, data.targetQuestions);
       if (val >= 90 && conf >= reqConf) {
         masteredCount[code] = (masteredCount[code] || 0) + 1;
       } else if (val >= 50) {
@@ -431,17 +432,18 @@ export async function GET(req: NextRequest) {
 
       // Calculate Quality score
       const topicPractice = studentTopicPracticeMap[code] || new Map<string, number>();
-      const topicMastery = studentTopicMasteryMap[code] || new Map<string, { mastery: number, confidence: number }>();
+      const topicMastery = studentTopicMasteryMap[code] || new Map<string, { mastery: number, confidence: number, reqConf?: number }>();
       
       let totalQualityScore = 0;
       let topicsCount = 0;
       topicPractice.forEach((q, topicCode) => {
-        const record = topicMastery.get(topicCode) || { mastery: 0, confidence: 0 };
+        const record = topicMastery.get(topicCode) || { mastery: 0, confidence: 0, reqConf: 10 };
         const mastery = record.mastery;
         const confidence = record.confidence;
+        const requiredConf = record.reqConf || 10;
         
         let topicQuality = 0;
-        if (mastery >= 90 && confidence >= 10) {
+        if (mastery >= 90 && confidence >= requiredConf) {
           const excess = Math.max(0, q - 15);
           topicQuality = Math.max(30, 100 - excess * 1.5);
         } else {
