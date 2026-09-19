@@ -149,5 +149,20 @@
   - **`subjectCode`**: Strictly official curriculum codes (`MGP1`, `CURI`, `MGM`, `SCIE`, `MATH`, `SCI`, `MTH1`, `MTH2`, `SCIT1`, `SCIT2`, `SCIT`).
 - **Single Method Invariant**: Never implement parallel, competing, or alternate query methods for the same business logic. All components must consume the single canonical SSOT utility.
 
+### S. Proctoring Interruption Coalescing & Mobile Lifecycle SSOT (`src/hooks/useLiveExam.ts`)
+- **Rule**: All tab switch, window blur, and fullscreen exit event tracking MUST be exclusively owned and debounced by `useLiveExam.ts`.
+- **Interruption Coalescing**:
+  - A single incoming phone call, OS notification, or heads-up dialer interruption MUST count as only **1 violation incident**.
+  - `isCurrentlyAwayRef` must prevent duplicate increments while the student is continuous away.
+  - A 10-second coalescing window and 5-second post-return stabilization buffer must be strictly maintained.
+  - `useProctoring.ts` must NEVER duplicate `setTabViolations` calls in its `onViolation` callback.
+
+### T. Topic Practice Quotas & Dynamic UI Presentation
+- **Rule**: Practice set limits MUST dynamically reflect the topic's true scope:
+  - **Minor / Micro Topics**: Max 2 Practice Sets ($2 \times 6 = 12$ Qs max, target: 6 Qs).
+  - **Medium / Conceptual Topics**: Max 3 Practice Sets ($3 \times 6 = 18$ Qs max, target: 10 Qs).
+  - **Major / HOTS Topics**: Max 3 Practice Sets ($3 \times 6 = 18$ Qs max, target: 15 Qs).
+- **UI Copy Standard**: NEVER display hardcoded `/5 practices` or `5/5 practices done` in any UI component, diagnostic badge, or explanation banner. Always render dynamic targets `${practiceCount}/${maxPractices} practices`.
+
 
 
