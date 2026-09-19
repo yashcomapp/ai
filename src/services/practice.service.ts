@@ -10,6 +10,7 @@ import { notifyReviewPending } from '@/lib/notifications';
 import { invalidateCache } from '@/lib/firebase/cache';
 import { evaluateSessionSincerity } from '@/lib/practiceTimeUtils';
 import { calculateSrsSchedule } from '@/lib/srsRotation';
+import { getRequiredConfidence } from '@/lib/studentDb';
 
 const DIFFICULTY_WEIGHTS: Record<string, number> = { easy: 1, medium: 2, hard: 3 };
 const BLOOM_WEIGHTS: Record<string, number> = {
@@ -212,9 +213,10 @@ export class PracticeService {
 
       const sessionAccuracy = evaluations.length > 0 ? (correctCount / evaluations.length) * 100 : 0;
       if (isRecoveryMode && (sessionAccuracy >= 80 || updatedData.mastery >= 90)) {
+        const reqConfidence = getRequiredConfidence((recordToUpdate as any).topicClassification, (recordToUpdate as any).targetQuestions);
         updatedData.isRecoveryMastered = true;
         updatedData.mastery = Math.max(updatedData.mastery, 90);
-        updatedData.confidence = Math.max(updatedData.confidence, 20);
+        updatedData.confidence = Math.max(updatedData.confidence, reqConfidence);
         updatedData.recoveryCompletedAt = new Date();
       }
 
