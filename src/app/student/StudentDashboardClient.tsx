@@ -25,6 +25,8 @@ import {
   Moon, 
   Rocket, 
   BookOpen, 
+  GraduationCap,
+  Brain,
   Award,
   Sparkles,
   FileText,
@@ -740,7 +742,7 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
                   onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
                   onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'translateY(0)'; }}
                 >
-                  <Dumbbell size={24} color="var(--accent)" />
+                  <GraduationCap size={24} color="var(--accent)" />
                   <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text)' }}>Learn OS</span>
                 </div>
 
