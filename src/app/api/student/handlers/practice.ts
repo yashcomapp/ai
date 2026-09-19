@@ -7,6 +7,7 @@ import { shuffleArray } from '@/lib/questionTypes';
 import { getDateKeyIST } from '@/lib/dateUtils';
 import { getRequiredConfidence } from '@/lib/studentDb';
 import { filterDistinctCandidates, areQuestionsTooSimilar } from '@/lib/questionSimilarity';
+import { getSrsMicroSetSize, selectSrsQuestions } from '@/lib/srsRotation';
 
 export const dynamic = 'force-dynamic';
 
@@ -133,7 +134,8 @@ export async function GET(req: NextRequest) {
     const maxSessionsAllowed = isMinorTopic ? 2 : 3;
     const maxQuestionsAllowed = isMinorTopic ? 12 : 18;
 
-    const isPracticeLimitReached = completedPractices >= maxSessionsAllowed || (practiceQuestionsAttempted >= maxQuestionsAllowed && mastery < 80);
+    const isRevisionMode = category === 'revision';
+    const isPracticeLimitReached = !isRevisionMode && (completedPractices >= maxSessionsAllowed || (practiceQuestionsAttempted >= maxQuestionsAllowed && mastery < 80));
 
     // If practice limit reached and not in recovery mode, prompt to enter Guided Recovery Diagnostic
     if (isPracticeLimitReached && !isRecoveryMode) {
@@ -170,7 +172,7 @@ export async function GET(req: NextRequest) {
     }
 
     // GUARDRAIL 1: Daily Pacing Cap (Anti-Spam per Topic: Max 2 sessions for minor, 3 for medium/major)
-    if (dailySessions >= maxSessionsAllowed && !isRecoveryMode) {
+    if (dailySessions >= maxSessionsAllowed && !isRecoveryMode && !isRevisionMode) {
       return NextResponse.json({
         requireTextbookStudy: true,
         lockType: 'daily',
@@ -179,7 +181,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Active daily lock check
-    if (dailyLockedUntil && dailyLockedUntil > now && !isRecoveryMode) {
+    if (dailyLockedUntil && dailyLockedUntil > now && !isRecoveryMode && !isRevisionMode) {
       return NextResponse.json({
         requireTextbookStudy: true,
         lockType: 'daily',
@@ -188,7 +190,7 @@ export async function GET(req: NextRequest) {
     }
 
     // GUARDRAIL 2: Cognitive Cooldown Lock (30-min assimilation after textbook study confirmation)
-    if (cooldownUntil && cooldownUntil > now && !isRecoveryMode) {
+    if (cooldownUntil && cooldownUntil > now && !isRecoveryMode && !isRevisionMode) {
       const minutesLeft = Math.ceil((cooldownUntil.getTime() - now.getTime()) / 60000);
       return NextResponse.json({
         requireTextbookStudy: true,
@@ -199,7 +201,7 @@ export async function GET(req: NextRequest) {
     }
 
     // GUARDRAIL 3: Study Break & Textbook Lock (When struggling: 12+ practice questions attempted, mastery < 75%, not yet confirmed)
-    if (practiceQuestionsAttempted >= 12 && mastery < 75 && !textbookReadConfirmed && !isRecoveryMode) {
+    if (practiceQuestionsAttempted >= 12 && mastery < 75 && !textbookReadConfirmed && !isRecoveryMode && !isRevisionMode) {
       return NextResponse.json({
         requireTextbookStudy: true,
         lockType: 'initial',
@@ -207,7 +209,7 @@ export async function GET(req: NextRequest) {
       }, { status: 403 });
     }
 
-    const finalSize = isRecoveryMode ? 8 : (size || 6);
+    const finalSize = isRecoveryMode ? 8 : (isRevisionMode ? (size || getSrsMicroSetSize(topicClassification)) : (size || 6));
 
     // 1.2 Fetch all questions for this topic (STRICTLY 5 Canonical Objective Types: OSC, OMC, OAR, OTF, ONE)
     let allQuestions: any[] = await getQuestionsByTopic(topicCode);
@@ -304,6 +306,89 @@ export async function GET(req: NextRequest) {
         isEligibleToRequest: false,
         fullyMastered: false,
         availableNew: freshQs.length,
+        requestedSize: sanitizedQuestions.length,
+        masteryAtStart: mastery,
+        totalAttemptedCount: questionsAttempted,
+        idealTimeSeconds: sanitizedQuestions.length * 75
+      });
+    }
+
+    // SPACED REPETITION WORKOUT MODE (SRS): Unseen First + Recency Decay + Mistake Verification
+    if (category === 'revision') {
+      const srsMicroSize = getSrsMicroSetSize(topicClassification);
+      const targetSize = size ? Number(size) : srsMicroSize;
+
+      const attemptLogs = questionHistory.map((h: any) => ({
+        questionId: h.questionId,
+        questionCode: h.questionCode,
+        isCorrect: h.wasCorrect,
+        timestamp: h.seenAt
+      }));
+
+      const pickedSrsQuestions = selectSrsQuestions(allQuestions, attemptLogs, targetSize);
+      const sanitizedQuestions = pickedSrsQuestions.map((q: any) => {
+        let assertion = q.assertion || '';
+        let reason = q.reason || '';
+        let options = q.options || [];
+
+        if (q.type === 'assertion_reason') {
+          if (!assertion && !reason && q.text) {
+            const textStr = String(q.text);
+            let assertionMatch = textStr.match(/Assertion\s*[:\-]?\s*([^R]*(?:R(?!eason)[^R]*)*)(?=Reason:|$)/i);
+            let reasonMatch = textStr.match(/Reason\s*[:\-]?\s*(.*)$/is);
+            if (assertionMatch && assertionMatch[1]) {
+              assertion = assertionMatch[1].trim().replace(/^Assertion\s*[:\-]?\s*/i, '');
+            }
+            if (reasonMatch && reasonMatch[1]) {
+              reason = reasonMatch[1].trim().replace(/^Reason\s*[:\-]?\s*/i, '');
+            }
+          }
+          if (!options || options.length === 0) {
+            options = [
+              { text: 'Both A and R are true and R is the correct explanation of A', value: 'A' },
+              { text: 'Both A and R are true but R is NOT the correct explanation of A', value: 'B' },
+              { text: 'A is true but R is false', value: 'C' },
+              { text: 'A is false but R is true', value: 'D' }
+            ];
+          }
+        } else if (Array.isArray(options)) {
+          options = shuffleArray(options.map((opt: any) => (typeof opt === 'object' ? opt : { text: String(opt), value: String(opt) })));
+        }
+
+        return {
+          id: q.id,
+          questionCode: q.questionCode,
+          text: q.text || q.assertion || '',
+          type: q.type || 'single_mcq',
+          options,
+          assertion,
+          reason,
+          difficulty: q.difficulty || 'medium',
+          bloomLevel: q.bloomLevel || 'Understand',
+          correctAnswer: q.correctAnswer || '',
+          correctAnswers: q.correctAnswers || [],
+          solution: q.solution || q.explanation || ''
+        };
+      });
+
+      const srsReqConfidence = getRequiredConfidence(topicClassification, targetQuestions);
+      return NextResponse.json({
+        topicCode,
+        topicName,
+        topicClassification: topicClassification || (targetQuestions && targetQuestions <= 35 ? 'minor' : (targetQuestions && targetQuestions >= 55 ? 'major' : 'medium')),
+        targetQuestions: targetQuestions || 50,
+        requiredConfidence: srsReqConfidence,
+        dailySessions,
+        practiceQuestionsAttempted,
+        isSrsRevision: true,
+        totalQuestions: sanitizedQuestions.length,
+        maxQuestionsAvailable: allQuestions.length,
+        totalTopicPool: allQuestions.length,
+        questions: sanitizedQuestions,
+        needRequest: false,
+        isEligibleToRequest: false,
+        fullyMastered: true,
+        availableNew: allQuestions.length,
         requestedSize: sanitizedQuestions.length,
         masteryAtStart: mastery,
         totalAttemptedCount: questionsAttempted,

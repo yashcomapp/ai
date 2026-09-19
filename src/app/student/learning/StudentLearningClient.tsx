@@ -36,6 +36,18 @@ interface TopicItem {
   isAbsentExam?: boolean;
   isRecoveryMastered?: boolean;
   isExamStrong?: boolean;
+  isSrsDue?: boolean;
+  srsSchedule?: {
+    srsStage: number;
+    intervalDays: number;
+    lastRevisedAt: string | null;
+    nextReviewDate: string;
+    isDueForRevision: boolean;
+    daysUntilDue: number;
+    daysOverdue: number;
+    estimatedRetention: number;
+    stageLabel: string;
+  };
   practiceQuestionsAttempted?: number;
 }
 
@@ -635,29 +647,50 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                                               expText = `${practiceCount}/5 practices done (${mastery}% accuracy). Complete 1 micro-set (5 Qs) to aim for 90%+ Mastered.`;
                                             }
                                           } else if (state === 'revision') {
-                                            const reqConf = topic.requiredConfidence || (topic.topicClassification === 'minor' || topic.topicClassification === 'micro' ? 6 : (topic.topicClassification === 'major' || topic.topicClassification === 'calculative' || topic.topicClassification === 'hots' ? 15 : 10));
-                                            const needed = Math.max(1, reqConf - attempts);
-                                            expIcon = '📖';
-                                            expColor = 'var(--accent)';
-                                            expText = `High accuracy (${mastery}%), but needs ${needed} more verified question(s) to reach full confidence for Mastered.`;
+                                            if (topic.isSrsDue) {
+                                              const srs = topic.srsSchedule;
+                                              expIcon = '🧠';
+                                              expColor = '#2563eb';
+                                              if (srs?.daysOverdue && srs.daysOverdue > 0) {
+                                                expText = `Spaced Repetition Overdue (${srs.daysOverdue}d ago) • Est. Retention: ${srs.estimatedRetention}% • ${srs.stageLabel}`;
+                                              } else {
+                                                expText = `Memory Refresher Due Today • Est. Retention: ${srs?.estimatedRetention || 75}% • ${srs?.stageLabel || 'Interval Workout'}`;
+                                              }
+                                            } else {
+                                              const reqConf = topic.requiredConfidence || (topic.topicClassification === 'minor' || topic.topicClassification === 'micro' ? 6 : (topic.topicClassification === 'major' || topic.topicClassification === 'calculative' || topic.topicClassification === 'hots' ? 15 : 10));
+                                              const needed = Math.max(1, reqConf - attempts);
+                                              expIcon = '📖';
+                                              expColor = 'var(--accent)';
+                                              expText = `High accuracy (${mastery}%), but needs ${needed} more verified question(s) to reach full confidence for Mastered.`;
+                                            }
                                           } else {
                                             if (isRecovery) {
                                               expIcon = '⚡';
                                               expColor = 'var(--accent)';
                                               expText = `Mastered via Recovery Diagnostic (Passed fresh unseen + remediated question assessment).`;
                                             } else {
+                                              const srs = topic.srsSchedule;
                                               expIcon = '⭐';
                                               expColor = '#10b981';
-                                              expText = `Mastered (${mastery}% accuracy across ${attempts} verified questions).`;
+                                              if (srs) {
+                                                expText = `Mastered (${mastery}% accuracy) • Memory Fresh (${srs.estimatedRetention}%) • Next review in ${srs.daysUntilDue} day(s)`;
+                                              } else {
+                                                expText = `Mastered (${mastery}% accuracy across ${attempts} verified questions).`;
+                                              }
                                             }
                                           }
 
                                           const isRecoveryAction = isLimitReached && state !== 'mastered';
+                                          const isSrsAction = state === 'revision' && topic.isSrsDue;
                                           const targetUrl = isRecoveryAction
                                             ? `/student/topic?topicCode=${topic.topicCode}&category=${topic.state}&mode=recovery`
                                             : `/student/topic?topicCode=${topic.topicCode}&category=${topic.state}`;
 
                                           const reqMasteryQs = topic.requiredConfidence || (topic.topicClassification === 'minor' || topic.topicClassification === 'micro' ? 6 : topic.topicClassification === 'major' || topic.topicClassification === 'calculative' || topic.topicClassification === 'hots' ? 15 : 10);
+
+                                          let btnLabel = actionText;
+                                          if (isRecoveryAction) btnLabel = '⚡ Recovery Quiz';
+                                          else if (isSrsAction) btnLabel = '🧠 Memory Workout';
 
                                           return (
                                             <tr 
@@ -691,6 +724,11 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                                                       Missed Exam
                                                     </span>
                                                   )}
+                                                  {topic.isSrsDue && (
+                                                    <span style={{ fontSize: '9px', fontWeight: 700, padding: '1px 6px', borderRadius: '10px', background: 'rgba(59, 130, 246, 0.15)', color: '#2563eb', border: '1px solid rgba(59, 130, 246, 0.35)' }}>
+                                                      🧠 SRS Due • {topic.srsSchedule?.stageLabel || 'Workout'}
+                                                    </span>
+                                                  )}
                                                   {state === 'mastered' && (
                                                     isRecovery ? (
                                                       <span style={{ fontSize: '9px', fontWeight: 700, padding: '1px 6px', borderRadius: '10px', background: 'var(--accent-soft)', color: 'var(--accent)', border: '1px solid var(--accent-ring)' }}>
@@ -717,8 +755,16 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                                                 {confidence}%
                                               </td>
                                               <td style={{ padding: '6px 8px', textAlign: 'center', color: 'var(--text)' }}>
-                                                 {topic.practiceCount}/5 practices
-                                                 <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>({topic.attempts} / {reqMasteryQs} to Master)</div>
+                                                 {topic.isSrsDue && topic.srsSchedule ? (
+                                                   <span style={{ fontSize: '11px', fontWeight: 700, color: '#2563eb' }}>
+                                                     {topic.srsSchedule.stageLabel}
+                                                   </span>
+                                                 ) : (
+                                                   <>
+                                                     {topic.practiceCount}/5 practices
+                                                     <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>({topic.attempts} / {reqMasteryQs} to Master)</div>
+                                                   </>
+                                                 )}
                                                </td>
                                               <td style={{ padding: '6px 8px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '11px' }}>
                                                 {formatDate(topic.lastAttempt)}
@@ -732,12 +778,12 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                                                     fontSize: '10px', 
                                                     fontWeight: 600, 
                                                     border: 'none', 
-                                                    background: isRecoveryAction ? 'var(--accent-grad)' : 'var(--accent-grad)', 
+                                                    background: isRecoveryAction ? 'var(--accent-grad)' : (isSrsAction ? 'linear-gradient(135deg, #2563eb, #3b82f6)' : 'var(--accent-grad)'), 
                                                     color: 'white', 
                                                     cursor: 'pointer' 
                                                   }}
                                                 >
-                                                  {isRecoveryAction ? '⚡ Recovery Quiz' : actionText}
+                                                  {btnLabel}
                                                 </button>
                                               </td>
                                             </tr>

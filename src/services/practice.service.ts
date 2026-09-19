@@ -9,6 +9,7 @@ import { MasteryService } from '@/services/mastery.service';
 import { notifyReviewPending } from '@/lib/notifications';
 import { invalidateCache } from '@/lib/firebase/cache';
 import { evaluateSessionSincerity } from '@/lib/practiceTimeUtils';
+import { calculateSrsSchedule } from '@/lib/srsRotation';
 
 const DIFFICULTY_WEIGHTS: Record<string, number> = { easy: 1, medium: 2, hard: 3 };
 const BLOOM_WEIGHTS: Record<string, number> = {
@@ -209,12 +210,36 @@ export class PracticeService {
       const recordToUpdate = existing || defaultRecord;
       const updatedData = MasteryService.calculateTopicMasteryUpdate(recordToUpdate, evaluations, practiceExamCode);
 
-      const recoverySessionAccuracy = evaluations.length > 0 ? (correctCount / evaluations.length) * 100 : 0;
-      if (isRecoveryMode && (recoverySessionAccuracy >= 80 || updatedData.mastery >= 90)) {
+      const sessionAccuracy = evaluations.length > 0 ? (correctCount / evaluations.length) * 100 : 0;
+      if (isRecoveryMode && (sessionAccuracy >= 80 || updatedData.mastery >= 90)) {
         updatedData.isRecoveryMastered = true;
         updatedData.mastery = Math.max(updatedData.mastery, 90);
         updatedData.confidence = Math.max(updatedData.confidence, 20);
         updatedData.recoveryCompletedAt = new Date();
+      }
+
+      if (category === 'revision') {
+        const currentStage = Number(existing?.srsStage || 0);
+        if (sessionAccuracy >= 80) {
+          // Passed SRS review with flying colors -> advance to next spaced interval stage
+          const nextStage = Math.min(5, currentStage + 1);
+          const sched = calculateSrsSchedule(new Date(), nextStage);
+          updatedData.srsStage = nextStage;
+          updatedData.lastRevisedAt = new Date();
+          updatedData.nextReviewDate = sched.nextReviewDate;
+          updatedData.mastery = Math.max(updatedData.mastery, 90);
+        } else if (sessionAccuracy < 60) {
+          // Concept retention degraded -> reset SRS stage to 0 to rebuild
+          updatedData.srsStage = 0;
+          updatedData.lastRevisedAt = new Date();
+          updatedData.mastery = Math.min(updatedData.mastery, 85);
+        } else {
+          // 60-79%: Keep at current stage and set refreshed review interval
+          const sched = calculateSrsSchedule(new Date(), currentStage);
+          updatedData.srsStage = currentStage;
+          updatedData.lastRevisedAt = new Date();
+          updatedData.nextReviewDate = sched.nextReviewDate;
+        }
       }
 
       finalMastery = updatedData.mastery;

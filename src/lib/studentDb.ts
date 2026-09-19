@@ -3,6 +3,7 @@ import { getCachedSyllabus, getFromCache, setInCache } from '@/lib/firebase/cach
 import { getDateKeyIST } from '@/lib/dateUtils';
 import { calculateUnifiedMetrics } from '@/lib/dashboardMetrics';
 import { deriveTopicCodeFromQuestionCode, getCanonicalSubjectName, parseTopicCode } from '@/lib/questionTypes';
+import { calculateSrsSchedule, SrsSchedule } from '@/lib/srsRotation';
 
 /**
  * Checks if a user or student profile is a demo / placeholder account
@@ -879,11 +880,13 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
       active: isMeetingActive
     };
 
-    // 7.9 Fetch Needs Attention topics for action items card
+    // 7.9 Fetch Needs Attention & SRS Due topics for action items card
     let needsAttentionTopicsList: any[] = [];
+    let srsDueTopicsList: any[] = [];
     try {
       const learningData = await getStudentLearningData(userData);
       needsAttentionTopicsList = learningData?.needsAttention || [];
+      srsDueTopicsList = (learningData?.revision || []).filter((t: any) => t.isSrsDue === true);
     } catch (e) {
       console.warn('Failed to load learning data for dashboard:', e);
     }
@@ -925,6 +928,7 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
         profile,
         resultsSummary,
         needsAttention: needsAttentionTopicsList,
+        srsDueTopics: srsDueTopicsList,
         pendingSelfReviews: pendingSelfReviewsList,
         pendingAbsences: pendingAbsencesList,
         peerReviews: {
@@ -1318,14 +1322,10 @@ export async function getStudentLearningData(userData: any) {
       }
     });
 
-    const isRecoveryMastered = !!mData?.isRecoveryMastered;
-    const isFullConfidence = confidence >= reqConf;
-    const isCertifiedMastered = (mastery >= 90 && isFullConfidence) || isRecoveryMastered;
-    const isExamStrong = mastery >= 90 && !isFullConfidence;
-    const state = isCertifiedMastered ? 'mastered' : (isExamStrong ? 'revision' : (mastery >= 50 ? 'continuePractice' : 'needsAttention'));
-    const attempts = mData?.questionsAttempted || mData?.attempts || 0;
-    const subCode = sData.subjectCode || (topicCode ? topicCode.split('-')[2] : '') || '';
-    const subName = sData.subjectName || getCanonicalSubjectName(subCode, topicCode, sData.chapterName);
+    const srsSchedule: SrsSchedule = calculateSrsSchedule(
+      mData?.lastRevisedAt || (mData?.updatedAt?.toDate ? mData.updatedAt.toDate().toISOString() : mData?.updatedAt) || mData?.lastAttempt || null,
+      mData?.srsStage !== undefined ? Number(mData.srsStage) : 0
+    );
 
     const topicItem = {
       topicCode,
@@ -1350,7 +1350,8 @@ export async function getStudentLearningData(userData: any) {
       lastScore: mData?.lastScore || 0,
       practiceCount,
       targetQuestions,
-      totalQuestions: targetQuestions
+      totalQuestions: targetQuestions,
+      srsSchedule
     };
 
     // A topic is truly in Focus only if mastery is low (<50) or if the student has never attempted it (attempts === 0) and missed an assigned exam.
@@ -1361,18 +1362,34 @@ export async function getStudentLearningData(userData: any) {
       continuePractice.push({ ...topicItem, state: 'continuePractice' });
     } else {
       if (isCertifiedMastered) {
-        mastered.push({ ...topicItem, state: 'mastered' });
+        if (srsSchedule.isDueForRevision) {
+          // Mastered topic is due for Spaced Repetition review -> route to Revise tab
+          revision.push({ ...topicItem, state: 'revision', isSrsDue: true });
+        } else {
+          // Mastered topic is still fresh -> stay in Mastered tab
+          mastered.push({ ...topicItem, state: 'mastered', isSrsDue: false });
+        }
       } else {
-        revision.push({ ...topicItem, state: 'revision' });
+        // High mastery but needs confidence validation -> route to Revise tab
+        revision.push({ ...topicItem, state: 'revision', isExamStrong: true });
       }
     }
   });
 
-  const sortFn = (a: any, b: any) => b.priorityScore - a.priorityScore;
+  const sortFn = (a: any, b: any) => {
+    // For revision, prioritize overdue SRS topics first
+    if (a.state === 'revision' && b.state === 'revision') {
+      const aOverdue = a.srsSchedule?.daysOverdue || 0;
+      const bOverdue = b.srsSchedule?.daysOverdue || 0;
+      if (aOverdue !== bOverdue) return bOverdue - aOverdue;
+    }
+    return b.priorityScore - a.priorityScore;
+  };
+
   needsAttention.sort(sortFn);
   continuePractice.sort(sortFn);
   revision.sort(sortFn);
-  mastered.sort(sortFn);
+  mastered.sort((a: any, b: any) => (a.srsSchedule?.daysUntilDue || 0) - (b.srsSchedule?.daysUntilDue || 0));
 
   const result = {
     studentCode,

@@ -227,6 +227,7 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
   const [dismissedOverdue, setDismissedOverdue] = useState(false);
 
   const needAttentionTopics: any[] = (data as any)?.needsAttention || [];
+  const srsDueTopics: any[] = (data as any)?.srsDueTopics || [];
   const attendanceRate = (data as any)?.profile?.attendanceRate !== undefined 
     ? `${(data as any).profile.attendanceRate}%` 
     : ((data as any)?.stats?.attendanceRate !== undefined ? `${(data as any).stats.attendanceRate}%` : '100%');
@@ -427,11 +428,12 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
   const peerReviews = activeData?.peerReviews || { count: 0, firstExamId: null };
   const pendingSelfReviews: any[] = (activeData as any)?.pendingSelfReviews || [];
   const pendingAbsences: any[] = (activeData as any)?.pendingAbsences || [];
+  const activeSrsDue: any[] = (activeData as any)?.srsDueTopics || [];
   const exams = activeData?.exams || { pendingObjectiveExams: [], scheduledObjectiveExams: [], pendingSubjectiveExams: [], scheduledSubjectiveExams: [], dailyHomePractices: [], studyChips: [] };
   const greeting = getGreeting();
   const firstName = profile?.name ? profile.name.split(' ')[0] : '';
-  const hasActionItems = pendingSelfReviews.length > 0 || pendingAbsences.length > 0 || needAttentionTopics.length > 0 || peerReviews.count > 0;
-  const totalActionCount = pendingSelfReviews.length + pendingAbsences.length + (peerReviews.count > 0 ? 1 : 0) + needAttentionTopics.length;
+  const hasActionItems = pendingSelfReviews.length > 0 || pendingAbsences.length > 0 || needAttentionTopics.length > 0 || activeSrsDue.length > 0 || peerReviews.count > 0;
+  const totalActionCount = pendingSelfReviews.length + pendingAbsences.length + (peerReviews.count > 0 ? 1 : 0) + needAttentionTopics.length + activeSrsDue.length;
 
   return (
     <div className="page-wrapper" style={{
@@ -613,6 +615,33 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
                   >
                     Grade Paper
                   </button>
+                </div>
+              )}
+              {/* 3.5. Spaced Repetition Due (Mastered Topics Ready for Micro-Refresher) */}
+              {activeSrsDue.length > 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  {activeSrsDue.slice(0, 3).map((t: any) => (
+                    <div key={t.topicCode} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 10px', background: 'rgba(59, 130, 246, 0.08)', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(59, 130, 246, 0.25)', gap: '8px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
+                        <span style={{ fontSize: '18px' }}>🧠</span>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                          <div style={{ fontWeight: 800, fontSize: '12px', color: '#2563eb' }}>
+                            Memory Refresher Due: {t.topicName}
+                          </div>
+                          <div style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>
+                            {t.subjectName || 'General'} • {t.srsSchedule?.stageLabel || 'Interval Refresher'} • {t.srsSchedule?.estimatedRetention || 75}% Retention
+                          </div>
+                        </div>
+                      </div>
+                      <button 
+                        className="btn btn-primary" 
+                        style={{ padding: '4px 10px', fontSize: '11px', borderRadius: 'var(--radius-sm)', fontWeight: 800, whiteSpace: 'nowrap', background: '#2563eb', color: '#ffffff', border: 'none' }}
+                        onClick={() => router.push(`/student/topic?topicCode=${encodeURIComponent(t.topicCode)}&category=revision`)}
+                      >
+                        Start Workout
+                      </button>
+                    </div>
+                  ))}
                 </div>
               )}
 
