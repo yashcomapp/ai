@@ -5,6 +5,7 @@ import { chunkArray } from '@/lib/firestoreUtils';
 import { calculateUnifiedMetrics } from '@/lib/dashboardMetrics';
 import { calculateProctoringIntegrityScore } from '@/lib/proctoring';
 import { calculateSrsSchedule } from '@/lib/srsRotation';
+import { getRequiredConfidence } from '@/lib/studentDb';
 
 export async function getParentDashboardData(
   parentEmail: string,
@@ -758,13 +759,14 @@ export async function getParentDashboardData(
   }> = [];
 
   masteriesList.forEach(m => {
+    const sData = syllabusMap.get(m.topicCode);
     const mLevel = Number(m.masteryLevel || m.mastery) || 0;
     const conf = Number(m.confidence) || 0;
     const practiceQuestions = Number(m.practiceQuestionsAttempted || 0);
     const practiceCount = Number(m.practiceCount || 0);
-    const hasPractice = practiceQuestions >= 12 || practiceCount >= 1 || (conf >= 20 && !m.examQuestionsAttempted) || m.isRecoveryMastered === true;
-    const isMastered = (mLevel >= 90 && conf >= 20 && hasPractice) || m.isRecoveryMastered === true;
-    const sData = syllabusMap.get(m.topicCode);
+    const reqConf = getRequiredConfidence(sData?.topicClassification || m.topicClassification, sData?.targetQuestions || m.targetQuestions);
+    const hasPractice = practiceQuestions >= 6 || practiceCount >= 1 || (conf >= reqConf && !m.examQuestionsAttempted) || m.isRecoveryMastered === true;
+    const isMastered = (mLevel >= 90 && conf >= reqConf && hasPractice) || m.isRecoveryMastered === true;
     const displayName = sData ? `${sData.chapterName} — ${sData.topicName}` : (m.topicName || m.topicCode || 'Topic');
     const subjectName = sData?.subjectName || m.subjectName || 'General';
 

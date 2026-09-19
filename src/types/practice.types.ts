@@ -14,6 +14,10 @@ export interface TopicMasteryRecord {
   practiceQuestionsAttempted?: number;
   examQuestionsAttempted?: number;
   practiceCount?: number;
+  topicClassification?: string;
+  targetQuestions?: number;
+  lastRevisedAt?: any;
+  srsStage?: number;
   createdAt: any;
   updatedAt?: any;
 }

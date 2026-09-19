@@ -10,7 +10,7 @@ import {
   StudentObservation 
 } from '@/types/quotient.types';
 import { evaluateSessionSincerity } from '@/lib/practiceTimeUtils';
-import { isDemoUser } from '@/lib/studentDb';
+import { isDemoUser, getRequiredConfidence } from '@/lib/studentDb';
 import { calculateSrsSchedule } from '@/lib/srsRotation';
 
 export const MASTERY_THRESHOLDS = {
@@ -191,10 +191,12 @@ export class PracticeQualityCalculator implements ParameterCalculator {
 
     const masteryMap = new Map<string, number>();
     const confidenceMap = new Map<string, number>();
+    const requiredConfidenceMap = new Map<string, number>();
     practiceRecords.forEach(rec => {
       if (rec.topicCode) {
         masteryMap.set(rec.topicCode, rec.mastery || 0);
         confidenceMap.set(rec.topicCode, rec.confidence || 0);
+        requiredConfidenceMap.set(rec.topicCode, getRequiredConfidence(rec.topicClassification, rec.targetQuestions));
       }
     });
 
@@ -202,9 +204,10 @@ export class PracticeQualityCalculator implements ParameterCalculator {
     topicPracticeMap.forEach((q, topicCode) => {
       const mastery = masteryMap.get(topicCode) || 0;
       const confidence = confidenceMap.get(topicCode) || 0;
+      const reqConf = requiredConfidenceMap.get(topicCode) || 10;
       
       let topicEfficiency = 0;
-      if (mastery >= MASTERY_THRESHOLDS.MASTERED_MASTERY && confidence >= MASTERY_THRESHOLDS.MASTERED_CONFIDENCE) {
+      if (mastery >= MASTERY_THRESHOLDS.MASTERED_MASTERY && confidence >= reqConf) {
         const excess = Math.max(0, q - 15);
         topicEfficiency = Math.max(40, 100 - excess * 1.5);
       } else {
@@ -240,7 +243,6 @@ export class PracticeQualityCalculator implements ParameterCalculator {
   }
 }
 
-// Strategy 3: Topic Health (Mastery Ratios)
 // Strategy 3: Topic Health (Continuous Mastery & Retention)
 export class TopicHealthCalculator implements ParameterCalculator {
   id = 'topicHealth';
@@ -275,15 +277,16 @@ export class TopicHealthCalculator implements ParameterCalculator {
         const mastery = Number(rec.mastery || 0);
         const confidence = Number(rec.confidence || 0);
         const isRecovery = Boolean(rec.isRecoveryMastered);
+        const reqConf = getRequiredConfidence(rec.topicClassification, rec.targetQuestions);
         const { retention, factor, isDue } = getRetentionFactor(rec);
         if (isDue) srsDueCount++;
         totalRetentionSum += retention;
 
-        if (isRecovery || (mastery >= 90 && confidence >= 10)) {
+        if (isRecovery || (mastery >= 90 && confidence >= reqConf)) {
           masteredCount++;
         }
         if (mastery < 50) attentionCount++;
-        const confidenceFactor = Math.min(1, Math.max(0.5, confidence / 10));
+        const confidenceFactor = Math.min(1, Math.max(0.5, confidence / reqConf));
         totalMasteryEarned += mastery * confidenceFactor * factor;
       });
       const score = Math.max(0, Math.min(100, Math.round(totalMasteryEarned / totalTopics)));
@@ -325,11 +328,12 @@ export class TopicHealthCalculator implements ParameterCalculator {
         const mastery = Number(record.mastery || 0);
         const confidence = Number(record.confidence || 0);
         const isRecovery = Boolean(record.isRecoveryMastered);
+        const reqConf = getRequiredConfidence(record.topicClassification, record.targetQuestions);
         const { retention, factor, isDue } = getRetentionFactor(record);
         if (isDue) srsDueCount++;
         totalRetentionSum += retention;
 
-        if (isRecovery || (mastery >= 90 && confidence >= 10)) {
+        if (isRecovery || (mastery >= 90 && confidence >= reqConf)) {
           masteredCount++;
         }
 
@@ -338,7 +342,7 @@ export class TopicHealthCalculator implements ParameterCalculator {
         }
 
         // Continuous confidence & SRS retention scaling
-        const confidenceFactor = Math.min(1, Math.max(0.5, confidence / 10));
+        const confidenceFactor = Math.min(1, Math.max(0.5, confidence / reqConf));
         const effectiveTopicScore = mastery * confidenceFactor * factor;
         totalMasteryEarned += effectiveTopicScore;
       } else {
