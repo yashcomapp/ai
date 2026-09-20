@@ -720,11 +720,19 @@ In addition to the topic-based questions:
 
     const buildBatchInstruction = (total: number) => {
       return `========================================
-OUTPUT FORMAT (DIRECT SINGLE-SHOT COMPLETE SUITE):
+OUTPUT FORMAT (STRICT MARKDOWN JSON CODE BOX REQUIRED):
 ========================================
 TOTAL QUESTIONS TO GENERATE: EXACTLY ${total} questions across ${promptTopics.length} topic(s).
-Output ALL ${total} questions directly in a SINGLE, COMPLETE, VALID JSON array [...] adhering strictly to the schema below.
-⚠️ CRITICAL: DO NOT split across multiple turns or prompt the user to "Type NEXT". Generate all ${total} questions completely in this single response.`;
+Output ALL ${total} questions enclosed within a SINGLE Markdown JSON code block:
+\`\`\`json
+[
+  ...
+]
+\`\`\`
+⚠️ CRITICAL ENFORCEMENT RULES:
+1. STRICT MARKDOWN CODE BLOCK: You MUST enclose the entire JSON output inside \`\`\`json and \`\`\` code fences so that the response renders inside a single copyable code box.
+2. ZERO CONVERSATIONAL TEXT / ZERO PREAMBLE: Do NOT output any introductory text, conversational pleasantries, markdown titles, or explanations before or after the code block. Start your response immediately with \`\`\`json on line 1 and end with \`\`\` on the final line.
+3. SINGLE COMPLETE SUITE: DO NOT split across multiple turns or ask the user to type "NEXT". Generate all ${total} questions completely in this single code box.`;
     };
 
     const buildNegativeConstraints = () => {
@@ -902,9 +910,12 @@ CRITICAL RULES & LEVEL/SOURCE FIDELITY:
    - "conceptTag": "concise subtopic or concept name"
 10. Strict KaTeX Math Formatting: Use \\( ... \\) for inline math and \\[ ... \\] for display math. Double-escape all backslashes (\\\\frac, \\\\pi, \\\\theta). Wrap chemical formulas in \\ce{...}.
 
-CRITICAL JSON ESCAPING RULES:
-1. Return ONLY the raw valid JSON array [...]. No explanations, markdown preamble, or extra text.
-2. Ensure valid JSON escaping for all quotes (\\\") and double backslashes.
+========================================
+CRITICAL JSON & MARKDOWN ESCAPING RULES:
+========================================
+1. STRICT MARKDOWN CODE BOX: Wrap the entire JSON response in a single \`\`\`json ... \`\`\` code block. Strictly NO markdown preamble, greetings, or text outside the code block.
+2. Ensure valid JSON escaping for all quotes (\\\") and double backslashes for LaTeX (\\\\frac, \\\\times, \\\\pi, \\\\theta).
+3. Do NOT use unescaped raw control characters inside string values.
 
 ${buildNegativeConstraints()}`;
     } else {
@@ -1013,15 +1024,16 @@ CRITICAL BOARD FIDELITY & ZERO-INVENTION RULES:
 ${buildImageInstruction()}
 
 ========================================
-CRITICAL JSON ESCAPING RULES:
+CRITICAL JSON & MARKDOWN ESCAPING RULES:
 ========================================
-1. Return ONLY the raw valid JSON array [...]. No explanations, markdown preamble, or extra text.
+1. STRICT MARKDOWN CODE BOX: Wrap the entire JSON array inside a single \`\`\`json ... \`\`\` code block. Strictly NO markdown preamble, greetings, or commentary outside the code block.
 2. Double-escape backslashes in LaTeX (\\\\frac, \\\\pi, \\\\theta).
 3. Do NOT use raw control characters inside string values.
 
 ========================================
-OUTPUT FORMAT: Return ONLY a valid JSON array of objects with schema:
+OUTPUT FORMAT: Return the JSON array inside a Markdown JSON code block with schema:
 ========================================
+\`\`\`json
 [
   {
     "contextId": "CTX-001",
@@ -1037,8 +1049,9 @@ OUTPUT FORMAT: Return ONLY a valid JSON array of objects with schema:
     "pyqInfo": "${samplePyq}"
   }
 ]
+\`\`\`
 
-Return ONLY valid JSON. No extra text.`;
+Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or after.`;
     }
   };
 
