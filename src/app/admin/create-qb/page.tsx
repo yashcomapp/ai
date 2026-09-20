@@ -1658,268 +1658,248 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
             singleTopicSelect={true}
           />
 
-          {/* Single Topic Target Question Quota */}
+          {/* Single Topic Target Question Quota (Compact) */}
           {selectedTopics.length > 0 && (
-            <div style={{ marginTop: '12px', borderTop: '1px solid var(--border-light)', paddingTop: '10px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '6px' }}>
-                <h3 style={{ fontSize: '12.5px', fontWeight: 800, margin: 0, color: 'var(--accent)' }}>Target Question Quota</h3>
-                <span className="badge-pill">
-                  Target: <strong>{getTotalTargetQuestions()} Questions</strong>
+            <div style={{ marginTop: '8px', borderTop: '1px solid var(--border-light)', paddingTop: '8px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px', flexWrap: 'wrap', gap: '6px' }}>
+                <h3 style={{ fontSize: '11.5px', fontWeight: 800, margin: 0, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.03em' }}>Target Question Quota</h3>
+                <span className="badge-pill" style={{ fontSize: '10.5px', padding: '2px 8px' }}>
+                  Target: <strong style={{ color: 'var(--text)' }}>{getTotalTargetQuestions()} Questions</strong>
                 </span>
               </div>
 
-              {/* Topic Scope Presets */}
-              <div style={{ background: 'var(--bg-soft)', padding: '8px 12px', borderRadius: 'var(--radius)', border: '1px solid var(--border-light)', marginBottom: '10px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <span style={{ fontSize: '10.5px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)' }}>
-                    {questionType === 'subjective' ? 'Subjective Presets:' : 'Objective Presets:'}
-                  </span>
+              {/* Unified Compact Topic & Preset Bar */}
+              <div style={{ background: 'var(--bg-soft)', padding: '6px 10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+                <div style={{ minWidth: '200px', flex: '1 1 auto' }}>
+                  <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text)', lineHeight: 1.2 }}>
+                    {selectedTopics[0]?.topic}
+                  </div>
+                  <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                    {selectedTopics[0]?.chapterName} • {selectedTopics[0]?.subject}
+                  </div>
                 </div>
-                <div className="segmented-track" style={{ flexWrap: 'wrap' }}>
-                  {questionType === 'subjective' ? (
-                    <>
-                      <button
-                        type="button"
-                        className={`pill-btn ${Number(defaultPerTopicCount) === 5 ? 'active' : ''}`}
-                        onClick={() => {
-                          setDefaultPerTopicCount(5);
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                  <div className="segmented-track" style={{ padding: '2px' }}>
+                    {questionType === 'subjective' ? (
+                      <>
+                        <button
+                          type="button"
+                          className={`pill-btn ${Number(defaultPerTopicCount) === 5 ? 'active' : ''}`}
+                          style={{ padding: '3px 8px', fontSize: '10.5px' }}
+                          onClick={() => {
+                            setDefaultPerTopicCount(5);
+                            if (selectedTopics[0]) setTopicCustomCounts({ [topicKey(selectedTopics[0])]: 5 });
+                          }}
+                          title="Core in-text & basic definitions: 5 Questions"
+                        >
+                          Core (5)
+                        </button>
+                        <button
+                          type="button"
+                          className={`pill-btn ${Number(defaultPerTopicCount) === 8 ? 'active' : ''}`}
+                          style={{ padding: '3px 8px', fontSize: '10.5px' }}
+                          onClick={() => {
+                            setDefaultPerTopicCount(8);
+                            if (selectedTopics[0]) setTopicCustomCounts({ [topicKey(selectedTopics[0])]: 8 });
+                          }}
+                          title="Standard Subjective Suite: 8 Questions"
+                        >
+                          Standard (8)
+                        </button>
+                        <button
+                          type="button"
+                          className={`pill-btn ${Number(defaultPerTopicCount) === 10 ? 'active' : ''}`}
+                          style={{ padding: '3px 8px', fontSize: '10.5px' }}
+                          onClick={() => {
+                            setDefaultPerTopicCount(10);
+                            if (selectedTopics[0]) setTopicCustomCounts({ [topicKey(selectedTopics[0])]: 10 });
+                          }}
+                          title="Comprehensive Chapter Exercise & PYQs: 10 Questions"
+                        >
+                          Comprehensive (10)
+                        </button>
+                        <button
+                          type="button"
+                          className={`pill-btn ${Number(defaultPerTopicCount) === 15 ? 'active' : ''}`}
+                          style={{ padding: '3px 8px', fontSize: '10.5px' }}
+                          onClick={() => {
+                            setDefaultPerTopicCount(15);
+                            if (selectedTopics[0]) setTopicCustomCounts({ [topicKey(selectedTopics[0])]: 15 });
+                          }}
+                          title="Full Topic Suite with Numericals & PYQs: 15 Questions"
+                        >
+                          Full Suite (15)
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          className={`pill-btn ${Number(defaultPerTopicCount) === 50 ? 'active' : ''}`}
+                          style={{ padding: '3px 8px', fontSize: '10.5px' }}
+                          onClick={() => {
+                            setDefaultPerTopicCount(50);
+                            if (selectedTopics[0]) setTopicCustomCounts({ [topicKey(selectedTopics[0])]: 50 });
+                          }}
+                          title="Minor topic: 50 Questions"
+                        >
+                          Minor (50)
+                        </button>
+                        <button
+                          type="button"
+                          className={`pill-btn ${Number(defaultPerTopicCount) === 80 ? 'active' : ''}`}
+                          style={{ padding: '3px 8px', fontSize: '10.5px' }}
+                          onClick={() => {
+                            setDefaultPerTopicCount(80);
+                            if (selectedTopics[0]) setTopicCustomCounts({ [topicKey(selectedTopics[0])]: 80 });
+                          }}
+                          title="Medium topic: 80 Questions"
+                        >
+                          Medium (80)
+                        </button>
+                        <button
+                          type="button"
+                          className={`pill-btn ${Number(defaultPerTopicCount) === 90 ? 'active' : ''}`}
+                          style={{ padding: '3px 8px', fontSize: '10.5px' }}
+                          onClick={() => {
+                            setDefaultPerTopicCount(90);
+                            if (selectedTopics[0]) setTopicCustomCounts({ [topicKey(selectedTopics[0])]: 90 });
+                          }}
+                          title="Major topic: 90 Questions"
+                        >
+                          Major (90)
+                        </button>
+                      </>
+                    )}
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <input
+                      type="number"
+                      min={5}
+                      max={100}
+                      value={defaultPerTopicCount}
+                      onChange={(e) => {
+                        const raw = e.target.value;
+                        if (raw === '') {
+                          setDefaultPerTopicCount('');
+                        } else {
+                          const val = parseInt(raw, 10);
+                          const v = isNaN(val) ? '' : Math.max(1, val);
+                          setDefaultPerTopicCount(v);
                           if (selectedTopics[0]) {
-                            setTopicCustomCounts({ [topicKey(selectedTopics[0])]: 5 });
+                            setTopicCustomCounts({ [topicKey(selectedTopics[0])]: v });
                           }
-                        }}
-                        title="Core in-text & basic definitions: 5 Questions"
-                      >
-                        🎯 Core (5 Qs)
-                      </button>
-                      <button
-                        type="button"
-                        className={`pill-btn ${Number(defaultPerTopicCount) === 8 ? 'active' : ''}`}
-                        onClick={() => {
-                          setDefaultPerTopicCount(8);
-                          if (selectedTopics[0]) {
-                            setTopicCustomCounts({ [topicKey(selectedTopics[0])]: 8 });
-                          }
-                        }}
-                        title="Standard Subjective Suite: 8 Questions"
-                      >
-                        ⚡ Standard (8 Qs)
-                      </button>
-                      <button
-                        type="button"
-                        className={`pill-btn ${Number(defaultPerTopicCount) === 10 ? 'active' : ''}`}
-                        onClick={() => {
-                          setDefaultPerTopicCount(10);
-                          if (selectedTopics[0]) {
-                            setTopicCustomCounts({ [topicKey(selectedTopics[0])]: 10 });
-                          }
-                        }}
-                        title="Comprehensive Chapter Exercise & PYQs: 10 Questions"
-                      >
-                        📚 Comprehensive (10 Qs)
-                      </button>
-                      <button
-                        type="button"
-                        className={`pill-btn ${Number(defaultPerTopicCount) === 15 ? 'active' : ''}`}
-                        onClick={() => {
-                          setDefaultPerTopicCount(15);
-                          if (selectedTopics[0]) {
-                            setTopicCustomCounts({ [topicKey(selectedTopics[0])]: 15 });
-                          }
-                        }}
-                        title="Full Topic Suite with Numericals & PYQs: 15 Questions"
-                      >
-                        🏆 Full Suite (15 Qs)
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <button
-                        type="button"
-                        className={`pill-btn ${Number(defaultPerTopicCount) === 50 ? 'active' : ''}`}
-                        onClick={() => {
-                          setDefaultPerTopicCount(50);
-                          if (selectedTopics[0]) {
-                            setTopicCustomCounts({ [topicKey(selectedTopics[0])]: 50 });
-                          }
-                        }}
-                        title="Minor topic: 50 Questions (30 Practice/SRS + 20 Exam)"
-                      >
-                        Minor Topic (50 Qs)
-                      </button>
-                      <button
-                        type="button"
-                        className={`pill-btn ${Number(defaultPerTopicCount) === 80 ? 'active' : ''}`}
-                        onClick={() => {
+                        }
+                      }}
+                      onBlur={() => {
+                        if (defaultPerTopicCount === '' || Number(defaultPerTopicCount) < 1) {
                           setDefaultPerTopicCount(80);
                           if (selectedTopics[0]) {
                             setTopicCustomCounts({ [topicKey(selectedTopics[0])]: 80 });
                           }
-                        }}
-                        title="Medium topic: 80 Questions (50 Practice/SRS + 30 Exam)"
-                      >
-                        Medium Topic (80 Qs)
-                      </button>
-                      <button
-                        type="button"
-                        className={`pill-btn ${Number(defaultPerTopicCount) === 90 ? 'active' : ''}`}
-                        onClick={() => {
-                          setDefaultPerTopicCount(90);
-                          if (selectedTopics[0]) {
-                            setTopicCustomCounts({ [topicKey(selectedTopics[0])]: 90 });
-                          }
-                        }}
-                        title="Major topic: 90 Questions (55 Practice/SRS + 35 Exam)"
-                      >
-                        Major Topic (90 Qs)
-                      </button>
-                    </>
-                  )}
-                </div>
-              </div>
-
-              {/* Selected Topic Details & Count Input */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--bg-soft)', padding: '12px 16px', borderRadius: 'var(--radius-sm)', flexWrap: 'wrap', gap: '10px' }}>
-                <div>
-                  <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text)' }}>
-                    {selectedTopics[0]?.topic}
-                  </div>
-                  <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                    {selectedTopics[0]?.chapterName} • {selectedTopics[0]?.subject}
-                  </div>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)' }}>Questions to Generate:</label>
-                  <input
-                    type="number"
-                    min={5}
-                    max={100}
-                    value={defaultPerTopicCount}
-                    onChange={(e) => {
-                      const raw = e.target.value;
-                      if (raw === '') {
-                        setDefaultPerTopicCount('');
-                      } else {
-                        const val = parseInt(raw, 10);
-                        const v = isNaN(val) ? '' : Math.max(1, val);
-                        setDefaultPerTopicCount(v);
-                        if (selectedTopics[0]) {
-                          setTopicCustomCounts({ [topicKey(selectedTopics[0])]: v });
                         }
-                      }
-                    }}
-                    onBlur={() => {
-                      if (defaultPerTopicCount === '' || Number(defaultPerTopicCount) < 1) {
-                        setDefaultPerTopicCount(80);
-                        if (selectedTopics[0]) {
-                          setTopicCustomCounts({ [topicKey(selectedTopics[0])]: 80 });
-                        }
-                      }
-                    }}
-                    style={{ width: '70px', padding: '6px 8px', textAlign: 'center', border: '1px solid var(--border-light)', borderRadius: '4px', background: 'var(--surface)', color: 'var(--text)', fontWeight: 700, fontSize: '13px' }}
-                  />
-                  <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)' }}>Qs</span>
+                      }}
+                      style={{ width: '48px', padding: '3px 5px', textAlign: 'center', border: '1px solid var(--border-light)', borderRadius: '4px', background: 'var(--surface)', color: 'var(--text)', fontWeight: 700, fontSize: '11.5px' }}
+                    />
+                    <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>Qs</span>
+                  </div>
                 </div>
               </div>
             </div>
           )}
         </div>
 
-        {/* Card 2: Workspace Settings & Actions */}
+        {/* Card 2: Compact Workspace Settings & Generator Actions */}
         {selectedTopics.length > 0 && (
-          <div className="card" style={{ background: 'var(--surface)', padding: '18px 24px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)' }}>
-            <h3 style={{ fontSize: '13px', fontWeight: 800, margin: '0 0 12px', textTransform: 'uppercase', color: 'var(--accent)' }}>Workspace Settings &amp; Generator Actions</h3>
-
-            {/* Optional Textbook/Diagram Image Upload */}
-            <div style={{ marginTop: '10px', borderTop: '1px dashed var(--border-light)', paddingTop: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
-              <label style={{ fontSize: '12px', fontWeight: 'bold', margin: 0 }}>🖼️ Upload Textbook/Diagram Image (optional)</label>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center' }}>
-                <input type="file" id="questionImageInput" accept="image/*" onChange={handleImageSelected} style={{ fontSize: '12px' }} />
-                {uploadedImageBase64 && (
-                  <button className="btn btn-secondary btn-sm" onClick={clearImage}>✕ Clear</button>
-                )}
-              </div>
-            </div>
-            {uploadedImageBase64 && (
-              <div style={{ marginTop: '10px' }}>
-                <img src={uploadedImageBase64} alt="Selected source preview" style={{ maxWidth: '240px', maxHeight: '180px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)' }} />
-              </div>
-            )}
-
-            {/* Generator Mode Selector (SSOT) */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px', marginTop: '16px', borderTop: '1px solid var(--border-light)', paddingTop: '14px' }}>
-              <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
-                <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--text-muted)' }}>Generator Mode:</span>
-                <div className="segmented-track">
-                  <button 
-                    type="button"
-                    className={`pill-btn ${questionType === 'objective' ? 'active' : ''}`}
-                    onClick={() => handleSwitchType('objective')}
-                  >
-                    🎯 Objective
-                  </button>
-                  <button 
-                    type="button"
-                    className={`pill-btn ${questionType === 'subjective' ? 'active' : ''}`}
-                    onClick={() => handleSwitchType('subjective')}
-                  >
-                    📝 Subjective
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Numericals / Calculation Questions Toggle */}
-            <div style={{ marginTop: '12px', padding: '10px 14px', background: includeNumericals ? 'var(--accent-soft)' : 'var(--bg-soft)', borderRadius: 'var(--radius-sm)', border: `1px solid ${includeNumericals ? 'var(--accent-ring)' : 'var(--border-light)'}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', margin: 0, flex: 1 }}>
-                <input
-                  type="checkbox"
-                  checked={includeNumericals}
-                  onChange={(e) => {
-                    setIncludeNumericals(e.target.checked);
-                    setNumericalsManuallyToggled(true);
-                  }}
-                  style={{ width: '16px', height: '16px', cursor: 'pointer' }}
-                />
-                <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text)' }}>
-                  Include Numericals &amp; Calculation Problems (ONE / Numerical Types)
-                </div>
-              </label>
-              <span className="badge-pill" style={{ opacity: includeNumericals ? 1 : 0.6 }}>
-                {includeNumericals ? 'Numericals ON' : 'Theory / Qualitative Only'}
-              </span>
-            </div>
-
-            {/* Subjective verbatim requirements warning */}
-            {questionType === 'subjective' && (
-              <div style={{ marginTop: '16px', padding: '12px', background: 'var(--warning-bg)', color: 'var(--warning)', borderRadius: 'var(--radius-sm)', borderLeft: '4px solid var(--warning)' }}>
-                <p style={{ margin: '0 0 6px', fontWeight: 'bold', fontSize: '12px' }}>⚠️ Verbatim Textbook Requirements for Subjective Questions:</p>
-                <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '11px' }}>
-                  <li>Answers must exactly match prescribed textbook vocabulary.</li>
-                  <li>Separate each answer sentence on a new numbered line (1., 2., 3...).</li>
-                  <li>Keywords must be clearly defined for underlining student feedback.</li>
-                  <li>No paraphrasing allowed - absolute verbatim alignment is required.</li>
-                </ul>
-              </div>
-            )}
-
-            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '16px' }}>
-              <button className="btn btn-secondary" onClick={clearAllSelections}>Clear All</button>
+          <div className="card" style={{ background: 'var(--surface)', padding: '10px 14px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
               
-              <button className="btn btn-primary" onClick={handleGeneratePrompt}>
-                🔧 Generate &amp; Copy AI Prompt
-              </button>
+              {/* Left Controls: Mode & Numericals */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)' }}>Mode:</span>
+                  <div className="segmented-track" style={{ padding: '2px' }}>
+                    <button 
+                      type="button"
+                      className={`pill-btn ${questionType === 'objective' ? 'active' : ''}`}
+                      style={{ padding: '3px 8px', fontSize: '10.5px' }}
+                      onClick={() => handleSwitchType('objective')}
+                    >
+                      🎯 Objective
+                    </button>
+                    <button 
+                      type="button"
+                      className={`pill-btn ${questionType === 'subjective' ? 'active' : ''}`}
+                      style={{ padding: '3px 8px', fontSize: '10.5px' }}
+                      onClick={() => handleSwitchType('subjective')}
+                    >
+                      📝 Subjective
+                    </button>
+                  </div>
+                </div>
+
+                {/* Numericals Toggle */}
+                <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: 'pointer', margin: 0, padding: '3px 8px', background: includeNumericals ? 'var(--accent-soft)' : 'var(--bg-soft)', borderRadius: 'var(--radius-sm)', border: `1px solid ${includeNumericals ? 'var(--accent-ring)' : 'var(--border-light)'}` }}>
+                  <input
+                    type="checkbox"
+                    checked={includeNumericals}
+                    onChange={(e) => {
+                      setIncludeNumericals(e.target.checked);
+                      setNumericalsManuallyToggled(true);
+                    }}
+                    style={{ width: '13px', height: '13px', cursor: 'pointer' }}
+                  />
+                  <span style={{ fontSize: '11px', fontWeight: 600, color: includeNumericals ? 'var(--accent)' : 'var(--text)' }}>
+                    {includeNumericals ? 'Numericals Included (ONE)' : 'Numericals Off (Theory Only)'}
+                  </span>
+                </label>
+
+                {/* Optional Image Upload */}
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                  <input type="file" id="questionImageInput" accept="image/*" onChange={handleImageSelected} style={{ fontSize: '11px', maxWidth: '180px' }} />
+                  {uploadedImageBase64 && (
+                    <button className="btn btn-secondary btn-sm" onClick={clearImage} style={{ padding: '2px 6px', fontSize: '10px' }}>✕ Clear</button>
+                  )}
+                </div>
+              </div>
+
+              {/* Right Action Buttons */}
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <button className="btn btn-secondary btn-sm" onClick={clearAllSelections} style={{ padding: '6px 12px', fontSize: '11.5px' }}>
+                  Clear All
+                </button>
+                <button className="btn btn-primary btn-sm" onClick={handleGeneratePrompt} style={{ padding: '6px 14px', fontSize: '11.5px', fontWeight: 700 }}>
+                  🔧 Generate &amp; Copy AI Prompt
+                </button>
+              </div>
+
             </div>
+
+            {uploadedImageBase64 && (
+              <div style={{ marginTop: '8px', borderTop: '1px dashed var(--border-light)', paddingTop: '8px' }}>
+                <img src={uploadedImageBase64} alt="Source preview" style={{ maxHeight: '80px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)' }} />
+              </div>
+            )}
+
+            {/* Subjective verbatim notice */}
+            {questionType === 'subjective' && (
+              <div style={{ marginTop: '8px', padding: '6px 10px', background: 'var(--warning-bg)', color: 'var(--warning)', borderRadius: 'var(--radius-sm)', borderLeft: '3px solid var(--warning)', fontSize: '11px' }}>
+                <strong>⚠️ Verbatim Notice:</strong> Answers must exactly match textbook vocabulary. One sentence per numbered line (1., 2., 3...).
+              </div>
+            )}
           </div>
         )}
 
         {/* Card 3: AI Workspace Prompt and response */}
-        <div id="aiWorkspaceSection" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px' }}>
+        <div id="aiWorkspaceSection" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '10px' }}>
           
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '10px' }}>
             {/* Prompt generated view */}
-            <div className="card" style={{ background: 'var(--surface)', padding: '18px 24px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div className="card" style={{ background: 'var(--surface)', padding: '10px 14px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', gap: '6px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h3 style={{ fontSize: '13px', fontWeight: 800, margin: 0, textTransform: 'uppercase', color: 'var(--accent)' }}>📋 Generated AI Prompt</h3>
+                <h3 style={{ fontSize: '11.5px', fontWeight: 800, margin: 0, textTransform: 'uppercase', color: 'var(--accent)', letterSpacing: '0.03em' }}>📋 Generated AI Prompt</h3>
                 {aiPrompt && (
                   <button 
                     className="btn btn-secondary btn-sm" 
@@ -1937,14 +1917,14 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
                 placeholder="Configure mapping configurations and click generate AI prompt above..."
                 value={aiPrompt}
                 onChange={(e) => setAiPrompt(e.target.value)}
-                style={{ width: '100%', height: '140px', background: 'var(--bg-soft)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', padding: '8px', fontSize: '11px', fontFamily: 'monospace', color: 'var(--text)' }}
+                style={{ width: '100%', height: '110px', background: 'var(--bg-soft)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', padding: '6px 8px', fontSize: '11px', fontFamily: 'monospace', color: 'var(--text)' }}
               />
             </div>
 
             {/* Paste Response block */}
-            <div id="paste-response-card" className="card" style={{ background: 'var(--surface)', padding: '18px 24px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div id="paste-response-card" className="card" style={{ background: 'var(--surface)', padding: '10px 14px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', gap: '6px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h3 style={{ fontSize: '13px', fontWeight: 800, margin: 0, textTransform: 'uppercase', color: 'var(--accent)' }}>📥 Paste AI Response</h3>
+                <h3 style={{ fontSize: '11.5px', fontWeight: 800, margin: 0, textTransform: 'uppercase', color: 'var(--accent)', letterSpacing: '0.03em' }}>📥 Paste AI Response</h3>
                 <button 
                   className="btn btn-secondary btn-sm" 
                   onClick={async () => {
@@ -1964,7 +1944,7 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
                 placeholder="Paste JSON output array from Gemini here..."
                 value={aiPasteText}
                 onChange={(e) => setAiPasteText(e.target.value)}
-                style={{ width: '100%', height: '140px', background: 'var(--surface)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', padding: '8px', fontSize: '11px', fontFamily: 'monospace', color: 'var(--text)' }}
+                style={{ width: '100%', height: '110px', background: 'var(--surface)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', padding: '6px 8px', fontSize: '11px', fontFamily: 'monospace', color: 'var(--text)' }}
               />
             </div>
           </div>
