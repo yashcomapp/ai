@@ -2,6 +2,7 @@ import { adminDb } from '@/lib/firebase/admin';
 import * as admin from 'firebase-admin';
 import { getDateKeyIST } from '@/lib/dateUtils';
 import { deriveTopicCodeFromQuestionCode } from '@/lib/questionTypes';
+import { chunkArray } from '@/lib/firestoreUtils';
 import { 
   StudentData, 
   QuotientResult, 
@@ -990,9 +991,106 @@ export class QuotientService {
   }
 
   /**
+   * Saves or creates a quotient evaluation parameter.
+   */
+  static async saveParameter(name: string, parameterId?: string): Promise<{ id: string; name: string }> {
+    const id = parameterId || name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    await adminDb.collection('quotientParameters').doc(id).set({
+      id,
+      name,
+      createdAt: new Date()
+    });
+    return { id, name };
+  }
+
+  /**
+   * Deletes a quotient evaluation parameter.
+   */
+  static async deleteParameter(parameterId: string): Promise<void> {
+    await adminDb.collection('quotientParameters').doc(parameterId).delete();
+  }
+
+  /**
+   * Logs a batch award observation across multiple students.
+   */
+  static async batchAward(studentCodes: string[], parameterId: string, score: number, actorEmail: string): Promise<void> {
+    const codeChunks = chunkArray(studentCodes, 30);
+    const deletePromises = codeChunks.map(async (chunk) => {
+      const snapshot = await adminDb.collection('studentObservations')
+        .where('parameterId', '==', parameterId)
+        .where('studentCode', 'in', chunk)
+        .get();
+      
+      const deleteBatch = adminDb.batch();
+      snapshot.docs.forEach(doc => {
+        deleteBatch.delete(doc.ref);
+      });
+      await deleteBatch.commit();
+    });
+    await Promise.all(deletePromises);
+
+    const chunkedBatch = adminDb.batch();
+    studentCodes.forEach(code => {
+      const ref = adminDb.collection('studentObservations').doc();
+      chunkedBatch.set(ref, {
+        studentCode: code,
+        parameterId,
+        score: Number(score),
+        observedBy: actorEmail,
+        observedAt: new Date()
+      });
+    });
+    await chunkedBatch.commit();
+  }
+
+  /**
+   * Logs single observation scores across multiple parameters for a student.
+   */
+  static async logSingleObservation(studentCode: string, scores: Record<string, number>, actorEmail: string): Promise<void> {
+    const paramIds = Object.keys(scores);
+    if (paramIds.length > 0) {
+      const existingQuery = await adminDb.collection('studentObservations')
+        .where('studentCode', '==', studentCode)
+        .where('parameterId', 'in', paramIds)
+        .get();
+      
+      const deleteBatch = adminDb.batch();
+      existingQuery.docs.forEach(doc => {
+        deleteBatch.delete(doc.ref);
+      });
+      await deleteBatch.commit();
+    }
+
+    const chunkedBatch = adminDb.batch();
+    Object.entries(scores).forEach(([paramId, scoreVal]) => {
+      const ref = adminDb.collection('studentObservations').doc();
+      chunkedBatch.set(ref, {
+        studentCode,
+        parameterId: paramId,
+        score: Number(scoreVal),
+        observedBy: actorEmail,
+        observedAt: new Date()
+      });
+    });
+    await chunkedBatch.commit();
+  }
+
+  /**
    * Logs a new classroom observation assessment for a student in Firestore.
    */
   static async saveObservation(obs: Omit<StudentObservation, 'observedAt'>): Promise<void> {
+    const existingQuery = await adminDb.collection('studentObservations')
+      .where('studentCode', '==', obs.studentCode)
+      .get();
+    
+    if (!existingQuery.empty) {
+      const deleteBatch = adminDb.batch();
+      existingQuery.docs.forEach(doc => {
+        deleteBatch.delete(doc.ref);
+      });
+      await deleteBatch.commit();
+    }
+
     const docRef = adminDb.collection('studentObservations').doc();
     await docRef.set({
       ...obs,

@@ -3,15 +3,15 @@ import { verifyRole, verifyAnyRole } from '@/lib/auth';
 import { getDateKeyIST } from '@/lib/dateUtils';
 import { ReportService } from '@/services/report.service';
 import { QuotientService } from '@/services/quotient.service';
-import { ReportCacheManager } from '@/lib/reportCache';
-import { adminDb } from '@/lib/firebase/admin';
-import { chunkArray } from '@/lib/firestoreUtils';
+import { getFromCache, setInCache, invalidateCache } from '@/lib/firebase/cache';
 
 export const dynamic = 'force-dynamic';
 
 const REPORT_CACHE_HEADERS = {
   'Cache-Control': 'private, s-maxage=60, stale-while-revalidate=120'
 };
+
+const REPORT_CACHE_TTL_MS = 60000; // 60 seconds
 
 // ── 1. Daily Practice Report Handler ──────────────────────────────────
 async function handleDailyPractice(req: NextRequest) {
@@ -24,7 +24,14 @@ async function handleDailyPractice(req: NextRequest) {
   const dateParam = searchParams.get('date');
   const targetDateStr = dateParam || getDateKeyIST();
 
+  const cacheKey = `admin_report_daily_practice_${targetDateStr}`;
+  const cached = getFromCache<any>(cacheKey);
+  if (cached) {
+    return NextResponse.json(cached, { headers: REPORT_CACHE_HEADERS });
+  }
+
   const report = await ReportService.getDailyPracticeReport(targetDateStr);
+  setInCache(cacheKey, report, REPORT_CACHE_TTL_MS);
   return NextResponse.json(report, { headers: REPORT_CACHE_HEADERS });
 }
 
@@ -40,11 +47,25 @@ async function handleLearningQuotientGet(req: NextRequest) {
   const duration = searchParams.get('duration') || 'monthly';
 
   if (studentCode) {
+    const cacheKey = `admin_report_lq_single_${studentCode}_${duration}`;
+    const cached = getFromCache<any>(cacheKey);
+    if (cached) {
+      return NextResponse.json(cached, { headers: REPORT_CACHE_HEADERS });
+    }
+
     const report = await ReportService.getSingleLearningQuotientReport(studentCode, duration);
+    setInCache(cacheKey, report, REPORT_CACHE_TTL_MS);
     return NextResponse.json(report, { headers: REPORT_CACHE_HEADERS });
   }
 
+  const bulkCacheKey = `admin_report_lq_bulk_${duration}`;
+  const cachedBulk = getFromCache<any>(bulkCacheKey);
+  if (cachedBulk) {
+    return NextResponse.json(cachedBulk, { headers: REPORT_CACHE_HEADERS });
+  }
+
   const report = await ReportService.getBulkLearningQuotientReport(duration);
+  setInCache(bulkCacheKey, report, REPORT_CACHE_TTL_MS);
   return NextResponse.json(report, { headers: REPORT_CACHE_HEADERS });
 }
 
@@ -63,15 +84,9 @@ async function handleLearningQuotientPost(req: NextRequest) {
     if (!name) {
       return NextResponse.json({ message: 'Parameter name is required.' }, { status: 400 });
     }
-    const id = parameterId || name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-    await adminDb.collection('quotientParameters').doc(id).set({
-      id,
-      name,
-      createdAt: new Date()
-    });
-    await ReportCacheManager.invalidateReport('bulk-learning-quotients-report-monthly');
-    await ReportCacheManager.invalidateReport('bulk-learning-quotients-report-weekly');
-    return NextResponse.json({ success: true, message: 'Parameter saved successfully.', parameter: { id, name } });
+    const parameter = await QuotientService.saveParameter(name, parameterId);
+    invalidateCache('admin_report_lq_');
+    return NextResponse.json({ success: true, message: 'Parameter saved successfully.', parameter });
   }
 
   if (action === 'deleteParameter') {
@@ -79,9 +94,8 @@ async function handleLearningQuotientPost(req: NextRequest) {
     if (!parameterId) {
       return NextResponse.json({ message: 'Parameter ID is required.' }, { status: 400 });
     }
-    await adminDb.collection('quotientParameters').doc(parameterId).delete();
-    await ReportCacheManager.invalidateReport('bulk-learning-quotients-report-monthly');
-    await ReportCacheManager.invalidateReport('bulk-learning-quotients-report-weekly');
+    await QuotientService.deleteParameter(parameterId);
+    invalidateCache('admin_report_lq_');
     return NextResponse.json({ success: true, message: 'Parameter deleted successfully.' });
   }
 
@@ -90,35 +104,8 @@ async function handleLearningQuotientPost(req: NextRequest) {
     if (!studentCodes || !Array.isArray(studentCodes) || !parameterId || score === undefined) {
       return NextResponse.json({ message: 'Missing required parameters for batch award.' }, { status: 400 });
     }
-
-    const codeChunks = chunkArray(studentCodes, 30);
-    const deletePromises = codeChunks.map(async (chunk) => {
-      const snapshot = await adminDb.collection('studentObservations')
-        .where('parameterId', '==', parameterId)
-        .where('studentCode', 'in', chunk)
-        .get();
-      
-      const deleteBatch = adminDb.batch();
-      snapshot.docs.forEach(doc => {
-        deleteBatch.delete(doc.ref);
-      });
-      await deleteBatch.commit();
-    });
-    await Promise.all(deletePromises);
-
-    const chunkedBatch = adminDb.batch();
-    studentCodes.forEach(code => {
-      const ref = adminDb.collection('studentObservations').doc();
-      chunkedBatch.set(ref, {
-        studentCode: code,
-        parameterId,
-        score: Number(score),
-        observedBy: actorEmail,
-        observedAt: new Date()
-      });
-    });
-    await chunkedBatch.commit();
-
+    await QuotientService.batchAward(studentCodes, parameterId, score, actorEmail);
+    invalidateCache('admin_report_lq_');
     return NextResponse.json({ success: true, message: 'Batch award observation logged successfully.' });
   }
 
@@ -127,53 +114,16 @@ async function handleLearningQuotientPost(req: NextRequest) {
     if (!studentCode || !scores || typeof scores !== 'object') {
       return NextResponse.json({ message: 'Missing required parameters.' }, { status: 400 });
     }
-
-    const paramIds = Object.keys(scores);
-    if (paramIds.length > 0) {
-      const existingQuery = await adminDb.collection('studentObservations')
-        .where('studentCode', '==', studentCode)
-        .where('parameterId', 'in', paramIds)
-        .get();
-      
-      const deleteBatch = adminDb.batch();
-      existingQuery.docs.forEach(doc => {
-        deleteBatch.delete(doc.ref);
-      });
-      await deleteBatch.commit();
-    }
-
-    const chunkedBatch = adminDb.batch();
-    Object.entries(scores).forEach(([paramId, scoreVal]) => {
-      const ref = adminDb.collection('studentObservations').doc();
-      chunkedBatch.set(ref, {
-        studentCode,
-        parameterId: paramId,
-        score: Number(scoreVal),
-        observedBy: actorEmail,
-        observedAt: new Date()
-      });
-    });
-    await chunkedBatch.commit();
-
+    await QuotientService.logSingleObservation(studentCode, scores, actorEmail);
+    invalidateCache('admin_report_lq_');
     return NextResponse.json({ success: true, message: 'Student observation logged successfully.' });
   }
 
   // Default action: save standard classroom observation
   const { studentCode, activeParticipation, sincerity, timelyWork } = body;
-
   if (!studentCode || activeParticipation === undefined || sincerity === undefined || timelyWork === undefined) {
     return NextResponse.json({ message: 'Missing required parameters.' }, { status: 400 });
   }
-
-  const existingQuery = await adminDb.collection('studentObservations')
-    .where('studentCode', '==', studentCode)
-    .get();
-  
-  const deleteBatch = adminDb.batch();
-  existingQuery.docs.forEach(doc => {
-    deleteBatch.delete(doc.ref);
-  });
-  await deleteBatch.commit();
 
   await QuotientService.saveObservation({
     studentCode,
@@ -182,6 +132,7 @@ async function handleLearningQuotientPost(req: NextRequest) {
     timelyWork: Number(timelyWork),
     observedBy: actorEmail
   });
+  invalidateCache('admin_report_lq_');
 
   return NextResponse.json({
     success: true,
@@ -200,7 +151,14 @@ async function handleLoginRegister(req: NextRequest) {
   const dateParam = url.searchParams.get('date');
   const targetDateStr = dateParam || getDateKeyIST();
 
+  const cacheKey = `admin_report_login_register_${targetDateStr}`;
+  const cached = getFromCache<any>(cacheKey);
+  if (cached) {
+    return NextResponse.json(cached, { headers: REPORT_CACHE_HEADERS });
+  }
+
   const report = await ReportService.getLoginRegisterReport(targetDateStr);
+  setInCache(cacheKey, report, REPORT_CACHE_TTL_MS);
   return NextResponse.json(report, { headers: REPORT_CACHE_HEADERS });
 }
 
@@ -211,7 +169,14 @@ async function handleParentPending(req: NextRequest) {
     return NextResponse.json({ message: 'Unauthorized. Admin role required.' }, { status: 403 });
   }
 
+  const cacheKey = 'admin_report_parent_pending';
+  const cached = getFromCache<any>(cacheKey);
+  if (cached) {
+    return NextResponse.json(cached, { headers: REPORT_CACHE_HEADERS });
+  }
+
   const report = await ReportService.getParentPendingReport();
+  setInCache(cacheKey, report, REPORT_CACHE_TTL_MS);
   return NextResponse.json(report, { headers: REPORT_CACHE_HEADERS });
 }
 
@@ -229,7 +194,14 @@ async function handleTruthTest(req: NextRequest) {
     return NextResponse.json({ message: 'Missing parameters (examId).' }, { status: 400 });
   }
 
+  const cacheKey = `admin_report_truth_test_${examId}`;
+  const cached = getFromCache<any>(cacheKey);
+  if (cached) {
+    return NextResponse.json(cached, { headers: REPORT_CACHE_HEADERS });
+  }
+
   const report = await ReportService.getTruthTestReport(examId);
+  setInCache(cacheKey, report, REPORT_CACHE_TTL_MS);
   return NextResponse.json(report, { headers: REPORT_CACHE_HEADERS });
 }
 
@@ -240,7 +212,14 @@ async function handleUsage(req: NextRequest) {
     return NextResponse.json({ message: 'Unauthorized. Admin role required.' }, { status: 403 });
   }
 
+  const cacheKey = 'admin_report_usage';
+  const cached = getFromCache<any>(cacheKey);
+  if (cached) {
+    return NextResponse.json(cached, { headers: REPORT_CACHE_HEADERS });
+  }
+
   const report = await ReportService.getUsageReport();
+  setInCache(cacheKey, report, REPORT_CACHE_TTL_MS);
   return NextResponse.json(report, { headers: REPORT_CACHE_HEADERS });
 }
 
@@ -259,6 +238,7 @@ async function handleTestCoverageReset(req: NextRequest) {
   }
 
   const result = await ReportService.resetTestCoverage(subjectId, topicCode, examId);
+  invalidateCache('admin_report_');
   return NextResponse.json(result);
 }
 
