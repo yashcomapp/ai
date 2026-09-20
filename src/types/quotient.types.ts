@@ -4,9 +4,12 @@ import { WeeklyIntegrity } from './user.types';
 
 export interface StudentObservation {
   studentCode: string;
-  activeParticipation: number; // 0 - 100
-  sincerity: number;           // 0 - 100
-  timelyWork: number;          // 0 - 100
+  type?: 'standard' | 'custom';
+  parameterId?: string;
+  score?: number;
+  activeParticipation?: number; // 0 - 100
+  sincerity?: number;           // 0 - 100
+  timelyWork?: number;          // 0 - 100
   observedBy: string;
   observedAt: any;
 }
