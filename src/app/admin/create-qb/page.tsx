@@ -1665,7 +1665,7 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
             <div style={{ marginTop: '12px', borderTop: '1px solid var(--border-light)', paddingTop: '10px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '6px' }}>
                 <h3 style={{ fontSize: '12.5px', fontWeight: 800, margin: 0, color: 'var(--accent)' }}>Target Question Quota</h3>
-                <span style={{ fontSize: '11.5px', fontWeight: 700, background: 'var(--info-bg)', color: 'var(--info)', padding: '2px 8px', borderRadius: '12px' }}>
+                <span className="badge-pill">
                   Target: <strong>{getTotalTargetQuestions()} Questions</strong>
                 </span>
               </div>
@@ -1677,61 +1677,57 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
                     {questionType === 'subjective' ? 'Subjective Presets:' : 'Objective Presets:'}
                   </span>
                 </div>
-                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                <div className="segmented-track" style={{ flexWrap: 'wrap' }}>
                   {questionType === 'subjective' ? (
                     <>
                       <button
                         type="button"
-                        className={`btn btn-sm ${Number(defaultPerTopicCount) === 5 ? 'btn-primary' : 'btn-secondary'}`}
+                        className={`pill-btn ${Number(defaultPerTopicCount) === 5 ? 'active' : ''}`}
                         onClick={() => {
                           setDefaultPerTopicCount(5);
                           if (selectedTopics[0]) {
                             setTopicCustomCounts({ [topicKey(selectedTopics[0])]: 5 });
                           }
                         }}
-                        style={{ fontSize: '11px', padding: '4px 10px', borderRadius: '12px' }}
                         title="Core in-text & basic definitions: 5 Questions"
                       >
                         🎯 Core (5 Qs)
                       </button>
                       <button
                         type="button"
-                        className={`btn btn-sm ${Number(defaultPerTopicCount) === 8 ? 'btn-primary' : 'btn-secondary'}`}
+                        className={`pill-btn ${Number(defaultPerTopicCount) === 8 ? 'active' : ''}`}
                         onClick={() => {
                           setDefaultPerTopicCount(8);
                           if (selectedTopics[0]) {
                             setTopicCustomCounts({ [topicKey(selectedTopics[0])]: 8 });
                           }
                         }}
-                        style={{ fontSize: '11px', padding: '4px 10px', borderRadius: '12px' }}
                         title="Standard Subjective Suite: 8 Questions"
                       >
                         ⚡ Standard (8 Qs)
                       </button>
                       <button
                         type="button"
-                        className={`btn btn-sm ${Number(defaultPerTopicCount) === 10 ? 'btn-primary' : 'btn-secondary'}`}
+                        className={`pill-btn ${Number(defaultPerTopicCount) === 10 ? 'active' : ''}`}
                         onClick={() => {
                           setDefaultPerTopicCount(10);
                           if (selectedTopics[0]) {
                             setTopicCustomCounts({ [topicKey(selectedTopics[0])]: 10 });
                           }
                         }}
-                        style={{ fontSize: '11px', padding: '4px 10px', borderRadius: '12px' }}
                         title="Comprehensive Chapter Exercise & PYQs: 10 Questions"
                       >
                         📚 Comprehensive (10 Qs)
                       </button>
                       <button
                         type="button"
-                        className={`btn btn-sm ${Number(defaultPerTopicCount) === 15 ? 'btn-primary' : 'btn-secondary'}`}
+                        className={`pill-btn ${Number(defaultPerTopicCount) === 15 ? 'active' : ''}`}
                         onClick={() => {
                           setDefaultPerTopicCount(15);
                           if (selectedTopics[0]) {
                             setTopicCustomCounts({ [topicKey(selectedTopics[0])]: 15 });
                           }
                         }}
-                        style={{ fontSize: '11px', padding: '4px 10px', borderRadius: '12px' }}
                         title="Full Topic Suite with Numericals & PYQs: 15 Questions"
                       >
                         🏆 Full Suite (15 Qs)
@@ -1741,42 +1737,39 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
                     <>
                       <button
                         type="button"
-                        className={`btn btn-sm ${Number(defaultPerTopicCount) === 50 ? 'btn-primary' : 'btn-secondary'}`}
+                        className={`pill-btn ${Number(defaultPerTopicCount) === 50 ? 'active' : ''}`}
                         onClick={() => {
                           setDefaultPerTopicCount(50);
                           if (selectedTopics[0]) {
                             setTopicCustomCounts({ [topicKey(selectedTopics[0])]: 50 });
                           }
                         }}
-                        style={{ fontSize: '11px', padding: '4px 12px', borderRadius: '12px' }}
                         title="Minor topic: 50 Questions (30 Practice/SRS + 20 Exam)"
                       >
                         Minor Topic (50 Qs)
                       </button>
                       <button
                         type="button"
-                        className={`btn btn-sm ${Number(defaultPerTopicCount) === 80 ? 'btn-primary' : 'btn-secondary'}`}
+                        className={`pill-btn ${Number(defaultPerTopicCount) === 80 ? 'active' : ''}`}
                         onClick={() => {
                           setDefaultPerTopicCount(80);
                           if (selectedTopics[0]) {
                             setTopicCustomCounts({ [topicKey(selectedTopics[0])]: 80 });
                           }
                         }}
-                        style={{ fontSize: '11px', padding: '4px 12px', borderRadius: '12px' }}
                         title="Medium topic: 80 Questions (50 Practice/SRS + 30 Exam)"
                       >
                         Medium Topic (80 Qs)
                       </button>
                       <button
                         type="button"
-                        className={`btn btn-sm ${Number(defaultPerTopicCount) === 90 ? 'btn-primary' : 'btn-secondary'}`}
+                        className={`pill-btn ${Number(defaultPerTopicCount) === 90 ? 'active' : ''}`}
                         onClick={() => {
                           setDefaultPerTopicCount(90);
                           if (selectedTopics[0]) {
                             setTopicCustomCounts({ [topicKey(selectedTopics[0])]: 90 });
                           }
                         }}
-                        style={{ fontSize: '11px', padding: '4px 12px', borderRadius: '12px' }}
                         title="Major topic: 90 Questions (55 Practice/SRS + 35 Exam)"
                       >
                         Major Topic (90 Qs)
@@ -1856,29 +1849,29 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
 
             {/* Generator Mode Selector (SSOT) */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px', marginTop: '16px', borderTop: '1px solid var(--border-light)', paddingTop: '14px' }}>
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-                <span style={{ fontSize: '12px', fontWeight: 'bold' }}>Generator Mode:</span>
-                <button 
-                  type="button"
-                  className={`btn btn-sm ${questionType === 'objective' ? 'btn-primary' : 'btn-secondary'}`}
-                  onClick={() => handleSwitchType('objective')}
-                  style={{ borderRadius: '20px', fontWeight: questionType === 'objective' ? 700 : 500 }}
-                >
-                  🎯 Objective
-                </button>
-                <button 
-                  type="button"
-                  className={`btn btn-sm ${questionType === 'subjective' ? 'btn-primary' : 'btn-secondary'}`}
-                  onClick={() => handleSwitchType('subjective')}
-                  style={{ borderRadius: '20px', fontWeight: questionType === 'subjective' ? 700 : 500 }}
-                >
-                  📝 Subjective
-                </button>
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--text-muted)' }}>Generator Mode:</span>
+                <div className="segmented-track">
+                  <button 
+                    type="button"
+                    className={`pill-btn ${questionType === 'objective' ? 'active' : ''}`}
+                    onClick={() => handleSwitchType('objective')}
+                  >
+                    🎯 Objective
+                  </button>
+                  <button 
+                    type="button"
+                    className={`pill-btn ${questionType === 'subjective' ? 'active' : ''}`}
+                    onClick={() => handleSwitchType('subjective')}
+                  >
+                    📝 Subjective
+                  </button>
+                </div>
               </div>
             </div>
 
             {/* Numericals / Calculation Questions Toggle */}
-            <div style={{ marginTop: '12px', padding: '10px 14px', background: includeNumericals ? 'var(--info-bg)' : 'var(--bg-soft)', borderRadius: 'var(--radius-sm)', border: `1px solid ${includeNumericals ? 'var(--info)' : 'var(--border-light)'}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
+            <div style={{ marginTop: '12px', padding: '10px 14px', background: includeNumericals ? 'var(--accent-soft)' : 'var(--bg-soft)', borderRadius: 'var(--radius-sm)', border: `1px solid ${includeNumericals ? 'var(--accent-ring)' : 'var(--border-light)'}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', margin: 0, flex: 1 }}>
                 <input
                   type="checkbox"
@@ -1893,7 +1886,7 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
                   Include Numericals &amp; Calculation Problems (ONE / Numerical Types)
                 </div>
               </label>
-              <span style={{ fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '12px', background: includeNumericals ? 'var(--info-bg)' : 'var(--border-light)', color: includeNumericals ? 'var(--info)' : 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+              <span className="badge-pill" style={{ opacity: includeNumericals ? 1 : 0.6 }}>
                 {includeNumericals ? 'Numericals ON' : 'Theory / Qualitative Only'}
               </span>
             </div>
@@ -1981,7 +1974,7 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
             {generatedQuestions.length > 0 ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ background: 'var(--info-bg)', color: 'var(--info)', padding: '5px 12px', borderRadius: '14px', fontSize: '11px', fontWeight: 700 }}>
+                <span className="badge-pill">
                   📦 {generatedQuestions.length} Questions Loaded in Preview
                 </span>
                 <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
@@ -2036,41 +2029,19 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
                   </h3>
 
                   {/* Filter View Switcher */}
-                  <div style={{ display: 'flex', background: 'var(--bg-soft)', borderRadius: '20px', padding: '2px', border: '1px solid var(--border-light)' }}>
+                  <div className="segmented-track">
                     <button
                       type="button"
+                      className={`pill-btn ${previewFilter === 'all' ? 'active' : ''}`}
                       onClick={() => setPreviewFilter('all')}
-                      style={{
-                        padding: '3px 10px',
-                        fontSize: '11px',
-                        fontWeight: 600,
-                        borderRadius: '16px',
-                        border: 'none',
-                        background: previewFilter === 'all' ? 'var(--accent)' : 'transparent',
-                        color: previewFilter === 'all' ? 'var(--text-white)' : 'var(--text-muted)',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s'
-                      }}
                     >
                       All ({generatedQuestions.length})
                     </button>
                     <button
                       type="button"
+                      className={`pill-btn ${previewFilter === 'issues' ? 'active' : ''}`}
                       onClick={() => setPreviewFilter('issues')}
-                      style={{
-                        padding: '3px 10px',
-                        fontSize: '11px',
-                        fontWeight: 600,
-                        borderRadius: '16px',
-                        border: 'none',
-                        background: previewFilter === 'issues' ? 'var(--danger)' : 'transparent',
-                        color: previewFilter === 'issues' ? 'var(--text-white)' : (validation.invalidIndices.size > 0 ? 'var(--danger)' : 'var(--text-muted)'),
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px'
-                      }}
+                      style={previewFilter !== 'issues' && validation.invalidIndices.size > 0 ? { color: 'var(--danger)' } : {}}
                     >
                       ⚠️ Issues Only ({validation.invalidIndices.size})
                     </button>

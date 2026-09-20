@@ -62,12 +62,12 @@ html.dark {
     --review-option-bg: #1f232d;
     --review-option-border: rgba(255, 255, 255, 0.07);
 
-    /* Primary Action & Brand - Calming Soft Dusky Slate-Azure (Ergonomic, Low-Glare, Harmonic) */
-    --primary: #386bb0;
-    --primary-hover: #2e5994;
-    --primary-dark: #224473;
-    --primary-soft: rgba(56, 107, 176, 0.18);
-    --primary-ring: rgba(56, 107, 176, 0.30);
+    /* Primary Action & Brand - Calming Soft Dusky Slate-Navy (Ergonomic, Low-Glare, Harmonic) */
+    --primary: #2d4872;
+    --primary-hover: #375787;
+    --primary-dark: #1f3350;
+    --primary-soft: rgba(45, 72, 114, 0.20);
+    --primary-ring: rgba(45, 72, 114, 0.35);
     --text-on-primary: #ffffff;
     --secondary: #4a88d9;
     --emerald: #10b981;
@@ -987,7 +987,63 @@ button:disabled {
     background: var(--bg-soft);
 }
 
-/* ---------- 20. ICON BUTTON (Top bar) ---------- */
+/* ---------- 20. SEGMENTED CONTROLS & ERGONOMIC PILLS ---------- */
+.segmented-track {
+    display: inline-flex;
+    align-items: center;
+    background: var(--bg-soft);
+    padding: 3px;
+    border-radius: var(--radius-pill);
+    border: 1px solid var(--border-light);
+    gap: 3px;
+}
+
+.pill-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 5px 13px;
+    font-size: 11px;
+    font-weight: 500;
+    border-radius: var(--radius-pill);
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.16s var(--ease);
+    user-select: none;
+    line-height: 1.3;
+}
+
+.pill-btn:hover {
+    color: var(--text);
+    background: var(--surface-2);
+}
+
+.pill-btn.active,
+.pill-btn[data-active="true"] {
+    background: var(--accent-soft);
+    color: var(--accent);
+    border-color: var(--accent-ring);
+    font-weight: 700;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.20);
+}
+
+.badge-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border-radius: var(--radius-pill);
+    font-size: 11px;
+    font-weight: 700;
+    background: var(--accent-soft);
+    color: var(--accent);
+    border: 1px solid var(--accent-ring);
+}
+
+/* ---------- 21. ICON BUTTON (Top bar) ---------- */
 .icon-btn {
     display: inline-flex;
     align-items: center;
