@@ -6,7 +6,7 @@ import { useTheme } from '@/context/ThemeContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Script from 'next/script';
 import { useMathRender } from '@/hooks/useMathRender';
-import { preprocessMathText, robustParseAIJson, validateQuestion, normalizeOptionText, cleanOptionPrefix, cleanStringForMatch, shuffleArray, normalizeBloomLevel, BLOOM_TAXONOMY_MAP } from '@/lib/questionTypes';
+import { preprocessMathText, robustParseAIJson, validateQuestion, normalizeOptionText, cleanOptionPrefix, cleanStringForMatch, isOptionMatch, shuffleArray, normalizeBloomLevel, BLOOM_TAXONOMY_MAP } from '@/lib/questionTypes';
 import { highlightModelAnswerKeywords } from '@/lib/pdfExport';
 import { SyllabusSelector } from '@/components/SyllabusSelector';
 import { useSyllabusSelector } from '@/hooks/useSyllabusSelector';
@@ -1175,10 +1175,7 @@ Return ONLY valid JSON. No extra text.`;
         if (cleanOptions[dIdx]) finalCorrectAnswer = cleanOptions[dIdx];
       } else {
         const cleanedAns = cleanOptionPrefix(rawAns);
-        const matched = cleanOptions.find(opt => 
-          normalizeOptionText(opt) === normalizeOptionText(cleanedAns) ||
-          cleanStringForMatch(opt) === cleanStringForMatch(cleanedAns)
-        );
+        const matched = cleanOptions.find(opt => isOptionMatch(opt, cleanedAns) || isOptionMatch(opt, rawAns));
         finalCorrectAnswer = matched || cleanedAns || rawAns;
       }
       finalCorrectAnswers = finalCorrectAnswer ? [finalCorrectAnswer] : [];
@@ -1201,10 +1198,7 @@ Return ONLY valid JSON. No extra text.`;
           return cleanOptions[dIdx] || str;
         }
         const cleaned = cleanOptionPrefix(str);
-        const matched = cleanOptions.find(opt => 
-          normalizeOptionText(opt) === normalizeOptionText(cleaned) ||
-          cleanStringForMatch(opt) === cleanStringForMatch(cleaned)
-        );
+        const matched = cleanOptions.find(opt => isOptionMatch(opt, cleaned) || isOptionMatch(opt, str));
         return matched || cleaned || str;
       }).filter(Boolean);
 
@@ -2306,10 +2300,16 @@ Return ONLY valid JSON. No extra text.`;
                           /* Objective preview formatting */
                           <>
                             {q.options && q.options.length > 0 && (
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '6px' }}>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
+                                <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                  <span>Options &amp; Correct Answer:</span>
+                                  <span style={{ fontWeight: 'normal', textTransform: 'none', fontSize: '10.5px' }}>Click indicator to set correct answer, or edit text directly</span>
+                                </div>
                                 {q.options.map((opt: string, oi: number) => {
-                                  const isCorrect = normalizeOptionText(opt) === normalizeOptionText(q.correctAnswer) || 
-                                    (q.correctAnswers && q.correctAnswers.some((ans: string) => normalizeOptionText(ans) === normalizeOptionText(opt)));
+                                  const isCorrect = isOptionMatch(opt, q.correctAnswer) || 
+                                    (q.correctAnswers && q.correctAnswers.some((ans: string) => isOptionMatch(opt, ans)));
+                                  const optLetter = String.fromCharCode(65 + oi);
+
                                   return (
                                     <div 
                                       key={oi} 
@@ -2320,22 +2320,23 @@ Return ONLY valid JSON. No extra text.`;
                                         background: isCorrect ? 'rgba(16, 185, 129, 0.08)' : 'var(--surface)',
                                         border: isCorrect ? '1.5px solid var(--success)' : '1px solid var(--border-light)',
                                         borderRadius: '6px',
-                                        padding: '6px 8px',
+                                        padding: '6px 10px',
                                         transition: 'all 0.2s'
                                       }}
                                     >
-                                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
-                                        {/* Select Indicator */}
-                                        <div 
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%' }}>
+                                        {/* Select Indicator Button */}
+                                        <button 
+                                          type="button"
                                           onClick={() => {
                                             setGeneratedQuestions(prev => {
                                               const next = [...prev];
                                               const currentQ = { ...next[idx] };
                                               if (currentQ.type === 'multiple_mcq') {
                                                 const cAnswers = Array.isArray(currentQ.correctAnswers) ? [...currentQ.correctAnswers] : [];
-                                                const exists = cAnswers.some((ans: string) => normalizeOptionText(ans) === normalizeOptionText(opt));
+                                                const exists = cAnswers.some((ans: string) => isOptionMatch(ans, opt));
                                                 if (exists) {
-                                                  currentQ.correctAnswers = cAnswers.filter((ans: string) => normalizeOptionText(ans) !== normalizeOptionText(opt));
+                                                  currentQ.correctAnswers = cAnswers.filter((ans: string) => !isOptionMatch(ans, opt));
                                                 } else {
                                                   currentQ.correctAnswers = [...cAnswers, opt];
                                                 }
@@ -2349,8 +2350,8 @@ Return ONLY valid JSON. No extra text.`;
                                             });
                                           }}
                                           style={{
-                                            width: '18px',
-                                            height: '18px',
+                                            width: '22px',
+                                            height: '22px',
                                             borderRadius: q.type === 'multiple_mcq' ? '4px' : '50%',
                                             border: isCorrect ? '2px solid var(--success)' : '2px solid var(--text-muted)',
                                             background: isCorrect ? 'var(--success)' : 'transparent',
@@ -2359,16 +2360,28 @@ Return ONLY valid JSON. No extra text.`;
                                             justifyContent: 'center',
                                             cursor: 'pointer',
                                             color: 'var(--text-white)',
-                                            fontSize: '10px',
+                                            fontSize: '11px',
                                             fontWeight: 'bold',
-                                            userSelect: 'none'
+                                            flexShrink: 0,
+                                            padding: 0
                                           }}
                                           title={q.type === 'multiple_mcq' ? 'Toggle correct option' : 'Set as correct option'}
                                         >
                                           {isCorrect && '✓'}
-                                        </div>
+                                        </button>
 
-                                        {/* Option Text Input */}
+                                        {/* Option Letter Label */}
+                                        <span style={{ 
+                                          fontSize: '11px', 
+                                          fontWeight: 800, 
+                                          color: isCorrect ? 'var(--success)' : 'var(--text-muted)',
+                                          minWidth: '18px',
+                                          flexShrink: 0
+                                        }}>
+                                          {optLetter}.
+                                        </span>
+
+                                        {/* Explicitly Editable Option Input */}
                                         <input 
                                           type="text"
                                           value={opt}
@@ -2383,11 +2396,11 @@ Return ONLY valid JSON. No extra text.`;
                                               currentQ.options = opts;
                                               
                                               // Sync correctness mapping
-                                              if (currentQ.correctAnswer === oldVal) {
+                                              if (isOptionMatch(currentQ.correctAnswer, oldVal) || currentQ.correctAnswer === oldVal) {
                                                 currentQ.correctAnswer = val;
                                               }
                                               if (Array.isArray(currentQ.correctAnswers)) {
-                                                currentQ.correctAnswers = currentQ.correctAnswers.map((a: string) => a === oldVal ? val : a);
+                                                currentQ.correctAnswers = currentQ.correctAnswers.map((a: string) => (isOptionMatch(a, oldVal) || a === oldVal) ? val : a);
                                               }
                                               next[idx] = currentQ;
                                               return next;
@@ -2395,26 +2408,105 @@ Return ONLY valid JSON. No extra text.`;
                                           }}
                                           style={{
                                             flex: 1,
-                                            border: 'none',
-                                            background: 'transparent',
-                                            fontSize: '11.5px',
+                                            border: '1px solid var(--border-light)',
+                                            background: 'var(--bg-soft)',
+                                            fontSize: '12px',
+                                            fontWeight: 600,
                                             color: 'var(--text)',
-                                            padding: '4px 6px',
+                                            padding: '6px 10px',
+                                            borderRadius: '4px',
                                             outline: 'none'
                                           }}
-                                          placeholder={`Option ${String.fromCharCode(65 + oi)}`}
+                                          placeholder={`Option ${optLetter} text...`}
                                         />
+
+                                        {/* Delete Option Button (allowed if > 2 options) */}
+                                        {q.options.length > 2 && (
+                                          <button
+                                            type="button"
+                                            onClick={() => {
+                                              setGeneratedQuestions(prev => {
+                                                const next = [...prev];
+                                                const currentQ = { ...next[idx] };
+                                                const oldVal = currentQ.options[oi];
+                                                const nextOpts = currentQ.options.filter((_: any, i: number) => i !== oi);
+                                                currentQ.options = nextOpts;
+                                                if (isOptionMatch(currentQ.correctAnswer, oldVal)) {
+                                                  currentQ.correctAnswer = nextOpts[0] || '';
+                                                }
+                                                if (Array.isArray(currentQ.correctAnswers)) {
+                                                  currentQ.correctAnswers = currentQ.correctAnswers.filter((a: string) => !isOptionMatch(a, oldVal));
+                                                  if (currentQ.correctAnswers.length === 0 && nextOpts.length > 0) {
+                                                    currentQ.correctAnswers = [nextOpts[0]];
+                                                    currentQ.correctAnswer = nextOpts[0];
+                                                  }
+                                                }
+                                                next[idx] = currentQ;
+                                                return next;
+                                              });
+                                            }}
+                                            style={{
+                                              background: 'transparent',
+                                              border: 'none',
+                                              color: 'var(--text-muted)',
+                                              cursor: 'pointer',
+                                              fontSize: '14px',
+                                              padding: '4px 6px',
+                                              borderRadius: '4px',
+                                              lineHeight: 1
+                                            }}
+                                            title="Remove this option"
+                                            onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--danger)')}
+                                            onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-muted)')}
+                                          >
+                                            ✕
+                                          </button>
+                                        )}
                                       </div>
 
                                       {/* Live Math Render Preview (Only shown when opt contains math formatting to avoid duplicates) */}
                                       {/\\\(|\\\)|\\\[|\\\]|\$\$|\$|\\ce/g.test(opt) && (
-                                        <div className="math-container" style={{ fontSize: '11px', color: 'var(--text-muted)', paddingLeft: '26px', borderTop: '1px dashed rgba(255,255,255,0.02)', paddingTop: '2px' }}>
+                                        <div className="math-container" style={{ fontSize: '11px', color: 'var(--text-muted)', paddingLeft: '50px', borderTop: '1px dashed var(--border-light)', paddingTop: '3px', marginTop: '2px' }}>
                                           {preprocessMathText(opt)}
                                         </div>
                                       )}
                                     </div>
                                   );
                                 })}
+
+                                {/* Add Option Button */}
+                                {q.options.length < 6 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setGeneratedQuestions(prev => {
+                                        const next = [...prev];
+                                        const currentQ = { ...next[idx] };
+                                        const opts = [...(currentQ.options || [])];
+                                        opts.push(`Option ${String.fromCharCode(65 + opts.length)}`);
+                                        currentQ.options = opts;
+                                        next[idx] = currentQ;
+                                        return next;
+                                      });
+                                    }}
+                                    style={{
+                                      alignSelf: 'flex-start',
+                                      background: 'var(--surface)',
+                                      border: '1px dashed var(--border-light)',
+                                      color: 'var(--primary)',
+                                      padding: '4px 10px',
+                                      borderRadius: '4px',
+                                      fontSize: '11px',
+                                      fontWeight: 700,
+                                      cursor: 'pointer',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: '4px'
+                                    }}
+                                  >
+                                    ➕ Add Option {String.fromCharCode(65 + q.options.length)}
+                                  </button>
+                                )}
                               </div>
                             )}
                             {q.correctAnswer && !q.options && (

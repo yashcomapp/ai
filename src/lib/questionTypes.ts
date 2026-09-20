@@ -719,6 +719,28 @@ export function normalizeOptionText(str: string): string {
     .toLowerCase();
 }
 
+/**
+ * Robustly matches an option against a target answer string.
+ * Respects exact matches and case-sensitivity for short scientific units/symbols (e.g. 'n' vs 'N', 'm' vs 'M', 'Pa').
+ */
+export function isOptionMatch(opt: any, target: any): boolean {
+  if (opt === undefined || opt === null || target === undefined || target === null) return false;
+  const optStr = String(opt).trim();
+  const targetStr = String(target).trim();
+  if (optStr === targetStr) return true;
+  
+  const cleanOpt = cleanOptionPrefix(optStr).trim();
+  const cleanTarget = cleanOptionPrefix(targetStr).trim();
+  if (cleanOpt === cleanTarget) return true;
+
+  // For short symbols/units (<= 3 chars, e.g. 'n' vs 'N', 'm' vs 'M', 'Pa') or LaTeX/math expressions, require exact case
+  if (cleanOpt.length <= 3 || cleanTarget.length <= 3 || /[\\_{}^$]/.test(cleanOpt) || /[\\_{}^$]/.test(cleanTarget)) {
+    return cleanOpt === cleanTarget;
+  }
+
+  return normalizeOptionText(cleanOpt) === normalizeOptionText(cleanTarget) || cleanStringForMatch(cleanOpt) === cleanStringForMatch(cleanTarget);
+}
+
 export function validateQuestion(q: any, questionType: 'objective' | 'subjective' | 'all_in_one' | 'dual_track' | string): string[] {
   const errors: string[] = [];
   
@@ -762,11 +784,25 @@ export function validateQuestion(q: any, questionType: 'objective' | 'subjective
     }
   }
 
-  // Check for duplicate options in MCQs
+  // Check for duplicate options in MCQs (preserving case for short symbols/units like 'n' vs 'N')
   if (Array.isArray(q.options) && q.options.length >= 2) {
-    const normList = q.options.map((opt: any) => normalizeOptionText(opt)).filter(Boolean);
-    if (new Set(normList).size !== normList.length) {
-      errors.push('Duplicate options detected: two or more options are identical or near-identical.');
+    const cleanedList = q.options.map((opt: any) => cleanOptionPrefix(String(opt || '')).replace(/\\\\/g, '\\').replace(/\s+/g, ' ').trim()).filter(Boolean);
+    
+    // Check for exact duplicates
+    const exactDuplicates = cleanedList.some((item, idx) => cleanedList.indexOf(item) !== idx);
+    if (exactDuplicates) {
+      errors.push('Duplicate options detected: two or more options are identical.');
+    } else {
+      // Check for case-insensitive duplicate only for longer non-math text (> 3 chars)
+      const normList = cleanedList.map(item => {
+        if (item.length <= 3 || /[\\_{}^$]/.test(item)) {
+          return item; // preserve case for units and symbols (e.g. 'n' vs 'N')
+        }
+        return item.toLowerCase();
+      });
+      if (new Set(normList).size !== normList.length) {
+        errors.push('Duplicate options detected: two or more options are identical or near-identical.');
+      }
     }
   }
 
@@ -783,10 +819,7 @@ export function validateQuestion(q: any, questionType: 'objective' | 'subjective
           }
         }
 
-        const isMatched = q.options.some((opt: any) => 
-          normalizeOptionText(opt) === normalizeOptionText(q.correctAnswer) ||
-          cleanStringForMatch(opt) === cleanStringForMatch(q.correctAnswer)
-        );
+        const isMatched = q.options.some((opt: any) => isOptionMatch(opt, q.correctAnswer));
         if (!isMatched) {
           errors.push('Correct answer does not match any items in options list.');
         }
@@ -796,10 +829,7 @@ export function validateQuestion(q: any, questionType: 'objective' | 'subjective
         errors.push('Missing correctAnswers list.');
       } else if (Array.isArray(q.options) && q.options.length > 0) {
         q.correctAnswers.forEach((ans: any) => {
-          const isMatched = q.options.some((opt: any) => 
-            normalizeOptionText(opt) === normalizeOptionText(ans) ||
-            cleanStringForMatch(opt) === cleanStringForMatch(ans)
-          );
+          const isMatched = q.options.some((opt: any) => isOptionMatch(opt, ans));
           if (!isMatched) {
             errors.push(`Correct answer "${ans}" not found in options list.`);
           }
@@ -815,8 +845,7 @@ export function validateQuestion(q: any, questionType: 'objective' | 'subjective
         errors.push('Numerical questions must specify a valid correct answer.');
       } else if (Array.isArray(q.options) && q.options.length > 0) {
         const isMatched = q.options.some((opt: any) => 
-          normalizeOptionText(opt) === normalizeOptionText(q.correctAnswer) ||
-          cleanStringForMatch(opt) === cleanStringForMatch(q.correctAnswer) ||
+          isOptionMatch(opt, q.correctAnswer) ||
           (!isNaN(parseFloat(String(opt))) && !isNaN(parseFloat(String(q.correctAnswer))) && Math.abs(parseFloat(String(opt)) - parseFloat(String(q.correctAnswer))) <= 0.05)
         );
         if (!isMatched) {
