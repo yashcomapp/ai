@@ -384,174 +384,89 @@
     transform: scale(0.98);
 }
 
-/* Color-Differentiated Stat Item Themes */
+/* Color-Differentiated Stat Item & Parent-Snap Card Themes (Low-Glare SSOT) */
 .stat-item-blue,
 .parent-snap-blue {
-    border-color: #bfdbfe !important;
+    border-color: rgba(75, 157, 200, 0.22) !important;
 }
 .stat-item-blue .stat-icon-wrapper,
 .parent-snap-blue .parent-snap-icon-wrapper {
-    background: #eff6ff !important;
-    color: #2563eb !important;
+    background: rgba(75, 157, 200, 0.12) !important;
+    color: var(--info) !important;
 }
 .stat-item-blue .stat-value,
 .parent-snap-blue .parent-snap-value {
-    color: #1e40af !important;
+    color: var(--info) !important;
 }
 
 .stat-item-emerald,
 .parent-snap-emerald {
-    border-color: #a7f3d0 !important;
+    border-color: rgba(42, 166, 106, 0.22) !important;
 }
 .stat-item-emerald .stat-icon-wrapper,
 .parent-snap-emerald .parent-snap-icon-wrapper {
-    background: #ecfdf5 !important;
-    color: #059669 !important;
+    background: rgba(42, 166, 106, 0.12) !important;
+    color: var(--success) !important;
 }
 .stat-item-emerald .stat-value,
 .parent-snap-emerald .parent-snap-value {
-    color: #065f46 !important;
+    color: var(--success) !important;
 }
 
 .stat-item-amber,
 .parent-snap-amber {
-    border-color: #fde68a !important;
+    border-color: rgba(201, 141, 40, 0.22) !important;
 }
 .stat-item-amber .stat-icon-wrapper,
 .parent-snap-amber .parent-snap-icon-wrapper {
-    background: #fffbeb !important;
-    color: #d97706 !important;
+    background: rgba(201, 141, 40, 0.12) !important;
+    color: var(--warning) !important;
 }
 .stat-item-amber .stat-value,
 .parent-snap-amber .parent-snap-value {
-    color: #92400e !important;
+    color: var(--warning) !important;
 }
 
 .stat-item-cyan,
 .parent-snap-cyan {
-    border-color: #bae6fd !important;
+    border-color: rgba(75, 157, 200, 0.22) !important;
 }
 .stat-item-cyan .stat-icon-wrapper,
 .parent-snap-cyan .parent-snap-icon-wrapper {
-    background: #f0f9ff !important;
-    color: #0284c7 !important;
+    background: rgba(75, 157, 200, 0.12) !important;
+    color: var(--info) !important;
 }
 .stat-item-cyan .stat-value,
 .parent-snap-cyan .parent-snap-value {
-    color: #075985 !important;
+    color: var(--info) !important;
 }
 
 .stat-item-purple,
 .parent-snap-purple {
-    border-color: #ddd6fe !important;
+    border-color: rgba(168, 130, 224, 0.22) !important;
 }
 .stat-item-purple .stat-icon-wrapper,
 .parent-snap-purple .parent-snap-icon-wrapper {
-    background: #f5f3ff !important;
-    color: #7c3aed !important;
+    background: rgba(168, 130, 224, 0.12) !important;
+    color: var(--purple) !important;
 }
 .stat-item-purple .stat-value,
 .parent-snap-purple .parent-snap-value {
-    color: #5b21b6 !important;
+    color: var(--purple) !important;
 }
 
 .stat-item-indigo,
 .parent-snap-indigo {
-    border-color: #c7d2fe !important;
+    border-color: rgba(74, 136, 217, 0.22) !important;
 }
 .stat-item-indigo .stat-icon-wrapper,
 .parent-snap-indigo .parent-snap-icon-wrapper {
-    background: #eef2ff !important;
-    color: #4f46e5 !important;
+    background: rgba(74, 136, 217, 0.12) !important;
+    color: var(--secondary) !important;
 }
 .stat-item-indigo .stat-value,
 .parent-snap-indigo .parent-snap-value {
-    color: #3730a3 !important;
-}
-
-/* Dark mode adaptations for stat-items & parent-snap cards (Zero Glare & Zero Halation) */
-[data-theme="dark"] .stat-item-blue,
-[data-theme="dark"] .parent-snap-blue {
-    border-color: rgba(56, 189, 248, 0.22) !important;
-}
-[data-theme="dark"] .stat-item-blue .stat-icon-wrapper,
-[data-theme="dark"] .parent-snap-blue .parent-snap-icon-wrapper {
-    background: rgba(56, 189, 248, 0.12) !important;
-    color: #7dd3fc !important;
-}
-[data-theme="dark"] .stat-item-blue .stat-value,
-[data-theme="dark"] .parent-snap-blue .parent-snap-value {
-    color: #7dd3fc !important;
-}
-
-[data-theme="dark"] .stat-item-emerald,
-[data-theme="dark"] .parent-snap-emerald {
-    border-color: rgba(52, 211, 153, 0.22) !important;
-}
-[data-theme="dark"] .stat-item-emerald .stat-icon-wrapper,
-[data-theme="dark"] .parent-snap-emerald .parent-snap-icon-wrapper {
-    background: rgba(52, 211, 153, 0.12) !important;
-    color: #86efac !important;
-}
-[data-theme="dark"] .stat-item-emerald .stat-value,
-[data-theme="dark"] .parent-snap-emerald .parent-snap-value {
-    color: #86efac !important;
-}
-
-[data-theme="dark"] .stat-item-amber,
-[data-theme="dark"] .parent-snap-amber {
-    border-color: rgba(251, 191, 36, 0.22) !important;
-}
-[data-theme="dark"] .stat-item-amber .stat-icon-wrapper,
-[data-theme="dark"] .parent-snap-amber .parent-snap-icon-wrapper {
-    background: rgba(251, 191, 36, 0.12) !important;
-    color: #fde047 !important;
-}
-[data-theme="dark"] .stat-item-amber .stat-value,
-[data-theme="dark"] .parent-snap-amber .parent-snap-value {
-    color: #fde047 !important;
-}
-
-[data-theme="dark"] .stat-item-cyan,
-[data-theme="dark"] .parent-snap-cyan {
-    border-color: rgba(45, 212, 191, 0.22) !important;
-}
-[data-theme="dark"] .stat-item-cyan .stat-icon-wrapper,
-[data-theme="dark"] .parent-snap-cyan .parent-snap-icon-wrapper {
-    background: rgba(45, 212, 191, 0.12) !important;
-    color: #99f6e4 !important;
-}
-[data-theme="dark"] .stat-item-cyan .stat-value,
-[data-theme="dark"] .parent-snap-cyan .parent-snap-value {
-    color: #99f6e4 !important;
-}
-
-[data-theme="dark"] .stat-item-purple,
-[data-theme="dark"] .parent-snap-purple {
-    border-color: rgba(192, 132, 252, 0.22) !important;
-}
-[data-theme="dark"] .stat-item-purple .stat-icon-wrapper,
-[data-theme="dark"] .parent-snap-purple .parent-snap-icon-wrapper {
-    background: rgba(192, 132, 252, 0.12) !important;
-    color: #d8b4fe !important;
-}
-[data-theme="dark"] .stat-item-purple .stat-value,
-[data-theme="dark"] .parent-snap-purple .parent-snap-value {
-    color: #d8b4fe !important;
-}
-
-[data-theme="dark"] .stat-item-indigo,
-[data-theme="dark"] .parent-snap-indigo {
-    border-color: rgba(129, 140, 248, 0.22) !important;
-}
-[data-theme="dark"] .stat-item-indigo .stat-icon-wrapper,
-[data-theme="dark"] .parent-snap-indigo .parent-snap-icon-wrapper {
-    background: rgba(129, 140, 248, 0.12) !important;
-    color: #c7d2fe !important;
-}
-[data-theme="dark"] .stat-item-indigo .stat-value,
-[data-theme="dark"] .parent-snap-indigo .parent-snap-value {
-    color: #c7d2fe !important;
+    color: var(--secondary) !important;
 }
 
 .stat-icon-wrapper,
