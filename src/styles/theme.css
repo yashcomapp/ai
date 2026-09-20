@@ -7,6 +7,7 @@
 :root,
 html[data-theme="dark"],
 html.dark {
+    color-scheme: dark;
     --bg: #111318;
     --bg-soft: #161920;
     --bg-grad: #111318;
@@ -25,12 +26,12 @@ html.dark {
     --border-light: rgba(255, 255, 255, 0.05);
     --border-glass: rgba(255, 255, 255, 0.09);
 
-    /* Ergonomic Zero-Halation Typography (Calibrated 8.5:1 Primary & 6.7:1 Secondary) */
-    --text: #adb3be;
-    --text-2: #939baa;
-    --text-secondary: #7c8594;
-    --text-muted: #707987;
-    --text-faint: #545c6b;
+    /* Ergonomic Zero-Halation Typography (Calibrated for Crisp Legibility Without Glare) */
+    --text: #bcc3cf;
+    --text-2: #9da6b5;
+    --text-secondary: #86909f;
+    --text-muted: #798393;
+    --text-faint: #5a6373;
 
     /* Primary Accent - Warm Matte Dull Terracotta/Amber (Eye-Comfort 6.1:1 Ratio) */
     --accent: #d97b38;
@@ -68,14 +69,14 @@ html.dark {
     --primary-dark: #1f3350;
     --primary-soft: rgba(45, 72, 114, 0.20);
     --primary-ring: rgba(45, 72, 114, 0.35);
-    --text-on-primary: #c5cbd4;
+    --text-on-primary: #d2d8e2;
     --secondary: #4a88d9;
     --emerald: #2aa66a;
     --emerald-dark: #228c58;
     --slate: #5d6778;
 
     --text-on-accent: #111318;
-    --text-white: #c5cbd4;
+    --text-white: #d2d8e2;
     --text-black: #000000;
     --color-green-whatsapp: #25D366;
     --color-green-whatsapp-border: #22c35e;
