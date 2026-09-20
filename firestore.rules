@@ -302,9 +302,19 @@ service cloud.firestore {
 
     // ── live exam monitoring (heartbeat + WebRTC signaling) ────
     match /liveExamSessions/{docId} {
-      allow read:   if isAuth();
-      allow create, update: if isAuth();
-      allow delete: if isAuth() && (isAdmin() || isStudent() || isParent());
+      allow read:   if isAuth() && (isAdmin()
+                       || (isParent() && isMyChildCode(resource.data.studentCode))
+                       || (isStudent() && resource.data.studentCode == myStudentCode()));
+      allow create: if isAuth() && (isAdmin()
+                       || (isStudent()
+                           && isValidStudentCode(request.resource.data.studentCode)
+                           && request.resource.data.studentCode == myStudentCode()));
+      allow update: if isAuth() && (isAdmin()
+                       || (isStudent()
+                           && resource.data.studentCode == myStudentCode()
+                           && request.resource.data.studentCode == myStudentCode()));
+      allow delete: if isAuth() && (isAdmin()
+                       || (isStudent() && resource.data.studentCode == myStudentCode()));
     }
 
     // ── per-user time-on-system tracking ──────────────────────
@@ -326,14 +336,16 @@ service cloud.firestore {
         && d.seconds is number && d.seconds >= 0 && d.seconds <= 86400;
     }
     match /userTimeLog/{docId} {
-      allow read:   if isAuth();
+      allow read:   if isAuth() && (isAdmin() || resource.data.uid == uid());
       allow create: if isAuth() && isValidTimeLogWrite();
       allow update: if isAuth() && resource.data.uid == uid() && isValidTimeLogWrite();
       allow delete: if isAdmin();
     }
 
     match /studentTopicMastery/{docId} {
-      allow read:   if isAuth();
+      allow read:   if isAuth() && (isAdmin()
+                       || (isParent() && isMyChildCode(resource.data.studentCode))
+                       || (isStudent() && resource.data.studentCode == myStudentCode()));
       allow create: if isStudent()
                     && isValidStudentCode(request.resource.data.studentCode)
                     && request.resource.data.studentCode == myStudentCode();
@@ -345,7 +357,9 @@ service cloud.firestore {
     // ── student profiles (aggregated mastery/progress) ────────
     // Doc ID == studentCode.
     match /studentProfiles/{docId} {
-      allow read:  if isAuth();
+      allow read:  if isAuth() && (isAdmin()
+                      || (isParent() && isMyChildCode(docId))
+                      || (isStudent() && docId == myStudentCode()));
       allow write: if isAdmin()
                   || (isStudent() && docId == myStudentCode());
     }
