@@ -1195,12 +1195,12 @@ button:disabled {
 
 .nav-item.active {
     background: var(--accent);
-    color: #ffffff;
+    color: var(--text-white);
 }
 
 .nav-item.active .nav-label {
     font-weight: 700;
-    color: #ffffff;
+    color: var(--text-white);
 }
 
 .nav-item:active {
