@@ -1599,7 +1599,7 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
         
         {/* Card 1: Syllabus Mapping Cascading Selects */}
         <div className="card" style={{ background: 'var(--surface)', padding: '12px 14px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)' }}>
-          <h3 style={{ fontSize: '13px', fontWeight: 800, margin: '0 0 8px', textTransform: 'uppercase', color: 'var(--text)' }}>Syllabus Mapping</h3>
+          <h3 style={{ fontSize: '13px', fontWeight: 800, margin: '0 0 8px', textTransform: 'uppercase', color: 'var(--accent)' }}>Syllabus Mapping</h3>
           
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '8px', marginBottom: '10px' }}>
             {/* Board */}
@@ -1664,7 +1664,7 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
           {selectedTopics.length > 0 && (
             <div style={{ marginTop: '12px', borderTop: '1px solid var(--border-light)', paddingTop: '10px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '6px' }}>
-                <h3 style={{ fontSize: '12.5px', fontWeight: 800, margin: 0, color: 'var(--text)' }}>Target Question Quota</h3>
+                <h3 style={{ fontSize: '12.5px', fontWeight: 800, margin: 0, color: 'var(--accent)' }}>Target Question Quota</h3>
                 <span style={{ fontSize: '11.5px', fontWeight: 700, background: 'var(--info-bg)', color: 'var(--info)', padding: '2px 8px', borderRadius: '12px' }}>
                   Target: <strong>{getTotalTargetQuestions()} Questions</strong>
                 </span>
@@ -1836,7 +1836,7 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
         {/* Card 2: Workspace Settings & Actions */}
         {selectedTopics.length > 0 && (
           <div className="card" style={{ background: 'var(--surface)', padding: '18px 24px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)' }}>
-            <h3 style={{ fontSize: '13px', fontWeight: 800, margin: '0 0 12px', textTransform: 'uppercase', color: 'var(--text)' }}>Workspace Settings &amp; Generator Actions</h3>
+            <h3 style={{ fontSize: '13px', fontWeight: 800, margin: '0 0 12px', textTransform: 'uppercase', color: 'var(--accent)' }}>Workspace Settings &amp; Generator Actions</h3>
 
             {/* Optional Textbook/Diagram Image Upload */}
             <div style={{ marginTop: '10px', borderTop: '1px dashed var(--border-light)', paddingTop: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
@@ -1928,7 +1928,7 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
             {/* Prompt generated view */}
             <div className="card" style={{ background: 'var(--surface)', padding: '18px 24px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h3 style={{ fontSize: '13px', fontWeight: 800, margin: 0, textTransform: 'uppercase', color: 'var(--text)' }}>📋 Generated AI Prompt</h3>
+                <h3 style={{ fontSize: '13px', fontWeight: 800, margin: 0, textTransform: 'uppercase', color: 'var(--accent)' }}>📋 Generated AI Prompt</h3>
                 {aiPrompt && (
                   <button 
                     className="btn btn-secondary btn-sm" 
@@ -1953,7 +1953,7 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
             {/* Paste Response block */}
             <div id="paste-response-card" className="card" style={{ background: 'var(--surface)', padding: '18px 24px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h3 style={{ fontSize: '13px', fontWeight: 800, margin: 0, textTransform: 'uppercase', color: 'var(--text)' }}>📥 Paste AI Response</h3>
+                <h3 style={{ fontSize: '13px', fontWeight: 800, margin: 0, textTransform: 'uppercase', color: 'var(--accent)' }}>📥 Paste AI Response</h3>
                 <button 
                   className="btn btn-secondary btn-sm" 
                   onClick={async () => {
@@ -2100,7 +2100,7 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
 
                 return (
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', background: 'var(--bg-soft)', padding: '10px 14px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)', fontSize: '11px', alignItems: 'center' }}>
-                    <span style={{ fontWeight: 700, color: 'var(--text)' }}>📊 Suite Composition:</span>
+                    <span style={{ fontWeight: 700, color: 'var(--accent)' }}>📊 Suite Composition:</span>
                     {objList.length > 0 && (
                       <span style={{ background: 'var(--info-bg)', color: 'var(--info)', padding: '3px 8px', borderRadius: '12px', fontWeight: 600 }}>
                         🎯 <strong>{objList.length} Objective</strong> ({easyC} Easy, {medC} Med, {hardC} Hard)

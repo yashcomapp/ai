@@ -32,14 +32,15 @@ html.dark {
     --text-muted: #94a3b8;
     --text-faint: #64748b;
 
-    /* Primary Accent - Warm Amber Focus (Low-Stress Alertness) */
-    --accent: #f59e0b;
-    --accent-dark: #d97706;
-    --accent-grad: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-    --accent-soft: rgba(245, 158, 11, 0.12);
-    --accent-ring: rgba(245, 158, 11, 0.25);
-    --accent-tint: rgba(245, 158, 11, 0.05);
-    --accent-light: rgba(245, 158, 11, 0.08);
+    /* Primary Accent - Warm Matte Dull Terracotta/Amber (Eye-Comfort & Low-Stress Alertness) */
+    --accent: #d97b38;
+    --accent-dark: #b86024;
+    --accent-hover: #e08844;
+    --accent-grad: linear-gradient(135deg, #d97b38 0%, #b86024 100%);
+    --accent-soft: rgba(217, 123, 56, 0.12);
+    --accent-ring: rgba(217, 123, 56, 0.25);
+    --accent-tint: rgba(217, 123, 56, 0.05);
+    --accent-light: rgba(217, 123, 56, 0.08);
 
     /* Rich Educational Category & Status Colors (Soft Eye-Comfort & Low-Glare WhatsApp Style) */
     --success: #34d399;
@@ -61,14 +62,14 @@ html.dark {
     --review-option-bg: #1f232d;
     --review-option-border: rgba(255, 255, 255, 0.07);
 
-    /* Primary Action & Brand - Calming Soft Slate-Azure (Ergonomic & Low-Glare) */
-    --primary: #0284c7;
-    --primary-hover: #0369a1;
-    --primary-dark: #075985;
-    --primary-soft: rgba(2, 132, 199, 0.20);
-    --primary-ring: rgba(2, 132, 199, 0.30);
+    /* Primary Action & Brand - Calming Soft Dusky Slate-Azure (Ergonomic, Low-Glare, Harmonic) */
+    --primary: #386bb0;
+    --primary-hover: #2e5994;
+    --primary-dark: #224473;
+    --primary-soft: rgba(56, 107, 176, 0.18);
+    --primary-ring: rgba(56, 107, 176, 0.30);
     --text-on-primary: #ffffff;
-    --secondary: #38bdf8;
+    --secondary: #4a88d9;
     --emerald: #10b981;
     --emerald-dark: #059669;
     --slate: #64748b;
