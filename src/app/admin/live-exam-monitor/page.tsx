@@ -472,7 +472,7 @@ export default function AdminLiveMonitorPage() {
                 >
                   <span>Live Exams</span>
                   {examCount > 0 && (
-                    <span style={{ fontSize: '11px', background: 'var(--danger)', color: 'var(--text-white, #ffffff)', padding: '1px 6px', borderRadius: '10px', fontWeight: 800 }}>
+                    <span style={{ fontSize: '11px', background: 'var(--danger)', color: 'var(--text-white)', padding: '1px 6px', borderRadius: '10px', fontWeight: 800 }}>
                       {examCount}
                     </span>
                   )}
@@ -499,7 +499,7 @@ export default function AdminLiveMonitorPage() {
                     <span style={{
                       fontSize: '11px',
                       background: 'linear-gradient(135deg, var(--purple), var(--accent))',
-                      color: 'var(--text-white, #ffffff)',
+                      color: 'var(--text-white)',
                       padding: '1px 7px',
                       borderRadius: '10px',
                       fontWeight: 800,
@@ -528,7 +528,7 @@ export default function AdminLiveMonitorPage() {
                 >
                   <span>Practice Activity</span>
                   {practiceCount > 0 && (
-                    <span style={{ fontSize: '11px', background: 'var(--accent)', color: 'var(--text-white, #ffffff)', padding: '1px 6px', borderRadius: '10px', fontWeight: 800 }}>
+                    <span style={{ fontSize: '11px', background: 'var(--accent)', color: 'var(--text-white)', padding: '1px 6px', borderRadius: '10px', fontWeight: 800 }}>
                       {practiceCount}
                     </span>
                   )}
@@ -646,7 +646,7 @@ export default function AdminLiveMonitorPage() {
               <button className="btn btn-secondary" style={{ padding: '2px 8px', fontSize: '10px' }} onClick={handleCloseVideoModal}>✕</button>
             </div>
 
-            <div style={{ width: '100%', background: '#000', borderRadius: 'var(--radius-sm)', overflow: 'hidden', position: 'relative', aspectRatio: '4/3', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ width: '100%', background: 'var(--text-black)', borderRadius: 'var(--radius-sm)', overflow: 'hidden', position: 'relative', aspectRatio: '4/3', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <video 
                 ref={videoRef}
                 autoPlay 
@@ -684,7 +684,7 @@ export default function AdminLiveMonitorPage() {
                     alignItems: 'center', 
                     gap: '6px',
                     background: isTalking ? 'var(--danger)' : undefined,
-                    color: isTalking ? 'var(--text-white, #ffffff)' : undefined,
+                    color: isTalking ? 'var(--text-white)' : undefined,
                     borderColor: isTalking ? 'var(--danger)' : undefined
                   }}
                 >

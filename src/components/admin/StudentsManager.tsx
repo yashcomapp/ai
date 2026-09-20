@@ -653,7 +653,7 @@ export default function StudentsManager() {
                   alignItems: 'center', 
                   gap: '10px', 
                   padding: '10px', 
-                  background: resetTargetStudent.parentEmail ? 'var(--bg-soft)' : '#fee2e2', 
+                  background: resetTargetStudent.parentEmail ? 'var(--bg-soft)' : 'var(--danger-bg)', 
                   borderRadius: 'var(--radius-sm)', 
                   cursor: resetTargetStudent.parentEmail ? 'pointer' : 'not-allowed', 
                   border: resetSelection === 'parent' ? '2px solid var(--accent)' : '2px solid transparent',
@@ -682,7 +682,7 @@ export default function StudentsManager() {
                   alignItems: 'center', 
                   gap: '10px', 
                   padding: '10px', 
-                  background: resetTargetStudent.parentEmail ? 'var(--bg-soft)' : '#fee2e2', 
+                  background: resetTargetStudent.parentEmail ? 'var(--bg-soft)' : 'var(--danger-bg)', 
                   borderRadius: 'var(--radius-sm)', 
                   cursor: resetTargetStudent.parentEmail ? 'pointer' : 'not-allowed', 
                   border: resetSelection === 'both' ? '2px solid var(--accent)' : '2px solid transparent',
@@ -721,7 +721,7 @@ export default function StudentsManager() {
                 type="button" 
                 className="btn btn-primary" 
                 onClick={handleSendResetEmail}
-                style={{ background: 'var(--accent-grad)', color: '#fff', border: 'none', fontWeight: 'bold' }}
+                style={{ background: 'var(--accent-grad)', color: 'var(--text-white)', border: 'none', fontWeight: 'bold' }}
               >
                 Send Reset Link
               </button>

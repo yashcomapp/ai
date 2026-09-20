@@ -113,7 +113,7 @@ function TopicPracticeContent() {
           document.head.appendChild(s);
         });
       }
-      const canvas = await w.html2canvas(element, { scale: 1.5, useCORS: true, backgroundColor: '#222730' });
+      const canvas = await w.html2canvas(element, { scale: 1.5, useCORS: true, backgroundColor: 'var(--surface-2)' });
       return canvas.toDataURL('image/jpeg', 0.7);
     } catch (err) {
       console.warn('Screenshot capture failed:', err);

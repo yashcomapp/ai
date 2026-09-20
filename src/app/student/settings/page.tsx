@@ -354,7 +354,7 @@ export default function StudentSettingsPage() {
           <div className="card" style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', overflow: 'hidden' }}>
             <div style={{ padding: '12px 16px', background: 'var(--bg-soft)', borderBottom: '1px solid var(--border-light)', fontWeight: 600, fontSize: '13px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span>🖥️ Hardware Diagnostic Mock Test</span>
-              <span className="badge badge-info" style={{ fontSize: '10px', background: 'var(--accent)', color: 'var(--text-white, #ffffff)', padding: '2px 8px', borderRadius: '4px' }}>
+              <span className="badge badge-info" style={{ fontSize: '10px', background: 'var(--accent)', color: 'var(--text-white)', padding: '2px 8px', borderRadius: '4px' }}>
                 Mock Test
               </span>
             </div>
@@ -379,11 +379,11 @@ export default function StudentSettingsPage() {
             <div style={{ padding: '12px 16px', background: 'var(--bg-soft)', borderBottom: '1px solid var(--border-light)', fontWeight: 600, fontSize: '13px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span>🔔 Push Notifications Status</span>
               {!notificationsSupported ? (
-                <span className="badge" style={{ fontSize: '10px', background: 'var(--danger)', color: 'var(--text-white, #ffffff)', padding: '2px 8px', borderRadius: '4px' }}>
+                <span className="badge" style={{ fontSize: '10px', background: 'var(--danger)', color: 'var(--text-white)', padding: '2px 8px', borderRadius: '4px' }}>
                   Unsupported
                 </span>
               ) : (
-                <span className={`badge ${notificationPermission === 'granted' ? (user?.hasPushRegistered ? 'badge-success' : 'badge-warning') : notificationPermission === 'denied' ? 'badge-danger' : 'badge-warning'}`} style={{ fontSize: '10px', background: notificationPermission === 'granted' ? (user?.hasPushRegistered ? 'var(--success)' : 'var(--warning)') : notificationPermission === 'denied' ? 'var(--danger)' : 'var(--warning)', color: 'var(--text-white, #ffffff)', padding: '2px 8px', borderRadius: '4px' }}>
+                <span className={`badge ${notificationPermission === 'granted' ? (user?.hasPushRegistered ? 'badge-success' : 'badge-warning') : notificationPermission === 'denied' ? 'badge-danger' : 'badge-warning'}`} style={{ fontSize: '10px', background: notificationPermission === 'granted' ? (user?.hasPushRegistered ? 'var(--success)' : 'var(--warning)') : notificationPermission === 'denied' ? 'var(--danger)' : 'var(--warning)', color: 'var(--text-white)', padding: '2px 8px', borderRadius: '4px' }}>
                   {notificationPermission === 'granted' ? (user?.hasPushRegistered ? 'Active' : 'Sync Pending') : notificationPermission === 'denied' ? 'Blocked' : 'Not Requested'}
                 </span>
               )}

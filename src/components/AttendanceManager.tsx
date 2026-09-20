@@ -681,16 +681,16 @@ export default function AttendanceManager({ role }: AttendanceManagerProps) {
                               bulletColor = 'var(--info)';
                             } else if (attendanceInfo.status === 'half_day') {
                               cellBg = 'rgba(249, 115, 22, 0.12)';
-                              cellColor = '#f97316';
-                              bulletColor = '#f97316';
+                              cellColor = 'var(--warning)';
+                              bulletColor = 'var(--warning)';
                             } else if (attendanceInfo.status === 'late') {
                               cellBg = 'rgba(234, 179, 8, 0.12)';
-                              cellColor = '#eab308';
-                              bulletColor = '#eab308';
+                              cellColor = 'var(--warning)';
+                              bulletColor = 'var(--warning)';
                             } else {
                               cellBg = 'rgba(148, 163, 184, 0.08)';
-                              cellColor = '#94a3b8';
-                              bulletColor = '#94a3b8';
+                              cellColor = 'var(--text-faint)';
+                              bulletColor = 'var(--text-faint)';
                             }
                           }
 
@@ -743,17 +743,17 @@ export default function AttendanceManager({ role }: AttendanceManagerProps) {
                       ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                           {selectedDayLogs.map((log: any, idx: number) => {
-                            let statusColor = '#94a3b8';
+                            let statusColor = 'var(--text-faint)';
                             let statusLabel = log.status.toUpperCase();
                             if (log.status === 'present') {
                               statusColor = 'var(--success)';
                             } else if (log.status === 'absent') {
                               statusColor = 'var(--danger)';
                             } else if (log.status === 'half_day') {
-                              statusColor = '#f97316';
+                              statusColor = 'var(--warning)';
                               statusLabel = 'HALF DAY';
                             } else if (log.status === 'late') {
-                              statusColor = '#eab308';
+                              statusColor = 'var(--warning)';
                               statusLabel = 'LATE CHECK-IN';
                             } else if (log.status === 'leave') {
                               statusColor = 'var(--info)';

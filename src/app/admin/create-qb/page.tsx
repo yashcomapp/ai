@@ -2033,7 +2033,7 @@ Return ONLY valid JSON. No extra text.`;
                         borderRadius: '16px',
                         border: 'none',
                         background: previewFilter === 'all' ? 'var(--accent)' : 'transparent',
-                        color: previewFilter === 'all' ? 'var(--text-white, #ffffff)' : 'var(--text-muted)',
+                        color: previewFilter === 'all' ? 'var(--text-white)' : 'var(--text-muted)',
                         cursor: 'pointer',
                         transition: 'all 0.2s'
                       }}
@@ -2050,7 +2050,7 @@ Return ONLY valid JSON. No extra text.`;
                         borderRadius: '16px',
                         border: 'none',
                         background: previewFilter === 'issues' ? 'var(--danger)' : 'transparent',
-                        color: previewFilter === 'issues' ? 'var(--text-white, #ffffff)' : (validation.invalidIndices.size > 0 ? 'var(--danger)' : 'var(--text-muted)'),
+                        color: previewFilter === 'issues' ? 'var(--text-white)' : (validation.invalidIndices.size > 0 ? 'var(--danger)' : 'var(--text-muted)'),
                         cursor: 'pointer',
                         transition: 'all 0.2s',
                         display: 'flex',
@@ -2112,7 +2112,7 @@ Return ONLY valid JSON. No extra text.`;
                       <button
                         type="button"
                         onClick={() => setPreviewFilter('issues')}
-                        style={{ background: 'var(--danger)', color: 'var(--text-white, #ffffff)', border: 'none', borderRadius: '4px', padding: '3px 8px', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}
+                        style={{ background: 'var(--danger)', color: 'var(--text-white)', border: 'none', borderRadius: '4px', padding: '3px 8px', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}
                       >
                         🔍 Show only problematic questions
                       </button>
@@ -2351,7 +2351,7 @@ Return ONLY valid JSON. No extra text.`;
                                             alignItems: 'center',
                                             justifyContent: 'center',
                                             cursor: 'pointer',
-                                            color: 'var(--text-white, #ffffff)',
+                                            color: 'var(--text-white)',
                                             fontSize: '10px',
                                             fontWeight: 'bold',
                                             userSelect: 'none'

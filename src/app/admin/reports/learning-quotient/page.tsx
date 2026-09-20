@@ -892,7 +892,7 @@ _Empowering Conceptual Excellence_`;
             <button
               className="btn btn-secondary"
               onClick={handleStartBroadcast}
-              style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, padding: '8px 16px', background: 'rgba(37, 211, 102, 0.1)', color: '#25D366', border: '1px solid rgba(37, 211, 102, 0.3)' }}
+              style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, padding: '8px 16px', background: 'rgba(37, 211, 102, 0.1)', color: 'var(--color-green-whatsapp)', border: '1px solid rgba(37, 211, 102, 0.3)' }}
             >
               📱 WhatsApp Broadcast to Parents
             </button>
@@ -1221,7 +1221,7 @@ _Empowering Conceptual Excellence_`;
                                 fontSize: '11px',
                                 padding: '5px 10px',
                                 background: isSelected ? 'var(--accent)' : 'var(--surface)',
-                                color: isSelected ? '#ffffff' : 'var(--text)',
+                                color: isSelected ? 'var(--text-white)' : 'var(--text)',
                                 borderRadius: '12px',
                                 border: isSelected ? '1px solid var(--accent)' : '1px solid var(--border-light)',
                                 cursor: 'grab',
@@ -1245,9 +1245,9 @@ _Empowering Conceptual Excellence_`;
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px', marginTop: '10px', flex: 1, minHeight: '220px', overflowY: 'auto' }}>
                     {[
                       { key: 'A', name: 'A (Excellent)', score: 80, color: 'var(--success)' },
-                      { key: 'B', name: 'B', score: 60, color: '#06b6d4' },
-                      { key: 'C', name: 'C', score: 40, color: '#f59e0b' },
-                      { key: 'D', name: 'D', score: 20, color: '#ea580c' },
+                      { key: 'B', name: 'B', score: 60, color: 'var(--info)' },
+                      { key: 'C', name: 'C', score: 40, color: 'var(--warning)' },
+                      { key: 'D', name: 'D', score: 20, color: 'var(--warning)' },
                       { key: 'E', name: 'E', score: 0, color: 'var(--danger)' }
                     ].map(col => {
                       const colStudents = batchStudents.filter(s => s.studentCode && bulkAssignments[s.studentCode] === col.key);
@@ -1346,7 +1346,7 @@ _Empowering Conceptual Excellence_`;
                                     fontSize: '10px',
                                     padding: '4px 6px',
                                     background: isSelected ? 'var(--accent)' : 'var(--surface)',
-                                    color: isSelected ? '#ffffff' : 'var(--text)',
+                                    color: isSelected ? 'var(--text-white)' : 'var(--text)',
                                     borderRadius: '6px',
                                     border: isSelected ? '1px solid var(--accent)' : '1px solid var(--border-light)',
                                     cursor: 'grab',
@@ -1734,7 +1734,7 @@ _Empowering Conceptual Excellence_`;
                     className="btn btn-primary"
                     disabled={!parentMobile}
                     onClick={handleWhatsAppDirectText}
-                    style={{ fontSize: '11px', fontWeight: 700, padding: '6px 12px', background: '#25D366', color: '#fff', borderColor: '#25D366' }}
+                    style={{ fontSize: '11px', fontWeight: 700, padding: '6px 12px', background: 'var(--color-green-whatsapp)', color: 'var(--text-white)', borderColor: 'var(--color-green-whatsapp)' }}
                   >
                     💬 WhatsApp Msg
                   </button>
@@ -1775,7 +1775,7 @@ _Empowering Conceptual Excellence_`;
                 <span>{broadcastQueue.filter(q => q.status === 'sent').length} / {broadcastQueue.length} Sent</span>
               </div>
               <div style={{ width: '100%', height: '8px', background: 'var(--border-light)', borderRadius: '4px', overflow: 'hidden' }}>
-                <div style={{ width: `${(broadcastQueue.filter(q => q.status === 'sent').length / broadcastQueue.length) * 100}%`, height: '100%', background: '#25D366', transition: 'width 0.3s ease' }}></div>
+                <div style={{ width: `${(broadcastQueue.filter(q => q.status === 'sent').length / broadcastQueue.length) * 100}%`, height: '100%', background: 'var(--color-green-whatsapp)', transition: 'width 0.3s ease' }}></div>
               </div>
             </div>
 
@@ -1783,7 +1783,7 @@ _Empowering Conceptual Excellence_`;
             {broadcastIndex < broadcastQueue.length ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', flex: 1, overflowY: 'auto' }}>
                 <div style={{ padding: '16px', borderRadius: 'var(--radius-md)', border: '1px solid rgba(37, 211, 102, 0.3)', background: 'rgba(37, 211, 102, 0.03)' }}>
-                  <div style={{ fontSize: '11px', fontWeight: 700, color: '#25D366', textTransform: 'uppercase', marginBottom: '4px' }}>Now Preparing Message For:</div>
+                  <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--color-green-whatsapp)', textTransform: 'uppercase', marginBottom: '4px' }}>Now Preparing Message For:</div>
                   <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text)' }}>{broadcastQueue[broadcastIndex].studentName}</div>
                   <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
                     Parent Contact: <strong>{broadcastQueue[broadcastIndex].parentMobile}</strong> ({broadcastQueue[broadcastIndex].parentName})
@@ -1820,7 +1820,7 @@ _Empowering Conceptual Excellence_`;
                   </button>
                   <button 
                     className="btn btn-primary" 
-                    style={{ flex: 2, height: '40px', fontWeight: 700, background: '#25D366', borderColor: '#22c35e' }} 
+                    style={{ flex: 2, height: '40px', fontWeight: 700, background: 'var(--color-green-whatsapp)', borderColor: 'var(--color-green-whatsapp-border)' }} 
                     onClick={handleSendNextParent}
                     disabled={loadingBroadcastDetails || !broadcastActiveDetails}
                   >
@@ -1851,10 +1851,10 @@ _Empowering Conceptual Excellence_`;
                         {idx + 1}. {item.studentName}
                       </span>
                       <span>
-                        {item.status === 'sent' && <span style={{ color: '#25D366', fontWeight: 700 }}>✓ Sent</span>}
+                        {item.status === 'sent' && <span style={{ color: 'var(--color-green-whatsapp)', fontWeight: 700 }}>✓ Sent</span>}
                         {item.status === 'skipped' && <span style={{ color: 'var(--text-muted)' }}>⏭️ Skipped</span>}
                         {item.status === 'pending' && idx > broadcastIndex && <span style={{ color: 'var(--text-muted)' }}>⏳ Waiting</span>}
-                        {isCurrent && <span style={{ color: '#25D366', fontWeight: 700 }}>👉 Current</span>}
+                        {isCurrent && <span style={{ color: 'var(--color-green-whatsapp)', fontWeight: 700 }}>👉 Current</span>}
                       </span>
                     </div>
                   );

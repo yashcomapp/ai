@@ -692,10 +692,10 @@ function ExamReportContent() {
   };
 
   const scoreColor = (pct: number) => {
-    if (pct >= 80) return 'var(--success, #1aa54e)';
-    if (pct >= 60) return 'var(--accent, #7cb305)';
-    if (pct >= 40) return 'var(--warning, #e2a800)';
-    return 'var(--danger, #e2483a)';
+    if (pct >= 80) return 'var(--success)';
+    if (pct >= 60) return 'var(--accent)';
+    if (pct >= 40) return 'var(--warning)';
+    return 'var(--danger)';
   };
 
   // Clones chosen sections to a clean offscreen element for print-optimized A4 generation
@@ -728,8 +728,8 @@ function ExamReportContent() {
     printContainer.className = 'math-container';
     printContainer.style.cssText = `
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
-      background: #ffffff !important;
-      color: #0f172a !important;
+      background: var(--text-white) !important;
+      color: var(--text) !important;
       padding: 24px !important;
       width: 210mm !important;
       box-sizing: border-box !important;
@@ -740,30 +740,30 @@ function ExamReportContent() {
     const styleOverride = document.createElement('style');
     styleOverride.innerHTML = `
       #pdf-print-container {
-        --bg: #ffffff !important;
-        --bg-soft: #f8fafc !important;
-        --surface: #ffffff !important;
-        --surface-popover: #ffffff !important;
-        --surface-hover: #f1f5f9 !important;
-        --text: #0f172a !important;
-        --text-muted: #475569 !important;
-        --text-faint: #64748b !important;
-        --border: #e2e8f0 !important;
-        --border-light: #e2e8f0 !important;
-        --border-popover: #cbd5e1 !important;
-        --primary: #2563eb !important;
-        --primary-hover: #1d4ed8 !important;
-        --accent: #0284c7 !important;
-        --success: #16a34a !important;
-        --success-muted: #15803d !important;
-        --warning: #d97706 !important;
-        --warning-muted: #b45309 !important;
-        --danger: #dc2626 !important;
-        --danger-muted: #b91c1c !important;
-        --info: #0284c7 !important;
-        --info-muted: #0369a1 !important;
-        background: #ffffff !important;
-        color: #0f172a !important;
+        --bg: var(--text-white) !important;
+        --bg-soft: var(--surface-2) !important;
+        --surface: var(--text-white) !important;
+        --surface-popover: var(--text-white) !important;
+        --surface-hover: var(--surface-3) !important;
+        --text: var(--text) !important;
+        --text-muted: var(--text-muted) !important;
+        --text-faint: var(--text-muted) !important;
+        --border: var(--border-light) !important;
+        --border-light: var(--border-light) !important;
+        --border-popover: var(--border) !important;
+        --primary: var(--primary) !important;
+        --primary-hover: var(--primary-hover) !important;
+        --accent: var(--info) !important;
+        --success: var(--success) !important;
+        --success-muted: var(--success) !important;
+        --warning: var(--warning) !important;
+        --warning-muted: var(--warning) !important;
+        --danger: var(--danger) !important;
+        --danger-muted: var(--danger) !important;
+        --info: var(--info) !important;
+        --info-muted: var(--info) !important;
+        background: var(--text-white) !important;
+        color: var(--text) !important;
       }
       #pdf-print-container * {
         box-sizing: border-box !important;
@@ -775,7 +775,7 @@ function ExamReportContent() {
         width: 100% !important;
         border-collapse: collapse !important;
         margin-bottom: 16px !important;
-        background: #ffffff !important;
+        background: var(--text-white) !important;
         font-size: 11px !important;
       }
       #pdf-print-container tr {
@@ -783,34 +783,34 @@ function ExamReportContent() {
         break-inside: avoid !important;
       }
       #pdf-print-container th {
-        background: #f1f5f9 !important;
-        color: #1e293b !important;
+        background: var(--surface-3) !important;
+        color: var(--text) !important;
         font-weight: 700 !important;
-        border: 1px solid #cbd5e1 !important;
+        border: 1px solid var(--border) !important;
         padding: 8px 10px !important;
         text-align: left !important;
         font-size: 11px !important;
       }
       #pdf-print-container td {
-        border: 1px solid #e2e8f0 !important;
+        border: 1px solid var(--border-light) !important;
         padding: 8px 10px !important;
         font-size: 11px !important;
-        color: #0f172a !important;
-        background: #ffffff !important;
+        color: var(--text) !important;
+        background: var(--text-white) !important;
       }
       #pdf-print-container tbody tr:nth-child(even) td {
-        background: #f8fafc !important;
+        background: var(--surface-2) !important;
       }
       #pdf-print-container .correct-option {
-        background: #dcfce7 !important;
-        border: 1.5px solid #16a34a !important;
-        color: #15803d !important;
+        background: var(--success-bg) !important;
+        border: 1.5px solid var(--success) !important;
+        color: var(--success) !important;
         font-weight: bold !important;
       }
       #pdf-print-container .explanation-box {
-        background: #fffbeb !important;
-        border: 1px solid #fde68a !important;
-        color: #92400e !important;
+        background: var(--warning-bg) !important;
+        border: 1px solid var(--warning) !important;
+        color: var(--warning) !important;
       }
     `;
     printContainer.appendChild(styleOverride);
@@ -818,12 +818,12 @@ function ExamReportContent() {
     // Title Header block
     const titleHeader = document.createElement('div');
     titleHeader.innerHTML = `
-      <div style="border-bottom: 2px solid #000000; padding-bottom: 8px; margin-bottom: 20px; font-family: system-ui, sans-serif; text-align: center;">
-        <h2 style="margin: 0; color: #1e40af; font-size: 20px; text-align: center;">YASHCOM Performance Analytics Report</h2>
-        <div style="font-size: 13px; color: #333; margin-top: 6px; font-weight: bold; text-align: center;">
+      <div style="border-bottom: 2px solid var(--text-black); padding-bottom: 8px; margin-bottom: 20px; font-family: system-ui, sans-serif; text-align: center;">
+        <h2 style="margin: 0; color: var(--primary); font-size: 20px; text-align: center;">YASHCOM Performance Analytics Report</h2>
+        <div style="font-size: 13px; color: var(--text); margin-top: 6px; font-weight: bold; text-align: center;">
           Exam Name: ${exam?.name || examId} &nbsp;&nbsp;|&nbsp;&nbsp; Subject: ${exam?.subjectName || exam?.subject || '—'}
         </div>
-        <div style="font-size: 11px; color: #555; margin-top: 4px; text-align: center;">
+        <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px; text-align: center;">
           Chapter: ${exam?.chapterNumber ? `${exam?.chapterNumber}. ${exam?.chapter || ''}` : (exam?.chapter || '—')} &nbsp;&nbsp;|&nbsp;&nbsp; Topic: ${exam?.topicNames?.join(', ') || exam?.topicCodes?.join(', ') || '—'} &nbsp;&nbsp;|&nbsp;&nbsp; Total Questions: ${exam?.questions?.length || 0} &nbsp;&nbsp;|&nbsp;&nbsp; Max Marks: ${exam?.totalMarks || 0}
         </div>
       </div>
@@ -837,27 +837,27 @@ function ExamReportContent() {
       statsSection.style.pageBreakInside = 'avoid';
       statsSection.style.breakInside = 'avoid';
       statsSection.innerHTML = `
-        <h3 style="font-size: 13px; margin: 0 0 12px; text-transform: uppercase; color: #111; letter-spacing: 0.5px; font-family: system-ui, sans-serif; border-bottom: 1px solid #ddd; padding-bottom: 4px;">📊 Section 1: Performance Summary</h3>
+        <h3 style="font-size: 13px; margin: 0 0 12px; text-transform: uppercase; color: var(--text); letter-spacing: 0.5px; font-family: system-ui, sans-serif; border-bottom: 1px solid var(--border-light); padding-bottom: 4px;">📊 Section 1: Performance Summary</h3>
         <div style="display: flex; gap: 10px; justify-content: space-between;">
-          <div style="flex: 1; border: 1px solid #ccc; padding: 12px; border-radius: 6px; text-align: center; font-family: system-ui, sans-serif;">
+          <div style="flex: 1; border: 1px solid var(--border); padding: 12px; border-radius: 6px; text-align: center; font-family: system-ui, sans-serif;">
             <div style="font-size: 22px; font-weight: 800;">${attempts.length}</div>
-            <div style="font-size: 11px; color: #666; font-weight: 600; margin-top: 4px;">Submissions</div>
+            <div style="font-size: 11px; color: var(--text-muted); font-weight: 600; margin-top: 4px;">Submissions</div>
           </div>
-          <div style="flex: 1; border: 1px solid #ccc; padding: 12px; border-radius: 6px; text-align: center; font-family: system-ui, sans-serif;">
-            <div style="font-size: 22px; font-weight: 800; color: #555;">${notStartedStudents.length}</div>
-            <div style="font-size: 11px; color: #666; font-weight: 600; margin-top: 4px;">Not Started</div>
+          <div style="flex: 1; border: 1px solid var(--border); padding: 12px; border-radius: 6px; text-align: center; font-family: system-ui, sans-serif;">
+            <div style="font-size: 22px; font-weight: 800; color: var(--text-muted);">${notStartedStudents.length}</div>
+            <div style="font-size: 11px; color: var(--text-muted); font-weight: 600; margin-top: 4px;">Not Started</div>
           </div>
-          <div style="flex: 1; border: 1px solid #ccc; padding: 12px; border-radius: 6px; text-align: center; font-family: system-ui, sans-serif;">
-            <div class="stat-val" style="font-size: 22px; font-weight: 800; color: #1aa54e !important;">${avgPercentage}%</div>
-            <div style="font-size: 11px; color: #666; font-weight: 600; margin-top: 4px;">Average Score</div>
+          <div style="flex: 1; border: 1px solid var(--border); padding: 12px; border-radius: 6px; text-align: center; font-family: system-ui, sans-serif;">
+            <div class="stat-val" style="font-size: 22px; font-weight: 800; color: var(--success) !important;">${avgPercentage}%</div>
+            <div style="font-size: 11px; color: var(--text-muted); font-weight: 600; margin-top: 4px;">Average Score</div>
           </div>
-          <div style="flex: 1; border: 1px solid #ccc; padding: 12px; border-radius: 6px; text-align: center; font-family: system-ui, sans-serif;">
-            <div class="stat-val" style="font-size: 22px; font-weight: 800; color: #e7a300 !important;">${pendingCount}</div>
-            <div style="font-size: 11px; color: #666; font-weight: 600; margin-top: 4px;">Pending Review</div>
+          <div style="flex: 1; border: 1px solid var(--border); padding: 12px; border-radius: 6px; text-align: center; font-family: system-ui, sans-serif;">
+            <div class="stat-val" style="font-size: 22px; font-weight: 800; color: var(--warning) !important;">${pendingCount}</div>
+            <div style="font-size: 11px; color: var(--text-muted); font-weight: 600; margin-top: 4px;">Pending Review</div>
           </div>
-          <div style="flex: 1; border: 1px solid #ccc; padding: 12px; border-radius: 6px; text-align: center; font-family: system-ui, sans-serif;">
-            <div class="stat-val" style="font-size: 22px; font-weight: 800; color: #e2483a !important;">${totalFlaggedCount}</div>
-            <div style="font-size: 11px; color: #666; font-weight: 600; margin-top: 4px;">Flagged Reviews</div>
+          <div style="flex: 1; border: 1px solid var(--border); padding: 12px; border-radius: 6px; text-align: center; font-family: system-ui, sans-serif;">
+            <div class="stat-val" style="font-size: 22px; font-weight: 800; color: var(--danger) !important;">${totalFlaggedCount}</div>
+            <div style="font-size: 11px; color: var(--text-muted); font-weight: 600; margin-top: 4px;">Flagged Reviews</div>
           </div>
         </div>
       `;
@@ -879,9 +879,9 @@ function ExamReportContent() {
           }
 
           absentHtml = `
-            <tr style="border-bottom: 1px solid #fee2e2; background: rgba(239, 68, 68, 0.08);">
+            <tr style="border-bottom: 1px solid var(--danger-bg); background: rgba(239, 68, 68, 0.08);">
               <td colspan="5" style="padding: 12px 10px; font-family: system-ui, sans-serif;">
-                <div style="text-align: center; font-weight: 800; font-size: 14px; color: #dc2626 !important; margin-bottom: 8px;">
+                <div style="text-align: center; font-weight: 800; font-size: 14px; color: var(--danger) !important; margin-bottom: 8px;">
                   🔴 Absent Students (${notStartedStudents.length})
                 </div>
                 <table style="width: 100%; border-collapse: collapse; table-layout: fixed; border: none; margin: 0; padding: 0;">
@@ -891,8 +891,8 @@ function ExamReportContent() {
                         ${[0, 1, 2].map(colIdx => {
                           const item = row[colIdx];
                           return `
-                            <td style="width: 33.33%; padding: 4px 6px; border: none; font-size: 12px; font-weight: 700; color: #dc2626 !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; vertical-align: middle;">
-                              ${item ? `• ${item.name} <span style="font-size: 9px; font-weight: normal; opacity: 0.85; color: #7f1d1d;">${formatAbsentLogin(item.lastLoginAt)}</span>` : ''}
+                            <td style="width: 33.33%; padding: 4px 6px; border: none; font-size: 12px; font-weight: 700; color: var(--danger) !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; vertical-align: middle;">
+                              ${item ? `• ${item.name} <span style="font-size: 9px; font-weight: normal; opacity: 0.85; color: var(--danger);">${formatAbsentLogin(item.lastLoginAt)}</span>` : ''}
                             </td>
                           `;
                         }).join('')}
@@ -913,32 +913,32 @@ function ExamReportContent() {
         const statusDate = a.reviewedAt || a.completedAt;
         const startDate = a.startedAt || a.completedAt;
         return `
-          <tr style="border-bottom: 1px solid #eee; font-size: 11px; font-family: system-ui, sans-serif; height: 32px;">
+          <tr style="border-bottom: 1px solid var(--border-light); font-size: 11px; font-family: system-ui, sans-serif; height: 32px;">
             <td style="padding: 6px 8px; font-weight: 600; white-space: nowrap;">${nameText}</td>
             <td class="score-cell" style="padding: 6px 8px; font-weight: bold; color: ${scoreColor(a.percentage)} !important; white-space: nowrap;">${a.score} / ${a.totalMarks} (${a.percentage}%)</td>
             <td style="padding: 6px 8px; white-space: nowrap;">${formatSeconds(getReviewTimeTaken(a))}</td>
             <td style="padding: 6px 8px; white-space: nowrap;">
-              <span style="font-size: 10px; padding: 2px 6px; border-radius: 8px; background: ${isPending ? '#fef3c7' : '#dbf3e1'}; color: ${isPending ? '#d97706' : '#1aa54e'}; font-weight: bold;">
+              <span style="font-size: 10px; padding: 2px 6px; border-radius: 8px; background: ${isPending ? 'var(--warning-bg)' : 'var(--success-bg)'}; color: ${isPending ? 'var(--warning)' : 'var(--success)'}; font-weight: bold;">
                 ${a.status}
               </span>
-              <span style="font-size: 10px; color: #555; margin-left: 4px;">
+              <span style="font-size: 10px; color: var(--text-muted); margin-left: 4px;">
                 ${formatDate(statusDate)}
               </span>
             </td>
-            <td style="padding: 6px 8px; color: #555; white-space: nowrap;">${formatDate(startDate)}</td>
+            <td style="padding: 6px 8px; color: var(--text-muted); white-space: nowrap;">${formatDate(startDate)}</td>
           </tr>
         `;
       }).join('');
 
       if (filteredAttempts.length === 0 && notStartedStudents.length === 0) {
-        rowsHtml = `<tr><td colspan="5" style="padding: 16px; text-align: center; color: #888; font-family: system-ui, sans-serif;">No attempts matching filters.</td></tr>`;
+        rowsHtml = `<tr><td colspan="5" style="padding: 16px; text-align: center; color: var(--text-muted); font-family: system-ui, sans-serif;">No attempts matching filters.</td></tr>`;
       }
 
       rosterSection.innerHTML = `
-        <h3 style="font-size: 13px; margin: 0 0 12px; text-transform: uppercase; color: #111; letter-spacing: 0.5px; font-family: system-ui, sans-serif; border-bottom: 1px solid #ddd; padding-bottom: 4px;">👤 Section 2: Student Submissions</h3>
-        <table style="width: 100%; border-collapse: collapse; text-align: left; border: 1px solid #ccc; border-radius: 4px; overflow: hidden;">
+        <h3 style="font-size: 13px; margin: 0 0 12px; text-transform: uppercase; color: var(--text); letter-spacing: 0.5px; font-family: system-ui, sans-serif; border-bottom: 1px solid var(--border-light); padding-bottom: 4px;">👤 Section 2: Student Submissions</h3>
+        <table style="width: 100%; border-collapse: collapse; text-align: left; border: 1px solid var(--border); border-radius: 4px; overflow: hidden;">
           <thead>
-            <tr style="background: #f4f4f4; border-bottom: 1px solid #ccc; font-size: 11px; color: #444; height: 30px;">
+            <tr style="background: var(--surface-2); border-bottom: 1px solid var(--border); font-size: 11px; color: var(--text); height: 30px;">
               <th style="padding: 6px 8px; white-space: nowrap;">Student Name</th>
               <th style="padding: 6px 8px; white-space: nowrap;">Score</th>
               <th style="padding: 6px 8px; white-space: nowrap;">Time Taken</th>
@@ -958,7 +958,7 @@ function ExamReportContent() {
     if (exportCards) {
       const cardsSection = document.createElement('div');
       cardsSection.innerHTML = `
-        <h3 style="font-size: 13px; margin: 0 0 15px; text-transform: uppercase; color: #111; letter-spacing: 0.5px; font-family: system-ui, sans-serif; border-bottom: 1px solid #ddd; padding-bottom: 4px;">📝 Section 3: Question Cards & Analysis</h3>
+        <h3 style="font-size: 13px; margin: 0 0 15px; text-transform: uppercase; color: var(--text); letter-spacing: 0.5px; font-family: system-ui, sans-serif; border-bottom: 1px solid var(--border-light); padding-bottom: 4px;">📝 Section 3: Question Cards & Analysis</h3>
       `;
 
       questionsList.forEach((s, idx) => {
@@ -967,11 +967,11 @@ function ExamReportContent() {
 
         const cardDiv = document.createElement('div');
         cardDiv.className = 'math-container';
-        cardDiv.style.border = '1px solid #ddd';
+        cardDiv.style.border = '1px solid var(--border-light)';
         cardDiv.style.padding = '14px';
         cardDiv.style.borderRadius = '6px';
         cardDiv.style.marginBottom = '14px';
-        cardDiv.style.background = '#ffffff';
+        cardDiv.style.background = 'var(--text-white)';
         cardDiv.style.pageBreakInside = 'avoid';
         cardDiv.style.breakInside = 'avoid';
         cardDiv.style.fontFamily = 'system-ui, sans-serif';
@@ -988,15 +988,15 @@ function ExamReportContent() {
               : s.correctAnswer === optKey;
 
             return `
-              <div class="${isCorrectOpt ? 'correct-option' : ''}" style="display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; margin-bottom: 4px; border: ${isCorrectOpt ? '1.5px solid #1aa54e' : '1px solid #eee'}; border-radius: 6px; background: ${isCorrectOpt ? 'rgba(26,165,78,0.05)' : '#ffffff'}; font-size: 11px;">
+              <div class="${isCorrectOpt ? 'correct-option' : ''}" style="display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; margin-bottom: 4px; border: ${isCorrectOpt ? '1.5px solid var(--success)' : '1px solid var(--border-light)'}; border-radius: 6px; background: ${isCorrectOpt ? 'rgba(26,165,78,0.05)' : 'var(--text-white)'}; font-size: 11px;">
                 <span>${isCorrectOpt ? '✅ ' : ''}${preprocessMathText(optText)}</span>
-                <span style="background: #f4f4f4; border-radius: 12px; padding: 2px 8px; font-weight: bold; font-size: 10px;">${vote.count} votes</span>
+                <span style="background: var(--surface-2); border-radius: 12px; padding: 2px 8px; font-weight: bold; font-size: 10px;">${vote.count} votes</span>
               </div>
             `;
           }).join('');
         } else if (s.correctAnswer) {
           optionsHtml = `
-            <div style="padding: 8px 12px; border: 1.5px solid #1aa54e; border-radius: 6px; background: rgba(26,165,78,0.05); font-size: 11px; font-weight: bold; margin-bottom: 6px;">
+            <div style="padding: 8px 12px; border: 1.5px solid var(--success); border-radius: 6px; background: rgba(26,165,78,0.05); font-size: 11px; font-weight: bold; margin-bottom: 6px;">
               ✅ Correct Answer: ${Array.isArray(s.correctAnswer) ? s.correctAnswer.join(', ') : s.correctAnswer}
             </div>
           `;
@@ -1016,10 +1016,10 @@ function ExamReportContent() {
           <div style="font-weight: 700; font-size: 12px; margin-bottom: 6px;">
             Q${(s.idx ?? idx) + 1}. ${preprocessMathText(s.questionText)}
           </div>
-          <div style="height: 6px; border-radius: 3px; background: #eee; overflow: hidden; margin-bottom: 6px;">
-            <div style="height: 100%; background: #1aa54e; width: ${pctCorrect}%;"></div>
+          <div style="height: 6px; border-radius: 3px; background: var(--border-light); overflow: hidden; margin-bottom: 6px;">
+            <div style="height: 100%; background: var(--success); width: ${pctCorrect}%;"></div>
           </div>
-          <div style="font-size: 10px; color: #666; margin-bottom: 8px;">
+          <div style="font-size: 10px; color: var(--text-muted); margin-bottom: 8px;">
             ✅ ${s.correct} correct &nbsp;•&nbsp; ❌ ${s.incorrect} incorrect &nbsp;•&nbsp; ➖ ${s.unanswered} unanswered
           </div>
           <div style="margin-bottom: 6px;">
@@ -1177,7 +1177,7 @@ function ExamReportContent() {
                   setBroadcastingNotices(false);
                 }
               }}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 600, padding: '5px 12px', background: 'var(--purple-bg, rgba(139, 92, 246, 0.15))', color: 'var(--purple, #8b5cf6)', border: '1px solid var(--purple-border, rgba(139, 92, 246, 0.3))' }}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 600, padding: '5px 12px', background: 'var(--purple-bg, rgba(139, 92, 246, 0.15))', color: 'var(--purple)', border: '1px solid var(--purple-border, rgba(139, 92, 246, 0.3))' }}
             >
               {broadcastingNotices ? '⏳ Broadcasting...' : '📢 Broadcast Results'}
             </button>
@@ -1258,7 +1258,7 @@ function ExamReportContent() {
                 🔄 Individual Reassignment (Absent Cases)
               </h3>
               {notStartedStudents.length > 0 && (
-                <span className="badge badge-danger" style={{ background: 'var(--danger-bg, rgba(234, 108, 117, 0.10))', color: 'var(--danger, #ea6c75)', border: '1px solid var(--danger-border, rgba(234, 108, 117, 0.22))', fontWeight: 700, padding: '2px 8px', borderRadius: '10px', fontSize: '11px' }}>
+                <span className="badge badge-danger" style={{ background: 'var(--danger-bg, rgba(234, 108, 117, 0.10))', color: 'var(--danger)', border: '1px solid var(--danger-border, rgba(234, 108, 117, 0.22))', fontWeight: 700, padding: '2px 8px', borderRadius: '10px', fontSize: '11px' }}>
                   {notStartedStudents.length} Absent
                 </span>
               )}
@@ -1371,8 +1371,8 @@ function ExamReportContent() {
                     <tr 
                       style={{ borderBottom: '1px solid var(--border-light)', background: 'var(--danger-bg, rgba(234, 108, 117, 0.10))' }}
                     >
-                      <td colSpan={6} style={{ padding: '10px 14px', color: 'var(--danger, #ea6c75)' }}>
-                        <div style={{ textAlign: 'center', fontWeight: 800, fontSize: '12.5px', marginBottom: '6px', color: 'var(--danger, #ea6c75)', letterSpacing: '0.2px' }}>
+                      <td colSpan={6} style={{ padding: '10px 14px', color: 'var(--danger)' }}>
+                        <div style={{ textAlign: 'center', fontWeight: 800, fontSize: '12.5px', marginBottom: '6px', color: 'var(--danger)', letterSpacing: '0.2px' }}>
                           🔴 Absent Students ({notStartedStudents.length})
                         </div>
                         <div style={{ 
@@ -1381,14 +1381,14 @@ function ExamReportContent() {
                           gap: '6px 12px',
                           fontSize: '12px',
                           fontWeight: 600,
-                          color: 'var(--danger, #ea6c75)'
+                          color: 'var(--danger)'
                         }}>
                           {[...notStartedStudents]
                             .sort((a, b) => a.name.localeCompare(b.name))
                             .map(a => (
-                              <div key={a.code} style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--danger, #ea6c75)', fontWeight: 600, fontSize: '12px' }} title={`${a.name} - ${formatAbsentLogin(a.lastLoginAt)}`}>
+                              <div key={a.code} style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--danger)', fontWeight: 600, fontSize: '12px' }} title={`${a.name} - ${formatAbsentLogin(a.lastLoginAt)}`}>
                                 • {a.name}{' '}
-                                <span style={{ fontSize: '10px', fontWeight: 500, color: 'var(--danger-muted, #fca5a5)', opacity: 0.9, marginLeft: '4px' }}>
+                                <span style={{ fontSize: '10px', fontWeight: 500, color: 'var(--danger-muted)', opacity: 0.9, marginLeft: '4px' }}>
                                   {formatAbsentLogin(a.lastLoginAt)}
                                 </span>
                               </div>
@@ -1437,7 +1437,7 @@ function ExamReportContent() {
                           <td style={{ padding: '7px 10px', whiteSpace: 'nowrap' }}>{formatSeconds(getReviewTimeTaken(a))}</td>
                           <td style={{ padding: '7px 10px', whiteSpace: 'nowrap' }}>
                             <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                              <span style={{ fontSize: '10px', padding: '1px 6px', borderRadius: '8px', background: isPending ? 'var(--warning-bg, #fef3c7)' : 'var(--success-bg, #dbf3e1)', color: isPending ? 'var(--warning)' : 'var(--success)', fontWeight: 700 }}>
+                              <span style={{ fontSize: '10px', padding: '1px 6px', borderRadius: '8px', background: isPending ? 'var(--warning-bg)' : 'var(--success-bg)', color: isPending ? 'var(--warning)' : 'var(--success)', fontWeight: 700 }}>
                                 {a.status}
                               </span>
                               <span style={{ fontSize: '10.5px', color: 'var(--text-muted)', fontWeight: 500 }}>
@@ -1879,7 +1879,7 @@ function ExamReportContent() {
                           alignItems: 'center', 
                           gap: '8px', 
                           padding: '8px 12px', 
-                          border: isSelected ? '1.5px solid #1aa54e' : '1px solid var(--border-light)', 
+                          border: isSelected ? '1.5px solid var(--success)' : '1px solid var(--border-light)', 
                           borderRadius: '8px', 
                           background: isSelected ? 'rgba(26,165,78,0.07)' : 'var(--surface)',
                           cursor: 'pointer',
@@ -2011,7 +2011,7 @@ function ExamReportContent() {
                   <strong style={{ color: 'var(--text-muted)' }}>Microphone:</strong>{' '}
                   <span style={{ 
                     fontWeight: 600, 
-                    color: selectedAttempt.micAvailable === false ? '#d97706' : '#16a34a' 
+                    color: selectedAttempt.micAvailable === false ? 'var(--warning)' : 'var(--success)' 
                   }}>
                     {selectedAttempt.micAvailable === false ? '⚠️ Offline' : '🟢 Active'}
                   </span>

@@ -60,12 +60,12 @@ export default function ToastContainer() {
           bg = 'rgba(22, 163, 74, 0.95)'; // Success green glass
           border = '1px solid rgba(34, 197, 94, 0.25)';
           icon = '✅';
-          color = '#ffffff';
+          color = 'var(--text-white)';
         } else if (toast.type === 'error') {
           bg = 'rgba(220, 38, 38, 0.95)'; // Error red glass
           border = '1px solid rgba(239, 68, 68, 0.25)';
           icon = '❌';
-          color = '#ffffff';
+          color = 'var(--text-white)';
         }
 
         return (

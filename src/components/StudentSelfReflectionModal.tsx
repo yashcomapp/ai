@@ -605,7 +605,7 @@ export default function StudentSelfReflectionModal({
                   fontSize: '12px',
                   fontWeight: 700,
                   background: isAllReviewed ? 'var(--success)' : 'var(--surface-3)',
-                  color: '#ffffff',
+                  color: 'var(--text-white)',
                   border: 'none',
                   borderRadius: '6px',
                   cursor: isAllReviewed ? 'pointer' : 'not-allowed'

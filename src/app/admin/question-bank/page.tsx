@@ -1196,7 +1196,7 @@ ${JSON.stringify(missingList, null, 2)}`;
                       borderRadius: '16px',
                       border: 'none',
                       background: duplicateScanScope === 'filtered' ? 'var(--accent)' : 'transparent',
-                      color: duplicateScanScope === 'filtered' ? 'var(--text-white, #ffffff)' : 'var(--text-muted)',
+                      color: duplicateScanScope === 'filtered' ? 'var(--text-white)' : 'var(--text-muted)',
                       cursor: 'pointer'
                     }}
                   >
@@ -1212,7 +1212,7 @@ ${JSON.stringify(missingList, null, 2)}`;
                       borderRadius: '16px',
                       border: 'none',
                       background: duplicateScanScope === 'all' ? 'var(--accent)' : 'transparent',
-                      color: duplicateScanScope === 'all' ? 'var(--text-white, #ffffff)' : 'var(--text-muted)',
+                      color: duplicateScanScope === 'all' ? 'var(--text-white)' : 'var(--text-muted)',
                       cursor: 'pointer'
                     }}
                   >

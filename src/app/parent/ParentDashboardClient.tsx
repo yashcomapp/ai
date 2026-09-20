@@ -971,7 +971,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
           <button 
             className="btn btn-primary" 
             onClick={logout} 
-            style={{ background: 'var(--danger)', color: 'var(--text-white, #ffffff)', border: 'none', padding: '10px 20px', borderRadius: 'var(--radius-md)', fontWeight: 'bold', cursor: 'pointer' }}
+            style={{ background: 'var(--danger)', color: 'var(--text-white)', border: 'none', padding: '10px 20px', borderRadius: 'var(--radius-md)', fontWeight: 'bold', cursor: 'pointer' }}
           >
             🚪 Back to Login
           </button>
@@ -1389,7 +1389,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                   >
                     {isSyncTimeSlot() ? (
                       <>
-                        <Video size={14} color="var(--text-white, #ffffff)" />
+                        <Video size={14} color="var(--text-white)" />
                         <span>Start 5-Min Sync</span>
                       </>
                     ) : (
@@ -2009,7 +2009,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                                   fontSize: '10px',
                                   fontWeight: 600,
                                   cursor: 'pointer',
-                                  color: 'var(--text-white, #ffffff)'
+                                  color: 'var(--text-white)'
                                 }}
                               >
                                 Read
@@ -2342,7 +2342,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                     fontWeight: 'bold',
                     fontSize: '14px',
                     background: typeConfig.color,
-                    color: 'var(--text-white, #ffffff)',
+                    color: 'var(--text-white)',
                     border: 'none',
                     cursor: 'pointer'
                   }}
@@ -2393,7 +2393,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
               </div>
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: 'var(--text-white, #ffffff)' }}>
+                  <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: 'var(--text-white)' }}>
                     Daily 5-Min Parent-Kid Sync
                   </h3>
                   <span style={{ fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '12px', background: 'rgba(20, 184, 166, 0.2)', color: 'var(--accent)', border: '1px solid rgba(20, 184, 166, 0.4)' }}>
@@ -2445,7 +2445,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                   letterSpacing: '0.5px'
                 }}>
                   <span>🔒 Mandatory:</span>
-                  <span style={{ color: 'var(--text-white, #ffffff)', fontFamily: 'monospace', fontSize: '13px' }}>{formatSyncTimer(syncSecondsRemaining)} left</span>
+                  <span style={{ color: 'var(--text-white)', fontFamily: 'monospace', fontSize: '13px' }}>{formatSyncTimer(syncSecondsRemaining)} left</span>
                 </div>
               ) : (
                 <button 
@@ -2453,7 +2453,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                   style={{
                     background: 'rgba(255, 255, 255, 0.1)',
                     border: '1px solid rgba(255, 255, 255, 0.2)',
-                    color: 'var(--text-white, #ffffff)',
+                    color: 'var(--text-white)',
                     padding: '8px 16px',
                     borderRadius: '20px',
                     fontSize: '13px',
@@ -2506,7 +2506,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                     <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                       Step 1 · 60-Second Check
                     </span>
-                    <h2 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-white, #ffffff)', margin: '4px 0 2px' }}>
+                    <h2 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-white)', margin: '4px 0 2px' }}>
                       Today&apos;s Study Effort ({formatDateIST(new Date().toISOString())})
                     </h2>
                     <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0 }}>
@@ -2571,7 +2571,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                     onClick={() => setDailySyncStep(2)}
                     style={{
                       background: 'var(--accent-grad)',
-                      color: 'var(--text-white, #ffffff)',
+                      color: 'var(--text-white)',
                       fontWeight: 700,
                       padding: '12px',
                       borderRadius: 'var(--radius)',
@@ -2594,7 +2594,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                     <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                       Step 2 · 3-Minute Discussion
                     </span>
-                    <h2 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-white, #ffffff)', margin: '4px 0 2px' }}>
+                    <h2 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-white)', margin: '4px 0 2px' }}>
                       Diagnostic Topic Movement & Tricky Questions
                     </h2>
                     <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0 }}>
@@ -2676,7 +2676,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                       <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Daily Mistake Review</span>
                     </div>
 
-                    <div style={{ fontSize: '13px', color: 'var(--text-white, #ffffff)', fontWeight: 600, lineHeight: '1.4' }}>
+                    <div style={{ fontSize: '13px', color: 'var(--text-white)', fontWeight: 600, lineHeight: '1.4' }}>
                       &ldquo;When solving numerical problems or multi-step derivations, double-check sign inversions and unit conversions.&rdquo;
                     </div>
 
@@ -2702,7 +2702,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                       style={{
                         flex: 2,
                         background: 'var(--accent-grad)',
-                        color: 'var(--text-white, #ffffff)',
+                        color: 'var(--text-white)',
                         fontWeight: 700,
                         padding: '12px',
                         borderRadius: 'var(--radius)',
@@ -2724,7 +2724,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                     <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                       Step 3 · Final Signoff
                     </span>
-                    <h2 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-white, #ffffff)', margin: '4px 0 2px' }}>
+                    <h2 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-white)', margin: '4px 0 2px' }}>
                       Parent Verification & Signoff
                     </h2>
                     <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0 }}>
@@ -2756,7 +2756,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                             transition: 'all 0.2s'
                           }}
                         >
-                          <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-white, #ffffff)' }}>{r.label}</div>
+                          <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-white)' }}>{r.label}</div>
                           <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>{r.desc}</div>
                         </div>
                       ))}
@@ -2779,8 +2779,8 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                         flex: 2,
                         background: syncSecondsRemaining > 0
                           ? 'rgba(255, 255, 255, 0.08)'
-                          : 'linear-gradient(135deg, #10b981, #059669)',
-                        color: syncSecondsRemaining > 0 ? 'var(--text-muted)' : 'var(--text-white, #ffffff)',
+                          : 'var(--accent-grad)',
+                        color: syncSecondsRemaining > 0 ? 'var(--text-muted)' : 'var(--text-white)',
                         fontWeight: 800,
                         padding: '12px',
                         borderRadius: 'var(--radius)',
@@ -2807,7 +2807,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
             }}>
               {/* PROMINENT 5-MINUTE COUNTDOWN CARD */}
               <div style={{
-                background: 'linear-gradient(135deg, #0b2426 0%, #061012 100%)',
+                background: 'var(--surface-3)',
                 border: syncSecondsRemaining > 0 ? '2px solid var(--accent)' : '2px solid var(--success)',
                 borderRadius: 'var(--radius-lg)',
                 padding: '18px',
@@ -2837,7 +2837,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                   fontWeight: 900,
                   fontFamily: 'monospace',
                   letterSpacing: '3px',
-                  color: syncSecondsRemaining > 0 ? 'var(--text-white, #ffffff)' : 'var(--success)',
+                  color: syncSecondsRemaining > 0 ? 'var(--text-white)' : 'var(--success)',
                   textShadow: syncSecondsRemaining > 0 ? '0 0 20px rgba(20, 184, 166, 0.4)' : '0 0 20px rgba(16, 185, 129, 0.6)',
                   lineHeight: '1',
                   margin: '4px 0'
@@ -2858,8 +2858,8 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                     width: `${((300 - syncSecondsRemaining) / 300) * 100}%`,
                     height: '100%',
                     background: syncSecondsRemaining > 0
-                      ? 'linear-gradient(90deg, #0f766e, #14b8a6, #2dd4bf)'
-                      : 'linear-gradient(90deg, #10b981, #34d399)',
+                      ? 'var(--accent-grad)'
+                      : 'var(--accent-grad)',
                     transition: 'width 1s linear',
                     borderRadius: '10px'
                   }} />
@@ -2887,7 +2887,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text)' }}>📹 Live Camera Feed</span>
-                  <span style={{ fontSize: '9px', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', background: 'var(--danger)', color: 'var(--text-white, #ffffff)' }}>
+                  <span style={{ fontSize: '9px', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', background: 'var(--danger)', color: 'var(--text-white)' }}>
                     LIVE
                   </span>
                 </div>
@@ -2898,7 +2898,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                   height: '180px',
                   borderRadius: '8px',
                   overflow: 'hidden',
-                  background: '#000000',
+                  background: 'var(--text-black)',
                   border: '1px solid var(--accent-ring)',
                   position: 'relative'
                 }}>

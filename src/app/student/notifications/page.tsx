@@ -255,7 +255,7 @@ export default function StudentSeenNotificationsPage() {
                   fontSize: '11px',
                   fontWeight: 700,
                   cursor: 'pointer',
-                  color: 'var(--text-white, #ffffff)',
+                  color: 'var(--text-white)',
                   transition: 'background 0.2s'
                 }}
               >

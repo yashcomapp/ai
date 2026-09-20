@@ -149,7 +149,7 @@ function TakeExamContent() {
           document.head.appendChild(s);
         });
       }
-      const canvas = await w.html2canvas(element, { scale: 1.5, useCORS: true, backgroundColor: '#222730' });
+      const canvas = await w.html2canvas(element, { scale: 1.5, useCORS: true, backgroundColor: 'var(--surface-2)' });
       return canvas.toDataURL('image/jpeg', 0.7);
     } catch (err) {
       console.warn('Screenshot capture failed:', err);
@@ -1813,7 +1813,7 @@ function TakeExamContent() {
                                       flex: 1,
                                       border: isSelected ? '1px solid var(--accent)' : '1px solid var(--border)',
                                       background: isSelected ? 'var(--accent-grad)' : 'var(--surface)',
-                                      color: isSelected ? 'var(--text-white, #ffffff)' : 'var(--text)',
+                                      color: isSelected ? 'var(--text-white)' : 'var(--text)',
                                       cursor: isUnderstood ? 'not-allowed' : 'pointer',
                                       whiteSpace: 'nowrap'
                                     }}
@@ -1844,7 +1844,7 @@ function TakeExamContent() {
                                       flex: 1,
                                       border: isSelected ? '1px solid var(--accent)' : '1px solid var(--border)',
                                       background: isSelected ? 'var(--accent-grad)' : 'var(--surface)',
-                                      color: isSelected ? 'var(--text-white, #ffffff)' : 'var(--text)',
+                                      color: isSelected ? 'var(--text-white)' : 'var(--text)',
                                       cursor: isUnderstood ? 'not-allowed' : 'pointer',
                                       whiteSpace: 'nowrap'
                                     }}

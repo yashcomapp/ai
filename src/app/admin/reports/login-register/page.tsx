@@ -338,7 +338,7 @@ export default function LoginRegisterReportPage() {
             onClick={() => setActiveTab('register')}
             style={{
               background: activeTab === 'register' ? 'var(--accent)' : 'none',
-              color: activeTab === 'register' ? '#fff' : 'var(--text)',
+              color: activeTab === 'register' ? 'var(--text-white)' : 'var(--text)',
               border: activeTab === 'register' ? 'none' : '1px solid var(--border-light)',
               padding: '8px 16px',
               borderRadius: 'var(--radius)',
@@ -353,7 +353,7 @@ export default function LoginRegisterReportPage() {
             onClick={() => setActiveTab('roster')}
             style={{
               background: activeTab === 'roster' ? 'var(--accent)' : 'none',
-              color: activeTab === 'roster' ? '#fff' : 'var(--text)',
+              color: activeTab === 'roster' ? 'var(--text-white)' : 'var(--text)',
               border: activeTab === 'roster' ? 'none' : '1px solid var(--border-light)',
               padding: '8px 16px',
               borderRadius: 'var(--radius)',

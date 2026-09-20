@@ -132,18 +132,18 @@ export async function GET(req: NextRequest) {
 
         let state = 'needsAttention';
         let expIcon = '🚨';
-        let expColor = '#ef4444';
+        let expColor = 'var(--danger)';
         let expText = '';
 
         if ((mastery >= 90 && isFullConfidence) || isRecovery) {
           state = 'mastered';
           if (isRecovery) {
             expIcon = '⚡';
-            expColor = '#8b5cf6';
+            expColor = 'var(--purple)';
             expText = 'Mastered via Recovery Diagnostic (Passed fresh unseen + remediated question assessment).';
           } else {
             expIcon = '⭐';
-            expColor = '#10b981';
+            expColor = 'var(--success)';
             expText = `Mastered (${mastery}% accuracy across ${attempts} verified questions).`;
           }
           mastered.push({
@@ -166,7 +166,7 @@ export async function GET(req: NextRequest) {
           state = 'revision';
           const needed = Math.max(1, reqConfidence - attempts);
           expIcon = '📖';
-          expColor = '#3b82f6';
+          expColor = 'var(--accent)';
           expText = `High accuracy (${mastery}%), but needs ${needed} more verified question(s) to reach full confidence for Mastered.`;
           practicing.push({
             topicCode: tCode,
@@ -188,11 +188,11 @@ export async function GET(req: NextRequest) {
           state = 'continuePractice';
           if (isLimitReached) {
             expIcon = '⚡';
-            expColor = '#8b5cf6';
+            expColor = 'var(--purple)';
             expText = `${maxPractices}/${maxPractices} practices done (${mastery}% accuracy). Take the Recovery Quiz (Fresh + Missed Qs) to achieve Mastered!`;
           } else {
             expIcon = '📈';
-            expColor = '#f59e0b';
+            expColor = 'var(--warning)';
             expText = `${practiceCount}/${maxPractices} practices done (${mastery}% accuracy). Complete 1 practice set (6 Qs) to aim for 90%+ Mastered.`;
           }
           practicing.push({
@@ -215,15 +215,15 @@ export async function GET(req: NextRequest) {
           state = 'needsAttention';
           if (isLimitReached) {
             expIcon = '⚡';
-            expColor = '#8b5cf6';
+            expColor = 'var(--purple)';
             expText = `${maxPractices}/${maxPractices} practices done (${mastery}% accuracy). Take the Recovery Quiz (Fresh + Missed Qs) to achieve Mastered!`;
           } else if (attempts === 0) {
             expIcon = '⚪';
-            expColor = '#94a3b8';
+            expColor = 'var(--text-muted)';
             expText = 'Not attempted yet. Start 1st practice to assess concept baseline.';
           } else {
             expIcon = '🚨';
-            expColor = '#ef4444';
+            expColor = 'var(--danger)';
             expText = `${practiceCount}/${maxPractices} practices done (${mastery}% accuracy). ${Math.max(0, maxPractices - practiceCount)} practice(s) left — focus on weak areas.`;
           }
           needsAttention.push({

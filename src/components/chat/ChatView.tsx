@@ -1461,7 +1461,7 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
               <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 2.02 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
               <span>Class Groups</span>
               {totalGroupUnread > 0 && (
-                <span style={{ background: 'var(--danger)', color: '#ffffff', fontSize: '9.5px', fontWeight: 800, padding: '1px 5px', borderRadius: '8px', lineHeight: '13px' }}>
+                <span style={{ background: 'var(--danger)', color: 'var(--text-white)', fontSize: '9.5px', fontWeight: 800, padding: '1px 5px', borderRadius: '8px', lineHeight: '13px' }}>
                   {totalGroupUnread}
                 </span>
               )}
@@ -1488,7 +1488,7 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
               <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
               <span>Direct Messages</span>
               {totalDmUnread > 0 && (
-                <span style={{ background: 'var(--danger)', color: '#ffffff', fontSize: '9.5px', fontWeight: 800, padding: '1px 5px', borderRadius: '8px', lineHeight: '13px' }}>
+                <span style={{ background: 'var(--danger)', color: 'var(--text-white)', fontSize: '9.5px', fontWeight: 800, padding: '1px 5px', borderRadius: '8px', lineHeight: '13px' }}>
                   {totalDmUnread}
                 </span>
               )}
@@ -1543,7 +1543,7 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
                   <button 
                     onClick={handleBulkDeleteConversations}
                     disabled={Object.values(selectedRoomIds).filter(Boolean).length === 0}
-                    style={{ background: 'var(--danger)', color: '#ffffff', border: 'none', padding: '3px 8px', fontSize: '10.5px', fontWeight: 'bold', borderRadius: '4px', cursor: 'pointer', opacity: Object.values(selectedRoomIds).filter(Boolean).length === 0 ? 0.5 : 1 }}
+                    style={{ background: 'var(--danger)', color: 'var(--text-white)', border: 'none', padding: '3px 8px', fontSize: '10.5px', fontWeight: 'bold', borderRadius: '4px', cursor: 'pointer', opacity: Object.values(selectedRoomIds).filter(Boolean).length === 0 ? 0.5 : 1 }}
                   >
                     Delete Selected
                   </button>
@@ -1664,7 +1664,7 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
                             style={{ 
                               fontSize: '10px', 
                               background: 'var(--danger)', 
-                              color: '#ffffff', 
+                              color: 'var(--text-white)', 
                               minWidth: '18px', 
                               height: '18px', 
                               display: 'flex', 
@@ -2291,7 +2291,7 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
                                   minWidth: '220px'
                                 }}>
                                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                    <div style={{ background: 'var(--danger)', width: '28px', height: '30px', borderRadius: '4px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '8.5px', color: '#ffffff' }}>
+                                    <div style={{ background: 'var(--danger)', width: '28px', height: '30px', borderRadius: '4px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '8.5px', color: 'var(--text-white)' }}>
                                       <span>FILE</span>
                                     </div>
                                     <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -2547,7 +2547,7 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
                       type="button"
                       onClick={handleBulkDeleteMessages}
                       disabled={Object.values(selectedMessageIds).filter(Boolean).length === 0}
-                      style={{ background: 'var(--danger)', border: 'none', color: '#ffffff', borderRadius: '8px', padding: '8px 16px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', opacity: Object.values(selectedMessageIds).filter(Boolean).length === 0 ? 0.5 : 1 }}
+                      style={{ background: 'var(--danger)', border: 'none', color: 'var(--text-white)', borderRadius: '8px', padding: '8px 16px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', opacity: Object.values(selectedMessageIds).filter(Boolean).length === 0 ? 0.5 : 1 }}
                     >
                       Delete Selected
                     </button>
@@ -2792,7 +2792,7 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
                     justifyContent: 'center', 
                     background: 'var(--accent)', 
                     border: 'none', 
-                    color: '#ffffff', 
+                    color: 'var(--text-white)', 
                     cursor: 'pointer',
                     boxShadow: '0 2px 6px rgba(79, 70, 229, 0.35)',
                     transition: 'transform 0.1s'
@@ -2936,7 +2936,7 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
                   padding: '10px', 
                   background: 'var(--accent)', 
                   border: 'none', 
-                  color: '#ffffff', 
+                  color: 'var(--text-white)', 
                   fontSize: '13px', 
                   fontWeight: 600, 
                   borderRadius: '6px', 
@@ -3024,7 +3024,7 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
                   setLinkUrl('');
                   setLinkLabel('');
                 }}
-                style={{ padding: '6px 14px', fontSize: '12px', border: 'none', background: 'var(--accent)', color: '#ffffff', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}
+                style={{ padding: '6px 14px', fontSize: '12px', border: 'none', background: 'var(--accent)', color: 'var(--text-white)', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}
               >
                 Insert Link
               </button>
@@ -3236,7 +3236,7 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
                   padding: '10px', 
                   background: 'var(--accent)', 
                   border: 'none', 
-                  color: '#ffffff', 
+                  color: 'var(--text-white)', 
                   fontSize: '13px', 
                   fontWeight: 600, 
                   borderRadius: '6px', 

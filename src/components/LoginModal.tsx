@@ -273,7 +273,7 @@ export default function LoginModal() {
           font-weight: 800;
           font-size: 14px;
           background: var(--accent-grad);
-          color: #ffffff;
+          color: var(--text-white);
           border: none;
           cursor: pointer;
           box-shadow: var(--shadow-sm);
@@ -401,7 +401,7 @@ export default function LoginModal() {
               <button 
                 className="btn btn-primary" 
                 onClick={() => handleConflictResolve(true)}
-                style={{ background: 'var(--accent-grad)', color: '#fff', border: 'none', padding: '6px 14px', borderRadius: 'var(--radius-sm)', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
+                style={{ background: 'var(--accent-grad)', color: 'var(--text-white)', border: 'none', padding: '6px 14px', borderRadius: 'var(--radius-sm)', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
               >
                 Log Out Other &amp; Continue
               </button>
@@ -444,7 +444,7 @@ export default function LoginModal() {
                     setShowForgotPanel(true);
                   }
                 }}
-                style={{ background: 'var(--accent-grad)', color: '#fff', border: 'none', padding: '6px 18px', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontWeight: 800, fontSize: '12.5px' }}
+                style={{ background: 'var(--accent-grad)', color: 'var(--text-white)', border: 'none', padding: '6px 18px', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontWeight: 800, fontSize: '12.5px' }}
               >
                 OK
               </button>

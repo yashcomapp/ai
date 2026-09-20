@@ -433,7 +433,7 @@ export default function ParentPendingReportPage() {
               <button className="btn btn-secondary" style={{ padding: '2px 8px', fontSize: '11px' }} onClick={() => setPreviewPhoto(null)}>✕</button>
             </div>
 
-            <div style={{ borderRadius: 'var(--radius)', overflow: 'hidden', border: '1px solid var(--border-light)', marginBottom: '12px', background: '#000' }}>
+            <div style={{ borderRadius: 'var(--radius)', overflow: 'hidden', border: '1px solid var(--border-light)', marginBottom: '12px', background: 'var(--text-black)' }}>
               <img 
                 src={previewPhoto.photoUrl} 
                 alt="Enlarged Proof" 

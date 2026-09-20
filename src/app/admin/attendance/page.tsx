@@ -395,7 +395,7 @@ export default function AdminAttendancePage() {
           >
             <span>Parent-Child 5-Min Sync Attendance</span>
             {syncData?.summary?.completedCount ? (
-              <span style={{ fontSize: '11px', background: 'var(--purple)', color: 'var(--text-white, #ffffff)', padding: '1px 6px', borderRadius: '10px', fontWeight: 800 }}>
+              <span style={{ fontSize: '11px', background: 'var(--purple)', color: 'var(--text-white)', padding: '1px 6px', borderRadius: '10px', fontWeight: 800 }}>
                 {syncData.summary.completedCount}
               </span>
             ) : null}
@@ -500,7 +500,7 @@ export default function AdminAttendancePage() {
                                         fontWeight: 'bold',
                                         background: 'var(--success)',
                                         border: 'none',
-                                        color: 'var(--text-white, #ffffff)',
+                                        color: 'var(--text-white)',
                                         cursor: 'pointer'
                                       }}
                                     >
@@ -516,7 +516,7 @@ export default function AdminAttendancePage() {
                                         fontWeight: 'bold',
                                         background: 'var(--danger)',
                                         border: 'none',
-                                        color: 'var(--text-white, #ffffff)',
+                                        color: 'var(--text-white)',
                                         cursor: 'pointer'
                                       }}
                                     >
@@ -530,7 +530,7 @@ export default function AdminAttendancePage() {
                                     style={{
                                       border: 'none',
                                       background: student.status === 'present' ? 'var(--success)' : 'var(--bg-soft)',
-                                      color: student.status === 'present' ? 'var(--text-white, #ffffff)' : 'var(--text-muted)',
+                                      color: student.status === 'present' ? 'var(--text-white)' : 'var(--text-muted)',
                                       width: '26px',
                                       height: '26px',
                                       borderRadius: '50%',
@@ -549,7 +549,7 @@ export default function AdminAttendancePage() {
                                     style={{
                                       border: 'none',
                                       background: student.status === 'absent' ? 'var(--danger)' : 'var(--bg-soft)',
-                                      color: student.status === 'absent' ? 'var(--text-white, #ffffff)' : 'var(--text-muted)',
+                                      color: student.status === 'absent' ? 'var(--text-white)' : 'var(--text-muted)',
                                       width: '26px',
                                       height: '26px',
                                       borderRadius: '50%',
@@ -568,7 +568,7 @@ export default function AdminAttendancePage() {
                                     style={{
                                       border: 'none',
                                       background: student.status === 'late' ? 'var(--warning)' : 'var(--bg-soft)',
-                                      color: student.status === 'late' ? 'var(--text-white, #ffffff)' : 'var(--text-muted)',
+                                      color: student.status === 'late' ? 'var(--text-white)' : 'var(--text-muted)',
                                       width: '26px',
                                       height: '26px',
                                       borderRadius: '50%',
@@ -587,7 +587,7 @@ export default function AdminAttendancePage() {
                                     style={{
                                       border: 'none',
                                       background: student.status === 'leave' ? 'var(--accent)' : 'var(--bg-soft)',
-                                      color: student.status === 'leave' ? 'var(--text-white, #ffffff)' : 'var(--text-muted)',
+                                      color: student.status === 'leave' ? 'var(--text-white)' : 'var(--text-muted)',
                                       width: '26px',
                                       height: '26px',
                                       borderRadius: '50%',
@@ -606,7 +606,7 @@ export default function AdminAttendancePage() {
                                     style={{
                                       border: 'none',
                                       background: student.status === 'half_day' ? 'var(--purple)' : 'var(--bg-soft)',
-                                      color: student.status === 'half_day' ? 'var(--text-white, #ffffff)' : 'var(--text-muted)',
+                                      color: student.status === 'half_day' ? 'var(--text-white)' : 'var(--text-muted)',
                                       width: '26px',
                                       height: '26px',
                                       borderRadius: '50%',

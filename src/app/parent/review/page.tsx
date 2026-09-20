@@ -925,7 +925,7 @@ export default function ParentReviewPanel() {
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                           <span style={{ fontWeight: 'bold', fontSize: '13px' }}>{item.name}</span>
                           {item.proctoringViolationTriggered && (
-                            <span className="badge" style={{ background: 'var(--danger)', color: 'var(--text-white, #ffffff)', fontSize: '10px', fontWeight: 800, padding: '3px 8px', borderRadius: '4px' }}>
+                            <span className="badge" style={{ background: 'var(--danger)', color: 'var(--text-white)', fontSize: '10px', fontWeight: 800, padding: '3px 8px', borderRadius: '4px' }}>
                               🚨 Doubtful
                             </span>
                           )}
@@ -971,7 +971,7 @@ export default function ParentReviewPanel() {
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                           <span style={{ fontWeight: 'bold', fontSize: '13px' }}>{item.name}</span>
                           {item.proctoringViolationTriggered && (
-                            <span className="badge" style={{ background: 'var(--danger)', color: 'var(--text-white, #ffffff)', fontSize: '10px', fontWeight: 800, padding: '3px 8px', borderRadius: '4px' }}>
+                            <span className="badge" style={{ background: 'var(--danger)', color: 'var(--text-white)', fontSize: '10px', fontWeight: 800, padding: '3px 8px', borderRadius: '4px' }}>
                               🚨 Doubtful
                             </span>
                           )}
@@ -1441,7 +1441,7 @@ export default function ParentReviewPanel() {
                   onClick={() => actorModal.onSelectActor('parent')}
                   style={{
                     background: 'var(--accent)',
-                    color: 'var(--text-white, #ffffff)',
+                    color: 'var(--text-white)',
                     padding: '14px 16px',
                     borderRadius: 'var(--radius)',
                     border: 'none',

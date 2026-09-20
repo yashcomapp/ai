@@ -212,13 +212,13 @@ export default function DailyPracticeSummaryPage() {
             margin-top: 15px !important;
           }
           th, td {
-            border: 1px solid #ddd !important;
+            border: 1px solid var(--border) !important;
             padding: 6px 8px !important;
             text-align: left !important;
           }
           th {
-            background-color: #f5f5f5 !important;
-            color: #333 !important;
+            background-color: var(--surface-2) !important;
+            color: var(--text) !important;
             font-weight: 700 !important;
           }
         }
@@ -256,8 +256,8 @@ export default function DailyPracticeSummaryPage() {
 
       {/* Header Info Block (Only visible on Print) */}
       <div className="print-header-info">
-        <h2 style={{ margin: '0 0 5px 0', color: '#1a1a1a' }}>Yashcom Foundation - Daily Practice Summary</h2>
-        <div style={{ fontSize: '12px', color: '#555', borderBottom: '2px solid #333', paddingBottom: '10px' }}>
+        <h2 style={{ margin: '0 0 5px 0', color: 'var(--text)' }}>Yashcom Foundation - Daily Practice Summary</h2>
+        <div style={{ fontSize: '12px', color: 'var(--text-muted)', borderBottom: '2px solid var(--text)', paddingBottom: '10px' }}>
           <strong>Batch:</strong> {selectedBatchName} | <strong>Date:</strong> {formatDisplayDate(selectedDate)} | <strong>Exported:</strong> {new Date().toLocaleTimeString('en-IN')}
         </div>
         <div style={{ display: 'flex', gap: '20px', marginTop: '10px', fontSize: '11px' }}>

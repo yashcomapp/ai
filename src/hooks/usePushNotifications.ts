@@ -93,7 +93,7 @@ export function usePushNotifications() {
         const options = {
           body: payload.notification?.body || payload.data?.body || '',
           badge: '/icons/badge-96.png?v=4',
-          color: '#1e3a8a'
+          color: 'rgb(30, 58, 138)'
         };
         if (Notification.permission === 'granted') {
           new Notification(title, options);

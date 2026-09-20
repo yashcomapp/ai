@@ -434,17 +434,17 @@ export default function AdminNoticesPage() {
         <head>
           <title>Notice Delivery & Seen Logs - ${title}</title>
           <style>
-            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 30px; color: #222730; }
-            h1 { font-size: 20px; font-weight: bold; margin-bottom: 5px; color: #171a1f; }
-            h2 { font-size: 14px; color: #64748b; margin-top: 0; margin-bottom: 25px; text-transform: uppercase; letter-spacing: 0.5px; }
-            .info-box { background: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; border-radius: 8px; margin-bottom: 25px; }
+            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 30px; color: var(--text); }
+            h1 { font-size: 20px; font-weight: bold; margin-bottom: 5px; color: var(--text); }
+            h2 { font-size: 14px; color: var(--text-muted); margin-top: 0; margin-bottom: 25px; text-transform: uppercase; letter-spacing: 0.5px; }
+            .info-box { background: var(--surface-2); border: 1px solid var(--border-light); padding: 15px; border-radius: 8px; margin-bottom: 25px; }
             .info-box p { margin: 4px 0; font-size: 13px; }
-            .section-title { font-size: 14px; font-weight: bold; color: #334155; margin-top: 25px; margin-bottom: 10px; border-bottom: 2px solid #e2e8f0; padding-bottom: 5px; }
+            .section-title { font-size: 14px; font-weight: bold; color: var(--text); margin-top: 25px; margin-bottom: 10px; border-bottom: 2px solid var(--border-light); padding-bottom: 5px; }
             table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 12.5px; }
-            th { background: #f1f5f9; color: #475569; font-weight: 600; text-align: left; padding: 10px; border: 1px solid #cbd5e1; }
-            td { padding: 10px; border: 1px solid #cbd5e1; color: #334155; }
-            .status-seen { color: #16a34a; font-weight: 600; }
-            .status-unseen { color: #dc2626; font-weight: 600; }
+            th { background: var(--surface-3); color: var(--text-muted); font-weight: 600; text-align: left; padding: 10px; border: 1px solid var(--border); }
+            td { padding: 10px; border: 1px solid var(--border); color: var(--text); }
+            .status-seen { color: var(--success); font-weight: 600; }
+            .status-unseen { color: var(--danger); font-weight: 600; }
             @media print {
               body { padding: 0; }
               button { display: none; }
@@ -469,7 +469,7 @@ export default function AdminNoticesPage() {
       htmlContent += `<div class="section-title">👥 Students Status (S)</div>`;
       const groups = noticeLogData.studentGroups;
       if (Object.keys(groups).length === 0) {
-        htmlContent += `<p style="font-size: 12.5px; font-style: italic; color: #64748b;">No students targeted.</p>`;
+        htmlContent += `<p style="font-size: 12.5px; font-style: italic; color: var(--text-muted);">No students targeted.</p>`;
       } else {
         Object.keys(groups).forEach(batchName => {
           let list = getSortedLogs(groups[batchName]);
@@ -478,7 +478,7 @@ export default function AdminNoticesPage() {
           }
 
           if (list.length > 0) {
-            htmlContent += `<h3 style="font-size: 13px; color: #4f46e5; margin-top: 15px; margin-bottom: 8px;">📦 ${batchName} (Students: ${list.length})</h3>`;
+            htmlContent += `<h3 style="font-size: 13px; color: var(--text); margin-top: 15px; margin-bottom: 8px;">📦 ${batchName} (Students: ${list.length})</h3>`;
             htmlContent += `
               <table>
                 <thead>
@@ -493,8 +493,8 @@ export default function AdminNoticesPage() {
             `;
             list.forEach((stud: any) => {
               const pushStatus = stud.hasPushRegistered
-                ? `<span style="color: #16a34a; font-weight: 600;">📲 Active</span>`
-                : `<span style="color: #dc2626; font-weight: 600;">📴 Disabled</span>`;
+                ? `<span style="color: var(--success); font-weight: 600;">📲 Active</span>`
+                : `<span style="color: var(--danger); font-weight: 600;">📴 Disabled</span>`;
               const seenStatus = stud.seen 
                 ? `<span class="status-seen">🟢 Seen at ${new Date(stud.seenAt).toLocaleString('en-IN')}</span>` 
                 : `<span class="status-unseen">❌ Not Seen yet</span>`;
@@ -518,7 +518,7 @@ export default function AdminNoticesPage() {
       htmlContent += `<div class="section-title">👪 Parents Status (P)</div>`;
       const pGroups = noticeLogData.parentGroups;
       if (Object.keys(pGroups).length === 0) {
-        htmlContent += `<p style="font-size: 12.5px; font-style: italic; color: #64748b;">No parents targeted.</p>`;
+        htmlContent += `<p style="font-size: 12.5px; font-style: italic; color: var(--text-muted);">No parents targeted.</p>`;
       } else {
         Object.keys(pGroups).forEach(batchName => {
           let pList = getSortedLogs(pGroups[batchName]);
@@ -527,7 +527,7 @@ export default function AdminNoticesPage() {
           }
 
           if (pList.length > 0) {
-            htmlContent += `<h3 style="font-size: 13px; color: #4f46e5; margin-top: 15px; margin-bottom: 8px;">📦 ${batchName} (Parents: ${pList.length})</h3>`;
+            htmlContent += `<h3 style="font-size: 13px; color: var(--text); margin-top: 15px; margin-bottom: 8px;">📦 ${batchName} (Parents: ${pList.length})</h3>`;
             htmlContent += `
               <table>
                 <thead>
@@ -541,8 +541,8 @@ export default function AdminNoticesPage() {
             `;
             pList.forEach((parent: any) => {
               const pushStatus = parent.hasPushRegistered
-                ? `<span style="color: #16a34a; font-weight: 600;">📲 Active</span>`
-                : `<span style="color: #dc2626; font-weight: 600;">📴 Disabled</span>`;
+                ? `<span style="color: var(--success); font-weight: 600;">📲 Active</span>`
+                : `<span style="color: var(--danger); font-weight: 600;">📴 Disabled</span>`;
               const seenStatus = parent.seen 
                 ? `<span class="status-seen">🟢 Seen at ${new Date(parent.seenAt).toLocaleString('en-IN')}</span>` 
                 : `<span class="status-unseen">❌ Not Seen yet</span>`;
@@ -624,7 +624,7 @@ export default function AdminNoticesPage() {
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
         <div>
-          <h1 style={{ fontSize: '20px', fontWeight: 800, margin: 0, background: 'linear-gradient(135deg, var(--accent), #818cf8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', whiteSpace: 'nowrap' }}>
+          <h1 style={{ fontSize: '20px', fontWeight: 800, margin: 0, background: 'linear-gradient(135deg, var(--accent), var(--text))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', whiteSpace: 'nowrap' }}>
             Notices & Announcements
           </h1>
         </div>
@@ -709,12 +709,12 @@ export default function AdminNoticesPage() {
                 {/* Color Palette Swatches */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '3px', padding: '0 4px', borderLeft: '1px solid var(--border-light)', borderRight: '1px solid var(--border-light)' }}>
                   {[
-                    { color: '#ffffff', label: 'White' },
-                    { color: '#f87171', label: 'Red' },
-                    { color: '#34d399', label: 'Green' },
-                    { color: '#fbbf24', label: 'Yellow' },
-                    { color: '#60a5fa', label: 'Blue' },
-                    { color: '#c084fc', label: 'Purple' }
+                    { color: 'var(--text-white)', label: 'White' },
+                    { color: 'var(--text)', label: 'Red' },
+                    { color: 'var(--text)', label: 'Green' },
+                    { color: 'var(--text)', label: 'Yellow' },
+                    { color: 'var(--text)', label: 'Blue' },
+                    { color: 'var(--text)', label: 'Purple' }
                   ].map(c => (
                     <button
                       key={c.color}
@@ -807,7 +807,7 @@ export default function AdminNoticesPage() {
                       fontWeight: 600,
                       cursor: 'pointer',
                       background: targetType === type ? 'var(--accent)' : 'var(--bg-soft)',
-                      color: targetType === type ? '#ffffff' : 'var(--text)',
+                      color: targetType === type ? 'var(--text-white)' : 'var(--text)',
                       transition: 'all 0.2s',
                       textAlign: 'center',
                       whiteSpace: 'nowrap'
@@ -927,7 +927,7 @@ export default function AdminNoticesPage() {
                 padding: '12px',
                 borderRadius: 'var(--radius-md)',
                 background: 'var(--accent)',
-                color: 'var(--text-white, #ffffff)',
+                color: 'var(--text-white)',
                 border: 'none',
                 fontWeight: 'bold',
                 cursor: 'pointer',
@@ -1187,7 +1187,7 @@ export default function AdminNoticesPage() {
                       onClick={() => setShowPdfOptionsModal(true)}
                       style={{
                         background: 'var(--accent)',
-                        color: 'var(--text-white, #ffffff)',
+                        color: 'var(--text-white)',
                         border: 'none',
                         borderRadius: 'var(--radius-sm)',
                         padding: '6px 12px',
@@ -1408,7 +1408,7 @@ export default function AdminNoticesPage() {
                   handleExportPDF();
                 }}
                 disabled={!pdfPrintStudents && !pdfPrintParents}
-                style={{ fontSize: '12px', padding: '6px 16px', background: 'var(--accent)', color: 'var(--text-white, #ffffff)', fontWeight: 'bold' }}
+                style={{ fontSize: '12px', padding: '6px 16px', background: 'var(--accent)', color: 'var(--text-white)', fontWeight: 'bold' }}
               >
                 🖨️ Print / Export PDF
               </button>

@@ -1492,22 +1492,22 @@ OUTPUT FORMAT: Return ONLY a valid JSON array of objects with schema:
           <title>${result.chapterName} — Master Weekly Subjective Suite</title>
           <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css">
           <style>
-            body { font-family: system-ui, -apple-system, sans-serif; color: #171a1f; padding: 20px; line-height: 1.45; }
+            body { font-family: system-ui, -apple-system, sans-serif; color: var(--text); padding: 20px; line-height: 1.45; }
             h1, h2, h3 { margin: 0 0 8px; }
-            .header-banner { text-align: center; border-bottom: 2px solid #2563eb; padding-bottom: 12px; margin-bottom: 20px; }
-            .day-card { border: 1px solid #cbd5e1; border-radius: 8px; margin-bottom: 24px; page-break-inside: avoid; overflow: hidden; }
-            .day-title { background: #0f172a; color: #fff; padding: 8px 14px; font-size: 13px; font-weight: bold; display: flex; justify-content: space-between; }
-            .topic-badge { background: #3b82f6; color: #fff; font-size: 10.5px; padding: 2px 8px; border-radius: 12px; margin-right: 6px; }
-            .q-box { border-bottom: 1px solid #f1f5f9; padding: 10px 14px; page-break-inside: avoid; }
+            .header-banner { text-align: center; border-bottom: 2px solid var(--primary); padding-bottom: 12px; margin-bottom: 20px; }
+            .day-card { border: 1px solid var(--text); border-radius: 8px; margin-bottom: 24px; page-break-inside: avoid; overflow: hidden; }
+            .day-title { background: var(--text); color: var(--text-white); padding: 8px 14px; font-size: 13px; font-weight: bold; display: flex; justify-content: space-between; }
+            .topic-badge { background: var(--text); color: var(--text-white); font-size: 10.5px; padding: 2px 8px; border-radius: 12px; margin-right: 6px; }
+            .q-box { border-bottom: 1px solid var(--text); padding: 10px 14px; page-break-inside: avoid; }
             .q-box:last-child { border-bottom: none; }
-            .q-text { font-size: 12.5px; font-weight: 700; margin-bottom: 5px; color: #171a1f; line-height: 1.4; }
-            .ans-box { background: #f8fafc; border-left: 4px solid #10b981; padding: 6px 10px; margin-top: 6px; font-size: 11.5px; border-radius: 4px; line-height: 1.4; }
-            .ans-text { margin-top: 3px; white-space: pre-wrap; word-break: break-word; color: #222730; }
-            mark { background-color: #fef08a !important; color: #854d0e !important; padding: 1px 3px; border-radius: 3px; font-weight: 700; }
+            .q-text { font-size: 12.5px; font-weight: 700; margin-bottom: 5px; color: var(--text); line-height: 1.4; }
+            .ans-box { background: var(--text); border-left: 4px solid var(--text); padding: 6px 10px; margin-top: 6px; font-size: 11.5px; border-radius: 4px; line-height: 1.4; }
+            .ans-text { margin-top: 3px; white-space: pre-wrap; word-break: break-word; color: var(--text); }
+            mark { background-color: var(--text) !important; color: var(--text) !important; padding: 1px 3px; border-radius: 3px; font-weight: 700; }
             @media print {
               body { padding: 10px; }
               .day-card { page-break-after: always; }
-              mark { background-color: #fef08a !important; color: #854d0e !important; -webkit-print-color-adjust: exact; }
+              mark { background-color: var(--text) !important; color: var(--text) !important; -webkit-print-color-adjust: exact; }
             }
           </style>
           <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js"></script>
@@ -1515,11 +1515,11 @@ OUTPUT FORMAT: Return ONLY a valid JSON array of objects with schema:
         </head>
         <body>
           <div class="header-banner math-container">
-            <h1 style="font-size: 18px; color: #0f172a;">YASHCOM Performance Learning OS — Master Weekly Suite</h1>
-            <div style="font-size: 12.5px; font-weight: bold; color: #475569;">
+            <h1 style="font-size: 18px; color: var(--text);">YASHCOM Performance Learning OS — Master Weekly Suite</h1>
+            <div style="font-size: 12.5px; font-weight: bold; color: var(--text-muted);">
               ${selectedBoard} Class ${selectedClass} | ${selectedSubjects.join(', ')} | Chapter(s) ${selectedChapters.map(c => c.split('||')[1]).join(', ')}: ${result.chapterName}
             </div>
-            <div style="font-size: 11px; color: #64748b; margin-top: 3px;">Week Starting: ${weekStartDate}</div>
+            <div style="font-size: 11px; color: var(--text-muted); margin-top: 3px;">Week Starting: ${weekStartDate}</div>
           </div>
       `;
 
@@ -1549,10 +1549,10 @@ OUTPUT FORMAT: Return ONLY a valid JSON array of objects with schema:
               <span>📅 ${dTest.dayName.toUpperCase()} HOME PRACTICE — ${dTest.date}</span>
               <span>Total: ${totalMarksForLearning} Marks</span>
             </div>
-            <div style="padding: 8px 14px; background: #eff6ff; font-size: 11px; color: #1e40af; border-bottom: 1px solid #dbeafe; display: flex; flex-direction: column; gap: 3px;">
+            <div style="padding: 8px 14px; background: var(--info-bg); font-size: 11px; color: var(--primary); border-bottom: 1px solid var(--text); display: flex; flex-direction: column; gap: 3px;">
               <div><strong>Topics Covered:</strong> ${getTopicNamesForDisplay(dTest.topics, dTest.learningQuestions || dTest.questions).join(', ') || 'Chapter Review'}</div>
               ${uniquePracticeSets.length > 0 ? `
-                <div style="color: #b91c1c; font-weight: 700; margin-top: 2px;">
+                <div style="color: var(--text); font-weight: 700; margin-top: 2px;">
                   📖 Required Textbook Practice Set: ${uniquePracticeSets.join(' | ')}
                 </div>
               ` : ''}
@@ -1560,10 +1560,10 @@ OUTPUT FORMAT: Return ONLY a valid JSON array of objects with schema:
             ${qSource.map((q: any, idx: number) => `
               <div class="q-box">
                 <div class="q-text">
-                  Q${idx + 1}. ${preprocessMathText(q.text)} <span style="font-weight: normal; color: #64748b; font-size: 11px;">[${q.marks} Mark${q.marks > 1 ? 's' : ''}]</span>
+                  Q${idx + 1}. ${preprocessMathText(q.text)} <span style="font-weight: normal; color: var(--text-muted); font-size: 11px;">[${q.marks} Mark${q.marks > 1 ? 's' : ''}]</span>
                 </div>
                 <div class="ans-box">
-                  <strong style="color: #065f46;">💡 Model Answer:</strong>
+                  <strong style="color: var(--success);">💡 Model Answer:</strong>
                   <div class="ans-text">${sanitizeAnswer(q.solution, q.text, q.keywords)}</div>
                 </div>
               </div>
@@ -1627,40 +1627,40 @@ OUTPUT FORMAT: Return ONLY a valid JSON array of objects with schema:
         <head>
           <title>${chapterName} — Weekly Study Planner</title>
           <style>
-            body { font-family: system-ui, -apple-system, sans-serif; color: #222730; padding: 30px; line-height: 1.5; background: #fff; }
-            .header-banner { text-align: center; border-bottom: 3px solid #2563eb; padding-bottom: 16px; margin-bottom: 24px; }
-            .header-title { font-size: 24px; font-weight: 800; color: #0f172a; margin: 0; text-transform: uppercase; letter-spacing: 0.5px; }
-            .meta-info { font-size: 13px; font-weight: bold; color: #475569; margin-top: 6px; }
-            .week-info { font-size: 12px; color: #64748b; margin-top: 4px; }
+            body { font-family: system-ui, -apple-system, sans-serif; color: var(--text); padding: 30px; line-height: 1.5; background: var(--text-white); }
+            .header-banner { text-align: center; border-bottom: 3px solid var(--primary); padding-bottom: 16px; margin-bottom: 24px; }
+            .header-title { font-size: 24px; font-weight: 800; color: var(--text); margin: 0; text-transform: uppercase; letter-spacing: 0.5px; }
+            .meta-info { font-size: 13px; font-weight: bold; color: var(--text-muted); margin-top: 6px; }
+            .week-info { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
             
             table { width: 100%; border-collapse: collapse; margin-top: 20px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05); }
-            th { background: #0f172a; color: #fff; padding: 12px 16px; font-size: 13px; font-weight: 800; text-align: left; text-transform: uppercase; }
-            td { padding: 12px 16px; border-bottom: 1px solid #e2e8f0; font-size: 12.5px; vertical-align: top; }
-            tr:nth-child(even) { background: #f8fafc; }
+            th { background: var(--text); color: var(--text-white); padding: 12px 16px; font-size: 13px; font-weight: 800; text-align: left; text-transform: uppercase; }
+            td { padding: 12px 16px; border-bottom: 1px solid var(--text); font-size: 12.5px; vertical-align: top; }
+            tr:nth-child(even) { background: var(--text); }
             
-            .day-cell { font-weight: bold; color: #171a1f; }
+            .day-cell { font-weight: bold; color: var(--text); }
             .type-badge { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 10.5px; font-weight: 700; text-transform: uppercase; }
-            .badge-practice { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
-            .badge-exam { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
+            .badge-practice { background: var(--info-bg); color: var(--primary); border: 1px solid var(--text); }
+            .badge-exam { background: var(--success-bg); color: var(--success); border: 1px solid var(--text); }
             
             .topic-list { margin: 0; padding-left: 18px; }
             .topic-list li { margin-bottom: 4px; }
-            .practice-set { margin-top: 6px; font-size: 11px; font-weight: bold; color: #b91c1c; }
+            .practice-set { margin-top: 6px; font-size: 11px; font-weight: bold; color: var(--text); }
             
-            .footer-note { text-align: center; margin-top: 40px; font-size: 11px; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 15px; }
+            .footer-note { text-align: center; margin-top: 40px; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--text); padding-top: 15px; }
             @media print {
               body { padding: 10px; }
               table { box-shadow: none; page-break-inside: avoid; }
-              th { background-color: #0f172a !important; color: #fff !important; -webkit-print-color-adjust: exact; }
-              .badge-practice { background-color: #eff6ff !important; color: #1e40af !important; -webkit-print-color-adjust: exact; }
-              .badge-exam { background-color: #ecfdf5 !important; color: #065f46 !important; -webkit-print-color-adjust: exact; }
+              th { background-color: var(--text) !important; color: var(--text-white) !important; -webkit-print-color-adjust: exact; }
+              .badge-practice { background-color: var(--info-bg) !important; color: var(--primary) !important; -webkit-print-color-adjust: exact; }
+              .badge-exam { background-color: var(--success-bg) !important; color: var(--success) !important; -webkit-print-color-adjust: exact; }
             }
           </style>
         </head>
         <body>
           <div class="header-banner">
             <h1 class="header-title">YASHCOM Performance Learning OS</h1>
-            <div style="font-size: 15px; font-weight: 700; color: #2563eb; margin-top: 4px;">📅 Weekly Study Planner & Schedule</div>
+            <div style="font-size: 15px; font-weight: 700; color: var(--primary); margin-top: 4px;">📅 Weekly Study Planner & Schedule</div>
             <div class="meta-info">
               ${boardVal} Class ${classVal} | ${subjectVal} | Chapter: ${chapterName}
             </div>
@@ -1689,7 +1689,7 @@ OUTPUT FORMAT: Return ONLY a valid JSON array of objects with schema:
           <tr>
             <td class="day-cell">
               <div>${dTest.dayName}</div>
-              <div style="font-size: 11px; font-weight: normal; color: #64748b; margin-top: 2px;">${dTest.date || ''}</div>
+              <div style="font-size: 11px; font-weight: normal; color: var(--text-muted); margin-top: 2px;">${dTest.date || ''}</div>
             </td>
             <td>
               <span class="type-badge badge-practice">✍️ Daily Practice</span>
@@ -1709,19 +1709,19 @@ OUTPUT FORMAT: Return ONLY a valid JSON array of objects with schema:
       if (saturdayTest) {
         htmlContent += `
           <tr>
-            <td class="day-cell" style="border-bottom: 2px solid #0f172a;">
+            <td class="day-cell" style="border-bottom: 2px solid var(--text);">
               <div>Saturday</div>
-              <div style="font-size: 11px; font-weight: normal; color: #64748b; margin-top: 2px;">Exam Day</div>
+              <div style="font-size: 11px; font-weight: normal; color: var(--text-muted); margin-top: 2px;">Exam Day</div>
             </td>
-            <td style="border-bottom: 2px solid #0f172a;">
+            <td style="border-bottom: 2px solid var(--text);">
               <span class="type-badge badge-exam">🏫 Classroom Test</span>
             </td>
-            <td style="border-bottom: 2px solid #0f172a;">
-              <div style="font-weight: bold; color: #171a1f;">Weekly Revision & Evaluation</div>
-              <div style="font-size: 11px; color: #475569; margin-top: 3px;">
+            <td style="border-bottom: 2px solid var(--text);">
+              <div style="font-weight: bold; color: var(--text);">Weekly Revision & Evaluation</div>
+              <div style="font-size: 11px; color: var(--text-muted); margin-top: 3px;">
                 Cumulative exam covering all topics listed from Monday to Friday.
               </div>
-              <div style="margin-top: 6px; font-size: 11.5px; font-weight: 600; color: #059669;">
+              <div style="margin-top: 6px; font-size: 11.5px; font-weight: 600; color: var(--success);">
                 📝 Format: Subjective Assessment (${saturdayTest.totalMarks || 40} Marks)
               </div>
             </td>
@@ -1735,7 +1735,7 @@ OUTPUT FORMAT: Return ONLY a valid JSON array of objects with schema:
 
           <div class="footer-note">
             <p><strong>Note for Students:</strong> Please ensure your daily homework practice is completed and uploaded on time. The Saturday Classroom Test is mandatory.</p>
-            <p style="font-size: 9.5px; color: #94a3b8; margin-top: 4px;">Generated dynamically by YASHCOM Syllabus Manager</p>
+            <p style="font-size: 9.5px; color: var(--text-faint); margin-top: 4px;">Generated dynamically by YASHCOM Syllabus Manager</p>
           </div>
         </body>
         </html>
@@ -2099,7 +2099,7 @@ OUTPUT FORMAT: Return ONLY a valid JSON array of objects with schema:
                   <button 
                     className="btn btn-secondary btn-sm"
                     onClick={handleGeneratePromptForChapter}
-                    style={{ fontSize: '11px', fontWeight: 700, padding: '6px 14px', background: 'var(--purple)', color: 'var(--text-white, #ffffff)', border: 'none' }}
+                    style={{ fontSize: '11px', fontWeight: 700, padding: '6px 14px', background: 'var(--purple)', color: 'var(--text-white)', border: 'none' }}
                   >
                     🔧 Generate & Copy AI Prompt
                   </button>
@@ -2309,7 +2309,7 @@ OUTPUT FORMAT: Return ONLY a valid JSON array of objects with schema:
                 <button 
                   className="btn btn-secondary btn-sm"
                   onClick={handleGeneratePYQPrompt}
-                  style={{ fontSize: '11px', fontWeight: 700, padding: '6px 14px', background: 'var(--purple)', color: 'var(--text-white, #ffffff)', border: 'none' }}
+                  style={{ fontSize: '11px', fontWeight: 700, padding: '6px 14px', background: 'var(--purple)', color: 'var(--text-white)', border: 'none' }}
                 >
                   🔧 Generate & Copy PYQ Prompt
                 </button>
@@ -2354,7 +2354,7 @@ OUTPUT FORMAT: Return ONLY a valid JSON array of objects with schema:
               <button 
                 className="btn btn-secondary btn-sm"
                 onClick={handleParseQuestions}
-                style={{ fontSize: '11px', fontWeight: 700, padding: '8px', background: 'var(--accent-grad)', color: 'var(--text-white, #ffffff)', border: 'none' }}
+                style={{ fontSize: '11px', fontWeight: 700, padding: '8px', background: 'var(--accent-grad)', color: 'var(--text-white)', border: 'none' }}
               >
                 📥 Parse JSON Questions
               </button>
