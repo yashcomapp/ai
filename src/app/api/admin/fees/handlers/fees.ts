@@ -3,6 +3,7 @@ import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole } from '@/lib/auth';
 import { getDateKeyIST as getISTDateString } from '@/lib/dateUtils';
 import { isDemoUser } from '@/lib/studentDb';
+import { toNonNegativeNumber, safeNumber } from '@/lib/validationUtils';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,14 +21,14 @@ async function recalculateStudentFeeStats(studentCode: string) {
     .get();
   const transactions = txSnap.docs.map(doc => doc.data());
 
-  const totalTxPaidAmount = transactions.reduce((sum, tx) => sum + Number(tx.amountPaid || 0), 0);
-  const netPayableAmount = Number(feeData.netPayableAmount || feeData.totalPackageAmount || 0);
+  const totalTxPaidAmount = transactions.reduce((sum, tx) => sum + safeNumber(tx.amountPaid), 0);
+  const netPayableAmount = safeNumber(feeData.netPayableAmount, safeNumber(feeData.totalPackageAmount, 0));
 
   const paymentsByInst: Record<string, number> = {};
 
   transactions.forEach(tx => {
     if (tx.installmentId) {
-      paymentsByInst[tx.installmentId] = (paymentsByInst[tx.installmentId] || 0) + Number(tx.amountPaid || 0);
+      paymentsByInst[tx.installmentId] = (paymentsByInst[tx.installmentId] || 0) + safeNumber(tx.amountPaid);
     }
   });
 
@@ -39,7 +40,7 @@ async function recalculateStudentFeeStats(studentCode: string) {
   const updatedInstallments = installments.map((inst: any, idx: number) => {
     const instId = inst.installmentId || `inst_${idx + 1}`;
     const paidForInst = paymentsByInst[instId] || 0;
-    const targetAmount = Number(inst.amount || 0);
+    const targetAmount = safeNumber(inst.amount, 0);
     
     let status = inst.status || 'pending';
     let paidAt = inst.paidAt || null;
@@ -85,7 +86,7 @@ async function recalculateStudentFeeStats(studentCode: string) {
 
   const directPaidSum = updatedInstallments
     .filter((i: any) => i.status === 'paid')
-    .reduce((sum: number, i: any) => sum + Number(i.amount || 0), 0);
+    .reduce((sum: number, i: any) => sum + safeNumber(i.amount, 0), 0);
   const totalPaidAmount = Math.max(totalTxPaidAmount, directPaidSum);
   const outstandingAmount = Math.max(0, netPayableAmount - totalPaidAmount);
 
@@ -207,15 +208,20 @@ export async function POST(req: NextRequest) {
       const cleanCode = studentCode.trim().toUpperCase();
       const feeRef = adminDb.collection('studentFees').doc(cleanCode);
 
-      const netPayable = Number(feeData.totalPackageAmount || 0) - Number(feeData.discountAmount || 0);
+      const totalPackageAmount = toNonNegativeNumber(feeData.totalPackageAmount, 'totalPackageAmount');
+      const discountAmount = toNonNegativeNumber(feeData.discountAmount ?? 0, 'discountAmount');
+      if (discountAmount > totalPackageAmount) {
+        return NextResponse.json({ error: 'Discount amount cannot exceed total package amount.' }, { status: 400 });
+      }
+      const netPayable = totalPackageAmount - discountAmount;
 
       // Save custom installments list
       const installments = Array.isArray(feeData.installments) ? feeData.installments : [];
       const formattedInstallments = installments.map((inst: any, idx: number) => ({
         installmentId: inst.installmentId || `inst_${idx + 1}`,
         installmentNo: idx + 1,
-        amount: Number(inst.amount),
-        dueDate: inst.dueDate, // YYYY-MM-DD
+        amount: toNonNegativeNumber(inst.amount, `installment ${idx + 1} amount`),
+        dueDate: inst.dueDate ? String(inst.dueDate) : '', // YYYY-MM-DD
         status: inst.status || 'pending',
         paidAt: inst.paidAt || null
       }));
@@ -225,8 +231,8 @@ export async function POST(req: NextRequest) {
         studentName: feeData.studentName || '',
         classNum: String(feeData.classNum || ''),
         batchId: feeData.batchId || '',
-        totalPackageAmount: Number(feeData.totalPackageAmount),
-        discountAmount: Number(feeData.discountAmount || 0),
+        totalPackageAmount,
+        discountAmount,
         netPayableAmount: netPayable,
         installments: formattedInstallments,
         updatedAt: new Date().toISOString()
@@ -252,6 +258,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Template not found.' }, { status: 404 });
       }
       const tmplData = tmplDoc.data()!;
+      const totalPackageAmount = toNonNegativeNumber(tmplData.totalPackageAmount, 'template totalPackageAmount');
 
       const studentsSnap = await adminDb.collection('users')
         .where('role', '==', 'student')
@@ -285,7 +292,7 @@ export async function POST(req: NextRequest) {
       const formattedInstallments = (tmplData.installments || []).map((inst: any, idx: number) => ({
         installmentId: `inst_${idx + 1}`,
         installmentNo: idx + 1,
-        amount: Number(inst.amount),
+        amount: toNonNegativeNumber(inst.amount, `installment ${idx + 1} amount`),
         dueDate: String(inst.dueDate || ''),
         status: 'pending',
         paidAt: null
@@ -303,9 +310,9 @@ export async function POST(req: NextRequest) {
           studentName: student.name,
           classNum: student.classNum,
           batchId: student.batchId,
-          totalPackageAmount: Number(tmplData.totalPackageAmount),
+          totalPackageAmount,
           discountAmount: 0,
-          netPayableAmount: Number(tmplData.totalPackageAmount),
+          netPayableAmount: totalPackageAmount,
           installments: formattedInstallments,
           templateId: tmplDoc.id,
           templateName: tmplData.name || '',

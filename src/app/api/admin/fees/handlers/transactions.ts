@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole } from '@/lib/auth';
 import { getDateKeyIST as getISTDateString } from '@/lib/dateUtils';
+import { toPositiveNumber, safeNumber } from '@/lib/validationUtils';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,15 +22,15 @@ async function syncStudentFees(studentCode: string) {
   const transactions = txSnap.docs.map(doc => doc.data());
 
   // 2. Sum overall paid totals
-  const totalTxPaidAmount = transactions.reduce((sum, tx) => sum + Number(tx.amountPaid || 0), 0);
-  const netPayableAmount = Number(feeData.netPayableAmount || feeData.totalPackageAmount || 0);
+  const totalTxPaidAmount = transactions.reduce((sum, tx) => sum + safeNumber(tx.amountPaid), 0);
+  const netPayableAmount = safeNumber(feeData.netPayableAmount, safeNumber(feeData.totalPackageAmount, 0));
 
   // 3. Map transaction payments by installmentId
   const paymentsByInst: Record<string, number> = {};
 
   transactions.forEach(tx => {
     if (tx.installmentId) {
-      paymentsByInst[tx.installmentId] = (paymentsByInst[tx.installmentId] || 0) + Number(tx.amountPaid || 0);
+      paymentsByInst[tx.installmentId] = (paymentsByInst[tx.installmentId] || 0) + safeNumber(tx.amountPaid);
     }
   });
 
@@ -42,7 +43,7 @@ async function syncStudentFees(studentCode: string) {
   const updatedInstallments = installments.map((inst: any, idx: number) => {
     const instId = inst.installmentId || `inst_${idx + 1}`;
     const paidForInst = paymentsByInst[instId] || 0;
-    const targetAmount = Number(inst.amount || 0);
+    const targetAmount = safeNumber(inst.amount, 0);
     
     let status = inst.status || 'pending';
     let paidAt = inst.paidAt || null;
@@ -91,7 +92,7 @@ async function syncStudentFees(studentCode: string) {
 
   const directPaidSum = updatedInstallments
     .filter((i: any) => i.status === 'paid')
-    .reduce((sum: number, i: any) => sum + Number(i.amount || 0), 0);
+    .reduce((sum: number, i: any) => sum + safeNumber(i.amount, 0), 0);
   const totalPaidAmount = Math.max(totalTxPaidAmount, directPaidSum);
   const outstandingAmount = Math.max(0, netPayableAmount - totalPaidAmount);
 
@@ -233,14 +234,21 @@ export async function POST(req: NextRequest) {
 
       for (const pay of payments) {
         const { studentCode, amountPaid, paymentMethod, referenceNumber, installmentId, paymentDate } = pay;
-        if (!studentCode || amountPaid === undefined || Number(amountPaid) <= 0 || !paymentMethod) continue;
+        if (!studentCode || amountPaid === undefined || !paymentMethod) continue;
+
+        let validAmount: number;
+        try {
+          validAmount = toPositiveNumber(amountPaid, `amountPaid for ${studentCode}`);
+        } catch {
+          continue; // Skip invalid or zero/negative payment rows in bulk
+        }
 
         const cleanCode = studentCode.trim().toUpperCase();
 
         // Guard against duplicate insertion if same installment & amount is already recorded
-        const txKey = `${cleanCode}_${installmentId}_${Number(amountPaid)}`;
+        const txKey = `${cleanCode}_${installmentId}_${validAmount}`;
         if (installmentId && existingTxSet.has(txKey)) {
-          console.warn(`Skipping duplicate transaction for ${cleanCode} ${installmentId} (₹${amountPaid})`);
+          console.warn(`Skipping duplicate transaction for ${cleanCode} ${installmentId} (₹${validAmount})`);
           continue;
         }
 
@@ -254,7 +262,7 @@ export async function POST(req: NextRequest) {
           transactionId: newTxRef.id,
           studentCode: cleanCode,
           installmentId: installmentId || '',
-          amountPaid: Number(amountPaid),
+          amountPaid: validAmount,
           paymentMethod,
           referenceNumber: referenceNumber || '',
           receiptUrl: '',
@@ -283,13 +291,14 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Missing required transaction fields.' }, { status: 400 });
       }
 
+      const validAmount = toPositiveNumber(amountPaid, 'amountPaid');
       const cleanCode = studentCode.trim().toUpperCase();
       const newTxRef = adminDb.collection('feeTransactions').doc();
       const newTx = {
         transactionId: newTxRef.id,
         studentCode: cleanCode,
         installmentId: installmentId || '',
-        amountPaid: Number(amountPaid),
+        amountPaid: validAmount,
         paymentMethod,
         referenceNumber: referenceNumber || '',
         receiptUrl: receiptUrl || '',
@@ -312,6 +321,8 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Missing required transaction fields.' }, { status: 400 });
       }
 
+      const validAmount = toPositiveNumber(amountPaid, 'amountPaid');
+
       let txRef = adminDb.collection('feeTransactions').doc(transactionId);
       let txSnap = await txRef.get();
       
@@ -332,7 +343,7 @@ export async function POST(req: NextRequest) {
       await txRef.update({
         studentCode: cleanCode,
         installmentId: installmentId !== undefined ? installmentId : (existingData.installmentId || ''),
-        amountPaid: Number(amountPaid),
+        amountPaid: validAmount,
         paymentMethod,
         referenceNumber: referenceNumber !== undefined ? referenceNumber : (existingData.referenceNumber || ''),
         receiptUrl: receiptUrl !== undefined ? receiptUrl : (existingData.receiptUrl || ''),

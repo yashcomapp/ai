@@ -26,3 +26,5 @@ scratch/
 inspect-*.js
 debug-*.js
 .env*
+*.zip
+

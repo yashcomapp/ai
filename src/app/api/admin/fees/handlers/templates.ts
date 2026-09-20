@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole } from '@/lib/auth';
+import { toNonNegativeNumber } from '@/lib/validationUtils';
 
 export const dynamic = 'force-dynamic';
 
@@ -40,6 +41,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Missing required template fields.' }, { status: 400 });
       }
 
+      const totalPkg = toNonNegativeNumber(totalPackageAmount, 'totalPackageAmount');
       const docId = templateId || `tmpl_${classNum}_${Date.now()}`;
       const docRef = adminDb.collection('feeTemplates').doc(docId);
       
@@ -47,11 +49,11 @@ export async function POST(req: NextRequest) {
         templateId: docId,
         name,
         classNum: String(classNum),
-        totalPackageAmount: Number(totalPackageAmount),
+        totalPackageAmount: totalPkg,
         registrationFee: 0,
-        installments: installments.map((inst: any, idx: number) => ({
+        installments: (Array.isArray(installments) ? installments : []).map((inst: any, idx: number) => ({
           installmentNo: idx + 1,
-          amount: Number(inst.amount),
+          amount: toNonNegativeNumber(inst.amount, `installment ${idx + 1} amount`),
           dueDate: String(inst.dueDate || (idx === 0 ? '2026-03-15' : ''))
         })),
         updatedAt: new Date().toISOString()
