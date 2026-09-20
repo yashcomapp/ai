@@ -25,14 +25,14 @@ html.dark {
     --border-light: rgba(255, 255, 255, 0.05);
     --border-glass: rgba(255, 255, 255, 0.09);
 
-    /* Ergonomic Low-Stress Typography (Anti-Halation & Zero Glare - Soft Matte Parchment Bone) */
-    --text: #d0d6e0;
-    --text-2: #b4bccb;
-    --text-secondary: #8e98a8;
-    --text-muted: #808b9c;
-    --text-faint: #5d6778;
+    /* Ergonomic Zero-Halation Typography (Calibrated 8.5:1 Primary & 6.7:1 Secondary) */
+    --text: #adb3be;
+    --text-2: #939baa;
+    --text-secondary: #7c8594;
+    --text-muted: #707987;
+    --text-faint: #545c6b;
 
-    /* Primary Accent - Warm Matte Dull Terracotta/Amber (Eye-Comfort & Low-Stress Alertness) */
+    /* Primary Accent - Warm Matte Dull Terracotta/Amber (Eye-Comfort 6.1:1 Ratio) */
     --accent: #d97b38;
     --accent-dark: #b86024;
     --accent-hover: #e08844;
@@ -42,20 +42,20 @@ html.dark {
     --accent-tint: rgba(217, 123, 56, 0.05);
     --accent-light: rgba(217, 123, 56, 0.08);
 
-    /* Rich Educational Category & Status Colors (Soft Eye-Comfort & Low-Glare WhatsApp Style) */
-    --success: #34d399;
-    --warning: #fbbf24;
-    --danger: #f87171;
-    --danger-muted: #fca5a5;
-    --info: #38bdf8;
-    --purple: #c084fc;
+    /* Anti-Glare Status & Category Colors (Calibrated 6.0–6.8:1 Low-Stress Ratios) */
+    --success: #2aa66a;
+    --warning: #c98d28;
+    --danger: #e86b6b;
+    --danger-muted: #cf7878;
+    --info: #4b9dc8;
+    --purple: #a882e0;
 
-    --success-bg: rgba(52, 211, 153, 0.12);
-    --warning-bg: rgba(251, 191, 36, 0.12);
-    --danger-bg: rgba(248, 113, 113, 0.12);
-    --danger-border: rgba(248, 113, 113, 0.25);
-    --info-bg: rgba(56, 189, 248, 0.12);
-    --purple-bg: rgba(192, 132, 252, 0.12);
+    --success-bg: rgba(42, 166, 106, 0.12);
+    --warning-bg: rgba(201, 141, 40, 0.12);
+    --danger-bg: rgba(232, 107, 107, 0.12);
+    --danger-border: rgba(232, 107, 107, 0.25);
+    --info-bg: rgba(75, 157, 200, 0.12);
+    --purple-bg: rgba(168, 130, 224, 0.12);
 
     --review-card-bg: #181b23;
     --review-card-border: rgba(255, 255, 255, 0.09);
@@ -68,14 +68,14 @@ html.dark {
     --primary-dark: #1f3350;
     --primary-soft: rgba(45, 72, 114, 0.20);
     --primary-ring: rgba(45, 72, 114, 0.35);
-    --text-on-primary: #eef2f6;
+    --text-on-primary: #c5cbd4;
     --secondary: #4a88d9;
-    --emerald: #10b981;
-    --emerald-dark: #059669;
-    --slate: #64748b;
+    --emerald: #2aa66a;
+    --emerald-dark: #228c58;
+    --slate: #5d6778;
 
     --text-on-accent: #111318;
-    --text-white: #eef2f6;
+    --text-white: #c5cbd4;
     --text-black: #000000;
     --color-green-whatsapp: #25D366;
     --color-green-whatsapp-border: #22c35e;
