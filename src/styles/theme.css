@@ -25,12 +25,12 @@ html.dark {
     --border-light: rgba(255, 255, 255, 0.05);
     --border-glass: rgba(255, 255, 255, 0.09);
 
-    /* Ergonomic Warm Typography (Anti-Halation & Zero Glare - Soft Matte Parchment Ivory) */
-    --text: #e2e8f0;
-    --text-2: #cbd5e1;
-    --text-secondary: #94a3b8;
-    --text-muted: #94a3b8;
-    --text-faint: #64748b;
+    /* Ergonomic Low-Stress Typography (Anti-Halation & Zero Glare - Soft Matte Parchment Bone) */
+    --text: #d0d6e0;
+    --text-2: #b4bccb;
+    --text-secondary: #8e98a8;
+    --text-muted: #808b9c;
+    --text-faint: #5d6778;
 
     /* Primary Accent - Warm Matte Dull Terracotta/Amber (Eye-Comfort & Low-Stress Alertness) */
     --accent: #d97b38;
@@ -68,14 +68,14 @@ html.dark {
     --primary-dark: #1f3350;
     --primary-soft: rgba(45, 72, 114, 0.20);
     --primary-ring: rgba(45, 72, 114, 0.35);
-    --text-on-primary: #ffffff;
+    --text-on-primary: #eef2f6;
     --secondary: #4a88d9;
     --emerald: #10b981;
     --emerald-dark: #059669;
     --slate: #64748b;
 
     --text-on-accent: #111318;
-    --text-white: #ffffff;
+    --text-white: #eef2f6;
     --text-black: #000000;
     --color-green-whatsapp: #25D366;
     --color-green-whatsapp-border: #22c35e;
@@ -256,7 +256,7 @@ h4,
 h5,
 h6 {
     font-family: var(--font-family);
-    font-weight: var(--font-extrabold);
+    font-weight: 650;
     letter-spacing: -0.01em;
     color: var(--text);
     margin: 0;
