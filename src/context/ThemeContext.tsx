@@ -12,39 +12,24 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [theme, setTheme] = useState<Theme>('dark');
+  const [theme] = useState<Theme>('dark');
 
   useEffect(() => {
-    const storedTheme = (localStorage.getItem('los_theme') as Theme) || 'dark';
-    setTheme(storedTheme);
-    document.documentElement.setAttribute('data-theme', storedTheme);
-    if (storedTheme === 'dark') {
-      document.documentElement.classList.add('dark');
-      document.documentElement.classList.remove('light');
-    } else {
-      document.documentElement.classList.add('light');
-      document.documentElement.classList.remove('dark');
-    }
+    localStorage.setItem('los_theme', 'dark');
+    document.documentElement.setAttribute('data-theme', 'dark');
+    document.documentElement.classList.add('dark');
+    document.documentElement.classList.remove('light');
   }, []);
 
   const toggleTheme = () => {
-    setTheme(prev => {
-      const nextTheme = prev === 'dark' ? 'light' : 'dark';
-      localStorage.setItem('los_theme', nextTheme);
-      document.documentElement.setAttribute('data-theme', nextTheme);
-      if (nextTheme === 'dark') {
-        document.documentElement.classList.add('dark');
-        document.documentElement.classList.remove('light');
-      } else {
-        document.documentElement.classList.add('light');
-        document.documentElement.classList.remove('dark');
-      }
-      return nextTheme;
-    });
+    // Single Theme Policy: Dark theme only
+    document.documentElement.setAttribute('data-theme', 'dark');
+    document.documentElement.classList.add('dark');
+    document.documentElement.classList.remove('light');
   };
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme }}>
+    <ThemeContext.Provider value={{ theme: 'dark', toggleTheme }}>
       {children}
     </ThemeContext.Provider>
   );
