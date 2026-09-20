@@ -1592,7 +1592,7 @@ Return ONLY valid JSON. No extra text.`;
         
         {/* Card 1: Syllabus Mapping Cascading Selects */}
         <div className="card" style={{ background: 'var(--surface)', padding: '12px 14px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)' }}>
-          <h3 style={{ fontSize: '13px', fontWeight: 800, margin: '0 0 8px', textTransform: 'uppercase', color: 'var(--accent)' }}>Syllabus Mapping</h3>
+          <h3 style={{ fontSize: '13px', fontWeight: 800, margin: '0 0 8px', textTransform: 'uppercase', color: 'var(--text)' }}>Syllabus Mapping</h3>
           
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '8px', marginBottom: '10px' }}>
             {/* Board */}
@@ -1657,8 +1657,8 @@ Return ONLY valid JSON. No extra text.`;
           {selectedTopics.length > 0 && (
             <div style={{ marginTop: '12px', borderTop: '1px solid var(--border-light)', paddingTop: '10px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '6px' }}>
-                <h3 style={{ fontSize: '12.5px', fontWeight: 800, margin: 0, color: 'var(--accent)' }}>Target Question Quota</h3>
-                <span style={{ fontSize: '11.5px', fontWeight: 700, background: 'rgba(52, 152, 219, 0.15)', color: 'var(--accent)', padding: '2px 8px', borderRadius: '12px' }}>
+                <h3 style={{ fontSize: '12.5px', fontWeight: 800, margin: 0, color: 'var(--text)' }}>Target Question Quota</h3>
+                <span style={{ fontSize: '11.5px', fontWeight: 700, background: 'var(--info-bg)', color: 'var(--info)', padding: '2px 8px', borderRadius: '12px' }}>
                   Target: <strong>{getTotalTargetQuestions()} Questions</strong>
                 </span>
               </div>
@@ -1829,7 +1829,7 @@ Return ONLY valid JSON. No extra text.`;
         {/* Card 2: Workspace Settings & Actions */}
         {selectedTopics.length > 0 && (
           <div className="card" style={{ background: 'var(--surface)', padding: '18px 24px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)' }}>
-            <h3 style={{ fontSize: '13px', fontWeight: 800, margin: '0 0 12px', textTransform: 'uppercase', color: 'var(--accent)' }}>Workspace Settings &amp; Generator Actions</h3>
+            <h3 style={{ fontSize: '13px', fontWeight: 800, margin: '0 0 12px', textTransform: 'uppercase', color: 'var(--text)' }}>Workspace Settings &amp; Generator Actions</h3>
 
             {/* Optional Textbook/Diagram Image Upload */}
             <div style={{ marginTop: '10px', borderTop: '1px dashed var(--border-light)', paddingTop: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
@@ -1871,7 +1871,7 @@ Return ONLY valid JSON. No extra text.`;
             </div>
 
             {/* Numericals / Calculation Questions Toggle */}
-            <div style={{ marginTop: '12px', padding: '10px 14px', background: includeNumericals ? 'rgba(52, 152, 219, 0.08)' : 'var(--bg-soft)', borderRadius: 'var(--radius-sm)', border: `1px solid ${includeNumericals ? 'var(--accent)' : 'var(--border-light)'}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
+            <div style={{ marginTop: '12px', padding: '10px 14px', background: includeNumericals ? 'var(--info-bg)' : 'var(--bg-soft)', borderRadius: 'var(--radius-sm)', border: `1px solid ${includeNumericals ? 'var(--info)' : 'var(--border-light)'}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', margin: 0, flex: 1 }}>
                 <input
                   type="checkbox"
@@ -1886,14 +1886,14 @@ Return ONLY valid JSON. No extra text.`;
                   Include Numericals &amp; Calculation Problems (ONE / Numerical Types)
                 </div>
               </label>
-              <span style={{ fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '12px', background: includeNumericals ? 'rgba(52, 152, 219, 0.2)' : 'var(--border-light)', color: includeNumericals ? 'var(--accent)' : 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+              <span style={{ fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '12px', background: includeNumericals ? 'var(--info-bg)' : 'var(--border-light)', color: includeNumericals ? 'var(--info)' : 'var(--text-muted)', whiteSpace: 'nowrap' }}>
                 {includeNumericals ? 'Numericals ON' : 'Theory / Qualitative Only'}
               </span>
             </div>
 
             {/* Subjective verbatim requirements warning */}
             {questionType === 'subjective' && (
-              <div style={{ marginTop: '16px', padding: '12px', background: 'rgba(245, 158, 11, 0.15)', color: 'var(--warning)', borderRadius: 'var(--radius-sm)', borderLeft: '4px solid var(--warning)' }}>
+              <div style={{ marginTop: '16px', padding: '12px', background: 'var(--warning-bg)', color: 'var(--warning)', borderRadius: 'var(--radius-sm)', borderLeft: '4px solid var(--warning)' }}>
                 <p style={{ margin: '0 0 6px', fontWeight: 'bold', fontSize: '12px' }}>⚠️ Verbatim Textbook Requirements for Subjective Questions:</p>
                 <ul style={{ margin: 0, paddingLeft: '20px', fontSize: '11px' }}>
                   <li>Answers must exactly match prescribed textbook vocabulary.</li>
@@ -1921,7 +1921,7 @@ Return ONLY valid JSON. No extra text.`;
             {/* Prompt generated view */}
             <div className="card" style={{ background: 'var(--surface)', padding: '18px 24px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h3 style={{ fontSize: '13px', fontWeight: 800, margin: 0, textTransform: 'uppercase', color: 'var(--accent)' }}>📋 Generated AI Prompt</h3>
+                <h3 style={{ fontSize: '13px', fontWeight: 800, margin: 0, textTransform: 'uppercase', color: 'var(--text)' }}>📋 Generated AI Prompt</h3>
                 {aiPrompt && (
                   <button 
                     className="btn btn-secondary btn-sm" 
@@ -1946,7 +1946,7 @@ Return ONLY valid JSON. No extra text.`;
             {/* Paste Response block */}
             <div id="paste-response-card" className="card" style={{ background: 'var(--surface)', padding: '18px 24px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h3 style={{ fontSize: '13px', fontWeight: 800, margin: 0, textTransform: 'uppercase', color: 'var(--accent)' }}>📥 Paste AI Response</h3>
+                <h3 style={{ fontSize: '13px', fontWeight: 800, margin: 0, textTransform: 'uppercase', color: 'var(--text)' }}>📥 Paste AI Response</h3>
                 <button 
                   className="btn btn-secondary btn-sm" 
                   onClick={async () => {
@@ -1974,7 +1974,7 @@ Return ONLY valid JSON. No extra text.`;
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
             {generatedQuestions.length > 0 ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ background: 'rgba(59, 130, 246, 0.15)', color: 'var(--accent)', padding: '5px 12px', borderRadius: '14px', fontSize: '11px', fontWeight: 700 }}>
+                <span style={{ background: 'var(--info-bg)', color: 'var(--info)', padding: '5px 12px', borderRadius: '14px', fontSize: '11px', fontWeight: 700 }}>
                   📦 {generatedQuestions.length} Questions Loaded in Preview
                 </span>
                 <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
@@ -2000,11 +2000,11 @@ Return ONLY valid JSON. No extra text.`;
               )}
               <button 
                 type="button"
-                className={generatedQuestions.length > 0 ? "btn btn-secondary" : "btn btn-primary"} 
+                className="btn btn-primary" 
                 onClick={() => handleParseJSON(false)} 
-                style={{ padding: '9px 20px', fontWeight: 700, fontSize: '12px' }}
+                style={{ padding: '9px 22px', fontWeight: 800, fontSize: '12.5px' }}
               >
-                {generatedQuestions.length > 0 ? '🔄 Replace All Questions' : '⚙️ Parse & Preview Questions'}
+                ⚙️ Parse &amp; Preview Questions
               </button>
             </div>
           </div>
@@ -2093,14 +2093,14 @@ Return ONLY valid JSON. No extra text.`;
 
                 return (
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', background: 'var(--bg-soft)', padding: '10px 14px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)', fontSize: '11px', alignItems: 'center' }}>
-                    <span style={{ fontWeight: 700, color: 'var(--accent)' }}>📊 Suite Composition:</span>
+                    <span style={{ fontWeight: 700, color: 'var(--text)' }}>📊 Suite Composition:</span>
                     {objList.length > 0 && (
-                      <span style={{ background: 'rgba(59, 130, 246, 0.15)', color: 'var(--accent)', padding: '3px 8px', borderRadius: '12px', fontWeight: 600 }}>
+                      <span style={{ background: 'var(--info-bg)', color: 'var(--info)', padding: '3px 8px', borderRadius: '12px', fontWeight: 600 }}>
                         🎯 <strong>{objList.length} Objective</strong> ({easyC} Easy, {medC} Med, {hardC} Hard)
                       </span>
                     )}
                     {subList.length > 0 && (
-                      <span style={{ background: 'rgba(16, 185, 129, 0.15)', color: 'var(--success)', padding: '3px 8px', borderRadius: '12px', fontWeight: 600 }}>
+                      <span style={{ background: 'var(--success-bg)', color: 'var(--success)', padding: '3px 8px', borderRadius: '12px', fontWeight: 600 }}>
                         📝 <strong>{subList.length} Subjective</strong> ({m1C} × 1M, {m2C} × 2M, {m4C} × 4M)
                       </span>
                     )}

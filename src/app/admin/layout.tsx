@@ -131,20 +131,26 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           position: fixed;
           bottom: 16px;
           right: 16px;
-          width: 52px;
-          height: 52px;
+          width: 48px;
+          height: 48px;
           border-radius: 50%;
-          background: var(--accent-grad);
-          color: var(--text-white);
-          border: none;
+          background: var(--surface-popover);
+          color: var(--text);
+          border: 1.5px solid var(--border-glass);
           box-shadow: var(--shadow-lg);
-          font-size: 24px;
+          font-size: 20px;
           z-index: 10000;
           cursor: pointer;
           display: flex;
           align-items: center;
           justify-content: center;
-          transition: transform 0.2s ease;
+          transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+        }
+        .nav-hamburger-btn:hover {
+          background: var(--surface-3);
+          border-color: var(--border-popover);
+          color: var(--primary);
+          transform: scale(1.05);
         }
         .nav-hamburger-btn .hb-icon {
           display: inline-block;

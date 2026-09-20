@@ -61,8 +61,13 @@ html.dark {
     --review-option-bg: #1f232d;
     --review-option-border: rgba(255, 255, 255, 0.07);
 
-    --primary: #f59e0b;
-    --primary-hover: #d97706;
+    /* Primary Action & Brand - Calming Soft Slate-Azure (Ergonomic & Low-Glare) */
+    --primary: #0284c7;
+    --primary-hover: #0369a1;
+    --primary-dark: #075985;
+    --primary-soft: rgba(2, 132, 199, 0.20);
+    --primary-ring: rgba(2, 132, 199, 0.30);
+    --text-on-primary: #ffffff;
     --secondary: #38bdf8;
     --emerald: #10b981;
     --emerald-dark: #059669;
@@ -919,15 +924,15 @@ button:disabled {
 }
 
 .btn-primary {
-    background: #2563eb;
-    color: #ffffff;
-    border-color: #1d4ed8;
-    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+    background: var(--primary);
+    color: var(--text-white);
+    border: 1px solid var(--primary-dark, var(--primary));
+    box-shadow: 0 2px 8px var(--primary-soft, rgba(2, 132, 199, 0.25));
 }
 
 .btn-primary:hover {
-    background: #1d4ed8;
-    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+    background: var(--primary-hover, var(--primary));
+    box-shadow: 0 4px 14px var(--primary-soft, rgba(2, 132, 199, 0.35));
     transform: translateY(-1px);
 }
 
@@ -1078,19 +1083,27 @@ button:disabled {
     position: fixed;
     bottom: 16px;
     right: 16px;
-    width: 52px;
-    height: 52px;
+    width: 48px;
+    height: 48px;
     border-radius: 50%;
-    background: var(--accent-grad);
-    color: #ffffff;
-    border: none;
+    background: var(--surface-popover);
+    color: var(--text);
+    border: 1.5px solid var(--border-glass);
     box-shadow: var(--shadow-lg);
-    font-size: 24px;
+    font-size: 20px;
     z-index: var(--z-nav);
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
+    transition: background 0.2s var(--ease), border-color 0.2s var(--ease), transform 0.15s var(--ease);
+}
+
+.nav-hamburger-btn:hover {
+    background: var(--surface-3);
+    border-color: var(--border-popover);
+    color: var(--primary);
+    transform: scale(1.05);
 }
 
 .nav-hamburger-btn .hb-icon {
