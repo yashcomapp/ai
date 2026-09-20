@@ -709,7 +709,7 @@ export default function AdminSyllabusPage() {
       name: '',
       code: '',
       textbookSetsStr: '',
-      targetQuestions: 50,
+      targetQuestions: 80,
       topicClassification: 'medium',
       hasSubtopics: false,
       subtopicsSum: 0
@@ -723,7 +723,7 @@ export default function AdminSyllabusPage() {
       : '';
     const subs = Array.isArray(topic.subtopics) ? topic.subtopics : [];
     const hasSubtopics = subs.length > 0;
-    const subtopicsSum = subs.reduce((sum: number, s: any) => sum + (Number(typeof s === 'object' ? s.targetQuestions : 0) || 30), 0);
+    const subtopicsSum = subs.reduce((sum: number, s: any) => sum + (Number(typeof s === 'object' ? s.targetQuestions : 0) || 50), 0);
     setTopicModal({
       show: true,
       mode: 'edit',
@@ -733,8 +733,8 @@ export default function AdminSyllabusPage() {
       name: topic.name,
       code: topic.topicCode || '',
       textbookSetsStr: setsStr,
-      targetQuestions: hasSubtopics ? subtopicsSum : (topic.targetQuestions !== undefined ? Number(topic.targetQuestions) : 50),
-      topicClassification: topic.topicClassification || (topic.targetQuestions <= 35 ? 'minor' : (topic.targetQuestions >= 55 ? 'major' : 'medium')),
+      targetQuestions: hasSubtopics ? subtopicsSum : (topic.targetQuestions !== undefined ? Number(topic.targetQuestions) : 80),
+      topicClassification: topic.topicClassification || (topic.targetQuestions <= 50 ? 'minor' : (topic.targetQuestions >= 90 ? 'major' : 'medium')),
       hasSubtopics,
       subtopicsSum
     });
@@ -769,7 +769,7 @@ export default function AdminSyllabusPage() {
     }).filter(Boolean);
 
     const topics = Array.isArray(chapter.topics) ? [...chapter.topics] : [];
-    const finalTarget = hasSubtopics ? subtopicsSum : (Number(targetQuestions) || 50);
+    const finalTarget = hasSubtopics ? subtopicsSum : (Number(targetQuestions) || 80);
 
     if (mode === 'add') {
       topics.push({
@@ -819,7 +819,7 @@ export default function AdminSyllabusPage() {
       number: nextSubNum,
       name: '',
       code: '',
-      targetQuestions: 30,
+      targetQuestions: 50,
       topicClassification: 'minor'
     });
   };
@@ -834,7 +834,7 @@ export default function AdminSyllabusPage() {
       : (parentTopic ? `${parentTopic.number}.${subIdx + 1}` : `${subIdx + 1}`);
     const targetQ = (typeof sub === 'object' && sub && sub.targetQuestions !== undefined) 
       ? Number(sub.targetQuestions) 
-      : 30;
+      : 50;
 
     setSubtopicModal({
       show: true,
@@ -846,7 +846,7 @@ export default function AdminSyllabusPage() {
       name: subName,
       code: (typeof sub === 'object' && (sub.subtopicCode || sub.code)) || '',
       targetQuestions: targetQ,
-      topicClassification: (typeof sub === 'object' && sub.topicClassification) || (targetQ <= 35 ? 'minor' : (targetQ >= 55 ? 'major' : 'medium'))
+      topicClassification: (typeof sub === 'object' && sub.topicClassification) || (targetQ <= 50 ? 'minor' : (targetQ >= 90 ? 'major' : 'medium'))
     });
   };
 
@@ -1474,9 +1474,9 @@ Return ONLY a valid JSON object matching the schema below:
                                             background: (topic.topicClassification === 'minor' || topic.topicClassification === 'micro') ? 'var(--success-bg)' : (topic.topicClassification === 'major' || topic.topicClassification === 'calculative' || topic.topicClassification === 'hots') ? 'var(--danger-bg)' : 'var(--info-bg)',
                                             color: (topic.topicClassification === 'minor' || topic.topicClassification === 'micro') ? 'var(--success)' : (topic.topicClassification === 'major' || topic.topicClassification === 'calculative' || topic.topicClassification === 'hots') ? 'var(--danger)' : 'var(--info)'
                                           }}>
-                                            {(topic.topicClassification === 'minor' || topic.topicClassification === 'micro') && '📘 Minor (~30 Qs)'}
-                                            {(topic.topicClassification === 'medium' || topic.topicClassification === 'moderate' || topic.topicClassification === 'conceptual') && '📙 Medium (~50 Qs)'}
-                                            {(topic.topicClassification === 'major' || topic.topicClassification === 'calculative' || topic.topicClassification === 'hots') && '📕 Major (~55 Qs)'}
+                                            {(topic.topicClassification === 'minor' || topic.topicClassification === 'micro') && '📘 Minor (~50 Qs)'}
+                                            {(topic.topicClassification === 'medium' || topic.topicClassification === 'moderate' || topic.topicClassification === 'conceptual') && '📙 Medium (~80 Qs)'}
+                                            {(topic.topicClassification === 'major' || topic.topicClassification === 'calculative' || topic.topicClassification === 'hots') && '📕 Major (~90 Qs)'}
                                             {topic.topicClassification !== 'minor' && topic.topicClassification !== 'micro' && topic.topicClassification !== 'medium' && topic.topicClassification !== 'moderate' && topic.topicClassification !== 'conceptual' && topic.topicClassification !== 'major' && topic.topicClassification !== 'calculative' && topic.topicClassification !== 'hots' && '📙 Standard'}
                                           </span>
                                         )}
@@ -1613,7 +1613,7 @@ Return ONLY a valid JSON object matching the schema below:
                                                     S - {subjCount}
                                                   </span>
                                                   <span style={{ fontWeight: 700, background: 'var(--warning-bg)', color: 'var(--warning)', padding: '1px 4px', borderRadius: '3px' }}>
-                                                    🎯 Target: {typeof sub === 'object' ? (sub.targetQuestions || 30) : 30} Qs
+                                                    🎯 Target: {typeof sub === 'object' ? (sub.targetQuestions || 50) : 50} Qs
                                                   </span>
                                                   {typeof sub === 'object' && sub.topicClassification && (
                                                      <span style={{
@@ -1625,9 +1625,9 @@ Return ONLY a valid JSON object matching the schema below:
                                                        background: (sub.topicClassification === 'minor' || sub.topicClassification === 'micro') ? 'var(--success-bg)' : (sub.topicClassification === 'major' || sub.topicClassification === 'calculative' || sub.topicClassification === 'hots') ? 'var(--danger-bg)' : 'var(--info-bg)',
                                                        color: (sub.topicClassification === 'minor' || sub.topicClassification === 'micro') ? 'var(--success)' : (sub.topicClassification === 'major' || sub.topicClassification === 'calculative' || sub.topicClassification === 'hots') ? 'var(--danger)' : 'var(--info)'
                                                      }}>
-                                                       {(sub.topicClassification === 'minor' || sub.topicClassification === 'micro') && '📘 Minor (~30 Qs)'}
-                                                       {(sub.topicClassification === 'medium' || sub.topicClassification === 'moderate' || sub.topicClassification === 'conceptual') && '📙 Medium (~50 Qs)'}
-                                                       {(sub.topicClassification === 'major' || sub.topicClassification === 'calculative' || sub.topicClassification === 'hots') && '📕 Major (~55 Qs)'}
+                                                       {(sub.topicClassification === 'minor' || sub.topicClassification === 'micro') && '📘 Minor (~50 Qs)'}
+                                                       {(sub.topicClassification === 'medium' || sub.topicClassification === 'moderate' || sub.topicClassification === 'conceptual') && '📙 Medium (~80 Qs)'}
+                                                       {(sub.topicClassification === 'major' || sub.topicClassification === 'calculative' || sub.topicClassification === 'hots') && '📕 Major (~90 Qs)'}
                                                        {sub.topicClassification !== 'minor' && sub.topicClassification !== 'micro' && sub.topicClassification !== 'medium' && sub.topicClassification !== 'moderate' && sub.topicClassification !== 'conceptual' && sub.topicClassification !== 'major' && sub.topicClassification !== 'calculative' && sub.topicClassification !== 'hots' && '📙 Standard'}
                                                      </span>
                                                    )}
@@ -1983,25 +1983,25 @@ Return ONLY a valid JSON object matching the schema below:
                   type="button"
                   className={`btn btn-sm ${topicModal.topicClassification === 'minor' ? 'btn-primary' : 'btn-secondary'}`}
                   style={{ fontSize: '10.5px', padding: '6px 8px', textAlign: 'center', fontWeight: topicModal.topicClassification === 'minor' ? 700 : 500 }}
-                  onClick={() => setTopicModal(p => ({ ...p, topicClassification: 'minor', targetQuestions: p.hasSubtopics ? p.targetQuestions : 30 }))}
+                  onClick={() => setTopicModal(p => ({ ...p, topicClassification: 'minor', targetQuestions: p.hasSubtopics ? p.targetQuestions : 50 }))}
                 >
-                  Minor (~30 Qs)
+                  Minor (~50 Qs)
                 </button>
                 <button
                   type="button"
                   className={`btn btn-sm ${topicModal.topicClassification === 'medium' || topicModal.topicClassification === 'conceptual' ? 'btn-primary' : 'btn-secondary'}`}
                   style={{ fontSize: '10.5px', padding: '6px 8px', textAlign: 'center', fontWeight: topicModal.topicClassification === 'medium' || topicModal.topicClassification === 'conceptual' ? 700 : 500 }}
-                  onClick={() => setTopicModal(p => ({ ...p, topicClassification: 'medium', targetQuestions: p.hasSubtopics ? p.targetQuestions : 50 }))}
+                  onClick={() => setTopicModal(p => ({ ...p, topicClassification: 'medium', targetQuestions: p.hasSubtopics ? p.targetQuestions : 80 }))}
                 >
-                  Medium (~50 Qs)
+                  Medium (~80 Qs)
                 </button>
                 <button
                   type="button"
                   className={`btn btn-sm ${topicModal.topicClassification === 'major' ? 'btn-primary' : 'btn-secondary'}`}
                   style={{ fontSize: '10.5px', padding: '6px 8px', textAlign: 'center', fontWeight: topicModal.topicClassification === 'major' ? 700 : 500 }}
-                  onClick={() => setTopicModal(p => ({ ...p, topicClassification: 'major', targetQuestions: p.hasSubtopics ? p.targetQuestions : 55 }))}
+                  onClick={() => setTopicModal(p => ({ ...p, topicClassification: 'major', targetQuestions: p.hasSubtopics ? p.targetQuestions : 90 }))}
                 >
-                  Major (~55 Qs)
+                  Major (~90 Qs)
                 </button>
               </div>
             </div>
@@ -2092,25 +2092,25 @@ Return ONLY a valid JSON object matching the schema below:
                   type="button"
                   className={`btn btn-sm ${subtopicModal.topicClassification === 'minor' ? 'btn-primary' : 'btn-secondary'}`}
                   style={{ fontSize: '10.5px', padding: '6px 8px', textAlign: 'center', fontWeight: subtopicModal.topicClassification === 'minor' ? 700 : 500 }}
-                  onClick={() => setSubtopicModal(p => ({ ...p, topicClassification: 'minor', targetQuestions: 30 }))}
+                  onClick={() => setSubtopicModal(p => ({ ...p, topicClassification: 'minor', targetQuestions: 50 }))}
                 >
-                  Minor (~30 Qs)
+                  Minor (~50 Qs)
                 </button>
                 <button
                   type="button"
                   className={`btn btn-sm ${subtopicModal.topicClassification === 'medium' || subtopicModal.topicClassification === 'conceptual' ? 'btn-primary' : 'btn-secondary'}`}
                   style={{ fontSize: '10.5px', padding: '6px 8px', textAlign: 'center', fontWeight: subtopicModal.topicClassification === 'medium' || subtopicModal.topicClassification === 'conceptual' ? 700 : 500 }}
-                  onClick={() => setSubtopicModal(p => ({ ...p, topicClassification: 'medium', targetQuestions: 50 }))}
+                  onClick={() => setSubtopicModal(p => ({ ...p, topicClassification: 'medium', targetQuestions: 80 }))}
                 >
-                  Medium (~50 Qs)
+                  Medium (~80 Qs)
                 </button>
                 <button
                   type="button"
                   className={`btn btn-sm ${subtopicModal.topicClassification === 'major' ? 'btn-primary' : 'btn-secondary'}`}
                   style={{ fontSize: '10.5px', padding: '6px 8px', textAlign: 'center', fontWeight: subtopicModal.topicClassification === 'major' ? 700 : 500 }}
-                  onClick={() => setSubtopicModal(p => ({ ...p, topicClassification: 'major', targetQuestions: 55 }))}
+                  onClick={() => setSubtopicModal(p => ({ ...p, topicClassification: 'major', targetQuestions: 90 }))}
                 >
-                  Major (~55 Qs)
+                  Major (~90 Qs)
                 </button>
               </div>
             </div>

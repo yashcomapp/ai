@@ -110,8 +110,8 @@ function CreateQBContent() {
   const [topicWeightageMode, setTopicWeightageMode] = useState<'custom_counts' | 'equal' | 'percentage'>('custom_counts');
   const [topicWeightageMap, setTopicWeightageMap] = useState<Record<string, number | string>>({});
   const [topicCustomCounts, setTopicCustomCounts] = useState<Record<string, number | string>>({});
-  const [defaultPerTopicCount, setDefaultPerTopicCount] = useState<number | string>(55);
-  const [totalBatchQuestions, setTotalBatchQuestions] = useState<number | string>(55);
+  const [defaultPerTopicCount, setDefaultPerTopicCount] = useState<number | string>(80);
+  const [totalBatchQuestions, setTotalBatchQuestions] = useState<number | string>(80);
 
 
 
@@ -527,7 +527,7 @@ function CreateQBContent() {
   const handleSwitchType = (type: 'objective' | 'subjective') => {
     setQuestionType(type);
     if (type === 'subjective') {
-      const currentVal = Number(defaultPerTopicCount) || 55;
+      const currentVal = Number(defaultPerTopicCount) || 80;
       if (currentVal > 20) {
         setDefaultPerTopicCount(10);
         if (selectedTopics[0]) {
@@ -537,9 +537,9 @@ function CreateQBContent() {
     } else {
       const currentVal = Number(defaultPerTopicCount) || 10;
       if (currentVal < 30) {
-        setDefaultPerTopicCount(55);
+        setDefaultPerTopicCount(80);
         if (selectedTopics[0]) {
-          setTopicCustomCounts({ [topicKey(selectedTopics[0])]: 55 });
+          setTopicCustomCounts({ [topicKey(selectedTopics[0])]: 80 });
         }
       }
     }
@@ -570,7 +570,7 @@ function CreateQBContent() {
   };
 
   const getTotalTargetQuestions = (): number => {
-    return typeof defaultPerTopicCount === 'number' ? defaultPerTopicCount : (parseInt(String(defaultPerTopicCount), 10) || 55);
+    return typeof defaultPerTopicCount === 'number' ? defaultPerTopicCount : (parseInt(String(defaultPerTopicCount), 10) || 80);
   };
 
   const getEffectiveTopicCounts = (): Record<string, number> => {
@@ -782,44 +782,50 @@ CRITICAL NEGATIVE CONSTRAINTS (ZERO-TOLERANCE RULES):
    * Canonical Answer Rules for OAR: "A" = Both true & R explains A | "B" = Both true & R does NOT explain A | "C" = A true & R false | "D" = A false & R true. Do NOT include options array for assertion_reason.
 `;
 
+      const getVaultBreakdown = (count: number) => {
+        if (count === 50) {
+          return { practice: 30, exam: 20 };
+        } else if (count === 80) {
+          return { practice: 50, exam: 30 };
+        } else if (count === 90) {
+          return { practice: 55, exam: 35 };
+        } else {
+          const practice = Math.round(count * 0.6);
+          const exam = Math.max(0, count - practice);
+          return { practice, exam };
+        }
+      };
+
+      const { practice: totalPracticeQs, exam: totalExamQs } = getVaultBreakdown(totalQs);
+
       const vaultPartitionGuide = allowNumericals ? `
 ========================================
-UNIVERSAL 3-VAULT PARTITION REQUIREMENT:
+UNIVERSAL 2-VAULT PARTITION REQUIREMENT:
 ========================================
-For each topic (55 Questions Total), generate and tag questions strictly into the 3 Storage Vaults:
-1. 🟢 PRACTICE VAULT ("vault": "practice") — EXACTLY 22 QUESTIONS:
-   - Dedicated for student self-paced practice across 3 attempts (18 Qs) + Guided Recovery diagnostic (4 Qs).
-   - Distribution: L1 Recall & Foundation (6 Qs) + L2 Conceptual Reasoning (8 Qs) + L3 Numerical & Application (8 Qs).
+For each topic (${totalQs} Questions Total), generate and tag questions strictly into the 2 Storage Vaults:
+1. 🟢 PRACTICE VAULT ("vault": "practice") — EXACTLY ${totalPracticeQs} QUESTIONS:
+   - Dedicated for student self-paced practice, diagnostic recovery, and spaced repetition (SRS).
+   - Distribution: Foundation & Recall (~30%) + Conceptual Reasoning (~40%) + Numerical & Application (~30%).
    - Mix: OSC, OMC, OTF, OAR, ONE.
 
-2. 🔵 EXAM VAULT ("vault": "exam") — EXACTLY 25 QUESTIONS:
-   - Reserved exclusively for teacher classroom tests, unit tests, and midterms (must be fresh and unseen by students).
-   - Distribution: L1 Recall (6 Qs) + L2 Conceptual Reasoning (10 Qs) + L3 Numerical & Application (9 Qs).
+2. 🔵 EXAM VAULT ("vault": "exam") — EXACTLY ${totalExamQs} QUESTIONS:
+   - Reserved exclusively for teacher classroom tests, chapter tests, and scheduled term exams (must be fresh and unseen by students).
+   - Distribution: Core Recall (~25%) + Conceptual Reasoning (~40%) + Numerical & Higher Application (~35%).
    - Mix: OSC, OMC, OTF, OAR, ONE.
-
-3. 🟣 MOCK VAULT ("vault": "mock") — EXACTLY 8 QUESTIONS:
-   - Reserved exclusively for Olympiad, Foundation, and full-length mock examinations.
-   - Distribution: L3 Advanced Application (3 Qs) + L4 HOTS & Critical Thinking (5 Qs).
-   - Mix: OMC, OAR, ONE, OSC.
 ` : `
 ========================================
-UNIVERSAL 3-VAULT PARTITION REQUIREMENT (THEORY ONLY - ZERO NUMERICALS):
+UNIVERSAL 2-VAULT PARTITION REQUIREMENT (THEORY ONLY - ZERO NUMERICALS):
 ========================================
-For each topic (55 Questions Total), generate and tag questions strictly into the 3 Storage Vaults:
-1. 🟢 PRACTICE VAULT ("vault": "practice") — EXACTLY 22 QUESTIONS:
-   - Dedicated for student self-paced practice across 3 attempts (18 Qs) + Guided Recovery diagnostic (4 Qs).
-   - Distribution: L1 Recall & Foundation (7 Qs) + L2 Conceptual Reasoning (9 Qs) + L3 Application & Mechanism (6 Qs).
+For each topic (${totalQs} Questions Total), generate and tag questions strictly into the 2 Storage Vaults:
+1. 🟢 PRACTICE VAULT ("vault": "practice") — EXACTLY ${totalPracticeQs} QUESTIONS:
+   - Dedicated for student self-paced practice, diagnostic recovery, and spaced repetition (SRS).
+   - Distribution: Foundation & Recall (~35%) + Conceptual Reasoning (~40%) + Application & Mechanisms (~25%).
    - Mix: OSC, OMC, OTF, OAR. (NO ONE / NO NUMERICALS).
 
-2. 🔵 EXAM VAULT ("vault": "exam") — EXACTLY 25 QUESTIONS:
-   - Reserved exclusively for teacher classroom tests, unit tests, and midterms (must be fresh and unseen by students).
-   - Distribution: L1 Recall (8 Qs) + L2 Conceptual Reasoning (10 Qs) + L3 Applied Scenarios (7 Qs).
+2. 🔵 EXAM VAULT ("vault": "exam") — EXACTLY ${totalExamQs} QUESTIONS:
+   - Reserved exclusively for teacher classroom tests, chapter tests, and scheduled term exams (must be fresh and unseen by students).
+   - Distribution: Core Recall (~30%) + Conceptual Reasoning (~40%) + Applied Scenarios (~30%).
    - Mix: OSC, OMC, OTF, OAR. (NO ONE / NO NUMERICALS).
-
-3. 🟣 MOCK VAULT ("vault": "mock") — EXACTLY 8 QUESTIONS:
-   - Reserved exclusively for Olympiad, Foundation, and full-length mock examinations.
-   - Distribution: L3 Multi-concept Application (3 Qs) + L4 Critical Thinking & Experimental Analysis (5 Qs).
-   - Mix: OMC, OAR, OSC. (NO ONE / NO NUMERICALS).
 `;
 
       (window as any).lastPromptMeta = { mode: 'objective', totalQs };
@@ -827,8 +833,9 @@ For each topic (55 Questions Total), generate and tag questions strictly into th
       let topicDistributionSummary = '\n\n========================================\nPER-TOPIC QUESTION ALLOCATION QUOTAS:\n========================================';
       promptTopics.forEach(tp => {
         const k = topicKey(tp);
-        const cnt = topicCounts[k] || 55;
-        topicDistributionSummary += `\n- ${tp.subject ? '[' + tp.subject + '] ' : ''}${tp.topic}: EXACTLY ${cnt} questions (22 Practice + 25 Exam + 8 Mock)`;
+        const cnt = topicCounts[k] || 80;
+        const { practice, exam } = getVaultBreakdown(cnt);
+        topicDistributionSummary += `\n- ${tp.subject ? '[' + tp.subject + '] ' : ''}${tp.topic}: EXACTLY ${cnt} questions (${practice} Practice/SRS + ${exam} Exam)`;
       });
 
       const roleBlock = `========================================
@@ -1637,7 +1644,7 @@ Return ONLY valid JSON. No extra text.`;
             selectedTopics={selectedTopics}
             onToggleTopic={(topic) => {
               setSelectedTopics([topic]);
-              const count = topic.targetQuestions || (defaultPerTopicCount ? Number(defaultPerTopicCount) : 55);
+              const count = topic.targetQuestions || (defaultPerTopicCount ? Number(defaultPerTopicCount) : 80);
               setDefaultPerTopicCount(count);
               setTopicCustomCounts({ [topicKey(topic)]: count });
             }}
@@ -1727,20 +1734,6 @@ Return ONLY valid JSON. No extra text.`;
                     <>
                       <button
                         type="button"
-                        className={`btn btn-sm ${Number(defaultPerTopicCount) === 30 ? 'btn-primary' : 'btn-secondary'}`}
-                        onClick={() => {
-                          setDefaultPerTopicCount(30);
-                          if (selectedTopics[0]) {
-                            setTopicCustomCounts({ [topicKey(selectedTopics[0])]: 30 });
-                          }
-                        }}
-                        style={{ fontSize: '11px', padding: '4px 12px', borderRadius: '12px' }}
-                        title="Minor topic: 2 Practice Sets • 6 Mastery Qs"
-                      >
-                        Minor Topic (30 Qs)
-                      </button>
-                      <button
-                        type="button"
                         className={`btn btn-sm ${Number(defaultPerTopicCount) === 50 ? 'btn-primary' : 'btn-secondary'}`}
                         onClick={() => {
                           setDefaultPerTopicCount(50);
@@ -1749,23 +1742,37 @@ Return ONLY valid JSON. No extra text.`;
                           }
                         }}
                         style={{ fontSize: '11px', padding: '4px 12px', borderRadius: '12px' }}
-                        title="Medium topic: 3 Practice Sets • 10 Mastery Qs"
+                        title="Minor topic: 50 Questions (30 Practice/SRS + 20 Exam)"
                       >
-                        Medium Topic (50 Qs)
+                        Minor Topic (50 Qs)
                       </button>
                       <button
                         type="button"
-                        className={`btn btn-sm ${Number(defaultPerTopicCount) === 55 ? 'btn-primary' : 'btn-secondary'}`}
+                        className={`btn btn-sm ${Number(defaultPerTopicCount) === 80 ? 'btn-primary' : 'btn-secondary'}`}
                         onClick={() => {
-                          setDefaultPerTopicCount(55);
+                          setDefaultPerTopicCount(80);
                           if (selectedTopics[0]) {
-                            setTopicCustomCounts({ [topicKey(selectedTopics[0])]: 55 });
+                            setTopicCustomCounts({ [topicKey(selectedTopics[0])]: 80 });
                           }
                         }}
                         style={{ fontSize: '11px', padding: '4px 12px', borderRadius: '12px' }}
-                        title="Major topic: 3 Practice Sets • 15 Mastery Qs (55 Qs in one go)"
+                        title="Medium topic: 80 Questions (50 Practice/SRS + 30 Exam)"
                       >
-                        Major Topic (55 Qs)
+                        Medium Topic (80 Qs)
+                      </button>
+                      <button
+                        type="button"
+                        className={`btn btn-sm ${Number(defaultPerTopicCount) === 90 ? 'btn-primary' : 'btn-secondary'}`}
+                        onClick={() => {
+                          setDefaultPerTopicCount(90);
+                          if (selectedTopics[0]) {
+                            setTopicCustomCounts({ [topicKey(selectedTopics[0])]: 90 });
+                          }
+                        }}
+                        style={{ fontSize: '11px', padding: '4px 12px', borderRadius: '12px' }}
+                        title="Major topic: 90 Questions (55 Practice/SRS + 35 Exam)"
+                      >
+                        Major Topic (90 Qs)
                       </button>
                     </>
                   )}
@@ -1804,9 +1811,9 @@ Return ONLY valid JSON. No extra text.`;
                     }}
                     onBlur={() => {
                       if (defaultPerTopicCount === '' || Number(defaultPerTopicCount) < 1) {
-                        setDefaultPerTopicCount(55);
+                        setDefaultPerTopicCount(80);
                         if (selectedTopics[0]) {
-                          setTopicCustomCounts({ [topicKey(selectedTopics[0])]: 55 });
+                          setTopicCustomCounts({ [topicKey(selectedTopics[0])]: 80 });
                         }
                       }
                     }}
