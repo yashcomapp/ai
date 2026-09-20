@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { useTheme } from '@/context/ThemeContext';
 import { useRouter } from 'next/navigation';
 import useSWR from 'swr';
 import { fetchWithToken } from '@/lib/swrFetcher';
@@ -10,7 +9,6 @@ import { formatDateDMY as formatDateStr } from '@/lib/dateUtils';
 
 export default function StudentFeesPage() {
   const { firebaseUser, logout } = useAuth();
-  const { toggleTheme } = useTheme();
   const router = useRouter();
 
   const fetcher = async (url: string) => {

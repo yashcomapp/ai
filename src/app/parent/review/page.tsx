@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState, Suspense } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { useTheme } from '@/context/ThemeContext';
 import { t } from '@/lib/i18n';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
@@ -54,7 +53,6 @@ interface ReviewItem {
 
 export default function ParentReviewPanel() {
   const { firebaseUser, user, logout } = useAuth();
-  const { toggleTheme } = useTheme();
   const router = useRouter();
 
   const [loading, setLoading] = useState(true);

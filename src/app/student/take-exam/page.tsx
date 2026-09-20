@@ -2,7 +2,6 @@
 
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { useTheme } from '@/context/ThemeContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Script from 'next/script';
 import { stripOptionLabel, preprocessMathText, parseAnswerList, isOptionSelectedByUser, isOptionCorrect, getQuestionCorrectAnswer, getRawOptionKey, getRawOptionText, extractAssertionAndReason } from '@/lib/questionTypes';
@@ -75,7 +74,6 @@ interface Exam {
 
 function TakeExamContent() {
   const { firebaseUser, logout, user } = useAuth();
-  const { toggleTheme } = useTheme();
   const router = useRouter();
   const searchParams = useSearchParams();
   const examId = searchParams.get('examId') || searchParams.get('id');

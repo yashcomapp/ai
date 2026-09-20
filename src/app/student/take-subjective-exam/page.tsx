@@ -2,7 +2,6 @@
 
 import React, { useEffect, useRef, useState, useCallback, Suspense } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { useTheme } from '@/context/ThemeContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Script from 'next/script';
 import { useMathRender } from '@/hooks/useMathRender';
@@ -74,7 +73,6 @@ const ModelAnswerBox = React.memo(function ModelAnswerBox({ html }: { html: stri
 
 function TakeSubjectiveExamContent() {
   const { firebaseUser, user, logout } = useAuth();
-  const { toggleTheme } = useTheme();
   const router = useRouter();
   const searchParams = useSearchParams();
 

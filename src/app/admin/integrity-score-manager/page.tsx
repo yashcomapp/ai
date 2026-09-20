@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState, useMemo, useDeferredValue } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { useTheme } from '@/context/ThemeContext';
 import { useRouter } from 'next/navigation';
 import { useReports } from '@/hooks/useReports';
 import dynamic from 'next/dynamic';
@@ -31,7 +30,6 @@ interface ScoreRecord {
 
 export default function AdminIntegrityScoreManagerPage() {
   const { firebaseUser, logout } = useAuth();
-  const { toggleTheme } = useTheme();
   const router = useRouter();
   const { getIntegrityReport } = useReports();
 

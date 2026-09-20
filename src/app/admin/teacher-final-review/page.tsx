@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState, Suspense } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { useTheme } from '@/context/ThemeContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
 const ExportPdfModal = dynamic(() => import('@/components/ExportPdfModal').then(m => ({ default: m.ExportPdfModal })), { ssr: false });
@@ -37,7 +36,6 @@ interface Question {
 
 function TeacherFinalReviewContent() {
   const { firebaseUser, logout } = useAuth();
-  const { toggleTheme } = useTheme();
   const router = useRouter();
   const searchParams = useSearchParams();
 

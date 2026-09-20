@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { useTheme } from '@/context/ThemeContext';
 
 interface SubmenuItem {
   icon: string;
@@ -47,7 +46,6 @@ const ADMIN_SUBMENUS: { [key: string]: SubmenuItem[] } = {
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { toggleTheme } = useTheme();
 
   const [panelOpen, setPanelOpen] = useState(false);
   const [activeSubmenu, setActiveSubmenu] = useState<string | null>(null);

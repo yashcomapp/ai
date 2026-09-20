@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState, useMemo, useDeferredValue } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { useTheme } from '@/context/ThemeContext';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 const ScorecardModal = dynamic(() => import('@/components/ScorecardModal'), { ssr: false });
@@ -70,7 +69,6 @@ interface Assignment {
 
 export default function AdminExamsPage() {
   const { firebaseUser, logout } = useAuth();
-  const { toggleTheme } = useTheme();
   const router = useRouter();
 
   const [loading, setLoading] = useState(true);

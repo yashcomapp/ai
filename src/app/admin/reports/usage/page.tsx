@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { useTheme } from '@/context/ThemeContext';
 import { useRouter } from 'next/navigation';
 import { useReports } from '@/hooks/useReports';
 import { formatDateDMY } from '@/lib/dateUtils';
@@ -11,7 +10,6 @@ const ExportPdfModal = dynamic(() => import('@/components/ExportPdfModal').then(
 // Client Firestore imports removed
 export default function UsageReportPage() {
   const { firebaseUser, logout, user } = useAuth();
-  const { toggleTheme } = useTheme();
   const router = useRouter();
   const { getUsageReport } = useReports();
 

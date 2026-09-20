@@ -3,18 +3,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { useTheme } from '@/context/ThemeContext';
 import TopBarTimeTracker from '@/components/TopBarTimeTracker';
 import { db } from '@/lib/firebase/firestore';
 import { doc, onSnapshot } from 'firebase/firestore';
 
-import { Sun, Moon, LogOut, Bell, Settings } from 'lucide-react';
+import { LogOut, Bell, Settings } from 'lucide-react';
 import Image from 'next/image';
 
 export default function StudentLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() || '';
   const router = useRouter();
-  const { theme, toggleTheme } = useTheme();
   const { user, logout } = useAuth();
   const [curfewActive, setCurfewActive] = useState(false);
   const [maintenance, setMaintenance] = useState<{ active: boolean; message: string } | null>(null);
@@ -189,8 +187,8 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
             onClick={() => router.push('/student/notifications')} 
             title="Notifications"
             style={{ 
-              background: pathname === '/student/notifications' ? 'var(--accent-soft)' : (theme === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)'), 
-              border: theme === 'dark' ? '1px solid rgba(255,255,255,0.15)' : '1px solid var(--border)', 
+              background: pathname === '/student/notifications' ? 'var(--accent-soft)' : 'rgba(255,255,255,0.08)', 
+              border: '1px solid rgba(255,255,255,0.15)', 
               borderRadius: '50%', 
               width: '36px', 
               height: '36px', 
@@ -211,8 +209,8 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
             onClick={() => router.push('/student/settings')} 
             title="Profile & Settings"
             style={{ 
-              background: pathname === '/student/settings' ? 'var(--accent-soft)' : (theme === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)'), 
-              border: theme === 'dark' ? '1px solid rgba(255,255,255,0.15)' : '1px solid var(--border)', 
+              background: pathname === '/student/settings' ? 'var(--accent-soft)' : 'rgba(255,255,255,0.08)', 
+              border: '1px solid rgba(255,255,255,0.15)', 
               borderRadius: '50%', 
               width: '36px', 
               height: '36px', 

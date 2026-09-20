@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { useTheme } from '@/context/ThemeContext';
 import { useRouter } from 'next/navigation';
 import Script from 'next/script';
 import { useMathRender } from '@/hooks/useMathRender';
@@ -48,7 +47,6 @@ interface Question {
 
 export default function AdminQuestionBankPage() {
   const { firebaseUser, logout } = useAuth();
-  const { toggleTheme } = useTheme();
   const router = useRouter();
 
   const [loading, setLoading] = useState(true);

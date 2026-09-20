@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { useTheme } from '@/context/ThemeContext';
 import TopBarTimeTracker from '@/components/TopBarTimeTracker';
 import useSWR from 'swr';
 import { fetchWithToken } from '@/lib/swrFetcher';
@@ -152,7 +151,6 @@ interface ReviewItem {
 
 export default function ParentDashboardClient({ initialData: serverInitialData }: { initialData?: ParentDashboardData }) {
   const { user, firebaseUser, loading: authLoading, logout } = useAuth();
-  const { theme, toggleTheme } = useTheme();
   const router = useRouter();
   const { initFCM } = usePushNotifications();
   const [syncingPush, setSyncingPush] = useState(false);

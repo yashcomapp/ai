@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { useAuth } from '@/context/AuthContext';
-import { useTheme } from '@/context/ThemeContext';
 import { useRouter } from 'next/navigation';
 import { Bell, MessageSquare, Settings, LogOut } from 'lucide-react';
 import StudentActivityTable from '@/components/StudentActivityTable';
@@ -37,7 +36,6 @@ interface AdminDashboardData {
 
 export default function AdminDashboard() {
   const { firebaseUser, logout, user } = useAuth();
-  const { toggleTheme } = useTheme();
   const router = useRouter();
 
   const renderStatsSkeleton = () => (

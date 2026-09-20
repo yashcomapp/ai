@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { useTheme } from '@/context/ThemeContext';
 import { useRouter } from 'next/navigation';
 import { playNotificationSound } from '@/lib/audioUtils';
 import { formatDateDMY } from '@/lib/dateUtils';
@@ -37,7 +36,6 @@ interface Notice {
 
 export default function AdminNoticesPage() {
   const { firebaseUser } = useAuth();
-  const { theme } = useTheme();
   const router = useRouter();
 
   const [loading, setLoading] = useState(true);

@@ -2,7 +2,6 @@
 
 import React, { useEffect, Suspense } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { useTheme } from '@/context/ThemeContext';
 import { fetchWithToken } from '@/lib/swrFetcher';
 import { useRouter, useSearchParams } from 'next/navigation';
 import useSWR from 'swr';
@@ -39,7 +38,6 @@ interface RegisterData {
 
 function ExamRegisterContent() {
   const { user, firebaseUser, loading: authLoading } = useAuth();
-  const { theme, toggleTheme } = useTheme();
   const router = useRouter();
   const searchParams = useSearchParams();
   const studentCodeParam = searchParams.get('studentCode');

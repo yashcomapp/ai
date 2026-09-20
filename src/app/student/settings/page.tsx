@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { useTheme } from '@/context/ThemeContext';
 import { useRouter } from 'next/navigation';
 import { EmailAuthProvider, reauthenticateWithCredential, updatePassword } from 'firebase/auth';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
@@ -25,7 +24,6 @@ interface StatsData {
 
 export default function StudentSettingsPage() {
   const { firebaseUser, logout, user } = useAuth();
-  const { toggleTheme } = useTheme();
   const { initFCM } = usePushNotifications();
   const [syncingPush, setSyncingPush] = useState(false);
   const [isMockTestOpen, setIsMockTestOpen] = useState(false);

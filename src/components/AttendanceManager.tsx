@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { useTheme } from '@/context/ThemeContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import useSWR from 'swr';
 import { fetchWithToken } from '@/lib/swrFetcher';
@@ -14,7 +13,6 @@ interface AttendanceManagerProps {
 
 export default function AttendanceManager({ role }: AttendanceManagerProps) {
   const { firebaseUser, user, logout } = useAuth();
-  const { toggleTheme } = useTheme();
   const router = useRouter();
   const searchParams = useSearchParams();
 

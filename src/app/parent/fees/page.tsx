@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { useTheme } from '@/context/ThemeContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import useSWR from 'swr';
 import { fetchWithToken } from '@/lib/swrFetcher';
@@ -10,7 +9,6 @@ import { formatDateDMY as formatDateStr } from '@/lib/dateUtils';
 
 function ParentFeesContent() {
   const { firebaseUser, user, logout } = useAuth();
-  const { toggleTheme } = useTheme();
   const router = useRouter();
   const searchParams = useSearchParams();
 

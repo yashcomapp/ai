@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { useTheme } from '@/context/ThemeContext';
 import { t } from '@/lib/i18n';
 import { useRouter } from 'next/navigation';
 import useSWR from 'swr';
@@ -92,7 +91,6 @@ interface DashboardData {
 
 export default function StudentDashboardClient({ initialData }: { initialData: DashboardData | null }) {
   const { user, firebaseUser, logout } = useAuth();
-  const { theme, toggleTheme } = useTheme();
   const router = useRouter();
 
   const [examTab, setExamTab] = useState<'objective' | 'subjective' | 'mock'>('objective');

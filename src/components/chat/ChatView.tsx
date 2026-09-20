@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { useTheme } from '@/context/ThemeContext';
 import { useRouter } from 'next/navigation';
 import { db } from '@/lib/firebase/firestore';
 import { collection, query, orderBy, limit, onSnapshot, doc, deleteDoc } from 'firebase/firestore';
@@ -63,7 +62,6 @@ interface ChatViewProps {
 
 export default function ChatView({ role = 'admin' }: ChatViewProps) {
   const { firebaseUser, user, logout } = useAuth();
-  const { theme, toggleTheme } = useTheme();
   const router = useRouter();
 
   const [rooms, setRooms] = useState<ChatRoom[]>([]);

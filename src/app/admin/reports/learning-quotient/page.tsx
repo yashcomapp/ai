@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { useTheme } from '@/context/ThemeContext';
 import { useRouter } from 'next/navigation';
 import { useReports } from '@/hooks/useReports';
 import { exportStudentMonthlyReportPDF } from '@/lib/pdfExport';
@@ -29,7 +28,6 @@ interface StudentLQ {
 
 export default function LearningQuotientReportPage() {
   const { firebaseUser, logout, user } = useAuth();
-  const { toggleTheme } = useTheme();
   const router = useRouter();
   const { 
     getQuotientReport, 

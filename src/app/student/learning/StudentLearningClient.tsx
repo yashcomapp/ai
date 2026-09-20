@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState, useMemo, useDeferredValue } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { useTheme } from '@/context/ThemeContext';
 import useSWR from 'swr';
 import { fetchWithToken } from '@/lib/swrFetcher';
 import { useToggleSet } from '@/hooks/useToggleSet';
@@ -61,7 +60,6 @@ interface LearningPathData {
 
 export default function StudentLearning({ initialData }: { initialData?: LearningPathData }) {
   const { firebaseUser, user } = useAuth();
-  const { toggleTheme } = useTheme();
   const router = useRouter();
 
   const [localCache, setLocalCache] = useState<LearningPathData | null>(null);

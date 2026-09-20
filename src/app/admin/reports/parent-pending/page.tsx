@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState, useMemo, useDeferredValue } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { useTheme } from '@/context/ThemeContext';
 import { useRouter } from 'next/navigation';
 import { useReports } from '@/hooks/useReports';
 import { formatDateTimeIST } from '@/lib/dateUtils';
@@ -40,7 +39,6 @@ interface SummaryStats {
 
 export default function ParentPendingReportPage() {
   const { firebaseUser, logout } = useAuth();
-  const { toggleTheme } = useTheme();
   const router = useRouter();
   const { getParentPendingReport } = useReports();
 

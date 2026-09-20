@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState, Suspense } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { useTheme } from '@/context/ThemeContext';
 import useSWR from 'swr';
 import { fetchWithToken } from '@/lib/swrFetcher';
 import { t } from '@/lib/i18n';
@@ -80,7 +79,6 @@ interface DetailedScorecard {
 
 export default function StudentResults({ initialData }: { initialData?: { results: ResultSummaryItem[] } }) {
   const { firebaseUser, logout } = useAuth();
-  const { toggleTheme } = useTheme();
   const router = useRouter();
 
   // Cache loading

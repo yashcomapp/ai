@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState, useMemo, useDeferredValue } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { useTheme } from '@/context/ThemeContext';
 import { useRouter } from 'next/navigation';
 
 interface StudentSummary {
@@ -22,7 +21,6 @@ interface StudentSummary {
 
 export default function DailyPracticeSummaryPage() {
   const { firebaseUser, logout, user } = useAuth();
-  const { toggleTheme } = useTheme();
   const router = useRouter();
 
   const [loading, setLoading] = useState(true);

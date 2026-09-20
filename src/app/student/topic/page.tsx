@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState, useRef, useCallback, Suspense, useMemo } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { useTheme } from '@/context/ThemeContext';
 import { t } from '@/lib/i18n';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Script from 'next/script';
@@ -54,7 +53,6 @@ interface PracticeData {
 function TopicPracticeContent() {
   const { startSession, submitGrading } = usePractice();
   const { firebaseUser, logout, user } = useAuth();
-  const { toggleTheme } = useTheme();
   const router = useRouter();
   const searchParams = useSearchParams();
 

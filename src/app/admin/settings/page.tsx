@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { useTheme } from '@/context/ThemeContext';
 import { useRouter } from 'next/navigation';
 import { auth } from '@/lib/firebase/client';
 import { updatePassword } from 'firebase/auth';
@@ -17,7 +16,6 @@ interface Exam {
 
 export default function AdminSettingsPage() {
   const { firebaseUser, logout } = useAuth();
-  const { toggleTheme } = useTheme();
   const router = useRouter();
 
   const [loading, setLoading] = useState(false);

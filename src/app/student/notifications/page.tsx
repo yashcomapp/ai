@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { useTheme } from '@/context/ThemeContext';
 import { useRouter } from 'next/navigation';
 
 interface Notice {
@@ -16,7 +15,6 @@ interface Notice {
 
 export default function StudentSeenNotificationsPage() {
   const { firebaseUser, logout } = useAuth();
-  const { toggleTheme } = useTheme();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [notices, setNotices] = useState<Notice[]>([]);

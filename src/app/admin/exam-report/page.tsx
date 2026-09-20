@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState, useMemo, Suspense } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { useTheme } from '@/context/ThemeContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Script from 'next/script';
 import { useMathRender } from '@/hooks/useMathRender';
@@ -89,7 +88,6 @@ function formatAbsentLogin(lastLoginAt?: string | null) {
 
 function ExamReportContent() {
   const { firebaseUser, logout } = useAuth();
-  const { toggleTheme } = useTheme();
   const router = useRouter();
   const searchParams = useSearchParams();
 
