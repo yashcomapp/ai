@@ -908,30 +908,29 @@ select,textarea {
     font-family: inherit;
     font-size: 13.5px;
     color: var(--text);
-    background: #ffffff;
-    border: 1.5px solid #94a3b8;
+    background-color: var(--bg-soft);
+    border: 1px solid var(--border);
     border-radius: 8px;
     transition: border-color 0.15s var(--ease), box-shadow 0.15s var(--ease);
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 input[type="text"]:hover,input[type="email"]:hover,input[type="password"]:hover,
 input[type="number"]:hover,input[type="tel"]:hover,input[type="date"]:hover,
 select:hover,textarea:hover {
-    border-color: #475569;
+    border-color: var(--border-glass);
 }
 .form-group select, .field select, .form-row select, .form-control {
     width: 100%;
 }
 select, .form-select, .filter-select {
     width: 100%;
-    border: 1.5px solid #94a3b8 !important;
-    background-color: #ffffff !important;
+    border: 1px solid var(--border) !important;
+    background-color: var(--bg-soft) !important;
     border-radius: 8px !important;
-    color: #0f172a !important;
+    color: var(--text) !important;
     appearance: none;
     -webkit-appearance: none;
     -moz-appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23334155' stroke-width='2.5'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E") !important;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23707987' stroke-width='2.5'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E") !important;
     background-repeat: no-repeat !important;
     background-position: right 10px center !important;
     background-size: 14px 14px !important;
@@ -946,66 +945,23 @@ select, .form-select, .filter-select {
     font-size: 12px !important;
     font-weight: 700 !important;
     border-radius: 20px !important;
-    border: 1.5px solid #94a3b8 !important;
-    background-color: #ffffff !important;
-    color: #0f172a !important;
+    border: 1px solid var(--border) !important;
+    background-color: var(--bg-soft) !important;
+    color: var(--text) !important;
     flex-shrink: 0 !important;
     appearance: none;
     -webkit-appearance: none;
     -moz-appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23334155' stroke-width='2.5'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E") !important;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23707987' stroke-width='2.5'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E") !important;
     background-repeat: no-repeat !important;
     background-position: right 8px center !important;
     background-size: 12px 12px !important;
     cursor: pointer;
 }
 select option {
-    background-color: #ffffff !important;
-    color: #0f172a !important;
+    background-color: var(--surface-popover) !important;
+    color: var(--text) !important;
     padding: 6px 10px;
-}
-html[data-theme="dark"] select option {
-    background-color: var(--surface-popover, #1f1f26) !important;
-    color: var(--text, #edeef0) !important;
-}
-
-html[data-theme="dark"] input[type="text"],
-html[data-theme="dark"] input[type="email"],
-html[data-theme="dark"] input[type="password"],
-html[data-theme="dark"] input[type="number"],
-html[data-theme="dark"] input[type="tel"],
-html[data-theme="dark"] input[type="date"],
-html[data-theme="dark"] select,
-html[data-theme="dark"] textarea,
-html[data-theme="dark"] .form-input,
-html[data-theme="dark"] .form-select,
-html[data-theme="dark"] .filter-select,
-html[data-theme="dark"] .form-control,
-html[data-theme="dark"] .glance-period-select {
-    background-color: var(--bg-soft, #18181c) !important;
-    border: 1px solid var(--border, rgba(255, 255, 255, 0.10)) !important;
-    color: var(--text, #edeef0) !important;
-    box-shadow: none !important;
-}
-
-html[data-theme="dark"] input[type="text"]:hover,
-html[data-theme="dark"] input[type="email"]:hover,
-html[data-theme="dark"] input[type="password"]:hover,
-html[data-theme="dark"] input[type="number"]:hover,
-html[data-theme="dark"] input[type="tel"]:hover,
-html[data-theme="dark"] input[type="date"]:hover,
-html[data-theme="dark"] select:hover,
-html[data-theme="dark"] textarea:hover,
-html[data-theme="dark"] .form-input:hover,
-html[data-theme="dark"] .form-select:hover,
-html[data-theme="dark"] .filter-select:hover {
-    border-color: var(--border-glass, rgba(255, 255, 255, 0.18)) !important;
-}
-
-html[data-theme="dark"] input[type="checkbox"] {
-    background-color: var(--surface, #1b1b20) !important;
-    border: 1.5px solid var(--border-glass, rgba(255, 255, 255, 0.18)) !important;
-    accent-color: var(--accent, #f59e0b) !important;
 }
 
 input:focus,select:focus,textarea:focus {
@@ -1019,26 +975,25 @@ input[type="checkbox"] {
     min-width: 18px !important;
     min-height: 18px !important;
     padding: 0 !important;
-    border: 2px solid #64748b !important;
+    border: 1.5px solid var(--border-glass) !important;
     border-radius: 4px !important;
-    background-color: #ffffff !important;
-    accent-color: #2563eb !important;
+    background-color: var(--surface) !important;
+    accent-color: var(--accent) !important;
     cursor: pointer !important;
     vertical-align: middle !important;
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 input[type="checkbox"]:hover {
-    border-color: #2563eb !important;
+    border-color: var(--accent) !important;
 }
 input[type="checkbox"]:focus {
-    outline: 2px solid #2563eb !important;
+    outline: 2px solid var(--accent) !important;
     outline-offset: 2px !important;
 }
 input:disabled,textarea:disabled,select:disabled {
     background: var(--bg-soft) !important;
     color: var(--text-muted) !important;
-    border-color: #cbd5e1 !important;
+    border-color: var(--border) !important;
     cursor: not-allowed;
 }
 
@@ -1046,13 +1001,16 @@ input:disabled,textarea:disabled,select:disabled {
 .form-input,.form-select,.filter-select,.ai-textarea {
     width: 100%;
     padding: 6px 10px;
-    border: 1.5px solid #94a3b8;
+    border: 1px solid var(--border);
     border-radius: 8px;
     font-size: 13.5px;
     font-family: inherit;
-    background: #ffffff;
+    background-color: var(--bg-soft);
     color: var(--text);
     transition: border-color 0.15s var(--ease), box-shadow 0.15s var(--ease);
+}
+.form-input:hover,.form-select:hover,.filter-select:hover {
+    border-color: var(--border-glass);
 }
 .form-input:focus,.form-select:focus,.filter-select:focus,.ai-textarea:focus {
     outline: none;
@@ -1071,11 +1029,7 @@ input:disabled,textarea:disabled,select:disabled {
 .checkbox-item { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; }
 .radio-group { display: flex; gap: 10px; flex-wrap: wrap; }
 .radio-group label { display: flex; align-items: center; gap: 5px; font-weight: 500; cursor: pointer; font-size: 13.5px; color: var(--text); }
-.selection-list { max-height: 180px; overflow-y: auto; border: 1.5px solid #94a3b8; border-radius: 8px; background: #ffffff; }
-html[data-theme="dark"] .selection-list {
-    background: var(--surface-2, #22222a) !important;
-    border-color: var(--border, rgba(255, 255, 255, 0.10)) !important;
-}
+.selection-list { max-height: 180px; overflow-y: auto; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-2); }
 .selection-item { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-bottom: 1px solid var(--border-light); }
 .selection-item:last-child { border-bottom: none; }
 .selection-item input[type="checkbox"] { width: 16px !important; height: 16px !important; cursor: pointer; }
@@ -1535,15 +1489,6 @@ html[data-theme="dark"] .selection-list {
 .dropdown-item:hover { background: var(--accent-soft); color: var(--accent); }
 .dropdown-icon { font-size: 16.8px; line-height: 1; flex-shrink: 0; }
 .dropdown-label { font-size: 14.4px; font-weight: 600; }
-
-html[data-theme="dark"] .dropdown-item {
-    color: #ffffff;
-    text-shadow: 0 1px 3px rgba(0,0,0,0.5);
-}
-html[data-theme="dark"] .dropdown-item:hover {
-    color: var(--accent);
-    text-shadow: none;
-}
 
 /* ============================================================
    18. VIEW LINK / MISC UTILITIES
@@ -2064,11 +2009,11 @@ button, a, .brand, .tab, .btn, [role="button"], .settings-toggle, .theme-toggle,
 .exam-listing-card,
 .practice-listing-card {
     position: relative;
-    background: #ffffff;
-    border: 1.5px solid #cbd5e1;
+    background: var(--surface);
+    border: 1px solid var(--border);
     border-radius: 16px;
     padding: 18px 20px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+    box-shadow: var(--shadow-sm);
     transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease;
     margin-bottom: 14px;
 }
@@ -2078,8 +2023,8 @@ button, a, .brand, .tab, .btn, [role="button"], .settings-toggle, .theme-toggle,
 .exam-listing-card:hover,
 .practice-listing-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.03);
-    border-color: #94a3b8;
+    box-shadow: var(--shadow-md);
+    border-color: var(--border-glass);
 }
 
 /* 3. Ribbon Tag */
@@ -2087,8 +2032,8 @@ button, a, .brand, .tab, .btn, [role="button"], .settings-toggle, .theme-toggle,
     position: absolute;
     top: 0;
     right: 16px;
-    background: #eff6ff;
-    color: #1e40af;
+    background: var(--info-bg);
+    color: var(--info);
     font-size: 11px;
     font-weight: 800;
     letter-spacing: 0.02em;
@@ -2096,23 +2041,23 @@ button, a, .brand, .tab, .btn, [role="button"], .settings-toggle, .theme-toggle,
     padding: 4px 10px;
     border-bottom-left-radius: 6px;
     border-bottom-right-radius: 6px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    box-shadow: var(--shadow-xs);
 }
 .ribbon-tag.ribbon-blue {
-    background: #eff6ff;
-    color: #1e40af;
+    background: var(--info-bg);
+    color: var(--info);
 }
 .ribbon-tag.ribbon-green {
-    background: #dcfce7;
-    color: #166534;
+    background: var(--success-bg);
+    color: var(--success);
 }
 .ribbon-tag.ribbon-amber {
-    background: #fef3c7;
-    color: #92400e;
+    background: var(--warning-bg);
+    color: var(--warning);
 }
 .ribbon-tag.ribbon-purple {
-    background: #f5f3ff;
-    color: #5b21b6;
+    background: var(--purple-bg);
+    color: var(--purple);
 }
 
 /* 4. Rating Pill Badge */
@@ -2120,8 +2065,8 @@ button, a, .brand, .tab, .btn, [role="button"], .settings-toggle, .theme-toggle,
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    background: #059669;
-    color: #ffffff;
+    background: var(--success-bg);
+    color: var(--success);
     font-size: 12px;
     font-weight: 700;
     padding: 3px 8px;
@@ -2130,7 +2075,7 @@ button, a, .brand, .tab, .btn, [role="button"], .settings-toggle, .theme-toggle,
 }
 .rating-pill-sub {
     font-size: 11px;
-    color: #64748b;
+    color: var(--text-muted);
     font-weight: 500;
     margin-top: 2px;
 }
@@ -2143,25 +2088,25 @@ button, a, .brand, .tab, .btn, [role="button"], .settings-toggle, .theme-toggle,
 }
 .price-original {
     text-decoration: line-through;
-    color: #94a3b8;
+    color: var(--text-muted);
     font-size: 14px;
     font-weight: 500;
 }
 .price-final {
     font-size: 20px;
     font-weight: 800;
-    color: #0f172a;
+    color: var(--text);
     letter-spacing: -0.02em;
 }
 
 /* 6. Embedded Offer / Promo Banner Strip */
 .offer-banner-strip {
-    background: #f0fdf4;
-    border: 1px dashed #86efac;
+    background: var(--success-bg);
+    border: 1px dashed var(--success);
     border-radius: 8px;
     padding: 8px 12px;
     font-size: 12px;
-    color: #166534;
+    color: var(--success);
     font-weight: 600;
     display: flex;
     align-items: center;
@@ -2171,8 +2116,8 @@ button, a, .brand, .tab, .btn, [role="button"], .settings-toggle, .theme-toggle,
 
 /* 7. Special Offers Coupon Card */
 .coupon-card {
-    background: #ecfdf5;
-    border: 1.5px solid #a7f3d0;
+    background: var(--success-bg);
+    border: 1px solid var(--success);
     border-radius: 14px;
     padding: 14px;
     display: flex;
@@ -2181,60 +2126,12 @@ button, a, .brand, .tab, .btn, [role="button"], .settings-toggle, .theme-toggle,
     gap: 12px;
 }
 .coupon-code-box {
-    border: 1.5px dashed #059669;
-    background: #ffffff;
-    color: #059669;
+    border: 1.5px dashed var(--success);
+    background: var(--surface-2);
+    color: var(--success);
     font-weight: 800;
     font-size: 13px;
     padding: 4px 10px;
     border-radius: 6px;
     letter-spacing: 0.05em;
-}
-
-/* Dark mode adaptations for listing cards, filter pills, and coupon widgets (Zero Glare & Zero Halation) */
-[data-theme="dark"] .edu-card,
-[data-theme="dark"] .redbus-card,
-[data-theme="dark"] .modern-listing-card,
-[data-theme="dark"] .exam-listing-card,
-[data-theme="dark"] .practice-listing-card {
-    background: var(--surface) !important;
-    border-color: var(--border) !important;
-    box-shadow: var(--shadow-sm) !important;
-}
-
-[data-theme="dark"] .filter-pill-chip {
-    background: var(--surface) !important;
-    border-color: var(--border) !important;
-    color: var(--text-2) !important;
-}
-[data-theme="dark"] .filter-pill-chip:hover {
-    border-color: var(--accent) !important;
-    color: var(--accent) !important;
-    background: var(--accent-light) !important;
-}
-[data-theme="dark"] .filter-pill-chip.active,
-[data-theme="dark"] .filter-pill-chip[data-active="true"] {
-    background: var(--accent) !important;
-    border-color: var(--accent-dark) !important;
-    color: var(--text-on-accent) !important;
-    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.25) !important;
-}
-
-[data-theme="dark"] .price-final {
-    color: var(--text) !important;
-}
-
-[data-theme="dark"] .coupon-card {
-    background: rgba(52, 211, 153, 0.08) !important;
-    border-color: rgba(52, 211, 153, 0.22) !important;
-}
-[data-theme="dark"] .coupon-code-box {
-    background: var(--surface-2) !important;
-    color: #86efac !important;
-    border-color: rgba(52, 211, 153, 0.3) !important;
-}
-[data-theme="dark"] .offer-banner-strip {
-    background: rgba(52, 211, 153, 0.08) !important;
-    border-color: rgba(52, 211, 153, 0.22) !important;
-    color: #86efac !important;
 }

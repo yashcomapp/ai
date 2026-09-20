@@ -1,4 +1,5 @@
 import { adminAuth, adminDb } from '@/lib/firebase/admin';
+import { UserRole } from '@/types/user.types';
 
 export interface VerifiedUser {
   decodedToken: any;
@@ -29,7 +30,7 @@ export function invalidateUserCache(uid?: string) {
   }
 }
 
-export async function verifyRole(req: Request, role: 'admin' | 'student' | 'parent'): Promise<VerifiedUser | null> {
+export async function verifyRole(req: Request, role: UserRole): Promise<VerifiedUser | null> {
   const result = await verifyAnyRole(req, [role]);
   if (!result) return null;
   return { decodedToken: result.decodedToken, userData: result.userData };
@@ -37,8 +38,8 @@ export async function verifyRole(req: Request, role: 'admin' | 'student' | 'pare
 
 export async function verifyAnyRole(
   req: Request,
-  roles: ('admin' | 'student' | 'parent')[]
-): Promise<{ decodedToken: any; userData: any; role: 'admin' | 'student' | 'parent' } | null> {
+  roles: UserRole[]
+): Promise<{ decodedToken: any; userData: any; role: UserRole } | null> {
   const decodedToken = await verifyToken(req);
   if (!decodedToken) return null;
 
@@ -70,7 +71,7 @@ export async function verifyAnyRole(
 
   if (!userData) return null;
 
-  const userRole = (userData.role || '').toLowerCase() as 'admin' | 'student' | 'parent';
+  const userRole = (userData.role || '').toLowerCase() as UserRole;
   if (roles.includes(userRole)) {
     // Curfew check for student role
     if (userRole === 'student') {

@@ -190,7 +190,7 @@ export default function DailyPracticeSummaryPage() {
             color: black !important;
             font-size: 11px !important;
           }
-          .no-print, nav, header, select, button, .theme-toggle, .page-header, .sidebar, .card:not(.print-table-card) {
+          .no-print, nav, header, select, button, .page-header, .sidebar, .card:not(.print-table-card) {
             display: none !important;
           }
           .print-header-info {

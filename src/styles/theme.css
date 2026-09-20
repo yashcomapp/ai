@@ -724,7 +724,6 @@ body,
     .page-header-right #usernameDisplay {
         display: none;
     }
-    .theme-toggle,
     .btn-icon.logout-btn {
         width: 32px;
         height: 32px;
@@ -736,55 +735,6 @@ body,
     .hide-desktop {
         display: none !important;
     }
-}
-
-/* ---------- 18. THEME TOGGLE (Only the button, NOT the container) ---------- */
-.theme-toggle {
-    background: rgba(255, 255, 255, 0.16);
-    color: var(--text-on-accent);
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    width: 36px;
-    height: 36px;
-    padding: 0;
-    border-radius: 50%;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 19.2px;
-    line-height: 1;
-    cursor: pointer;
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    transition: background 0.15s var(--ease), transform 0.25s var(--ease);
-    flex-shrink: 0;
-}
-
-.theme-toggle:hover {
-    background: rgba(255, 255, 255, 0.28);
-}
-
-.theme-toggle:active {
-    transform: scale(0.92);
-}
-
-.theme-toggle .ico-sun,
-.ico-sun {
-    display: inline;
-}
-
-.theme-toggle .ico-moon,
-.ico-moon {
-    display: none;
-}
-
-html[data-theme="dark"] .theme-toggle .ico-sun,
-html[data-theme="dark"] .ico-sun {
-    display: none;
-}
-
-html[data-theme="dark"] .theme-toggle .ico-moon,
-html[data-theme="dark"] .ico-moon {
-    display: inline;
 }
 
 .btn-icon.logout-btn {

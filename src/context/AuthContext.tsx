@@ -12,8 +12,9 @@ import {
   browserLocalPersistence
 } from 'firebase/auth';
 import { auth } from '@/lib/firebase/client';
+import { UserRole } from '@/types/user.types';
 
-export type UserRole = 'admin' | 'student' | 'parent' | 'pending' | 'guest';
+export type { UserRole };
 
 export interface UserProfile {
   uid: string;
