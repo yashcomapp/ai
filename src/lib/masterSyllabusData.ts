@@ -5447,9 +5447,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
             "number": "3.2",
             "name": "Operations on Polynomials: Addition, Subtraction, Multiplication",
             "topicCode": "MH-9-MTH1-3-3.2",
-            "subtopics": [
-              "Degree of sum, difference and product polynomials"
-            ],
+            "subtopics": [],
             "practiceSet": "Exercise 3.2",
             "theorems": [],
             "problemSet": "Problem Set 3"

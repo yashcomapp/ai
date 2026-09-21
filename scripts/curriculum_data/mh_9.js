@@ -38,7 +38,7 @@ const mh9Subjects = [
         name: 'Polynomials',
         topics: [
           createTopic('MH', '9', 'MTH1', '3', '1', 'Introduction: Degree of Polynomials & Forms', ['Degree in one and more variables', 'Standard form, Index form, and Coefficient form']),
-          createTopic('MH', '9', 'MTH1', '3', '2', 'Operations on Polynomials: Addition, Subtraction, Multiplication', ['Degree of sum, difference and product polynomials']),
+          createTopic('MH', '9', 'MTH1', '3', '2', 'Operations on Polynomials: Addition, Subtraction, Multiplication', []),
           createTopic('MH', '9', 'MTH1', '3', '3', 'Division of Polynomials: Synthetic Division & Linear Method', ['Synthetic division algorithm using opposite coefficients', 'Linear division method']),
           createTopic('MH', '9', 'MTH1', '3', '4', 'Value of Polynomial, Remainder Theorem & Factor Theorem', ['Evaluating p(x) for x = a', 'Remainder theorem statement & verification', 'Factor theorem for checking factorability'], '', ['Remainder Theorem', 'Factor Theorem']),
           createTopic('MH', '9', 'MTH1', '3', '5', 'Factorisation of Polynomials (Middle Term Splitting & Substitution)', ['Factoring quadratic expressions (x² - x)² - 8(x² - x) + 12', 'Factoring cubic polynomials'])
