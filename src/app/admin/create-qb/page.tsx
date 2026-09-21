@@ -408,7 +408,7 @@ function CreateQBContent() {
     triggerLoadChapters(selectedSubjects);
   }, [selectedSubjects]);
 
-  // Triggers background loading of chapters map
+  // Triggers instant local population & background live counts loading of chapters map
   const triggerLoadChapters = async (subMap: Record<string, SelectedSubjectData>) => {
     const subjects = Object.keys(subMap);
     if (!subjects.length) {
@@ -419,12 +419,37 @@ function CreateQBContent() {
       return;
     }
 
-    const allChapters: ChapterItem[] = [];
+    // 1. INSTANT: Synchronously populate chapters from already loaded syllabusIndex (0ms delay)
+    const instantChapters: ChapterItem[] = [];
+    subjects.forEach((subject) => {
+      const entry = syllabusIndex?.subjects?.[selectedBoard]?.[selectedClass]?.[subject];
+      if (entry && Array.isArray(entry.chapters)) {
+        entry.chapters.forEach((ch: any) => {
+          instantChapters.push({
+            subject,
+            chapter: ch,
+            chapterName: ch.name || `Chapter ${ch.number}`,
+            chapterNumber: String(ch.number || ''),
+            objectiveCount: ch.objectiveCount || 0,
+            subjectiveCount: ch.subjectiveCount || 0
+          });
+        });
+      }
+    });
+
+    if (instantChapters.length > 0) {
+      setCurrentChapters(instantChapters);
+    }
+
+    // 2. BACKGROUND: Enrich chapters with live question counts without blocking UI
     try {
-      const idToken = await firebaseUser!.getIdToken();
+      if (!firebaseUser) return;
+      const idToken = await firebaseUser.getIdToken();
+      const enrichedChapters: ChapterItem[] = [];
+
       await Promise.all(
         subjects.map(async (subject) => {
-          const entry = syllabusIndex.subjects?.[selectedBoard]?.[selectedClass]?.[subject];
+          const entry = syllabusIndex?.subjects?.[selectedBoard]?.[selectedClass]?.[subject];
           if (entry && entry.docId) {
             const res = await fetch(`/api/admin/exams/generate?docId=${entry.docId}`, {
               headers: { 'Authorization': `Bearer ${idToken}` }
@@ -433,7 +458,7 @@ function CreateQBContent() {
               const data = await res.json();
               if (data.chapters) {
                 data.chapters.forEach((ch: any) => {
-                  allChapters.push({
+                  enrichedChapters.push({
                     subject,
                     chapter: ch,
                     chapterName: ch.name || `Chapter ${ch.number}`,
@@ -447,12 +472,12 @@ function CreateQBContent() {
           }
         })
       );
-      setCurrentChapters(allChapters);
-      setSelectedChapters(new Set());
-      setCurrentAllTopics([]);
-      setSelectedTopics([]);
+
+      if (enrichedChapters.length > 0) {
+        setCurrentChapters(enrichedChapters);
+      }
     } catch (err) {
-      console.error('Error loading chapters:', err);
+      console.error('Error background-loading chapters live counts:', err);
     }
   };
 

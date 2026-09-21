@@ -6,6 +6,9 @@ import { verifyRole } from '@/lib/auth';
 import { ChunkedBatch } from '@/lib/firebase/batch';
 export const dynamic = 'force-dynamic';
 
+const SYLLABUS_DOC_CACHE = new Map<string, { data: any; timestamp: number }>();
+const CACHE_TTL = 30000; // 30 seconds cache for calculated counts
+
 export async function GET(req: NextRequest) {
   try {
     const adminUser = await verifyRole(req, 'admin');
@@ -144,6 +147,11 @@ export async function GET(req: NextRequest) {
 
     // Action B: Fetch single syllabus document with live calculated question counts
     if (docId) {
+      const cached = SYLLABUS_DOC_CACHE.get(docId);
+      if (cached && (Date.now() - cached.timestamp < CACHE_TTL)) {
+        return NextResponse.json(cached.data);
+      }
+
       const docSnap = await adminDb.collection('syllabus').doc(docId).get();
       if (!docSnap.exists) {
         return NextResponse.json({ message: 'Subject syllabus not found.' }, { status: 404 });
@@ -340,6 +348,7 @@ export async function GET(req: NextRequest) {
         console.warn('Chapter questions aggregation error bypassed:', countErr);
       }
 
+      SYLLABUS_DOC_CACHE.set(docId, { data: subjectData, timestamp: Date.now() });
       return NextResponse.json(subjectData);
     }
 
@@ -368,7 +377,7 @@ export async function GET(req: NextRequest) {
     };
 
     // Dynamically build syllabusSubjects directly from live syllabus collection
-    const subjectsMap: Record<string, Record<string, Record<string, { docId: string }>>> = {};
+    const subjectsMap: Record<string, Record<string, Record<string, { docId: string; chapters?: any[] }>>> = {};
 
     syllabusSnap.docs.forEach(doc => {
       const data = doc.data();
@@ -390,7 +399,8 @@ export async function GET(req: NextRequest) {
           subjectsMap[board][cls] = {};
         }
         subjectsMap[board][cls][subject] = {
-          docId: doc.id
+          docId: doc.id,
+          chapters: data.chapters || []
         };
       }
     });
@@ -427,6 +437,8 @@ export async function POST(req: NextRequest) {
     if (!action) {
       return NextResponse.json({ message: 'Missing parameters (action).' }, { status: 400 });
     }
+
+    SYLLABUS_DOC_CACHE.clear();
 
     // Compile and Save Final Exam
     if (action === 'saveExam') {

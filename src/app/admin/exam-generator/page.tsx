@@ -343,7 +343,58 @@ export default function AdminExamGeneratorPage() {
 
   const triggerLoadChapters = async (subs: Set<string>) => {
     resetChaptersTopics();
-    if (subs.size === 0 || !firebaseUser) return;
+    if (subs.size === 0) return;
+
+    // 1. INSTANT: Synchronously populate chapters and topics from loaded syllabusIndex (0ms delay)
+    const instantChaptersList: any[] = [];
+    Array.from(subs).forEach((subject) => {
+      const entry = syllabusIndex?.subjects?.[selectedBoard]?.[selectedClass]?.[subject];
+      if (entry && Array.isArray(entry.chapters)) {
+        entry.chapters.forEach((ch: any, idx: number) => {
+          instantChaptersList.push({
+            subject,
+            chapter: ch,
+            chapterName: ch.name || `Chapter ${ch.number || idx + 1}`,
+            chapterNumber: String(ch.number || idx + 1),
+            objectiveCount: ch.objectiveCount || 0,
+            subjectiveCount: ch.subjectiveCount || 0
+          });
+        });
+      }
+    });
+
+    if (instantChaptersList.length > 0) {
+      const instantTopicsList: any[] = [];
+      instantChaptersList.forEach((chItem) => {
+        const rawTopics = chItem.chapter.topics || [];
+        const walk = (tList: any[]) => {
+          tList.forEach(t => {
+            const isObj = t && typeof t === 'object';
+            const label = isObj ? ((t.number ? `${t.number} ` : '') + (t.name || t.title || '')) : String(t);
+            const num = isObj ? (t.number || t.topicNumber || label) : label;
+            instantTopicsList.push({
+              subject: chItem.subject,
+              chapterName: chItem.chapterName,
+              chapterNumber: chItem.chapterNumber,
+              topic: label,
+              topicName: isObj ? (t.name || t.title || label) : label,
+              topicNumber: num,
+              topicCode: isObj ? (t.topicCode || t.subtopicCode || '') : '',
+              objectiveCount: isObj ? (t.objectiveCount || 0) : 0,
+              subjectiveCount: isObj ? (t.subjectiveCount || 0) : 0,
+              hasSubtopics: isObj && Array.isArray(t.subtopics) && t.subtopics.length > 0
+            });
+            if (isObj && t.subtopics && t.subtopics.length > 0) walk(t.subtopics);
+          });
+        };
+        walk(rawTopics);
+      });
+
+      setAvailableChapters(instantChaptersList);
+      setAvailableTopics(instantTopicsList);
+    }
+
+    if (!firebaseUser) return;
     
     setFetchingPool(true);
     try {
@@ -352,7 +403,7 @@ export default function AdminExamGeneratorPage() {
       
       await Promise.all(
         Array.from(subs).map(async (subject) => {
-          const entry = syllabusIndex.subjects[selectedBoard]?.[selectedClass]?.[subject];
+          const entry = syllabusIndex?.subjects?.[selectedBoard]?.[selectedClass]?.[subject];
           if (entry && entry.docId) {
             const res = await fetch(`/api/admin/exams/generate?docId=${entry.docId}`, {
               headers: { 'Authorization': `Bearer ${idToken}` }
@@ -375,39 +426,37 @@ export default function AdminExamGeneratorPage() {
         })
       );
 
-      // Compile flat list of all topics
-      const allTopicsList: any[] = [];
-      allChaptersList.forEach((chItem) => {
-        const rawTopics = chItem.chapter.topics || [];
-        const walk = (tList: any[]) => {
-          tList.forEach(t => {
-            const isObj = t && typeof t === 'object';
-            const label = isObj ? ((t.number ? `${t.number} ` : '') + (t.name || t.title || '')) : String(t);
-            const num = isObj ? (t.number || t.topicNumber || label) : label;
-            allTopicsList.push({
-              subject: chItem.subject,
-              chapterName: chItem.chapterName,
-              chapterNumber: chItem.chapterNumber,
-              topic: label,
-              topicName: isObj ? (t.name || t.title || label) : label,
-              topicNumber: num,
-              topicCode: isObj ? (t.topicCode || t.subtopicCode || '') : '',
-              objectiveCount: isObj ? (t.objectiveCount || 0) : 0,
-              subjectiveCount: isObj ? (t.subjectiveCount || 0) : 0,
-              hasSubtopics: isObj && Array.isArray(t.subtopics) && t.subtopics.length > 0
+      if (allChaptersList.length > 0) {
+        // Compile flat list of all topics with enriched live counts
+        const allTopicsList: any[] = [];
+        allChaptersList.forEach((chItem) => {
+          const rawTopics = chItem.chapter.topics || [];
+          const walk = (tList: any[]) => {
+            tList.forEach(t => {
+              const isObj = t && typeof t === 'object';
+              const label = isObj ? ((t.number ? `${t.number} ` : '') + (t.name || t.title || '')) : String(t);
+              const num = isObj ? (t.number || t.topicNumber || label) : label;
+              allTopicsList.push({
+                subject: chItem.subject,
+                chapterName: chItem.chapterName,
+                chapterNumber: chItem.chapterNumber,
+                topic: label,
+                topicName: isObj ? (t.name || t.title || label) : label,
+                topicNumber: num,
+                topicCode: isObj ? (t.topicCode || t.subtopicCode || '') : '',
+                objectiveCount: isObj ? (t.objectiveCount || 0) : 0,
+                subjectiveCount: isObj ? (t.subjectiveCount || 0) : 0,
+                hasSubtopics: isObj && Array.isArray(t.subtopics) && t.subtopics.length > 0
+              });
+              if (isObj && t.subtopics && t.subtopics.length > 0) walk(t.subtopics);
             });
-            if (isObj && t.subtopics && t.subtopics.length > 0) walk(t.subtopics);
-          });
-        };
-        walk(rawTopics);
-      });
+          };
+          walk(rawTopics);
+        });
 
-      setAvailableChapters(allChaptersList);
-      setAvailableTopics(allTopicsList);
-      
-      // Keep unselected by default
-      setSelectedChapters(new Set());
-      setSelectedTopics([]);
+        setAvailableChapters(allChaptersList);
+        setAvailableTopics(allTopicsList);
+      }
     } catch (err) {
       console.error(err);
     } finally {

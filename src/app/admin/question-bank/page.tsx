@@ -284,11 +284,17 @@ export default function AdminQuestionBankPage() {
     setFilterSubject(subj);
     setFilterChapter('');
     setFilterTopic('');
-    setAvailableChapters([]);
     setAvailableTopics([]);
 
-    // Load chapters list for this subject
+    // 1. INSTANT: Immediately populate chapters from syllabusIndex (0ms delay)
     const entry = syllabusIndex?.subjects?.[filterBoard]?.[filterClass]?.[subj];
+    if (entry && Array.isArray(entry.chapters) && entry.chapters.length > 0) {
+      setAvailableChapters(entry.chapters);
+    } else {
+      setAvailableChapters([]);
+    }
+
+    // 2. BACKGROUND: Load enriched chapters list with live counts
     if (entry && entry.docId && firebaseUser) {
       try {
         const idToken = await firebaseUser.getIdToken();
@@ -297,7 +303,9 @@ export default function AdminQuestionBankPage() {
         });
         if (res.ok) {
           const data = await res.json();
-          setAvailableChapters(data.chapters || []);
+          if (data.chapters && data.chapters.length > 0) {
+            setAvailableChapters(data.chapters);
+          }
         }
       } catch (err) {
         console.error(err);
