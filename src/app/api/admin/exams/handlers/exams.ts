@@ -873,7 +873,7 @@ export async function PUT(req: NextRequest) {
   }
 }
 
-// 4. DELETE - Delete an exam along with all related details
+// 4. DELETE - Delete an exam along with all related details and release its questions
 export async function DELETE(req: NextRequest) {
   try {
     const adminUser = await verifyRole(req, 'admin');
@@ -887,6 +887,23 @@ export async function DELETE(req: NextRequest) {
 
     if (!examId || !type) {
       return NextResponse.json({ message: 'Missing parameters (examId, type).' }, { status: 400 });
+    }
+
+    // Retrieve the target exam document first to inspect questions to release
+    const targetCollection = type === 'objective' ? 'exams' : 'subjectiveExams';
+    const targetExamDoc = await adminDb.collection(targetCollection).doc(examId).get();
+    const targetExamData = targetExamDoc.exists ? targetExamDoc.data() : null;
+
+    const assignedQuestionCodes: string[] = [];
+    if (targetExamData) {
+      const codes = targetExamData.questionCodes || targetExamData.questionIds || [];
+      codes.forEach((c: any) => { if (c) assignedQuestionCodes.push(String(c).trim()); });
+      if (Array.isArray(targetExamData.questions)) {
+        targetExamData.questions.forEach((q: any) => {
+          if (q?.id) assignedQuestionCodes.push(String(q.id).trim());
+          if (q?.questionCode) assignedQuestionCodes.push(String(q.questionCode).trim());
+        });
+      }
     }
 
     const batch = new ChunkedBatch(adminDb);
@@ -969,6 +986,70 @@ export async function DELETE(req: NextRequest) {
     }
 
     await batch.commit();
+
+    // Release questions back into question bank vault if not locked by other active exams
+    if (assignedQuestionCodes.length > 0) {
+      try {
+        const uniqueCandidateCodes = Array.from(new Set(assignedQuestionCodes));
+        const [remainingObjSnap, remainingSubjSnap] = await Promise.all([
+          adminDb.collection('exams').get(),
+          adminDb.collection('subjectiveExams').get()
+        ]);
+
+        const otherActiveCodes = new Set<string>();
+        remainingObjSnap.docs.forEach(doc => {
+          if (doc.id === examId) return;
+          const edata = doc.data();
+          const codes = edata.questionCodes || edata.questionIds || [];
+          codes.forEach((c: any) => { if (c) otherActiveCodes.add(String(c).trim()); });
+          if (Array.isArray(edata.questions)) {
+            edata.questions.forEach((q: any) => {
+              if (q?.id) otherActiveCodes.add(String(q.id).trim());
+              if (q?.questionCode) otherActiveCodes.add(String(q.questionCode).trim());
+            });
+          }
+        });
+        remainingSubjSnap.docs.forEach(doc => {
+          if (doc.id === examId) return;
+          const edata = doc.data();
+          const codes = edata.questionCodes || edata.questionIds || [];
+          codes.forEach((c: any) => { if (c) otherActiveCodes.add(String(c).trim()); });
+          if (Array.isArray(edata.questions)) {
+            edata.questions.forEach((q: any) => {
+              if (q?.id) otherActiveCodes.add(String(q.id).trim());
+              if (q?.questionCode) otherActiveCodes.add(String(q.questionCode).trim());
+            });
+          }
+        });
+
+        const codesToRelease = uniqueCandidateCodes.filter(c => !otherActiveCodes.has(c));
+        if (codesToRelease.length > 0) {
+          const releaseBatch = new ChunkedBatch(adminDb);
+          for (const code of codesToRelease) {
+            const qRef = adminDb.collection('questions').doc(code);
+            releaseBatch.set(qRef, { usedInClassroomTest: false }, { merge: true });
+          }
+
+          for (let i = 0; i < codesToRelease.length; i += 30) {
+            const chunk = codesToRelease.slice(i, i + 30);
+            try {
+              const matchedSnap = await adminDb.collection('questions')
+                .where('questionCode', 'in', chunk)
+                .get();
+              matchedSnap.docs.forEach(qDoc => {
+                releaseBatch.set(qDoc.ref, { usedInClassroomTest: false }, { merge: true });
+              });
+            } catch (mErr) {
+              console.warn('Matched question release lookup warning:', mErr);
+            }
+          }
+
+          await releaseBatch.commit();
+        }
+      } catch (relErr) {
+        console.warn('Failed to release questions during exam delete:', relErr);
+      }
+    }
 
     // Auto re-sync class counters to highest remaining active exam sequence
     try {

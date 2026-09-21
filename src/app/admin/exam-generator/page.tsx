@@ -227,6 +227,34 @@ export default function AdminExamGeneratorPage() {
   const [currentTemplate, setCurrentTemplate] = useState<Template | null>(CANONICAL_EXAM_PRESETS[0]);
   const [questionType, setQuestionType] = useState<'objective' | 'subjective'>('objective');
 
+  // Custom Blueprint Configuration States
+  const [customTotalQs, setCustomTotalQs] = useState<number>(30);
+  const [customDuration, setCustomDuration] = useState<number>(45);
+  const [customPositiveMarks, setCustomPositiveMarks] = useState<number>(4);
+  const [customNegativeMarks, setCustomNegativeMarks] = useState<number>(1);
+  const [customPoolMode, setCustomPoolMode] = useState<'flexible' | 'custom_types'>('flexible');
+  const [customTypeCounts, setCustomTypeCounts] = useState<{ [key: string]: number }>({
+    single_mcq: 18,
+    assertion_reason: 4,
+    multiple_mcq: 4,
+    numerical: 4
+  });
+  const [customDifficulty, setCustomDifficulty] = useState<{ easy: number; medium: number; hard: number }>({
+    easy: 30,
+    medium: 50,
+    hard: 20
+  });
+
+  // Custom Subjective Configuration States
+  const [customSubjTotalQs, setCustomSubjTotalQs] = useState<number>(6);
+  const [customSubjDuration, setCustomSubjDuration] = useState<number>(45);
+  const [customSubjPositiveMarks, setCustomSubjPositiveMarks] = useState<number>(2);
+  const [customSubjPoolMode, setCustomSubjPoolMode] = useState<'flexible' | 'custom_types'>('flexible');
+  const [customSubjTypeCounts, setCustomSubjTypeCounts] = useState<{ [key: string]: number }>({
+    subjective_short: 4,
+    subjective_long: 2
+  });
+
   const handleSwitchType = (type: 'objective' | 'subjective') => {
     setQuestionType(type);
     if (type === 'objective') {
@@ -263,9 +291,6 @@ export default function AdminExamGeneratorPage() {
   const [subjectWeights, setSubjectWeights] = useState<{ [key: string]: number }>({});
   const [topicWeights, setTopicWeights] = useState<{ [key: string]: number | string }>({});
   const [topicWeightMode, setTopicWeightMode] = useState<'equal' | 'custom'>('equal');
-
-
-
 
   // Question selection pools
   const [availablePool, setAvailablePool] = useState<Question[]>([]);
@@ -509,7 +534,66 @@ export default function AdminExamGeneratorPage() {
     setSelectedTemplateId(id);
     const pool = questionType === 'subjective' ? CANONICAL_SUBJECTIVE_PRESETS : CANONICAL_EXAM_PRESETS;
     const tmpl = pool.find(t => t.id === id) || null;
-    setCurrentTemplate(tmpl);
+    if (id === 'custom_blueprint') {
+      setCurrentTemplate({
+        id: 'custom_blueprint',
+        name: 'Custom Blueprint (Configure Qs & Time)',
+        totalQuestions: customTotalQs,
+        duration: customDuration,
+        positiveMarks: customPositiveMarks,
+        negativeMarks: customNegativeMarks,
+        difficulty: customDifficulty,
+        typeCounts: customPoolMode === 'custom_types' ? customTypeCounts : undefined
+      });
+    } else if (id === 'custom_subjective') {
+      setCurrentTemplate({
+        id: 'custom_subjective',
+        name: 'Custom Subjective Blueprint',
+        totalQuestions: customSubjTotalQs,
+        duration: customSubjDuration,
+        positiveMarks: customSubjPositiveMarks,
+        negativeMarks: 0,
+        typeCounts: customSubjPoolMode === 'custom_types' ? customSubjTypeCounts : undefined
+      });
+    } else {
+      setCurrentTemplate(tmpl);
+    }
+  };
+
+  const getNormalizedTypeCounts = (tmpl: Template | null, qType: 'objective' | 'subjective') => {
+    if (!tmpl) return null;
+    if (tmpl.id === 'custom_blueprint') {
+      if (customPoolMode === 'flexible') return null;
+      return customTypeCounts;
+    }
+    if (tmpl.id === 'custom_subjective') {
+      if (customSubjPoolMode === 'flexible') return null;
+      return customSubjTypeCounts;
+    }
+    if (tmpl.typeCounts && Object.keys(tmpl.typeCounts).length > 0) {
+      return tmpl.typeCounts;
+    }
+    if (qType === 'subjective') {
+      if (tmpl.subjectiveDistribution && Object.keys(tmpl.subjectiveDistribution).length > 0) {
+        return tmpl.subjectiveDistribution;
+      }
+      return { subjective_short: Math.max(1, Math.floor((tmpl.totalQuestions || 3) * 0.7)), subjective_long: Math.max(1, Math.ceil((tmpl.totalQuestions || 3) * 0.3)) };
+    }
+    if (tmpl.objectiveDistribution && Object.keys(tmpl.objectiveDistribution).length > 0) {
+      const counts: Record<string, number> = {};
+      Object.entries(tmpl.objectiveDistribution).forEach(([k, v]) => {
+        const num = Number(v) || 0;
+        if (num <= 0) return;
+        if (k === 'single_choice' || k === 'single_mcq') counts['single_mcq'] = num;
+        else if (k === 'multiple_choice' || k === 'multiple_mcq') counts['multiple_mcq'] = num;
+        else if (k === 'assertion_reason') counts['assertion_reason'] = num;
+        else if (k === 'numerical' || k === 'numerical_obj') counts['numerical'] = num;
+        else if (k === 'true_false') counts['true_false'] = num;
+        else counts[k] = num;
+      });
+      if (Object.keys(counts).length > 0) return counts;
+    }
+    return { single_mcq: tmpl.totalQuestions || 30 };
   };
 
   // Boards and Classes derivation
@@ -590,76 +674,174 @@ export default function AdminExamGeneratorPage() {
       const pool: Question[] = data.questions || data.pool || [];
       setAvailablePool(pool);
 
-      // Distribute and match questions
-      const difficulty = currentTemplate.difficulty || { easy: 33, medium: 34, hard: 33 };
-      const totalQs = currentTemplate.totalQuestions || 10;
-      const typeCounts = currentTemplate.typeCounts || { single_mcq: totalQs };
+      const isCustom = selectedTemplateId === 'custom_blueprint' || selectedTemplateId === 'custom_subjective';
+      const effectiveTotalQs = isCustom 
+        ? (questionType === 'subjective' ? customSubjTotalQs : customTotalQs)
+        : (currentTemplate.totalQuestions || 10);
+      const effectiveDifficulty = isCustom && questionType === 'objective'
+        ? customDifficulty
+        : (currentTemplate.difficulty || { easy: 30, medium: 50, hard: 20 });
 
-      const needed: any[] = [];
-      Object.entries(typeCounts).forEach(([type, count]) => {
-        if (!count) return;
-        const easyC = Math.round((difficulty.easy / 100) * count);
-        const medC = Math.round((difficulty.medium / 100) * count);
-        const hardC = count - easyC - medC;
-        if (easyC > 0) needed.push({ type, difficulty: 'easy', count: easyC });
-        if (medC > 0) needed.push({ type, difficulty: 'medium', count: medC });
-        if (hardC > 0) needed.push({ type, difficulty: 'hard', count: hardC });
-      });
+      const normalizedTypeCounts = getNormalizedTypeCounts(currentTemplate, questionType);
 
       const selected: Question[] = [];
       const usedCodes = new Set<string>();
       const shortfallReqs: any[] = [];
 
-      needed.forEach(req => {
-        // Distribute count among selected topics proportional to weightages
-        const topicCounts = distributeCountsByWeight(req.count);
+      // Calculate total topic question targets based on topic weightages
+      const topicQuestionTargets = distributeCountsByWeight(effectiveTotalQs);
 
+      if (!normalizedTypeCounts) {
+        // Flexible Pool Mode: Fill up each topic's target quota from available questions in that topic
         selectedTopics.forEach(t => {
-          const targetForTopic = topicCounts[t.topicNumber] || 0;
+          const targetForTopic = topicQuestionTargets[t.topicNumber] || 0;
           if (targetForTopic <= 0) return;
 
-          const candidates = pool.filter(q =>
-            q.type === req.type && 
-            q.difficulty === req.difficulty && 
-            isQuestionMatchingTopic(q, t) &&
-            !usedCodes.has(q.questionCode || q.id || '') &&
-            !selected.some(sel => areQuestionsTooSimilar(q, sel))
-          );
-          
-          const picked = candidates.slice(0, targetForTopic);
-          picked.forEach(q => {
-            usedCodes.add(q.questionCode || q.id || '');
-            selected.push(q);
-          });
+          const easyTarget = Math.round((effectiveDifficulty.easy / 100) * targetForTopic);
+          const medTarget = Math.round((effectiveDifficulty.medium / 100) * targetForTopic);
+          const hardTarget = targetForTopic - easyTarget - medTarget;
 
-          let stillNeeded = targetForTopic - picked.length;
-          if (stillNeeded > 0) {
-            // Relax difficulty check, keep type and topic, and avoid near-duplicates
-            const relaxed = pool.filter(q =>
-              q.type === req.type && 
+          const diffReqs = [
+            { diff: 'easy', count: easyTarget },
+            { diff: 'medium', count: medTarget },
+            { diff: 'hard', count: hardTarget }
+          ].filter(r => r.count > 0);
+
+          let pickedForTopic = 0;
+
+          // 1. Pick preferred difficulty distributions
+          diffReqs.forEach(req => {
+            const candidates = pool.filter(q =>
+              q.difficulty === req.diff &&
               isQuestionMatchingTopic(q, t) &&
               !usedCodes.has(q.questionCode || q.id || '') &&
               !selected.some(sel => areQuestionsTooSimilar(q, sel))
-            ).slice(0, stillNeeded);
-            relaxed.forEach(q => {
+            );
+            const picked = candidates.slice(0, req.count);
+            picked.forEach(q => {
               usedCodes.add(q.questionCode || q.id || '');
               selected.push(q);
+              pickedForTopic++;
             });
-            stillNeeded -= relaxed.length;
+          });
+
+          // 2. If topic target not fully reached, pick any remaining valid questions for this topic
+          if (pickedForTopic < targetForTopic) {
+            const remaining = pool.filter(q =>
+              isQuestionMatchingTopic(q, t) &&
+              !usedCodes.has(q.questionCode || q.id || '') &&
+              !selected.some(sel => areQuestionsTooSimilar(q, sel))
+            ).slice(0, targetForTopic - pickedForTopic);
+
+            remaining.forEach(q => {
+              usedCodes.add(q.questionCode || q.id || '');
+              selected.push(q);
+              pickedForTopic++;
+            });
           }
 
-          if (stillNeeded > 0) {
+          // 3. If still short of topic target, record shortfall
+          if (pickedForTopic < targetForTopic) {
+            const shortfallCount = targetForTopic - pickedForTopic;
             const matchIdx = selectedTopics.findIndex(tp => tp.topicNumber === t.topicNumber);
-            shortfallReqs.push({ 
-              type: req.type, 
-              difficulty: req.difficulty, 
-              count: stillNeeded,
+            shortfallReqs.push({
+              type: questionType === 'subjective' ? 'subjective_short' : 'single_mcq',
+              difficulty: 'medium',
+              count: shortfallCount,
               contextId: 'CTX-' + String(matchIdx + 1).padStart(3, '0'),
               topicName: t.topic
             });
           }
         });
-      });
+      } else {
+        // Structured Blueprint / Preset Mode
+        const needed: any[] = [];
+        Object.entries(normalizedTypeCounts).forEach(([type, count]) => {
+          if (!count) return;
+          const easyC = Math.round((effectiveDifficulty.easy / 100) * count);
+          const medC = Math.round((effectiveDifficulty.medium / 100) * count);
+          const hardC = count - easyC - medC;
+          if (easyC > 0) needed.push({ type, difficulty: 'easy', count: easyC });
+          if (medC > 0) needed.push({ type, difficulty: 'medium', count: medC });
+          if (hardC > 0) needed.push({ type, difficulty: 'hard', count: hardC });
+        });
+
+        // Track how many questions each topic has received
+        const topicPickedCounts: Record<string, number> = {};
+        selectedTopics.forEach(t => { topicPickedCounts[t.topicNumber] = 0; });
+
+        needed.forEach(req => {
+          const topicCounts = distributeCountsByWeight(req.count);
+
+          selectedTopics.forEach(t => {
+            const targetForTopicAndType = topicCounts[t.topicNumber] || 0;
+            if (targetForTopicAndType <= 0) return;
+
+            // 1. Exact match (type + difficulty + topic)
+            const candidates = pool.filter(q =>
+              q.type === req.type &&
+              q.difficulty === req.difficulty &&
+              isQuestionMatchingTopic(q, t) &&
+              !usedCodes.has(q.questionCode || q.id || '') &&
+              !selected.some(sel => areQuestionsTooSimilar(q, sel))
+            );
+
+            const picked = candidates.slice(0, targetForTopicAndType);
+            picked.forEach(q => {
+              usedCodes.add(q.questionCode || q.id || '');
+              selected.push(q);
+              topicPickedCounts[t.topicNumber] = (topicPickedCounts[t.topicNumber] || 0) + 1;
+            });
+
+            let stillNeeded = targetForTopicAndType - picked.length;
+            
+            // 2. Relax difficulty for same type in topic
+            if (stillNeeded > 0) {
+              const relaxed = pool.filter(q =>
+                q.type === req.type &&
+                isQuestionMatchingTopic(q, t) &&
+                !usedCodes.has(q.questionCode || q.id || '') &&
+                !selected.some(sel => areQuestionsTooSimilar(q, sel))
+              ).slice(0, stillNeeded);
+
+              relaxed.forEach(q => {
+                usedCodes.add(q.questionCode || q.id || '');
+                selected.push(q);
+                topicPickedCounts[t.topicNumber] = (topicPickedCounts[t.topicNumber] || 0) + 1;
+              });
+              stillNeeded -= relaxed.length;
+            }
+
+            // 3. Graceful Backfill: If the bank doesn't have enough questions of this exact type in this topic, backfill from other valid question types in this topic so the exam is filled
+            if (stillNeeded > 0) {
+              const otherTypes = pool.filter(q =>
+                isQuestionMatchingTopic(q, t) &&
+                !usedCodes.has(q.questionCode || q.id || '') &&
+                !selected.some(sel => areQuestionsTooSimilar(q, sel))
+              ).slice(0, stillNeeded);
+
+              otherTypes.forEach(q => {
+                usedCodes.add(q.questionCode || q.id || '');
+                selected.push(q);
+                topicPickedCounts[t.topicNumber] = (topicPickedCounts[t.topicNumber] || 0) + 1;
+              });
+              stillNeeded -= otherTypes.length;
+            }
+
+            // 4. True shortfall if the topic itself has run out of candidate questions
+            if (stillNeeded > 0) {
+              const matchIdx = selectedTopics.findIndex(tp => tp.topicNumber === t.topicNumber);
+              shortfallReqs.push({
+                type: req.type,
+                difficulty: req.difficulty,
+                count: stillNeeded,
+                contextId: 'CTX-' + String(matchIdx + 1).padStart(3, '0'),
+                topicName: t.topic
+              });
+            }
+          });
+        });
+      }
 
       setGeneratedQuestions(selected);
       setShortfalls(shortfallReqs);
@@ -845,6 +1027,25 @@ Return ONLY valid JSON. No markdown wrappers or extra commentary.`;
       const questionCodes = generatedQuestions.map(q => q.questionCode || q.id || '');
 
       const idToken = await firebaseUser.getIdToken();
+      const isCustom = selectedTemplateId === 'custom_blueprint' || selectedTemplateId === 'custom_subjective';
+      const effectiveDuration = isCustom
+        ? (questionType === 'subjective' ? customSubjDuration : customDuration)
+        : (currentTemplate.duration || 30);
+      const effectivePositiveMarks = isCustom
+        ? (questionType === 'subjective' ? customSubjPositiveMarks : customPositiveMarks)
+        : (currentTemplate.positiveMarks || 4);
+      const effectiveNegativeMarks = isCustom
+        ? (questionType === 'subjective' ? 0 : customNegativeMarks)
+        : (currentTemplate.negativeMarks ?? 1);
+
+      const templateDetailsPayload = {
+        ...currentTemplate,
+        totalQuestions: generatedQuestions.length,
+        duration: effectiveDuration,
+        positiveMarks: effectivePositiveMarks,
+        negativeMarks: effectiveNegativeMarks
+      };
+
       const res = await fetch('/api/admin/exams/generate', {
         method: 'POST',
         headers: {
@@ -864,13 +1065,13 @@ Return ONLY valid JSON. No markdown wrappers or extra commentary.`;
           chapterNumber: chapterNumbers,
           topicCodes,
           isMixed,
-          totalMarks: generatedQuestions.reduce((s, q) => s + (q.marks || currentTemplate.positiveMarks || 4), 0),
+          totalMarks: generatedQuestions.reduce((s, q) => s + (q.marks || effectivePositiveMarks), 0),
           questionCodes,
           templateId: selectedTemplateId,
-          templateDetails: currentTemplate,
-          duration: currentTemplate.duration || 30,
-          positiveMarks: currentTemplate.positiveMarks || 4,
-          negativeMarks: currentTemplate.negativeMarks ?? 1,
+          templateDetails: templateDetailsPayload,
+          duration: effectiveDuration,
+          positiveMarks: effectivePositiveMarks,
+          negativeMarks: effectiveNegativeMarks,
           examCategory: currentTemplate.examCategory || 'standard',
           isMasteryExempt: currentTemplate.examCategory === 'mock' || currentTemplate.examCategory === 'foundation',
           examType: currentTemplate.examCategory === 'foundation' ? 'entrance' : (questionType === 'subjective' ? 'subjective' : 'obj')
@@ -1026,8 +1227,241 @@ Return ONLY valid JSON. No markdown wrappers or extra commentary.`;
           />
 
           {currentTemplate && (
-            <div style={{ background: 'var(--bg-soft)', padding: '6px 12px', borderRadius: 'var(--radius-sm)', fontSize: '11px', borderLeft: '3px solid var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span>📋 <strong>Template parameters:</strong> {currentTemplate.totalQuestions} Questions • {currentTemplate.duration} mins • +{currentTemplate.positiveMarks} / -{currentTemplate.negativeMarks} Marks</span>
+            <div style={{ background: 'var(--bg-soft)', padding: '6px 12px', borderRadius: 'var(--radius-sm)', fontSize: '11px', borderLeft: '3px solid var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+              <span>📋 <strong>Template parameters:</strong> {selectedTemplateId === 'custom_blueprint' ? customTotalQs : selectedTemplateId === 'custom_subjective' ? customSubjTotalQs : currentTemplate.totalQuestions} Questions • {selectedTemplateId === 'custom_blueprint' ? customDuration : selectedTemplateId === 'custom_subjective' ? customSubjDuration : currentTemplate.duration} mins • +{selectedTemplateId === 'custom_blueprint' ? customPositiveMarks : selectedTemplateId === 'custom_subjective' ? customSubjPositiveMarks : currentTemplate.positiveMarks} / -{selectedTemplateId === 'custom_blueprint' ? customNegativeMarks : selectedTemplateId === 'custom_subjective' ? 0 : currentTemplate.negativeMarks} Marks</span>
+              {selectedTemplateId === 'custom_blueprint' && (
+                <span className="badge" style={{ background: 'rgba(59, 130, 246, 0.15)', color: '#60a5fa', border: '1px solid rgba(59, 130, 246, 0.3)', padding: '2px 8px', borderRadius: '12px', fontSize: '10px', fontWeight: 700 }}>
+                  ⚙️ Custom Mode: {customPoolMode === 'flexible' ? 'Flexible (All Available Types)' : 'Exact Type Counts'}
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* Custom Blueprint Configuration Panel (Objective) */}
+          {selectedTemplateId === 'custom_blueprint' && (
+            <div style={{ background: 'var(--surface-light)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)', padding: '12px 14px', marginTop: '6px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-light)', paddingBottom: '6px' }}>
+                <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>⚙️ Custom Blueprint Configuration</span>
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  <button
+                    type="button"
+                    className={`btn btn-sm ${customPoolMode === 'flexible' ? 'btn-primary' : 'btn-secondary'}`}
+                    onClick={() => setCustomPoolMode('flexible')}
+                    style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '12px' }}
+                  >
+                    🎯 Flexible Pool (Auto-Fill)
+                  </button>
+                  <button
+                    type="button"
+                    className={`btn btn-sm ${customPoolMode === 'custom_types' ? 'btn-primary' : 'btn-secondary'}`}
+                    onClick={() => setCustomPoolMode('custom_types')}
+                    style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '12px' }}
+                  >
+                    📑 Exact Type Breakdown
+                  </button>
+                </div>
+              </div>
+
+              {/* Row 1: Total Qs, Duration, Marks */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '10px', alignItems: 'end' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '3px' }}>Total Questions</label>
+                  <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                    <input
+                      type="number"
+                      min={1}
+                      max={200}
+                      value={customTotalQs}
+                      onChange={(e) => setCustomTotalQs(Math.max(1, parseInt(e.target.value, 10) || 1))}
+                      style={{ width: '100%', padding: '4px 6px', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', background: 'var(--surface)', color: 'var(--text)', fontSize: '12px', height: '28px', fontWeight: 700 }}
+                    />
+                  </div>
+                  <div style={{ display: 'flex', gap: '3px', marginTop: '3px', flexWrap: 'wrap' }}>
+                    {[10, 15, 20, 30, 45, 60].map(cnt => (
+                      <button
+                        key={cnt}
+                        type="button"
+                        onClick={() => setCustomTotalQs(cnt)}
+                        style={{ fontSize: '9px', padding: '1px 5px', borderRadius: '4px', border: '1px solid var(--border-light)', background: customTotalQs === cnt ? 'var(--accent)' : 'var(--surface)', color: customTotalQs === cnt ? '#fff' : 'var(--text-muted)', cursor: 'pointer' }}
+                      >
+                        {cnt}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '3px' }}>Duration (Mins)</label>
+                  <input
+                    type="number"
+                    min={5}
+                    max={300}
+                    value={customDuration}
+                    onChange={(e) => setCustomDuration(Math.max(5, parseInt(e.target.value, 10) || 5))}
+                    style={{ width: '100%', padding: '4px 6px', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', background: 'var(--surface)', color: 'var(--text)', fontSize: '12px', height: '28px', fontWeight: 700 }}
+                  />
+                  <div style={{ display: 'flex', gap: '3px', marginTop: '3px', flexWrap: 'wrap' }}>
+                    {[15, 30, 45, 60, 90].map(dur => (
+                      <button
+                        key={dur}
+                        type="button"
+                        onClick={() => setCustomDuration(dur)}
+                        style={{ fontSize: '9px', padding: '1px 5px', borderRadius: '4px', border: '1px solid var(--border-light)', background: customDuration === dur ? 'var(--accent)' : 'var(--surface)', color: customDuration === dur ? '#fff' : 'var(--text-muted)', cursor: 'pointer' }}
+                      >
+                        {dur}m
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '3px' }}>Positive Marks (+)</label>
+                  <select
+                    value={customPositiveMarks}
+                    onChange={(e) => setCustomPositiveMarks(Number(e.target.value))}
+                    style={{ width: '100%', padding: '4px 6px', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', background: 'var(--surface)', color: 'var(--text)', fontSize: '12px', height: '28px' }}
+                  >
+                    <option value={1}>+1 Mark</option>
+                    <option value={2}>+2 Marks</option>
+                    <option value={4}>+4 Marks (Standard)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '3px' }}>Negative Marks (-)</label>
+                  <select
+                    value={customNegativeMarks}
+                    onChange={(e) => setCustomNegativeMarks(Number(e.target.value))}
+                    style={{ width: '100%', padding: '4px 6px', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', background: 'var(--surface)', color: 'var(--text)', fontSize: '12px', height: '28px' }}
+                  >
+                    <option value={0}>0 (No Penalty)</option>
+                    <option value={0.25}>-0.25 Marks</option>
+                    <option value={0.5}>-0.5 Marks</option>
+                    <option value={1}>-1 Mark (Standard)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Exact Type Breakdown Controls (when active) */}
+              {customPoolMode === 'custom_types' && (
+                <div style={{ background: 'var(--surface)', padding: '8px 10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)' }}>
+                  <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px', textTransform: 'uppercase' }}>Specify Target Counts Per Format:</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(90px, 1fr))', gap: '6px' }}>
+                    {[
+                      { key: 'single_mcq', label: 'Single MCQ (OSC)' },
+                      { key: 'multiple_mcq', label: 'Multi MCQ (OMC)' },
+                      { key: 'true_false', label: 'True / False (OTF)' },
+                      { key: 'assertion_reason', label: 'Assert-Reason (OAR)' },
+                      { key: 'numerical', label: 'Numerical (ONE)' }
+                    ].map(t => (
+                      <div key={t.key}>
+                        <span style={{ display: 'block', fontSize: '9px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '2px' }}>{t.label}</span>
+                        <input
+                          type="number"
+                          min={0}
+                          value={customTypeCounts[t.key] || 0}
+                          onChange={(e) => {
+                            const val = Math.max(0, parseInt(e.target.value, 10) || 0);
+                            setCustomTypeCounts(prev => ({ ...prev, [t.key]: val }));
+                          }}
+                          style={{ width: '100%', padding: '3px 5px', border: '1px solid var(--border-light)', borderRadius: '4px', background: 'var(--surface-light)', color: 'var(--text)', fontSize: '11px', height: '26px' }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Difficulty breakdown */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '10px', color: 'var(--text-muted)', flexWrap: 'wrap' }}>
+                <span style={{ fontWeight: 700 }}>Difficulty Distribution:</span>
+                <span>🟢 Easy: <strong>{customDifficulty.easy}%</strong></span>
+                <span>🟡 Medium: <strong>{customDifficulty.medium}%</strong></span>
+                <span>🔴 Hard: <strong>{customDifficulty.hard}%</strong></span>
+                <div style={{ display: 'flex', gap: '4px', marginLeft: 'auto' }}>
+                  <button
+                    type="button"
+                    onClick={() => setCustomDifficulty({ easy: 30, medium: 50, hard: 20 })}
+                    style={{ fontSize: '9px', padding: '1px 6px', borderRadius: '4px', border: '1px solid var(--border-light)', background: 'var(--surface)', color: 'var(--text)', cursor: 'pointer' }}
+                  >
+                    Balanced (30/50/20)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCustomDifficulty({ easy: 50, medium: 40, hard: 10 })}
+                    style={{ fontSize: '9px', padding: '1px 6px', borderRadius: '4px', border: '1px solid var(--border-light)', background: 'var(--surface)', color: 'var(--text)', cursor: 'pointer' }}
+                  >
+                    Foundation (50/40/10)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCustomDifficulty({ easy: 10, medium: 40, hard: 50 })}
+                    style={{ fontSize: '9px', padding: '1px 6px', borderRadius: '4px', border: '1px solid var(--border-light)', background: 'var(--surface)', color: 'var(--text)', cursor: 'pointer' }}
+                  >
+                    Challenger (10/40/50)
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Custom Subjective Configuration Panel */}
+          {selectedTemplateId === 'custom_subjective' && (
+            <div style={{ background: 'var(--surface-light)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)', padding: '12px 14px', marginTop: '6px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-light)', paddingBottom: '6px' }}>
+                <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>⚙️ Custom Subjective Configuration</span>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '10px', alignItems: 'end' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '3px' }}>Total Questions</label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={50}
+                    value={customSubjTotalQs}
+                    onChange={(e) => setCustomSubjTotalQs(Math.max(1, parseInt(e.target.value, 10) || 1))}
+                    style={{ width: '100%', padding: '4px 6px', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', background: 'var(--surface)', color: 'var(--text)', fontSize: '12px', height: '28px', fontWeight: 700 }}
+                  />
+                  <div style={{ display: 'flex', gap: '3px', marginTop: '3px' }}>
+                    {[3, 5, 6, 8, 10].map(cnt => (
+                      <button
+                        key={cnt}
+                        type="button"
+                        onClick={() => setCustomSubjTotalQs(cnt)}
+                        style={{ fontSize: '9px', padding: '1px 5px', borderRadius: '4px', border: '1px solid var(--border-light)', background: customSubjTotalQs === cnt ? 'var(--accent)' : 'var(--surface)', color: customSubjTotalQs === cnt ? '#fff' : 'var(--text-muted)', cursor: 'pointer' }}
+                      >
+                        {cnt}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '3px' }}>Duration (Mins)</label>
+                  <input
+                    type="number"
+                    min={5}
+                    max={240}
+                    value={customSubjDuration}
+                    onChange={(e) => setCustomSubjDuration(Math.max(5, parseInt(e.target.value, 10) || 5))}
+                    style={{ width: '100%', padding: '4px 6px', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', background: 'var(--surface)', color: 'var(--text)', fontSize: '12px', height: '28px', fontWeight: 700 }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '3px' }}>Marks Per Question (Avg)</label>
+                  <select
+                    value={customSubjPositiveMarks}
+                    onChange={(e) => setCustomSubjPositiveMarks(Number(e.target.value))}
+                    style={{ width: '100%', padding: '4px 6px', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', background: 'var(--surface)', color: 'var(--text)', fontSize: '12px', height: '28px' }}
+                  >
+                    <option value={1}>1 Mark (Define / Laws)</option>
+                    <option value={2}>2 Marks (Short / Reasoning)</option>
+                    <option value={4}>4 Marks (Long / Complex)</option>
+                  </select>
+                </div>
+              </div>
             </div>
           )}
         </div>
