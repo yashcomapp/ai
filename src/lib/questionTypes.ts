@@ -191,34 +191,96 @@ export function normalizeOptionAnswer(value: any, options?: any[]): string {
   return valueStr.trim();
 }
 
+export type CanonicalQuestionType =
+  | 'OSC'
+  | 'OMC'
+  | 'OTF'
+  | 'OAR'
+  | 'OFB'
+  | 'ONE'
+  | 'SDF'
+  | 'SLP'
+  | 'SSA'
+  | 'SSR'
+  | 'SSN'
+  | 'SLA'
+  | 'SLN';
+
+export const CANONICAL_OBJECTIVE_TYPES: CanonicalQuestionType[] = ['OSC', 'OMC', 'OTF', 'OAR', 'OFB', 'ONE'];
+export const CANONICAL_SUBJECTIVE_TYPES: CanonicalQuestionType[] = ['SDF', 'SLP', 'SSA', 'SSR', 'SSN', 'SLA', 'SLN'];
+
+/**
+ * Single Source of Truth (SSOT) Canonical Question Type Converter.
+ * Deterministically normalizes any input string/alias to its canonical 3-letter uppercase code.
+ */
+export function toCanonicalQuestionType(type: any): CanonicalQuestionType {
+  const t = String(type || '').trim().toUpperCase().replace(/[-\s]/g, '_');
+
+  // Direct canonical codes
+  if (t === 'OSC') return 'OSC';
+  if (t === 'OMC') return 'OMC';
+  if (t === 'OTF') return 'OTF';
+  if (t === 'OAR') return 'OAR';
+  if (t === 'OFB') return 'OFB';
+  if (t === 'ONE') return 'ONE';
+  if (t === 'SDF') return 'SDF';
+  if (t === 'SLP') return 'SLP';
+  if (t === 'SSA') return 'SSA';
+  if (t === 'SSR') return 'SSR';
+  if (t === 'SSN') return 'SSN';
+  if (t === 'SLA') return 'SLA';
+  if (t === 'SLN') return 'SLN';
+
+  // Legacy & descriptive names
+  if (t === 'SINGLE_MCQ' || t === 'SINGLE_CHOICE' || t === 'MCQ' || t === 'SINGLE') return 'OSC';
+  if (t === 'MULTIPLE_MCQ' || t === 'MULTI_MCQ' || t === 'MULTIPLE_CHOICE' || t === 'MULTI_SELECT') return 'OMC';
+  if (t === 'TRUE_FALSE' || t === 'TF' || t === 'TRUEFALSE') return 'OTF';
+  if (t === 'ASSERTION_REASON' || t === 'AR' || t === 'ASSERTION') return 'OAR';
+  if (t === 'FILL_BLANKS' || t === 'FILL_BLANK' || t === 'FIB') return 'OFB';
+  if (t === 'NUMERICAL' || t === 'NUMERICAL_OBJ' || t === 'NUM' || t === 'NUMERICAL5') return 'ONE';
+  if (t === 'NUMERICAL_SHORT' || t === 'NUM_SHORT') return 'SSN';
+  if (t === 'NUMERICAL_LONG' || t === 'NUM_LONG') return 'SLN';
+  if (t === 'SUBJECTIVE_SHORT' || t === 'SUB_SHORT' || t === 'SHORT_ANSWER') return 'SSA';
+  if (t === 'SUBJECTIVE_LONG' || t === 'SUB_LONG' || t === 'LONG_ANSWER') return 'SLA';
+  if (t === 'SUBJECTIVE_REASON' || t === 'SUBJECTIVE_NOTES' || t === 'SCI_REASONING' || t === 'SCIENTIFIC_REASONING' || t === 'SHORT_NOTES' || t === 'NOTES') return 'SSR';
+  if (t === 'SUBJECTIVE_DEFINE' || t === 'DEFINITION' || t === 'DEFINE') return 'SDF';
+  if (t === 'SUBJECTIVE_LAWS' || t === 'LAWS' || t === 'PRINCIPLES') return 'SLP';
+
+  // Default fallback for unrecognized objective types
+  return 'OSC';
+}
+
 export function isMultipleChoiceType(type: any): boolean {
-  const t = String(type || '').trim().toLowerCase();
-  return t === 'multiple_mcq' || t === 'multi_mcq' || t === 'omc' || t === 'multiple_choice' || t === 'multi_select';
+  return toCanonicalQuestionType(type) === 'OMC';
 }
 
 export function isSingleChoiceType(type: any): boolean {
-  const t = String(type || '').trim().toLowerCase();
-  return t === 'single_mcq' || t === 'mcq' || t === 'osc' || t === 'single_choice' || t === 'single';
+  return toCanonicalQuestionType(type) === 'OSC';
 }
 
 export function isTrueFalseType(type: any): boolean {
-  const t = String(type || '').trim().toLowerCase();
-  return t === 'true_false' || t === 'otf' || t === 'tf' || t === 'truefalse';
+  return toCanonicalQuestionType(type) === 'OTF';
 }
 
 export function isAssertionReasonType(type: any): boolean {
-  const t = String(type || '').trim().toLowerCase();
-  return t === 'assertion_reason' || t === 'oar' || t === 'ar' || t === 'assertion';
+  return toCanonicalQuestionType(type) === 'OAR';
 }
 
 export function isFillBlanksType(type: any): boolean {
-  const t = String(type || '').trim().toLowerCase();
-  return t === 'fill_blanks' || t === 'fill_blank' || t === 'ofb' || t === 'fib';
+  return toCanonicalQuestionType(type) === 'OFB';
 }
 
 export function isNumericalType(type: any): boolean {
-  const t = String(type || '').trim().toLowerCase();
-  return t === 'numerical' || t === 'one' || t === 'numerical_short' || t === 'ssn' || t === 'numerical_long' || t === 'sln';
+  const c = toCanonicalQuestionType(type);
+  return c === 'ONE' || c === 'SSN' || c === 'SLN';
+}
+
+export function isObjectiveType(type: any): boolean {
+  return CANONICAL_OBJECTIVE_TYPES.includes(toCanonicalQuestionType(type));
+}
+
+export function isSubjectiveType(type: any): boolean {
+  return CANONICAL_SUBJECTIVE_TYPES.includes(toCanonicalQuestionType(type));
 }
 
 export function classifyAssertionReasonAnswer(value: any): string {
@@ -249,80 +311,102 @@ export function classifyAssertionReasonAnswer(value: any): string {
 
 export function evaluateQuestionAnswer(type: string, userAnswer: any, correctAnswer: any, options?: any[]): boolean {
   if (isBlank(userAnswer)) return false;
+  const canonicalType = toCanonicalQuestionType(type);
 
-  // 1. Multiple Choice (Multi-Select)
-  if (isMultipleChoiceType(type)) {
-    let rawCorrect = correctAnswer;
-    if ((!rawCorrect || (Array.isArray(rawCorrect) && rawCorrect.length === 0)) && Array.isArray(options) && options.length > 0) {
-      const fromOpts = options
-        .map((opt, idx) => (opt && typeof opt === 'object' && (opt.isCorrect || opt.correct)) ? String.fromCharCode(65 + idx) : null)
-        .filter(Boolean);
-      if (fromOpts.length > 0) rawCorrect = fromOpts;
+  switch (canonicalType) {
+    // 1. Multiple Choice (Multi-Select)
+    case 'OMC': {
+      let rawCorrect = correctAnswer;
+      if ((!rawCorrect || (Array.isArray(rawCorrect) && rawCorrect.length === 0)) && Array.isArray(options) && options.length > 0) {
+        const fromOpts = options
+          .map((opt, idx) => (opt && typeof opt === 'object' && (opt.isCorrect || opt.correct)) ? String.fromCharCode(65 + idx) : null)
+          .filter(Boolean);
+        if (fromOpts.length > 0) rawCorrect = fromOpts;
+      }
+
+      const userList = parseAnswerList(userAnswer);
+      const correctList = parseAnswerList(rawCorrect);
+
+      const userNorm = Array.from(new Set(userList.map(v => normalizeOptionAnswer(v, options)).filter(Boolean))).sort();
+      const correctNorm = Array.from(new Set(correctList.map(v => normalizeOptionAnswer(v, options)).filter(Boolean))).sort();
+
+      if (userNorm.length === 0 && correctNorm.length === 0) return false;
+      return JSON.stringify(userNorm) === JSON.stringify(correctNorm);
     }
 
-    const userList = parseAnswerList(userAnswer);
-    const correctList = parseAnswerList(rawCorrect);
-
-    const userNorm = Array.from(new Set(userList.map(v => normalizeOptionAnswer(v, options)).filter(Boolean))).sort();
-    const correctNorm = Array.from(new Set(correctList.map(v => normalizeOptionAnswer(v, options)).filter(Boolean))).sort();
-
-    if (userNorm.length === 0 && correctNorm.length === 0) return false;
-    return JSON.stringify(userNorm) === JSON.stringify(correctNorm);
-  }
-
-  // 2. Single MCQ
-  if (isSingleChoiceType(type)) {
-    let rawCorrect = correctAnswer;
-    if (!rawCorrect && Array.isArray(options) && options.length > 0) {
-      const fromOpt = options.find((opt: any) => opt && typeof opt === 'object' && (opt.isCorrect || opt.correct));
-      if (fromOpt) rawCorrect = fromOpt.text || fromOpt.value || fromOpt.label || '';
-    }
-    const userNorm = normalizeOptionAnswer(userAnswer, options);
-    const correctNorm = normalizeOptionAnswer(rawCorrect, options);
-    return Boolean(userNorm && correctNorm && userNorm === correctNorm);
-  }
-
-  // 3. True / False
-  if (isTrueFalseType(type)) {
-    const userNorm = String(userAnswer || '').trim().toLowerCase();
-    const correctNorm = String(correctAnswer || '').trim().toLowerCase();
-    return Boolean(userNorm && correctNorm && userNorm === correctNorm);
-  }
-
-  // 4. Assertion & Reason
-  if (isAssertionReasonType(type)) {
-    const userNorm = classifyAssertionReasonAnswer(userAnswer);
-    const correctNorm = classifyAssertionReasonAnswer(correctAnswer);
-    return Boolean(userNorm && correctNorm && userNorm === correctNorm);
-  }
-
-  // 5. Fill in the Blanks
-  if (isFillBlanksType(type)) {
-    const userNorm = String(userAnswer || '').trim().toLowerCase();
-    const correctNorm = String(correctAnswer || '').trim().toLowerCase();
-    return Boolean(userNorm && correctNorm && userNorm === correctNorm);
-  }
-
-  // 6. Numerical Objective
-  if (isNumericalType(type)) {
-    if (Array.isArray(options) && options.length > 0) {
+    // 2. Single MCQ
+    case 'OSC': {
+      let rawCorrect = correctAnswer;
+      if (!rawCorrect && Array.isArray(options) && options.length > 0) {
+        const fromOpt = options.find((opt: any) => opt && typeof opt === 'object' && (opt.isCorrect || opt.correct));
+        if (fromOpt) rawCorrect = fromOpt.text || fromOpt.value || fromOpt.label || '';
+      }
       const userNorm = normalizeOptionAnswer(userAnswer, options);
-      const correctNorm = normalizeOptionAnswer(correctAnswer, options);
-      if (userNorm && correctNorm && userNorm === correctNorm) return true;
+      const correctNorm = normalizeOptionAnswer(rawCorrect, options);
+      return Boolean(userNorm && correctNorm && userNorm === correctNorm);
     }
-    const u = parseFloat(userAnswer);
-    const c = parseFloat(correctAnswer);
-    return !isNaN(u) && !isNaN(c) && Math.abs(u - c) <= 0.05;
-  }
 
-  // General fallback for any options-based question
-  if (Array.isArray(options) && options.length > 0) {
-    const userNorm = normalizeOptionAnswer(userAnswer, options);
-    const correctNorm = normalizeOptionAnswer(correctAnswer, options);
-    if (userNorm && correctNorm && userNorm === correctNorm) return true;
-  }
+    // 3. True / False
+    case 'OTF': {
+      const normTF = (val: any) => {
+        const s = String(val ?? '').trim().toLowerCase();
+        if (s === 'true' || s === 't' || s === '1' || s === 'yes' || s === 'correct') return 'true';
+        if (s === 'false' || s === 'f' || s === '0' || s === 'no' || s === 'incorrect') return 'false';
+        return s;
+      };
+      const userNorm = normTF(userAnswer);
+      const correctNorm = normTF(correctAnswer);
+      if (userNorm && correctNorm && userNorm === correctNorm) return true;
+      if (Array.isArray(options) && options.length > 0) {
+        const uOpt = normalizeOptionAnswer(userAnswer, options);
+        const cOpt = normalizeOptionAnswer(correctAnswer, options);
+        return Boolean(uOpt && cOpt && uOpt === cOpt);
+      }
+      return Boolean(userNorm && correctNorm && userNorm === correctNorm);
+    }
 
-  return false;
+    // 4. Assertion & Reason
+    case 'OAR': {
+      const userNorm = classifyAssertionReasonAnswer(userAnswer);
+      const correctNorm = classifyAssertionReasonAnswer(correctAnswer);
+      return Boolean(userNorm && correctNorm && userNorm === correctNorm);
+    }
+
+    // 5. Fill in the Blanks
+    case 'OFB': {
+      const cleanU = cleanStringForMatch(userAnswer);
+      const cleanC = cleanStringForMatch(correctAnswer);
+      if (cleanU && cleanC && cleanU === cleanC) return true;
+      const userNorm = String(userAnswer || '').trim().toLowerCase();
+      const correctNorm = String(correctAnswer || '').trim().toLowerCase();
+      return Boolean(userNorm && correctNorm && userNorm === correctNorm);
+    }
+
+    // 6. Numerical Objective
+    case 'ONE':
+    case 'SSN':
+    case 'SLN': {
+      if (Array.isArray(options) && options.length > 0) {
+        const userNorm = normalizeOptionAnswer(userAnswer, options);
+        const correctNorm = normalizeOptionAnswer(correctAnswer, options);
+        if (userNorm && correctNorm && userNorm === correctNorm) return true;
+      }
+      const u = parseFloat(String(userAnswer).replace(/[^0-9.\-]/g, ''));
+      const c = parseFloat(String(correctAnswer).replace(/[^0-9.\-]/g, ''));
+      if (!isNaN(u) && !isNaN(c) && Math.abs(u - c) <= 0.05) return true;
+      return cleanStringForMatch(userAnswer) === cleanStringForMatch(correctAnswer);
+    }
+
+    // General fallback for any options-based question or subjective text
+    default: {
+      if (Array.isArray(options) && options.length > 0) {
+        const userNorm = normalizeOptionAnswer(userAnswer, options);
+        const correctNorm = normalizeOptionAnswer(correctAnswer, options);
+        if (userNorm && correctNorm && userNorm === correctNorm) return true;
+      }
+      return cleanStringForMatch(userAnswer) === cleanStringForMatch(correctAnswer);
+    }
+  }
 }
 
 export function extractAssertionAndReason(q: any): { assertion: string; reason: string } {
@@ -398,39 +482,56 @@ export function getCanonicalSubjectName(subjectCode?: string, topicCode?: string
   return subjectCode || 'Science & Technology';
 }
 
-export const QUESTION_TYPE_MAP: { [key: string]: { id: string; label: string; code: string; category: 'objective' | 'subjective'; defaultMarks: number } } = {
-  single_mcq: { id: 'single_mcq', label: 'Single MCQ', code: 'OSC', category: 'objective', defaultMarks: 4 },
-  multiple_mcq: { id: 'multiple_mcq', label: 'Multiple MCQ', code: 'OMC', category: 'objective', defaultMarks: 4 },
-  true_false: { id: 'true_false', label: 'True/False', code: 'OTF', category: 'objective', defaultMarks: 4 },
-  assertion_reason: { id: 'assertion_reason', label: 'Assertion-Reason', code: 'OAR', category: 'objective', defaultMarks: 4 },
-  numerical: { id: 'numerical', label: 'Numerical (Obj)', code: 'ONE', category: 'objective', defaultMarks: 4 },
-  numerical_short: { id: 'numerical_short', label: 'Num Short (2m)', code: 'SSN', category: 'subjective', defaultMarks: 2 },
-  numerical_long: { id: 'numerical_long', label: 'Num Long (4m)', code: 'SLN', category: 'subjective', defaultMarks: 4 },
-  subjective_short: { id: 'subjective_short', label: 'Sub Short (2m)', code: 'SSA', category: 'subjective', defaultMarks: 2 },
-  subjective_long: { id: 'subjective_long', label: 'Sub Long (4m)', code: 'SLA', category: 'subjective', defaultMarks: 4 },
-  subjective_reason: { id: 'subjective_reason', label: 'Sci Reasoning (2m)', code: 'SSR', category: 'subjective', defaultMarks: 2 },
-  subjective_notes: { id: 'subjective_notes', label: 'Notes (2m)', code: 'SSR', category: 'subjective', defaultMarks: 2 },
-  subjective_define: { id: 'subjective_define', label: 'Define (1m)', code: 'SDF', category: 'subjective', defaultMarks: 1 },
-  subjective_laws: { id: 'subjective_laws', label: 'Laws (1m)', code: 'SLP', category: 'subjective', defaultMarks: 1 },
+export const QUESTION_TYPE_MAP: { [key: string]: { id: string; label: string; code: CanonicalQuestionType; category: 'objective' | 'subjective'; defaultMarks: number } } = {
+  // Canonical 3-letter codes
+  OSC: { id: 'OSC', label: 'Single Choice MCQ', code: 'OSC', category: 'objective', defaultMarks: 4 },
+  OMC: { id: 'OMC', label: 'Multiple Choice MCQ', code: 'OMC', category: 'objective', defaultMarks: 4 },
+  OTF: { id: 'OTF', label: 'True / False', code: 'OTF', category: 'objective', defaultMarks: 4 },
+  OAR: { id: 'OAR', label: 'Assertion & Reason', code: 'OAR', category: 'objective', defaultMarks: 4 },
+  OFB: { id: 'OFB', label: 'Fill in the Blanks', code: 'OFB', category: 'objective', defaultMarks: 4 },
+  ONE: { id: 'ONE', label: 'Numerical Objective', code: 'ONE', category: 'objective', defaultMarks: 4 },
+  SDF: { id: 'SDF', label: 'Definition (1m)', code: 'SDF', category: 'subjective', defaultMarks: 1 },
+  SLP: { id: 'SLP', label: 'Laws & Principles (1m)', code: 'SLP', category: 'subjective', defaultMarks: 1 },
+  SSA: { id: 'SSA', label: 'Short Answer (2m)', code: 'SSA', category: 'subjective', defaultMarks: 2 },
+  SSR: { id: 'SSR', label: 'Scientific Reasoning / Notes (2m)', code: 'SSR', category: 'subjective', defaultMarks: 2 },
+  SSN: { id: 'SSN', label: 'Numerical Short (2m)', code: 'SSN', category: 'subjective', defaultMarks: 2 },
+  SLA: { id: 'SLA', label: 'Long Answer (4m)', code: 'SLA', category: 'subjective', defaultMarks: 4 },
+  SLN: { id: 'SLN', label: 'Numerical Long (4m)', code: 'SLN', category: 'subjective', defaultMarks: 4 },
+
+  // Legacy mappings for backwards compatibility
+  single_mcq: { id: 'single_mcq', label: 'Single Choice MCQ', code: 'OSC', category: 'objective', defaultMarks: 4 },
+  multiple_mcq: { id: 'multiple_mcq', label: 'Multiple Choice MCQ', code: 'OMC', category: 'objective', defaultMarks: 4 },
+  true_false: { id: 'true_false', label: 'True / False', code: 'OTF', category: 'objective', defaultMarks: 4 },
+  assertion_reason: { id: 'assertion_reason', label: 'Assertion & Reason', code: 'OAR', category: 'objective', defaultMarks: 4 },
+  fill_blanks: { id: 'fill_blanks', label: 'Fill in the Blanks', code: 'OFB', category: 'objective', defaultMarks: 4 },
+  numerical: { id: 'numerical', label: 'Numerical Objective', code: 'ONE', category: 'objective', defaultMarks: 4 },
+  numerical_short: { id: 'numerical_short', label: 'Numerical Short (2m)', code: 'SSN', category: 'subjective', defaultMarks: 2 },
+  numerical_long: { id: 'numerical_long', label: 'Numerical Long (4m)', code: 'SLN', category: 'subjective', defaultMarks: 4 },
+  subjective_short: { id: 'subjective_short', label: 'Short Answer (2m)', code: 'SSA', category: 'subjective', defaultMarks: 2 },
+  subjective_long: { id: 'subjective_long', label: 'Long Answer (4m)', code: 'SLA', category: 'subjective', defaultMarks: 4 },
+  subjective_reason: { id: 'subjective_reason', label: 'Scientific Reasoning (2m)', code: 'SSR', category: 'subjective', defaultMarks: 2 },
+  subjective_notes: { id: 'subjective_notes', label: 'Short Notes (2m)', code: 'SSR', category: 'subjective', defaultMarks: 2 },
+  subjective_define: { id: 'subjective_define', label: 'Definition (1m)', code: 'SDF', category: 'subjective', defaultMarks: 1 },
+  subjective_laws: { id: 'subjective_laws', label: 'Laws & Principles (1m)', code: 'SLP', category: 'subjective', defaultMarks: 1 },
 };
 
 export const OBJECTIVE_QUESTION_TYPES = [
-  { id: 'single_mcq', label: 'Single MCQ', code: 'OSC' },
-  { id: 'multiple_mcq', label: 'Multiple MCQ', code: 'OMC' },
-  { id: 'true_false', label: 'True/False', code: 'OTF' },
-  { id: 'assertion_reason', label: 'Assertion-Reason', code: 'OAR' },
-  { id: 'numerical', label: 'Numerical (Obj)', code: 'ONE' }
+  { id: 'OSC', label: 'Single Choice MCQ (OSC)', code: 'OSC' },
+  { id: 'OMC', label: 'Multiple Choice MCQ (OMC)', code: 'OMC' },
+  { id: 'OTF', label: 'True / False (OTF)', code: 'OTF' },
+  { id: 'OAR', label: 'Assertion & Reason (OAR)', code: 'OAR' },
+  { id: 'OFB', label: 'Fill in the Blanks (OFB)', code: 'OFB' },
+  { id: 'ONE', label: 'Numerical Objective (ONE)', code: 'ONE' }
 ];
 
 export const SUBJECTIVE_QUESTION_TYPES = [
-  { id: 'numerical_short', label: 'Num Short (2m)', code: 'SSN' },
-  { id: 'numerical_long', label: 'Num Long (4m)', code: 'SLN' },
-  { id: 'subjective_short', label: 'Sub Short (2m)', code: 'SSA' },
-  { id: 'subjective_long', label: 'Sub Long (4m)', code: 'SLA' },
-  { id: 'subjective_reason', label: 'Sci Reasoning (2m)', code: 'SSR' },
-  { id: 'subjective_notes', label: 'Notes (2m)', code: 'SSR' },
-  { id: 'subjective_define', label: 'Define (1m)', code: 'SDF' },
-  { id: 'subjective_laws', label: 'Laws (1m)', code: 'SLP' }
+  { id: 'SDF', label: 'Definition (SDF - 1m)', code: 'SDF' },
+  { id: 'SLP', label: 'Laws & Principles (SLP - 1m)', code: 'SLP' },
+  { id: 'SSA', label: 'Short Answer (SSA - 2m)', code: 'SSA' },
+  { id: 'SSR', label: 'Scientific Reasoning / Notes (SSR - 2m)', code: 'SSR' },
+  { id: 'SSN', label: 'Numerical Short (SSN - 2m)', code: 'SSN' },
+  { id: 'SLA', label: 'Long Answer (SLA - 4m)', code: 'SLA' },
+  { id: 'SLN', label: 'Numerical Long (SLN - 4m)', code: 'SLN' }
 ];
 
 export function deriveTopicCodeFromQuestionCode(qCode: string): string {
@@ -828,9 +929,10 @@ export function validateQuestion(q: any, questionType: 'objective' | 'subjective
   }
 
   // Normalize type
-  const type = q.type || q.qtype || '';
+  const rawType = q.type || q.qtype || '';
+  const canonicalType = toCanonicalQuestionType(rawType);
   const isSubjective = questionType === 'subjective' || 
-    (questionType === 'all_in_one' && (QUESTION_TYPE_MAP[type]?.category === 'subjective' || (q.marks && !q.options?.length && q.type !== 'numerical')));
+    (questionType === 'all_in_one' && (isSubjectiveType(canonicalType) || (q.marks && !q.options?.length && canonicalType !== 'ONE')));
 
   // Check for phantom diagram / figure references without image
   if (!q.imageUrl && !q.figureUrl) {
@@ -863,7 +965,7 @@ export function validateQuestion(q: any, questionType: 'objective' | 'subjective
   }
 
   if (!isSubjective) {
-    if (type === 'single_mcq' || type === 'true_false') {
+    if (canonicalType === 'OSC' || canonicalType === 'OTF') {
       if (!q.correctAnswer || !String(q.correctAnswer).trim()) {
         errors.push('Missing correct answer.');
       } else if (Array.isArray(q.options) && q.options.length > 0) {
@@ -880,7 +982,7 @@ export function validateQuestion(q: any, questionType: 'objective' | 'subjective
           errors.push('Correct answer does not match any items in options list.');
         }
       }
-    } else if (type === 'multiple_mcq') {
+    } else if (canonicalType === 'OMC') {
       if (!q.correctAnswers || !Array.isArray(q.correctAnswers) || q.correctAnswers.length === 0) {
         errors.push('Missing correctAnswers list.');
       } else if (Array.isArray(q.options) && q.options.length > 0) {
@@ -891,14 +993,14 @@ export function validateQuestion(q: any, questionType: 'objective' | 'subjective
           }
         });
       }
-    } else if (type === 'assertion_reason') {
+    } else if (canonicalType === 'OAR') {
       const correctNorm = String(q.correctAnswer || '').trim().toUpperCase();
       if (!['A', 'B', 'C', 'D'].includes(correctNorm)) {
         errors.push('Correct answer for Assertion-Reason must be A, B, C, or D.');
       }
-    } else if (type === 'numerical') {
+    } else if (canonicalType === 'ONE' || canonicalType === 'OFB') {
       if (!q.correctAnswer || !String(q.correctAnswer).trim()) {
-        errors.push('Numerical questions must specify a valid correct answer.');
+        errors.push('Numerical and Fill-in-the-Blanks questions must specify a valid correct answer.');
       } else if (Array.isArray(q.options) && q.options.length > 0) {
         const isMatched = q.options.some((opt: any) => 
           isOptionMatch(opt, q.correctAnswer) ||

@@ -1,4 +1,19 @@
-export type QuestionType = 
+export type CanonicalQuestionType =
+  | 'OSC'
+  | 'OMC'
+  | 'OTF'
+  | 'OAR'
+  | 'OFB'
+  | 'ONE'
+  | 'SDF'
+  | 'SLP'
+  | 'SSA'
+  | 'SSR'
+  | 'SSN'
+  | 'SLA'
+  | 'SLN';
+
+export type LegacyQuestionType =
   | 'single_mcq' 
   | 'multiple_mcq' 
   | 'true_false' 
@@ -13,6 +28,8 @@ export type QuestionType =
   | 'subjective_notes'
   | 'subjective_define'
   | 'subjective_laws';
+
+export type QuestionType = CanonicalQuestionType | LegacyQuestionType | string;
 
 export interface OptionObject {
   text?: string;

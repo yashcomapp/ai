@@ -1403,7 +1403,7 @@ function TopicPracticeContent() {
               </div>
 
               {(() => {
-                if (q.type === 'assertion_reason') {
+                if (isAssertionReasonType(q.type)) {
                   const { assertion, reason } = extractAssertionAndReason(q);
                   return (
                     <div className="assertion-reason-container" style={{ margin: '15px 0' }}>
@@ -1705,7 +1705,7 @@ function TopicPracticeContent() {
                 )}
 
                 {/* 5. Direct Numerical Input (when no options provided) */}
-                {(q.type === 'numerical' || q.type === 'numerical_short' || q.type === 'numerical_long') && (!Array.isArray(q.options) || q.options.length === 0) && (
+                {isNumericalType(q.type) && (!Array.isArray(q.options) || q.options.length === 0) && (
                   <div>
                     <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '6px' }}>Type Numerical Value:</label>
                     <input 
@@ -1725,7 +1725,7 @@ function TopicPracticeContent() {
                 )}
 
                 {/* 6. Fill in the Blanks Input (when no options provided) */}
-                {(q.type === 'fill_blank' || q.type === 'fill_blanks') && (!Array.isArray(q.options) || q.options.length === 0) && (
+                {isFillBlanksType(q.type) && (!Array.isArray(q.options) || q.options.length === 0) && (
                   <div>
                     <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '6px' }}>Type Missing Word:</label>
                     <input 
@@ -1745,7 +1745,7 @@ function TopicPracticeContent() {
                 )}
 
                 {/* 7. General Text Input Fallback (for any question with missing options) */}
-                {q.type !== 'true_false' && q.type !== 'assertion_reason' && q.type !== 'numerical' && q.type !== 'numerical_short' && q.type !== 'numerical_long' && q.type !== 'fill_blank' && q.type !== 'fill_blanks' && (!Array.isArray(q.options) || q.options.length === 0) && (
+                {!isTrueFalseType(q.type) && !isAssertionReasonType(q.type) && !isNumericalType(q.type) && !isFillBlanksType(q.type) && (!Array.isArray(q.options) || q.options.length === 0) && (
                   <div>
                     <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '6px' }}>Type Your Answer:</label>
                     <input 

@@ -3,7 +3,7 @@ import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole } from '@/lib/auth';
 import { QuestionRepository } from '@/repositories/question.repository';
 import { PracticeService } from '@/services/practice.service';
-import { shuffleArray } from '@/lib/questionTypes';
+import { shuffleArray, isObjectiveType, isSingleChoiceType, isMultipleChoiceType, isAssertionReasonType } from '@/lib/questionTypes';
 import { getDateKeyIST } from '@/lib/dateUtils';
 import { getRequiredConfidence } from '@/lib/studentDb';
 import { filterDistinctCandidates, areQuestionsTooSimilar } from '@/lib/questionSimilarity';
@@ -211,16 +211,15 @@ export async function GET(req: NextRequest) {
 
     const finalSize = isRecoveryMode ? 8 : (isRevisionMode ? (size || getSrsMicroSetSize(topicClassification)) : (size || 6));
 
-    // 1.2 Fetch all questions for this topic (STRICTLY 5 Canonical Objective Types: OSC, OMC, OAR, OTF, ONE)
+    // 1.2 Fetch all questions for this topic (STRICTLY Canonical Objective Types: OSC, OMC, OAR, OTF, ONE, OFB)
     let allQuestions: any[] = await getQuestionsByTopic(topicCode);
-    const PRACTICE_OBJECTIVE_TYPES = ['single_mcq', 'multiple_mcq', 'assertion_reason', 'true_false', 'numerical'];
     allQuestions = allQuestions.filter((q: any) => {
-      if (!q.type || !PRACTICE_OBJECTIVE_TYPES.includes(q.type) || q.type.startsWith('subjective')) return false;
+      if (!q.type || !isObjectiveType(q.type)) return false;
       // ZERO-COLLISION: Exclude questions strictly designated for formal exams or mock tests
       if (q.vault && q.vault !== 'practice') return false;
       if (examCategory === 'foundation' ? q.examCategory !== 'foundation' : (q.examCategory && q.examCategory !== 'standard')) return false;
       // MCQs must have at least 2 valid options to be served in practice mode
-      if ((q.type === 'single_mcq' || q.type === 'multiple_mcq') && (!Array.isArray(q.options) || q.options.length < 2)) {
+      if ((isSingleChoiceType(q.type) || isMultipleChoiceType(q.type)) && (!Array.isArray(q.options) || q.options.length < 2)) {
         return false;
       }
       return true;
@@ -331,7 +330,7 @@ export async function GET(req: NextRequest) {
         let reason = q.reason || '';
         let options = q.options || [];
 
-        if (q.type === 'assertion_reason') {
+        if (isAssertionReasonType(q.type)) {
           if (!assertion && !reason && q.text) {
             const textStr = String(q.text);
             let assertionMatch = textStr.match(/Assertion\s*[:\-]?\s*([^R]*(?:R(?!eason)[^R]*)*)(?=Reason:|$)/i);
@@ -553,7 +552,7 @@ export async function GET(req: NextRequest) {
       let reason = q.reason || '';
       let options = q.options || [];
 
-      if (q.type === 'assertion_reason') {
+      if (isAssertionReasonType(q.type)) {
         // Parse from text if assertion/reason are empty
         if (!assertion && !reason && q.text) {
           const textStr = String(q.text);

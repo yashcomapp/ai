@@ -13,7 +13,9 @@ import {
   getRawOptionKey, 
   getRawOptionText, 
   parseAnswerList,
-  formatUserAnswerSummary
+  formatUserAnswerSummary,
+  isAssertionReasonType,
+  isObjectiveType
 } from '@/lib/questionTypes';
 import { formatDateTimeIST } from '@/lib/dateUtils';
 
@@ -311,7 +313,7 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
                           </span>
                         </div>
 
-                        {q.type === 'assertion_reason' ? (() => {
+                        {isAssertionReasonType(q.type) ? (() => {
                           const { assertion, reason } = extractAssertionAndReason(q);
                           return (
                             <div style={{ marginBottom: '8px', fontSize: '12.5px' }}>
@@ -381,8 +383,7 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
                         ) : null}
 
                         {(() => {
-                          const isObjective = (q.options && q.options.length > 0) || 
-                            ['single_mcq', 'multiple_mcq', 'true_false', 'assertion_reason', 'fill_blanks', 'fill_blank', 'numerical', 'numerical_short', 'numerical_long'].includes(q.type);
+                          const isObjective = (q.options && q.options.length > 0) || isObjectiveType(q.type);
                           
                           const correctDisplay = Array.isArray(q.correctAnswer)
                             ? q.correctAnswer.map((ca: any) => formatUserAnswerSummary(q.options, ca)).join(', ')

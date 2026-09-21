@@ -4,7 +4,7 @@ import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole } from '@/lib/auth';
 import { QuestionRepository } from '@/repositories/question.repository';
 import { ChunkedBatch } from '@/lib/firebase/batch';
-import { validateQuestion, normalizeBloomLevel, OBJECTIVE_QUESTION_TYPES, SUBJECTIVE_QUESTION_TYPES, QUESTION_TYPE_MAP, cleanStringForMatch } from '@/lib/questionTypes';
+import { validateQuestion, normalizeBloomLevel, OBJECTIVE_QUESTION_TYPES, SUBJECTIVE_QUESTION_TYPES, QUESTION_TYPE_MAP, cleanStringForMatch, toCanonicalQuestionType, isObjectiveType, isSubjectiveType } from '@/lib/questionTypes';
 import { getFromCache, setInCache, invalidateCache } from '@/lib/firebase/cache';
 export const dynamic = 'force-dynamic';
 
@@ -202,13 +202,11 @@ export async function GET(req: NextRequest) {
 
       // Type check
       if (type) {
-        if (q.type !== type) return false;
+        if (toCanonicalQuestionType(q.type) !== toCanonicalQuestionType(type) && q.type !== type) return false;
       } else if (category === 'objective') {
-        const objTypes = OBJECTIVE_QUESTION_TYPES.map(t => t.id);
-        if (!objTypes.includes(q.type)) return false;
+        if (!isObjectiveType(q.type)) return false;
       } else if (category === 'subjective') {
-        const subjTypes = SUBJECTIVE_QUESTION_TYPES.map(t => t.id);
-        if (!subjTypes.includes(q.type)) return false;
+        if (!isSubjectiveType(q.type)) return false;
       }
 
       // Usage status check
@@ -296,7 +294,7 @@ export async function POST(req: NextRequest) {
 
         const boardCode = boardCodes[board] || board.substring(0, 4).toUpperCase();
         const subjectCode = subjectCodes[subjectName] || subjectName.substring(0, 4).toUpperCase();
-        const typeCode = QUESTION_TYPE_MAP[qtype]?.code || 'SSA';
+        const typeCode = toCanonicalQuestionType(qtype);
         const chapterPart = item.chapterNumber || '01';
         const topicPart = item.topicNumber || '1.1';
         const topicCode = `${boardCode}-${classNum}-${subjectCode}-${chapterPart}-${topicPart}`;
@@ -382,7 +380,7 @@ export async function POST(req: NextRequest) {
           finalTopicName = finalTopicName.substring(topicPart.length).replace(/^[:\s\-]+/g, '').trim();
         }
 
-        const resolvedMarks = marksMap[normalizedQType] ?? (Number(item.marks) > 0 ? Number(item.marks) : 4);
+        const resolvedMarks = QUESTION_TYPE_MAP[normalizedQType]?.defaultMarks ?? marksMap[normalizedQType] ?? (Number(item.marks) > 0 ? Number(item.marks) : 4);
         const questionDoc: any = {
           questionCode: finalCode,
           type: normalizedQType,

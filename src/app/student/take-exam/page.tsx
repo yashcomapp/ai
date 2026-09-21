@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import { useAuth } from '@/context/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Script from 'next/script';
-import { stripOptionLabel, preprocessMathText, parseAnswerList, isOptionSelectedByUser, isOptionCorrect, getQuestionCorrectAnswer, getRawOptionKey, getRawOptionText, extractAssertionAndReason, isMultipleChoiceType, isSingleChoiceType, isTrueFalseType, isAssertionReasonType } from '@/lib/questionTypes';
+import { stripOptionLabel, preprocessMathText, parseAnswerList, isOptionSelectedByUser, isOptionCorrect, getQuestionCorrectAnswer, getRawOptionKey, getRawOptionText, extractAssertionAndReason, isMultipleChoiceType, isSingleChoiceType, isTrueFalseType, isAssertionReasonType, isNumericalType, isFillBlanksType, isObjectiveType } from '@/lib/questionTypes';
 import { useMathRender } from '@/hooks/useMathRender';
 import { db } from '@/lib/firebase/firestore';
 import { useExamTimer } from '@/hooks/useExamTimer';
@@ -1245,7 +1245,7 @@ function TakeExamContent() {
             </div>
 
 
-            {currentQuestion.type !== 'assertion_reason' && (
+            {!isAssertionReasonType(currentQuestion.type) && (
               <div 
                 className="math-container"
                 style={{ fontSize: '15px', lineHeight: '1.6', marginBottom: '16px', whiteSpace: 'pre-line' }}
@@ -1403,7 +1403,7 @@ function TakeExamContent() {
               })()}
 
               {/* 5. Numerical and its variants (when no options provided) */}
-              {(currentQuestion.type === 'numerical' || currentQuestion.type === 'numerical_short' || currentQuestion.type === 'numerical_long') && (!Array.isArray(currentQuestion.options) || currentQuestion.options.length === 0) && (
+              {isNumericalType(currentQuestion.type) && (!Array.isArray(currentQuestion.options) || currentQuestion.options.length === 0) && (
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '6px' }}>Type Numerical Value:</label>
                   <input 
@@ -1417,7 +1417,7 @@ function TakeExamContent() {
               )}
 
               {/* 6. Fill in the Blanks */}
-              {(currentQuestion.type === 'fill_blank' || currentQuestion.type === 'fill_blanks') && (
+              {isFillBlanksType(currentQuestion.type) && (
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '6px' }}>Type Missing Word:</label>
                   <input 
@@ -1684,12 +1684,15 @@ function TakeExamContent() {
                            </span>
                          </div>
 
-                        {matchingQ?.type === 'assertion_reason' && matchingQ.assertion && matchingQ.reason ? (
-                          <div style={{ marginBottom: '12px', fontSize: '13px' }}>
-                            <p style={{ margin: '4px 0' }}><strong>Assertion (A):</strong> <span className="math-container">{preprocessMathText(matchingQ.assertion)}</span></p>
-                            <p style={{ margin: '4px 0' }}><strong>Reason (R):</strong> <span className="math-container">{preprocessMathText(matchingQ.reason)}</span></p>
-                          </div>
-                        ) : (
+                        {isAssertionReasonType(matchingQ?.type) ? (() => {
+                          const { assertion, reason } = extractAssertionAndReason(matchingQ);
+                          return (
+                            <div style={{ marginBottom: '12px', fontSize: '13px' }}>
+                              <p style={{ margin: '4px 0' }}><strong>Assertion (A):</strong> <span className="math-container">{preprocessMathText(assertion)}</span></p>
+                              <p style={{ margin: '4px 0' }}><strong>Reason (R):</strong> <span className="math-container">{preprocessMathText(reason)}</span></p>
+                            </div>
+                          );
+                        })() : (
                           <p className="math-container" style={{ fontSize: '13px', margin: '0 0 12px 0', fontWeight: 'bold', lineHeight: '1.4' }}>
                             {preprocessMathText(qItem.questionText)}
                           </p>
