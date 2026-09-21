@@ -86,31 +86,93 @@ export async function GET(req: NextRequest) {
     });
 
     if (admin) {
-      // Admin gets active chat rooms
+      // 1. Fetch all active batches and ensure class group rooms exist in chatRooms
+      const batchesSnap = await adminDb.collection('batches').get();
+      const activeBatches = batchesSnap.docs.filter(d => d.data().status !== 'inactive');
+      
+      const batchRoomRefs = activeBatches.map(b => adminDb.collection('chatRooms').doc(`room_batch_${b.id}`));
+      const batchRoomSnaps = batchRoomRefs.length > 0 ? await adminDb.getAll(...batchRoomRefs).catch(() => []) : [];
+      const batchRoomMap = new Map(batchRoomSnaps.map((s: any) => [s.id, s]));
+
+      const batchCreationPromises: Promise<any>[] = [];
+      activeBatches.forEach(bDoc => {
+        const bId = bDoc.id;
+        const bData = bDoc.data();
+        const gRoomId = `room_batch_${bId}`;
+        const existingSnap = batchRoomMap.get(gRoomId);
+        const properName = bData.name?.trim() || 'Class Group';
+
+        if (!existingSnap || !existingSnap.exists) {
+          batchCreationPromises.push(adminDb.collection('chatRooms').doc(gRoomId).set({
+            roomId: gRoomId,
+            type: 'group',
+            name: properName,
+            participants: ['admin'],
+            unreadCounts: { admin: 0 },
+            isMutedForStudents: false,
+            isMutedForParents: false,
+            lastMessage: {
+              text: `Class group for ${properName} initialized.`,
+              senderName: 'System',
+              timestamp: new Date().toISOString()
+            },
+            createdAt: new Date().toISOString()
+          }));
+        } else {
+          const gData = existingSnap.data();
+          if (gData && gData.name !== properName) {
+            batchCreationPromises.push(adminDb.collection('chatRooms').doc(gRoomId).update({ name: properName }));
+          }
+        }
+      });
+
+      if (batchCreationPromises.length > 0) {
+        await Promise.all(batchCreationPromises);
+      }
+
+      // 2. Fetch all chatRooms
       const roomsSnap = await adminDb.collection('chatRooms').limit(300).get();
       let rooms = roomsSnap.docs.map(doc => ({
         id: doc.id,
+        roomId: doc.id,
         ...doc.data()
       })) as any[];
 
-      // Filter out inactive participants and empty DMs for admin
+      // 3. Filter and sanitize rooms for Admin:
       rooms = rooms.filter(room => {
-        const parts: string[] = room.participants || [];
-        const hasInactive = parts.some(p => {
-          const upper = p.toUpperCase();
-          if (inactiveCodes.has(upper)) return true;
-          if (p.startsWith('PR-')) {
-            const email = p.replace('PR-', '').toLowerCase().trim();
-            if (inactiveEmails.has(email)) return true;
-          }
-          return false;
-        });
-        if (hasInactive) return false;
-
-        // For DM rooms: ONLY include existent communications (rooms with a genuine user message)
-        if (room.type === 'dm' && !isExistentCommunication(room)) {
-          return false;
+        // For DM rooms: ONLY include existent communications with active users
+        if (room.type === 'dm') {
+          const parts: string[] = room.participants || [];
+          const hasInactive = parts.some(p => {
+            const upper = p.toUpperCase();
+            if (inactiveCodes.has(upper)) return true;
+            if (p.startsWith('PR-')) {
+              const email = p.replace('PR-', '').toLowerCase().trim();
+              if (inactiveEmails.has(email)) return true;
+            }
+            return false;
+          });
+          if (hasInactive) return false;
+          if (!isExistentCommunication(room)) return false;
+          return true;
         }
+
+        // For Groups: KEEP all class group rooms visible, but sanitize inactive participants
+        if (room.type === 'group') {
+          if (Array.isArray(room.participants)) {
+            room.participants = room.participants.filter((p: string) => {
+              const upper = p.toUpperCase();
+              if (inactiveCodes.has(upper)) return false;
+              if (p.startsWith('PR-')) {
+                const email = p.replace('PR-', '').toLowerCase().trim();
+                if (inactiveEmails.has(email)) return false;
+              }
+              return true;
+            });
+          }
+          return true;
+        }
+
         return true;
       });
 
