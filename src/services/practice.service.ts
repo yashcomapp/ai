@@ -117,10 +117,15 @@ export class PracticeService {
       const isDisputed = disputedSet.has(String(ans.questionId).toLowerCase()) || (qData.questionCode && disputedSet.has(String(qData.questionCode).toLowerCase()));
       if (isDisputed) disputedCount++;
 
+      const isMultiple = qData.type === 'multiple_mcq' || qData.type === 'multi_mcq';
+      const resolvedCorrectAnswer = isMultiple
+        ? (Array.isArray(qData.correctAnswers) && qData.correctAnswers.length > 0 ? qData.correctAnswers : (qData.correctAnswer ? [qData.correctAnswer] : []))
+        : (qData.correctAnswer || (Array.isArray(qData.correctAnswers) ? qData.correctAnswers[0] : ''));
+
       const isCorrect = isDisputed ? false : evaluateQuestionAnswer(
         qData.type || 'single_mcq',
         ans.answer,
-        qData.correctAnswer || qData.correctAnswers || '',
+        resolvedCorrectAnswer,
         qData.options
       );
 

@@ -96,7 +96,10 @@ export class AttemptService {
       const isDisputed = disputedSet.has(String(q.id || '').toLowerCase()) || 
                          disputedSet.has(String(q.questionCode || '').toLowerCase());
 
-      const correctAnswer = q.correctAnswer || q.correctAnswers;
+      const isMultiple = q.type === 'multiple_mcq' || q.type === 'multi_mcq';
+      const correctAnswer = isMultiple
+        ? (Array.isArray(q.correctAnswers) && q.correctAnswers.length > 0 ? q.correctAnswers : (q.correctAnswer ? [q.correctAnswer] : []))
+        : (q.correctAnswer || (Array.isArray(q.correctAnswers) ? q.correctAnswers[0] : ''));
       const isAttempted = ans && ans !== '' && ans !== '[]' && ans !== '{}';
       
       let isCorrect = false;

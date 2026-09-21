@@ -599,10 +599,15 @@ function TopicPracticeContent() {
     const q = data.questions[currentQIndex];
     const answer = userAnswers[currentQIndex] || '';
 
+    const isMultiple = q.type === 'multiple_mcq' || q.type === 'multi_mcq';
+    const resolvedCorrectAnswer = isMultiple
+      ? (Array.isArray(q.correctAnswers) && q.correctAnswers.length > 0 ? q.correctAnswers : (q.correctAnswer ? [q.correctAnswer] : []))
+      : (q.correctAnswer || (Array.isArray(q.correctAnswers) ? q.correctAnswers[0] : ''));
+
     const isCorrect = evaluateQuestionAnswer(
       q.type || 'single_mcq',
       answer,
-      q.correctAnswer || q.correctAnswers || '',
+      resolvedCorrectAnswer,
       q.options
     );
 

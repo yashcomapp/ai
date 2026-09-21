@@ -270,7 +270,7 @@ export async function GET(req: NextRequest) {
       const sanitizedQuestions = recoveryQuestions.map((q: any) => {
         let options = q.options;
         if (Array.isArray(options)) {
-          options = shuffleArray(options.map((opt: any) => (typeof opt === 'object' ? opt : { text: String(opt), value: String(opt) })));
+          options = options.map((opt: any) => (typeof opt === 'object' ? opt : { text: String(opt), value: String(opt) }));
         }
         return {
           id: q.id,
