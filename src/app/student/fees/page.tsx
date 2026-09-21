@@ -55,33 +55,33 @@ export default function StudentFeesPage() {
         </div>
       </div>
 
-      <div style={{ flex: 1, padding: '24px 12px' }}>
-        <div style={{ maxWidth: '900px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <div style={{ flex: 1, padding: '10px 8px' }}>
+        <div style={{ maxWidth: '900px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
 
         {error && <div className="alert-box alert-box-danger">Failed to load fees details.</div>}
 
         {isLoading ? (
-          <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-muted)' }}>Loading fees register...</div>
+          <div style={{ padding: '24px 12px', textAlign: 'center', color: 'var(--text-muted)' }}>Loading fees register...</div>
         ) : !fee ? (
-          <div className="card" style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)', background: 'var(--surface)' }}>
+          <div className="card" style={{ padding: '20px 12px', textAlign: 'center', color: 'var(--text-muted)', background: 'var(--surface)' }}>
             🪙 No active package configured for your account yet. Please contact the administrator.
           </div>
         ) : (
           <>
             {/* Summary Row */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px' }}>
-              <div className="card" style={{ background: 'var(--surface)', padding: '16px', borderRadius: 'var(--radius)', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center', textAlign: 'center' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '8px' }}>
+              <div className="card" style={{ background: 'var(--surface)', padding: '10px 8px', borderRadius: 'var(--radius)', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'center', textAlign: 'center' }}>
                 <span style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800 }}>Net Payable Rate</span>
-                <span style={{ fontSize: '1.45rem', fontWeight: 800, color: 'var(--text)' }}>₹{fee.netPayableAmount}</span>
+                <span style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--text)' }}>₹{fee.netPayableAmount}</span>
                 <span style={{ fontSize: '10px', color: 'var(--text-faint)' }}>Package: ₹{fee.totalPackageAmount} | Disc: ₹{fee.discountAmount}</span>
               </div>
-              <div className="card" style={{ background: 'var(--surface)', padding: '16px', borderRadius: 'var(--radius)', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center', textAlign: 'center' }}>
+              <div className="card" style={{ background: 'var(--surface)', padding: '10px 8px', borderRadius: 'var(--radius)', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'center', textAlign: 'center' }}>
                 <span style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800 }}>Total Paid</span>
-                <span style={{ fontSize: '1.45rem', fontWeight: 800, color: 'var(--success)' }}>₹{fee.totalPaidAmount}</span>
+                <span style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--success)' }}>₹{fee.totalPaidAmount}</span>
               </div>
-              <div className="card" style={{ background: 'var(--surface)', padding: '16px', borderRadius: 'var(--radius)', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'center', textAlign: 'center' }}>
+              <div className="card" style={{ background: 'var(--surface)', padding: '10px 8px', borderRadius: 'var(--radius)', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'center', textAlign: 'center' }}>
                 <span style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800 }}>Outstanding Balance</span>
-                <span style={{ fontSize: '1.45rem', fontWeight: 800, color: fee.outstandingAmount > 0 ? 'var(--danger)' : 'var(--success)' }}>₹{fee.outstandingAmount}</span>
+                <span style={{ fontSize: '1.3rem', fontWeight: 800, color: fee.outstandingAmount > 0 ? 'var(--danger)' : 'var(--success)' }}>₹{fee.outstandingAmount}</span>
               </div>
             </div>
 
@@ -95,26 +95,26 @@ export default function StudentFeesPage() {
 
             {/* Installments schedule list */}
             <div className="card" style={{ background: 'var(--surface)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
-              <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-light)' }}>
-                <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 'bold' }}>📅 Installments Dues Timeline</h3>
+              <div style={{ padding: '8px 12px', borderBottom: '1px solid var(--border-light)' }}>
+                <h3 style={{ margin: 0, fontSize: '13px', fontWeight: 'bold' }}>📅 Installments Dues Timeline</h3>
               </div>
               <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                   <thead>
                     <tr style={{ background: 'var(--bg-soft)', borderBottom: '1px solid var(--border-light)', fontSize: '11px', color: 'var(--text-muted)' }}>
-                      <th style={{ padding: '12px 16px' }}>INSTALLMENT</th>
-                      <th style={{ padding: '12px 16px' }}>DUE AMOUNT</th>
-                      <th style={{ padding: '12px 16px' }}>DUE DATE</th>
-                      <th style={{ padding: '12px 16px' }}>STATUS</th>
+                      <th style={{ padding: '6px 10px' }}>INSTALLMENT</th>
+                      <th style={{ padding: '6px 10px' }}>DUE AMOUNT</th>
+                      <th style={{ padding: '6px 10px' }}>DUE DATE</th>
+                      <th style={{ padding: '6px 10px' }}>STATUS</th>
                     </tr>
                   </thead>
                   <tbody>
                     {fee.installments?.map((inst: any, idx: number) => (
                       <tr key={idx} style={{ borderBottom: '1px solid var(--border-light)' }}>
-                        <td style={{ padding: '14px 16px', fontSize: '13px', fontWeight: 'bold' }}>Installment {inst.installmentNo}</td>
-                        <td style={{ padding: '14px 16px', fontSize: '13px', fontWeight: 700 }}>₹{inst.amount}</td>
-                        <td style={{ padding: '14px 16px', fontSize: '13px' }}>{formatDateStr(inst.dueDate)}</td>
-                        <td style={{ padding: '14px 16px' }}>
+                        <td style={{ padding: '6px 10px', fontSize: '12.5px', fontWeight: 'bold' }}>Installment {inst.installmentNo}</td>
+                        <td style={{ padding: '6px 10px', fontSize: '12.5px', fontWeight: 700 }}>₹{inst.amount}</td>
+                        <td style={{ padding: '6px 10px', fontSize: '12.5px' }}>{formatDateStr(inst.dueDate)}</td>
+                        <td style={{ padding: '6px 10px' }}>
                           {inst.status === 'paid' ? (
                             <span className="badge badge-success" style={{ fontSize: '10px' }}>PAID</span>
                           ) : inst.status === 'overdue' ? (
@@ -132,35 +132,35 @@ export default function StudentFeesPage() {
 
             {/* Payment history list */}
             <div className="card" style={{ background: 'var(--surface)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
-              <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-light)' }}>
-                <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 'bold' }}>🧾 Logged Ledger Receipts</h3>
+              <div style={{ padding: '8px 12px', borderBottom: '1px solid var(--border-light)' }}>
+                <h3 style={{ margin: 0, fontSize: '13px', fontWeight: 'bold' }}>🧾 Logged Ledger Receipts</h3>
               </div>
               {transactions.length === 0 ? (
-                <div style={{ padding: '30px', textAlign: 'center', color: 'var(--text-faint)', fontSize: '12px' }}>No payments logged yet.</div>
+                <div style={{ padding: '16px', textAlign: 'center', color: 'var(--text-faint)', fontSize: '12px' }}>No payments logged yet.</div>
               ) : (
                 <div style={{ overflowX: 'auto' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                     <thead>
                       <tr style={{ background: 'var(--bg-soft)', borderBottom: '1px solid var(--border-light)', fontSize: '11px', color: 'var(--text-muted)' }}>
-                        <th style={{ padding: '12px 16px' }}>RECEIPT ID</th>
-                        <th style={{ padding: '12px 16px' }}>ALLOCATED DUES</th>
-                        <th style={{ padding: '12px 16px' }}>METHOD</th>
-                        <th style={{ padding: '12px 16px' }}>REF / TR REF</th>
-                        <th style={{ padding: '12px 16px' }}>AMOUNT PAID</th>
-                        <th style={{ padding: '12px 16px' }}>DATE LOGGED</th>
+                        <th style={{ padding: '6px 10px' }}>RECEIPT ID</th>
+                        <th style={{ padding: '6px 10px' }}>ALLOCATED DUES</th>
+                        <th style={{ padding: '6px 10px' }}>METHOD</th>
+                        <th style={{ padding: '6px 10px' }}>REF / TR REF</th>
+                        <th style={{ padding: '6px 10px' }}>AMOUNT PAID</th>
+                        <th style={{ padding: '6px 10px' }}>DATE LOGGED</th>
                       </tr>
                     </thead>
                     <tbody>
                       {transactions.map((tx: any) => (
-                        <tr key={tx.transactionId} style={{ borderBottom: '1px solid var(--border-light)', fontSize: '13px' }}>
-                          <td style={{ padding: '14px 16px', fontWeight: 'bold', fontFamily: 'monospace' }}>{tx.transactionId}</td>
-                          <td style={{ padding: '14px 16px' }}>
+                        <tr key={tx.transactionId} style={{ borderBottom: '1px solid var(--border-light)', fontSize: '12.5px' }}>
+                          <td style={{ padding: '6px 10px', fontWeight: 'bold', fontFamily: 'monospace' }}>{tx.transactionId}</td>
+                          <td style={{ padding: '6px 10px' }}>
                             {tx.installmentId?.startsWith('inst_') ? `Installment ${tx.installmentId.replace('inst_', '')}` : (tx.installmentId === 'registration' ? 'Installment 1' : (tx.installmentId || '--'))}
                           </td>
-                          <td style={{ padding: '14px 16px' }}>{tx.paymentMethod}</td>
-                          <td style={{ padding: '14px 16px', color: 'var(--text-muted)' }}>{tx.referenceNumber || '--'}</td>
-                          <td style={{ padding: '14px 16px', color: 'var(--success)', fontWeight: 700 }}>₹{tx.amountPaid}</td>
-                          <td style={{ padding: '14px 16px', color: 'var(--text-faint)' }}>{formatDateStr(tx.timestamp)}</td>
+                          <td style={{ padding: '6px 10px' }}>{tx.paymentMethod}</td>
+                          <td style={{ padding: '6px 10px', color: 'var(--text-muted)' }}>{tx.referenceNumber || '--'}</td>
+                          <td style={{ padding: '6px 10px', color: 'var(--success)', fontWeight: 700 }}>₹{tx.amountPaid}</td>
+                          <td style={{ padding: '6px 10px', color: 'var(--text-faint)' }}>{formatDateStr(tx.timestamp)}</td>
                         </tr>
                       ))}
                     </tbody>

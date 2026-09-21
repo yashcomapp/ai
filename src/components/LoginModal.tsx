@@ -170,7 +170,7 @@ export default function LoginModal() {
         }
         .login-modal {
           background: var(--surface);
-          padding: 24px 28px;
+          padding: 16px 18px;
           border-radius: var(--radius-lg);
           box-shadow: var(--shadow-lg);
           width: 100%;

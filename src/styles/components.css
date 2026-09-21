@@ -780,7 +780,7 @@
     align-items: center;
     justify-content: center;
     z-index: var(--z-modal);
-    padding: 20px;
+    padding: 8px;
 }
 .modal.show { display: flex; }
 .modal-content {
@@ -789,33 +789,33 @@
     border-radius: var(--radius-lg);
     width: 100%;
     max-width: 560px;
-    max-height: 85vh;
+    max-height: 90vh;
     overflow-y: auto;
     box-shadow: var(--shadow-lg);
     color: var(--text);
 }
 .modal-header {
-    padding: 8px 12px;
+    padding: 6px 10px;
     display: flex;
     align-items: center;
     justify-content: space-between;
     border-bottom: 1px solid var(--border-light);
 }
-.modal-header h3,.modal-header h4 { font-size: 16px; font-weight: 700; margin: 0; }
-.modal-body { padding: 10px 12px; }
+.modal-header h3,.modal-header h4 { font-size: 15px; font-weight: 700; margin: 0; }
+.modal-body { padding: 8px 10px; }
 .modal-footer {
-    padding: 6px 12px;
+    padding: 6px 10px;
     border-top: 1px solid var(--border-light);
     display: flex;
     justify-content: flex-end;
-    gap: 8px;
+    gap: 6px;
     background: var(--surface-2);
 }
 .close-modal {
     background: transparent;
     border: none;
     color: var(--text-muted);
-    font-size: 22px;
+    font-size: 20px;
     line-height: 1;
     cursor: pointer;
     padding: 2px 6px;
@@ -825,7 +825,7 @@
 .close-modal:hover { background: var(--bg-soft); color: var(--text); }
 
 .modal-list { list-style: none; padding: 0; margin: 0; }
-.modal-list li { padding: 6px 0; border-bottom: 1px solid var(--border-light); }
+.modal-list li { padding: 4px 0; border-bottom: 1px solid var(--border-light); }
 .modal-list li:last-child { border-bottom: none; }
 .modal-list .name { font-weight: 500; color: var(--text); }
 
@@ -1300,22 +1300,22 @@ input:disabled,textarea:disabled,select:disabled {
 /* ============================================================
    12. EMPTY & LOADING STATES
    ============================================================ */
-.empty-state { text-align: center; padding: 32px 16px; color: var(--text-muted); font-size: 15.6px; }
-.empty-state .ico,.empty-state .empty-icon { font-size: 33.6px; display: block; margin-bottom: 6px; opacity: 0.5; }
-.empty-state-icon { font-size: 48px; color: var(--text-muted); }
-.loading-state { text-align: center; padding: 24px; color: var(--text-muted); }
-.loading-spinner { text-align: center; padding: 30px; }
+.empty-state { text-align: center; padding: 18px 12px; color: var(--text-muted); font-size: 14px; }
+.empty-state .ico,.empty-state .empty-icon { font-size: 28px; display: block; margin-bottom: 4px; opacity: 0.5; }
+.empty-state-icon { font-size: 36px; color: var(--text-muted); }
+.loading-state { text-align: center; padding: 16px; color: var(--text-muted); }
+.loading-spinner { text-align: center; padding: 18px; }
 .spinner {
-    width: 24px;
-    height: 24px;
-    margin: 0 auto 8px;
+    width: 20px;
+    height: 20px;
+    margin: 0 auto 6px;
     border-radius: 50%;
-    border: 2.5px solid var(--border);
+    border: 2px solid var(--border);
     border-top-color: var(--accent);
     animation: spin 0.9s linear infinite;
 }
-.loading { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 12px; font-size: 15.6px; color: var(--text-muted); }
-.loading .spinner { width: 18px; height: 18px; margin: 0; }
+.loading { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 8px; font-size: 14px; color: var(--text-muted); }
+.loading .spinner { width: 16px; height: 16px; margin: 0; }
 
 /* ============================================================
    13. TOAST / STATUS MESSAGE
@@ -1326,9 +1326,9 @@ input:disabled,textarea:disabled,select:disabled {
     right: 20px;
     background: var(--success);
     color: var(--text-on-accent);
-    padding: 9px 18px;
+    padding: 7px 14px;
     border-radius: var(--radius-pill);
-    font-size: 15.6px;
+    font-size: 14px;
     z-index: 6000;
     display: none;
     box-shadow: var(--shadow-md);
@@ -1339,10 +1339,10 @@ input:disabled,textarea:disabled,select:disabled {
    14. ALERT / CALLOUT BOXES
    ============================================================ */
 .alert-box {
-    padding: 10px 14px;
-    margin: 12px 0;
+    padding: 8px 12px;
+    margin: 8px 0;
     border-radius: var(--radius-sm);
-    font-size: 14.4px;
+    font-size: 13.5px;
     border-left: 3px solid transparent;
 }
 .alert-box-danger  { background: var(--danger-bg);  border-left-color: var(--danger);  color: var(--danger); }
@@ -1354,20 +1354,20 @@ input:disabled,textarea:disabled,select:disabled {
 .warning-banner {
     background: var(--warning-bg);
     border-left: 4px solid var(--warning);
-    padding: 14px 18px;
+    padding: 10px 14px;
     border-radius: var(--radius);
-    margin-bottom: 20px;
+    margin-bottom: 12px;
 }
-.warning-banner h3 { font-size: 18px; color: var(--warning); margin-bottom: 6px; }
-.warning-banner p  { font-size: 15.6px; color: var(--danger); }
+.warning-banner h3 { font-size: 16px; color: var(--warning); margin-bottom: 4px; }
+.warning-banner p  { font-size: 14px; color: var(--danger); }
 
 /* Info / result boxes (classroom-test style) */
 .result-box {
     background: var(--success-bg);
     border-left: 4px solid var(--success);
-    padding: 14px;
+    padding: 10px 12px;
     border-radius: var(--radius-sm);
-    margin-top: 14px;
+    margin-top: 10px;
     display: none;
 }
 .result-box.error { background: var(--danger-bg); border-left-color: var(--danger); }
@@ -1447,7 +1447,7 @@ input:disabled,textarea:disabled,select:disabled {
 .blocking-overlay .blocking-box {
     background: var(--surface);
     border: 1px solid var(--border-glass);
-    padding: 32px 44px;
+    padding: 20px 24px;
     border-radius: var(--radius-lg);
     text-align: center;
     color: var(--text);
@@ -1456,26 +1456,26 @@ input:disabled,textarea:disabled,select:disabled {
 }
 .blocking-overlay .blocking-title {
     font-weight: 700;
-    margin-bottom: 6px;
-    font-size: 19.2px;
+    margin-bottom: 4px;
+    font-size: 17px;
     color: var(--text);
 }
 .blocking-overlay .blocking-message {
-    font-size: 15.6px;
+    font-size: 13.5px;
     color: var(--text-muted);
 }
 .blocking-overlay .blocking-spin {
-    border: 4px solid var(--border);
-    border-top: 4px solid var(--accent);
+    border: 3px solid var(--border);
+    border-top: 3px solid var(--accent);
     border-radius: 50%;
-    width: 40px;
-    height: 40px;
+    width: 32px;
+    height: 32px;
     animation: spin 1s linear infinite;
-    margin: 0 auto 12px;
+    margin: 0 auto 10px;
 }
 .blocking-overlay .blocking-progress-track {
-    margin-top: 14px;
-    height: 6px;
+    margin-top: 10px;
+    height: 5px;
     border-radius: 999px;
     background: var(--border);
     overflow: hidden;
@@ -1488,17 +1488,16 @@ input:disabled,textarea:disabled,select:disabled {
     width: 0%;
 }
 .blocking-overlay .blocking-progress-label {
-    margin-top: 6px;
-    font-size: 13.2px;
+    margin-top: 4px;
+    font-size: 12px;
     color: var(--text-muted);
 }
 
 /* ============================================================
    16. AUTH SCREEN
    ============================================================ */
-.auth-shell { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+.auth-shell { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 12px; }
 .auth-card {
-
     width: 100%;
     max-width: 400px;
     background: var(--surface-glass);
@@ -1507,14 +1506,14 @@ input:disabled,textarea:disabled,select:disabled {
     border: 1px solid var(--border-glass);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-lg);
-    padding: 32px;
+    padding: 20px 22px;
     text-align: center;
 }
-.auth-card h1 { font-size: 26.4px; font-weight: 700; margin: 0 0 4px; }
+.auth-card h1 { font-size: 22px; font-weight: 700; margin: 0 0 4px; }
 .auth-card .form-group { text-align: left; }
-.auth-subtitle { color: var(--text-muted); font-size: 15.6px; margin-bottom: 18px; }
-.role-badges { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
-.auth-foot { margin-top: 18px; font-size: 14.4px; color: var(--text-muted); }
+.auth-subtitle { color: var(--text-muted); font-size: 13.5px; margin-bottom: 12px; }
+.role-badges { display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+.auth-foot { margin-top: 14px; font-size: 13px; color: var(--text-muted); }
 .auth-foot a { color: var(--accent); font-weight: 500; text-decoration: none; }
 .auth-foot a:hover { text-decoration: underline; }
 .auth-foot p { margin: 4px 0 0; }
@@ -2071,11 +2070,11 @@ button, a, .brand, .tab, .btn, [role="button"], .settings-toggle, .theme-toggle,
     position: relative;
     background: var(--surface);
     border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 18px 20px;
+    border-radius: 12px;
+    padding: 10px 12px;
     box-shadow: var(--shadow-sm);
     transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease;
-    margin-bottom: 14px;
+    margin-bottom: 8px;
 }
 .edu-card:hover,
 .redbus-card:hover,
@@ -2091,16 +2090,16 @@ button, a, .brand, .tab, .btn, [role="button"], .settings-toggle, .theme-toggle,
 .ribbon-tag {
     position: absolute;
     top: 0;
-    right: 16px;
+    right: 12px;
     background: var(--info-bg);
     color: var(--info);
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 800;
     letter-spacing: 0.02em;
     text-transform: uppercase;
-    padding: 4px 10px;
-    border-bottom-left-radius: 6px;
-    border-bottom-right-radius: 6px;
+    padding: 3px 8px;
+    border-bottom-left-radius: 5px;
+    border-bottom-right-radius: 5px;
     box-shadow: var(--shadow-xs);
 }
 .ribbon-tag.ribbon-blue {
@@ -2127,17 +2126,17 @@ button, a, .brand, .tab, .btn, [role="button"], .settings-toggle, .theme-toggle,
     gap: 4px;
     background: var(--success-bg);
     color: var(--success);
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 700;
-    padding: 3px 8px;
-    border-radius: 6px;
+    padding: 2px 6px;
+    border-radius: 4px;
     line-height: 1;
 }
 .rating-pill-sub {
-    font-size: 11px;
+    font-size: 10px;
     color: var(--text-muted);
     font-weight: 500;
-    margin-top: 2px;
+    margin-top: 1px;
 }
 
 /* 5. Pricing Display */
@@ -2149,11 +2148,11 @@ button, a, .brand, .tab, .btn, [role="button"], .settings-toggle, .theme-toggle,
 .price-original {
     text-decoration: line-through;
     color: var(--text-muted);
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 500;
 }
 .price-final {
-    font-size: 20px;
+    font-size: 17px;
     font-weight: 800;
     color: var(--text);
     letter-spacing: -0.02em;
@@ -2163,35 +2162,35 @@ button, a, .brand, .tab, .btn, [role="button"], .settings-toggle, .theme-toggle,
 .offer-banner-strip {
     background: var(--success-bg);
     border: 1px dashed var(--success);
-    border-radius: 8px;
-    padding: 8px 12px;
-    font-size: 12px;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 11px;
     color: var(--success);
     font-weight: 600;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-top: 10px;
+    margin-top: 6px;
 }
 
 /* 7. Special Offers Coupon Card */
 .coupon-card {
     background: var(--success-bg);
     border: 1px solid var(--success);
-    border-radius: 14px;
-    padding: 14px;
+    border-radius: 10px;
+    padding: 8px 12px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
+    gap: 8px;
 }
 .coupon-code-box {
     border: 1.5px dashed var(--success);
     background: var(--surface-2);
     color: var(--success);
     font-weight: 800;
-    font-size: 13px;
-    padding: 4px 10px;
-    border-radius: 6px;
+    font-size: 12px;
+    padding: 3px 8px;
+    border-radius: 4px;
     letter-spacing: 0.05em;
 }

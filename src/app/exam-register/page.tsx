@@ -128,13 +128,13 @@ function ExamRegisterContent() {
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       
-      <style dangerouslySetInnerHTML={{ __html: ".summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; width: 100%; } .summary-card { padding: 16px; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--border-light); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 8px; } .exam-name-cell { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } @media (max-width: 768px) { .summary-grid { grid-template-columns: repeat(2, 1fr) !important; } .exam-name-cell { max-width: 140px !important; } }" }} />
+      <style dangerouslySetInnerHTML={{ __html: ".summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; width: 100%; } .summary-card { padding: 8px 10px; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--border-light); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 4px; } .exam-name-cell { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } @media (max-width: 768px) { .summary-grid { grid-template-columns: repeat(2, 1fr) !important; } .exam-name-cell { max-width: 140px !important; } }" }} />
 
       {/* Main Roster Body */}
-      <div className="dashboard-container" style={{ maxWidth: '900px', width: '100%', margin: '0 auto', padding: '16px', flex: 1, display: 'flex', flexDirection: 'column', gap: '14px' }}>
+      <div className="dashboard-container" style={{ maxWidth: '900px', width: '100%', margin: '0 auto', padding: '10px 8px', flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
         
         {/* Navigation & Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
           <button
             onClick={() => {
               if (user?.role === 'parent') {
@@ -150,9 +150,9 @@ function ExamRegisterContent() {
               display: 'inline-flex',
               alignItems: 'center',
               gap: '6px',
-              padding: '8px 14px',
+              padding: '5px 10px',
               borderRadius: 'var(--radius)',
-              fontSize: '13px',
+              fontSize: '12px',
               fontWeight: 600,
               cursor: 'pointer',
               background: 'var(--surface)',
@@ -165,10 +165,10 @@ function ExamRegisterContent() {
 
           {data && (
             <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text)' }}>
+              <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text)' }}>
                 Exam Attendance & Performance Register
               </div>
-              <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
+              <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '1px' }}>
                 {data.studentName} • {data.batchName || 'Registered Student'}
               </div>
             </div>
@@ -177,13 +177,13 @@ function ExamRegisterContent() {
 
         {/* Loading and Error Handling States */}
         {isLoading && (
-          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '100px 0', color: 'var(--text-muted)' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '40px 0', color: 'var(--text-muted)' }}>
             <span>Retrieving exam registers...</span>
           </div>
         )}
 
         {error && (
-          <div className="alert-box alert-box-danger" style={{ display: 'block', padding: '16px', borderRadius: 'var(--radius-lg)' }}>
+          <div className="alert-box alert-box-danger" style={{ display: 'block', padding: '10px 12px', borderRadius: 'var(--radius)' }}>
             ⚠️ Error loading exam register records. Please try again or verify permissions.
           </div>
         )}
@@ -194,19 +194,19 @@ function ExamRegisterContent() {
             {/* Exams Table */}
             <div className="card glass" style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', overflow: 'hidden' }}>
               <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12.5px', textAlign: 'left' }}>
                   <thead>
-                    <tr style={{ background: 'var(--bg-soft)', borderBottom: '1px solid var(--border-light)', color: 'var(--text-muted)' }}>
-                      <th style={{ padding: '12px 16px' }}>Date</th>
-                      <th style={{ padding: '12px 16px' }}>Exam Name</th>
-                      <th style={{ padding: '12px 16px', textAlign: 'center' }}>Percentage</th>
-                      <th style={{ padding: '12px 16px', textAlign: 'left' }}>Absence Reason</th>
+                    <tr style={{ background: 'var(--bg-soft)', borderBottom: '1px solid var(--border-light)', color: 'var(--text-muted)', fontSize: '11px' }}>
+                      <th style={{ padding: '6px 10px' }}>Date</th>
+                      <th style={{ padding: '6px 10px' }}>Exam Name</th>
+                      <th style={{ padding: '6px 10px', textAlign: 'center' }}>Percentage</th>
+                      <th style={{ padding: '6px 10px', textAlign: 'left' }}>Absence Reason</th>
                     </tr>
                   </thead>
                   <tbody>
                     {sortedExams.length === 0 ? (
                       <tr>
-                        <td colSpan={4} style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                        <td colSpan={4} style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)' }}>
                           No completed or missed exams recorded for this batch.
                         </td>
                       </tr>
@@ -227,10 +227,10 @@ function ExamRegisterContent() {
                               background: isAbsent ? 'rgba(239, 68, 68, 0.02)' : 'transparent'
                             }}
                           >
-                            <td style={{ padding: '12px 16px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                            <td style={{ padding: '6px 10px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
                               {record.date || '—'}
                             </td>
-                            <td style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--text)' }}>
+                            <td style={{ padding: '6px 10px', fontWeight: 600, color: 'var(--text)' }}>
                               <div 
                                 className="exam-name-cell" 
                                 title={isAbsent ? `${displayName} (Absent - No Scorecard)` : displayName}
@@ -252,19 +252,19 @@ function ExamRegisterContent() {
                                 {displayName}
                               </div>
                             </td>
-                            <td style={{ padding: '12px 16px', textAlign: 'center' }}>
+                            <td style={{ padding: '6px 10px', textAlign: 'center' }}>
                               <span style={getPercentageStyle(record)}>
                                 {isAbsent ? 'Absent' : `${record.percentage}%`}
                               </span>
                             </td>
-                            <td style={{ padding: '12px 16px', textAlign: 'left' }}>
+                            <td style={{ padding: '6px 10px', textAlign: 'left' }}>
                               {isAbsent ? (
                                 record.absenceReason ? (
-                                  <span style={{ fontSize: '11.5px', color: 'var(--text)', fontWeight: 600, background: 'var(--bg-soft)', padding: '2px 8px', borderRadius: '8px', border: '1px solid var(--border-light)' }}>
+                                  <span style={{ fontSize: '11px', color: 'var(--text)', fontWeight: 600, background: 'var(--bg-soft)', padding: '2px 6px', borderRadius: '6px', border: '1px solid var(--border-light)' }}>
                                     {record.absenceReason}
                                   </span>
                                 ) : (
-                                  <span style={{ color: 'var(--danger)', fontSize: '11.5px', fontWeight: 600 }}>Absent</span>
+                                  <span style={{ color: 'var(--danger)', fontSize: '11px', fontWeight: 600 }}>Absent</span>
                                 )
                               ) : (
                                 <span style={{ color: 'var(--text-muted)', fontSize: '11px' }}>—</span>
@@ -283,30 +283,30 @@ function ExamRegisterContent() {
             <div className="summary-grid">
               
               {/* Card 1: Total Exams */}
-              <div className="card glass summary-card" style={{ padding: '12px 14px' }}>
+              <div className="card glass summary-card">
                 <div style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px' }}>Total Exams</div>
-                <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text)', margin: '2px 0' }}>{data.summary.total}</div>
+                <div style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--text)', margin: '1px 0' }}>{data.summary.total}</div>
                 <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Conducted to date</div>
               </div>
 
               {/* Card 2: Attended */}
-              <div className="card glass summary-card" style={{ padding: '12px 14px' }}>
+              <div className="card glass summary-card">
                 <div style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px' }}>Present</div>
-                <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--success)', margin: '2px 0' }}>{data.summary.present}</div>
+                <div style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--success)', margin: '1px 0' }}>{data.summary.present}</div>
                 <div style={{ fontSize: '10px', color: 'var(--success)', fontWeight: 600 }}>Attempted Exams</div>
               </div>
 
               {/* Card 3: Absent */}
-              <div className="card glass summary-card" style={{ padding: '12px 14px' }}>
+              <div className="card glass summary-card">
                 <div style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px' }}>Absent</div>
-                <div style={{ fontSize: '1.4rem', fontWeight: 800, color: data.summary.absent > 0 ? 'var(--danger)' : 'var(--text-muted)', margin: '2px 0' }}>{data.summary.absent}</div>
+                <div style={{ fontSize: '1.3rem', fontWeight: 800, color: data.summary.absent > 0 ? 'var(--danger)' : 'var(--text-muted)', margin: '1px 0' }}>{data.summary.absent}</div>
                 <div style={{ fontSize: '10px', color: data.summary.absent > 0 ? 'var(--danger)' : 'var(--text-muted)', fontWeight: 600 }}>Missed Sessions</div>
               </div>
 
               {/* Card 4: Average Grade */}
-              <div className="card glass summary-card" style={{ padding: '12px 14px' }}>
+              <div className="card glass summary-card">
                 <div style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px' }}>Average Grade</div>
-                <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--accent)', margin: '2px 0' }}>{data.summary.present > 0 ? `${data.summary.averagePercentage}%` : '—'}</div>
+                <div style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--accent)', margin: '1px 0' }}>{data.summary.present > 0 ? `${data.summary.averagePercentage}%` : '—'}</div>
                 <div style={{ fontSize: '10px', color: 'var(--accent)', fontWeight: 600 }}>Performance Parity</div>
               </div>
 

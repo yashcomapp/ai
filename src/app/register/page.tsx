@@ -207,37 +207,37 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="reg-shell" style={{ minHeight: '100vh', display: 'flex', justifyContent: 'center', padding: '24px 16px 80px' }}>
-      <div className="reg-card" style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-lg)', padding: '32px 28px', width: '100%', maxWidth: '520px' }}>
-        <h1>AI @ YASHCOM</h1>
-        <div className="reg-subtitle" style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '24px' }}>
+    <div className="reg-shell" style={{ minHeight: '100vh', display: 'flex', justifyContent: 'center', padding: '12px 10px 40px' }}>
+      <div className="reg-card" style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-lg)', padding: '16px 14px', width: '100%', maxWidth: '520px' }}>
+        <h1 style={{ fontSize: '1.4rem' }}>AI @ YASHCOM</h1>
+        <div className="reg-subtitle" style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.8rem', marginBottom: '12px' }}>
           Student Registration — Fill in your details and wait for admin approval
         </div>
 
         {errorMsg && (
-          <div className="alert-box alert-box-danger" style={{ display: 'block', marginBottom: '20px' }}>
+          <div className="alert-box alert-box-danger" style={{ display: 'block', marginBottom: '10px' }}>
             {errorMsg}
           </div>
         )}
 
         {success ? (
-          <div className="success-state" style={{ textAlign: 'center', padding: '40px 20px' }}>
-            <div className="success-icon" style={{ fontSize: '3rem', marginBottom: '16px' }}>🎉</div>
+          <div className="success-state" style={{ textAlign: 'center', padding: '20px 12px' }}>
+            <div className="success-icon" style={{ fontSize: '2.5rem', marginBottom: '10px' }}>🎉</div>
             <h2>Registration Submitted!</h2>
             <p>Your registration has been sent to the admin for approval.<br />You will be notified once your account is approved.</p>
-            <Link className="btn btn-primary" style={{ display: 'inline-block', marginTop: '16px' }} href="/">
+            <Link className="btn btn-primary" style={{ display: 'inline-block', marginTop: '12px' }} href="/">
               ← Back to Login
             </Link>
           </div>
         ) : (
           <form onSubmit={handleSubmit}>
             {/* BATCH / CLASS */}
-            <div className="section-title" style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '20px 0 10px', paddingBottom: '6px', borderBottom: '1px solid var(--border-light)' }}>
+            <div className="section-title" style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '12px 0 6px', paddingBottom: '4px', borderBottom: '1px solid var(--border-light)' }}>
               🎓 Batch / Class
             </div>
 
             <div className="form-group">
-              <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '4px' }}>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '3px' }}>
                 Select Batch <span className="req" style={{ color: 'var(--danger)' }}>*</span>
               </label>
               <select 
@@ -261,11 +261,11 @@ export default function RegisterPage() {
             </div>
 
             {/* STUDENT DETAILS */}
-            <div className="section-title" style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '20px 0 10px', paddingBottom: '6px', borderBottom: '1px solid var(--border-light)' }}>
+            <div className="section-title" style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '12px 0 6px', paddingBottom: '4px', borderBottom: '1px solid var(--border-light)' }}>
               🧑 Student Details
             </div>
 
-            <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '12px' }}>
+            <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '8px' }}>
               <div className="form-group">
                 <label>Full Name (First & Last) <span className="req" style={{ color: 'var(--danger)' }}>*</span></label>
                 <input 
@@ -282,7 +282,7 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '12px' }}>
+            <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '8px' }}>
               <div className="form-group">
                 <label>Date of Birth <span className="req" style={{ color: 'var(--danger)' }}>*</span></label>
                 <input 
@@ -297,7 +297,7 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
               <div className="form-group">
                 <label>Gender <span className="req" style={{ color: 'var(--danger)' }}>*</span></label>
                 <select 
@@ -331,7 +331,7 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
               <div className="form-group">
                 <label>Mobile Number <span className="req" style={{ color: 'var(--danger)' }}>*</span></label>
                 <input 
@@ -381,11 +381,11 @@ export default function RegisterPage() {
             </div>
 
             {/* PARENT INFO */}
-            <div className="section-title" style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '20px 0 10px', paddingBottom: '6px', borderBottom: '1px solid var(--border-light)' }}>
+            <div className="section-title" style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '12px 0 6px', paddingBottom: '4px', borderBottom: '1px solid var(--border-light)' }}>
               👨‍👩‍👧 Parent / Guardian Information
             </div>
 
-            <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
               <div className="form-group">
                 <label>Parent Name <span className="req" style={{ color: 'var(--danger)' }}>*</span></label>
                 <input 
@@ -414,7 +414,7 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
               <div className="form-group">
                 <label>Parent Mobile <span className="req" style={{ color: 'var(--danger)' }}>*</span></label>
                 <input 
@@ -463,15 +463,15 @@ export default function RegisterPage() {
               type="submit"
               className="btn btn-primary btn-block" 
               disabled={submitting}
-              style={{ marginTop: '24px' }}
+              style={{ marginTop: '16px' }}
             >
               {submitting ? 'Submitting Registration...' : '📤 Submit Registration'}
             </button>
           </form>
         )}
 
-        <div style={{ textAlign: 'center', marginTop: '20px' }}>
-          <Link className="back-link" style={{ fontSize: '0.85rem', color: 'var(--accent)' }} href="/">
+        <div style={{ textAlign: 'center', marginTop: '14px' }}>
+          <Link className="back-link" style={{ fontSize: '0.8rem', color: 'var(--accent)' }} href="/">
             ← Already have an account? Login
           </Link>
         </div>

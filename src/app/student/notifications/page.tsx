@@ -184,19 +184,19 @@ export default function StudentSeenNotificationsPage() {
           borderRadius: 'var(--radius-lg)', 
           border: '1px solid var(--border-light)', 
           borderLeft: config.border,
-          padding: '16px',
+          padding: '10px 12px',
           display: 'flex',
           flexDirection: 'column',
-          gap: '10px',
+          gap: '6px',
           position: 'relative',
           opacity: isSeen ? 0.75 : 1
         }}
       >
         {/* Notice Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px', flexWrap: 'wrap' }}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-              <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 800, color: 'var(--text)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+              <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: 'var(--text)' }}>
                 {notice.title}
               </h3>
               <span style={{ fontSize: '9px', fontWeight: 800, background: config.badgeBg, color: config.badgeColor, padding: '2px 8px', borderRadius: '12px' }}>
@@ -338,7 +338,7 @@ export default function StudentSeenNotificationsPage() {
         </div>
       </div>
 
-      <main style={{ flex: 1, padding: '24px 12px', maxWidth: '800px', width: '100%', margin: '0 auto' }}>
+      <main style={{ flex: 1, padding: '10px 8px', maxWidth: '800px', width: '100%', margin: '0 auto' }}>
       <style>{`
         @keyframes skeleton-blink {
           0% { opacity: 0.6; }
@@ -351,20 +351,20 @@ export default function StudentSeenNotificationsPage() {
       `}</style>
 
       {error && (
-        <div className="alert-box alert-box-danger" style={{ display: 'block', marginBottom: '20px' }}>
+        <div className="alert-box alert-box-danger" style={{ display: 'block', marginBottom: '10px' }}>
           {error}
         </div>
       )}
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
         
         {/* Page Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', borderBottom: '1px solid var(--border-light)', paddingBottom: '14px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', borderBottom: '1px solid var(--border-light)', paddingBottom: '8px' }}>
           <div>
-            <h2 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 800, color: 'var(--text)' }}>
+            <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: 'var(--text)' }}>
               📢 Student Notice Board
             </h2>
-            <p style={{ margin: '4px 0 0 0', fontSize: '11.5px', color: 'var(--text-muted)' }}>
+            <p style={{ margin: '2px 0 0 0', fontSize: '11px', color: 'var(--text-muted)' }}>
               Stay updated with the latest schedules, announcements, and reminders.
             </p>
           </div>
@@ -372,7 +372,7 @@ export default function StudentSeenNotificationsPage() {
             <button 
               className="btn btn-secondary btn-sm"
               onClick={handleClearAllSeen}
-              style={{ fontSize: '11px', fontWeight: 700, padding: '6px 14px', background: 'var(--danger-bg)', color: 'var(--danger)', border: '1px solid var(--danger-border)' }}
+              style={{ fontSize: '11px', fontWeight: 700, padding: '4px 10px', background: 'var(--danger-bg)', color: 'var(--danger)', border: '1px solid var(--danger-border)' }}
             >
               🗑️ Clear Read Archive
             </button>
@@ -383,29 +383,29 @@ export default function StudentSeenNotificationsPage() {
         {loading ? (
           renderListSkeleton()
         ) : notices.length === 0 ? (
-          <div className="card" style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', padding: '40px 20px', textAlign: 'center' }}>
-            <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>📭</div>
-            <h4 style={{ margin: '0 0 4px 0', fontSize: '14px', fontWeight: 700, color: 'var(--text)' }}>No Announcements</h4>
+          <div className="card" style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', padding: '20px 12px', textAlign: 'center' }}>
+            <div style={{ fontSize: '2rem', marginBottom: '8px' }}>📭</div>
+            <h4 style={{ margin: '0 0 4px 0', fontSize: '13px', fontWeight: 700, color: 'var(--text)' }}>No Announcements</h4>
             <p style={{ margin: 0, fontSize: '11px', color: 'var(--text-muted)' }}>
               There are no announcements currently published.
             </p>
             <button 
               className="btn btn-primary btn-sm" 
               onClick={() => router.push('/student')} 
-              style={{ marginTop: '16px', fontSize: '12px', fontWeight: 700 }}
+              style={{ marginTop: '12px', fontSize: '11.5px', fontWeight: 700 }}
             >
               🏠 Go to Dashboard
             </button>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             {/* 1. Unread section */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <h4 style={{ margin: '0 0 4px 0', fontSize: '13px', fontWeight: 800, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <h4 style={{ margin: '0 0 2px 0', fontSize: '12px', fontWeight: 800, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                 New Announcements ({unreadNotices.length})
               </h4>
               {unreadNotices.length === 0 ? (
-                <div className="card" style={{ background: 'var(--bg-soft)', borderRadius: 'var(--radius-md)', padding: '16px', textAlign: 'center', border: '1px dashed var(--border-light)', fontSize: '12px', color: 'var(--text-muted)' }}>
+                <div className="card" style={{ background: 'var(--bg-soft)', borderRadius: 'var(--radius-md)', padding: '10px 12px', textAlign: 'center', border: '1px dashed var(--border-light)', fontSize: '11.5px', color: 'var(--text-muted)' }}>
                   🎉 You have read all notifications.
                 </div>
               ) : (
@@ -415,8 +415,8 @@ export default function StudentSeenNotificationsPage() {
 
             {/* 2. Read Archive section */}
             {readNotices.length > 0 && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', borderTop: '1px dashed var(--border-light)', paddingTop: '20px' }}>
-                <h4 style={{ margin: '0 0 4px 0', fontSize: '13px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', borderTop: '1px dashed var(--border-light)', paddingTop: '10px' }}>
+                <h4 style={{ margin: '0 0 2px 0', fontSize: '12px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                   Read History Archive ({readNotices.length})
                 </h4>
                 {readNotices.map(notice => renderNoticeCard(notice, true))}

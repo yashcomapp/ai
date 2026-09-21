@@ -268,12 +268,12 @@ a:hover {
     width: 100%;
     max-width: var(--content-max);
     margin: 0 auto;
-    padding: 8px 10px 60px;
+    padding: 6px 8px 32px;
 }
 
 @media (min-width: 768px) {
     .main-content {
-        padding: 10px 14px 60px;
+        padding: 8px 12px 32px;
     }
 }
 

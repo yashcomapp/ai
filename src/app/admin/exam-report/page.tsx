@@ -1272,24 +1272,35 @@ function ExamReportContent() {
                   Select absent students to schedule a make-up or reassign this exam specifically to them.
                 </p>
                 
-                {/* Select All Toggle */}
-                <div style={{ display: 'flex', gap: '6px', alignItems: 'center', borderBottom: '1px solid var(--border-light)', paddingBottom: '6px', marginBottom: '2px' }}>
-                  <input 
-                    type="checkbox" 
-                    id="reassign-select-all"
-                    checked={reassignSelectedStudents.size === notStartedStudents.length}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setReassignSelectedStudents(new Set(notStartedStudents.map(s => s.code)));
-                      } else {
-                        setReassignSelectedStudents(new Set());
-                      }
-                    }}
-                    style={{ cursor: 'pointer' }}
-                  />
-                  <label htmlFor="reassign-select-all" style={{ fontSize: '11.5px', fontWeight: 'bold', cursor: 'pointer', userSelect: 'none' }}>
-                    Select All ({notStartedStudents.length})
-                  </label>
+                {/* Select All Toggle & Setup Reassignment Button */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-light)', paddingBottom: '6px', marginBottom: '4px', flexWrap: 'wrap', gap: '8px' }}>
+                  <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                    <input 
+                      type="checkbox" 
+                      id="reassign-select-all"
+                      checked={reassignSelectedStudents.size === notStartedStudents.length && notStartedStudents.length > 0}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setReassignSelectedStudents(new Set(notStartedStudents.map(s => s.code)));
+                        } else {
+                          setReassignSelectedStudents(new Set());
+                        }
+                      }}
+                      style={{ cursor: 'pointer' }}
+                    />
+                    <label htmlFor="reassign-select-all" style={{ fontSize: '11.5px', fontWeight: 'bold', cursor: 'pointer', userSelect: 'none' }}>
+                      Select All ({notStartedStudents.length})
+                    </label>
+                  </div>
+
+                  <button 
+                    className="btn btn-primary"
+                    disabled={reassignSelectedStudents.size === 0}
+                    onClick={openReassignModal}
+                    style={{ fontSize: '11.5px', padding: '4px 10px', display: 'flex', alignItems: 'center', gap: '6px', height: '28px', borderRadius: 'var(--radius-pill, 999px)' }}
+                  >
+                    🔄 Setup Reassignment ({reassignSelectedStudents.size})
+                  </button>
                 </div>
                 
                 {/* Scrollable list of students */}
@@ -1331,17 +1342,6 @@ function ExamReportContent() {
                       <span style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{s.name}</span>
                     </label>
                   ))}
-                </div>
-                
-                <div style={{ display: 'flex', justifyContent: 'flex-start', marginTop: '2px' }}>
-                  <button 
-                    className="btn btn-primary"
-                    disabled={reassignSelectedStudents.size === 0}
-                    onClick={openReassignModal}
-                    style={{ fontSize: '11.5px', padding: '5px 12px', display: 'flex', alignItems: 'center', gap: '6px' }}
-                  >
-                    🔄 Setup Reassignment ({reassignSelectedStudents.size})
-                  </button>
                 </div>
               </>
             )}

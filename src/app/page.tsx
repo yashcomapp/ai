@@ -71,7 +71,7 @@ export default function LoginPage() {
 
         /* Hero Section */
         .hero-section {
-          padding: 40px 16px 24px;
+          padding: 24px 14px 16px;
           text-align: center;
           display: flex;
           flex-direction: column;
@@ -160,63 +160,63 @@ export default function LoginPage() {
         }
         .btn-hero-secondary:hover {
           background: var(--surface-2);
-          border-color: var(--border-light);
+          border-color: var(--border-focus);
         }
 
-        /* Features Section */
-        .features-section {
-          padding: 20px 16px 40px;
-          max-width: 1000px;
-          width: 100%;
+        /* Feature Cards Grid */
+        .features-container {
+          padding: 16px 16px 32px;
+          max-width: 1080px;
           margin: 0 auto;
+          width: 100%;
           box-sizing: border-box;
         }
-        .features-header {
-          text-align: center;
-          margin-bottom: 20px;
-        }
         .features-heading {
-          font-size: 22px;
+          text-align: center;
+          font-size: 20px;
           font-weight: 800;
           color: var(--text);
-          line-height: 1.3;
-          margin: 0 0 6px;
-        }
-        .features-sub {
-          font-size: 13px;
-          color: var(--text-muted);
-          margin: 0;
+          margin-bottom: 16px;
         }
         .cards-grid {
           display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 12px;
+          grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+          gap: 14px;
         }
-        .landing-card {
-          border-radius: var(--radius);
-          padding: 16px;
+        .feature-card {
+          background: var(--surface);
+          border: 1px solid var(--border-light);
+          border-radius: var(--radius-md);
+          padding: 16px 14px;
+          box-shadow: var(--shadow-sm);
+          transition: all 0.2s ease;
           display: flex;
           flex-direction: column;
-          gap: 8px;
-          box-shadow: var(--shadow-sm);
-          transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
-        .landing-card:hover {
+        .feature-card:hover {
           transform: translateY(-2px);
           box-shadow: var(--shadow-md);
+          border-color: var(--border-focus);
         }
-        .landing-card-header {
+        .feature-icon-wrapper {
+          width: 40px;
+          height: 40px;
+          border-radius: var(--radius);
+          background: var(--accent-soft);
+          color: var(--accent);
           display: flex;
           align-items: center;
-          gap: 6px;
+          justify-content: center;
+          font-size: 20px;
+          margin-bottom: 12px;
         }
-        .landing-card-title {
-          font-size: 14px;
-          font-weight: 800;
-          margin: 0;
-          line-height: 1.2;
+        .feature-title {
+          font-size: 15px;
+          font-weight: 700;
+          color: var(--text);
+          margin: 0 0 6px;
         }
-        .landing-card-desc {
+        .feature-desc {
           font-size: 12.5px;
           color: var(--text-secondary);
           line-height: 1.45;
@@ -225,7 +225,7 @@ export default function LoginPage() {
 
         /* Footer */
         .landing-footer {
-          padding: 16px 20px;
+          padding: 12px 16px;
           text-align: center;
           background: var(--surface);
           border-top: 1px solid var(--border-light);
@@ -240,7 +240,7 @@ export default function LoginPage() {
 
         @media (max-width: 768px) {
           .hero-section {
-            padding: 24px 16px 16px;
+            padding: 16px 12px 12px;
           }
           .hero-title {
             font-size: 26px;
