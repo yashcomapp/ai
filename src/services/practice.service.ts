@@ -269,6 +269,9 @@ export class PracticeService {
       });
     });
 
+    let practiceNumber = 1;
+    let resolvedTopicName = topicCode;
+
     if (!isAlreadySubmitted) {
       // Write a masteryExamLog document for audit trail
       await adminDb.collection('masteryExamLog').doc(logId).set({
@@ -303,6 +306,7 @@ export class PracticeService {
           subjectName = sData.subjectName || sData.subject || subjectName;
           chapterName = sData.chapterName || sData.chapterTitle || sData.chapter || (sData.chapterNumber ? (String(sData.chapterNumber).startsWith('Chapter') ? String(sData.chapterNumber) : `Chapter ${sData.chapterNumber}`) : chapterName);
         }
+        resolvedTopicName = topicName;
 
         const strengths: string[] = [];
         const needsAttention: string[] = [];
@@ -354,11 +358,11 @@ export class PracticeService {
           suspiciousLevel = 'yellow';
         }
 
-        // Query existing parentReviews count for this student to determine the sequential practiceNumber
-        let practiceNumber = 1;
+        // Query existing parentReviews count for this student & topic to determine the sequential practiceNumber
         try {
           const countSnap = await adminDb.collection('parentReviews')
             .where('studentCode', '==', studentCode)
+            .where('topicCode', '==', topicCode)
             .count()
             .get();
           practiceNumber = (countSnap.data().count || 0) + 1;
@@ -366,6 +370,7 @@ export class PracticeService {
           console.warn('Failed to calculate practice test sequence number:', cErr);
         }
 
+        const now = new Date();
         await adminDb.collection('parentReviews').doc(logId).set({
           studentCode,
           practiceSessionId: logId,
@@ -394,7 +399,9 @@ export class PracticeService {
           strengths: strengths.slice(0, 3),
           needsAttention: needsAttention.slice(0, 3),
           startedAt: new Date(Date.now() - (durationSpent || 0) * 1000),
-          createdAt: new Date(),
+          createdAt: now,
+          timestamp: now.toISOString(),
+          submittedAt: now,
           parentStatus: 'pending',
           practiceNumber: practiceNumber,
           questions: evaluations,
@@ -403,7 +410,7 @@ export class PracticeService {
             questionCode: e.questionCode || '',
             questionText: e.text || e.assertion || '',
             text: e.text || e.assertion || '',
-            type: e.type || 'single_mcq',
+            type: e.type || 'OSC',
             options: e.options || [],
             userAnswer: e.userAnswer ?? '',
             correctAnswer: e.correctAnswer ?? '',
@@ -433,7 +440,7 @@ export class PracticeService {
           scorePercent,
           reviewId: logId,
           startedAt: new Date(Date.now() - (durationSpent || 0) * 1000),
-          completedAt: new Date(),
+          completedAt: now,
           durationSpentSec: durationSpent || 0,
           tabViolations: violations?.tabOutCount || 0,
           gazeViolations: violations?.lookingAwayCount || 0
@@ -457,6 +464,10 @@ export class PracticeService {
       disputedCount,
       mastery: finalMastery,
       confidence: finalConfidence,
+      practiceNumber,
+      topicCode,
+      topicName: resolvedTopicName,
+      completedAt: new Date().toISOString(),
       questions: evaluations
     };
   }

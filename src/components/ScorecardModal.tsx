@@ -63,6 +63,8 @@ export interface DetailedScorecard {
   subject?: string;
   chapter?: string;
   topicName?: string;
+  topicCode?: string;
+  practiceNumber?: number | null;
   violations?: {
     screenshots?: string[];
   };
@@ -116,9 +118,16 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
       <div className="modal-content" style={{ background: 'var(--surface-popover)', border: '1px solid var(--border-popover)', borderRadius: 'var(--radius-lg)', maxWidth: '850px', width: '100%', height: 'fit-content', maxHeight: '92vh', display: 'flex', flexDirection: 'column', overflowY: 'hidden' }}>
         
         <div className="modal-header" style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 'bold' }}>
-            📊 {scorecard?.examType === 'practice' ? 'Practice Review Scorecard' : 'Exam Review Scorecard'}
-          </h4>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 'bold' }}>
+              📊 {scorecard?.examType === 'practice' ? 'Practice Review Scorecard' : 'Exam Review Scorecard'}
+            </h4>
+            {scorecard?.examType === 'practice' && scorecard?.practiceNumber && (
+              <span style={{ background: 'var(--accent)', color: '#fff', fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '12px' }}>
+                Practice #{scorecard.practiceNumber}
+              </span>
+            )}
+          </div>
           <button className="close-modal" onClick={onClose} style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '1.2rem', color: 'var(--text-muted)' }}>✕</button>
         </div>
 
@@ -145,10 +154,19 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
               }}>
                 <div style={{ fontSize: '11px', lineHeight: '1.3' }}>
                   <strong style={{ color: 'var(--text-muted)' }}>{scorecard.examType === 'practice' ? 'Topic' : 'Exam ID'}:</strong>{' '}
-                  <span style={{ fontWeight: 600 }}>{scorecard.examType === 'practice' ? scorecard.topicName || scorecard.examName : scorecard.examName}</span>
+                  <span style={{ fontWeight: 600 }}>
+                    {scorecard.examType === 'practice' ? (scorecard.topicName || scorecard.examName) : scorecard.examName}
+                    {scorecard.examType === 'practice' && scorecard.topicCode && scorecard.topicCode !== (scorecard.topicName || scorecard.examName) ? ` (${scorecard.topicCode})` : ''}
+                  </span>
                 </div>
+                {scorecard.examType === 'practice' && (scorecard.practiceNumber !== undefined && scorecard.practiceNumber !== null) && (
+                  <div style={{ fontSize: '11px', lineHeight: '1.3' }}>
+                    <strong style={{ color: 'var(--text-muted)' }}>Practice Set:</strong>{' '}
+                    <span style={{ fontWeight: 700, color: 'var(--accent)' }}>Practice #{scorecard.practiceNumber}</span>
+                  </div>
+                )}
                 <div style={{ fontSize: '11px', lineHeight: '1.3' }}>
-                  <strong style={{ color: 'var(--text-muted)' }}>Date:</strong>{' '}
+                  <strong style={{ color: 'var(--text-muted)' }}>Date & Time:</strong>{' '}
                   <span style={{ fontWeight: 600 }}>{formatDate(scorecard.submittedAt)}</span>
                 </div>
                 <div style={{ fontSize: '11px', lineHeight: '1.3' }}>

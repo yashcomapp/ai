@@ -679,7 +679,7 @@ export async function GET(req: NextRequest) {
         }
       }
 
-      const resolvedSubmittedAt = reviewData.submittedAt || reviewData.completedAt || reviewData.processedAt || null;
+      const resolvedSubmittedAt = reviewData.submittedAt || reviewData.completedAt || reviewData.createdAt || reviewData.timestamp || reviewData.updatedAt || reviewData.startedAt || reviewData.processedAt || null;
 
       return NextResponse.json({
         id,
@@ -690,11 +690,12 @@ export async function GET(req: NextRequest) {
         totalMarks: reviewData.totalMarks || reviewData.totalQuestions || 0,
         percentage: reviewData.percentage ?? Math.round(((reviewData.score || 0) / (reviewData.totalMarks || reviewData.totalQuestions || 1)) * 100),
         durationSpent: reviewData.durationSpent || reviewData.totalSeconds || 0,
-        submittedAt: resolvedSubmittedAt?.toDate ? resolvedSubmittedAt.toDate().toISOString() : resolvedSubmittedAt || null,
+        submittedAt: resolvedSubmittedAt?.toDate ? resolvedSubmittedAt.toDate().toISOString() : (resolvedSubmittedAt ? (typeof resolvedSubmittedAt === 'string' ? resolvedSubmittedAt : new Date(resolvedSubmittedAt).toISOString()) : null),
         tabViolations: reviewData.tabViolations || 0,
         subject,
         chapter,
-        topicName,
+        topicName: topicName || reviewData.topicName || '',
+        topicCode: reviewData.topicCode || reviewData.examCode || '',
         practiceNumber: reviewData.practiceNumber || null,
         violations: reviewData.violations || null,
         proctoringViolations: reviewData.proctoringViolations || reviewData.violations || {},

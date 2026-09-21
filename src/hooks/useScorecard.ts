@@ -24,6 +24,8 @@ export interface DetailedScorecard {
   subject?: string;
   chapter?: string;
   topicName?: string;
+  topicCode?: string;
+  practiceNumber?: number | null;
   violations?: {
     screenshots?: string[];
   };
