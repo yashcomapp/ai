@@ -1,6 +1,6 @@
 import { adminDb } from '@/lib/firebase/admin';
 import { IntegrityService } from '@/services/integrity.service';
-import { deriveTopicCodeFromQuestionCode } from '@/lib/questionTypes';
+import { deriveTopicCodeFromQuestionCode, parseTopicCode } from '@/lib/questionTypes';
 import { getFromCache, setInCache } from '@/lib/firebase/cache';
 
 function determineExamType(data: any): string {
@@ -90,9 +90,34 @@ export async function getStudentResultsData(
         const tCode = deriveTopicCodeFromQuestionCode(code);
         if (tCode) {
           allTopicCodes.add(tCode);
+          const parsed = parseTopicCode(tCode);
+          if (parsed && parsed.topicNumber && parsed.topicNumber.includes('.')) {
+            const parts = parsed.topicNumber.split('.');
+            if (parts.length > 2) {
+              const parentNum = parts.slice(0, 2).join('.');
+              allTopicCodes.add(`${parsed.boardCode}-${parsed.classNum}-${parsed.subjectCode}-${parsed.chapterNumber}-${parentNum}`);
+            }
+          }
         }
       }
     });
+  });
+
+  // Extract topic codes from practice reviews (parentReviews)
+  parentReviewsSnap.docs.forEach(doc => {
+    const data = doc.data();
+    const tCode = data.topicCode || '';
+    if (tCode) {
+      allTopicCodes.add(tCode);
+      const parsed = parseTopicCode(tCode);
+      if (parsed && parsed.topicNumber && parsed.topicNumber.includes('.')) {
+        const parts = parsed.topicNumber.split('.');
+        if (parts.length > 2) {
+          const parentNum = parts.slice(0, 2).join('.');
+          allTopicCodes.add(`${parsed.boardCode}-${parsed.classNum}-${parsed.subjectCode}-${parsed.chapterNumber}-${parentNum}`);
+        }
+      }
+    }
   });
 
   const uniqueTopicCodes = Array.from(allTopicCodes);
@@ -227,10 +252,34 @@ export async function getStudentResultsData(
                                data.status === 'approved' || 
                                evaluationsSnap.docs.some(e => e.data().attemptId === doc.id || e.data().legacyId === doc.id);
 
+    const tCode = data.topicCode || '';
+    let sData = syllabusMap.get(tCode);
+    if (!sData && tCode) {
+      const parsed = parseTopicCode(tCode);
+      if (parsed && parsed.topicNumber && parsed.topicNumber.includes('.')) {
+        const parts = parsed.topicNumber.split('.');
+        if (parts.length > 2) {
+          const parentNum = parts.slice(0, 2).join('.');
+          const parentCode = `${parsed.boardCode}-${parsed.classNum}-${parsed.subjectCode}-${parsed.chapterNumber}-${parentNum}`;
+          sData = syllabusMap.get(parentCode);
+        }
+      }
+    }
+
+    const resolvedTopicName = data.topicName && data.topicName !== tCode && data.topicName !== 'Practice Set' 
+      ? data.topicName 
+      : (sData?.topicName || sData?.title || sData?.name || data.topicName || 'Practice Session');
+    const resolvedSubjectName = data.subjectName && data.subjectName !== 'General' 
+      ? data.subjectName 
+      : (sData?.subjectName || sData?.subject || data.subjectName || 'General');
+    const resolvedChapterName = data.chapterName && data.chapterName !== 'General' && data.chapterName !== 'General Chapter' 
+      ? data.chapterName 
+      : (sData?.chapterName || sData?.chapterTitle || sData?.chapter || data.chapterName || 'General Chapter');
+
     return {
       id: doc.id,
-      examCode: data.topicCode || '',
-      examName: data.topicName || 'Practice Session',
+      examCode: tCode,
+      examName: resolvedTopicName,
       examType: 'practice',
       score,
       totalQuestions: total,
@@ -240,9 +289,9 @@ export async function getStudentResultsData(
       submittedAt: resolvedSubmittedAt?.toDate ? resolvedSubmittedAt.toDate().toISOString() : resolvedSubmittedAt || null,
       rawTimestamp,
       status: isPracticeApproved ? 'approved' : (data.parentStatus || data.status || 'pending'),
-      subject: data.subjectName || 'General',
-      chapter: data.chapterName || 'General Chapter',
-      topicName: data.topicName || '',
+      subject: resolvedSubjectName,
+      chapter: resolvedChapterName,
+      topicName: resolvedTopicName,
       suspiciousLevel: data.suspiciousLevel || 'green'
     };
   });

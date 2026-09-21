@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole, verifyAnyRole } from '@/lib/auth';
 import { IntegrityService } from '@/services/integrity.service';
-import { deriveTopicCodeFromQuestionCode } from '@/lib/questionTypes';
+import { deriveTopicCodeFromQuestionCode, parseTopicCode } from '@/lib/questionTypes';
 import { getStudentResultsData } from '@/lib/resultsDb';
 export const dynamic = 'force-dynamic';
 
@@ -640,16 +640,40 @@ export async function GET(req: NextRequest) {
       let chapter = reviewData.chapter || '';
       let topicName = '';
 
-      if (determineExamType(reviewData) === 'practice' && reviewData.examName) {
-        try {
-          const tSnap = await adminDb.collection('syllabusTopicIndex').doc(reviewData.examName).get();
-          if (tSnap.exists) {
-            const tData = tSnap.data()!;
-            subject = tData.subjectName || '';
-            chapter = tData.chapterName || '';
-            topicName = tData.topicName || '';
-          }
-        } catch {}
+      if (determineExamType(reviewData) === 'practice') {
+        const lookupCode = reviewData.topicCode || reviewData.examCode || reviewData.examName;
+        if (lookupCode) {
+          try {
+            let tSnap = await adminDb.collection('syllabusTopicIndex').doc(lookupCode).get();
+            if (!tSnap.exists) {
+              const parsed = parseTopicCode(lookupCode);
+              if (parsed && parsed.topicNumber && parsed.topicNumber.includes('.')) {
+                const parts = parsed.topicNumber.split('.');
+                if (parts.length > 2) {
+                  const parentNum = parts.slice(0, 2).join('.');
+                  const parentCode = `${parsed.boardCode}-${parsed.classNum}-${parsed.subjectCode}-${parsed.chapterNumber}-${parentNum}`;
+                  const pSnap = await adminDb.collection('syllabusTopicIndex').doc(parentCode).get();
+                  if (pSnap.exists) tSnap = pSnap;
+                }
+              }
+            }
+            if (tSnap.exists) {
+              const tData = tSnap.data()!;
+              subject = tData.subjectName || tData.subject || subject;
+              chapter = tData.chapterName || tData.chapter || chapter;
+              topicName = tData.topicName || tData.title || tData.name || topicName;
+            }
+          } catch {}
+        }
+        if (!topicName && reviewData.topicName && reviewData.topicName !== lookupCode) {
+          topicName = reviewData.topicName;
+        }
+        if (!subject || subject === 'General') {
+          subject = reviewData.subjectName || reviewData.subject || subject;
+        }
+        if (!chapter || chapter === 'General' || chapter === 'General Chapter') {
+          chapter = reviewData.chapterName || reviewData.chapter || chapter;
+        }
       } else {
         // Resolve topic names for formal exams from question details
         const examTopics = new Set<string>();

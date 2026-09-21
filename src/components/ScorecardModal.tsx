@@ -152,6 +152,18 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
                 marginBottom: '10px',
                 border: '1px solid var(--border-light)'
               }}>
+                {scorecard.subject && scorecard.subject !== 'General' && (
+                  <div style={{ fontSize: '11px', lineHeight: '1.3' }}>
+                    <strong style={{ color: 'var(--text-muted)' }}>Subject:</strong>{' '}
+                    <span style={{ fontWeight: 600 }}>{scorecard.subject}</span>
+                  </div>
+                )}
+                {scorecard.chapter && scorecard.chapter !== 'General' && scorecard.chapter !== 'General Chapter' && (
+                  <div style={{ fontSize: '11px', lineHeight: '1.3' }}>
+                    <strong style={{ color: 'var(--text-muted)' }}>Chapter:</strong>{' '}
+                    <span style={{ fontWeight: 600 }}>{scorecard.chapter}</span>
+                  </div>
+                )}
                 <div style={{ fontSize: '11px', lineHeight: '1.3' }}>
                   <strong style={{ color: 'var(--text-muted)' }}>{scorecard.examType === 'practice' ? 'Topic' : 'Exam ID'}:</strong>{' '}
                   <span style={{ fontWeight: 600 }}>

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import * as admin from 'firebase-admin';
 import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole } from '@/lib/auth';
-import { deriveTopicCodeFromQuestionCode } from '@/lib/questionTypes';
+import { deriveTopicCodeFromQuestionCode, parseTopicCode } from '@/lib/questionTypes';
 import { ReportCacheManager } from '@/lib/reportCache';
 import { chunkArray } from '@/lib/firestoreUtils';
 import { getDateKeyIST } from '@/lib/dateUtils';
@@ -195,7 +195,17 @@ export async function GET(req: NextRequest) {
     // Topic codes from practice reviews
     pracSnaps.docs.forEach(doc => {
       const tc = doc.data().topicCode;
-      if (tc) allTopicCodes.add(tc);
+      if (tc) {
+        allTopicCodes.add(tc);
+        const parsed = parseTopicCode(tc);
+        if (parsed && parsed.topicNumber && parsed.topicNumber.includes('.')) {
+          const parts = parsed.topicNumber.split('.');
+          if (parts.length > 2) {
+            const parentNum = parts.slice(0, 2).join('.');
+            allTopicCodes.add(`${parsed.boardCode}-${parsed.classNum}-${parsed.subjectCode}-${parsed.chapterNumber}-${parentNum}`);
+          }
+        }
+      }
     });
 
     // Topic codes from objective reviews (derived from questionCodes / questionDetails)
@@ -328,7 +338,18 @@ export async function GET(req: NextRequest) {
       const status = data.parentStatus || (evalMap.has(doc.id) ? 'approved' : 'pending');
       const resolvedActor = data.reviewedByActor || evalMap.get(doc.id)?.reviewedByActor || (status === 'approved' ? 'parent' : null);
       
-      const sData = syllabusMap.get(data.topicCode || '');
+      let sData = syllabusMap.get(data.topicCode || '');
+      if (!sData && data.topicCode) {
+        const parsed = parseTopicCode(data.topicCode);
+        if (parsed && parsed.topicNumber && parsed.topicNumber.includes('.')) {
+          const parts = parsed.topicNumber.split('.');
+          if (parts.length > 2) {
+            const parentNum = parts.slice(0, 2).join('.');
+            const parentCode = `${parsed.boardCode}-${parsed.classNum}-${parsed.subjectCode}-${parsed.chapterNumber}-${parentNum}`;
+            sData = syllabusMap.get(parentCode);
+          }
+        }
+      }
       let displayName = data.topicName;
       if (!displayName || displayName === data.topicCode || displayName === 'Practice Set' || displayName.startsWith('MH-') || displayName.startsWith('CBSE-')) {
         displayName = sData?.topicName || sData?.title || sData?.name || displayName || 'Practice Set';

@@ -299,7 +299,22 @@ export class PracticeService {
         let subjectName = 'General';
         let chapterName = 'General';
         
-        const syllabusSnap = await adminDb.collection('syllabusTopicIndex').doc(topicCode).get();
+        let syllabusSnap = await adminDb.collection('syllabusTopicIndex').doc(topicCode).get();
+        if (!syllabusSnap.exists) {
+          const parsed = parseTopicCode(topicCode);
+          if (parsed && parsed.topicNumber && parsed.topicNumber.includes('.')) {
+            const parts = parsed.topicNumber.split('.');
+            if (parts.length > 2) {
+              const parentNum = parts.slice(0, 2).join('.');
+              const parentCode = `${parsed.boardCode}-${parsed.classNum}-${parsed.subjectCode}-${parsed.chapterNumber}-${parentNum}`;
+              const pSnap = await adminDb.collection('syllabusTopicIndex').doc(parentCode).get();
+              if (pSnap.exists) {
+                syllabusSnap = pSnap;
+              }
+            }
+          }
+        }
+
         if (syllabusSnap.exists) {
           const sData = syllabusSnap.data()!;
           topicName = sData.topicName || sData.title || sData.name || topicName;

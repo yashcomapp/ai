@@ -108,15 +108,29 @@ async function runIndexRebuild() {
         if (opsInBatch >= MAX_BATCH_OPS) await flushBatch();
 
         // Subtopics indexing
-        for (const subtopic of subtopics) {
-          const subNum = subtopic.number;
-          if (!subNum) continue;
-          const subName = subtopic.name || '';
+        for (let sIdx = 0; sIdx < subtopics.length; sIdx++) {
+          const subtopic = subtopics[sIdx];
+          let subNum = '';
+          let subName = '';
+          let subTarget = 30;
+          let subClassification = 'minor';
+
+          if (typeof subtopic === 'string') {
+            subNum = `${topicNum}.${sIdx + 1}`;
+            subName = subtopic.trim();
+            subTarget = 30;
+            subClassification = 'minor';
+          } else if (subtopic && typeof subtopic === 'object') {
+            subNum = subtopic.number ? String(subtopic.number) : `${topicNum}.${sIdx + 1}`;
+            subName = subtopic.name || subtopic.title || '';
+            subTarget = Number(subtopic.targetQuestions) || 30;
+            subClassification = subtopic.topicClassification || (subTarget <= 35 ? 'minor' : (subTarget >= 55 ? 'major' : 'medium'));
+          }
+
+          if (!subNum || !subName) continue;
 
           const subCode = `${boardCode}-${classNum}-${subjectCode}-${chapterNum}-${subNum}`;
           validCodes.add(subCode);
-          const subTarget = Number(subtopic.targetQuestions) || 30;
-          const subClassification = subtopic.topicClassification || (subTarget <= 35 ? 'minor' : (subTarget >= 55 ? 'major' : 'medium'));
 
           const subRef = adminDb.collection('syllabusTopicIndex').doc(subCode);
           batch.set(subRef, {
@@ -124,10 +138,15 @@ async function runIndexRebuild() {
             classCode: String(classNum),
             subjectCode,
             subjectName,
+            subject: subjectName,
             chapterNumber: String(chapterNum),
             chapterName,
+            chapter: chapterName,
+            chapterTitle: chapterName,
             topicNumber: String(subNum),
             topicName: subName,
+            title: subName,
+            name: subName,
             parentTopicCode: topicCode,
             topicCode: subCode,
             targetQuestions: subTarget,
