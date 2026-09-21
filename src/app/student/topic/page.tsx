@@ -86,6 +86,7 @@ function TopicPracticeContent() {
   const [sessionId] = useState(() => `sess_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
   const [userAnswers, setUserAnswers] = useState<string[]>([]);
   const [submittedAnswers, setSubmittedAnswers] = useState<boolean[]>([]);
+  const [questionResults, setQuestionResults] = useState<(boolean | null)[]>([]);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [feedbackCorrect, setFeedbackCorrect] = useState(false);
   const [isWindowFocused, setIsWindowFocused] = useState(true);
@@ -239,6 +240,7 @@ function TopicPracticeContent() {
         setData(pData);
         setUserAnswers(new Array(pData.questions.length).fill(''));
         setSubmittedAnswers(new Array(pData.questions.length).fill(false));
+        setQuestionResults(new Array(pData.questions.length).fill(null));
         
         if (pData.masteryAtStart >= 80 && (pData.totalAttemptedCount || 0) < 30 && !unlockedSelected) {
           setShowUnlockModal(true);
@@ -617,6 +619,10 @@ function TopicPracticeContent() {
     const submitted = [...submittedAnswers];
     submitted[currentQIndex] = true;
     setSubmittedAnswers(submitted);
+
+    const results = [...questionResults];
+    results[currentQIndex] = isCorrect;
+    setQuestionResults(results);
 
     if (!isCorrect) {
       const qType = String(q.type || '').toLowerCase();
@@ -1324,20 +1330,34 @@ function TopicPracticeContent() {
       {started && !finished && (
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', maxWidth: '800px', width: '100%', margin: '0 auto', padding: '24px 12px' }}>
           {/* Progress Indicator */}
-          <div style={{ display: 'flex', gap: '4px', marginBottom: '20px' }}>
-            {data.questions.map((_, idx) => (
-              <div 
-                key={idx} 
-                onClick={() => !isQSubmitted && setCurrentQIndex(idx)}
-                style={{
-                  flex: 1, 
-                  height: '6px', 
-                  borderRadius: '3px',
-                  background: idx === currentQIndex ? 'var(--accent)' : (submittedAnswers[idx] ? 'var(--success)' : 'var(--border-light)'),
-                  cursor: isQSubmitted ? 'not-allowed' : 'pointer'
-                }}
-              />
-            ))}
+          <div style={{ display: 'flex', gap: '6px', marginBottom: '20px' }}>
+            {data.questions.map((_, idx) => {
+              const isCurrent = idx === currentQIndex;
+              const isSubmitted = submittedAnswers[idx];
+              const isCorrect = questionResults[idx];
+              let barColor = 'var(--border-light)';
+              if (isCurrent) {
+                barColor = 'var(--accent)';
+              } else if (isSubmitted) {
+                barColor = isCorrect === true ? 'var(--success)' : 'var(--danger)';
+              }
+              return (
+                <div 
+                  key={idx} 
+                  onClick={() => !isQSubmitted && setCurrentQIndex(idx)}
+                  style={{
+                    flex: 1, 
+                    height: '8px', 
+                    borderRadius: '4px',
+                    background: barColor,
+                    cursor: isQSubmitted ? 'not-allowed' : 'pointer',
+                    transition: 'all 0.3s ease',
+                    boxShadow: isCurrent ? '0 0 6px rgba(99, 102, 241, 0.5)' : 'none'
+                  }}
+                  title={`Question ${idx + 1}: ${isSubmitted ? (isCorrect ? 'Correct (✓)' : 'Incorrect (✗)') : 'Pending'}`}
+                />
+              );
+            })}
           </div>
 
           {/* Question View */}
@@ -1409,6 +1429,33 @@ function TopicPracticeContent() {
                     let isChecked = false;
                     try { isChecked = JSON.parse(uAns || '[]').includes(letter); } catch {}
                     const optionText = typeof opt === 'object' && opt ? (opt.text || opt.value || '') : String(opt);
+                    const correctList = Array.isArray(q.correctAnswers) && q.correctAnswers.length > 0
+                      ? q.correctAnswers
+                      : (q.correctAnswer ? [q.correctAnswer] : []);
+                    const isThisCorrect = correctList.map((c: any) => normalizeOptionAnswer(c, q.options)).includes(letter);
+
+                    let itemBorder = isChecked ? '2px solid var(--accent)' : '1px solid var(--border-light)';
+                    let itemBg = isChecked ? 'var(--accent-light)' : 'var(--surface)';
+                    let badge = null;
+
+                    if (isQSubmitted) {
+                      if (isChecked) {
+                        if (isThisCorrect) {
+                          itemBorder = '2px solid var(--success)';
+                          itemBg = 'rgba(16, 185, 129, 0.12)';
+                          badge = <span style={{ marginLeft: 'auto', fontSize: '11px', color: 'var(--success)', fontWeight: 700 }}>✓ Selected (Correct)</span>;
+                        } else {
+                          itemBorder = '2px solid var(--danger)';
+                          itemBg = 'rgba(239, 68, 68, 0.12)';
+                          badge = <span style={{ marginLeft: 'auto', fontSize: '11px', color: 'var(--danger)', fontWeight: 700 }}>✗ Selected (Incorrect)</span>;
+                        }
+                      } else if (isThisCorrect) {
+                        itemBorder = '2px dashed var(--success)';
+                        itemBg = 'rgba(16, 185, 129, 0.06)';
+                        badge = <span style={{ marginLeft: 'auto', fontSize: '11px', color: 'var(--success)', fontWeight: 700 }}>✓ Correct Choice</span>;
+                      }
+                    }
+
                     return (
                       <div 
                         key={`${q.id}-${oIdx}`} 
@@ -1419,9 +1466,10 @@ function TopicPracticeContent() {
                           gap: '12px',
                           padding: '12px 16px',
                           borderRadius: 'var(--radius-sm)',
-                          border: isChecked ? '2px solid var(--accent)' : '1px solid var(--border-light)',
-                          background: isChecked ? 'var(--accent-light)' : 'var(--surface)',
-                          cursor: isQSubmitted ? 'not-allowed' : 'pointer'
+                          border: itemBorder,
+                          background: itemBg,
+                          cursor: isQSubmitted ? 'not-allowed' : 'pointer',
+                          transition: 'border 0.15s, background 0.15s'
                         }}
                       >
                         <input 
@@ -1433,6 +1481,7 @@ function TopicPracticeContent() {
                         <div className="math-container" style={{ fontSize: '13px', color: 'var(--text)' }}>
                           <strong>{letter}.</strong> {preprocessMathText(stripOptionLabel(optionText))}
                         </div>
+                        {badge}
                       </div>
                     );
                   })
@@ -1442,6 +1491,31 @@ function TopicPracticeContent() {
                 {q.type === 'true_false' && (
                   ['True', 'False'].map((val) => {
                     const selected = uAns.toLowerCase() === val.toLowerCase();
+                    const correctVal = String(q.correctAnswer || (Array.isArray(q.correctAnswers) ? q.correctAnswers[0] : '')).trim().toLowerCase();
+                    const isThisCorrect = val.toLowerCase() === correctVal;
+
+                    let itemBorder = selected ? '2px solid var(--accent)' : '1px solid var(--border-light)';
+                    let itemBg = selected ? 'var(--accent-light)' : 'var(--surface)';
+                    let badge = null;
+
+                    if (isQSubmitted) {
+                      if (selected) {
+                        if (isThisCorrect) {
+                          itemBorder = '2px solid var(--success)';
+                          itemBg = 'rgba(16, 185, 129, 0.12)';
+                          badge = <span style={{ marginLeft: 'auto', fontSize: '11px', color: 'var(--success)', fontWeight: 700 }}>✓ Selected (Correct)</span>;
+                        } else {
+                          itemBorder = '2px solid var(--danger)';
+                          itemBg = 'rgba(239, 68, 68, 0.12)';
+                          badge = <span style={{ marginLeft: 'auto', fontSize: '11px', color: 'var(--danger)', fontWeight: 700 }}>✗ Selected (Incorrect)</span>;
+                        }
+                      } else if (isThisCorrect) {
+                        itemBorder = '2px dashed var(--success)';
+                        itemBg = 'rgba(16, 185, 129, 0.06)';
+                        badge = <span style={{ marginLeft: 'auto', fontSize: '11px', color: 'var(--success)', fontWeight: 700 }}>✓ Correct Choice</span>;
+                      }
+                    }
+
                     return (
                       <div 
                         key={`${q.id}-${val}`} 
@@ -1452,8 +1526,8 @@ function TopicPracticeContent() {
                           gap: '12px',
                           padding: '12px 16px',
                           borderRadius: 'var(--radius-sm)',
-                          border: selected ? '2px solid var(--accent)' : '1px solid var(--border-light)',
-                          background: selected ? 'var(--accent-light)' : 'var(--surface)',
+                          border: itemBorder,
+                          background: itemBg,
                           cursor: isQSubmitted ? 'not-allowed' : 'pointer',
                           transition: 'border 0.15s, background 0.15s'
                         }}
@@ -1466,6 +1540,7 @@ function TopicPracticeContent() {
                           disabled={isQSubmitted}
                         />
                         <div className="math-container" style={{ fontSize: '13px', color: 'var(--text)' }}>{val}</div>
+                        {badge}
                       </div>
                     );
                   })
@@ -1497,10 +1572,39 @@ function TopicPracticeContent() {
                     });
                   }
 
+                  const rawCorrect = q.correctAnswer || (Array.isArray(q.correctAnswers) ? q.correctAnswers[0] : '');
+                  const correctCode = (typeof rawCorrect === 'string' && rawCorrect.length === 1 && /[A-D]/i.test(rawCorrect))
+                    ? rawCorrect.toUpperCase()
+                    : 'A';
+
                   return optionsToRender.map((opt: any) => {
                     const code = opt.code;
                     const selected = uAns === code;
                     const optionText = opt.text;
+                    const isThisCorrect = code.toUpperCase() === correctCode;
+
+                    let itemBorder = selected ? '2px solid var(--accent)' : '1px solid var(--border-light)';
+                    let itemBg = selected ? 'var(--accent-light)' : 'var(--surface)';
+                    let badge = null;
+
+                    if (isQSubmitted) {
+                      if (selected) {
+                        if (isThisCorrect) {
+                          itemBorder = '2px solid var(--success)';
+                          itemBg = 'rgba(16, 185, 129, 0.12)';
+                          badge = <span style={{ marginLeft: 'auto', fontSize: '11px', color: 'var(--success)', fontWeight: 700 }}>✓ Selected (Correct)</span>;
+                        } else {
+                          itemBorder = '2px solid var(--danger)';
+                          itemBg = 'rgba(239, 68, 68, 0.12)';
+                          badge = <span style={{ marginLeft: 'auto', fontSize: '11px', color: 'var(--danger)', fontWeight: 700 }}>✗ Selected (Incorrect)</span>;
+                        }
+                      } else if (isThisCorrect) {
+                        itemBorder = '2px dashed var(--success)';
+                        itemBg = 'rgba(16, 185, 129, 0.06)';
+                        badge = <span style={{ marginLeft: 'auto', fontSize: '11px', color: 'var(--success)', fontWeight: 700 }}>✓ Correct Choice</span>;
+                      }
+                    }
+
                     return (
                       <div 
                         key={`${q.id}-${code}`} 
@@ -1511,8 +1615,8 @@ function TopicPracticeContent() {
                           gap: '12px',
                           padding: '12px 16px',
                           borderRadius: 'var(--radius-sm)',
-                          border: selected ? '2px solid var(--accent)' : '1px solid var(--border-light)',
-                          background: selected ? 'var(--accent-light)' : 'var(--surface)',
+                          border: itemBorder,
+                          background: itemBg,
                           cursor: isQSubmitted ? 'not-allowed' : 'pointer',
                           transition: 'border 0.15s, background 0.15s'
                         }}
@@ -1527,6 +1631,7 @@ function TopicPracticeContent() {
                         <div className="math-container" style={{ fontSize: '13px', color: 'var(--text)' }}>
                           <strong>{code}.</strong> {preprocessMathText(stripOptionLabel(optionText))}
                         </div>
+                        {badge}
                       </div>
                     );
                   });
@@ -1538,6 +1643,31 @@ function TopicPracticeContent() {
                     const letter = String.fromCharCode(65 + oIdx);
                     const selected = uAns === letter;
                     const optionText = typeof opt === 'object' && opt ? (opt.text || opt.value || '') : String(opt);
+                    const resolvedCorrect = q.correctAnswer || (Array.isArray(q.correctAnswers) ? q.correctAnswers[0] : '');
+                    const isThisCorrect = normalizeOptionAnswer(letter, q.options) === normalizeOptionAnswer(resolvedCorrect, q.options);
+
+                    let itemBorder = selected ? '2px solid var(--accent)' : '1px solid var(--border-light)';
+                    let itemBg = selected ? 'var(--accent-light)' : 'var(--surface)';
+                    let badge = null;
+
+                    if (isQSubmitted) {
+                      if (selected) {
+                        if (isThisCorrect) {
+                          itemBorder = '2px solid var(--success)';
+                          itemBg = 'rgba(16, 185, 129, 0.12)';
+                          badge = <span style={{ marginLeft: 'auto', fontSize: '11px', color: 'var(--success)', fontWeight: 700 }}>✓ Selected (Correct)</span>;
+                        } else {
+                          itemBorder = '2px solid var(--danger)';
+                          itemBg = 'rgba(239, 68, 68, 0.12)';
+                          badge = <span style={{ marginLeft: 'auto', fontSize: '11px', color: 'var(--danger)', fontWeight: 700 }}>✗ Selected (Incorrect)</span>;
+                        }
+                      } else if (isThisCorrect) {
+                        itemBorder = '2px dashed var(--success)';
+                        itemBg = 'rgba(16, 185, 129, 0.06)';
+                        badge = <span style={{ marginLeft: 'auto', fontSize: '11px', color: 'var(--success)', fontWeight: 700 }}>✓ Correct Choice</span>;
+                      }
+                    }
+
                     return (
                       <div 
                         key={`${q.id}-${oIdx}`} 
@@ -1548,8 +1678,8 @@ function TopicPracticeContent() {
                           gap: '12px',
                           padding: '12px 16px',
                           borderRadius: 'var(--radius-sm)',
-                          border: selected ? '2px solid var(--accent)' : '1px solid var(--border-light)',
-                          background: selected ? 'var(--accent-light)' : 'var(--surface)',
+                          border: itemBorder,
+                          background: itemBg,
                           cursor: isQSubmitted ? 'not-allowed' : 'pointer',
                           transition: 'border 0.15s, background 0.15s'
                         }}
@@ -1564,6 +1694,7 @@ function TopicPracticeContent() {
                         <div className="math-container" style={{ fontSize: '13px', color: 'var(--text)' }}>
                           <strong>{letter}.</strong> {preprocessMathText(stripOptionLabel(optionText))}
                         </div>
+                        {badge}
                       </div>
                     );
                   })

@@ -63,6 +63,7 @@ interface ChatViewProps {
 }
 
 export default function ChatView({ role = 'admin' }: ChatViewProps) {
+  const router = useRouter();
   const { firebaseUser, user, logout } = useAuth();
 
   const [rooms, setRooms] = useState<ChatRoom[]>([]);

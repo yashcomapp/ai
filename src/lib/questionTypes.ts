@@ -173,12 +173,12 @@ export function normalizeOptionAnswer(value: any, options?: any[]): string {
     if (idx !== -1) return String.fromCharCode(65 + idx);
   }
 
-  const match = value.match(/^([A-D])/i);
-  if (match) {
-    return match[1].toUpperCase();
+  // 3. Fallback for single letter A-Z only
+  if (/^[A-Z]$/i.test(value)) {
+    return value.toUpperCase();
   }
 
-  return value.toUpperCase();
+  return value.trim();
 }
 
 export function classifyAssertionReasonAnswer(value: any): string {
@@ -789,12 +789,12 @@ export function validateQuestion(q: any, questionType: 'objective' | 'subjective
     const cleanedList = q.options.map((opt: any) => cleanOptionPrefix(String(opt || '')).replace(/\\\\/g, '\\').replace(/\s+/g, ' ').trim()).filter(Boolean);
     
     // Check for exact duplicates
-    const exactDuplicates = cleanedList.some((item, idx) => cleanedList.indexOf(item) !== idx);
+    const exactDuplicates = cleanedList.some((item: string, idx: number) => cleanedList.indexOf(item) !== idx);
     if (exactDuplicates) {
       errors.push('Duplicate options detected: two or more options are identical.');
     } else {
       // Check for case-insensitive duplicate only for longer non-math text (> 3 chars)
-      const normList = cleanedList.map(item => {
+      const normList = cleanedList.map((item: string) => {
         if (item.length <= 3 || /[\\_{}^$]/.test(item)) {
           return item; // preserve case for units and symbols (e.g. 'n' vs 'N')
         }
