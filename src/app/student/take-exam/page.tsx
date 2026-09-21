@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import { useAuth } from '@/context/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Script from 'next/script';
-import { stripOptionLabel, preprocessMathText, parseAnswerList, isOptionSelectedByUser, isOptionCorrect, getQuestionCorrectAnswer, getRawOptionKey, getRawOptionText, extractAssertionAndReason } from '@/lib/questionTypes';
+import { stripOptionLabel, preprocessMathText, parseAnswerList, isOptionSelectedByUser, isOptionCorrect, getQuestionCorrectAnswer, getRawOptionKey, getRawOptionText, extractAssertionAndReason, isMultipleChoiceType, isSingleChoiceType, isTrueFalseType, isAssertionReasonType } from '@/lib/questionTypes';
 import { useMathRender } from '@/hooks/useMathRender';
 import { db } from '@/lib/firebase/firestore';
 import { useExamTimer } from '@/hooks/useExamTimer';
@@ -1257,7 +1257,8 @@ function TakeExamContent() {
             {/* Options Area based on type */}
             <div style={{ padding: '0 0 10px' }}>
               {/* 1. Single MCQ / Any question with options */}
-              {currentQuestion.type !== 'multiple_mcq' && currentQuestion.type !== 'multi_mcq' && currentQuestion.type !== 'true_false' && currentQuestion.type !== 'assertion_reason' && Array.isArray(currentQuestion.options) && currentQuestion.options.length > 0 && (
+              {/* 1. Single MCQ (Single choice options) */}
+              {!isMultipleChoiceType(currentQuestion.type) && !isTrueFalseType(currentQuestion.type) && !isAssertionReasonType(currentQuestion.type) && Array.isArray(currentQuestion.options) && currentQuestion.options.length > 0 && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {currentQuestion.options.map((opt, oIdx) => {
                     const letter = String.fromCharCode(65 + oIdx);
@@ -1283,7 +1284,7 @@ function TakeExamContent() {
               )}
 
               {/* 2. Multiple MCQ */}
-              {(currentQuestion.type === 'multiple_mcq' || currentQuestion.type === 'multi_mcq') && currentQuestion.options && (
+              {isMultipleChoiceType(currentQuestion.type) && currentQuestion.options && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {currentQuestion.options.map((opt, oIdx) => {
                     const letter = String.fromCharCode(65 + oIdx);
@@ -1313,7 +1314,7 @@ function TakeExamContent() {
               )}
 
               {/* 3. True / False */}
-              {currentQuestion.type === 'true_false' && (
+              {isTrueFalseType(currentQuestion.type) && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   {['True', 'False'].map((val) => {
                     const selected = currentAnswer === val;
@@ -1333,7 +1334,7 @@ function TakeExamContent() {
               )}
 
               {/* 4. Assertion & Reason */}
-              {currentQuestion.type === 'assertion_reason' && (() => {
+              {isAssertionReasonType(currentQuestion.type) && (() => {
                 const { assertion, reason } = extractAssertionAndReason(currentQuestion);
                 
                 const defaultArOptions = [

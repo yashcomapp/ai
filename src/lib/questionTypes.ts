@@ -146,11 +146,17 @@ export function formatRichText(text: any): string {
 
 
 export function normalizeOptionAnswer(value: any, options?: any[]): string {
-  if (!value && value !== 0) return '';
-  value = String(value).trim();
+  if (value === undefined || value === null || value === '') return '';
+
+  // If value is a number (0, 1, 2, 3) representing option index
+  if (typeof value === 'number' && Number.isInteger(value) && value >= 0 && value < 26) {
+    return String.fromCharCode(65 + value);
+  }
+
+  const valueStr = String(value).trim();
 
   // 1. Direct letter match with optional prefix: "A", "B", "Option A", "(A)", "Option (B)", "A.", "A:"
-  const prefixMatch = value.match(/^(?:option\s+)?\(?([A-Z])\)?[:.\-\s]?$/i);
+  const prefixMatch = valueStr.match(/^(?:option\s+)?\(?([A-Z])\)?[:.\-\s]?$/i);
   if (prefixMatch) {
     const letter = prefixMatch[1].toUpperCase();
     if (!options || !options.length) return letter;
@@ -159,26 +165,60 @@ export function normalizeOptionAnswer(value: any, options?: any[]): string {
   }
 
   // 2. Match against options array by exact text, stripped text, and normalized alphanumeric text
-  if (Array.isArray(options) && options.length) {
+  if (Array.isArray(options) && options.length > 0) {
     const norm = (s: any) => String(s ?? '').trim().toLowerCase();
     const cleanNorm = (s: any) => String(s ?? '').toLowerCase().replace(/\\\(|\\\)|\\\[|\\\]|\$+/g, '').replace(/[^\w\d]/g, '').trim();
-    const valClean = cleanNorm(value);
+    const cleanValNorm = cleanNorm(stripOptionLabel(valueStr));
+    const rawValClean = cleanNorm(valueStr);
 
-    const idx = options.findIndex(opt => {
-      const optText = (opt && typeof opt === 'object') ? (opt.text ?? opt.value ?? '') : opt;
-      if (norm(optText) === norm(value)) return true;
-      if (valClean && cleanNorm(optText) === valClean) return true;
+    const idx = options.findIndex((opt) => {
+      const optText = (opt && typeof opt === 'object') ? (opt.text ?? opt.value ?? opt.label ?? '') : String(opt ?? '');
+      if (norm(optText) === norm(valueStr)) return true;
+      if (norm(stripOptionLabel(optText)) === norm(stripOptionLabel(valueStr))) return true;
+      if (rawValClean && cleanNorm(optText) === rawValClean) return true;
+      if (cleanValNorm && cleanNorm(stripOptionLabel(optText)) === cleanValNorm) return true;
+      if (isOptionMatch(optText, valueStr)) return true;
       return false;
     });
     if (idx !== -1) return String.fromCharCode(65 + idx);
   }
 
   // 3. Fallback for single letter A-Z only
-  if (/^[A-Z]$/i.test(value)) {
-    return value.toUpperCase();
+  if (/^[A-Z]$/i.test(valueStr)) {
+    return valueStr.toUpperCase();
   }
 
-  return value.trim();
+  return valueStr.trim();
+}
+
+export function isMultipleChoiceType(type: any): boolean {
+  const t = String(type || '').trim().toLowerCase();
+  return t === 'multiple_mcq' || t === 'multi_mcq' || t === 'omc' || t === 'multiple_choice' || t === 'multi_select';
+}
+
+export function isSingleChoiceType(type: any): boolean {
+  const t = String(type || '').trim().toLowerCase();
+  return t === 'single_mcq' || t === 'mcq' || t === 'osc' || t === 'single_choice' || t === 'single';
+}
+
+export function isTrueFalseType(type: any): boolean {
+  const t = String(type || '').trim().toLowerCase();
+  return t === 'true_false' || t === 'otf' || t === 'tf' || t === 'truefalse';
+}
+
+export function isAssertionReasonType(type: any): boolean {
+  const t = String(type || '').trim().toLowerCase();
+  return t === 'assertion_reason' || t === 'oar' || t === 'ar' || t === 'assertion';
+}
+
+export function isFillBlanksType(type: any): boolean {
+  const t = String(type || '').trim().toLowerCase();
+  return t === 'fill_blanks' || t === 'fill_blank' || t === 'ofb' || t === 'fib';
+}
+
+export function isNumericalType(type: any): boolean {
+  const t = String(type || '').trim().toLowerCase();
+  return t === 'numerical' || t === 'one' || t === 'numerical_short' || t === 'ssn' || t === 'numerical_long' || t === 'sln';
 }
 
 export function classifyAssertionReasonAnswer(value: any): string {
@@ -208,64 +248,80 @@ export function classifyAssertionReasonAnswer(value: any): string {
 }
 
 export function evaluateQuestionAnswer(type: string, userAnswer: any, correctAnswer: any, options?: any[]): boolean {
-  // If options are provided and non-empty, and it's not a multi-mcq, true_false, or assertion_reason, check option match
-  if (Array.isArray(options) && options.length > 0 && type !== 'multiple_mcq' && type !== 'multi_mcq' && type !== 'true_false' && type !== 'assertion_reason') {
+  if (isBlank(userAnswer)) return false;
+
+  // 1. Multiple Choice (Multi-Select)
+  if (isMultipleChoiceType(type)) {
+    let rawCorrect = correctAnswer;
+    if ((!rawCorrect || (Array.isArray(rawCorrect) && rawCorrect.length === 0)) && Array.isArray(options) && options.length > 0) {
+      const fromOpts = options
+        .map((opt, idx) => (opt && typeof opt === 'object' && (opt.isCorrect || opt.correct)) ? String.fromCharCode(65 + idx) : null)
+        .filter(Boolean);
+      if (fromOpts.length > 0) rawCorrect = fromOpts;
+    }
+
+    const userList = parseAnswerList(userAnswer);
+    const correctList = parseAnswerList(rawCorrect);
+
+    const userNorm = Array.from(new Set(userList.map(v => normalizeOptionAnswer(v, options)).filter(Boolean))).sort();
+    const correctNorm = Array.from(new Set(correctList.map(v => normalizeOptionAnswer(v, options)).filter(Boolean))).sort();
+
+    if (userNorm.length === 0 && correctNorm.length === 0) return false;
+    return JSON.stringify(userNorm) === JSON.stringify(correctNorm);
+  }
+
+  // 2. Single MCQ
+  if (isSingleChoiceType(type)) {
+    let rawCorrect = correctAnswer;
+    if (!rawCorrect && Array.isArray(options) && options.length > 0) {
+      const fromOpt = options.find((opt: any) => opt && typeof opt === 'object' && (opt.isCorrect || opt.correct));
+      if (fromOpt) rawCorrect = fromOpt.text || fromOpt.value || fromOpt.label || '';
+    }
+    const userNorm = normalizeOptionAnswer(userAnswer, options);
+    const correctNorm = normalizeOptionAnswer(rawCorrect, options);
+    return Boolean(userNorm && correctNorm && userNorm === correctNorm);
+  }
+
+  // 3. True / False
+  if (isTrueFalseType(type)) {
+    const userNorm = String(userAnswer || '').trim().toLowerCase();
+    const correctNorm = String(correctAnswer || '').trim().toLowerCase();
+    return Boolean(userNorm && correctNorm && userNorm === correctNorm);
+  }
+
+  // 4. Assertion & Reason
+  if (isAssertionReasonType(type)) {
+    const userNorm = classifyAssertionReasonAnswer(userAnswer);
+    const correctNorm = classifyAssertionReasonAnswer(correctAnswer);
+    return Boolean(userNorm && correctNorm && userNorm === correctNorm);
+  }
+
+  // 5. Fill in the Blanks
+  if (isFillBlanksType(type)) {
+    const userNorm = String(userAnswer || '').trim().toLowerCase();
+    const correctNorm = String(correctAnswer || '').trim().toLowerCase();
+    return Boolean(userNorm && correctNorm && userNorm === correctNorm);
+  }
+
+  // 6. Numerical Objective
+  if (isNumericalType(type)) {
+    if (Array.isArray(options) && options.length > 0) {
+      const userNorm = normalizeOptionAnswer(userAnswer, options);
+      const correctNorm = normalizeOptionAnswer(correctAnswer, options);
+      if (userNorm && correctNorm && userNorm === correctNorm) return true;
+    }
+    const u = parseFloat(userAnswer);
+    const c = parseFloat(correctAnswer);
+    return !isNaN(u) && !isNaN(c) && Math.abs(u - c) <= 0.05;
+  }
+
+  // General fallback for any options-based question
+  if (Array.isArray(options) && options.length > 0) {
     const userNorm = normalizeOptionAnswer(userAnswer, options);
     const correctNorm = normalizeOptionAnswer(correctAnswer, options);
     if (userNorm && correctNorm && userNorm === correctNorm) return true;
   }
 
-  if (type === 'single_mcq' || type === 'mcq') {
-    return normalizeOptionAnswer(userAnswer, options) === normalizeOptionAnswer(correctAnswer, options);
-  }
-
-  if (type === 'multiple_mcq' || type === 'multi_mcq') {
-    let userArr: any = [];
-    try {
-      userArr = JSON.parse(userAnswer);
-    } catch {
-      userArr = userAnswer;
-    }
-    if (!Array.isArray(userArr)) {
-      userArr = userArr ? [userArr] : [];
-    }
-
-    let correctArr = Array.isArray(correctAnswer)
-      ? correctAnswer
-      : (correctAnswer ? [correctAnswer] : []);
-
-    userArr = Array.from(new Set(userArr.map((v: any) => normalizeOptionAnswer(v, options)))).sort();
-    correctArr = Array.from(new Set(correctArr.map((v: any) => normalizeOptionAnswer(v, options)))).sort();
-
-    return JSON.stringify(userArr) === JSON.stringify(correctArr);
-  }
-
-  if (type === 'true_false') {
-    const userNorm = String(userAnswer || '').trim().toLowerCase();
-    const correctNorm = String(correctAnswer || '').trim().toLowerCase();
-    return userNorm === correctNorm;
-  }
-
-  if (type === 'assertion_reason') {
-    return classifyAssertionReasonAnswer(userAnswer) === classifyAssertionReasonAnswer(correctAnswer);
-  }
-
-  if (type === 'fill_blanks' || type === 'fill_blank') {
-    return String(userAnswer || '').trim().toLowerCase() === String(correctAnswer || '').trim().toLowerCase();
-  }
-
-  if (type === 'numerical' || type === 'numerical_short' || type === 'numerical_long') {
-    if (Array.isArray(options) && options.length > 0) {
-      if (normalizeOptionAnswer(userAnswer, options) === normalizeOptionAnswer(correctAnswer, options)) {
-        return true;
-      }
-    }
-    const u = parseFloat(userAnswer);
-    const c = parseFloat(correctAnswer);
-    return !isNaN(u) && !isNaN(c) && Math.abs(u - c) <= 0.05; // 0.05 tolerance
-  }
-
-  // Subjective types have no auto grading
   return false;
 }
 

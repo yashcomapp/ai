@@ -1,6 +1,6 @@
 import { adminDb } from '@/lib/firebase/admin';
 import * as admin from 'firebase-admin';
-import { evaluateQuestionAnswer, parseTopicCode } from '@/lib/questionTypes';
+import { evaluateQuestionAnswer, parseTopicCode, isMultipleChoiceType, parseAnswerList } from '@/lib/questionTypes';
 import { QuestionRepository } from '@/repositories/question.repository';
 import { PracticeRepository } from '@/repositories/practice.repository';
 import { TopicMasteryRecord, TopicRecommendation } from '@/types/practice.types';
@@ -117,9 +117,9 @@ export class PracticeService {
       const isDisputed = disputedSet.has(String(ans.questionId).toLowerCase()) || (qData.questionCode && disputedSet.has(String(qData.questionCode).toLowerCase()));
       if (isDisputed) disputedCount++;
 
-      const isMultiple = qData.type === 'multiple_mcq' || qData.type === 'multi_mcq';
+      const isMultiple = isMultipleChoiceType(qData.type);
       const resolvedCorrectAnswer = isMultiple
-        ? (Array.isArray(qData.correctAnswers) && qData.correctAnswers.length > 0 ? qData.correctAnswers : (qData.correctAnswer ? [qData.correctAnswer] : []))
+        ? (Array.isArray(qData.correctAnswers) && qData.correctAnswers.length > 0 ? qData.correctAnswers : parseAnswerList(qData.correctAnswer))
         : (qData.correctAnswer || (Array.isArray(qData.correctAnswers) ? qData.correctAnswers[0] : ''));
 
       const isCorrect = isDisputed ? false : evaluateQuestionAnswer(

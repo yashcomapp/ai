@@ -5,7 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { t } from '@/lib/i18n';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Script from 'next/script';
-import { normalizeOptionAnswer, preprocessMathText, evaluateQuestionAnswer, stripOptionLabel, extractAssertionAndReason } from '@/lib/questionTypes';
+import { normalizeOptionAnswer, preprocessMathText, evaluateQuestionAnswer, stripOptionLabel, extractAssertionAndReason, isMultipleChoiceType, isSingleChoiceType, isTrueFalseType, isAssertionReasonType, isFillBlanksType, isNumericalType, parseAnswerList, isOptionMatch } from '@/lib/questionTypes';
 import { useMathRender } from '@/hooks/useMathRender';
 import { usePractice } from '@/hooks/usePractice';
 import { useAudioLevel } from '@/hooks/useAudioLevel';
@@ -601,9 +601,9 @@ function TopicPracticeContent() {
     const q = data.questions[currentQIndex];
     const answer = userAnswers[currentQIndex] || '';
 
-    const isMultiple = q.type === 'multiple_mcq' || q.type === 'multi_mcq';
+    const isMultiple = isMultipleChoiceType(q.type);
     const resolvedCorrectAnswer = isMultiple
-      ? (Array.isArray(q.correctAnswers) && q.correctAnswers.length > 0 ? q.correctAnswers : (q.correctAnswer ? [q.correctAnswer] : []))
+      ? (Array.isArray(q.correctAnswers) && q.correctAnswers.length > 0 ? q.correctAnswers : (q.correctAnswer ? parseAnswerList(q.correctAnswer) : []))
       : (q.correctAnswer || (Array.isArray(q.correctAnswers) ? q.correctAnswers[0] : ''));
 
     const isCorrect = evaluateQuestionAnswer(
@@ -1022,50 +1022,53 @@ function TopicPracticeContent() {
   const isQSubmitted = submittedAnswers[currentQIndex];
 
   const getCorrectOptionText = (qItem: QuestionItem) => {
-    const cAnswer = (qItem as any).correctAnswer || '';
-    const cAnswers = (qItem as any).correctAnswers || [];
+    const isMultiple = isMultipleChoiceType(qItem.type);
+    const rawAnswers = isMultiple
+      ? (Array.isArray(qItem.correctAnswers) && qItem.correctAnswers.length > 0 ? qItem.correctAnswers : parseAnswerList(qItem.correctAnswer))
+      : [qItem.correctAnswer || (Array.isArray(qItem.correctAnswers) ? qItem.correctAnswers[0] : '')];
 
     if (!qItem.options || qItem.options.length === 0) {
-      return String(cAnswer || cAnswers.join(', ') || 'Correct option');
-    }
-    
-    const correctOptObj = qItem.options.find((o: any) => o && typeof o === 'object' && (o.isCorrect || o.correct));
-    if (correctOptObj) {
-      return correctOptObj.text || correctOptObj.value || 'Correct option';
-    }
-    
-    if (cAnswer) {
-      // Find matching option by text, value, or index code
-      const match = qItem.options.find((o: any, idx: number) => {
-        const text = typeof o === 'object' && o ? (o.text || o.value || '') : String(o);
-        const code = String.fromCharCode(65 + idx);
-        return text === cAnswer || code === cAnswer || normalizeOptionAnswer(text, qItem.options) === normalizeOptionAnswer(cAnswer, qItem.options);
-      });
-      if (match) {
-        const matchText = typeof match === 'object' ? (match.text || match.value) : String(match);
-        const idx = qItem.options.indexOf(match);
-        const code = String.fromCharCode(65 + idx);
-        return `(${code}) ${stripOptionLabel(matchText)}`;
-      }
-    }
-    
-    if (cAnswers.length > 0) {
-      const matches = qItem.options.filter((o: any, idx: number) => {
-        const text = typeof o === 'object' && o ? (o.text || o.value || '') : String(o);
-        const code = String.fromCharCode(65 + idx);
-        return cAnswers.includes(text) || cAnswers.includes(code) || cAnswers.some((ca: any) => normalizeOptionAnswer(text, qItem.options) === normalizeOptionAnswer(ca, qItem.options));
-      });
-      if (matches.length > 0) {
-        return matches.map((m: any) => {
-          const mText = typeof m === 'object' ? (m.text || m.value) : String(m);
-          const idx = qItem.options.indexOf(m);
-          const code = String.fromCharCode(65 + idx);
-          return `(${code}) ${stripOptionLabel(mText)}`;
-        }).join(', ');
-      }
+      return rawAnswers.filter(Boolean).join(', ') || 'Correct option';
     }
 
-    return String(cAnswer || cAnswers.join(', ') || 'Correct option');
+    const matchedTexts: string[] = [];
+    rawAnswers.forEach(ans => {
+      if (!ans) return;
+      const normLetter = normalizeOptionAnswer(ans, qItem.options);
+      if (normLetter && /^[A-Z]$/.test(normLetter)) {
+        const idx = normLetter.charCodeAt(0) - 65;
+        if (idx >= 0 && idx < qItem.options.length) {
+          const opt = qItem.options[idx];
+          const text = typeof opt === 'object' && opt ? (opt.text || opt.value || '') : String(opt);
+          matchedTexts.push(`(${normLetter}) ${stripOptionLabel(text)}`);
+          return;
+        }
+      }
+      const match = qItem.options.find((o: any) => isOptionMatch(o, ans));
+      if (match) {
+        const idx = qItem.options.indexOf(match);
+        const code = String.fromCharCode(65 + idx);
+        const text = typeof match === 'object' ? (match.text || match.value) : String(match);
+        matchedTexts.push(`(${code}) ${stripOptionLabel(text)}`);
+      } else {
+        matchedTexts.push(String(ans));
+      }
+    });
+
+    if (matchedTexts.length > 0) {
+      return Array.from(new Set(matchedTexts)).join(', ');
+    }
+
+    const correctOpts = qItem.options.filter((o: any) => o && typeof o === 'object' && (o.isCorrect || o.correct));
+    if (correctOpts.length > 0) {
+      return correctOpts.map((o: any) => {
+        const idx = qItem.options.indexOf(o);
+        const code = String.fromCharCode(65 + idx);
+        return `(${code}) ${stripOptionLabel(o.text || o.value)}`;
+      }).join(', ');
+    }
+
+    return 'Correct option';
   };
 
   return (
@@ -1423,7 +1426,7 @@ function TopicPracticeContent() {
               {/* Options Selector Layout */}
               <div className="options-container" style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '16px' }}>
                 {/* 1. Multiple MCQ */}
-                {(q.type === 'multiple_mcq' || q.type === 'multi_mcq') && Array.isArray(q.options) && q.options.length > 0 && (
+                {isMultipleChoiceType(q.type) && Array.isArray(q.options) && q.options.length > 0 && (
                   q.options.map((opt: any, oIdx: number) => {
                     const letter = String.fromCharCode(65 + oIdx);
                     let isChecked = false;
@@ -1431,8 +1434,9 @@ function TopicPracticeContent() {
                     const optionText = typeof opt === 'object' && opt ? (opt.text || opt.value || '') : String(opt);
                     const correctList = Array.isArray(q.correctAnswers) && q.correctAnswers.length > 0
                       ? q.correctAnswers
-                      : (q.correctAnswer ? [q.correctAnswer] : []);
-                    const isThisCorrect = correctList.map((c: any) => normalizeOptionAnswer(c, q.options)).includes(letter);
+                      : parseAnswerList(q.correctAnswer);
+                    const correctLetters = correctList.map((c: any) => normalizeOptionAnswer(c, q.options));
+                    const isThisCorrect = correctLetters.includes(letter);
 
                     let itemBorder = isChecked ? '2px solid var(--accent)' : '1px solid var(--border-light)';
                     let itemBg = isChecked ? 'var(--accent-light)' : 'var(--surface)';
@@ -1488,7 +1492,7 @@ function TopicPracticeContent() {
                 )}
 
                 {/* 2. True/False */}
-                {q.type === 'true_false' && (
+                {isTrueFalseType(q.type) && (
                   ['True', 'False'].map((val) => {
                     const selected = uAns.toLowerCase() === val.toLowerCase();
                     const correctVal = String(q.correctAnswer || (Array.isArray(q.correctAnswers) ? q.correctAnswers[0] : '')).trim().toLowerCase();
@@ -1547,7 +1551,7 @@ function TopicPracticeContent() {
                 )}
 
                 {/* 3. Assertion & Reason */}
-                {q.type === 'assertion_reason' && (() => {
+                {isAssertionReasonType(q.type) && (() => {
                   const defaultArOptions = [
                     { code: 'A', text: 'Both Assertion (A) and Reason (R) are true, and Reason (R) is the correct explanation of Assertion (A).' },
                     { code: 'B', text: 'Both Assertion (A) and Reason (R) are true, but Reason (R) is NOT the correct explanation of Assertion (A).' },
@@ -1638,7 +1642,7 @@ function TopicPracticeContent() {
                 })()}
 
                 {/* 4. Single MCQ / Any Question Type with Options (including Numerical MCQ) */}
-                {q.type !== 'multiple_mcq' && q.type !== 'multi_mcq' && q.type !== 'true_false' && q.type !== 'assertion_reason' && Array.isArray(q.options) && q.options.length > 0 && (
+                {!isMultipleChoiceType(q.type) && !isTrueFalseType(q.type) && !isAssertionReasonType(q.type) && Array.isArray(q.options) && q.options.length > 0 && (
                   q.options.map((opt: any, oIdx: number) => {
                     const letter = String.fromCharCode(65 + oIdx);
                     const selected = uAns === letter;

@@ -5,7 +5,7 @@ import { MasteryService } from './mastery.service';
 import { IntegrityService } from './integrity.service';
 import { AttemptRepository } from '@/repositories/attempt.repository';
 import { ProctoringViolations, QuestionDetail, ExamAttempt } from '@/types/attempt.types';
-import { deriveTopicCodeFromQuestionCode } from '@/lib/questionTypes';
+import { deriveTopicCodeFromQuestionCode, isMultipleChoiceType, parseAnswerList } from '@/lib/questionTypes';
 import { invalidateCache } from '@/lib/firebase/cache';
 
 export class AttemptService {
@@ -96,9 +96,9 @@ export class AttemptService {
       const isDisputed = disputedSet.has(String(q.id || '').toLowerCase()) || 
                          disputedSet.has(String(q.questionCode || '').toLowerCase());
 
-      const isMultiple = q.type === 'multiple_mcq' || q.type === 'multi_mcq';
+      const isMultiple = isMultipleChoiceType(q.type);
       const correctAnswer = isMultiple
-        ? (Array.isArray(q.correctAnswers) && q.correctAnswers.length > 0 ? q.correctAnswers : (q.correctAnswer ? [q.correctAnswer] : []))
+        ? (Array.isArray(q.correctAnswers) && q.correctAnswers.length > 0 ? q.correctAnswers : parseAnswerList(q.correctAnswer))
         : (q.correctAnswer || (Array.isArray(q.correctAnswers) ? q.correctAnswers[0] : ''));
       const isAttempted = ans && ans !== '' && ans !== '[]' && ans !== '{}';
       
