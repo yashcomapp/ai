@@ -315,12 +315,25 @@ export class TopicHealthCalculator implements ParameterCalculator {
     const { practiceRecords, assignedTopics, conductedExams = [], attempts = [] } = data;
     
     // Helper to calculate retention factor
-    const getRetentionFactor = (rec: any): { retention: number; factor: number; isDue: boolean } => {
+    const getRetentionFactor = (rec: any): { retention: number; factor: number; isDue: boolean; hasPracticed: boolean } => {
+      if (!rec) {
+        return { retention: 0, factor: 0.70, isDue: false, hasPracticed: false };
+      }
+      const hasPracticed = (
+        Number(rec.confidence || 0) > 0 || 
+        Number(rec.totalAttempts || 0) > 0 || 
+        Number(rec.questionsAttempted || 0) > 0 || 
+        Number(rec.mastery || 0) > 0 ||
+        Boolean(rec.isRecoveryMastered)
+      );
+      if (!hasPracticed) {
+        return { retention: 0, factor: 0.70, isDue: false, hasPracticed: false };
+      }
       const lastTime = rec.lastRevisedAt || (rec.updatedAt?.toDate ? rec.updatedAt.toDate() : rec.updatedAt) || rec.lastAttempt;
       const sched = calculateSrsSchedule(lastTime, Number(rec.srsStage || 0));
       const retention = sched.estimatedRetention;
       const factor = 0.70 + 0.30 * (retention / 100);
-      return { retention, factor, isDue: sched.isDueForRevision };
+      return { retention, factor, isDue: sched.isDueForRevision, hasPracticed: true };
     };
 
     // Map student exam attempt scores by examId
@@ -362,21 +375,25 @@ export class TopicHealthCalculator implements ParameterCalculator {
       let totalRetentionSum = 0;
 
       practiceRecords.forEach(rec => {
-        const mastery = Number(rec.mastery || 0);
-        const confidence = Number(rec.confidence || 0);
-        const isRecovery = Boolean(rec.isRecoveryMastered);
-        const reqConf = getRequiredConfidence(rec.topicClassification, rec.targetQuestions);
-        const { retention, factor, isDue } = getRetentionFactor(rec);
-        if (isDue) srsDueCount++;
-        totalRetentionSum += retention;
+        const { retention, factor, isDue, hasPracticed } = getRetentionFactor(rec);
+        if (hasPracticed) {
+          const mastery = Number(rec.mastery || 0);
+          const confidence = Number(rec.confidence || 0);
+          const isRecovery = Boolean(rec.isRecoveryMastered);
+          const reqConf = getRequiredConfidence(rec.topicClassification, rec.targetQuestions);
+          if (isDue) srsDueCount++;
+          totalRetentionSum += retention;
 
-        if (isRecovery || (mastery >= 90 && confidence >= reqConf)) {
-          masteredCount++;
+          if (isRecovery || (mastery >= 90 && confidence >= reqConf)) {
+            masteredCount++;
+          } else {
+            attentionCount++;
+          }
+          const confidenceFactor = Math.min(1, Math.max(0.5, confidence / reqConf));
+          totalMasteryEarned += mastery * confidenceFactor * factor;
         } else {
           attentionCount++;
         }
-        const confidenceFactor = Math.min(1, Math.max(0.5, confidence / reqConf));
-        totalMasteryEarned += mastery * confidenceFactor * factor;
       });
       const score = Math.max(0, Math.min(100, Math.round(totalMasteryEarned / totalTopics)));
       return {
@@ -419,12 +436,14 @@ export class TopicHealthCalculator implements ParameterCalculator {
       let practiceScoreOnTopic: number | null = null;
       let isMastered = false;
 
-      if (record) {
+      const { retention, factor, isDue, hasPracticed } = getRetentionFactor(record);
+
+      if (hasPracticed && record) {
         const mastery = Number(record.mastery || 0);
         const confidence = Number(record.confidence || 0);
         const isRecovery = Boolean(record.isRecoveryMastered);
         const reqConf = getRequiredConfidence(record.topicClassification, record.targetQuestions);
-        const { retention, factor, isDue } = getRetentionFactor(record);
+        
         if (isDue) srsDueCount++;
         totalRetentionSum += retention;
 

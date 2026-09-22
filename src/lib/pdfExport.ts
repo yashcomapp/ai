@@ -1133,7 +1133,7 @@ export async function exportStudentMonthlyReportPDF(params: {
           </div>
           <div style="display: flex; justify-content: space-between; font-size: 8.5px; color: #64748b; font-weight: 600;">
             <span>Mastered Ratio: ${healthComp.details?.masteryRatio ?? 0}% (Attn: ${healthComp.details?.attentionCount ?? 0})</span>
-            <span>🧠 Retention: ${healthComp.details?.averageRetention ?? 100}% (Due: ${healthComp.details?.srsDueCount ?? 0})</span>
+            <span>🧠 Retention: ${healthComp.details?.averageRetention ?? 0}% (Due: ${healthComp.details?.srsDueCount ?? 0})</span>
           </div>
         </div>
 

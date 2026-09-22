@@ -314,7 +314,7 @@ export default function LearningQuotientReportPage() {
 
     const practiceScore = practiceComp.score !== null ? `${practiceComp.score}/100` : '0/100';
     const healthScore = healthComp.score !== null ? `${healthComp.score}/100` : '0/100';
-    const averageRetention = healthComp.details?.averageRetention ?? 100;
+    const averageRetention = healthComp.details?.averageRetention ?? 0;
     const srsDueCount = healthComp.details?.srsDueCount ?? 0;
 
     const obsScore = obsComp.score !== null ? `${obsComp.score}/100` : 'N/A';
@@ -1735,7 +1735,7 @@ _Empowering Conceptual Excellence_`;
                         <span>
                           {comp.parameterId === 'exam' && `Attendance: ${comp.details.attendanceRate}%, Absent: ${comp.details.absent}`}
                           {comp.parameterId === 'practice' && `Attempted: ${comp.details.totalQuestionsAttempted} Qs, Topics: ${comp.details.topicsAttemptedCount}, Engagement: ${comp.details.engagementScore}%, Quality: ${comp.details.qualityScore}%`}
-                          {comp.parameterId === 'topicHealth' && `Mastered: ${comp.details.masteryRatio}%, Retention: ${comp.details.averageRetention ?? 100}%, Attention: ${comp.details.attentionRatio}%`}
+                          {comp.parameterId === 'topicHealth' && `Mastered: ${comp.details.masteryRatio}%, Retention: ${comp.details.averageRetention ?? 0}%, Attention: ${comp.details.attentionRatio}%`}
                           {comp.parameterId === 'integrity' && `Avg Infractions: ${comp.details.averageWeeklyViolations} / week`}
                           {comp.parameterId === 'observations' && `Logs: ${comp.details.observationCount} observations`}
                         </span>

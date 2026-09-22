@@ -159,23 +159,25 @@ export function calculateUnifiedMetrics(input: UnifiedMetricsInput): UnifiedMetr
     const confidence = Number(t.confidence || 0);
     const isRecovery = !!t.isRecoveryMastered;
     const reqConf = Number(t.requiredConfidence || 10);
-    const isFullConfidence = confidence >= reqConf;
+    const hasPracticed = confidence > 0 || mastery > 0 || isRecovery || Number(t.questionsAttempted || 0) > 0;
 
     // Resolve SRS retention and review status
-    let retention = 100;
+    let retention = 0;
     let isDue = false;
     let isOverdue = false;
 
-    if (t.srsSchedule) {
-      retention = typeof t.srsSchedule.estimatedRetention === 'number' ? t.srsSchedule.estimatedRetention : 100;
-      isDue = Boolean(t.srsSchedule.isDueForRevision);
-      isOverdue = Number(t.srsSchedule.daysOverdue || 0) > 0;
-    } else {
-      const lastTime = t.lastRevisedAt || (t.updatedAt?.toDate ? t.updatedAt.toDate() : t.updatedAt) || t.lastAttempt;
-      const sched = calculateSrsSchedule(lastTime, Number(t.srsStage || 0));
-      retention = sched.estimatedRetention;
-      isDue = sched.isDueForRevision;
-      isOverdue = sched.daysOverdue > 0;
+    if (hasPracticed) {
+      if (t.srsSchedule) {
+        retention = typeof t.srsSchedule.estimatedRetention === 'number' ? t.srsSchedule.estimatedRetention : 100;
+        isDue = Boolean(t.srsSchedule.isDueForRevision);
+        isOverdue = Number(t.srsSchedule.daysOverdue || 0) > 0;
+      } else {
+        const lastTime = t.lastRevisedAt || (t.updatedAt?.toDate ? t.updatedAt.toDate() : t.updatedAt) || t.lastAttempt;
+        const sched = calculateSrsSchedule(lastTime, Number(t.srsStage || 0));
+        retention = sched.estimatedRetention;
+        isDue = sched.isDueForRevision;
+        isOverdue = sched.daysOverdue > 0;
+      }
     }
 
     if (isDue) srsDueTopicsCount++;

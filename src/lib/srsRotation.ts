@@ -69,6 +69,20 @@ export function calculateSrsSchedule(
     }
   }
 
+  if (!hasAttempt) {
+    return {
+      srsStage: 0,
+      intervalDays,
+      lastRevisedAt: null,
+      nextReviewDate: new Date(now + intervalDays * 24 * 60 * 60 * 1000).toISOString(),
+      isDueForRevision: false,
+      daysUntilDue: intervalDays,
+      daysOverdue: 0,
+      estimatedRetention: 0,
+      stageLabel: 'Unpracticed (Pending Initial Workout)'
+    };
+  }
+
   const elapsedDays = Math.max(0, (now - lastAttemptMs) / (1000 * 60 * 60 * 24));
   const nextReviewMs = lastAttemptMs + intervalDays * 24 * 60 * 60 * 1000;
   const nextReviewDate = new Date(nextReviewMs).toISOString();
@@ -86,20 +100,18 @@ export function calculateSrsSchedule(
   // Ebbinghaus Memory Retention Decay Curve Estimation
   // 100% -> 75% over the interval, then drops to 40% when overdue
   let estimatedRetention = 100;
-  if (hasAttempt) {
-    if (elapsedDays <= intervalDays) {
-      const progress = elapsedDays / Math.max(1, intervalDays);
-      estimatedRetention = Math.round(100 - progress * 25); // Drops from 100% to 75%
-    } else {
-      const overdueProgress = (elapsedDays - intervalDays) / Math.max(1, intervalDays);
-      estimatedRetention = Math.max(35, Math.round(75 - overdueProgress * 35)); // Drops from 75% to 40%
-    }
+  if (elapsedDays <= intervalDays) {
+    const progress = elapsedDays / Math.max(1, intervalDays);
+    estimatedRetention = Math.round(100 - progress * 25); // Drops from 100% to 75%
+  } else {
+    const overdueProgress = (elapsedDays - intervalDays) / Math.max(1, intervalDays);
+    estimatedRetention = Math.max(35, Math.round(75 - overdueProgress * 35)); // Drops from 75% to 40%
   }
 
   return {
     srsStage: stage,
     intervalDays,
-    lastRevisedAt: hasAttempt ? new Date(lastAttemptMs).toISOString() : null,
+    lastRevisedAt: new Date(lastAttemptMs).toISOString(),
     nextReviewDate,
     isDueForRevision,
     daysUntilDue,
