@@ -190,7 +190,7 @@ export default function LearningQuotientReportPage() {
     } else if (examComp.score >= 60) {
       examText = `${name} परीक्षाओं में संतोषजनक प्रदर्शन कर रहे हैं, लेकिन छोटी-मोटी वैचारिक त्रुटियों (Conceptual Errors) पर ध्यान देकर और नियमित पुनरावृत्ति (Revision) करके अंक और बेहतर कर सकते हैं।`;
     } else {
-      examText = `${name} को मूलभूत अवधारणाएं (Fundamentals) सुदृढ़ करने के लिए अतिरिक्त मार्गदर्शन एवं व्यवस्थित पुनरावृत्ति की अत्यंत आवश्यकता है।`;
+      examText = `${name} को मूलभूत अवधारणाएं (Fundamentals) सुदृढ़ करने के लिए अतिरिक्त मार्गदर्शन एवं व्यवस्थित पुनरावृत्ति (Systematic Revision) की अत्यंत आवश्यकता है।`;
     }
     if (examComp.details?.absent > 0) {
       examText += ` (कृपया ध्यान दें कि ${examComp.details.absent} अनुपस्थित परीक्षा(ओं) के कारण कुल प्राप्तांक प्रभावित हुए हैं।)`;
@@ -249,9 +249,13 @@ export default function LearningQuotientReportPage() {
     else if (parentScore >= 80) observationPoints.push('घर पर नियमित अध्ययन दिनचर्या का पालन कर रहे हैं');
 
     const lq = details.overallQuotient ?? 0;
-    let obsText = observationPoints.length > 0
-      ? `कक्षा एवं गृह अवलोकन: ${name} ${observationPoints.join(', ')}। कुल LQ ${lq}/100 है।`
-      : `कक्षा एवं गृह अवलोकन: अनुशासित एवं संतोषजनक। कुल LQ ${lq}/100 है।`;
+    let obsText = '';
+    if (observationPoints.length > 0) {
+      const bullets = observationPoints.map((pt, idx) => `   - ${pt}${idx === observationPoints.length - 1 ? '।' : ','}`).join('\n');
+      obsText = `कक्षा एवं गृह अवलोकन: ${name}\n${bullets}\n\n   👉 *कुल LQ ${lq}/100 है।*`;
+    } else {
+      obsText = `कक्षा एवं गृह अवलोकन: ${name}\n   - अनुशासित एवं संतोषजनक व्यवहार।\n\n   👉 *कुल LQ ${lq}/100 है।*`;
+    }
 
     // Point 5: Concluding Parent Advice
     let adviceText = '';
@@ -357,8 +361,8 @@ Namaste Parents 🙏
 "${comments}"
 
 =========================
-Aapke sahyog aur support ke liye dhanyawad! 
-Milkar hum student ke concepts aur exam score ko behtar banayenge.
+आपके सहयोग एवं समर्थन के लिए धन्यवाद! 🙏
+मिलकर हम विद्यार्थी की संकल्पनाओं (Concepts) और परीक्षा परिणाम को और बेहतर बनाएंगे।
 
 _Yashcom Foundation_
 _Empowering Conceptual Excellence_`;
