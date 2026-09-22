@@ -720,9 +720,26 @@ export function getExamDateKey(exam: any): string {
 
 export function isExamForStudent(exam: any, studentCode: string, bIds: string[], studentClass?: string): boolean {
   if (!exam) return false;
+
+  // Exclude unassigned, draft, vault, or unpublished exams
+  if (
+    exam.status === 'unassigned' ||
+    exam.status === 'archived_vault' ||
+    exam.status === 'draft' ||
+    exam.published === false ||
+    exam.isAssigned === false ||
+    exam.isArchivedVault === true ||
+    exam.assignmentStatus === 'unassigned'
+  ) {
+    return false;
+  }
+
+  // Direct student targeting
   if (exam.targetStudents && Array.isArray(exam.targetStudents) && exam.targetStudents.includes(studentCode)) {
     return true;
   }
+
+  // Direct batch targeting
   if (exam.batchId && bIds.includes(exam.batchId)) {
     return true;
   }
@@ -732,16 +749,23 @@ export function isExamForStudent(exam: any, studentCode: string, bIds: string[],
   if (Array.isArray(exam.targetBatches) && exam.targetBatches.some((b: string) => bIds.includes(b))) {
     return true;
   }
-  if (studentClass) {
+
+  // Class-wide fallback: ONLY if exam has active/published status and is not assigned to other batches
+  if (studentClass && (exam.status === 'active' || exam.published === true)) {
     const normStudent = String(studentClass).replace(/\D/g, '');
     const normExam = String(exam.class || exam.className || '').replace(/\D/g, '');
     if (normExam && normStudent && normExam === normStudent) {
       const hasSpecificBatches = (Array.isArray(exam.batchIds) && exam.batchIds.length > 0) ||
                                 (Array.isArray(exam.targetBatches) && exam.targetBatches.length > 0) ||
                                 (exam.batchId);
-      if (!hasSpecificBatches) {
-        return true;
+      if (hasSpecificBatches) {
+        return (
+          (exam.batchId && bIds.includes(exam.batchId)) ||
+          (Array.isArray(exam.batchIds) && exam.batchIds.some((b: string) => bIds.includes(b))) ||
+          (Array.isArray(exam.targetBatches) && exam.targetBatches.some((b: string) => bIds.includes(b)))
+        );
       }
+      return true;
     }
   }
   return false;
@@ -1072,7 +1096,8 @@ export class QuotientService {
       observationsSnap,
       parentReviewsSnap,
       examsSnap,
-      subjectiveExamsSnap
+      subjectiveExamsSnap,
+      batchAssignmentsSnap
     ] = await Promise.all([
       adminDb.collection('examAttempts').where('studentCode', '==', studentCode).get(),
       adminDb.collection('assignments').where('studentCode', '==', studentCode).get(),
@@ -1081,12 +1106,24 @@ export class QuotientService {
       adminDb.collection('studentObservations').where('studentCode', '==', studentCode).get(),
       adminDb.collection('parentReviews').where('studentCode', '==', studentCode).get(),
       adminDb.collection('exams').get(),
-      adminDb.collection('subjectiveExams').get()
+      adminDb.collection('subjectiveExams').get(),
+      adminDb.collection('batchAssignments').get()
     ]);
 
     const examsMap = new Map();
     examsSnap.docs.forEach(doc => {
       examsMap.set(doc.id, { id: doc.id, ...doc.data() });
+    });
+
+    batchAssignmentsSnap.docs.forEach(doc => {
+      const bData = doc.data();
+      if (bData.examId && examsMap.has(bData.examId)) {
+        const ex = examsMap.get(bData.examId);
+        const tBatches = new Set([...(ex.targetBatches || []), ...(bData.targetBatches || [])]);
+        const tStudents = new Set([...(ex.targetStudents || []), ...(bData.targetStudents || [])]);
+        ex.targetBatches = Array.from(tBatches);
+        ex.targetStudents = Array.from(tStudents);
+      }
     });
 
     const rawAttempts = attemptsSnap.docs.map((doc: any) => doc.data() as any).filter((att: any) => att.examType !== 'entrance');
@@ -1127,7 +1164,8 @@ export class QuotientService {
       examsSnap,
       subjectiveExamsSnap,
       batchesSnap,
-      parentReviewsSnap
+      parentReviewsSnap,
+      batchAssignmentsSnap
     ] = await Promise.all([
       adminDb.collection('examAttempts').get(),
       adminDb.collection('assignments').get(),
@@ -1138,12 +1176,24 @@ export class QuotientService {
       adminDb.collection('exams').get(),
       adminDb.collection('subjectiveExams').get(),
       adminDb.collection('batches').get(),
-      adminDb.collection('parentReviews').get()
+      adminDb.collection('parentReviews').get(),
+      adminDb.collection('batchAssignments').get()
     ]);
 
     const examsMap = new Map();
     examsSnap.docs.forEach(doc => {
       examsMap.set(doc.id, { id: doc.id, ...doc.data() });
+    });
+
+    batchAssignmentsSnap.docs.forEach(doc => {
+      const bData = doc.data();
+      if (bData.examId && examsMap.has(bData.examId)) {
+        const ex = examsMap.get(bData.examId);
+        const tBatches = new Set([...(ex.targetBatches || []), ...(bData.targetBatches || [])]);
+        const tStudents = new Set([...(ex.targetStudents || []), ...(bData.targetStudents || [])]);
+        ex.targetBatches = Array.from(tBatches);
+        ex.targetStudents = Array.from(tStudents);
+      }
     });
 
     const subjectiveExamsList = subjectiveExamsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
