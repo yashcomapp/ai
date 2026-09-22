@@ -161,102 +161,87 @@ export default function LearningQuotientReportPage() {
   const generateStudentComments = (studentInfo: any, details: any): string => {
     if (!details || !details.components) return '';
 
-    const name = studentInfo?.name || 'The student';
+    const name = studentInfo?.name || 'Student';
     const examComp = details.components.find((c: any) => c.parameterId === 'exam') || { score: 0, details: {} };
     const practiceComp = details.components.find((c: any) => c.parameterId === 'practice') || { score: 0, details: {} };
     const healthComp = details.components.find((c: any) => c.parameterId === 'topicHealth') || { score: 0, details: {} };
-    const integrityComp = details.components.find((c: any) => c.parameterId === 'integrity') || { score: 0, details: {} };
     const obsComp = details.components.find((c: any) => c.parameterId === 'observations') || { score: 0, details: {} };
+
+    const totalAssigned = healthComp.details?.totalTopics ?? practiceComp.details?.totalAssignedTopics ?? 0;
+    const masteredTopics = healthComp.details?.masteredCount ?? 0;
+    const unmasteredTopics = Math.max(0, totalAssigned - masteredTopics);
+    const practicedTopics = practiceComp.details?.topicsAttemptedCount ?? 0;
+    const totalQuestions = practiceComp.details?.totalQuestionsAttempted ?? 0;
 
     const sentences: string[] = [];
 
-    // 1. Exam Performance comment
+    // 1. Exam Performance Feedback (Hinglish)
     if (examComp.score >= 85) {
-      sentences.push(`${name} is demonstrating outstanding academic performance in exams, showing a deep conceptual understanding of the topics.`);
+      sentences.push(`${name} exams me lagatar behtareen performance de rahe hain aur concepts bohot acche se clear hain.`);
     } else if (examComp.score >= 60) {
-      sentences.push(`${name} is performing steadily in assessments, but can achieve higher scores by focusing on minor conceptual gaps and thorough revision.`);
+      sentences.push(`${name} assessments me theek perform kar rahe hain, lekin choti conceptual galtiyon par dhyan dekar aur revision karke score aur badha sakte hain.`);
     } else {
-      sentences.push(`${name}'s exam scores indicate that they need additional academic support and structured review to strengthen their fundamentals.`);
+      sentences.push(`${name} ko fundamentals strong karne ke liye additional study guidance aur structured revision ki sakht zaroorat hai.`);
     }
 
     if (examComp.details?.absent > 0) {
-      sentences.push(`Note that ${examComp.details.absent} missed test(s) have impacted their overall score mapping.`);
+      sentences.push(`Dhyan dein ki ${examComp.details.absent} missed test(s) ki wajah se overall score par asar pada hai.`);
     }
 
-    // 2. Practice Engagement comment
-    const avgQuestions = practiceComp.details?.averageQuestionsPerTopic ?? 0;
+    // 2. Practice & Topics Mastered vs Unmastered (Hinglish)
+    if (totalAssigned > 0) {
+      if (unmasteredTopics > 0) {
+        sentences.push(`Total ${totalAssigned} assigned topics me se ${masteredTopics} topics Mastered hain, jabki ${unmasteredTopics} topics abhi unmastered/practice pending hain jin par practice aur revision zaroori hai.`);
+      } else {
+        sentences.push(`Syllabus ke sabhi ${totalAssigned} assigned topics successfully Mastered ho chuke hain.`);
+      }
+    }
+
     if (practiceComp.score >= 80) {
-      if (avgQuestions > 0 && avgQuestions <= 15) {
-        sentences.push(`Their self-practice habits are exemplary, mastering concepts quickly (avg ${avgQuestions} Qs/topic) with high efficiency.`);
-      } else {
-        sentences.push(`Their self-practice habits are exemplary, completing ${practiceComp.details?.totalQuestionsAttempted || 0} questions with high mastery efficiency.`);
-      }
-    } else if (practiceComp.score >= 60) {
-      if (avgQuestions > 15) {
-        sentences.push(`They are actively practicing, but solving too many questions (avg ${avgQuestions} Qs/topic) to achieve mastery. We recommend reading the textbook and reviewing concepts before taking tests.`);
-      } else {
-        sentences.push(`They are actively practicing (${practiceComp.details?.totalQuestionsAttempted || 0} questions), but need to focus on completing topics in fewer attempts.`);
-      }
+      sentences.push(`Self-practice consistency bohot shandar hai (${practicedTopics} topics par ${totalQuestions} questions solve kiye hain).`);
+    } else if (practiceComp.score >= 50) {
+      sentences.push(`Practice regular chal rahi hai (${practicedTopics} topics covered), lekin unmastered topics par practice sets badhane ki zaroorat hai.`);
     } else {
-      if (avgQuestions > 15) {
-        sentences.push(`Practice engagement is high in volume, but has low efficiency (avg ${avgQuestions} Qs/topic) without achieving mastery. Reading the textbook and thorough concept revision is strongly recommended.`);
-      } else {
-        sentences.push(`Practice engagement is below expectations with only ${practiceComp.details?.totalQuestionsAttempted || 0} questions attempted; regular practice is highly recommended.`);
-      }
+      sentences.push(`Practice engagement kam hai (${practicedTopics} topics par sirf ${totalQuestions} questions solve kiye hain); rozana time par self-practice complete karna zaroori hai.`);
     }
 
-    // 3. Topic Health & SRS Retention comment
-    if (healthComp.score >= 80) {
-      sentences.push(`Their subject topic health is excellent, showing consistent mastery across assigned coursework.`);
-    } else if (healthComp.details?.attentionCount > 0) {
-      sentences.push(`Currently, there are ${healthComp.details.attentionCount} focus topic(s) requiring immediate attention and review to achieve complete mastery.`);
-    } else {
-      sentences.push(`Concept mastery is stable, but they should proactively review newly assigned chapters.`);
-    }
-
+    // 3. SRS Memory Retention (Hinglish)
     if (healthComp.details?.srsDueCount > 0) {
-      sentences.push(`${healthComp.details.srsDueCount} topic(s) are due for a quick memory refresher workout to preserve long-term retention.`);
+      sentences.push(`${healthComp.details.srsDueCount} topic(s) ka memory refresher workout due hai taaki purane concepts yaad rahein.`);
     }
 
-    // 4. Proctoring Integrity comment
-    if (integrityComp.score >= 90) {
-      sentences.push(`They maintain high focus and integrity during online testing environments.`);
-    } else if (integrityComp.score < 80) {
-      sentences.push(`Some focus deviations (tab-switching) were observed during online tests; parental supervision is recommended.`);
-    }
-
-    // 5. Classroom Observations
+    // 4. Classroom & Home Observations (Hinglish)
     const obsParams = obsComp.details?.parameters || [];
     const sincerity = obsParams.find((p: any) => p.id === 'sincerity')?.average ?? 50;
     const participation = obsParams.find((p: any) => p.id === 'activeParticipation')?.average ?? 50;
     const timelyWork = obsParams.find((p: any) => p.id === 'timelyWork')?.average ?? 50;
     const parentScore = obsParams.find((p: any) => p.id === 'parentScore')?.average ?? 50;
 
-    const classroomSentences: string[] = [];
-    if (sincerity >= 80) classroomSentences.push('shows exemplary behavior');
-    else if (sincerity < 50) classroomSentences.push('needs to improve classroom sincerity');
+    const observationPoints: string[] = [];
+    if (sincerity < 50) observationPoints.push('class me sincerity aur focus badhane ki zaroorat hai');
+    else if (sincerity >= 80) observationPoints.push('class me disciplined behavior maintain kar rahe hain');
 
-    if (participation >= 80) classroomSentences.push('is highly active in participation');
-    else if (participation < 50) classroomSentences.push('needs encouragement to participate');
+    if (participation < 50) observationPoints.push('active participation me thoda encouragement chahiye');
+    else if (participation >= 80) observationPoints.push('actively participate karte hain');
 
-    if (timelyWork >= 80) classroomSentences.push('consistently submits work on time');
-    else if (timelyWork < 50) classroomSentences.push('needs to submit assignments promptly');
+    if (timelyWork < 50) observationPoints.push('assignments time par submit karne honge');
+    else if (timelyWork >= 80) observationPoints.push('assignments time par submit karte hain');
 
-    if (parentScore >= 80) classroomSentences.push('maintains high home-study discipline');
-    else if (parentScore < 50) classroomSentences.push('requires stricter supervision for home studies');
+    if (parentScore < 50) observationPoints.push('ghar par self-study ka strict supervision zaroori hai');
+    else if (parentScore >= 80) observationPoints.push('ghar par self-study routine acchi tarah follow kar rahe hain');
 
-    if (classroomSentences.length > 0) {
-      sentences.push(`In classroom & home observations, ${name} ` + classroomSentences.join(', ') + '.');
+    if (observationPoints.length > 0) {
+      sentences.push(`Observations: ${name} ` + observationPoints.join(', ') + '.');
     }
 
-    // Overall Tier advice
+    // 5. Overall LQ Summary Advice (Hinglish)
     const lq = details.overallQuotient ?? 0;
     if (lq >= 85) {
-      sentences.push(`Overall, with a Learning Quotient (LQ) of ${lq}, ${name} exhibits excellent academic consistency and behavior.`);
+      sentences.push(`Overall LQ ${lq}/100 ke saath ${name} Excellent Tier me hain. Isi tarah lagan banaye rakhein!`);
     } else if (lq >= 60) {
-      sentences.push(`Overall, with an LQ of ${lq}, ${name} shows solid potential and can reach the excellent tier with consistent effort.`);
+      sentences.push(`Overall LQ ${lq}/100 ke saath ${name} me accha potential hai aur regular practice se Top Tier me aa sakte hain.`);
     } else {
-      sentences.push(`Overall, with an LQ of ${lq}, immediate parent-teacher alignment is advised to help ${name} focus on practice and revision.`);
+      sentences.push(`Overall LQ ${lq}/100 hai; parents se anurodh hai ki ghar par student ke revision aur unmastered topics ki practice par vishesh dhyan dein.`);
     }
 
     return sentences.join(' ');
@@ -392,11 +377,17 @@ export default function LearningQuotientReportPage() {
       ? `this week, ending ${new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}`
       : new Date().toLocaleString('en-IN', { month: 'long', year: 'numeric' });
     
+    const studentName = selectedStudentInfo?.name || 'Student';
     const examComp = quotientDetails.components.find((c: any) => c.parameterId === 'exam') || { score: 0, details: {} };
     const practiceComp = quotientDetails.components.find((c: any) => c.parameterId === 'practice') || { score: 0, details: {} };
     const healthComp = quotientDetails.components.find((c: any) => c.parameterId === 'topicHealth') || { score: 0, details: {} };
-    const integrityComp = quotientDetails.components.find((c: any) => c.parameterId === 'integrity') || { score: 0, details: {} };
     const obsComp = quotientDetails.components.find((c: any) => c.parameterId === 'observations') || { score: 0, details: {} };
+
+    const totalAssigned = healthComp.details?.totalTopics ?? practiceComp.details?.totalAssignedTopics ?? 0;
+    const masteredTopics = healthComp.details?.masteredCount ?? 0;
+    const unmasteredTopics = Math.max(0, totalAssigned - masteredTopics);
+    const practicedTopics = practiceComp.details?.topicsAttemptedCount ?? 0;
+    const totalQuestions = practiceComp.details?.totalQuestionsAttempted ?? 0;
 
     const activePart = obsComp.details?.parameters?.find((p: any) => p.id === 'activeParticipation')?.average ?? 50;
     const sincerity = obsComp.details?.parameters?.find((p: any) => p.id === 'sincerity')?.average ?? 50;
@@ -406,37 +397,54 @@ export default function LearningQuotientReportPage() {
     const lq = quotientDetails.overallQuotient;
     const tierName = lq >= 85 ? 'Excellent Tier 🌟' : lq >= 60 ? 'Standard Tier 👍' : 'Needs Attention ⚠️';
 
+    const examScore = examComp.score !== null ? `${examComp.score}/100` : 'N/A';
+    const attendanceRate = examComp.details?.attendanceRate ?? 100;
+    const absentCount = examComp.details?.absent ?? 0;
+
+    const practiceScore = practiceComp.score !== null ? `${practiceComp.score}/100` : '0/100';
+    const healthScore = healthComp.score !== null ? `${healthComp.score}/100` : '0/100';
+    const averageRetention = healthComp.details?.averageRetention ?? 100;
+    const srsDueCount = healthComp.details?.srsDueCount ?? 0;
+
+    const obsScore = obsComp.score !== null ? `${obsComp.score}/100` : 'N/A';
+
+    const comments = commentsText || generateStudentComments(
+      { name: studentName, studentCode: selectedCode, email: selectedStudentInfo?.email || '' },
+      quotientDetails
+    );
+
     const message = `*📚 YASHCOM FOUNDATION 📚*
-*🌟 ${durationLabel} Performance Review 🌟*
+*🌟 ${durationLabel} Academic Review & Learning Quotient (LQ) 🌟*
 =========================
-Dear Parent,
+Namaste Parents 🙏
 
-Here is the ${durationLabel} Performance & Learning Quotient (LQ) summary for *${selectedStudentInfo?.name || 'your child'}* for *${reportPeriod}*.
+*${studentName}* ka ${durationLabel} Performance & Learning Quotient (LQ) summary (*${reportPeriod}*):
 
-📈 *OVERALL ${durationLabel.toUpperCase()} LEARNING QUOTIENT (LQ)*
+📈 *OVERALL LEARNING QUOTIENT (LQ)*
 👉 *${lq} / 100* (${tierName})
 
-📊 *PERFORMANCE PILLARS BREAKDOWN*
-🎯 *1. Exam Performance:* *${examComp.score !== null ? examComp.score + '/100' : 'N/A'}*
-   ${examComp.score !== null 
-     ? `└ _Attendance: ${examComp.details?.attendanceRate ?? 100}%, Absent: ${examComp.details?.absent ?? 0} Tests_`
-     : `└ _No exams completed in this period_`}
-🏋️ *2. Practice Engagement (Efficiency):* *${practiceComp.score}/100*
-   └ _Attempted: ${practiceComp.details?.totalQuestionsAttempted ?? 0} Qs, Topics: ${practiceComp.details?.topicsAttemptedCount ?? 0}, Avg Qs/Topic: ${practiceComp.details?.averageQuestionsPerTopic ?? 0}_
-🩺 *3. Topic Health & SRS Retention:* *${healthComp.score}/100*
-   └ _Mastery: ${healthComp.details?.masteryRatio ?? 0}%, Retention: ${healthComp.details?.averageRetention ?? 100}% (Due: ${healthComp.details?.srsDueCount ?? 0})_
-🛡️ *4. Proctoring Integrity:* *${integrityComp.score}/100*
-   └ _Integrity Index: ${integrityComp.score}%, Avg Infractions: ${integrityComp.details?.averageWeeklyViolations ?? 0}/wk_
-👥 *5. Classroom Observations:* *${obsComp.score !== null ? obsComp.score + '/100' : 'N/A'}*
-   ${obsComp.score !== null
-     ? `└ _Participation (20%): ${activePart}%, Sincerity (20%): ${sincerity}%, Timely Work (20%): ${timelyWork}%, Parent Score (40%): ${parentScore}%_`
-     : `└ _No observations logged in this period_`}
+📊 *PERFORMANCE PILLARS SUMMARY*
+🎯 *1. Exam Performance:* *${examScore}*
+   └ Attendance: ${attendanceRate}%, Missed Tests: ${absentCount}
 
-📝 *${isWeekly ? 'WEEKLY STUDY TIP' : "EDUCATOR'S DIAGNOSTIC FEEDBACK"}*
-"${commentsText || 'Keep up the good effort!'}"
+🏋️ *2. Practice Efforts & Consistency:* *${practiceScore}*
+   └ Total Assigned Topics: *${totalAssigned}*
+   └ Mastered Topics (🟢): *${masteredTopics}*
+   └ Practice / Revision Pending (🟡🔴 Unmastered): *${unmasteredTopics}*
+   └ Practice Activity: *${practicedTopics}* topics par *${totalQuestions}* questions solve kiye
+
+🩺 *3. Concept Health & Memory Retention:* *${healthScore}*
+   └ Retention Rate: ${averageRetention}% (${srsDueCount > 0 ? `${srsDueCount} topics revision ke liye due hain` : 'Retention stable hai'})
+
+👥 *4. Classroom & Home Observations:* *${obsScore}*
+   └ Participation: ${activePart}%, Sincerity: ${sincerity}%, Timely Work: ${timelyWork}%, Parent Strict Score: ${parentScore}%
+
+📝 *EDUCATOR'S DIAGNOSTIC FEEDBACK (सलाह):*
+"${comments}"
 
 =========================
-Thank you for your partnership in your child's learning journey!
+Aapke sahyog aur support ke liye dhanyawad! 
+Milkar hum student ke concepts aur exam score ko behtar banayenge.
 
 _Yashcom Foundation_
 _Empowering Conceptual Excellence_`;
@@ -707,11 +715,17 @@ _Empowering Conceptual Excellence_`;
       ? `this week, ending ${new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}`
       : new Date().toLocaleString('en-IN', { month: 'long', year: 'numeric' });
 
+    const studentName = student.studentName;
     const examComp = broadcastActiveDetails.components.find((c: any) => c.parameterId === 'exam') || { score: 0, details: {} };
     const practiceComp = broadcastActiveDetails.components.find((c: any) => c.parameterId === 'practice') || { score: 0, details: {} };
     const healthComp = broadcastActiveDetails.components.find((c: any) => c.parameterId === 'topicHealth') || { score: 0, details: {} };
-    const integrityComp = broadcastActiveDetails.components.find((c: any) => c.parameterId === 'integrity') || { score: 0, details: {} };
     const obsComp = broadcastActiveDetails.components.find((c: any) => c.parameterId === 'observations') || { score: 0, details: {} };
+
+    const totalAssigned = healthComp.details?.totalTopics ?? practiceComp.details?.totalAssignedTopics ?? 0;
+    const masteredTopics = healthComp.details?.masteredCount ?? 0;
+    const unmasteredTopics = Math.max(0, totalAssigned - masteredTopics);
+    const practicedTopics = practiceComp.details?.topicsAttemptedCount ?? 0;
+    const totalQuestions = practiceComp.details?.totalQuestionsAttempted ?? 0;
 
     const activePart = obsComp.details?.parameters?.find((p: any) => p.id === 'activeParticipation')?.average ?? 50;
     const sincerity = obsComp.details?.parameters?.find((p: any) => p.id === 'sincerity')?.average ?? 50;
@@ -721,42 +735,54 @@ _Empowering Conceptual Excellence_`;
     const lq = broadcastActiveDetails.overallQuotient;
     const tierName = lq >= 85 ? 'Excellent Tier 🌟' : lq >= 60 ? 'Standard Tier 👍' : 'Needs Attention ⚠️';
 
+    const examScore = examComp.score !== null ? `${examComp.score}/100` : 'N/A';
+    const attendanceRate = examComp.details?.attendanceRate ?? 100;
+    const absentCount = examComp.details?.absent ?? 0;
+
+    const practiceScore = practiceComp.score !== null ? `${practiceComp.score}/100` : '0/100';
+    const healthScore = healthComp.score !== null ? `${healthComp.score}/100` : '0/100';
+    const averageRetention = healthComp.details?.averageRetention ?? 100;
+    const srsDueCount = healthComp.details?.srsDueCount ?? 0;
+
+    const obsScore = obsComp.score !== null ? `${obsComp.score}/100` : 'N/A';
+
     const comments = generateStudentComments(
       { name: student.studentName, studentCode: student.studentCode, email: student.email },
       broadcastActiveDetails
     );
 
     const message = `*📚 YASHCOM FOUNDATION 📚*
-*🌟 ${durationLabel} Performance Review 🌟*
+*🌟 ${durationLabel} Academic Review & Learning Quotient (LQ) 🌟*
 =========================
-Dear Parent,
+Namaste Parents 🙏
 
-Here is the ${durationLabel} Performance & Learning Quotient (LQ) summary for *${student.studentName}* for *${reportPeriod}*.
+*${studentName}* ka ${durationLabel} Performance & Learning Quotient (LQ) summary (*${reportPeriod}*):
 
-📈 *OVERALL ${durationLabel.toUpperCase()} LEARNING QUOTIENT (LQ)*
+📈 *OVERALL LEARNING QUOTIENT (LQ)*
 👉 *${lq} / 100* (${tierName})
 
-📊 *PERFORMANCE PILLARS BREAKDOWN*
-🎯 *1. Exam Performance:* *${examComp.score !== null ? examComp.score + '/100' : 'N/A'}*
-   ${examComp.score !== null 
-     ? `└ _Attendance: ${examComp.details?.attendanceRate ?? 100}%, Absent: ${examComp.details?.absent ?? 0} Tests_`
-     : `└ _No exams completed in this period_`}
-🏋️ *2. Practice Engagement (Efficiency):* *${practiceComp.score}/100*
-   └ _Attempted: ${practiceComp.details?.totalQuestionsAttempted ?? 0} Qs, Topics: ${practiceComp.details?.topicsAttemptedCount ?? 0}, Avg Qs/Topic: ${practiceComp.details?.averageQuestionsPerTopic ?? 0}_
-🩺 *3. Topic Health & SRS Retention:* *${healthComp.score}/100*
-   └ _Mastery: ${healthComp.details?.masteryRatio ?? 0}%, Retention: ${healthComp.details?.averageRetention ?? 100}% (Due: ${healthComp.details?.srsDueCount ?? 0})_
-🛡️ *4. Proctoring Integrity:* *${integrityComp.score}/100*
-   └ _Integrity Index: ${integrityComp.score}%, Avg Infractions: ${integrityComp.details?.averageWeeklyViolations ?? 0}/wk_
-👥 *5. Classroom Observations:* *${obsComp.score !== null ? obsComp.score + '/100' : 'N/A'}*
-   ${obsComp.score !== null
-     ? `└ _Participation (20%): ${activePart}%, Sincerity (20%): ${sincerity}%, Timely Work (20%): ${timelyWork}%, Parent Score (40%): ${parentScore}%_`
-     : `└ _No observations logged in this period_`}
+📊 *PERFORMANCE PILLARS SUMMARY*
+🎯 *1. Exam Performance:* *${examScore}*
+   └ Attendance: ${attendanceRate}%, Missed Tests: ${absentCount}
 
-📝 *${isWeekly ? 'WEEKLY STUDY TIP' : "EDUCATOR'S DIAGNOSTIC FEEDBACK"}*
-"${comments || 'Keep up the good effort!'}"
+🏋️ *2. Practice Efforts & Consistency:* *${practiceScore}*
+   └ Total Assigned Topics: *${totalAssigned}*
+   └ Mastered Topics (🟢): *${masteredTopics}*
+   └ Practice / Revision Pending (🟡🔴 Unmastered): *${unmasteredTopics}*
+   └ Practice Activity: *${practicedTopics}* topics par *${totalQuestions}* questions solve kiye
+
+🩺 *3. Concept Health & Memory Retention:* *${healthScore}*
+   └ Retention Rate: ${averageRetention}% (${srsDueCount > 0 ? `${srsDueCount} topics revision ke liye due hain` : 'Retention stable hai'})
+
+👥 *4. Classroom & Home Observations:* *${obsScore}*
+   └ Participation: ${activePart}%, Sincerity: ${sincerity}%, Timely Work: ${timelyWork}%, Parent Strict Score: ${parentScore}%
+
+📝 *EDUCATOR'S DIAGNOSTIC FEEDBACK (सलाह):*
+"${comments}"
 
 =========================
-Thank you for your partnership in your child's learning journey!
+Aapke sahyog aur support ke liye dhanyawad! 
+Milkar hum student ke concepts aur exam score ko behtar banayenge.
 
 _Yashcom Foundation_
 _Empowering Conceptual Excellence_`;
@@ -1839,13 +1865,24 @@ _Empowering Conceptual Excellence_`;
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)' }}>Message Preview Summary:</div>
                     <div style={{ fontSize: '11px', background: 'var(--bg-soft)', padding: '10px 14px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)', maxHeight: '180px', overflowY: 'auto', whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}>
-                      Overall LQ: {broadcastActiveDetails.overallQuotient}/100
-                      {"\n"}Exam: {broadcastActiveDetails.components.find((c: any) => c.parameterId === 'exam')?.score ?? 0}/100
-                      {"\n"}Practice: {broadcastActiveDetails.components.find((c: any) => c.parameterId === 'practice')?.score ?? 0}/100
-                      {"\n"}Comments: "{generateStudentComments(
-                        { name: broadcastQueue[broadcastIndex].studentName, studentCode: broadcastQueue[broadcastIndex].studentCode, email: broadcastQueue[broadcastIndex].email },
-                        broadcastActiveDetails
-                      )}"
+                      {(() => {
+                        const hComp = broadcastActiveDetails.components.find((c: any) => c.parameterId === 'topicHealth') || {};
+                        const pComp = broadcastActiveDetails.components.find((c: any) => c.parameterId === 'practice') || {};
+                        const tot = hComp.details?.totalTopics ?? pComp.details?.totalAssignedTopics ?? 0;
+                        const mast = hComp.details?.masteredCount ?? 0;
+                        const unmast = Math.max(0, tot - mast);
+                        return (
+                          <>
+                            Overall LQ: {broadcastActiveDetails.overallQuotient}/100
+                            {"\n"}Exam: {broadcastActiveDetails.components.find((c: any) => c.parameterId === 'exam')?.score ?? 0}/100 | Practice: {pComp.score ?? 0}/100
+                            {"\n"}Topics: {tot} Assigned | {mast} Mastered | {unmast} Unmastered (Pending)
+                            {"\n"}Comments: "{generateStudentComments(
+                              { name: broadcastQueue[broadcastIndex].studentName, studentCode: broadcastQueue[broadcastIndex].studentCode, email: broadcastQueue[broadcastIndex].email },
+                              broadcastActiveDetails
+                            )}"
+                          </>
+                        );
+                      })()}
                     </div>
                   </div>
                 ) : (
