@@ -323,7 +323,6 @@ export class TopicHealthCalculator implements ParameterCalculator {
         Number(rec.confidence || 0) > 0 || 
         Number(rec.totalAttempts || 0) > 0 || 
         Number(rec.questionsAttempted || 0) > 0 || 
-        Number(rec.mastery || 0) > 0 ||
         Boolean(rec.isRecoveryMastered)
       );
       if (!hasPracticed) {
