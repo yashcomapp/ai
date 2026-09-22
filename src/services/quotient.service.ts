@@ -1147,19 +1147,19 @@ export class QuotientService {
    * Logs single observation scores across multiple parameters for a student atomically.
    */
   static async logSingleObservation(studentCode: string, scores: Record<string, number>, actorEmail: string): Promise<void> {
-    const paramIds = Object.keys(scores);
     const batch = adminDb.batch();
 
-    if (paramIds.length > 0) {
-      const existingQuery = await adminDb.collection('studentObservations')
-        .where('studentCode', '==', studentCode)
-        .where('parameterId', 'in', paramIds)
-        .get();
-      
-      existingQuery.docs.forEach(doc => {
+    const existingQuery = await adminDb.collection('studentObservations')
+      .where('studentCode', '==', studentCode)
+      .get();
+    
+    existingQuery.docs.forEach(doc => {
+      const data = doc.data();
+      // Delete legacy standard docs or docs matching any of the submitted parameter IDs
+      if (!data.parameterId || Object.prototype.hasOwnProperty.call(scores, data.parameterId)) {
         batch.delete(doc.ref);
-      });
-    }
+      }
+    });
 
     Object.entries(scores).forEach(([paramId, scoreVal]) => {
       const ref = adminDb.collection('studentObservations').doc();

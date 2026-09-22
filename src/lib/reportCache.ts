@@ -100,6 +100,33 @@ export class ReportCacheManager {
   }
 
   /**
+   * Invalidates all cache entries matching a pattern string from both memory and Firestore.
+   */
+  static async invalidatePattern(pattern: string) {
+    for (const key of this.cache.keys()) {
+      if (key.includes(pattern)) {
+        this.cache.delete(key);
+      }
+    }
+    try {
+      const snap = await adminDb.collection('reportCache').get();
+      const batch = adminDb.batch();
+      let deleteCount = 0;
+      snap.docs.forEach(doc => {
+        if (doc.id.includes(pattern)) {
+          batch.delete(doc.ref);
+          deleteCount++;
+        }
+      });
+      if (deleteCount > 0) {
+        await batch.commit();
+      }
+    } catch (err) {
+      console.warn('Failed to invalidate Firestore reportCache pattern:', err);
+    }
+  }
+
+  /**
    * Clears all report cache entries from both memory and Firestore.
    */
   static async clearAll() {

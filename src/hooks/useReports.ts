@@ -9,7 +9,8 @@ export function useReports() {
     setError(null);
     try {
       const res = await fetch(url, {
-        headers: { 'Authorization': `Bearer ${idToken}` }
+        headers: { 'Authorization': `Bearer ${idToken}` },
+        cache: 'no-store'
       });
       if (!res.ok) throw new Error(`Report fetch failed: ${res.statusText}`);
       const data = await res.json();

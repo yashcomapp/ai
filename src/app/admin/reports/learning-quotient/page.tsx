@@ -452,10 +452,18 @@ _Empowering Conceptual Excellence_`;
       const idToken = await firebaseUser!.getIdToken();
       const res = await getQuotientReport(idToken, student.studentCode);
       if (res && res.success && res.quotientData) {
+        if (res.parameters && res.parameters.length > 0) {
+          setParameters(res.parameters);
+        }
         const obsComponent = res.quotientData.components.find((c: any) => c.parameterId === 'observations');
+        const activeParams = (parameters && parameters.length > 0)
+          ? parameters
+          : (res.parameters && res.parameters.length > 0)
+          ? res.parameters
+          : (obsComponent?.details?.parameters || []);
+
         const initialScores: Record<string, number> = {};
-        
-        parameters.forEach(p => {
+        activeParams.forEach((p: any) => {
           const detail = obsComponent?.details?.parameters?.find((param: any) => param.id === p.id);
           initialScores[p.id] = detail ? detail.average : 50;
         });
@@ -491,8 +499,8 @@ _Empowering Conceptual Excellence_`;
       const res = await logSingleObservation(idToken, singleStudentCode, singleStudentScores);
       if (res && res.success) {
         setSingleObsMsg('✅ Observations logged successfully!');
-        loadRoster();
-        setTimeout(() => setShowSingleModal(false), 800);
+        await loadRoster();
+        setTimeout(() => setShowSingleModal(false), 600);
       } else {
         setSingleObsMsg('❌ Failed to log observations.');
       }
