@@ -1450,7 +1450,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                     LQ Score
                   </div>
                   <div style={{ fontSize: '9.5px', color: 'var(--text-secondary)', fontWeight: 600 }}>
-                    🧠 {snapshot?.averageRetention ?? (data as any)?.srsStats?.retentionScore ?? 100}% Retention
+                    🧠 {snapshot?.averageRetention ?? (data as any)?.srsStats?.retentionScore ?? 0}% Retention
                   </div>
                 </div>
 
@@ -1491,7 +1491,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                     borderRadius: 'var(--radius-pill)',
                     border: '1px solid var(--border)'
                   }}>
-                    {((data as any)?.srsStats?.retentionScore) ?? snapshot?.averageRetention ?? 85}% Retained Memory
+                    {((data as any)?.srsStats?.retentionScore) ?? snapshot?.averageRetention ?? 0}% Retained Memory
                   </span>
                 </div>
                 <p style={{ margin: '0 0 8px 0', fontSize: '11px', color: 'var(--text-secondary)', lineHeight: 1.4 }}>

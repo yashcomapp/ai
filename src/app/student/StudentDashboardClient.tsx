@@ -521,7 +521,7 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
                     LQ Score
                   </div>
                   <div style={{ fontSize: '9.5px', color: 'var(--text-secondary)', fontWeight: 600 }}>
-                    🧠 {(profile as any)?.averageRetention || 100}% Retention
+                    🧠 {(profile as any)?.averageRetention ?? 0}% Retention
                   </div>
                 </div>
 

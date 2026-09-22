@@ -212,7 +212,7 @@ export function calculateUnifiedMetrics(input: UnifiedMetricsInput): UnifiedMetr
 
   const averageRetention = topicMasteries.length > 0
     ? Math.round(totalRetentionSum / topicMasteries.length)
-    : 100;
+    : 0;
 
   // --- 3. Efforts Calculation ---
   // Denominator: number of topics on which exams/tests have actually been conducted/assigned
