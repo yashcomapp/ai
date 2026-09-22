@@ -159,7 +159,8 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
   const [selectedChildCode, setSelectedChildCode] = useState<string>(() => {
     if (typeof window !== 'undefined') {
       try {
-        return localStorage.getItem('yc_parent_selected_child') || defaultChildCode;
+        const key = user?.email ? `yc_parent_selected_child_${user.email}` : 'yc_parent_selected_child';
+        return localStorage.getItem(key) || defaultChildCode;
       } catch (e) {
         return defaultChildCode;
       }
@@ -170,15 +171,15 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
   useEffect(() => {
     if (selectedChildCode && typeof window !== 'undefined') {
       try {
-        localStorage.setItem('yc_parent_selected_child', selectedChildCode);
+        const key = user?.email ? `yc_parent_selected_child_${user.email}` : 'yc_parent_selected_child';
+        localStorage.setItem(key, selectedChildCode);
       } catch (e) {}
     }
-  }, [selectedChildCode]);
+  }, [selectedChildCode, user?.email]);
+
   const [activeTab, setActiveTab] = useState<'pending' | 'approved'>('pending');
   const [activeModal, setActiveModal] = useState<string | null>(null);
   const [selectedReview, setSelectedReview] = useState<ReviewItem | null>(null);
-
-  const [notices, setNotices] = useState<any[]>([]);
   const [seenNoticeIds, setSeenNoticeIds] = useState<string[]>([]);
   const [activeOverlayNotice, setActiveOverlayNotice] = useState<any | null>(null);
   const [absenceReason, setAbsenceReason] = useState<string>('');
@@ -722,10 +723,13 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
     }
   );
 
-  // Auto-select first child on load
+  // Auto-select valid child on load
   useEffect(() => {
-    if (initialData?.children && initialData.children.length > 0 && !selectedChildCode) {
-      setSelectedChildCode(initialData.children[0].studentCode);
+    if (initialData?.children && initialData.children.length > 0) {
+      const validCodes = initialData.children.map((c: any) => c.studentCode);
+      if (!selectedChildCode || !validCodes.includes(selectedChildCode)) {
+        setSelectedChildCode(initialData.children[0].studentCode);
+      }
     }
   }, [initialData, selectedChildCode]);
 

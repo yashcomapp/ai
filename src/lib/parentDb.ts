@@ -105,9 +105,9 @@ export async function getParentDashboardData(
     className: c.class ? (String(c.class).startsWith('Class') ? String(c.class) : `Class ${c.class}`) : (c.classNum ? `Class ${c.classNum}` : (c.className || 'Student'))
   }));
 
-  // If no specific child is requested, default to the first child
+  // If no specific child is requested, or requested child doesn't belong to this parent, default to the first child
   let targetStudentCode = selectedStudentCode;
-  if (!targetStudentCode && childrenList.length > 0) {
+  if ((!targetStudentCode || !childrenDocs.some(c => c.studentCode === targetStudentCode)) && childrenList.length > 0) {
     targetStudentCode = childrenList[0].studentCode;
   }
 
@@ -122,7 +122,9 @@ export async function getParentDashboardData(
   let childUid = childUser ? childUser.uid : null;
 
   if (!childUid) {
-    throw new Error('Access denied: student does not belong to parent profile.');
+    return {
+      children: childrenList
+    };
   }
 
   // Aggregations for the child
