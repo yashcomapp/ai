@@ -161,7 +161,7 @@ export default function LearningQuotientReportPage() {
   const generateStudentComments = (studentInfo: any, details: any): string => {
     if (!details || !details.components) return '';
 
-    const name = studentInfo?.name || 'Student';
+    const name = studentInfo?.name || 'विद्यार्थी';
     const examComp = details.components.find((c: any) => c.parameterId === 'exam') || { score: 0, details: {} };
     const practiceComp = details.components.find((c: any) => c.parameterId === 'practice') || { score: 0, details: {} };
     const healthComp = details.components.find((c: any) => c.parameterId === 'topicHealth') || { score: 0, details: {} };
@@ -175,42 +175,42 @@ export default function LearningQuotientReportPage() {
 
     const sentences: string[] = [];
 
-    // 1. Exam Performance Feedback (Hinglish)
+    // 1. Exam Performance Feedback (Pure Hindi)
     if (examComp.score >= 85) {
-      sentences.push(`${name} exams me lagatar behtareen performance de rahe hain aur concepts bohot acche se clear hain.`);
+      sentences.push(`${name} परीक्षाओं में लगातार उत्कृष्ट प्रदर्शन कर रहे हैं और इनकी मूलभूत अवधारणाएं (Concepts) बहुत स्पष्ट हैं।`);
     } else if (examComp.score >= 60) {
-      sentences.push(`${name} assessments me theek perform kar rahe hain, lekin choti conceptual galtiyon par dhyan dekar aur revision karke score aur badha sakte hain.`);
+      sentences.push(`${name} परीक्षाओं में संतोषजनक प्रदर्शन कर रहे हैं, लेकिन छोटी-मोटी वैचारिक त्रुटियों पर ध्यान देकर और नियमित पुनरावृत्ति (Revision) करके अंक और बेहतर कर सकते हैं।`);
     } else {
-      sentences.push(`${name} ko fundamentals strong karne ke liye additional study guidance aur structured revision ki sakht zaroorat hai.`);
+      sentences.push(`${name} को मूलभूत अवधारणाएं (Fundamentals) सुदृढ़ करने के लिए अतिरिक्त मार्गदर्शन एवं व्यवस्थित पुनरावृत्ति की अत्यंत आवश्यकता है।`);
     }
 
     if (examComp.details?.absent > 0) {
-      sentences.push(`Dhyan dein ki ${examComp.details.absent} missed test(s) ki wajah se overall score par asar pada hai.`);
+      sentences.push(`कृपया ध्यान दें कि ${examComp.details.absent} अनुपस्थित परीक्षा(ओं) के कारण कुल प्राप्तांक प्रभावित हुए हैं।`);
     }
 
-    // 2. Practice & Topics Mastered vs Unmastered (Hinglish)
+    // 2. Practice & Topics Mastered vs Unmastered (Pure Hindi)
     if (totalAssigned > 0) {
       if (unmasteredTopics > 0) {
-        sentences.push(`Total ${totalAssigned} assigned topics me se ${masteredTopics} topics Mastered hain, jabki ${unmasteredTopics} topics abhi unmastered/practice pending hain jin par practice aur revision zaroori hai.`);
+        sentences.push(`कुल ${totalAssigned} निर्धारित पाठों में से ${masteredTopics} पाठ पूर्ण रूप से सिद्ध (Mastered 🟢) हैं, जबकि ${unmasteredTopics} पाठों पर अभ्यास एवं पुनरावृत्ति (🟡🔴) शेष है।`);
       } else {
-        sentences.push(`Syllabus ke sabhi ${totalAssigned} assigned topics successfully Mastered ho chuke hain.`);
+        sentences.push(`पाठ्यक्रम के सभी ${totalAssigned} निर्धारित पाठ सफलतापूर्वक पूर्ण एवं सिद्ध (Mastered 🟢) हो चुके हैं।`);
       }
     }
 
     if (practiceComp.score >= 80) {
-      sentences.push(`Self-practice consistency bohot shandar hai (${practicedTopics} topics par ${totalQuestions} questions solve kiye hain).`);
+      sentences.push(`स्वयं-अभ्यास (Self-Practice) में निरंतरता बहुत सराहनीय है (${practicedTopics} पाठों पर ${totalQuestions} प्रश्न हल किए हैं)।`);
     } else if (practiceComp.score >= 50) {
-      sentences.push(`Practice regular chal rahi hai (${practicedTopics} topics covered), lekin unmastered topics par practice sets badhane ki zaroorat hai.`);
+      sentences.push(`अभ्यास कार्य नियमित है (${practicedTopics} पाठ हल किए), परंतु शेष पाठों पर भी अभ्यास प्रश्नों की संख्या बढ़ाने की आवश्यकता है।`);
     } else {
-      sentences.push(`Practice engagement kam hai (${practicedTopics} topics par sirf ${totalQuestions} questions solve kiye hain); rozana time par self-practice complete karna zaroori hai.`);
+      sentences.push(`अभ्यास में सहभागिता अत्यंत कम है (${practicedTopics} पाठों पर केवल ${totalQuestions} प्रश्न हल किए हैं); प्रतिदिन समय पर स्वयं-अभ्यास पूर्ण करना अनिवार्य है।`);
     }
 
-    // 3. SRS Memory Retention (Hinglish)
+    // 3. SRS Memory Retention (Pure Hindi)
     if (healthComp.details?.srsDueCount > 0) {
-      sentences.push(`${healthComp.details.srsDueCount} topic(s) ka memory refresher workout due hai taaki purane concepts yaad rahein.`);
+      sentences.push(`${healthComp.details.srsDueCount} पाठों का स्मरण पुनरावृत्ति सत्र (Memory Refresher) शेष है ताकि पुराने सिद्धांत याद रहें।`);
     }
 
-    // 4. Classroom & Home Observations (Hinglish)
+    // 4. Classroom & Home Observations (Pure Hindi)
     const obsParams = obsComp.details?.parameters || [];
     const sincerity = obsParams.find((p: any) => p.id === 'sincerity')?.average ?? 50;
     const participation = obsParams.find((p: any) => p.id === 'activeParticipation')?.average ?? 50;
@@ -218,30 +218,30 @@ export default function LearningQuotientReportPage() {
     const parentScore = obsParams.find((p: any) => p.id === 'parentScore')?.average ?? 50;
 
     const observationPoints: string[] = [];
-    if (sincerity < 50) observationPoints.push('class me sincerity aur focus badhane ki zaroorat hai');
-    else if (sincerity >= 80) observationPoints.push('class me disciplined behavior maintain kar rahe hain');
+    if (sincerity < 50) observationPoints.push('कक्षा में एकाग्रता और गंभीरता बढ़ाने की आवश्यकता है');
+    else if (sincerity >= 80) observationPoints.push('कक्षा में अनुशासित और गंभीर व्यवहार बनाए रखते हैं');
 
-    if (participation < 50) observationPoints.push('active participation me thoda encouragement chahiye');
-    else if (participation >= 80) observationPoints.push('actively participate karte hain');
+    if (participation < 50) observationPoints.push('सक्रिय सहभागिता के लिए प्रोत्साहन आवश्यक है');
+    else if (participation >= 80) observationPoints.push('कक्षा में सक्रिय रूप से भाग लेते हैं');
 
-    if (timelyWork < 50) observationPoints.push('assignments time par submit karne honge');
-    else if (timelyWork >= 80) observationPoints.push('assignments time par submit karte hain');
+    if (timelyWork < 50) observationPoints.push('गृहकार्य और असाइनमेंट समय पर जमा करना आवश्यक है');
+    else if (timelyWork >= 80) observationPoints.push('सभी असाइनमेंट समय पर जमा करते हैं');
 
-    if (parentScore < 50) observationPoints.push('ghar par self-study ka strict supervision zaroori hai');
-    else if (parentScore >= 80) observationPoints.push('ghar par self-study routine acchi tarah follow kar rahe hain');
+    if (parentScore < 50) observationPoints.push('घर पर स्वाध्याय (Self-Study) के लिए कड़े मार्गदर्शन की आवश्यकता है');
+    else if (parentScore >= 80) observationPoints.push('घर पर नियमित अध्ययन दिनचर्या का पालन कर रहे हैं');
 
     if (observationPoints.length > 0) {
-      sentences.push(`Observations: ${name} ` + observationPoints.join(', ') + '.');
+      sentences.push(`कक्षा एवं गृह अवलोकन: ${name} ` + observationPoints.join(', ') + '।');
     }
 
-    // 5. Overall LQ Summary Advice (Hinglish)
+    // 5. Overall LQ Summary Advice (Pure Hindi)
     const lq = details.overallQuotient ?? 0;
     if (lq >= 85) {
-      sentences.push(`Overall LQ ${lq}/100 ke saath ${name} Excellent Tier me hain. Isi tarah lagan banaye rakhein!`);
+      sentences.push(`कुल LQ ${lq}/100 के साथ ${name} उत्कृष्ट श्रेणी (Excellent Tier) में हैं। इसी प्रकार निरंतर परिश्रम बनाए रखें!`);
     } else if (lq >= 60) {
-      sentences.push(`Overall LQ ${lq}/100 ke saath ${name} me accha potential hai aur regular practice se Top Tier me aa sakte hain.`);
+      sentences.push(`कुल LQ ${lq}/100 के साथ ${name} में उत्तम क्षमता है; नियमित अभ्यास से सर्वोच्च श्रेणी में आ सकते हैं।`);
     } else {
-      sentences.push(`Overall LQ ${lq}/100 hai; parents se anurodh hai ki ghar par student ke revision aur unmastered topics ki practice par vishesh dhyan dein.`);
+      sentences.push(`कुल LQ ${lq}/100 है; अभिभावकों से विशेष अनुरोध है कि घर पर विद्यार्थी के दैनिक स्वाध्याय और शेष पाठों के अभ्यास पर विशेष ध्यान दें।`);
     }
 
     return sentences.join(' ');
@@ -326,7 +326,7 @@ Namaste Parents 🙏
    └ Assignments & Timely Work (20%): ${timelyWork}%
    └ Active Participation (20%): ${activePart}%
 
-📝 *EDUCATOR'S DIAGNOSTIC FEEDBACK (सलाह):*
+📝 *शिक्षक का शैक्षणिक विश्लेषण एवं मार्गदर्शन (EDUCATOR'S DIAGNOSTIC FEEDBACK):*
 "${comments}"
 
 =========================
@@ -1639,8 +1639,8 @@ _Empowering Conceptual Excellence_`;
                     )}
                   </div>
                   
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <label style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)' }}>📝 EDIT DRAFT DIAGNOSTIC COMMENTARY:</label>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <label style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)' }}>📝 शिक्षक का शैक्षणिक विश्लेषण एवं मार्गदर्शन (DIAGNOSTIC FEEDBACK):</label>
                     <textarea 
                       rows={3} 
                       value={commentsText} 
