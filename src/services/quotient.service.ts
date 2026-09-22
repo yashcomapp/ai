@@ -518,7 +518,7 @@ export class ClassObservationsCalculator implements ParameterCalculator {
 
 const getTopicCodeFromQuestionCode = deriveTopicCodeFromQuestionCode;
 
-function resolveSubjectCode(subjectName: string, classNum?: string | number): string {
+export function resolveSubjectCode(subjectName: string, classNum?: string | number): string {
   const s = String(subjectName || '').toLowerCase();
   const c = String(classNum || '');
   if (s.includes('science and tech') && (s.includes('2') || s.includes('part 2') || s.includes('part - 2'))) return 'SCIT2';
@@ -533,7 +533,7 @@ function resolveSubjectCode(subjectName: string, classNum?: string | number): st
   return 'SCIT2';
 }
 
-function getObjectiveExamTopics(exam: any): string[] {
+export function getObjectiveExamTopics(exam: any): string[] {
   const topics = new Set<string>();
   if (!exam) return [];
 
@@ -564,7 +564,7 @@ function getObjectiveExamTopics(exam: any): string[] {
   return Array.from(topics);
 }
 
-function getSubjectiveExamTopics(exam: any): string[] {
+export function getSubjectiveExamTopics(exam: any): string[] {
   const topics = new Set<string>();
   if (!exam) return [];
 
@@ -590,7 +590,7 @@ function getSubjectiveExamTopics(exam: any): string[] {
   return Array.from(topics);
 }
 
-function getExamDateKey(exam: any): string {
+export function getExamDateKey(exam: any): string {
   if (exam.scheduledDate) return String(exam.scheduledDate);
   if (exam.dateKey) return String(exam.dateKey);
   if (exam.createdAt) {
@@ -611,7 +611,7 @@ function getExamDateKey(exam: any): string {
   return '';
 }
 
-function isExamForStudent(exam: any, studentCode: string, bIds: string[], studentClass?: string): boolean {
+export function isExamForStudent(exam: any, studentCode: string, bIds: string[], studentClass?: string): boolean {
   if (!exam) return false;
   if (exam.targetStudents && Array.isArray(exam.targetStudents) && exam.targetStudents.includes(studentCode)) {
     return true;

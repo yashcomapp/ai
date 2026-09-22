@@ -8,6 +8,7 @@ import { getDateKeyIST } from '@/lib/dateUtils';
 import { getRequiredConfidence, isDemoUser } from '@/lib/studentDb';
 import { evaluateSessionSincerity } from '@/lib/practiceTimeUtils';
 import { getCanonicalSubjectName, parseTopicCode } from '@/lib/questionTypes';
+import { getObjectiveExamTopics, getSubjectiveExamTopics, getExamDateKey, isExamForStudent } from '@/services/quotient.service';
 export const dynamic = 'force-dynamic';
 
 const parseIST = (dateStr: string) => {
@@ -47,10 +48,43 @@ export async function GET(req: NextRequest) {
     const studentCodeParam = req.nextUrl.searchParams.get('studentCode');
 
     if (action === 'studentTopicStatus' && studentCodeParam) {
-      const [masterySnap, parentReviewsSnap] = await Promise.all([
+      const [studentUserSnap, masterySnap, parentReviewsSnap, examsSnap, subjExamsSnap] = await Promise.all([
+        adminDb.collection('users').where('studentCode', '==', studentCodeParam).where('role', '==', 'student').limit(1).get(),
         adminDb.collection('studentTopicMastery').where('studentCode', '==', studentCodeParam).get(),
-        adminDb.collection('parentReviews').where('studentCode', '==', studentCodeParam).get()
+        adminDb.collection('parentReviews').where('studentCode', '==', studentCodeParam).get(),
+        adminDb.collection('exams').where('status', 'in', ['active', 'draft']).get(),
+        adminDb.collection('subjectiveExams').where('status', 'in', ['active', 'draft']).get()
       ]);
+
+      const studentUser = studentUserSnap.docs[0]?.data();
+      const bIds = studentUser?.batchIds || (studentUser?.batchId ? [studentUser.batchId] : []);
+      const studentClass = studentUser?.class || studentUser?.className || '';
+      const todayDateStr = getDateKeyIST();
+
+      const conductedTopicsSet = new Set<string>();
+
+      examsSnap.docs.forEach(doc => {
+        const exam = { id: doc.id, ...doc.data() };
+        const examDateStr = getExamDateKey(exam) || todayDateStr;
+        if (examDateStr <= todayDateStr && isExamForStudent(exam, studentCodeParam, bIds, studentClass)) {
+          getObjectiveExamTopics(exam).forEach(t => conductedTopicsSet.add(t));
+        }
+      });
+
+      subjExamsSnap.docs.forEach(doc => {
+        const exam = { id: doc.id, ...doc.data() };
+        const examDateStr = getExamDateKey(exam) || todayDateStr;
+        if (examDateStr <= todayDateStr && isExamForStudent(exam, studentCodeParam, bIds, studentClass)) {
+          getSubjectiveExamTopics(exam).forEach(t => conductedTopicsSet.add(t));
+        }
+      });
+
+      masterySnap.docs.forEach(d => {
+        if (d.data().topicCode) conductedTopicsSet.add(d.data().topicCode);
+      });
+      parentReviewsSnap.docs.forEach(d => {
+        if (d.data().topicCode) conductedTopicsSet.add(d.data().topicCode);
+      });
 
       const practiceCountMap = new Map<string, number>();
       const practiceQuestionsMap = new Map<string, number>();
@@ -64,7 +98,7 @@ export async function GET(req: NextRequest) {
         }
       });
 
-      const topicCodes = Array.from(new Set(masterySnap.docs.map(d => d.data().topicCode).filter(Boolean)));
+      const topicCodes = Array.from(conductedTopicsSet);
       const queryCodesSet = new Set<string>(topicCodes);
       topicCodes.forEach(tc => {
         const lastDot = tc.lastIndexOf('.');
@@ -89,13 +123,18 @@ export async function GET(req: NextRequest) {
         });
       }
 
+      const masteryByTopic = new Map<string, any>();
+      masterySnap.docs.forEach(doc => {
+        const d = doc.data();
+        if (d.topicCode) masteryByTopic.set(d.topicCode, d);
+      });
+
       const mastered: any[] = [];
       const practicing: any[] = [];
       const needsAttention: any[] = [];
 
-      masterySnap.docs.forEach(doc => {
-        const d = doc.data();
-        const tCode = d.topicCode;
+      topicCodes.forEach(tCode => {
+        const d = masteryByTopic.get(tCode);
         let sData = syllabusMap.get(tCode);
         let parentTopic = null;
         if (!sData && tCode) {
@@ -112,18 +151,17 @@ export async function GET(req: NextRequest) {
         const parsed = parseTopicCode(tCode);
         const subCode = sData?.subjectCode || parsed?.subjectCode || (tCode.includes('-') ? tCode.split('-')[2] : '') || '';
         const subName = sData?.subjectName || getCanonicalSubjectName(subCode, tCode, sData?.chapterName);
-        const chapName = d.chapterName || sData?.chapterName || (parsed?.chapterNumber ? `Chapter ${parsed.chapterNumber}` : 'General');
+        const chapName = d?.chapterName || sData?.chapterName || (parsed?.chapterNumber ? `Chapter ${parsed.chapterNumber}` : 'General');
         const chapNum = parsed?.chapterNumber || sData?.chapterNumber || '';
-        const topName = d.topicName || (sData?.topicName ? (parentTopic ? `${sData.topicName} (${parsed?.topicNumber || tCode})` : sData.topicName) : (d.name || `Topic ${parsed?.topicNumber || tCode}`));
+        const topName = d?.topicName || (sData?.topicName ? (parentTopic ? `${sData.topicName} (${parsed?.topicNumber || tCode})` : sData.topicName) : (d?.name || `Topic ${parsed?.topicNumber || tCode}`));
 
-        const mastery = Number(d.mastery || 0);
-        const confidence = Number(d.confidence || 0);
         const practiceCount = practiceCountMap.get(tCode) || 0;
-        const practiceQuestions = Number(d.practiceQuestionsAttempted || practiceQuestionsMap.get(tCode) || 0);
-        const attempts = d.questionsAttempted || d.attempts || 0;
-        const isRecovery = !!d.isRecoveryMastered;
-        const classification = sData?.topicClassification || d.topicClassification;
-        const targetQ = sData?.targetQuestions || d.targetQuestions;
+        const attempts = d ? (d.questionsAttempted || d.attempts || 0) : 0;
+        const mastery = d ? Number(d.mastery || 0) : 0;
+        const confidence = d ? Number(d.confidence || 0) : 0;
+        const isRecovery = d ? !!d.isRecoveryMastered : false;
+        const classification = sData?.topicClassification || d?.topicClassification;
+        const targetQ = sData?.targetQuestions || d?.targetQuestions;
         const reqConfidence = getRequiredConfidence(classification, targetQ);
         const isFullConfidence = confidence >= reqConfidence;
         const rawScope = String(classification || '').toLowerCase().trim();
@@ -136,7 +174,28 @@ export async function GET(req: NextRequest) {
         let expColor = 'var(--danger)';
         let expText = '';
 
-        if ((mastery >= 90 && isFullConfidence) || isRecovery) {
+        if (!d && attempts === 0 && practiceCount === 0) {
+          state = 'needsAttention';
+          expIcon = '⚪';
+          expColor = 'var(--text-muted)';
+          expText = 'Not attempted yet (conducted in batch exams). Start 1st practice to assess concept baseline.';
+          needsAttention.push({
+            topicCode: tCode,
+            topicName: topName,
+            subjectName: subName,
+            chapterName: chapName,
+            chapterNumber: chapNum,
+            topicNumber: parsed?.topicNumber || sData?.topicNumber || '',
+            mastery: 0,
+            confidence: 0,
+            practiceCount: 0,
+            attempts: 0,
+            state,
+            expIcon,
+            expColor,
+            expText
+          });
+        } else if ((mastery >= 90 && isFullConfidence) || isRecovery) {
           state = 'mastered';
           if (isRecovery) {
             expIcon = '⚡';
@@ -277,7 +336,7 @@ export async function GET(req: NextRequest) {
       adminDb.collection('exams').where('status', 'in', ['active', 'draft']).get(),
       adminDb.collection('subjectiveExams').where('status', 'in', ['active', 'draft']).get(),
       adminDb.collection('batches').select('name').get(),
-      adminDb.collection('users').where('role', '==', 'student').select('studentCode', 'name', 'rollNumber', 'batchIds', 'batchId', 'status').get(),
+      adminDb.collection('users').where('role', '==', 'student').select('studentCode', 'name', 'rollNumber', 'batchIds', 'batchId', 'class', 'className', 'status').get(),
       adminDb.collection('batchAssignments').where('endAt', '>=', since).get(),
       adminDb.collection('subjectiveAssignments').where('endAt', '>=', since).get(),
       adminDb.collection('reviews').where('startedAt', '>=', since).select('examId').get(),
@@ -301,6 +360,8 @@ export async function GET(req: NextRequest) {
         rollNumber: data.rollNumber || '',
         batchIds: data.batchIds || [],
         batchId: data.batchId || null,
+        class: data.class || data.className || '',
+        className: data.className || data.class || '',
         status: data.status || 'active'
       };
     }).filter(s => !!s.studentCode && s.status !== 'inactive' && !isDemoUser(s));
@@ -392,10 +453,7 @@ export async function GET(req: NextRequest) {
       }
     });
 
-    const masteryGroup: Record<string, number[]> = {};
-    const masteredCount: Record<string, number> = {};
-    const practicingCount: Record<string, number> = {};
-    const needsAttentionCount: Record<string, number> = {};
+    const todayDateStr = getDateKeyIST();
 
     // Map of studentCode -> Map of topicCode -> totalQuestions
     const studentTopicPracticeMap: Record<string, Map<string, number>> = {};
@@ -412,8 +470,8 @@ export async function GET(req: NextRequest) {
       map.set(tCode, (map.get(tCode) || 0) + (data.totalQuestions || 0));
     });
 
-    // Map of studentCode -> Map of topicCode -> { mastery, confidence, reqConf }
-    const studentTopicMasteryMap: Record<string, Map<string, { mastery: number, confidence: number, reqConf?: number }>> = {};
+    // Map of studentCode -> Map of topicCode -> { mastery, confidence, reqConf, isRecoveryMastered }
+    const studentTopicMasteryMap: Record<string, Map<string, { mastery: number, confidence: number, reqConf?: number, isRecoveryMastered?: boolean }>> = {};
 
     masterySnap.docs.forEach(doc => {
       const data = doc.data();
@@ -430,35 +488,92 @@ export async function GET(req: NextRequest) {
         if (!studentTopicMasteryMap[code]) {
           studentTopicMasteryMap[code] = new Map();
         }
-        studentTopicMasteryMap[code].set(tCode, { mastery: val, confidence: conf, reqConf });
+        studentTopicMasteryMap[code].set(tCode, {
+          mastery: val,
+          confidence: conf,
+          reqConf,
+          isRecoveryMastered: Boolean(data.isRecoveryMastered)
+        });
+      }
+    });
+
+    // Build conducted topics per student based on their batch / class / target exams
+    const studentConductedTopicsMap: Record<string, string[]> = {};
+    students.forEach(s => {
+      const code = s.studentCode;
+      const bIds = s.batchIds || (s.batchId ? [s.batchId] : []);
+      const studentClass = (s as any).class || (s as any).className || '';
+
+      const topicsSet = new Set<string>();
+
+      exams.forEach((exam: any) => {
+        const examDateStr = getExamDateKey(exam) || todayDateStr;
+        if (examDateStr <= todayDateStr && isExamForStudent(exam, code, bIds, studentClass)) {
+          getObjectiveExamTopics(exam).forEach(t => topicsSet.add(t));
+        }
+      });
+
+      subjectiveExams.forEach((exam: any) => {
+        const examDateStr = getExamDateKey(exam) || todayDateStr;
+        if (examDateStr <= todayDateStr && isExamForStudent(exam, code, bIds, studentClass)) {
+          getSubjectiveExamTopics(exam).forEach(t => topicsSet.add(t));
+        }
+      });
+
+      // Also include any topics student practiced or has mastery records for
+      if (studentTopicMasteryMap[code]) {
+        studentTopicMasteryMap[code].forEach((_, t) => topicsSet.add(t));
+      }
+      if (studentTopicPracticeMap[code]) {
+        studentTopicPracticeMap[code].forEach((_, t) => topicsSet.add(t));
       }
 
-      if (!masteryGroup[code]) masteryGroup[code] = [];
-      masteryGroup[code].push(val);
-
-      if ((val >= 90 && conf >= reqConf) || Boolean(data.isRecoveryMastered)) {
-        masteredCount[code] = (masteredCount[code] || 0) + 1;
-      } else if (val >= 50) {
-        practicingCount[code] = (practicingCount[code] || 0) + 1;
-      } else {
-        needsAttentionCount[code] = (needsAttentionCount[code] || 0) + 1;
-      }
+      studentConductedTopicsMap[code] = Array.from(topicsSet);
     });
 
     const masteryStats: Record<string, { avgMastery: number, avgQuality: number, mastered: number, practicing: number, needsAttention: number }> = {};
     students.forEach(s => {
       const code = s.studentCode;
-      const list = masteryGroup[code] || [];
-      const avg = list.length ? Math.round(list.reduce((sum, v) => sum + v, 0) / list.length) : 0;
+      const conductedTopics = studentConductedTopicsMap[code] || [];
+      const masteryMap = studentTopicMasteryMap[code] || new Map();
+
+      let mCount = 0;
+      let pCount = 0;
+      let naCount = 0;
+      let totalMasterySum = 0;
+
+      conductedTopics.forEach(tCode => {
+        const record = masteryMap.get(tCode);
+        if (record) {
+          const val = record.mastery;
+          const conf = record.confidence;
+          const reqConf = record.reqConf || 10;
+          totalMasterySum += val;
+
+          if ((val >= 90 && conf >= reqConf) || record.isRecoveryMastered) {
+            mCount++;
+          } else if (val >= 50) {
+            pCount++;
+          } else {
+            naCount++;
+          }
+        } else {
+          // Unattempted conducted topic counts as 0% under needsAttention
+          naCount++;
+        }
+      });
+
+      const avg = conductedTopics.length > 0
+        ? Math.round(totalMasterySum / conductedTopics.length)
+        : 0;
 
       // Calculate Quality score (40% Session Accuracy + 30% Pacing Sincerity + 30% Mastery Efficiency)
       const topicPractice = studentTopicPracticeMap[code] || new Map<string, number>();
-      const topicMastery = studentTopicMasteryMap[code] || new Map<string, { mastery: number, confidence: number, reqConf?: number }>();
       
       let totalEfficiencyScore = 0;
       let topicsCount = 0;
       topicPractice.forEach((q, topicCode) => {
-        const record = topicMastery.get(topicCode) || { mastery: 0, confidence: 0, reqConf: 10 };
+        const record = masteryMap.get(topicCode) || { mastery: 0, confidence: 0, reqConf: 10 };
         const mastery = record.mastery;
         const confidence = record.confidence;
         const requiredConf = record.reqConf || 10;
@@ -492,9 +607,9 @@ export async function GET(req: NextRequest) {
       masteryStats[code] = {
         avgMastery: avg,
         avgQuality: avgQuality,
-        mastered: masteredCount[code] || 0,
-        practicing: practicingCount[code] || 0,
-        needsAttention: needsAttentionCount[code] || 0
+        mastered: mCount,
+        practicing: pCount,
+        needsAttention: naCount
       };
     });
 

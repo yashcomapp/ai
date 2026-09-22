@@ -2197,7 +2197,7 @@ export default function AdminExamsPage() {
                                   <span 
                                     onClick={(e) => openTopicStatusModal(student, 'mastered', e)} 
                                     style={{ color: 'var(--success)', fontWeight: 700, cursor: 'pointer', padding: '3px 8px', borderRadius: '6px', background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.25)', transition: 'all 0.15s' }} 
-                                    title="Click to view Mastered Topics (>=90% && Conf>=20)"
+                                    title="Click to view Mastered Topics (>=90% accuracy & target confidence)"
                                   >
                                     🟢 {mastery.mastered}
                                   </span>
