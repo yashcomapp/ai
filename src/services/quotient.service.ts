@@ -352,7 +352,7 @@ export class TopicHealthCalculator implements ParameterCalculator {
     // If no assigned topics are resolved, fallback using practiceRecords
     if (!assignedTopics || assignedTopics.length === 0) {
       if (practiceRecords.length === 0) {
-        return { score: 0, details: { totalTopics: 0, masteredCount: 0, attentionCount: 0, srsDueCount: 0, averageRetention: 100 } };
+        return { score: 0, details: { totalTopics: 0, masteredCount: 0, attentionCount: 0, srsDueCount: 0, averageRetention: 0 } };
       }
       const totalTopics = practiceRecords.length;
       let totalMasteryEarned = 0;
@@ -372,8 +372,9 @@ export class TopicHealthCalculator implements ParameterCalculator {
 
         if (isRecovery || (mastery >= 90 && confidence >= reqConf)) {
           masteredCount++;
+        } else {
+          attentionCount++;
         }
-        if (mastery < 50) attentionCount++;
         const confidenceFactor = Math.min(1, Math.max(0.5, confidence / reqConf));
         totalMasteryEarned += mastery * confidenceFactor * factor;
       });
@@ -385,7 +386,7 @@ export class TopicHealthCalculator implements ParameterCalculator {
           masteredCount,
           attentionCount,
           srsDueCount,
-          averageRetention: Math.round(totalRetentionSum / totalTopics),
+          averageRetention: totalTopics > 0 ? Math.round(totalRetentionSum / totalTopics) : 0,
           masteryRatio: totalTopics > 0 ? Math.round((masteredCount / totalTopics) * 100) : 0,
           attentionRatio: totalTopics > 0 ? Math.round((attentionCount / totalTopics) * 100) : 0,
           fallbackUsed: true
@@ -416,6 +417,8 @@ export class TopicHealthCalculator implements ParameterCalculator {
       const examScoreOnTopic = hasConductedExam ? examTopicScores.get(topicCode)! : null;
 
       let practiceScoreOnTopic: number | null = null;
+      let isMastered = false;
+
       if (record) {
         const mastery = Number(record.mastery || 0);
         const confidence = Number(record.confidence || 0);
@@ -425,31 +428,36 @@ export class TopicHealthCalculator implements ParameterCalculator {
         if (isDue) srsDueCount++;
         totalRetentionSum += retention;
 
+        if (isRecovery || (mastery >= 90 && confidence >= reqConf)) {
+          isMastered = true;
+        }
+
         const confidenceFactor = Math.min(1, Math.max(0.5, confidence / reqConf));
         practiceScoreOnTopic = mastery * confidenceFactor * factor;
       } else {
-        totalRetentionSum += 100;
+        // Topic has NOT been practiced yet; memory retention is 0%
+        totalRetentionSum += 0;
       }
 
       // Reconcile official exam performance with practice records for true topic health
       let effectiveTopicScore = 0;
       if (examScoreOnTopic !== null && practiceScoreOnTopic !== null) {
-        // Topic has both proctored exam and practice: 60% exam mastery + 40% practice mastery
-        effectiveTopicScore = (examScoreOnTopic * 0.60) + (practiceScoreOnTopic * 0.40);
-      } else if (examScoreOnTopic !== null) {
-        // Conducted exam only (if missed/absent, counts as 0)
-        effectiveTopicScore = examScoreOnTopic;
+        // Topic has both proctored exam and practice: 50% exam mastery + 50% practice mastery
+        effectiveTopicScore = (examScoreOnTopic * 0.50) + (practiceScoreOnTopic * 0.50);
       } else if (practiceScoreOnTopic !== null) {
         // Self-practice only
         effectiveTopicScore = practiceScoreOnTopic;
+      } else if (examScoreOnTopic !== null) {
+        // Conducted exam test only, but student did 0 independent practice/mastery workouts (at most 20% unconfirmed credit)
+        effectiveTopicScore = examScoreOnTopic * 0.20;
       } else {
         // Unattempted: 0%
         effectiveTopicScore = 0;
       }
 
-      if (effectiveTopicScore >= 85) {
+      if (isMastered) {
         masteredCount++;
-      } else if (effectiveTopicScore < 50) {
+      } else {
         attentionCount++;
       }
 
@@ -470,7 +478,7 @@ export class TopicHealthCalculator implements ParameterCalculator {
         masteredCount,
         attentionCount,
         srsDueCount,
-        averageRetention: totalTopics > 0 ? Math.round(totalRetentionSum / totalTopics) : 100,
+        averageRetention: totalTopics > 0 ? Math.round(totalRetentionSum / totalTopics) : 0,
         masteryRatio: totalTopics > 0 ? Math.round((masteredCount / totalTopics) * 100) : 0,
         attentionRatio: totalTopics > 0 ? Math.round((attentionRatio) * 100) : 0,
         averageMastery: Math.round(averageTopicHealth),

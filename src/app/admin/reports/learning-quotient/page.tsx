@@ -318,10 +318,13 @@ Namaste Parents 🙏
    └ Practice Activity: *${practicedTopics}* topics par *${totalQuestions}* questions solve kiye
 
 🩺 *3. Concept Health & Memory Retention:* *${healthScore}*
-   └ Retention Rate: ${averageRetention}% (${srsDueCount > 0 ? `${srsDueCount} topics revision ke liye due hain` : 'Retention stable hai'})
+   └ Retention Rate: ${averageRetention}% (${srsDueCount > 0 ? `${srsDueCount} topics revision ke liye due hain` : averageRetention > 0 ? 'Retention stable hai' : 'Practice pending hai'})
 
 👥 *4. Classroom & Home Observations:* *${obsScore}*
-   └ Participation: ${activePart}%, Sincerity: ${sincerity}%, Timely Work: ${timelyWork}%, Parent Strict Score: ${parentScore}%
+   └ Parent Strict Score (40%): ${parentScore}%
+   └ Class Sincerity & Focus (20%): ${sincerity}%
+   └ Assignments & Timely Work (20%): ${timelyWork}%
+   └ Active Participation (20%): ${activePart}%
 
 📝 *EDUCATOR'S DIAGNOSTIC FEEDBACK (सलाह):*
 "${comments}"
