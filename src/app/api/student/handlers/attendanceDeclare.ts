@@ -14,9 +14,10 @@ export async function GET(req: NextRequest) {
     }
 
     if (session.role === 'admin') {
-      // Admin gets all declarations
+      // Admin gets latest declarations (bounded to protect performance and Firestore read quota)
       const snap = await adminDb.collection('attendanceDeclarations')
         .orderBy('createdAt', 'desc')
+        .limit(500)
         .get();
       const declarations = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       return NextResponse.json({ success: true, declarations });
