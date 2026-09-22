@@ -180,13 +180,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
   const [activeTab, setActiveTab] = useState<'pending' | 'approved'>('pending');
   const [activeModal, setActiveModal] = useState<string | null>(null);
   const [selectedReview, setSelectedReview] = useState<ReviewItem | null>(null);
-  const [seenNoticeIds, setSeenNoticeIds] = useState<string[]>([]);
-  const [activeOverlayNotice, setActiveOverlayNotice] = useState<any | null>(null);
-  const [absenceReason, setAbsenceReason] = useState<string>('');
-  const [absenceRemarks, setAbsenceRemarks] = useState<string>('');
   const [timeFilter, setTimeFilter] = useState<'overall' | 'month' | 'week'>('overall');
-
-  // Multi-actor verification selection
   const [actorPromptOpen, setActorPromptOpen] = useState(false);
   const [chosenActor, setChosenActor] = useState<'parent' | 'student'>('parent');
   const [approving, setApproving] = useState(false);
@@ -585,8 +579,13 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
 
   // Modals & Reviews extra state
   const [selectedActivity, setSelectedActivity] = useState<ActivityItem | null>(null);
+  const [notices, setNotices] = useState<{ id: string; title: string; body: string; createdAt: string | null; isOverlay?: boolean; type?: string; noticeDate?: string | null }[]>([]);
+  const [seenNoticeIds, setSeenNoticeIds] = useState<string[]>([]);
   const [showSeenNotices, setShowSeenNotices] = useState(false);
   const [isNoticesModalOpen, setIsNoticesModalOpen] = useState(false);
+  const [activeOverlayNotice, setActiveOverlayNotice] = useState<any | null>(null);
+  const [absenceReason, setAbsenceReason] = useState('');
+  const [absenceRemarks, setAbsenceRemarks] = useState('');
 
   const handleDismissOverlayNotice = async (noticeId: string, reason?: string, remarks?: string) => {
     const userId = firebaseUser?.uid || 'parent';

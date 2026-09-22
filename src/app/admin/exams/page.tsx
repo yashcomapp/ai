@@ -2887,6 +2887,7 @@ export default function AdminExamsPage() {
                           const endMonth = String(endDate.getMonth() + 1).padStart(2, '0');
                           const endDateStr = String(endDate.getDate()).padStart(2, '0');
                           const endHours = String(endDate.getHours()).padStart(2, '0');
+                          const endMinutes = String(endDate.getMinutes()).padStart(2, '0');
                           updates.endAtStr = `${endYear}-${endMonth}-${endDateStr}T${endHours}:${endMinutes}`;
                         }
                         return { ...prev, ...updates };

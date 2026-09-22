@@ -41,7 +41,7 @@ export default function LearningQuotientReportPage() {
   const [loading, setLoading] = useState(true);
   const [students, setStudents] = useState<StudentLQ[]>([]);
   const [batches, setBatches] = useState<{ id: string; name: string }[]>([]);
-  const [parameters, setParameters] = useState<{ id: string; name: string }[]>([]);
+  const [parameters, setParameters] = useState<{ id: string; name: string; weight?: number }[]>([]);
   const [selectedBatchId, setSelectedBatchId] = useState<string>('all');
 
   // Sorting state
@@ -133,7 +133,7 @@ export default function LearningQuotientReportPage() {
   const [broadcastIndex, setBroadcastIndex] = useState(0);
   const [broadcastActiveDetails, setBroadcastActiveDetails] = useState<any>(null);
   const [loadingBroadcastDetails, setLoadingBroadcastDetails] = useState(false);
-  const [duration, setDuration] = useState<string>('monthly');
+  const [duration, setDuration] = useState<'weekly' | 'monthly'>('monthly');
   const [whatsAppMode, setWhatsAppMode] = useState<'app' | 'web'>('app');
 
   useEffect(() => {
@@ -897,7 +897,7 @@ _Empowering Conceptual Excellence_`;
               <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)' }}>Duration:</span>
               <select
                 value={duration}
-                onChange={(e) => setDuration(e.target.value)}
+                onChange={(e) => setDuration(e.target.value as 'weekly' | 'monthly')}
                 style={{
                   padding: '6px 10px',
                   borderRadius: 'var(--radius-sm)',
