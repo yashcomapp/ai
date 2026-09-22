@@ -52,7 +52,7 @@ export function useReports() {
 
   const saveClassObservation = async (
     idToken: string, 
-    data: { studentCode: string; activeParticipation: number; sincerity: number; timelyWork: number }
+    data: { studentCode: string; activeParticipation: number; sincerity: number; timelyWork: number; parentScore?: number }
   ) => {
     setLoading(true);
     try {

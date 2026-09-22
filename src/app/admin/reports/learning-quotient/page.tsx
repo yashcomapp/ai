@@ -230,6 +230,7 @@ export default function LearningQuotientReportPage() {
     const sincerity = obsParams.find((p: any) => p.id === 'sincerity')?.average ?? 50;
     const participation = obsParams.find((p: any) => p.id === 'activeParticipation')?.average ?? 50;
     const timelyWork = obsParams.find((p: any) => p.id === 'timelyWork')?.average ?? 50;
+    const parentScore = obsParams.find((p: any) => p.id === 'parentScore')?.average ?? 50;
 
     const classroomSentences: string[] = [];
     if (sincerity >= 80) classroomSentences.push('shows exemplary behavior');
@@ -241,8 +242,11 @@ export default function LearningQuotientReportPage() {
     if (timelyWork >= 80) classroomSentences.push('consistently submits work on time');
     else if (timelyWork < 50) classroomSentences.push('needs to submit assignments promptly');
 
+    if (parentScore >= 80) classroomSentences.push('maintains high home-study discipline');
+    else if (parentScore < 50) classroomSentences.push('requires stricter supervision for home studies');
+
     if (classroomSentences.length > 0) {
-      sentences.push(`In the classroom, ${name} ` + classroomSentences.join(', ') + '.');
+      sentences.push(`In classroom & home observations, ${name} ` + classroomSentences.join(', ') + '.');
     }
 
     // Overall Tier advice
@@ -397,6 +401,7 @@ export default function LearningQuotientReportPage() {
     const activePart = obsComp.details?.parameters?.find((p: any) => p.id === 'activeParticipation')?.average ?? 50;
     const sincerity = obsComp.details?.parameters?.find((p: any) => p.id === 'sincerity')?.average ?? 50;
     const timelyWork = obsComp.details?.parameters?.find((p: any) => p.id === 'timelyWork')?.average ?? 50;
+    const parentScore = obsComp.details?.parameters?.find((p: any) => p.id === 'parentScore')?.average ?? 50;
 
     const lq = quotientDetails.overallQuotient;
     const tierName = lq >= 85 ? 'Excellent Tier 🌟' : lq >= 60 ? 'Standard Tier 👍' : 'Needs Attention ⚠️';
@@ -424,7 +429,7 @@ Here is the ${durationLabel} Performance & Learning Quotient (LQ) summary for *$
    └ _Integrity Index: ${integrityComp.score}%, Avg Infractions: ${integrityComp.details?.averageWeeklyViolations ?? 0}/wk_
 👥 *5. Classroom Observations:* *${obsComp.score !== null ? obsComp.score + '/100' : 'N/A'}*
    ${obsComp.score !== null
-     ? `└ _Participation: ${activePart}%, Sincerity: ${sincerity}%, Work Submission: ${timelyWork}%_`
+     ? `└ _Participation (20%): ${activePart}%, Sincerity (20%): ${sincerity}%, Timely Work (20%): ${timelyWork}%, Parent Score (40%): ${parentScore}%_`
      : `└ _No observations logged in this period_`}
 
 📝 *${isWeekly ? 'WEEKLY STUDY TIP' : "EDUCATOR'S DIAGNOSTIC FEEDBACK"}*
@@ -473,15 +478,29 @@ _Empowering Conceptual Excellence_`;
         setSingleObsMsg('✅ Saved!');
 
         // Optimistically calculate new observation average and overall LQ score
-        const updatedObsScore = Object.keys(singleStudentScores).length > 0
-          ? Math.round(Object.values(singleStudentScores).reduce((a, b) => a + b, 0) / Object.keys(singleStudentScores).length)
-          : 50;
+        let weightedSum = 0;
+        let totalWeight = 0;
+        const updatedObsDetails = parameters.map(p => {
+          const avg = singleStudentScores[p.id] !== undefined ? Number(singleStudentScores[p.id]) : 50;
+          let paramWeight = 0.20;
+          if (p.weight !== undefined && p.weight !== null && Number(p.weight) > 0) {
+            paramWeight = Number(p.weight);
+          } else if (p.id === 'parentScore') {
+            paramWeight = 0.40;
+          } else {
+            paramWeight = 0.20;
+          }
+          weightedSum += avg * paramWeight;
+          totalWeight += paramWeight;
+          return {
+            id: p.id,
+            name: p.name,
+            average: avg,
+            weight: paramWeight
+          };
+        });
 
-        const updatedObsDetails = parameters.map(p => ({
-          id: p.id,
-          name: p.name,
-          average: singleStudentScores[p.id] ?? 50
-        }));
+        const updatedObsScore = totalWeight > 0 ? Math.round(weightedSum / totalWeight) : 50;
 
         setStudents(prev => prev.map(s => {
           if (s.studentCode === singleStudentCode) {
@@ -697,6 +716,7 @@ _Empowering Conceptual Excellence_`;
     const activePart = obsComp.details?.parameters?.find((p: any) => p.id === 'activeParticipation')?.average ?? 50;
     const sincerity = obsComp.details?.parameters?.find((p: any) => p.id === 'sincerity')?.average ?? 50;
     const timelyWork = obsComp.details?.parameters?.find((p: any) => p.id === 'timelyWork')?.average ?? 50;
+    const parentScore = obsComp.details?.parameters?.find((p: any) => p.id === 'parentScore')?.average ?? 50;
 
     const lq = broadcastActiveDetails.overallQuotient;
     const tierName = lq >= 85 ? 'Excellent Tier 🌟' : lq >= 60 ? 'Standard Tier 👍' : 'Needs Attention ⚠️';
@@ -729,7 +749,7 @@ Here is the ${durationLabel} Performance & Learning Quotient (LQ) summary for *$
    └ _Integrity Index: ${integrityComp.score}%, Avg Infractions: ${integrityComp.details?.averageWeeklyViolations ?? 0}/wk_
 👥 *5. Classroom Observations:* *${obsComp.score !== null ? obsComp.score + '/100' : 'N/A'}*
    ${obsComp.score !== null
-     ? `└ _Participation: ${activePart}%, Sincerity: ${sincerity}%, Work Submission: ${timelyWork}%_`
+     ? `└ _Participation (20%): ${activePart}%, Sincerity (20%): ${sincerity}%, Timely Work (20%): ${timelyWork}%, Parent Score (40%): ${parentScore}%_`
      : `└ _No observations logged in this period_`}
 
 📝 *${isWeekly ? 'WEEKLY STUDY TIP' : "EDUCATOR'S DIAGNOSTIC FEEDBACK"}*
@@ -1043,27 +1063,35 @@ _Empowering Conceptual Excellence_`;
                       No active observation parameters. Add parameters in settings first.
                     </div>
                   ) : (
-                    parameters.map(p => (
-                      <div key={p.id}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', fontWeight: 700, marginBottom: '4px' }}>
-                          <span>{p.name}</span>
-                          <span style={{ color: 'var(--accent)' }}>{singleStudentScores[p.id] ?? 50} / 100</span>
+                    parameters.map(p => {
+                      const weightPct = p.id === 'parentScore' || p.weight === 0.4 ? '40%' : `${Math.round((p.weight || 0.2) * 100)}%`;
+                      return (
+                        <div key={p.id}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', fontWeight: 700, marginBottom: '4px' }}>
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <span>{p.name}</span>
+                              <span style={{ fontSize: '9.5px', fontWeight: 700, padding: '1px 6px', borderRadius: '4px', background: p.id === 'parentScore' ? 'rgba(234, 179, 8, 0.15)' : 'var(--bg-soft)', color: p.id === 'parentScore' ? 'var(--warning, #eab308)' : 'var(--text-muted)', border: '1px solid var(--border-light)' }}>
+                                {weightPct} weight
+                              </span>
+                            </span>
+                            <span style={{ color: 'var(--accent)', fontWeight: 800 }}>{singleStudentScores[p.id] ?? 50} / 100</span>
+                          </div>
+                          <input 
+                            type="range" 
+                            min="0" 
+                            max="100" 
+                            value={singleStudentScores[p.id] ?? 50}
+                            onChange={(e) => {
+                              setSingleStudentScores(prev => ({
+                                ...prev,
+                                [p.id]: Number(e.target.value)
+                              }));
+                            }}
+                            style={{ width: '100%', accentColor: 'var(--accent)' }}
+                          />
                         </div>
-                        <input 
-                          type="range" 
-                          min="0" 
-                          max="100" 
-                          value={singleStudentScores[p.id] ?? 50}
-                          onChange={(e) => {
-                            setSingleStudentScores(prev => ({
-                              ...prev,
-                              [p.id]: Number(e.target.value)
-                            }));
-                          }}
-                          style={{ width: '100%', accentColor: 'var(--accent)' }}
-                        />
-                      </div>
-                    ))
+                      );
+                    })
                   )}
                 </div>
 
@@ -1428,12 +1456,18 @@ _Empowering Conceptual Excellence_`;
 
                   <div style={{ flex: 1, overflowY: 'auto', border: '1px solid var(--border-light)', borderRadius: '4px', padding: '10px', background: 'var(--bg-soft)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     {parameters.map(p => {
-                      const isDefault = ['activeParticipation', 'sincerity', 'timelyWork'].includes(p.id);
+                      const isDefault = ['activeParticipation', 'sincerity', 'timelyWork', 'parentScore'].includes(p.id);
+                      const weightPct = p.id === 'parentScore' || p.weight === 0.4 ? '40%' : `${Math.round((p.weight || 0.2) * 100)}%`;
                       return (
                         <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--surface)', padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border-light)' }}>
                           <div>
-                            <strong style={{ fontSize: '12px', color: 'var(--text)' }}>{p.name}</strong>
-                            <div style={{ fontSize: '9px', color: 'var(--text-muted)' }}>slug: <code>{p.id}</code> {isDefault && <span style={{ color: 'var(--accent)', fontWeight: 700 }}> [System Default]</span>}</div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <strong style={{ fontSize: '12px', color: 'var(--text)' }}>{p.name}</strong>
+                              <span style={{ fontSize: '9.5px', fontWeight: 700, padding: '1px 6px', borderRadius: '4px', background: p.id === 'parentScore' ? 'rgba(234, 179, 8, 0.15)' : 'var(--bg-soft)', color: p.id === 'parentScore' ? 'var(--warning, #eab308)' : 'var(--text-muted)', border: '1px solid var(--border-light)' }}>
+                                {weightPct} weight
+                              </span>
+                            </div>
+                            <div style={{ fontSize: '9px', color: 'var(--text-muted)', marginTop: '2px' }}>slug: <code>{p.id}</code> {isDefault && <span style={{ color: 'var(--accent)', fontWeight: 700 }}> [System Default]</span>}</div>
                           </div>
                           {!isDefault && (
                             <button

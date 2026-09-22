@@ -453,9 +453,10 @@ export class ClassObservationsCalculator implements ParameterCalculator {
   calculate(data: StudentData): ScoreResult {
     const { observations, activeParameters } = data;
     const parameters = activeParameters || [
-      { id: 'activeParticipation', name: 'Active Participation' },
-      { id: 'sincerity', name: 'Sincerity & Behavior' },
-      { id: 'timelyWork', name: 'Timely Work' }
+      { id: 'activeParticipation', name: 'Active Participation', weight: 0.20 },
+      { id: 'sincerity', name: 'Sincerity & Behavior', weight: 0.20 },
+      { id: 'timelyWork', name: 'Timely Work', weight: 0.20 },
+      { id: 'parentScore', name: 'Parent Score (Strict)', weight: 0.40 }
     ];
 
     if (parameters.length === 0) {
@@ -483,11 +484,15 @@ export class ClassObservationsCalculator implements ParameterCalculator {
         if (obs.timelyWork !== undefined && scoresMap['timelyWork']) {
           scoresMap['timelyWork'].push(Number(obs.timelyWork));
         }
+        if (obs.parentScore !== undefined && scoresMap['parentScore']) {
+          scoresMap['parentScore'].push(Number(obs.parentScore));
+        }
       }
     });
 
     const parameterDetails: any[] = [];
-    let totalScoreSum = 0;
+    let weightedScoreSum = 0;
+    let totalWeightSum = 0;
 
     parameters.forEach((p: any) => {
       const scores = scoresMap[p.id] || [];
@@ -495,16 +500,29 @@ export class ClassObservationsCalculator implements ParameterCalculator {
       if (scores.length > 0) {
         avg = Math.round(scores.reduce((sum, val) => sum + val, 0) / scores.length);
       }
-      totalScoreSum += avg;
+
+      let paramWeight = 0.20;
+      if (p.weight !== undefined && p.weight !== null && Number(p.weight) > 0) {
+        paramWeight = Number(p.weight);
+      } else if (p.id === 'parentScore') {
+        paramWeight = 0.40;
+      } else {
+        paramWeight = 0.20;
+      }
+
+      weightedScoreSum += avg * paramWeight;
+      totalWeightSum += paramWeight;
+
       parameterDetails.push({
         id: p.id,
         name: p.name,
         average: avg,
+        weight: paramWeight,
         logsCount: scores.length
       });
     });
 
-    const score = Math.round(totalScoreSum / parameters.length);
+    const score = totalWeightSum > 0 ? Math.round(weightedScoreSum / totalWeightSum) : 50;
 
     return {
       score,
@@ -656,21 +674,39 @@ export class QuotientService {
   static async getParameters(): Promise<any[]> {
     const parametersSnap = await adminDb.collection('quotientParameters').orderBy('createdAt', 'asc').get();
     let parameters = parametersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+    const defaultStandardParams = [
+      { id: 'activeParticipation', name: 'Active Participation', weight: 0.20, createdAt: new Date() },
+      { id: 'sincerity', name: 'Sincerity & Behavior', weight: 0.20, createdAt: new Date() },
+      { id: 'timelyWork', name: 'Timely Work', weight: 0.20, createdAt: new Date() },
+      { id: 'parentScore', name: 'Parent Score (Strict)', weight: 0.40, createdAt: new Date() }
+    ];
+
     if (parameters.length === 0) {
-      const defaults = [
-        { id: 'activeParticipation', name: 'Active Participation', createdAt: new Date() },
-        { id: 'sincerity', name: 'Sincerity & Behavior', createdAt: new Date() },
-        { id: 'timelyWork', name: 'Timely Work', createdAt: new Date() }
-      ];
       const batch = adminDb.batch();
-      defaults.forEach(p => {
+      defaultStandardParams.forEach(p => {
         const ref = adminDb.collection('quotientParameters').doc(p.id);
         batch.set(ref, p);
       });
       await batch.commit();
-      return defaults;
+      return defaultStandardParams;
     }
-    return parameters;
+
+    // Ensure Parent Score (Strict) exists in Firestore
+    const hasParentScore = parameters.some(p => p.id === 'parentScore');
+    if (!hasParentScore) {
+      const parentScoreParam = { id: 'parentScore', name: 'Parent Score (Strict)', weight: 0.40, createdAt: new Date() };
+      await adminDb.collection('quotientParameters').doc('parentScore').set(parentScoreParam, { merge: true });
+      parameters.push(parentScoreParam);
+    }
+
+    return parameters.map((p: any) => {
+      let weight = p.weight;
+      if (weight === undefined || weight === null) {
+        weight = p.id === 'parentScore' ? 0.40 : 0.20;
+      }
+      return { ...p, weight };
+    });
   }
 
   /**
@@ -1202,6 +1238,7 @@ export class QuotientService {
       activeParticipation: Number(obs.activeParticipation ?? 0),
       sincerity: Number(obs.sincerity ?? 0),
       timelyWork: Number(obs.timelyWork ?? 0),
+      parentScore: Number(obs.parentScore ?? 0),
       observedBy: obs.observedBy,
       observedAt: new Date()
     });

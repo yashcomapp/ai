@@ -10,6 +10,7 @@ export interface StudentObservation {
   activeParticipation?: number; // 0 - 100
   sincerity?: number;           // 0 - 100
   timelyWork?: number;          // 0 - 100
+  parentScore?: number;         // 0 - 100
   observedBy: string;
   observedAt: any;
 }

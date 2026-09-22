@@ -1004,7 +1004,8 @@ export async function exportStudentMonthlyReportPDF(params: {
   const obsParams = obsComp.details?.parameters || [
     { id: 'activeParticipation', name: 'Active Participation', average: 50 },
     { id: 'sincerity', name: 'Sincerity & Behavior', average: 50 },
-    { id: 'timelyWork', name: 'Timely Work', average: 50 }
+    { id: 'timelyWork', name: 'Timely Work', average: 50 },
+    { id: 'parentScore', name: 'Parent Score (Strict)', average: 50 }
   ];
 
   const htmlContent = `

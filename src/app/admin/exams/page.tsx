@@ -321,6 +321,7 @@ export default function AdminExamsPage() {
     classroomDuration: number;
     classroomTimePerQ: number;
     isMorningTest?: boolean;
+    isEveningTest?: boolean;
   }>({
     show: false,
     type: 'objective',
@@ -338,7 +339,8 @@ export default function AdminExamsPage() {
     examMode: 'home',
     classroomDuration: 60,
     classroomTimePerQ: 5,
-    isMorningTest: false
+    isMorningTest: false,
+    isEveningTest: false
   });
 
   const [assigning, setAssigning] = useState(false);
@@ -358,6 +360,7 @@ export default function AdminExamsPage() {
     examDuration: number;
     lateEntryRestriction: boolean;
     isMorningTest?: boolean;
+    isEveningTest?: boolean;
   }>({
     show: false,
     id: '',
@@ -372,7 +375,8 @@ export default function AdminExamsPage() {
     attemptLimit: 1,
     examDuration: 30,
     lateEntryRestriction: false,
-    isMorningTest: false
+    isMorningTest: false,
+    isEveningTest: false
   });
 
   const [lotteryModal, setLotteryModal] = useState<{
@@ -726,6 +730,29 @@ export default function AdminExamsPage() {
     return { startStr, endStr };
   };
 
+  const getEveningTestTimes = (durationMinutes: number) => {
+    const target = new Date();
+    // If it is already past 9:00 PM (21:00) today, schedule for tomorrow 21:00
+    if (target.getHours() >= 21) {
+      target.setDate(target.getDate() + 1);
+    }
+    const y = target.getFullYear();
+    const m = String(target.getMonth() + 1).padStart(2, '0');
+    const d = String(target.getDate()).padStart(2, '0');
+    const startStr = `${y}-${m}-${d}T21:00`;
+
+    const endDate = new Date(target);
+    endDate.setHours(21, durationMinutes, 0, 0);
+    const ey = endDate.getFullYear();
+    const em = String(endDate.getMonth() + 1).padStart(2, '0');
+    const ed = String(endDate.getDate()).padStart(2, '0');
+    const eh = String(endDate.getHours()).padStart(2, '0');
+    const emin = String(endDate.getMinutes()).padStart(2, '0');
+    const endStr = `${ey}-${em}-${ed}T${eh}:${emin}`;
+
+    return { startStr, endStr };
+  };
+
   // Create Assignment Action
   const handleOpenAssign = (exam: Exam, type: 'objective' | 'subjective') => {
     setAssignModal({
@@ -745,7 +772,8 @@ export default function AdminExamsPage() {
       examMode: exam.mode === 'classroom' ? 'classroom' : 'home',
       classroomDuration: 60,
       classroomTimePerQ: 5,
-      isMorningTest: false
+      isMorningTest: false,
+      isEveningTest: false
     });
   };
 
@@ -803,7 +831,8 @@ export default function AdminExamsPage() {
       attemptLimit: activeAssign.attemptLimit,
       examDuration: activeAssign.examDuration || 30,
       lateEntryRestriction: activeAssign.lateEntryRestriction === true,
-      isMorningTest: false
+      isMorningTest: false,
+      isEveningTest: false
     });
   };
 
@@ -2417,25 +2446,25 @@ export default function AdminExamsPage() {
                     type="radio" 
                     name="openMode" 
                     checked={assignModal.openMode === 'immediate'} 
-                    onChange={() => setAssignModal(prev => ({ ...prev, openMode: 'immediate', isMorningTest: false }))} 
+                    onChange={() => setAssignModal(prev => ({ ...prev, openMode: 'immediate', isMorningTest: false, isEveningTest: false }))} 
                   /> Immediate
                 </label>
                 <label style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
                   <input 
                     type="radio" 
                     name="openMode" 
-                    checked={assignModal.openMode === 'scheduled'} 
-                    onChange={() => setAssignModal(prev => ({ ...prev, openMode: 'scheduled' }))} 
+                    checked={assignModal.openMode === 'scheduled' && !assignModal.isMorningTest && !assignModal.isEveningTest} 
+                    onChange={() => setAssignModal(prev => ({ ...prev, openMode: 'scheduled', isMorningTest: false, isEveningTest: false }))} 
                   /> Scheduled
                 </label>
-                <label style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', whiteSpace: 'nowrap', background: 'rgba(52, 152, 219, 0.1)', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(52, 152, 219, 0.2)' }}>
+                <label style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', whiteSpace: 'nowrap', background: assignModal.isMorningTest ? 'rgba(52, 152, 219, 0.2)' : 'rgba(52, 152, 219, 0.08)', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(52, 152, 219, 0.25)' }}>
                   <input 
                     type="checkbox" 
                     checked={!!assignModal.isMorningTest} 
                     onChange={(e) => {
                       const checked = e.target.checked;
                       setAssignModal(prev => {
-                        let updates: any = { isMorningTest: checked };
+                        let updates: any = { isMorningTest: checked, isEveningTest: false };
                         if (checked) {
                           updates.openMode = 'scheduled';
                           const duration = prev.type === 'objective' ? prev.examDuration : (prev.examMode === 'classroom' ? prev.classroomDuration : 60);
@@ -2448,6 +2477,26 @@ export default function AdminExamsPage() {
                     }}
                   /> ☀️ 6 AM Test
                 </label>
+                <label style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', whiteSpace: 'nowrap', background: assignModal.isEveningTest ? 'rgba(168, 85, 247, 0.2)' : 'rgba(168, 85, 247, 0.08)', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(168, 85, 247, 0.25)' }}>
+                  <input 
+                    type="checkbox" 
+                    checked={!!assignModal.isEveningTest} 
+                    onChange={(e) => {
+                      const checked = e.target.checked;
+                      setAssignModal(prev => {
+                        let updates: any = { isEveningTest: checked, isMorningTest: false };
+                        if (checked) {
+                          updates.openMode = 'scheduled';
+                          const duration = prev.type === 'objective' ? prev.examDuration : (prev.examMode === 'classroom' ? prev.classroomDuration : 60);
+                          const times = getEveningTestTimes(duration);
+                          updates.startAtStr = times.startStr;
+                          updates.endAtStr = times.endStr;
+                        }
+                        return { ...prev, ...updates };
+                      });
+                    }}
+                  /> 🌙 9 PM Test
+                </label>
               </div>
 
               {assignModal.openMode === 'scheduled' && (
@@ -2458,7 +2507,7 @@ export default function AdminExamsPage() {
                         <input 
                           type="datetime-local" 
                           value={assignModal.startAtStr}
-                          disabled={assignModal.isMorningTest}
+                          disabled={assignModal.isMorningTest || assignModal.isEveningTest}
                           onChange={(e) => {
                             const val = e.target.value;
                             setAssignModal(prev => ({ 
@@ -2475,7 +2524,7 @@ export default function AdminExamsPage() {
                         <input 
                           type="datetime-local" 
                           value={assignModal.endAtStr}
-                          disabled={assignModal.isMorningTest}
+                          disabled={assignModal.isMorningTest || assignModal.isEveningTest}
                           onChange={(e) => setAssignModal(prev => ({ ...prev, endAtStr: e.target.value }))}
                           style={{ width: '100%', padding: '6px', background: 'var(--surface)', color: 'var(--text)', border: '1px solid var(--border-light)' }}
                         />
@@ -2538,7 +2587,7 @@ export default function AdminExamsPage() {
                       const dur = Number(raw);
                       setAssignModal(prev => {
                         let updates: any = { examDuration: isNaN(dur) ? '' : dur };
-                        if (prev.isMorningTest && prev.startAtStr && !isNaN(dur) && dur > 0) {
+                        if ((prev.isMorningTest || prev.isEveningTest) && prev.startAtStr && !isNaN(dur) && dur > 0) {
                           const startDate = new Date(prev.startAtStr);
                           const endDate = new Date(startDate.getTime() + dur * 60000);
                           const endYear = endDate.getFullYear();
@@ -2692,25 +2741,25 @@ export default function AdminExamsPage() {
                     type="radio" 
                     name="editOpenMode" 
                     checked={editModal.openMode === 'immediate'} 
-                    onChange={() => setEditModal(prev => ({ ...prev, openMode: 'immediate', isMorningTest: false }))} 
+                    onChange={() => setEditModal(prev => ({ ...prev, openMode: 'immediate', isMorningTest: false, isEveningTest: false }))} 
                   /> Immediate
                 </label>
                 <label style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
                   <input 
                     type="radio" 
                     name="editOpenMode" 
-                    checked={editModal.openMode === 'scheduled'} 
-                    onChange={() => setEditModal(prev => ({ ...prev, openMode: 'scheduled' }))} 
+                    checked={editModal.openMode === 'scheduled' && !editModal.isMorningTest && !editModal.isEveningTest} 
+                    onChange={() => setEditModal(prev => ({ ...prev, openMode: 'scheduled', isMorningTest: false, isEveningTest: false }))} 
                   /> Scheduled
                 </label>
-                <label style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', whiteSpace: 'nowrap', background: 'rgba(52, 152, 219, 0.1)', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(52, 152, 219, 0.2)' }}>
+                <label style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', whiteSpace: 'nowrap', background: editModal.isMorningTest ? 'rgba(52, 152, 219, 0.2)' : 'rgba(52, 152, 219, 0.08)', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(52, 152, 219, 0.25)' }}>
                   <input 
                     type="checkbox" 
                     checked={!!editModal.isMorningTest} 
                     onChange={(e) => {
                       const checked = e.target.checked;
                       setEditModal(prev => {
-                        let updates: any = { isMorningTest: checked };
+                        let updates: any = { isMorningTest: checked, isEveningTest: false };
                         if (checked) {
                           updates.openMode = 'scheduled';
                           const times = getMorningTestTimes(prev.examDuration || 30);
@@ -2722,6 +2771,25 @@ export default function AdminExamsPage() {
                     }}
                   /> ☀️ 6 AM Test
                 </label>
+                <label style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', whiteSpace: 'nowrap', background: editModal.isEveningTest ? 'rgba(168, 85, 247, 0.2)' : 'rgba(168, 85, 247, 0.08)', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(168, 85, 247, 0.25)' }}>
+                  <input 
+                    type="checkbox" 
+                    checked={!!editModal.isEveningTest} 
+                    onChange={(e) => {
+                      const checked = e.target.checked;
+                      setEditModal(prev => {
+                        let updates: any = { isEveningTest: checked, isMorningTest: false };
+                        if (checked) {
+                          updates.openMode = 'scheduled';
+                          const times = getEveningTestTimes(prev.examDuration || 30);
+                          updates.startAtStr = times.startStr;
+                          updates.endAtStr = times.endStr;
+                        }
+                        return { ...prev, ...updates };
+                      });
+                    }}
+                  /> 🌙 9 PM Test
+                </label>
               </div>
 
               {editModal.openMode === 'scheduled' && (
@@ -2732,7 +2800,7 @@ export default function AdminExamsPage() {
                       <input 
                         type="datetime-local" 
                         value={editModal.startAtStr}
-                        disabled={editModal.isMorningTest}
+                        disabled={editModal.isMorningTest || editModal.isEveningTest}
                         onChange={(e) => {
                           const val = e.target.value;
                           setEditModal(prev => ({ 
@@ -2749,7 +2817,7 @@ export default function AdminExamsPage() {
                       <input 
                         type="datetime-local" 
                         value={editModal.endAtStr}
-                        disabled={editModal.isMorningTest}
+                        disabled={editModal.isMorningTest || editModal.isEveningTest}
                         onChange={(e) => setEditModal(prev => ({ ...prev, endAtStr: e.target.value }))}
                         style={{ width: '100%', padding: '6px', background: 'var(--surface)', color: 'var(--text)', border: '1px solid var(--border-light)' }}
                       />
@@ -2812,14 +2880,13 @@ export default function AdminExamsPage() {
                       const dur = Number(raw);
                       setEditModal(prev => {
                         let updates: any = { examDuration: isNaN(dur) ? '' : dur };
-                        if (prev.isMorningTest && prev.startAtStr && !isNaN(dur) && dur > 0) {
+                        if ((prev.isMorningTest || prev.isEveningTest) && prev.startAtStr && !isNaN(dur) && dur > 0) {
                           const startDate = new Date(prev.startAtStr);
                           const endDate = new Date(startDate.getTime() + dur * 60000);
                           const endYear = endDate.getFullYear();
                           const endMonth = String(endDate.getMonth() + 1).padStart(2, '0');
                           const endDateStr = String(endDate.getDate()).padStart(2, '0');
                           const endHours = String(endDate.getHours()).padStart(2, '0');
-                          const endMinutes = String(endDate.getMinutes()).padStart(2, '0');
                           updates.endAtStr = `${endYear}-${endMonth}-${endDateStr}T${endHours}:${endMinutes}`;
                         }
                         return { ...prev, ...updates };

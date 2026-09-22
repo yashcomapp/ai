@@ -135,7 +135,7 @@ async function handleLearningQuotientPost(req: NextRequest) {
   }
 
   // Default action: save standard classroom observation
-  const { studentCode, activeParticipation, sincerity, timelyWork } = body;
+  const { studentCode, activeParticipation, sincerity, timelyWork, parentScore } = body;
   if (!studentCode || activeParticipation === undefined || sincerity === undefined || timelyWork === undefined) {
     return NextResponse.json({ message: 'Missing required parameters.' }, { status: 400 });
   }
@@ -145,13 +145,15 @@ async function handleLearningQuotientPost(req: NextRequest) {
     activeParticipation: Number(activeParticipation),
     sincerity: Number(sincerity),
     timelyWork: Number(timelyWork),
+    parentScore: parentScore !== undefined ? Number(parentScore) : 50,
     observedBy: actorEmail
   });
   invalidateCache('admin_report_lq_');
   await ReportService.updateStudentObservationInCache(studentCode, {
     activeParticipation: Number(activeParticipation),
     sincerity: Number(sincerity),
-    timelyWork: Number(timelyWork)
+    timelyWork: Number(timelyWork),
+    parentScore: parentScore !== undefined ? Number(parentScore) : 50
   });
 
   return NextResponse.json({

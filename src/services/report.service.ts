@@ -468,17 +468,31 @@ export class ReportService {
     const durations = ['monthly', 'weekly', 'allTime'];
     const params = parameters || await QuotientService.getParameters();
 
-    const scoreVals = Object.values(scores);
-    const avgObsScore = scoreVals.length > 0
-      ? Math.round(scoreVals.reduce((sum, v) => sum + Number(v || 0), 0) / scoreVals.length)
-      : 50;
+    let weightedScoreSum = 0;
+    let totalWeightSum = 0;
 
-    const obsDetails = params.map((p: any) => ({
-      id: p.id,
-      name: p.name,
-      average: scores[p.id] !== undefined ? Number(scores[p.id]) : 50,
-      logsCount: 1
-    }));
+    const obsDetails = params.map((p: any) => {
+      const avg = scores[p.id] !== undefined ? Number(scores[p.id]) : 50;
+      let paramWeight = 0.20;
+      if (p.weight !== undefined && p.weight !== null && Number(p.weight) > 0) {
+        paramWeight = Number(p.weight);
+      } else if (p.id === 'parentScore') {
+        paramWeight = 0.40;
+      } else {
+        paramWeight = 0.20;
+      }
+      weightedScoreSum += avg * paramWeight;
+      totalWeightSum += paramWeight;
+      return {
+        id: p.id,
+        name: p.name,
+        average: avg,
+        weight: paramWeight,
+        logsCount: 1
+      };
+    });
+
+    const avgObsScore = totalWeightSum > 0 ? Math.round(weightedScoreSum / totalWeightSum) : 50;
 
     for (const dur of durations) {
       const fullBulkCacheKey = `bulk-lq-full-report-${dur}`;
@@ -551,14 +565,28 @@ export class ReportService {
       if (cachedFullBulk && Array.isArray(cachedFullBulk.students)) {
         cachedFullBulk.students = cachedFullBulk.students.map((s: any) => {
           if (studentSet.has(s.studentCode)) {
+            let weightedSum = 0;
+            let totalWeight = 0;
             const obsDetails = (s.obsDetails || []).map((d: any) => {
-              if (d.id === parameterId) {
-                return { ...d, average: score };
+              const avg = d.id === parameterId ? score : (d.average ?? 50);
+              let paramWeight = 0.20;
+              if (d.weight !== undefined && d.weight !== null && Number(d.weight) > 0) {
+                paramWeight = Number(d.weight);
+              } else if (d.id === 'parentScore') {
+                paramWeight = 0.40;
+              } else {
+                paramWeight = 0.20;
               }
-              return d;
+              weightedSum += avg * paramWeight;
+              totalWeight += paramWeight;
+              return {
+                ...d,
+                average: avg,
+                weight: paramWeight
+              };
             });
-            const avgObsScore = obsDetails.length > 0
-              ? Math.round(obsDetails.reduce((sum: number, d: any) => sum + (d.average || 0), 0) / obsDetails.length)
+            const avgObsScore = totalWeight > 0
+              ? Math.round(weightedSum / totalWeight)
               : score;
 
             const examW = (s.examScore || 0) * 0.25;

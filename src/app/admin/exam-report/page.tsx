@@ -142,6 +142,7 @@ function ExamReportContent() {
   const [reassignAttemptLimit, setReassignAttemptLimit] = useState(1);
   const [reassignDuration, setReassignDuration] = useState(30);
   const [reassignLateEntryRestriction, setReassignLateEntryRestriction] = useState(true);
+  const [reassignPresetSlot, setReassignPresetSlot] = useState<'6am' | '9pm' | null>(null);
   const [reassigning, setReassigning] = useState(false);
 
   const toLocalISOString = (date: Date) => {
@@ -150,10 +151,54 @@ function ExamReportContent() {
     return localISOTime;
   };
 
+  const getMorningTestTimes = (durationMinutes: number) => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const y = tomorrow.getFullYear();
+    const m = String(tomorrow.getMonth() + 1).padStart(2, '0');
+    const d = String(tomorrow.getDate()).padStart(2, '0');
+    const startStr = `${y}-${m}-${d}T06:00`;
+
+    const endDate = new Date(tomorrow);
+    endDate.setHours(6, durationMinutes, 0, 0);
+    const ey = endDate.getFullYear();
+    const em = String(endDate.getMonth() + 1).padStart(2, '0');
+    const ed = String(endDate.getDate()).padStart(2, '0');
+    const eh = String(endDate.getHours()).padStart(2, '0');
+    const emin = String(endDate.getMinutes()).padStart(2, '0');
+    const endStr = `${ey}-${em}-${ed}T${eh}:${emin}`;
+
+    return { startStr, endStr };
+  };
+
+  const getEveningTestTimes = (durationMinutes: number) => {
+    const target = new Date();
+    if (target.getHours() >= 21) {
+      target.setDate(target.getDate() + 1);
+    }
+    const y = target.getFullYear();
+    const m = String(target.getMonth() + 1).padStart(2, '0');
+    const d = String(target.getDate()).padStart(2, '0');
+    const startStr = `${y}-${m}-${d}T21:00`;
+
+    const endDate = new Date(target);
+    endDate.setHours(21, durationMinutes, 0, 0);
+    const ey = endDate.getFullYear();
+    const em = String(endDate.getMonth() + 1).padStart(2, '0');
+    const ed = String(endDate.getDate()).padStart(2, '0');
+    const eh = String(endDate.getHours()).padStart(2, '0');
+    const emin = String(endDate.getMinutes()).padStart(2, '0');
+    const endStr = `${ey}-${em}-${ed}T${eh}:${emin}`;
+
+    return { startStr, endStr };
+  };
+
   const openReassignModal = () => {
-    setReassignDuration(exam?.totalMarks ? (exam as any).duration || 30 : 30);
+    const dur = exam?.totalMarks ? (exam as any).duration || 30 : 30;
+    setReassignDuration(dur);
     setReassignAttemptLimit(1);
     setReassignOpenMode('immediate');
+    setReassignPresetSlot(null);
     setReassignLateEntryRestriction(true);
     
     const now = new Date();
@@ -1250,7 +1295,7 @@ function ExamReportContent() {
           )}
 
           {/* Section: Individual Reassignment for Absent Cases */}
-          <div className="card" style={{ background: 'var(--surface)', borderRadius: 'var(--radius)', border: '1px solid var(--border-light)', padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div className="card" style={{ background: 'var(--surface)', borderRadius: 'var(--radius)', border: '1px solid var(--border-light)', padding: '6px 12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h3 style={{ fontSize: '12px', fontWeight: 800, margin: 0, textTransform: 'uppercase', color: 'var(--accent)' }}>
                 🔄 Individual Reassignment (Absent Cases)
@@ -1263,17 +1308,13 @@ function ExamReportContent() {
             </div>
             
             {notStartedStudents.length === 0 ? (
-              <div style={{ padding: '10px', background: 'var(--bg-soft)', borderRadius: 'var(--radius-sm)', fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center' }}>
+              <div style={{ padding: '8px', background: 'var(--bg-soft)', borderRadius: 'var(--radius-sm)', fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center' }}>
                 🎉 All assigned students have started or completed the exam. No absent cases found.
               </div>
             ) : (
               <>
-                <p style={{ fontSize: '11.5px', color: 'var(--text-muted)', margin: 0 }}>
-                  Select absent students to schedule a make-up or reassign this exam specifically to them.
-                </p>
-                
                 {/* Select All Toggle & Setup Reassignment Button */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-light)', paddingBottom: '6px', marginBottom: '4px', flexWrap: 'wrap', gap: '8px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-light)', paddingBottom: '4px', flexWrap: 'wrap', gap: '8px' }}>
                   <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
                     <input 
                       type="checkbox" 
@@ -1297,33 +1338,27 @@ function ExamReportContent() {
                     className="btn btn-primary"
                     disabled={reassignSelectedStudents.size === 0}
                     onClick={openReassignModal}
-                    style={{ fontSize: '11.5px', padding: '4px 10px', display: 'flex', alignItems: 'center', gap: '6px', height: '28px', borderRadius: 'var(--radius-pill, 999px)' }}
+                    style={{ fontSize: '11.5px', padding: '3px 10px', display: 'flex', alignItems: 'center', gap: '6px', height: '26px', borderRadius: 'var(--radius-pill, 999px)' }}
                   >
                     🔄 Setup Reassignment ({reassignSelectedStudents.size})
                   </button>
                 </div>
                 
-                {/* Scrollable list of students */}
-                <div style={{ maxHeight: '120px', overflowY: 'auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '6px', padding: '2px' }}>
+                {/* Clean inline list of students (no box enclosure) */}
+                <div style={{ maxHeight: '100px', overflowY: 'auto', display: 'flex', flexWrap: 'wrap', gap: '6px 18px', padding: '2px 0' }}>
                   {notStartedStudents.map(s => (
                     <label 
                       key={s.code} 
                       style={{ 
-                        display: 'flex', 
+                        display: 'inline-flex', 
                         alignItems: 'center', 
                         gap: '6px', 
-                        padding: '4px 8px', 
-                        background: 'var(--bg-soft)', 
-                        borderRadius: 'var(--radius-sm)', 
-                        border: '1px solid var(--border-light)',
                         cursor: 'pointer',
-                        fontSize: '11.5px',
+                        fontSize: '12px',
                         fontWeight: 600,
-                        userSelect: 'none',
-                        transition: 'background 0.2s, border 0.2s'
+                        color: 'var(--text)',
+                        userSelect: 'none'
                       }}
-                      onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--surface)'; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--bg-soft)'; }}
                     >
                       <input 
                         type="checkbox" 
@@ -1339,7 +1374,7 @@ function ExamReportContent() {
                         }}
                         style={{ cursor: 'pointer' }}
                       />
-                      <span style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{s.name}</span>
+                      <span>{s.name}</span>
                     </label>
                   ))}
                 </div>
@@ -2242,13 +2277,16 @@ function ExamReportContent() {
             {/* Availability mode */}
             <div>
               <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '5px' }}>Availability Slot</label>
-              <div style={{ display: 'flex', gap: '15px', marginBottom: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '10px', flexWrap: 'wrap' }}>
                 <label style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
                   <input 
                     type="radio" 
-                    name="reassignOpenMode"
+                    name="reassignOpenMode" 
                     checked={reassignOpenMode === 'immediate'} 
-                    onChange={() => setReassignOpenMode('immediate')} 
+                    onChange={() => {
+                      setReassignOpenMode('immediate');
+                      setReassignPresetSlot(null);
+                    }} 
                     style={{ cursor: 'pointer' }}
                   /> Immediate
                 </label>
@@ -2256,10 +2294,51 @@ function ExamReportContent() {
                   <input 
                     type="radio" 
                     name="reassignOpenMode" 
-                    checked={reassignOpenMode === 'scheduled'} 
-                    onChange={() => setReassignOpenMode('scheduled')} 
+                    checked={reassignOpenMode === 'scheduled' && !reassignPresetSlot} 
+                    onChange={() => {
+                      setReassignOpenMode('scheduled');
+                      setReassignPresetSlot(null);
+                    }} 
                     style={{ cursor: 'pointer' }}
                   /> Scheduled
+                </label>
+                <label style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', whiteSpace: 'nowrap', background: reassignPresetSlot === '6am' ? 'rgba(52, 152, 219, 0.2)' : 'rgba(52, 152, 219, 0.08)', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(52, 152, 219, 0.25)' }}>
+                  <input 
+                    type="checkbox" 
+                    checked={reassignPresetSlot === '6am'} 
+                    onChange={(e) => {
+                      const checked = e.target.checked;
+                      if (checked) {
+                        setReassignOpenMode('scheduled');
+                        setReassignPresetSlot('6am');
+                        const times = getMorningTestTimes(reassignDuration || 30);
+                        setReassignStartAtStr(times.startStr);
+                        setReassignEndAtStr(times.endStr);
+                      } else {
+                        setReassignPresetSlot(null);
+                      }
+                    }} 
+                    style={{ cursor: 'pointer' }}
+                  /> ☀️ 6 AM Test
+                </label>
+                <label style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', whiteSpace: 'nowrap', background: reassignPresetSlot === '9pm' ? 'rgba(168, 85, 247, 0.2)' : 'rgba(168, 85, 247, 0.08)', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(168, 85, 247, 0.25)' }}>
+                  <input 
+                    type="checkbox" 
+                    checked={reassignPresetSlot === '9pm'} 
+                    onChange={(e) => {
+                      const checked = e.target.checked;
+                      if (checked) {
+                        setReassignOpenMode('scheduled');
+                        setReassignPresetSlot('9pm');
+                        const times = getEveningTestTimes(reassignDuration || 30);
+                        setReassignStartAtStr(times.startStr);
+                        setReassignEndAtStr(times.endStr);
+                      } else {
+                        setReassignPresetSlot(null);
+                      }
+                    }} 
+                    style={{ cursor: 'pointer' }}
+                  /> 🌙 9 PM Test
                 </label>
               </div>
 
@@ -2271,6 +2350,7 @@ function ExamReportContent() {
                       <input 
                         type="datetime-local" 
                         value={reassignStartAtStr}
+                        disabled={!!reassignPresetSlot}
                         onChange={(e) => {
                           const val = e.target.value;
                           setReassignStartAtStr(val);
@@ -2284,6 +2364,7 @@ function ExamReportContent() {
                       <input 
                         type="datetime-local" 
                         value={reassignEndAtStr}
+                        disabled={!!reassignPresetSlot}
                         onChange={(e) => setReassignEndAtStr(e.target.value)}
                         style={{ width: '100%', padding: '8px', background: 'var(--surface)', color: 'var(--text)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)' }}
                       />
@@ -2339,7 +2420,22 @@ function ExamReportContent() {
                   value={reassignDuration === undefined || reassignDuration === null ? '' : reassignDuration} 
                   onChange={(e) => {
                     const raw = e.target.value;
-                    setReassignDuration(raw === '' ? '' as any : Number(raw));
+                    if (raw === '') {
+                      setReassignDuration('' as any);
+                      return;
+                    }
+                    const dur = Number(raw);
+                    setReassignDuration(isNaN(dur) ? '' as any : dur);
+                    if (reassignPresetSlot && reassignStartAtStr && !isNaN(dur) && dur > 0) {
+                      const startDate = new Date(reassignStartAtStr);
+                      const endDate = new Date(startDate.getTime() + dur * 60000);
+                      const endYear = endDate.getFullYear();
+                      const endMonth = String(endDate.getMonth() + 1).padStart(2, '0');
+                      const endDateStr = String(endDate.getDate()).padStart(2, '0');
+                      const endHours = String(endDate.getHours()).padStart(2, '0');
+                      const endMinutes = String(endDate.getMinutes()).padStart(2, '0');
+                      setReassignEndAtStr(`${endYear}-${endMonth}-${endDateStr}T${endHours}:${endMinutes}`);
+                    }
                   }}
                   onBlur={() => {
                     if (!reassignDuration || Number(reassignDuration) < 1) {
