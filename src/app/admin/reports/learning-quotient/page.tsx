@@ -1881,11 +1881,62 @@ _Empowering Conceptual Excellence_`;
 
             {/* Current Target Student Box */}
             {broadcastIndex < broadcastQueue.length ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', flex: 1, overflowY: 'auto' }}>
-                <div style={{ padding: '16px', borderRadius: 'var(--radius-md)', border: '1px solid rgba(37, 211, 102, 0.3)', background: 'rgba(37, 211, 102, 0.03)' }}>
-                  <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--color-green-whatsapp)', textTransform: 'uppercase', marginBottom: '4px' }}>Now Preparing Message For:</div>
-                  <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text)' }}>{broadcastQueue[broadcastIndex].studentName}</div>
-                  <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', flex: 1, overflowY: 'auto' }}>
+                <div style={{ padding: '12px 14px', borderRadius: 'var(--radius-md)', border: '1px solid rgba(37, 211, 102, 0.3)', background: 'rgba(37, 211, 102, 0.03)', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  
+                  {/* Row 1: Heading & Send & Next Button */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
+                    <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--color-green-whatsapp)', textTransform: 'uppercase' }}>
+                      Now Preparing Message For:
+                    </div>
+                    <button 
+                      className="btn btn-primary" 
+                      style={{ 
+                        height: '34px', 
+                        padding: '0 14px', 
+                        fontSize: '12px', 
+                        fontWeight: 700, 
+                        background: 'var(--color-green-whatsapp)', 
+                        borderColor: 'var(--color-green-whatsapp-border)',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        whiteSpace: 'nowrap',
+                        flexShrink: 0
+                      }} 
+                      onClick={handleSendNextParent}
+                      disabled={loadingBroadcastDetails || !broadcastActiveDetails}
+                    >
+                      📱 Open WhatsApp & Next
+                    </button>
+                  </div>
+
+                  {/* Row 2: Student Name & Skip Button */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
+                    <div style={{ fontSize: '17px', fontWeight: 800, color: 'var(--text)', lineHeight: '1.2' }}>
+                      {broadcastQueue[broadcastIndex].studentName}
+                    </div>
+                    <button 
+                      className="btn btn-secondary" 
+                      style={{ 
+                        height: '28px', 
+                        padding: '0 12px', 
+                        fontSize: '11px', 
+                        fontWeight: 700,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        whiteSpace: 'nowrap',
+                        flexShrink: 0
+                      }} 
+                      onClick={handleSkipCurrentParent}
+                    >
+                      ⏭️ Skip
+                    </button>
+                  </div>
+
+                  {/* Row 3: Parent Contact */}
+                  <div style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>
                     Parent Contact: <strong>{broadcastQueue[broadcastIndex].parentMobile}</strong> ({broadcastQueue[broadcastIndex].parentName})
                   </div>
                 </div>
@@ -1896,9 +1947,9 @@ _Empowering Conceptual Excellence_`;
                     Loading performance scores and generating comments...
                   </div>
                 ) : broadcastActiveDetails ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)' }}>WhatsApp Message Preview:</div>
-                    <div style={{ fontSize: '11px', background: 'var(--bg-soft)', padding: '12px 14px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)', maxHeight: '220px', overflowY: 'auto', whiteSpace: 'pre-wrap', fontFamily: 'monospace', lineHeight: '1.45' }}>
+                    <div style={{ fontSize: '11px', background: 'var(--bg-soft)', padding: '10px 12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)', maxHeight: '180px', overflowY: 'auto', whiteSpace: 'pre-wrap', fontFamily: 'monospace', lineHeight: '1.4' }}>
                       {buildWhatsAppMessage(
                         { name: broadcastQueue[broadcastIndex].studentName, studentCode: broadcastQueue[broadcastIndex].studentCode, email: broadcastQueue[broadcastIndex].email },
                         broadcastActiveDetails,
@@ -1911,20 +1962,6 @@ _Empowering Conceptual Excellence_`;
                     ⚠️ Failed to load scores. You can still skip or attempt to send.
                   </div>
                 )}
-
-                <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-                  <button className="btn btn-secondary" style={{ flex: 1, height: '40px', fontWeight: 700 }} onClick={handleSkipCurrentParent}>
-                    ⏭️ Skip
-                  </button>
-                  <button 
-                    className="btn btn-primary" 
-                    style={{ flex: 2, height: '40px', fontWeight: 700, background: 'var(--color-green-whatsapp)', borderColor: 'var(--color-green-whatsapp-border)' }} 
-                    onClick={handleSendNextParent}
-                    disabled={loadingBroadcastDetails || !broadcastActiveDetails}
-                  >
-                    📱 Open WhatsApp & Next
-                  </button>
-                </div>
               </div>
             ) : (
               <div style={{ textAlign: 'center', padding: '30px 20px', display: 'flex', flexDirection: 'column', gap: '15px', alignItems: 'center' }}>
