@@ -351,7 +351,7 @@ export async function GET(req: NextRequest) {
             ];
           }
         } else if (Array.isArray(options)) {
-          options = shuffleArray(options.map((opt: any) => (typeof opt === 'object' ? opt : { text: String(opt), value: String(opt) })));
+          options = options.map((opt: any) => (typeof opt === 'object' ? opt : { text: String(opt), value: String(opt) }));
         }
 
         return {
