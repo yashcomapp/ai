@@ -457,8 +457,135 @@ export class ReportService {
       students: studentsWithLQ
     };
 
-    await ReportCacheManager.setReport(fullBulkCacheKey, fullBulkResult, 60);
+    await ReportCacheManager.setReport(fullBulkCacheKey, fullBulkResult, 300);
     return fullBulkResult;
+  }
+
+  /**
+   * Incrementally updates a single student's observations in cached reports without full recalculation.
+   */
+  static async updateStudentObservationInCache(studentCode: string, scores: Record<string, number>, parameters?: any[]) {
+    const durations = ['monthly', 'weekly', 'allTime'];
+    const params = parameters || await QuotientService.getParameters();
+
+    const scoreVals = Object.values(scores);
+    const avgObsScore = scoreVals.length > 0
+      ? Math.round(scoreVals.reduce((sum, v) => sum + Number(v || 0), 0) / scoreVals.length)
+      : 50;
+
+    const obsDetails = params.map((p: any) => ({
+      id: p.id,
+      name: p.name,
+      average: scores[p.id] !== undefined ? Number(scores[p.id]) : 50,
+      logsCount: 1
+    }));
+
+    for (const dur of durations) {
+      const fullBulkCacheKey = `bulk-lq-full-report-${dur}`;
+      const cachedFullBulk = await ReportCacheManager.getReport<any>(fullBulkCacheKey);
+      if (cachedFullBulk && Array.isArray(cachedFullBulk.students)) {
+        cachedFullBulk.students = cachedFullBulk.students.map((s: any) => {
+          if (s.studentCode === studentCode) {
+            const examW = (s.examScore || 0) * 0.25;
+            const pracW = (s.practiceScore || 0) * 0.20;
+            const qualW = (s.qualityScore || 0) * 0.15;
+            const healthW = (s.healthScore || 0) * 0.15;
+            const integW = (s.integrityScore !== undefined ? s.integrityScore : 100) * 0.10;
+            const obsW = avgObsScore * 0.15;
+            const newLQ = Math.min(100, Math.round(examW + pracW + qualW + healthW + integW + obsW));
+
+            return {
+              ...s,
+              obsScore: avgObsScore,
+              obsDetails,
+              overallQuotient: newLQ
+            };
+          }
+          return s;
+        });
+        await ReportCacheManager.setReport(fullBulkCacheKey, cachedFullBulk, 300);
+      }
+
+      const cacheKey = `bulk-learning-quotients-report-${dur}`;
+      const quotientsMap = await ReportCacheManager.getReport<Record<string, QuotientResult>>(cacheKey);
+      if (quotientsMap && quotientsMap[studentCode]) {
+        const qData = quotientsMap[studentCode];
+        if (qData.components) {
+          const obsComp = qData.components.find((c: any) => c.parameterId === 'observations');
+          if (obsComp) {
+            obsComp.score = avgObsScore;
+            obsComp.details = {
+              observationCount: 1,
+              parameters: obsDetails
+            };
+            obsComp.contribution = Math.round(avgObsScore * obsComp.weight * 10) / 10;
+          }
+          let totalWeight = 0;
+          let weightedSum = 0;
+          qData.components.forEach((c: any) => {
+            if (c.score !== null && c.score !== undefined) {
+              totalWeight += c.weight;
+              weightedSum += c.score * c.weight;
+            }
+          });
+          qData.overallQuotient = totalWeight > 0 ? Math.min(100, Math.round(weightedSum / totalWeight)) : 0;
+          await ReportCacheManager.setReport(cacheKey, quotientsMap, 300);
+        }
+      }
+
+      const singleCacheKey = `single-lq-${studentCode}-${dur}`;
+      await ReportCacheManager.invalidateReport(singleCacheKey);
+    }
+  }
+
+  /**
+   * Incrementally updates batch awarded observations in cached reports without full recalculation.
+   */
+  static async updateBatchAwardInCache(studentCodes: string[], parameterId: string, score: number) {
+    const durations = ['monthly', 'weekly', 'allTime'];
+    const studentSet = new Set(studentCodes);
+
+    for (const dur of durations) {
+      const fullBulkCacheKey = `bulk-lq-full-report-${dur}`;
+      const cachedFullBulk = await ReportCacheManager.getReport<any>(fullBulkCacheKey);
+      if (cachedFullBulk && Array.isArray(cachedFullBulk.students)) {
+        cachedFullBulk.students = cachedFullBulk.students.map((s: any) => {
+          if (studentSet.has(s.studentCode)) {
+            const obsDetails = (s.obsDetails || []).map((d: any) => {
+              if (d.id === parameterId) {
+                return { ...d, average: score };
+              }
+              return d;
+            });
+            const avgObsScore = obsDetails.length > 0
+              ? Math.round(obsDetails.reduce((sum: number, d: any) => sum + (d.average || 0), 0) / obsDetails.length)
+              : score;
+
+            const examW = (s.examScore || 0) * 0.25;
+            const pracW = (s.practiceScore || 0) * 0.20;
+            const qualW = (s.qualityScore || 0) * 0.15;
+            const healthW = (s.healthScore || 0) * 0.15;
+            const integW = (s.integrityScore !== undefined ? s.integrityScore : 100) * 0.10;
+            const obsW = avgObsScore * 0.15;
+            const newLQ = Math.min(100, Math.round(examW + pracW + qualW + healthW + integW + obsW));
+
+            return {
+              ...s,
+              obsScore: avgObsScore,
+              obsDetails,
+              overallQuotient: newLQ
+            };
+          }
+          return s;
+        });
+        await ReportCacheManager.setReport(fullBulkCacheKey, cachedFullBulk, 300);
+      }
+
+      for (const code of studentCodes) {
+        await ReportCacheManager.invalidateReport(`single-lq-${code}-${dur}`);
+      }
+      await ReportCacheManager.invalidateReport(`bulk-learning-quotients-report-${dur}`);
+    }
   }
 
   /**

@@ -504,10 +504,7 @@ _Empowering Conceptual Excellence_`;
         }));
 
         // Close modal quickly for smooth UX
-        setTimeout(() => setShowSingleModal(false), 350);
-
-        // Sync fresh roster in the background
-        loadRoster(duration);
+        setTimeout(() => setShowSingleModal(false), 300);
       } else {
         setSingleObsMsg('❌ Failed to log observations.');
       }
