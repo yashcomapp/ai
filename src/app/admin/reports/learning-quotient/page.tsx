@@ -134,6 +134,16 @@ export default function LearningQuotientReportPage() {
   const [broadcastActiveDetails, setBroadcastActiveDetails] = useState<any>(null);
   const [loadingBroadcastDetails, setLoadingBroadcastDetails] = useState(false);
   const [duration, setDuration] = useState<string>('monthly');
+  const [whatsAppMode, setWhatsAppMode] = useState<'app' | 'web'>('app');
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('los_whatsapp_mode');
+      if (saved === 'app' || saved === 'web') {
+        setWhatsAppMode(saved as 'app' | 'web');
+      }
+    } catch (_) {}
+  }, []);
 
   // Load initial student roster based on duration
   const loadRoster = async (selectedDuration: string = duration) => {
@@ -473,6 +483,24 @@ _Empowering Conceptual Excellence_`;
     }
   };
 
+  const dispatchWhatsApp = (phoneStr: string, message: string) => {
+    const encodedMessage = encodeURIComponent(message);
+    if (whatsAppMode === 'app') {
+      // Direct OS Protocol URI: Launches WhatsApp Desktop app directly without opening any browser tabs
+      const link = document.createElement('a');
+      link.href = `whatsapp://send?phone=${phoneStr}&text=${encodedMessage}`;
+      document.body.appendChild(link);
+      link.click();
+      setTimeout(() => {
+        try { document.body.removeChild(link); } catch (_) {}
+      }, 100);
+    } else {
+      // WhatsApp Web Direct: Opens directly in 1 single reused tab without the intermediate landing page
+      const url = `https://web.whatsapp.com/send?phone=${phoneStr}&text=${encodedMessage}`;
+      window.open(url, 'whatsapp_web_broadcast_tab');
+    }
+  };
+
   const handleWhatsAppDirectText = () => {
     if (!quotientDetails) return;
     const cleanPhone = parentMobile.replace(/\D/g, '');
@@ -485,9 +513,7 @@ _Empowering Conceptual Excellence_`;
       commentsText
     );
 
-    const encodedMessage = encodeURIComponent(message);
-    const url = `https://api.whatsapp.com/send?phone=${phoneStr}&text=${encodedMessage}`;
-    window.open(url, '_blank');
+    dispatchWhatsApp(phoneStr, message);
   };
 
   // Open single observation rating sliders (instant, zero-flicker, 0ms latency)
@@ -751,10 +777,7 @@ _Empowering Conceptual Excellence_`;
       duration
     );
 
-    const encodedMessage = encodeURIComponent(message);
-    const url = `https://api.whatsapp.com/send?phone=${phoneStr}&text=${encodedMessage}`;
-    
-    window.open(url, '_blank');
+    dispatchWhatsApp(phoneStr, message);
 
     const updatedQueue = [...broadcastQueue];
     updatedQueue[broadcastIndex].status = 'sent';
@@ -1806,6 +1829,53 @@ _Empowering Conceptual Excellence_`;
               </div>
               <div style={{ width: '100%', height: '8px', background: 'var(--border-light)', borderRadius: '4px', overflow: 'hidden' }}>
                 <div style={{ width: `${(broadcastQueue.filter(q => q.status === 'sent').length / broadcastQueue.length) * 100}%`, height: '100%', background: 'var(--color-green-whatsapp)', transition: 'width 0.3s ease' }}></div>
+              </div>
+            </div>
+
+            {/* Send Mode Toggle */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--bg-soft)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)', fontSize: '11px', flexWrap: 'wrap', gap: '6px' }}>
+              <span style={{ fontWeight: 700, color: 'var(--text)' }}>Dispatch Mode:</span>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setWhatsAppMode('app');
+                    try { localStorage.setItem('los_whatsapp_mode', 'app'); } catch (_) {}
+                  }}
+                  style={{
+                    padding: '5px 10px',
+                    borderRadius: 'var(--radius-sm)',
+                    border: whatsAppMode === 'app' ? '1px solid var(--color-green-whatsapp)' : '1px solid var(--border-light)',
+                    background: whatsAppMode === 'app' ? 'rgba(37, 211, 102, 0.15)' : 'transparent',
+                    color: whatsAppMode === 'app' ? 'var(--color-green-whatsapp)' : 'var(--text-muted)',
+                    fontWeight: whatsAppMode === 'app' ? 700 : 500,
+                    cursor: 'pointer',
+                    fontSize: '11px'
+                  }}
+                  title="Opens Windows/Desktop WhatsApp App without leaving browser tabs open"
+                >
+                  💻 Desktop App (No Tabs)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setWhatsAppMode('web');
+                    try { localStorage.setItem('los_whatsapp_mode', 'web'); } catch (_) {}
+                  }}
+                  style={{
+                    padding: '5px 10px',
+                    borderRadius: 'var(--radius-sm)',
+                    border: whatsAppMode === 'web' ? '1px solid var(--color-green-whatsapp)' : '1px solid var(--border-light)',
+                    background: whatsAppMode === 'web' ? 'rgba(37, 211, 102, 0.15)' : 'transparent',
+                    color: whatsAppMode === 'web' ? 'var(--color-green-whatsapp)' : 'var(--text-muted)',
+                    fontWeight: whatsAppMode === 'web' ? 700 : 500,
+                    cursor: 'pointer',
+                    fontSize: '11px'
+                  }}
+                  title="Direct to WhatsApp Web reusing 1 single browser tab"
+                >
+                  🌐 WhatsApp Web (1 Tab)
+                </button>
               </div>
             </div>
 
