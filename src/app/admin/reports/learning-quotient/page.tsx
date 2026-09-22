@@ -247,6 +247,93 @@ export default function LearningQuotientReportPage() {
     return sentences.join(' ');
   };
 
+  const buildWhatsAppMessage = (
+    student: { name: string; studentCode?: string; email?: string },
+    details: any,
+    currentDuration: 'weekly' | 'monthly',
+    customComments?: string
+  ): string => {
+    if (!details) return '';
+
+    const isWeekly = currentDuration === 'weekly';
+    const durationLabel = isWeekly ? 'Weekly' : 'Monthly';
+    const reportPeriod = isWeekly 
+      ? `this week, ending ${new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}`
+      : new Date().toLocaleString('en-IN', { month: 'long', year: 'numeric' });
+
+    const studentName = student.name || 'Student';
+    const examComp = details.components?.find((c: any) => c.parameterId === 'exam') || { score: 0, details: {} };
+    const practiceComp = details.components?.find((c: any) => c.parameterId === 'practice') || { score: 0, details: {} };
+    const healthComp = details.components?.find((c: any) => c.parameterId === 'topicHealth') || { score: 0, details: {} };
+    const obsComp = details.components?.find((c: any) => c.parameterId === 'observations') || { score: 0, details: {} };
+
+    const totalAssigned = healthComp.details?.totalTopics ?? practiceComp.details?.totalAssignedTopics ?? 0;
+    const masteredTopics = healthComp.details?.masteredCount ?? 0;
+    const unmasteredTopics = Math.max(0, totalAssigned - masteredTopics);
+    const practicedTopics = practiceComp.details?.topicsAttemptedCount ?? 0;
+    const totalQuestions = practiceComp.details?.totalQuestionsAttempted ?? 0;
+
+    const activePart = obsComp.details?.parameters?.find((p: any) => p.id === 'activeParticipation')?.average ?? 50;
+    const sincerity = obsComp.details?.parameters?.find((p: any) => p.id === 'sincerity')?.average ?? 50;
+    const timelyWork = obsComp.details?.parameters?.find((p: any) => p.id === 'timelyWork')?.average ?? 50;
+    const parentScore = obsComp.details?.parameters?.find((p: any) => p.id === 'parentScore')?.average ?? 50;
+
+    const lq = details.overallQuotient ?? 0;
+    const tierName = lq >= 85 ? 'Excellent Tier 🌟' : lq >= 60 ? 'Standard Tier 👍' : 'Needs Attention ⚠️';
+
+    const examScore = examComp.score !== null ? `${examComp.score}/100` : 'N/A';
+    const attendanceRate = examComp.details?.attendanceRate ?? 100;
+    const absentCount = examComp.details?.absent ?? 0;
+
+    const practiceScore = practiceComp.score !== null ? `${practiceComp.score}/100` : '0/100';
+    const healthScore = healthComp.score !== null ? `${healthComp.score}/100` : '0/100';
+    const averageRetention = healthComp.details?.averageRetention ?? 100;
+    const srsDueCount = healthComp.details?.srsDueCount ?? 0;
+
+    const obsScore = obsComp.score !== null ? `${obsComp.score}/100` : 'N/A';
+
+    const comments = customComments || generateStudentComments(
+      { name: studentName, studentCode: student.studentCode, email: student.email },
+      details
+    );
+
+    return `*📚 YASHCOM FOUNDATION 📚*
+*🌟 ${durationLabel} Academic Review & Learning Quotient (LQ) 🌟*
+=========================
+Namaste Parents 🙏
+
+*${studentName}* ka ${durationLabel} Performance & Learning Quotient (LQ) summary (*${reportPeriod}*):
+
+📈 *OVERALL LEARNING QUOTIENT (LQ)*
+👉 *${lq} / 100* (${tierName})
+
+📊 *PERFORMANCE PILLARS SUMMARY*
+🎯 *1. Exam Performance:* *${examScore}*
+   └ Attendance: ${attendanceRate}%, Missed Tests: ${absentCount}
+
+🏋️ *2. Practice Efforts & Consistency:* *${practiceScore}*
+   └ Total Assigned Topics: *${totalAssigned}*
+   └ Mastered Topics (🟢): *${masteredTopics}*
+   └ Practice / Revision Pending (🟡🔴 Unmastered): *${unmasteredTopics}*
+   └ Practice Activity: *${practicedTopics}* topics par *${totalQuestions}* questions solve kiye
+
+🩺 *3. Concept Health & Memory Retention:* *${healthScore}*
+   └ Retention Rate: ${averageRetention}% (${srsDueCount > 0 ? `${srsDueCount} topics revision ke liye due hain` : 'Retention stable hai'})
+
+👥 *4. Classroom & Home Observations:* *${obsScore}*
+   └ Participation: ${activePart}%, Sincerity: ${sincerity}%, Timely Work: ${timelyWork}%, Parent Strict Score: ${parentScore}%
+
+📝 *EDUCATOR'S DIAGNOSTIC FEEDBACK (सलाह):*
+"${comments}"
+
+=========================
+Aapke sahyog aur support ke liye dhanyawad! 
+Milkar hum student ke concepts aur exam score ko behtar banayenge.
+
+_Yashcom Foundation_
+_Empowering Conceptual Excellence_`;
+  };
+
   // Open student quotient details modal
   const handleOpenDetailsModal = async (student: StudentLQ) => {
     setSelectedCode(student.studentCode || '');
@@ -371,83 +458,12 @@ export default function LearningQuotientReportPage() {
     const cleanPhone = parentMobile.replace(/\D/g, '');
     const phoneStr = cleanPhone.length === 10 ? '91' + cleanPhone : cleanPhone;
     
-    const isWeekly = duration === 'weekly';
-    const durationLabel = isWeekly ? 'Weekly' : 'Monthly';
-    const reportPeriod = isWeekly 
-      ? `this week, ending ${new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}`
-      : new Date().toLocaleString('en-IN', { month: 'long', year: 'numeric' });
-    
-    const studentName = selectedStudentInfo?.name || 'Student';
-    const examComp = quotientDetails.components.find((c: any) => c.parameterId === 'exam') || { score: 0, details: {} };
-    const practiceComp = quotientDetails.components.find((c: any) => c.parameterId === 'practice') || { score: 0, details: {} };
-    const healthComp = quotientDetails.components.find((c: any) => c.parameterId === 'topicHealth') || { score: 0, details: {} };
-    const obsComp = quotientDetails.components.find((c: any) => c.parameterId === 'observations') || { score: 0, details: {} };
-
-    const totalAssigned = healthComp.details?.totalTopics ?? practiceComp.details?.totalAssignedTopics ?? 0;
-    const masteredTopics = healthComp.details?.masteredCount ?? 0;
-    const unmasteredTopics = Math.max(0, totalAssigned - masteredTopics);
-    const practicedTopics = practiceComp.details?.topicsAttemptedCount ?? 0;
-    const totalQuestions = practiceComp.details?.totalQuestionsAttempted ?? 0;
-
-    const activePart = obsComp.details?.parameters?.find((p: any) => p.id === 'activeParticipation')?.average ?? 50;
-    const sincerity = obsComp.details?.parameters?.find((p: any) => p.id === 'sincerity')?.average ?? 50;
-    const timelyWork = obsComp.details?.parameters?.find((p: any) => p.id === 'timelyWork')?.average ?? 50;
-    const parentScore = obsComp.details?.parameters?.find((p: any) => p.id === 'parentScore')?.average ?? 50;
-
-    const lq = quotientDetails.overallQuotient;
-    const tierName = lq >= 85 ? 'Excellent Tier 🌟' : lq >= 60 ? 'Standard Tier 👍' : 'Needs Attention ⚠️';
-
-    const examScore = examComp.score !== null ? `${examComp.score}/100` : 'N/A';
-    const attendanceRate = examComp.details?.attendanceRate ?? 100;
-    const absentCount = examComp.details?.absent ?? 0;
-
-    const practiceScore = practiceComp.score !== null ? `${practiceComp.score}/100` : '0/100';
-    const healthScore = healthComp.score !== null ? `${healthComp.score}/100` : '0/100';
-    const averageRetention = healthComp.details?.averageRetention ?? 100;
-    const srsDueCount = healthComp.details?.srsDueCount ?? 0;
-
-    const obsScore = obsComp.score !== null ? `${obsComp.score}/100` : 'N/A';
-
-    const comments = commentsText || generateStudentComments(
-      { name: studentName, studentCode: selectedCode, email: selectedStudentInfo?.email || '' },
-      quotientDetails
+    const message = buildWhatsAppMessage(
+      { name: selectedStudentInfo?.name || 'Student', studentCode: selectedCode, email: selectedStudentInfo?.email || '' },
+      quotientDetails,
+      duration,
+      commentsText
     );
-
-    const message = `*📚 YASHCOM FOUNDATION 📚*
-*🌟 ${durationLabel} Academic Review & Learning Quotient (LQ) 🌟*
-=========================
-Namaste Parents 🙏
-
-*${studentName}* ka ${durationLabel} Performance & Learning Quotient (LQ) summary (*${reportPeriod}*):
-
-📈 *OVERALL LEARNING QUOTIENT (LQ)*
-👉 *${lq} / 100* (${tierName})
-
-📊 *PERFORMANCE PILLARS SUMMARY*
-🎯 *1. Exam Performance:* *${examScore}*
-   └ Attendance: ${attendanceRate}%, Missed Tests: ${absentCount}
-
-🏋️ *2. Practice Efforts & Consistency:* *${practiceScore}*
-   └ Total Assigned Topics: *${totalAssigned}*
-   └ Mastered Topics (🟢): *${masteredTopics}*
-   └ Practice / Revision Pending (🟡🔴 Unmastered): *${unmasteredTopics}*
-   └ Practice Activity: *${practicedTopics}* topics par *${totalQuestions}* questions solve kiye
-
-🩺 *3. Concept Health & Memory Retention:* *${healthScore}*
-   └ Retention Rate: ${averageRetention}% (${srsDueCount > 0 ? `${srsDueCount} topics revision ke liye due hain` : 'Retention stable hai'})
-
-👥 *4. Classroom & Home Observations:* *${obsScore}*
-   └ Participation: ${activePart}%, Sincerity: ${sincerity}%, Timely Work: ${timelyWork}%, Parent Strict Score: ${parentScore}%
-
-📝 *EDUCATOR'S DIAGNOSTIC FEEDBACK (सलाह):*
-"${comments}"
-
-=========================
-Aapke sahyog aur support ke liye dhanyawad! 
-Milkar hum student ke concepts aur exam score ko behtar banayenge.
-
-_Yashcom Foundation_
-_Empowering Conceptual Excellence_`;
 
     const encodedMessage = encodeURIComponent(message);
     const url = `https://api.whatsapp.com/send?phone=${phoneStr}&text=${encodedMessage}`;
@@ -709,83 +725,11 @@ _Empowering Conceptual Excellence_`;
     const cleanPhone = student.parentMobile.replace(/\D/g, '');
     const phoneStr = cleanPhone.length === 10 ? '91' + cleanPhone : cleanPhone;
 
-    const isWeekly = duration === 'weekly';
-    const durationLabel = isWeekly ? 'Weekly' : 'Monthly';
-    const reportPeriod = isWeekly 
-      ? `this week, ending ${new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}`
-      : new Date().toLocaleString('en-IN', { month: 'long', year: 'numeric' });
-
-    const studentName = student.studentName;
-    const examComp = broadcastActiveDetails.components.find((c: any) => c.parameterId === 'exam') || { score: 0, details: {} };
-    const practiceComp = broadcastActiveDetails.components.find((c: any) => c.parameterId === 'practice') || { score: 0, details: {} };
-    const healthComp = broadcastActiveDetails.components.find((c: any) => c.parameterId === 'topicHealth') || { score: 0, details: {} };
-    const obsComp = broadcastActiveDetails.components.find((c: any) => c.parameterId === 'observations') || { score: 0, details: {} };
-
-    const totalAssigned = healthComp.details?.totalTopics ?? practiceComp.details?.totalAssignedTopics ?? 0;
-    const masteredTopics = healthComp.details?.masteredCount ?? 0;
-    const unmasteredTopics = Math.max(0, totalAssigned - masteredTopics);
-    const practicedTopics = practiceComp.details?.topicsAttemptedCount ?? 0;
-    const totalQuestions = practiceComp.details?.totalQuestionsAttempted ?? 0;
-
-    const activePart = obsComp.details?.parameters?.find((p: any) => p.id === 'activeParticipation')?.average ?? 50;
-    const sincerity = obsComp.details?.parameters?.find((p: any) => p.id === 'sincerity')?.average ?? 50;
-    const timelyWork = obsComp.details?.parameters?.find((p: any) => p.id === 'timelyWork')?.average ?? 50;
-    const parentScore = obsComp.details?.parameters?.find((p: any) => p.id === 'parentScore')?.average ?? 50;
-
-    const lq = broadcastActiveDetails.overallQuotient;
-    const tierName = lq >= 85 ? 'Excellent Tier 🌟' : lq >= 60 ? 'Standard Tier 👍' : 'Needs Attention ⚠️';
-
-    const examScore = examComp.score !== null ? `${examComp.score}/100` : 'N/A';
-    const attendanceRate = examComp.details?.attendanceRate ?? 100;
-    const absentCount = examComp.details?.absent ?? 0;
-
-    const practiceScore = practiceComp.score !== null ? `${practiceComp.score}/100` : '0/100';
-    const healthScore = healthComp.score !== null ? `${healthComp.score}/100` : '0/100';
-    const averageRetention = healthComp.details?.averageRetention ?? 100;
-    const srsDueCount = healthComp.details?.srsDueCount ?? 0;
-
-    const obsScore = obsComp.score !== null ? `${obsComp.score}/100` : 'N/A';
-
-    const comments = generateStudentComments(
+    const message = buildWhatsAppMessage(
       { name: student.studentName, studentCode: student.studentCode, email: student.email },
-      broadcastActiveDetails
+      broadcastActiveDetails,
+      duration
     );
-
-    const message = `*📚 YASHCOM FOUNDATION 📚*
-*🌟 ${durationLabel} Academic Review & Learning Quotient (LQ) 🌟*
-=========================
-Namaste Parents 🙏
-
-*${studentName}* ka ${durationLabel} Performance & Learning Quotient (LQ) summary (*${reportPeriod}*):
-
-📈 *OVERALL LEARNING QUOTIENT (LQ)*
-👉 *${lq} / 100* (${tierName})
-
-📊 *PERFORMANCE PILLARS SUMMARY*
-🎯 *1. Exam Performance:* *${examScore}*
-   └ Attendance: ${attendanceRate}%, Missed Tests: ${absentCount}
-
-🏋️ *2. Practice Efforts & Consistency:* *${practiceScore}*
-   └ Total Assigned Topics: *${totalAssigned}*
-   └ Mastered Topics (🟢): *${masteredTopics}*
-   └ Practice / Revision Pending (🟡🔴 Unmastered): *${unmasteredTopics}*
-   └ Practice Activity: *${practicedTopics}* topics par *${totalQuestions}* questions solve kiye
-
-🩺 *3. Concept Health & Memory Retention:* *${healthScore}*
-   └ Retention Rate: ${averageRetention}% (${srsDueCount > 0 ? `${srsDueCount} topics revision ke liye due hain` : 'Retention stable hai'})
-
-👥 *4. Classroom & Home Observations:* *${obsScore}*
-   └ Participation: ${activePart}%, Sincerity: ${sincerity}%, Timely Work: ${timelyWork}%, Parent Strict Score: ${parentScore}%
-
-📝 *EDUCATOR'S DIAGNOSTIC FEEDBACK (सलाह):*
-"${comments}"
-
-=========================
-Aapke sahyog aur support ke liye dhanyawad! 
-Milkar hum student ke concepts aur exam score ko behtar banayenge.
-
-_Yashcom Foundation_
-_Empowering Conceptual Excellence_`;
 
     const encodedMessage = encodeURIComponent(message);
     const url = `https://api.whatsapp.com/send?phone=${phoneStr}&text=${encodedMessage}`;
@@ -1863,26 +1807,13 @@ _Empowering Conceptual Excellence_`;
                   </div>
                 ) : broadcastActiveDetails ? (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)' }}>Message Preview Summary:</div>
-                    <div style={{ fontSize: '11px', background: 'var(--bg-soft)', padding: '10px 14px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)', maxHeight: '180px', overflowY: 'auto', whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}>
-                      {(() => {
-                        const hComp = broadcastActiveDetails.components.find((c: any) => c.parameterId === 'topicHealth') || {};
-                        const pComp = broadcastActiveDetails.components.find((c: any) => c.parameterId === 'practice') || {};
-                        const tot = hComp.details?.totalTopics ?? pComp.details?.totalAssignedTopics ?? 0;
-                        const mast = hComp.details?.masteredCount ?? 0;
-                        const unmast = Math.max(0, tot - mast);
-                        return (
-                          <>
-                            Overall LQ: {broadcastActiveDetails.overallQuotient}/100
-                            {"\n"}Exam: {broadcastActiveDetails.components.find((c: any) => c.parameterId === 'exam')?.score ?? 0}/100 | Practice: {pComp.score ?? 0}/100
-                            {"\n"}Topics: {tot} Assigned | {mast} Mastered | {unmast} Unmastered (Pending)
-                            {"\n"}Comments: "{generateStudentComments(
-                              { name: broadcastQueue[broadcastIndex].studentName, studentCode: broadcastQueue[broadcastIndex].studentCode, email: broadcastQueue[broadcastIndex].email },
-                              broadcastActiveDetails
-                            )}"
-                          </>
-                        );
-                      })()}
+                    <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)' }}>WhatsApp Message Preview:</div>
+                    <div style={{ fontSize: '11px', background: 'var(--bg-soft)', padding: '12px 14px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)', maxHeight: '220px', overflowY: 'auto', whiteSpace: 'pre-wrap', fontFamily: 'monospace', lineHeight: '1.45' }}>
+                      {buildWhatsAppMessage(
+                        { name: broadcastQueue[broadcastIndex].studentName, studentCode: broadcastQueue[broadcastIndex].studentCode, email: broadcastQueue[broadcastIndex].email },
+                        broadcastActiveDetails,
+                        duration
+                      )}
                     </div>
                   </div>
                 ) : (
