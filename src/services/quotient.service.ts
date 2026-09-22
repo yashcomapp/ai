@@ -288,7 +288,7 @@ export class PracticeQualityCalculator implements ParameterCalculator {
 export class TopicHealthCalculator implements ParameterCalculator {
   id = 'topicHealth';
   name = 'Topic Health';
-  weight = 0.20;
+  weight = 0.25;
 
   calculate(data: StudentData): ScoreResult {
     const { practiceRecords, assignedTopics } = data;
@@ -421,7 +421,7 @@ export class TopicHealthCalculator implements ParameterCalculator {
 export class IntegrityScoreCalculator implements ParameterCalculator {
   id = 'integrity';
   name = 'Proctoring Integrity';
-  weight = 0.10;
+  weight = 0.00;
 
   calculate(data: StudentData): ScoreResult {
     const { integrityRecords } = data;
@@ -448,7 +448,7 @@ export class IntegrityScoreCalculator implements ParameterCalculator {
 export class ClassObservationsCalculator implements ParameterCalculator {
   id = 'observations';
   name = 'Obs';
-  weight = 0.15;
+  weight = 0.20;
 
   calculate(data: StudentData): ScoreResult {
     const { observations, activeParameters } = data;

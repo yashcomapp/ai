@@ -502,10 +502,10 @@ export class ReportService {
           if (s.studentCode === studentCode) {
             const examW = (s.examScore || 0) * 0.25;
             const pracW = (s.practiceScore || 0) * 0.20;
-            const qualW = (s.qualityScore || 0) * 0.15;
-            const healthW = (s.healthScore || 0) * 0.15;
-            const integW = (s.integrityScore !== undefined ? s.integrityScore : 100) * 0.10;
-            const obsW = avgObsScore * 0.15;
+            const qualW = (s.qualityScore || 0) * 0.10;
+            const healthW = (s.healthScore || 0) * 0.25;
+            const integW = 0;
+            const obsW = avgObsScore * 0.20;
             const newLQ = Math.min(100, Math.round(examW + pracW + qualW + healthW + integW + obsW));
 
             return {
@@ -591,10 +591,10 @@ export class ReportService {
 
             const examW = (s.examScore || 0) * 0.25;
             const pracW = (s.practiceScore || 0) * 0.20;
-            const qualW = (s.qualityScore || 0) * 0.15;
-            const healthW = (s.healthScore || 0) * 0.15;
-            const integW = (s.integrityScore !== undefined ? s.integrityScore : 100) * 0.10;
-            const obsW = avgObsScore * 0.15;
+            const qualW = (s.qualityScore || 0) * 0.10;
+            const healthW = (s.healthScore || 0) * 0.25;
+            const integW = 0;
+            const obsW = avgObsScore * 0.20;
             const newLQ = Math.min(100, Math.round(examW + pracW + qualW + healthW + integW + obsW));
 
             return {

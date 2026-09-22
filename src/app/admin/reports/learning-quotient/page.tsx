@@ -506,10 +506,10 @@ _Empowering Conceptual Excellence_`;
           if (s.studentCode === singleStudentCode) {
             const examW = (s.examScore || 0) * 0.25;
             const pracW = (s.practiceScore || 0) * 0.20;
-            const qualW = (s.qualityScore || 0) * 0.15;
-            const healthW = (s.healthScore || 0) * 0.15;
-            const integW = (s.integrityScore || 100) * 0.10;
-            const obsW = updatedObsScore * 0.15;
+            const qualW = (s.qualityScore || 0) * 0.10;
+            const healthW = (s.healthScore || 0) * 0.25;
+            const integW = 0;
+            const obsW = updatedObsScore * 0.20;
             const newLQ = Math.min(100, Math.round(examW + pracW + qualW + healthW + integW + obsW));
 
             return {
@@ -953,9 +953,9 @@ _Empowering Conceptual Excellence_`;
                 {renderSortHeader('Exam (25%)', 'examScore')}
                 {renderSortHeader('Practice (20%)', 'practiceScore')}
                 {renderSortHeader('Quality (10%)', 'qualityScore')}
-                {renderSortHeader('Topic Health (20%)', 'healthScore')}
-                {renderSortHeader('Integrity (10%)', 'integrityScore')}
-                {renderSortHeader('Obs (15%)', 'obsScore')}
+                {renderSortHeader('Topic Health (25%)', 'healthScore')}
+                {renderSortHeader('Integrity (0%)', 'integrityScore')}
+                {renderSortHeader('Obs (20%)', 'obsScore')}
                 {renderSortHeader('LQ', 'overallQuotient')}
                 <th style={{ padding: '12px 8px', textAlign: 'center', whiteSpace: 'nowrap' }}>Actions</th>
               </tr>
