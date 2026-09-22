@@ -348,10 +348,10 @@ Namaste Parents 🙏
    └ Retention Rate: ${averageRetention}% (${srsDueCount > 0 ? `${srsDueCount} topics revision ke liye due hain` : averageRetention > 0 ? 'Retention stable hai' : 'Practice pending hai'})
 
 👥 *4. Classroom & Home Observations:* *${obsScore}*
-   └ Parent Strict Score (40%): ${parentScore}%
-   └ Class Sincerity & Focus (20%): ${sincerity}%
-   └ Assignments & Timely Work (20%): ${timelyWork}%
-   └ Active Participation (20%): ${activePart}%
+   └ Parent Strict Score: ${parentScore}%
+   └ Class Sincerity & Focus: ${sincerity}%
+   └ Assignments & Timely Work: ${timelyWork}%
+   └ Active Participation: ${activePart}%
 
 📝 *शिक्षक का शैक्षणिक विश्लेषण एवं मार्गदर्शन (EDUCATOR'S DIAGNOSTIC FEEDBACK):*
 "${comments}"
