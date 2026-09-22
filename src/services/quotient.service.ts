@@ -135,8 +135,12 @@ export class PracticeEngagementCalculator implements ParameterCalculator {
     const totalAssignedTopics = Math.max(1, assignedTopics.length > 0 ? assignedTopics.length : topicPracticeMap.size);
     const coveragePercent = Math.min(100, Math.round((topicPracticeMap.size / totalAssignedTopics) * 100));
 
-    // Practice Engagement is balanced between Topic Coverage (50%) and Practice Accuracy (50%)
-    const score = Math.round(0.50 * coveragePercent + 0.50 * avgPracticeScore);
+    // Expected practice quota is 2 practice sessions per conducted/assigned topic
+    const expectedPracticeSessions = Math.max(1, totalAssignedTopics * 2);
+    const volumeEffortPercent = Math.min(100, Math.round((parentReviews.length / expectedPracticeSessions) * 100));
+
+    // Practice Engagement is an authentic measure of Effort & Coverage (60% topic coverage + 40% practice volume fulfillment)
+    const score = Math.min(100, Math.round(0.60 * coveragePercent + 0.40 * volumeEffortPercent));
 
     const averageQuestionsPerTopic = topicPracticeMap.size > 0
       ? Math.round((totalQuestionsAttempted / topicPracticeMap.size) * 10) / 10
@@ -150,6 +154,7 @@ export class PracticeEngagementCalculator implements ParameterCalculator {
         topicsAttemptedCount: topicPracticeMap.size,
         totalAssignedTopics,
         coveragePercent,
+        volumeEffortPercent,
         averageQuestionsPerTopic
       }
     };
@@ -162,7 +167,7 @@ export class PracticeQualityCalculator implements ParameterCalculator {
   weight = 0.10;
 
   calculate(data: StudentData): ScoreResult {
-    const { practiceRecords } = data;
+    const { practiceRecords, attempts = [], assignedTopics = [] } = data;
     const parentReviews = data.parentReviews || [];
     
     if (parentReviews.length === 0) {
@@ -257,12 +262,28 @@ export class PracticeQualityCalculator implements ParameterCalculator {
       ? Math.round(totalEfficiencyScore / topicPracticeMap.size)
       : 100;
 
-    // Quality Score = 40% Session Accuracy + 30% Pacing Sincerity + 30% Mastery Efficiency
-    const qualityScore = Math.max(0, Math.min(100, Math.round(
-      averageAccuracyScore * 0.40 + 
-      averagePacingScore * 0.30 + 
-      averageEfficiencyScore * 0.30
-    )));
+    // 3. Authenticity & Breadth Verification Factor
+    let authenticityFactor = 1.0;
+    if (attempts.length > 0) {
+      const totalExamPct = attempts.reduce((sum: number, att: any) => {
+        const pct = att.percentage != null && !isNaN(Number(att.percentage))
+          ? Number(att.percentage)
+          : (att.totalMarks > 0 ? (Number(att.score || 0) / Number(att.totalMarks)) * 100 : 0);
+        return sum + pct;
+      }, 0);
+      const avgExamPct = totalExamPct / attempts.length;
+      authenticityFactor = Math.min(1.0, Math.max(0.60, 0.50 + 0.50 * (avgExamPct / 100)));
+    }
+
+    const totalAssignedTopics = Math.max(1, assignedTopics.length > 0 ? assignedTopics.length : topicPracticeMap.size);
+    const breadthFactor = Math.min(1.0, Math.max(0.60, 0.40 + 0.60 * (topicPracticeMap.size / totalAssignedTopics)));
+
+    // Quality Score = 40% Verified Accuracy + 30% Pacing Sincerity + 30% Mastery Efficiency, modulated by Breadth
+    const rawQuality = averageAccuracyScore * 0.40 * authenticityFactor + 
+                       averagePacingScore * 0.30 + 
+                       averageEfficiencyScore * 0.30;
+
+    const qualityScore = Math.max(0, Math.min(100, Math.round(rawQuality * breadthFactor)));
 
     const averageQuestionsPerTopic = topicPracticeMap.size > 0
       ? Math.round((totalQuestionsAttempted / topicPracticeMap.size) * 10) / 10
@@ -291,7 +312,7 @@ export class TopicHealthCalculator implements ParameterCalculator {
   weight = 0.25;
 
   calculate(data: StudentData): ScoreResult {
-    const { practiceRecords, assignedTopics } = data;
+    const { practiceRecords, assignedTopics, conductedExams = [], attempts = [] } = data;
     
     // Helper to calculate retention factor
     const getRetentionFactor = (rec: any): { retention: number; factor: number; isDue: boolean } => {
@@ -301,6 +322,32 @@ export class TopicHealthCalculator implements ParameterCalculator {
       const factor = 0.70 + 0.30 * (retention / 100);
       return { retention, factor, isDue: sched.isDueForRevision };
     };
+
+    // Map student exam attempt scores by examId
+    const attemptPercentages = new Map<string, number>();
+    attempts.forEach((att: any) => {
+      if (att.examId) {
+        const pct = att.percentage != null && !isNaN(Number(att.percentage))
+          ? Number(att.percentage)
+          : (att.totalMarks > 0 ? (Number(att.score || 0) / Number(att.totalMarks)) * 100 : 0);
+        attemptPercentages.set(att.examId, pct);
+      }
+    });
+
+    // Map conducted exam scores directly to topic codes
+    const examTopicScores = new Map<string, number>();
+    conductedExams.forEach((exam: any) => {
+      const eId = exam.id || exam.examId;
+      const examPct = attemptPercentages.has(eId) ? attemptPercentages.get(eId)! : 0;
+      const tCodes = getObjectiveExamTopics(exam);
+      tCodes.forEach(tc => {
+        if (tc) examTopicScores.set(tc, examPct);
+      });
+      const subTCodes = getSubjectiveExamTopics(exam);
+      subTCodes.forEach(tc => {
+        if (tc) examTopicScores.set(tc, examPct);
+      });
+    });
 
     // If no assigned topics are resolved, fallback using practiceRecords
     if (!assignedTopics || assignedTopics.length === 0) {
@@ -365,6 +412,10 @@ export class TopicHealthCalculator implements ParameterCalculator {
 
     assignedTopics.forEach((topicCode: string) => {
       const record = practiceMap.get(topicCode);
+      const hasConductedExam = examTopicScores.has(topicCode);
+      const examScoreOnTopic = hasConductedExam ? examTopicScores.get(topicCode)! : null;
+
+      let practiceScoreOnTopic: number | null = null;
       if (record) {
         const mastery = Number(record.mastery || 0);
         const confidence = Number(record.confidence || 0);
@@ -374,30 +425,42 @@ export class TopicHealthCalculator implements ParameterCalculator {
         if (isDue) srsDueCount++;
         totalRetentionSum += retention;
 
-        if (isRecovery || (mastery >= 90 && confidence >= reqConf)) {
-          masteredCount++;
-        }
-
-        if (mastery < 50) {
-          attentionCount++;
-        }
-
-        // Continuous confidence & SRS retention scaling
         const confidenceFactor = Math.min(1, Math.max(0.5, confidence / reqConf));
-        const effectiveTopicScore = mastery * confidenceFactor * factor;
-        totalMasteryEarned += effectiveTopicScore;
+        practiceScoreOnTopic = mastery * confidenceFactor * factor;
       } else {
-        // Not even started or opened: counts as 0% mastery, needs attention
-        attentionCount++;
         totalRetentionSum += 100;
       }
+
+      // Reconcile official exam performance with practice records for true topic health
+      let effectiveTopicScore = 0;
+      if (examScoreOnTopic !== null && practiceScoreOnTopic !== null) {
+        // Topic has both proctored exam and practice: 60% exam mastery + 40% practice mastery
+        effectiveTopicScore = (examScoreOnTopic * 0.60) + (practiceScoreOnTopic * 0.40);
+      } else if (examScoreOnTopic !== null) {
+        // Conducted exam only (if missed/absent, counts as 0)
+        effectiveTopicScore = examScoreOnTopic;
+      } else if (practiceScoreOnTopic !== null) {
+        // Self-practice only
+        effectiveTopicScore = practiceScoreOnTopic;
+      } else {
+        // Unattempted: 0%
+        effectiveTopicScore = 0;
+      }
+
+      if (effectiveTopicScore >= 85) {
+        masteredCount++;
+      } else if (effectiveTopicScore < 50) {
+        attentionCount++;
+      }
+
+      totalMasteryEarned += effectiveTopicScore;
     });
 
     const averageTopicHealth = totalTopics > 0 ? (totalMasteryEarned / totalTopics) : 0;
     const attentionRatio = totalTopics > 0 ? (attentionCount / totalTopics) : 0;
     
-    // Penalize heavily unattempted topics proportionally
-    const penalty = attentionRatio > 0.5 ? (attentionRatio - 0.5) * 20 : 0;
+    // Penalize unattempted/neglected topics proportionally
+    const penalty = attentionRatio > 0.40 ? (attentionRatio - 0.40) * 20 : 0;
     const score = Math.max(0, Math.min(100, Math.round(averageTopicHealth - penalty)));
 
     return {

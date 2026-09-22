@@ -954,7 +954,6 @@ _Empowering Conceptual Excellence_`;
                 {renderSortHeader('Practice (20%)', 'practiceScore')}
                 {renderSortHeader('Quality (10%)', 'qualityScore')}
                 {renderSortHeader('Topic Health (25%)', 'healthScore')}
-                {renderSortHeader('Integrity (0%)', 'integrityScore')}
                 {renderSortHeader('Obs (20%)', 'obsScore')}
                 {renderSortHeader('LQ', 'overallQuotient')}
                 <th style={{ padding: '12px 8px', textAlign: 'center', whiteSpace: 'nowrap' }}>Actions</th>
@@ -963,7 +962,7 @@ _Empowering Conceptual Excellence_`;
             <tbody>
               {sortedStudents.length === 0 ? (
                 <tr>
-                  <td colSpan={9} style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)', fontSize: '12px' }}>
+                  <td colSpan={8} style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)', fontSize: '12px' }}>
                     No students mapped to this batch.
                   </td>
                 </tr>
@@ -992,9 +991,6 @@ _Empowering Conceptual Excellence_`;
                       </td>
                       <td style={{ padding: '12px 8px', textAlign: 'center' }}>
                         <span style={{ fontWeight: 700, color: getScoreColor(s.healthScore) }}>{s.healthScore}</span>
-                      </td>
-                      <td style={{ padding: '12px 8px', textAlign: 'center' }}>
-                        <span style={{ fontWeight: 700, color: getScoreColor(s.integrityScore) }}>{s.integrityScore}</span>
                       </td>
                       <td style={{ padding: '12px 8px', textAlign: 'center' }}>
                         <span style={{ fontWeight: 700, color: getScoreColor(s.obsScore) }}>{s.obsScore}</span>
