@@ -175,7 +175,7 @@ export default function LearningQuotientReportPage() {
 
     const sentences: string[] = [];
 
-    // 1. Exam Performance Feedback (Pure Hindi)
+    // 1. Exam Performance Feedback (Hindi)
     if (examComp.score >= 85) {
       sentences.push(`${name} परीक्षाओं में लगातार उत्कृष्ट प्रदर्शन कर रहे हैं और इनकी मूलभूत अवधारणाएं (Concepts) बहुत स्पष्ट हैं।`);
     } else if (examComp.score >= 60) {
@@ -188,29 +188,40 @@ export default function LearningQuotientReportPage() {
       sentences.push(`कृपया ध्यान दें कि ${examComp.details.absent} अनुपस्थित परीक्षा(ओं) के कारण कुल प्राप्तांक प्रभावित हुए हैं।`);
     }
 
-    // 2. Practice & Topics Mastered vs Unmastered (Pure Hindi)
+    // 2. Pre-reading and Post-reading Feedback based on Exam & Practice scores
+    const examScore = examComp.score ?? 0;
+    const practiceScore = practiceComp.score ?? 0;
+    if (examScore < 60 || practiceScore < 50) {
+      sentences.push(`कक्षा से पहले Pre-reading और कक्षा के बाद Post-reading बहुत कम (Very Less) है; पाठ को कक्षा से पहले पढ़कर आना और बाद में दोहराना अत्यंत आवश्यक है।`);
+    } else if (examScore < 80 || practiceScore < 75) {
+      sentences.push(`कक्षा से पहले Pre-reading और कक्षा के बाद Post-reading कम (Less) है; नियमित Pre/Post-reading से समझ और परीक्षा अंक और बेहतर हो सकते हैं।`);
+    } else {
+      sentences.push(`कक्षा से पहले Pre-reading और कक्षा के बाद Post-reading का स्तर अच्छा है; इसे निरंतर बनाए रखें।`);
+    }
+
+    // 3. Assigned Practice Topics & Mastery vs Pending
     if (totalAssigned > 0) {
       if (unmasteredTopics > 0) {
-        sentences.push(`कुल ${totalAssigned} निर्धारित पाठों में से ${masteredTopics} पाठ पूर्ण रूप से सिद्ध (Mastered 🟢) हैं, जबकि ${unmasteredTopics} पाठों पर अभ्यास एवं पुनरावृत्ति (🟡🔴) शेष है।`);
+        sentences.push(`कुल ${totalAssigned} assigned Practice topics में से ${masteredTopics} practice topics पूर्ण रूप से सिद्ध (Mastered 🟢) हैं, जबकि ${unmasteredTopics} practice topics पर अभ्यास एवं पुनरावृत्ति (🟡🔴) शेष है।`);
       } else {
-        sentences.push(`पाठ्यक्रम के सभी ${totalAssigned} निर्धारित पाठ सफलतापूर्वक पूर्ण एवं सिद्ध (Mastered 🟢) हो चुके हैं।`);
+        sentences.push(`पाठ्यक्रम के सभी ${totalAssigned} assigned Practice topics सफलतापूर्वक पूर्ण एवं सिद्ध (Mastered 🟢) हो चुके हैं।`);
       }
     }
 
     if (practiceComp.score >= 80) {
-      sentences.push(`स्वयं-अभ्यास (Self-Practice) में निरंतरता बहुत सराहनीय है (${practicedTopics} पाठों पर ${totalQuestions} प्रश्न हल किए हैं)।`);
+      sentences.push(`स्वयं-अभ्यास (Self-Practice) में निरंतरता बहुत सराहनीय है (${practicedTopics} practice topics पर ${totalQuestions} प्रश्न हल किए हैं)।`);
     } else if (practiceComp.score >= 50) {
-      sentences.push(`अभ्यास कार्य नियमित है (${practicedTopics} पाठ हल किए), परंतु शेष पाठों पर भी अभ्यास प्रश्नों की संख्या बढ़ाने की आवश्यकता है।`);
+      sentences.push(`अभ्यास कार्य नियमित है (${practicedTopics} practice topics हल किए), परंतु शेष practice topics पर भी अभ्यास प्रश्नों की संख्या बढ़ाने की आवश्यकता है।`);
     } else {
-      sentences.push(`अभ्यास में सहभागिता अत्यंत कम है (${practicedTopics} पाठों पर केवल ${totalQuestions} प्रश्न हल किए हैं); प्रतिदिन समय पर स्वयं-अभ्यास पूर्ण करना अनिवार्य है।`);
+      sentences.push(`अभ्यास में efforts अत्यंत कम हैं (${practicedTopics} practice topics पर केवल ${totalQuestions} प्रश्न हल किए हैं); प्रतिदिन समय पर स्वयं-अभ्यास (Self-Practice) पूर्ण करना अनिवार्य है।`);
     }
 
-    // 3. SRS Memory Retention (Pure Hindi)
+    // 4. SRS Memory Retention
     if (healthComp.details?.srsDueCount > 0) {
-      sentences.push(`${healthComp.details.srsDueCount} पाठों का स्मरण पुनरावृत्ति सत्र (Memory Refresher) शेष है ताकि पुराने सिद्धांत याद रहें।`);
+      sentences.push(`${healthComp.details.srsDueCount} practice topics का स्मरण पुनरावृत्ति सत्र (Memory Refresher) शेष है ताकि पुराने सिद्धांत याद रहें।`);
     }
 
-    // 4. Classroom & Home Observations (Pure Hindi)
+    // 5. Classroom & Home Observations
     const obsParams = obsComp.details?.parameters || [];
     const sincerity = obsParams.find((p: any) => p.id === 'sincerity')?.average ?? 50;
     const participation = obsParams.find((p: any) => p.id === 'activeParticipation')?.average ?? 50;
@@ -221,11 +232,11 @@ export default function LearningQuotientReportPage() {
     if (sincerity < 50) observationPoints.push('कक्षा में एकाग्रता और गंभीरता बढ़ाने की आवश्यकता है');
     else if (sincerity >= 80) observationPoints.push('कक्षा में अनुशासित और गंभीर व्यवहार बनाए रखते हैं');
 
-    if (participation < 50) observationPoints.push('सक्रिय सहभागिता के लिए प्रोत्साहन आवश्यक है');
-    else if (participation >= 80) observationPoints.push('कक्षा में सक्रिय रूप से भाग लेते हैं');
+    if (participation < 50) observationPoints.push('सक्रिय सहभागिता (Active Participation) के लिए प्रोत्साहन आवश्यक है');
+    else if (participation >= 80) observationPoints.push('कक्षा में सक्रिय रूप से भाग लेते हैं (Active Participation)');
 
-    if (timelyWork < 50) observationPoints.push('गृहकार्य और असाइनमेंट समय पर जमा करना आवश्यक है');
-    else if (timelyWork >= 80) observationPoints.push('सभी असाइनमेंट समय पर जमा करते हैं');
+    if (timelyWork < 50) observationPoints.push('गृहकार्य (Homework) और असाइनमेंट समय पर जमा करना आवश्यक है');
+    else if (timelyWork >= 80) observationPoints.push('सभी गृहकार्य (Homework) और असाइनमेंट समय पर जमा करते हैं');
 
     if (parentScore < 50) observationPoints.push('घर पर स्वाध्याय (Self-Study) के लिए कड़े मार्गदर्शन की आवश्यकता है');
     else if (parentScore >= 80) observationPoints.push('घर पर नियमित अध्ययन दिनचर्या का पालन कर रहे हैं');
@@ -234,14 +245,14 @@ export default function LearningQuotientReportPage() {
       sentences.push(`कक्षा एवं गृह अवलोकन: ${name} ` + observationPoints.join(', ') + '।');
     }
 
-    // 5. Overall LQ Summary Advice (Pure Hindi)
+    // 6. Overall LQ Summary Advice
     const lq = details.overallQuotient ?? 0;
     if (lq >= 85) {
       sentences.push(`कुल LQ ${lq}/100 के साथ ${name} उत्कृष्ट श्रेणी (Excellent Tier) में हैं। इसी प्रकार निरंतर परिश्रम बनाए रखें!`);
     } else if (lq >= 60) {
       sentences.push(`कुल LQ ${lq}/100 के साथ ${name} में उत्तम क्षमता है; नियमित अभ्यास से सर्वोच्च श्रेणी में आ सकते हैं।`);
     } else {
-      sentences.push(`कुल LQ ${lq}/100 है; अभिभावकों से विशेष अनुरोध है कि घर पर विद्यार्थी के दैनिक स्वाध्याय और शेष पाठों के अभ्यास पर विशेष ध्यान दें।`);
+      sentences.push(`कुल LQ ${lq}/100 है; अभिभावकों से विशेष अनुरोध है कि घर पर विद्यार्थी के दैनिक स्वाध्याय और शेष practice topics के अभ्यास पर विशेष ध्यान दें।`);
     }
 
     return sentences.join(' ');
