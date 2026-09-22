@@ -30,9 +30,16 @@ export class ExamPerformanceCalculator implements ParameterCalculator {
 
   calculate(data: StudentData): ScoreResult {
     const { assignments, attempts } = data;
-    if (assignments.length === 0) {
+    const conductedExams = (data as any).conductedExams || assignments || [];
+    
+    if (conductedExams.length === 0) {
       if (attempts.length > 0) {
-        const totalScoreSum = attempts.reduce((sum, att) => sum + (att.percentage ?? 0), 0);
+        const totalScoreSum = attempts.reduce((sum, att) => {
+          const pct = att.percentage != null && !isNaN(Number(att.percentage))
+            ? Number(att.percentage)
+            : (att.totalMarks > 0 ? (Number(att.score || 0) / Number(att.totalMarks)) * 100 : 0);
+          return sum + pct;
+        }, 0);
         return {
           score: Math.round(totalScoreSum / attempts.length),
           details: {
@@ -43,25 +50,34 @@ export class ExamPerformanceCalculator implements ParameterCalculator {
           }
         };
       }
-      return { score: 0, details: { totalAssigned: 0, completed: 0, absent: 0, reason: 'No exams assigned yet' } };
+      return { score: 0, details: { totalAssigned: 0, completed: 0, absent: 0, reason: 'No exams conducted yet' } };
     }
+
+    const attemptPercentages = new Map<string, number>();
+    attempts.forEach(att => {
+      if (att.examId) {
+        const pct = att.percentage != null && !isNaN(Number(att.percentage))
+          ? Number(att.percentage)
+          : (att.totalMarks > 0 ? (Number(att.score || 0) / Number(att.totalMarks)) * 100 : 0);
+        attemptPercentages.set(att.examId, pct);
+      }
+    });
 
     let completedCount = 0;
     let totalScoreSum = 0;
 
-    assignments.forEach(assignment => {
-      // Find a matching completed exam attempt
-      const attempt = attempts.find(att => att.examId === assignment.examId);
-      if (assignment.status === 'completed' || attempt) {
+    conductedExams.forEach((exam: any) => {
+      const eId = exam.id || exam.examId;
+      if (attemptPercentages.has(eId)) {
         completedCount++;
-        totalScoreSum += attempt?.percentage ?? 100;
+        totalScoreSum += attemptPercentages.get(eId)!;
       }
     });
 
-    const totalAssigned = assignments.length;
-    const absentCount = totalAssigned - completedCount;
-    // Score is sum of completed exam percentages divided by total assigned exams (absent counts as 0)
-    const score = Math.round(totalScoreSum / totalAssigned);
+    const totalAssigned = conductedExams.length;
+    const absentCount = Math.max(0, totalAssigned - completedCount);
+    // Score is sum of completed exam percentages divided by total conducted exams (absent counts as 0)
+    const score = totalAssigned > 0 ? Math.round(totalScoreSum / totalAssigned) : 0;
 
     return {
       score,
@@ -69,32 +85,31 @@ export class ExamPerformanceCalculator implements ParameterCalculator {
         totalAssigned,
         completed: completedCount,
         absent: absentCount,
-        attendanceRate: Math.round((completedCount / totalAssigned) * 100)
+        attendanceRate: totalAssigned > 0 ? Math.round((completedCount / totalAssigned) * 100) : 0
       }
     };
   }
 }
 
-// Strategy 2: Practice Engagement & Quality (Mastery Efficiency)
+// Strategy 2: Practice Engagement & Quality (Coverage & Accuracy)
 export class PracticeEngagementCalculator implements ParameterCalculator {
   id = 'practice';
   name = 'Practice';
   weight = 0.20;
 
   calculate(data: StudentData): ScoreResult {
-    const { practiceRecords } = data;
+    const { practiceRecords, assignedTopics = [] } = data;
     const parentReviews = data.parentReviews || [];
     
     if (parentReviews.length === 0) {
-      const avgMast = practiceRecords.length > 0 
-        ? Math.round(practiceRecords.reduce((sum: number, rec: any) => sum + (rec.mastery || 0), 0) / practiceRecords.length)
-        : 0;
       return { 
         score: 0, 
         details: { 
           totalQuestionsAttempted: 0, 
-          averageMastery: avgMast, 
+          averageMastery: 0, 
           topicsAttemptedCount: 0, 
+          totalAssignedTopics: assignedTopics.length,
+          coveragePercent: 0,
           averageQuestionsPerTopic: 0 
         } 
       };
@@ -103,27 +118,38 @@ export class PracticeEngagementCalculator implements ParameterCalculator {
     const totalQuestionsAttempted = parentReviews.reduce((sum: number, rev: any) => sum + (rev.totalQuestions || 0), 0);
 
     const topicPracticeMap = new Map<string, number>();
+    const sessionScores: number[] = [];
     parentReviews.forEach((rev: any) => {
       const tCode = rev.topicCode;
       if (tCode) {
         topicPracticeMap.set(tCode, (topicPracticeMap.get(tCode) || 0) + (rev.totalQuestions || 0));
       }
+      const sPercent = Number(rev.scorePercent != null ? rev.scorePercent : (rev.totalQuestions ? (rev.score / rev.totalQuestions) * 100 : 0));
+      if (!isNaN(sPercent)) sessionScores.push(sPercent);
     });
 
-    const averageMastery = practiceRecords.length > 0 
-      ? Math.round(practiceRecords.reduce((sum: number, rec: any) => sum + (rec.mastery || 0), 0) / practiceRecords.length)
+    const avgPracticeScore = sessionScores.length > 0
+      ? Math.round(sessionScores.reduce((sum, v) => sum + v, 0) / sessionScores.length)
       : 0;
-    
+
+    const totalAssignedTopics = Math.max(1, assignedTopics.length > 0 ? assignedTopics.length : topicPracticeMap.size);
+    const coveragePercent = Math.min(100, Math.round((topicPracticeMap.size / totalAssignedTopics) * 100));
+
+    // Practice Engagement is balanced between Topic Coverage (50%) and Practice Accuracy (50%)
+    const score = Math.round(0.50 * coveragePercent + 0.50 * avgPracticeScore);
+
     const averageQuestionsPerTopic = topicPracticeMap.size > 0
       ? Math.round((totalQuestionsAttempted / topicPracticeMap.size) * 10) / 10
       : 0;
 
     return {
-      score: averageMastery,
+      score,
       details: {
         totalQuestionsAttempted,
-        averageMastery,
+        averagePracticeScore: avgPracticeScore,
         topicsAttemptedCount: topicPracticeMap.size,
+        totalAssignedTopics,
+        coveragePercent,
         averageQuestionsPerTopic
       }
     };
@@ -147,19 +173,24 @@ export class PracticeQualityCalculator implements ParameterCalculator {
           topicsAttemptedCount: 0, 
           averageQuestionsPerTopic: 0,
           pacingScore: 0,
-          efficiencyScore: 0
+          efficiencyScore: 0,
+          accuracyScore: 0
         } 
       };
     }
 
     const totalQuestionsAttempted = parentReviews.reduce((sum: number, rev: any) => sum + (rev.totalQuestions || 0), 0);
 
-    // 1. Calculate Pacing / Sincerity Score from all practice reviews
+    // 1. Session Score Accuracy (40%)
+    const sessionScores: number[] = [];
     let totalPacingScore = 0;
     let rushedCount = 0;
     let fluencyCount = 0;
 
     parentReviews.forEach((rev: any) => {
+      const sPercent = Number(rev.scorePercent != null ? rev.scorePercent : (rev.totalQuestions ? (rev.score / rev.totalQuestions) * 100 : 0));
+      if (!isNaN(sPercent)) sessionScores.push(sPercent);
+
       let pacing = rev.sincerityPacingScore;
       if (typeof pacing !== 'number') {
         const sincerity = evaluateSessionSincerity({
@@ -177,11 +208,15 @@ export class PracticeQualityCalculator implements ParameterCalculator {
       totalPacingScore += pacing;
     });
 
+    const averageAccuracyScore = sessionScores.length > 0
+      ? Math.round(sessionScores.reduce((sum, v) => sum + v, 0) / sessionScores.length)
+      : 0;
+
     const averagePacingScore = parentReviews.length > 0
       ? Math.round(totalPacingScore / parentReviews.length)
       : 100;
 
-    // 2. Calculate Mastery Efficiency Score per topic
+    // 2. Mastery Efficiency Score per topic (30%)
     const topicPracticeMap = new Map<string, number>();
     parentReviews.forEach((rev: any) => {
       const tCode = rev.topicCode;
@@ -222,8 +257,12 @@ export class PracticeQualityCalculator implements ParameterCalculator {
       ? Math.round(totalEfficiencyScore / topicPracticeMap.size)
       : 100;
 
-    // Quality Score = 60% Pacing Sincerity + 40% Mastery Efficiency
-    const qualityScore = Math.max(0, Math.min(100, Math.round(averagePacingScore * 0.60 + averageEfficiencyScore * 0.40)));
+    // Quality Score = 40% Session Accuracy + 30% Pacing Sincerity + 30% Mastery Efficiency
+    const qualityScore = Math.max(0, Math.min(100, Math.round(
+      averageAccuracyScore * 0.40 + 
+      averagePacingScore * 0.30 + 
+      averageEfficiencyScore * 0.30
+    )));
 
     const averageQuestionsPerTopic = topicPracticeMap.size > 0
       ? Math.round((totalQuestionsAttempted / topicPracticeMap.size) * 10) / 10
@@ -235,6 +274,7 @@ export class PracticeQualityCalculator implements ParameterCalculator {
         totalQuestionsAttempted,
         topicsAttemptedCount: topicPracticeMap.size,
         averageQuestionsPerTopic,
+        accuracyScore: averageAccuracyScore,
         pacingScore: averagePacingScore,
         efficiencyScore: averageEfficiencyScore,
         rushedCount,
@@ -478,21 +518,39 @@ export class ClassObservationsCalculator implements ParameterCalculator {
 
 const getTopicCodeFromQuestionCode = deriveTopicCodeFromQuestionCode;
 
+function resolveSubjectCode(subjectName: string, classNum?: string | number): string {
+  const s = String(subjectName || '').toLowerCase();
+  const c = String(classNum || '');
+  if (s.includes('science and tech') && (s.includes('2') || s.includes('part 2') || s.includes('part - 2'))) return 'SCIT2';
+  if (s.includes('science and tech') && (s.includes('1') || s.includes('part 1') || s.includes('part - 1'))) return 'SCIT1';
+  if (s.includes('curiosity') || (s.includes('science') && c === '8')) return 'CURI';
+  if (s.includes('exploration') || (s.includes('science') && c === '9')) return 'SCIE';
+  if (s.includes('science')) return 'SCIT';
+  if (s.includes('algebra') || (s.includes('math') && (s.includes('1') || s.includes('part 1') || s.includes('part - 1')))) return 'MTH1';
+  if (s.includes('geometry') || (s.includes('math') && (s.includes('2') || s.includes('part 2') || s.includes('part - 2')))) return 'MTH2';
+  if (s.includes('ganit') || (s.includes('math') && c === '8')) return 'MGP1';
+  if (s.includes('math')) return 'MTH';
+  return 'SCIT2';
+}
+
 function getObjectiveExamTopics(exam: any): string[] {
   const topics = new Set<string>();
   if (!exam) return [];
-  const idParts = (exam.id || '').split('-');
-  const board = exam.boardCode || idParts[0] || '';
-  const classCode = exam.class || idParts[1] || '';
-  const subjectCode = exam.subjectCode || idParts[2] || '';
-  const chapterNumber = exam.chapterNumber || (idParts[4] ? idParts[4].split('_')[0] : '');
+
+  const rawId = String(exam.id || '');
+  const idParts = rawId.split('-');
+
+  const board = exam.boardCode || (idParts.length > 2 && /^(MH|CBSE)$/i.test(idParts[1]) ? idParts[1] : (idParts.length > 1 && /^(MH|CBSE)$/i.test(idParts[0]) ? idParts[0] : 'MH'));
+  const classCode = String(exam.class || (idParts.length > 2 && /^\d+$/.test(idParts[2]) ? idParts[2] : (idParts.length > 1 && /^\d+$/.test(idParts[1]) ? idParts[1] : '10')));
+  const subjectCode = exam.subjectCode || resolveSubjectCode((exam.subjects || [])[0] || exam.subjectName || rawId, classCode);
 
   const tCodes = exam.topicCodes || (exam.topicCode ? [exam.topicCode] : []);
   tCodes.forEach((t: string) => {
     if (!t) return;
-    if (t.includes('-')) {
+    if (t.includes('-') && t.split('-').length >= 4) {
       topics.add(t);
-    } else if (board && classCode && subjectCode && chapterNumber) {
+    } else {
+      const chapterNumber = t.includes('.') ? t.split('.')[0] : (exam.chapterNumber || '1');
       topics.add(`${board}-${classCode}-${subjectCode}-${chapterNumber}-${t}`);
     }
   });
@@ -530,6 +588,56 @@ function getSubjectiveExamTopics(exam: any): string[] {
   });
 
   return Array.from(topics);
+}
+
+function getExamDateKey(exam: any): string {
+  if (exam.scheduledDate) return String(exam.scheduledDate);
+  if (exam.dateKey) return String(exam.dateKey);
+  if (exam.createdAt) {
+    if (typeof exam.createdAt.toDate === 'function') {
+      return getDateKeyIST(exam.createdAt.toDate());
+    }
+    const d = new Date(exam.createdAt);
+    if (!isNaN(d.getTime())) return getDateKeyIST(d);
+  }
+  const idStr = String(exam.id || '');
+  const idMatch = idStr.match(/(\d{2})(\d{2})(\d{2})$/);
+  if (idMatch) {
+    const day = idMatch[1];
+    const month = idMatch[2];
+    const year = '20' + idMatch[3];
+    return `${year}-${month}-${day}`;
+  }
+  return '';
+}
+
+function isExamForStudent(exam: any, studentCode: string, bIds: string[], studentClass?: string): boolean {
+  if (!exam) return false;
+  if (exam.targetStudents && Array.isArray(exam.targetStudents) && exam.targetStudents.includes(studentCode)) {
+    return true;
+  }
+  if (exam.batchId && bIds.includes(exam.batchId)) {
+    return true;
+  }
+  if (Array.isArray(exam.batchIds) && exam.batchIds.some((b: string) => bIds.includes(b))) {
+    return true;
+  }
+  if (Array.isArray(exam.targetBatches) && exam.targetBatches.some((b: string) => bIds.includes(b))) {
+    return true;
+  }
+  if (studentClass) {
+    const normStudent = String(studentClass).replace(/\D/g, '');
+    const normExam = String(exam.class || exam.className || '').replace(/\D/g, '');
+    if (normExam && normStudent && normExam === normStudent) {
+      const hasSpecificBatches = (Array.isArray(exam.batchIds) && exam.batchIds.length > 0) ||
+                                (Array.isArray(exam.targetBatches) && exam.targetBatches.length > 0) ||
+                                (exam.batchId);
+      if (!hasSpecificBatches) {
+        return true;
+      }
+    }
+  }
+  return false;
 }
 
 export class QuotientService {
@@ -652,7 +760,8 @@ export class QuotientService {
     rawObservations: any[],
     rawReviews: any[],
     examsMap: Map<string, any>,
-    subjectiveExamsList: any[]
+    subjectiveExamsList: any[],
+    studentClass?: string
   ): QuotientResult {
     const todayDateStr = getDateKeyIST();
     const startDate = duration ? this.getStartDateForDuration(duration) : null;
@@ -662,38 +771,69 @@ export class QuotientService {
     const filteredSubjectiveExams = this.filterByDate(subjectiveExamsList, ['scheduledDate', 'createdAt'], startDate);
 
     const topicsSet = new Set<string>();
+    const conductedObjectiveExams: any[] = [];
 
-    // 1. Sourcing from objective exam attempts
+    // 1. Gather all conducted objective exams matching student batch or class
+    examsMap.forEach((exam: any) => {
+      const isMatch = isExamForStudent(exam, studentCode, bIds, studentClass);
+      const examDateStr = getExamDateKey(exam) || todayDateStr;
+      const isPastOrToday = examDateStr <= todayDateStr;
+      const withinDate = this.isWithinDateRange(exam.scheduledDate || exam.createdAt || examDateStr, startDate);
+
+      if (isMatch && isPastOrToday && withinDate) {
+        conductedObjectiveExams.push(exam);
+        getObjectiveExamTopics(exam).forEach(t => topicsSet.add(t));
+      }
+    });
+
+    // 2. Sourcing from actual objective exam attempts (including ad-hoc/direct)
     filteredAttempts.forEach((attData: any) => {
       const exam = examsMap.get(attData.examId);
       if (exam) {
         getObjectiveExamTopics(exam).forEach(t => topicsSet.add(t));
+        const eId = exam.id || exam.examId;
+        if (!conductedObjectiveExams.some(e => (e.id || e.examId) === eId)) {
+          conductedObjectiveExams.push(exam);
+        }
       }
     });
 
-    // 2. Sourcing from assignments
+    // 3. Sourcing from assignments
     filteredAssignments.forEach((assData: any) => {
       const exam = examsMap.get(assData.examId);
       if (exam) {
         getObjectiveExamTopics(exam).forEach(t => topicsSet.add(t));
+        const eId = exam.id || exam.examId;
+        if (!conductedObjectiveExams.some(e => (e.id || e.examId) === eId)) {
+          conductedObjectiveExams.push(exam);
+        }
       }
     });
 
-    // 3. Sourcing from subjective exams
+    // 4. Gather all conducted subjective exams matching student batch or class
+    const conductedSubjectiveExams: any[] = [];
     filteredSubjectiveExams.forEach((subExam: any) => {
-      const isAssigned = subExam.batchId && bIds.includes(subExam.batchId);
-      const scheduledDateStr = subExam.scheduledDate || todayDateStr;
+      const isMatch = isExamForStudent(subExam, studentCode, bIds, studentClass);
+      const scheduledDateStr = subExam.scheduledDate || getExamDateKey(subExam) || todayDateStr;
       const isPastOrToday = scheduledDateStr <= todayDateStr;
       
-      if (isAssigned && isPastOrToday) {
+      if (isMatch && isPastOrToday) {
+        conductedSubjectiveExams.push(subExam);
         getSubjectiveExamTopics(subExam).forEach(t => topicsSet.add(t));
       }
     });
 
+    // 5. Add practiced topics from parentReviews
+    const filteredReviews = this.filterByDate(rawReviews, ['timestamp', 'createdAt'], startDate);
+    filteredReviews.forEach((rev: any) => {
+      if (rev.topicCode) topicsSet.add(rev.topicCode);
+    });
+
     const assignedTopics = Array.from(topicsSet);
+    const conductedExams = [...conductedObjectiveExams, ...conductedSubjectiveExams];
+
     const filteredIntegrity = this.filterByDate(rawIntegrity, ['timestamp', 'createdAt'], startDate);
     const filteredObservations = this.filterByDate(rawObservations, ['observedAt', 'timestamp'], startDate);
-    const filteredReviews = this.filterByDate(rawReviews, ['timestamp', 'createdAt'], startDate);
 
     const practicedTopics = new Set(filteredReviews.map((r: any) => r.topicCode).filter(Boolean));
     const filteredPractice = startDate 
@@ -704,6 +844,7 @@ export class QuotientService {
       studentCode,
       attempts: filteredAttempts,
       assignments: filteredAssignments,
+      conductedExams,
       practiceRecords: filteredPractice,
       integrityRecords: filteredIntegrity,
       observations: filteredObservations,
@@ -718,7 +859,7 @@ export class QuotientService {
       let score = result.score;
 
       if (startDate) {
-        if (calc.id === 'exam' && studentData.attempts.length === 0) {
+        if (calc.id === 'exam' && studentData.attempts.length === 0 && conductedExams.length === 0) {
           score = null as any;
         }
         if (calc.id === 'integrity' && studentData.integrityRecords.length === 0) {
@@ -782,7 +923,7 @@ export class QuotientService {
   static async calculateStudentQuotient(studentCode: string, duration: string = 'monthly'): Promise<QuotientResult> {
     const activeParameters = await this.getParameters();
 
-    // 1. Fetch user doc first to resolve batchIds
+    // 1. Fetch user doc first to resolve batchIds and class
     const studentUserQuery = await adminDb.collection('users')
       .where('role', '==', 'student')
       .where('studentCode', '==', studentCode)
@@ -790,41 +931,14 @@ export class QuotientService {
       .get();
 
     let bIds: string[] = [];
+    let studentClass = '';
     if (!studentUserQuery.empty) {
       const userData = studentUserQuery.docs[0].data();
       bIds = userData.batchIds || (userData.batchId ? [userData.batchId] : []);
+      studentClass = userData.class || userData.className || '';
     }
 
-    // 2. Fetch student specific records in parallel
-    const queries: Promise<any>[] = [
-      adminDb.collection('examAttempts').where('studentCode', '==', studentCode).get(),
-      adminDb.collection('assignments').where('studentCode', '==', studentCode).get(),
-      adminDb.collection('studentTopicMastery').where('studentCode', '==', studentCode).get(),
-      adminDb.collection('integrityScores').where('studentCode', '==', studentCode).get(),
-      adminDb.collection('studentObservations').where('studentCode', '==', studentCode).get(),
-      adminDb.collection('parentReviews').where('studentCode', '==', studentCode).get()
-    ];
-
-    // Only query subjectiveExams if student is assigned batches (using 'in' operator chunked to max 30)
-    if (bIds.length > 0) {
-      const batchChunks = [];
-      for (let i = 0; i < bIds.length; i += 30) {
-        batchChunks.push(bIds.slice(i, i + 30));
-      }
-      const subjectiveExamsPromise = Promise.all(
-        batchChunks.map(chunk =>
-          adminDb.collection('subjectiveExams').where('batchId', 'in', chunk).get()
-        )
-      ).then(snaps => {
-        const allDocs: admin.firestore.QueryDocumentSnapshot[] = [];
-        snaps.forEach(s => allDocs.push(...s.docs));
-        return { docs: allDocs } as any;
-      });
-      queries.push(subjectiveExamsPromise);
-    } else {
-      queries.push(Promise.resolve({ docs: [] }));
-    }
-
+    // 2. Fetch student specific records and all exams in parallel
     const [
       attemptsSnap,
       assignmentsSnap,
@@ -832,38 +946,21 @@ export class QuotientService {
       integritySnap,
       observationsSnap,
       parentReviewsSnap,
+      examsSnap,
       subjectiveExamsSnap
-    ] = await Promise.all(queries);
-
-    // 3. Compile unique exam IDs referenced by attempts and assignments
-    const examIds = new Set<string>();
-    attemptsSnap.docs.forEach((doc: any) => {
-      const examId = doc.data().examId;
-      if (examId) examIds.add(examId);
-    });
-    assignmentsSnap.docs.forEach((doc: any) => {
-      const examId = doc.data().examId;
-      if (examId) examIds.add(examId);
-    });
-
-    // 4. Fetch only the referenced exams in chunks of 30
-    let examsSnapDocs: admin.firestore.QueryDocumentSnapshot[] = [];
-    if (examIds.size > 0) {
-      const idsArray = Array.from(examIds);
-      const chunks = [];
-      for (let i = 0; i < idsArray.length; i += 30) {
-        chunks.push(idsArray.slice(i, i + 30));
-      }
-      const snaps = await Promise.all(
-        chunks.map(chunk =>
-          adminDb.collection('exams').where(admin.firestore.FieldPath.documentId(), 'in', chunk).get()
-        )
-      );
-      snaps.forEach(s => examsSnapDocs.push(...s.docs));
-    }
+    ] = await Promise.all([
+      adminDb.collection('examAttempts').where('studentCode', '==', studentCode).get(),
+      adminDb.collection('assignments').where('studentCode', '==', studentCode).get(),
+      adminDb.collection('studentTopicMastery').where('studentCode', '==', studentCode).get(),
+      adminDb.collection('integrityScores').where('studentCode', '==', studentCode).get(),
+      adminDb.collection('studentObservations').where('studentCode', '==', studentCode).get(),
+      adminDb.collection('parentReviews').where('studentCode', '==', studentCode).get(),
+      adminDb.collection('exams').get(),
+      adminDb.collection('subjectiveExams').get()
+    ]);
 
     const examsMap = new Map();
-    examsSnapDocs.forEach(doc => {
+    examsSnap.docs.forEach(doc => {
       examsMap.set(doc.id, { id: doc.id, ...doc.data() });
     });
 
@@ -873,7 +970,7 @@ export class QuotientService {
     const rawIntegrity = integritySnap.docs.map((doc: any) => doc.data() as any);
     const rawObservations = observationsSnap.docs.map((doc: any) => doc.data() as any);
     const rawReviews = parentReviewsSnap.docs.map((doc: any) => doc.data() as any);
-    const subjectiveExamsList = subjectiveExamsSnap.docs.map((doc: any) => doc.data() as any);
+    const subjectiveExamsList = subjectiveExamsSnap.docs.map((doc: any) => ({ id: doc.id, ...doc.data() }));
 
     return this.computeStudentQuotientScore(
       studentCode,
@@ -887,7 +984,8 @@ export class QuotientService {
       rawObservations,
       rawReviews,
       examsMap,
-      subjectiveExamsList
+      subjectiveExamsList,
+      studentClass
     );
   }
 
@@ -926,11 +1024,13 @@ export class QuotientService {
     const subjectiveExamsList = subjectiveExamsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
     const studentBatchesMap = new Map<string, string[]>();
+    const studentClassMap = new Map<string, string>();
     usersSnap.docs.forEach(doc => {
       const data = doc.data();
       if (data.studentCode && !isDemoUser(data)) {
         const bIds = data.batchIds || (data.batchId ? [data.batchId] : []);
         studentBatchesMap.set(data.studentCode, bIds);
+        studentClassMap.set(data.studentCode, data.class || data.className || '');
       }
     });
 
@@ -964,6 +1064,7 @@ export class QuotientService {
 
     studentCodes.forEach(code => {
       const bIds = studentBatchesMap.get(code) || [];
+      const studentClass = studentClassMap.get(code) || '';
       const sAttempts = attemptsMap[code] || [];
       const sAssignments = assignmentsMap[code] || [];
       const sPractice = practiceMap[code] || [];
@@ -983,7 +1084,8 @@ export class QuotientService {
         sObservations,
         sReviews,
         examsMap,
-        subjectiveExamsList
+        subjectiveExamsList,
+        studentClass
       );
     });
 

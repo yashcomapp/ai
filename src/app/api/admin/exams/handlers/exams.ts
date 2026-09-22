@@ -6,6 +6,7 @@ import { ChunkedBatch } from '@/lib/firebase/batch';
 import { notifyNewExam } from '@/lib/notifications';
 import { getDateKeyIST } from '@/lib/dateUtils';
 import { getRequiredConfidence, isDemoUser } from '@/lib/studentDb';
+import { evaluateSessionSincerity } from '@/lib/practiceTimeUtils';
 import { getCanonicalSubjectName, parseTopicCode } from '@/lib/questionTypes';
 export const dynamic = 'force-dynamic';
 
@@ -335,6 +336,7 @@ export async function GET(req: NextRequest) {
     .sort((a, b) => a.displayName.localeCompare(b.displayName));
 
     const practiceStats: Record<string, { totalSessions: number, questionsAttempted: number, avgScore: number, lastActive: string | null }> = {};
+    const studentPacingMap: Record<string, number[]> = {};
     
     // 1. Process parentReviews collection (practice records)
     parentReviewsSnap.docs.forEach(doc => {
@@ -362,6 +364,18 @@ export async function GET(req: NextRequest) {
           : (data.totalMarks > 0 ? Math.round(((data.score || 0) / data.totalMarks) * 100) : 0));
       stats.avgScore += percent;
 
+      let pacing = data.sincerityPacingScore;
+      if (typeof pacing !== 'number') {
+        const sincerity = evaluateSessionSincerity({
+          questions: data.questions || data.questionDetails || [],
+          durationSpent: Number(data.durationSpent || (qCount ? qCount * 35 : 180)),
+          scorePercent: Number(data.scorePercent || percent || 100)
+        });
+        pacing = sincerity.sincerityPacingScore;
+      }
+      if (!studentPacingMap[code]) studentPacingMap[code] = [];
+      studentPacingMap[code].push(pacing);
+
       const itemDate = data.startedAt?.toDate ? data.startedAt.toDate() : data.createdAt?.toDate ? data.createdAt.toDate() : data.startedAt ? new Date(data.startedAt) : null;
       if (itemDate) {
         if (!stats.lastActive || itemDate > new Date(stats.lastActive)) {
@@ -370,9 +384,7 @@ export async function GET(req: NextRequest) {
       }
     });
 
-    // 2. Process practice sessions in reviews collection removed (unified under parentReviews)
-
-    // 3. Calculate average score
+    // 2. Calculate average score
     Object.keys(practiceStats).forEach(code => {
       const stats = practiceStats[code];
       if (stats.totalSessions > 0) {
@@ -439,11 +451,11 @@ export async function GET(req: NextRequest) {
       const list = masteryGroup[code] || [];
       const avg = list.length ? Math.round(list.reduce((sum, v) => sum + v, 0) / list.length) : 0;
 
-      // Calculate Quality score
+      // Calculate Quality score (40% Session Accuracy + 30% Pacing Sincerity + 30% Mastery Efficiency)
       const topicPractice = studentTopicPracticeMap[code] || new Map<string, number>();
       const topicMastery = studentTopicMasteryMap[code] || new Map<string, { mastery: number, confidence: number, reqConf?: number }>();
       
-      let totalQualityScore = 0;
+      let totalEfficiencyScore = 0;
       let topicsCount = 0;
       topicPractice.forEach((q, topicCode) => {
         const record = topicMastery.get(topicCode) || { mastery: 0, confidence: 0, reqConf: 10 };
@@ -451,19 +463,31 @@ export async function GET(req: NextRequest) {
         const confidence = record.confidence;
         const requiredConf = record.reqConf || 10;
         
-        let topicQuality = 0;
+        let topicEfficiency = 0;
         if (mastery >= 90 && confidence >= requiredConf) {
           const excess = Math.max(0, q - 15);
-          topicQuality = Math.max(30, 100 - excess * 1.5);
+          topicEfficiency = Math.max(40, 100 - excess * 1.5);
         } else {
           const excess = Math.max(0, q - 15);
-          topicQuality = Math.max(0, mastery - excess * 1.5);
+          topicEfficiency = Math.max(0, mastery - excess * 1.5);
         }
-        totalQualityScore += topicQuality;
+        totalEfficiencyScore += topicEfficiency;
         topicsCount++;
       });
 
-      const avgQuality = topicsCount > 0 ? Math.round(totalQualityScore / topicsCount) : 100;
+      const avgEfficiency = topicsCount > 0 ? Math.round(totalEfficiencyScore / topicsCount) : 100;
+
+      const studentPractice = practiceStats[code];
+      const hasPractice = studentPractice && studentPractice.totalSessions > 0;
+      const avgAccuracy = hasPractice ? studentPractice.avgScore : 0;
+      const pacingList = studentPacingMap[code] || [];
+      const avgPacing = (hasPractice && pacingList.length > 0)
+        ? Math.round(pacingList.reduce((sum, v) => sum + v, 0) / pacingList.length)
+        : 100;
+
+      const avgQuality = hasPractice
+        ? Math.max(0, Math.min(100, Math.round(avgAccuracy * 0.40 + avgPacing * 0.30 + avgEfficiency * 0.30)))
+        : 0;
 
       masteryStats[code] = {
         avgMastery: avg,
