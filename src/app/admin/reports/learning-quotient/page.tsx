@@ -179,7 +179,7 @@ export default function LearningQuotientReportPage() {
     if (examComp.score >= 85) {
       sentences.push(`${name} परीक्षाओं में लगातार उत्कृष्ट प्रदर्शन कर रहे हैं और इनकी मूलभूत अवधारणाएं (Concepts) बहुत स्पष्ट हैं।`);
     } else if (examComp.score >= 60) {
-      sentences.push(`${name} परीक्षाओं में संतोषजनक प्रदर्शन कर रहे हैं, लेकिन छोटी-मोटी वैचारिक त्रुटियों पर ध्यान देकर और नियमित पुनरावृत्ति (Revision) करके अंक और बेहतर कर सकते हैं।`);
+      sentences.push(`${name} परीक्षाओं में संतोषजनक प्रदर्शन कर रहे हैं, लेकिन छोटी-मोटी वैचारिक त्रुटियों (Conceptual Errors) पर ध्यान देकर और नियमित पुनरावृत्ति (Revision) करके अंक और बेहतर कर सकते हैं।`);
     } else {
       sentences.push(`${name} को मूलभूत अवधारणाएं (Fundamentals) सुदृढ़ करने के लिए अतिरिक्त मार्गदर्शन एवं व्यवस्थित पुनरावृत्ति की अत्यंत आवश्यकता है।`);
     }
@@ -229,8 +229,8 @@ export default function LearningQuotientReportPage() {
     const parentScore = obsParams.find((p: any) => p.id === 'parentScore')?.average ?? 50;
 
     const observationPoints: string[] = [];
-    if (sincerity < 50) observationPoints.push('कक्षा में एकाग्रता और गंभीरता बढ़ाने की आवश्यकता है');
-    else if (sincerity >= 80) observationPoints.push('कक्षा में अनुशासित और गंभीर व्यवहार बनाए रखते हैं');
+    if (sincerity < 50) observationPoints.push('कक्षा में एकाग्रता (Focus) और गंभीरता बढ़ाने की आवश्यकता है');
+    else if (sincerity >= 80) observationPoints.push('कक्षा में एकाग्रता (Focus) और अनुशासित व्यवहार बनाए रखते हैं');
 
     if (participation < 50) observationPoints.push('सक्रिय सहभागिता (Active Participation) के लिए प्रोत्साहन आवश्यक है');
     else if (participation >= 80) observationPoints.push('कक्षा में सक्रिय रूप से भाग लेते हैं (Active Participation)');
