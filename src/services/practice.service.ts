@@ -122,25 +122,68 @@ export class PracticeService {
         ? (Array.isArray(qData.correctAnswers) && qData.correctAnswers.length > 0 ? qData.correctAnswers : parseAnswerList(qData.correctAnswer))
         : (qData.correctAnswer || (Array.isArray(qData.correctAnswers) ? qData.correctAnswers[0] : ''));
 
-      const isCorrect = isDisputed ? false : evaluateQuestionAnswer(
-        qData.type || 'single_mcq',
-        ans.answer,
-        resolvedCorrectAnswer,
-        qData.options
-      );
+      let isCorrect = false;
+      if (!isDisputed) {
+        // Pass 1: Standard answer evaluation against Firestore options
+        isCorrect = evaluateQuestionAnswer(
+          qData.type || 'single_mcq',
+          ans.answer,
+          resolvedCorrectAnswer,
+          qData.options
+        );
+
+        // Pass 2: Check ans.selectedOptionText against resolvedCorrectAnswer and qData.options
+        if (!isCorrect && ans.selectedOptionText) {
+          isCorrect = evaluateQuestionAnswer(
+            qData.type || 'single_mcq',
+            ans.selectedOptionText,
+            resolvedCorrectAnswer,
+            qData.options
+          );
+        }
+
+        // Pass 3: Check optionsSnapshot if present
+        if (!isCorrect && Array.isArray(ans.optionsSnapshot) && ans.optionsSnapshot.length > 0) {
+          if (isMultiple) {
+            try {
+              const letters = parseAnswerList(ans.answer);
+              const mappedTexts = letters.map((l: string) => {
+                if (/^[A-Z]$/i.test(l)) {
+                  const idx = l.toUpperCase().charCodeAt(0) - 65;
+                  if (idx >= 0 && idx < ans.optionsSnapshot.length) {
+                    const opt = ans.optionsSnapshot[idx];
+                    return typeof opt === 'object' && opt ? (opt.text || opt.value || '') : String(opt);
+                  }
+                }
+                return l;
+              });
+              isCorrect = evaluateQuestionAnswer(qData.type || 'single_mcq', mappedTexts, resolvedCorrectAnswer, qData.options);
+            } catch {}
+          } else if (typeof ans.answer === 'string' && /^[A-Z]$/i.test(ans.answer)) {
+            const idx = ans.answer.toUpperCase().charCodeAt(0) - 65;
+            if (idx >= 0 && idx < ans.optionsSnapshot.length) {
+              const opt = ans.optionsSnapshot[idx];
+              const optText = typeof opt === 'object' && opt ? (opt.text || opt.value || '') : String(opt);
+              if (optText) {
+                isCorrect = evaluateQuestionAnswer(qData.type || 'single_mcq', optText, resolvedCorrectAnswer, qData.options);
+              }
+            }
+          }
+        }
+      }
 
       evaluations.push({
         id: ans.questionId,
         questionCode: qData.questionCode,
         text: qData.text || qData.assertion || '',
         type: qData.type || 'single_mcq',
-        options: qData.options || [],
+        options: (ans.optionsSnapshot && ans.optionsSnapshot.length > 0) ? ans.optionsSnapshot : (qData.options || []),
         assertion: qData.assertion || '',
         reason: qData.reason || '',
         solution: qData.solution || qData.explanation || qData.solutionText || qData.explanationText || '',
         difficulty: qData.difficulty || 'medium',
         bloomLevel: qData.bloomLevel || 'Understand',
-        userAnswer: ans.answer,
+        userAnswer: ans.selectedOptionText || ans.answer,
         correctAnswer: qData.correctAnswer || '',
         correctAnswers: qData.correctAnswers || [],
         isCorrect,

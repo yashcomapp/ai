@@ -664,10 +664,42 @@ function TopicPracticeContent() {
     stopWebcam();
 
     try {
-      const formattedAnswers = data.questions.map((q, idx) => ({
-        questionId: q.id,
-        answer: userAnswers[idx] || ''
-      }));
+      const formattedAnswers = data.questions.map((q, idx) => {
+        const uAns = userAnswers[idx] || '';
+        let selectedOptionText = uAns;
+
+        if (isMultipleChoiceType(q.type)) {
+          try {
+            const rawList = parseAnswerList(uAns);
+            if (Array.isArray(rawList) && Array.isArray(q.options) && q.options.length > 0) {
+              const matchedTexts = rawList.map((letter: string) => {
+                if (typeof letter === 'string' && /^[A-Z]$/i.test(letter)) {
+                  const oIdx = letter.toUpperCase().charCodeAt(0) - 65;
+                  if (oIdx >= 0 && oIdx < q.options.length) {
+                    const opt = q.options[oIdx];
+                    return typeof opt === 'object' && opt ? (opt.text || opt.value || opt.label || '') : String(opt);
+                  }
+                }
+                return String(letter);
+              });
+              selectedOptionText = JSON.stringify(matchedTexts);
+            }
+          } catch {}
+        } else if (Array.isArray(q.options) && q.options.length > 0 && typeof uAns === 'string' && /^[A-Z]$/i.test(uAns)) {
+          const oIdx = uAns.toUpperCase().charCodeAt(0) - 65;
+          if (oIdx >= 0 && oIdx < q.options.length) {
+            const opt = q.options[oIdx];
+            selectedOptionText = typeof opt === 'object' && opt ? (opt.text || opt.value || opt.label || '') : String(opt);
+          }
+        }
+
+        return {
+          questionId: q.id,
+          answer: uAns,
+          selectedOptionText,
+          optionsSnapshot: q.options || []
+        };
+      });
 
       const idToken = await firebaseUser.getIdToken();
       const res = await fetch('/api/student/practice', {
