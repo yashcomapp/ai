@@ -275,7 +275,7 @@ export default function LearningQuotientReportPage() {
       `5. ${adviceText}`
     ];
 
-    return points.join('\n');
+    return points.join('\n\n');
   };
 
   const buildWhatsAppMessage = (
@@ -358,7 +358,7 @@ Namaste Parents 🙏
    └ Active Participation: ${activePart}%
 
 📝 *शिक्षक का शैक्षणिक विश्लेषण एवं मार्गदर्शन (EDUCATOR'S DIAGNOSTIC FEEDBACK):*
-"${comments}"
+${comments}
 
 =========================
 आपके सहयोग एवं समर्थन के लिए धन्यवाद! 🙏
