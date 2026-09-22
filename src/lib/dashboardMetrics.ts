@@ -159,6 +159,7 @@ export function calculateUnifiedMetrics(input: UnifiedMetricsInput): UnifiedMetr
     const confidence = Number(t.confidence || 0);
     const isRecovery = !!t.isRecoveryMastered;
     const reqConf = Number(t.requiredConfidence || 10);
+    const isFullConfidence = confidence >= reqConf;
     const hasPracticed = Number(t.confidence || 0) > 0 || Number(t.questionsAttempted || 0) > 0 || Number(t.totalAttempts || 0) > 0 || isRecovery;
 
     // Resolve SRS retention and review status
