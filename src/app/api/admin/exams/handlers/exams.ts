@@ -353,8 +353,14 @@ export async function GET(req: NextRequest) {
 
       const stats = practiceStats[code];
       stats.totalSessions += 1;
-      stats.questionsAttempted += (data.totalQuestions || 0);
-      stats.avgScore += (data.scorePercent || 0);
+      const qCount = Number(data.totalQuestions || data.questionsCount || (Array.isArray(data.questions) ? data.questions.length : (data.questionDetails?.length || 0)));
+      stats.questionsAttempted += qCount;
+      const percent = data.percentage !== undefined && data.percentage !== null
+        ? Number(data.percentage)
+        : (data.scorePercent !== undefined && data.scorePercent !== null
+          ? Number(data.scorePercent)
+          : (data.totalMarks > 0 ? Math.round(((data.score || 0) / data.totalMarks) * 100) : 0));
+      stats.avgScore += percent;
 
       const itemDate = data.startedAt?.toDate ? data.startedAt.toDate() : data.createdAt?.toDate ? data.createdAt.toDate() : data.startedAt ? new Date(data.startedAt) : null;
       if (itemDate) {
@@ -418,7 +424,7 @@ export async function GET(req: NextRequest) {
       if (!masteryGroup[code]) masteryGroup[code] = [];
       masteryGroup[code].push(val);
 
-      if (val >= 90 && conf >= reqConf) {
+      if ((val >= 90 && conf >= reqConf) || Boolean(data.isRecoveryMastered)) {
         masteredCount[code] = (masteredCount[code] || 0) + 1;
       } else if (val >= 50) {
         practicingCount[code] = (practicingCount[code] || 0) + 1;
