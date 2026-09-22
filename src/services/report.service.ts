@@ -428,6 +428,7 @@ export class ReportService {
           healthScore: healthComp?.score ?? 0,
           integrityScore: integrityComp?.score ?? 0,
           obsScore: obsComp?.score ?? 50,
+          obsDetails: obsComp?.details?.parameters || [],
           parentName: pName,
           parentMobile: pMobile
         };
@@ -442,6 +443,7 @@ export class ReportService {
           healthScore: 0,
           integrityScore: 100,
           obsScore: 50,
+          obsDetails: [],
           parentName: pName,
           parentMobile: pMobile
         };

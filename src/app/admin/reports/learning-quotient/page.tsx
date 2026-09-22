@@ -22,6 +22,7 @@ interface StudentLQ {
   healthScore: number;
   integrityScore: number;
   obsScore: number;
+  obsDetails?: { id: string; name: string; average: number; logsCount?: number }[];
   parentName?: string;
   parentMobile?: string;
 }
@@ -440,54 +441,25 @@ _Empowering Conceptual Excellence_`;
     window.open(url, '_blank');
   };
 
-  // Open single observation rating sliders
-  const handleOpenSingleModal = async (student: StudentLQ) => {
+  // Open single observation rating sliders (instant, zero-flicker, 0ms latency)
+  const handleOpenSingleModal = (student: StudentLQ) => {
     setSingleStudentCode(student.studentCode || '');
     setSingleStudentName(student.name);
     setSingleObsMsg('');
-    setSingleLoading(true);
+    setSingleLoading(false);
+
+    // Synchronously compute initial scores from the selected student's own observation details
+    const initialScores: Record<string, number> = {};
+    parameters.forEach(p => {
+      const detail = student.obsDetails?.find(param => param.id === p.id);
+      initialScores[p.id] = detail ? detail.average : (student.obsScore ?? 50);
+    });
+
+    setSingleStudentScores(initialScores);
     setShowSingleModal(true);
-
-    try {
-      const idToken = await firebaseUser!.getIdToken();
-      const res = await getQuotientReport(idToken, student.studentCode);
-      if (res && res.success && res.quotientData) {
-        if (res.parameters && res.parameters.length > 0) {
-          setParameters(res.parameters);
-        }
-        const obsComponent = res.quotientData.components.find((c: any) => c.parameterId === 'observations');
-        const activeParams = (parameters && parameters.length > 0)
-          ? parameters
-          : (res.parameters && res.parameters.length > 0)
-          ? res.parameters
-          : (obsComponent?.details?.parameters || []);
-
-        const initialScores: Record<string, number> = {};
-        activeParams.forEach((p: any) => {
-          const detail = obsComponent?.details?.parameters?.find((param: any) => param.id === p.id);
-          initialScores[p.id] = detail ? detail.average : 50;
-        });
-        setSingleStudentScores(initialScores);
-      } else {
-        const initialScores: Record<string, number> = {};
-        parameters.forEach(p => {
-          initialScores[p.id] = 50;
-        });
-        setSingleStudentScores(initialScores);
-      }
-    } catch (err) {
-      console.error(err);
-      const initialScores: Record<string, number> = {};
-      parameters.forEach(p => {
-        initialScores[p.id] = 50;
-      });
-      setSingleStudentScores(initialScores);
-    } finally {
-      setSingleLoading(false);
-    }
   };
 
-  // Submit single student observation update
+  // Submit single student observation update (fast atomic save + optimistic UI update)
   const handleSubmitSingleObservation = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!firebaseUser || !singleStudentCode) return;
@@ -498,9 +470,44 @@ _Empowering Conceptual Excellence_`;
       const idToken = await firebaseUser.getIdToken();
       const res = await logSingleObservation(idToken, singleStudentCode, singleStudentScores);
       if (res && res.success) {
-        setSingleObsMsg('✅ Observations logged successfully!');
-        await loadRoster();
-        setTimeout(() => setShowSingleModal(false), 600);
+        setSingleObsMsg('✅ Saved!');
+
+        // Optimistically calculate new observation average and overall LQ score
+        const updatedObsScore = Object.keys(singleStudentScores).length > 0
+          ? Math.round(Object.values(singleStudentScores).reduce((a, b) => a + b, 0) / Object.keys(singleStudentScores).length)
+          : 50;
+
+        const updatedObsDetails = parameters.map(p => ({
+          id: p.id,
+          name: p.name,
+          average: singleStudentScores[p.id] ?? 50
+        }));
+
+        setStudents(prev => prev.map(s => {
+          if (s.studentCode === singleStudentCode) {
+            const examW = (s.examScore || 0) * 0.25;
+            const pracW = (s.practiceScore || 0) * 0.20;
+            const qualW = (s.qualityScore || 0) * 0.15;
+            const healthW = (s.healthScore || 0) * 0.15;
+            const integW = (s.integrityScore || 100) * 0.10;
+            const obsW = updatedObsScore * 0.15;
+            const newLQ = Math.min(100, Math.round(examW + pracW + qualW + healthW + integW + obsW));
+
+            return {
+              ...s,
+              obsScore: updatedObsScore,
+              obsDetails: updatedObsDetails,
+              overallQuotient: newLQ
+            };
+          }
+          return s;
+        }));
+
+        // Close modal quickly for smooth UX
+        setTimeout(() => setShowSingleModal(false), 350);
+
+        // Sync fresh roster in the background
+        loadRoster(duration);
       } else {
         setSingleObsMsg('❌ Failed to log observations.');
       }
