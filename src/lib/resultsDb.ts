@@ -47,7 +47,6 @@ export async function getStudentResultsData(
     adminDb.collection('parentReviews').where('studentCode', '==', studentCode).get(),
     adminDb.collection('evaluations')
       .where('studentCode', '==', studentCode)
-      .where('evaluatorType', '==', 'parent')
       .get(),
     isListAutonomous && studentBatches.length > 0
       ? adminDb.collection('batchAssignments')

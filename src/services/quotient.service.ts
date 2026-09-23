@@ -1332,7 +1332,7 @@ export class QuotientService {
     const studentClassMap = new Map<string, string>();
     usersSnap.docs.forEach(doc => {
       const data = doc.data();
-      if (data.studentCode && !isDemoUser(data)) {
+      if (data.studentCode && !isDemoUser(data) && data.status !== 'inactive') {
         const bIds = data.batchIds || (data.batchId ? [data.batchId] : []);
         studentBatchesMap.set(data.studentCode, bIds);
         studentClassMap.set(data.studentCode, data.class || data.className || '');

@@ -99,10 +99,11 @@ export class ExamService {
 
     for (let i = 0; i < unverifiedIds.length; i += 30) {
       const chunk = unverifiedIds.slice(i, i + 30);
-      const [qAttemptsSnap, qReviewsSnap, qSubSnap] = await Promise.all([
+      const [qAttemptsSnap, qReviewsSnap, qSubSnap, qEvalSnap] = await Promise.all([
         adminDb.collection('examAttempts').where('studentCode', '==', studentCode).where('examId', 'in', chunk).get(),
         adminDb.collection('reviews').where('studentCode', '==', studentCode).where('examId', 'in', chunk).get(),
-        adminDb.collection('subjectiveAttempts').where('studentCode', '==', studentCode).where('examId', 'in', chunk).get()
+        adminDb.collection('subjectiveAttempts').where('studentCode', '==', studentCode).where('examId', 'in', chunk).get(),
+        adminDb.collection('evaluations').where('studentCode', '==', studentCode).where('examId', 'in', chunk).get()
       ]);
 
       qAttemptsSnap.docs.forEach(d => {
@@ -113,6 +114,10 @@ export class ExamService {
       });
       qSubSnap.docs.forEach(d => {
         if (d.data()?.status !== 'precheck') attemptedExamIds.add(d.data().examId);
+      });
+      qEvalSnap.docs.forEach(d => {
+        const dt = d.data();
+        if (dt?.examId) attemptedExamIds.add(dt.examId);
       });
     }
 
@@ -247,10 +252,11 @@ export class ExamService {
 
     for (let i = 0; i < candidateExamIds.length; i += 30) {
       const chunk = candidateExamIds.slice(i, i + 30);
-      const [qAttSnap, qRevSnap, qSubSnap] = await Promise.all([
+      const [qAttSnap, qRevSnap, qSubSnap, qEvalSnap] = await Promise.all([
         adminDb.collection('examAttempts').where('studentCode', '==', studentCode).where('examId', 'in', chunk).get(),
         adminDb.collection('reviews').where('studentCode', '==', studentCode).where('examId', 'in', chunk).get(),
-        adminDb.collection('subjectiveAttempts').where('studentCode', '==', studentCode).where('examId', 'in', chunk).get()
+        adminDb.collection('subjectiveAttempts').where('studentCode', '==', studentCode).where('examId', 'in', chunk).get(),
+        adminDb.collection('evaluations').where('studentCode', '==', studentCode).where('examId', 'in', chunk).get()
       ]);
       qAttSnap.docs.forEach(d => {
         if (d.data()?.status !== 'precheck') attemptedExamIds.add(d.data().examId);
@@ -260,6 +266,10 @@ export class ExamService {
       });
       qSubSnap.docs.forEach(d => {
         if (d.data()?.status !== 'precheck') attemptedExamIds.add(d.data().examId);
+      });
+      qEvalSnap.docs.forEach(d => {
+        const dt = d.data();
+        if (dt?.examId) attemptedExamIds.add(dt.examId);
       });
     }
 
@@ -283,7 +293,7 @@ export class ExamService {
           id: `absent_${pastExam.examId}_${studentCode}`,
           examId: pastExam.examId,
           type: 'absent_exam' as const,
-          name: `${pastExamTitle} (Missed / अनुपस्थित)`,
+          name: `${pastExamTitle} (Missed / Absent)`,
           subject,
           chapter,
           date: pastExam.endAt.toISOString(),

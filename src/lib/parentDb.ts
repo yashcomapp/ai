@@ -225,15 +225,12 @@ export async function getParentDashboardData(
   ] = await Promise.all([
     adminDb.collection('reviews')
       .where('studentCode', '==', targetStudentCode)
-      .select('examId', 'examType', 'percentage', 'score', 'totalMarks', 'createdAt', 'completedAt', 'startedAt', 'name', 'subjectName', 'status', 'wrongAnswerReasons', 'examName', 'examCode', 'tabViolations', 'proctoringViolations', 'questionCodes', 'questionDetails')
       .get(),
     adminDb.collection('parentReviews')
       .where('studentCode', '==', targetStudentCode)
-      .select('scorePercent', 'createdAt', 'startedAt', 'name', 'subjectName', 'status', 'correctCount', 'totalQuestions', 'masteryBefore', 'masteryAfter', 'topicCode', 'topicName', 'tabViolations', 'violations')
       .get(),
     adminDb.collection('subjectiveAttempts')
       .where('studentCode', '==', targetStudentCode)
-      .select('examId', 'examName', 'completedAt', 'createdAt', 'startedAt', 'totalMarks', 'score', 'tabViolations', 'noFaceCount', 'multipleFacesCount', 'awayTimeTotal')
       .get(),
 
     // Batch Assignments (by batch list)

@@ -246,7 +246,6 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
       // parentReviews snapshot
       adminDb.collection('parentReviews')
         .where('studentCode', '==', studentCode)
-        .select('scorePercent', 'createdAt', 'startedAt', 'name', 'subjectName', 'status', 'correctCount', 'totalQuestions', 'masteryBefore', 'masteryAfter', 'topicCode', 'topicName', 'tabViolations', 'violations')
         .get()
     ]);
 
@@ -1023,7 +1022,6 @@ export async function getStudentLearningData(userData: any) {
     adminDb.collection('parentReviews')
       .where('studentCode', '==', studentCode)
       .where('type', '==', 'practice')
-      .select('topicCode')
       .get(),
     adminDb.collection('examAttempts').where('studentCode', '==', studentCode).get(),
     adminDb.collection('reviews').where('studentCode', '==', studentCode).get(),
