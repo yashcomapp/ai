@@ -250,25 +250,7 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
         .get()
     ]);
 
-    // 3. Compile profile statistics (dynamically calculated from studentTopicMastery)
-    let masteredTopicsCount = 0;
-    let needsAttentionTopicsCount = 0;
-    let overallMasterySum = 0;
-
-    masterySnapshot.docs.forEach(doc => {
-      const mData = doc.data();
-      const mastery = Number(mData.mastery || 0);
-      const confidence = Number(mData.confidence || 0);
-      const reqConf = getRequiredConfidence(mData.topicClassification, mData.targetQuestions);
-      overallMasterySum += mastery;
-
-      if (mastery < 50) {
-        needsAttentionTopicsCount += 1;
-      } else if (mastery >= 90 && (confidence >= reqConf || mData.isRecoveryMastered)) {
-        masteredTopicsCount += 1;
-      }
-    });
-
+    // 3. Calculate absent exams and deduplicate assignments
     let absentExamsCount = 0;
     const now = new Date();
     const todayDateStr = getDateKeyIST(new Date());
@@ -337,7 +319,13 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
         const isPast = scheduledDateStr < todayDateStr;
         if (isPast) {
           const attempted = attemptsSnapshot.docs.some(a => a.data().examId === doc.id);
-          if (!attempted) {
+          const attemptedInEval = evaluationsSnapshot.docs.some((d: any) => {
+            const e = d.data();
+            return e.examId === doc.id || 
+                   (e.legacyId && e.legacyId.startsWith(doc.id)) || 
+                   (e.attemptId && e.attemptId.startsWith(doc.id));
+          });
+          if (!attempted && !attemptedInEval) {
             absentExamsCount++;
             absentExamsList.push({
               examId: doc.id,
@@ -364,7 +352,13 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
         const isPast = now > untilDate;
         if (isPast) {
           const attempted = attemptsSnapshot.docs.some(a => a.data().examId === doc.id);
-          if (!attempted) {
+          const attemptedInEval = evaluationsSnapshot.docs.some((d: any) => {
+            const e = d.data();
+            return e.examId === doc.id || 
+                   (e.legacyId && e.legacyId.startsWith(doc.id)) || 
+                   (e.attemptId && e.attemptId.startsWith(doc.id));
+          });
+          if (!attempted && !attemptedInEval) {
             absentExamsCount++;
             absentExamsList.push({
               examId: doc.id,

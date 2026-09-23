@@ -502,7 +502,13 @@ export async function getParentDashboardData(
     if (now > ass.endAt) {
       const attemptedObj = examResults.some((r: any) => r.examId === ass.examId);
       const attemptedSub = subjectiveAttemptsSnapshot.docs.some(a => a.data().examId === ass.examId);
-      if (!attemptedObj && !attemptedSub) {
+      const attemptedInEval = evaluationsSnapshot.docs.some((d: any) => {
+        const e = d.data();
+        return e.examId === ass.examId || 
+               (e.legacyId && e.legacyId.startsWith(ass.examId)) || 
+               (e.attemptId && e.attemptId.startsWith(ass.examId));
+      });
+      if (!attemptedObj && !attemptedSub && !attemptedInEval) {
         absentExamsCount++;
       }
     }
@@ -520,7 +526,13 @@ export async function getParentDashboardData(
       const isPast = scheduledDateStr < todayDateStr;
       if (isPast) {
         const attempted = subjectiveAttemptsSnapshot.docs.some(a => a.data().examId === doc.id);
-        if (!attempted) {
+        const attemptedInEval = evaluationsSnapshot.docs.some((d: any) => {
+          const e = d.data();
+          return e.examId === doc.id || 
+                 (e.legacyId && e.legacyId.startsWith(doc.id)) || 
+                 (e.attemptId && e.attemptId.startsWith(doc.id));
+        });
+        if (!attempted && !attemptedInEval) {
           absentExamsCount++;
         }
       }
@@ -540,7 +552,13 @@ export async function getParentDashboardData(
       const isPast = now > untilDate;
       if (isPast) {
         const attempted = subjectiveAttemptsSnapshot.docs.some(a => a.data().examId === doc.id);
-        if (!attempted) {
+        const attemptedInEval = evaluationsSnapshot.docs.some((d: any) => {
+          const e = d.data();
+          return e.examId === doc.id || 
+                 (e.legacyId && e.legacyId.startsWith(doc.id)) || 
+                 (e.attemptId && e.attemptId.startsWith(doc.id));
+        });
+        if (!attempted && !attemptedInEval) {
           absentExamsCount++;
         }
       }
@@ -548,11 +566,37 @@ export async function getParentDashboardData(
   });
 
   // 5. Compile line chart data showing exam marks & integrity over time
-  const conductedTopicCodes = new Set<string>(objectiveTopicCodes);
+  const conductedTopicCodes = new Set<string>();
   masterySnapshot.docs.forEach(doc => {
     const tc = doc.data().topicCode;
     if (tc) conductedTopicCodes.add(tc);
   });
+
+  classroomExamsSnap.docs.forEach((doc: any) => {
+    const d = doc.data();
+    if (d.topicCode) conductedTopicCodes.add(d.topicCode);
+    if (d.resolvedTopicCode) conductedTopicCodes.add(d.resolvedTopicCode);
+    (d.topicCodes || d.topics || []).forEach((tc: string) => conductedTopicCodes.add(tc));
+  });
+
+  homePracticeSnap.docs.forEach((doc: any) => {
+    const d = doc.data();
+    if (d.topicCode) conductedTopicCodes.add(d.topicCode);
+    if (d.resolvedTopicCode) conductedTopicCodes.add(d.resolvedTopicCode);
+    (d.topicCodes || d.topics || []).forEach((tc: string) => conductedTopicCodes.add(tc));
+  });
+
+  allAssignmentsList.forEach(doc => {
+    const d = doc.data();
+    if (d.topicCode) conductedTopicCodes.add(d.topicCode);
+    if (d.resolvedTopicCode) conductedTopicCodes.add(d.resolvedTopicCode);
+    (d.topicCodes || d.topics || []).forEach((tc: string) => conductedTopicCodes.add(tc));
+  });
+
+  objectiveTopicCodes.forEach(tc => {
+    if (tc) conductedTopicCodes.add(tc);
+  });
+
   const totalCoveredTopics = conductedTopicCodes.size > 0 ? conductedTopicCodes.size : (masterySnapshot.docs.length > 0 ? masterySnapshot.docs.length : 1);
 
   const unifiedMetrics = calculateUnifiedMetrics({
@@ -619,7 +663,13 @@ export async function getParentDashboardData(
     if (now > ass.endAt) {
       const attemptedObj = examResults.some((r: any) => r.examId === ass.examId);
       const attemptedSub = subjectiveAttemptsSnapshot.docs.some(a => a.data().examId === ass.examId);
-      if (!attemptedObj && !attemptedSub) {
+      const attemptedInEval = evaluationsSnapshot.docs.some((d: any) => {
+        const e = d.data();
+        return e.examId === ass.examId || 
+               (e.legacyId && e.legacyId.startsWith(ass.examId)) || 
+               (e.attemptId && e.attemptId.startsWith(ass.examId));
+      });
+      if (!attemptedObj && !attemptedSub && !attemptedInEval) {
         const assDoc = allAssignmentsList.find(doc => doc.data().examId === ass.examId);
         const assData = assDoc?.data() || {};
         
@@ -651,7 +701,13 @@ export async function getParentDashboardData(
       const isPast = scheduledDateStr < todayDateStr;
       if (isPast) {
         const attempted = subjectiveAttemptsSnapshot.docs.some(a => a.data().examId === doc.id);
-        if (!attempted) {
+        const attemptedInEval = evaluationsSnapshot.docs.some((d: any) => {
+          const e = d.data();
+          return e.examId === doc.id || 
+                 (e.legacyId && e.legacyId.startsWith(doc.id)) || 
+                 (e.attemptId && e.attemptId.startsWith(doc.id));
+        });
+        if (!attempted && !attemptedInEval) {
           const scheduledDate = new Date(`${scheduledDateStr}T23:59:59.000Z`);
           
           const tCode = examData.resolvedTopicCode || '';
@@ -684,7 +740,13 @@ export async function getParentDashboardData(
       const isPast = now > untilDate;
       if (isPast) {
         const attempted = subjectiveAttemptsSnapshot.docs.some(a => a.data().examId === doc.id);
-        if (!attempted) {
+        const attemptedInEval = evaluationsSnapshot.docs.some((d: any) => {
+          const e = d.data();
+          return e.examId === doc.id || 
+                 (e.legacyId && e.legacyId.startsWith(doc.id)) || 
+                 (e.attemptId && e.attemptId.startsWith(doc.id));
+        });
+        if (!attempted && !attemptedInEval) {
           const tCode = examData.resolvedTopicCode || '';
           const sData = tCode ? syllabusMap.get(tCode) : null;
           const resolvedName = sData ? `${sData.chapterName} — ${sData.topicName}` : (examData.chapter || examData.chapterName || examData.name || 'Missed Home Practice');
