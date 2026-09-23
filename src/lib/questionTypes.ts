@@ -164,19 +164,18 @@ export function normalizeOptionAnswer(value: any, options?: any[]): string {
     if (idx >= 0 && idx < options.length) return letter;
   }
 
-  // 2. Match against options array by exact text, stripped text, and normalized alphanumeric text
+  // 2. Match against options array by exact text, stripped text, and normalized math-aware text
   if (Array.isArray(options) && options.length > 0) {
     const norm = (s: any) => String(s ?? '').trim().toLowerCase();
-    const cleanNorm = (s: any) => String(s ?? '').toLowerCase().replace(/\\\(|\\\)|\\\[|\\\]|\$+/g, '').replace(/[^\w\d]/g, '').trim();
-    const cleanValNorm = cleanNorm(stripOptionLabel(valueStr));
-    const rawValClean = cleanNorm(valueStr);
+    const cleanValNorm = cleanStringForMatch(stripOptionLabel(valueStr));
+    const rawValClean = cleanStringForMatch(valueStr);
 
     const idx = options.findIndex((opt) => {
       const optText = (opt && typeof opt === 'object') ? (opt.text ?? opt.value ?? opt.label ?? '') : String(opt ?? '');
       if (norm(optText) === norm(valueStr)) return true;
       if (norm(stripOptionLabel(optText)) === norm(stripOptionLabel(valueStr))) return true;
-      if (rawValClean && cleanNorm(optText) === rawValClean) return true;
-      if (cleanValNorm && cleanNorm(stripOptionLabel(optText)) === cleanValNorm) return true;
+      if (rawValClean && cleanStringForMatch(optText) === rawValClean) return true;
+      if (cleanValNorm && cleanStringForMatch(stripOptionLabel(optText)) === cleanValNorm) return true;
       if (isOptionMatch(optText, valueStr)) return true;
       return false;
     });
@@ -1064,11 +1063,18 @@ export function parseAnswerList(ansInput: any): string[] {
 }
 
 export function cleanStringForMatch(s: any): string {
-  return String(s || '')
-    .toLowerCase()
+  if (s === undefined || s === null) return '';
+  return String(s)
     .replace(/\\ce\{([^}]+)\}/g, '$1')
-    .replace(/\\\(|\\\)|\\\[|\\\]|\$+/g, '')
-    .replace(/[^\w\d]/g, '')
+    .replace(/\\(?:text|mathrm|mathbf|mathit|mathsf|mathtt)\{([^}]+)\}/g, '$1')
+    .replace(/\\\(|\\\)|\\\[|\\\]|\$+/g, '')       // Strip math delimiter wrappers
+    .replace(/[\u2212\u2013\u2014]/g, '-')         // Normalize unicode minus / en-dash / em-dash to ASCII minus
+    .replace(/\\times|\\cdot|×/g, '*')
+    .replace(/\\div|÷/g, '/')
+    .replace(/\\pm/g, '+-')
+    .replace(/\\\\/g, '\\')
+    .replace(/\s+/g, '')                           // Strip whitespace
+    .toLowerCase()
     .trim();
 }
 
