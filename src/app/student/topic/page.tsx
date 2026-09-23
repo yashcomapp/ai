@@ -613,7 +613,7 @@ function TopicPracticeContent() {
       : (q.correctAnswer || (Array.isArray(q.correctAnswers) ? q.correctAnswers[0] : ''));
 
     const isCorrect = evaluateQuestionAnswer(
-      q.type || 'single_mcq',
+      q.type || 'OSC',
       answer,
       resolvedCorrectAnswer,
       q.options

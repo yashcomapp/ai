@@ -5,7 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Script from 'next/script';
 import { useMathRender } from '@/hooks/useMathRender';
-import { preprocessMathText, robustParseAIJson, validateQuestion, normalizeOptionText, cleanOptionPrefix, cleanStringForMatch, isOptionMatch, shuffleArray, normalizeBloomLevel, BLOOM_TAXONOMY_MAP } from '@/lib/questionTypes';
+import { preprocessMathText, toCanonicalQuestionType, robustParseAIJson, validateQuestion, normalizeOptionText, cleanOptionPrefix, cleanStringForMatch, isOptionMatch, shuffleArray, normalizeBloomLevel, BLOOM_TAXONOMY_MAP } from '@/lib/questionTypes';
 import { highlightModelAnswerKeywords } from '@/lib/pdfExport';
 import { SyllabusSelector } from '@/components/SyllabusSelector';
 import { useSyllabusSelector } from '@/hooks/useSyllabusSelector';
@@ -779,37 +779,37 @@ CRITICAL NEGATIVE CONSTRAINTS (ZERO-TOLERANCE RULES):
 ========================================
 5 CANONICAL OBJECTIVE QUESTION FORMATS (Used Across All Levels):
 ========================================
-1. Single Choice MCQ ("single_mcq" / OSC): 4 options, exactly 1 correct answer.
-   Example: { "contextId":"CTX-001", "type":"single_mcq", "vault":"practice", "text":"Question text...", "options":["Option A","Option B","Option C","Option D"], "correctAnswer":"Option B", "solution":"Step-by-step reasoning...", "difficulty":"easy", "bloomLevel":"Remember", "conceptTag":"..." }
+1. Single Choice MCQ (type: "OSC"): 4 options, exactly 1 correct answer.
+   Example: { "contextId":"CTX-001", "type":"OSC", "vault":"practice", "text":"Question text...", "options":["Option A","Option B","Option C","Option D"], "correctAnswer":"Option B", "solution":"Step-by-step reasoning...", "difficulty":"easy", "bloomLevel":"Remember", "conceptTag":"..." }
 
-2. Multiple Choice MCQ ("multiple_mcq" / OMC): 4 options, 2 or more correct answers.
-   Example: { "contextId":"CTX-001", "type":"multiple_mcq", "vault":"exam", "text":"Which of the following are properties of...?", "options":["Option A","Option B","Option C","Option D"], "correctAnswers":["Option A","Option C"], "solution":"Detailed explanation...", "difficulty":"hard", "bloomLevel":"Analyze", "conceptTag":"..." }
+2. Multiple Choice MCQ (type: "OMC"): 4 options, 2 or more correct answers.
+   Example: { "contextId":"CTX-001", "type":"OMC", "vault":"exam", "text":"Which of the following are properties of...?", "options":["Option A","Option B","Option C","Option D"], "correctAnswers":["Option A","Option C"], "solution":"Detailed explanation...", "difficulty":"hard", "bloomLevel":"Analyze", "conceptTag":"..." }
 
-3. True / False ("true_false" / OTF): Evaluates conceptual facts or rules.
-   Example: { "contextId":"CTX-001", "type":"true_false", "vault":"practice", "text":"Statement to evaluate...", "options":["True","False"], "correctAnswer":"True", "solution":"Why it is true/false...", "difficulty":"easy", "bloomLevel":"Remember", "conceptTag":"..." }
+3. True / False (type: "OTF"): Evaluates conceptual facts or rules.
+   Example: { "contextId":"CTX-001", "type":"OTF", "vault":"practice", "text":"Statement to evaluate...", "options":["True","False"], "correctAnswer":"True", "solution":"Why it is true/false...", "difficulty":"easy", "bloomLevel":"Remember", "conceptTag":"..." }
 
-4. Assertion & Reason ("assertion_reason" / OAR): Evaluates logical cause-and-effect.
-   Example: { "contextId":"CTX-001", "type":"assertion_reason", "vault":"practice", "text":"Assertion (A): ...\\nReason (R): ...", "correctAnswer":"A", "solution":"Explain why both are true and R explains A...", "difficulty":"medium", "bloomLevel":"Analyze", "conceptTag":"..." }
+4. Assertion & Reason (type: "OAR"): Evaluates logical cause-and-effect.
+   Example: { "contextId":"CTX-001", "type":"OAR", "vault":"practice", "text":"Assertion (A): ...\\nReason (R): ...", "correctAnswer":"A", "solution":"Explain why both are true and R explains A...", "difficulty":"medium", "bloomLevel":"Analyze", "conceptTag":"..." }
    * Canonical Answer Rules for OAR: "A" = Both true & R explains A | "B" = Both true & R does NOT explain A | "C" = A true & R false | "D" = A false & R true. Do NOT include options array for assertion_reason.
 
-5. Numerical Objective ("numerical" / ONE): Single Choice Numerical MCQ with 4 distinct numerical options and exactly 1 correct answer.
-   Example: { "contextId":"CTX-001", "type":"numerical", "vault":"practice", "text":"Calculate the value of... in standard units:", "options":["12.5","24.5","36.5","48.5"], "correctAnswer":"24.5", "solution":"Step 1: Formula ... Step 2: Calculation = 24.5", "difficulty":"medium", "bloomLevel":"Apply", "conceptTag":"..." }
+5. Numerical Objective (type: "ONE"): Single Choice Numerical MCQ with 4 distinct numerical options and exactly 1 correct answer.
+   Example: { "contextId":"CTX-001", "type":"ONE", "vault":"practice", "text":"Calculate the value of... in standard units:", "options":["12.5","24.5","36.5","48.5"], "correctAnswer":"24.5", "solution":"Step 1: Formula ... Step 2: Calculation = 24.5", "difficulty":"medium", "bloomLevel":"Apply", "conceptTag":"..." }
    * Note: Numerical Objective (ONE) questions must ALWAYS have exactly 4 numerical options and 1 correct answer so students select a single choice option without typing.
 ` : `
 ========================================
 4 CANONICAL OBJECTIVE QUESTION FORMATS (THEORY & CONCEPTUAL ONLY):
 ========================================
-1. Single Choice MCQ ("single_mcq" / OSC): 4 options, exactly 1 correct answer.
-   Example: { "contextId":"CTX-001", "type":"single_mcq", "vault":"practice", "text":"Question text...", "options":["Option A","Option B","Option C","Option D"], "correctAnswer":"Option B", "solution":"Step-by-step reasoning...", "difficulty":"easy", "bloomLevel":"Remember", "conceptTag":"..." }
+1. Single Choice MCQ (type: "OSC"): 4 options, exactly 1 correct answer.
+   Example: { "contextId":"CTX-001", "type":"OSC", "vault":"practice", "text":"Question text...", "options":["Option A","Option B","Option C","Option D"], "correctAnswer":"Option B", "solution":"Step-by-step reasoning...", "difficulty":"easy", "bloomLevel":"Remember", "conceptTag":"..." }
 
-2. Multiple Choice MCQ ("multiple_mcq" / OMC): 4 options, 2 or more correct answers.
-   Example: { "contextId":"CTX-001", "type":"multiple_mcq", "vault":"exam", "text":"Which of the following are properties of...?", "options":["Option A","Option B","Option C","Option D"], "correctAnswers":["Option A","Option C"], "solution":"Detailed explanation...", "difficulty":"hard", "bloomLevel":"Analyze", "conceptTag":"..." }
+2. Multiple Choice MCQ (type: "OMC"): 4 options, 2 or more correct answers.
+   Example: { "contextId":"CTX-001", "type":"OMC", "vault":"exam", "text":"Which of the following are properties of...?", "options":["Option A","Option B","Option C","Option D"], "correctAnswers":["Option A","Option C"], "solution":"Detailed explanation...", "difficulty":"hard", "bloomLevel":"Analyze", "conceptTag":"..." }
 
-3. True / False ("true_false" / OTF): Evaluates conceptual facts or rules.
-   Example: { "contextId":"CTX-001", "type":"true_false", "vault":"practice", "text":"Statement to evaluate...", "options":["True","False"], "correctAnswer":"True", "solution":"Why it is true/false...", "difficulty":"easy", "bloomLevel":"Remember", "conceptTag":"..." }
+3. True / False (type: "OTF"): Evaluates conceptual facts or rules.
+   Example: { "contextId":"CTX-001", "type":"OTF", "vault":"practice", "text":"Statement to evaluate...", "options":["True","False"], "correctAnswer":"True", "solution":"Why it is true/false...", "difficulty":"easy", "bloomLevel":"Remember", "conceptTag":"..." }
 
-4. Assertion & Reason ("assertion_reason" / OAR): Evaluates logical cause-and-effect.
-   Example: { "contextId":"CTX-001", "type":"assertion_reason", "vault":"practice", "text":"Assertion (A): ...\\nReason (R): ...", "correctAnswer":"A", "solution":"Explain why both are true and R explains A...", "difficulty":"medium", "bloomLevel":"Analyze", "conceptTag":"..." }
+4. Assertion & Reason (type: "OAR"): Evaluates logical cause-and-effect.
+   Example: { "contextId":"CTX-001", "type":"OAR", "vault":"practice", "text":"Assertion (A): ...\\nReason (R): ...", "correctAnswer":"A", "solution":"Explain why both are true and R explains A...", "difficulty":"medium", "bloomLevel":"Analyze", "conceptTag":"..." }
    * Canonical Answer Rules for OAR: "A" = Both true & R explains A | "B" = Both true & R does NOT explain A | "C" = A true & R false | "D" = A false & R true. Do NOT include options array for assertion_reason.
 `;
 
@@ -1183,7 +1183,7 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
     const matchedTopic = currentAllTopics.find(t => String(t.topicNumber) === String(resolvedTopicNumber));
     const finalTopicName = matchedTopic ? matchedTopic.topic : resolvedTopicName;
 
-    let rawType = q.type || 'single_mcq';
+    let rawType = q.type || 'OSC';
     if (rawType === 'numerical5') rawType = 'numerical';
     const isMultiple = rawType === 'multiple_mcq' || (rawType === 'single_mcq' && Array.isArray(q.correctAnswers) && q.correctAnswers.length > 1);
     const finalType = isMultiple ? 'multiple_mcq' : rawType;
@@ -1198,7 +1198,7 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
     let finalCorrectAnswer = '';
     let finalCorrectAnswers: string[] = [];
 
-    if (finalType === 'single_mcq' || finalType === 'true_false') {
+    if (finalType === 'OSC' || finalType === 'OTF' || finalType === 'single_mcq' || finalType === 'true_false') {
       let rawAns = String(q.correctAnswer || (Array.isArray(q.correctAnswers) ? q.correctAnswers[0] : '') || '').trim();
       const letterMatch = rawAns.match(/^[A-D]$/i);
       const digitMatch = rawAns.match(/^[1-4]$/);
@@ -1220,7 +1220,7 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
       if (cleanOptions.length >= 2) {
         cleanOptions = shuffleArray(cleanOptions);
       }
-    } else if (finalType === 'multiple_mcq') {
+    } else if (finalType === 'OMC' || finalType === 'multiple_mcq') {
       const rawAnsList = Array.isArray(q.correctAnswers) ? q.correctAnswers : (q.correctAnswer ? [q.correctAnswer] : []);
       finalCorrectAnswers = rawAnsList.map((rawAns: any) => {
         const str = String(rawAns || '').trim();
@@ -1348,7 +1348,7 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
         const canonicalTopicCode = `${bCode}-${selectedClass}-${sCode}-${chNum}-${tNum}`;
 
         return {
-          qtype: q.type || 'single_mcq',
+          qtype: toCanonicalQuestionType(q.type || 'OSC'),
           text: q.text,
           options: q.options || [],
           correctAnswer: q.correctAnswer || '',

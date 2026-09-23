@@ -126,7 +126,7 @@ export class PracticeService {
       if (!isDisputed) {
         // Pass 1: Standard answer evaluation against Firestore options
         isCorrect = evaluateQuestionAnswer(
-          qData.type || 'single_mcq',
+          qData.type || 'OSC',
           ans.answer,
           resolvedCorrectAnswer,
           qData.options
@@ -135,7 +135,7 @@ export class PracticeService {
         // Pass 2: Check ans.selectedOptionText against resolvedCorrectAnswer and qData.options
         if (!isCorrect && ans.selectedOptionText) {
           isCorrect = evaluateQuestionAnswer(
-            qData.type || 'single_mcq',
+            qData.type || 'OSC',
             ans.selectedOptionText,
             resolvedCorrectAnswer,
             qData.options
@@ -157,7 +157,7 @@ export class PracticeService {
                 }
                 return l;
               });
-              isCorrect = evaluateQuestionAnswer(qData.type || 'single_mcq', mappedTexts, resolvedCorrectAnswer, qData.options);
+              isCorrect = evaluateQuestionAnswer(qData.type || 'OSC', mappedTexts, resolvedCorrectAnswer, qData.options);
             } catch {}
           } else if (typeof ans.answer === 'string' && /^[A-Z]$/i.test(ans.answer)) {
             const idx = ans.answer.toUpperCase().charCodeAt(0) - 65;
@@ -165,7 +165,7 @@ export class PracticeService {
               const opt = ans.optionsSnapshot[idx];
               const optText = typeof opt === 'object' && opt ? (opt.text || opt.value || '') : String(opt);
               if (optText) {
-                isCorrect = evaluateQuestionAnswer(qData.type || 'single_mcq', optText, resolvedCorrectAnswer, qData.options);
+                isCorrect = evaluateQuestionAnswer(qData.type || 'OSC', optText, resolvedCorrectAnswer, qData.options);
               }
             }
           }
@@ -176,7 +176,7 @@ export class PracticeService {
         id: ans.questionId,
         questionCode: qData.questionCode,
         text: qData.text || qData.assertion || '',
-        type: qData.type || 'single_mcq',
+        type: qData.type || 'OSC',
         options: (ans.optionsSnapshot && ans.optionsSnapshot.length > 0) ? ans.optionsSnapshot : (qData.options || []),
         assertion: qData.assertion || '',
         reason: qData.reason || '',

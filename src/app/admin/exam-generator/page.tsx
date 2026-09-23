@@ -745,7 +745,7 @@ export default function AdminExamGeneratorPage() {
             const shortfallCount = targetForTopic - pickedForTopic;
             const matchIdx = selectedTopics.findIndex(tp => tp.topicNumber === t.topicNumber);
             shortfallReqs.push({
-              type: questionType === 'subjective' ? 'subjective_short' : 'single_mcq',
+              type: questionType === 'subjective' ? 'SSA' : 'OSC',
               difficulty: 'medium',
               count: shortfallCount,
               contextId: 'CTX-' + String(matchIdx + 1).padStart(3, '0'),
@@ -912,7 +912,7 @@ Return ONLY a valid raw JSON array containing exactly ${totalMissing} question o
 [
   {
     "contextId": "CTX-001",
-    "type": "single_mcq", // or multiple_mcq, assertion_reason, true_false, fill_blanks, numerical, subjective_define, subjective_short, etc.
+    "type": "OSC", // Canonical 3-letter codes: OSC (Single MCQ), OMC (Multiple MCQ), OTF (True/False), OAR (Assertion/Reason), ONE (Numerical MCQ), SDF (Define), SSA (Short Answer), SLA (Long Answer), etc.
     "text": "Question statement...",
     "options": ["Option A", "Option B", "Option C", "Option D"], // (omit for numerical, assertion_reason, and subjective)
     "correctAnswer": "Option B", // (exact string from options; for assertion_reason exactly "A", "B", "C", or "D"; for numerical clean number)
@@ -955,7 +955,7 @@ Return ONLY valid JSON. No markdown wrappers or extra commentary.`;
         }) || selectedTopics[0];
 
         return {
-          qtype: q.type || q.qtype || 'single_mcq',
+          qtype: toCanonicalQuestionType(q.type || q.qtype || 'OSC'),
           text: q.text || '',
           options: q.options || [],
           correctAnswer: q.correctAnswer || '',

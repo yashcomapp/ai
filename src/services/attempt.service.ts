@@ -104,7 +104,7 @@ export class AttemptService {
       
       let isCorrect = false;
       if (isAttempted && !isDisputed) {
-        isCorrect = EvaluationService.evaluate(q.type || 'single_mcq', ans, correctAnswer, q.options);
+        isCorrect = EvaluationService.evaluate(q.type || 'OSC', ans, correctAnswer, q.options);
       }
 
       const timeSpentSeconds = submitted?.timeSpentSeconds || 0;

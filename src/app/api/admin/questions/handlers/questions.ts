@@ -380,10 +380,10 @@ export async function POST(req: NextRequest) {
           finalTopicName = finalTopicName.substring(topicPart.length).replace(/^[:\s\-]+/g, '').trim();
         }
 
-        const resolvedMarks = QUESTION_TYPE_MAP[normalizedQType]?.defaultMarks ?? marksMap[normalizedQType] ?? (Number(item.marks) > 0 ? Number(item.marks) : 4);
+        const resolvedMarks = QUESTION_TYPE_MAP[p.typeCode]?.defaultMarks ?? QUESTION_TYPE_MAP[normalizedQType]?.defaultMarks ?? marksMap[normalizedQType] ?? (Number(item.marks) > 0 ? Number(item.marks) : 4);
         const questionDoc: any = {
           questionCode: finalCode,
-          type: normalizedQType,
+          type: p.typeCode,
           text: item.text,
           options: item.options || [],
           correctAnswer: item.correctAnswer || '',
@@ -522,7 +522,7 @@ export async function POST(req: NextRequest) {
 
     const questionDoc: any = {
       questionCode: finalCode,
-      type: normalizedQType,
+      type: typeCode,
       text,
       options: options || [],
       correctAnswer: correctAnswer || '',
