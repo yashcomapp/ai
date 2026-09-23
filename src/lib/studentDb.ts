@@ -246,7 +246,7 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
       // parentReviews snapshot
       adminDb.collection('parentReviews')
         .where('studentCode', '==', studentCode)
-        .select('totalQuestions')
+        .select('scorePercent', 'createdAt', 'startedAt', 'name', 'subjectName', 'status', 'correctCount', 'totalQuestions', 'masteryBefore', 'masteryAfter', 'topicCode', 'topicName', 'tabViolations', 'violations')
         .get()
     ]);
 
@@ -429,6 +429,7 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
       totalTopicsCount: unifiedMetrics.totalTopicsCount,
       effortsPercent: unifiedMetrics.effortsPercent,
       totalQuestionsPracticed: unifiedMetrics.totalQuestionsPracticed,
+      practiceAvgScore: unifiedMetrics.practiceAvg,
       name: userData.name || 'Student',
       studentCode,
       autonomous: userData.autonomous || false,
@@ -455,6 +456,7 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
       bestScore: allPercentages.length ? Math.round(Math.max(...allPercentages)) : 0,
       objectiveAvg: unifiedMetrics.objectiveAvg,
       subjectiveAvg: unifiedMetrics.subjectiveAvg,
+      practiceAvg: unifiedMetrics.practiceAvg,
       pendingReviewCount: reviews.filter((r: any) => {
         const isApproved = r.status === 'approved' || evalMap.has(r.id);
         return !isApproved && r.status === 'pending';
