@@ -30,6 +30,16 @@
 
 import { calculateSrsSchedule } from '@/lib/srsRotation';
 
+/**
+ * ATTENTION - QUERY INTEGRITY CONTRACT:
+ * When querying collections passed into `calculateUnifiedMetrics`, DO NOT strip fields with partial `.select()`:
+ * - `topicMasteries`: requires `mastery`, `confidence`, `requiredConfidence`, `isRecoveryMastered`,
+ *   `questionsAttempted`, `totalAttempts`, `srsSchedule`, `lastRevisedAt`, `updatedAt`, `srsStage`, `lastAttempt`.
+ * - `practiceReviews`: requires `scorePercent`, `totalQuestions`, `status`, `createdAt`, `topicCode`.
+ * - `objectiveReviews`: requires `percentage`, `score`, `totalMarks`, `status`.
+ * - `subjectiveEvaluations`: requires `percentage`, `totalMarksAwarded`, `totalMaxMarks`.
+ * Partial projections will silently corrupt retention, SRS due counts, and mastery metrics.
+ */
 export interface UnifiedMetricsInput {
   objectiveReviews?: Array<{ percentage?: number | string; score?: number; totalMarks?: number; status?: string; [key: string]: any }>;
   subjectiveEvaluations?: Array<{ percentage?: number | string; totalMarksAwarded?: number; totalMaxMarks?: number; [key: string]: any }>;

@@ -285,16 +285,14 @@ export async function getParentDashboardData(
       .where('studentCode', '==', targetStudentCode)
       .get(),
 
-    // Topics Mastery
+    // Topics Mastery (full document required for retention, SRS schedule, and confidence calculations)
     adminDb.collection('studentTopicMastery')
       .where('studentCode', '==', targetStudentCode)
-      .select('mastery', 'topicCode')
       .get(),
 
-    // Evaluations
+    // Evaluations (all evaluations regardless of evaluatorType)
     adminDb.collection('evaluations')
       .where('studentCode', '==', targetStudentCode)
-      .where('evaluatorType', '==', 'parent')
       .get()
   ]);
 
