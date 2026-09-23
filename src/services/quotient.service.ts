@@ -6,6 +6,7 @@ import { chunkArray } from '@/lib/firestoreUtils';
 import { 
   StudentData, 
   QuotientResult, 
+  QuotientComponentResult,
   ParameterCalculator, 
   ScoreResult, 
   StudentObservation 
@@ -13,6 +14,7 @@ import {
 import { evaluateSessionSincerity } from '@/lib/practiceTimeUtils';
 import { isDemoUser, getRequiredConfidence } from '@/lib/studentDb';
 import { calculateSrsSchedule } from '@/lib/srsRotation';
+import { calculateUnifiedMetrics } from '@/lib/dashboardMetrics';
 
 export const MASTERY_THRESHOLDS = {
   MASTERED_MASTERY: 90,
@@ -31,6 +33,23 @@ export class ExamPerformanceCalculator implements ParameterCalculator {
   calculate(data: StudentData): ScoreResult {
     const { assignments, attempts } = data;
     const conductedExams = (data as any).conductedExams || assignments || [];
+
+    if (data.unifiedMetrics) {
+      const totalAssigned = conductedExams.length;
+      const completedCount = data.unifiedMetrics.examCount;
+      const absentCount = Math.max(0, totalAssigned - completedCount);
+      return {
+        score: data.unifiedMetrics.averageMarks,
+        details: {
+          totalAssigned,
+          completed: completedCount,
+          absent: absentCount,
+          attendanceRate: totalAssigned > 0 ? Math.round((completedCount / totalAssigned) * 100) : 100,
+          objectiveAvg: data.unifiedMetrics.objectiveAvg,
+          subjectiveAvg: data.unifiedMetrics.subjectiveAvg
+        }
+      };
+    }
     
     if (conductedExams.length === 0) {
       if (attempts.length > 0) {
@@ -76,8 +95,7 @@ export class ExamPerformanceCalculator implements ParameterCalculator {
 
     const totalAssigned = conductedExams.length;
     const absentCount = Math.max(0, totalAssigned - completedCount);
-    // Score is sum of completed exam percentages divided by total conducted exams (absent counts as 0)
-    const score = totalAssigned > 0 ? Math.round(totalScoreSum / totalAssigned) : 0;
+    const score = completedCount > 0 ? Math.round(totalScoreSum / completedCount) : 0;
 
     return {
       score,
@@ -100,6 +118,33 @@ export class PracticeEngagementCalculator implements ParameterCalculator {
   calculate(data: StudentData): ScoreResult {
     const { practiceRecords, assignedTopics = [] } = data;
     const parentReviews = data.parentReviews || [];
+
+    if (data.unifiedMetrics) {
+      const topicPracticeMap = new Map<string, number>();
+      parentReviews.forEach((rev: any) => {
+        if (rev.topicCode) {
+          topicPracticeMap.set(rev.topicCode, (topicPracticeMap.get(rev.topicCode) || 0) + (rev.totalQuestions || 0));
+        }
+      });
+      const totalAssignedTopics = data.unifiedMetrics.totalTopicsCount;
+      const coveragePercent = Math.min(100, Math.round((topicPracticeMap.size / totalAssignedTopics) * 100));
+
+      return {
+        score: data.unifiedMetrics.effortsPercent,
+        details: {
+          totalQuestionsAttempted: data.unifiedMetrics.totalQuestionsPracticed,
+          averagePracticeScore: data.unifiedMetrics.practiceAvg,
+          topicsAttemptedCount: topicPracticeMap.size,
+          totalAssignedTopics,
+          coveragePercent,
+          volumeEffortPercent: data.unifiedMetrics.effortsPercent,
+          practicesCompletedCount: data.unifiedMetrics.practicesCompletedCount,
+          averageQuestionsPerTopic: topicPracticeMap.size > 0
+            ? Math.round((data.unifiedMetrics.totalQuestionsPracticed / topicPracticeMap.size) * 10) / 10
+            : 0
+        }
+      };
+    }
     
     if (parentReviews.length === 0) {
       return { 
@@ -135,11 +180,9 @@ export class PracticeEngagementCalculator implements ParameterCalculator {
     const totalAssignedTopics = Math.max(1, assignedTopics.length > 0 ? assignedTopics.length : topicPracticeMap.size);
     const coveragePercent = Math.min(100, Math.round((topicPracticeMap.size / totalAssignedTopics) * 100));
 
-    // Expected practice quota is 2 practice sessions per conducted/assigned topic
     const expectedPracticeSessions = Math.max(1, totalAssignedTopics * 2);
     const volumeEffortPercent = Math.min(100, Math.round((parentReviews.length / expectedPracticeSessions) * 100));
 
-    // Practice Engagement is an authentic measure of Effort & Coverage (60% topic coverage + 40% practice volume fulfillment)
     const score = Math.min(100, Math.round(0.60 * coveragePercent + 0.40 * volumeEffortPercent));
 
     const averageQuestionsPerTopic = topicPracticeMap.size > 0
@@ -313,6 +356,24 @@ export class TopicHealthCalculator implements ParameterCalculator {
 
   calculate(data: StudentData): ScoreResult {
     const { practiceRecords, assignedTopics, conductedExams = [], attempts = [] } = data;
+
+    if (data.unifiedMetrics) {
+      return {
+        score: data.unifiedMetrics.lqScore,
+        details: {
+          totalTopics: data.unifiedMetrics.totalTopicsCount,
+          masteredCount: data.unifiedMetrics.masteredTopicsCount,
+          attentionCount: data.unifiedMetrics.needsAttentionTopicsCount,
+          srsDueCount: data.unifiedMetrics.srsDueTopicsCount,
+          srsOverdueCount: data.unifiedMetrics.srsOverdueTopicsCount,
+          averageRetention: data.unifiedMetrics.averageRetention,
+          nominalMastery: data.unifiedMetrics.overallMastery,
+          masteryRatio: data.unifiedMetrics.totalTopicsCount > 0
+            ? Math.round((data.unifiedMetrics.masteredTopicsCount / data.unifiedMetrics.totalTopicsCount) * 100)
+            : 0
+        }
+      };
+    }
     
     // Helper to calculate retention factor
     const getRetentionFactor = (rec: any): { retention: number; factor: number; isDue: boolean; hasPracticed: boolean } => {
@@ -910,7 +971,8 @@ export class QuotientService {
     rawReviews: any[],
     examsMap: Map<string, any>,
     subjectiveExamsList: any[],
-    studentClass?: string
+    studentClass?: string,
+    rawEvaluations: any[] = []
   ): QuotientResult {
     const todayDateStr = getDateKeyIST();
     const startDate = duration ? this.getStartDateForDuration(duration) : null;
@@ -918,6 +980,7 @@ export class QuotientService {
     const filteredAttempts = this.filterByDate(rawAttempts, ['timestamp', 'createdAt', 'completedAt'], startDate);
     const filteredAssignments = this.filterByDate(rawAssignments, ['createdAt', 'dueDate'], startDate);
     const filteredSubjectiveExams = this.filterByDate(subjectiveExamsList, ['scheduledDate', 'createdAt'], startDate);
+    const filteredEvaluations = this.filterByDate(rawEvaluations, ['createdAt', 'evaluatedAt', 'timestamp', 'date'], startDate);
 
     const topicsSet = new Set<string>();
     const conductedObjectiveExams: any[] = [];
@@ -978,16 +1041,41 @@ export class QuotientService {
       if (rev.topicCode) topicsSet.add(rev.topicCode);
     });
 
-    const assignedTopics = Array.from(topicsSet);
-    const conductedExams = [...conductedObjectiveExams, ...conductedSubjectiveExams];
-
-    const filteredIntegrity = this.filterByDate(rawIntegrity, ['timestamp', 'createdAt'], startDate);
-    const filteredObservations = this.filterByDate(rawObservations, ['observedAt', 'timestamp'], startDate);
-
+    // 6. Add mastered topics
     const practicedTopics = new Set(filteredReviews.map((r: any) => r.topicCode).filter(Boolean));
     const filteredPractice = startDate 
       ? rawPractice.filter((rec: any) => rec.topicCode && practicedTopics.has(rec.topicCode))
       : rawPractice;
+
+    filteredPractice.forEach((rec: any) => {
+      if (rec.topicCode) topicsSet.add(rec.topicCode);
+    });
+
+    const assignedTopics = Array.from(topicsSet);
+    const conductedExams = [...conductedObjectiveExams, ...conductedSubjectiveExams];
+    const totalCoveredTopicsCount = Math.max(1, assignedTopics.length > 0 ? assignedTopics.length : (filteredPractice.length > 0 ? filteredPractice.length : 1));
+
+    const filteredIntegrity = this.filterByDate(rawIntegrity, ['timestamp', 'createdAt'], startDate);
+    const filteredObservations = this.filterByDate(rawObservations, ['observedAt', 'timestamp'], startDate);
+
+    let resolvedIntegrityScore = 100;
+    if (filteredIntegrity.length > 0) {
+      const totalInt = filteredIntegrity.reduce((sum: number, item: any) => {
+        const val = item.integrityScore !== undefined ? item.integrityScore : item.score;
+        return sum + (val !== undefined ? Number(val) : 100);
+      }, 0);
+      resolvedIntegrityScore = Math.round(totalInt / filteredIntegrity.length);
+    }
+
+    // Single Source of Truth Unified Metrics Calculation
+    const unifiedMetrics = calculateUnifiedMetrics({
+      objectiveReviews: filteredAttempts,
+      subjectiveEvaluations: filteredEvaluations,
+      topicMasteries: filteredPractice,
+      practiceReviews: filteredReviews,
+      integrityScore: resolvedIntegrityScore,
+      totalCoveredTopics: totalCoveredTopicsCount
+    });
 
     const studentData: StudentData = {
       studentCode,
@@ -1000,71 +1088,107 @@ export class QuotientService {
       activeParameters,
       assignedTopics,
       parentReviews: filteredReviews,
-      allPracticeRecords: rawPractice
+      allPracticeRecords: rawPractice,
+      unifiedMetrics
     };
 
-    const components = this.calculators.map(calc => {
-      const result = calc.calculate(studentData);
-      let score = result.score;
+    const qualityResult = new PracticeQualityCalculator().calculate(studentData);
+    const obsResult = new ClassObservationsCalculator().calculate(studentData);
 
-      if (startDate) {
-        if (calc.id === 'exam' && studentData.attempts.length === 0 && conductedExams.length === 0) {
-          score = null as any;
+    const absentExamsCount = Math.max(0, conductedExams.length - unifiedMetrics.examCount);
+    const attendanceRate = conductedExams.length > 0
+      ? Math.round((unifiedMetrics.examCount / conductedExams.length) * 100)
+      : 100;
+
+    const finalLQ = unifiedMetrics.lqScore;
+
+    const components: QuotientComponentResult[] = [
+      {
+        parameterId: 'exam',
+        parameterName: 'Exam',
+        score: unifiedMetrics.averageMarks,
+        weight: 0.25,
+        contribution: Math.round(unifiedMetrics.averageMarks * 0.25 * 10) / 10,
+        details: {
+          totalAssigned: conductedExams.length,
+          completed: unifiedMetrics.examCount,
+          absent: absentExamsCount,
+          attendanceRate,
+          objectiveAvg: unifiedMetrics.objectiveAvg,
+          subjectiveAvg: unifiedMetrics.subjectiveAvg
         }
-        if (calc.id === 'integrity' && studentData.integrityRecords.length === 0) {
-          score = 100;
+      },
+      {
+        parameterId: 'practice',
+        parameterName: 'Practice',
+        score: unifiedMetrics.effortsPercent,
+        weight: 0.20,
+        contribution: Math.round(unifiedMetrics.effortsPercent * 0.20 * 10) / 10,
+        details: {
+          totalQuestionsAttempted: unifiedMetrics.totalQuestionsPracticed,
+          averagePracticeScore: unifiedMetrics.practiceAvg,
+          topicsAttemptedCount: practicedTopics.size,
+          totalAssignedTopics: totalCoveredTopicsCount,
+          coveragePercent: Math.min(100, Math.round((practicedTopics.size / totalCoveredTopicsCount) * 100)),
+          volumeEffortPercent: unifiedMetrics.effortsPercent,
+          practicesCompletedCount: unifiedMetrics.practicesCompletedCount,
+          averageQuestionsPerTopic: practicedTopics.size > 0
+            ? Math.round((unifiedMetrics.totalQuestionsPracticed / practicedTopics.size) * 10) / 10
+            : 0
         }
-        if (calc.id === 'practice' && filteredReviews.length === 0) {
-          score = 0;
+      },
+      {
+        parameterId: 'quality',
+        parameterName: 'Quality',
+        score: qualityResult.score,
+        weight: 0.10,
+        contribution: Math.round(qualityResult.score * 0.10 * 10) / 10,
+        details: qualityResult.details
+      },
+      {
+        parameterId: 'topicHealth',
+        parameterName: 'Topic Health',
+        score: unifiedMetrics.lqScore,
+        weight: 0.25,
+        contribution: Math.round(unifiedMetrics.lqScore * 0.25 * 10) / 10,
+        details: {
+          totalTopics: totalCoveredTopicsCount,
+          masteredCount: unifiedMetrics.masteredTopicsCount,
+          attentionCount: unifiedMetrics.needsAttentionTopicsCount,
+          srsDueCount: unifiedMetrics.srsDueTopicsCount,
+          srsOverdueCount: unifiedMetrics.srsOverdueTopicsCount,
+          averageRetention: unifiedMetrics.averageRetention,
+          nominalMastery: unifiedMetrics.overallMastery,
+          masteryRatio: totalCoveredTopicsCount > 0
+            ? Math.round((unifiedMetrics.masteredTopicsCount / totalCoveredTopicsCount) * 100)
+            : 0
         }
-        if (calc.id === 'quality' && filteredReviews.length === 0) {
-          score = 0;
+      },
+      {
+        parameterId: 'integrity',
+        parameterName: 'Integrity',
+        score: unifiedMetrics.integrityScore,
+        weight: 0.00,
+        contribution: 0,
+        details: {
+          score: unifiedMetrics.integrityScore,
+          recordsCount: filteredIntegrity.length
         }
+      },
+      {
+        parameterId: 'observations',
+        parameterName: 'Class Observations',
+        score: obsResult.score,
+        weight: 0.20,
+        contribution: Math.round(obsResult.score * 0.20 * 10) / 10,
+        details: obsResult.details
       }
-
-      return {
-        parameterId: calc.id,
-        parameterName: calc.name,
-        score,
-        weight: calc.weight,
-        details: result.details
-      };
-    });
-
-    let totalWeight = 0;
-    let weightedScoreSum = 0;
-
-    components.forEach(comp => {
-      if (comp.score !== null) {
-        totalWeight += comp.weight;
-        weightedScoreSum += comp.score * comp.weight;
-      }
-    });
-
-    let finalLQ = totalWeight > 0 
-      ? Math.min(100, Math.round(weightedScoreSum / totalWeight)) 
-      : 0;
-
-    if (startDate) {
-      const practicedCount = filteredReviews.reduce((sum, r) => sum + (r.totalQuestions || 0), 0);
-      const examsCount = filteredAttempts.length;
-      if (practicedCount === 0 && examsCount === 0) {
-        finalLQ = 0;
-      }
-    }
-
-    const finalComponents = components.map(comp => {
-      const contribution = comp.score !== null ? Math.round(comp.score * comp.weight * 10) / 10 : 0;
-      return {
-        ...comp,
-        contribution
-      };
-    });
+    ];
 
     return {
       studentCode,
       overallQuotient: finalLQ,
-      components: finalComponents,
+      components,
       calculatedAt: new Date()
     };
   }
@@ -1097,7 +1221,8 @@ export class QuotientService {
       parentReviewsSnap,
       examsSnap,
       subjectiveExamsSnap,
-      batchAssignmentsSnap
+      batchAssignmentsSnap,
+      evaluationsSnap
     ] = await Promise.all([
       adminDb.collection('examAttempts').where('studentCode', '==', studentCode).get(),
       adminDb.collection('assignments').where('studentCode', '==', studentCode).get(),
@@ -1107,7 +1232,8 @@ export class QuotientService {
       adminDb.collection('parentReviews').where('studentCode', '==', studentCode).get(),
       adminDb.collection('exams').get(),
       adminDb.collection('subjectiveExams').get(),
-      adminDb.collection('batchAssignments').get()
+      adminDb.collection('batchAssignments').get(),
+      adminDb.collection('evaluations').where('studentCode', '==', studentCode).get()
     ]);
 
     const examsMap = new Map();
@@ -1133,6 +1259,7 @@ export class QuotientService {
     const rawObservations = observationsSnap.docs.map((doc: any) => doc.data() as any);
     const rawReviews = parentReviewsSnap.docs.map((doc: any) => doc.data() as any);
     const subjectiveExamsList = subjectiveExamsSnap.docs.map((doc: any) => ({ id: doc.id, ...doc.data() }));
+    const rawEvaluations = evaluationsSnap.docs.map((doc: any) => doc.data() as any);
 
     return this.computeStudentQuotientScore(
       studentCode,
@@ -1147,7 +1274,8 @@ export class QuotientService {
       rawReviews,
       examsMap,
       subjectiveExamsList,
-      studentClass
+      studentClass,
+      rawEvaluations
     );
   }
 
@@ -1165,7 +1293,8 @@ export class QuotientService {
       subjectiveExamsSnap,
       batchesSnap,
       parentReviewsSnap,
-      batchAssignmentsSnap
+      batchAssignmentsSnap,
+      evaluationsSnap
     ] = await Promise.all([
       adminDb.collection('examAttempts').get(),
       adminDb.collection('assignments').get(),
@@ -1177,7 +1306,8 @@ export class QuotientService {
       adminDb.collection('subjectiveExams').get(),
       adminDb.collection('batches').get(),
       adminDb.collection('parentReviews').get(),
-      adminDb.collection('batchAssignments').get()
+      adminDb.collection('batchAssignments').get(),
+      adminDb.collection('evaluations').get()
     ]);
 
     const examsMap = new Map();
@@ -1215,6 +1345,7 @@ export class QuotientService {
     const rawIntegrity = integritySnap.docs.map((doc: any) => doc.data()).filter((i: any) => !isDemoUser(i));
     const rawObservations = observationsSnap.docs.map((doc: any) => doc.data()).filter((o: any) => !isDemoUser(o));
     const rawReviews = parentReviewsSnap.docs.map((doc: any) => doc.data()).filter((r: any) => !isDemoUser(r));
+    const rawEvaluations = evaluationsSnap.docs.map((doc: any) => doc.data()).filter((e: any) => !isDemoUser(e));
 
     const groupByStudent = (list: any[]) => {
       const map: Record<string, any[]> = {};
@@ -1234,6 +1365,7 @@ export class QuotientService {
     const integrityMap = groupByStudent(rawIntegrity);
     const observationsMap = groupByStudent(rawObservations);
     const parentReviewsMap = groupByStudent(rawReviews);
+    const evaluationsMap = groupByStudent(rawEvaluations);
 
     const resultsMap: Record<string, QuotientResult> = {};
 
@@ -1246,6 +1378,7 @@ export class QuotientService {
       const sIntegrity = integrityMap[code] || [];
       const sObservations = observationsMap[code] || [];
       const sReviews = parentReviewsMap[code] || [];
+      const sEvaluations = evaluationsMap[code] || [];
 
       resultsMap[code] = this.computeStudentQuotientScore(
         code,
@@ -1260,7 +1393,8 @@ export class QuotientService {
         sReviews,
         examsMap,
         subjectiveExamsList,
-        studentClass
+        studentClass,
+        sEvaluations
       );
     });
 

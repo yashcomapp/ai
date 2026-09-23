@@ -171,7 +171,7 @@ export default function LearningQuotientReportPage() {
   const generateStudentComments = (studentInfo: any, details: any): string => {
     if (!details || !details.components) return '';
 
-    const name = studentInfo?.name || 'विद्यार्थी';
+    const name = studentInfo?.name || 'Student';
     const examComp = details.components.find((c: any) => c.parameterId === 'exam') || { score: 0, details: {} };
     const practiceComp = details.components.find((c: any) => c.parameterId === 'practice') || { score: 0, details: {} };
     const healthComp = details.components.find((c: any) => c.parameterId === 'topicHealth') || { score: 0, details: {} };
@@ -186,14 +186,14 @@ export default function LearningQuotientReportPage() {
     // Point 1: Exam Performance Feedback
     let examText = '';
     if (examComp.score >= 85) {
-      examText = `${name} परीक्षाओं में लगातार उत्कृष्ट प्रदर्शन कर रहे हैं और इनकी मूलभूत अवधारणाएं (Concepts) बहुत स्पष्ट हैं।`;
+      examText = `${name} is demonstrating consistent excellence in examinations with very strong conceptual foundations.`;
     } else if (examComp.score >= 60) {
-      examText = `${name} परीक्षाओं में संतोषजनक प्रदर्शन कर रहे हैं, लेकिन छोटी-मोटी वैचारिक त्रुटियों (Conceptual Errors) पर ध्यान देकर और नियमित पुनरावृत्ति (Revision) करके अंक और बेहतर कर सकते हैं।`;
+      examText = `${name} shows satisfactory examination performance. Focusing on precision in minor conceptual nuances and structured revision will help achieve top-tier marks.`;
     } else {
-      examText = `${name} को मूलभूत अवधारणाएं (Fundamentals) सुदृढ़ करने के लिए अतिरिक्त मार्गदर्शन एवं व्यवस्थित पुनरावृत्ति (Systematic Revision) की अत्यंत आवश्यकता है।`;
+      examText = `${name} requires targeted academic support and structured fundamental revision to reinforce core subject concepts.`;
     }
     if (examComp.details?.absent > 0) {
-      examText += ` (कृपया ध्यान दें कि ${examComp.details.absent} अनुपस्थित परीक्षा(ओं) के कारण कुल प्राप्तांक प्रभावित हुए हैं।)`;
+      examText += ` (Note: ${examComp.details.absent} missed examination(s) have been factored into the schedule.)`;
     }
 
     // Point 2: Pre-reading and Post-reading Feedback
@@ -201,31 +201,31 @@ export default function LearningQuotientReportPage() {
     const examScore = examComp.score ?? 0;
     const practiceScore = practiceComp.score ?? 0;
     if (examScore < 60 || practiceScore < 50) {
-      readingText = `कक्षा से पहले Pre-reading और कक्षा के बाद Post-reading बहुत कम (Very Less) है; पाठ को कक्षा से पहले पढ़कर आना और बाद में दोहराना अत्यंत आवश्यक है।`;
+      readingText = `Pre-class preparation and post-class review are currently limited. Reading chapters beforehand and revising immediately after class is essential for concept retention.`;
     } else if (examScore < 80 || practiceScore < 75) {
-      readingText = `कक्षा से पहले Pre-reading और कक्षा के बाद Post-reading कम (Less) है; नियमित Pre/Post-reading से समझ और परीक्षा अंक और बेहतर हो सकते हैं।`;
+      readingText = `Pre-reading and post-reading routines are moderate. Enhancing consistency in daily text reading will elevate comprehension and exam scores.`;
     } else {
-      readingText = `कक्षा से पहले Pre-reading और कक्षा के बाद Post-reading का स्तर अच्छा है; इसे निरंतर बनाए रखें।`;
+      readingText = `Pre-reading and post-reading habits are commendable. Maintain this proactive learning discipline.`;
     }
 
     // Point 3: Assigned Practice Topics & Mastery Breakdown
     let practiceText = '';
     if (totalAssigned > 0) {
       if (unmasteredTopics > 0) {
-        practiceText = `कुल ${totalAssigned} assigned Practice topics में से ${masteredTopics} practice topics पूर्ण रूप से सिद्ध (Mastered 🟢) हैं, जबकि ${unmasteredTopics} practice topics पर अभ्यास एवं पुनरावृत्ति (🟡🔴) शेष है। `;
+        practiceText = `Out of ${totalAssigned} assigned topics, ${masteredTopics} topics are fully Mastered (🟢), while ${unmasteredTopics} topics require continued practice and revision (🟡🔴). `;
       } else {
-        practiceText = `पाठ्यक्रम के सभी ${totalAssigned} assigned Practice topics सफलतापूर्वक पूर्ण एवं सिद्ध (Mastered 🟢) हो चुके हैं। `;
+        practiceText = `All ${totalAssigned} assigned curriculum topics have been successfully Mastered (🟢). `;
       }
     }
     if (practiceComp.score >= 80) {
-      practiceText += `स्वयं-अभ्यास (Self-Practice) में निरंतरता बहुत सराहनीय है (${practicedTopics} practice topics पर ${totalQuestions} प्रश्न हल किए हैं)।`;
+      practiceText += `Self-practice dedication is outstanding (${totalQuestions} questions solved across ${practicedTopics} topics).`;
     } else if (practiceComp.score >= 50) {
-      practiceText += `अभ्यास कार्य नियमित है (${practicedTopics} practice topics हल किए), परंतु शेष practice topics पर भी अभ्यास प्रश्नों की संख्या बढ़ाने की आवश्यकता है।`;
+      practiceText += `Self-practice is regular (${practicedTopics} topics attempted), but increasing question volume on remaining topics will strengthen mastery.`;
     } else {
-      practiceText += `अभ्यास में efforts अत्यंत कम हैं (${practicedTopics} practice topics पर केवल ${totalQuestions} प्रश्न हल किए हैं); प्रतिदिन समय पर स्वयं-अभ्यास (Self-Practice) पूर्ण करना अनिवार्य है।`;
+      practiceText += `Practice efforts require immediate acceleration (${totalQuestions} questions solved across ${practicedTopics} topics). Daily self-practice sessions must be prioritized.`;
     }
     if (healthComp.details?.srsDueCount > 0) {
-      practiceText += ` (${healthComp.details.srsDueCount} practice topics का स्मरण पुनरावृत्ति सत्र शेष है।)`;
+      practiceText += ` (${healthComp.details.srsDueCount} topic(s) are currently due for spaced memory revision.)`;
     }
 
     // Point 4: Classroom & Home Observations + Overall LQ
@@ -236,43 +236,43 @@ export default function LearningQuotientReportPage() {
     const parentScore = obsParams.find((p: any) => p.id === 'parentScore')?.average ?? 50;
 
     const observationPoints: string[] = [];
-    if (sincerity < 50) observationPoints.push('कक्षा में एकाग्रता (Focus) और गंभीरता बढ़ाने की आवश्यकता है');
-    else if (sincerity >= 80) observationPoints.push('कक्षा में एकाग्रता (Focus) और अनुशासित व्यवहार बनाए रखते हैं');
+    if (sincerity < 50) observationPoints.push('Classroom focus and active attention need improvement.');
+    else if (sincerity >= 80) observationPoints.push('Maintains disciplined focus and sincere engagement during lectures.');
 
-    if (participation < 50) observationPoints.push('सक्रिय सहभागिता (Active Participation) के लिए प्रोत्साहन आवश्यक है');
-    else if (participation >= 80) observationPoints.push('कक्षा में सक्रिय रूप से भाग लेते हैं (Active Participation)');
+    if (participation < 50) observationPoints.push('Needs encouragement for active class participation and doubt resolution.');
+    else if (participation >= 80) observationPoints.push('Actively participates in discussions and problem-solving.');
 
-    if (timelyWork < 50) observationPoints.push('गृहकार्य (Homework) और असाइनमेंट समय पर जमा करना आवश्यक है');
-    else if (timelyWork >= 80) observationPoints.push('सभी गृहकार्य (Homework) और असाइनमेंट समय पर जमा करते हैं');
+    if (timelyWork < 50) observationPoints.push('Regular and timely submission of homework assignments is required.');
+    else if (timelyWork >= 80) observationPoints.push('Consistently submits assignments and homework on time.');
 
-    if (parentScore < 50) observationPoints.push('घर पर स्वाध्याय (Self-Study) के लिए कड़े मार्गदर्शन की आवश्यकता है');
-    else if (parentScore >= 80) observationPoints.push('घर पर नियमित अध्ययन दिनचर्या का पालन कर रहे हैं');
+    if (parentScore < 50) observationPoints.push('Requires closer parental monitoring and structured study routines at home.');
+    else if (parentScore >= 80) observationPoints.push('Maintains an excellent, disciplined daily study routine at home.');
 
     const lq = details.overallQuotient ?? 0;
     let obsText = '';
     if (observationPoints.length > 0) {
-      const bullets = observationPoints.map((pt, idx) => `   - ${pt}${idx === observationPoints.length - 1 ? '।' : ','}`).join('\n');
-      obsText = `कक्षा एवं गृह अवलोकन: ${name}\n${bullets}\n\n   👉 *कुल LQ ${lq}/100 है।*`;
+      const bullets = observationPoints.map(pt => `   • ${pt}`).join('\n');
+      obsText = `Classroom & Home Observations: ${name}\n${bullets}\n\n   👉 *Overall Learning Quotient (LQ): ${lq}/100*`;
     } else {
-      obsText = `कक्षा एवं गृह अवलोकन: ${name}\n   - अनुशासित एवं संतोषजनक व्यवहार।\n\n   👉 *कुल LQ ${lq}/100 है।*`;
+      obsText = `Classroom & Home Observations: ${name}\n   • Disciplined and satisfactory conduct.\n\n   👉 *Overall Learning Quotient (LQ): ${lq}/100*`;
     }
 
-    // Point 5: Concluding Parent Advice
+    // Point 5: Concluding Parent Guidance
     let adviceText = '';
     if (lq >= 85) {
-      adviceText = `अभिभावकों से अनुरोध है कि विद्यार्थी के इस उत्कृष्ट प्रदर्शन की सराहना करें और इसी प्रकार नियमित स्वाध्याय बनाए रखने के लिए प्रेरित करें।`;
+      adviceText = `Parents are requested to appreciate the student's commendable effort and encourage continued momentum in daily self-practice.`;
     } else if (lq >= 60) {
-      adviceText = `अभिभावकों से अनुरोध है कि घर पर विद्यार्थी के दैनिक स्वाध्याय और शेष practice topics के अभ्यास पर ध्यान दें ताकि Top Tier में आ सकें।`;
+      adviceText = `Parents are requested to monitor daily self-study hours and practice on unmastered topics to facilitate movement into the Top Tier.`;
     } else {
-      adviceText = `अभिभावकों से विशेष अनुरोध है कि घर पर विद्यार्थी के दैनिक स्वाध्याय और शेष practice topics के अभ्यास पर विशेष ध्यान दें।`;
+      adviceText = `Parents are strongly urged to prioritize daily study schedules and ensure completion of assigned practice sets.`;
     }
 
     const points = [
-      `1. ${examText}`,
-      `2. ${readingText}`,
-      `3. ${practiceText}`,
-      `4. ${obsText}`,
-      `5. ${adviceText}`
+      `1. Examination Performance: ${examText}`,
+      `2. Study & Reading Habits: ${readingText}`,
+      `3. Practice & Concept Mastery: ${practiceText}`,
+      `4. Behavioral & Classroom Observations:\n${obsText}`,
+      `5. Educator's Guidance for Parents: ${adviceText}`
     ];
 
     return points.join('\n\n');
@@ -289,7 +289,7 @@ export default function LearningQuotientReportPage() {
     const isWeekly = currentDuration === 'weekly';
     const durationLabel = isWeekly ? 'Weekly' : 'Monthly';
     const reportPeriod = isWeekly 
-      ? `this week, ending ${new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}`
+      ? `Week ending ${new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}`
       : new Date().toLocaleString('en-IN', { month: 'long', year: 'numeric' });
 
     const studentName = student.name || 'Student';
@@ -312,16 +312,16 @@ export default function LearningQuotientReportPage() {
     const lq = details.overallQuotient ?? 0;
     const tierName = lq >= 85 ? 'Excellent Tier 🌟' : lq >= 60 ? 'Standard Tier 👍' : 'Needs Attention ⚠️';
 
-    const examScore = examComp.score !== null ? `${examComp.score}/100` : 'N/A';
+    const examScore = examComp.score !== null ? `${examComp.score}%` : 'N/A';
     const attendanceRate = examComp.details?.attendanceRate ?? 100;
     const absentCount = examComp.details?.absent ?? 0;
 
-    const practiceScore = practiceComp.score !== null ? `${practiceComp.score}/100` : '0/100';
-    const healthScore = healthComp.score !== null ? `${healthComp.score}/100` : '0/100';
+    const practiceScore = practiceComp.score !== null ? `${practiceComp.score}%` : '0%';
+    const healthScore = healthComp.score !== null ? `${healthComp.score}%` : '0%';
     const averageRetention = healthComp.details?.averageRetention ?? 0;
     const srsDueCount = healthComp.details?.srsDueCount ?? 0;
 
-    const obsScore = obsComp.score !== null ? `${obsComp.score}/100` : 'N/A';
+    const obsScore = obsComp.score !== null ? `${obsComp.score}%` : 'N/A';
 
     const comments = customComments || generateStudentComments(
       { name: studentName, studentCode: student.studentCode, email: student.email },
@@ -331,38 +331,38 @@ export default function LearningQuotientReportPage() {
     return `*📚 YASHCOM FOUNDATION 📚*
 *🌟 ${durationLabel} Academic Review & Learning Quotient (LQ) 🌟*
 =========================
-Namaste Parents 🙏
+Dear Parents,
 
-*${studentName}* ka ${durationLabel} Performance & Learning Quotient (LQ) summary (*${reportPeriod}*):
+Academic & Learning Quotient (LQ) summary for *${studentName}* (*${reportPeriod}*):
 
 📈 *OVERALL LEARNING QUOTIENT (LQ)*
 👉 *${lq} / 100* (${tierName})
 
-📊 *PERFORMANCE PILLARS SUMMARY*
-🎯 *1. Exam Performance:* *${examScore}*
-   └ Attendance: ${attendanceRate}%, Missed Tests: ${absentCount}
+📊 *ACADEMIC PERFORMANCE PILLARS*
+🎯 *1. Exam Average:* *${examScore}*
+   └ Attendance Rate: ${attendanceRate}%, Missed Tests: ${absentCount}
 
 🏋️ *2. Practice Efforts & Consistency:* *${practiceScore}*
    └ Total Assigned Topics: *${totalAssigned}*
    └ Mastered Topics (🟢): *${masteredTopics}*
-   └ Practice / Revision Pending (🟡🔴 Unmastered): *${unmasteredTopics}*
-   └ Practice Activity: *${practicedTopics}* topics par *${totalQuestions}* questions solve kiye
+   └ Revision / Practice Pending (🟡🔴): *${unmasteredTopics}*
+   └ Practice Volume: *${totalQuestions}* questions solved across *${practicedTopics}* topics
 
-🩺 *3. Concept Health & Memory Retention:* *${healthScore}*
-   └ Retention Rate: ${averageRetention}% (${srsDueCount > 0 ? `${srsDueCount} topics revision ke liye due hain` : averageRetention > 0 ? 'Retention stable hai' : 'Practice pending hai'})
+🩺 *3. Concept Health & Retention:* *${healthScore}*
+   └ Memory Retention Index: ${averageRetention}% (${srsDueCount > 0 ? `${srsDueCount} topic(s) due for revision` : averageRetention > 0 ? 'Retention is stable' : 'Practice pending'})
 
 👥 *4. Classroom & Home Observations:* *${obsScore}*
-   └ Parent Strict Score: ${parentScore}%
-   └ Class Sincerity & Focus: ${sincerity}%
-   └ Assignments & Timely Work: ${timelyWork}%
+   └ Parent Study Score: ${parentScore}%
+   └ Classroom Focus & Sincerity: ${sincerity}%
+   └ Assignment Timeliness: ${timelyWork}%
    └ Active Participation: ${activePart}%
 
-📝 *शिक्षक का शैक्षणिक विश्लेषण एवं मार्गदर्शन (EDUCATOR'S DIAGNOSTIC FEEDBACK):*
+📝 *EDUCATOR'S DIAGNOSTIC FEEDBACK & GUIDANCE:*
 ${comments}
 
 =========================
-आपके सहयोग एवं समर्थन के लिए धन्यवाद! 🙏
-मिलकर हम विद्यार्थी की संकल्पनाओं (Concepts) और परीक्षा परिणाम को और बेहतर बनाएंगे।
+Thank you for your continuous support and partnership! 🙏
+Together, we empower students toward conceptual clarity and academic excellence.
 
 _Yashcom Foundation_
 _Empowering Conceptual Excellence_`;
@@ -578,19 +578,10 @@ _Empowering Conceptual Excellence_`;
 
         setStudents(prev => prev.map(s => {
           if (s.studentCode === singleStudentCode) {
-            const examW = (s.examScore || 0) * 0.25;
-            const pracW = (s.practiceScore || 0) * 0.20;
-            const qualW = (s.qualityScore || 0) * 0.10;
-            const healthW = (s.healthScore || 0) * 0.25;
-            const integW = 0;
-            const obsW = updatedObsScore * 0.20;
-            const newLQ = Math.min(100, Math.round(examW + pracW + qualW + healthW + integW + obsW));
-
             return {
               ...s,
               obsScore: updatedObsScore,
-              obsDetails: updatedObsDetails,
-              overallQuotient: newLQ
+              obsDetails: updatedObsDetails
             };
           }
           return s;
@@ -967,12 +958,12 @@ _Empowering Conceptual Excellence_`;
             <thead>
               <tr style={{ borderBottom: '2px solid var(--border-light)', color: 'var(--text-muted)', fontSize: '12px', fontWeight: 700 }}>
                 {renderSortHeader('Student', 'name', 'left')}
-                {renderSortHeader('Exam (25%)', 'examScore')}
-                {renderSortHeader('Practice (20%)', 'practiceScore')}
-                {renderSortHeader('Quality (10%)', 'qualityScore')}
-                {renderSortHeader('Topic Health (25%)', 'healthScore')}
-                {renderSortHeader('Obs (20%)', 'obsScore')}
-                {renderSortHeader('LQ', 'overallQuotient')}
+                {renderSortHeader('Exam Avg', 'examScore')}
+                {renderSortHeader('Efforts %', 'practiceScore')}
+                {renderSortHeader('Quality', 'qualityScore')}
+                {renderSortHeader('Mastery', 'healthScore')}
+                {renderSortHeader('Obs', 'obsScore')}
+                {renderSortHeader('LQ Score', 'overallQuotient')}
                 <th style={{ padding: '12px 8px', textAlign: 'center', whiteSpace: 'nowrap' }}>Actions</th>
               </tr>
             </thead>

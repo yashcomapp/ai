@@ -500,19 +500,10 @@ export class ReportService {
       if (cachedFullBulk && Array.isArray(cachedFullBulk.students)) {
         cachedFullBulk.students = cachedFullBulk.students.map((s: any) => {
           if (s.studentCode === studentCode) {
-            const examW = (s.examScore || 0) * 0.25;
-            const pracW = (s.practiceScore || 0) * 0.20;
-            const qualW = (s.qualityScore || 0) * 0.10;
-            const healthW = (s.healthScore || 0) * 0.25;
-            const integW = 0;
-            const obsW = avgObsScore * 0.20;
-            const newLQ = Math.min(100, Math.round(examW + pracW + qualW + healthW + integW + obsW));
-
             return {
               ...s,
               obsScore: avgObsScore,
-              obsDetails,
-              overallQuotient: newLQ
+              obsDetails
             };
           }
           return s;
@@ -534,15 +525,6 @@ export class ReportService {
             };
             obsComp.contribution = Math.round(avgObsScore * obsComp.weight * 10) / 10;
           }
-          let totalWeight = 0;
-          let weightedSum = 0;
-          qData.components.forEach((c: any) => {
-            if (c.score !== null && c.score !== undefined) {
-              totalWeight += c.weight;
-              weightedSum += c.score * c.weight;
-            }
-          });
-          qData.overallQuotient = totalWeight > 0 ? Math.min(100, Math.round(weightedSum / totalWeight)) : 0;
           await ReportCacheManager.setReport(cacheKey, quotientsMap, 300);
         }
       }
@@ -589,19 +571,10 @@ export class ReportService {
               ? Math.round(weightedSum / totalWeight)
               : score;
 
-            const examW = (s.examScore || 0) * 0.25;
-            const pracW = (s.practiceScore || 0) * 0.20;
-            const qualW = (s.qualityScore || 0) * 0.10;
-            const healthW = (s.healthScore || 0) * 0.25;
-            const integW = 0;
-            const obsW = avgObsScore * 0.20;
-            const newLQ = Math.min(100, Math.round(examW + pracW + qualW + healthW + integW + obsW));
-
             return {
               ...s,
               obsScore: avgObsScore,
-              obsDetails,
-              overallQuotient: newLQ
+              obsDetails
             };
           }
           return s;
