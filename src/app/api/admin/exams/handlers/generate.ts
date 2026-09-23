@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as admin from 'firebase-admin';
 import { adminDb } from '@/lib/firebase/admin';
-import { OBJECTIVE_QUESTION_TYPES, SUBJECTIVE_QUESTION_TYPES, cleanStringForMatch } from '@/lib/questionTypes';
+import { OBJECTIVE_QUESTION_TYPES, SUBJECTIVE_QUESTION_TYPES, toCanonicalQuestionType, CANONICAL_OBJECTIVE_TYPES, CANONICAL_SUBJECTIVE_TYPES, cleanStringForMatch } from '@/lib/questionTypes';
 import { verifyRole } from '@/lib/auth';
 import { ChunkedBatch } from '@/lib/firebase/batch';
 export const dynamic = 'force-dynamic';
@@ -95,7 +95,10 @@ export async function GET(req: NextRequest) {
 
           if (!bMatch || !sMatch) return false;
 
-          const typeMatch = targetTypes.includes(q.type);
+          const qCanonicalType = toCanonicalQuestionType(q.type);
+          const typeMatch = questionType === 'subjective'
+            ? CANONICAL_SUBJECTIVE_TYPES.includes(qCanonicalType)
+            : CANONICAL_OBJECTIVE_TYPES.includes(qCanonicalType);
           const isUsed = q.usedInClassroomTest === true || 
                          usedInExamsSet.has(String(q.id || '').trim()) || 
                          usedInExamsSet.has(String(q.questionCode || '').trim());

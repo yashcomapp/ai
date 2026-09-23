@@ -5,7 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import Script from 'next/script';
 import { useMathRender } from '@/hooks/useMathRender';
-import { preprocessMathText, smartJsonParse, robustParseAIJson, cleanStringForMatch } from '@/lib/questionTypes';
+import { preprocessMathText, smartJsonParse, robustParseAIJson, cleanStringForMatch, toCanonicalQuestionType } from '@/lib/questionTypes';
 import { highlightModelAnswerKeywords } from '@/lib/pdfExport';
 import { SyllabusSelector } from '@/components/SyllabusSelector';
 import { useSyllabusSelector } from '@/hooks/useSyllabusSelector';
@@ -779,7 +779,7 @@ export default function AdminExamGeneratorPage() {
 
             // 1. Exact match (type + difficulty + topic)
             const candidates = pool.filter(q =>
-              q.type === req.type &&
+              toCanonicalQuestionType(q.type) === toCanonicalQuestionType(req.type) &&
               q.difficulty === req.difficulty &&
               isQuestionMatchingTopic(q, t) &&
               !usedCodes.has(q.questionCode || q.id || '') &&
@@ -798,7 +798,7 @@ export default function AdminExamGeneratorPage() {
             // 2. Relax difficulty for same type in topic
             if (stillNeeded > 0) {
               const relaxed = pool.filter(q =>
-                q.type === req.type &&
+                toCanonicalQuestionType(q.type) === toCanonicalQuestionType(req.type) &&
                 isQuestionMatchingTopic(q, t) &&
                 !usedCodes.has(q.questionCode || q.id || '') &&
                 !selected.some(sel => areQuestionsTooSimilar(q, sel))
@@ -1105,7 +1105,7 @@ Return ONLY valid JSON. No markdown wrappers or extra commentary.`;
 
   const templateRequiredTypes = currentTemplate?.typeCounts ? Object.keys(currentTemplate.typeCounts) : [];
   const matchingPoolCount = templateRequiredTypes.length > 0
-    ? availablePool.filter(q => templateRequiredTypes.includes(q.type)).length
+    ? availablePool.filter(q => templateRequiredTypes.some(reqType => toCanonicalQuestionType(reqType) === toCanonicalQuestionType(q.type))).length
     : availablePool.length;
 
   return (
