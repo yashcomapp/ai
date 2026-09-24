@@ -35,6 +35,7 @@ interface SummaryStats {
   studentSoloCount: number;
   parentSincerityRate: number;
   verifiedTodayCount: number;
+  hasTruncatedBacklog?: boolean;
 }
 
 export default function ParentPendingReportPage() {
@@ -185,6 +186,24 @@ export default function ParentPendingReportPage() {
       {/* Main Content */}
       <main style={{ flex: 1, padding: '16px 14px', maxWidth: '1100px', width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '14px' }}>
         
+        {/* Large Backlog Warning Notice */}
+        {summary.hasTruncatedBacklog && (
+          <div style={{
+            background: 'rgba(234, 179, 8, 0.12)',
+            border: '1px solid rgba(234, 179, 8, 0.35)',
+            color: 'var(--text)',
+            borderRadius: 'var(--radius-md)',
+            padding: '10px 14px',
+            fontSize: '12.5px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}>
+            <span>⚠️</span>
+            <span><strong>Large Backlog Notice:</strong> Showing the latest 1,000 log records. Older expired records are queued for background auto-purge.</span>
+          </div>
+        )}
+
         {/* KPI Summary Bento Grid - One Compact Line on Desktop, 2x2 on Mobile */}
         <div id="sincerity-summary-cards" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px' }}>
           

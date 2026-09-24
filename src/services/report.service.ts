@@ -779,6 +779,9 @@ export class ReportService {
     const cached = await ReportCacheManager.getReport<any>(cacheKey);
     if (cached) return cached;
 
+    const SINCERITY_QUERY_LIMIT = 1000;
+    const EVAL_QUERY_LIMIT = 1000;
+
     const [studentsSnap, batchesSnap, sinceritySnap, evalSnap] = await Promise.all([
       adminDb.collection('users')
         .where('role', '==', 'student')
@@ -787,15 +790,17 @@ export class ReportService {
         .get(),
       adminDb.collection('parentSincerityLogs')
         .orderBy('createdAt', 'desc')
-        .limit(300)
+        .limit(SINCERITY_QUERY_LIMIT)
         .get()
         .catch(() => ({ docs: [] } as any)),
       adminDb.collection('evaluations')
         .orderBy('createdAt', 'desc')
-        .limit(200)
+        .limit(EVAL_QUERY_LIMIT)
         .get()
         .catch(() => ({ docs: [] } as any))
     ]);
+
+    const hasTruncatedBacklog = (sinceritySnap.docs.length >= SINCERITY_QUERY_LIMIT) || (evalSnap.docs.length >= EVAL_QUERY_LIMIT);
 
     const activeStudentsMap = new Map<string, any>();
     studentsSnap.docs.forEach(doc => {
@@ -976,7 +981,8 @@ export class ReportService {
         parentVerifiedCount,
         studentSoloCount,
         parentSincerityRate,
-        verifiedTodayCount
+        verifiedTodayCount,
+        hasTruncatedBacklog
       }
     };
 
