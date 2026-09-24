@@ -373,7 +373,7 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
 
     // Fetch subjective evaluations for this student
     const subjectiveEvaluationsList = evaluationsSnapshot.docs.map(doc => doc.data());
-    const objectiveReviewsList = reviews;
+    const objectiveReviewsList = reviews.filter((r: any) => r.examType !== 'entrance');
     const topicMasteriesList = masterySnapshot.docs.map(doc => doc.data());
     const practiceReviewsList = parentReviewsSnapshot.docs.map(doc => doc.data());
 
@@ -388,18 +388,21 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
     classroomExamsSnap.docs.forEach((doc: any) => {
       const d = doc.data();
       if (d.topicCode) conductedTopicCodes.add(d.topicCode);
+      if (d.resolvedTopicCode) conductedTopicCodes.add(d.resolvedTopicCode);
       (d.topicCodes || d.topics || []).forEach((tc: string) => conductedTopicCodes.add(tc));
     });
 
     homePracticeSnap.docs.forEach((doc: any) => {
       const d = doc.data();
       if (d.topicCode) conductedTopicCodes.add(d.topicCode);
+      if (d.resolvedTopicCode) conductedTopicCodes.add(d.resolvedTopicCode);
       (d.topicCodes || d.topics || []).forEach((tc: string) => conductedTopicCodes.add(tc));
     });
 
     allAssignmentsList.forEach(doc => {
       const d = doc.data();
       if (d.topicCode) conductedTopicCodes.add(d.topicCode);
+      if (d.resolvedTopicCode) conductedTopicCodes.add(d.resolvedTopicCode);
       (d.topicCodes || d.topics || []).forEach((tc: string) => conductedTopicCodes.add(tc));
     });
 
@@ -436,10 +439,17 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
       batchIds: userData.batchIds || []
     };
 
-    // 4. Compile reviews and results summary
-    const completedObjective = objectiveReviewsList.filter((r: any) => r.percentage != null || r.score != null);
+    // 4. Compile reviews and results summary (excluding entrance exams & practice sessions)
+    const completedObjective = objectiveReviewsList.filter((r: any) => 
+      (r.percentage != null || r.score != null) && 
+      r.examType !== 'entrance' && 
+      !r.isPractice && 
+      r.status !== 'practice'
+    );
     const objPercentages = completedObjective.map((r: any) => parseFloat(r.percentage) || 0);
-    const evalPercentages = subjectiveEvaluationsList.map((e: any) => parseFloat(e.percentage) || 0);
+    const evalPercentages = subjectiveEvaluationsList
+      .filter((e: any) => e.examType !== 'entrance' && !e.isPractice && e.status !== 'practice')
+      .map((e: any) => parseFloat(e.percentage) || 0);
     const allPercentages = [...objPercentages, ...evalPercentages];
     
     const evalMap = new Set(

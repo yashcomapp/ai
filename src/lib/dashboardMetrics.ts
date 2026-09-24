@@ -107,6 +107,10 @@ export function calculateUnifiedMetrics(input: UnifiedMetricsInput): UnifiedMetr
   // --- 1. Average Marks Calculation ---
   const objPercentages: number[] = [];
   objectiveReviews.forEach(r => {
+    // Explicitly exclude entrance/placement exams and informal practice sessions from primary curriculum average
+    if (r.examType === 'entrance' || r.type === 'entrance' || r.isEntrance === true || r.examCategory === 'entrance') return;
+    if (r.examType === 'practice' || r.isPractice === true || r.status === 'practice' || r.type === 'practice') return;
+
     if (r.percentage != null && !isNaN(Number(r.percentage))) {
       objPercentages.push(Number(r.percentage));
     } else if (r.score != null && r.totalMarks && r.totalMarks > 0) {
@@ -116,6 +120,10 @@ export function calculateUnifiedMetrics(input: UnifiedMetricsInput): UnifiedMetr
 
   const subPercentages: number[] = [];
   subjectiveEvaluations.forEach(e => {
+    // Explicitly exclude entrance/placement exams and informal practice sessions from primary curriculum average
+    if (e.examType === 'entrance' || e.type === 'entrance' || e.isEntrance === true || e.examCategory === 'entrance') return;
+    if (e.examType === 'practice' || e.isPractice === true || e.status === 'practice' || e.type === 'practice') return;
+
     if (e.percentage != null && !isNaN(Number(e.percentage))) {
       subPercentages.push(Number(e.percentage));
     } else if (e.totalMarksAwarded != null && e.totalMaxMarks && e.totalMaxMarks > 0) {
@@ -143,9 +151,13 @@ export function calculateUnifiedMetrics(input: UnifiedMetricsInput): UnifiedMetr
   practiceReviews.forEach(p => {
     if (p.scorePercent != null && !isNaN(Number(p.scorePercent))) {
       practicePercentages.push(Number(p.scorePercent));
+    } else if (p.percentage != null && !isNaN(Number(p.percentage))) {
+      practicePercentages.push(Number(p.percentage));
     }
     if (p.totalQuestions != null) {
       totalQuestionsPracticed += Number(p.totalQuestions) || 0;
+    } else if (p.questionsCount != null) {
+      totalQuestionsPracticed += Number(p.questionsCount) || 0;
     }
   });
 
