@@ -296,7 +296,6 @@ export async function GET(req: NextRequest) {
       if (!isSubjective) {
         evaluationsSnap = await adminDb.collection('evaluations')
           .where('studentCode', '==', reviewData.studentCode)
-          .where('evaluatorType', '==', 'parent')
           .get();
         evaluationsList = evaluationsSnap.docs.map((doc: any) => doc.data());
       }

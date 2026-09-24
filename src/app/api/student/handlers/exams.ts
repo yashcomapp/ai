@@ -201,7 +201,6 @@ export async function GET(req: NextRequest) {
         .get(),
       adminDb.collection('evaluations')
         .where('studentCode', '==', studentCode)
-        .where('evaluatorType', '==', 'parent')
         .get()
     ]);
 

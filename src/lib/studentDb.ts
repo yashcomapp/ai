@@ -218,10 +218,9 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
       // Fetch student's attempts to filter out completed subjective exams
       adminDb.collection('subjectiveAttempts').where('studentCode', '==', studentCode).get(),
 
-      // Fetch evaluations
+      // Fetch evaluations (all evaluations regardless of evaluatorType: teacher, parent, peer)
       adminDb.collection('evaluations')
         .where('studentCode', '==', studentCode)
-        .where('evaluatorType', '==', 'parent')
         .get(),
 
       // Load syllabus mapping cache

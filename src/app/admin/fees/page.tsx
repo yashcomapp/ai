@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, useMemo, Suspense } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { formatDateDMY as formatDateStr, getDateKeyIST } from '@/lib/dateUtils';
@@ -64,6 +64,11 @@ function AdminFeesContent() {
       setActiveTab(tabParam);
     }
   }, [tabParam]);
+
+  // Student Dues Override Search & Filter States
+  const [studentSearch, setStudentSearch] = useState('');
+  const [studentClassFilter, setStudentClassFilter] = useState('ALL');
+  const [studentStatusFilter, setStudentStatusFilter] = useState('ALL');
 
   // Bulk Entry State
   const [bulkClass, setBulkClass] = useState('8');
@@ -235,6 +240,53 @@ function AdminFeesContent() {
   // Student Fees
   const [students, setStudents] = useState<StudentFeeRecord[]>([]);
   const [loadingStudents, setLoadingStudents] = useState(true);
+
+  // Unique classes dynamically from students list
+  const uniqueClasses = useMemo(() => {
+    const classes = Array.from(new Set(students.map(s => String(s.classNum)).filter(Boolean)));
+    return classes.sort((a, b) => Number(a) - Number(b));
+  }, [students]);
+
+  // Filtered Students for Student Dues Override
+  const filteredStudents = useMemo(() => {
+    return students.filter(s => {
+      // 1. Search Query
+      if (studentSearch.trim()) {
+        const query = studentSearch.trim().toLowerCase();
+        const matchName = (s.name || '').toLowerCase().includes(query);
+        const matchCode = (s.studentCode || '').toLowerCase().includes(query);
+        const matchEmail = (s.email || '').toLowerCase().includes(query);
+        const matchBatch = (s.batchName || '').toLowerCase().includes(query);
+        if (!matchName && !matchCode && !matchEmail && !matchBatch) {
+          return false;
+        }
+      }
+
+      // 2. Class Filter
+      if (studentClassFilter !== 'ALL' && String(s.classNum) !== studentClassFilter) {
+        return false;
+      }
+
+      // 3. Status Filter
+      if (studentStatusFilter !== 'ALL') {
+        const hasOverdue = s.fee?.hasOverdueInstallment === true;
+        const isUnconfigured = !s.fee || s.fee.totalPackageAmount === undefined;
+        const isExempted = s.fee?.feeStatus === 'exempted' || s.fee?.netPayableAmount === 0;
+        const isPaid = s.fee?.feeStatus === 'fully_paid' || ((s.fee?.totalPaidAmount || 0) >= (s.fee?.netPayableAmount || 0) && (s.fee?.netPayableAmount || 0) > 0);
+        const isPartial = s.fee?.feeStatus === 'partially_paid' || ((s.fee?.totalPaidAmount || 0) > 0 && (s.fee?.totalPaidAmount || 0) < (s.fee?.netPayableAmount || 0));
+        const isUnpaid = !isPaid && !isExempted && !isPartial && !isUnconfigured;
+
+        if (studentStatusFilter === 'overdue' && !hasOverdue) return false;
+        if (studentStatusFilter === 'fully_paid' && !isPaid && !isExempted) return false;
+        if (studentStatusFilter === 'partially_paid' && !isPartial) return false;
+        if (studentStatusFilter === 'unpaid' && !isUnpaid && !hasOverdue) return false;
+        if (studentStatusFilter === 'unconfigured' && !isUnconfigured) return false;
+      }
+
+      return true;
+    });
+  }, [students, studentSearch, studentClassFilter, studentStatusFilter]);
+
   const [selectedStudent, setSelectedStudent] = useState<StudentFeeRecord | null>(null);
   const [customPackageTotal, setCustomPackageTotal] = useState(0);
   const [customDiscount, setCustomDiscount] = useState(0);
@@ -671,12 +723,116 @@ function AdminFeesContent() {
         {/* WORKSPACE 1: Student Sheets Override */}
         {activeTab === 'students' && !selectedStudent && (
           <div className="card" style={{ background: 'var(--surface)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
-            <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-              <div>
-                <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 800 }}>Active Students Ledgers</h3>
-                <p style={{ margin: '2px 0 0 0', fontSize: '11px', color: 'var(--text-muted)' }}>
-                  Total {students.length} students across classes. Assign blanket structures or override individually.
-                </p>
+            {/* Header & Filter Controls */}
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 800 }}>Active Students Ledgers</h3>
+                  <p style={{ margin: '2px 0 0 0', fontSize: '11px', color: 'var(--text-muted)' }}>
+                    Total {students.length} students across classes. Assign blanket structures or override individually.
+                  </p>
+                </div>
+
+                {/* Filter Counter Badge */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                  <div style={{ background: 'var(--bg-soft)', padding: '6px 14px', borderRadius: 'var(--radius)', border: '1px solid var(--border-light)', fontSize: '12px' }}>
+                    <span>Showing <strong>{filteredStudents.length}</strong> of <strong>{students.length}</strong> students</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Filter Controls Row */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px', alignItems: 'flex-end' }}>
+                
+                {/* Search Box */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>Search Student</label>
+                  <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                    <input
+                      type="text"
+                      placeholder="Search name, code, batch..."
+                      value={studentSearch}
+                      onChange={(e) => setStudentSearch(e.target.value)}
+                      style={{
+                        width: '100%',
+                        padding: '7px 28px 7px 10px',
+                        borderRadius: '4px',
+                        border: '1px solid var(--border-light)',
+                        background: 'var(--bg-soft)',
+                        color: 'var(--text)',
+                        fontSize: '12px'
+                      }}
+                    />
+                    {studentSearch && (
+                      <button
+                        onClick={() => setStudentSearch('')}
+                        style={{
+                          position: 'absolute',
+                          right: '8px',
+                          border: 'none',
+                          background: 'transparent',
+                          color: 'var(--text-muted)',
+                          cursor: 'pointer',
+                          fontSize: '12px',
+                          padding: 0
+                        }}
+                        title="Clear search"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Class Filter */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>Class</label>
+                  <select
+                    value={studentClassFilter}
+                    onChange={(e) => setStudentClassFilter(e.target.value)}
+                    style={{ padding: '7px 10px', borderRadius: '4px', border: '1px solid var(--border-light)', background: 'var(--bg-soft)', color: 'var(--text)', fontSize: '12px' }}
+                  >
+                    <option value="ALL">All Classes</option>
+                    {uniqueClasses.map(cls => (
+                      <option key={cls} value={cls}>Class {cls}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Status Filter */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>Fee Status</label>
+                  <select
+                    value={studentStatusFilter}
+                    onChange={(e) => setStudentStatusFilter(e.target.value)}
+                    style={{ padding: '7px 10px', borderRadius: '4px', border: '1px solid var(--border-light)', background: 'var(--bg-soft)', color: 'var(--text)', fontSize: '12px' }}
+                  >
+                    <option value="ALL">All Statuses</option>
+                    <option value="overdue">⚠️ Overdue Only</option>
+                    <option value="fully_paid">🟢 Paid / Exempted</option>
+                    <option value="partially_paid">🟡 Partially Paid</option>
+                    <option value="unpaid">🔴 Unpaid / Pending</option>
+                    <option value="unconfigured">⚪ Unconfigured</option>
+                  </select>
+                </div>
+
+                {/* Clear Filters Button */}
+                {(studentSearch || studentClassFilter !== 'ALL' || studentStatusFilter !== 'ALL') && (
+                  <div>
+                    <button
+                      onClick={() => {
+                        setStudentSearch('');
+                        setStudentClassFilter('ALL');
+                        setStudentStatusFilter('ALL');
+                      }}
+                      className="btn btn-secondary"
+                      style={{ padding: '7px 12px', fontSize: '11px', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
+                    >
+                      <span>✕</span> Clear Filters
+                    </button>
+                  </div>
+                )}
+
               </div>
             </div>
 
@@ -684,6 +840,21 @@ function AdminFeesContent() {
               <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>Loading student sheets...</div>
             ) : students.length === 0 ? (
               <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>No student records found.</div>
+            ) : filteredStudents.length === 0 ? (
+              <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                <p style={{ margin: '0 0 12px 0', fontSize: '13px' }}>No students match your search and filter criteria.</p>
+                <button
+                  onClick={() => {
+                    setStudentSearch('');
+                    setStudentClassFilter('ALL');
+                    setStudentStatusFilter('ALL');
+                  }}
+                  className="btn btn-secondary"
+                  style={{ padding: '6px 14px', fontSize: '12px' }}
+                >
+                  Reset Filters
+                </button>
+              </div>
             ) : (
               <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
@@ -700,7 +871,7 @@ function AdminFeesContent() {
                   </thead>
                   <tbody>
                     {(() => {
-                      const sortedStudents = [...students].sort((a, b) => {
+                      const sortedStudents = [...filteredStudents].sort((a, b) => {
                         let valA: any = '';
                         let valB: any = '';
                         if (studentSortField === 'name') {
