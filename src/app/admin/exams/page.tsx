@@ -2266,16 +2266,30 @@ export default function AdminExamsPage() {
       {/* Modal: Assign Exam (Both Objective & Subjective) */}
       {assignModal.show && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.45)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', zIndex: 20000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ background: 'var(--surface-popover)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-popover)', maxWidth: '550px', width: '90%', maxHeight: '90vh', overflowY: 'auto', padding: '24px', display: 'flex', flexDirection: 'column', gap: '15px', boxShadow: 'var(--shadow-lg)' }}>
-            <h3 style={{ fontSize: '16px', fontWeight: 800, margin: 0 }}>
-              📋 Assign {assignModal.type === 'objective' ? 'Objective' : 'Subjective'} Exam: {assignModal.examName}
-            </h3>
+          <div style={{ background: 'var(--surface-popover)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-popover)', maxWidth: '620px', width: '94%', maxHeight: '90vh', overflowY: 'auto', padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '12px', boxShadow: 'var(--shadow-lg)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
+              <div>
+                <h3 style={{ fontSize: '15px', fontWeight: 800, margin: 0, color: 'var(--text)' }}>
+                  📋 Assign {assignModal.type === 'objective' ? 'Objective' : 'Subjective'} Exam
+                </h3>
+                <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px', wordBreak: 'break-word', lineHeight: '1.4' }}>
+                  {assignModal.examName}
+                </div>
+              </div>
+              <button 
+                onClick={() => setAssignModal(prev => ({ ...prev, show: false }))} 
+                disabled={assigning}
+                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '18px', padding: '2px 6px', borderRadius: '4px' }}
+              >
+                ✕
+              </button>
+            </div>
 
             {assignModal.type === 'subjective' && (
               <div>
-                <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '5px' }}>Subjective Exam Mode</label>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px' }}>Subjective Exam Mode</label>
                 <div style={{ display: 'flex', gap: '15px' }}>
-                  <label style={{ fontSize: '12px' }}>
+                  <label style={{ fontSize: '12px', cursor: 'pointer' }}>
                     <input 
                       type="radio" 
                       name="examMode" 
@@ -2283,7 +2297,7 @@ export default function AdminExamsPage() {
                       onChange={() => setAssignModal(prev => ({ ...prev, examMode: 'home' }))} 
                     /> 🏠 Home Mode (Parent review)
                   </label>
-                  <label style={{ fontSize: '12px' }}>
+                  <label style={{ fontSize: '12px', cursor: 'pointer' }}>
                     <input 
                       type="radio" 
                       name="examMode" 
@@ -2296,8 +2310,8 @@ export default function AdminExamsPage() {
             )}
 
             {assignModal.type === 'subjective' && assignModal.examMode === 'classroom' && (
-              <div style={{ background: 'var(--bg-soft)', padding: '10px', borderRadius: 'var(--radius-sm)', borderLeft: '3px solid var(--warning)', fontSize: '11px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <strong>Classroom Peer lottery Settings:</strong>
+              <div style={{ background: 'var(--bg-soft)', padding: '8px 12px', borderRadius: 'var(--radius-sm)', borderLeft: '3px solid var(--warning)', fontSize: '11px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <strong>Classroom Peer Lottery Settings:</strong>
                 <div style={{ display: 'flex', gap: '10px' }}>
                   <div>
                     <label style={{ display: 'block', fontSize: '10px', color: 'var(--text-muted)' }}>Duration (mins)</label>
@@ -2337,10 +2351,10 @@ export default function AdminExamsPage() {
               </div>
             )}
 
-            <div>
-              <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '5px' }}>Target Audience</label>
-              <div style={{ display: 'flex', gap: '15px', marginBottom: '10px' }}>
-                <label style={{ fontSize: '12px' }}>
+            <div style={{ background: 'var(--surface-sunken)', padding: '10px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-light)' }}>
+              <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px' }}>Target Audience</label>
+              <div style={{ display: 'flex', gap: '15px', marginBottom: '8px' }}>
+                <label style={{ fontSize: '12px', cursor: 'pointer' }}>
                   <input 
                     type="radio" 
                     name="targetType" 
@@ -2348,7 +2362,7 @@ export default function AdminExamsPage() {
                     onChange={() => setAssignModal(prev => ({ ...prev, targetType: 'batch' }))} 
                   /> Batches Only
                 </label>
-                <label style={{ fontSize: '12px' }}>
+                <label style={{ fontSize: '12px', cursor: 'pointer' }}>
                   <input 
                     type="radio" 
                     name="targetType" 
@@ -2356,7 +2370,7 @@ export default function AdminExamsPage() {
                     onChange={() => setAssignModal(prev => ({ ...prev, targetType: 'student' }))} 
                   /> Students Only
                 </label>
-                <label style={{ fontSize: '12px' }}>
+                <label style={{ fontSize: '12px', cursor: 'pointer' }}>
                   <input 
                     type="radio" 
                     name="targetType" 
@@ -2368,11 +2382,11 @@ export default function AdminExamsPage() {
 
               {/* Batches selections */}
               {(assignModal.targetType === 'batch' || assignModal.targetType === 'mixed') && (
-                <div style={{ marginBottom: '10px' }}>
-                  <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '3px' }}>Select Target Batches:</label>
-                  <div style={{ maxHeight: '100px', overflowY: 'auto', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', padding: '5px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px' }}>Select Target Batches:</label>
+                  <div style={{ maxHeight: '110px', overflowY: 'auto', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', padding: '6px 8px', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '4px' }}>
                     {batches.map(b => (
-                      <label key={b.id} style={{ display: 'block', fontSize: '12px', padding: '2px 0' }}>
+                      <label key={b.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', padding: '2px 0', cursor: 'pointer' }}>
                         <input 
                           type="checkbox" 
                           checked={assignModal.selectedBatches.has(b.id)} 
@@ -2386,9 +2400,9 @@ export default function AdminExamsPage() {
 
               {/* Student selections grouped by batch */}
               {(assignModal.targetType === 'student' || assignModal.targetType === 'mixed') && (
-                <div>
+                <div style={{ marginTop: '6px' }}>
                   <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '3px' }}>Select Target Students (Grouped by Batch):</label>
-                  <div style={{ maxHeight: '180px', overflowY: 'auto', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', padding: '5px' }}>
+                  <div style={{ maxHeight: '150px', overflowY: 'auto', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', padding: '5px' }}>
                     {(() => {
                       const { grouped, unassigned } = getStudentsGroupedByBatch();
                       const elements: React.ReactNode[] = [];
@@ -2396,7 +2410,7 @@ export default function AdminExamsPage() {
                       Object.entries(grouped).forEach(([bid, group]) => {
                         if (group.list.length === 0) return;
                         elements.push(
-                          <div key={`group-hdr-${bid}`} style={{ fontWeight: 'bold', fontSize: '11px', color: 'var(--accent)', marginTop: '8px', paddingBottom: '2px', borderBottom: '1px dashed var(--border-light)' }}>
+                          <div key={`group-hdr-${bid}`} style={{ fontWeight: 'bold', fontSize: '11px', color: 'var(--accent)', marginTop: '6px', paddingBottom: '2px', borderBottom: '1px dashed var(--border-light)' }}>
                             📦 {group.batchName}
                           </div>
                         );
@@ -2415,7 +2429,7 @@ export default function AdminExamsPage() {
 
                       if (unassigned.length > 0) {
                         elements.push(
-                          <div key="group-hdr-unassigned" style={{ fontWeight: 'bold', fontSize: '11px', color: 'var(--text-muted)', marginTop: '8px', paddingBottom: '2px', borderBottom: '1px dashed var(--border-light)' }}>
+                          <div key="group-hdr-unassigned" style={{ fontWeight: 'bold', fontSize: '11px', color: 'var(--text-muted)', marginTop: '6px', paddingBottom: '2px', borderBottom: '1px dashed var(--border-light)' }}>
                             👤 Unassigned / No Batch
                           </div>
                         );
@@ -2432,7 +2446,7 @@ export default function AdminExamsPage() {
                         });
                       }
 
-                      return elements.length > 0 ? elements : <div style={{ fontSize: '11px', color: 'var(--text-muted)', padding: '10px 0' }}>No students found.</div>;
+                      return elements.length > 0 ? elements : <div style={{ fontSize: '11px', color: 'var(--text-muted)', padding: '8px 0' }}>No students found.</div>;
                     })()}
                   </div>
                 </div>
@@ -2441,7 +2455,7 @@ export default function AdminExamsPage() {
 
             <div>
               <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '5px' }}>Availability Slot</label>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '8px', flexWrap: 'wrap' }}>
                 <label style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
                   <input 
                     type="radio" 
@@ -2501,71 +2515,71 @@ export default function AdminExamsPage() {
               </div>
 
               {assignModal.openMode === 'scheduled' && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <div style={{ display: 'flex', gap: '10px' }}>
-                      <div style={{ flex: 1 }}>
-                        <label style={{ display: 'block', fontSize: '10px', color: 'var(--text-muted)' }}>Start Datetime</label>
-                        <input 
-                          type="datetime-local" 
-                          value={assignModal.startAtStr}
-                          disabled={assignModal.isMorningTest || assignModal.isEveningTest}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            setAssignModal(prev => ({ 
-                              ...prev, 
-                              startAtStr: val, 
-                              endAtStr: val 
-                            }));
-                          }}
-                          style={{ width: '100%', padding: '6px', background: 'var(--surface)', color: 'var(--text)', border: '1px solid var(--border-light)' }}
-                        />
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <label style={{ display: 'block', fontSize: '10px', color: 'var(--text-muted)' }}>End Datetime</label>
-                        <input 
-                          type="datetime-local" 
-                          value={assignModal.endAtStr}
-                          disabled={assignModal.isMorningTest || assignModal.isEveningTest}
-                          onChange={(e) => setAssignModal(prev => ({ ...prev, endAtStr: e.target.value }))}
-                          style={{ width: '100%', padding: '6px', background: 'var(--surface)', color: 'var(--text)', border: '1px solid var(--border-light)' }}
-                        />
-                      </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <div style={{ flex: 1 }}>
+                      <label style={{ display: 'block', fontSize: '10px', color: 'var(--text-muted)' }}>Start Datetime</label>
+                      <input 
+                        type="datetime-local" 
+                        value={assignModal.startAtStr}
+                        disabled={assignModal.isMorningTest || assignModal.isEveningTest}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setAssignModal(prev => ({ 
+                            ...prev, 
+                            startAtStr: val, 
+                            endAtStr: val 
+                          }));
+                        }}
+                        style={{ width: '100%', padding: '5px 6px', background: 'var(--surface)', color: 'var(--text)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)' }}
+                      />
                     </div>
-                    {/* Late Entry Restriction Options */}
-                    <div style={{ marginTop: '5px' }}>
-                      <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '3px' }}>Late Entry Restriction</label>
-                      <div style={{ display: 'flex', gap: '15px' }}>
-                        <label style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
-                          <input 
-                            type="radio" 
-                            name="lateEntryRestriction" 
-                            checked={assignModal.lateEntryRestriction === true} 
-                            onChange={() => setAssignModal(prev => ({ ...prev, lateEntryRestriction: true }))} 
-                            style={{ cursor: 'pointer' }}
-                          /> Enforce 5-minute limit
-                        </label>
-                        <label style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
-                          <input 
-                            type="radio" 
-                            name="lateEntryRestriction" 
-                            checked={assignModal.lateEntryRestriction === false} 
-                            onChange={() => setAssignModal(prev => ({ ...prev, lateEntryRestriction: false }))} 
-                            style={{ cursor: 'pointer' }}
-                          /> Allow late entry
-                        </label>
-                      </div>
+                    <div style={{ flex: 1 }}>
+                      <label style={{ display: 'block', fontSize: '10px', color: 'var(--text-muted)' }}>End Datetime</label>
+                      <input 
+                        type="datetime-local" 
+                        value={assignModal.endAtStr}
+                        disabled={assignModal.isMorningTest || assignModal.isEveningTest}
+                        onChange={(e) => setAssignModal(prev => ({ ...prev, endAtStr: e.target.value }))}
+                        style={{ width: '100%', padding: '5px 6px', background: 'var(--surface)', color: 'var(--text)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)' }}
+                      />
                     </div>
                   </div>
-                )}
+                  {/* Late Entry Restriction Options */}
+                  <div style={{ marginTop: '2px' }}>
+                    <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '3px' }}>Late Entry Restriction</label>
+                    <div style={{ display: 'flex', gap: '15px' }}>
+                      <label style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                        <input 
+                          type="radio" 
+                          name="lateEntryRestriction" 
+                          checked={assignModal.lateEntryRestriction === true} 
+                          onChange={() => setAssignModal(prev => ({ ...prev, lateEntryRestriction: true }))} 
+                          style={{ cursor: 'pointer' }}
+                        /> Enforce 5-minute limit
+                      </label>
+                      <label style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                        <input 
+                          type="radio" 
+                          name="lateEntryRestriction" 
+                          checked={assignModal.lateEntryRestriction === false} 
+                          onChange={() => setAssignModal(prev => ({ ...prev, lateEntryRestriction: false }))} 
+                          style={{ cursor: 'pointer' }}
+                        /> Allow late entry
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div style={{ display: 'flex', gap: '15px' }}>
               <div style={{ flex: 1 }}>
-                <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '5px' }}>Attempt Limit</label>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px' }}>Attempt Limit</label>
                 <select 
                   value={assignModal.attemptLimit} 
                   onChange={(e) => setAssignModal(prev => ({ ...prev, attemptLimit: Number(e.target.value) }))}
-                  style={{ width: '100%', padding: '6px', background: 'var(--surface)', color: 'var(--text)', border: '1px solid var(--border-light)' }}
+                  style={{ width: '100%', padding: '5px 6px', background: 'var(--surface)', color: 'var(--text)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)' }}
                 >
                   <option value={1}>1 Attempt</option>
                   <option value={2}>2 Attempts</option>
@@ -2575,7 +2589,7 @@ export default function AdminExamsPage() {
               </div>
               {assignModal.type === 'objective' && (
                 <div style={{ flex: 1 }}>
-                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '5px' }}>Duration (Minutes)</label>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px' }}>Duration (Minutes)</label>
                   <input 
                     type="number" 
                     value={assignModal.examDuration === undefined || assignModal.examDuration === null ? '' : assignModal.examDuration} 
@@ -2606,13 +2620,13 @@ export default function AdminExamsPage() {
                         setAssignModal(prev => ({ ...prev, examDuration: 45 }));
                       }
                     }}
-                    style={{ width: '100%', padding: '6px', background: 'var(--surface)', color: 'var(--text)', border: '1px solid var(--border-light)' }}
+                    style={{ width: '100%', padding: '5px 6px', background: 'var(--surface)', color: 'var(--text)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)' }}
                   />
                 </div>
               )}
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '6px' }}>
               <button className="btn btn-secondary" onClick={() => setAssignModal(prev => ({ ...prev, show: false }))} disabled={assigning}>Cancel</button>
               <button className="btn btn-primary" onClick={handleSaveAssignment} disabled={assigning}>
                 {assigning ? '⏳ Assigning Exam...' : 'Assign Exam'}
@@ -2625,17 +2639,30 @@ export default function AdminExamsPage() {
       {/* Modal: Edit Assignment Schedule */}
       {editModal.show && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.45)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', zIndex: 20000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ background: 'var(--surface-popover)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-popover)', maxWidth: '550px', width: '90%', maxHeight: '90vh', overflowY: 'auto', padding: '24px', display: 'flex', flexDirection: 'column', gap: '15px', boxShadow: 'var(--shadow-lg)' }}>
-            <h3 style={{ fontSize: '16px', fontWeight: 800, margin: 0 }}>
-              ✏️ Edit Assignment: {editModal.examName}
-            </h3>
+          <div style={{ background: 'var(--surface-popover)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-popover)', maxWidth: '620px', width: '94%', maxHeight: '90vh', overflowY: 'auto', padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '12px', boxShadow: 'var(--shadow-lg)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
+              <div>
+                <h3 style={{ fontSize: '15px', fontWeight: 800, margin: 0, color: 'var(--text)' }}>
+                  ✏️ Edit Assignment Schedule
+                </h3>
+                <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px', wordBreak: 'break-word', lineHeight: '1.4' }}>
+                  {editModal.examName}
+                </div>
+              </div>
+              <button 
+                onClick={() => setEditModal(prev => ({ ...prev, show: false }))} 
+                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '18px', padding: '2px 6px', borderRadius: '4px' }}
+              >
+                ✕
+              </button>
+            </div>
 
             {/* Target Audience Section */}
-            <div style={{ background: 'var(--surface-sunken)', padding: '12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-light)' }}>
-              <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '8px' }}>Target Audience</label>
+            <div style={{ background: 'var(--surface-sunken)', padding: '10px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-light)' }}>
+              <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px' }}>Target Audience</label>
               
-              <div style={{ display: 'flex', gap: '15px', marginBottom: '10px' }}>
-                <label style={{ fontSize: '12px' }}>
+              <div style={{ display: 'flex', gap: '15px', marginBottom: '8px' }}>
+                <label style={{ fontSize: '12px', cursor: 'pointer' }}>
                   <input 
                     type="radio" 
                     name="editTargetType" 
@@ -2643,7 +2670,7 @@ export default function AdminExamsPage() {
                     onChange={() => setEditModal(prev => ({ ...prev, targetType: 'batch' }))} 
                   /> Batches Only
                 </label>
-                <label style={{ fontSize: '12px' }}>
+                <label style={{ fontSize: '12px', cursor: 'pointer' }}>
                   <input 
                     type="radio" 
                     name="editTargetType" 
@@ -2651,7 +2678,7 @@ export default function AdminExamsPage() {
                     onChange={() => setEditModal(prev => ({ ...prev, targetType: 'student' }))} 
                   /> Students Only
                 </label>
-                <label style={{ fontSize: '12px' }}>
+                <label style={{ fontSize: '12px', cursor: 'pointer' }}>
                   <input 
                     type="radio" 
                     name="editTargetType" 
@@ -2663,11 +2690,11 @@ export default function AdminExamsPage() {
 
               {/* Batches selections */}
               {(editModal.targetType === 'batch' || editModal.targetType === 'mixed') && (
-                <div style={{ marginBottom: '10px' }}>
-                  <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '3px' }}>Select Target Batches:</label>
-                  <div style={{ maxHeight: '100px', overflowY: 'auto', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', padding: '5px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px' }}>Select Target Batches:</label>
+                  <div style={{ maxHeight: '110px', overflowY: 'auto', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', padding: '6px 8px', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '4px' }}>
                     {batches.map(b => (
-                      <label key={b.id} style={{ display: 'block', fontSize: '12px', padding: '2px 0' }}>
+                      <label key={b.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', padding: '2px 0', cursor: 'pointer' }}>
                         <input 
                           type="checkbox" 
                           checked={editModal.selectedBatches.has(b.id)} 
@@ -2681,9 +2708,9 @@ export default function AdminExamsPage() {
 
               {/* Student selections grouped by batch */}
               {(editModal.targetType === 'student' || editModal.targetType === 'mixed') && (
-                <div>
+                <div style={{ marginTop: '6px' }}>
                   <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '3px' }}>Select Target Students (Grouped by Batch):</label>
-                  <div style={{ maxHeight: '180px', overflowY: 'auto', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', padding: '5px' }}>
+                  <div style={{ maxHeight: '150px', overflowY: 'auto', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', padding: '5px' }}>
                     {(() => {
                       const { grouped, unassigned } = getStudentsGroupedByBatch();
                       const elements: React.ReactNode[] = [];
@@ -2691,7 +2718,7 @@ export default function AdminExamsPage() {
                       Object.entries(grouped).forEach(([bid, group]) => {
                         if (group.list.length === 0) return;
                         elements.push(
-                          <div key={`edit-group-hdr-${bid}`} style={{ fontWeight: 'bold', fontSize: '11px', color: 'var(--accent)', marginTop: '8px', paddingBottom: '2px', borderBottom: '1px dashed var(--border-light)' }}>
+                          <div key={`edit-group-hdr-${bid}`} style={{ fontWeight: 'bold', fontSize: '11px', color: 'var(--accent)', marginTop: '6px', paddingBottom: '2px', borderBottom: '1px dashed var(--border-light)' }}>
                             📦 {group.batchName}
                           </div>
                         );
@@ -2710,7 +2737,7 @@ export default function AdminExamsPage() {
 
                       if (unassigned.length > 0) {
                         elements.push(
-                          <div key="edit-group-hdr-unassigned" style={{ fontWeight: 'bold', fontSize: '11px', color: 'var(--text-muted)', marginTop: '8px', paddingBottom: '2px', borderBottom: '1px dashed var(--border-light)' }}>
+                          <div key="edit-group-hdr-unassigned" style={{ fontWeight: 'bold', fontSize: '11px', color: 'var(--text-muted)', marginTop: '6px', paddingBottom: '2px', borderBottom: '1px dashed var(--border-light)' }}>
                             👤 Unassigned / No Batch
                           </div>
                         );
@@ -2727,7 +2754,7 @@ export default function AdminExamsPage() {
                         });
                       }
 
-                      return elements.length > 0 ? elements : <div style={{ fontSize: '11px', color: 'var(--text-muted)', padding: '10px 0' }}>No students found.</div>;
+                      return elements.length > 0 ? elements : <div style={{ fontSize: '11px', color: 'var(--text-muted)', padding: '8px 0' }}>No students found.</div>;
                     })()}
                   </div>
                 </div>
@@ -2736,7 +2763,7 @@ export default function AdminExamsPage() {
 
             <div>
               <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '5px' }}>Availability Slot</label>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '8px', flexWrap: 'wrap' }}>
                 <label style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
                   <input 
                     type="radio" 
@@ -2794,7 +2821,7 @@ export default function AdminExamsPage() {
               </div>
 
               {editModal.openMode === 'scheduled' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                   <div style={{ display: 'flex', gap: '10px' }}>
                     <div style={{ flex: 1 }}>
                       <label style={{ display: 'block', fontSize: '10px', color: 'var(--text-muted)' }}>Start Datetime</label>
@@ -2810,7 +2837,7 @@ export default function AdminExamsPage() {
                             endAtStr: val 
                           }));
                         }}
-                        style={{ width: '100%', padding: '6px', background: 'var(--surface)', color: 'var(--text)', border: '1px solid var(--border-light)' }}
+                        style={{ width: '100%', padding: '5px 6px', background: 'var(--surface)', color: 'var(--text)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)' }}
                       />
                     </div>
                     <div style={{ flex: 1 }}>
@@ -2820,12 +2847,12 @@ export default function AdminExamsPage() {
                         value={editModal.endAtStr}
                         disabled={editModal.isMorningTest || editModal.isEveningTest}
                         onChange={(e) => setEditModal(prev => ({ ...prev, endAtStr: e.target.value }))}
-                        style={{ width: '100%', padding: '6px', background: 'var(--surface)', color: 'var(--text)', border: '1px solid var(--border-light)' }}
+                        style={{ width: '100%', padding: '5px 6px', background: 'var(--surface)', color: 'var(--text)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)' }}
                       />
                     </div>
                   </div>
                   {/* Late Entry Restriction Options */}
-                  <div style={{ marginTop: '5px' }}>
+                  <div style={{ marginTop: '2px' }}>
                     <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '3px' }}>Late Entry Restriction</label>
                     <div style={{ display: 'flex', gap: '15px' }}>
                       <label style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
@@ -2854,11 +2881,11 @@ export default function AdminExamsPage() {
 
             <div style={{ display: 'flex', gap: '15px' }}>
               <div style={{ flex: 1 }}>
-                <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '5px' }}>Attempt Limit</label>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px' }}>Attempt Limit</label>
                 <select 
                   value={editModal.attemptLimit} 
                   onChange={(e) => setEditModal(prev => ({ ...prev, attemptLimit: Number(e.target.value) }))}
-                  style={{ width: '100%', padding: '6px', background: 'var(--surface)', color: 'var(--text)', border: '1px solid var(--border-light)' }}
+                  style={{ width: '100%', padding: '5px 6px', background: 'var(--surface)', color: 'var(--text)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)' }}
                 >
                   <option value={1}>1 Attempt</option>
                   <option value={2}>2 Attempts</option>
@@ -2868,7 +2895,7 @@ export default function AdminExamsPage() {
               </div>
               {editModal.collection === 'batchAssignments' && (
                 <div style={{ flex: 1 }}>
-                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '5px' }}>Duration (Minutes)</label>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px' }}>Duration (Minutes)</label>
                   <input 
                     type="number" 
                     value={editModal.examDuration === undefined || editModal.examDuration === null ? '' : editModal.examDuration} 
@@ -2899,13 +2926,13 @@ export default function AdminExamsPage() {
                         setEditModal(prev => ({ ...prev, examDuration: 45 }));
                       }
                     }}
-                    style={{ width: '100%', padding: '6px', background: 'var(--surface)', color: 'var(--text)', border: '1px solid var(--border-light)' }}
+                    style={{ width: '100%', padding: '5px 6px', background: 'var(--surface)', color: 'var(--text)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)' }}
                   />
                 </div>
               )}
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '6px' }}>
               <button className="btn btn-secondary" onClick={() => setEditModal(prev => ({ ...prev, show: false }))}>Cancel</button>
               <button className="btn btn-primary" onClick={handleSaveEditedAssignment}>Save Changes</button>
             </div>
