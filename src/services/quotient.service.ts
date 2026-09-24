@@ -14,7 +14,7 @@ import {
 import { evaluateSessionSincerity } from '@/lib/practiceTimeUtils';
 import { isDemoUser, getRequiredConfidence } from '@/lib/studentDb';
 import { calculateSrsSchedule } from '@/lib/srsRotation';
-import { calculateUnifiedMetrics } from '@/lib/dashboardMetrics';
+import { calculateUnifiedMetrics, extractConductedTopicCodes } from '@/lib/dashboardMetrics';
 
 export const MASTERY_THRESHOLDS = {
   MASTERED_MASTERY: 90,
@@ -982,7 +982,6 @@ export class QuotientService {
     const filteredSubjectiveExams = this.filterByDate(subjectiveExamsList, ['scheduledDate', 'createdAt'], startDate);
     const filteredEvaluations = this.filterByDate(rawEvaluations, ['createdAt', 'evaluatedAt', 'timestamp', 'date'], startDate);
 
-    const topicsSet = new Set<string>();
     const conductedObjectiveExams: any[] = [];
 
     // 1. Gather all conducted objective exams matching student batch or class
@@ -994,7 +993,6 @@ export class QuotientService {
 
       if (isMatch && isPastOrToday && withinDate) {
         conductedObjectiveExams.push(exam);
-        getObjectiveExamTopics(exam).forEach(t => topicsSet.add(t));
       }
     });
 
@@ -1002,7 +1000,6 @@ export class QuotientService {
     filteredAttempts.forEach((attData: any) => {
       const exam = examsMap.get(attData.examId);
       if (exam) {
-        getObjectiveExamTopics(exam).forEach(t => topicsSet.add(t));
         const eId = exam.id || exam.examId;
         if (!conductedObjectiveExams.some(e => (e.id || e.examId) === eId)) {
           conductedObjectiveExams.push(exam);
@@ -1014,7 +1011,6 @@ export class QuotientService {
     filteredAssignments.forEach((assData: any) => {
       const exam = examsMap.get(assData.examId);
       if (exam) {
-        getObjectiveExamTopics(exam).forEach(t => topicsSet.add(t));
         const eId = exam.id || exam.examId;
         if (!conductedObjectiveExams.some(e => (e.id || e.examId) === eId)) {
           conductedObjectiveExams.push(exam);
@@ -1031,27 +1027,30 @@ export class QuotientService {
       
       if (isMatch && isPastOrToday) {
         conductedSubjectiveExams.push(subExam);
-        getSubjectiveExamTopics(subExam).forEach(t => topicsSet.add(t));
       }
     });
 
-    // 5. Add practiced topics from parentReviews
+    // 5. Practice reviews filter
     const filteredReviews = this.filterByDate(rawReviews, ['timestamp', 'createdAt'], startDate);
-    filteredReviews.forEach((rev: any) => {
-      if (rev.topicCode) topicsSet.add(rev.topicCode);
-    });
 
-    // 6. Add mastered topics
+    // 6. Mastered topics
     const practicedTopics = new Set(filteredReviews.map((r: any) => r.topicCode).filter(Boolean));
     const filteredPractice = startDate 
       ? rawPractice.filter((rec: any) => rec.topicCode && practicedTopics.has(rec.topicCode))
       : rawPractice;
 
-    filteredPractice.forEach((rec: any) => {
-      if (rec.topicCode) topicsSet.add(rec.topicCode);
+    // Single Source of Truth Topic Extraction
+    const conductedTopicCodes = extractConductedTopicCodes({
+      masteryList: filteredPractice,
+      classroomExams: conductedSubjectiveExams,
+      homePractice: conductedSubjectiveExams,
+      assignments: filteredAssignments,
+      objectiveExams: conductedObjectiveExams,
+      practiceReviews: filteredReviews,
+      objectiveReviews: filteredAttempts
     });
 
-    const assignedTopics = Array.from(topicsSet);
+    const assignedTopics = Array.from(conductedTopicCodes);
     const conductedExams = [...conductedObjectiveExams, ...conductedSubjectiveExams];
     const totalCoveredTopicsCount = Math.max(1, assignedTopics.length > 0 ? assignedTopics.length : (filteredPractice.length > 0 ? filteredPractice.length : 1));
 
