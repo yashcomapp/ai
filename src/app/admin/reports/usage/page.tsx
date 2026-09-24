@@ -181,6 +181,9 @@ export default function UsageReportPage() {
             <div className="modal-header" style={{ padding: '16px 24px', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 'bold' }}>
                 📋 {activeReviewsModal === 'parent' ? 'Parent Reviews List' : 'Student Reviews List'}
+                <span style={{ fontSize: '11px', fontWeight: 'normal', color: 'var(--text-muted)', marginLeft: '8px' }}>
+                  (Latest {evaluations.filter(e => activeReviewsModal === 'student' ? e.reviewedByActor === 'student' : (e.reviewedByActor === 'parent' || (!e.reviewedByActor && e.evaluatorType === 'parent'))).length} reviews)
+                </span>
               </h4>
               <button onClick={() => setActiveReviewsModal(null)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '1.2rem', color: 'var(--text-muted)' }}>✕</button>
             </div>

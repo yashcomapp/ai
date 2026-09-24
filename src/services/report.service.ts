@@ -23,26 +23,37 @@ export class ReportService {
       examsCountSnap,
       questionsCountSnap,
       attemptsCountSnap,
-      evaluationsSnap
+      parentEvalsSnap,
+      studentEvalsSnap,
+      totalEvalsSnap,
+      recentEvalsSnap
     ] = await Promise.all([
       adminDb.collection('users').count().get(),
       adminDb.collection('subjectiveExams').count().get(),
       adminDb.collection('questions').count().get(),
       adminDb.collection('examAttempts').count().get(),
-      adminDb.collection('evaluations').get()
+      adminDb.collection('evaluations').where('evaluatorType', '==', 'parent').count().get().catch(() => ({ data: () => ({ count: 0 }) } as any)),
+      adminDb.collection('evaluations').where('reviewedByActor', '==', 'student').count().get().catch(() => ({ data: () => ({ count: 0 }) } as any)),
+      adminDb.collection('evaluations').count().get(),
+      adminDb.collection('evaluations')
+        .orderBy('createdAt', 'desc')
+        .limit(100)
+        .select('examName', 'examCode', 'name', 'studentCode', 'childStudentCode', 'reviewedByActor', 'evaluatorType', 'createdAt', 'date')
+        .get()
+        .catch(() => 
+          adminDb.collection('evaluations')
+            .limit(100)
+            .select('examName', 'examCode', 'name', 'studentCode', 'childStudentCode', 'reviewedByActor', 'evaluatorType', 'createdAt', 'date')
+            .get()
+        )
     ]);
 
-    let parentReviews = 0;
-    let studentReviews = 0;
+    const parentReviews = parentEvalsSnap.data().count;
+    const studentReviews = studentEvalsSnap.data().count;
 
-    const evaluations = evaluationsSnap.docs
-      .map(doc => {
+    const evaluations = recentEvalsSnap.docs
+      .map((doc: any) => {
         const data = doc.data();
-        if (data.reviewedByActor === 'student') {
-          studentReviews++;
-        } else if (data.reviewedByActor === 'parent' || data.evaluatorType === 'parent') {
-          parentReviews++;
-        }
         return {
           id: doc.id,
           ...data,
@@ -50,7 +61,7 @@ export class ReportService {
           date: data.date?.toDate ? data.date.toDate() : data.date || null
         };
       })
-      .filter(e => !isDemoUser(e));
+      .filter((e: any) => !isDemoUser(e));
 
     const result = {
       success: true,
@@ -59,6 +70,7 @@ export class ReportService {
         totalExams: examsCountSnap.data().count,
         totalQuestions: questionsCountSnap.data().count,
         totalAttempts: attemptsCountSnap.data().count,
+        totalEvaluations: totalEvalsSnap.data().count,
         parentReviews,
         studentReviews
       },
