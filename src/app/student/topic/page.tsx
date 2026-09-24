@@ -74,6 +74,8 @@ function TopicPracticeContent() {
   const [lockType, setLockType] = useState<'initial' | 'cooldown' | 'daily' | 'recovery_next_day' | 'recovery_awaiting_approval' | null>(null);
   const [showRecoveryPrompt, setShowRecoveryPrompt] = useState(false);
   const [recoveryMessage, setRecoveryMessage] = useState('');
+  const [recoveryConfirmedCheck, setRecoveryConfirmedCheck] = useState(false);
+  const [confirmingRecovery, setConfirmingRecovery] = useState(false);
 
   // Setup practice status
   const [started, setStarted] = useState(false);
@@ -314,6 +316,37 @@ function TopicPracticeContent() {
       alert(err.message || 'Error updating textbook confirmation status.');
     } finally {
       setConfirmingTextbook(false);
+    }
+  };
+
+  const handleApproveRecovery = async () => {
+    if (!firebaseUser || !topicCode || confirmingRecovery) return;
+    setConfirmingRecovery(true);
+    try {
+      const idToken = await firebaseUser.getIdToken();
+      const res = await fetch('/api/student/practice', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`
+        },
+        body: JSON.stringify({
+          action: 'approveRecovery',
+          topicCode
+        })
+      });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.message || 'Failed to approve recovery diagnostic.');
+      }
+      setShowRecoveryPrompt(false);
+      setLockType(null);
+      setLoading(true);
+      router.push(`/student/topic?topicCode=${encodeURIComponent(topicCode)}&category=${category}&mode=recovery`);
+    } catch (err: any) {
+      alert(err.message || 'Error unlocking recovery diagnostic.');
+    } finally {
+      setConfirmingRecovery(false);
     }
   };
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -838,6 +871,35 @@ function TopicPracticeContent() {
           <p style={{ fontSize: '14px', color: 'var(--text-muted)', lineHeight: '1.6', marginBottom: '24px' }}>
             {recoveryMessage || "You have completed extensive practice on this topic. Take the Guided Recovery Diagnostic (8 targeted questions) to strengthen core concepts and achieve Mastery."}
           </p>
+
+          {isAwaitingApproval && (
+            <label style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '10px', 
+              fontSize: '13px', 
+              color: 'var(--text)', 
+              cursor: 'pointer',
+              padding: '12px 16px',
+              background: 'var(--bg)',
+              borderRadius: 'var(--radius-md)',
+              border: '1px solid var(--border-light)',
+              width: '100%',
+              marginBottom: '24px',
+              boxSizing: 'border-box'
+            }}>
+              <input 
+                type="checkbox" 
+                checked={recoveryConfirmedCheck} 
+                onChange={(e) => setRecoveryConfirmedCheck(e.target.checked)}
+                style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+              />
+              <span style={{ textAlign: 'left', lineHeight: '1.4' }}>
+                I / My parent confirm that I have thoroughly reviewed the textbook concepts and notes for this topic.
+              </span>
+            </label>
+          )}
+
           <div style={{ display: 'flex', gap: '12px', width: '100%' }}>
             <button 
               className="btn btn-secondary" 
@@ -857,13 +919,16 @@ function TopicPracticeContent() {
             ) : isAwaitingApproval ? (
               <button 
                 className="btn btn-primary" 
-                onClick={() => {
-                  setLoading(true);
-                  fetchQuestions();
+                disabled={!recoveryConfirmedCheck || confirmingRecovery}
+                onClick={handleApproveRecovery}
+                style={{ 
+                  flex: 2, 
+                  fontWeight: 700, 
+                  background: recoveryConfirmedCheck ? 'var(--accent-grad)' : undefined, 
+                  opacity: (!recoveryConfirmedCheck || confirmingRecovery) ? 0.6 : 1 
                 }}
-                style={{ flex: 1, fontWeight: 700 }}
               >
-                🔄 Refresh Status
+                {confirmingRecovery ? '⌛ Unlocking Diagnostic...' : '📖 Confirm Review & Start Diagnostic (8 Qs)'}
               </button>
             ) : (
               <button 
@@ -871,7 +936,7 @@ function TopicPracticeContent() {
                 onClick={() => {
                   setShowRecoveryPrompt(false);
                   setLoading(true);
-                  router.push(`/student/topic?topicCode=${topicCode}&category=${category}&mode=recovery`);
+                  router.push(`/student/topic?topicCode=${encodeURIComponent(topicCode)}&category=${category}&mode=recovery`);
                 }}
                 style={{ flex: 1, fontWeight: 700 }}
               >

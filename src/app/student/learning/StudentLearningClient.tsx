@@ -684,8 +684,8 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                                           const isRecoveryAction = isLimitReached && state !== 'mastered';
                                           const isSrsAction = state === 'revision' && topic.isSrsDue;
                                           const targetUrl = isRecoveryAction
-                                            ? `/student/topic?topicCode=${topic.topicCode}&category=${topic.state}&mode=recovery`
-                                            : `/student/topic?topicCode=${topic.topicCode}&category=${topic.state}`;
+                                            ? `/student/topic?topicCode=${encodeURIComponent(topic.topicCode)}&category=${topic.state}&mode=recovery`
+                                            : `/student/topic?topicCode=${encodeURIComponent(topic.topicCode)}&category=${topic.state}`;
 
                                           const reqMasteryQs = topic.requiredConfidence || (topic.topicClassification === 'minor' || topic.topicClassification === 'micro' ? 6 : topic.topicClassification === 'major' || topic.topicClassification === 'calculative' || topic.topicClassification === 'hots' ? 15 : 10);
 
