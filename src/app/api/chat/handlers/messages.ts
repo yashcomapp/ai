@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 
 function getUserKey(authResult: { decodedToken: any; userData: any; role: string }): string {
   const { decodedToken, userData, role } = authResult;
-  if (role === 'admin') return decodedToken?.uid || 'admin';
+  if (role === 'admin') return 'admin';
   if (role === 'student') return userData?.studentCode || '';
   if (role === 'parent') return `PR-${userData?.email?.toLowerCase().trim()}`;
   return '';
@@ -368,11 +368,17 @@ export async function POST(req: NextRequest) {
       });
 
       // Atomically reset unread counter on the room document as well
-      batch.update(
-        roomRef,
-        new admin.firestore.FieldPath('unreadCounts', userKey),
-        0
-      );
+      if (role === 'admin') {
+        batch.update(roomRef, new admin.firestore.FieldPath('unreadCounts', 'admin'), 0);
+        if (authResult.decodedToken?.uid) {
+          batch.update(roomRef, new admin.firestore.FieldPath('unreadCounts', authResult.decodedToken.uid), 0);
+        }
+      } else {
+        batch.update(roomRef, new admin.firestore.FieldPath('unreadCounts', userKey), 0);
+        if (authResult.decodedToken?.uid) {
+          batch.update(roomRef, new admin.firestore.FieldPath('unreadCounts', authResult.decodedToken.uid), 0);
+        }
+      }
 
       await batch.commit();
 
@@ -471,8 +477,10 @@ export async function POST(req: NextRequest) {
 
     // 2. Increment unread count for other participants
     const unreadCounts = { ...roomData.unreadCounts };
+    const senderIsAdmin = role === 'admin' || senderRole === 'admin';
     (roomData.participants || []).forEach((p: string) => {
-      if (p !== senderId) {
+      const isSender = p === senderId || (senderIsAdmin && (p === 'admin' || p === authResult.decodedToken?.uid));
+      if (!isSender) {
         unreadCounts[p] = (unreadCounts[p] || 0) + 1;
       }
     });

@@ -547,7 +547,7 @@ export async function POST(req: NextRequest) {
       const { userData, role } = authResult;
       let userKey = '';
       if (role === 'admin') {
-        userKey = authResult.decodedToken?.uid || 'admin';
+        userKey = 'admin';
       } else if (role === 'student') {
         userKey = userData?.studentCode || '';
       } else if (role === 'parent') {
@@ -574,9 +574,18 @@ export async function POST(req: NextRequest) {
           }
         }
 
-        const unreadCounts = roomData.unreadCounts || {};
-        if (unreadCounts[userKey] !== 0) {
-          unreadCounts[userKey] = 0;
+        const unreadCounts = { ...(roomData.unreadCounts || {}) };
+        let hasChanges = false;
+        if (role === 'admin') {
+          if (unreadCounts['admin'] !== 0) { unreadCounts['admin'] = 0; hasChanges = true; }
+          if (authResult.decodedToken?.uid && unreadCounts[authResult.decodedToken.uid] !== 0) {
+            unreadCounts[authResult.decodedToken.uid] = 0;
+            hasChanges = true;
+          }
+        } else {
+          if (unreadCounts[userKey] !== 0) { unreadCounts[userKey] = 0; hasChanges = true; }
+        }
+        if (hasChanges) {
           await roomRef.update({ unreadCounts });
         }
       }

@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { UserRole } from '@/types/user.types';
 import { useRouter } from 'next/navigation';
@@ -158,13 +158,40 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
   const prevActiveRoomIdRef = useRef('');
 
   const myUserKey = useMemo(() => {
-    if (role === 'admin') return firebaseUser?.uid || 'admin';
+    if (role === 'admin') return 'admin';
     if (role === 'student') return user?.studentCode || '';
     if (role === 'parent') return user?.email ? `PR-${user.email.toLowerCase().trim()}` : '';
     return 'user';
-  }, [role, firebaseUser, user]);
+  }, [role, user]);
 
   const adminUid = myUserKey;
+
+  const getRoomUnreadCount = useCallback((room: ChatRoom | undefined | null): number => {
+    if (!room || !room.unreadCounts) return 0;
+    const uCounts = room.unreadCounts;
+    if (role === 'admin') {
+      return Number(uCounts['admin'] || (firebaseUser?.uid ? uCounts[firebaseUser.uid] : 0) || 0);
+    }
+    if (role === 'student') {
+      const sCode = user?.studentCode || '';
+      return Number(
+        (sCode ? (uCounts[sCode] || uCounts[sCode.toUpperCase()] || uCounts[sCode.toLowerCase()]) : 0) ||
+        (firebaseUser?.uid ? uCounts[firebaseUser.uid] : 0) ||
+        0
+      );
+    }
+    if (role === 'parent') {
+      const pKey = user?.email ? `PR-${user.email.toLowerCase().trim()}` : '';
+      const sCode = user?.studentCode || '';
+      return Number(
+        (pKey ? uCounts[pKey] : 0) ||
+        (sCode ? (uCounts[`PR-${sCode}`] || uCounts[`PR-${sCode.toUpperCase()}`]) : 0) ||
+        (firebaseUser?.uid ? uCounts[firebaseUser.uid] : 0) ||
+        0
+      );
+    }
+    return 0;
+  }, [role, firebaseUser?.uid, user?.studentCode, user?.email]);
 
   const [viewportHeight, setViewportHeight] = useState('100dvh');
 
@@ -418,17 +445,20 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
 
   // Mark messages as read when viewing active room
   useEffect(() => {
-    if (!activeRoomId || !firebaseUser || messages.length === 0) return;
+    if (!activeRoomId || !firebaseUser) return;
 
-    const userKey = adminUid;
-
-    // Check if there are any unread messages from other senders
+    const currentRoom = rooms.find(r => r.roomId === activeRoomId);
+    const unread = getRoomUnreadCount(currentRoom);
     const hasUnread = messages.some(msg => {
       const readBy = msg.readBy || {};
-      return msg.senderId !== userKey && !readBy[userKey];
+      if (role === 'admin') {
+        const isAdminSender = msg.senderRole === 'admin' || msg.senderId === 'admin' || msg.senderId === firebaseUser.uid;
+        return !isAdminSender && !readBy['admin'] && !readBy[firebaseUser.uid];
+      }
+      return msg.senderId !== myUserKey && !readBy[myUserKey];
     });
 
-    if (hasUnread) {
+    if (hasUnread || unread > 0) {
       const markAsRead = async () => {
         try {
           const token = await firebaseUser.getIdToken();
@@ -446,7 +476,7 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
       };
       markAsRead();
     }
-  }, [activeRoomId, messages, firebaseUser, adminUid]);
+  }, [activeRoomId, messages, firebaseUser, myUserKey, role, rooms, getRoomUnreadCount]);
 
   // Scroll to bottom on new messages or room change, ignoring deletions
   useEffect(() => {
@@ -1240,14 +1270,14 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
 
   // Aggregate unread badge counts
   const totalGroupUnread = useMemo(() => {
-    return rooms.filter(r => r.type === 'group').reduce((acc, r) => acc + (r.unreadCounts?.[adminUid] || 0), 0);
-  }, [rooms, adminUid]);
+    return rooms.filter(r => r.type === 'group').reduce((acc, r) => acc + getRoomUnreadCount(r), 0);
+  }, [rooms, getRoomUnreadCount]);
 
   const totalDmUnread = useMemo(() => {
     return rooms
       .filter(r => r.type === 'dm' && r.lastMessage && r.lastMessage.text && !r.lastMessage.text.includes('Private direct message channel established'))
-      .reduce((acc, r) => acc + (r.unreadCounts?.[adminUid] || 0), 0);
-  }, [rooms, adminUid]);
+      .reduce((acc, r) => acc + getRoomUnreadCount(r), 0);
+  }, [rooms, getRoomUnreadCount]);
 
   const activeRoom = rooms.find(r => r.roomId === activeRoomId);
   const activeDisplayName = getRoomDisplayName(activeRoom);
@@ -1566,7 +1596,7 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
             ) : (
               filteredRooms.map(room => {
                 const isActive = room.roomId === activeRoomId;
-                const unread = room.unreadCounts?.[adminUid] || 0;
+                const unread = getRoomUnreadCount(room);
                 const isDM = room.type === 'dm';
                 const displayName = getRoomDisplayName(room);
 
