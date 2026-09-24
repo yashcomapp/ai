@@ -275,7 +275,28 @@ export async function GET(req: NextRequest) {
     }
 
 
-    const examSnap = await adminDb.collection('subjectiveExams').doc(examId).get();
+    let examSnap = await adminDb.collection('subjectiveExams').doc(examId).get();
+    if (!examSnap.exists) {
+      if (examId.includes(' ') || examId.includes('+')) {
+        const normalize = (s: any) => String(s || '').replace(/[\s\+]+/g, ' ').trim().toLowerCase();
+        const targetNorm = normalize(examId);
+        const prefix = examId.split(/[-_]/).slice(0, 3).join('-');
+        if (prefix && prefix.length >= 3) {
+          try {
+            const prefixSnap = await adminDb.collection('subjectiveExams')
+              .where('__name__', '>=', prefix)
+              .where('__name__', '<=', prefix + '\uf8ff')
+              .get();
+            for (const pDoc of prefixSnap.docs) {
+              if (normalize(pDoc.id) === targetNorm || normalize(pDoc.data().name) === targetNorm) {
+                examSnap = pDoc;
+                break;
+              }
+            }
+          } catch {}
+        }
+      }
+    }
     if (!examSnap.exists) {
       return NextResponse.json({ message: 'Exam not found.' }, { status: 404 });
     }

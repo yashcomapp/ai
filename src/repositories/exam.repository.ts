@@ -19,7 +19,18 @@ export class ExamRepository {
       return { id: canonicalId, ...data, examId: canonicalId } as unknown as Exam;
     }
 
-    // Fallback 1: Query by legacyExamIds array
+    // Fallback 1: Query with '+' replacing spaces (handles URLSearchParams decoding '+' to ' ')
+    if (examId.includes(' ')) {
+      const plusVariant = examId.replace(/ /g, '+');
+      const plusDoc = await this.examsCollection.doc(plusVariant).get();
+      if (plusDoc.exists) {
+        const data = plusDoc.data() || {};
+        const canonicalId = data.examId || data.id || plusDoc.id;
+        return { id: canonicalId, ...data, examId: canonicalId } as unknown as Exam;
+      }
+    }
+
+    // Fallback 2: Query by legacyExamIds array
     const legacySnap = await this.examsCollection
       .where('legacyExamIds', 'array-contains', examId)
       .limit(1)
@@ -31,7 +42,7 @@ export class ExamRepository {
       return { id: canonicalId, ...data, examId: canonicalId } as unknown as Exam;
     }
 
-    // Fallback 2: Query by legacyExamId field
+    // Fallback 3: Query by legacyExamId field
     const legacyFieldSnap = await this.examsCollection
       .where('legacyExamId', '==', examId)
       .limit(1)
@@ -41,6 +52,42 @@ export class ExamRepository {
       const data = lDoc.data() || {};
       const canonicalId = data.examId || data.id || lDoc.id;
       return { id: canonicalId, ...data, examId: canonicalId } as unknown as Exam;
+    }
+
+    // Fallback 4: Query by name field
+    const nameSnap = await this.examsCollection
+      .where('name', '==', examId)
+      .limit(1)
+      .get();
+    if (!nameSnap.empty) {
+      const nDoc = nameSnap.docs[0];
+      const data = nDoc.data() || {};
+      const canonicalId = data.examId || data.id || nDoc.id;
+      return { id: canonicalId, ...data, examId: canonicalId } as unknown as Exam;
+    }
+
+    // Fallback 5: Robust normalized prefix scan (handles complex URL space/plus decoding)
+    if (examId.includes(' ') || examId.includes('+')) {
+      const normalize = (s: any) => String(s || '').replace(/[\s\+]+/g, ' ').trim().toLowerCase();
+      const targetNorm = normalize(examId);
+      const prefix = examId.split(/[-_]/).slice(0, 3).join('-');
+      if (prefix && prefix.length >= 3) {
+        try {
+          const prefixSnap = await this.examsCollection
+            .where('__name__', '>=', prefix)
+            .where('__name__', '<=', prefix + '\uf8ff')
+            .get();
+          for (const pDoc of prefixSnap.docs) {
+            const docNorm = normalize(pDoc.id);
+            const nameNorm = normalize(pDoc.data().name);
+            if (docNorm === targetNorm || nameNorm === targetNorm) {
+              const data = pDoc.data() || {};
+              const canonicalId = data.examId || data.id || pDoc.id;
+              return { id: canonicalId, ...data, examId: canonicalId } as unknown as Exam;
+            }
+          }
+        } catch {}
+      }
     }
 
     return null;

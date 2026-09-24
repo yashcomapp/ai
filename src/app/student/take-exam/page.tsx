@@ -425,7 +425,7 @@ function TakeExamContent() {
     const fetchExam = async () => {
       try {
         const idToken = await firebaseUser.getIdToken();
-        const res = await fetch(`/api/student/exams?id=${examId}`, {
+        const res = await fetch(`/api/student/exams?id=${encodeURIComponent(examId)}`, {
           headers: { 'Authorization': `Bearer ${idToken}` }
         });
         if (!res.ok) {

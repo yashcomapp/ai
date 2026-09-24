@@ -335,15 +335,15 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
 
   const handleStartExam = (examId: string, isSubjective: boolean) => {
     if (isSubjective) {
-      router.push(`/student/take-subjective-exam?examId=${examId}`);
+      router.push(`/student/take-subjective-exam?examId=${encodeURIComponent(examId)}`);
     } else {
-      router.push(`/student/take-exam?examId=${examId}`);
+      router.push(`/student/take-exam?examId=${encodeURIComponent(examId)}`);
     }
   };
 
   const handleGoToPeerReview = (examId: string | null) => {
     if (examId) {
-      router.push(`/student/take-subjective-exam?mode=peer-review&examId=${examId}`);
+      router.push(`/student/take-subjective-exam?mode=peer-review&examId=${encodeURIComponent(examId)}`);
     }
   };
 
@@ -1095,7 +1095,7 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
                     {hp.isActive ? (
                       <button 
                         className="btn btn-primary btn-sm"
-                        onClick={() => router.push(`/student/take-subjective-exam?examId=${hp.id}`)}
+                        onClick={() => router.push(`/student/take-subjective-exam?examId=${encodeURIComponent(hp.id)}`)}
                         style={{ padding: '4px 10px', fontSize: '10.5px', fontWeight: 700, whiteSpace: 'nowrap' }}
                       >
                         Start Test

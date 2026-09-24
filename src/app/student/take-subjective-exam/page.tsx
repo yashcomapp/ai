@@ -272,7 +272,7 @@ function TakeSubjectiveExamContent() {
     setLoading(true);
     try {
       const idToken = await firebaseUser.getIdToken();
-      const res = await fetch(`/api/student/exams/subjective?examId=${examId}&mode=${mode}`, {
+      const res = await fetch(`/api/student/exams/subjective?examId=${encodeURIComponent(examId)}&mode=${encodeURIComponent(mode)}`, {
         headers: {
           'Authorization': `Bearer ${idToken}`
         }
