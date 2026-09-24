@@ -179,7 +179,8 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
       syllabusList,
       classroomExamsSnap,
       homePracticeSnap,
-      parentReviewsSnapshot
+      parentReviewsSnapshot,
+      integritySnapshot
     ] = await Promise.all([
       adminDb.collection('reviews').where('studentCode', '==', studentCode).get(),
       adminDb.collection('peerAssignments').where('reviewerStudentCode', '==', studentCode).where('status', '==', 'pending').get(),
@@ -244,6 +245,11 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
 
       // parentReviews snapshot
       adminDb.collection('parentReviews')
+        .where('studentCode', '==', studentCode)
+        .get(),
+
+      // Integrity Scores
+      adminDb.collection('integrityScores')
         .where('studentCode', '==', studentCode)
         .get()
     ]);
@@ -419,6 +425,18 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
     const topicMasteriesList = masterySnapshot.docs.map(doc => doc.data());
     const practiceReviewsList = parentReviewsSnapshot.docs.map(doc => doc.data());
 
+    // Resolve student integrity score
+    let integrityScore = 100;
+    if (integritySnapshot && !integritySnapshot.empty) {
+      const records = integritySnapshot.docs.map(doc => doc.data());
+      records.sort((a, b) => {
+        const ad = a.weekStart?.toDate ? a.weekStart.toDate() : new Date(a.weekStart || 0);
+        const bd = b.weekStart?.toDate ? b.weekStart.toDate() : new Date(b.weekStart || 0);
+        return bd.getTime() - ad.getTime();
+      });
+      integrityScore = records[0]?.integrityScore ?? 100;
+    }
+
     // Calculate total unique topics on which tests/exams have been conducted/assigned via SSOT
     const conductedTopicCodes = extractConductedTopicCodes({
       masteryList: topicMasteriesList,
@@ -439,6 +457,7 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
       subjectiveEvaluations: subjectiveEvaluationsList,
       topicMasteries: topicMasteriesList,
       practiceReviews: practiceReviewsList,
+      integrityScore,
       totalCoveredTopics: totalCoveredTopicsCount
     });
 
@@ -456,6 +475,7 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
       effortsPercent: unifiedMetrics.effortsPercent,
       totalQuestionsPracticed: unifiedMetrics.totalQuestionsPracticed,
       practiceAvgScore: unifiedMetrics.practiceAvg,
+      integrityScore: unifiedMetrics.integrityScore,
       name: userData.name || 'Student',
       studentCode,
       autonomous: userData.autonomous || false,
