@@ -490,6 +490,30 @@ export async function POST(req: NextRequest) {
     const examData = examSnap.exists ? examSnap.data()! : {};
     const questions = await getAttemptQuestions(attemptData, examData);
 
+    // Server-side authoritative wall-clock duration calculation
+    let effectiveStartedAt: Date | null = null;
+    if (attemptData.startedAt) {
+      effectiveStartedAt = attemptData.startedAt.toDate ? attemptData.startedAt.toDate() : new Date(attemptData.startedAt);
+    }
+    
+    const totalTimeMin = Number(examData.totalTime) || (Number(examData.totalMarks) * 2) || 60;
+    const examDurationSeconds = totalTimeMin * 60;
+    let authoritativeTimeSpent = Number(timeSpentSeconds) || 0;
+    let isOvertime = false;
+
+    if (effectiveStartedAt && !isNaN(effectiveStartedAt.getTime())) {
+      const serverElapsedSeconds = Math.max(0, Math.round((Date.now() - effectiveStartedAt.getTime()) / 1000));
+      const maxAllowableSeconds = examDurationSeconds + 180; // 180s buffer for photo uploads and network latency
+      if (serverElapsedSeconds > maxAllowableSeconds) {
+        isOvertime = true;
+        authoritativeTimeSpent = examDurationSeconds;
+      } else {
+        authoritativeTimeSpent = Math.min(serverElapsedSeconds, Math.max(Number(timeSpentSeconds) || 0, serverElapsedSeconds));
+      }
+    } else {
+      authoritativeTimeSpent = Math.min(Number(timeSpentSeconds) || examDurationSeconds, examDurationSeconds);
+    }
+
     const submissionUpdates = {
       status: 'completed',
       completedAt: new Date(),
@@ -498,7 +522,8 @@ export async function POST(req: NextRequest) {
       noFaceCount: Number(noFaceCount) || 0,
       multipleFacesCount: Number(multipleFacesCount) || 0,
       awayTimeTotal: Number(awayTimeTotal) || 0,
-      timeSpentSeconds: Number(timeSpentSeconds) || 0,
+      timeSpentSeconds: authoritativeTimeSpent,
+      isOvertime: isOvertime,
       proctoringViolationTriggered: !!proctoringViolationTriggered,
       micAvailable: micBypassed !== undefined ? !micBypassed : true,
       violations: violations || null

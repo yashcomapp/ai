@@ -197,6 +197,33 @@ export class AttemptService {
         }
       }
 
+      // Step A.1: Authoritative Server-Side Duration Verification
+      let effectiveStartedAt: Date | null = null;
+      const docStartedAt = attemptSnap.exists ? attemptSnap.data()?.startedAt : null;
+      if (docStartedAt) {
+        effectiveStartedAt = docStartedAt.toDate ? docStartedAt.toDate() : new Date(docStartedAt);
+      } else if (startedAt) {
+        effectiveStartedAt = new Date(startedAt);
+      }
+
+      const examDurationSeconds = (Number(examData.duration) || 30) * 60;
+      let authoritativeDurationSpent = durationSpent || 0;
+      let isOvertime = false;
+
+      if (effectiveStartedAt && !isNaN(effectiveStartedAt.getTime())) {
+        const serverElapsedSeconds = Math.max(0, Math.round((Date.now() - effectiveStartedAt.getTime()) / 1000));
+        const maxAllowableSeconds = examDurationSeconds + 120; // 120s grace period for client network/rendering
+        
+        if (serverElapsedSeconds > maxAllowableSeconds) {
+          isOvertime = true;
+          authoritativeDurationSpent = examDurationSeconds;
+        } else {
+          authoritativeDurationSpent = Math.min(serverElapsedSeconds, Math.max(durationSpent || 0, serverElapsedSeconds));
+        }
+      } else {
+        authoritativeDurationSpent = Math.min(durationSpent || examDurationSeconds, examDurationSeconds);
+      }
+
       // Step B: Read student profile to check for autonomous mode setting
       let isAutonomous = false;
       if (userRef) {
@@ -249,7 +276,8 @@ export class AttemptService {
         score: score,
         totalMarks: totalMarks,
         percentage: percentage,
-        durationSpent: durationSpent || 0,
+        durationSpent: authoritativeDurationSpent,
+        isOvertime: isOvertime,
         integrityScore: integrityScore,
         suspiciousLevel: suspiciousLevel,
         tabViolations: tabViolations || 0,
@@ -278,7 +306,8 @@ export class AttemptService {
         score: score,
         totalMarks: totalMarks,
         percentage: percentage,
-        durationSpent: durationSpent || 0,
+        durationSpent: authoritativeDurationSpent,
+        isOvertime: isOvertime,
         tabViolations: tabViolations || 0,
         proctoringViolations: proctoringViolations || { noFace: 0, multipleFaces: 0, lookingAway: 0, headMovement: 0 },
         wrongAnswers: wrongAnswers,
