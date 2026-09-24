@@ -1261,94 +1261,6 @@ function ExamReportContent() {
             </div>
           )}
 
-          {/* Section: Individual Reassignment for Absent Cases */}
-          <div className="card" style={{ background: 'var(--surface)', borderRadius: 'var(--radius)', border: '1px solid var(--border-light)', padding: '6px 12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ fontSize: '12px', fontWeight: 800, margin: 0, textTransform: 'uppercase', color: 'var(--accent)' }}>
-                🔄 Individual Reassignment (Absent Cases)
-              </h3>
-              {notStartedStudents.length > 0 && (
-                <span className="badge badge-danger" style={{ background: 'var(--danger-bg, rgba(234, 108, 117, 0.10))', color: 'var(--danger)', border: '1px solid var(--danger-border, rgba(234, 108, 117, 0.22))', fontWeight: 700, padding: '2px 8px', borderRadius: '10px', fontSize: '11px' }}>
-                  {notStartedStudents.length} Absent
-                </span>
-              )}
-            </div>
-            
-            {notStartedStudents.length === 0 ? (
-              <div style={{ padding: '8px', background: 'var(--bg-soft)', borderRadius: 'var(--radius-sm)', fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center' }}>
-                🎉 All assigned students have started or completed the exam. No absent cases found.
-              </div>
-            ) : (
-              <>
-                {/* Select All Toggle & Setup Reassignment Button */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-light)', paddingBottom: '4px', flexWrap: 'wrap', gap: '8px' }}>
-                  <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                    <input 
-                      type="checkbox" 
-                      id="reassign-select-all"
-                      checked={reassignSelectedStudents.size === notStartedStudents.length && notStartedStudents.length > 0}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setReassignSelectedStudents(new Set(notStartedStudents.map(s => s.code)));
-                        } else {
-                          setReassignSelectedStudents(new Set());
-                        }
-                      }}
-                      style={{ cursor: 'pointer' }}
-                    />
-                    <label htmlFor="reassign-select-all" style={{ fontSize: '11.5px', fontWeight: 'bold', cursor: 'pointer', userSelect: 'none' }}>
-                      Select All ({notStartedStudents.length})
-                    </label>
-                  </div>
-
-                  <button 
-                    className="btn btn-primary"
-                    disabled={reassignSelectedStudents.size === 0}
-                    onClick={openReassignModal}
-                    style={{ fontSize: '11.5px', padding: '3px 10px', display: 'flex', alignItems: 'center', gap: '6px', height: '26px', borderRadius: 'var(--radius-pill, 999px)' }}
-                  >
-                    🔄 Setup Reassignment ({reassignSelectedStudents.size})
-                  </button>
-                </div>
-                
-                {/* Clean inline list of students (no box enclosure) */}
-                <div style={{ maxHeight: '100px', overflowY: 'auto', display: 'flex', flexWrap: 'wrap', gap: '6px 18px', padding: '2px 0' }}>
-                  {notStartedStudents.map(s => (
-                    <label 
-                      key={s.code} 
-                      style={{ 
-                        display: 'inline-flex', 
-                        alignItems: 'center', 
-                        gap: '6px', 
-                        cursor: 'pointer',
-                        fontSize: '12px',
-                        fontWeight: 600,
-                        color: 'var(--text)',
-                        userSelect: 'none'
-                      }}
-                    >
-                      <input 
-                        type="checkbox" 
-                        checked={reassignSelectedStudents.has(s.code)}
-                        onChange={() => {
-                          const next = new Set(reassignSelectedStudents);
-                          if (next.has(s.code)) {
-                            next.delete(s.code);
-                          } else {
-                            next.add(s.code);
-                          }
-                          setReassignSelectedStudents(next);
-                        }}
-                        style={{ cursor: 'pointer' }}
-                      />
-                      <span>{s.name}</span>
-                    </label>
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
-
           {/* Section A: Student Roster Grid */}
           <div className="card" style={{ background: 'var(--surface)', borderRadius: 'var(--radius)', border: '1px solid var(--border-light)', overflow: 'hidden' }}>
             <h3 style={{ fontSize: '12px', fontWeight: 800, padding: '10px 14px 0', margin: 0, textTransform: 'uppercase', color: 'var(--accent)' }}>👤 Student Submissions</h3>
@@ -1462,6 +1374,94 @@ function ExamReportContent() {
                 </tbody>
               </table>
             </div>
+          </div>
+
+          {/* Section: Individual Reassignment for Absent Cases */}
+          <div className="card" style={{ background: 'var(--surface)', borderRadius: 'var(--radius)', border: '1px solid var(--border-light)', padding: '6px 12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h3 style={{ fontSize: '12px', fontWeight: 800, margin: 0, textTransform: 'uppercase', color: 'var(--accent)' }}>
+                🔄 Individual Reassignment (Absent Cases)
+              </h3>
+              {notStartedStudents.length > 0 && (
+                <span className="badge badge-danger" style={{ background: 'var(--danger-bg, rgba(234, 108, 117, 0.10))', color: 'var(--danger)', border: '1px solid var(--danger-border, rgba(234, 108, 117, 0.22))', fontWeight: 700, padding: '2px 8px', borderRadius: '10px', fontSize: '11px' }}>
+                  {notStartedStudents.length} Absent
+                </span>
+              )}
+            </div>
+            
+            {notStartedStudents.length === 0 ? (
+              <div style={{ padding: '8px', background: 'var(--bg-soft)', borderRadius: 'var(--radius-sm)', fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center' }}>
+                🎉 All assigned students have started or completed the exam. No absent cases found.
+              </div>
+            ) : (
+              <>
+                {/* Select All Toggle & Setup Reassignment Button */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-light)', paddingBottom: '4px', flexWrap: 'wrap', gap: '8px' }}>
+                  <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                    <input 
+                      type="checkbox" 
+                      id="reassign-select-all"
+                      checked={reassignSelectedStudents.size === notStartedStudents.length && notStartedStudents.length > 0}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setReassignSelectedStudents(new Set(notStartedStudents.map(s => s.code)));
+                        } else {
+                          setReassignSelectedStudents(new Set());
+                        }
+                      }}
+                      style={{ cursor: 'pointer' }}
+                    />
+                    <label htmlFor="reassign-select-all" style={{ fontSize: '11.5px', fontWeight: 'bold', cursor: 'pointer', userSelect: 'none' }}>
+                      Select All ({notStartedStudents.length})
+                    </label>
+                  </div>
+
+                  <button 
+                    className="btn btn-primary"
+                    disabled={reassignSelectedStudents.size === 0}
+                    onClick={openReassignModal}
+                    style={{ fontSize: '11.5px', padding: '3px 10px', display: 'flex', alignItems: 'center', gap: '6px', height: '26px', borderRadius: 'var(--radius-pill, 999px)' }}
+                  >
+                    🔄 Setup Reassignment ({reassignSelectedStudents.size})
+                  </button>
+                </div>
+                
+                {/* Clean inline list of students (no box enclosure) */}
+                <div style={{ maxHeight: '100px', overflowY: 'auto', display: 'flex', flexWrap: 'wrap', gap: '6px 18px', padding: '2px 0' }}>
+                  {notStartedStudents.map(s => (
+                    <label 
+                      key={s.code} 
+                      style={{ 
+                        display: 'inline-flex', 
+                        alignItems: 'center', 
+                        gap: '6px', 
+                        cursor: 'pointer',
+                        fontSize: '12px',
+                        fontWeight: 600,
+                        color: 'var(--text)',
+                        userSelect: 'none'
+                      }}
+                    >
+                      <input 
+                        type="checkbox" 
+                        checked={reassignSelectedStudents.has(s.code)}
+                        onChange={() => {
+                          const next = new Set(reassignSelectedStudents);
+                          if (next.has(s.code)) {
+                            next.delete(s.code);
+                          } else {
+                            next.add(s.code);
+                          }
+                          setReassignSelectedStudents(next);
+                        }}
+                        style={{ cursor: 'pointer' }}
+                      />
+                      <span>{s.name}</span>
+                    </label>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
 
           {/* Section B: Auto-submitted Attempts */}

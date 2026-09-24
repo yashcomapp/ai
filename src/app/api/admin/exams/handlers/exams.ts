@@ -949,12 +949,6 @@ export async function PUT(req: NextRequest) {
     }
 
     const assignData = assignSnap.data()!;
-    const startAt = assignData.startAt ? (assignData.startAt.toDate ? assignData.startAt.toDate() : new Date(assignData.startAt)) : null;
-
-    // Block edit if exam already started
-    if (startAt && startAt <= new Date() && assignData.openMode !== 'immediate') {
-      return NextResponse.json({ message: 'Cannot edit: the exam has already started.' }, { status: 400 });
-    }
 
     let updatedStart = new Date();
     let updatedEnd = new Date();

@@ -988,7 +988,8 @@ export default function AdminExamsPage() {
       });
 
       if (!res.ok) {
-        throw new Error('Failed to update assignment.');
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.message || 'Failed to update assignment.');
       }
 
       alert('✅ Assignment schedule and target audience updated!');
