@@ -1,3 +1,28 @@
+/**
+ * Canonical topic equality comparison that prevents duplicate topics / subtopic key mismatches.
+ */
+export function isSameTopic(a: any, b: any): boolean {
+  if (!a || !b) return false;
+  if (a.subject && b.subject && a.subject !== b.subject) return false;
+  if (a.chapterNumber && b.chapterNumber && String(a.chapterNumber) !== String(b.chapterNumber)) return false;
+
+  // 1. Topic code exact match
+  if (a.topicCode && b.topicCode && a.topicCode === b.topicCode) return true;
+
+  // 2. Topic number exact match
+  if (a.topicNumber && b.topicNumber && a.topicNumber === b.topicNumber) return true;
+
+  // 3. Topic label exact match
+  if (a.topic && b.topic && a.topic === b.topic) return true;
+
+  // 4. Normalized topic name match (ignoring leading digits like "8.1.1 Reactivity..." vs "Reactivity...")
+  const normA = (a.topicName || a.topic || '').replace(/^[\d.]+\s*/, '').trim().toLowerCase();
+  const normB = (b.topicName || b.topic || '').replace(/^[\d.]+\s*/, '').trim().toLowerCase();
+  if (normA && normB && normA === normB) return true;
+
+  return false;
+}
+
 export function distributeCountsByWeight(
   totalQs: number,
   selectedTopics: any[],

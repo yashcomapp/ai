@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { isSameTopic } from '@/lib/syllabusUtils';
 
 export function useSyllabusSelector<T extends { topic: string; subject?: string; chapterNumber?: string | number }, S = any>({
   syllabusIndex,
@@ -52,9 +53,9 @@ export function useSyllabusSelector<T extends { topic: string; subject?: string;
   const handleToggleTopic = (topicItem: T) => {
     if ((topicItem as any).hasSubtopics) return;
     setSelectedTopics(prev => {
-      const exists = prev.some(t => t.topic === topicItem.topic && t.subject === topicItem.subject);
+      const exists = prev.some(t => isSameTopic(t, topicItem));
       if (exists) {
-        return prev.filter(t => !(t.topic === topicItem.topic && t.subject === topicItem.subject));
+        return prev.filter(t => !isSameTopic(t, topicItem));
       } else {
         return [...prev, topicItem];
       }
@@ -66,7 +67,7 @@ export function useSyllabusSelector<T extends { topic: string; subject?: string;
       const copy = [...prev];
       filteredTopics.forEach(ft => {
         if ((ft as any).hasSubtopics) return;
-        if (!copy.some(t => t.topic === ft.topic && t.subject === ft.subject)) {
+        if (!copy.some(t => isSameTopic(t, ft))) {
           copy.push(ft);
         }
       });
@@ -76,7 +77,7 @@ export function useSyllabusSelector<T extends { topic: string; subject?: string;
 
   const handleDeselectAllTopics = (filteredTopics: T[]) => {
     setSelectedTopics(prev =>
-      prev.filter(p => !filteredTopics.some(v => v.topic === p.topic && v.subject === p.subject))
+      prev.filter(p => !filteredTopics.some(v => isSameTopic(v, p)))
     );
   };
 

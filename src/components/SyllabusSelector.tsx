@@ -1,6 +1,5 @@
-'use client';
-
 import React from 'react';
+import { isSameTopic } from '@/lib/syllabusUtils';
 
 interface Topic {
   topic: string;
@@ -69,7 +68,7 @@ export function SyllabusSelector<T extends { topic: string; subject?: string }>(
   };
 
   const isTopicChecked = (top: T) => {
-    return selectedTopics.some(s => s.topic === top.topic && s.subject === top.subject);
+    return selectedTopics.some(s => isSameTopic(s, top));
   };
 
   return (

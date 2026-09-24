@@ -9,7 +9,7 @@ import { preprocessMathText, smartJsonParse, robustParseAIJson, cleanStringForMa
 import { highlightModelAnswerKeywords } from '@/lib/pdfExport';
 import { SyllabusSelector } from '@/components/SyllabusSelector';
 import { useSyllabusSelector } from '@/hooks/useSyllabusSelector';
-import { distributeCountsByWeight as distributeCountsByWeightLib, buildObjectiveSchema } from '@/lib/syllabusUtils';
+import { distributeCountsByWeight as distributeCountsByWeightLib, buildObjectiveSchema, isSameTopic } from '@/lib/syllabusUtils';
 import { areQuestionsTooSimilar } from '@/lib/questionSimilarity';
 
 interface Template {
@@ -392,24 +392,28 @@ export default function AdminExamGeneratorPage() {
       const instantTopicsList: any[] = [];
       instantChaptersList.forEach((chItem) => {
         const rawTopics = chItem.chapter.topics || [];
-        const walk = (tList: any[]) => {
-          tList.forEach(t => {
+        const walk = (tList: any[], parentNum?: string, parentCode?: string) => {
+          tList.forEach((t, sIdx) => {
             const isObj = t && typeof t === 'object';
-            const label = isObj ? ((t.number ? `${t.number} ` : '') + (t.name || t.title || '')) : String(t);
-            const num = isObj ? (t.number || t.topicNumber || label) : label;
+            const subNum = !isObj && parentNum ? `${parentNum}.${sIdx + 1}` : '';
+            const rawNum = isObj ? (t.number || t.topicNumber || '') : subNum;
+            const name = isObj ? (t.name || t.title || '') : String(t);
+            const label = rawNum ? `${rawNum} ${name}` : name;
+            const num = rawNum || label;
+            const topCode = isObj ? (t.topicCode || t.subtopicCode || '') : (parentCode ? `${parentCode}.${sIdx + 1}` : '');
             instantTopicsList.push({
               subject: chItem.subject,
               chapterName: chItem.chapterName,
               chapterNumber: chItem.chapterNumber,
               topic: label,
-              topicName: isObj ? (t.name || t.title || label) : label,
+              topicName: name || label,
               topicNumber: num,
-              topicCode: isObj ? (t.topicCode || t.subtopicCode || '') : '',
+              topicCode: topCode,
               objectiveCount: isObj ? (t.objectiveCount || 0) : 0,
               subjectiveCount: isObj ? (t.subjectiveCount || 0) : 0,
               hasSubtopics: isObj && Array.isArray(t.subtopics) && t.subtopics.length > 0
             });
-            if (isObj && t.subtopics && t.subtopics.length > 0) walk(t.subtopics);
+            if (isObj && t.subtopics && t.subtopics.length > 0) walk(t.subtopics, num, topCode);
           });
         };
         walk(rawTopics);
@@ -456,24 +460,28 @@ export default function AdminExamGeneratorPage() {
         const allTopicsList: any[] = [];
         allChaptersList.forEach((chItem) => {
           const rawTopics = chItem.chapter.topics || [];
-          const walk = (tList: any[]) => {
-            tList.forEach(t => {
+          const walk = (tList: any[], parentNum?: string, parentCode?: string) => {
+            tList.forEach((t, sIdx) => {
               const isObj = t && typeof t === 'object';
-              const label = isObj ? ((t.number ? `${t.number} ` : '') + (t.name || t.title || '')) : String(t);
-              const num = isObj ? (t.number || t.topicNumber || label) : label;
+              const subNum = !isObj && parentNum ? `${parentNum}.${sIdx + 1}` : '';
+              const rawNum = isObj ? (t.number || t.topicNumber || '') : subNum;
+              const name = isObj ? (t.name || t.title || '') : String(t);
+              const label = rawNum ? `${rawNum} ${name}` : name;
+              const num = rawNum || label;
+              const topCode = isObj ? (t.topicCode || t.subtopicCode || '') : (parentCode ? `${parentCode}.${sIdx + 1}` : '');
               allTopicsList.push({
                 subject: chItem.subject,
                 chapterName: chItem.chapterName,
                 chapterNumber: chItem.chapterNumber,
                 topic: label,
-                topicName: isObj ? (t.name || t.title || label) : label,
+                topicName: name || label,
                 topicNumber: num,
-                topicCode: isObj ? (t.topicCode || t.subtopicCode || '') : '',
+                topicCode: topCode,
                 objectiveCount: isObj ? (t.objectiveCount || 0) : 0,
                 subjectiveCount: isObj ? (t.subjectiveCount || 0) : 0,
                 hasSubtopics: isObj && Array.isArray(t.subtopics) && t.subtopics.length > 0
               });
-              if (isObj && t.subtopics && t.subtopics.length > 0) walk(t.subtopics);
+              if (isObj && t.subtopics && t.subtopics.length > 0) walk(t.subtopics, num, topCode);
             });
           };
           walk(rawTopics);
@@ -481,6 +489,19 @@ export default function AdminExamGeneratorPage() {
 
         setAvailableChapters(allChaptersList);
         setAvailableTopics(allTopicsList);
+
+        // Reconcile and deduplicate selectedTopics against live allTopicsList
+        setSelectedTopics(prev => {
+          const reconciled: any[] = [];
+          prev.forEach(p => {
+            const match = allTopicsList.find(t => isSameTopic(t, p));
+            const itemToKeep = match || p;
+            if (!reconciled.some(r => isSameTopic(r, itemToKeep))) {
+              reconciled.push(itemToKeep);
+            }
+          });
+          return reconciled;
+        });
       }
     } catch (err) {
       console.error(err);
@@ -609,19 +630,22 @@ export default function AdminExamGeneratorPage() {
     );
   }, [selectedChapters, availableChapters, availableTopics]);
 
+  const getTopicKey = (t: any) => t?.topicCode || t?.topicNumber || t?.topic || '';
+
   // Distribute counts based on equal/custom weightages
   const distributeCountsByWeight = (count: number) => {
     const cleanWeights: Record<string, number> = {};
     selectedTopics.forEach(t => {
-      const raw = topicWeights[t.topicNumber];
-      cleanWeights[t.topicNumber] = typeof raw === 'number' ? raw : (parseInt(String(raw), 10) || 0);
+      const key = getTopicKey(t);
+      const raw = topicWeights[key];
+      cleanWeights[key] = typeof raw === 'number' ? raw : (parseInt(String(raw), 10) || 0);
     });
     return distributeCountsByWeightLib(
       count,
       selectedTopics,
       cleanWeights,
       topicWeightMode,
-      t => t.topicNumber
+      getTopicKey
     );
   };
 
@@ -641,7 +665,7 @@ export default function AdminExamGeneratorPage() {
     }
     if (topicWeightMode === 'custom') {
       const sum = selectedTopics.reduce((acc, t) => {
-        const raw = topicWeights[t.topicNumber];
+        const raw = topicWeights[getTopicKey(t)];
         const val = typeof raw === 'number' ? raw : (parseInt(String(raw), 10) || 0);
         return acc + (raw !== undefined && raw !== '' ? val : Math.floor(100 / selectedTopics.length));
       }, 0);
@@ -694,7 +718,7 @@ export default function AdminExamGeneratorPage() {
       if (!normalizedTypeCounts) {
         // Flexible Pool Mode: Fill up each topic's target quota from available questions in that topic
         selectedTopics.forEach(t => {
-          const targetForTopic = topicQuestionTargets[t.topicNumber] || 0;
+          const targetForTopic = topicQuestionTargets[getTopicKey(t)] || 0;
           if (targetForTopic <= 0) return;
 
           const easyTarget = Math.round((effectiveDifficulty.easy / 100) * targetForTopic);
@@ -768,7 +792,7 @@ export default function AdminExamGeneratorPage() {
 
         // Track how many questions each topic has received
         const topicPickedCounts: Record<string, number> = {};
-        selectedTopics.forEach(t => { topicPickedCounts[t.topicNumber] = 0; });
+        selectedTopics.forEach(t => { topicPickedCounts[getTopicKey(t)] = 0; });
 
         needed.forEach(req => {
           const topicCounts = distributeCountsByWeight(req.count);
@@ -1498,7 +1522,7 @@ Return ONLY valid JSON. No markdown wrappers or extra commentary.`;
                   <span style={{ textAlign: 'right' }}>Weight (%)</span>
                 </div>
                 {selectedTopics.map((top, idx) => {
-                  const key = top.topicNumber;
+                  const key = getTopicKey(top);
                   const currentWeight = topicWeights[key] !== undefined ? topicWeights[key] : Math.floor(100 / selectedTopics.length);
                   return (
                     <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1fr 100px', gap: '10px', alignItems: 'center', fontSize: '12px' }}>
@@ -1533,19 +1557,19 @@ Return ONLY valid JSON. No markdown wrappers or extra commentary.`;
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 100px', gap: '10px', fontWeight: 'bold', fontSize: '12px', borderTop: '1px dashed var(--border-light)', paddingTop: '8px', marginTop: '5px' }}>
                   <span>Total Weightage</span>
                   <span style={{ textAlign: 'right', color: selectedTopics.reduce((acc, t) => {
-                    const raw = topicWeights[t.topicNumber];
+                    const raw = topicWeights[getTopicKey(t)];
                     const val = typeof raw === 'number' ? raw : (parseInt(String(raw), 10) || 0);
                     return acc + (raw !== undefined && raw !== '' ? val : Math.floor(100 / selectedTopics.length));
                   }, 0) === 100 ? 'var(--success)' : 'var(--danger)' }}>
                     {selectedTopics.reduce((acc, t) => {
-                      const raw = topicWeights[t.topicNumber];
+                      const raw = topicWeights[getTopicKey(t)];
                       const val = typeof raw === 'number' ? raw : (parseInt(String(raw), 10) || 0);
                       return acc + (raw !== undefined && raw !== '' ? val : Math.floor(100 / selectedTopics.length));
                     }, 0)}%
                   </span>
                 </div>
                 {selectedTopics.reduce((acc, t) => {
-                  const raw = topicWeights[t.topicNumber];
+                  const raw = topicWeights[getTopicKey(t)];
                   const val = typeof raw === 'number' ? raw : (parseInt(String(raw), 10) || 0);
                   return acc + (raw !== undefined && raw !== '' ? val : Math.floor(100 / selectedTopics.length));
                 }, 0) !== 100 && (
