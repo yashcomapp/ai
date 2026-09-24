@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole } from '@/lib/auth';
 import { getDateKeyIST as getISTDateString } from '@/lib/dateUtils';
-import { toPositiveNumber, safeNumber } from '@/lib/validationUtils';
+import { toPositiveNumber } from '@/lib/validationUtils';
+import { normalizeStudentFeeRecord } from '@/lib/feeUtils';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,117 +16,30 @@ async function syncStudentFees(studentCode: string) {
   if (!feeDoc.exists) return;
   const feeData = feeDoc.data()!;
 
-  // 1. Fetch all payment transactions for this student
   const txSnap = await adminDb.collection('feeTransactions')
     .where('studentCode', '==', studentCodeUpper)
     .get();
   const transactions = txSnap.docs.map(doc => doc.data());
 
-  // 2. Sum overall paid totals
-  const totalTxPaidAmount = transactions.reduce((sum, tx) => sum + safeNumber(tx.amountPaid), 0);
-  const netPayableAmount = safeNumber(feeData.netPayableAmount, safeNumber(feeData.totalPackageAmount, 0));
+  const normalized = normalizeStudentFeeRecord(feeData, transactions);
 
-  // 3. Map transaction payments by installmentId
-  const paymentsByInst: Record<string, number> = {};
-
-  transactions.forEach(tx => {
-    if (tx.installmentId) {
-      paymentsByInst[tx.installmentId] = (paymentsByInst[tx.installmentId] || 0) + safeNumber(tx.amountPaid);
-    }
-  });
-
-  // 4. Update individual installments status
-  const todayStr = getISTDateString();
-  const installments = Array.isArray(feeData.installments) ? feeData.installments : [];
-  let hasOverdueInstallment = false;
-  let nextInstallmentDueDate: string | null = null;
-
-  const updatedInstallments = installments.map((inst: any, idx: number) => {
-    const instId = inst.installmentId || `inst_${idx + 1}`;
-    const paidForInst = paymentsByInst[instId] || 0;
-    const targetAmount = safeNumber(inst.amount, 0);
-    
-    let status = inst.status || 'pending';
-    let paidAt = inst.paidAt || null;
-
-    if (paidForInst >= targetAmount && targetAmount > 0) {
-      status = 'paid';
-      paidAt = paidAt || new Date().toISOString();
-    } else if (inst.status === 'paid' || inst.statusOverride === 'paid') {
-      status = 'paid';
-      paidAt = paidAt || new Date().toISOString();
-    } else if (inst.status === 'overdue' || inst.statusOverride === 'overdue') {
-      status = 'overdue';
-      hasOverdueInstallment = true;
-    } else if (inst.status === 'pending' || inst.statusOverride === 'pending') {
-      status = 'pending';
-      if (!nextInstallmentDueDate || (inst.dueDate && inst.dueDate < nextInstallmentDueDate)) {
-        nextInstallmentDueDate = inst.dueDate;
-      }
-    } else {
-      // Unpaid or partially paid. Check if due date has passed
-      if (inst.dueDate && inst.dueDate < todayStr) {
-        status = 'overdue';
-        hasOverdueInstallment = true;
-      } else {
-        status = 'pending';
-      }
-      
-      // Track earliest next due date
-      if (!nextInstallmentDueDate || (inst.dueDate && inst.dueDate < nextInstallmentDueDate)) {
-        nextInstallmentDueDate = inst.dueDate;
-      }
-    }
-
-    if (status === 'overdue') {
-      hasOverdueInstallment = true;
-    }
-
-    return {
-      ...inst,
-      installmentId: instId,
-      installmentNo: idx + 1,
-      status,
-      paidAt
-    };
-  });
-
-  const directPaidSum = updatedInstallments
-    .filter((i: any) => i.status === 'paid')
-    .reduce((sum: number, i: any) => sum + safeNumber(i.amount, 0), 0);
-  const totalPaidAmount = Math.max(totalTxPaidAmount, directPaidSum);
-  const outstandingAmount = Math.max(0, netPayableAmount - totalPaidAmount);
-
-  // Determine overall status
-  let feeStatus = 'unpaid';
-  const allPaid = updatedInstallments.length > 0 && updatedInstallments.every((i: any) => i.status === 'paid');
-  if (netPayableAmount === 0) {
-    feeStatus = 'exempted';
-  } else if ((totalPaidAmount >= netPayableAmount && netPayableAmount > 0) || allPaid) {
-    feeStatus = 'fully_paid';
-  } else if (totalPaidAmount > 0 || updatedInstallments.some((i: any) => i.status === 'paid')) {
-    feeStatus = 'partially_paid';
-  }
-
-  // 5. Write synchronized results to studentFees document
   await feeRef.update({
-    totalPaidAmount,
-    outstandingAmount,
-    feeStatus,
-    hasOverdueInstallment,
-    nextInstallmentDueDate,
-    installments: updatedInstallments,
+    totalPaidAmount: normalized.totalPaidAmount,
+    outstandingAmount: normalized.outstandingAmount,
+    feeStatus: normalized.feeStatus,
+    hasOverdueInstallment: normalized.hasOverdueInstallment,
+    nextInstallmentDueDate: normalized.nextInstallmentDueDate,
+    installments: normalized.installments,
     updatedAt: new Date().toISOString()
   });
 
-  // 7. Also sync user profile feeStatus field for backward-compatibility
   const studentQuery = await adminDb.collection('users')
     .where('studentCode', '==', studentCodeUpper)
     .where('role', '==', 'student')
     .get();
   if (!studentQuery.empty) {
     await studentQuery.docs[0].ref.update({
-      feeStatus
+      feeStatus: normalized.feeStatus
     });
   }
 }

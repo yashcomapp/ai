@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole } from '@/lib/auth';
 import { getFromCache, setInCache } from '@/lib/firebase/cache';
+import { normalizeStudentFeeRecord } from '@/lib/feeUtils';
 
 export const dynamic = 'force-dynamic';
 
@@ -53,11 +54,13 @@ export async function GET(req: NextRequest) {
         .get()
     ]);
 
-    const feeRecord = feeDoc.exists ? feeDoc.data() : null;
+    const rawFeeData = feeDoc.exists ? feeDoc.data() : null;
     const transactions = txsSnap.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
     }));
+    
+    const feeRecord = rawFeeData ? normalizeStudentFeeRecord(rawFeeData, transactions) : null;
     
     // Sort transactions in-memory by timestamp desc
     transactions.sort((a: any, b: any) => {
