@@ -1187,6 +1187,75 @@ export function getRawOptionText(opt: any): string {
   return (opt && typeof opt === 'object') ? (opt.text || '') : String(opt);
 }
 
+/**
+ * Resolves the clean display text for an answer input given an options array.
+ * Prioritizes direct text/code matching before considering letter indices or fallbacks.
+ */
+export function resolveOptionDisplayText(options: any[], answerInput: any): string {
+  const list = parseAnswerList(answerInput);
+  if (list.length === 0) return '(blank)';
+  if (!Array.isArray(options) || options.length === 0) return list.join(', ');
+
+  const matchedTexts: string[] = [];
+  list.forEach(item => {
+    if (item === undefined || item === null || item === '') return;
+    const itemStr = String(item).trim();
+
+    // 1. First priority: Exact match against option text or option code
+    const exactOpt = options.find((o: any) => {
+      const optText = (o && typeof o === 'object') ? (o.text ?? o.value ?? o.label ?? '') : String(o ?? '');
+      const optCode = (o && typeof o === 'object') ? (o.code ?? '') : '';
+      return optText === itemStr || (optCode && optCode === itemStr);
+    });
+    if (exactOpt) {
+      const text = (exactOpt && typeof exactOpt === 'object') ? (exactOpt.text ?? exactOpt.value ?? itemStr) : String(exactOpt);
+      matchedTexts.push(text);
+      return;
+    }
+
+    // 2. Second priority: Math-aware normalized match
+    const cleanItem = cleanStringForMatch(stripOptionLabel(itemStr));
+    const normalizedOpt = options.find((o: any) => {
+      const optText = (o && typeof o === 'object') ? (o.text ?? o.value ?? o.label ?? '') : String(o ?? '');
+      return cleanItem && cleanStringForMatch(stripOptionLabel(optText)) === cleanItem;
+    });
+    if (normalizedOpt) {
+      const text = (normalizedOpt && typeof normalizedOpt === 'object') ? (normalizedOpt.text ?? normalizedOpt.value ?? itemStr) : String(normalizedOpt);
+      matchedTexts.push(text);
+      return;
+    }
+
+    // 3. Third priority: Explicit letter prefix like "Option A", "A.", "(B)"
+    const prefixMatch = itemStr.match(/^(?:option\s+)?\(?([A-Z])\)?[:.\-\s]?$/i);
+    if (prefixMatch) {
+      const letterIndex = prefixMatch[1].toUpperCase().charCodeAt(0) - 65;
+      if (letterIndex >= 0 && letterIndex < options.length) {
+        const opt = options[letterIndex];
+        const text = (opt && typeof opt === 'object') ? (opt.text ?? opt.value ?? itemStr) : String(opt);
+        matchedTexts.push(text);
+        return;
+      }
+    }
+
+    // 4. Fourth priority: Explicit option index like "option_0", "option_1"
+    const optionIndexMatch = itemStr.match(/^option_?([0-9]+)$/i);
+    if (optionIndexMatch) {
+      const idx = parseInt(optionIndexMatch[1], 10);
+      if (idx >= 0 && idx < options.length) {
+        const opt = options[idx];
+        const text = (opt && typeof opt === 'object') ? (opt.text ?? opt.value ?? itemStr) : String(opt);
+        matchedTexts.push(text);
+        return;
+      }
+    }
+
+    // Default fallback: return raw item string
+    matchedTexts.push(itemStr);
+  });
+
+  return matchedTexts.length > 0 ? matchedTexts.join(', ') : '(blank)';
+}
+
 export const BLOOM_TAXONOMY_MAP: Record<string, 'Remember' | 'Understand' | 'Apply' | 'Analyze' | 'Evaluate' | 'Create'> = {
   r: 'Remember', remember: 'Remember', Remember: 'Remember',
   u: 'Understand', understand: 'Understand', Understand: 'Understand',
@@ -1227,38 +1296,5 @@ export function normalizeBloomLevel(val: any, difficulty?: string, type?: string
 }
 
 export function formatUserAnswerSummary(options: any[], userAns: any): string {
-  const list = parseAnswerList(userAns);
-  if (list.length === 0) return '(blank)';
-  if (!options || !Array.isArray(options) || options.length === 0) return list.join(', ');
-
-  const matchedTexts: string[] = [];
-  list.forEach(item => {
-    let foundText = '';
-    if (item.length === 1 && item.toUpperCase() >= 'A' && item.toUpperCase() <= 'Z') {
-      const codeIndex = item.toUpperCase().charCodeAt(0) - 65;
-      if (codeIndex >= 0 && codeIndex < options.length) {
-        const optVal = options[codeIndex];
-        foundText = (optVal && typeof optVal === 'object') ? ((optVal as any).text || (optVal as any).code || item) : String(optVal);
-      }
-    }
-    if (!foundText && /^\d+$/.test(item)) {
-      const codeIndex = parseInt(item, 10);
-      if (codeIndex >= 0 && codeIndex < options.length) {
-        const optVal = options[codeIndex];
-        foundText = (optVal && typeof optVal === 'object') ? ((optVal as any).text || (optVal as any).code || item) : String(optVal);
-      }
-    }
-    if (!foundText) {
-      const opt = options.find((o: any) => {
-        if (o && typeof o === 'object') return o.code === item || o.text === item;
-        return String(o) === item;
-      });
-      if (opt) {
-        foundText = (opt && typeof opt === 'object') ? ((opt as any).text || (opt as any).code || item) : String(opt);
-      }
-    }
-    matchedTexts.push(foundText || item);
-  });
-
-  return matchedTexts.join(', ');
+  return resolveOptionDisplayText(options, userAns);
 }

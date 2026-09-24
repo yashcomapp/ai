@@ -5,7 +5,7 @@ import { MasteryService } from './mastery.service';
 import { IntegrityService } from './integrity.service';
 import { AttemptRepository } from '@/repositories/attempt.repository';
 import { ProctoringViolations, QuestionDetail, ExamAttempt } from '@/types/attempt.types';
-import { deriveTopicCodeFromQuestionCode, isMultipleChoiceType, parseAnswerList } from '@/lib/questionTypes';
+import { deriveTopicCodeFromQuestionCode, isMultipleChoiceType, parseAnswerList, resolveOptionDisplayText } from '@/lib/questionTypes';
 import { invalidateCache } from '@/lib/firebase/cache';
 
 export class AttemptService {
@@ -72,19 +72,8 @@ export class AttemptService {
     const questionDetails: QuestionDetail[] = [];
     const questionEvaluations: any[] = [];
 
-    const getOptionTextHelper = (q: any, code: string) => {
-      if (!q || !q.options || !Array.isArray(q.options)) return code;
-      let cleanCode = code;
-      try {
-        if (code.startsWith('[') && code.endsWith(']')) {
-          const parsed = JSON.parse(code);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            cleanCode = parsed[0];
-          }
-        }
-      } catch {}
-      const opt = q.options.find((o: any) => o.code === cleanCode || o.text === cleanCode);
-      return opt ? opt.text : code;
+    const getOptionTextHelper = (q: any, code: any) => {
+      return resolveOptionDisplayText(q?.options || [], code);
     };
 
     // 1. Evaluate answers using EvaluationService

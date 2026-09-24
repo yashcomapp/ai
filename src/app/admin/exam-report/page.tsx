@@ -5,7 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Script from 'next/script';
 import { useMathRender } from '@/hooks/useMathRender';
-import { preprocessMathText, parseAnswerList, isOptionSelectedByUser, isOptionCorrect, getQuestionCorrectAnswer, getRawOptionKey, getRawOptionText, isBlank } from '@/lib/questionTypes';
+import { preprocessMathText, parseAnswerList, isOptionSelectedByUser, isOptionCorrect, getQuestionCorrectAnswer, getRawOptionKey, getRawOptionText, isBlank, resolveOptionDisplayText } from '@/lib/questionTypes';
 import { playNotificationSound } from '@/lib/audioUtils';
 
 interface Attempt {
@@ -335,40 +335,7 @@ function ExamReportContent() {
 
   const getOptionText = (questionCode: string, ansInput: any) => {
     const q = questionsMap[questionCode];
-    const list = parseAnswerList(ansInput);
-    if (list.length === 0) return '(blank)';
-    if (!q || !q.options || !Array.isArray(q.options)) return list.join(', ');
-
-    const matchedTexts: string[] = [];
-    list.forEach(item => {
-      let foundText = '';
-      if (item.length === 1 && item.toUpperCase() >= 'A' && item.toUpperCase() <= 'Z') {
-        const codeIndex = item.toUpperCase().charCodeAt(0) - 65;
-        if (codeIndex >= 0 && codeIndex < q.options.length) {
-          const optVal = q.options[codeIndex];
-          foundText = (optVal && typeof optVal === 'object') ? ((optVal as any).text || (optVal as any).code || item) : String(optVal);
-        }
-      }
-      if (!foundText && /^\d+$/.test(item)) {
-        const codeIndex = parseInt(item, 10);
-        if (codeIndex >= 0 && codeIndex < q.options.length) {
-          const optVal = q.options[codeIndex];
-          foundText = (optVal && typeof optVal === 'object') ? ((optVal as any).text || (optVal as any).code || item) : String(optVal);
-        }
-      }
-      if (!foundText) {
-        const opt = q.options.find((o: any) => {
-          if (o && typeof o === 'object') return o.code === item || o.text === item;
-          return String(o) === item;
-        });
-        if (opt) {
-          foundText = (opt && typeof opt === 'object') ? ((opt as any).text || (opt as any).code || item) : String(opt);
-        }
-      }
-      matchedTexts.push(foundText || item);
-    });
-
-    return matchedTexts.join(', ');
+    return resolveOptionDisplayText(q?.options || [], ansInput);
   };
 
   const isDemo = (s: any) => {

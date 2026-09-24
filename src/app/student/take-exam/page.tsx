@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import { useAuth } from '@/context/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Script from 'next/script';
-import { stripOptionLabel, preprocessMathText, parseAnswerList, isOptionSelectedByUser, isOptionCorrect, getQuestionCorrectAnswer, getRawOptionKey, getRawOptionText, extractAssertionAndReason, isMultipleChoiceType, isSingleChoiceType, isTrueFalseType, isAssertionReasonType, isNumericalType, isFillBlanksType, isObjectiveType } from '@/lib/questionTypes';
+import { stripOptionLabel, preprocessMathText, parseAnswerList, isOptionSelectedByUser, isOptionCorrect, getQuestionCorrectAnswer, getRawOptionKey, getRawOptionText, extractAssertionAndReason, isMultipleChoiceType, isSingleChoiceType, isTrueFalseType, isAssertionReasonType, isNumericalType, isFillBlanksType, isObjectiveType, resolveOptionDisplayText } from '@/lib/questionTypes';
 import { useMathRender } from '@/hooks/useMathRender';
 import { db } from '@/lib/firebase/firestore';
 import { useExamTimer } from '@/hooks/useExamTimer';
@@ -413,43 +413,9 @@ function TakeExamContent() {
 
 
   const getOptionText = (questionText: string, ansInput: any) => {
-    const list = parseAnswerList(ansInput);
-    if (list.length === 0) return '(blank)';
-    if (!exam || !exam.questions) return list.join(', ');
-    const q = exam.questions.find((x: any) => x.text === questionText);
-    if (!q || !q.options || !Array.isArray(q.options)) return list.join(', ');
-
-    const opts: any[] = q.options;
-    const matchedTexts: string[] = [];
-    list.forEach(item => {
-      let foundText = '';
-      if (item.length === 1 && item.toUpperCase() >= 'A' && item.toUpperCase() <= 'Z') {
-        const codeIndex = item.toUpperCase().charCodeAt(0) - 65;
-        if (codeIndex >= 0 && codeIndex < opts.length) {
-          const optVal = opts[codeIndex];
-          foundText = (optVal && typeof optVal === 'object') ? (optVal.text || optVal.code || item) : String(optVal);
-        }
-      }
-      if (!foundText && /^\d+$/.test(item)) {
-        const codeIndex = parseInt(item, 10);
-        if (codeIndex >= 0 && codeIndex < opts.length) {
-          const optVal = opts[codeIndex];
-          foundText = (optVal && typeof optVal === 'object') ? (optVal.text || optVal.code || item) : String(optVal);
-        }
-      }
-      if (!foundText) {
-        const opt = opts.find((o: any) => {
-          if (o && typeof o === 'object') return o.code === item || o.text === item;
-          return String(o) === item;
-        });
-        if (opt) {
-          foundText = (opt && typeof opt === 'object') ? (opt.text || opt.code || item) : String(opt);
-        }
-      }
-      matchedTexts.push(foundText || item);
-    });
-
-    return matchedTexts.join(', ');
+    if (!exam || !exam.questions) return parseAnswerList(ansInput).join(', ');
+    const q = exam.questions.find((x: any) => x.text === questionText || x.questionCode === questionText);
+    return resolveOptionDisplayText(q?.options || [], ansInput);
   };
 
   // 1. Fetch exam configuration

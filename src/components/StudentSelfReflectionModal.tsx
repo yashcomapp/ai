@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useMathRender } from '@/hooks/useMathRender';
-import { preprocessMathText, parseAnswerList } from '@/lib/questionTypes';
+import { preprocessMathText, parseAnswerList, resolveOptionDisplayText } from '@/lib/questionTypes';
 
 interface StudentSelfReflectionModalProps {
   examId: string;
@@ -140,41 +140,7 @@ export default function StudentSelfReflectionModal({
   };
 
   const getOptionText = (qItem: any, ansVal: any) => {
-    const list = parseAnswerList(ansVal);
-    if (list.length === 0) return '(blank)';
-    const opts = qItem.options || [];
-    if (!Array.isArray(opts) || opts.length === 0) return list.join(', ');
-
-    const matchedTexts: string[] = [];
-    list.forEach(item => {
-      let foundText = '';
-      if (item.length === 1 && item.toUpperCase() >= 'A' && item.toUpperCase() <= 'Z') {
-        const codeIndex = item.toUpperCase().charCodeAt(0) - 65;
-        if (codeIndex >= 0 && codeIndex < opts.length) {
-          const optVal = opts[codeIndex];
-          foundText = (optVal && typeof optVal === 'object') ? (optVal.text || optVal.code || item) : String(optVal);
-        }
-      }
-      if (!foundText && /^\d+$/.test(item)) {
-        const codeIndex = parseInt(item, 10);
-        if (codeIndex >= 0 && codeIndex < opts.length) {
-          const optVal = opts[codeIndex];
-          foundText = (optVal && typeof optVal === 'object') ? (optVal.text || optVal.code || item) : String(optVal);
-        }
-      }
-      if (!foundText) {
-        const opt = opts.find((o: any) => {
-          if (o && typeof o === 'object') return o.code === item || o.text === item;
-          return String(o) === item;
-        });
-        if (opt) {
-          foundText = (opt && typeof opt === 'object') ? (opt.text || opt.code || item) : String(opt);
-        }
-      }
-      matchedTexts.push(foundText || item);
-    });
-
-    return matchedTexts.join(', ');
+    return resolveOptionDisplayText(qItem.options || [], ansVal);
   };
 
   return (
