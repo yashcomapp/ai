@@ -2,7 +2,7 @@ import { adminDb } from '@/lib/firebase/admin';
 import { deriveTopicCodeFromQuestionCode } from '@/lib/questionTypes';
 import { getDateKeyIST } from '@/lib/dateUtils';
 import { chunkArray } from '@/lib/firestoreUtils';
-import { calculateUnifiedMetrics } from '@/lib/dashboardMetrics';
+import { calculateUnifiedMetrics, extractConductedTopicCodes } from '@/lib/dashboardMetrics';
 import { calculateProctoringIntegrityScore } from '@/lib/proctoring';
 import { calculateSrsSchedule } from '@/lib/srsRotation';
 import { getRequiredConfidence } from '@/lib/studentDb';
@@ -561,35 +561,14 @@ export async function getParentDashboardData(
   });
 
   // 5. Compile line chart data showing exam marks & integrity over time
-  const conductedTopicCodes = new Set<string>();
-  masterySnapshot.docs.forEach(doc => {
-    const tc = doc.data().topicCode;
-    if (tc) conductedTopicCodes.add(tc);
-  });
-
-  classroomExamsSnap.docs.forEach((doc: any) => {
-    const d = doc.data();
-    if (d.topicCode) conductedTopicCodes.add(d.topicCode);
-    if (d.resolvedTopicCode) conductedTopicCodes.add(d.resolvedTopicCode);
-    (d.topicCodes || d.topics || []).forEach((tc: string) => conductedTopicCodes.add(tc));
-  });
-
-  homePracticeSnap.docs.forEach((doc: any) => {
-    const d = doc.data();
-    if (d.topicCode) conductedTopicCodes.add(d.topicCode);
-    if (d.resolvedTopicCode) conductedTopicCodes.add(d.resolvedTopicCode);
-    (d.topicCodes || d.topics || []).forEach((tc: string) => conductedTopicCodes.add(tc));
-  });
-
-  allAssignmentsList.forEach(doc => {
-    const d = doc.data();
-    if (d.topicCode) conductedTopicCodes.add(d.topicCode);
-    if (d.resolvedTopicCode) conductedTopicCodes.add(d.resolvedTopicCode);
-    (d.topicCodes || d.topics || []).forEach((tc: string) => conductedTopicCodes.add(tc));
-  });
-
-  objectiveTopicCodes.forEach(tc => {
-    if (tc) conductedTopicCodes.add(tc);
+  const conductedTopicCodes = extractConductedTopicCodes({
+    masteryList: masterySnapshot.docs.map(doc => doc.data()),
+    classroomExams: classroomExamsSnap.docs.map((d: any) => d.data()),
+    homePractice: homePracticeSnap.docs.map((d: any) => d.data()),
+    assignments: allAssignmentsList.map(d => d.data()),
+    objectiveExams: objectiveExamsMap,
+    practiceReviews: parentReviews,
+    objectiveReviews: examResults
   });
 
   const totalCoveredTopics = conductedTopicCodes.size > 0 ? conductedTopicCodes.size : (masterySnapshot.docs.length > 0 ? masterySnapshot.docs.length : 1);

@@ -29,6 +29,63 @@
  */
 
 import { calculateSrsSchedule } from '@/lib/srsRotation';
+import { deriveTopicCodeFromQuestionCode } from '@/lib/questionTypes';
+
+export interface ExtractConductedTopicCodesInput {
+  masteryList?: Array<{ topicCode?: string; [key: string]: any }>;
+  classroomExams?: Array<{ topicCode?: string; resolvedTopicCode?: string; topicCodes?: string[]; topics?: string[]; questionIds?: string[]; questionCodes?: string[]; [key: string]: any }>;
+  homePractice?: Array<{ topicCode?: string; resolvedTopicCode?: string; topicCodes?: string[]; topics?: string[]; questionIds?: string[]; questionCodes?: string[]; [key: string]: any }>;
+  assignments?: Array<{ topicCode?: string; resolvedTopicCode?: string; topicCodes?: string[]; topics?: string[]; [key: string]: any }>;
+  objectiveExams?: Array<{ topicCode?: string; resolvedTopicCode?: string; topicCodes?: string[]; topics?: string[]; questionCodes?: string[]; [key: string]: any }> | Map<string, any>;
+  practiceReviews?: Array<{ topicCode?: string; resolvedTopicCode?: string; [key: string]: any }>;
+  objectiveReviews?: Array<{ topicCode?: string; resolvedTopicCode?: string; [key: string]: any }>;
+}
+
+/**
+ * Single Source of Truth (SSOT) to aggregate all unique topics on which exams/tests
+ * have actually been conducted, assigned, practiced, or mastered so far.
+ */
+export function extractConductedTopicCodes(input: ExtractConductedTopicCodesInput): Set<string> {
+  const conducted = new Set<string>();
+
+  const addCode = (code?: string) => {
+    if (code && typeof code === 'string' && code.trim()) {
+      conducted.add(code.trim());
+    }
+  };
+
+  const processItem = (item: any) => {
+    if (!item) return;
+    addCode(item.topicCode);
+    addCode(item.resolvedTopicCode);
+    if (Array.isArray(item.topicCodes)) item.topicCodes.forEach(addCode);
+    if (Array.isArray(item.topics)) item.topics.forEach(addCode);
+    if (Array.isArray(item.questionCodes) && item.questionCodes.length > 0) {
+      addCode(deriveTopicCodeFromQuestionCode(item.questionCodes[0]));
+    }
+    if (Array.isArray(item.questionIds) && item.questionIds.length > 0) {
+      addCode(deriveTopicCodeFromQuestionCode(item.questionIds[0]));
+    }
+  };
+
+  (input.masteryList || []).forEach(processItem);
+  (input.classroomExams || []).forEach(processItem);
+  (input.homePractice || []).forEach(processItem);
+  (input.assignments || []).forEach(processItem);
+  
+  if (input.objectiveExams) {
+    if (input.objectiveExams instanceof Map) {
+      input.objectiveExams.forEach(processItem);
+    } else if (Array.isArray(input.objectiveExams)) {
+      input.objectiveExams.forEach(processItem);
+    }
+  }
+
+  (input.practiceReviews || []).forEach(processItem);
+  (input.objectiveReviews || []).forEach(processItem);
+
+  return conducted;
+}
 
 /**
  * ATTENTION - QUERY INTEGRITY CONTRACT:

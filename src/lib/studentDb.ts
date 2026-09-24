@@ -1,7 +1,7 @@
 import { adminDb } from '@/lib/firebase/admin';
 import { getCachedSyllabus, getFromCache, setInCache } from '@/lib/firebase/cache';
 import { getDateKeyIST } from '@/lib/dateUtils';
-import { calculateUnifiedMetrics } from '@/lib/dashboardMetrics';
+import { calculateUnifiedMetrics, extractConductedTopicCodes } from '@/lib/dashboardMetrics';
 import { deriveTopicCodeFromQuestionCode, getCanonicalSubjectName, parseTopicCode } from '@/lib/questionTypes';
 import { calculateSrsSchedule, SrsSchedule } from '@/lib/srsRotation';
 
@@ -370,39 +370,64 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
       }
     });
 
+    // 4. Process Objective Exams (Combine batch-wide & student-specific assignments)
+    const rawObjAssignments = [...batchAssignmentsSnapshot.docs, ...studentAssignmentsSnapshot.docs];
+    const objAssignmentsMap = new Map();
+    rawObjAssignments.forEach(doc => {
+      objAssignmentsMap.set(doc.id, { id: doc.id, ...doc.data() });
+    });
+
+    const activeObjAssignments = [];
+    const scheduledObjAssignments = [];
+
+    for (const assignment of objAssignmentsMap.values()) {
+      if (assignment.examType === 'subjective') continue;
+
+      const startAt = assignment.startAt?.toDate ? assignment.startAt.toDate() : new Date(assignment.startAt);
+      const endAt = assignment.endAt?.toDate ? assignment.endAt.toDate() : new Date(assignment.endAt);
+
+      if (now > endAt) continue; // Expired
+      if (now >= startAt) {
+        activeObjAssignments.push(assignment);
+      } else {
+        scheduledObjAssignments.push({ ...assignment, _startAt: startAt });
+      }
+    }
+
+    // Batch resolve all unique objective exam details for active/scheduled/completed assignments
+    const neededObjectiveIds = Array.from(new Set([
+      ...reviews.slice(0, 15).map((r: any) => r.examId || r.id).filter(Boolean),
+      ...activeObjAssignments.map(a => a.examId),
+      ...scheduledObjAssignments.map(a => a.examId),
+      ...Array.from(uniqueAssignments.values()).filter((a: any) => a.examType !== 'subjective').map((a: any) => a.examId)
+    ].filter(Boolean)));
+
+    const objExamsMap = new Map();
+    if (neededObjectiveIds.length > 0) {
+      const objRefs = neededObjectiveIds.map(id => adminDb.collection('exams').doc(id));
+      const objDocs = await adminDb.getAll(...objRefs).catch(() => []);
+      objDocs.forEach(doc => {
+        if (doc && doc.exists) {
+          objExamsMap.set(doc.id, doc.data());
+        }
+      });
+    }
+
     // Fetch subjective evaluations for this student
     const subjectiveEvaluationsList = evaluationsSnapshot.docs.map(doc => doc.data());
     const objectiveReviewsList = reviews.filter((r: any) => r.examType !== 'entrance');
     const topicMasteriesList = masterySnapshot.docs.map(doc => doc.data());
     const practiceReviewsList = parentReviewsSnapshot.docs.map(doc => doc.data());
 
-    // Calculate total unique topics on which tests/exams have been conducted/assigned
-    const conductedTopicCodes = new Set<string>();
-
-    masterySnapshot.docs.forEach(doc => {
-      const tc = doc.data().topicCode;
-      if (tc) conductedTopicCodes.add(tc);
-    });
-
-    classroomExamsSnap.docs.forEach((doc: any) => {
-      const d = doc.data();
-      if (d.topicCode) conductedTopicCodes.add(d.topicCode);
-      if (d.resolvedTopicCode) conductedTopicCodes.add(d.resolvedTopicCode);
-      (d.topicCodes || d.topics || []).forEach((tc: string) => conductedTopicCodes.add(tc));
-    });
-
-    homePracticeSnap.docs.forEach((doc: any) => {
-      const d = doc.data();
-      if (d.topicCode) conductedTopicCodes.add(d.topicCode);
-      if (d.resolvedTopicCode) conductedTopicCodes.add(d.resolvedTopicCode);
-      (d.topicCodes || d.topics || []).forEach((tc: string) => conductedTopicCodes.add(tc));
-    });
-
-    allAssignmentsList.forEach(doc => {
-      const d = doc.data();
-      if (d.topicCode) conductedTopicCodes.add(d.topicCode);
-      if (d.resolvedTopicCode) conductedTopicCodes.add(d.resolvedTopicCode);
-      (d.topicCodes || d.topics || []).forEach((tc: string) => conductedTopicCodes.add(tc));
+    // Calculate total unique topics on which tests/exams have been conducted/assigned via SSOT
+    const conductedTopicCodes = extractConductedTopicCodes({
+      masteryList: topicMasteriesList,
+      classroomExams: classroomExamsSnap.docs.map((d: any) => d.data()),
+      homePractice: homePracticeSnap.docs.map((d: any) => d.data()),
+      assignments: allAssignmentsList.map(d => d.data()),
+      objectiveExams: objExamsMap,
+      practiceReviews: practiceReviewsList,
+      objectiveReviews: objectiveReviewsList
     });
 
     const totalCoveredTopicsCount = conductedTopicCodes.size > 0 
@@ -438,7 +463,7 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
       batchIds: userData.batchIds || []
     };
 
-    // 4. Compile reviews and results summary (excluding entrance exams & practice sessions)
+    // 5. Compile reviews and results summary (excluding entrance exams & practice sessions)
     const completedObjective = objectiveReviewsList.filter((r: any) => 
       (r.percentage != null || r.score != null) && 
       r.examType !== 'entrance' && 
@@ -471,52 +496,11 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
       }).length
     };
 
-    // 5. Compile peer reviews
+    // 6. Compile peer reviews
     const peerReviewsCount = peerReviewsSnapshot.docs.length;
     const firstPeerReviewExamId = peerReviewsCount > 0 ? (peerReviewsSnapshot.docs[0].data()?.examId || null) : null;
 
-    // 6. Process Objective Exams (Combine batch-wide & student-specific assignments)
-    const rawObjAssignments = [...batchAssignmentsSnapshot.docs, ...studentAssignmentsSnapshot.docs];
-    const objAssignmentsMap = new Map();
-    rawObjAssignments.forEach(doc => {
-      objAssignmentsMap.set(doc.id, { id: doc.id, ...doc.data() });
-    });
-
-    const activeObjAssignments = [];
-    const scheduledObjAssignments = [];
-
-    for (const assignment of objAssignmentsMap.values()) {
-      if (assignment.examType === 'subjective') continue;
-
-      const startAt = assignment.startAt?.toDate ? assignment.startAt.toDate() : new Date(assignment.startAt);
-      const endAt = assignment.endAt?.toDate ? assignment.endAt.toDate() : new Date(assignment.endAt);
-
-      if (now > endAt) continue; // Expired
-      if (now >= startAt) {
-        activeObjAssignments.push(assignment);
-      } else {
-        scheduledObjAssignments.push({ ...assignment, _startAt: startAt });
-      }
-    }
-
-    // Batch resolve all unique objective exam details
-    const uniqueObjectiveIds = Array.from(new Set([
-      ...activeObjAssignments.map(a => a.examId),
-      ...scheduledObjAssignments.map(a => a.examId)
-    ]));
-
-    const objExamsMap = new Map();
-    if (uniqueObjectiveIds.length > 0) {
-      const objRefs = uniqueObjectiveIds.map(id => adminDb.collection('exams').doc(id));
-      const objDocs = await adminDb.getAll(...objRefs);
-      objDocs.forEach(doc => {
-        if (doc.exists) {
-          objExamsMap.set(doc.id, doc.data());
-        }
-      });
-    }
-
-    // Resolve details of active objective exams (if not already completed)
+    // 7. Resolve details of active objective exams (if not already completed)
     const pendingObjectiveExams = [];
     const scheduledObjectiveExams = [];
     const pendingEntranceExams = [];
