@@ -27,7 +27,7 @@ messaging.onBackgroundMessage((payload) => {
   const notificationOptions = {
     body: payload.data?.body || payload.notification?.body || '',
     badge: '/icons/badge-96.png?v=4',
-    color: '#1e3a8a',
+    color: '#d97b38',
     data: payload.data || {},
     actions: actions
   };
@@ -51,7 +51,7 @@ self.addEventListener('notificationclick', (event) => {
             return self.registration.showNotification('YASHCOM', {
               body: '✅ Practice review approved successfully!',
               badge: '/icons/badge-96.png?v=4',
-              color: '#1e3a8a'
+              color: '#d97b38'
             });
           }
         }).catch(err => {
