@@ -82,12 +82,13 @@ export function useLiveExam({
       if (now - startTimeRef.current < 8000) {
         return;
       }
-      // 2. Continuous departure check: if user is already away (e.g. active phone call), do NOT double-count
+      // 2. Continuous departure check: if user is already away (e.g. active phone call, system banner), do NOT double-count
       if (isCurrentlyAwayRef.current) {
         return;
       }
-      // 3. Coalescing cooldown: 10s cooldown from incident start, 5s cooldown from return stabilization
-      if (now - lastViolationTimeRef.current < 10000 || (lastReturnTimeRef.current > 0 && now - lastReturnTimeRef.current < 5000)) {
+      // 3. Coalescing cooldown: 15s cooldown from incident start, 12s cooldown from return stabilization
+      // Absorbs entire phone call lifecycles, dialer animations, and OS system prompts into a single violation incident
+      if (now - lastViolationTimeRef.current < 15000 || (lastReturnTimeRef.current > 0 && now - lastReturnTimeRef.current < 12000)) {
         return;
       }
 
@@ -118,6 +119,7 @@ export function useLiveExam({
     };
 
     const handleFocus = () => {
+      if (document.hidden) return; // Ignore fake focus bounces while page is still in background
       const now = Date.now();
       if (isCurrentlyAwayRef.current) {
         const awayMs = now - lastActiveRef.current;

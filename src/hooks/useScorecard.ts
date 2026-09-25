@@ -43,9 +43,9 @@ export function useScorecard() {
     setScorecard(null);
     try {
       const idToken = await firebaseUser.getIdToken();
-      let url = `/api/student/results?id=${id}`;
+      let url = `/api/student/results?id=${encodeURIComponent(id)}`;
       if (studentCode) {
-        url += `&studentCode=${studentCode}`;
+        url += `&studentCode=${encodeURIComponent(studentCode)}`;
       }
       const res = await fetch(url, {
         headers: {

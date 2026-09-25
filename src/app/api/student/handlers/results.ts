@@ -92,7 +92,25 @@ export async function GET(req: NextRequest) {
 
     if (id) {
       // 1. Fetch details of a single review submission (try reviews first, then parentReviews)
-      let reviewSnap = await adminDb.collection('reviews').doc(id).get();
+      let resolvedId = id;
+      let reviewSnap = await adminDb.collection('reviews').doc(resolvedId).get();
+      if (!reviewSnap.exists && id.includes(' ')) {
+        const altId = id.replace(/ /g, '+');
+        const altSnap = await adminDb.collection('reviews').doc(altId).get();
+        if (altSnap.exists) {
+          reviewSnap = altSnap;
+          resolvedId = altId;
+        }
+      }
+      if (!reviewSnap.exists && id.includes('+')) {
+        const altId = id.replace(/\+/g, ' ');
+        const altSnap = await adminDb.collection('reviews').doc(altId).get();
+        if (altSnap.exists) {
+          reviewSnap = altSnap;
+          resolvedId = altId;
+        }
+      }
+
       let reviewData: any = null;
       let isPractice = false;
       let evaluationsList: any[] = [];
@@ -102,13 +120,23 @@ export async function GET(req: NextRequest) {
       if (reviewSnap.exists) {
         reviewData = reviewSnap.data()!;
       } else {
-        const pSnap = await adminDb.collection('parentReviews').doc(id).get();
+        let pSnap = await adminDb.collection('parentReviews').doc(resolvedId).get();
+        if (!pSnap.exists && id.includes(' ')) {
+          const altId = id.replace(/ /g, '+');
+          const altSnap = await adminDb.collection('parentReviews').doc(altId).get();
+          if (altSnap.exists) pSnap = altSnap;
+        }
         if (pSnap.exists) {
           reviewData = pSnap.data()!;
           isPractice = true;
         } else {
           // Try loading from subjectiveAttempts!
-          const subSnap = await adminDb.collection('subjectiveAttempts').doc(id).get();
+          let subSnap = await adminDb.collection('subjectiveAttempts').doc(resolvedId).get();
+          if (!subSnap.exists && id.includes(' ')) {
+            const altId = id.replace(/ /g, '+');
+            const altSnap = await adminDb.collection('subjectiveAttempts').doc(altId).get();
+            if (altSnap.exists) subSnap = altSnap;
+          }
           if (subSnap.exists) {
             const subData = subSnap.data()!;
             isSubjective = true;
