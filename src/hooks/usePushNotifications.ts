@@ -31,9 +31,9 @@ export function usePushNotifications() {
     }
 
     try {
-      // 1. Register Service Worker
+      // 1. Register Service Worker with isolated FCM scope (prevents overwriting root /sw.js MediaPipe caching)
       const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {
-        scope: '/'
+        scope: '/firebase-cloud-messaging-push-scope'
       });
       // Force immediate check for updates on service worker file
       await registration.update().catch(() => {});
