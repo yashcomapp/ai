@@ -6,6 +6,8 @@ export interface FeeInstallment {
   installmentNo?: number;
   label?: string;
   amount: number;
+  paidAmount?: number;
+  remainingAmount?: number;
   dueDate: string;
   status: 'pending' | 'overdue' | 'paid';
   statusOverride?: 'pending' | 'overdue' | 'paid';
@@ -34,6 +36,7 @@ export interface StudentFeeRecord {
 /**
  * Single Source of Truth (SSOT) fee record normalization.
  * Dynamically computes installment overdue status based on current IST date.
+ * Features automatic FIFO waterfall allocation for unallocated payments and excess roll-forward.
  * Zero-cost in-memory evaluation on read and write.
  */
 export function normalizeStudentFeeRecord(
@@ -45,34 +48,78 @@ export function normalizeStudentFeeRecord(
   const todayStr = getDateKeyIST();
   const netPayableAmount = safeNumber(feeData.netPayableAmount, safeNumber(feeData.totalPackageAmount, 0));
 
-  // 1. Calculate transaction sums by installment
-  const paymentsByInst: Record<string, number> = {};
+  // 1. Separate transaction payments into specific installment payments and unallocated pool
+  const specificPayments: Record<string, number> = {};
   let totalTxPaidAmount = 0;
+  let unallocatedPool = 0;
 
   if (Array.isArray(transactions) && transactions.length > 0) {
     transactions.forEach(tx => {
       const amt = safeNumber(tx.amountPaid, 0);
       totalTxPaidAmount += amt;
-      if (tx.installmentId) {
-        paymentsByInst[tx.installmentId] = (paymentsByInst[tx.installmentId] || 0) + amt;
+      const instId = typeof tx.installmentId === 'string' ? tx.installmentId.trim() : '';
+      if (instId) {
+        specificPayments[instId] = (specificPayments[instId] || 0) + amt;
+      } else {
+        unallocatedPool += amt;
       }
     });
   }
 
+  // If base fee record has a higher totalPaidAmount than transactions ledger sum, treat difference as unallocated
+  const baseTotalPaid = safeNumber(feeData.totalPaidAmount, 0);
+  if (baseTotalPaid > totalTxPaidAmount) {
+    unallocatedPool += (baseTotalPaid - totalTxPaidAmount);
+    totalTxPaidAmount = baseTotalPaid;
+  }
+
   const rawInstallments = Array.isArray(feeData.installments) ? feeData.installments : [];
+
+  // Pass 1: Apply specific installment payments up to required amount; roll forward any excess into unallocatedPool
+  const allocatedByInst: Record<string, number> = {};
+
+  rawInstallments.forEach((inst: any, idx: number) => {
+    const instId = inst.installmentId || `inst_${idx + 1}`;
+    const targetAmount = safeNumber(inst.amount, 0);
+    const specificAmt = specificPayments[instId] || 0;
+
+    if (specificAmt > targetAmount) {
+      allocatedByInst[instId] = targetAmount;
+      unallocatedPool += (specificAmt - targetAmount); // Roll forward excess to unallocated pool
+    } else {
+      allocatedByInst[instId] = specificAmt;
+    }
+  });
+
+  // Pass 2: Waterfall / FIFO allocate the unallocatedPool to remaining unpaid installments
+  rawInstallments.forEach((inst: any, idx: number) => {
+    const instId = inst.installmentId || `inst_${idx + 1}`;
+    const targetAmount = safeNumber(inst.amount, 0);
+    const currentlyAllocated = allocatedByInst[instId] || 0;
+    const needed = Math.max(0, targetAmount - currentlyAllocated);
+
+    if (needed > 0 && unallocatedPool > 0) {
+      const allocateFromPool = Math.min(unallocatedPool, needed);
+      allocatedByInst[instId] = currentlyAllocated + allocateFromPool;
+      unallocatedPool -= allocateFromPool;
+    }
+  });
+
+  // Pass 3: Determine installment statuses, overdue flags, and next due date
   let hasOverdueInstallment = false;
   let nextInstallmentDueDate: string | null = null;
+  const isFullyPaidOverall = (totalTxPaidAmount >= netPayableAmount && netPayableAmount > 0) || (netPayableAmount === 0);
 
   const installments: FeeInstallment[] = rawInstallments.map((inst: any, idx: number) => {
     const instId = inst.installmentId || `inst_${idx + 1}`;
-    const paidForInst = paymentsByInst[instId] || 0;
+    const paidForInst = allocatedByInst[instId] || 0;
     const targetAmount = safeNumber(inst.amount, 0);
 
     let status: 'pending' | 'overdue' | 'paid' = 'pending';
     let paidAt = inst.paidAt || null;
 
-    // Check if fully paid
-    if (paidForInst >= targetAmount && targetAmount > 0) {
+    // Check if fully paid (either overall, covered by allocated amount, or explicit override)
+    if (isFullyPaidOverall || (paidForInst >= targetAmount && targetAmount > 0)) {
       status = 'paid';
       paidAt = paidAt || new Date().toISOString();
     } else if (inst.statusOverride === 'paid' || inst.status === 'paid') {
@@ -108,19 +155,17 @@ export function normalizeStudentFeeRecord(
       installmentId: instId,
       installmentNo: idx + 1,
       amount: targetAmount,
+      paidAmount: paidForInst,
+      remainingAmount: Math.max(0, targetAmount - paidForInst),
       dueDate: inst.dueDate || '',
       status,
       paidAt
     };
   });
 
-  const directPaidSum = installments
-    .filter(i => i.status === 'paid')
-    .reduce((sum, i) => sum + safeNumber(i.amount, 0), 0);
-
   const totalPaidAmount = Math.max(
     totalTxPaidAmount,
-    safeNumber(feeData.totalPaidAmount, directPaidSum)
+    safeNumber(feeData.totalPaidAmount, 0)
   );
   const outstandingAmount = Math.max(0, netPayableAmount - totalPaidAmount);
 
@@ -133,6 +178,11 @@ export function normalizeStudentFeeRecord(
     feeStatus = 'fully_paid';
   } else if (totalPaidAmount > 0 || installments.some(i => i.status === 'paid')) {
     feeStatus = 'partially_paid';
+  }
+
+  if (feeStatus === 'fully_paid' || feeStatus === 'exempted') {
+    hasOverdueInstallment = false;
+    nextInstallmentDueDate = null;
   }
 
   return {
