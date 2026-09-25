@@ -29,19 +29,36 @@ export async function GET(req: NextRequest) {
       return NextResponse.json(cached);
     }
 
-    const examSnap = await adminDb.collection('exams').doc(examId).get();
+    let resolvedExamId = examId;
+    let examSnap = await adminDb.collection('exams').doc(resolvedExamId).get();
+    if (!examSnap.exists && examId.includes(' ')) {
+      const altId = examId.replace(/ /g, '+');
+      const altSnap = await adminDb.collection('exams').doc(altId).get();
+      if (altSnap.exists) {
+        examSnap = altSnap;
+        resolvedExamId = altId;
+      }
+    }
+    if (!examSnap.exists && examId.includes('+')) {
+      const altId = examId.replace(/\+/g, ' ');
+      const altSnap = await adminDb.collection('exams').doc(altId).get();
+      if (altSnap.exists) {
+        examSnap = altSnap;
+        resolvedExamId = altId;
+      }
+    }
     if (!examSnap.exists) {
       return NextResponse.json({ message: 'Exam not found.' }, { status: 404 });
     }
 
     // Load reviews, assignments, students, batches, syllabus, and parent evaluations in parallel
     const [reviewsSnap, assignmentsSnap, studentsSnap, batchesSnap, syllabusList, evalSnaps] = await Promise.all([
-      adminDb.collection('reviews').where('examId', '==', examId).get(),
-      adminDb.collection('batchAssignments').where('examId', '==', examId).get(),
+      adminDb.collection('reviews').where('examId', '==', resolvedExamId).get(),
+      adminDb.collection('batchAssignments').where('examId', '==', resolvedExamId).get(),
       adminDb.collection('users').where('role', '==', 'student').select('studentCode', 'name', 'batchId', 'batchIds', 'autonomous', 'status', 'lastLoginAt', 'lastActiveAt').get(),
       adminDb.collection('batches').select('name').get(),
       getCachedSyllabus(),
-      adminDb.collection('evaluations').where('examId', '==', examId).get()
+      adminDb.collection('evaluations').where('examId', '==', resolvedExamId).get()
     ]);
 
     const evalApprovedMap = new Map<string, any>();
@@ -52,7 +69,7 @@ export async function GET(req: NextRequest) {
       const info = { ...d, evalDate };
       if (d.attemptId) evalApprovedMap.set(d.attemptId, info);
       if (d.legacyId) evalApprovedMap.set(d.legacyId, info);
-      if (d.studentCode) evalApprovedMap.set(`${examId}_${d.studentCode}`, info);
+      if (d.studentCode) evalApprovedMap.set(`${resolvedExamId}_${d.studentCode}`, info);
     });
 
     const examData = examSnap.data() || {};
@@ -286,7 +303,7 @@ export async function POST(req: NextRequest) {
       const qOptions = questionData.options || [];
 
       // 2. Fetch all reviews for this exam to re-score
-      const reviewsSnap = await adminDb.collection('reviews').where('examId', '==', examId).get();
+      const reviewsSnap = await adminDb.collection('reviews').where('examId', '==', resolvedExamId).get();
       const examSnap = await adminDb.collection('exams').doc(examId).get();
       const examData = examSnap.exists ? examSnap.data()! : {};
       const negativePerWrong = Number(examData.negativeMarks) || 0;

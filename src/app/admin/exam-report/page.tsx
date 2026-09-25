@@ -141,7 +141,7 @@ function ExamReportContent() {
   const [reassignEndAtStr, setReassignEndAtStr] = useState('');
   const [reassignAttemptLimit, setReassignAttemptLimit] = useState(1);
   const [reassignDuration, setReassignDuration] = useState(30);
-  const [reassignLateEntryRestriction, setReassignLateEntryRestriction] = useState(true);
+  const [reassignLateEntryRestriction, setReassignLateEntryRestriction] = useState(false);
   const [reassignPresetSlot, setReassignPresetSlot] = useState<'6am' | '9pm' | null>(null);
   const [reassigning, setReassigning] = useState(false);
 
@@ -248,7 +248,7 @@ function ExamReportContent() {
     setLoading(true);
     try {
       const idToken = await firebaseUser.getIdToken();
-      const res = await fetch(`/api/admin/exams/objective?examId=${examId}`, {
+      const res = await fetch(`/api/admin/exams/objective?examId=${encodeURIComponent(examId)}`, {
         headers: {
           'Authorization': `Bearer ${idToken}`
         }

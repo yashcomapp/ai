@@ -90,33 +90,48 @@ export default function ParentReviewPanel() {
   const captureVerificationSnapshot = async (): Promise<string | null> => {
     try {
       if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
-        throw new Error('Camera and microphone hardware is not supported or accessible on this device.');
+        throw new Error('Camera hardware is not accessible on this device.');
       }
+      // Fast single-track video capture without blocking audio hardware initialization
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { width: { ideal: 480 }, height: { ideal: 360 }, facingMode: 'user' },
-        audio: true
+        video: { width: { ideal: 320, max: 480 }, height: { ideal: 240, max: 360 }, facingMode: 'user' },
+        audio: false
       });
       const video = document.createElement('video');
       video.playsInline = true;
       video.muted = true;
       video.srcObject = stream;
-      await video.play();
 
-      await new Promise(res => setTimeout(res, 500));
+      await new Promise<void>((resolve) => {
+        let resolved = false;
+        const done = () => {
+          if (!resolved) {
+            resolved = true;
+            resolve();
+          }
+        };
+        video.onloadeddata = () => done();
+        video.play().then(() => {
+          setTimeout(done, 150);
+        }).catch(done);
+        setTimeout(done, 1500); // safety fallback
+      });
 
       const canvas = document.createElement('canvas');
-      canvas.width = 480;
-      canvas.height = 360;
+      canvas.width = 320;
+      canvas.height = 240;
       const ctx = canvas.getContext('2d');
       if (ctx) {
-        ctx.drawImage(video, 0, 0, 480, 360);
+        ctx.drawImage(video, 0, 0, 320, 240);
       }
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
-      stream.getTracks().forEach(t => t.stop());
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.65);
+      stream.getTracks().forEach(t => {
+        try { t.stop(); } catch (e) {}
+      });
       return dataUrl;
     } catch (e: any) {
-      console.error('Camera/Mic verification failed:', e);
-      throw new Error(e.message || 'Camera and microphone access is required.');
+      console.error('Camera verification snapshot failed:', e);
+      throw new Error(e.message || 'Camera access is required for parent verification.');
     }
   };
 
@@ -135,7 +150,7 @@ export default function ParentReviewPanel() {
             }
           } catch (camErr: any) {
             setCapturingSnapshot(false);
-            alert('⚠️ Camera & Microphone access is MANDATORY for Parent Exam Review Verification.\n\nPlease allow camera and microphone permissions in your browser settings to verify this review.');
+            alert('⚠️ Camera access is required for Parent Exam Review Verification.\n\nPlease allow camera permission in your browser to verify this review.');
             return;
           }
           setCapturingSnapshot(false);

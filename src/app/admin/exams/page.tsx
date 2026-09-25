@@ -767,7 +767,7 @@ export default function AdminExamsPage() {
       startAtStr: '',
       endAtStr: '',
       attemptLimit: 1,
-      lateEntryRestriction: true,
+      lateEntryRestriction: false,
       examDuration: 30,
       examMode: exam.mode === 'classroom' ? 'classroom' : 'home',
       classroomDuration: 60,
@@ -1580,7 +1580,7 @@ export default function AdminExamsPage() {
                                                                  <button className="btn btn-primary" style={{ padding: '4px 10px', fontSize: '11px' }} onClick={() => handleOpenAssign(exam, 'objective')}>
                                                                    📋 Assign Again
                                                                  </button>
-                                                                 <button className="btn btn-secondary" style={{ padding: '4px 10px', fontSize: '11px' }} onClick={() => router.push(`/admin/exam-report?examId=${exam.id}`)}>
+                                                                 <button className="btn btn-secondary" style={{ padding: '4px 10px', fontSize: '11px' }} onClick={() => router.push(`/admin/exam-report?examId=${encodeURIComponent(exam.id)}`)}>
                                                                    📊 Report
                                                                  </button>
                                                                  <button 

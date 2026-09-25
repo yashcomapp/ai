@@ -103,13 +103,29 @@ export async function GET(req: NextRequest) {
       return NextResponse.json(cached);
     }
 
-    const examSnap = await adminDb.collection('subjectiveExams').doc(examId).get();
+    let resolvedExamId = examId;
+    let examSnap = await adminDb.collection('subjectiveExams').doc(resolvedExamId).get();
+    if (!examSnap.exists && examId.includes(' ')) {
+      const altId = examId.replace(/ /g, '+');
+      const altSnap = await adminDb.collection('subjectiveExams').doc(altId).get();
+      if (altSnap.exists) {
+        examSnap = altSnap;
+        resolvedExamId = altId;
+      }
+    }
+    if (!examSnap.exists && examId.includes('+')) {
+      const altId = examId.replace(/\+/g, ' ');
+      const altSnap = await adminDb.collection('subjectiveExams').doc(altId).get();
+      if (altSnap.exists) {
+        examSnap = altSnap;
+        resolvedExamId = altId;
+      }
+    }
     if (!examSnap.exists) {
       return NextResponse.json({ message: 'Exam not found.' }, { status: 404 });
     }
 
-    const attemptsSnap = await adminDb.collection('subjectiveAttempts')
-      .where('examId', '==', examId)
+    const attemptsSnap = await adminDb.collection('subjectiveAttempts').where('examId', '==', resolvedExamId)
       .where('status', 'in', ['completed', 'parent_reviewed', 'peer_reviewed', 'approved', 'peer_review_pending'])
       .get();
 
