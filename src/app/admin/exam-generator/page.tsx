@@ -718,7 +718,8 @@ export default function AdminExamGeneratorPage() {
       if (!normalizedTypeCounts) {
         // Flexible Pool Mode: Fill up each topic's target quota from available questions in that topic
         selectedTopics.forEach(t => {
-          const targetForTopic = topicQuestionTargets[getTopicKey(t)] || 0;
+          const tKey = getTopicKey(t);
+          const targetForTopic = topicQuestionTargets[tKey] || 0;
           if (targetForTopic <= 0) return;
 
           const easyTarget = Math.round((effectiveDifficulty.easy / 100) * targetForTopic);
@@ -767,13 +768,13 @@ export default function AdminExamGeneratorPage() {
           // 3. If still short of topic target, record shortfall
           if (pickedForTopic < targetForTopic) {
             const shortfallCount = targetForTopic - pickedForTopic;
-            const matchIdx = selectedTopics.findIndex(tp => tp.topicNumber === t.topicNumber);
+            const matchIdx = selectedTopics.findIndex(tp => getTopicKey(tp) === tKey);
             shortfallReqs.push({
               type: questionType === 'subjective' ? 'SSA' : 'OSC',
               difficulty: 'medium',
               count: shortfallCount,
               contextId: 'CTX-' + String(matchIdx + 1).padStart(3, '0'),
-              topicName: t.topic
+              topicName: t.topic || t.topicName || t.topicNumber
             });
           }
         });
@@ -798,7 +799,8 @@ export default function AdminExamGeneratorPage() {
           const topicCounts = distributeCountsByWeight(req.count);
 
           selectedTopics.forEach(t => {
-            const targetForTopicAndType = topicCounts[t.topicNumber] || 0;
+            const tKey = getTopicKey(t);
+            const targetForTopicAndType = topicCounts[tKey] || topicCounts[t.topicNumber] || topicCounts[t.topicCode] || 0;
             if (targetForTopicAndType <= 0) return;
 
             // 1. Exact match (type + difficulty + topic)
@@ -814,7 +816,7 @@ export default function AdminExamGeneratorPage() {
             picked.forEach(q => {
               usedCodes.add(q.questionCode || q.id || '');
               selected.push(q);
-              topicPickedCounts[t.topicNumber] = (topicPickedCounts[t.topicNumber] || 0) + 1;
+              topicPickedCounts[tKey] = (topicPickedCounts[tKey] || 0) + 1;
             });
 
             let stillNeeded = targetForTopicAndType - picked.length;
@@ -831,7 +833,7 @@ export default function AdminExamGeneratorPage() {
               relaxed.forEach(q => {
                 usedCodes.add(q.questionCode || q.id || '');
                 selected.push(q);
-                topicPickedCounts[t.topicNumber] = (topicPickedCounts[t.topicNumber] || 0) + 1;
+                topicPickedCounts[tKey] = (topicPickedCounts[tKey] || 0) + 1;
               });
               stillNeeded -= relaxed.length;
             }
@@ -847,24 +849,59 @@ export default function AdminExamGeneratorPage() {
               otherTypes.forEach(q => {
                 usedCodes.add(q.questionCode || q.id || '');
                 selected.push(q);
-                topicPickedCounts[t.topicNumber] = (topicPickedCounts[t.topicNumber] || 0) + 1;
+                topicPickedCounts[tKey] = (topicPickedCounts[tKey] || 0) + 1;
               });
               stillNeeded -= otherTypes.length;
             }
 
             // 4. True shortfall if the topic itself has run out of candidate questions
             if (stillNeeded > 0) {
-              const matchIdx = selectedTopics.findIndex(tp => tp.topicNumber === t.topicNumber);
+              const matchIdx = selectedTopics.findIndex(tp => getTopicKey(tp) === tKey);
               shortfallReqs.push({
                 type: req.type,
                 difficulty: req.difficulty,
                 count: stillNeeded,
                 contextId: 'CTX-' + String(matchIdx + 1).padStart(3, '0'),
-                topicName: t.topic
+                topicName: t.topic || t.topicName || t.topicNumber
               });
             }
           });
         });
+
+        // 5. Global Topic Guarantee: If any topic is below its proportional target from topicQuestionTargets, fill it
+        selectedTopics.forEach(t => {
+          const tKey = getTopicKey(t);
+          const targetForTopic = topicQuestionTargets[tKey] || 0;
+          const currentPicked = topicPickedCounts[tKey] || 0;
+          if (currentPicked < targetForTopic && selected.length < effectiveTotalQs) {
+            const neededForTopic = Math.min(targetForTopic - currentPicked, effectiveTotalQs - selected.length);
+            const remaining = pool.filter(q =>
+              isQuestionMatchingTopic(q, t) &&
+              !usedCodes.has(q.questionCode || q.id || '') &&
+              !selected.some(sel => areQuestionsTooSimilar(q, sel))
+            ).slice(0, neededForTopic);
+
+            remaining.forEach(q => {
+              usedCodes.add(q.questionCode || q.id || '');
+              selected.push(q);
+              topicPickedCounts[tKey] = (topicPickedCounts[tKey] || 0) + 1;
+            });
+          }
+        });
+
+        // 6. Global Exam Guarantee: If total selected questions < effectiveTotalQs, fill remaining slots from ANY matching unused candidate questions in the pool
+        if (selected.length < effectiveTotalQs) {
+          const remainingPool = pool.filter(q =>
+            selectedTopics.some(t => isQuestionMatchingTopic(q, t)) &&
+            !usedCodes.has(q.questionCode || q.id || '') &&
+            !selected.some(sel => areQuestionsTooSimilar(q, sel))
+          ).slice(0, effectiveTotalQs - selected.length);
+
+          remainingPool.forEach(q => {
+            usedCodes.add(q.questionCode || q.id || '');
+            selected.push(q);
+          });
+        }
       }
 
       setGeneratedQuestions(selected);
