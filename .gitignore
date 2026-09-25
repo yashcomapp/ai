@@ -14,6 +14,7 @@ build/
 *.json
 !package.json
 !tsconfig.json
+!public/manifest.json
 *.tsbuildinfo
 
 .vercel
