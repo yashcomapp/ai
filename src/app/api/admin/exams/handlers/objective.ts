@@ -9,6 +9,71 @@ import { ReportCacheManager } from '@/lib/reportCache';
 import { isDemoUser } from '@/lib/studentDb';
 export const dynamic = 'force-dynamic';
 
+async function resolveObjectiveExam(inputExamId: string) {
+  let snap = await adminDb.collection('exams').doc(inputExamId).get();
+  if (snap.exists) return { snap, examId: snap.id };
+
+  const decoded = decodeURIComponent(inputExamId);
+  const candidates = new Set<string>([
+    decoded,
+    inputExamId.replace(/ /g, '+'),
+    inputExamId.replace(/\+/g, ' '),
+    decoded.replace(/ /g, '+'),
+    decoded.replace(/\+/g, ' ')
+  ]);
+
+  for (const cand of candidates) {
+    if (cand && cand !== inputExamId) {
+      snap = await adminDb.collection('exams').doc(cand).get();
+      if (snap.exists) return { snap, examId: snap.id };
+    }
+  }
+
+  const clean = (s: string) => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  const targetClean = clean(decoded);
+
+  const allExamsSnap = await adminDb.collection('exams').get();
+  let bestCandidate: { snap: admin.firestore.QueryDocumentSnapshot<admin.firestore.DocumentData>; examId: string } | null = null;
+  let highestScore = 0;
+
+  for (const doc of allExamsSnap.docs) {
+    const data = doc.data();
+    let score = 0;
+
+    if (doc.id === inputExamId || doc.id === decoded || data.id === inputExamId || data.examId === inputExamId) {
+      score = 1000;
+    } else if (clean(doc.id) === targetClean) {
+      score = 900;
+    } else if (clean(data.title || data.name || '') === targetClean) {
+      score = 850;
+    } else {
+      const docClean = clean(doc.id);
+      if (targetClean.length > 10 && docClean.length > 10) {
+        let matchingChars = 0;
+        const minLen = Math.min(targetClean.length, docClean.length);
+        for (let i = 0; i < minLen; i++) {
+          if (targetClean[i] === docClean[i]) matchingChars++;
+        }
+        const similarity = matchingChars / Math.max(targetClean.length, docClean.length);
+        if (similarity > 0.6) {
+          score = Math.round(similarity * 800);
+        }
+      }
+    }
+
+    if (score > highestScore) {
+      highestScore = score;
+      bestCandidate = { snap: doc, examId: doc.id };
+    }
+  }
+
+  if (bestCandidate && highestScore >= 500) {
+    return bestCandidate;
+  }
+
+  return { snap, examId: inputExamId };
+}
+
 export async function GET(req: NextRequest) {
   try {
     const adminUser = await verifyRole(req, 'admin');
@@ -23,32 +88,15 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ message: 'Missing parameters (examId).' }, { status: 400 });
     }
 
-    const cacheKey = `exam-report-objective-${examId}`;
+    const { snap: examSnap, examId: resolvedExamId } = await resolveObjectiveExam(examId);
+    if (!examSnap || !examSnap.exists) {
+      return NextResponse.json({ message: 'Exam not found.' }, { status: 404 });
+    }
+
+    const cacheKey = `exam-report-objective-${resolvedExamId}`;
     const cached = await ReportCacheManager.getReport(cacheKey);
     if (cached) {
       return NextResponse.json(cached);
-    }
-
-    let resolvedExamId = examId;
-    let examSnap = await adminDb.collection('exams').doc(resolvedExamId).get();
-    if (!examSnap.exists && examId.includes(' ')) {
-      const altId = examId.replace(/ /g, '+');
-      const altSnap = await adminDb.collection('exams').doc(altId).get();
-      if (altSnap.exists) {
-        examSnap = altSnap;
-        resolvedExamId = altId;
-      }
-    }
-    if (!examSnap.exists && examId.includes('+')) {
-      const altId = examId.replace(/\+/g, ' ');
-      const altSnap = await adminDb.collection('exams').doc(altId).get();
-      if (altSnap.exists) {
-        examSnap = altSnap;
-        resolvedExamId = altId;
-      }
-    }
-    if (!examSnap.exists) {
-      return NextResponse.json({ message: 'Exam not found.' }, { status: 404 });
     }
 
     // Load reviews, assignments, students, batches, syllabus, and parent evaluations in parallel
@@ -271,9 +319,10 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { action, examId, questionId, newCorrectAnswer, attemptId, updates } = body;
 
-    const resolvedExamId = examId || (attemptId ? (await adminDb.collection('reviews').doc(attemptId).get().then(s => s.data()?.examId).catch(() => null)) : null);
-    if (resolvedExamId) {
-      await ReportCacheManager.invalidateReport(`exam-report-objective-${resolvedExamId}`);
+    const { examId: resolvedExamId } = examId ? await resolveObjectiveExam(examId) : { examId: null };
+    const finalExamId = resolvedExamId || (attemptId ? (await adminDb.collection('reviews').doc(attemptId).get().then(s => s.data()?.examId).catch(() => null)) : null);
+    if (finalExamId) {
+      await ReportCacheManager.invalidateReport(`exam-report-objective-${finalExamId}`);
     }
 
     if (action === 'rescore') {
@@ -303,9 +352,9 @@ export async function POST(req: NextRequest) {
       const qOptions = questionData.options || [];
 
       // 2. Fetch all reviews for this exam to re-score
-      const reviewsSnap = await adminDb.collection('reviews').where('examId', '==', resolvedExamId).get();
-      const examSnap = await adminDb.collection('exams').doc(examId).get();
-      const examData = examSnap.exists ? examSnap.data()! : {};
+      const reviewsSnap = await adminDb.collection('reviews').where('examId', '==', finalExamId).get();
+      const { snap: examSnap } = await resolveObjectiveExam(finalExamId || examId);
+      const examData = examSnap && examSnap.exists ? examSnap.data()! : {};
       const negativePerWrong = Number(examData.negativeMarks) || 0;
 
       const batch = new ChunkedBatch(adminDb);
