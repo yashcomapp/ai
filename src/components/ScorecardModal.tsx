@@ -123,7 +123,7 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
               📊 {scorecard?.examType === 'practice' ? 'Practice Review Scorecard' : 'Exam Review Scorecard'}
             </h4>
             {scorecard?.examType === 'practice' && scorecard?.practiceNumber && (
-              <span style={{ background: 'var(--accent)', color: '#fff', fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '12px' }}>
+              <span style={{ background: 'var(--accent)', color: 'var(--text-on-accent)', fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '12px' }}>
                 Practice #{scorecard.practiceNumber}
               </span>
             )}

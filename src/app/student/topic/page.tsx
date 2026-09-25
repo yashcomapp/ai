@@ -1107,7 +1107,7 @@ function TopicPracticeContent() {
           
           {/* Header Badge with Practice Number and IST Date/Time */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginBottom: '16px', borderBottom: '1px solid var(--border-light)', paddingBottom: '12px' }}>
-            <span style={{ background: 'var(--accent)', color: '#fff', fontSize: '12px', fontWeight: 800, padding: '4px 10px', borderRadius: '14px' }}>
+            <span style={{ background: 'var(--accent)', color: 'var(--text-on-accent)', fontSize: '12px', fontWeight: 800, padding: '4px 10px', borderRadius: '14px' }}>
               📚 Practice Set #{practiceNum}
             </span>
             <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600 }}>

@@ -1291,7 +1291,7 @@ Return ONLY valid JSON. No markdown wrappers or extra commentary.`;
             <div style={{ background: 'var(--bg-soft)', padding: '6px 12px', borderRadius: 'var(--radius-sm)', fontSize: '11px', borderLeft: '3px solid var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
               <span>📋 <strong>Template parameters:</strong> {selectedTemplateId === 'custom_blueprint' ? customTotalQs : selectedTemplateId === 'custom_subjective' ? customSubjTotalQs : currentTemplate.totalQuestions} Questions • {selectedTemplateId === 'custom_blueprint' ? customDuration : selectedTemplateId === 'custom_subjective' ? customSubjDuration : currentTemplate.duration} mins • +{selectedTemplateId === 'custom_blueprint' ? customPositiveMarks : selectedTemplateId === 'custom_subjective' ? customSubjPositiveMarks : currentTemplate.positiveMarks} / -{selectedTemplateId === 'custom_blueprint' ? customNegativeMarks : selectedTemplateId === 'custom_subjective' ? 0 : currentTemplate.negativeMarks} Marks</span>
               {selectedTemplateId === 'custom_blueprint' && (
-                <span className="badge" style={{ background: 'rgba(59, 130, 246, 0.15)', color: '#60a5fa', border: '1px solid rgba(59, 130, 246, 0.3)', padding: '2px 8px', borderRadius: '12px', fontSize: '10px', fontWeight: 700 }}>
+                <span className="badge" style={{ background: 'var(--accent-soft)', color: 'var(--accent)', border: '1px solid var(--accent-ring)', padding: '2px 8px', borderRadius: '12px', fontSize: '10px', fontWeight: 700 }}>
                   ⚙️ Custom Mode: {customPoolMode === 'flexible' ? 'Flexible (All Available Types)' : 'Exact Type Counts'}
                 </span>
               )}
@@ -1343,7 +1343,7 @@ Return ONLY valid JSON. No markdown wrappers or extra commentary.`;
                         key={cnt}
                         type="button"
                         onClick={() => setCustomTotalQs(cnt)}
-                        style={{ fontSize: '9px', padding: '1px 5px', borderRadius: '4px', border: '1px solid var(--border-light)', background: customTotalQs === cnt ? 'var(--accent)' : 'var(--surface)', color: customTotalQs === cnt ? '#fff' : 'var(--text-muted)', cursor: 'pointer' }}
+                        style={{ fontSize: '9px', padding: '1px 5px', borderRadius: '4px', border: '1px solid var(--border-light)', background: customTotalQs === cnt ? 'var(--accent)' : 'var(--surface)', color: customTotalQs === cnt ? 'var(--text-on-accent)' : 'var(--text-muted)', cursor: 'pointer' }}
                       >
                         {cnt}
                       </button>
@@ -1367,7 +1367,7 @@ Return ONLY valid JSON. No markdown wrappers or extra commentary.`;
                         key={dur}
                         type="button"
                         onClick={() => setCustomDuration(dur)}
-                        style={{ fontSize: '9px', padding: '1px 5px', borderRadius: '4px', border: '1px solid var(--border-light)', background: customDuration === dur ? 'var(--accent)' : 'var(--surface)', color: customDuration === dur ? '#fff' : 'var(--text-muted)', cursor: 'pointer' }}
+                        style={{ fontSize: '9px', padding: '1px 5px', borderRadius: '4px', border: '1px solid var(--border-light)', background: customDuration === dur ? 'var(--accent)' : 'var(--surface)', color: customDuration === dur ? 'var(--text-on-accent)' : 'var(--text-muted)', cursor: 'pointer' }}
                       >
                         {dur}m
                       </button>
@@ -1490,7 +1490,7 @@ Return ONLY valid JSON. No markdown wrappers or extra commentary.`;
                         key={cnt}
                         type="button"
                         onClick={() => setCustomSubjTotalQs(cnt)}
-                        style={{ fontSize: '9px', padding: '1px 5px', borderRadius: '4px', border: '1px solid var(--border-light)', background: customSubjTotalQs === cnt ? 'var(--accent)' : 'var(--surface)', color: customSubjTotalQs === cnt ? '#fff' : 'var(--text-muted)', cursor: 'pointer' }}
+                        style={{ fontSize: '9px', padding: '1px 5px', borderRadius: '4px', border: '1px solid var(--border-light)', background: customSubjTotalQs === cnt ? 'var(--accent)' : 'var(--surface)', color: customSubjTotalQs === cnt ? 'var(--text-on-accent)' : 'var(--text-muted)', cursor: 'pointer' }}
                       >
                         {cnt}
                       </button>
