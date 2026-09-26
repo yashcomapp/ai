@@ -643,8 +643,29 @@ function AdminFeesContent() {
 
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', padding: '24px 12px' }}>
-      <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
         
+        {/* Back to Dashboard Link on Top */}
+        <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+          <button 
+            onClick={() => router.push('/admin')} 
+            style={{
+              background: 'none',
+              border: 'none',
+              color: 'var(--accent)',
+              cursor: 'pointer',
+              fontSize: '13px',
+              fontWeight: 600,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              padding: 0
+            }}
+          >
+            ← Back to Dashboard
+          </button>
+        </div>
+
         {/* Header Block */}
         <div className="card glass" style={{ padding: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
           <div>

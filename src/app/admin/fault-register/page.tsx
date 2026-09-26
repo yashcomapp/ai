@@ -232,6 +232,27 @@ export default function AdminFaultRegisterPage() {
     <div style={{ background: 'var(--bg)', minHeight: '100vh', padding: '16px 12px' }}>
       <div style={{ maxWidth: '1440px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '14px' }}>
         
+        {/* Back to Dashboard Link on Top */}
+        <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+          <button 
+            onClick={() => router.push('/admin')} 
+            style={{
+              background: 'none',
+              border: 'none',
+              color: 'var(--accent)',
+              cursor: 'pointer',
+              fontSize: '13px',
+              fontWeight: 600,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              padding: 0
+            }}
+          >
+            ← Back to Dashboard
+          </button>
+        </div>
+
         {/* Header Bar */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', background: 'var(--surface)', padding: '14px 18px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)' }}>
           <div>

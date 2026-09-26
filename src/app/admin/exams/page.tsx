@@ -1196,6 +1196,27 @@ export default function AdminExamsPage() {
 
       {/* Tabs Container */}
       <main style={{ flex: 1, padding: '24px 12px', maxWidth: '1100px', width: '100%', margin: '0 auto' }}>
+
+        {/* Back to Dashboard Link on Top */}
+        <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '12px' }}>
+          <button 
+            onClick={() => router.push('/admin')} 
+            style={{
+              background: 'none',
+              border: 'none',
+              color: 'var(--accent)',
+              cursor: 'pointer',
+              fontSize: '13px',
+              fontWeight: 600,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              padding: 0
+            }}
+          >
+            ← Back to Dashboard
+          </button>
+        </div>
         {error && (
           <div className="alert-box alert-box-danger" style={{ display: 'block', marginBottom: '20px' }}>
             {error}
