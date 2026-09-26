@@ -12,6 +12,7 @@ import { useLiveExam } from '@/hooks/useLiveExam';
 import { useAudioLevel } from '@/hooks/useAudioLevel';
 import { calculateHeadPose, checkLookingAway, checkExcessiveMovement } from '@/utils/headPose';
 import { useProctoring } from '@/hooks/useProctoring';
+import { InterruptionLockoutModal } from '@/components/InterruptionLockoutModal';
 
 const RTC_CONFIG = {
   iceServers: [
@@ -263,6 +264,8 @@ function TakeExamContent() {
     setTabViolations,
     proctoringViolations,
     setProctoringViolations,
+    isInterrupted,
+    resumeExam,
     cameraStatus,
     cameraStream,
     micBypassed,
@@ -542,13 +545,11 @@ function TakeExamContent() {
     const crossedTabSubmit = tabViolations >= 3;
 
     if (crossedTabSubmit) {
-      alert('🚨 Exam auto-submitted: You switched tabs or left the exam window 3 times.');
       setAutoSubmittedReason('Auto-submitted due to exceeding allowed tab switches (3/3).');
       submitExamAction(tabViolations, true);
       return;
     }
 
-    // Show warnings via non-blocking banner for intermediate tab violations (avoids window.alert focus-loss blur cascades)
     if (tabViolations > prevTabViolationsRef.current) {
       setActiveViolationWarning(`⚠️ WARNING: Tab switch / focus loss detected! (Violation ${tabViolations}/3). Reaching 3/3 will auto-submit your exam.`);
     }
@@ -920,6 +921,23 @@ function TakeExamContent() {
           {activeViolationWarning}
         </div>
       )}
+
+      {/* Interruption Lockout & Resume Modal (Phone call / tab switch recovery) */}
+      <InterruptionLockoutModal
+        isOpen={(isInterrupted || tabViolations >= 3) && !cameraModalOpen}
+        tabViolations={tabViolations}
+        maxViolations={3}
+        isSubmitting={examSubmitted}
+        onManualResume={() => {
+          resumeExam();
+        }}
+        onTimeoutAutoSubmit={() => {
+          if (!examSubmitted) {
+            setAutoSubmittedReason('Auto-submitted due to unresumed exam window departure (3/3).');
+            submitExamAction(tabViolations, true);
+          }
+        }}
+      />
       {/* Script Injections for MediaPipe (Lazy loaded when modal is open) */}
       {cameraModalOpen && (
         <>

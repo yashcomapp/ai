@@ -13,6 +13,7 @@ import { useLiveExam } from '@/hooks/useLiveExam';
 import { useAudioLevel } from '@/hooks/useAudioLevel';
 import { preprocessMathText, formatRichText } from '@/lib/questionTypes';
 import { formatDuration } from '@/lib/dateUtils';
+import { InterruptionLockoutModal } from '@/components/InterruptionLockoutModal';
 
 const RTC_CONFIG = {
   iceServers: [
@@ -161,6 +162,8 @@ function TakeSubjectiveExamContent() {
     setAwayTimeTotal,
     proctoringViolations,
     setProctoringViolations,
+    isInterrupted,
+    resumeExam,
     cameraStatus,
     cameraStream,
     micBypassed,
@@ -246,7 +249,6 @@ function TakeSubjectiveExamContent() {
     const crossedTabSubmit = tabViolations >= 3;
 
     if (crossedTabSubmit) {
-      alert('🚨 Exam auto-submitted: You switched tabs or left the exam window 3 times.');
       setAutoSubmittedReason('Auto-submitted due to exceeding allowed tab switches (3/3).');
       handleSubmitExam(true);
       return;
@@ -802,6 +804,23 @@ function TakeSubjectiveExamContent() {
           </div>
         </div>
       )}
+
+      {/* Interruption Lockout & Resume Modal (Phone call / tab switch recovery) */}
+      <InterruptionLockoutModal
+        isOpen={(isInterrupted || tabViolations >= 3) && started}
+        tabViolations={tabViolations}
+        maxViolations={3}
+        isSubmitting={submitting}
+        onManualResume={() => {
+          resumeExam();
+        }}
+        onTimeoutAutoSubmit={() => {
+          if (!submitting) {
+            setAutoSubmittedReason('Auto-submitted due to unresumed exam window departure (3/3).');
+            handleSubmitExam(true);
+          }
+        }}
+      />
 
       {/* Compact Proctoring Bar for Takers */}
       {mode !== 'peer-review' && (

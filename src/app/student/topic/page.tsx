@@ -13,6 +13,7 @@ import { calculateHeadPose, checkLookingAway, checkExcessiveMovement } from '@/u
 import { useProctoring } from '@/hooks/useProctoring';
 import { useLiveExam } from '@/hooks/useLiveExam';
 import { formatDuration, formatDateTimeIST } from '@/lib/dateUtils';
+import { InterruptionLockoutModal } from '@/components/InterruptionLockoutModal';
 
 interface QuestionItem {
   id: string;
@@ -358,6 +359,8 @@ function TopicPracticeContent() {
     setAwayTimeTotal: setTotalAwaySeconds,
     proctoringViolations,
     setProctoringViolations,
+    isInterrupted,
+    resumeExam,
     cameraStatus,
     cameraStream,
     startCameraStream,
@@ -526,7 +529,6 @@ function TopicPracticeContent() {
     if (!started || finished) return;
 
     if (tabViolations >= 3) {
-      alert('🚨 Practice auto-submitted: You switched tabs or left the practice window 3 times.');
       handleFinishPractice(true);
       return;
     }
@@ -545,38 +547,16 @@ function TopicPracticeContent() {
 
     if (isCrossedNow) {
       if (!hasCrossedThresholdRef.current) {
-        // Just crossed! Show critical warning
         hasCrossedThresholdRef.current = true;
-        
-        let reason = '';
-        if (crossedTab) reason = `Tab Switch limit of 2 crossed (${tabViolations} violations).`;
-        else if (crossedNoFace) reason = `Face Absence limit of 3 crossed (${noFaceVal} violations).`;
-        else if (crossedLookingAway) reason = `Looking Away limit of 3 crossed (${lookingAwayVal} violations).`;
-        else if (crossedCumulative) reason = `Cumulative violation limit of 4 crossed (${cumulativeVal} violations).`;
-
-        alert(`⚠️ CRITICAL WARNING: ${reason}\nYou have crossed the allowed proctoring threshold! ANY further violation of any kind will result in immediate automatic submission of your practice session!`);
       } else {
-        // Already crossed previously, and a violation incremented!
         const tabIncremented = tabViolations > prevTabViolationsRef.current;
         const noFaceIncremented = noFaceVal > prevNoFaceViolationsRef.current;
         const lookingAwayIncremented = lookingAwayVal > prevLookingAwayViolationsRef.current;
 
         if (tabIncremented || noFaceIncremented || lookingAwayIncremented) {
-          alert('🚨 Practice auto-submitted due to a post-threshold proctoring violation!');
           handleFinishPractice(true);
           return;
         }
-      }
-    } else {
-      // Normal warnings (not yet crossed)
-      if (tabViolations > prevTabViolationsRef.current) {
-        alert(`⚠️ WARNING: You switched tabs or left the practice window!\nTab Violation ${tabViolations}/2. Please return to focus.`);
-      }
-      if (noFaceVal > prevNoFaceViolationsRef.current) {
-        alert(`⚠️ WARNING: Face not detected!\nFace Absence Violation ${noFaceVal}/3. Please look at the camera.`);
-      }
-      if (lookingAwayVal > prevLookingAwayViolationsRef.current) {
-        alert(`⚠️ WARNING: Please keep your eyes on the screen!\nLooking Away Violation ${lookingAwayVal}/3.`);
       }
     }
 
@@ -1335,46 +1315,21 @@ function TopicPracticeContent() {
 
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      {!isWindowFocused && started && !finished && (
-        <div style={{
-          position: 'fixed',
-          inset: 0,
-          background: 'rgba(0, 0, 0, 0.9)',
-          backdropFilter: 'blur(16px)',
-          WebkitBackdropFilter: 'blur(16px)',
-          zIndex: 99999,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '20px',
-          color: 'var(--text)'
-        }}>
-          <div style={{
-            background: 'var(--surface-popover)',
-            border: '1px solid var(--border-popover)',
-            borderRadius: '16px',
-            padding: '30px',
-            maxWidth: '400px',
-            width: '100%',
-            textAlign: 'center',
-            boxShadow: 'var(--shadow-xl)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '16px'
-          }}>
-            <div style={{ fontSize: '50px' }}>⚠️</div>
-            <h3 style={{ fontSize: '18px', fontWeight: 800, margin: 0, color: 'var(--text)' }}>
-              Window Focus Lost!
-            </h3>
-            <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0, lineHeight: 1.4 }}>
-              Proctoring active. You switched tabs, left the window, or opened another app in split screen.
-            </p>
-            <p style={{ fontSize: '12px', color: 'var(--warning)', fontWeight: 700, margin: 0 }}>
-              Please click/tap here to return to focus.
-            </p>
-          </div>
-        </div>
-      )}
+      {/* Interruption Lockout & Resume Modal */}
+      <InterruptionLockoutModal
+        isOpen={(isInterrupted || tabViolations >= 3) && started && !finished && !cameraModalOpen}
+        tabViolations={tabViolations}
+        maxViolations={3}
+        isSubmitting={finished}
+        onManualResume={() => {
+          resumeExam();
+        }}
+        onTimeoutAutoSubmit={() => {
+          if (!finished) {
+            handleFinishPractice(true);
+          }
+        }}
+      />
       {/* Script Injections for MediaPipe (Lazy loaded when modal is open) */}
       {cameraModalOpen && (
         <>

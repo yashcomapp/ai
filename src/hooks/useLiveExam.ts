@@ -68,6 +68,24 @@ export function useLiveExam({
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
   const [micBypassed, setMicBypassed] = useState(false);
 
+  const [isInterrupted, setIsInterrupted] = useState<boolean>(false);
+  const isInterruptedRef = useRef<boolean>(false);
+
+  const resumeExam = () => {
+    const now = Date.now();
+    isCurrentlyAwayRef.current = false;
+    isInterruptedRef.current = false;
+    lastReturnTimeRef.current = now;
+    setIsInterrupted(false);
+
+    // Attempt to restore fullscreen on mobile/desktop
+    try {
+      if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      }
+    } catch {}
+  };
+
   useEffect(() => {
     if (!started) return;
     if (!examId || !studentCode || (examType as any) === 'sync') return;
@@ -82,19 +100,21 @@ export function useLiveExam({
       if (now - startTimeRef.current < 8000) {
         return;
       }
-      // 2. Continuous departure check: if user is already away (e.g. active phone call, system banner), do NOT double-count
-      if (isCurrentlyAwayRef.current) {
+      // 2. Continuous departure check or active interruption: if user is already away or currently in interrupted state, do NOT double-count
+      if (isCurrentlyAwayRef.current || isInterruptedRef.current) {
         return;
       }
-      // 3. Coalescing cooldown: 15s cooldown from incident start, 12s cooldown from return stabilization
+      // 3. Coalescing cooldown: 25s cooldown from incident start, 15s cooldown from return stabilization
       // Absorbs entire phone call lifecycles, dialer animations, and OS system prompts into a single violation incident
-      if (now - lastViolationTimeRef.current < 15000 || (lastReturnTimeRef.current > 0 && now - lastReturnTimeRef.current < 12000)) {
+      if (now - lastViolationTimeRef.current < 25000 || (lastReturnTimeRef.current > 0 && now - lastReturnTimeRef.current < 15000)) {
         return;
       }
 
       isCurrentlyAwayRef.current = true;
+      isInterruptedRef.current = true;
       lastViolationTimeRef.current = now;
       lastActiveRef.current = now;
+      setIsInterrupted(true);
       setTabViolations(prev => prev + 1);
     };
 
@@ -108,8 +128,6 @@ export function useLiveExam({
           if (awayMs > 0) {
             setAwayTimeTotal(prev => prev + Math.round(awayMs / 1000));
           }
-          isCurrentlyAwayRef.current = false;
-          lastReturnTimeRef.current = now;
         }
       }
     };
@@ -126,8 +144,6 @@ export function useLiveExam({
         if (awayMs > 0) {
           setAwayTimeTotal(prev => prev + Math.round(awayMs / 1000));
         }
-        isCurrentlyAwayRef.current = false;
-        lastReturnTimeRef.current = now;
       }
     };
 
@@ -580,6 +596,8 @@ export function useLiveExam({
     setAwayTimeTotal,
     proctoringViolations,
     setProctoringViolations,
+    isInterrupted,
+    resumeExam,
     cameraStatus,
     cameraStream,
     micBypassed,
