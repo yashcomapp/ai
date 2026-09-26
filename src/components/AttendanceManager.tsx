@@ -143,7 +143,7 @@ export default function AttendanceManager({ role }: AttendanceManagerProps) {
         })
       });
       const resData = await res.json();
-      if (!res.ok) throw new Error(resData.error || 'Failed to submit attendance.');
+      if (!res.ok) throw new Error(resData.error || resData.message || 'Failed to submit attendance.');
       
       setVoluntarySuccess(`Voluntary attendance for ${displayName} has been marked successfully for today.`);
       mutateAttendance();
@@ -211,7 +211,7 @@ export default function AttendanceManager({ role }: AttendanceManagerProps) {
         body: JSON.stringify(payload)
       });
       const resData = await res.json();
-      if (!res.ok) throw new Error(resData.error || 'Failed to submit declaration.');
+      if (!res.ok) throw new Error(resData.error || resData.message || 'Failed to submit declaration.');
       
       const successMsg = `✅ Excused Leave Registered: excusing dates ${declStart} to ${declEnd} successfully.`;
       setDeclSuccess(successMsg);
@@ -242,7 +242,7 @@ export default function AttendanceManager({ role }: AttendanceManagerProps) {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const resData = await res.json();
-      if (!res.ok) throw new Error(resData.error || 'Failed to delete declaration.');
+      if (!res.ok) throw new Error(resData.error || resData.message || 'Failed to delete declaration.');
       alert('🗑️ Leave declaration cancelled successfully!');
       mutateDecls();
       mutateAttendance();

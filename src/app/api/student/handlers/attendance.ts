@@ -69,7 +69,7 @@ export async function GET(req: NextRequest) {
     }
 
     if (!studentCode || batchIds.length === 0) {
-      return NextResponse.json({ message: 'Unauthorized or no active batches found.' }, { status: 403 });
+      return NextResponse.json({ error: 'Unauthorized or no active batches found.' }, { status: 403 });
     }
 
     const sCodeUpper = studentCode.trim().toUpperCase();
@@ -121,17 +121,28 @@ export async function GET(req: NextRequest) {
 
     const summary = calculateAttendanceSummary(recordsList);
 
-    // Check if student has approved leave today
+    // Check if student has approved leave or parent declaration today
     const todayStr = getISTDateString();
-    const leavesSnap = await adminDb.collection('leaveApplications')
-      .where('studentCode', '==', sCodeUpper)
-      .where('status', '==', 'approved')
-      .get();
+    const [leavesSnap, declsSnap] = await Promise.all([
+      adminDb.collection('leaveApplications')
+        .where('studentCode', '==', sCodeUpper)
+        .where('status', '==', 'approved')
+        .get(),
+      adminDb.collection('attendanceDeclarations')
+        .where('studentCode', '==', sCodeUpper)
+        .get()
+    ]);
 
     let isCurrentlyOnLeaveToday = false;
     leavesSnap.docs.forEach(doc => {
       const data = doc.data();
       if (data.startDate <= todayStr && data.endDate >= todayStr) {
+        isCurrentlyOnLeaveToday = true;
+      }
+    });
+    declsSnap.docs.forEach(doc => {
+      const data = doc.data();
+      if (data.status === 'leave' && data.startDate <= todayStr && data.endDate >= todayStr) {
         isCurrentlyOnLeaveToday = true;
       }
     });
@@ -233,7 +244,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (!studentCode || batchIds.length === 0) {
-      return NextResponse.json({ message: 'Unauthorized or no active batches found.' }, { status: 403 });
+      return NextResponse.json({ error: 'Unauthorized or no active batches found.' }, { status: 403 });
     }
 
     const sCodeUpper = studentCode.trim().toUpperCase();
@@ -312,6 +323,8 @@ export async function POST(req: NextRequest) {
     }
 
     await writeBatch.commit();
+
+    invalidateCache(`student_attendance_${sCodeUpper}`);
 
     return NextResponse.json({ success: true, message: 'Attendance marked successfully.' });
   } catch (error: any) {

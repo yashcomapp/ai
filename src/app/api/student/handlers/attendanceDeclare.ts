@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase/admin';
 import { verifyAnyRole } from '@/lib/auth';
 import { getDateKeyIST } from '@/lib/dateUtils';
+import { invalidateCache } from '@/lib/firebase/cache';
 
 export const dynamic = 'force-dynamic';
 
@@ -81,8 +82,11 @@ export async function POST(req: NextRequest) {
     // 1. Authenticate user in a single pass
     const session = await verifyAnyRole(req, ['student', 'parent']);
     if (!session) {
-      return NextResponse.json({ message: 'Unauthorized.' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 });
     }
+
+    const body = await req.json().catch(() => ({}));
+    let { status, startDate, endDate, remarks } = body;
 
     if (session.role === 'student') {
       studentCode = session.userData?.studentCode || '';
@@ -90,9 +94,8 @@ export async function POST(req: NextRequest) {
       role = 'student';
     } else if (session.role === 'parent') {
       role = 'parent';
-      const bodyCopy = await req.clone().json().catch(() => ({}));
       const { searchParams } = new URL(req.url);
-      const targetCode = (bodyCopy.studentCode || searchParams.get('studentCode'))?.trim().toUpperCase();
+      const targetCode = (body.studentCode || searchParams.get('studentCode'))?.trim().toUpperCase();
 
       const parentData = session.userData;
       let parentCodes: string[] = [];
@@ -136,11 +139,8 @@ export async function POST(req: NextRequest) {
     }
 
     if (!studentCode) {
-      return NextResponse.json({ message: 'Unauthorized or missing student profile.' }, { status: 403 });
+      return NextResponse.json({ error: 'Unauthorized or missing student profile.' }, { status: 403 });
     }
-
-    const body = await req.json();
-    let { status, startDate, endDate, remarks } = body;
 
     if (!status || !['present', 'leave'].includes(status)) {
       return NextResponse.json({ error: 'Invalid status. Choose present or leave.' }, { status: 400 });
@@ -202,6 +202,8 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    invalidateCache(`student_attendance_${studentCode.toUpperCase()}`);
+
     return NextResponse.json({ success: true, declaration: newDeclaration });
   } catch (error: any) {
     console.error('API POST declarations error:', error);
@@ -258,6 +260,8 @@ export async function DELETE(req: NextRequest) {
     });
     batch.delete(docRef);
     await batch.commit();
+
+    invalidateCache(`student_attendance_${studentCode.toUpperCase()}`);
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
