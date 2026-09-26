@@ -88,28 +88,18 @@ self.addEventListener('notificationclick', (event) => {
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-      // 1. If an existing app window is open, focus and route it
+      // 1. If an existing app window is open, focus and navigate it
       for (const client of clientList) {
         if ('focus' in client) {
           client.focus();
-          
-          let finalUrl = targetUrl;
-          if (targetUrl.startsWith('/chat')) {
-            const rolePrefix = client.url.includes('/parent') 
-              ? '/parent' 
-              : client.url.includes('/admin') 
-                ? '/admin' 
-                : '/student';
-            finalUrl = targetUrl.replace(/^\/chat/, `${rolePrefix}/chat`);
-          }
 
           if ('navigate' in client) {
-            client.navigate(finalUrl);
+            client.navigate(targetUrl);
           }
           client.postMessage({
             type: 'SELECT_CHAT_ROOM',
             roomId: data.roomId,
-            url: finalUrl,
+            url: targetUrl,
             data: data
           });
           return;
@@ -117,12 +107,8 @@ self.addEventListener('notificationclick', (event) => {
       }
 
       // 2. If no window is open, launch a new window with the destination URL
-      let finalOpenUrl = targetUrl;
-      if (targetUrl.startsWith('/chat')) {
-        finalOpenUrl = '/chat' + targetUrl.slice(5);
-      }
       if (clients.openWindow) {
-        return clients.openWindow(finalOpenUrl);
+        return clients.openWindow(targetUrl);
       }
     })
   );
