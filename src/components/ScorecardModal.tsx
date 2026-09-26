@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useAuth } from '@/context/AuthContext';
 import { useMathRender } from '@/hooks/useMathRender';
 import { 
   preprocessMathText, 
@@ -17,7 +18,7 @@ import {
   isAssertionReasonType,
   isObjectiveType
 } from '@/lib/questionTypes';
-import { formatDateTimeIST } from '@/lib/dateUtils';
+import { formatDateTimeIST, parseDateInput } from '@/lib/dateUtils';
 
 interface QuestionDetailsItem {
   id: string;
@@ -78,10 +79,38 @@ interface ScorecardModalProps {
 }
 
 export default function ScorecardModal({ scorecard, loading, onClose, actionButton }: ScorecardModalProps) {
+  const { user, firebaseUser } = useAuth();
   const [questionFilterTab, setQuestionFilterTab] = useState<'all' | 'correct' | 'incorrect' | 'unanswered'>('all');
 
+  // Interactive Review & 60-Minute Accountability State
+  const isOfficialExam = scorecard?.examType !== 'practice' && scorecard?.examType !== 'entrance';
+  const [reviewedQuestionIds, setReviewedQuestionIds] = useState<Set<string>>(new Set());
+  const [challenges, setChallenges] = useState<Record<string, any>>({});
+  const [reviewSubmitting, setReviewSubmitting] = useState<boolean>(false);
+  const [reviewSubmittedSuccess, setReviewSubmittedSuccess] = useState<string | null>(null);
+
+  // Time elapsed since exam submission
+  const [elapsedMinutes, setElapsedMinutes] = useState<number>(0);
+  const startTimeRef = useRef<number>(Date.now());
+
+  // Challenge Dialog Modal
+  const [challengeTargetQ, setChallengeTargetQ] = useState<QuestionDetailsItem | null>(null);
+  const [challengeReason, setChallengeReason] = useState<string>('wrong_key');
+  const [challengeSuggestedAnswer, setChallengeSuggestedAnswer] = useState<string>('B');
+  const [challengeNotes, setChallengeNotes] = useState<string>('');
+
+  useEffect(() => {
+    if (scorecard?.submittedAt) {
+      const compDate = parseDateInput(scorecard.submittedAt);
+      if (compDate) {
+        const diffM = Math.floor((Date.now() - compDate.getTime()) / 60000);
+        setElapsedMinutes(Math.max(0, diffM));
+      }
+    }
+  }, [scorecard]);
+
   // Dynamically load KaTeX and auto-render math expressions when scorecard changes or tab changes
-  useMathRender([scorecard, questionFilterTab]);
+  useMathRender([scorecard, questionFilterTab, challengeTargetQ]);
 
   const formatDate = (dateStr: string | null) => {
     return formatDateTimeIST(dateStr) || '-';
@@ -113,14 +142,86 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
     return true;
   }) || [];
 
+  const remainingMins = Math.max(0, 60 - elapsedMinutes);
+  const isWithin60Min = elapsedMinutes <= 60;
+
+  // Toggle mark question as understood
+  const toggleUnderstood = (qId: string) => {
+    setReviewedQuestionIds(prev => {
+      const next = new Set(prev);
+      if (next.has(qId)) next.delete(qId);
+      else next.add(qId);
+      return next;
+    });
+  };
+
+  // Submit challenge
+  const handleSaveChallenge = () => {
+    if (!challengeTargetQ) return;
+    const qId = challengeTargetQ.questionCode || challengeTargetQ.id;
+    setChallenges(prev => ({
+      ...prev,
+      [qId]: {
+        questionId: qId,
+        questionCode: challengeTargetQ.questionCode || qId,
+        questionText: challengeTargetQ.text || '',
+        reason: challengeReason,
+        suggestedAnswer: challengeSuggestedAnswer,
+        notes: challengeNotes
+      }
+    }));
+    // Also mark as reviewed
+    setReviewedQuestionIds(prev => new Set(prev).add(qId));
+    setChallengeTargetQ(null);
+  };
+
+  // Submit full review
+  const handleSubmitReview = async () => {
+    if (!firebaseUser || !scorecard || !user) return;
+    setReviewSubmitting(true);
+    setReviewSubmittedSuccess(null);
+    try {
+      const token = await firebaseUser.getIdToken();
+      const timeSpentSecs = Math.max(10, Math.floor((Date.now() - startTimeRef.current) / 1000));
+      const examId = scorecard.id || scorecard.examCode;
+
+      const res = await fetch('/api/student/exam-review', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          examId,
+          examName: scorecard.examName,
+          reviewedQuestionIds: Array.from(reviewedQuestionIds),
+          challenges: Object.values(challenges),
+          timeSpentSeconds: timeSpentSecs
+        })
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setReviewSubmittedSuccess(data.message || '✅ Verified review submitted successfully!');
+      } else {
+        alert('Error submitting review: ' + data.message);
+      }
+    } catch (err: any) {
+      alert('Error: ' + err.message);
+    } finally {
+      setReviewSubmitting(false);
+    }
+  };
+
   return (
     <div className="modal show" style={{ position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.45)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)', zIndex: 35000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '10px 8px' }}>
-      <div className="modal-content" style={{ background: 'var(--surface-popover)', border: '1px solid var(--border-popover)', borderRadius: 'var(--radius-lg)', maxWidth: '850px', width: '100%', height: 'fit-content', maxHeight: '92vh', display: 'flex', flexDirection: 'column', overflowY: 'hidden' }}>
+      <div className="modal-content" style={{ background: 'var(--surface-popover)', border: '1px solid var(--border-popover)', borderRadius: 'var(--radius-lg)', maxWidth: '880px', width: '100%', height: 'fit-content', maxHeight: '94vh', display: 'flex', flexDirection: 'column', overflowY: 'hidden' }}>
         
+        {/* Header */}
         <div className="modal-header" style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 'bold' }}>
-              📊 {scorecard?.examType === 'practice' ? 'Practice Review Scorecard' : 'Exam Review Scorecard'}
+              📊 {scorecard?.examType === 'practice' ? 'Practice Review Scorecard' : 'Exam Review & Verification Scorecard'}
             </h4>
             {scorecard?.examType === 'practice' && scorecard?.practiceNumber && (
               <span style={{ background: 'var(--accent)', color: 'var(--text-on-accent)', fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '12px' }}>
@@ -140,6 +241,39 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
 
           {!loading && scorecard && (
             <div>
+              {/* 60-Minute Accountability Banner for Official Exams */}
+              {isOfficialExam && user?.role === 'student' && (
+                <div style={{
+                  background: isWithin60Min ? 'rgba(234, 179, 8, 0.12)' : 'var(--danger-bg)',
+                  border: `1px solid ${isWithin60Min ? 'rgba(234, 179, 8, 0.4)' : 'rgba(239, 68, 68, 0.3)'}`,
+                  borderRadius: 'var(--radius-sm)',
+                  padding: '8px 12px',
+                  marginBottom: '10px',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                  gap: '6px'
+                }}>
+                  <div style={{ fontSize: '11.5px', color: isWithin60Min ? 'var(--text)' : 'var(--danger)', fontWeight: 600 }}>
+                    {isWithin60Min ? (
+                      <span>⏱️ <strong>60-Min Review Window:</strong> {remainingMins}m remaining to verify mistakes without being flagged in Fault Register!</span>
+                    ) : (
+                      <span>⚠️ <strong>Review Window Expired:</strong> {elapsedMinutes}m elapsed since exam. Review will be recorded as Late.</span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: '10.5px', color: '#eab308', fontWeight: 700 }}>
+                    🏆 First 3 to spot genuine question/key errors earn +2 Diligence points!
+                  </div>
+                </div>
+              )}
+
+              {reviewSubmittedSuccess && (
+                <div style={{ background: 'var(--success-bg)', color: 'var(--success)', border: '1px solid var(--success-border)', padding: '8px 12px', borderRadius: 'var(--radius-sm)', fontSize: '12px', fontWeight: 700, marginBottom: '10px' }}>
+                  {reviewSubmittedSuccess}
+                </div>
+              )}
+
               {/* Compact Horizontal Summary Bar */}
               <div style={{ 
                 background: 'var(--bg-soft)', 
@@ -199,18 +333,6 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
                   <strong style={{ color: 'var(--text-muted)' }}>Tab Out:</strong>{' '}
                   <span style={{ fontWeight: 600 }}>{scorecard.tabViolations} times</span>
                 </div>
-                {scorecard.proctoringViolations && (
-                  <>
-                    <div style={{ fontSize: '11px', lineHeight: '1.3' }}>
-                      <strong style={{ color: 'var(--text-muted)' }}>Gaze:</strong>{' '}
-                      <span style={{ fontWeight: 600 }}>{scorecard.proctoringViolations.lookingAway || 0} times</span>
-                    </div>
-                    <div style={{ fontSize: '11px', lineHeight: '1.3' }}>
-                      <strong style={{ color: 'var(--text-muted)' }}>No Face:</strong>{' '}
-                      <span style={{ fontWeight: 600 }}>{scorecard.proctoringViolations.noFace || 0} times</span>
-                    </div>
-                  </>
-                )}
               </div>
 
               {/* Filter Tabs Bar */}
@@ -278,28 +400,24 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
               </div>
 
               {/* Question Cards */}
-              <h5 style={{ fontSize: '12px', fontWeight: 'bold', marginBottom: '8px', paddingBottom: '2px' }}>🔍 Question-by-Question Audit</h5>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <h5 style={{ fontSize: '12px', fontWeight: 'bold', margin: 0 }}>🔍 Question-by-Question Audit</h5>
+                {isOfficialExam && user?.role === 'student' && (
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                    Verified: <strong>{reviewedQuestionIds.size}</strong> / {scorecard.questions.length}
+                  </span>
+                )}
+              </div>
+
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {filteredQuestions.length === 0 ? (
                   <div style={{ textAlign: 'center', padding: '20px 0', color: 'var(--text-faint)', fontSize: '12px' }}>📭 No questions match this filter.</div>
                 ) : (
                   filteredQuestions.map((q, idx) => {
                     const isUnanswered = isBlank(q.userAnswer);
-                    
-                    // Find option text for correct choice if it exists
-                    let correctOptionsToRender: { label: string; text: string }[] = [];
-                    if (q.options && q.options.length > 0) {
-                      q.options.forEach((opt: any, optIdx: number) => {
-                        const label = String.fromCharCode(65 + optIdx);
-                        const isCorrectOpt = q.correctAnswers ? q.correctAnswers.includes(label) : (q.correctAnswer === label);
-                        if (isCorrectOpt) {
-                          correctOptionsToRender.push({
-                            label,
-                            text: opt.text || opt
-                          });
-                        }
-                      });
-                    }
+                    const qId = q.questionCode || q.id;
+                    const isUnderstood = reviewedQuestionIds.has(qId);
+                    const challenge = challenges[qId];
 
                     return (
                       <div 
@@ -308,7 +426,7 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
                           width: '100%',
                           padding: '10px 12px',
                           borderRadius: 'var(--radius-sm)',
-                          border: '1.5px solid var(--review-card-border)',
+                          border: isUnderstood ? '1.5px solid var(--accent)' : '1.5px solid var(--review-card-border)',
                           background: 'var(--review-card-bg)',
                           display: 'flex',
                           flexDirection: 'column',
@@ -316,7 +434,7 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
                         }}
                       >
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-light)', paddingBottom: '4px', fontSize: '11px', color: 'var(--text-muted)' }}>
-                          <div style={{ display: 'flex', alignItems: 'center' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                             <span style={{ fontWeight: 600 }}>
                               Q{scorecard.questions.indexOf(q) !== -1 ? scorecard.questions.indexOf(q) + 1 : idx + 1}{' '}
                               ({(q.difficulty || 'MEDIUM').toUpperCase()} • {q.bloomLevel || 'Understand'})
@@ -325,22 +443,25 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
                               const reason = getReasonForQuestion(q, scorecard);
                               if (!reason) return null;
                               return (
-                                <span style={{ background: 'var(--warning-bg)', color: 'var(--warning)', border: '1px solid rgba(251, 191, 36, 0.25)', padding: '1px 5px', borderRadius: '4px', fontSize: '9px', fontWeight: 'bold', marginLeft: '6px' }}>
+                                <span style={{ background: 'var(--warning-bg)', color: 'var(--warning)', border: '1px solid rgba(251, 191, 36, 0.25)', padding: '1px 5px', borderRadius: '4px', fontSize: '9px', fontWeight: 'bold' }}>
                                   ⚠️ Reason: {reason}
                                 </span>
                               );
                             })()}
                           </div>
-                          <span style={{ 
-                            fontWeight: 'bold', 
-                            fontSize: '10px',
-                            padding: '1px 6px',
-                            borderRadius: '10px',
-                            background: isUnanswered ? 'var(--bg-soft)' : (q.isCorrect ? 'var(--success-bg)' : 'var(--danger-bg)'),
-                            color: isUnanswered ? 'var(--text-muted)' : (q.isCorrect ? 'var(--success)' : 'var(--danger)') 
-                          }}>
-                            {isUnanswered ? 'Unattempted' : (q.isCorrect ? 'Correct' : 'Incorrect')}
-                          </span>
+
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span style={{ 
+                              fontWeight: 'bold', 
+                              fontSize: '10px',
+                              padding: '1px 6px',
+                              borderRadius: '10px',
+                              background: isUnanswered ? 'var(--bg-soft)' : (q.isCorrect ? 'var(--success-bg)' : 'var(--danger-bg)'),
+                              color: isUnanswered ? 'var(--text-muted)' : (q.isCorrect ? 'var(--success)' : 'var(--danger)') 
+                            }}>
+                              {isUnanswered ? 'Unattempted' : (q.isCorrect ? 'Correct' : 'Incorrect')}
+                            </span>
+                          </div>
                         </div>
 
                         {isAssertionReasonType(q.type) ? (() => {
@@ -366,7 +487,6 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
                               let isCorrectOpt = isOptionCorrect(correctAns, optKey, oi, optText, q.options);
                               const isUserOpt = isOptionSelectedByUser(q.userAnswer, optKey, oi, optText, q.options);
 
-                              // Failsafe: if the question is overall evaluated as correct and user selected this option, it IS correct!
                               if (q.isCorrect && isUserOpt) {
                                 isCorrectOpt = true;
                               }
@@ -412,85 +532,66 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
                           </div>
                         ) : null}
 
-                        {(() => {
-                          const isObjective = (q.options && q.options.length > 0) || isObjectiveType(q.type);
-                          
-                          const correctDisplay = Array.isArray(q.correctAnswer)
-                            ? q.correctAnswer.map((ca: any) => formatUserAnswerSummary(q.options, ca)).join(', ')
-                            : (Array.isArray(q.correctAnswers) && q.correctAnswers.length > 0
-                                ? q.correctAnswers.map((ca: any) => formatUserAnswerSummary(q.options, ca)).join(', ')
-                                : (q.correctAnswer ? formatUserAnswerSummary(q.options, q.correctAnswer) : 'N/A'));
-
-                          return isObjective ? (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '11.5px', background: 'var(--surface-3)', padding: '6px 8px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)' }}>
-                              <div style={{ lineHeight: '1.3' }}>
-                                <strong style={{ color: 'var(--text-muted)', marginRight: '6px' }}>Student Answer:</strong>
-                                <span className="math-container" style={{ color: 'var(--text)', fontWeight: 600 }}>
-                                  {preprocessMathText(
-                                    isUnanswered
-                                      ? '(blank)'
-                                      : (q.options && q.options.length > 0
-                                          ? formatUserAnswerSummary(q.options, q.userAnswer)
-                                          : (q.userAnswer || '(blank)'))
-                                  )}
-                                </span>
-                              </div>
-                              <div style={{ lineHeight: '1.3' }}>
-                                <strong style={{ color: 'var(--text-muted)', marginRight: '6px' }}>Correct Answer:</strong>
-                                <span className="math-container" style={{ color: 'var(--success)', fontWeight: 'bold' }}>
-                                  {preprocessMathText(correctDisplay)}
-                                </span>
-                              </div>
-                            </div>
-                          ) : (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '12px', background: 'var(--surface-3)', padding: '12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)' }}>
-                              <div style={{ fontWeight: 600, color: 'var(--text)' }}>
-                                Total Marks: <span style={{ color: 'var(--accent)' }}>{(q as any).marks || 0}</span>
-                              </div>
-                              {(q as any).evaluations && (q as any).evaluations.length > 0 ? (
-                                (q as any).evaluations.map((ev: any, ei: number) => (
-                                  <div key={ei} style={{ borderTop: ei > 0 ? '1px dashed var(--border-light)' : 'none', paddingTop: ei > 0 ? '10px' : '0' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-                                      <span style={{ fontWeight: 700, color: 'var(--text-muted)', textTransform: 'capitalize' }}>
-                                        Evaluator: {ev.evaluatorType} {ev.evaluatorName ? `(${ev.evaluatorName})` : ''}
-                                      </span>
-                                      <span style={{ fontWeight: 800, color: 'var(--success)', fontSize: '13px' }}>
-                                        Score: {ev.marksAwarded} / {ev.maxMarks}
-                                      </span>
-                                    </div>
-                                    {ev.stepMarks && ev.stepMarks.length > 0 && (
-                                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', margin: '6px 0', paddingLeft: '8px', borderLeft: '2px solid var(--accent)' }}>
-                                        {ev.stepMarks.map((sm: any, smi: number) => {
-                                          const stepDesc = (q as any).steps?.[sm.stepNo - 1]?.description || `Step ${sm.stepNo}`;
-                                          return (
-                                            <div key={smi} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-muted)' }}>
-                                              <span>{stepDesc}</span>
-                                              <span style={{ fontWeight: 600 }}>{sm.awarded} marks</span>
-                                            </div>
-                                          );
-                                        })}
-                                      </div>
-                                    )}
-                                    {ev.feedback && (
-                                      <div style={{ fontStyle: 'italic', color: 'var(--text)', background: 'var(--bg-soft)', padding: '6px 8px', borderRadius: '4px', marginTop: '6px' }}>
-                                        💬 {ev.feedback}
-                                      </div>
-                                    )}
-                                  </div>
-                                ))
-                              ) : (
-                                <div style={{ fontStyle: 'italic', color: 'var(--text-muted)' }}>No grading evaluation available yet.</div>
-                              )}
-                            </div>
-                          );
-                        })()}
-
+                        {/* Solution & Explanation */}
                         {q.solution && (
-                          <div style={{ marginTop: '6px', fontSize: '11.5px', color: 'var(--text-muted)', borderTop: '1px dashed var(--border-light)', paddingTop: '6px' }}>
+                          <div style={{ marginTop: '4px', fontSize: '11.5px', color: 'var(--text-muted)', borderTop: '1px dashed var(--border-light)', paddingTop: '6px' }}>
                             <strong>Solution Explanation:</strong>
                             <p className="math-container" style={{ margin: '2px 0 0 0', lineHeight: '1.35' }}>{preprocessMathText(q.solution)}</p>
                           </div>
                         )}
+
+                        {/* Interactive Verification & Challenge Buttons (Student Exam Review) */}
+                        {isOfficialExam && user?.role === 'student' && (
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px', marginTop: '6px', paddingTop: '6px', borderTop: '1px solid var(--border-light)' }}>
+                            <div style={{ display: 'flex', gap: '6px' }}>
+                              <button
+                                type="button"
+                                onClick={() => toggleUnderstood(qId)}
+                                style={{
+                                  padding: '3px 8px',
+                                  borderRadius: '12px',
+                                  fontSize: '10.5px',
+                                  fontWeight: 700,
+                                  border: isUnderstood ? '1px solid var(--success)' : '1px solid var(--border-light)',
+                                  background: isUnderstood ? 'var(--success-bg)' : 'transparent',
+                                  color: isUnderstood ? 'var(--success)' : 'var(--text-muted)',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                {isUnderstood ? '✓ Understood' : 'Mark as Understood'}
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setChallengeTargetQ(q);
+                                  setChallengeReason('wrong_key');
+                                  setChallengeSuggestedAnswer('B');
+                                  setChallengeNotes('');
+                                }}
+                                style={{
+                                  padding: '3px 8px',
+                                  borderRadius: '12px',
+                                  fontSize: '10.5px',
+                                  fontWeight: 700,
+                                  border: challenge ? '1px solid var(--warning)' : '1px solid var(--border-light)',
+                                  background: challenge ? 'rgba(234, 179, 8, 0.15)' : 'transparent',
+                                  color: challenge ? '#eab308' : 'var(--text-muted)',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                {challenge ? '⚠️ Challenged' : '⚠️ Challenge Key / Error'}
+                              </button>
+                            </div>
+
+                            {challenge && (
+                              <span style={{ fontSize: '10px', color: '#eab308', fontWeight: 600 }}>
+                                Flagged: {challenge.reason} ({challenge.suggestedAnswer})
+                              </span>
+                            )}
+                          </div>
+                        )}
+
                       </div>
                     );
                   })
@@ -500,12 +601,101 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
           )}
         </div>
 
-        <div className="modal-footer" style={{ padding: '16px 24px', borderTop: '1px solid var(--border-light)', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-          <button className="btn btn-secondary" onClick={onClose}>Close</button>
-          {actionButton}
+        {/* Footer */}
+        <div className="modal-footer" style={{ padding: '12px 18px', borderTop: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+          <div>
+            {isOfficialExam && user?.role === 'student' && (
+              <button
+                type="button"
+                className="btn btn-primary btn-sm"
+                onClick={handleSubmitReview}
+                disabled={reviewSubmitting || reviewedQuestionIds.size === 0}
+                style={{ fontWeight: 700, fontSize: '12px', padding: '6px 14px' }}
+              >
+                {reviewSubmitting ? 'Submitting...' : `🚀 Complete Verified Review (${reviewedQuestionIds.size}/${scorecard?.questions.length || 0})`}
+              </button>
+            )}
+          </div>
+
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button className="btn btn-secondary btn-sm" onClick={onClose}>Close</button>
+            {actionButton}
+          </div>
         </div>
 
       </div>
+
+      {/* Challenge Question Dialog */}
+      {challengeTargetQ && (
+        <div className="modal show" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 40000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px' }}>
+          <div className="modal-content" style={{ background: 'var(--surface)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-lg)', maxWidth: '460px', width: '100%', padding: '18px' }}>
+            <h4 style={{ margin: '0 0 6px', fontSize: '14px', fontWeight: 800 }}>
+              ⚠️ Challenge Question / Answer Key
+            </h4>
+            <p style={{ margin: '0 0 10px', fontSize: '11px', color: 'var(--text-muted)' }}>
+              Question: <strong>{challengeTargetQ.questionCode || challengeTargetQ.id}</strong>
+            </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '3px' }}>Issue Type</label>
+                <select
+                  value={challengeReason}
+                  onChange={(e) => setChallengeReason(e.target.value)}
+                  style={{ width: '100%', padding: '6px', fontSize: '12px', borderRadius: '4px', border: '1px solid var(--border-light)', background: 'var(--surface)', color: 'var(--text)' }}
+                >
+                  <option value="wrong_key">Wrong Answer Key (Key given is incorrect)</option>
+                  <option value="typo">Typo / Ambiguity in Question Text</option>
+                  <option value="no_correct_option">None of the Options are Correct</option>
+                  <option value="math_error">Math / Equation Rendering Defect</option>
+                  <option value="ambiguous">Multiple Correct Options</option>
+                </select>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '3px' }}>Your Suggested Correct Option / Answer</label>
+                <input
+                  type="text"
+                  value={challengeSuggestedAnswer}
+                  onChange={(e) => setChallengeSuggestedAnswer(e.target.value)}
+                  placeholder="e.g. B or Option (C)"
+                  style={{ width: '100%', padding: '6px', fontSize: '12px', borderRadius: '4px', border: '1px solid var(--border-light)', background: 'var(--surface)', color: 'var(--text)' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '3px' }}>Your Explanation / Proof</label>
+                <textarea
+                  rows={2}
+                  value={challengeNotes}
+                  onChange={(e) => setChallengeNotes(e.target.value)}
+                  placeholder="e.g. As per NCERT Chapter 5 pg 42, force is mass x acceleration..."
+                  style={{ width: '100%', padding: '6px', fontSize: '11px', borderRadius: '4px', border: '1px solid var(--border-light)', background: 'var(--bg)', color: 'var(--text)' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '8px' }}>
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-sm"
+                  onClick={() => setChallengeTargetQ(null)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary btn-sm"
+                  onClick={handleSaveChallenge}
+                  style={{ fontWeight: 700 }}
+                >
+                  Save Challenge
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

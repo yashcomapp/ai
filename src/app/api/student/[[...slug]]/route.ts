@@ -7,6 +7,7 @@ import { GET as getFees } from '../handlers/fees';
 import { GET as getSettings, POST as postSettings } from '../handlers/settings';
 import { POST as postDisputes } from '../handlers/disputes';
 import { GET as getExamRegister, POST as postExamRegister } from '../handlers/examRegister';
+import { GET as getExamReview, POST as postExamReview } from '../handlers/examReview';
 import { GET as getAttendance } from '../handlers/attendance';
 import { GET as getAttendanceDeclare, POST as postAttendanceDeclare, DELETE as deleteAttendanceDeclare } from '../handlers/attendanceDeclare';
 import { GET as getExams, POST as postExams, PUT as putExams } from '../handlers/exams';
@@ -35,6 +36,8 @@ export async function GET(req: NextRequest, { params }: { params: { slug?: strin
         return await getSettings(req);
       case 'exam-register':
         return await getExamRegister(req);
+      case 'exam-review':
+        return await getExamReview(req);
       case 'attendance':
         return await getAttendance(req);
       case 'attendance/declare':
@@ -66,6 +69,8 @@ export async function POST(req: NextRequest, { params }: { params: { slug?: stri
         return await postDisputes(req);
       case 'exam-register':
         return await postExamRegister(req);
+      case 'exam-review':
+        return await postExamReview(req);
       case 'attendance/declare':
         return await postAttendanceDeclare(req);
       case 'exams':
