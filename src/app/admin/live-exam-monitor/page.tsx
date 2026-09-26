@@ -443,27 +443,6 @@ export default function AdminLiveMonitorPage() {
       </header>
 
       <main style={{ flex: 1, padding: '24px 12px', maxWidth: '1000px', width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '15px' }}>
-
-        {/* Back to Dashboard Link on Top */}
-        <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '12px' }}>
-          <button 
-            onClick={() => router.push('/admin')} 
-            style={{
-              background: 'none',
-              border: 'none',
-              color: 'var(--accent)',
-              cursor: 'pointer',
-              fontSize: '13px',
-              fontWeight: 600,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              padding: 0
-            }}
-          >
-            ← Back to Dashboard
-          </button>
-        </div>
         {/* Tabs Selection with Dynamic Active Badges */}
         <div className="tabs-container" style={{ display: 'flex', gap: '8px', borderBottom: '1.5px solid var(--border-light)', paddingBottom: '8px' }}>
           {(() => {

@@ -1790,27 +1790,6 @@ OUTPUT FORMAT: Return ONLY a valid JSON array of objects with schema:
 
       {/* Main Workspace */}
       <main style={{ flex: 1, padding: '24px 12px', maxWidth: '900px', width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-
-        {/* Back to Dashboard Link on Top */}
-        <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '12px' }}>
-          <button 
-            onClick={() => router.push('/admin')} 
-            style={{
-              background: 'none',
-              border: 'none',
-              color: 'var(--accent)',
-              cursor: 'pointer',
-              fontSize: '13px',
-              fontWeight: 600,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              padding: 0
-            }}
-          >
-            ← Back to Dashboard
-          </button>
-        </div>
         
         {/* Form Container */}
         <div className="card" style={{ background: 'var(--surface)', padding: '20px 24px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', gap: '16px' }}>

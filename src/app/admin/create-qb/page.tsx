@@ -1619,27 +1619,6 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
 
       {/* Main Workspace */}
       <main style={{ flex: 1, padding: '12px 10px', maxWidth: '1080px', width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-
-        {/* Back to Dashboard Link on Top */}
-        <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '12px' }}>
-          <button 
-            onClick={() => router.push('/admin')} 
-            style={{
-              background: 'none',
-              border: 'none',
-              color: 'var(--accent)',
-              cursor: 'pointer',
-              fontSize: '13px',
-              fontWeight: 600,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              padding: 0
-            }}
-          >
-            ← Back to Dashboard
-          </button>
-        </div>
         
         {/* Card 1: Syllabus Mapping Cascading Selects */}
         <div className="card" style={{ background: 'var(--surface)', padding: '12px 14px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)' }}>

@@ -372,9 +372,6 @@ export default function AdminAttendancePage() {
             <button className="btn btn-secondary" onClick={() => setShowLeaveModal(true)}>
               Manage Long Leaves
             </button>
-            <button className="btn btn-secondary" onClick={() => router.push('/admin')}>
-              Back
-            </button>
           </div>
         </div>
 

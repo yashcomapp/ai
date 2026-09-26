@@ -1150,27 +1150,6 @@ function ExamReportContent() {
 
       {/* Main Workspace */}
       <main style={{ flex: 1, padding: '10px 12px', maxWidth: '1000px', width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-
-        {/* Back to Dashboard Link on Top */}
-        <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '12px' }}>
-          <button 
-            onClick={() => router.push('/admin')} 
-            style={{
-              background: 'none',
-              border: 'none',
-              color: 'var(--accent)',
-              cursor: 'pointer',
-              fontSize: '13px',
-              fontWeight: 600,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              padding: 0
-            }}
-          >
-            ← Back to Dashboard
-          </button>
-        </div>
         
         {/* Legacy-style Toolbar with Back & Export PDF & Broadcast Notices */}
         <div className="report-toolbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px', flexWrap: 'wrap', gap: '6px' }}>

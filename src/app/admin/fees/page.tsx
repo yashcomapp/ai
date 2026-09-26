@@ -671,7 +671,6 @@ function AdminFeesContent() {
           <div>
             <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--accent)', margin: 0 }}>Fees Manager & Ledger</h2>
           </div>
-          <button className="btn btn-secondary" onClick={() => router.push('/admin')}>Back</button>
         </div>
 
         {error && <div className="alert-box alert-box-danger">{error}</div>}

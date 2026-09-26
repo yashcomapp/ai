@@ -427,27 +427,6 @@ export default function AdminSettingsPage() {
 
       {/* Main Workspace */}
       <main style={{ flex: 1, padding: '24px 12px', maxWidth: '850px', width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-
-        {/* Back to Dashboard Link on Top */}
-        <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '12px' }}>
-          <button 
-            onClick={() => router.push('/admin')} 
-            style={{
-              background: 'none',
-              border: 'none',
-              color: 'var(--accent)',
-              cursor: 'pointer',
-              fontSize: '13px',
-              fontWeight: 600,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              padding: 0
-            }}
-          >
-            ← Back to Dashboard
-          </button>
-        </div>
         
         {/* Navigation Tabs */}
         <div className="test-type-tabs" style={{ display: 'flex', gap: '4px', borderBottom: '1px solid var(--border-light)', paddingBottom: '8px' }}>
