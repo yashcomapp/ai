@@ -243,17 +243,25 @@ function ExamReportContent() {
     });
   }, [selectedAttempt, questionFilterTab]);
 
-  const fetchReport = async () => {
+  const fetchReport = async (retryCount = 0) => {
     if (!firebaseUser || !examId) return;
     setLoading(true);
+    setError('');
     try {
-      const idToken = await firebaseUser.getIdToken();
+      const idToken = await firebaseUser.getIdToken(retryCount > 0);
       const res = await fetch(`/api/admin/exams/objective?examId=${encodeURIComponent(examId)}`, {
         headers: {
           'Authorization': `Bearer ${idToken}`
         }
       });
-      if (!res.ok) throw new Error('Failed to retrieve objective exam report.');
+      if (!res.ok) {
+        if (retryCount < 2) {
+          await new Promise(r => setTimeout(r, 1000));
+          return fetchReport(retryCount + 1);
+        }
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.message || `Failed to retrieve objective exam report (HTTP ${res.status}).`);
+      }
       const data = await res.json();
       const examData = data.exam || {};
       if (examData) {
@@ -272,6 +280,10 @@ function ExamReportContent() {
       });
       setQuestionsMap(qMap);
     } catch (err: any) {
+      if (retryCount < 2 && (err.message?.includes('fetch') || err.name === 'TypeError')) {
+        await new Promise(r => setTimeout(r, 1200));
+        return fetchReport(retryCount + 1);
+      }
       console.error(err);
       setError(err.message || 'Error occurred fetching report.');
     } finally {
@@ -1117,10 +1129,17 @@ function ExamReportContent() {
   if (error || !exam) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: 'var(--bg)', padding: '20px' }}>
-        <div className="alert-box alert-box-danger" style={{ display: 'block', maxWidth: '500px', textAlign: 'center' }}>
+        <div className="alert-box alert-box-danger" style={{ display: 'block', maxWidth: '500px', textAlign: 'center', marginBottom: '16px' }}>
           {error || 'Objective exam not found.'}
         </div>
-        <button className="btn btn-primary" onClick={() => router.push('/admin/exams')} style={{ marginTop: '20px' }}>Back to Exams</button>
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          <button className="btn btn-primary" onClick={() => fetchReport(0)} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span>🔄</span> Retry / Refresh
+          </button>
+          <button className="btn btn-secondary" onClick={() => router.push('/admin/exams')}>
+            Back to Exams
+          </button>
+        </div>
       </div>
     );
   }
