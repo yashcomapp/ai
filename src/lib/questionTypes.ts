@@ -4,6 +4,13 @@ export function stripOptionLabel(text: any): string {
   return String(text).replace(/^\s*\(?[A-Da-d]\)?[).:]\s*/, '');
 }
 
+export const DEFAULT_ASSERTION_REASON_OPTIONS: string[] = [
+  'Both Assertion (A) and Reason (R) are true, and Reason (R) is the correct explanation of Assertion (A).',
+  'Both Assertion (A) and Reason (R) are true, but Reason (R) is NOT the correct explanation of Assertion (A).',
+  'Assertion (A) is true, but Reason (R) is false.',
+  'Assertion (A) is false, but Reason (R) is true.'
+];
+
 const MATH_PREPROCESS_CACHE = new Map<string, string>();
 const RICH_TEXT_CACHE = new Map<string, string>();
 const MAX_MATH_CACHE_SIZE = 3000;

@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import { useAuth } from '@/context/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Script from 'next/script';
-import { stripOptionLabel, preprocessMathText, parseAnswerList, isOptionSelectedByUser, isOptionCorrect, getQuestionCorrectAnswer, getRawOptionKey, getRawOptionText, extractAssertionAndReason, isMultipleChoiceType, isSingleChoiceType, isTrueFalseType, isAssertionReasonType, isNumericalType, isFillBlanksType, isObjectiveType, resolveOptionDisplayText } from '@/lib/questionTypes';
+import { stripOptionLabel, preprocessMathText, parseAnswerList, isOptionSelectedByUser, isOptionCorrect, getQuestionCorrectAnswer, getRawOptionKey, getRawOptionText, extractAssertionAndReason, isMultipleChoiceType, isSingleChoiceType, isTrueFalseType, isAssertionReasonType, isNumericalType, isFillBlanksType, isObjectiveType, resolveOptionDisplayText, DEFAULT_ASSERTION_REASON_OPTIONS } from '@/lib/questionTypes';
 import { useMathRender } from '@/hooks/useMathRender';
 import { db } from '@/lib/firebase/firestore';
 import { useExamTimer } from '@/hooks/useExamTimer';
@@ -415,7 +415,10 @@ function TakeExamContent() {
   const getOptionText = (questionText: string, ansInput: any) => {
     if (!exam || !exam.questions) return parseAnswerList(ansInput).join(', ');
     const q = exam.questions.find((x: any) => x.text === questionText || x.questionCode === questionText);
-    return resolveOptionDisplayText(q?.options || [], ansInput);
+    const opts = (q?.options && q.options.length > 0)
+      ? q.options
+      : (isAssertionReasonType(q?.type) ? DEFAULT_ASSERTION_REASON_OPTIONS : []);
+    return resolveOptionDisplayText(opts, ansInput);
   };
 
   // 1. Fetch exam configuration
@@ -1665,60 +1668,70 @@ function TakeExamContent() {
                         )}
 
                         {/* Options list rendering matching result scorecard */}
-                        {matchingQ?.options && matchingQ.options.length > 0 ? (
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '12px' }}>
-                            {matchingQ.options.map((opt: any, oi: number) => {
-                              const optKey = getRawOptionKey(opt);
-                              const optText = getRawOptionText(opt);
-                              
-                              const correctAns = getQuestionCorrectAnswer(matchingQ);
-                              const isCorrectOpt = isOptionCorrect(correctAns, optKey, oi, optText, matchingQ.options);
-                              const isUserOpt = isOptionSelectedByUser(qItem.userAnswer, optKey, oi, optText, matchingQ.options);
+                        {(() => {
+                          const isAssertionReason = isAssertionReasonType(matchingQ?.type);
+                          const optionsToRender = (matchingQ?.options && matchingQ.options.length > 0)
+                            ? matchingQ.options
+                            : (isAssertionReason ? DEFAULT_ASSERTION_REASON_OPTIONS : []);
 
-                              let border = '1px solid var(--review-option-border)';
-                              let background = 'var(--review-option-bg)';
-                              let color = 'var(--text)';
-                              let prefix = '';
+                          if (optionsToRender.length > 0) {
+                            return (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '12px' }}>
+                                {optionsToRender.map((opt: any, oi: number) => {
+                                  const optKey = getRawOptionKey(opt);
+                                  const optText = getRawOptionText(opt);
+                                  
+                                  const correctAns = getQuestionCorrectAnswer(matchingQ) || qItem.correctAnswer;
+                                  const isCorrectOpt = isOptionCorrect(correctAns, optKey, oi, optText, optionsToRender);
+                                  const isUserOpt = isOptionSelectedByUser(qItem.userAnswer, optKey, oi, optText, optionsToRender);
 
-                              if (isCorrectOpt) {
-                                border = '1.5px solid var(--success)';
-                                background = 'var(--success-bg)';
-                                color = 'var(--success)';
-                                prefix = '✅ ';
-                              }
-                              
-                              if (isUserOpt && !isCorrectOpt) {
-                                border = '1.5px solid var(--danger)';
-                                background = 'rgba(220, 38, 38, 0.08)';
-                                color = 'var(--danger)';
-                                prefix = '❌ ';
-                              } else if (isUserOpt && isCorrectOpt) {
-                                prefix = '🎯 ';
-                              }
+                                  let border = '1px solid var(--review-option-border)';
+                                  let background = 'var(--review-option-bg)';
+                                  let color = 'var(--text)';
+                                  let prefix = '';
 
-                              return (
-                                <div 
-                                  key={oi} 
-                                  style={{ 
-                                    display: 'flex', 
-                                    alignItems: 'center', 
-                                    gap: '6px',
-                                    padding: '8px 12px', 
-                                    border, 
-                                    borderRadius: 'var(--radius-sm)', 
-                                    background,
-                                    color,
-                                    fontSize: '12px',
-                                    fontWeight: (isCorrectOpt || isUserOpt) ? 600 : 400
-                                  }}
-                                >
-                                  {prefix && <span style={{ marginRight: '4px' }}>{prefix}</span>}
-                                  <span className="math-container">{preprocessMathText(optText)}</span>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        ) : null}
+                                  if (isCorrectOpt) {
+                                    border = '1.5px solid var(--success)';
+                                    background = 'var(--success-bg)';
+                                    color = 'var(--success)';
+                                    prefix = isUserOpt ? '🎯 ' : '✅ ';
+                                  } else if (isUserOpt) {
+                                    border = '1.5px solid var(--danger)';
+                                    background = 'rgba(220, 38, 38, 0.08)';
+                                    color = 'var(--danger)';
+                                    prefix = '❌ ';
+                                  }
+
+                                  const letterLabel = String.fromCharCode(65 + oi);
+
+                                  return (
+                                    <div 
+                                      key={oi} 
+                                      style={{ 
+                                        display: 'flex', 
+                                        alignItems: 'flex-start', 
+                                        gap: '6px',
+                                        padding: '8px 12px', 
+                                        border, 
+                                        borderRadius: 'var(--radius-sm)', 
+                                        background,
+                                        color,
+                                        fontSize: '12px',
+                                        fontWeight: (isCorrectOpt || isUserOpt) ? 600 : 400
+                                      }}
+                                    >
+                                      <span style={{ fontWeight: 'bold', minWidth: '24px', flexShrink: 0 }}>
+                                        {prefix ? `${prefix}(${letterLabel})` : `(${letterLabel})`}
+                                      </span>
+                                      <span className="math-container" style={{ flex: 1 }}>{preprocessMathText(stripOptionLabel(optText))}</span>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            );
+                          }
+                          return null;
+                        })()}
 
                         {/* Answers Side-by-Side Grid */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '12px', background: 'var(--surface-3)', padding: '8px 10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)', marginBottom: '12px' }}>

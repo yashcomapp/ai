@@ -16,7 +16,10 @@ import {
   getRawOptionText,
   isOptionCorrect,
   getQuestionCorrectAnswer,
-  formatUserAnswerSummary
+  formatUserAnswerSummary,
+  isAssertionReasonType,
+  stripOptionLabel,
+  DEFAULT_ASSERTION_REASON_OPTIONS
 } from '@/lib/questionTypes';
 import Image from 'next/image';
 interface Question {
@@ -1092,13 +1095,13 @@ ${JSON.stringify(missingList, null, 2)}`;
                       )}
 
                       {/* Render Options list breakdown (ScorecardModal style) */}
-                      {q.options && q.options.length > 0 && (
+                      {((q.options && q.options.length > 0) || isAssertionReasonType(q.type)) && (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '6px' }}>
-                          {q.options.map((opt, oi) => {
+                          {(q.options && q.options.length > 0 ? q.options : DEFAULT_ASSERTION_REASON_OPTIONS).map((opt, oi, allOpts) => {
                             const optKey = getRawOptionKey(opt);
                             const optText = getRawOptionText(opt);
                             const correctAns = getQuestionCorrectAnswer(q);
-                            const isCorrectOpt = isOptionCorrect(correctAns, optKey, oi, optText, q.options);
+                            const isCorrectOpt = isOptionCorrect(correctAns, optKey, oi, optText, allOpts);
 
                             let border = '1px solid var(--review-option-border)';
                             let background = 'var(--review-option-bg)';
@@ -1128,8 +1131,8 @@ ${JSON.stringify(missingList, null, 2)}`;
                                   fontWeight: isCorrectOpt ? 600 : 400
                                 }}
                               >
-                                <span style={{ fontWeight: 700, marginRight: '2px' }}>{prefix}{String.fromCharCode(65 + oi)}.</span>
-                                <span className="math-container" dangerouslySetInnerHTML={{ __html: preprocessMathText(optText) }} />
+                                <span style={{ fontWeight: 700, minWidth: '24px', flexShrink: 0 }}>{prefix}({String.fromCharCode(65 + oi)})</span>
+                                <span className="math-container" style={{ flex: 1 }} dangerouslySetInnerHTML={{ __html: preprocessMathText(stripOptionLabel(optText)) }} />
                               </div>
                             );
                           })}
