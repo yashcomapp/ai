@@ -15,20 +15,24 @@ const messaging = firebase.messaging();
 messaging.onBackgroundMessage((payload) => {
   console.log('[firebase-messaging-sw.js] Received background message ', payload);
   
+  const data = payload.data || {};
   const actions = [];
-  if (payload.data?.type === 'practice_review_pending' || payload.data?.type === 'review_pending') {
+  if (data.type === 'practice_review_pending' || data.type === 'review_pending') {
     actions.push({
       action: 'approve_practice',
       title: '✅ Approve'
     });
   }
 
-  const notificationTitle = payload.data?.title || payload.notification?.title || 'YASHCOM';
+  const notificationTitle = data.title || payload.notification?.title || 'YASHCOM';
   const notificationOptions = {
-    body: payload.data?.body || payload.notification?.body || '',
+    body: data.body || payload.notification?.body || '',
     badge: '/icons/badge-96.png?v=4',
+    icon: '/icons/icon-192.png',
     color: '#d97b38',
-    data: payload.data || {},
+    data: data,
+    tag: data.roomId || data.type || 'yashcom-notification',
+    renotify: true,
     actions: actions
   };
 
@@ -38,8 +42,11 @@ messaging.onBackgroundMessage((payload) => {
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
 
+  const data = event.notification.data || {};
+
+  // Quick inline approve action for parents
   if (event.action === 'approve_practice') {
-    const reviewId = event.notification.data?.reviewId;
+    const reviewId = data.reviewId;
     if (reviewId) {
       event.waitUntil(
         fetch('/api/parent/review', {
@@ -51,6 +58,7 @@ self.addEventListener('notificationclick', (event) => {
             return self.registration.showNotification('YASHCOM', {
               body: '✅ Practice review approved successfully!',
               badge: '/icons/badge-96.png?v=4',
+              icon: '/icons/icon-192.png',
               color: '#d97b38'
             });
           }
@@ -62,16 +70,59 @@ self.addEventListener('notificationclick', (event) => {
     }
   }
 
-  // Default click opens parent review page
+  // Resolve target deep link URL from notification payload
+  let targetUrl = data.url;
+  if (!targetUrl) {
+    if (data.type === 'chat_message' && data.roomId) {
+      targetUrl = `/chat?room=${encodeURIComponent(data.roomId)}`;
+    } else if (data.type === 'practice_review_pending' || data.type === 'review_pending') {
+      targetUrl = '/parent/review';
+    } else if (data.type === 'new_exam') {
+      targetUrl = data.examId ? `/student/take-exam?examId=${encodeURIComponent(data.examId)}` : '/student';
+    } else if (data.type === 'announcement' || data.type === 'absent_notice') {
+      targetUrl = '/student/notifications';
+    } else {
+      targetUrl = '/';
+    }
+  }
+
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      // 1. If an existing app window is open, focus and route it
       for (const client of clientList) {
-        if (client.url.includes('/parent') && 'focus' in client) {
-          return client.focus();
+        if ('focus' in client) {
+          client.focus();
+          
+          let finalUrl = targetUrl;
+          if (targetUrl.startsWith('/chat')) {
+            const rolePrefix = client.url.includes('/parent') 
+              ? '/parent' 
+              : client.url.includes('/admin') 
+                ? '/admin' 
+                : '/student';
+            finalUrl = targetUrl.replace(/^\/chat/, `${rolePrefix}/chat`);
+          }
+
+          if ('navigate' in client) {
+            client.navigate(finalUrl);
+          }
+          client.postMessage({
+            type: 'SELECT_CHAT_ROOM',
+            roomId: data.roomId,
+            url: finalUrl,
+            data: data
+          });
+          return;
         }
       }
+
+      // 2. If no window is open, launch a new window with the destination URL
+      let finalOpenUrl = targetUrl;
+      if (targetUrl.startsWith('/chat')) {
+        finalOpenUrl = '/chat' + targetUrl.slice(5);
+      }
       if (clients.openWindow) {
-        return clients.openWindow('/parent/review');
+        return clients.openWindow(finalOpenUrl);
       }
     })
   );

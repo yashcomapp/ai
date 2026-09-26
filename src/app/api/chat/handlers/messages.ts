@@ -511,7 +511,8 @@ export async function POST(req: NextRequest) {
             type: 'chat_message',
             roomId,
             senderId,
-            senderRole
+            senderRole,
+            url: `/chat?room=${encodeURIComponent(roomId)}`
           });
         }
       }

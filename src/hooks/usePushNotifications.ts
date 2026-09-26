@@ -89,14 +89,41 @@ export function usePushNotifications() {
       const { onMessage } = await import('firebase/messaging');
       onMessage(messaging, (payload) => {
         console.log('Foreground message received:', payload);
-        const title = payload.notification?.title || payload.data?.title || 'Announcement';
-        const options = {
-          body: payload.notification?.body || payload.data?.body || '',
+        const data = payload.data || {};
+        const title = data.title || payload.notification?.title || 'YASHCOM';
+        const options: NotificationOptions = {
+          body: data.body || payload.notification?.body || '',
           badge: '/icons/badge-96.png?v=4',
-          color: 'rgb(30, 58, 138)'
+          icon: '/icons/icon-192.png',
+          data: data,
+          tag: data.roomId || data.type || 'yashcom-foreground-notif'
         };
         if (Notification.permission === 'granted') {
-          new Notification(title, options);
+          const notif = new Notification(title, options);
+          notif.onclick = (e) => {
+            e.preventDefault();
+            window.focus();
+            notif.close();
+
+            const role = user?.role || 'student';
+            if (data.type === 'chat_message' && data.roomId) {
+              const targetChatUrl = `/${role}/chat?room=${encodeURIComponent(data.roomId)}`;
+              window.postMessage({ type: 'SELECT_CHAT_ROOM', roomId: data.roomId, url: targetChatUrl }, '*');
+              if (window.location.pathname.endsWith('/chat')) {
+                window.history.replaceState(null, '', targetChatUrl);
+              } else {
+                window.location.href = targetChatUrl;
+              }
+            } else if (data.url) {
+              window.location.href = data.url;
+            } else if (data.type === 'practice_review_pending' || data.type === 'review_pending') {
+              window.location.href = '/parent/review';
+            } else if (data.type === 'new_exam') {
+              window.location.href = data.examId ? `/student/take-exam?examId=${encodeURIComponent(data.examId)}` : '/student';
+            } else if (data.type === 'announcement' || data.type === 'absent_notice') {
+              window.location.href = '/student/notifications';
+            }
+          };
         }
       });
 

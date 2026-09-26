@@ -298,6 +298,44 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
     return () => unsubscribe();
   }, [firebaseUser]);
 
+  // Auto-activate chat room from URL search parameter (e.g. ?room=ROOM_ID or ?roomId=ROOM_ID from notification click)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const targetRoomId = params.get('room') || params.get('roomId');
+    if (targetRoomId && targetRoomId !== activeRoomId) {
+      setActiveRoomId(targetRoomId);
+      const matched = rooms.find(r => r.roomId === targetRoomId || (r as any).id === targetRoomId);
+      if (matched) {
+        setActiveTab(matched.type === 'dm' ? 'dm' : 'group');
+      }
+    }
+  }, [rooms, activeRoomId]);
+
+  // Listen for real-time notification click messages from service worker / foreground handler
+  useEffect(() => {
+    const handleNotificationMessage = (e: MessageEvent) => {
+      if (e.data?.type === 'SELECT_CHAT_ROOM' && e.data?.roomId) {
+        const targetRoomId = e.data.roomId;
+        setActiveRoomId(targetRoomId);
+        const matched = rooms.find(r => r.roomId === targetRoomId || (r as any).id === targetRoomId);
+        if (matched) {
+          setActiveTab(matched.type === 'dm' ? 'dm' : 'group');
+        }
+      }
+    };
+    window.addEventListener('message', handleNotificationMessage);
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('message', handleNotificationMessage);
+    }
+    return () => {
+      window.removeEventListener('message', handleNotificationMessage);
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.removeEventListener('message', handleNotificationMessage);
+      }
+    };
+  }, [rooms]);
+
   // Fallback API Polling for rooms list when direct collection subscription fails
   useEffect(() => {
     if (!useRoomsApiPolling || !firebaseUser) return;
