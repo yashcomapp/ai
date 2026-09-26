@@ -242,7 +242,7 @@ export async function GET(req: NextRequest) {
         processedExams.set(examId, {
           examId,
           name: examName,
-          date: formatDate(attempt.completedAt || attempt.startedAt || assignment.endAt),
+          date: formatDate(attempt.completedAt || attempt.submittedAt || attempt.startedAt || assignment.startAt || assignment.createdAt || assignment.endAt),
           maxMarks,
           score,
           percentage,
@@ -336,7 +336,7 @@ export async function GET(req: NextRequest) {
         processedExams.set(examId, {
           examId,
           name: examData.name || 'Classroom Test',
-          date: formatDate(attempt.completedAt || attempt.startedAt || scheduledDateStr),
+          date: formatDate(attempt.completedAt || attempt.submittedAt || attempt.startedAt || scheduledDateStr || examData.createdAt),
           maxMarks,
           score,
           percentage,
@@ -347,7 +347,7 @@ export async function GET(req: NextRequest) {
         processedExams.set(examId, {
           examId,
           name: examData.name || 'Classroom Test',
-          date: formatDate(scheduledDateStr),
+          date: formatDate(scheduledDateStr || examData.createdAt),
           maxMarks: examData.totalMarks || 100,
           score: 0,
           percentage: 0,
@@ -379,7 +379,7 @@ export async function GET(req: NextRequest) {
         processedExams.set(examId, {
           examId,
           name: data.examName || data.examCode || 'Objective Test',
-          date: formatDate(data.submittedAt || data.completedAt || data.processedAt || now),
+          date: formatDate(data.completedAt || data.submittedAt || data.startedAt || data.processedAt || data.createdAt),
           maxMarks,
           score,
           percentage,
@@ -407,7 +407,7 @@ export async function GET(req: NextRequest) {
           processedExams.set(examId, {
             examId,
             name: data.examName || 'Subjective Test',
-            date: formatDate(data.completedAt || data.startedAt || now),
+            date: formatDate(data.completedAt || data.submittedAt || data.startedAt || data.createdAt),
             maxMarks,
             score,
             percentage,

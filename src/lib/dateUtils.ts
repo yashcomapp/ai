@@ -6,16 +6,61 @@
 export const IST_TIMEZONE = 'Asia/Kolkata';
 
 /**
+ * Universal date parser that reliably parses:
+ * - JavaScript Date objects
+ * - Epoch millisecond numbers or numeric strings
+ * - ISO / YYYY-MM-DD date strings
+ * - Firestore Timestamps (Admin or Client SDK with .toDate())
+ * - Firestore serialized timestamp objects ({ seconds, nanoseconds } or { _seconds, _nanoseconds })
+ */
+export function parseDateInput(dateInput?: any): Date | null {
+  if (dateInput == null) return null;
+  if (dateInput instanceof Date) {
+    return isNaN(dateInput.getTime()) ? null : dateInput;
+  }
+  if (typeof dateInput === 'number') {
+    const d = new Date(dateInput);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  if (typeof dateInput === 'string') {
+    const trimmed = dateInput.trim();
+    if (!trimmed) return null;
+    // Check if numeric string timestamp
+    if (/^\d{10,13}$/.test(trimmed)) {
+      const num = Number(trimmed);
+      const d = new Date(trimmed.length === 10 ? num * 1000 : num);
+      if (!isNaN(d.getTime())) return d;
+    }
+    const d = new Date(trimmed);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  if (typeof dateInput === 'object') {
+    if (typeof dateInput.toDate === 'function') {
+      try {
+        const d = dateInput.toDate();
+        if (d instanceof Date && !isNaN(d.getTime())) return d;
+      } catch {}
+    }
+    const secs = dateInput.seconds ?? dateInput._seconds;
+    if (typeof secs === 'number') {
+      const nanos = dateInput.nanoseconds ?? dateInput._nanoseconds ?? 0;
+      const d = new Date(secs * 1000 + Math.floor(nanos / 1000000));
+      return isNaN(d.getTime()) ? null : d;
+    }
+  }
+  return null;
+}
+
+/**
  * Formats a Date/Timestamp into 12-hour or 24-hour time string in IST
  * Example: "05:09 PM" or "5:09 pm"
  */
 export function formatTimeIST(
-  dateInput?: Date | string | number | null,
+  dateInput?: any,
   options?: { hour12?: boolean; uppercase?: boolean }
 ): string {
-  if (!dateInput) return '';
-  const d = new Date(dateInput);
-  if (isNaN(d.getTime())) return '';
+  const d = parseDateInput(dateInput);
+  if (!d) return '';
 
   const formatted = d.toLocaleTimeString('en-IN', {
     timeZone: IST_TIMEZONE,
@@ -31,10 +76,9 @@ export function formatTimeIST(
  * Formats a Date/Timestamp into date string in IST
  * Example: "20/07/2026"
  */
-export function formatDateIST(dateInput?: Date | string | number | null): string {
-  if (!dateInput) return '';
-  const d = new Date(dateInput);
-  if (isNaN(d.getTime())) return '';
+export function formatDateIST(dateInput?: any): string {
+  const d = parseDateInput(dateInput);
+  if (!d) return '';
 
   const day = String(d.toLocaleDateString('en-US', { timeZone: IST_TIMEZONE, day: 'numeric' })).padStart(2, '0');
   const month = String(d.toLocaleDateString('en-US', { timeZone: IST_TIMEZONE, month: 'numeric' })).padStart(2, '0');
@@ -46,10 +90,9 @@ export function formatDateIST(dateInput?: Date | string | number | null): string
  * Formats full Date & Time in IST
  * Example: "20/07/2026, 05:09 PM"
  */
-export function formatDateTimeIST(dateInput?: Date | string | number | null): string {
-  if (!dateInput) return '';
-  const d = new Date(dateInput);
-  if (isNaN(d.getTime())) return '';
+export function formatDateTimeIST(dateInput?: any): string {
+  const d = parseDateInput(dateInput);
+  if (!d) return '';
 
   const day = String(d.toLocaleDateString('en-US', { timeZone: IST_TIMEZONE, day: 'numeric' })).padStart(2, '0');
   const month = String(d.toLocaleDateString('en-US', { timeZone: IST_TIMEZONE, month: 'numeric' })).padStart(2, '0');
@@ -68,9 +111,13 @@ export function formatDateTimeIST(dateInput?: Date | string | number | null): st
 /**
  * Returns YYYY-MM-DD date key strictly computed in IST (Asia/Kolkata)
  */
-export function getDateKeyIST(dateInput?: Date | string | number | null): string {
-  const d = dateInput ? new Date(dateInput) : new Date();
-  if (isNaN(d.getTime())) {
+export function getDateKeyIST(dateInput?: any): string {
+  if (dateInput == null) {
+    const now = new Date();
+    return now.toLocaleDateString('en-CA', { timeZone: IST_TIMEZONE });
+  }
+  const d = parseDateInput(dateInput);
+  if (!d) {
     const now = new Date();
     return now.toLocaleDateString('en-CA', { timeZone: IST_TIMEZONE });
   }
@@ -82,11 +129,8 @@ export function getDateKeyIST(dateInput?: Date | string | number | null): string
  * Example: "Just now", "5m ago", "2h ago", or "20/07/2026, 05:09 PM"
  */
 export function formatLastActiveIST(lastActiveAt: any): string {
-  if (!lastActiveAt) return 'Never';
-  const date = lastActiveAt.seconds 
-    ? new Date(lastActiveAt.seconds * 1000) 
-    : new Date(lastActiveAt);
-  if (isNaN(date.getTime())) return 'Never';
+  const date = parseDateInput(lastActiveAt);
+  if (!date) return 'Never';
   
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
@@ -114,7 +158,7 @@ export function formatLastActiveIST(lastActiveAt: any): string {
 /**
  * Formats a Date/Timestamp into standard DD/MM/YYYY format in IST
  */
-export function formatDateDMY(dateInput?: Date | string | number | null): string {
+export function formatDateDMY(dateInput?: any): string {
   if (!dateInput) return '--';
   // If it's already a YYYY-MM-DD string, quickly split and format to avoid Date parsing issues
   if (typeof dateInput === 'string') {
@@ -123,15 +167,13 @@ export function formatDateDMY(dateInput?: Date | string | number | null): string
       return `${parts[2]}/${parts[1]}/${parts[0]}`;
     }
   }
-  try {
-    const d = new Date(dateInput);
-    if (!isNaN(d.getTime())) {
-      const day = String(d.toLocaleDateString('en-US', { timeZone: IST_TIMEZONE, day: 'numeric' })).padStart(2, '0');
-      const month = String(d.toLocaleDateString('en-US', { timeZone: IST_TIMEZONE, month: 'numeric' })).padStart(2, '0');
-      const year = d.toLocaleDateString('en-US', { timeZone: IST_TIMEZONE, year: 'numeric' });
-      return `${day}/${month}/${year}`;
-    }
-  } catch (e) {}
+  const d = parseDateInput(dateInput);
+  if (d) {
+    const day = String(d.toLocaleDateString('en-US', { timeZone: IST_TIMEZONE, day: 'numeric' })).padStart(2, '0');
+    const month = String(d.toLocaleDateString('en-US', { timeZone: IST_TIMEZONE, month: 'numeric' })).padStart(2, '0');
+    const year = d.toLocaleDateString('en-US', { timeZone: IST_TIMEZONE, year: 'numeric' });
+    return `${day}/${month}/${year}`;
+  }
   return String(dateInput);
 }
 
@@ -172,17 +214,8 @@ export function formatDurationHM(totalSeconds: number): string {
  */
 export function toISTDateTimeLocalInput(dateInput?: any): string {
   if (!dateInput) return '';
-  let d: Date;
-  if (dateInput?.toDate && typeof dateInput.toDate === 'function') {
-    d = dateInput.toDate();
-  } else if (dateInput?._seconds) {
-    d = new Date(dateInput._seconds * 1000);
-  } else if (dateInput?.seconds) {
-    d = new Date(dateInput.seconds * 1000);
-  } else {
-    d = new Date(dateInput);
-  }
-  if (isNaN(d.getTime())) return '';
+  const d = parseDateInput(dateInput);
+  if (!d) return '';
 
   const day = String(d.toLocaleDateString('en-US', { timeZone: IST_TIMEZONE, day: 'numeric' })).padStart(2, '0');
   const month = String(d.toLocaleDateString('en-US', { timeZone: IST_TIMEZONE, month: 'numeric' })).padStart(2, '0');
