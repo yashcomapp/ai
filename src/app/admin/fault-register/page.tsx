@@ -244,7 +244,7 @@ export default function AdminFaultRegisterPage() {
               </span>
             </div>
             <p style={{ margin: '3px 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>
-              1-Click discipline tracking for students & parents with auto-detection for missed 60m exam reviews, fees & absences.
+              1-Click discipline tracking for students & parents with auto-detection for missed 60m exam reviews, exam absences & communication gaps.
             </p>
           </div>
 

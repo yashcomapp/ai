@@ -7,7 +7,7 @@ export interface FaultCategory {
   name: string;
   category: 'academic' | 'conduct' | 'punctuality' | 'admin' | 'review' | 'custom';
   target: 'student' | 'parent' | 'shared';
-  autoDetectKey?: 'no_exam_review' | 'exam_absent' | 'no_absent_comm' | 'late_fees' | 'zero_practice';
+  autoDetectKey?: 'no_exam_review' | 'exam_absent' | 'exam_absent_no_info' | 'no_absent_comm' | 'zero_practice';
   icon?: string;
   isDefault?: boolean;
 }
@@ -16,7 +16,7 @@ export const DEFAULT_FAULT_CATEGORIES: FaultCategory[] = [
   { id: 'no_exam_review', name: 'No Exam Review (>60m)', category: 'review', target: 'student', autoDetectKey: 'no_exam_review', icon: '⏱️', isDefault: true },
   { id: 'no_absent_comm', name: 'No Communication on Absence', category: 'punctuality', target: 'shared', autoDetectKey: 'no_absent_comm', icon: '📞', isDefault: true },
   { id: 'exam_absent', name: 'Exam Absenteeism', category: 'punctuality', target: 'student', autoDetectKey: 'exam_absent', icon: '📝', isDefault: true },
-  { id: 'late_fees', name: 'Late Fees Payment', category: 'admin', target: 'parent', autoDetectKey: 'late_fees', icon: '💳', isDefault: true },
+  { id: 'exam_absent_no_info', name: 'Exam Absence without Information', category: 'punctuality', target: 'shared', autoDetectKey: 'exam_absent_no_info', icon: '📵', isDefault: true },
   { id: 'no_homework', name: 'Incomplete / No Homework', category: 'academic', target: 'student', icon: '📚', isDefault: true },
   { id: 'no_pre_reading', name: 'No Pre-Reading / Topic Prep', category: 'academic', target: 'student', icon: '📖', isDefault: true },
   { id: 'zero_practice', name: 'Zero Practice / No Self-Study', category: 'academic', target: 'student', autoDetectKey: 'zero_practice', icon: '🎯', isDefault: true },
@@ -48,7 +48,7 @@ export class FaultService {
     try {
       const snap = await adminDb.collection('config').doc('faultCategories').get();
       if (snap.exists) {
-        const customCategories = snap.data()?.categories || [];
+        const customCategories = (snap.data()?.categories || []).filter((c: FaultCategory) => c.id !== 'late_fees');
         const merged = [...DEFAULT_FAULT_CATEGORIES];
         customCategories.forEach((c: FaultCategory) => {
           if (!merged.some(m => m.id === c.id)) {
@@ -227,38 +227,90 @@ export class FaultService {
 
     try {
       const now = new Date();
-      const [attendanceSnap, feesSnap, reviewsSnap, examReviewsSnap] = await Promise.all([
+      const [attendanceSnap, scheduledExamsSnap, reviewsSnap, examReviewsSnap] = await Promise.all([
         // 1. Attendance for date
         adminDb.collection('attendance').where('date', '==', dateKey).get(),
-        // 2. Overdue fees
-        adminDb.collection('studentFees').where('hasOverdueInstallment', '==', true).get(),
+        // 2. Exams scheduled for date
+        adminDb.collection('exams').where('scheduledDate', '==', dateKey).get(),
         // 3. Reviews completed on this date
         adminDb.collection('reviews').get(),
         // 4. Completed exam reviews
         adminDb.collection('examReviews').get()
       ]);
 
-      // A. Check Absence without Communication
+      // Track declared leaves and absence communications from attendance
+      const absentStudentsWithLeave = new Set<string>();
+      const absentStudentsNoLeave = new Set<string>();
+
       attendanceSnap.docs.forEach(doc => {
-        const records = doc.data().records || {};
+        const data = doc.data();
+        const records = data.records || {};
+        const isExamAttendance = data.type === 'exam' || data.isExam;
+
         Object.entries(records).forEach(([sCode, r]: [string, any]) => {
-          if (studentCodesSet.has(sCode.toUpperCase()) && r.status === 'absent' && !r.reason && !r.declaredLeave) {
-            const entry = initEntry(sCode);
-            entry['no_absent_comm'] = true;
-            entry['no_absent_comm_note'] = 'Absent marked without prior leave notice';
+          const sUpper = sCode.toUpperCase();
+          if (!studentCodesSet.has(sUpper)) return;
+
+          if (r.status === 'absent') {
+            const hasPriorInfo = !!(r.reason || r.declaredLeave || r.leaveType);
+            if (hasPriorInfo) {
+              absentStudentsWithLeave.add(sUpper);
+            } else {
+              absentStudentsNoLeave.add(sUpper);
+              const entry = initEntry(sUpper);
+              entry['no_absent_comm'] = true;
+              entry['no_absent_comm_note'] = 'Absent marked without prior leave notice';
+            }
+
+            if (isExamAttendance) {
+              const entry = initEntry(sUpper);
+              entry['exam_absent'] = true;
+              entry['exam_absent_note'] = 'Absent for scheduled exam session';
+              if (!hasPriorInfo) {
+                entry['exam_absent_no_info'] = true;
+                entry['exam_absent_no_info_note'] = 'Exam absent with zero prior information';
+              }
+            }
           }
         });
       });
 
-      // B. Check Late Fees
-      feesSnap.docs.forEach(doc => {
-        const sCode = doc.id.toUpperCase();
-        if (studentCodesSet.has(sCode)) {
-          const entry = initEntry(sCode);
-          entry['late_fees'] = true;
-          entry['late_fees_note'] = 'Overdue installment pending';
-        }
-      });
+      // B. Check Missed Scheduled Exams on this Date
+      if (!scheduledExamsSnap.empty) {
+        const attemptedStudentsForExam = new Set<string>();
+        reviewsSnap.docs.forEach(doc => {
+          const d = doc.data();
+          const sCode = (d.studentCode || '').toUpperCase();
+          if (d.examId) {
+            attemptedStudentsForExam.add(`${sCode}_${d.examId}`);
+          }
+        });
+
+        scheduledExamsSnap.docs.forEach(examDoc => {
+          const examData = examDoc.data();
+          const examId = examDoc.id;
+          const examName = examData.title || examData.name || examId;
+
+          studentCodes.forEach(sCode => {
+            const sUpper = sCode.toUpperCase();
+            const hasAttempted = attemptedStudentsForExam.has(`${sUpper}_${examId}`);
+
+            if (!hasAttempted) {
+              const entry = initEntry(sUpper);
+              entry['exam_absent'] = true;
+              const hasLeave = absentStudentsWithLeave.has(sUpper);
+
+              if (hasLeave) {
+                entry['exam_absent_note'] = `Missed scheduled exam: ${examName} (leave declared)`;
+              } else {
+                entry['exam_absent_note'] = `Missed scheduled exam: ${examName}`;
+                entry['exam_absent_no_info'] = true;
+                entry['exam_absent_no_info_note'] = `Missed scheduled exam (${examName}) without prior information`;
+              }
+            }
+          });
+        });
+      }
 
       // C. Check Missed 60-Min Exam Reviews for exams finished on this date
       const verifiedReviewsSet = new Set<string>();
