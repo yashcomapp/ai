@@ -244,8 +244,8 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
               {/* 60-Minute Accountability Banner for Official Exams */}
               {isOfficialExam && user?.role === 'student' && (
                 <div style={{
-                  background: isWithin60Min ? 'rgba(234, 179, 8, 0.12)' : 'var(--danger-bg)',
-                  border: `1px solid ${isWithin60Min ? 'rgba(234, 179, 8, 0.4)' : 'rgba(239, 68, 68, 0.3)'}`,
+                  background: isWithin60Min ? 'var(--warning-bg)' : 'var(--danger-bg)',
+                  border: `1px solid ${isWithin60Min ? 'var(--warning-border)' : 'var(--danger-border)'}`,
                   borderRadius: 'var(--radius-sm)',
                   padding: '8px 12px',
                   marginBottom: '10px',
@@ -262,7 +262,7 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
                       <span>⚠️ <strong>Review Window Expired:</strong> {elapsedMinutes}m elapsed since exam. Review will be recorded as Late.</span>
                     )}
                   </div>
-                  <div style={{ fontSize: '10.5px', color: '#eab308', fontWeight: 700 }}>
+                  <div style={{ fontSize: '10.5px', color: 'var(--warning)', fontWeight: 700 }}>
                     🏆 First 3 to spot genuine question/key errors earn +2 Diligence points!
                   </div>
                 </div>
@@ -574,9 +574,9 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
                                   borderRadius: '12px',
                                   fontSize: '10.5px',
                                   fontWeight: 700,
-                                  border: challenge ? '1px solid var(--warning)' : '1px solid var(--border-light)',
-                                  background: challenge ? 'rgba(234, 179, 8, 0.15)' : 'transparent',
-                                  color: challenge ? '#eab308' : 'var(--text-muted)',
+                                  border: challenge ? '1px solid var(--warning-border)' : '1px solid var(--border-light)',
+                                  background: challenge ? 'var(--warning-bg)' : 'transparent',
+                                  color: challenge ? 'var(--warning)' : 'var(--text-muted)',
                                   cursor: 'pointer'
                                 }}
                               >
@@ -585,7 +585,7 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
                             </div>
 
                             {challenge && (
-                              <span style={{ fontSize: '10px', color: '#eab308', fontWeight: 600 }}>
+                              <span style={{ fontSize: '10px', color: 'var(--warning)', fontWeight: 600 }}>
                                 Flagged: {challenge.reason} ({challenge.suggestedAnswer})
                               </span>
                             )}

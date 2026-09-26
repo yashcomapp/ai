@@ -242,8 +242,8 @@ export default function AdminDisputesPage() {
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: '6px',
-                                    background: isTop3 ? 'rgba(234, 179, 8, 0.12)' : 'var(--surface-2)',
-                                    border: isTop3 ? '1px solid rgba(234, 179, 8, 0.4)' : '1px solid var(--border-light)',
+                                    background: isTop3 ? 'var(--warning-bg)' : 'var(--surface-2)',
+                                    border: isTop3 ? '1px solid var(--warning-border)' : '1px solid var(--border-light)',
                                     padding: '3px 8px',
                                     borderRadius: '12px',
                                     fontSize: '11px'
@@ -255,7 +255,7 @@ export default function AdminDisputesPage() {
                                     ({rep.reason || 'issue'} • {formatDateTimeIST(rep.submittedAt || rep.createdAt)})
                                   </span>
                                   {isTop3 && (
-                                    <span style={{ fontSize: '9px', color: '#eab308', fontWeight: 800 }}>
+                                    <span style={{ fontSize: '9px', color: 'var(--warning)', fontWeight: 800 }}>
                                       [+2 Bounty Eligible]
                                     </span>
                                   )}

@@ -5,6 +5,7 @@ import { MasteryService } from './mastery.service';
 import { invalidateCache } from '@/lib/firebase/cache';
 
 export interface ExamReviewStatus {
+  hasAttempt: boolean;
   examId: string;
   studentCode: string;
   completedAt: string | null;
@@ -39,7 +40,7 @@ export class ExamReviewService {
     const reviewRef = adminDb.collection('reviews').doc(`${examId}_${sCodeUpper}`);
     let reviewSnap = await reviewRef.get();
     if (!reviewSnap.exists) {
-      // Fallback query
+      // Fallback query in reviews
       const qSnap = await adminDb.collection('reviews')
         .where('studentCode', '==', sCodeUpper)
         .where('examId', '==', examId)
@@ -48,7 +49,38 @@ export class ExamReviewService {
       if (!qSnap.empty) reviewSnap = qSnap.docs[0];
     }
 
-    const reviewData = reviewSnap.exists ? reviewSnap.data() : null;
+    let reviewData = reviewSnap.exists ? reviewSnap.data() : null;
+
+    // Fallback query in examAttempts if review not found
+    if (!reviewData) {
+      const attemptSnap = await adminDb.collection('examAttempts')
+        .where('studentCode', '==', sCodeUpper)
+        .where('examId', '==', examId)
+        .limit(1)
+        .get();
+      if (!attemptSnap.empty) {
+        reviewData = attemptSnap.docs[0].data();
+      }
+    }
+
+    if (!reviewData) {
+      return {
+        hasAttempt: false,
+        examId,
+        studentCode: sCodeUpper,
+        completedAt: null,
+        elapsedMinutes: 0,
+        remainingMinutes: 0,
+        isWithin60MinWindow: false,
+        status: 'pending',
+        reviewedAt: null,
+        timeSpentSeconds: 0,
+        reviewedQuestionCount: 0,
+        disputeCount: 0,
+        bountyEarnedCount: 0
+      };
+    }
+
     const completedDate = parseDateInput(reviewData?.completedAt || reviewData?.submittedAt || reviewData?.createdAt);
 
     const now = new Date();
@@ -66,6 +98,7 @@ export class ExamReviewService {
     }
 
     return {
+      hasAttempt: true,
       examId,
       studentCode: sCodeUpper,
       completedAt: completedDate ? completedDate.toISOString() : null,
@@ -116,33 +149,45 @@ export class ExamReviewService {
 
     // Check attempt completion timestamp
     const reviewStatus = await this.getReviewStatus(sCodeUpper, examId);
+    if (!reviewStatus.hasAttempt) {
+      throw new Error('No exam attempt found for this student. You can only review exams you have attempted.');
+    }
+
     const isWithin60Min = reviewStatus.isWithin60MinWindow;
     const reviewStatusValue = isWithin60Min ? 'on_time' : 'late';
 
     let bountyCount = 0;
 
-    // Process and rank question challenges (Top 3 get bounty eligibility)
+    // Process and rank question challenges atomically (Strictly First 3 Reporters get bounty eligibility)
     for (const challenge of challenges) {
       const qId = challenge.questionId || challenge.questionCode;
       if (!qId) continue;
 
-      // Count existing reports for this question in this exam to determine reporter rank
-      const existingReportsSnap = await adminDb.collection('questionDisputes')
-        .where('examId', '==', examId)
-        .where('questionId', '==', qId)
-        .get();
+      const disputeDocId = `${examId}_${qId}_${sCodeUpper}`;
+      const disputeRef = adminDb.collection('questionDisputes').doc(disputeDocId);
+      const counterRef = adminDb.collection('examDisputeCounters').doc(`${examId}_${qId}`);
 
-      const existingReporters = existingReportsSnap.docs.map(d => d.data().studentCode?.toUpperCase());
-      const alreadyReported = existingReporters.includes(sCodeUpper);
+      const awardedBounty = await adminDb.runTransaction(async (transaction) => {
+        const disputeSnap = await transaction.get(disputeRef);
+        if (disputeSnap.exists) {
+          // Already reported by this student
+          return disputeSnap.data()?.eligibleForBounty || false;
+        }
 
-      if (!alreadyReported) {
-        const reporterRank = existingReportsSnap.size + 1; // 1st, 2nd, 3rd, etc.
-        const eligibleForBounty = reporterRank <= 3; // Strictly first 3 students!
-        if (eligibleForBounty) bountyCount++;
+        const counterSnap = await transaction.get(counterRef);
+        const currentCount = counterSnap.exists ? (Number(counterSnap.data()?.count) || 0) : 0;
+        const reporterRank = currentCount + 1;
+        const eligibleForBounty = reporterRank <= 3;
 
-        const disputeRef = adminDb.collection('questionDisputes').doc();
-        await disputeRef.set({
-          id: disputeRef.id,
+        transaction.set(counterRef, {
+          count: reporterRank,
+          examId,
+          questionId: qId,
+          lastReportedAt: now.toISOString()
+        }, { merge: true });
+
+        transaction.set(disputeRef, {
+          id: disputeDocId,
           examId,
           examName,
           questionId: qId,
@@ -161,6 +206,12 @@ export class ExamReviewService {
           submittedAt: now.toISOString(),
           createdAt: now.toISOString()
         });
+
+        return eligibleForBounty;
+      });
+
+      if (awardedBounty) {
+        bountyCount++;
       }
     }
 
@@ -262,7 +313,7 @@ export class ExamReviewService {
     for (let i = 0; i < disputesList.length; i++) {
       const dispute = disputesList[i];
       const isTop3 = i < 3;
-      const rank = i + 1;
+      const rank = dispute.reporterRank || i + 1;
 
       if (isTop3) {
         top3Reporters.push({
@@ -282,9 +333,8 @@ export class ExamReviewService {
     }
 
     // 3. Batch Re-Evaluate All Students on this Exam
-    const [reviewsSnap, attemptsSnap, examDocSnap] = await Promise.all([
+    const [reviewsSnap, examDocSnap] = await Promise.all([
       adminDb.collection('reviews').where('examId', '==', examId).get(),
-      adminDb.collection('examAttempts').where('examId', '==', examId).get(),
       adminDb.collection('exams').doc(examId).get()
     ]);
 
@@ -293,6 +343,9 @@ export class ExamReviewService {
     const negativeMarks = Number(examData?.negativeMarks) || 0;
 
     let studentsUpdated = 0;
+    const BATCH_SIZE = 400;
+    let currentBatch = adminDb.batch();
+    let batchOpCount = 0;
 
     for (const doc of reviewsSnap.docs) {
       const review = doc.data();
@@ -300,7 +353,6 @@ export class ExamReviewService {
       const questionDetails = Array.isArray(review.questionDetails) ? review.questionDetails : [];
       let revisedScore = 0;
       let totalMarks = 0;
-      let scoreChanged = false;
 
       // Check if this student is among top 3 bounty recipients (+2 Diligence Bonus)
       const isBountyWinner = top3Reporters.some(r => r.studentCode?.toUpperCase() === studentCode?.toUpperCase());
@@ -330,10 +382,6 @@ export class ExamReviewService {
             };
           }
 
-          if (isNowCorrect !== q.isCorrect) {
-            scoreChanged = true;
-          }
-
           if (isNowCorrect) {
             revisedScore += qPositive;
           } else if (q.userAnswer && q.userAnswer !== 'unanswered') {
@@ -359,20 +407,28 @@ export class ExamReviewService {
         }
       });
 
-      // Include diligence bonus
-      const finalScoreWithBonus = Math.max(0, revisedScore + diligenceBonus);
       const totalMax = Math.max(1, totalMarks);
-      const newPercentage = Math.round((finalScoreWithBonus / totalMax) * 100);
+      // Clamp academic percentage to 100% per Rule 2A
+      const academicScore = Math.min(totalMax, Math.max(0, revisedScore));
+      const academicPercentage = Math.min(100, Math.round((academicScore / totalMax) * 100));
+      const finalScoreWithBonus = Math.max(0, revisedScore + diligenceBonus);
 
-      await doc.ref.update({
+      currentBatch.update(doc.ref, {
         score: finalScoreWithBonus,
         totalMarks: totalMax,
-        percentage: newPercentage,
+        percentage: academicPercentage,
         questionDetails: updatedQuestionDetails,
         diligenceBonusAwarded: diligenceBonus,
         recalculatedAt: new Date().toISOString(),
         recalculatedReason: `Answer key update for Q: ${questionId} by ${adminEmail}`
       });
+
+      batchOpCount++;
+      if (batchOpCount >= BATCH_SIZE) {
+        await currentBatch.commit();
+        currentBatch = adminDb.batch();
+        batchOpCount = 0;
+      }
 
       studentsUpdated++;
 
@@ -380,11 +436,15 @@ export class ExamReviewService {
       const firstTopicCode = review.topicCode || (updatedQuestionDetails[0]?.questionCode ? deriveTopicCode(updatedQuestionDetails[0].questionCode) : '');
       if (studentCode && firstTopicCode) {
         try {
-          await MasteryService.recordExamAttempt(studentCode, firstTopicCode, newPercentage, examId);
+          await MasteryService.recordExamAttempt(studentCode, firstTopicCode, academicPercentage, examId);
         } catch (mErr) {
           console.warn('Failed to update mastery on re-evaluation:', mErr);
         }
       }
+    }
+
+    if (batchOpCount > 0) {
+      await currentBatch.commit();
     }
 
     return {
