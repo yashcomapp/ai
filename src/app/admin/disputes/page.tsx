@@ -31,8 +31,11 @@ export default function AdminDisputesPage() {
   const [resolutionAction, setResolutionAction] = useState<'correct_key' | 'bonus_all' | 'quarantine' | 'reject_challenge'>('correct_key');
   const [resolutionNotes, setResolutionNotes] = useState<string>('');
 
+  // Student History Modal
+  const [selectedStudentForHistory, setSelectedStudentForHistory] = useState<{ studentCode: string; studentName: string; className?: string } | null>(null);
+
   // MathKaTeX renderer hook
-  useMathRender([loading, disputes, activeModalItem, expandedCodes]);
+  useMathRender([loading, disputes, activeModalItem, expandedCodes, selectedStudentForHistory]);
 
   const loadDisputes = useCallback(async () => {
     if (!firebaseUser) return;
@@ -113,6 +116,37 @@ export default function AdminDisputesPage() {
     return questionsMap[activeModalItem.questionId] || null;
   }, [activeModalItem, questionsMap]);
 
+  // Sorted exam keys: exams with open pending disputes appear first
+  const sortedExamKeys = useMemo(() => {
+    const keys = Object.keys(grouped);
+    return keys.sort((a, b) => {
+      const qMapA = grouped[a] || {};
+      const qMapB = grouped[b] || {};
+      const hasPendingA = Object.values(qMapA).some(reports =>
+        !reports.every((r: any) => r.status && r.status !== 'pending')
+      );
+      const hasPendingB = Object.values(qMapB).some(reports =>
+        !reports.every((r: any) => r.status && r.status !== 'pending')
+      );
+      if (hasPendingA !== hasPendingB) {
+        return hasPendingA ? -1 : 1;
+      }
+      return 0;
+    });
+  }, [grouped]);
+
+  // Student history disputes
+  const studentDisputesList = useMemo(() => {
+    if (!selectedStudentForHistory) return [];
+    const targetCode = (selectedStudentForHistory.studentCode || '').toUpperCase();
+    const targetName = (selectedStudentForHistory.studentName || '').toLowerCase();
+    return disputes.filter(d => {
+      const sCode = (d.studentCode || '').toUpperCase();
+      const sName = (d.studentName || '').toLowerCase();
+      return (targetCode && sCode === targetCode) || (targetName && sName === targetName);
+    });
+  }, [selectedStudentForHistory, disputes]);
+
   if (authLoading || !user) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: 'var(--bg)' }}>
@@ -120,8 +154,6 @@ export default function AdminDisputesPage() {
       </div>
     );
   }
-
-  const examKeys = Object.keys(grouped);
 
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', padding: '16px 12px' }}>
@@ -196,7 +228,7 @@ export default function AdminDisputesPage() {
           <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)' }}>
             <div className="spinner" style={{ margin: '0 auto 10px' }}></div> Loading disputes and reporter ranks...
           </div>
-        ) : examKeys.length === 0 ? (
+        ) : sortedExamKeys.length === 0 ? (
           <div className="card" style={{ background: 'var(--surface)', padding: '40px 20px', textAlign: 'center', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)' }}>
             <span style={{ fontSize: '36px' }}>🎉</span>
             <h3 style={{ margin: '10px 0 4px', fontSize: '16px', fontWeight: 700 }}>Zero Pending Question Disputes</h3>
@@ -205,11 +237,28 @@ export default function AdminDisputesPage() {
             </p>
           </div>
         ) : (
-          examKeys.map(eId => {
+          sortedExamKeys.map(eId => {
             const qMap = grouped[eId];
-            const qKeys = Object.keys(qMap);
-            const firstReport = qMap[qKeys[0]]?.[0];
+            const rawQKeys = Object.keys(qMap);
+            const firstReport = qMap[rawQKeys[0]]?.[0];
             const examName = firstReport?.examName || eId;
+
+            // Sort questions: unresolved first, resolved sent to the bottom of the list
+            const sortedQKeys = [...rawQKeys].sort((a, b) => {
+              const repA = qMap[a] || [];
+              const repB = qMap[b] || [];
+              const isResA = repA.every((r: any) => r.status && r.status !== 'pending') || repA.some((r: any) => r.status?.startsWith('approved') || r.status === 'rejected');
+              const isResB = repB.every((r: any) => r.status && r.status !== 'pending') || repB.some((r: any) => r.status?.startsWith('approved') || r.status === 'rejected');
+              if (isResA !== isResB) {
+                return isResA ? 1 : -1; // Unresolved (false) at top, Resolved (true) at bottom
+              }
+              return repB.length - repA.length;
+            });
+
+            const pendingCount = sortedQKeys.filter(qId => {
+              const rep = qMap[qId] || [];
+              return !rep.every((r: any) => r.status && r.status !== 'pending') && !rep.some((r: any) => r.status?.startsWith('approved') || r.status === 'rejected');
+            }).length;
 
             return (
               <div key={eId} className="card" style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -218,19 +267,35 @@ export default function AdminDisputesPage() {
                     <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 800, color: 'var(--accent)' }}>
                       📝 {examName}
                     </h3>
-                    <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Exam ID: {eId} • {qKeys.length} flagged question(s)</span>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'flex', gap: '8px', alignItems: 'center', marginTop: '2px' }}>
+                      <span>Exam ID: <code>{eId}</code></span>
+                      <span>•</span>
+                      <span>{sortedQKeys.length} flagged question(s)</span>
+                      {pendingCount > 0 ? (
+                        <span className="badge" style={{ background: 'var(--danger-bg)', color: 'var(--danger)', fontSize: '10px', fontWeight: 700, padding: '1px 6px', borderRadius: '4px' }}>
+                          ⚠️ {pendingCount} Pending
+                        </span>
+                      ) : (
+                        <span className="badge" style={{ background: 'var(--success-bg)', color: 'var(--success)', fontSize: '10px', fontWeight: 700, padding: '1px 6px', borderRadius: '4px' }}>
+                          ✅ All Resolved
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {qKeys.map(qId => {
+                  {sortedQKeys.map(qId => {
                     const reports = qMap[qId];
                     const reportCount = reports.length;
                     const isResolving = resolvingKey === `${eId}_${qId}`;
                     const isAlreadyApproved = reports.some(r => r.status?.startsWith('approved'));
                     const isAlreadyRejected = reports.every(r => r.status === 'rejected');
+                    const isResolved = isAlreadyApproved || isAlreadyRejected;
                     const qData = questionsMap[qId] || null;
                     const itemKey = `${eId}_${qId}`;
+                    
+                    // Resolved questions are collapsed by default unless explicitly expanded by user
                     const isExpanded = expandedCodes.has(itemKey);
 
                     // Determine current correct answer label
@@ -244,21 +309,22 @@ export default function AdminDisputesPage() {
                       <div
                         key={qId}
                         style={{
-                          background: 'var(--surface-light)',
+                          background: isResolved ? 'var(--surface)' : 'var(--surface-light)',
                           border: isAlreadyApproved
                             ? '1px solid var(--success-border, #10b981)'
                             : isAlreadyRejected
                               ? '1px solid var(--border-light)'
                               : '1px solid var(--warning-border, #f59e0b)',
                           borderRadius: 'var(--radius-md, 8px)',
-                          padding: '14px',
+                          padding: isResolved && !isExpanded ? '10px 14px' : '14px',
                           display: 'flex',
                           flexDirection: 'column',
-                          gap: '10px'
+                          gap: '10px',
+                          opacity: isResolved && !isExpanded ? 0.9 : 1
                         }}
                       >
                         {/* Top Bar with Question Code & Action Buttons */}
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                             <span className="badge" style={{ background: 'var(--accent-soft)', color: 'var(--accent)', fontWeight: 800, fontSize: '11px', padding: '3px 8px', borderRadius: '6px' }}>
                               Question: {qId}
@@ -290,7 +356,7 @@ export default function AdminDisputesPage() {
                               onClick={() => toggleExpand(itemKey)}
                               style={{ fontSize: '11px', padding: '4px 10px', display: 'flex', alignItems: 'center', gap: '4px' }}
                             >
-                              <span>{isExpanded ? '▲' : '▼'}</span> {isExpanded ? 'Hide Details' : 'View Question'}
+                              <span>{isExpanded ? '▲' : '▼'}</span> {isExpanded ? 'Hide Details' : isResolved ? 'View Question' : 'Details'}
                             </button>
 
                             <button
@@ -310,141 +376,182 @@ export default function AdminDisputesPage() {
                           </div>
                         </div>
 
-                        {/* Question Content & Options Display (Always visible or expanded) */}
-                        <div
-                          style={{
-                            background: 'var(--surface)',
-                            border: '1px solid var(--border-light)',
-                            borderRadius: '8px',
-                            padding: '12px',
-                            display: isExpanded ? 'block' : 'none'
-                          }}
-                        >
-                          {qData ? (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                              {/* Question Text */}
-                              <div>
-                                <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '4px' }}>
-                                  Question Statement:
-                                </div>
-                                <div 
-                                  style={{ fontSize: '13px', lineHeight: 1.5, color: 'var(--text)', fontWeight: 600 }}
-                                  dangerouslySetInnerHTML={{ __html: preprocessMathText(qData.text || qData.questionText || '') }}
-                                />
-                              </div>
-
-                              {/* Assertion & Reason if applicable */}
-                              {isAssertion && (
-                                <div style={{ background: 'var(--surface-light)', padding: '8px 10px', borderRadius: '6px', fontSize: '12px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                  {assertionText && (
-                                    <div><strong>Assertion (A):</strong> <span dangerouslySetInnerHTML={{ __html: preprocessMathText(assertionText) }} /></div>
-                                  )}
-                                  {reasonText && (
-                                    <div><strong>Reason (R):</strong> <span dangerouslySetInnerHTML={{ __html: preprocessMathText(reasonText) }} /></div>
-                                  )}
-                                </div>
-                              )}
-
-                              {/* Options List */}
-                              {qData.options && qData.options.length > 0 && (
+                        {/* Question Content & Options Display (Shown when expanded or open) */}
+                        {isExpanded && (
+                          <div
+                            style={{
+                              background: 'var(--surface)',
+                              border: '1px solid var(--border-light)',
+                              borderRadius: '8px',
+                              padding: '12px'
+                            }}
+                          >
+                            {qData ? (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                {/* Question Text */}
                                 <div>
-                                  <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '6px' }}>
-                                    Options:
+                                  <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '4px' }}>
+                                    Question Statement:
                                   </div>
-                                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '6px' }}>
-                                    {qData.options.map((opt: any, oIdx: number) => {
-                                      const optLetter = String.fromCharCode(65 + oIdx);
-                                      const isCorrect = String(rawCorrect).toUpperCase().includes(optLetter);
-                                      const optText = typeof opt === 'object' && opt ? (opt.text || opt.value || '') : String(opt);
-
-                                      return (
-                                        <div
-                                          key={oIdx}
-                                          style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '8px',
-                                            padding: '6px 10px',
-                                            borderRadius: '6px',
-                                            fontSize: '12px',
-                                            background: isCorrect ? 'var(--success-bg, rgba(16, 185, 129, 0.15))' : 'var(--surface-light)',
-                                            border: isCorrect ? '1px solid var(--success, #10b981)' : '1px solid var(--border-light)',
-                                            color: isCorrect ? 'var(--success, #10b981)' : 'var(--text)'
-                                          }}
-                                        >
-                                          <strong style={{ minWidth: '22px' }}>({optLetter})</strong>
-                                          <span 
-                                            style={{ flex: 1 }}
-                                            dangerouslySetInnerHTML={{ __html: preprocessMathText(stripOptionLabel(optText)) }}
-                                          />
-                                          {isCorrect && (
-                                            <span style={{ fontSize: '10px', fontWeight: 800, padding: '1px 6px', borderRadius: '4px', background: 'var(--success)', color: '#fff' }}>
-                                              ✓ Key
-                                            </span>
-                                          )}
-                                        </div>
-                                      );
-                                    })}
-                                  </div>
-                                </div>
-                              )}
-
-                              {/* Solution / Explanation */}
-                              {(qData.solution || qData.explanation) && (
-                                <div style={{ background: 'rgba(59, 130, 246, 0.08)', border: '1px solid rgba(59, 130, 246, 0.2)', borderRadius: '6px', padding: '8px 10px', fontSize: '12px' }}>
-                                  <strong style={{ color: 'var(--accent)' }}>💡 Solution / Explanation:</strong>
                                   <div 
-                                    style={{ marginTop: '3px', color: 'var(--text-muted)' }}
-                                    dangerouslySetInnerHTML={{ __html: preprocessMathText(qData.solution || qData.explanation) }}
+                                    style={{ fontSize: '13px', lineHeight: 1.5, color: 'var(--text)', fontWeight: 600 }}
+                                    dangerouslySetInnerHTML={{ __html: preprocessMathText(qData.text || qData.questionText || '') }}
                                   />
                                 </div>
-                              )}
-                            </div>
-                          ) : (
-                            <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                              Question data not found in index. Question Code: <code>{qId}</code>
-                            </div>
-                          )}
-                        </div>
 
-                        {/* Top Reporters List with Bounty Badges */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', background: 'var(--surface)', padding: '8px 10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)' }}>
+                                {/* Assertion & Reason if applicable */}
+                                {isAssertion && (
+                                  <div style={{ background: 'var(--surface-light)', padding: '8px 10px', borderRadius: '6px', fontSize: '12px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                    {assertionText && (
+                                      <div><strong>Assertion (A):</strong> <span dangerouslySetInnerHTML={{ __html: preprocessMathText(assertionText) }} /></div>
+                                    )}
+                                    {reasonText && (
+                                      <div><strong>Reason (R):</strong> <span dangerouslySetInnerHTML={{ __html: preprocessMathText(reasonText) }} /></div>
+                                    )}
+                                  </div>
+                                )}
+
+                                {/* Options List */}
+                                {qData.options && qData.options.length > 0 && (
+                                  <div>
+                                    <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '6px' }}>
+                                      Options:
+                                    </div>
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '6px' }}>
+                                      {qData.options.map((opt: any, oIdx: number) => {
+                                        const optLetter = String.fromCharCode(65 + oIdx);
+                                        const isCorrect = String(rawCorrect).toUpperCase().includes(optLetter);
+                                        const optText = typeof opt === 'object' && opt ? (opt.text || opt.value || '') : String(opt);
+
+                                        return (
+                                          <div
+                                            key={oIdx}
+                                            style={{
+                                              display: 'flex',
+                                              alignItems: 'center',
+                                              gap: '8px',
+                                              padding: '6px 10px',
+                                              borderRadius: '6px',
+                                              fontSize: '12px',
+                                              background: isCorrect ? 'var(--success-bg, rgba(16, 185, 129, 0.15))' : 'var(--surface-light)',
+                                              border: isCorrect ? '1px solid var(--success, #10b981)' : '1px solid var(--border-light)',
+                                              color: isCorrect ? 'var(--success, #10b981)' : 'var(--text)'
+                                            }}
+                                          >
+                                            <strong style={{ minWidth: '22px' }}>({optLetter})</strong>
+                                            <span 
+                                              style={{ flex: 1 }}
+                                              dangerouslySetInnerHTML={{ __html: preprocessMathText(stripOptionLabel(optText)) }}
+                                            />
+                                            {isCorrect && (
+                                              <span style={{ fontSize: '10px', fontWeight: 800, padding: '1px 6px', borderRadius: '4px', background: 'var(--success)', color: '#fff' }}>
+                                                ✓ Key
+                                              </span>
+                                            )}
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Solution / Explanation */}
+                                {(qData.solution || qData.explanation) && (
+                                  <div style={{ background: 'rgba(59, 130, 246, 0.08)', border: '1px solid rgba(59, 130, 246, 0.2)', borderRadius: '6px', padding: '8px 10px', fontSize: '12px' }}>
+                                    <strong style={{ color: 'var(--accent)' }}>💡 Solution / Explanation:</strong>
+                                    <div 
+                                      style={{ marginTop: '3px', color: 'var(--text-muted)' }}
+                                      dangerouslySetInnerHTML={{ __html: preprocessMathText(qData.solution || qData.explanation) }}
+                                    />
+                                  </div>
+                                )}
+                              </div>
+                            ) : (
+                              <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                                Question data not found in index. Question Code: <code>{qId}</code>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Top Reporters List - Clean One-Line Format as per Class & Student Name */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', background: 'var(--surface)', padding: '8px 12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)' }}>
                           <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
                             Reporters & Bounty Eligibility (First 3 Only):
                           </span>
-                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
                             {reports.map((rep, rIdx) => {
                               const rank = rep.reporterRank || rIdx + 1;
                               const isTop3 = rank <= 3;
+                              const studentClass = rep.className || (rep.classNum ? `Class ${rep.classNum}` : 'Student');
+
                               return (
                                 <div
                                   key={rep.id || rIdx}
                                   style={{
                                     display: 'flex',
                                     alignItems: 'center',
-                                    gap: '6px',
-                                    background: isTop3 ? 'var(--warning-bg)' : 'var(--surface-2)',
-                                    border: isTop3 ? '1px solid var(--warning-border)' : '1px solid var(--border-light)',
-                                    padding: '3px 8px',
-                                    borderRadius: '12px',
-                                    fontSize: '11px'
+                                    justifyContent: 'space-between',
+                                    flexWrap: 'wrap',
+                                    gap: '8px',
+                                    background: isTop3 ? 'rgba(245, 158, 11, 0.07)' : 'var(--surface-2)',
+                                    border: isTop3 ? '1px solid rgba(245, 158, 11, 0.25)' : '1px solid var(--border-light)',
+                                    padding: '5px 10px',
+                                    borderRadius: '6px',
+                                    fontSize: '12px'
                                   }}
                                 >
-                                  <span>{isTop3 ? `🏆 #${rank}` : `#${rank}`}</span>
-                                  <strong>{rep.studentName}</strong>
-                                  <span style={{ fontSize: '9px', color: 'var(--text-muted)' }}>
-                                    ({rep.reason || 'issue'} • {formatDateTimeIST(rep.submittedAt || rep.createdAt)})
-                                  </span>
-                                  {rep.notes && (
-                                    <span style={{ fontSize: '9px', fontStyle: 'italic', color: 'var(--text-muted)' }}>
-                                      &quot;{rep.notes}&quot;
+                                  {/* Left: Rank, Class, Clickable Student Name, Reason & Notes */}
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                    <span style={{ fontWeight: 800, color: isTop3 ? 'var(--warning)' : 'var(--text-muted)', fontSize: '11px', minWidth: '35px' }}>
+                                      {isTop3 ? `🏆 #${rank}` : `#${rank}`}
                                     </span>
-                                  )}
-                                  {isTop3 && (
-                                    <span style={{ fontSize: '9px', color: 'var(--warning)', fontWeight: 800 }}>
-                                      [+2 Bounty Eligible]
+
+                                    <span className="badge" style={{ background: 'var(--surface)', color: 'var(--text-muted)', fontSize: '10px', fontWeight: 700, padding: '1px 6px', borderRadius: '4px', border: '1px solid var(--border-light)' }}>
+                                      {studentClass}
                                     </span>
-                                  )}
+
+                                    {/* Clickable Student Name to open dispute history modal */}
+                                    <button
+                                      type="button"
+                                      onClick={() => setSelectedStudentForHistory({
+                                        studentCode: rep.studentCode || '',
+                                        studentName: rep.studentName || 'Student',
+                                        className: studentClass
+                                      })}
+                                      style={{
+                                        background: 'none',
+                                        border: 'none',
+                                        padding: 0,
+                                        fontWeight: 800,
+                                        color: 'var(--accent)',
+                                        textDecoration: 'underline',
+                                        cursor: 'pointer',
+                                        fontSize: '12px'
+                                      }}
+                                      title="Click to view all reports and questions disputed by this student"
+                                    >
+                                      {rep.studentName}
+                                    </button>
+
+                                    <span style={{ color: 'var(--text-muted)', fontSize: '11px' }}>
+                                      • <strong>{rep.reason || 'issue'}</strong>
+                                      {rep.notes && <span style={{ fontStyle: 'italic', marginLeft: '4px' }}>— &quot;{rep.notes}&quot;</span>}
+                                      {rep.suggestedAnswer && <span style={{ marginLeft: '4px', color: 'var(--text)' }}>[Suggested: {rep.suggestedAnswer}]</span>}
+                                    </span>
+                                  </div>
+
+                                  {/* Right: Timestamp & Bounty status */}
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
+                                      📅 {formatDateTimeIST(rep.submittedAt || rep.createdAt)}
+                                    </span>
+                                    {isTop3 && (
+                                      <span className="badge" style={{ background: 'var(--warning-bg)', color: 'var(--warning)', fontWeight: 800, fontSize: '9px', padding: '2px 6px', borderRadius: '4px', border: '1px solid var(--warning-border)' }}>
+                                        +2 Bounty Eligible
+                                      </span>
+                                    )}
+                                  </div>
                                 </div>
                               );
                             })}
@@ -460,6 +567,171 @@ export default function AdminDisputesPage() {
         )}
 
       </div>
+
+      {/* Student Dispute & Report History Modal */}
+      {selectedStudentForHistory && (
+        <div className="modal show" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(6px)', zIndex: 40000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px', overflowY: 'auto' }}>
+          <div className="modal-content" style={{ background: 'var(--surface)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-lg, 12px)', maxWidth: '720px', width: '100%', padding: '20px', maxHeight: '90vh', overflowY: 'auto', boxShadow: 'var(--shadow-xl)' }}>
+            
+            {/* Modal Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', borderBottom: '1px solid var(--border-light)', paddingBottom: '10px' }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <h4 style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: 'var(--text)' }}>
+                    👤 {selectedStudentForHistory.studentName}&apos;s Disputed Questions
+                  </h4>
+                  {selectedStudentForHistory.className && (
+                    <span className="badge" style={{ background: 'var(--accent-soft)', color: 'var(--accent)', fontSize: '10px', fontWeight: 700, padding: '2px 6px', borderRadius: '4px' }}>
+                      {selectedStudentForHistory.className}
+                    </span>
+                  )}
+                </div>
+                <p style={{ margin: '2px 0 0', fontSize: '11px', color: 'var(--text-muted)' }}>
+                  Complete track record of all questions reported and challenged by this student.
+                </p>
+              </div>
+              <button 
+                className="close-modal" 
+                onClick={() => setSelectedStudentForHistory(null)} 
+                style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '1.4rem', color: 'var(--text-muted)' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Summary Statistics Bar */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', marginBottom: '14px' }}>
+              <div style={{ background: 'var(--surface-light)', padding: '10px', borderRadius: '8px', textAlign: 'center', border: '1px solid var(--border-light)' }}>
+                <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--accent)' }}>{studentDisputesList.length}</div>
+                <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Total Reports Filed</div>
+              </div>
+              <div style={{ background: 'rgba(245, 158, 11, 0.08)', padding: '10px', borderRadius: '8px', textAlign: 'center', border: '1px solid rgba(245, 158, 11, 0.2)' }}>
+                <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--warning)' }}>
+                  {studentDisputesList.filter(d => (d.reporterRank || 1) <= 3).length}
+                </div>
+                <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--warning)', textTransform: 'uppercase' }}>🏆 Top 3 Spotters</div>
+              </div>
+              <div style={{ background: 'rgba(16, 185, 129, 0.08)', padding: '10px', borderRadius: '8px', textAlign: 'center', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+                <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--success)' }}>
+                  {studentDisputesList.filter(d => d.status?.startsWith('approved')).length}
+                </div>
+                <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--success)', textTransform: 'uppercase' }}>Resolved / Awarded</div>
+              </div>
+            </div>
+
+            {/* Student's Reports List */}
+            {studentDisputesList.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '30px 10px', color: 'var(--text-muted)', fontSize: '12px' }}>
+                No active dispute reports found for this student.
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {studentDisputesList.map((d, idx) => {
+                  const qData = questionsMap[d.questionId || d.questionCode] || null;
+                  const isApproved = d.status?.startsWith('approved');
+                  const isRejected = d.status === 'rejected';
+                  const isTop3 = (d.reporterRank || idx + 1) <= 3;
+
+                  return (
+                    <div
+                      key={d.id || idx}
+                      style={{
+                        background: 'var(--surface-light)',
+                        border: isApproved 
+                          ? '1px solid var(--success-border)' 
+                          : isRejected 
+                            ? '1px solid var(--border-light)' 
+                            : '1px solid var(--warning-border)',
+                        borderRadius: '8px',
+                        padding: '12px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '8px'
+                      }}
+                    >
+                      {/* Top Header of Question */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span className="badge" style={{ background: 'var(--accent-soft)', color: 'var(--accent)', fontWeight: 800, fontSize: '11px', padding: '2px 8px', borderRadius: '4px' }}>
+                            {d.questionCode || d.questionId}
+                          </span>
+                          <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text)' }}>
+                            {d.examName || d.examId}
+                          </span>
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          {isApproved ? (
+                            <span className="badge" style={{ background: 'var(--success-bg)', color: 'var(--success)', fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '8px' }}>
+                              ✅ Resolved & Re-evaluated
+                            </span>
+                          ) : isRejected ? (
+                            <span className="badge" style={{ background: 'rgba(148, 163, 184, 0.2)', color: '#94a3b8', fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '8px' }}>
+                              ❌ Challenge Dismissed
+                            </span>
+                          ) : (
+                            <span className="badge" style={{ background: 'var(--danger-bg)', color: 'var(--danger)', fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '8px' }}>
+                              ⏳ Pending Review
+                            </span>
+                          )}
+
+                          {isTop3 && (
+                            <span className="badge" style={{ background: 'var(--warning-bg)', color: 'var(--warning)', fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '8px' }}>
+                              🏆 Spotter #{d.reporterRank || 1}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Question text preview if available */}
+                      {qData?.text && (
+                        <div style={{ background: 'var(--surface)', padding: '8px 10px', borderRadius: '6px', fontSize: '12px', border: '1px solid var(--border-light)' }}>
+                          <div 
+                            style={{ color: 'var(--text)', fontWeight: 600, lineHeight: 1.4 }}
+                            dangerouslySetInnerHTML={{ __html: preprocessMathText(qData.text || qData.questionText || '') }}
+                          />
+                        </div>
+                      )}
+
+                      {/* Student's Challenge Details */}
+                      <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                        <div>
+                          <strong style={{ color: 'var(--text)' }}>Reason:</strong> {d.reason || 'General issue'}
+                        </div>
+                        {d.suggestedAnswer && (
+                          <div>
+                            <strong style={{ color: 'var(--text)' }}>Suggested Answer:</strong> {d.suggestedAnswer}
+                          </div>
+                        )}
+                        {d.notes && (
+                          <div>
+                            <strong style={{ color: 'var(--text)' }}>Student Notes:</strong> &quot;{d.notes}&quot;
+                          </div>
+                        )}
+                        <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                          Reported on {formatDateTimeIST(d.submittedAt || d.createdAt)}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Modal Footer */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '14px', paddingTop: '10px', borderTop: '1px solid var(--border-light)' }}>
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm"
+                onClick={() => setSelectedStudentForHistory(null)}
+              >
+                Close View
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
 
       {/* Resolution & Challenge Management Modal */}
       {activeModalItem && (

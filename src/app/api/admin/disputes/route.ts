@@ -27,10 +27,48 @@ export async function GET(req: NextRequest) {
 
     const snap = await query.limit(300).get();
 
-    const disputes = snap.docs.map(doc => ({
+    const rawDisputes = snap.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
     }));
+
+    // Hydrate student metadata (class, batchName, name)
+    const studentCodes = Array.from(new Set(rawDisputes.map((d: any) => (d.studentCode || '').toUpperCase()).filter(Boolean)));
+    const usersMap = new Map<string, { className: string; classNum: string; name: string }>();
+
+    if (studentCodes.length > 0) {
+      try {
+        const usersSnap = await adminDb.collection('users').where('role', '==', 'student').get();
+        usersSnap.docs.forEach(doc => {
+          const u = doc.data();
+          const code = (u.studentCode || '').toUpperCase();
+          if (code) {
+            const cNum = u.classNum || u.class || '';
+            const cName = cNum ? `Class ${cNum}` : (u.className || u.batchName || '');
+            usersMap.set(code, {
+              className: cName,
+              classNum: String(cNum),
+              name: u.name || 'Student'
+            });
+          }
+        });
+      } catch (err) {
+        console.warn('Failed to hydrate student profiles for disputes:', err);
+      }
+    }
+
+    const disputes = rawDisputes.map((d: any) => {
+      const sCode = (d.studentCode || '').toUpperCase();
+      const uInfo = usersMap.get(sCode);
+      const cName = uInfo?.className || (d.classNum ? `Class ${d.classNum}` : (d.batchName || d.className || ''));
+      const sName = uInfo?.name || d.studentName || 'Student';
+      return {
+        ...d,
+        studentName: sName,
+        className: cName,
+        classNum: uInfo?.classNum || d.classNum || ''
+      };
+    });
 
     // Sort by submittedAt ascending so ranking is chronological
     disputes.sort((a: any, b: any) => {
