@@ -315,13 +315,52 @@ export class ExamReviewService {
           }
         });
       } else if (action === 'quarantine') {
-        await qRef.update({
-          flaggedDefective: true,
-          defectiveReason: notes || 'Admin quarantined defective question',
-          quarantinedAt: new Date().toISOString()
+        const qData = qSnap.data() || {};
+        const qCode = qData.questionCode || questionId;
+
+        // Archive to quarantinedQuestions before deletion
+        await adminDb.collection('quarantinedQuestions').doc(qRef.id).set({
+          ...qData,
+          deletedFromQuestionBank: true,
+          deletedReason: notes || 'Admin quarantined and deleted defective question from Question Bank',
+          deletedBy: adminEmail,
+          deletedAt: new Date().toISOString()
         });
+
+        // Permanently delete the primary question document
+        await qRef.delete();
+
+        // Also delete any duplicate documents with the same questionCode
+        if (qCode) {
+          const dupSnaps = await adminDb.collection('questions').where('questionCode', '==', qCode).get();
+          if (!dupSnaps.empty) {
+            const delBatch = adminDb.batch();
+            dupSnaps.docs.forEach(d => delBatch.delete(d.ref));
+            await delBatch.commit();
+          }
+        }
       }
       invalidateCache('qb_base_');
+    } else if (action === 'quarantine') {
+      // If direct doc did not exist, search by questionCode and delete
+      const qByCodeSnap = await adminDb.collection('questions')
+        .where('questionCode', '==', questionId)
+        .get();
+      if (!qByCodeSnap.empty) {
+        const delBatch = adminDb.batch();
+        for (const doc of qByCodeSnap.docs) {
+          await adminDb.collection('quarantinedQuestions').doc(doc.id).set({
+            ...doc.data(),
+            deletedFromQuestionBank: true,
+            deletedReason: notes || 'Admin quarantined and deleted defective question from Question Bank',
+            deletedBy: adminEmail,
+            deletedAt: new Date().toISOString()
+          });
+          delBatch.delete(doc.ref);
+        }
+        await delBatch.commit();
+        invalidateCache('qb_base_');
+      }
     }
 
     // 2. Fetch and award bounty strictly to the first 3 reporters

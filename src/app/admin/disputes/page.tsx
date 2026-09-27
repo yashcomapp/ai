@@ -566,7 +566,7 @@ export default function AdminDisputesPage() {
                 >
                   <option value="correct_key">🔑 Change Correct Key (Re-evaluate all student attempts against new key)</option>
                   <option value="bonus_all">🎁 Award Bonus Marks to All Students (Flawed / Ambiguous Question)</option>
-                  <option value="quarantine">🚫 Quarantine / Exclude Question from Exam Total</option>
+                  <option value="quarantine">🚫 Delete from Question Bank & Exclude Question from Exam Total</option>
                   <option value="reject_challenge">❌ Reject / Dismiss Challenge (Question is 100% Valid - No Changes)</option>
                 </select>
               </div>
