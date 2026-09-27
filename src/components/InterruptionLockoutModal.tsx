@@ -25,28 +25,28 @@ export function InterruptionLockoutModal({
   const isSecondViolation = tabViolations === 2 && maxViolations === 3;
 
   useEffect(() => {
-    if (!isOpen) {
+    if (!isOpen || isFinalViolation || isSubmitting) {
       setSecondsRemaining(45);
       return;
     }
 
-    if (isFinalViolation || isSubmitting) {
-      return;
-    }
-
+    const targetEndTime = Date.now() + 45 * 1000;
     setSecondsRemaining(45);
-    const interval = setInterval(() => {
-      setSecondsRemaining(prev => {
-        if (prev <= 1) {
-          clearInterval(interval);
-          if (onTimeoutAutoSubmit) {
-            onTimeoutAutoSubmit();
-          }
-          return 0;
+
+    const updateTimer = () => {
+      const diffMs = targetEndTime - Date.now();
+      const remaining = Math.max(0, Math.ceil(diffMs / 1000));
+      setSecondsRemaining(remaining);
+      if (remaining <= 0) {
+        clearInterval(interval);
+        if (onTimeoutAutoSubmit) {
+          onTimeoutAutoSubmit();
         }
-        return prev - 1;
-      });
-    }, 1000);
+      }
+    };
+
+    // 500ms tick prevents timer drift even if backgrounded or throttled
+    const interval = setInterval(updateTimer, 500);
 
     return () => clearInterval(interval);
   }, [isOpen, tabViolations, isFinalViolation, isSubmitting, onTimeoutAutoSubmit]);
@@ -59,7 +59,7 @@ export function InterruptionLockoutModal({
         position: 'fixed',
         inset: 0,
         zIndex: 999999,
-        background: 'rgba(15, 23, 42, 0.88)',
+        background: 'rgba(17, 19, 24, 0.88)',
         backdropFilter: 'blur(12px)',
         WebkitBackdropFilter: 'blur(12px)',
         display: 'flex',
@@ -84,19 +84,19 @@ export function InterruptionLockoutModal({
 
       <div
         style={{
-          background: 'var(--surface-popover, #1e293b)',
+          background: 'var(--surface-popover, var(--surface))',
           border: isFinalViolation 
-            ? '2px solid #ef4444' 
+            ? '2px solid var(--danger)' 
             : isSecondViolation 
-              ? '2px solid #f97316' 
-              : '2px solid #eab308',
-          borderRadius: '16px',
+              ? '2px solid var(--warning)' 
+              : '2px solid var(--warning)',
+          borderRadius: 'var(--radius-lg, 16px)',
           padding: '28px 24px',
           maxWidth: '480px',
           width: '100%',
           textAlign: 'center',
-          boxShadow: '0 20px 40px -15px rgba(0, 0, 0, 0.6)',
-          color: 'var(--foreground, #f8fafc)'
+          boxShadow: 'var(--shadow-lg, 0 20px 40px -15px rgba(0, 0, 0, 0.6))',
+          color: 'var(--text)'
         }}
       >
         {/* Icon & Status Header */}
@@ -112,16 +112,16 @@ export function InterruptionLockoutModal({
               justifyContent: 'center',
               fontSize: '32px',
               background: isFinalViolation
-                ? 'rgba(239, 68, 68, 0.15)'
+                ? 'var(--danger-bg)'
                 : isSecondViolation
-                  ? 'rgba(249, 115, 22, 0.15)'
-                  : 'rgba(234, 179, 8, 0.15)',
+                  ? 'var(--warning-bg)'
+                  : 'var(--warning-bg)',
               border: `1px solid ${
                 isFinalViolation
-                  ? '#ef4444'
+                  ? 'var(--danger)'
                   : isSecondViolation
-                    ? '#f97316'
-                    : '#eab308'
+                    ? 'var(--warning)'
+                    : 'var(--warning)'
               }`,
               animation: 'pulseWarning 1.5s infinite ease-in-out'
             }}
@@ -139,11 +139,11 @@ export function InterruptionLockoutModal({
               textTransform: 'uppercase',
               letterSpacing: '0.05em',
               background: isFinalViolation
-                ? '#ef4444'
+                ? 'var(--danger)'
                 : isSecondViolation
-                  ? '#f97316'
-                  : '#eab308',
-              color: '#0f172a',
+                  ? 'var(--warning)'
+                  : 'var(--warning)',
+              color: 'var(--bg)',
               marginBottom: '8px'
             }}
           >
@@ -159,7 +159,7 @@ export function InterruptionLockoutModal({
               fontSize: '20px',
               fontWeight: 800,
               margin: '8px 0 4px',
-              color: 'var(--foreground, #ffffff)'
+              color: 'var(--text)'
             }}
           >
             {isFinalViolation
@@ -175,23 +175,23 @@ export function InterruptionLockoutModal({
           style={{
             fontSize: '14px',
             lineHeight: 1.55,
-            color: 'var(--text-muted, #cbd5e1)',
+            color: 'var(--text-muted)',
             marginBottom: '20px',
             textAlign: 'left',
-            background: 'rgba(0, 0, 0, 0.25)',
+            background: 'var(--surface-2)',
             padding: '14px',
-            borderRadius: '10px',
-            border: '1px solid rgba(255, 255, 255, 0.08)'
+            borderRadius: 'var(--radius-md, 10px)',
+            border: '1px solid var(--border-light)'
           }}
         >
           {isFinalViolation ? (
-            <p style={{ margin: 0, color: '#fca5a5' }}>
+            <p style={{ margin: 0, color: 'var(--danger-muted, var(--danger))' }}>
               The maximum allowed tab/window departures (<strong>3/3</strong>) have been reached. 
               Your exam is being automatically submitted. All answered questions are saved.
             </p>
           ) : isSecondViolation ? (
             <>
-              <p style={{ margin: '0 0 8px', fontWeight: 600, color: '#fed7aa' }}>
+              <p style={{ margin: '0 0 8px', fontWeight: 600, color: 'var(--warning)' }}>
                 ⚠️ <strong>This was your second violation.</strong>
               </p>
               <p style={{ margin: 0 }}>
@@ -201,7 +201,7 @@ export function InterruptionLockoutModal({
             </>
           ) : (
             <>
-              <p style={{ margin: '0 0 8px', fontWeight: 600, color: '#fef08a' }}>
+              <p style={{ margin: '0 0 8px', fontWeight: 600, color: 'var(--warning)' }}>
                 A phone call, notification, or window change was detected.
               </p>
               <p style={{ margin: 0 }}>
@@ -218,11 +218,11 @@ export function InterruptionLockoutModal({
             <div
               style={{
                 fontSize: '12px',
-                color: '#94a3b8',
+                color: 'var(--text-muted)',
                 marginBottom: '12px'
               }}
             >
-              Auto-submits in <strong style={{ color: secondsRemaining <= 10 ? '#ef4444' : '#f8fafc' }}>{secondsRemaining}s</strong> if not resumed
+              Auto-submits in <strong style={{ color: secondsRemaining <= 10 ? 'var(--danger)' : 'var(--text)' }}>{secondsRemaining}s</strong> if not resumed
             </div>
 
             <button
@@ -230,9 +230,9 @@ export function InterruptionLockoutModal({
               style={{
                 width: '100%',
                 padding: '14px 20px',
-                borderRadius: '10px',
-                background: isSecondViolation ? '#f97316' : '#22c55e',
-                color: '#ffffff',
+                borderRadius: 'var(--radius-md, 10px)',
+                background: isSecondViolation ? 'var(--warning)' : 'var(--success)',
+                color: 'var(--bg)',
                 border: 'none',
                 fontWeight: 700,
                 fontSize: '16px',
@@ -242,8 +242,8 @@ export function InterruptionLockoutModal({
                 justifyContent: 'center',
                 gap: '8px',
                 boxShadow: isSecondViolation
-                  ? '0 4px 14px rgba(249, 115, 22, 0.4)'
-                  : '0 4px 14px rgba(34, 197, 94, 0.4)',
+                  ? '0 4px 14px var(--accent-ring)'
+                  : '0 4px 14px rgba(42, 166, 106, 0.35)',
                 transition: 'all 0.15s ease'
               }}
             >
@@ -259,14 +259,14 @@ export function InterruptionLockoutModal({
                 display: 'inline-block',
                 width: '28px',
                 height: '28px',
-                border: '3px solid rgba(239, 68, 68, 0.3)',
-                borderTop: '3px solid #ef4444',
+                border: '3px solid var(--danger-bg)',
+                borderTop: '3px solid var(--danger)',
                 borderRadius: '50%',
                 animation: 'spin 0.8s linear infinite',
                 margin: '0 auto 10px'
               }}
             />
-            <p style={{ fontSize: '13px', color: '#f8fafc', fontWeight: 600, margin: 0 }}>
+            <p style={{ fontSize: '13px', color: 'var(--text)', fontWeight: 600, margin: 0 }}>
               Saving and submitting your responses...
             </p>
           </div>
@@ -277,9 +277,9 @@ export function InterruptionLockoutModal({
           style={{
             marginTop: '16px',
             paddingTop: '12px',
-            borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+            borderTop: '1px solid var(--border-light)',
             fontSize: '11px',
-            color: '#94a3b8'
+            color: 'var(--text-faint)'
           }}
         >
           💡 <strong>Tip for Mobile:</strong> Turn on <em>&quot;Do Not Disturb&quot; (DND)</em> or block incoming calls to prevent unintentional interruptions.

@@ -174,8 +174,10 @@ export default function ParentPendingReportPage() {
             <h1 style={{ fontSize: '16px', margin: 0 }}>Parent Reviews & Sincerity Audit</h1>
           </div>
         </div>
-        <div className="page-header-right" style={{ display: 'flex', gap: '10px' }}>
-          
+        <div className="page-header-right" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <button className="btn btn-secondary" onClick={() => router.push('/admin')} style={{ padding: '6px 12px', fontSize: '12px' }}>
+            ← Back to Dashboard
+          </button>
           <button className="btn btn-primary" style={{ padding: '6px 12px', fontSize: '12px' }} onClick={() => setPdfSelectorOpen(true)}>
             📄 Export PDF
           </button>

@@ -41,6 +41,9 @@ function AdminStudentsUnifiedContent({ initialTab }: { initialTab?: TabType }) {
           </div>
         </div>
         <div className="page-header-right" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button className="btn btn-secondary" onClick={() => router.push('/admin')} style={{ padding: '6px 12px', fontSize: '12px' }}>
+            ← Back to Dashboard
+          </button>
           <button className="btn btn-secondary" title="Logout" onClick={logout} style={{ padding: '6px 12px', fontSize: '12px' }}>
             Logout
           </button>
