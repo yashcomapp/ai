@@ -115,8 +115,20 @@ function TopicPracticeContent() {
           document.head.appendChild(s);
         });
       }
-      const canvas = await w.html2canvas(element, { scale: 1.5, useCORS: true, backgroundColor: 'var(--surface-2)' });
-      return canvas.toDataURL('image/jpeg', 0.7);
+      const canvas = await w.html2canvas(element, { scale: 1.2, useCORS: true, backgroundColor: 'var(--surface-2)' });
+      let outputCanvas = canvas;
+      if (canvas.width > 800) {
+        const scaled = document.createElement('canvas');
+        const ratio = 800 / canvas.width;
+        scaled.width = 800;
+        scaled.height = Math.round(canvas.height * ratio);
+        const ctx = scaled.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(canvas, 0, 0, scaled.width, scaled.height);
+          outputCanvas = scaled;
+        }
+      }
+      return outputCanvas.toDataURL('image/jpeg', 0.65);
     } catch (err) {
       console.warn('Screenshot capture failed:', err);
       return null;

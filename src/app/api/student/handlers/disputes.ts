@@ -34,10 +34,27 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'Missing question identifier.' }, { status: 400 });
     }
 
+    // Validate screenshot size to protect Firestore document size limits (max 700KB Base64)
+    let safeScreenshotData: string | null = null;
+    if (screenshotData && typeof screenshotData === 'string') {
+      if (screenshotData.length > 700000) {
+        return NextResponse.json({ 
+          message: 'Screenshot file is too large (maximum 700KB). Please upload a smaller image or compressed screenshot.' 
+        }, { status: 400 });
+      }
+      safeScreenshotData = screenshotData;
+    }
+
     const resolvedExamId = examId || (topicCode ? `practice_${topicCode}` : (source === 'practice' ? 'practice_self_study' : ''));
     const resolvedExamName = topicCode ? `🎯 Practice & Self-Study • ${topicCode}` : (source === 'practice' ? '🎯 Practice & Self-Study' : (examId || ''));
 
-    const disputeRef = adminDb.collection('questionDisputes').doc();
+    // Deterministic doc ID prevents duplicate submissions on rapid click or network retries
+    const safeStudent = (studentCode || 'student').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
+    const safeQId = (questionCode || questionId || 'q').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
+    const safeExam = (resolvedExamId || 'practice').trim().replace(/[^a-zA-Z0-9_-]/g, '_');
+    const deterministicDocId = `disp_${safeStudent}_${safeExam}_${safeQId}`;
+
+    const disputeRef = adminDb.collection('questionDisputes').doc(deterministicDocId);
     const disputeData = {
       disputeId: disputeRef.id,
       questionId: questionId || questionCode,
@@ -54,12 +71,12 @@ export async function POST(req: NextRequest) {
       board,
       reason,
       notes: notes || '',
-      screenshotData: screenshotData || null, // Base64 image
+      screenshotData: safeScreenshotData,
       status: 'pending', // 'pending' | 'approved' | 'rejected'
       createdAt: new Date().toISOString()
     };
 
-    await disputeRef.set(disputeData);
+    await disputeRef.set(disputeData, { merge: true });
 
     return NextResponse.json({
       success: true,
