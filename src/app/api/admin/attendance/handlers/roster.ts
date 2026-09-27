@@ -22,17 +22,20 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Missing batchId or date.' }, { status: 400 });
     }
 
-    // 1. Fetch batch details, students, active leaves, and attendance concurrently in parallel
+    // 1. Fetch batch details, students, active leaves, declarations, and attendance concurrently in parallel
     const dateStr = date.replace(/-/g, '');
     const attendanceDocId = `${dateStr}_${batchId}`;
 
-    const [batchDoc, studentsSnap, leavesSnap, attendanceDoc] = await Promise.all([
+    const [batchDoc, studentsSnap, leavesSnap, declsSnap, attendanceDoc] = await Promise.all([
       adminDb.collection('batches').doc(batchId).get(),
       adminDb.collection('users')
         .where('role', '==', 'student')
         .where('batchIds', 'array-contains', batchId)
         .get(),
       adminDb.collection('leaveApplications')
+        .where('endDate', '>=', date)
+        .get(),
+      adminDb.collection('attendanceDeclarations')
         .where('endDate', '>=', date)
         .get(),
       adminDb.collection('attendance').doc(attendanceDocId).get()
@@ -66,12 +69,21 @@ export async function GET(req: NextRequest) {
       }
     });
 
+    const activeDeclarations = new Map<string, any>();
+    declsSnap.docs.forEach(doc => {
+      const data = doc.data();
+      if (data.studentCode && data.startDate <= date) {
+        activeDeclarations.set(data.studentCode.toUpperCase(), data);
+      }
+    });
+
     const existingRecords = attendanceDoc.exists ? attendanceDoc.data()?.records || {} : {};
 
     // 5. Merge data to compile current roster status
     const roster = students.map(student => {
       const codeUpper = student.studentCode.toUpperCase();
       const hasLeave = activeLeaves.get(codeUpper);
+      const hasDecl = activeDeclarations.get(codeUpper);
       
       let status = 'present';
       let remarks = '';
@@ -85,8 +97,15 @@ export async function GET(req: NextRequest) {
 
       if (hasLeave && hasLeave.status === 'approved') {
         status = 'leave';
-        remarks = `Approved Leave: ${hasLeave.remarks || hasLeave.type}`;
+        remarks = `Approved Leave: ${hasLeave.remarks || hasLeave.type || 'Leave'}`;
         isLeaveApproved = true;
+      } else if (hasDecl && (hasDecl.status === 'leave' || hasDecl.status === 'absent')) {
+        status = hasDecl.status;
+        remarks = `Parent Declared: ${hasDecl.remarks || (hasDecl.status === 'leave' ? 'Leave' : 'Absent')}`;
+        isLeaveApproved = hasDecl.status === 'leave';
+        selfMarked = true;
+        selfMarkedBy = hasDecl.declaredBy || 'parent';
+        selfMarkedAt = hasDecl.createdAt || null;
       } else {
         if (hasLeave && hasLeave.status === 'pending') {
           pendingLeave = {
@@ -96,6 +115,13 @@ export async function GET(req: NextRequest) {
             remarks: hasLeave.remarks || '',
             status: hasLeave.status
           };
+        }
+        if (hasDecl && !rec) {
+          status = hasDecl.status || 'present';
+          remarks = `Parent Declared: ${hasDecl.remarks || ''}`;
+          selfMarked = true;
+          selfMarkedBy = hasDecl.declaredBy || 'parent';
+          selfMarkedAt = hasDecl.createdAt || null;
         }
         if (rec) {
           status = rec.status || 'present';

@@ -127,9 +127,11 @@ export async function GET(req: NextRequest) {
       adminDb.collection('leaveApplications')
         .where('studentCode', '==', sCodeUpper)
         .where('status', '==', 'approved')
+        .where('endDate', '>=', todayStr)
         .get(),
       adminDb.collection('attendanceDeclarations')
         .where('studentCode', '==', sCodeUpper)
+        .where('endDate', '>=', todayStr)
         .get()
     ]);
 
