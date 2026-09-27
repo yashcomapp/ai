@@ -62,8 +62,25 @@ export async function GET(req: NextRequest) {
       const uInfo = usersMap.get(sCode);
       const cName = uInfo?.className || (d.classNum ? `Class ${d.classNum}` : (d.batchName || d.className || ''));
       const sName = uInfo?.name || d.studentName || 'Student';
+
+      let resolvedExamId = d.examId;
+      if (!resolvedExamId || resolvedExamId === 'null' || resolvedExamId === 'undefined' || resolvedExamId === 'unassigned_exam') {
+        resolvedExamId = d.topicCode ? `practice_${d.topicCode}` : (d.source ? `practice_${d.source}` : 'practice_self_study');
+      }
+
+      let resolvedExamName = d.examName;
+      if (!resolvedExamName || resolvedExamName === 'undefined' || resolvedExamName === 'null') {
+        if (resolvedExamId.startsWith('practice_') || d.source === 'practice') {
+          resolvedExamName = d.topicCode ? `🎯 Practice & Self-Study • ${d.topicCode}` : '🎯 Practice & Self-Study';
+        } else {
+          resolvedExamName = resolvedExamId;
+        }
+      }
+
       return {
         ...d,
+        examId: resolvedExamId,
+        examName: resolvedExamName,
         studentName: sName,
         className: cName,
         classNum: uInfo?.classNum || d.classNum || ''
@@ -82,7 +99,7 @@ export async function GET(req: NextRequest) {
     const questionIdSet = new Set<string>();
 
     disputes.forEach((d: any) => {
-      const eId = d.examId || 'unassigned_exam';
+      const eId = d.examId || (d.topicCode ? `practice_${d.topicCode}` : 'practice_self_study');
       const qId = d.questionId || d.questionCode || 'unknown_q';
       if (!grouped[eId]) grouped[eId] = {};
       if (!grouped[eId][qId]) grouped[eId][qId] = [];

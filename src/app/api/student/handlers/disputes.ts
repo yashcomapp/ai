@@ -34,6 +34,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'Missing question identifier.' }, { status: 400 });
     }
 
+    const resolvedExamId = examId || (topicCode ? `practice_${topicCode}` : (source === 'practice' ? 'practice_self_study' : ''));
+    const resolvedExamName = topicCode ? `🎯 Practice & Self-Study • ${topicCode}` : (source === 'practice' ? '🎯 Practice & Self-Study' : (examId || ''));
+
     const disputeRef = adminDb.collection('questionDisputes').doc();
     const disputeData = {
       disputeId: disputeRef.id,
@@ -42,7 +45,8 @@ export async function POST(req: NextRequest) {
       questionText: questionText || '',
       topicCode: topicCode || '',
       source,
-      examId,
+      examId: resolvedExamId || null,
+      examName: resolvedExamName || '',
       sessionId,
       studentCode,
       studentName,

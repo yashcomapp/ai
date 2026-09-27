@@ -263,23 +263,56 @@ export class ExamReviewService {
   }> {
     const { examId, questionId, newCorrectOption, action, notes = '', adminEmail = 'Admin' } = params;
 
-    // Handle Challenge Dismissal / Rejection (No marks recalculated, challenge marked as invalid)
-    if (action === 'reject_challenge' || (action as any) === 'dismiss') {
-      const disputesSnap = await adminDb.collection('questionDisputes')
-        .where('examId', '==', examId)
+    // Helper to find all matching dispute documents (matches questionId or questionCode across exam or practice)
+    const getMatchingDisputeDocs = async () => {
+      let qSnap = await adminDb.collection('questionDisputes')
         .where('questionId', '==', questionId)
         .get();
 
-      const batch = adminDb.batch();
-      disputesSnap.docs.forEach(doc => {
-        batch.update(doc.ref, {
-          status: 'rejected',
-          resolvedBy: adminEmail,
-          resolvedAt: new Date().toISOString(),
-          resolutionNotes: notes || 'Admin reviewed: Question verified as valid. Challenge dismissed.'
+      if (qSnap.empty) {
+        qSnap = await adminDb.collection('questionDisputes')
+          .where('questionCode', '==', questionId)
+          .get();
+      }
+
+      if (qSnap.empty) return [];
+
+      const isRealExam = examId && examId !== 'unassigned_exam' && examId !== 'null' && !examId.startsWith('practice_');
+      if (isRealExam) {
+        const filtered = qSnap.docs.filter(d => {
+          const data = d.data();
+          return data.examId === examId || !data.examId;
         });
-      });
-      await batch.commit();
+        if (filtered.length > 0) return filtered;
+      }
+
+      if (examId && (examId.startsWith('practice_') || examId === 'unassigned_exam')) {
+        const filtered = qSnap.docs.filter(d => {
+          const data = d.data();
+          return data.examId === examId || data.source === 'practice' || !data.examId || data.examId === 'null';
+        });
+        if (filtered.length > 0) return filtered;
+      }
+
+      return qSnap.docs;
+    };
+
+    // Handle Challenge Dismissal / Rejection (No marks recalculated, challenge marked as invalid)
+    if (action === 'reject_challenge' || (action as any) === 'dismiss') {
+      const matchingDocs = await getMatchingDisputeDocs();
+
+      if (matchingDocs.length > 0) {
+        const batch = adminDb.batch();
+        matchingDocs.forEach(doc => {
+          batch.update(doc.ref, {
+            status: 'rejected',
+            resolvedBy: adminEmail,
+            resolvedAt: new Date().toISOString(),
+            resolutionNotes: notes || 'Admin reviewed: Question verified as valid. Challenge dismissed.'
+          });
+        });
+        await batch.commit();
+      }
 
       return {
         studentsUpdated: 0,
@@ -364,39 +397,48 @@ export class ExamReviewService {
     }
 
     // 2. Fetch and award bounty strictly to the first 3 reporters
-    const disputesSnap = await adminDb.collection('questionDisputes')
-      .where('examId', '==', examId)
-      .where('questionId', '==', questionId)
-      .get();
-
-    const disputesList = disputesSnap.docs.map(d => ({ docId: d.id, ...d.data() } as any));
-    disputesList.sort((a, b) => new Date(a.submittedAt).getTime() - new Date(b.submittedAt).getTime());
+    const matchingDocs = await getMatchingDisputeDocs();
+    const disputesList = matchingDocs.map(d => ({ docId: d.id, ...d.data() } as any));
+    disputesList.sort((a, b) => new Date(a.submittedAt || a.createdAt || 0).getTime() - new Date(b.submittedAt || b.createdAt || 0).getTime());
 
     const top3Reporters: Array<{ studentCode: string; studentName: string; rank: number }> = [];
 
-    for (let i = 0; i < disputesList.length; i++) {
-      const dispute = disputesList[i];
-      const isTop3 = i < 3;
-      const rank = dispute.reporterRank || i + 1;
+    if (disputesList.length > 0) {
+      const dispBatch = adminDb.batch();
+      for (let i = 0; i < disputesList.length; i++) {
+        const dispute = disputesList[i];
+        const isTop3 = i < 3;
+        const rank = dispute.reporterRank || i + 1;
 
-      if (isTop3) {
-        top3Reporters.push({
-          studentCode: dispute.studentCode,
-          studentName: dispute.studentName,
-          rank
+        if (isTop3) {
+          top3Reporters.push({
+            studentCode: dispute.studentCode,
+            studentName: dispute.studentName,
+            rank
+          });
+        }
+
+        dispBatch.update(adminDb.collection('questionDisputes').doc(dispute.docId), {
+          status: isTop3 ? 'approved_bounty' : 'approved_no_bounty',
+          actualRank: rank,
+          resolvedBy: adminEmail,
+          resolvedAt: new Date().toISOString(),
+          resolutionNotes: notes
         });
       }
-
-      await adminDb.collection('questionDisputes').doc(dispute.docId).update({
-        status: isTop3 ? 'approved_bounty' : 'approved_no_bounty',
-        actualRank: rank,
-        resolvedBy: adminEmail,
-        resolvedAt: new Date().toISOString(),
-        resolutionNotes: notes
-      });
+      await dispBatch.commit();
     }
 
-    // 3. Batch Re-Evaluate All Students on this Exam
+    // 3. Batch Re-Evaluate All Students on this Exam if valid scheduled exam
+    const isRealExam = examId && examId !== 'unassigned_exam' && examId !== 'null' && !examId.startsWith('practice_');
+    if (!isRealExam) {
+      return {
+        studentsUpdated: 0,
+        top3Reporters,
+        message: `Question ${questionId} updated in Question Bank successfully. ${top3Reporters.length} reporter(s) awarded bounty.`
+      };
+    }
+
     const [reviewsSnap, examDocSnap] = await Promise.all([
       adminDb.collection('reviews').where('examId', '==', examId).get(),
       adminDb.collection('exams').doc(examId).get()
