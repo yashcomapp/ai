@@ -36,22 +36,24 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { date, studentCode, faults, notes, bulk } = body;
+    const { date, studentCode, studentName, batchId, faults, notes, bulk } = body;
     const recordedBy = admin.decodedToken?.email || 'Admin';
 
     if (Array.isArray(bulk) && bulk.length > 0) {
-      for (const entry of bulk) {
-        if (entry.studentCode && entry.date) {
-          await FaultService.saveStudentFaults({
-            date: entry.date,
-            studentCode: entry.studentCode,
-            faults: entry.faults || {},
-            notes: entry.notes || {},
-            recordedBy
-          });
-        }
-      }
-      return NextResponse.json({ success: true, message: `Successfully saved fault register for ${bulk.length} students.` });
+      const formattedEntries = bulk
+        .filter(entry => entry.studentCode && entry.date)
+        .map(entry => ({
+          date: entry.date,
+          studentCode: entry.studentCode,
+          studentName: entry.studentName,
+          batchId: entry.batchId,
+          faults: entry.faults || {},
+          notes: entry.notes || {},
+          recordedBy
+        }));
+
+      await FaultService.saveBulkFaults(formattedEntries);
+      return NextResponse.json({ success: true, message: `Successfully saved fault register for ${formattedEntries.length} students.` });
     }
 
     if (!studentCode || !date) {
@@ -61,6 +63,8 @@ export async function POST(req: NextRequest) {
     await FaultService.saveStudentFaults({
       date,
       studentCode,
+      studentName,
+      batchId,
       faults: faults || {},
       notes: notes || {},
       recordedBy

@@ -344,29 +344,35 @@ export class FaultService {
   }
 
   /**
-   * Saves a student fault entry for a given date
+   * Saves a student fault entry for a given date (0 read cost when studentName is supplied)
    */
   static async saveStudentFaults(params: {
     date: string;
     studentCode: string;
+    studentName?: string;
+    batchId?: string;
     faults: Record<string, boolean>;
     notes?: Record<string, string>;
     recordedBy: string;
   }): Promise<void> {
-    const { date, studentCode, faults, notes = {}, recordedBy } = params;
+    const { date, studentCode, faults, notes = {}, recordedBy, studentName, batchId } = params;
     const sCodeUpper = studentCode.trim().toUpperCase();
     const docId = `${sCodeUpper}_${date}`;
 
-    // Fetch student profile to keep record self-contained
-    const userQuery = await adminDb.collection('users')
-      .where('role', '==', 'student')
-      .where('studentCode', '==', sCodeUpper)
-      .limit(1)
-      .get();
+    let resolvedName = studentName;
+    let resolvedBatchId = batchId;
 
-    const studentUser = userQuery.empty ? null : userQuery.docs[0].data();
-    const studentName = studentUser?.name || 'Student';
-    const batchId = studentUser?.batchId || (Array.isArray(studentUser?.batchIds) ? studentUser.batchIds[0] : '');
+    if (!resolvedName) {
+      const userQuery = await adminDb.collection('users')
+        .where('role', '==', 'student')
+        .where('studentCode', '==', sCodeUpper)
+        .limit(1)
+        .get();
+
+      const studentUser = userQuery.empty ? null : userQuery.docs[0].data();
+      resolvedName = studentUser?.name || 'Student';
+      resolvedBatchId = studentUser?.batchId || (Array.isArray(studentUser?.batchIds) ? studentUser.batchIds[0] : '');
+    }
 
     const activeFaultCount = Object.values(faults).filter(Boolean).length;
 
@@ -374,14 +380,52 @@ export class FaultService {
       id: docId,
       date,
       studentCode: sCodeUpper,
-      studentName,
-      batchId,
+      studentName: resolvedName,
+      batchId: resolvedBatchId || '',
       faults,
       notes,
       activeFaultCount,
       updatedAt: new Date().toISOString(),
       recordedBy
     }, { merge: true });
+  }
+
+  /**
+   * Saves multiple student fault entries in a single atomic Firestore batch (0 read cost, 1 network roundtrip)
+   */
+  static async saveBulkFaults(entries: Array<{
+    date: string;
+    studentCode: string;
+    studentName?: string;
+    batchId?: string;
+    faults: Record<string, boolean>;
+    notes?: Record<string, string>;
+    recordedBy: string;
+  }>): Promise<void> {
+    if (!entries.length) return;
+    const batch = adminDb.batch();
+
+    entries.forEach(entry => {
+      const sCodeUpper = entry.studentCode.trim().toUpperCase();
+      const docId = `${sCodeUpper}_${entry.date}`;
+      const docRef = adminDb.collection('faultRecords').doc(docId);
+      const activeFaultCount = Object.values(entry.faults || {}).filter(Boolean).length;
+
+      batch.set(docRef, {
+        id: docId,
+        date: entry.date,
+        studentCode: sCodeUpper,
+        studentName: entry.studentName || 'Student',
+        batchId: entry.batchId || '',
+        faults: entry.faults || {},
+        notes: entry.notes || {},
+        activeFaultCount,
+        updatedAt: new Date().toISOString(),
+        recordedBy: entry.recordedBy
+      }, { merge: true });
+    });
+
+    await batch.commit();
   }
 
   /**

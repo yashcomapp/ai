@@ -35,12 +35,17 @@ export default function AdminFaultRegisterPage() {
     }
     if (pendingSavesRef.current.size === 0 || !firebaseUser) return;
 
-    const entries = Array.from(pendingSavesRef.current.entries()).map(([sCode, data]) => ({
-      date: dateRef.current,
-      studentCode: sCode,
-      faults: data.faults,
-      notes: data.notes
-    }));
+    const entries = Array.from(pendingSavesRef.current.entries()).map(([sCode, data]) => {
+      const student = students.find(s => s.studentCode === sCode);
+      return {
+        date: dateRef.current,
+        studentCode: sCode,
+        studentName: student?.studentName || '',
+        batchId: student?.batchId || '',
+        faults: data.faults,
+        notes: data.notes
+      };
+    });
 
     pendingSavesRef.current.clear();
     setSaveStatus('saving');
