@@ -41,18 +41,72 @@ export async function GET(req: NextRequest) {
 
     // Group disputes by examId and questionId
     const grouped: Record<string, Record<string, any[]>> = {};
+    const questionIdSet = new Set<string>();
+
     disputes.forEach((d: any) => {
       const eId = d.examId || 'unassigned_exam';
       const qId = d.questionId || d.questionCode || 'unknown_q';
       if (!grouped[eId]) grouped[eId] = {};
       if (!grouped[eId][qId]) grouped[eId][qId] = [];
       grouped[eId][qId].push(d);
+
+      if (qId && qId !== 'unknown_q') {
+        questionIdSet.add(qId);
+      }
+      if (d.questionCode) {
+        questionIdSet.add(d.questionCode);
+      }
     });
+
+    // Hydrate Question details from Question Bank
+    const questionsMap: Record<string, any> = {};
+    const codeList = Array.from(questionIdSet);
+
+    if (codeList.length > 0) {
+      const refs = codeList.map(code => adminDb.collection('questions').doc(code));
+      const directSnaps = refs.length > 0 ? await adminDb.getAll(...refs).catch(() => []) : [];
+      const missingCodes: string[] = [];
+
+      directSnaps.forEach((snap, idx) => {
+        if (snap && snap.exists) {
+          const qData = snap.data();
+          const qObj = { id: codeList[idx], questionCode: codeList[idx], ...qData };
+          questionsMap[codeList[idx]] = qObj;
+          if (qData?.questionCode) questionsMap[qData.questionCode] = qObj;
+        } else {
+          missingCodes.push(codeList[idx]);
+        }
+      });
+
+      if (missingCodes.length > 0) {
+        const chunkSize = 30;
+        const chunks = [];
+        for (let i = 0; i < missingCodes.length; i += chunkSize) {
+          chunks.push(missingCodes.slice(i, i + chunkSize));
+        }
+
+        const querySnaps = await Promise.all(
+          chunks.map(chunk =>
+            adminDb.collection('questions').where('questionCode', 'in', chunk).get()
+          )
+        );
+
+        querySnaps.forEach(s => {
+          s.docs.forEach(doc => {
+            const qData = doc.data();
+            const qObj = { id: doc.id, ...qData };
+            questionsMap[doc.id] = qObj;
+            if (qData?.questionCode) questionsMap[qData.questionCode] = qObj;
+          });
+        });
+      }
+    }
 
     return NextResponse.json({
       success: true,
       disputes,
-      grouped
+      grouped,
+      questionsMap
     });
   } catch (error: any) {
     console.error('API admin get exam disputes error:', error);

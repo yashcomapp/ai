@@ -263,6 +263,31 @@ export class ExamReviewService {
   }> {
     const { examId, questionId, newCorrectOption, action, notes = '', adminEmail = 'Admin' } = params;
 
+    // Handle Challenge Dismissal / Rejection (No marks recalculated, challenge marked as invalid)
+    if (action === 'reject_challenge' || (action as any) === 'dismiss') {
+      const disputesSnap = await adminDb.collection('questionDisputes')
+        .where('examId', '==', examId)
+        .where('questionId', '==', questionId)
+        .get();
+
+      const batch = adminDb.batch();
+      disputesSnap.docs.forEach(doc => {
+        batch.update(doc.ref, {
+          status: 'rejected',
+          resolvedBy: adminEmail,
+          resolvedAt: new Date().toISOString(),
+          resolutionNotes: notes || 'Admin reviewed: Question verified as valid. Challenge dismissed.'
+        });
+      });
+      await batch.commit();
+
+      return {
+        studentsUpdated: 0,
+        top3Reporters: [],
+        message: `Challenge for question ${questionId} has been dismissed/rejected. No changes made to student marks or answer keys.`
+      };
+    }
+
     // 1. Update Question Bank document
     let qRef = adminDb.collection('questions').doc(questionId);
     let qSnap = await qRef.get();
