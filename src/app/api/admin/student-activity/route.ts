@@ -25,7 +25,9 @@ export async function GET(req: NextRequest) {
       const baseName = data.name || data.displayName || 'Unknown';
       return {
         uid,
-        name: `${baseName} (S)${data.autonomous ? ' ⭐' : ''}`,
+        role: 'student' as const,
+        name: baseName,
+        isAutonomous: !!data.autonomous,
         email: data.email || '',
         studentCode: data.studentCode || '',
         status: data.status || 'active',
@@ -51,9 +53,12 @@ export async function GET(req: NextRequest) {
 
       return {
         uid,
-        name: `${baseName} (P)`,
+        role: 'parent' as const,
+        name: baseName,
+        isAutonomous: false,
         email: data.email || '',
         studentCode: data.studentCode || data.studentId || '',
+        status: data.status || 'active',
         lastLoginAt: data.lastLoginAt?.toDate ? data.lastLoginAt.toDate().toISOString() : data.lastLoginAt || null,
         currentPage: data.currentPage || 'Offline / Out of app',
         currentPagePath: data.currentPagePath || '',
@@ -71,7 +76,11 @@ export async function GET(req: NextRequest) {
       return bTime - aTime;
     });
 
-    return NextResponse.json({ studentsActivity: combinedActivity });
+    return NextResponse.json({ 
+      studentsActivity: combinedActivity,
+      studentsCount: studentsActivity.length,
+      parentsCount: parentsActivity.length
+    });
   } catch (error: any) {
     console.error('Student activity API error:', error);
     return NextResponse.json({ message: error.message || 'Internal Server Error' }, { status: 500 });
