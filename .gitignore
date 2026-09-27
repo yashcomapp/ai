@@ -21,9 +21,10 @@ build/
 
 .vercel
 
-# Local backups and scratch data
-backups/
+# Local scratch and one-off repair scripts
+src/scripts/
 scratch/
+backups/
 
 # debug/inspect helper scripts at root
 inspect-*.js
