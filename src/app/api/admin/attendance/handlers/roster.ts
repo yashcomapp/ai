@@ -3,6 +3,7 @@ import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole } from '@/lib/auth';
 import { getDateKeyIST as getISTDateString } from '@/lib/dateUtils';
 import { isDemoUser } from '@/lib/studentDb';
+import { invalidateCache } from '@/lib/firebase/cache';
 
 export const dynamic = 'force-dynamic';
 
@@ -149,14 +150,14 @@ export async function POST(req: NextRequest) {
 
     const dateStr = date.replace(/-/g, '');
     const attendanceDocId = `${dateStr}_${batchId}`;
-
-    // 1. Get batch name
-    const batchDoc = await adminDb.collection('batches').doc(batchId).get();
-    const batchName = batchDoc.data()?.name || 'Unknown Batch';
-
-    // 2. Save Daily Attendance document with self-marked validation/corrections preservation
     const attendanceRef = adminDb.collection('attendance').doc(attendanceDocId);
-    const existingDoc = await attendanceRef.get();
+
+    // 1. Fetch batch details and existing attendance in parallel
+    const [batchDoc, existingDoc] = await Promise.all([
+      adminDb.collection('batches').doc(batchId).get(),
+      attendanceRef.get()
+    ]);
+    const batchName = batchDoc.data()?.name || 'Unknown Batch';
     const existingRecords = existingDoc.exists ? existingDoc.data()?.records || {} : {};
 
     const updatedRecords: Record<string, any> = {};
@@ -192,9 +193,13 @@ export async function POST(req: NextRequest) {
       updatedAt: new Date().toISOString()
     }, { merge: true });
 
-    // 3. Automated Emergency Absence alerts in Direct Message Chats
+    // 3. Automated Emergency Absence alerts in Direct Message Chats (Only for newly marked absent students)
     const studentCodes = Object.keys(records);
-    const absentCodes = studentCodes.filter(sCode => records[sCode].status === 'absent');
+    const absentCodes = studentCodes.filter(sCode => {
+      if (records[sCode].status !== 'absent') return false;
+      const existing = existingRecords[sCode] || existingRecords[sCode.toUpperCase()];
+      return !existing || existing.status !== 'absent';
+    });
 
     if (absentCodes.length > 0) {
       const batch = adminDb.batch();
@@ -303,6 +308,8 @@ export async function POST(req: NextRequest) {
 
       await batch.commit();
     }
+
+    studentCodes.forEach(code => invalidateCache(`student_attendance_${code.toUpperCase()}`));
 
     return NextResponse.json({ success: true, message: 'Attendance roster marked successfully.' });
   } catch (error: any) {
