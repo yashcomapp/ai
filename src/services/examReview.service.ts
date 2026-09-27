@@ -351,47 +351,59 @@ export class ExamReviewService {
         const qData = qSnap.data() || {};
         const qCode = qData.questionCode || questionId;
 
-        // Archive to quarantinedQuestions before deletion
+        const quarantinePayload = {
+          status: 'quarantined',
+          isQuarantined: true,
+          flaggedDefective: true,
+          quarantinedReason: notes || 'Admin quarantined defective question from Disputes Hub',
+          quarantinedBy: adminEmail,
+          quarantinedAt: new Date().toISOString()
+        };
+
+        // Soft-quarantine the primary question doc (preserves referential integrity for scheduled exams)
+        await qRef.update(quarantinePayload);
+
+        // Archive snapshot to quarantinedQuestions collection
         await adminDb.collection('quarantinedQuestions').doc(qRef.id).set({
           ...qData,
-          deletedFromQuestionBank: true,
-          deletedReason: notes || 'Admin quarantined and deleted defective question from Question Bank',
-          deletedBy: adminEmail,
-          deletedAt: new Date().toISOString()
-        });
+          ...quarantinePayload
+        }, { merge: true });
 
-        // Permanently delete the primary question document
-        await qRef.delete();
-
-        // Also delete any duplicate documents with the same questionCode
+        // Also soft-quarantine any duplicate documents with the same questionCode
         if (qCode) {
           const dupSnaps = await adminDb.collection('questions').where('questionCode', '==', qCode).get();
           if (!dupSnaps.empty) {
-            const delBatch = adminDb.batch();
-            dupSnaps.docs.forEach(d => delBatch.delete(d.ref));
-            await delBatch.commit();
+            const updBatch = adminDb.batch();
+            dupSnaps.docs.forEach(d => updBatch.update(d.ref, quarantinePayload));
+            await updBatch.commit();
           }
         }
       }
       invalidateCache('qb_base_');
     } else if (action === 'quarantine') {
-      // If direct doc did not exist, search by questionCode and delete
+      // If direct doc did not exist, search by questionCode and soft-quarantine
       const qByCodeSnap = await adminDb.collection('questions')
         .where('questionCode', '==', questionId)
         .get();
       if (!qByCodeSnap.empty) {
-        const delBatch = adminDb.batch();
+        const quarantinePayload = {
+          status: 'quarantined',
+          isQuarantined: true,
+          flaggedDefective: true,
+          quarantinedReason: notes || 'Admin quarantined defective question from Disputes Hub',
+          quarantinedBy: adminEmail,
+          quarantinedAt: new Date().toISOString()
+        };
+
+        const updBatch = adminDb.batch();
         for (const doc of qByCodeSnap.docs) {
           await adminDb.collection('quarantinedQuestions').doc(doc.id).set({
             ...doc.data(),
-            deletedFromQuestionBank: true,
-            deletedReason: notes || 'Admin quarantined and deleted defective question from Question Bank',
-            deletedBy: adminEmail,
-            deletedAt: new Date().toISOString()
-          });
-          delBatch.delete(doc.ref);
+            ...quarantinePayload
+          }, { merge: true });
+          updBatch.update(doc.ref, quarantinePayload);
         }
-        await delBatch.commit();
+        await updBatch.commit();
         invalidateCache('qb_base_');
       }
     }
