@@ -201,44 +201,50 @@ export class FaultService {
 
     try {
       const now = new Date();
-      // 1. Fetch Attendance and Scheduled Exams for dateKey in parallel
-      const [attendanceSnap, scheduledExamsSnap] = await Promise.all([
+      // 1. Fetch Attendance, Scheduled Exams, Leaves and Declarations for dateKey in parallel
+      const [attendanceSnap, scheduledExamsSnap, leavesSnap, declsSnap] = await Promise.all([
         adminDb.collection('attendance').where('date', '==', dateKey).get(),
-        adminDb.collection('exams').where('scheduledDate', '==', dateKey).get()
+        adminDb.collection('exams').where('scheduledDate', '==', dateKey).get(),
+        adminDb.collection('leaveApplications').where('endDate', '>=', dateKey).get(),
+        adminDb.collection('attendanceDeclarations').where('endDate', '>=', dateKey).get()
       ]);
 
-      // Track declared leaves and absence communications from attendance
-      const absentStudentsWithLeave = new Set<string>();
-      const absentStudentsNoLeave = new Set<string>();
+      // Track declared leaves and attendance declarations
+      const activeLeavesMap = new Map<string, any>();
+      leavesSnap.docs.forEach(doc => {
+        const d = doc.data();
+        if (d.studentCode && d.startDate <= dateKey && (!d.status || d.status === 'approved' || d.status === 'pending')) {
+          activeLeavesMap.set(d.studentCode.toUpperCase(), d);
+        }
+      });
 
+      const activeDeclarationsMap = new Map<string, any>();
+      declsSnap.docs.forEach(doc => {
+        const d = doc.data();
+        if (d.studentCode && d.startDate <= dateKey) {
+          activeDeclarationsMap.set(d.studentCode.toUpperCase(), d);
+        }
+      });
+
+      // A. Check Absence Communication from Classroom Attendance
       attendanceSnap.docs.forEach(doc => {
         const data = doc.data();
         const records = data.records || {};
-        const isExamAttendance = data.type === 'exam' || data.isExam;
 
         Object.entries(records).forEach(([sCode, r]: [string, any]) => {
           const sUpper = sCode.toUpperCase();
           if (!studentCodesSet.has(sUpper)) return;
 
           if (r.status === 'absent') {
-            const hasPriorInfo = !!(r.reason || r.declaredLeave || r.leaveType);
-            if (hasPriorInfo) {
-              absentStudentsWithLeave.add(sUpper);
-            } else {
-              absentStudentsNoLeave.add(sUpper);
+            const hasLeave = activeLeavesMap.has(sUpper);
+            const hasDecl = activeDeclarationsMap.has(sUpper);
+            const hasExplicitInfo = !!(r.reason || r.declaredLeave || r.leaveType);
+            const hasPriorInfo = hasLeave || hasDecl || hasExplicitInfo;
+
+            if (!hasPriorInfo) {
               const entry = initEntry(sUpper);
               entry['no_absent_comm'] = true;
-              entry['no_absent_comm_note'] = 'Absent marked without prior leave notice';
-            }
-
-            if (isExamAttendance) {
-              const entry = initEntry(sUpper);
-              entry['exam_absent'] = true;
-              entry['exam_absent_note'] = 'Absent for scheduled exam session';
-              if (!hasPriorInfo) {
-                entry['exam_absent_no_info'] = true;
-                entry['exam_absent_no_info_note'] = 'Exam absent with zero prior information';
-              }
+              entry['no_absent_comm_note'] = 'Absent marked without prior leave application or declaration';
             }
           }
         });
@@ -307,10 +313,14 @@ export class FaultService {
             if (!hasAttempted) {
               const entry = initEntry(sUpper);
               entry['exam_absent'] = true;
-              const hasLeave = absentStudentsWithLeave.has(sUpper);
+              const hasLeave = activeLeavesMap.has(sUpper);
+              const hasDecl = activeDeclarationsMap.has(sUpper);
 
-              if (hasLeave) {
-                entry['exam_absent_note'] = `Missed scheduled exam: ${examName} (leave declared)`;
+              if (hasLeave || hasDecl) {
+                const leaveReason = hasLeave
+                  ? (activeLeavesMap.get(sUpper)?.reason || 'Leave applied')
+                  : (activeDeclarationsMap.get(sUpper)?.reason || 'Attendance declared');
+                entry['exam_absent_note'] = `Missed scheduled exam: ${examName} (${leaveReason})`;
               } else {
                 entry['exam_absent_note'] = `Missed scheduled exam: ${examName}`;
                 entry['exam_absent_no_info'] = true;
