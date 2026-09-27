@@ -83,32 +83,31 @@ export class FaultService {
     categories: FaultCategory[];
     students: StudentFaultEntry[];
   }> {
-    const categories = await this.getCategories();
+    const isSpecificBatch = batchId && batchId !== 'all';
 
-    // 1. Fetch batch info
+    // 1. Fetch categories, batch info, students, and existing fault records in parallel
+    const [categories, bDoc, studentsSnap, faultDocsSnap] = await Promise.all([
+      this.getCategories(),
+      isSpecificBatch ? adminDb.collection('batches').doc(batchId).get() : Promise.resolve(null),
+      adminDb.collection('users').where('role', '==', 'student').get(),
+      adminDb.collection('faultRecords').where('date', '==', dateKey).get()
+    ]);
+
     let batchName = 'All Batches';
-    if (batchId && batchId !== 'all') {
-      const bDoc = await adminDb.collection('batches').doc(batchId).get();
-      if (bDoc.exists) batchName = bDoc.data()?.name || batchName;
+    if (bDoc && bDoc.exists) {
+      batchName = bDoc.data()?.name || batchName;
     }
 
-    // 2. Fetch active students in batch
-    let studentQuery: FirebaseFirestore.Query = adminDb.collection('users')
-      .where('role', '==', 'student');
-
-    if (batchId && batchId !== 'all') {
-      studentQuery = studentQuery.where('batchIds', 'array-contains', batchId);
-    }
-
-    const studentsSnap = await studentQuery.get();
-    const activeStudents = studentsSnap.docs
+    // 2. Filter active students for the selected batch
+    const allActiveStudents = studentsSnap.docs
       .map(doc => {
         const d = doc.data();
-        const bId = d.batchId || (Array.isArray(d.batchIds) && d.batchIds.length > 0 ? d.batchIds[0] : '');
+        const bIds: string[] = Array.isArray(d.batchIds) ? d.batchIds : (d.batchId ? [d.batchId] : []);
         return {
           studentCode: d.studentCode || '',
           studentName: d.name || 'Student',
-          batchId: bId,
+          batchId: bIds[0] || d.batchId || '',
+          batchIds: bIds,
           classNum: d.classNum || d.class || '',
           parentName: d.parentName || '',
           parentPhone: d.parentPhone || d.parentMobile || '',
@@ -118,37 +117,14 @@ export class FaultService {
       })
       .filter(s => s.status === 'active' && !s.isDemo && s.studentCode);
 
-    // Fallback if batchId wasn't using array-contains (e.g. single batchId field)
-    let filteredStudents = activeStudents;
-    if (batchId && batchId !== 'all' && activeStudents.length === 0) {
-      const allStudentsSnap = await adminDb.collection('users').where('role', '==', 'student').get();
-      filteredStudents = allStudentsSnap.docs
-        .map(doc => {
-          const d = doc.data();
-          const bIds: string[] = d.batchIds || (d.batchId ? [d.batchId] : []);
-          return {
-            studentCode: d.studentCode || '',
-            studentName: d.name || 'Student',
-            batchId: bIds[0] || '',
-            batchIds: bIds,
-            classNum: d.classNum || d.class || '',
-            parentName: d.parentName || '',
-            parentPhone: d.parentPhone || d.parentMobile || '',
-            status: d.status || 'active',
-            isDemo: isDemoUser(d)
-          };
-        })
-        .filter(s => s.status === 'active' && !s.isDemo && s.studentCode && s.batchIds?.includes(batchId));
-    }
+    const filteredStudents = isSpecificBatch
+      ? allActiveStudents.filter(s => s.batchIds?.includes(batchId) || s.batchId === batchId)
+      : allActiveStudents;
 
-    // Sort students by name alphabetically
+    // Sort students alphabetically
     filteredStudents.sort((a, b) => a.studentName.localeCompare(b.studentName));
 
-    // 3. Fetch existing fault records for this date
-    const faultDocsSnap = await adminDb.collection('faultRecords')
-      .where('date', '==', dateKey)
-      .get();
-
+    // 3. Map existing fault records
     const existingFaultsMap = new Map<string, any>();
     faultDocsSnap.docs.forEach(doc => {
       const d = doc.data();
@@ -157,7 +133,7 @@ export class FaultService {
       }
     });
 
-    // 4. Run System Auto-Detect for the date
+    // 4. Run scoped auto-detection for targeted students
     const autoDetections = await this.runAutoDetect(dateKey, filteredStudents.map(s => s.studentCode));
 
     // 5. Construct matrix rows
@@ -171,12 +147,10 @@ export class FaultService {
       const autoSuggested: Record<string, boolean> = {};
 
       categories.forEach(cat => {
-        // If teacher previously saved a record, use it
         if (existing?.faults && existing.faults[cat.id] !== undefined) {
           faults[cat.id] = !!existing.faults[cat.id];
           notes[cat.id] = existing.notes?.[cat.id] || '';
         } else if (detected[cat.id]) {
-          // If auto-detected and not yet overwritten, suggest true
           faults[cat.id] = true;
           notes[cat.id] = detected[`${cat.id}_note`] || 'Auto-detected by system';
           autoSuggested[cat.id] = true;
@@ -227,15 +201,10 @@ export class FaultService {
 
     try {
       const now = new Date();
-      const [attendanceSnap, scheduledExamsSnap, reviewsSnap, examReviewsSnap] = await Promise.all([
-        // 1. Attendance for date
+      // 1. Fetch Attendance and Scheduled Exams for dateKey in parallel
+      const [attendanceSnap, scheduledExamsSnap] = await Promise.all([
         adminDb.collection('attendance').where('date', '==', dateKey).get(),
-        // 2. Exams scheduled for date
-        adminDb.collection('exams').where('scheduledDate', '==', dateKey).get(),
-        // 3. Reviews completed on this date
-        adminDb.collection('reviews').get(),
-        // 4. Completed exam reviews
-        adminDb.collection('examReviews').get()
+        adminDb.collection('exams').where('scheduledDate', '==', dateKey).get()
       ]);
 
       // Track declared leaves and absence communications from attendance
@@ -275,15 +244,55 @@ export class FaultService {
         });
       });
 
-      // B. Check Missed Scheduled Exams on this Date
+      // B. Check Missed Scheduled Exams & 60-Min Reviews on this Date
       if (!scheduledExamsSnap.empty) {
+        const examIds = scheduledExamsSnap.docs.map(doc => doc.id);
+
+        // Fetch reviews and examReviews ONLY for the scheduled exams
+        const [reviewsSnaps, examReviewsSnaps] = await Promise.all([
+          Promise.all(examIds.map(eId =>
+            adminDb.collection('reviews')
+              .where('examId', '==', eId)
+              .select('studentCode', 'examId', 'completedAt', 'submittedAt', 'createdAt', 'examName', 'examType')
+              .get()
+          )),
+          Promise.all(examIds.map(eId =>
+            adminDb.collection('examReviews')
+              .where('examId', '==', eId)
+              .select('studentCode', 'examId')
+              .get()
+          ))
+        ]);
+
         const attemptedStudentsForExam = new Set<string>();
-        reviewsSnap.docs.forEach(doc => {
-          const d = doc.data();
-          const sCode = (d.studentCode || '').toUpperCase();
-          if (d.examId) {
-            attemptedStudentsForExam.add(`${sCode}_${d.examId}`);
-          }
+        const verifiedReviewsSet = new Set<string>();
+        const completedExams: Array<{ studentCode: string; examId: string; examName: string; completedAt: any }> = [];
+
+        examReviewsSnaps.forEach(snap => {
+          snap.docs.forEach(doc => {
+            const d = doc.data();
+            if (d.studentCode && d.examId) {
+              verifiedReviewsSet.add(`${d.studentCode.toUpperCase()}_${d.examId}`);
+            }
+          });
+        });
+
+        reviewsSnaps.forEach(snap => {
+          snap.docs.forEach(doc => {
+            const d = doc.data();
+            const sCode = (d.studentCode || '').toUpperCase();
+            if (d.examId && sCode) {
+              attemptedStudentsForExam.add(`${sCode}_${d.examId}`);
+              if (studentCodesSet.has(sCode) && d.examType !== 'entrance' && d.examType !== 'practice') {
+                completedExams.push({
+                  studentCode: sCode,
+                  examId: d.examId,
+                  examName: d.examName || d.examId,
+                  completedAt: d.completedAt || d.submittedAt || d.createdAt
+                });
+              }
+            }
+          });
         });
 
         scheduledExamsSnap.docs.forEach(examDoc => {
@@ -310,37 +319,22 @@ export class FaultService {
             }
           });
         });
-      }
 
-      // C. Check Missed 60-Min Exam Reviews for exams finished on this date
-      const verifiedReviewsSet = new Set<string>();
-      examReviewsSnap.docs.forEach(doc => {
-        const d = doc.data();
-        if (d.studentCode && d.examId) {
-          verifiedReviewsSet.add(`${d.studentCode.toUpperCase()}_${d.examId}`);
-        }
-      });
-
-      reviewsSnap.docs.forEach(doc => {
-        const d = doc.data();
-        const sCode = (d.studentCode || '').toUpperCase();
-        if (!studentCodesSet.has(sCode) || d.examType === 'entrance' || d.examType === 'practice') return;
-
-        const compDate = parseDateInput(d.completedAt || d.submittedAt || d.createdAt);
-        if (compDate && getDateKeyIST(compDate) === dateKey) {
-          const examId = d.examId || d.examCode;
-          const reviewKey = `${sCode}_${examId}`;
-          const isVerified = verifiedReviewsSet.has(reviewKey);
-
-          // If exam completed > 60 minutes ago and no verified review submitted
-          const diffMinutes = Math.floor((now.getTime() - compDate.getTime()) / (1000 * 60));
-          if (!isVerified && diffMinutes > 60) {
-            const entry = initEntry(sCode);
-            entry['no_exam_review'] = true;
-            entry['no_exam_review_note'] = `Exam review not completed within 60m window (${diffMinutes}m elapsed for ${d.examName || examId})`;
+        // C. Check Missed 60-Min Exam Reviews
+        completedExams.forEach(item => {
+          const compDate = parseDateInput(item.completedAt);
+          if (compDate && getDateKeyIST(compDate) === dateKey) {
+            const reviewKey = `${item.studentCode}_${item.examId}`;
+            const isVerified = verifiedReviewsSet.has(reviewKey);
+            const diffMinutes = Math.floor((now.getTime() - compDate.getTime()) / (1000 * 60));
+            if (!isVerified && diffMinutes > 60) {
+              const entry = initEntry(item.studentCode);
+              entry['no_exam_review'] = true;
+              entry['no_exam_review_note'] = `Exam review not completed within 60m window (${diffMinutes}m elapsed for ${item.examName})`;
+            }
           }
-        }
-      });
+        });
+      }
 
     } catch (err) {
       console.error('Error running fault auto-detection:', err);
