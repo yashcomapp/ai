@@ -18,8 +18,84 @@ export default function AdminFaultRegisterPage() {
   const [categories, setCategories] = useState<FaultCategory[]>([]);
   const [students, setStudents] = useState<StudentFaultEntry[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [saving, setSaving] = useState<boolean>(false);
-  const [saveSuccessMsg, setSaveSuccessMsg] = useState<string>('');
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [lastSavedTime, setLastSavedTime] = useState<string | null>(null);
+
+  // Auto-save debounce and queue refs
+  const pendingSavesRef = React.useRef<Map<string, { faults: Record<string, boolean>; notes: Record<string, string> }>>(new Map());
+  const debounceTimerRef = React.useRef<NodeJS.Timeout | null>(null);
+  const dateRef = React.useRef<string>(date);
+  dateRef.current = date;
+
+  // Flush pending auto-saves
+  const flushPendingSaves = useCallback(async () => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
+    }
+    if (pendingSavesRef.current.size === 0 || !firebaseUser) return;
+
+    const entries = Array.from(pendingSavesRef.current.entries()).map(([sCode, data]) => ({
+      date: dateRef.current,
+      studentCode: sCode,
+      faults: data.faults,
+      notes: data.notes
+    }));
+
+    pendingSavesRef.current.clear();
+    setSaveStatus('saving');
+
+    try {
+      const token = await firebaseUser.getIdToken();
+      const payload = entries.length === 1 ? entries[0] : { bulk: entries };
+      const res = await fetch('/api/admin/fault-register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        setSaveStatus('saved');
+        const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        setLastSavedTime(timeStr);
+      } else {
+        setSaveStatus('error');
+      }
+    } catch (err) {
+      console.error('Auto-save error:', err);
+      setSaveStatus('error');
+    }
+  }, [firebaseUser]);
+
+  // Queue a student for auto-saving
+  const queueAutoSave = useCallback((studentCode: string, faults: Record<string, boolean>, notes: Record<string, string>, immediate: boolean = false) => {
+    pendingSavesRef.current.set(studentCode, { faults, notes });
+    setSaveStatus('saving');
+
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    if (immediate) {
+      flushPendingSaves();
+    } else {
+      debounceTimerRef.current = setTimeout(() => {
+        flushPendingSaves();
+      }, 350);
+    }
+  }, [flushPendingSaves]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (pendingSavesRef.current.size > 0) {
+        flushPendingSaves();
+      }
+    };
+  }, [flushPendingSaves]);
 
   // Category Manager Modal
   const [categoryModalOpen, setCategoryModalOpen] = useState<boolean>(false);
@@ -61,8 +137,11 @@ export default function AdminFaultRegisterPage() {
   // 2. Fetch Matrix Data
   const loadMatrix = useCallback(async () => {
     if (!firebaseUser) return;
+    // Flush any pending saves before reloading matrix
+    if (pendingSavesRef.current.size > 0) {
+      await flushPendingSaves();
+    }
     setLoading(true);
-    setSaveSuccessMsg('');
     try {
       const token = await firebaseUser.getIdToken();
       const res = await fetch(`/api/admin/fault-register?date=${date}&batchId=${selectedBatchId}`, {
@@ -72,13 +151,14 @@ export default function AdminFaultRegisterPage() {
         const data = await res.json();
         setCategories(data.categories || []);
         setStudents(data.students || []);
+        setSaveStatus('idle');
       }
     } catch (err) {
       console.error('Failed to load fault register matrix:', err);
     } finally {
       setLoading(false);
     }
-  }, [firebaseUser, date, selectedBatchId]);
+  }, [firebaseUser, date, selectedBatchId, flushPendingSaves]);
 
   useEffect(() => {
     if (user && user.role === 'admin') {
@@ -86,55 +166,31 @@ export default function AdminFaultRegisterPage() {
     }
   }, [user, loadMatrix]);
 
-  // Toggle fault checkbox
+  // Toggle fault checkbox with real-time auto-save
   const handleToggleFault = (studentCode: string, catId: string) => {
-    setStudents(prev => prev.map(s => {
-      if (s.studentCode === studentCode) {
-        const currentVal = !!s.faults[catId];
-        return {
-          ...s,
-          faults: {
+    setStudents(prev => {
+      let targetStudent: StudentFaultEntry | undefined;
+      const updated = prev.map(s => {
+        if (s.studentCode === studentCode) {
+          const currentVal = !!s.faults[catId];
+          const updatedFaults = {
             ...s.faults,
             [catId]: !currentVal
-          }
-        };
-      }
-      return s;
-    }));
-  };
-
-  // Save changes
-  const handleSaveAll = async () => {
-    if (!firebaseUser) return;
-    setSaving(true);
-    setSaveSuccessMsg('');
-    try {
-      const token = await firebaseUser.getIdToken();
-      const bulkPayload = students.map(s => ({
-        date,
-        studentCode: s.studentCode,
-        faults: s.faults,
-        notes: s.notes
-      }));
-
-      const res = await fetch('/api/admin/fault-register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({ bulk: bulkPayload })
+          };
+          targetStudent = {
+            ...s,
+            faults: updatedFaults
+          };
+          return targetStudent;
+        }
+        return s;
       });
 
-      if (res.ok) {
-        setSaveSuccessMsg(`✅ Fault register successfully saved for ${date}!`);
-        setTimeout(() => setSaveSuccessMsg(''), 4000);
+      if (targetStudent) {
+        queueAutoSave(targetStudent.studentCode, targetStudent.faults, targetStudent.notes);
       }
-    } catch (err: any) {
-      alert('Error saving register: ' + err.message);
-    } finally {
-      setSaving(false);
-    }
+      return updated;
+    });
   };
 
   // Open note modal
@@ -148,18 +204,29 @@ export default function AdminFaultRegisterPage() {
 
   const saveNote = () => {
     if (!activeNoteStudent || !activeNoteCatId) return;
-    setStudents(prev => prev.map(s => {
-      if (s.studentCode === activeNoteStudent) {
-        return {
-          ...s,
-          notes: {
+    const noteText = tempNoteText.trim();
+    setStudents(prev => {
+      let targetStudent: StudentFaultEntry | undefined;
+      const updated = prev.map(s => {
+        if (s.studentCode === activeNoteStudent) {
+          const updatedNotes = {
             ...s.notes,
-            [activeNoteCatId]: tempNoteText.trim()
-          }
-        };
+            [activeNoteCatId]: noteText
+          };
+          targetStudent = {
+            ...s,
+            notes: updatedNotes
+          };
+          return targetStudent;
+        }
+        return s;
+      });
+
+      if (targetStudent) {
+        queueAutoSave(targetStudent.studentCode, targetStudent.faults, targetStudent.notes, true);
       }
-      return s;
-    }));
+      return updated;
+    });
     setActiveNoteStudent(null);
     setActiveNoteCatId(null);
   };
@@ -286,15 +353,88 @@ export default function AdminFaultRegisterPage() {
             >
               ⚙️ Manage Fault Types
             </button>
-            <button
-              type="button"
-              className="btn btn-primary btn-sm"
-              onClick={handleSaveAll}
-              disabled={saving || loading}
-              style={{ fontSize: '12px', padding: '6px 16px', fontWeight: 700 }}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '7px',
+                fontSize: '12px',
+                fontWeight: 700,
+                padding: '6px 14px',
+                borderRadius: 'var(--radius-sm)',
+                background: saveStatus === 'saving'
+                  ? 'var(--accent-soft)'
+                  : saveStatus === 'error'
+                    ? 'rgba(239, 68, 68, 0.15)'
+                    : saveStatus === 'saved'
+                      ? 'rgba(34, 197, 94, 0.12)'
+                      : 'var(--surface-2)',
+                color: saveStatus === 'saving'
+                  ? 'var(--accent)'
+                  : saveStatus === 'error'
+                    ? 'var(--danger)'
+                    : saveStatus === 'saved'
+                      ? 'var(--success)'
+                      : 'var(--text-muted)',
+                border: saveStatus === 'saving'
+                  ? '1px solid var(--accent-ring)'
+                  : saveStatus === 'error'
+                    ? '1px solid var(--danger)'
+                    : saveStatus === 'saved'
+                      ? '1px solid rgba(34, 197, 94, 0.3)'
+                      : '1px solid var(--border-light)'
+              }}
             >
-              {saving ? 'Saving...' : '💾 Save Register'}
-            </button>
+              {saveStatus === 'saving' ? (
+                <>
+                  <span
+                    style={{
+                      display: 'inline-block',
+                      width: '11px',
+                      height: '11px',
+                      border: '2px solid var(--accent)',
+                      borderTopColor: 'transparent',
+                      borderRadius: '50%',
+                      animation: 'spin 0.7s linear infinite'
+                    }}
+                  />
+                  <span>Saving...</span>
+                </>
+              ) : saveStatus === 'error' ? (
+                <>
+                  <span>⚠️ Save Error</span>
+                  <button
+                    type="button"
+                    onClick={() => flushPendingSaves()}
+                    style={{
+                      background: 'var(--danger)',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '4px',
+                      padding: '2px 7px',
+                      fontSize: '10px',
+                      cursor: 'pointer',
+                      fontWeight: 700
+                    }}
+                  >
+                    Retry
+                  </button>
+                </>
+              ) : (
+                <>
+                  <span
+                    style={{
+                      width: '8px',
+                      height: '8px',
+                      borderRadius: '50%',
+                      background: saveStatus === 'saved' ? 'var(--success)' : 'var(--text-muted)',
+                      boxShadow: saveStatus === 'saved' ? '0 0 6px var(--success)' : 'none'
+                    }}
+                  />
+                  <span>{lastSavedTime ? `Auto-saved (${lastSavedTime})` : '⚡ Auto-save Ready'}</span>
+                </>
+              )}
+            </div>
           </div>
         </div>
 
@@ -344,12 +484,6 @@ export default function AdminFaultRegisterPage() {
             🔄 Refresh
           </button>
         </div>
-
-        {saveSuccessMsg && (
-          <div style={{ background: 'var(--success-bg)', color: 'var(--success)', border: '1px solid var(--success-border)', padding: '8px 14px', borderRadius: 'var(--radius-sm)', fontSize: '12px', fontWeight: 700 }}>
-            {saveSuccessMsg}
-          </div>
-        )}
 
         {/* Main Matrix Table */}
         <div className="card" style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', padding: '0', overflow: 'hidden' }}>
