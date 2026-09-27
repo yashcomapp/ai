@@ -6,6 +6,7 @@ interface InterruptionLockoutModalProps {
   isOpen: boolean;
   tabViolations: number;
   maxViolations?: number;
+  durationSeconds?: number;
   isSubmitting?: boolean;
   onManualResume: () => void;
   onTimeoutAutoSubmit?: () => void;
@@ -15,23 +16,24 @@ export function InterruptionLockoutModal({
   isOpen,
   tabViolations,
   maxViolations = 3,
+  durationSeconds = 20,
   isSubmitting = false,
   onManualResume,
   onTimeoutAutoSubmit
 }: InterruptionLockoutModalProps) {
-  const [secondsRemaining, setSecondsRemaining] = useState<number>(45);
+  const [secondsRemaining, setSecondsRemaining] = useState<number>(durationSeconds);
 
   const isFinalViolation = tabViolations >= maxViolations;
   const isSecondViolation = tabViolations === 2 && maxViolations === 3;
 
   useEffect(() => {
     if (!isOpen || isFinalViolation || isSubmitting) {
-      setSecondsRemaining(45);
+      setSecondsRemaining(durationSeconds);
       return;
     }
 
-    const targetEndTime = Date.now() + 45 * 1000;
-    setSecondsRemaining(45);
+    const targetEndTime = Date.now() + durationSeconds * 1000;
+    setSecondsRemaining(durationSeconds);
 
     const updateTimer = () => {
       const diffMs = targetEndTime - Date.now();
@@ -49,7 +51,7 @@ export function InterruptionLockoutModal({
     const interval = setInterval(updateTimer, 500);
 
     return () => clearInterval(interval);
-  }, [isOpen, tabViolations, isFinalViolation, isSubmitting, onTimeoutAutoSubmit]);
+  }, [isOpen, tabViolations, isFinalViolation, isSubmitting, durationSeconds, onTimeoutAutoSubmit]);
 
   if (!isOpen) return null;
 
