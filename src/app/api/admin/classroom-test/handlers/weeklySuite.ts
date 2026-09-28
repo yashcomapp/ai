@@ -3,7 +3,7 @@ import * as admin from 'firebase-admin';
 import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole } from '@/lib/auth';
 import { NextRequest } from 'next/server';
-import { shuffleArray } from '@/lib/questionTypes';
+import { shuffleArray, isQuestionQuarantined } from '@/lib/questionTypes';
 import { areQuestionsTooSimilar, filterDistinctCandidates } from '@/lib/questionSimilarity';
 import { getDateKeyIST } from '@/lib/dateUtils';
 
@@ -158,6 +158,9 @@ export async function POST(request: NextRequest) {
       id: doc.id,
       ...doc.data()
     })) as any[];
+
+    // Exclude soft-quarantined / defective questions
+    dbQuestions = dbQuestions.filter(q => !isQuestionQuarantined(q));
 
     // Filter questions matching target chapters
     dbQuestions = dbQuestions.filter(q => {

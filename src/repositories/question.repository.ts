@@ -1,6 +1,6 @@
 import { adminDb } from '@/lib/firebase/admin';
 import { QuestionItem } from '@/types/question.types';
-import { deriveTopicCodeFromQuestionCode } from '@/lib/questionTypes';
+import { deriveTopicCodeFromQuestionCode, isQuestionQuarantined } from '@/lib/questionTypes';
 
 export class QuestionRepository {
   private static collection = adminDb.collection('questions');
@@ -120,7 +120,8 @@ export class QuestionRepository {
       return cached.data;
     }
 
-    const result = await this.resolveQuestionsByTopic(topicCode);
+    const rawResult = await this.resolveQuestionsByTopic(topicCode);
+    const result = rawResult.filter(q => !isQuestionQuarantined(q));
     // Cache for 5 minutes
     this.topicCache.set(topicCode, { data: result, expiry: Date.now() + 5 * 60 * 1000 });
     return result;

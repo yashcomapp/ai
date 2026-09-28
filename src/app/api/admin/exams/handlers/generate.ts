@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as admin from 'firebase-admin';
 import { adminDb } from '@/lib/firebase/admin';
-import { OBJECTIVE_QUESTION_TYPES, SUBJECTIVE_QUESTION_TYPES, toCanonicalQuestionType, CANONICAL_OBJECTIVE_TYPES, CANONICAL_SUBJECTIVE_TYPES, cleanStringForMatch } from '@/lib/questionTypes';
+import { OBJECTIVE_QUESTION_TYPES, SUBJECTIVE_QUESTION_TYPES, toCanonicalQuestionType, CANONICAL_OBJECTIVE_TYPES, CANONICAL_SUBJECTIVE_TYPES, cleanStringForMatch, isQuestionQuarantined } from '@/lib/questionTypes';
 import { verifyRole } from '@/lib/auth';
 import { ChunkedBatch } from '@/lib/firebase/batch';
 export const dynamic = 'force-dynamic';
@@ -80,6 +80,7 @@ export async function GET(req: NextRequest) {
 
       const pool = questionsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() as any }))
         .filter(q => {
+          if (isQuestionQuarantined(q)) return false;
           const b = String(q.board || '').toLowerCase();
           const s = String(q.subject || '').toLowerCase();
           const sc = String(q.subjectCode || '').toLowerCase();

@@ -134,7 +134,7 @@ export class FaultService {
     });
 
     // 4. Run scoped auto-detection for targeted students
-    const autoDetections = await this.runAutoDetect(dateKey, filteredStudents.map(s => s.studentCode));
+    const autoDetections = await this.runAutoDetect(dateKey, filteredStudents);
 
     // 5. Construct matrix rows
     const studentEntries: StudentFaultEntry[] = filteredStudents.map(s => {
@@ -186,13 +186,22 @@ export class FaultService {
   }
 
   /**
-   * Auto-detects systemic faults for a given date across target students
+   * Auto-detects systemic faults for a given date across target students (strictly scoped to assigned exams)
    */
-  private static async runAutoDetect(dateKey: string, studentCodes: string[]): Promise<Map<string, Record<string, any>>> {
+  private static async runAutoDetect(
+    dateKey: string,
+    targetStudents: Array<{
+      studentCode: string;
+      studentName?: string;
+      batchIds?: string[];
+      batchId?: string;
+      classNum?: string | number;
+    }>
+  ): Promise<Map<string, Record<string, any>>> {
     const results = new Map<string, Record<string, any>>();
-    if (!studentCodes.length) return results;
+    if (!targetStudents.length) return results;
 
-    const studentCodesSet = new Set(studentCodes.map(c => c.toUpperCase()));
+    const studentCodesSet = new Set(targetStudents.map(s => (s.studentCode || '').toUpperCase()).filter(Boolean));
     const initEntry = (code: string) => {
       const cUpper = code.toUpperCase();
       if (!results.has(cUpper)) results.set(cUpper, {});
@@ -201,15 +210,33 @@ export class FaultService {
 
     try {
       const now = new Date();
-      // 1. Fetch Attendance, Scheduled Exams, Leaves and Declarations for dateKey in parallel
-      const [attendanceSnap, scheduledExamsSnap, leavesSnap, declsSnap] = await Promise.all([
+      // 1. Fetch Attendance, Scheduled Exams (Objective + Subjective), Batch Assignments, Leaves and Declarations in parallel
+      const [
+        attendanceSnap,
+        scheduledExamsSnap,
+        scheduledSubjExamsSnap,
+        batchAssignmentsSnap,
+        subjAssignmentsSnap,
+        leavesSnap,
+        declsSnap
+      ] = await Promise.all([
         adminDb.collection('attendance').where('date', '==', dateKey).get(),
         adminDb.collection('exams').where('scheduledDate', '==', dateKey).get(),
+        adminDb.collection('subjectiveExams').where('scheduledDate', '==', dateKey).get(),
+        adminDb.collection('batchAssignments').where('status', '==', 'active').get(),
+        adminDb.collection('subjectiveAssignments').where('status', '==', 'active').get(),
         adminDb.collection('leaveApplications').where('endDate', '>=', dateKey).get(),
         adminDb.collection('attendanceDeclarations').where('endDate', '>=', dateKey).get()
       ]);
 
-      // Track declared leaves and attendance declarations
+      // Fallback check for subjective exams that might store date under 'date'
+      let subjExamsDocs = scheduledSubjExamsSnap.docs;
+      if (subjExamsDocs.length === 0) {
+        const altSubjSnap = await adminDb.collection('subjectiveExams').where('date', '==', dateKey).get();
+        subjExamsDocs = altSubjSnap.docs;
+      }
+
+      // Track active leaves and attendance declarations for dateKey
       const activeLeavesMap = new Map<string, any>();
       leavesSnap.docs.forEach(doc => {
         const d = doc.data();
@@ -223,6 +250,17 @@ export class FaultService {
         const d = doc.data();
         if (d.studentCode && d.startDate <= dateKey) {
           activeDeclarationsMap.set(d.studentCode.toUpperCase(), d);
+        }
+      });
+
+      // Index active assignments by examId
+      const assignmentsByExam = new Map<string, any[]>();
+      [...batchAssignmentsSnap.docs, ...subjAssignmentsSnap.docs].forEach(doc => {
+        const d = doc.data();
+        if (d.examId) {
+          const list = assignmentsByExam.get(d.examId) || [];
+          list.push(d);
+          assignmentsByExam.set(d.examId, list);
         }
       });
 
@@ -250,20 +288,88 @@ export class FaultService {
         });
       });
 
-      // B. Check Missed Scheduled Exams & 60-Min Reviews on this Date
-      if (!scheduledExamsSnap.empty) {
-        const examIds = scheduledExamsSnap.docs.map(doc => doc.id);
+      // Helper to evaluate if a student was assigned/targeted for a specific exam
+      const isStudentAssignedToExam = (
+        student: { studentCode: string; batchIds?: string[]; batchId?: string; classNum?: string | number },
+        examData: any,
+        examAssignments: any[]
+      ): boolean => {
+        const sCodeUpper = (student.studentCode || '').toUpperCase();
+        const sBatches: string[] = (Array.isArray(student.batchIds) && student.batchIds.length > 0
+          ? student.batchIds
+          : (student.batchId ? [student.batchId] : [])).map(b => String(b).trim()).filter(Boolean);
+        const sClassStr = String(student.classNum || '').trim().replace(/[^0-9]/g, '');
 
-        // Fetch reviews and examReviews ONLY for the scheduled exams
-        const [reviewsSnaps, examReviewsSnaps] = await Promise.all([
-          Promise.all(examIds.map(eId =>
+        // 1. Check formal assignments (batchAssignments & subjectiveAssignments)
+        if (examAssignments && examAssignments.length > 0) {
+          for (const a of examAssignments) {
+            if (Array.isArray(a.targetStudents) && a.targetStudents.map((c: string) => String(c).toUpperCase()).includes(sCodeUpper)) {
+              return true;
+            }
+            if (Array.isArray(a.targetBatches) && a.targetBatches.some((b: string) => sBatches.includes(String(b).trim()))) {
+              return true;
+            }
+          }
+        }
+
+        // 2. Direct targetStudents on the exam doc
+        const targetStudentsList: string[] = (examData.targetStudents || examData.studentCodes || []).map((c: string) => String(c).toUpperCase());
+        if (targetStudentsList.length > 0) {
+          return targetStudentsList.includes(sCodeUpper);
+        }
+
+        // 3. Class match check
+        const examClassRaw = examData.classNum || examData.class;
+        const examClassStr = String(examClassRaw || '').trim().replace(/[^0-9]/g, '');
+        if (sClassStr && examClassStr && sClassStr !== examClassStr) {
+          return false;
+        }
+
+        // 4. Direct targetBatches on the exam doc
+        const examBatches: string[] = (examData.targetBatches || examData.assignedBatches || examData.batchIds || (examData.batchId ? [examData.batchId] : []))
+          .map((b: any) => String(b).trim())
+          .filter(Boolean);
+        if (examBatches.length > 0) {
+          return sBatches.some(b => examBatches.includes(b));
+        }
+
+        // 5. If no target students and no target batches:
+        // If class is specified on exam, it targets all students of that class
+        if (examClassStr) {
+          return sClassStr === examClassStr;
+        }
+
+        // If neither batch nor class is specified, exam applies to all students
+        return true;
+      };
+
+      // B. Check Missed Scheduled Exams (Objective + Subjective) & 60-Min Reviews on this Date
+      const objExamIds = scheduledExamsSnap.docs.map(doc => doc.id);
+      const subjExamIds = subjExamsDocs.map(doc => doc.id);
+
+      if (objExamIds.length > 0 || subjExamIds.length > 0) {
+        // Fetch reviews, examReviews, and subjectiveAttempts for all scheduled exams
+        const [objReviewsSnaps, examReviewsSnaps, subjAttemptsSnaps, subjReviewsSnaps] = await Promise.all([
+          Promise.all(objExamIds.map(eId =>
             adminDb.collection('reviews')
               .where('examId', '==', eId)
               .select('studentCode', 'examId', 'completedAt', 'submittedAt', 'createdAt', 'examName', 'examType')
               .get()
           )),
-          Promise.all(examIds.map(eId =>
+          Promise.all(objExamIds.map(eId =>
             adminDb.collection('examReviews')
+              .where('examId', '==', eId)
+              .select('studentCode', 'examId')
+              .get()
+          )),
+          Promise.all(subjExamIds.map(eId =>
+            adminDb.collection('subjectiveAttempts')
+              .where('examId', '==', eId)
+              .select('studentCode', 'examId', 'completedAt', 'submittedAt', 'createdAt')
+              .get()
+          )),
+          Promise.all(subjExamIds.map(eId =>
+            adminDb.collection('reviews')
               .where('examId', '==', eId)
               .select('studentCode', 'examId')
               .get()
@@ -283,7 +389,7 @@ export class FaultService {
           });
         });
 
-        reviewsSnaps.forEach(snap => {
+        objReviewsSnaps.forEach(snap => {
           snap.docs.forEach(doc => {
             const d = doc.data();
             const sCode = (d.studentCode || '').toUpperCase();
@@ -301,15 +407,47 @@ export class FaultService {
           });
         });
 
-        scheduledExamsSnap.docs.forEach(examDoc => {
+        subjAttemptsSnaps.forEach(snap => {
+          snap.docs.forEach(doc => {
+            const d = doc.data();
+            const sCode = (d.studentCode || '').toUpperCase();
+            if (d.examId && sCode) {
+              attemptedStudentsForExam.add(`${sCode}_${d.examId}`);
+            }
+          });
+        });
+
+        subjReviewsSnaps.forEach(snap => {
+          snap.docs.forEach(doc => {
+            const d = doc.data();
+            const sCode = (d.studentCode || '').toUpperCase();
+            if (d.examId && sCode) {
+              attemptedStudentsForExam.add(`${sCode}_${d.examId}`);
+            }
+          });
+        });
+
+        const allScheduledExams = [
+          ...scheduledExamsSnap.docs.map(doc => ({ doc, isSubjective: false })),
+          ...subjExamsDocs.map(doc => ({ doc, isSubjective: true }))
+        ];
+
+        allScheduledExams.forEach(({ doc: examDoc, isSubjective }) => {
           const examData = examDoc.data();
           const examId = examDoc.id;
           const examName = examData.title || examData.name || examId;
+          const examAssignments = assignmentsByExam.get(examId) || [];
 
-          studentCodes.forEach(sCode => {
-            const sUpper = sCode.toUpperCase();
+          targetStudents.forEach(student => {
+            const sUpper = (student.studentCode || '').toUpperCase();
+            if (!sUpper || !studentCodesSet.has(sUpper)) return;
+
+            // Scope check: only evaluate absenteeism if the student is assigned to this exam
+            if (!isStudentAssignedToExam(student, examData, examAssignments)) {
+              return;
+            }
+
             const hasAttempted = attemptedStudentsForExam.has(`${sUpper}_${examId}`);
-
             if (!hasAttempted) {
               const entry = initEntry(sUpper);
               entry['exam_absent'] = true;
@@ -320,11 +458,11 @@ export class FaultService {
                 const leaveReason = hasLeave
                   ? (activeLeavesMap.get(sUpper)?.reason || 'Leave applied')
                   : (activeDeclarationsMap.get(sUpper)?.reason || 'Attendance declared');
-                entry['exam_absent_note'] = `Missed scheduled exam: ${examName} (${leaveReason})`;
+                entry['exam_absent_note'] = `Missed scheduled ${isSubjective ? 'subjective ' : ''}exam: ${examName} (${leaveReason})`;
               } else {
-                entry['exam_absent_note'] = `Missed scheduled exam: ${examName}`;
+                entry['exam_absent_note'] = `Missed scheduled ${isSubjective ? 'subjective ' : ''}exam: ${examName}`;
                 entry['exam_absent_no_info'] = true;
-                entry['exam_absent_no_info_note'] = `Missed scheduled exam (${examName}) without prior information`;
+                entry['exam_absent_no_info_note'] = `Missed scheduled ${isSubjective ? 'subjective ' : ''}exam (${examName}) without prior information`;
               }
             }
           });

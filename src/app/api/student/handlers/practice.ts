@@ -3,7 +3,7 @@ import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole } from '@/lib/auth';
 import { QuestionRepository } from '@/repositories/question.repository';
 import { PracticeService } from '@/services/practice.service';
-import { shuffleArray, isObjectiveType, isSingleChoiceType, isMultipleChoiceType, isAssertionReasonType } from '@/lib/questionTypes';
+import { shuffleArray, isObjectiveType, isSingleChoiceType, isMultipleChoiceType, isAssertionReasonType, isQuestionQuarantined } from '@/lib/questionTypes';
 import { getDateKeyIST } from '@/lib/dateUtils';
 import { getRequiredConfidence } from '@/lib/studentDb';
 import { filterDistinctCandidates, areQuestionsTooSimilar } from '@/lib/questionSimilarity';
@@ -215,6 +215,7 @@ export async function GET(req: NextRequest) {
     let allQuestions: any[] = await getQuestionsByTopic(topicCode);
     allQuestions = allQuestions.filter((q: any) => {
       if (!q.type || !isObjectiveType(q.type)) return false;
+      if (isQuestionQuarantined(q)) return false;
       // ZERO-COLLISION: Exclude questions strictly designated for formal exams or mock tests
       if (q.vault && q.vault !== 'practice') return false;
       if (examCategory === 'foundation' ? q.examCategory !== 'foundation' : (q.examCategory && q.examCategory !== 'standard')) return false;

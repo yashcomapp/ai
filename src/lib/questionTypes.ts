@@ -4,6 +4,15 @@ export function stripOptionLabel(text: any): string {
   return String(text).replace(/^\s*\(?[A-Da-d]\)?[).:]\s*/, '');
 }
 
+/**
+ * Checks whether a question is quarantined or flagged as defective.
+ * Quarantined questions MUST NEVER be served in practice sessions or picked for new exams/tests.
+ */
+export function isQuestionQuarantined(q: any): boolean {
+  if (!q) return false;
+  return q.isQuarantined === true || q.status === 'quarantined' || q.flaggedDefective === true;
+}
+
 export const DEFAULT_ASSERTION_REASON_OPTIONS: string[] = [
   'Both Assertion (A) and Reason (R) are true, and Reason (R) is the correct explanation of Assertion (A).',
   'Both Assertion (A) and Reason (R) are true, but Reason (R) is NOT the correct explanation of Assertion (A).',

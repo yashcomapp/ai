@@ -3,7 +3,7 @@ import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole } from '@/lib/auth';
 import { NextRequest } from 'next/server';
 import { ChunkedBatch } from '@/lib/firebase/batch';
-import { shuffleArray } from '@/lib/questionTypes';
+import { shuffleArray, isQuestionQuarantined } from '@/lib/questionTypes';
 
 export async function GET(request: NextRequest) {
   try {
@@ -68,6 +68,9 @@ export async function POST(request: Request) {
       id: doc.id,
       ...doc.data()
     })) as any[];
+
+    // Exclude soft-quarantined / defective questions
+    allQuestions = allQuestions.filter(q => !isQuestionQuarantined(q));
 
     // Filter by subject-chapter combinations
     allQuestions = allQuestions.filter(q => {
