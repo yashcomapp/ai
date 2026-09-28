@@ -509,7 +509,7 @@ export async function POST(req: NextRequest) {
         return true;
       });
 
-      if (otherParticipants.length > 0 || (senderIsAdmin && (roomData.participants || []).includes('admin'))) {
+      if (otherParticipants.length > 0) {
         let targetUids = await resolveFirebaseUidsForChatParticipants(otherParticipants);
 
         // Explicitly filter out the sender's own UID (especially for admin senders where 'admin' participant expands to all admin UIDs)

@@ -215,16 +215,12 @@ export class FaultService {
         attendanceSnap,
         scheduledExamsSnap,
         scheduledSubjExamsSnap,
-        batchAssignmentsSnap,
-        subjAssignmentsSnap,
         leavesSnap,
         declsSnap
       ] = await Promise.all([
         adminDb.collection('attendance').where('date', '==', dateKey).get(),
         adminDb.collection('exams').where('scheduledDate', '==', dateKey).get(),
         adminDb.collection('subjectiveExams').where('scheduledDate', '==', dateKey).get(),
-        adminDb.collection('batchAssignments').where('status', '==', 'active').get(),
-        adminDb.collection('subjectiveAssignments').where('status', '==', 'active').get(),
         adminDb.collection('leaveApplications').where('endDate', '>=', dateKey).get(),
         adminDb.collection('attendanceDeclarations').where('endDate', '>=', dateKey).get()
       ]);
@@ -253,16 +249,42 @@ export class FaultService {
         }
       });
 
-      // Index active assignments by examId
+      // B. Load targeted assignments specifically for scheduled exams (supports active and archived exams)
+      const objExamIds = scheduledExamsSnap.docs.map(doc => doc.id);
+      const subjExamIds = subjExamsDocs.map(doc => doc.id);
+      const allScheduledExamIds = Array.from(new Set([...objExamIds, ...subjExamIds]));
+
       const assignmentsByExam = new Map<string, any[]>();
-      [...batchAssignmentsSnap.docs, ...subjAssignmentsSnap.docs].forEach(doc => {
-        const d = doc.data();
-        if (d.examId) {
-          const list = assignmentsByExam.get(d.examId) || [];
-          list.push(d);
-          assignmentsByExam.set(d.examId, list);
+      if (allScheduledExamIds.length > 0) {
+        const examIdChunks: string[][] = [];
+        for (let i = 0; i < allScheduledExamIds.length; i += 30) {
+          examIdChunks.push(allScheduledExamIds.slice(i, i + 30));
         }
-      });
+
+        const [batchSnaps, subjSnaps] = await Promise.all([
+          Promise.all(examIdChunks.map(chunk => 
+            adminDb.collection('batchAssignments')
+              .where('examId', 'in', chunk)
+              .get()
+          )),
+          Promise.all(examIdChunks.map(chunk => 
+            adminDb.collection('subjectiveAssignments')
+              .where('examId', 'in', chunk)
+              .get()
+          ))
+        ]);
+
+        [...batchSnaps, ...subjSnaps].forEach(snap => {
+          snap.docs.forEach(doc => {
+            const d = doc.data();
+            if (d.examId) {
+              const list = assignmentsByExam.get(d.examId) || [];
+              list.push(d);
+              assignmentsByExam.set(d.examId, list);
+            }
+          });
+        });
+      }
 
       // A. Check Absence Communication from Classroom Attendance
       attendanceSnap.docs.forEach(doc => {
@@ -300,7 +322,7 @@ export class FaultService {
           : (student.batchId ? [student.batchId] : [])).map(b => String(b).trim()).filter(Boolean);
         const sClassStr = String(student.classNum || '').trim().replace(/[^0-9]/g, '');
 
-        // 1. Check formal assignments (batchAssignments & subjectiveAssignments)
+        // 1. If formal assignments exist for this exam, assignment targeting is authoritative
         if (examAssignments && examAssignments.length > 0) {
           for (const a of examAssignments) {
             if (Array.isArray(a.targetStudents) && a.targetStudents.map((c: string) => String(c).toUpperCase()).includes(sCodeUpper)) {
@@ -310,6 +332,8 @@ export class FaultService {
               return true;
             }
           }
+          // Formal assignments were defined for this exam and none included this student -> NOT assigned!
+          return false;
         }
 
         // 2. Direct targetStudents on the exam doc
@@ -339,14 +363,11 @@ export class FaultService {
           return sClassStr === examClassStr;
         }
 
-        // If neither batch nor class is specified, exam applies to all students
+        // If neither batch nor class is specified, exam applies to all students in scope
         return true;
       };
 
       // B. Check Missed Scheduled Exams (Objective + Subjective) & 60-Min Reviews on this Date
-      const objExamIds = scheduledExamsSnap.docs.map(doc => doc.id);
-      const subjExamIds = subjExamsDocs.map(doc => doc.id);
-
       if (objExamIds.length > 0 || subjExamIds.length > 0) {
         // Fetch reviews, examReviews, and subjectiveAttempts for all scheduled exams
         const [objReviewsSnaps, examReviewsSnaps, subjAttemptsSnaps, subjReviewsSnaps] = await Promise.all([

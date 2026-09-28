@@ -7,6 +7,17 @@ export class QuestionRepository {
   private static topicCache = new Map<string, { data: QuestionItem[]; expiry: number }>();
 
   /**
+   * Clears memory cache for a specific topic code or all topics
+   */
+  static clearTopicCache(topicCode?: string): void {
+    if (topicCode) {
+      this.topicCache.delete(topicCode);
+    } else {
+      this.topicCache.clear();
+    }
+  }
+
+  /**
    * Retrieves a question by ID
    */
   static async getById(id: string): Promise<QuestionItem | null> {

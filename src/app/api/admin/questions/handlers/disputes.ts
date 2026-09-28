@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole } from '@/lib/auth';
 import { invalidateCache } from '@/lib/firebase/cache';
+import { QuestionRepository } from '@/repositories/question.repository';
 
 export const dynamic = 'force-dynamic';
 
@@ -88,11 +89,14 @@ export async function POST(req: NextRequest) {
 
         if (qSnap.exists) {
           await qRef.update({
+            status: 'quarantined',
+            isQuarantined: true,
             flaggedDefective: true,
             defectiveReason: disputeData.reason || 'Student reported issue',
             quarantinedAt: new Date().toISOString()
           });
           invalidateCache('qb_base_');
+          QuestionRepository.clearTopicCache();
         }
       } catch (qErr) {
         console.warn('Failed to update question status:', qErr);

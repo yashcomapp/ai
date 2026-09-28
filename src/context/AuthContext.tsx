@@ -278,6 +278,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const idToken = auth.currentUser ? await auth.currentUser.getIdToken() : null;
       
       if (uid && idToken) {
+        // Clear FCM token on server if registered
+        try {
+          const cacheKey = `fcm_reg_${uid}`;
+          const cached = localStorage.getItem(cacheKey);
+          if (cached) {
+            const parsed = JSON.parse(cached);
+            if (parsed?.token) {
+              await fetch('/api/notifications/register-token', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${idToken}`
+                },
+                body: JSON.stringify({ token: parsed.token, action: 'unregister' })
+              }).catch(() => {});
+            }
+          }
+          localStorage.removeItem(cacheKey);
+        } catch (fcmErr) {
+          console.warn('FCM token unregister error:', fcmErr);
+        }
+
         // Clear active session token on server
         await fetch('/api/auth/session', {
           method: 'POST',
@@ -291,6 +313,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (e) {
       console.warn('Logout session clearing error:', e);
     } finally {
+      try {
+        const uid = sessionStorage.getItem('uid') || auth.currentUser?.uid;
+        if (uid) localStorage.removeItem(`fcm_reg_${uid}`);
+      } catch {}
       localStorage.removeItem(LOCAL_TOKEN_KEY);
       sessionStorage.clear();
       document.body.removeAttribute('data-role');

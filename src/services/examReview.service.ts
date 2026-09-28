@@ -3,6 +3,7 @@ import { parseDateInput, getDateKeyIST } from '@/lib/dateUtils';
 import { EvaluationService } from './evaluation.service';
 import { MasteryService } from './mastery.service';
 import { invalidateCache } from '@/lib/firebase/cache';
+import { QuestionRepository } from '@/repositories/question.repository';
 
 export interface ExamReviewStatus {
   hasAttempt: boolean;
@@ -380,6 +381,7 @@ export class ExamReviewService {
         }
       }
       invalidateCache('qb_base_');
+      QuestionRepository.clearTopicCache();
     } else if (action === 'quarantine') {
       // If direct doc did not exist, search by questionCode and soft-quarantine
       const qByCodeSnap = await adminDb.collection('questions')
@@ -405,6 +407,7 @@ export class ExamReviewService {
         }
         await updBatch.commit();
         invalidateCache('qb_base_');
+        QuestionRepository.clearTopicCache();
       }
     }
 
