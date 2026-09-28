@@ -604,6 +604,7 @@ export async function DELETE(req: NextRequest) {
       const isUsed = qData.usedInClassroomTest === true || (Number(qData.timesUsed) > 0);
       if (isUsed && !force) {
         return NextResponse.json({ 
+          code: 'QUESTION_IN_USE',
           message: `Cannot delete question '${id}' because it is used in exams. Delete prohibited to preserve student exam review integrity. Quarantine the question or pass ?force=true to override.` 
         }, { status: 400 });
       }
@@ -631,6 +632,7 @@ export async function DELETE(req: NextRequest) {
 
       if (usedQuestions.length > 0) {
         return NextResponse.json({
+          code: 'QUESTION_IN_USE',
           message: `Cannot delete ${usedQuestions.length} question(s) because they are referenced in exams: ${usedQuestions.slice(0, 5).join(', ')}${usedQuestions.length > 5 ? '...' : ''}. Pass force: true to override.`
         }, { status: 400 });
       }

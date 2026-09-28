@@ -424,12 +424,13 @@ export default function AdminQuestionBankPage() {
 
   // Delete Individual Question
   const handleDeleteQuestion = async (qCode: string, forceOverride = false) => {
-    if (!forceOverride && !confirm(`Delete question: ${qCode}?`)) return;
+    const isForce = forceOverride === true;
+    if (!isForce && !confirm(`Delete question: ${qCode}?`)) return;
     if (!firebaseUser) return;
 
     try {
       const idToken = await firebaseUser.getIdToken();
-      const res = await fetch(`/api/admin/questions?id=${encodeURIComponent(qCode)}${forceOverride ? '&force=true' : ''}`, {
+      const res = await fetch(`/api/admin/questions?id=${encodeURIComponent(qCode)}${isForce ? '&force=true' : ''}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${idToken}`
@@ -437,8 +438,8 @@ export default function AdminQuestionBankPage() {
       });
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
-        if (errData.message && errData.message.includes('used in exams') && !forceOverride) {
-          if (confirm(`${errData.message}\n\nDo you want to FORCE delete this question anyway?`)) {
+        if ((errData.code === 'QUESTION_IN_USE' || (errData.message && errData.message.includes('used in exams'))) && !isForce) {
+          if (confirm(`${errData.message}\n\n⚠️ Warning: Quarantining the question is safer to preserve exam scorecards.\n\nDo you want to FORCE delete this question anyway?`)) {
             return handleDeleteQuestion(qCode, true);
           }
           return;
@@ -507,8 +508,9 @@ export default function AdminQuestionBankPage() {
   };
 
   const handleDeleteSelectedDuplicates = async (forceOverride = false) => {
+    const isForce = forceOverride === true;
     if (selectedDups.size === 0) return;
-    if (!forceOverride && !confirm(`Are you sure you want to purge ${selectedDups.size} duplicate questions?`)) return;
+    if (!isForce && !confirm(`Are you sure you want to purge ${selectedDups.size} duplicate questions?`)) return;
 
     try {
       const idToken = await firebaseUser!.getIdToken();
@@ -518,13 +520,13 @@ export default function AdminQuestionBankPage() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${idToken}`
         },
-        body: JSON.stringify({ ids: Array.from(selectedDups), force: forceOverride })
+        body: JSON.stringify({ ids: Array.from(selectedDups), force: isForce })
       });
 
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
-        if (errData.message && errData.message.includes('referenced in exams') && !forceOverride) {
-          if (confirm(`${errData.message}\n\nDo you want to FORCE purge anyway?`)) {
+        if ((errData.code === 'QUESTION_IN_USE' || (errData.message && errData.message.includes('referenced in exams'))) && !isForce) {
+          if (confirm(`${errData.message}\n\n⚠️ Warning: Force deleting active exam questions can impact student scorecards. Consider quarantining instead.\n\nDo you still want to FORCE purge these duplicate questions?`)) {
             return handleDeleteSelectedDuplicates(true);
           }
           return;
@@ -1260,7 +1262,7 @@ ${JSON.stringify(missingList, null, 2)}`;
                 ({duplicateGroups.length} duplicate group{duplicateGroups.length === 1 ? '' : 's'} found • {selectedDups.size} selected for purge)
               </span>
               {selectedDups.size > 0 && (
-                <button className="btn btn-primary" style={{ background: 'var(--danger)', borderColor: 'var(--danger)', padding: '4px 10px', fontSize: '11px', marginLeft: 'auto' }} onClick={handleDeleteSelectedDuplicates}>
+                <button className="btn btn-primary" style={{ background: 'var(--danger)', borderColor: 'var(--danger)', padding: '4px 10px', fontSize: '11px', marginLeft: 'auto' }} onClick={() => handleDeleteSelectedDuplicates()}>
                   🗑️ Purge {selectedDups.size} Selected
                 </button>
               )}
