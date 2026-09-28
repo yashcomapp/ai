@@ -734,7 +734,9 @@ export async function GET(req: NextRequest) {
 
       return NextResponse.json({
         id,
-        examCode: reviewData.examCode,
+        examId: reviewData.examId || reviewData.examCode || (id.includes('_') ? id.split('_')[0] : id),
+        studentCode: reviewData.studentCode || studentCode,
+        examCode: reviewData.examCode || reviewData.examId || id,
         examName: topicName || reviewData.examName || reviewData.examCode,
         examType: determineExamType(reviewData),
         score: reviewData.score || 0,

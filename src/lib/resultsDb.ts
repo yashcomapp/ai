@@ -174,7 +174,9 @@ export async function getStudentResultsData(
 
     return {
       id: doc.id,
-      examCode: data.examCode,
+      examId: data.examId || data.examCode || (doc.id.includes('_') ? doc.id.split('_')[0] : doc.id),
+      studentCode: data.studentCode || studentCode,
+      examCode: data.examCode || data.examId || doc.id,
       examName: topicName || data.examName || data.examCode,
       examType: determineExamType(data),
       score,

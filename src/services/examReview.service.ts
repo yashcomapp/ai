@@ -36,38 +36,57 @@ export class ExamReviewService {
    */
   static async getReviewStatus(studentCode: string, examId: string): Promise<ExamReviewStatus> {
     const sCodeUpper = studentCode.trim().toUpperCase();
+    let canonicalExamId = examId.trim();
+    if (sCodeUpper && canonicalExamId.toUpperCase().endsWith(`_${sCodeUpper}`)) {
+      canonicalExamId = canonicalExamId.slice(0, canonicalExamId.length - (sCodeUpper.length + 1));
+    }
     
     // 1. Fetch official exam review doc if submitted
-    const reviewRef = adminDb.collection('reviews').doc(`${examId}_${sCodeUpper}`);
-    let reviewSnap = await reviewRef.get();
-    if (!reviewSnap.exists) {
+    let reviewData: any = null;
+    let reviewSnap = await adminDb.collection('reviews').doc(`${canonicalExamId}_${sCodeUpper}`).get();
+    if (!reviewSnap.exists && examId !== canonicalExamId) {
+      const directSnap = await adminDb.collection('reviews').doc(examId).get();
+      if (directSnap.exists) reviewSnap = directSnap;
+    }
+    if (reviewSnap.exists) {
+      reviewData = reviewSnap.data();
+    } else {
       // Fallback query in reviews
+      const candidateIds = Array.from(new Set([canonicalExamId, examId].filter(Boolean)));
       const qSnap = await adminDb.collection('reviews')
         .where('studentCode', '==', sCodeUpper)
-        .where('examId', '==', examId)
+        .where('examId', 'in', candidateIds)
         .limit(1)
         .get();
-      if (!qSnap.empty) reviewSnap = qSnap.docs[0];
+      if (!qSnap.empty) reviewData = qSnap.docs[0].data();
     }
-
-    let reviewData = reviewSnap.exists ? reviewSnap.data() : null;
 
     // Fallback query in examAttempts if review not found
     if (!reviewData) {
-      const attemptSnap = await adminDb.collection('examAttempts')
-        .where('studentCode', '==', sCodeUpper)
-        .where('examId', '==', examId)
-        .limit(1)
-        .get();
-      if (!attemptSnap.empty) {
-        reviewData = attemptSnap.docs[0].data();
+      let attemptSnap = await adminDb.collection('examAttempts').doc(`${canonicalExamId}_${sCodeUpper}`).get();
+      if (!attemptSnap.exists && examId !== canonicalExamId) {
+        const directSnap = await adminDb.collection('examAttempts').doc(examId).get();
+        if (directSnap.exists) attemptSnap = directSnap;
+      }
+      if (attemptSnap.exists) {
+        reviewData = attemptSnap.data();
+      } else {
+        const candidateIds = Array.from(new Set([canonicalExamId, examId].filter(Boolean)));
+        const attemptSnapQuery = await adminDb.collection('examAttempts')
+          .where('studentCode', '==', sCodeUpper)
+          .where('examId', 'in', candidateIds)
+          .limit(1)
+          .get();
+        if (!attemptSnapQuery.empty) {
+          reviewData = attemptSnapQuery.docs[0].data();
+        }
       }
     }
 
     if (!reviewData) {
       return {
         hasAttempt: false,
-        examId,
+        examId: canonicalExamId,
         studentCode: sCodeUpper,
         completedAt: null,
         elapsedMinutes: 0,
@@ -90,7 +109,11 @@ export class ExamReviewService {
     const isWithin60MinWindow = elapsedMinutes <= 60;
 
     // 2. Fetch verified examReview submission
-    const examReviewDoc = await adminDb.collection('examReviews').doc(`${sCodeUpper}_${examId}`).get();
+    let examReviewDoc = await adminDb.collection('examReviews').doc(`${sCodeUpper}_${canonicalExamId}`).get();
+    if (!examReviewDoc.exists && examId !== canonicalExamId) {
+      const altDoc = await adminDb.collection('examReviews').doc(`${sCodeUpper}_${examId}`).get();
+      if (altDoc.exists) examReviewDoc = altDoc;
+    }
     const examReviewData = examReviewDoc.exists ? examReviewDoc.data() : null;
 
     let status: 'pending' | 'on_time' | 'late' = 'pending';
@@ -100,7 +123,7 @@ export class ExamReviewService {
 
     return {
       hasAttempt: true,
-      examId,
+      examId: canonicalExamId,
       studentCode: sCodeUpper,
       completedAt: completedDate ? completedDate.toISOString() : null,
       elapsedMinutes,
@@ -146,10 +169,14 @@ export class ExamReviewService {
     } = params;
 
     const sCodeUpper = studentCode.trim().toUpperCase();
+    let canonicalExamId = examId.trim();
+    if (sCodeUpper && canonicalExamId.toUpperCase().endsWith(`_${sCodeUpper}`)) {
+      canonicalExamId = canonicalExamId.slice(0, canonicalExamId.length - (sCodeUpper.length + 1));
+    }
     const now = new Date();
 
     // Check attempt completion timestamp
-    const reviewStatus = await this.getReviewStatus(sCodeUpper, examId);
+    const reviewStatus = await this.getReviewStatus(sCodeUpper, canonicalExamId);
     if (!reviewStatus.hasAttempt) {
       throw new Error('No exam attempt found for this student. You can only review exams you have attempted.');
     }
@@ -164,9 +191,9 @@ export class ExamReviewService {
       const qId = challenge.questionId || challenge.questionCode;
       if (!qId) continue;
 
-      const disputeDocId = `${examId}_${qId}_${sCodeUpper}`;
+      const disputeDocId = `${canonicalExamId}_${qId}_${sCodeUpper}`;
       const disputeRef = adminDb.collection('questionDisputes').doc(disputeDocId);
-      const counterRef = adminDb.collection('examDisputeCounters').doc(`${examId}_${qId}`);
+      const counterRef = adminDb.collection('examDisputeCounters').doc(`${canonicalExamId}_${qId}`);
 
       const awardedBounty = await adminDb.runTransaction(async (transaction) => {
         const disputeSnap = await transaction.get(disputeRef);
@@ -182,14 +209,14 @@ export class ExamReviewService {
 
         transaction.set(counterRef, {
           count: reporterRank,
-          examId,
+          examId: canonicalExamId,
           questionId: qId,
           lastReportedAt: now.toISOString()
         }, { merge: true });
 
         transaction.set(disputeRef, {
           id: disputeDocId,
-          examId,
+          examId: canonicalExamId,
           examName,
           questionId: qId,
           questionCode: challenge.questionCode || qId,
@@ -217,13 +244,13 @@ export class ExamReviewService {
     }
 
     // Save master examReview record
-    const examReviewRef = adminDb.collection('examReviews').doc(`${sCodeUpper}_${examId}`);
+    const examReviewRef = adminDb.collection('examReviews').doc(`${sCodeUpper}_${canonicalExamId}`);
     await examReviewRef.set({
-      id: `${sCodeUpper}_${examId}`,
+      id: `${sCodeUpper}_${canonicalExamId}`,
       studentCode: sCodeUpper,
       studentName,
       batchId,
-      examId,
+      examId: canonicalExamId,
       examName,
       reviewedQuestionIds,
       timeSpentSeconds,

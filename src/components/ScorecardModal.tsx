@@ -185,7 +185,11 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
     try {
       const token = await firebaseUser.getIdToken();
       const timeSpentSecs = Math.max(10, Math.floor((Date.now() - startTimeRef.current) / 1000));
-      const examId = scorecard.id || scorecard.examCode;
+      const sCode = (user.studentCode || scorecard.studentCode || '').trim().toUpperCase();
+      let examId = scorecard.examId || scorecard.examCode || scorecard.id;
+      if (examId && sCode && examId.toUpperCase().endsWith(`_${sCode}`)) {
+        examId = examId.slice(0, examId.length - (sCode.length + 1));
+      }
 
       const res = await fetch('/api/student/exam-review', {
         method: 'POST',
