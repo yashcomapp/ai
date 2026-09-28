@@ -64,7 +64,7 @@ export class QuestionRepository {
     }
 
     const snap = await query
-      .select('questionCode', 'text', 'difficulty', 'timesUsed')
+      .select('questionCode', 'text', 'difficulty', 'timesUsed', 'usedInClassroomTest')
       .limit(limitVal)
       .get();
 
@@ -106,16 +106,29 @@ export class QuestionRepository {
         questionCode: q.questionCode || q.id,
         text: q.text,
         difficulty: q.difficulty,
-        timesUsed: q.timesUsed || 0
+        timesUsed: q.timesUsed || 0,
+        usedInClassroomTest: q.usedInClassroomTest === true
       });
     });
 
     const duplicateGroups = Object.keys(groups)
       .filter(textKey => groups[textKey].length > 1)
-      .map(textKey => ({
-        text: groups[textKey][0].text,
-        questions: groups[textKey]
-      }));
+      .map(textKey => {
+        const questions = groups[textKey];
+        // Prioritize keeping questions that have been used in classroom tests / exams
+        questions.sort((a, b) => {
+          const aUsed = a.usedInClassroomTest || (a.timesUsed > 0);
+          const bUsed = b.usedInClassroomTest || (b.timesUsed > 0);
+          if (aUsed && !bUsed) return -1;
+          if (!aUsed && bUsed) return 1;
+          return (b.timesUsed || 0) - (a.timesUsed || 0);
+        });
+
+        return {
+          text: questions[0].text,
+          questions
+        };
+      });
 
     return duplicateGroups;
   }

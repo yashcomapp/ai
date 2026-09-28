@@ -410,7 +410,10 @@ export default function AdminQuestionBankPage() {
         body: JSON.stringify({ ids: Array.from(selectedCodes) })
       });
 
-      if (!res.ok) throw new Error('Bulk delete failed.');
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.message || 'Bulk delete failed.');
+      }
       alert('✅ Selected questions deleted.');
       setSelectedCodes(new Set());
       await fetchQuestionsList();
@@ -420,19 +423,28 @@ export default function AdminQuestionBankPage() {
   };
 
   // Delete Individual Question
-  const handleDeleteQuestion = async (qCode: string) => {
-    if (!confirm(`Delete question: ${qCode}?`)) return;
+  const handleDeleteQuestion = async (qCode: string, forceOverride = false) => {
+    if (!forceOverride && !confirm(`Delete question: ${qCode}?`)) return;
     if (!firebaseUser) return;
 
     try {
       const idToken = await firebaseUser.getIdToken();
-      const res = await fetch(`/api/admin/questions?id=${qCode}`, {
+      const res = await fetch(`/api/admin/questions?id=${encodeURIComponent(qCode)}${forceOverride ? '&force=true' : ''}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${idToken}`
         }
       });
-      if (!res.ok) throw new Error('Delete failed.');
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        if (errData.message && errData.message.includes('used in exams') && !forceOverride) {
+          if (confirm(`${errData.message}\n\nDo you want to FORCE delete this question anyway?`)) {
+            return handleDeleteQuestion(qCode, true);
+          }
+          return;
+        }
+        throw new Error(errData.message || 'Delete failed.');
+      }
       alert('✅ Question deleted.');
       await fetchQuestionsList();
     } catch (err: any) {
@@ -494,9 +506,9 @@ export default function AdminQuestionBankPage() {
     setSelectedDups(next);
   };
 
-  const handleDeleteSelectedDuplicates = async () => {
+  const handleDeleteSelectedDuplicates = async (forceOverride = false) => {
     if (selectedDups.size === 0) return;
-    if (!confirm(`Are you sure you want to purge ${selectedDups.size} duplicate questions?`)) return;
+    if (!forceOverride && !confirm(`Are you sure you want to purge ${selectedDups.size} duplicate questions?`)) return;
 
     try {
       const idToken = await firebaseUser!.getIdToken();
@@ -506,10 +518,19 @@ export default function AdminQuestionBankPage() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${idToken}`
         },
-        body: JSON.stringify({ ids: Array.from(selectedDups) })
+        body: JSON.stringify({ ids: Array.from(selectedDups), force: forceOverride })
       });
 
-      if (!res.ok) throw new Error('Failed to delete duplicates.');
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        if (errData.message && errData.message.includes('referenced in exams') && !forceOverride) {
+          if (confirm(`${errData.message}\n\nDo you want to FORCE purge anyway?`)) {
+            return handleDeleteSelectedDuplicates(true);
+          }
+          return;
+        }
+        throw new Error(errData.message || 'Failed to delete duplicates.');
+      }
       alert('✅ Purged duplicate questions.');
       setShowDuplicatesModal(false);
       await fetchQuestionsList();
@@ -1278,7 +1299,7 @@ ${JSON.stringify(missingList, null, 2)}`;
                                 ) : (
                                   <span style={{ fontSize: '9px', fontWeight: 700, color: 'var(--success)' }}>KEEP</span>
                                 )}
-                                <span>{q.questionCode} ({q.difficulty}) • Used {q.timesUsed || 0} times</span>
+                                <span>{q.questionCode} ({q.difficulty}) • {q.usedInClassroomTest ? 'Used in Exam/Test' : 'Unused'} ({q.timesUsed || 0} times)</span>
                               </label>
                             );
                           })}
