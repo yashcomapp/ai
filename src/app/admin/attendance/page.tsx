@@ -258,7 +258,6 @@ export default function AdminAttendancePage() {
       const resData = await res.json();
       if (!res.ok) throw new Error(resData.error || 'Failed to save attendance');
       setSuccessMsg('✅ Daily attendance saved successfully! Unexcused absences reported to parents.');
-      setIsMarked(true);
       setSaving(false);
       // Refresh roster asynchronously in background without keeping button locked in Saving state
       fetchRoster();

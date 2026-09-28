@@ -301,9 +301,9 @@ export default function AdminDisputesPage() {
                     // Determine current correct answer label
                     const rawCorrect = qData?.correctAnswer || qData?.answer || 'A';
                     const isAssertion = isAssertionReasonType(qData?.type);
-                    const { assertionText, reasonText } = isAssertion 
-                      ? extractAssertionAndReason(qData?.text || qData?.questionText || '', qData?.assertion, qData?.reason)
-                      : { assertionText: '', reasonText: '' };
+                    const { assertion: assertionText, reason: reasonText } = isAssertion 
+                      ? extractAssertionAndReason(qData)
+                      : { assertion: '', reason: '' };
 
                     return (
                       <div

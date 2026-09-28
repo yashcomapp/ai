@@ -45,6 +45,8 @@ interface QuestionDetailsItem {
 
 export interface DetailedScorecard {
   id: string;
+  examId?: string;
+  studentCode?: string;
   examCode: string;
   examName: string;
   examType: string;
@@ -556,13 +558,13 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
                               <div>
                                 <strong style={{ color: 'var(--text-muted)', marginRight: '6px' }}>Your Answer:</strong>
                                 <span className="math-container" style={{ color: isUnanswered ? 'var(--text-muted)' : (q.isCorrect ? 'var(--success)' : 'var(--danger)'), fontWeight: 600 }}>
-                                  {isUnanswered ? '(blank)' : preprocessMathText(formatUserAnswerSummary(q.userAnswer))}
+                                  {isUnanswered ? '(blank)' : preprocessMathText(formatUserAnswerSummary(q.options || [], q.userAnswer))}
                                 </span>
                               </div>
                               <div>
                                 <strong style={{ color: 'var(--text-muted)', marginRight: '6px' }}>Correct Answer:</strong>
                                 <span className="math-container" style={{ color: 'var(--success)', fontWeight: 600 }}>
-                                  {preprocessMathText(formatUserAnswerSummary(getQuestionCorrectAnswer(q)))}
+                                  {preprocessMathText(formatUserAnswerSummary(q.options || [], getQuestionCorrectAnswer(q)))}
                                 </span>
                               </div>
                             </div>

@@ -281,7 +281,7 @@ export class ExamReviewService {
     examId: string;
     questionId: string;
     newCorrectOption: string; // e.g. 'B' or 'C' or 'ALL_CORRECT'
-    action: 'correct_key' | 'bonus_all' | 'quarantine';
+    action: 'correct_key' | 'bonus_all' | 'quarantine' | 'reject_challenge' | 'dismiss';
     notes?: string;
     adminEmail?: string;
   }): Promise<{
@@ -584,7 +584,20 @@ export class ExamReviewService {
       const firstTopicCode = review.topicCode || (updatedQuestionDetails[0]?.questionCode ? deriveTopicCode(updatedQuestionDetails[0].questionCode) : '');
       if (studentCode && firstTopicCode) {
         try {
-          await MasteryService.recordExamAttempt(studentCode, firstTopicCode, academicPercentage, examId);
+          const masteryRef = adminDb.collection('studentTopicMastery').doc(`${studentCode}_${firstTopicCode}`);
+          const masterySnap = await masteryRef.get();
+          const existingMastery = masterySnap.exists ? masterySnap.data() : { studentCode, topicCode: firstTopicCode };
+          const evaluations = updatedQuestionDetails.map((qd: any) => ({
+            id: qd.questionId || qd.id || qd.questionCode || '',
+            difficulty: qd.difficulty || 'medium',
+            bloomLevel: qd.bloomLevel || 'Understand',
+            isCorrect: !!qd.isCorrect,
+            marksAwarded: qd.isCorrect ? (qd.marks || 4) : 0,
+            maxMarks: qd.marks || 4,
+            examCategory: 'standard'
+          }));
+          const updatedMasteryData = MasteryService.calculateTopicMasteryUpdate(existingMastery, evaluations, examId);
+          await masteryRef.set(updatedMasteryData, { merge: true });
         } catch (mErr) {
           console.warn('Failed to update mastery on re-evaluation:', mErr);
         }
