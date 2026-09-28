@@ -270,45 +270,70 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // 4. Logout operation
+  // 4. Logout operation (parallelized with short abort timeout & keepalive)
   const logout = async () => {
     setLoading(true);
     try {
       const uid = sessionStorage.getItem('uid') || auth.currentUser?.uid;
-      const idToken = auth.currentUser ? await auth.currentUser.getIdToken() : null;
+      const idToken = auth.currentUser ? await auth.currentUser.getIdToken().catch(() => null) : null;
       
       if (uid && idToken) {
-        // Clear FCM token on server if registered
+        const backgroundTasks: Promise<any>[] = [];
+
+        // 1. Clear FCM token on server if registered (parallel with short 1.5s abort timeout & keepalive)
         try {
           const cacheKey = `fcm_reg_${uid}`;
           const cached = localStorage.getItem(cacheKey);
+          let tokenToUnregister = '';
           if (cached) {
             const parsed = JSON.parse(cached);
             if (parsed?.token) {
-              await fetch('/api/notifications/register-token', {
+              tokenToUnregister = parsed.token;
+            }
+          }
+
+          if (tokenToUnregister) {
+            const fcmAbortCtrl = new AbortController();
+            const fcmTimeout = setTimeout(() => fcmAbortCtrl.abort(), 1500);
+            backgroundTasks.push(
+              fetch('/api/notifications/register-token', {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',
                   'Authorization': `Bearer ${idToken}`
                 },
-                body: JSON.stringify({ token: parsed.token, action: 'unregister' })
-              }).catch(() => {});
-            }
+                body: JSON.stringify({ token: tokenToUnregister, action: 'unregister' }),
+                keepalive: true,
+                signal: fcmAbortCtrl.signal
+              })
+                .catch(() => {})
+                .finally(() => clearTimeout(fcmTimeout))
+            );
           }
-          localStorage.removeItem(cacheKey);
         } catch (fcmErr) {
-          console.warn('FCM token unregister error:', fcmErr);
+          console.warn('FCM token unregister prep error:', fcmErr);
         }
 
-        // Clear active session token on server
-        await fetch('/api/auth/session', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${idToken}`
-          },
-          body: JSON.stringify({ action: 'end_session' })
-        }).catch((err) => console.warn('Could not clear session on server:', err));
+        // 2. Clear active session token on server (parallel with short 1.5s abort timeout & keepalive)
+        const sessionAbortCtrl = new AbortController();
+        const sessionTimeout = setTimeout(() => sessionAbortCtrl.abort(), 1500);
+        backgroundTasks.push(
+          fetch('/api/auth/session', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${idToken}`
+            },
+            body: JSON.stringify({ action: 'end_session' }),
+            keepalive: true,
+            signal: sessionAbortCtrl.signal
+          })
+            .catch((err) => console.warn('Silent end_session error:', err))
+            .finally(() => clearTimeout(sessionTimeout))
+        );
+
+        // Execute in parallel without blocking client logout beyond 1.5s
+        await Promise.allSettled(backgroundTasks);
       }
     } catch (e) {
       console.warn('Logout session clearing error:', e);
@@ -316,6 +341,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         const uid = sessionStorage.getItem('uid') || auth.currentUser?.uid;
         if (uid) localStorage.removeItem(`fcm_reg_${uid}`);
+        // Purge any remaining fcm_reg_ keys in localStorage
+        const keysToRemove: string[] = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith('fcm_reg_')) {
+            keysToRemove.push(key);
+          }
+        }
+        keysToRemove.forEach(k => localStorage.removeItem(k));
       } catch {}
       localStorage.removeItem(LOCAL_TOKEN_KEY);
       sessionStorage.clear();

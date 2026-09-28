@@ -37,7 +37,7 @@ function AdminStudentsUnifiedContent({ initialTab }: { initialTab?: TabType }) {
             YASHCOM
           </span>
           <div>
-            <h1 style={{ fontSize: '16px', margin: 0, fontWeight: 800 }}>Students & Batches</h1>
+            <h1 style={{ fontSize: '16px', margin: 0, fontWeight: 800 }}>{activeTab === 'registrations' ? 'Student Registrations' : activeTab === 'batches' ? 'Batches' : 'Students & Batches'}</h1>
           </div>
         </div>
         <div className="page-header-right" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -52,6 +52,26 @@ function AdminStudentsUnifiedContent({ initialTab }: { initialTab?: TabType }) {
 
       {/* Main Container with Tab Bar */}
       <main style={{ flex: 1, padding: '20px 16px', maxWidth: '1200px', width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        {/* Back to Dashboard Link on Top */}
+        <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+          <button 
+            onClick={() => router.push('/admin')} 
+            style={{
+              background: 'none',
+              border: 'none',
+              color: 'var(--accent)',
+              cursor: 'pointer',
+              fontSize: '13px',
+              fontWeight: 600,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              padding: 0
+            }}
+          >
+            ← Back to Dashboard
+          </button>
+        </div>
 
         {/* Modern Tab Switcher */}
         <div style={{ display: 'flex', gap: '6px', borderBottom: '1.5px solid var(--border-light)', paddingBottom: '2px' }}>
