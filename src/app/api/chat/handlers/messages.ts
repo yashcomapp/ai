@@ -500,14 +500,42 @@ export async function POST(req: NextRequest) {
 
     // Send push notification to other participants of the chat room
     try {
-      const otherParticipants = (roomData.participants || []).filter((p: string) => p !== senderId);
-      if (otherParticipants.length > 0) {
-        const targetUids = await resolveFirebaseUidsForChatParticipants(otherParticipants);
+      const senderIsAdmin = role === 'admin' || senderRole === 'admin';
+      const senderUid = authResult.decodedToken?.uid;
+
+      const otherParticipants = (roomData.participants || []).filter((p: string) => {
+        if (p === senderId) return false;
+        if (senderIsAdmin && (p === 'admin' || p === senderUid)) return false;
+        return true;
+      });
+
+      if (otherParticipants.length > 0 || (senderIsAdmin && (roomData.participants || []).includes('admin'))) {
+        let targetUids = await resolveFirebaseUidsForChatParticipants(otherParticipants);
+
+        // Explicitly filter out the sender's own UID (especially for admin senders where 'admin' participant expands to all admin UIDs)
+        if (senderUid) {
+          targetUids = targetUids.filter(uid => uid !== senderUid);
+        }
+
         if (targetUids.length > 0) {
           const notifTitle = roomData.type === 'group'
-            ? `${senderName} in ${roomData.name}`
+            ? `${senderName} in ${roomData.name || 'Class Group'}`
             : senderName;
-          await sendPushNotification(targetUids, notifTitle, text, {
+
+          // Safe, truncated push message body handling text, polls, images and media
+          let notifBody = '';
+          if (type === 'poll') {
+            notifBody = `📊 Poll: ${text || 'New poll'}`;
+          } else if (type === 'image' || type === 'media' || mediaUrl) {
+            notifBody = text ? `📷 ${text}` : '📷 Photo';
+          } else {
+            notifBody = text || 'New message';
+          }
+          if (notifBody.length > 100) {
+            notifBody = notifBody.substring(0, 97) + '...';
+          }
+
+          await sendPushNotification(targetUids, notifTitle, notifBody, {
             type: 'chat_message',
             roomId,
             senderId,

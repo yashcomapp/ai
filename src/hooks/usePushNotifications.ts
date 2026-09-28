@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 
 export function usePushNotifications() {
   const { firebaseUser, user } = useAuth();
+  const unsubscribeRef = useRef<(() => void) | null>(null);
 
   const registerTokenOnServer = useCallback(async (token: string, action: 'register' | 'unregister') => {
     if (!firebaseUser) return;
@@ -52,7 +53,7 @@ export function usePushNotifications() {
       }
 
       // 3. Dynamically import firebase messaging
-      const { getMessaging, getToken } = await import('firebase/messaging');
+      const { getMessaging, getToken, onMessage } = await import('firebase/messaging');
       const { app } = await import('@/lib/firebase/client');
 
       const messaging = getMessaging(app);
@@ -85,19 +86,26 @@ export function usePushNotifications() {
         }
       }
 
-      // Register foreground message listener
-      const { onMessage } = await import('firebase/messaging');
-      onMessage(messaging, (payload) => {
+      // Clean up previous foreground listener if re-initializing
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current();
+        unsubscribeRef.current = null;
+      }
+
+      // Register foreground message listener and store cleanup handle
+      const unsub = onMessage(messaging, (payload) => {
         console.log('Foreground message received:', payload);
         const data = payload.data || {};
         const title = data.title || payload.notification?.title || 'YASHCOM';
-        const options: NotificationOptions = {
+        const options = {
           body: data.body || payload.notification?.body || '',
           badge: '/icons/badge-96.png?v=4',
           icon: '/icons/icon-192.png',
           data: data,
-          tag: data.roomId || data.type || 'yashcom-foreground-notif'
-        };
+          tag: data.roomId || data.type || 'yashcom-foreground-notif',
+          renotify: true
+        } as NotificationOptions & { renotify?: boolean };
+
         if (Notification.permission === 'granted') {
           const notif = new Notification(title, options);
           notif.onclick = (e) => {
@@ -126,10 +134,28 @@ export function usePushNotifications() {
           };
         }
       });
+      unsubscribeRef.current = unsub;
 
       if (token) {
-        // Register token with server on every load/initialization to prevent database sync loss
-        await registerTokenOnServer(token, 'register');
+        // Client-side cache: skip redundant server POST if already registered within the last 7 days
+        const cacheKey = `fcm_reg_${user.uid || 'anon'}`;
+        let shouldRegister = true;
+        try {
+          const cached = localStorage.getItem(cacheKey);
+          if (cached) {
+            const parsed = JSON.parse(cached);
+            if (parsed.token === token && parsed.timestamp && (Date.now() - parsed.timestamp < 7 * 24 * 60 * 60 * 1000)) {
+              shouldRegister = false;
+            }
+          }
+        } catch (e) {}
+
+        if (shouldRegister) {
+          await registerTokenOnServer(token, 'register');
+          try {
+            localStorage.setItem(cacheKey, JSON.stringify({ token, timestamp: Date.now() }));
+          } catch (e) {}
+        }
       } else {
         console.warn('No FCM token received from Firebase Messaging.');
       }
@@ -143,6 +169,12 @@ export function usePushNotifications() {
     if (firebaseUser && user) {
       initFCM();
     }
+    return () => {
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current();
+        unsubscribeRef.current = null;
+      }
+    };
   }, [firebaseUser, user, initFCM]);
 
   return { initFCM };

@@ -86,8 +86,9 @@ export async function sendPushNotification(
   if (targetUids.length === 0) return;
 
   try {
-    // 1. Gather all tokens for these UIDs
+    // 1. Gather all tokens for these UIDs (and track token -> uid map for pruning dead tokens)
     const tokens: string[] = [];
+    const tokenToUidMap = new Map<string, string>();
 
     // Chunk targetUids into groups of 30 (Firestore limit for 'in' queries)
     const chunks: string[][] = [];
@@ -111,10 +112,14 @@ export async function sendPushNotification(
       if (!usersSnap || usersSnap.empty) return;
       usersSnap.docs.forEach(doc => {
         const userData = doc.data();
+        const uid = doc.id;
         if (Array.isArray(userData.fcmTokens)) {
           userData.fcmTokens.forEach((t: string) => {
-            if (t && typeof t === 'string' && !tokens.includes(t)) {
-              tokens.push(t);
+            if (t && typeof t === 'string') {
+              tokenToUidMap.set(t, uid);
+              if (!tokens.includes(t)) {
+                tokens.push(t);
+              }
             }
           });
         }
@@ -144,11 +149,32 @@ export async function sendPushNotification(
 
     let successCount = 0;
     let failureCount = 0;
+    const deadTokensByUid = new Map<string, string[]>();
+
     await Promise.all(fcmChunks.map(async (chunk) => {
       try {
         const response = await admin.messaging().sendEach(chunk);
         successCount += response.successCount;
         failureCount += response.failureCount;
+
+        // Inspect individual response results to identify dead / unregistered tokens
+        response.responses.forEach((resp, idx) => {
+          if (!resp.success && resp.error) {
+            const errorCode = resp.error.code;
+            if (
+              errorCode === 'messaging/registration-token-not-registered' ||
+              errorCode === 'messaging/invalid-registration-token'
+            ) {
+              const deadToken = chunk[idx]?.token;
+              const uid = deadToken ? tokenToUidMap.get(deadToken) : null;
+              if (deadToken && uid) {
+                const list = deadTokensByUid.get(uid) || [];
+                list.push(deadToken);
+                deadTokensByUid.set(uid, list);
+              }
+            }
+          }
+        });
       } catch (fcmErr) {
         console.error('Error sending FCM multicast chunk:', fcmErr);
         failureCount += chunk.length;
@@ -156,30 +182,50 @@ export async function sendPushNotification(
     }));
     console.log(`FCM multicast complete: successfully sent ${successCount} of ${messages.length} messages (failed: ${failureCount}).`);
 
-    // 3. Log to history collection for each recipient in batches of 500 (Firestore limit)
-    try {
-      const BATCH_CHUNK_SIZE = 500;
-      const uidChunks: string[][] = [];
-      for (let i = 0; i < targetUids.length; i += BATCH_CHUNK_SIZE) {
-        uidChunks.push(targetUids.slice(i, i + BATCH_CHUNK_SIZE));
-      }
-
-      await Promise.all(uidChunks.map(async (chunk) => {
-        const batch = adminDb.batch();
-        chunk.forEach(uid => {
-          const logRef = adminDb.collection('pushNotificationsHistory').doc();
-          batch.set(logRef, {
-            userId: uid,
-            title,
-            body,
-            data: data || null,
-            sentAt: admin.firestore.FieldValue.serverTimestamp()
+    // Prune dead/unregistered tokens from users collection asynchronously
+    if (deadTokensByUid.size > 0) {
+      try {
+        const pruneBatch = adminDb.batch();
+        deadTokensByUid.forEach((tokensToRemove, uid) => {
+          const userRef = adminDb.collection('users').doc(uid);
+          pruneBatch.update(userRef, {
+            fcmTokens: admin.firestore.FieldValue.arrayRemove(...tokensToRemove)
           });
         });
-        await batch.commit();
-      }));
-    } catch (logErr) {
-      console.error('Error logging push notification history:', logErr);
+        await pruneBatch.commit();
+        console.log(`Pruned ${deadTokensByUid.size} users' unregistered FCM tokens.`);
+      } catch (pruneErr) {
+        console.warn('Failed to prune dead FCM tokens:', pruneErr);
+      }
+    }
+
+    // 3. Log to pushNotificationsHistory collection for non-chat notifications
+    // Chat messages already have their own persistent collection (chatRooms/{roomId}/messages) with unread counts
+    if (data?.type !== 'chat_message') {
+      try {
+        const BATCH_CHUNK_SIZE = 500;
+        const uidChunks: string[][] = [];
+        for (let i = 0; i < targetUids.length; i += BATCH_CHUNK_SIZE) {
+          uidChunks.push(targetUids.slice(i, i + BATCH_CHUNK_SIZE));
+        }
+
+        await Promise.all(uidChunks.map(async (chunk) => {
+          const batch = adminDb.batch();
+          chunk.forEach(uid => {
+            const logRef = adminDb.collection('pushNotificationsHistory').doc();
+            batch.set(logRef, {
+              userId: uid,
+              title,
+              body,
+              data: data || null,
+              sentAt: admin.firestore.FieldValue.serverTimestamp()
+            });
+          });
+          await batch.commit();
+        }));
+      } catch (logErr) {
+        console.error('Error logging push notification history:', logErr);
+      }
     }
   } catch (error) {
     console.error('Error sending multicast FCM notification:', error);

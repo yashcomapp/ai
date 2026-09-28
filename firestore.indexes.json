@@ -1,6 +1,24 @@
 {
   "indexes": [
     {
+      "collectionGroup": "pushNotificationsHistory",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "userId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "sentAt",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
       "collectionGroup": "questionRequests",
       "queryScope": "COLLECTION",
       "fields": [

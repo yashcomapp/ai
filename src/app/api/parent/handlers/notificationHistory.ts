@@ -15,6 +15,8 @@ export async function GET(req: NextRequest) {
 
     const snap = await adminDb.collection('pushNotificationsHistory')
       .where('userId', '==', uid)
+      .orderBy('sentAt', 'desc')
+      .limit(50)
       .get();
 
     const history = snap.docs.map(doc => {
@@ -23,10 +25,9 @@ export async function GET(req: NextRequest) {
         id: doc.id,
         title: d.title || 'Notification',
         body: d.body || '',
-        sentAt: d.sentAt?.toDate ? d.sentAt.toDate().toISOString() : new Date().toISOString()
+        sentAt: d.sentAt?.toDate ? d.sentAt.toDate().toISOString() : (d.sentAt ? new Date(d.sentAt).toISOString() : new Date().toISOString())
       };
-    }).sort((a, b) => new Date(b.sentAt).getTime() - new Date(a.sentAt).getTime())
-      .slice(0, 50);
+    });
 
     return NextResponse.json({ success: true, history });
   } catch (error: any) {

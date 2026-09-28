@@ -36,27 +36,29 @@ export async function POST(req: NextRequest) {
     const existingTokens = Array.isArray(userData.fcmTokens) ? userData.fcmTokens : [];
     const isNewToken = !existingTokens.includes(token);
 
+    if (!isNewToken) {
+      return NextResponse.json({ success: true, message: 'Token already registered', isNew: false });
+    }
+
     await userRef.set({
       fcmTokens: admin.firestore.FieldValue.arrayUnion(token),
       updatedAt: admin.firestore.FieldValue.serverTimestamp()
     }, { merge: true });
     invalidateUserCache(uid);
 
-    if (isNewToken) {
-      // Send a readiness/welcome push notification to confirm it works!
-      try {
-        const { sendPushNotification } = await import('@/lib/notifications');
-        await sendPushNotification(
-          [uid],
-          'YASHCOM',
-          '🔔 Aapka device notification ke liye ready hai! You will receive live updates and alerts here.'
-        );
-      } catch (pushErr) {
-        console.warn('Failed to send welcome/readiness notification:', pushErr);
-      }
+    // Send a readiness/welcome push notification to confirm it works for fresh devices!
+    try {
+      const { sendPushNotification } = await import('@/lib/notifications');
+      await sendPushNotification(
+        [uid],
+        'YASHCOM',
+        '🔔 Aapka device notification ke liye ready hai! You will receive live updates and alerts here.'
+      );
+    } catch (pushErr) {
+      console.warn('Failed to send welcome/readiness notification:', pushErr);
     }
 
-    return NextResponse.json({ success: true, message: 'Token registered successfully' });
+    return NextResponse.json({ success: true, message: 'Token registered successfully', isNew: true });
 
   } catch (error: any) {
     console.error('API register-token error:', error);
