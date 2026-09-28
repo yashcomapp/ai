@@ -872,7 +872,11 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
 
   const isGlobalLoading = authLoading || (initialLoading && !initialData && !localCache) || (!initialData && !initialError);
   const isChildDataLoading = isGlobalLoading || (childLoading && !data && !localCache);
-  const error = initialError?.message || childError?.message || reviewsError?.message || '';
+  // Only critical/fatal initial authorization errors should lock the dashboard.
+  // Secondary background errors (like reviews SWR revalidation) must never lock out the parent.
+  const fatalError = (initialError?.message && (initialError.message.toLowerCase().includes('autonomous') || initialError.message.toLowerCase().includes('disabled') || initialError.message.toLowerCase().includes('unauthorized') || initialError.message.toLowerCase().includes('access denied'))) 
+    ? initialError.message 
+    : (!initialData && !localCache && initialError?.message ? initialError.message : '');
 
   const handleApprove = async () => {
     if (!firebaseUser || !selectedReview || approving) return;
@@ -957,8 +961,8 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
 
 
 
-  if (error) {
-    const isAutonomousError = error.toLowerCase().includes('autonomous') || error.toLowerCase().includes('disabled');
+  if (fatalError) {
+    const isAutonomousError = fatalError.toLowerCase().includes('autonomous') || fatalError.toLowerCase().includes('disabled');
     return (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: 'var(--bg)', padding: '20px' }}>
         <div style={{ maxWidth: '480px', width: '100%', textAlign: 'center', padding: '32px 24px', background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: `1px solid ${isAutonomousError ? 'var(--danger)' : 'var(--border-light)'}`, boxShadow: 'var(--shadow-glass)' }}>
@@ -967,7 +971,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
             {isAutonomousError ? 'Login Denied / एक्सेस अस्वीकृत' : 'Notice'}
           </h3>
           <p style={{ fontSize: '13.5px', color: 'var(--text)', lineHeight: '1.5', marginBottom: '20px' }}>
-            {error}
+            {fatalError}
           </p>
           <button 
             className="btn btn-primary" 

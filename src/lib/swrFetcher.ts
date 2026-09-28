@@ -7,7 +7,8 @@ export async function fetchWithToken(url: string, firebaseUser: any) {
     }
   });
   if (!res.ok) {
-    throw new Error(`Failed to fetch data from ${url}`);
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.message || `Failed to fetch data from ${url}`);
   }
   return res.json();
 }
