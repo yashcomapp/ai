@@ -1228,7 +1228,7 @@ export class QuotientService {
       adminDb.collection('studentTopicMastery').where('studentCode', '==', studentCode).get(),
       adminDb.collection('integrityScores').where('studentCode', '==', studentCode).get(),
       adminDb.collection('studentObservations').where('studentCode', '==', studentCode).get(),
-      adminDb.collection('parentReviews').where('studentCode', '==', studentCode).get(),
+      adminDb.collection('parentReviews').where('studentCode', '==', studentCode).select('studentCode', 'topicCode', 'timestamp', 'createdAt', 'startedAt', 'score', 'totalMarks', 'percentage').get(),
       adminDb.collection('exams').get(),
       adminDb.collection('subjectiveExams').get(),
       adminDb.collection('batchAssignments').get(),
@@ -1297,14 +1297,14 @@ export class QuotientService {
     ] = await Promise.all([
       adminDb.collection('examAttempts').get(),
       adminDb.collection('assignments').get(),
-      adminDb.collection('studentTopicMastery').get(),
+      adminDb.collection('studentTopicMastery').select('studentCode', 'topicCode', 'mastery', 'confidence', 'topicClassification', 'targetQuestions', 'isRecoveryMastered').get(),
       adminDb.collection('integrityScores').get(),
       adminDb.collection('studentObservations').get(),
-      adminDb.collection('users').where('role', '==', 'student').get(),
+      adminDb.collection('users').where('role', '==', 'student').select('studentCode', 'name', 'batchIds', 'batchId', 'class', 'className', 'status').get(),
       adminDb.collection('exams').get(),
       adminDb.collection('subjectiveExams').get(),
-      adminDb.collection('batches').get(),
-      adminDb.collection('parentReviews').get(),
+      adminDb.collection('batches').select('name').get(),
+      adminDb.collection('parentReviews').select('studentCode', 'topicCode', 'timestamp', 'createdAt', 'startedAt', 'score', 'totalMarks', 'percentage').get(),
       adminDb.collection('batchAssignments').get(),
       adminDb.collection('evaluations').get()
     ]);

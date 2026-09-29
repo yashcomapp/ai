@@ -103,6 +103,8 @@ export default function AdminExamsPage() {
       needsAttention: number;
     }
   }>({});
+  const [loadingPracticeTracks, setLoadingPracticeTracks] = useState(false);
+  const [practiceTracksLoaded, setPracticeTracksLoaded] = useState(false);
 
   // Filtering states
   const [objFilterName, setObjFilterName] = useState('');
@@ -590,8 +592,6 @@ export default function AdminExamsPage() {
       setStudents(data.students || []);
       setAssignments(data.assignments || []);
       setAttemptCounts(data.attemptCounts || {});
-      setPracticeStats(data.practiceStats || {});
-      setMasteryStats(data.masteryStats || {});
 
       // Auto-open assign modal if redirected with assign or assignSubj param
       if (assignExamId && handledAssignRef.current !== assignExamId) {
@@ -614,6 +614,30 @@ export default function AdminExamsPage() {
       setError(err.message || 'Error occurred loading data.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadPracticeTracks = async () => {
+    if (!firebaseUser) return;
+    setLoadingPracticeTracks(true);
+    try {
+      const idToken = await firebaseUser.getIdToken();
+      const res = await fetch('/api/admin/exams?action=practiceTracks', {
+        headers: {
+          'Authorization': `Bearer ${idToken}`
+        }
+      });
+      if (!res.ok) {
+        throw new Error('Failed to load practice tracks data.');
+      }
+      const data = await res.json();
+      setPracticeStats(data.practiceStats || {});
+      setMasteryStats(data.masteryStats || {});
+      setPracticeTracksLoaded(true);
+    } catch (err: any) {
+      console.error('Failed to load practice tracks:', err);
+    } finally {
+      setLoadingPracticeTracks(false);
     }
   };
 
@@ -683,6 +707,12 @@ export default function AdminExamsPage() {
       loadData();
     }
   }, [firebaseUser]);
+
+  useEffect(() => {
+    if (activeTab === 'practice' && !practiceTracksLoaded && !loadingPracticeTracks && firebaseUser) {
+      loadPracticeTracks();
+    }
+  }, [activeTab, practiceTracksLoaded, loadingPracticeTracks, firebaseUser]);
 
   useEffect(() => {
     if (!loading) {
@@ -2183,7 +2213,12 @@ export default function AdminExamsPage() {
             </div>
 
             {/* Batches & Student Lists */}
-            {filteredPracticeBatches.map(({ batch, batchStudents, sortedStudents }) => {
+            {loadingPracticeTracks ? (
+              <div className="card" style={{ padding: '60px 20px', textAlign: 'center', background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)' }}>
+                <div className="spinner" style={{ margin: '0 auto 12px' }}></div>
+                <div style={{ color: 'var(--text-muted)', fontSize: '13px', fontWeight: 600 }}>Loading practice tracks and topic mastery...</div>
+              </div>
+            ) : filteredPracticeBatches.map(({ batch, batchStudents, sortedStudents }) => {
               const renderSortIndicator = (field: string) => {
                 if (pracSortField !== field) return <span style={{ color: 'var(--text-faint)', marginLeft: '4px' }}>⇅</span>;
                 return pracSortDir === 'asc' ? <span style={{ color: 'var(--accent)', marginLeft: '4px' }}>↑</span> : <span style={{ color: 'var(--accent)', marginLeft: '4px' }}>↓</span>;

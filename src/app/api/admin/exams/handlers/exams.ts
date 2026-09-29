@@ -317,6 +317,250 @@ export async function GET(req: NextRequest) {
       });
     }
 
+    if (action === 'practiceTracks') {
+      const since = new Date();
+      since.setDate(since.getDate() - 90);
+
+      const [
+        examsList,
+        subjExamsList,
+        studentsList,
+        parentReviewsSnap,
+        masterySnap
+      ] = await Promise.all([
+        adminDb.collection('exams').where('status', 'in', ['active', 'draft']).get(),
+        adminDb.collection('subjectiveExams').where('status', 'in', ['active', 'draft']).get(),
+        adminDb.collection('users').where('role', '==', 'student').select('studentCode', 'name', 'rollNumber', 'batchIds', 'batchId', 'class', 'className', 'status').get(),
+        adminDb.collection('parentReviews').where('startedAt', '>=', since).select('studentCode', 'topicCode', 'totalQuestions', 'questionsCount', 'percentage', 'scorePercent', 'score', 'totalMarks', 'sincerityPacingScore', 'durationSpent', 'startedAt', 'createdAt').get(),
+        adminDb.collection('studentTopicMastery').select('studentCode', 'topicCode', 'mastery', 'confidence', 'topicClassification', 'targetQuestions', 'isRecoveryMastered').get()
+      ]);
+
+      const exams = examsList.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const subjectiveExams = subjExamsList.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const students = studentsList.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          studentCode: data.studentCode || '',
+          name: data.name || '',
+          email: data.email || '',
+          rollNumber: data.rollNumber || '',
+          batchIds: data.batchIds || [],
+          batchId: data.batchId || null,
+          class: data.class || data.className || '',
+          className: data.className || data.class || '',
+          status: data.status || 'active'
+        };
+      }).filter(s => !!s.studentCode && s.status !== 'inactive' && !isDemoUser(s));
+
+      const practiceStats: Record<string, { totalSessions: number, questionsAttempted: number, avgScore: number, lastActive: string | null }> = {};
+      const studentPacingMap: Record<string, number[]> = {};
+
+      parentReviewsSnap.docs.forEach(doc => {
+        const data = doc.data();
+        const code = data.studentCode;
+        if (!code) return;
+
+        if (!practiceStats[code]) {
+          practiceStats[code] = {
+            totalSessions: 0,
+            questionsAttempted: 0,
+            avgScore: 0,
+            lastActive: null
+          };
+        }
+
+        const stats = practiceStats[code];
+        stats.totalSessions += 1;
+        const qCount = Number(data.totalQuestions || data.questionsCount || (Array.isArray(data.questions) ? data.questions.length : (data.questionDetails?.length || 0)));
+        stats.questionsAttempted += qCount;
+        const percent = data.percentage !== undefined && data.percentage !== null
+          ? Number(data.percentage)
+          : (data.scorePercent !== undefined && data.scorePercent !== null
+            ? Number(data.scorePercent)
+            : (data.totalMarks > 0 ? Math.round(((data.score || 0) / data.totalMarks) * 100) : 0));
+        stats.avgScore += percent;
+
+        let pacing = data.sincerityPacingScore;
+        if (typeof pacing !== 'number') {
+          const sincerity = evaluateSessionSincerity({
+            questions: data.questions || data.questionDetails || [],
+            durationSpent: Number(data.durationSpent || (qCount ? qCount * 35 : 180)),
+            scorePercent: Number(data.scorePercent || percent || 100)
+          });
+          pacing = sincerity.sincerityPacingScore;
+        }
+        if (!studentPacingMap[code]) studentPacingMap[code] = [];
+        studentPacingMap[code].push(pacing);
+
+        const itemDate = data.startedAt?.toDate ? data.startedAt.toDate() : data.createdAt?.toDate ? data.createdAt.toDate() : data.startedAt ? new Date(data.startedAt) : null;
+        if (itemDate) {
+          if (!stats.lastActive || itemDate > new Date(stats.lastActive)) {
+            stats.lastActive = itemDate.toISOString();
+          }
+        }
+      });
+
+      Object.keys(practiceStats).forEach(code => {
+        const stats = practiceStats[code];
+        if (stats.totalSessions > 0) {
+          stats.avgScore = Math.round(stats.avgScore / stats.totalSessions);
+        }
+      });
+
+      const todayDateStr = getDateKeyIST();
+      const studentTopicPracticeMap: Record<string, Map<string, number>> = {};
+      parentReviewsSnap.docs.forEach(doc => {
+        const data = doc.data();
+        const code = data.studentCode;
+        const tCode = data.topicCode;
+        if (!code || !tCode) return;
+
+        if (!studentTopicPracticeMap[code]) {
+          studentTopicPracticeMap[code] = new Map<string, number>();
+        }
+        const map = studentTopicPracticeMap[code];
+        map.set(tCode, (map.get(tCode) || 0) + (data.totalQuestions || 0));
+      });
+
+      const studentTopicMasteryMap: Record<string, Map<string, { mastery: number, confidence: number, reqConf?: number, isRecoveryMastered?: boolean }>> = {};
+      masterySnap.docs.forEach(doc => {
+        const data = doc.data();
+        const code = data.studentCode;
+        if (!code) return;
+
+        const val = Number(data.mastery || 0);
+        const conf = Number(data.confidence || 0);
+        const tCode = data.topicCode;
+        const reqConf = getRequiredConfidence(data.topicClassification, data.targetQuestions);
+
+        if (tCode) {
+          if (!studentTopicMasteryMap[code]) {
+            studentTopicMasteryMap[code] = new Map();
+          }
+          studentTopicMasteryMap[code].set(tCode, {
+            mastery: val,
+            confidence: conf,
+            reqConf,
+            isRecoveryMastered: Boolean(data.isRecoveryMastered)
+          });
+        }
+      });
+
+      const studentConductedTopicsMap: Record<string, string[]> = {};
+      students.forEach(s => {
+        const code = s.studentCode;
+        const bIds = s.batchIds || (s.batchId ? [s.batchId] : []);
+        const studentClass = (s as any).class || (s as any).className || '';
+
+        const topicsSet = new Set<string>();
+
+        exams.forEach((exam: any) => {
+          const examDateStr = getExamDateKey(exam) || todayDateStr;
+          if (examDateStr <= todayDateStr && isExamForStudent(exam, code, bIds, studentClass)) {
+            getObjectiveExamTopics(exam).forEach(t => topicsSet.add(t));
+          }
+        });
+
+        subjectiveExams.forEach((exam: any) => {
+          const examDateStr = getExamDateKey(exam) || todayDateStr;
+          if (examDateStr <= todayDateStr && isExamForStudent(exam, code, bIds, studentClass)) {
+            getSubjectiveExamTopics(exam).forEach(t => topicsSet.add(t));
+          }
+        });
+
+        if (studentTopicMasteryMap[code]) {
+          studentTopicMasteryMap[code].forEach((_, t) => topicsSet.add(t));
+        }
+        if (studentTopicPracticeMap[code]) {
+          studentTopicPracticeMap[code].forEach((_, t) => topicsSet.add(t));
+        }
+
+        studentConductedTopicsMap[code] = Array.from(topicsSet);
+      });
+
+      const masteryStats: Record<string, { avgMastery: number, avgQuality: number, mastered: number, practicing: number, needsAttention: number }> = {};
+      students.forEach(s => {
+        const code = s.studentCode;
+        const conductedTopics = studentConductedTopicsMap[code] || [];
+        const masteryMap = studentTopicMasteryMap[code] || new Map();
+
+        let mCount = 0;
+        let pCount = 0;
+        let naCount = 0;
+        let totalMasterySum = 0;
+
+        conductedTopics.forEach(tCode => {
+          const record = masteryMap.get(tCode);
+          if (record) {
+            const val = record.mastery;
+            const conf = record.confidence;
+            const reqConf = record.reqConf || 10;
+            totalMasterySum += val;
+
+            if ((val >= 90 && conf >= reqConf) || record.isRecoveryMastered) {
+              mCount++;
+            } else if (val >= 50) {
+              pCount++;
+            } else {
+              naCount++;
+            }
+          } else {
+            naCount++;
+          }
+        });
+
+        const avg = conductedTopics.length > 0
+          ? Math.round(totalMasterySum / conductedTopics.length)
+          : 0;
+
+        const topicPractice = studentTopicPracticeMap[code] || new Map<string, number>();
+        let totalEfficiencyScore = 0;
+        let topicsCount = 0;
+        topicPractice.forEach((q, topicCode) => {
+          const record = masteryMap.get(topicCode) || { mastery: 0, confidence: 0, reqConf: 10 };
+          const mastery = record.mastery;
+          const confidence = record.confidence;
+          const requiredConf = record.reqConf || 10;
+          
+          let topicEfficiency = 0;
+          if (mastery >= 90 && confidence >= requiredConf) {
+            const excess = Math.max(0, q - 15);
+            topicEfficiency = Math.max(40, 100 - excess * 1.5);
+          } else {
+            const excess = Math.max(0, q - 15);
+            topicEfficiency = Math.max(0, mastery - excess * 1.5);
+          }
+          totalEfficiencyScore += topicEfficiency;
+          topicsCount++;
+        });
+
+        const avgEfficiency = topicsCount > 0 ? Math.round(totalEfficiencyScore / topicsCount) : 100;
+
+        const studentPractice = practiceStats[code];
+        const hasPractice = studentPractice && studentPractice.totalSessions > 0;
+        const avgAccuracy = hasPractice ? studentPractice.avgScore : 0;
+        const pacingList = studentPacingMap[code] || [];
+        const avgPacing = (hasPractice && pacingList.length > 0)
+          ? Math.round(pacingList.reduce((sum, v) => sum + v, 0) / pacingList.length)
+          : 100;
+
+        const avgQuality = hasPractice
+          ? Math.max(0, Math.min(100, Math.round(avgAccuracy * 0.40 + avgPacing * 0.30 + avgEfficiency * 0.30)))
+          : 0;
+
+        masteryStats[code] = {
+          avgMastery: avg,
+          avgQuality: avgQuality,
+          mastered: mCount,
+          practicing: pCount,
+          needsAttention: naCount
+        };
+      });
+
+      return NextResponse.json({ practiceStats, masteryStats });
+    }
+
     const since = new Date();
     since.setDate(since.getDate() - 90);
 
@@ -329,8 +573,6 @@ export async function GET(req: NextRequest) {
       subjAssignList,
       reviewsSnap,
       attemptsSnap,
-      parentReviewsSnap,
-      masterySnap,
       parentsSnap
     ] = await Promise.all([
       adminDb.collection('exams').where('status', 'in', ['active', 'draft']).get(),
@@ -341,8 +583,6 @@ export async function GET(req: NextRequest) {
       adminDb.collection('subjectiveAssignments').get(),
       adminDb.collection('reviews').where('startedAt', '>=', since).select('examId').get(),
       adminDb.collection('examAttempts').where('startedAt', '>=', since).select('examId').get(),
-      adminDb.collection('parentReviews').where('startedAt', '>=', since).select('studentCode', 'topicCode', 'totalQuestions', 'questionsCount', 'percentage', 'scorePercent', 'score', 'totalMarks', 'sincerityPacingScore', 'durationSpent', 'startedAt', 'createdAt').get(),
-      adminDb.collection('studentTopicMastery').select('studentCode', 'topicCode', 'mastery', 'confidence', 'topicClassification', 'targetQuestions', 'isRecoveryMastered').get(),
       adminDb.collection('users').where('role', '==', 'parent').select('email', 'studentCode', 'studentCodes', 'name').get()
     ]);
 
@@ -370,7 +610,6 @@ export async function GET(req: NextRequest) {
       const data = doc.data();
       if (isDemoUser(data)) return null;
       const pEmail = data.email || '';
-      const pName = data.name || '';
       const pCodes = data.studentCodes || (data.studentCode ? [data.studentCode] : []);
       
       const childNames: string[] = [];
@@ -385,7 +624,6 @@ export async function GET(req: NextRequest) {
       });
 
       if (childNames.length === 0) return null;
-
       const displayName = childNames.map(name => `${name} (P)`).join(', ');
 
       return {
@@ -395,223 +633,6 @@ export async function GET(req: NextRequest) {
       };
     }).filter((p): p is { email: string; displayName: string; studentCodes: string[] } => p !== null && !!p.email)
     .sort((a, b) => a.displayName.localeCompare(b.displayName));
-
-    const practiceStats: Record<string, { totalSessions: number, questionsAttempted: number, avgScore: number, lastActive: string | null }> = {};
-    const studentPacingMap: Record<string, number[]> = {};
-    
-    // 1. Process parentReviews collection (practice records)
-    parentReviewsSnap.docs.forEach(doc => {
-      const data = doc.data();
-      const code = data.studentCode;
-      if (!code) return;
-
-      if (!practiceStats[code]) {
-        practiceStats[code] = {
-          totalSessions: 0,
-          questionsAttempted: 0,
-          avgScore: 0,
-          lastActive: null
-        };
-      }
-
-      const stats = practiceStats[code];
-      stats.totalSessions += 1;
-      const qCount = Number(data.totalQuestions || data.questionsCount || (Array.isArray(data.questions) ? data.questions.length : (data.questionDetails?.length || 0)));
-      stats.questionsAttempted += qCount;
-      const percent = data.percentage !== undefined && data.percentage !== null
-        ? Number(data.percentage)
-        : (data.scorePercent !== undefined && data.scorePercent !== null
-          ? Number(data.scorePercent)
-          : (data.totalMarks > 0 ? Math.round(((data.score || 0) / data.totalMarks) * 100) : 0));
-      stats.avgScore += percent;
-
-      let pacing = data.sincerityPacingScore;
-      if (typeof pacing !== 'number') {
-        const sincerity = evaluateSessionSincerity({
-          questions: data.questions || data.questionDetails || [],
-          durationSpent: Number(data.durationSpent || (qCount ? qCount * 35 : 180)),
-          scorePercent: Number(data.scorePercent || percent || 100)
-        });
-        pacing = sincerity.sincerityPacingScore;
-      }
-      if (!studentPacingMap[code]) studentPacingMap[code] = [];
-      studentPacingMap[code].push(pacing);
-
-      const itemDate = data.startedAt?.toDate ? data.startedAt.toDate() : data.createdAt?.toDate ? data.createdAt.toDate() : data.startedAt ? new Date(data.startedAt) : null;
-      if (itemDate) {
-        if (!stats.lastActive || itemDate > new Date(stats.lastActive)) {
-          stats.lastActive = itemDate.toISOString();
-        }
-      }
-    });
-
-    // 2. Calculate average score
-    Object.keys(practiceStats).forEach(code => {
-      const stats = practiceStats[code];
-      if (stats.totalSessions > 0) {
-        stats.avgScore = Math.round(stats.avgScore / stats.totalSessions);
-      }
-    });
-
-    const todayDateStr = getDateKeyIST();
-
-    // Map of studentCode -> Map of topicCode -> totalQuestions
-    const studentTopicPracticeMap: Record<string, Map<string, number>> = {};
-    parentReviewsSnap.docs.forEach(doc => {
-      const data = doc.data();
-      const code = data.studentCode;
-      const tCode = data.topicCode;
-      if (!code || !tCode) return;
-
-      if (!studentTopicPracticeMap[code]) {
-        studentTopicPracticeMap[code] = new Map<string, number>();
-      }
-      const map = studentTopicPracticeMap[code];
-      map.set(tCode, (map.get(tCode) || 0) + (data.totalQuestions || 0));
-    });
-
-    // Map of studentCode -> Map of topicCode -> { mastery, confidence, reqConf, isRecoveryMastered }
-    const studentTopicMasteryMap: Record<string, Map<string, { mastery: number, confidence: number, reqConf?: number, isRecoveryMastered?: boolean }>> = {};
-
-    masterySnap.docs.forEach(doc => {
-      const data = doc.data();
-      const code = data.studentCode;
-      if (!code) return;
-
-      const val = Number(data.mastery || 0);
-      const conf = Number(data.confidence || 0);
-      const tCode = data.topicCode;
-
-      const reqConf = getRequiredConfidence(data.topicClassification, data.targetQuestions);
-
-      if (tCode) {
-        if (!studentTopicMasteryMap[code]) {
-          studentTopicMasteryMap[code] = new Map();
-        }
-        studentTopicMasteryMap[code].set(tCode, {
-          mastery: val,
-          confidence: conf,
-          reqConf,
-          isRecoveryMastered: Boolean(data.isRecoveryMastered)
-        });
-      }
-    });
-
-    // Build conducted topics per student based on their batch / class / target exams
-    const studentConductedTopicsMap: Record<string, string[]> = {};
-    students.forEach(s => {
-      const code = s.studentCode;
-      const bIds = s.batchIds || (s.batchId ? [s.batchId] : []);
-      const studentClass = (s as any).class || (s as any).className || '';
-
-      const topicsSet = new Set<string>();
-
-      exams.forEach((exam: any) => {
-        const examDateStr = getExamDateKey(exam) || todayDateStr;
-        if (examDateStr <= todayDateStr && isExamForStudent(exam, code, bIds, studentClass)) {
-          getObjectiveExamTopics(exam).forEach(t => topicsSet.add(t));
-        }
-      });
-
-      subjectiveExams.forEach((exam: any) => {
-        const examDateStr = getExamDateKey(exam) || todayDateStr;
-        if (examDateStr <= todayDateStr && isExamForStudent(exam, code, bIds, studentClass)) {
-          getSubjectiveExamTopics(exam).forEach(t => topicsSet.add(t));
-        }
-      });
-
-      // Also include any topics student practiced or has mastery records for
-      if (studentTopicMasteryMap[code]) {
-        studentTopicMasteryMap[code].forEach((_, t) => topicsSet.add(t));
-      }
-      if (studentTopicPracticeMap[code]) {
-        studentTopicPracticeMap[code].forEach((_, t) => topicsSet.add(t));
-      }
-
-      studentConductedTopicsMap[code] = Array.from(topicsSet);
-    });
-
-    const masteryStats: Record<string, { avgMastery: number, avgQuality: number, mastered: number, practicing: number, needsAttention: number }> = {};
-    students.forEach(s => {
-      const code = s.studentCode;
-      const conductedTopics = studentConductedTopicsMap[code] || [];
-      const masteryMap = studentTopicMasteryMap[code] || new Map();
-
-      let mCount = 0;
-      let pCount = 0;
-      let naCount = 0;
-      let totalMasterySum = 0;
-
-      conductedTopics.forEach(tCode => {
-        const record = masteryMap.get(tCode);
-        if (record) {
-          const val = record.mastery;
-          const conf = record.confidence;
-          const reqConf = record.reqConf || 10;
-          totalMasterySum += val;
-
-          if ((val >= 90 && conf >= reqConf) || record.isRecoveryMastered) {
-            mCount++;
-          } else if (val >= 50) {
-            pCount++;
-          } else {
-            naCount++;
-          }
-        } else {
-          // Unattempted conducted topic counts as 0% under needsAttention
-          naCount++;
-        }
-      });
-
-      const avg = conductedTopics.length > 0
-        ? Math.round(totalMasterySum / conductedTopics.length)
-        : 0;
-
-      // Calculate Quality score (40% Session Accuracy + 30% Pacing Sincerity + 30% Mastery Efficiency)
-      const topicPractice = studentTopicPracticeMap[code] || new Map<string, number>();
-      
-      let totalEfficiencyScore = 0;
-      let topicsCount = 0;
-      topicPractice.forEach((q, topicCode) => {
-        const record = masteryMap.get(topicCode) || { mastery: 0, confidence: 0, reqConf: 10 };
-        const mastery = record.mastery;
-        const confidence = record.confidence;
-        const requiredConf = record.reqConf || 10;
-        
-        let topicEfficiency = 0;
-        if (mastery >= 90 && confidence >= requiredConf) {
-          const excess = Math.max(0, q - 15);
-          topicEfficiency = Math.max(40, 100 - excess * 1.5);
-        } else {
-          const excess = Math.max(0, q - 15);
-          topicEfficiency = Math.max(0, mastery - excess * 1.5);
-        }
-        totalEfficiencyScore += topicEfficiency;
-        topicsCount++;
-      });
-
-      const avgEfficiency = topicsCount > 0 ? Math.round(totalEfficiencyScore / topicsCount) : 100;
-
-      const studentPractice = practiceStats[code];
-      const hasPractice = studentPractice && studentPractice.totalSessions > 0;
-      const avgAccuracy = hasPractice ? studentPractice.avgScore : 0;
-      const pacingList = studentPacingMap[code] || [];
-      const avgPacing = (hasPractice && pacingList.length > 0)
-        ? Math.round(pacingList.reduce((sum, v) => sum + v, 0) / pacingList.length)
-        : 100;
-
-      const avgQuality = hasPractice
-        ? Math.max(0, Math.min(100, Math.round(avgAccuracy * 0.40 + avgPacing * 0.30 + avgEfficiency * 0.30)))
-        : 0;
-
-      masteryStats[code] = {
-        avgMastery: avg,
-        avgQuality: avgQuality,
-        mastered: mCount,
-        practicing: pCount,
-        needsAttention: naCount
-      };
-    });
 
     const attemptCounts: { [key: string]: number } = {};
     const examAttemptsMap: { [key: string]: Set<string> } = {};
@@ -687,9 +708,7 @@ export async function GET(req: NextRequest) {
       students,
       parents,
       assignments: [...objAssignments, ...subjAssignments],
-      attemptCounts,
-      practiceStats,
-      masteryStats
+      attemptCounts
     });
 
   } catch (error: any) {
