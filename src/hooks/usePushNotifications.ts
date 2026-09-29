@@ -61,7 +61,6 @@ export function usePushNotifications() {
 
       if (!vapidKey) {
         console.warn('NEXT_PUBLIC_FIREBASE_VAPID_KEY is missing in environment variables. FCM cannot run.');
-        window.alert('❌ Push Notification Setup failed: VAPID Key is missing from env. Restart Next.js dev server after editing .env.local.');
         return;
       }
 
@@ -82,7 +81,8 @@ export function usePushNotifications() {
             vapidKey
           });
         } else {
-          throw getTokenErr;
+          console.warn('FCM token generation unavailable in current browser mode:', getTokenErr?.message || getTokenErr);
+          return;
         }
       }
 
@@ -160,8 +160,7 @@ export function usePushNotifications() {
         console.warn('No FCM token received from Firebase Messaging.');
       }
     } catch (err: any) {
-      console.error('Error initializing FCM client:', err);
-      window.alert(`❌ Push Notification Setup failed: ${err.message || err}`);
+      console.warn('Silent notice: Push notification background registration skipped or unavailable on this device/browser mode (e.g. Incognito):', err?.message || err);
     }
   }, [firebaseUser, user, registerTokenOnServer]);
 

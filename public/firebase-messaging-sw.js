@@ -1,43 +1,47 @@
-importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js');
-importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js');
+try {
+  importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js');
+  importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js');
 
-firebase.initializeApp({
-  apiKey: "AIzaSyAV2-YqCyBURq2uzB-X8vJnAGpZQSj3SVg",
-  authDomain: "ai-yashcom.firebaseapp.com",
-  projectId: "ai-yashcom",
-  storageBucket: "ai-yashcom.firebasestorage.app",
-  messagingSenderId: "236075352424",
-  appId: "1:236075352424:web:665d88c97bdf117cfe56dd"
-});
+  firebase.initializeApp({
+    apiKey: "AIzaSyAV2-YqCyBURq2uzB-X8vJnAGpZQSj3SVg",
+    authDomain: "ai-yashcom.firebaseapp.com",
+    projectId: "ai-yashcom",
+    storageBucket: "ai-yashcom.firebasestorage.app",
+    messagingSenderId: "236075352424",
+    appId: "1:236075352424:web:665d88c97bdf117cfe56dd"
+  });
 
-const messaging = firebase.messaging();
+  const messaging = firebase.messaging();
 
-messaging.onBackgroundMessage((payload) => {
-  console.log('[firebase-messaging-sw.js] Received background message ', payload);
-  
-  const data = payload.data || {};
-  const actions = [];
-  if (data.type === 'practice_review_pending' || data.type === 'review_pending') {
-    actions.push({
-      action: 'approve_practice',
-      title: '✅ Approve'
-    });
-  }
+  messaging.onBackgroundMessage((payload) => {
+    console.log('[firebase-messaging-sw.js] Received background message ', payload);
+    
+    const data = payload.data || {};
+    const actions = [];
+    if (data.type === 'practice_review_pending' || data.type === 'review_pending') {
+      actions.push({
+        action: 'approve_practice',
+        title: '✅ Approve'
+      });
+    }
 
-  const notificationTitle = data.title || payload.notification?.title || 'YASHCOM';
-  const notificationOptions = {
-    body: data.body || payload.notification?.body || '',
-    badge: '/icons/badge-96.png?v=4',
-    icon: '/icons/icon-192.png',
-    color: '#d97b38',
-    data: data,
-    tag: data.roomId || data.type || 'yashcom-notification',
-    renotify: true,
-    actions: actions
-  };
+    const notificationTitle = data.title || payload.notification?.title || 'YASHCOM';
+    const notificationOptions = {
+      body: data.body || payload.notification?.body || '',
+      badge: '/icons/badge-96.png?v=4',
+      icon: '/icons/icon-192.png',
+      color: '#d97b38',
+      data: data,
+      tag: data.roomId || data.type || 'yashcom-notification',
+      renotify: true,
+      actions: actions
+    };
 
-  self.registration.showNotification(notificationTitle, notificationOptions);
-});
+    self.registration.showNotification(notificationTitle, notificationOptions);
+  });
+} catch (swInitErr) {
+  console.warn('[firebase-messaging-sw.js] Background messaging service worker init skipped in this environment (e.g. Incognito):', swInitErr);
+}
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
