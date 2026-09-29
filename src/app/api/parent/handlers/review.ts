@@ -23,44 +23,44 @@ async function resolveChildrenCodes(parentData: any): Promise<string[]> {
   }
 
   const parentEmail = parentData?.email?.toLowerCase();
-  if (parentEmail) {
+  const parentPhone = parentData?.phone || parentData?.parentPhone || parentData?.mobile;
+  if (parentEmail || parentPhone) {
     try {
-      const querySnap = await adminDb.collection('users')
-        .where('role', '==', 'student')
-        .where('parentEmail', '==', parentEmail)
-        .get();
-      querySnap.docs.forEach(doc => {
+      const [emailSnap, phoneSnap] = await Promise.all([
+        parentEmail
+          ? adminDb.collection('users')
+              .where('role', '==', 'student')
+              .where('parentEmail', '==', parentEmail)
+              .get()
+              .catch(() => ({ docs: [] } as any))
+          : Promise.resolve({ docs: [] } as any),
+        parentPhone
+          ? adminDb.collection('users')
+              .where('role', '==', 'student')
+              .where('parentPhone', '==', parentPhone)
+              .get()
+              .catch(() => ({ docs: [] } as any))
+          : Promise.resolve({ docs: [] } as any)
+      ]);
+
+      emailSnap.docs.forEach((doc: any) => {
+        const data = doc.data();
+        if (data.studentCode && !childrenCodes.includes(data.studentCode)) {
+          childrenCodes.push(data.studentCode);
+        }
+      });
+      phoneSnap.docs.forEach((doc: any) => {
         const data = doc.data();
         if (data.studentCode && !childrenCodes.includes(data.studentCode)) {
           childrenCodes.push(data.studentCode);
         }
       });
     } catch (e) {
-      console.warn('Error fetching children by email:', e);
+      console.warn('Error fetching children by email/phone:', e);
     }
   }
 
-  if (childrenCodes.length > 0) {
-    const activeChildrenCodes: string[] = [];
-    const chunks = chunkArray(childrenCodes, 30);
-    const results = await Promise.all(chunks.map(chunk => 
-      adminDb.collection('users')
-        .where('role', '==', 'student')
-        .where('studentCode', 'in', chunk)
-        .get()
-    ));
-    results.forEach(snap => {
-      snap.docs.forEach(doc => {
-        const data = doc.data();
-        if (data.studentCode && data.role === 'student') {
-          activeChildrenCodes.push(data.studentCode);
-        }
-      });
-    });
-    return activeChildrenCodes;
-  }
-
-  return childrenCodes;
+  return Array.from(new Set(childrenCodes.filter(Boolean)));
 }
 
 // 1. GET - Load reviews for child student

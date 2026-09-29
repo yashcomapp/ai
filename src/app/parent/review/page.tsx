@@ -232,22 +232,47 @@ export default function ParentReviewPanel() {
   // Load reviews when child changes
   const loadReviewsForChild = async (childCode: string) => {
     if (!firebaseUser || !childCode) return;
+    
+    // Load local cache immediately for zero-flicker experience
+    try {
+      const cachedStr = typeof window !== 'undefined' ? localStorage.getItem(`yc_parent_reviews_${childCode}`) : null;
+      if (cachedStr) {
+        const cachedData = JSON.parse(cachedStr);
+        if (cachedData && Array.isArray(cachedData.practiceReviews)) {
+          setObjectiveReviews(cachedData.objectiveReviews || []);
+          setPracticeReviews(cachedData.practiceReviews || []);
+          setSubjectiveReviews(cachedData.subjectiveReviews || []);
+          setEntranceReviews(cachedData.entranceReviews || []);
+          setIsAutonomousChild(cachedData.isAutonomousChild || false);
+        }
+      }
+    } catch {}
+
     setReviewsLoading(true);
-    setObjectiveReviews([]);
-    setPracticeReviews([]);
-    setSubjectiveReviews([]);
-    setEntranceReviews([]);
     setSelectedReview(null);
     try {
-      const idToken = await firebaseUser.getIdToken();
-      const res = await fetch(`/api/parent/review?studentCode=${childCode}`, {
+      let idToken = await firebaseUser.getIdToken();
+      let res = await fetch(`/api/parent/review?studentCode=${childCode}`, {
         headers: {
           'Authorization': `Bearer ${idToken}`
         }
       });
-      if (!res.ok) {
-        throw new Error('Failed to fetch reviews list');
+
+      // If token expired or unauthorized, force token refresh and retry once
+      if (res.status === 401 || res.status === 403) {
+        idToken = await firebaseUser.getIdToken(true);
+        res = await fetch(`/api/parent/review?studentCode=${childCode}`, {
+          headers: {
+            'Authorization': `Bearer ${idToken}`
+          }
+        });
       }
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.message || 'Failed to fetch reviews list');
+      }
+
       const data = await res.json();
       const obj = data.objectiveReviews || [];
       const prac = data.practiceReviews || [];
@@ -263,6 +288,13 @@ export default function ParentReviewPanel() {
         setActiveTab('objective');
       }
 
+      // Persist to local cache for instant offline/re-entry hydration
+      try {
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(`yc_parent_reviews_${childCode}`, JSON.stringify(data));
+        }
+      } catch {}
+
       // Auto-open review if query param "select" matches
       if (typeof window !== 'undefined') {
         const params = new URLSearchParams(window.location.search);
@@ -276,8 +308,7 @@ export default function ParentReviewPanel() {
         }
       }
     } catch (err: any) {
-      console.error(err);
-      alert(err.message || 'Error loading reviews list');
+      console.error('Parent review fetch error:', err);
     } finally {
       setReviewsLoading(false);
     }
