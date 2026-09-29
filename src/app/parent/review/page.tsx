@@ -90,7 +90,7 @@ export default function ParentReviewPanel() {
   const captureVerificationSnapshot = async (): Promise<string | null> => {
     try {
       if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
-        return null;
+        throw new Error('Camera hardware is not accessible on this device.');
       }
       // Fast single-track video capture without blocking audio hardware initialization
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -130,8 +130,8 @@ export default function ParentReviewPanel() {
       });
       return dataUrl;
     } catch (e: any) {
-      console.warn('Camera verification snapshot unavailable/denied:', e);
-      return null;
+      console.error('Camera verification snapshot failed:', e);
+      throw new Error(e.message || 'Camera access is required for parent verification.');
     }
   };
 
@@ -145,8 +145,13 @@ export default function ParentReviewPanel() {
           setCapturingSnapshot(true);
           try {
             photo = await captureVerificationSnapshot();
+            if (!photo) {
+              throw new Error('Verification snapshot could not be generated.');
+            }
           } catch (camErr: any) {
-            console.warn('Camera verification skipped:', camErr);
+            setCapturingSnapshot(false);
+            alert('⚠️ Camera access is required for Parent Exam Review Verification.\n\nPlease allow camera permission in your browser to verify this review.');
+            return;
           }
           setCapturingSnapshot(false);
         }
@@ -686,9 +691,17 @@ export default function ParentReviewPanel() {
     return result.sort((a, b) => (b.rawDate?.getTime() || 0) - (a.rawDate?.getTime() || 0));
   };
 
-  const isPracticeDigestAvailable = (_dateKey: string) => {
-    // Parents can review and approve completed practice sessions at any time
-    return true;
+  const isPracticeDigestAvailable = (dateKey: string) => {
+    const todayKey = getDateKeyIST();
+    
+    if (dateKey < todayKey) return true; // Past dates are available
+    if (dateKey > todayKey) return false;
+
+    // Today: Available at or after 10:30 PM (22:30 IST)
+    const nowIST = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+    const hour = nowIST.getHours();
+    const min = nowIST.getMinutes();
+    return hour > 22 || (hour === 22 && min >= 30);
   };
 
   const handleApproveDayGroup = async (group: any) => {
@@ -889,7 +902,7 @@ export default function ParentReviewPanel() {
               <div>
                 <h3 style={{ fontSize: '13.5px', fontWeight: 800, color: 'var(--text)', margin: 0 }}>📚 Day-Wise Practice Register</h3>
                 <p style={{ margin: '3px 0 0 0', fontSize: '11px', color: 'var(--text-muted)' }}>
-                  Practice sets are consolidated daily. Click any date or practice set to inspect detailed questions, answers, and solutions.
+                  Practice sets are consolidated daily. Today's practice digest opens for parent review after 10:30 PM.
                 </p>
               </div>
             </div>
@@ -1147,7 +1160,7 @@ export default function ParentReviewPanel() {
                   <div style={{ textAlign: 'center', padding: '10px', background: 'var(--success-bg)', color: 'var(--success)', fontWeight: 700, borderRadius: 'var(--radius-sm)' }}>
                     ✓ Entire Day Practice Approved
                   </div>
-                ) : (
+                ) : isPracticeDigestAvailable(selectedDayGroup.dateKey) ? (
                   <button
                     className="btn btn-primary"
                     onClick={() => {
@@ -1159,6 +1172,10 @@ export default function ParentReviewPanel() {
                   >
                     {approving ? 'Submitting approval...' : `✅ Approve All Practices for ${selectedDayGroup.dateFormatted}`}
                   </button>
+                ) : (
+                  <div style={{ textAlign: 'center', padding: '10px', background: 'var(--warning-bg)', color: 'var(--warning)', fontSize: '12px', fontWeight: 600, borderRadius: 'var(--radius-sm)' }}>
+                    ⏳ Today's practice is in progress. Full day digest will open for approval at 10:30 PM.
+                  </div>
                 )}
               </div>
             </div>
