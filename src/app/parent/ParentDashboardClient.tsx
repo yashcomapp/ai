@@ -1601,10 +1601,10 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                   Quick Actions
                 </h3>
               </div>
-              {/* Bento Grid: 5 Action Modules in 1 Single Line */}
+              {/* Bento Grid: 4 Action Modules in 1 Single Line */}
               <div style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(5, 1fr)',
+                gridTemplateColumns: 'repeat(4, 1fr)',
                 gap: '6px',
                 alignItems: 'stretch'
               }}>
@@ -1644,48 +1644,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                   </div>
                 </div>
 
-                {/* Bento Item 2: Reviews & Approvals */}
-                <div
-                  onClick={() => {
-                    const firstPending = pendingReviews[0];
-                    const targetTab = firstPending?.type === 'practice' ? 'practice' : (firstPending?.type === 'subjective' ? 'subjective' : (firstPending?.type === 'entrance' ? 'mock' : 'objective'));
-                    router.push(`/parent/review?child=${selectedChildCode}${pendingReviews.length > 0 ? `&tab=${targetTab}` : ''}`);
-                  }}
-                  style={{
-                    background: pendingReviews.length > 0 ? 'rgba(239, 68, 68, 0.08)' : 'var(--surface-2)',
-                    border: pendingReviews.length > 0 ? '1.5px solid var(--danger)' : '1.5px solid var(--border)',
-                    borderRadius: 'var(--radius-sm)',
-                    padding: '8px 3px',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    textAlign: 'center',
-                    gap: '4px',
-                    transition: 'all 0.2s ease',
-                    boxShadow: 'var(--shadow-sm)',
-                    position: 'relative'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = 'var(--danger)';
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = pendingReviews.length > 0 ? 'var(--danger)' : 'var(--border)';
-                    e.currentTarget.style.transform = 'translateY(0)';
-                  }}
-                >
-                  <ShieldCheck size={24} color={pendingReviews.length > 0 ? 'var(--danger)' : 'var(--accent)'} />
-                  <div style={{ fontSize: '10.5px', fontWeight: 800, color: 'var(--text)', lineHeight: 1.2, whiteSpace: 'nowrap' }}>
-                    Exam Reviews
-                  </div>
-                  <div style={{ fontSize: '9.5px', color: pendingReviews.length > 0 ? 'var(--danger)' : 'var(--accent)', fontWeight: 800, whiteSpace: 'nowrap' }}>
-                    {pendingReviews.length > 0 ? `${pendingReviews.length} Pending` : 'All Clear'}
-                  </div>
-                </div>
-
-                {/* Bento Item 3: Exam Register */}
+                {/* Bento Item 2: Exam Register */}
                 <div
                   onClick={() => router.push(`/exam-register?studentCode=${selectedChildCode}`)}
                   style={{
@@ -1721,7 +1680,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                   </div>
                 </div>
 
-                {/* Bento Item 4: Fees & Dues */}
+                {/* Bento Item 3: Fees & Dues */}
                 <div
                   onClick={() => router.push(`/parent/fees?studentCode=${selectedChildCode}`)}
                   style={{
@@ -1757,7 +1716,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                   </div>
                 </div>
 
-                {/* Bento Item 5: Chat */}
+                {/* Bento Item 4: Chat */}
                 <div
                   onClick={() => router.push('/parent/chat')}
                   style={{
