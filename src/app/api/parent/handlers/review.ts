@@ -133,16 +133,6 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    const cacheKey = `parent_reviews_${studentCode}`;
-    const cached = getFromCache<any>(cacheKey);
-    if (cached) {
-      return NextResponse.json(cached, {
-        headers: {
-          'Cache-Control': 'private, max-age=15, stale-while-revalidate=30'
-        }
-      });
-    }
-
     // Fetch student profile to see if they are autonomous
     const studentUserSnap = await adminDb.collection('users')
       .where('role', '==', 'student')
@@ -478,11 +468,9 @@ export async function GET(req: NextRequest) {
       isAutonomousChild: isAutonomous
     };
 
-    setInCache(cacheKey, responseData, 30000); // 30s in-memory cache
-
     return NextResponse.json(responseData, {
       headers: {
-        'Cache-Control': 'private, max-age=15, stale-while-revalidate=30'
+        'Cache-Control': 'no-store, no-cache, must-revalidate'
       }
     });
 

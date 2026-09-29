@@ -347,10 +347,10 @@ export default function ParentReviewPanel() {
   };
 
   useEffect(() => {
-    if (selectedChild) {
+    if (selectedChild && firebaseUser) {
       loadReviewsForChild(selectedChild);
     }
-  }, [selectedChild]);
+  }, [selectedChild, firebaseUser]);
 
   // Read tab param on initial load
   useEffect(() => {
