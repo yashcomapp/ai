@@ -112,29 +112,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         }
 
-        // Deferred non-blocking client storage telemetry sync (runs in background after 4s)
-        setTimeout(() => {
-          try {
-            const lsDump: Record<string, string> = {};
-            for (let i = 0; i < localStorage.length; i++) {
-              const key = localStorage.key(i);
-              if (key) {
-                lsDump[key] = localStorage.getItem(key) || '';
-              }
-            }
-            fetch('/api/user/client-storage-sync', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${idToken}`
-              },
-              body: JSON.stringify({
-                localStorageDump: lsDump,
-                userAgent: navigator.userAgent
-              })
-            }).catch(() => {});
-          } catch {}
-        }, 4000);
       } catch (err) {
         console.error('Error verifying auth token:', err);
         await logout();

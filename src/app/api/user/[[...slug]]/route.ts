@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GET as getTimeLog, POST as postTimeLog } from '../handlers/timeLog';
-import { POST as postClientStorageSync } from '../handlers/clientStorageSync';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,8 +28,6 @@ export async function POST(req: NextRequest, { params }: { params: { slug?: stri
     switch (subroute) {
       case 'time-log':
         return await postTimeLog(req);
-      case 'client-storage-sync':
-        return await postClientStorageSync(req);
       default:
         return NextResponse.json({ message: `Unknown user POST route: ${subroute}` }, { status: 404 });
     }
