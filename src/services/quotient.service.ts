@@ -1229,7 +1229,8 @@ export class QuotientService {
       adminDb.collection('studentTopicMastery').where('studentCode', '==', studentCode).get(),
       adminDb.collection('integrityScores').where('studentCode', '==', studentCode).get(),
       adminDb.collection('studentObservations').where('studentCode', '==', studentCode).get(),
-      adminDb.collection('parentReviews').where('studentCode', '==', studentCode).select('studentCode', 'topicCode', 'timestamp', 'createdAt', 'startedAt', 'score', 'totalMarks', 'percentage').get(),
+      // parentReviews: Full document required for calculateUnifiedMetrics (scorePercent, percentage, totalQuestions, questionsCount, topicCode, status) and PracticeQualityCalculator (pacing, sincerity)
+      adminDb.collection('parentReviews').where('studentCode', '==', studentCode).get(),
       adminDb.collection('exams').get(),
       adminDb.collection('subjectiveExams').get(),
       adminDb.collection('batchAssignments').get(),
@@ -1304,11 +1305,12 @@ export class QuotientService {
       adminDb.collection('studentTopicMastery').get(),
       adminDb.collection('integrityScores').get(),
       adminDb.collection('studentObservations').get(),
-      adminDb.collection('users').where('role', '==', 'student').select('studentCode', 'name', 'batchIds', 'batchId', 'class', 'className', 'status').get(),
+      adminDb.collection('users').where('role', '==', 'student').select('studentCode', 'name', 'email', 'isDemo', 'batchIds', 'batchId', 'class', 'className', 'status').get(),
       adminDb.collection('exams').get(),
       adminDb.collection('subjectiveExams').get(),
       adminDb.collection('batches').select('name').get(),
-      adminDb.collection('parentReviews').select('studentCode', 'topicCode', 'timestamp', 'createdAt', 'startedAt', 'score', 'totalMarks', 'percentage').get(),
+      // parentReviews: Full document required for calculateUnifiedMetrics (scorePercent, percentage, totalQuestions, questionsCount, topicCode, status) and PracticeQualityCalculator (pacing, sincerity)
+      adminDb.collection('parentReviews').get(),
       adminDb.collection('batchAssignments').get(),
       adminDb.collection('evaluations').get()
     ]);
