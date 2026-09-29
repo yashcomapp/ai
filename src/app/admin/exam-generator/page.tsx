@@ -57,6 +57,7 @@ interface Template {
   objectiveDistribution?: { [key: string]: number };
   subjectiveDistribution?: { [key: string]: number };
   examCategory?: 'standard' | 'foundation' | 'mock';
+  isFixedDuration?: boolean;
 }
 
 const CANONICAL_EXAM_PRESETS: Template[] = [
@@ -82,13 +83,15 @@ const CANONICAL_EXAM_PRESETS: Template[] = [
   },
   {
     id: 'homi_bhabha_100',
-    name: 'Dr. Homi Bhabha Science Mock (100 Questions • Dynamic Time • +1/0 Marks)',
+    name: 'Dr. Homi Bhabha Science Mock (100 Questions • 90 Mins • +1/0 Marks)',
     totalQuestions: 100,
-    duration: 100,
+    duration: 90,
     positiveMarks: 1,
     negativeMarks: 0,
     difficulty: { easy: 20, medium: 50, hard: 30 },
-    examCategory: 'foundation'
+    objectiveDistribution: { single_choice: 95, numerical: 5 },
+    examCategory: 'foundation',
+    isFixedDuration: true
   },
   {
     id: 'custom_blueprint',
@@ -257,6 +260,9 @@ export default function AdminExamGeneratorPage() {
   const dynamicTiming = useMemo(() => calculateDynamicExamDuration(generatedQuestions), [generatedQuestions]);
 
   const currentEffectiveDuration = useMemo(() => {
+    if (currentTemplate?.isFixedDuration) {
+      return currentTemplate.duration;
+    }
     if (selectedTemplateId === 'custom_blueprint') {
       if (customDurationMode === 'manual') return customDuration;
       if (generatedQuestions.length > 0) return dynamicTiming.duration;
@@ -271,7 +277,7 @@ export default function AdminExamGeneratorPage() {
       return dynamicTiming.duration;
     }
     return currentTemplate?.duration || 30;
-  }, [selectedTemplateId, customDurationMode, customDuration, customSubjDurationMode, customSubjDuration, generatedQuestions.length, dynamicTiming.duration, customTotalQs, customSubjTotalQs, currentTemplate?.duration]);
+  }, [currentTemplate?.isFixedDuration, currentTemplate?.duration, selectedTemplateId, customDurationMode, customDuration, customSubjDurationMode, customSubjDuration, generatedQuestions.length, dynamicTiming.duration, customTotalQs, customSubjTotalQs]);
 
   const handleSwitchType = (type: 'objective' | 'subjective') => {
     setQuestionType(type);
@@ -1304,7 +1310,11 @@ Return ONLY valid JSON. No markdown wrappers or extra commentary.`;
                 <span style={{ color: 'var(--accent)', fontWeight: 700, margin: '0 4px' }}>
                   ⏱️ {currentEffectiveDuration} mins
                 </span>
-                {generatedQuestions.length > 0 ? (
+                {currentTemplate.isFixedDuration ? (
+                  <span style={{ color: 'var(--text-muted)', fontSize: '10.5px' }}>
+                    (Fixed 90 Mins • 95 Single Choice + 5 Numericals)
+                  </span>
+                ) : generatedQuestions.length > 0 ? (
                   <span style={{ color: 'var(--text-muted)', fontSize: '10.5px' }}>
                     ({dynamicTiming.textualCount} Textual × 1m + {dynamicTiming.numericalCount} Numerical × 2m)
                   </span>
@@ -1782,9 +1792,15 @@ Return ONLY valid JSON. No markdown wrappers or extra commentary.`;
             <div style={{ background: 'var(--bg-soft)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', padding: '8px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', marginBottom: '12px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px' }}>
                 <span>⏱️ <strong>Calculated Exam Duration:</strong> <span style={{ color: 'var(--accent)', fontWeight: 800 }}>{currentEffectiveDuration} Minutes</span></span>
-                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                  ({dynamicTiming.textualCount} Textual @ 1 min/Q + {dynamicTiming.numericalCount} Numerical @ 2 min/Q)
-                </span>
+                {currentTemplate?.isFixedDuration ? (
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                    (Fixed 90 Mins • {dynamicTiming.textualCount} Textual + {dynamicTiming.numericalCount} Numerical)
+                  </span>
+                ) : (
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                    ({dynamicTiming.textualCount} Textual @ 1 min/Q + {dynamicTiming.numericalCount} Numerical @ 2 min/Q)
+                  </span>
+                )}
               </div>
               <div style={{ fontSize: '12px', fontWeight: 700 }}>
                 📊 Total Marks: <span style={{ color: 'var(--success)' }}>{generatedQuestions.reduce((s, q) => s + (q.marks || (selectedTemplateId === 'custom_blueprint' ? customPositiveMarks : currentTemplate?.positiveMarks || 4)), 0)} Marks</span>
