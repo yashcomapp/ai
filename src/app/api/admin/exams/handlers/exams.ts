@@ -337,12 +337,12 @@ export async function GET(req: NextRequest) {
       adminDb.collection('subjectiveExams').where('status', 'in', ['active', 'draft']).get(),
       adminDb.collection('batches').select('name').get(),
       adminDb.collection('users').where('role', '==', 'student').select('studentCode', 'name', 'rollNumber', 'batchIds', 'batchId', 'class', 'className', 'status').get(),
-      adminDb.collection('batchAssignments').where('endAt', '>=', since).get(),
-      adminDb.collection('subjectiveAssignments').where('endAt', '>=', since).get(),
+      adminDb.collection('batchAssignments').get(),
+      adminDb.collection('subjectiveAssignments').get(),
       adminDb.collection('reviews').where('startedAt', '>=', since).select('examId').get(),
       adminDb.collection('examAttempts').where('startedAt', '>=', since).select('examId').get(),
-      adminDb.collection('parentReviews').where('startedAt', '>=', since).get(),
-      adminDb.collection('studentTopicMastery').get(),
+      adminDb.collection('parentReviews').where('startedAt', '>=', since).select('studentCode', 'topicCode', 'totalQuestions', 'questionsCount', 'percentage', 'scorePercent', 'score', 'totalMarks', 'sincerityPacingScore', 'durationSpent', 'startedAt', 'createdAt').get(),
+      adminDb.collection('studentTopicMastery').select('studentCode', 'topicCode', 'mastery', 'confidence', 'topicClassification', 'targetQuestions', 'isRecoveryMastered').get(),
       adminDb.collection('users').where('role', '==', 'parent').select('email', 'studentCode', 'studentCodes', 'name').get()
     ]);
 

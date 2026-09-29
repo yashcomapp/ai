@@ -452,8 +452,21 @@ export async function POST(req: NextRequest) {
         templateDetails, duration, positiveMarks, negativeMarks, examType
       } = body;
 
-      const boardCodesSnap = await adminDb.collection('config').doc('boardCodes').get();
-      const subjectCodesSnap = await adminDb.collection('config').doc('subjectCodes').get();
+      const validQuestionCodes = (Array.isArray(questionCodes) ? questionCodes : []).filter(Boolean);
+      const questionChunks: string[][] = [];
+      for (let i = 0; i < validQuestionCodes.length; i += 30) {
+        questionChunks.push(validQuestionCodes.slice(i, i + 30));
+      }
+
+      const [boardCodesSnap, subjectCodesSnap, ...questionSnaps] = await Promise.all([
+        adminDb.collection('config').doc('boardCodes').get(),
+        adminDb.collection('config').doc('subjectCodes').get(),
+        ...questionChunks.map(chunk =>
+          adminDb.collection('questions')
+            .where(admin.firestore.FieldPath.documentId(), 'in', chunk)
+            .get()
+        )
+      ]);
       
       const boardCodes = boardCodesSnap.exists ? boardCodesSnap.data()! : {};
       const subjectCodes = subjectCodesSnap.exists ? subjectCodesSnap.data()! : {};
@@ -463,21 +476,9 @@ export async function POST(req: NextRequest) {
 
       // Check if all selected questions are subjective
       let isAllSubjective = false;
-      if (questionCodes && questionCodes.length > 0) {
-        const chunks = [];
-        for (let i = 0; i < questionCodes.length; i += 30) {
-          chunks.push(questionCodes.slice(i, i + 30));
-        }
-
+      if (validQuestionCodes.length > 0) {
         const questionDocs: any[] = [];
-        const snaps = await Promise.all(
-          chunks.map(chunk =>
-            adminDb.collection('questions')
-              .where(admin.firestore.FieldPath.documentId(), 'in', chunk)
-              .get()
-          )
-        );
-        snaps.forEach(snap => {
+        questionSnaps.forEach(snap => {
           snap.docs.forEach(doc => questionDocs.push(doc.data()));
         });
 
@@ -652,18 +653,20 @@ export async function POST(req: NextRequest) {
         for (let i = 0; i < validCodes.length; i += 30) {
           chunks.push(validCodes.slice(i, i + 30));
         }
-        for (const chunk of chunks) {
-          try {
-            const matchedSnap = await adminDb.collection('questions')
-              .where('questionCode', 'in', chunk)
-              .get();
-            matchedSnap.docs.forEach(doc => {
-              batch.set(doc.ref, { usedInClassroomTest: true }, { merge: true });
-            });
-          } catch (mErr) {
-            console.warn('Matching questionCode lookup warning:', mErr);
-          }
-        }
+        await Promise.all(
+          chunks.map(async chunk => {
+            try {
+              const matchedSnap = await adminDb.collection('questions')
+                .where('questionCode', 'in', chunk)
+                .get();
+              matchedSnap.docs.forEach(doc => {
+                batch.set(doc.ref, { usedInClassroomTest: true }, { merge: true });
+              });
+            } catch (mErr) {
+              console.warn('Matching questionCode lookup warning:', mErr);
+            }
+          })
+        );
       }
 
       try {

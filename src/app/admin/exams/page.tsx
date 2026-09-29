@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useMemo, useDeferredValue } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
 const ScorecardModal = dynamic(() => import('@/components/ScorecardModal'), { ssr: false });
 const ExportPdfModal = dynamic(() => import('@/components/ExportPdfModal').then(m => ({ default: m.ExportPdfModal })), { ssr: false });
@@ -70,6 +70,10 @@ interface Assignment {
 export default function AdminExamsPage() {
   const { firebaseUser, logout } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const assignExamId = searchParams?.get('assign') || null;
+  const assignSubjExamId = searchParams?.get('assignSubj') || null;
+  const handledAssignRef = React.useRef<string | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -566,6 +570,7 @@ export default function AdminExamsPage() {
   const loadData = async () => {
     if (!firebaseUser) return;
     setLoading(true);
+    setError('');
     try {
       const idToken = await firebaseUser.getIdToken();
       const res = await fetch('/api/admin/exams', {
@@ -577,14 +582,33 @@ export default function AdminExamsPage() {
         throw new Error('Failed to load exams configuration data.');
       }
       const data = await res.json();
-      setExams(data.exams);
-      setSubjectiveExams(data.subjectiveExams);
-      setBatches(data.batches);
-      setStudents(data.students);
-      setAssignments(data.assignments);
+      const fetchedExams: Exam[] = data.exams || [];
+      const fetchedSubjExams: Exam[] = data.subjectiveExams || [];
+      setExams(fetchedExams);
+      setSubjectiveExams(fetchedSubjExams);
+      setBatches(data.batches || []);
+      setStudents(data.students || []);
+      setAssignments(data.assignments || []);
       setAttemptCounts(data.attemptCounts || {});
       setPracticeStats(data.practiceStats || {});
       setMasteryStats(data.masteryStats || {});
+
+      // Auto-open assign modal if redirected with assign or assignSubj param
+      if (assignExamId && handledAssignRef.current !== assignExamId) {
+        const target = fetchedExams.find(e => e.id === assignExamId || e.name === assignExamId);
+        if (target) {
+          handledAssignRef.current = assignExamId;
+          setActiveTab('objective');
+          handleOpenAssign(target, 'objective');
+        }
+      } else if (assignSubjExamId && handledAssignRef.current !== assignSubjExamId) {
+        const target = fetchedSubjExams.find(e => e.id === assignSubjExamId || e.name === assignSubjExamId);
+        if (target) {
+          handledAssignRef.current = assignSubjExamId;
+          setActiveTab('subjective');
+          handleOpenAssign(target, 'subjective');
+        }
+      }
     } catch (err: any) {
       console.error(err);
       setError(err.message || 'Error occurred loading data.');
@@ -659,6 +683,26 @@ export default function AdminExamsPage() {
       loadData();
     }
   }, [firebaseUser]);
+
+  useEffect(() => {
+    if (!loading) {
+      if (assignExamId && handledAssignRef.current !== assignExamId && exams.length > 0) {
+        const target = exams.find(e => e.id === assignExamId || e.name === assignExamId);
+        if (target) {
+          handledAssignRef.current = assignExamId;
+          setActiveTab('objective');
+          handleOpenAssign(target, 'objective');
+        }
+      } else if (assignSubjExamId && handledAssignRef.current !== assignSubjExamId && subjectiveExams.length > 0) {
+        const target = subjectiveExams.find(e => e.id === assignSubjExamId || e.name === assignSubjExamId);
+        if (target) {
+          handledAssignRef.current = assignSubjExamId;
+          setActiveTab('subjective');
+          handleOpenAssign(target, 'subjective');
+        }
+      }
+    }
+  }, [assignExamId, assignSubjExamId, exams, subjectiveExams, loading]);
 
 
 
@@ -1197,8 +1241,15 @@ export default function AdminExamsPage() {
       {/* Tabs Container */}
       <main style={{ flex: 1, padding: '24px 12px', maxWidth: '1100px', width: '100%', margin: '0 auto' }}>
         {error && (
-          <div className="alert-box alert-box-danger" style={{ display: 'block', marginBottom: '20px' }}>
-            {error}
+          <div className="alert-box alert-box-danger" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', gap: '12px' }}>
+            <span>{error}</span>
+            <button 
+              className="btn btn-secondary btn-sm" 
+              onClick={() => { setError(''); loadData(); }} 
+              style={{ background: 'var(--surface)', color: 'var(--text)', whiteSpace: 'nowrap' }}
+            >
+              🔄 Retry
+            </button>
           </div>
         )}
 

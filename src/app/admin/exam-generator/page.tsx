@@ -1143,10 +1143,7 @@ Return ONLY valid JSON. No markdown wrappers or extra commentary.`;
         throw new Error('Failed to save exam.');
       }
       const data = await res.json();
-      alert('✅ Exam generated successfully!');
-      setTimeout(() => {
-        router.push(`/admin/exams?assign=${data.examId}`);
-      }, 1500);
+      router.push(`/admin/exams?assign=${data.examId}`);
     } catch (err: any) {
       alert(err.message || 'Error occurred compiling exam.');
     } finally {
