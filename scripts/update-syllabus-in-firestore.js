@@ -65,7 +65,42 @@ async function updateSyllabusInFirestore() {
   fs.writeFileSync(path.join(backupDir, 'syllabus.json'), JSON.stringify(currentSyllabusData, null, 2), 'utf8');
   console.log(`✓ Created backup snapshot of ${currentSyllabus.size} syllabus docs at ${backupDir}\n`);
 
-  // Step 2: Write all subjects into 'syllabus' collection
+  // Step 2: Remove deprecated syllabus documents (e.g. cbse_9_math, cbse_9_sci)
+  const validDocIds = new Set(MASTER_SYLLABUS_SUBJECTS.map(s => s.docId));
+  for (const doc of currentSyllabus.docs) {
+    if (!validDocIds.has(doc.id)) {
+      console.log(`🗑️ Deleting deprecated syllabus document: ${doc.id}`);
+      await doc.ref.delete();
+    }
+  }
+
+  // Also remove old CBSE 9 MATH and SCI topic index entries
+  const oldTopicsSnap = await db.collection('syllabusTopicIndex')
+    .where('boardCode', '==', 'CBSE')
+    .where('class', '==', '9')
+    .get();
+
+  const validTopicCodes = new Set();
+  MASTER_SYLLABUS_SUBJECTS.forEach(s => {
+    s.chapters.forEach(c => {
+      c.topics.forEach(t => validTopicCodes.add(t.topicCode));
+    });
+  });
+
+  const batchDelete = db.batch();
+  let deletedOldTopicsCount = 0;
+  oldTopicsSnap.forEach(doc => {
+    if (!validTopicCodes.has(doc.id)) {
+      batchDelete.delete(doc.ref);
+      deletedOldTopicsCount++;
+    }
+  });
+  if (deletedOldTopicsCount > 0) {
+    await batchDelete.commit();
+    console.log(`🗑️ Deleted ${deletedOldTopicsCount} deprecated CBSE Class 9 topic index docs.\n`);
+  }
+
+  // Step 3: Write all valid subjects into 'syllabus' collection
   const syllabusSubjectsConfig = { subjects: {} };
   const subjectCodesMap = {};
   const boardCodesMap = {
@@ -143,7 +178,7 @@ async function updateSyllabusInFirestore() {
     console.log(`   ✓ Seeded ${subj.docId.padEnd(30)} | ${subj.boardCode} Class ${subj.class} - ${subj.subject} (${subj.subjectCode}) [${subj.chapters.length} chapters]`);
   }
 
-  // Step 3: Write syllabusTopicIndex in batches of 450
+  // Step 4: Write syllabusTopicIndex in batches of 450
   console.log(`\nWriting syllabusTopicIndex with ${topicDocsBatch.length} canonical topics...`);
   let totalTopicsIndexed = 0;
   for (let i = 0; i < topicDocsBatch.length; i += 450) {
@@ -161,10 +196,10 @@ async function updateSyllabusInFirestore() {
   }
   console.log(`   ✓ Indexed ${totalTopicsIndexed} canonical topics into syllabusTopicIndex.\n`);
 
-  // Step 4: Sync config documents
+  // Step 5: Sync config documents
   console.log('Syncing config documents (syllabusSubjects, subjectCodes, boardCodes)...');
-  await db.collection('config').doc('syllabusSubjects').set(syllabusSubjectsConfig, { merge: true });
-  await db.collection('config').doc('subjectCodes').set(subjectCodesMap, { merge: true });
+  await db.collection('config').doc('syllabusSubjects').set(syllabusSubjectsConfig);
+  await db.collection('config').doc('subjectCodes').set(subjectCodesMap);
   await db.collection('config').doc('boardCodes').set(boardCodesMap, { merge: true });
   console.log('   ✓ Config collections synced successfully.\n');
 
