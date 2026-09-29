@@ -5,12 +5,45 @@ import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import Script from 'next/script';
 import { useMathRender } from '@/hooks/useMathRender';
-import { preprocessMathText, smartJsonParse, robustParseAIJson, cleanStringForMatch, toCanonicalQuestionType } from '@/lib/questionTypes';
+import { preprocessMathText, smartJsonParse, robustParseAIJson, cleanStringForMatch, toCanonicalQuestionType, isNumericalType, CanonicalQuestionType } from '@/lib/questionTypes';
 import { highlightModelAnswerKeywords } from '@/lib/pdfExport';
 import { SyllabusSelector } from '@/components/SyllabusSelector';
 import { useSyllabusSelector } from '@/hooks/useSyllabusSelector';
 import { distributeCountsByWeight as distributeCountsByWeightLib, buildObjectiveSchema, isSameTopic } from '@/lib/syllabusUtils';
 import { areQuestionsTooSimilar } from '@/lib/questionSimilarity';
+
+function isQuestionNumerical(q: Question | any): boolean {
+  if (!q) return false;
+  const t = String(q.type || '');
+  if (isNumericalType(t)) return true;
+  const code = String(q.questionCode || q.id || '').toUpperCase();
+  if (code.includes('-ONE-') || code.includes('-SSN-') || code.includes('-SLN-')) return true;
+  const tLow = t.toLowerCase();
+  if (tLow.includes('numerical') || tLow.includes('calculation')) return true;
+  return false;
+}
+
+function calculateDynamicExamDuration(questions: Question[]): {
+  duration: number;
+  textualCount: number;
+  numericalCount: number;
+} {
+  if (!questions || questions.length === 0) {
+    return { duration: 30, textualCount: 0, numericalCount: 0 };
+  }
+  let textualCount = 0;
+  let numericalCount = 0;
+  questions.forEach(q => {
+    if (isQuestionNumerical(q)) {
+      numericalCount++;
+    } else {
+      textualCount++;
+    }
+  });
+  // 1 minute for purely objective textual questions, 2 minutes for numerical / calculation based
+  const duration = Math.max(1, (textualCount * 1) + (numericalCount * 2));
+  return { duration, textualCount, numericalCount };
+}
 
 interface Template {
   id: string;
@@ -28,87 +61,40 @@ interface Template {
 
 const CANONICAL_EXAM_PRESETS: Template[] = [
   {
-    id: 'daily_topic_30',
-    name: 'Daily Topic Objective Test (30 Questions • 45 Mins • 120 Marks)',
+    id: 'regular_test_30',
+    name: 'Regular Test (30 Questions • Dynamic Time • +4/-1 Marks)',
     totalQuestions: 30,
-    duration: 45,
+    duration: 30,
     positiveMarks: 4,
     negativeMarks: 1,
     difficulty: { easy: 30, medium: 50, hard: 20 },
-    objectiveDistribution: { single_choice: 18, assertion_reason: 4, multiple_choice: 4, numerical: 4 },
     examCategory: 'standard'
-  },
-  {
-    id: 'chapter_mastery_30',
-    name: 'Chapter Mastery Test (30 Questions • 45 Mins • 120 Marks)',
-    totalQuestions: 30,
-    duration: 45,
-    positiveMarks: 4,
-    negativeMarks: 1,
-    difficulty: { easy: 20, medium: 50, hard: 30 },
-    objectiveDistribution: { single_choice: 18, assertion_reason: 4, multiple_choice: 4, numerical: 4 },
-    examCategory: 'standard'
-  },
-  {
-    id: 'full_chapter_mock_30',
-    name: 'Full Chapter Mock Test (30 Questions • 45 Mins • 120 Marks)',
-    totalQuestions: 30,
-    duration: 45,
-    positiveMarks: 4,
-    negativeMarks: 1,
-    difficulty: { easy: 25, medium: 50, hard: 25 },
-    objectiveDistribution: { single_choice: 20, assertion_reason: 5, multiple_choice: 3, numerical: 2 },
-    examCategory: 'mock'
-  },
-  {
-    id: 'combined_portions_mock_60',
-    name: 'Combined Syllabus / Term Mock (60 Questions • 90 Mins • 240 Marks)',
-    totalQuestions: 60,
-    duration: 90,
-    positiveMarks: 4,
-    negativeMarks: 1,
-    difficulty: { easy: 20, medium: 50, hard: 30 },
-    objectiveDistribution: { single_choice: 40, assertion_reason: 10, multiple_choice: 5, numerical: 5 },
-    examCategory: 'mock'
   },
   {
     id: 'foundation_olympiad_50',
-    name: 'Foundation / Olympiad Mock (50 Questions • 60 Mins • 200 Marks)',
+    name: 'Foundation / Olympiad Mock (50 Questions • Dynamic Time • +4/-1 Marks)',
     totalQuestions: 50,
-    duration: 60,
+    duration: 50,
     positiveMarks: 4,
     negativeMarks: 1,
     difficulty: { easy: 10, medium: 40, hard: 50 },
-    objectiveDistribution: { single_choice: 30, assertion_reason: 10, multiple_choice: 5, numerical: 5 },
     examCategory: 'foundation'
   },
   {
-    id: 'homi_bhabha_9_100',
-    name: 'Dr. Homi Bhabha Science Mock (100 Questions • 90 Mins • 100 Marks)',
+    id: 'homi_bhabha_100',
+    name: 'Dr. Homi Bhabha Science Mock (100 Questions • Dynamic Time • +1/0 Marks)',
     totalQuestions: 100,
-    duration: 90,
+    duration: 100,
     positiveMarks: 1,
     negativeMarks: 0,
     difficulty: { easy: 20, medium: 50, hard: 30 },
-    objectiveDistribution: { single_choice: 94, numerical: 6 },
     examCategory: 'foundation'
   },
   {
-    id: 'quick_revision_15',
-    name: 'Quick Practice Quiz (15 Questions • 20 Mins • 60 Marks)',
-    totalQuestions: 15,
-    duration: 20,
-    positiveMarks: 4,
-    negativeMarks: 1,
-    difficulty: { easy: 40, medium: 40, hard: 20 },
-    objectiveDistribution: { single_choice: 10, assertion_reason: 3, numerical: 2 },
-    examCategory: 'standard'
-  },
-  {
     id: 'custom_blueprint',
-    name: 'Custom Blueprint (Configure Qs & Time)',
+    name: 'Custom Blueprint (Configure Qs, Types & Time)',
     totalQuestions: 30,
-    duration: 45,
+    duration: 30,
     positiveMarks: 4,
     negativeMarks: 1
   }
@@ -117,7 +103,7 @@ const CANONICAL_EXAM_PRESETS: Template[] = [
 const CANONICAL_SUBJECTIVE_PRESETS: Template[] = [
   {
     id: 'daily_subjective_3',
-    name: 'Daily Subjective Practice (3 Questions • 10 Mins • 8 Marks)',
+    name: 'Daily Subjective Practice (3 Questions • Dynamic Time • 8 Marks)',
     totalQuestions: 3,
     duration: 10,
     positiveMarks: 2,
@@ -126,18 +112,18 @@ const CANONICAL_SUBJECTIVE_PRESETS: Template[] = [
   },
   {
     id: 'saturday_classroom_6',
-    name: 'Saturday Classroom Test (6 Questions • 60 Mins • 20 Marks)',
+    name: 'Saturday Classroom Test (6 Questions • Dynamic Time • 20 Marks)',
     totalQuestions: 6,
-    duration: 60,
+    duration: 45,
     positiveMarks: 4,
     negativeMarks: 0,
     subjectiveDistribution: { subjective_short: 4, subjective_long: 2 }
   },
   {
     id: 'custom_subjective',
-    name: 'Custom Subjective Blueprint',
+    name: 'Custom Subjective Blueprint (Configure Qs & Time)',
     totalQuestions: 6,
-    duration: 45,
+    duration: 30,
     positiveMarks: 2,
     negativeMarks: 0
   }
@@ -223,21 +209,27 @@ export default function AdminExamGeneratorPage() {
     emptySelectedSubjects: new Set<string>()
   });
 
-  const [selectedTemplateId, setSelectedTemplateId] = useState('daily_topic_30');
+  const [selectedTemplateId, setSelectedTemplateId] = useState('regular_test_30');
   const [currentTemplate, setCurrentTemplate] = useState<Template | null>(CANONICAL_EXAM_PRESETS[0]);
   const [questionType, setQuestionType] = useState<'objective' | 'subjective'>('objective');
 
   // Custom Blueprint Configuration States
   const [customTotalQs, setCustomTotalQs] = useState<number>(30);
-  const [customDuration, setCustomDuration] = useState<number>(45);
+  const [customDurationMode, setCustomDurationMode] = useState<'dynamic' | 'manual'>('dynamic');
+  const [customDuration, setCustomDuration] = useState<number>(30);
   const [customPositiveMarks, setCustomPositiveMarks] = useState<number>(4);
   const [customNegativeMarks, setCustomNegativeMarks] = useState<number>(1);
-  const [customPoolMode, setCustomPoolMode] = useState<'flexible' | 'custom_types'>('flexible');
+  const [customPoolMode, setCustomPoolMode] = useState<'flexible' | 'filter' | 'custom_types'>('flexible');
+  const [customAllowedTypes, setCustomAllowedTypes] = useState<Set<CanonicalQuestionType>>(
+    new Set(['OSC', 'OMC', 'OAR', 'ONE', 'OTF', 'OFB'])
+  );
   const [customTypeCounts, setCustomTypeCounts] = useState<{ [key: string]: number }>({
     single_mcq: 18,
     assertion_reason: 4,
     multiple_mcq: 4,
-    numerical: 4
+    numerical: 4,
+    true_false: 0,
+    fill_blanks: 0
   });
   const [customDifficulty, setCustomDifficulty] = useState<{ easy: number; medium: number; hard: number }>({
     easy: 30,
@@ -247,6 +239,7 @@ export default function AdminExamGeneratorPage() {
 
   // Custom Subjective Configuration States
   const [customSubjTotalQs, setCustomSubjTotalQs] = useState<number>(6);
+  const [customSubjDurationMode, setCustomSubjDurationMode] = useState<'dynamic' | 'manual'>('dynamic');
   const [customSubjDuration, setCustomSubjDuration] = useState<number>(45);
   const [customSubjPositiveMarks, setCustomSubjPositiveMarks] = useState<number>(2);
   const [customSubjPoolMode, setCustomSubjPoolMode] = useState<'flexible' | 'custom_types'>('flexible');
@@ -255,10 +248,35 @@ export default function AdminExamGeneratorPage() {
     subjective_long: 2
   });
 
+  // Question selection pools
+  const [availablePool, setAvailablePool] = useState<Question[]>([]);
+  const [generatedQuestions, setGeneratedQuestions] = useState<Question[]>([]);
+  const [shortfalls, setShortfalls] = useState<any[]>([]);
+  const [fetchingPool, setFetchingPool] = useState(false);
+
+  const dynamicTiming = useMemo(() => calculateDynamicExamDuration(generatedQuestions), [generatedQuestions]);
+
+  const currentEffectiveDuration = useMemo(() => {
+    if (selectedTemplateId === 'custom_blueprint') {
+      if (customDurationMode === 'manual') return customDuration;
+      if (generatedQuestions.length > 0) return dynamicTiming.duration;
+      return Math.max(1, customTotalQs);
+    }
+    if (selectedTemplateId === 'custom_subjective') {
+      if (customSubjDurationMode === 'manual') return customSubjDuration;
+      if (generatedQuestions.length > 0) return dynamicTiming.duration;
+      return customSubjTotalQs * 5;
+    }
+    if (generatedQuestions.length > 0) {
+      return dynamicTiming.duration;
+    }
+    return currentTemplate?.duration || 30;
+  }, [selectedTemplateId, customDurationMode, customDuration, customSubjDurationMode, customSubjDuration, generatedQuestions.length, dynamicTiming.duration, customTotalQs, customSubjTotalQs, currentTemplate?.duration]);
+
   const handleSwitchType = (type: 'objective' | 'subjective') => {
     setQuestionType(type);
     if (type === 'objective') {
-      setSelectedTemplateId('daily_topic_30');
+      setSelectedTemplateId('regular_test_30');
       setCurrentTemplate(CANONICAL_EXAM_PRESETS[0]);
     } else {
       setSelectedTemplateId('daily_subjective_3');
@@ -291,12 +309,6 @@ export default function AdminExamGeneratorPage() {
   const [subjectWeights, setSubjectWeights] = useState<{ [key: string]: number }>({});
   const [topicWeights, setTopicWeights] = useState<{ [key: string]: number | string }>({});
   const [topicWeightMode, setTopicWeightMode] = useState<'equal' | 'custom'>('equal');
-
-  // Question selection pools
-  const [availablePool, setAvailablePool] = useState<Question[]>([]);
-  const [generatedQuestions, setGeneratedQuestions] = useState<Question[]>([]);
-  const [shortfalls, setShortfalls] = useState<any[]>([]);
-  const [fetchingPool, setFetchingPool] = useState(false);
 
   // In-Place Shortfall AI Generation Modal State
   const [showShortfallModal, setShowShortfallModal] = useState(false);
@@ -558,9 +570,9 @@ export default function AdminExamGeneratorPage() {
     if (id === 'custom_blueprint') {
       setCurrentTemplate({
         id: 'custom_blueprint',
-        name: 'Custom Blueprint (Configure Qs & Time)',
+        name: 'Custom Blueprint (Configure Qs, Types & Time)',
         totalQuestions: customTotalQs,
-        duration: customDuration,
+        duration: customDurationMode === 'manual' ? customDuration : customTotalQs,
         positiveMarks: customPositiveMarks,
         negativeMarks: customNegativeMarks,
         difficulty: customDifficulty,
@@ -569,9 +581,9 @@ export default function AdminExamGeneratorPage() {
     } else if (id === 'custom_subjective') {
       setCurrentTemplate({
         id: 'custom_subjective',
-        name: 'Custom Subjective Blueprint',
+        name: 'Custom Subjective Blueprint (Configure Qs & Time)',
         totalQuestions: customSubjTotalQs,
-        duration: customSubjDuration,
+        duration: customSubjDurationMode === 'manual' ? customSubjDuration : customSubjTotalQs * 5,
         positiveMarks: customSubjPositiveMarks,
         negativeMarks: 0,
         typeCounts: customSubjPoolMode === 'custom_types' ? customSubjTypeCounts : undefined
@@ -584,11 +596,11 @@ export default function AdminExamGeneratorPage() {
   const getNormalizedTypeCounts = (tmpl: Template | null, qType: 'objective' | 'subjective') => {
     if (!tmpl) return null;
     if (tmpl.id === 'custom_blueprint') {
-      if (customPoolMode === 'flexible') return null;
+      if (customPoolMode !== 'custom_types') return null;
       return customTypeCounts;
     }
     if (tmpl.id === 'custom_subjective') {
-      if (customSubjPoolMode === 'flexible') return null;
+      if (customSubjPoolMode !== 'custom_types') return null;
       return customSubjTypeCounts;
     }
     if (tmpl.typeCounts && Object.keys(tmpl.typeCounts).length > 0) {
@@ -696,7 +708,10 @@ export default function AdminExamGeneratorPage() {
       }
       const data = await res.json();
       const pool: Question[] = data.questions || data.pool || [];
-      setAvailablePool(pool);
+      const candidatePool: Question[] = (selectedTemplateId === 'custom_blueprint' && customPoolMode === 'filter')
+        ? pool.filter(q => customAllowedTypes.has(toCanonicalQuestionType(q.type)))
+        : pool;
+      setAvailablePool(candidatePool);
 
       const isCustom = selectedTemplateId === 'custom_blueprint' || selectedTemplateId === 'custom_subjective';
       const effectiveTotalQs = isCustom 
@@ -736,7 +751,7 @@ export default function AdminExamGeneratorPage() {
 
           // 1. Pick preferred difficulty distributions
           diffReqs.forEach(req => {
-            const candidates = pool.filter(q =>
+            const candidates = candidatePool.filter(q =>
               q.difficulty === req.diff &&
               isQuestionMatchingTopic(q, t) &&
               !usedCodes.has(q.questionCode || q.id || '') &&
@@ -752,7 +767,7 @@ export default function AdminExamGeneratorPage() {
 
           // 2. If topic target not fully reached, pick any remaining valid questions for this topic
           if (pickedForTopic < targetForTopic) {
-            const remaining = pool.filter(q =>
+            const remaining = candidatePool.filter(q =>
               isQuestionMatchingTopic(q, t) &&
               !usedCodes.has(q.questionCode || q.id || '') &&
               !selected.some(sel => areQuestionsTooSimilar(q, sel))
@@ -770,7 +785,7 @@ export default function AdminExamGeneratorPage() {
             const shortfallCount = targetForTopic - pickedForTopic;
             const matchIdx = selectedTopics.findIndex(tp => getTopicKey(tp) === tKey);
             shortfallReqs.push({
-              type: questionType === 'subjective' ? 'SSA' : 'OSC',
+              type: questionType === 'subjective' ? 'SSA' : (selectedTemplateId === 'custom_blueprint' && customPoolMode === 'filter' ? Array.from(customAllowedTypes)[0] || 'OSC' : 'OSC'),
               difficulty: 'medium',
               count: shortfallCount,
               contextId: 'CTX-' + String(matchIdx + 1).padStart(3, '0'),
@@ -804,7 +819,7 @@ export default function AdminExamGeneratorPage() {
             if (targetForTopicAndType <= 0) return;
 
             // 1. Exact match (type + difficulty + topic)
-            const candidates = pool.filter(q =>
+            const candidates = candidatePool.filter(q =>
               toCanonicalQuestionType(q.type) === toCanonicalQuestionType(req.type) &&
               q.difficulty === req.difficulty &&
               isQuestionMatchingTopic(q, t) &&
@@ -823,7 +838,7 @@ export default function AdminExamGeneratorPage() {
             
             // 2. Relax difficulty for same type in topic
             if (stillNeeded > 0) {
-              const relaxed = pool.filter(q =>
+              const relaxed = candidatePool.filter(q =>
                 toCanonicalQuestionType(q.type) === toCanonicalQuestionType(req.type) &&
                 isQuestionMatchingTopic(q, t) &&
                 !usedCodes.has(q.questionCode || q.id || '') &&
@@ -840,7 +855,7 @@ export default function AdminExamGeneratorPage() {
 
             // 3. Graceful Backfill: If the bank doesn't have enough questions of this exact type in this topic, backfill from other valid question types in this topic so the exam is filled
             if (stillNeeded > 0) {
-              const otherTypes = pool.filter(q =>
+              const otherTypes = candidatePool.filter(q =>
                 isQuestionMatchingTopic(q, t) &&
                 !usedCodes.has(q.questionCode || q.id || '') &&
                 !selected.some(sel => areQuestionsTooSimilar(q, sel))
@@ -875,7 +890,7 @@ export default function AdminExamGeneratorPage() {
           const currentPicked = topicPickedCounts[tKey] || 0;
           if (currentPicked < targetForTopic && selected.length < effectiveTotalQs) {
             const neededForTopic = Math.min(targetForTopic - currentPicked, effectiveTotalQs - selected.length);
-            const remaining = pool.filter(q =>
+            const remaining = candidatePool.filter(q =>
               isQuestionMatchingTopic(q, t) &&
               !usedCodes.has(q.questionCode || q.id || '') &&
               !selected.some(sel => areQuestionsTooSimilar(q, sel))
@@ -891,7 +906,7 @@ export default function AdminExamGeneratorPage() {
 
         // 6. Global Exam Guarantee: If total selected questions < effectiveTotalQs, fill remaining slots from ANY matching unused candidate questions in the pool
         if (selected.length < effectiveTotalQs) {
-          const remainingPool = pool.filter(q =>
+          const remainingPool = candidatePool.filter(q =>
             selectedTopics.some(t => isQuestionMatchingTopic(q, t)) &&
             !usedCodes.has(q.questionCode || q.id || '') &&
             !selected.some(sel => areQuestionsTooSimilar(q, sel))
@@ -907,7 +922,7 @@ export default function AdminExamGeneratorPage() {
       setGeneratedQuestions(selected);
       setShortfalls(shortfallReqs);
 
-      if (pool.length === 0) {
+      if (candidatePool.length === 0) {
         alert('⚠️ No candidate questions found in the Question Bank matching the selected topics. You can generate them with AI below.');
       }
 
@@ -1089,15 +1104,13 @@ Return ONLY valid JSON. No markdown wrappers or extra commentary.`;
 
       const idToken = await firebaseUser.getIdToken();
       const isCustom = selectedTemplateId === 'custom_blueprint' || selectedTemplateId === 'custom_subjective';
-      const effectiveDuration = isCustom
-        ? (questionType === 'subjective' ? customSubjDuration : customDuration)
-        : (currentTemplate.duration || 30);
+      const effectiveDuration = currentEffectiveDuration;
       const effectivePositiveMarks = isCustom
         ? (questionType === 'subjective' ? customSubjPositiveMarks : customPositiveMarks)
         : (currentTemplate.positiveMarks || 4);
       const effectiveNegativeMarks = isCustom
         ? (questionType === 'subjective' ? 0 : customNegativeMarks)
-        : (currentTemplate.negativeMarks ?? 1);
+        : (currentTemplate.negativeMarks ?? 0);
 
       const templateDetailsPayload = {
         ...currentTemplate,
@@ -1285,11 +1298,29 @@ Return ONLY valid JSON. No markdown wrappers or extra commentary.`;
           />
 
           {currentTemplate && (
-            <div style={{ background: 'var(--bg-soft)', padding: '6px 12px', borderRadius: 'var(--radius-sm)', fontSize: '11px', borderLeft: '3px solid var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
-              <span>📋 <strong>Template parameters:</strong> {selectedTemplateId === 'custom_blueprint' ? customTotalQs : selectedTemplateId === 'custom_subjective' ? customSubjTotalQs : currentTemplate.totalQuestions} Questions • {selectedTemplateId === 'custom_blueprint' ? customDuration : selectedTemplateId === 'custom_subjective' ? customSubjDuration : currentTemplate.duration} mins • +{selectedTemplateId === 'custom_blueprint' ? customPositiveMarks : selectedTemplateId === 'custom_subjective' ? customSubjPositiveMarks : currentTemplate.positiveMarks} / -{selectedTemplateId === 'custom_blueprint' ? customNegativeMarks : selectedTemplateId === 'custom_subjective' ? 0 : currentTemplate.negativeMarks} Marks</span>
+            <div style={{ background: 'var(--bg-soft)', padding: '8px 12px', borderRadius: 'var(--radius-sm)', fontSize: '11px', borderLeft: '3px solid var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+              <span>
+                📋 <strong>Template parameters:</strong> {selectedTemplateId === 'custom_blueprint' ? customTotalQs : selectedTemplateId === 'custom_subjective' ? customSubjTotalQs : currentTemplate.totalQuestions} Questions • 
+                <span style={{ color: 'var(--accent)', fontWeight: 700, margin: '0 4px' }}>
+                  ⏱️ {currentEffectiveDuration} mins
+                </span>
+                {generatedQuestions.length > 0 ? (
+                  <span style={{ color: 'var(--text-muted)', fontSize: '10.5px' }}>
+                    ({dynamicTiming.textualCount} Textual × 1m + {dynamicTiming.numericalCount} Numerical × 2m)
+                  </span>
+                ) : (
+                  <span style={{ color: 'var(--text-muted)', fontSize: '10.5px' }}>
+                    (Dynamic: 1m Textual / 2m Numerical)
+                  </span>
+                )}
+                {' '}• +{selectedTemplateId === 'custom_blueprint' ? customPositiveMarks : selectedTemplateId === 'custom_subjective' ? customSubjPositiveMarks : currentTemplate.positiveMarks} / -{selectedTemplateId === 'custom_blueprint' ? customNegativeMarks : selectedTemplateId === 'custom_subjective' ? 0 : currentTemplate.negativeMarks} Marks
+                {currentTemplate.negativeMarks === 0 && selectedTemplateId !== 'custom_blueprint' && (
+                  <span style={{ color: 'var(--success)', fontWeight: 700, marginLeft: '4px' }}>(No negative marking)</span>
+                )}
+              </span>
               {selectedTemplateId === 'custom_blueprint' && (
                 <span className="badge" style={{ background: 'var(--accent-soft)', color: 'var(--accent)', border: '1px solid var(--accent-ring)', padding: '2px 8px', borderRadius: '12px', fontSize: '10px', fontWeight: 700 }}>
-                  ⚙️ Custom Mode: {customPoolMode === 'flexible' ? 'Flexible (All Available Types)' : 'Exact Type Counts'}
+                  ⚙️ Custom: {customPoolMode === 'flexible' ? 'All Types' : customPoolMode === 'filter' ? 'Filtered Formats' : 'Exact Target Counts'} | {customDurationMode === 'dynamic' ? 'Dynamic Time' : `${customDuration}m Fixed`}
                 </span>
               )}
             </div>
@@ -1297,45 +1328,141 @@ Return ONLY valid JSON. No markdown wrappers or extra commentary.`;
 
           {/* Custom Blueprint Configuration Panel (Objective) */}
           {selectedTemplateId === 'custom_blueprint' && (
-            <div style={{ background: 'var(--surface-light)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)', padding: '12px 14px', marginTop: '6px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-light)', paddingBottom: '6px' }}>
+            <div style={{ background: 'var(--surface-light)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)', padding: '12px 14px', marginTop: '6px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-light)', paddingBottom: '6px', flexWrap: 'wrap', gap: '6px' }}>
                 <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>⚙️ Custom Blueprint Configuration</span>
-                <div style={{ display: 'flex', gap: '6px' }}>
+                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                   <button
                     type="button"
                     className={`btn btn-sm ${customPoolMode === 'flexible' ? 'btn-primary' : 'btn-secondary'}`}
                     onClick={() => setCustomPoolMode('flexible')}
-                    style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '12px' }}
+                    style={{ fontSize: '10px', padding: '3px 8px', borderRadius: '12px' }}
                   >
-                    🎯 Flexible Pool (Auto-Fill)
+                    🎯 All Available Types
+                  </button>
+                  <button
+                    type="button"
+                    className={`btn btn-sm ${customPoolMode === 'filter' ? 'btn-primary' : 'btn-secondary'}`}
+                    onClick={() => setCustomPoolMode('filter')}
+                    style={{ fontSize: '10px', padding: '3px 8px', borderRadius: '12px' }}
+                  >
+                    🔍 Choose Specific Formats
                   </button>
                   <button
                     type="button"
                     className={`btn btn-sm ${customPoolMode === 'custom_types' ? 'btn-primary' : 'btn-secondary'}`}
                     onClick={() => setCustomPoolMode('custom_types')}
-                    style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '12px' }}
+                    style={{ fontSize: '10px', padding: '3px 8px', borderRadius: '12px' }}
                   >
-                    📑 Exact Type Breakdown
+                    📑 Exact Target Counts
                   </button>
                 </div>
               </div>
 
-              {/* Row 1: Total Qs, Duration, Marks */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '10px', alignItems: 'end' }}>
+              {/* Format Filtering Checkboxes (when 'filter' mode active) */}
+              {customPoolMode === 'filter' && (
+                <div style={{ background: 'var(--surface)', padding: '10px 12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                    Select Allowed Question Formats to Include:
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '8px' }}>
+                    {[
+                      { type: 'OSC', label: 'Single Choice MCQ (OSC)', time: '1 min/Q' },
+                      { type: 'OMC', label: 'Multi Choice MCQ (OMC)', time: '1 min/Q' },
+                      { type: 'OAR', label: 'Assertion & Reason (OAR)', time: '1 min/Q' },
+                      { type: 'ONE', label: 'Numerical Objective (ONE)', time: '2 mins/Q' },
+                      { type: 'OTF', label: 'True / False (OTF)', time: '1 min/Q' },
+                      { type: 'OFB', label: 'Fill in the Blanks (OFB)', time: '1 min/Q' }
+                    ].map(item => {
+                      const isChecked = customAllowedTypes.has(item.type as CanonicalQuestionType);
+                      return (
+                        <label 
+                          key={item.type}
+                          style={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: '6px', 
+                            padding: '6px 8px', 
+                            borderRadius: 'var(--radius-sm)', 
+                            border: isChecked ? '1px solid var(--accent)' : '1px solid var(--border-light)', 
+                            background: isChecked ? 'var(--accent-soft)' : 'var(--bg-soft)', 
+                            cursor: 'pointer',
+                            fontSize: '11px',
+                            fontWeight: isChecked ? 700 : 500
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={(e) => {
+                              const checked = e.target.checked;
+                              setCustomAllowedTypes(prev => {
+                                const next = new Set(prev);
+                                if (checked) next.add(item.type as CanonicalQuestionType);
+                                else {
+                                  if (next.size > 1) next.delete(item.type as CanonicalQuestionType);
+                                }
+                                return next;
+                              });
+                            }}
+                            style={{ cursor: 'pointer' }}
+                          />
+                          <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <span>{item.label}</span>
+                            <span style={{ fontSize: '9.5px', color: 'var(--text-muted)' }}>⏱️ {item.time}</span>
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Exact Type Breakdown Controls (when 'custom_types' active) */}
+              {customPoolMode === 'custom_types' && (
+                <div style={{ background: 'var(--surface)', padding: '10px 12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)' }}>
+                  <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--accent)', marginBottom: '6px', textTransform: 'uppercase' }}>Specify Target Counts Per Format:</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(90px, 1fr))', gap: '6px' }}>
+                    {[
+                      { key: 'single_mcq', label: 'Single MCQ (OSC)' },
+                      { key: 'multiple_mcq', label: 'Multi MCQ (OMC)' },
+                      { key: 'assertion_reason', label: 'Assert-Reason (OAR)' },
+                      { key: 'numerical', label: 'Numerical (ONE)' },
+                      { key: 'true_false', label: 'True / False (OTF)' },
+                      { key: 'fill_blanks', label: 'Fill Blanks (OFB)' }
+                    ].map(t => (
+                      <div key={t.key}>
+                        <span style={{ display: 'block', fontSize: '9px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '2px' }}>{t.label}</span>
+                        <input
+                          type="number"
+                          min={0}
+                          value={customTypeCounts[t.key] || 0}
+                          onChange={(e) => {
+                            const val = Math.max(0, parseInt(e.target.value, 10) || 0);
+                            setCustomTypeCounts(prev => ({ ...prev, [t.key]: val }));
+                          }}
+                          style={{ width: '100%', padding: '3px 5px', border: '1px solid var(--border-light)', borderRadius: '4px', background: 'var(--surface-light)', color: 'var(--text)', fontSize: '11px', height: '26px' }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Row 1: Total Qs, Duration Mode & Settings, Marks */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '10px', alignItems: 'end' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '3px' }}>Total Questions</label>
-                  <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-                    <input
-                      type="number"
-                      min={1}
-                      max={200}
-                      value={customTotalQs}
-                      onChange={(e) => setCustomTotalQs(Math.max(1, parseInt(e.target.value, 10) || 1))}
-                      style={{ width: '100%', padding: '4px 6px', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', background: 'var(--surface)', color: 'var(--text)', fontSize: '12px', height: '28px', fontWeight: 700 }}
-                    />
-                  </div>
+                  <input
+                    type="number"
+                    min={1}
+                    max={200}
+                    value={customTotalQs}
+                    onChange={(e) => setCustomTotalQs(Math.max(1, parseInt(e.target.value, 10) || 1))}
+                    style={{ width: '100%', padding: '4px 6px', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', background: 'var(--surface)', color: 'var(--text)', fontSize: '12px', height: '28px', fontWeight: 700 }}
+                  />
                   <div style={{ display: 'flex', gap: '3px', marginTop: '3px', flexWrap: 'wrap' }}>
-                    {[10, 15, 20, 30, 45, 60].map(cnt => (
+                    {[10, 15, 20, 30, 50, 100].map(cnt => (
                       <button
                         key={cnt}
                         type="button"
@@ -1349,27 +1476,43 @@ Return ONLY valid JSON. No markdown wrappers or extra commentary.`;
                 </div>
 
                 <div>
-                  <label style={{ display: 'block', fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '3px' }}>Duration (Mins)</label>
-                  <input
-                    type="number"
-                    min={5}
-                    max={300}
-                    value={customDuration}
-                    onChange={(e) => setCustomDuration(Math.max(5, parseInt(e.target.value, 10) || 5))}
-                    style={{ width: '100%', padding: '4px 6px', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', background: 'var(--surface)', color: 'var(--text)', fontSize: '12px', height: '28px', fontWeight: 700 }}
-                  />
-                  <div style={{ display: 'flex', gap: '3px', marginTop: '3px', flexWrap: 'wrap' }}>
-                    {[15, 30, 45, 60, 90].map(dur => (
-                      <button
-                        key={dur}
-                        type="button"
-                        onClick={() => setCustomDuration(dur)}
-                        style={{ fontSize: '9px', padding: '1px 5px', borderRadius: '4px', border: '1px solid var(--border-light)', background: customDuration === dur ? 'var(--accent)' : 'var(--surface)', color: customDuration === dur ? 'var(--text-on-accent)' : 'var(--text-muted)', cursor: 'pointer' }}
-                      >
-                        {dur}m
-                      </button>
-                    ))}
+                  <label style={{ display: 'block', fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '3px' }}>
+                    Duration: {customDurationMode === 'dynamic' ? '⏱️ Dynamic (Auto)' : `⏳ Fixed (${customDuration}m)`}
+                  </label>
+                  <div style={{ display: 'flex', gap: '4px', height: '28px', alignItems: 'center' }}>
+                    <button
+                      type="button"
+                      className={`btn btn-sm ${customDurationMode === 'dynamic' ? 'btn-primary' : 'btn-secondary'}`}
+                      onClick={() => setCustomDurationMode('dynamic')}
+                      style={{ fontSize: '10px', flex: 1, padding: '2px 4px', height: '100%' }}
+                    >
+                      ⏱️ Dynamic
+                    </button>
+                    <button
+                      type="button"
+                      className={`btn btn-sm ${customDurationMode === 'manual' ? 'btn-primary' : 'btn-secondary'}`}
+                      onClick={() => setCustomDurationMode('manual')}
+                      style={{ fontSize: '10px', flex: 1, padding: '2px 4px', height: '100%' }}
+                    >
+                      ⏳ Manual
+                    </button>
                   </div>
+                  {customDurationMode === 'manual' ? (
+                    <div style={{ marginTop: '3px' }}>
+                      <input
+                        type="number"
+                        min={5}
+                        max={300}
+                        value={customDuration}
+                        onChange={(e) => setCustomDuration(Math.max(5, parseInt(e.target.value, 10) || 5))}
+                        style={{ width: '100%', padding: '2px 6px', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', background: 'var(--surface)', color: 'var(--text)', fontSize: '11px', height: '24px' }}
+                      />
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: '9px', color: 'var(--text-muted)', marginTop: '3px' }}>
+                      Auto: 1m textual + 2m numerical
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -1392,43 +1535,13 @@ Return ONLY valid JSON. No markdown wrappers or extra commentary.`;
                     onChange={(e) => setCustomNegativeMarks(Number(e.target.value))}
                     style={{ width: '100%', padding: '4px 6px', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', background: 'var(--surface)', color: 'var(--text)', fontSize: '12px', height: '28px' }}
                   >
-                    <option value={0}>0 (No Penalty)</option>
+                    <option value={0}>0 (No Penalty / Mock)</option>
                     <option value={0.25}>-0.25 Marks</option>
                     <option value={0.5}>-0.5 Marks</option>
                     <option value={1}>-1 Mark (Standard)</option>
                   </select>
                 </div>
               </div>
-
-              {/* Exact Type Breakdown Controls (when active) */}
-              {customPoolMode === 'custom_types' && (
-                <div style={{ background: 'var(--surface)', padding: '8px 10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)' }}>
-                  <div style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px', textTransform: 'uppercase' }}>Specify Target Counts Per Format:</div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(90px, 1fr))', gap: '6px' }}>
-                    {[
-                      { key: 'single_mcq', label: 'Single MCQ (OSC)' },
-                      { key: 'multiple_mcq', label: 'Multi MCQ (OMC)' },
-                      { key: 'true_false', label: 'True / False (OTF)' },
-                      { key: 'assertion_reason', label: 'Assert-Reason (OAR)' },
-                      { key: 'numerical', label: 'Numerical (ONE)' }
-                    ].map(t => (
-                      <div key={t.key}>
-                        <span style={{ display: 'block', fontSize: '9px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '2px' }}>{t.label}</span>
-                        <input
-                          type="number"
-                          min={0}
-                          value={customTypeCounts[t.key] || 0}
-                          onChange={(e) => {
-                            const val = Math.max(0, parseInt(e.target.value, 10) || 0);
-                            setCustomTypeCounts(prev => ({ ...prev, [t.key]: val }));
-                          }}
-                          style={{ width: '100%', padding: '3px 5px', border: '1px solid var(--border-light)', borderRadius: '4px', background: 'var(--surface-light)', color: 'var(--text)', fontSize: '11px', height: '26px' }}
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
 
               {/* Difficulty breakdown */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '10px', color: 'var(--text-muted)', flexWrap: 'wrap' }}>
@@ -1660,9 +1773,22 @@ Return ONLY valid JSON. No markdown wrappers or extra commentary.`;
         {/* Selected Questions List */}
         {generatedQuestions.length > 0 && (
           <div className="card" style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', padding: '16px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', borderBottom: '1px solid var(--border-light)', paddingBottom: '6px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', borderBottom: '1px solid var(--border-light)', paddingBottom: '6px' }}>
               <h3 style={{ fontSize: '13px', fontWeight: 700, margin: 0 }}>📝 Selected Exam Questions</h3>
               <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>({generatedQuestions.length} selected)</span>
+            </div>
+
+            {/* Dynamic Timing & Marks Summary Banner */}
+            <div style={{ background: 'var(--bg-soft)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', padding: '8px 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', marginBottom: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px' }}>
+                <span>⏱️ <strong>Calculated Exam Duration:</strong> <span style={{ color: 'var(--accent)', fontWeight: 800 }}>{currentEffectiveDuration} Minutes</span></span>
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                  ({dynamicTiming.textualCount} Textual @ 1 min/Q + {dynamicTiming.numericalCount} Numerical @ 2 min/Q)
+                </span>
+              </div>
+              <div style={{ fontSize: '12px', fontWeight: 700 }}>
+                📊 Total Marks: <span style={{ color: 'var(--success)' }}>{generatedQuestions.reduce((s, q) => s + (q.marks || (selectedTemplateId === 'custom_blueprint' ? customPositiveMarks : currentTemplate?.positiveMarks || 4)), 0)} Marks</span>
+              </div>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
