@@ -8,7 +8,7 @@ import { useRouter } from 'next/navigation';
 import { db } from '@/lib/firebase/firestore';
 import { collection, query, orderBy, limit, onSnapshot, doc, deleteDoc } from 'firebase/firestore';
 import { renderMarkdown } from '@/lib/markdown';
-import { getDateKeyIST, formatDateIST } from '@/lib/dateUtils';
+import { getDateKeyIST, formatDateIST, parseDateInput } from '@/lib/dateUtils';
 
 interface ChatRoom {
   roomId: string;
@@ -80,7 +80,7 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
   const [isMobile, setIsMobile] = useState(false);
   const [useApiPolling, setUseApiPolling] = useState(false);
   const [useRoomsApiPolling, setUseRoomsApiPolling] = useState(false);
-  const [showOlderGroupMessages, setShowOlderGroupMessages] = useState(false);
+  const [visibleHistoryWeeks, setVisibleHistoryWeeks] = useState(0);
 
   // Mute control states
   const [muteStudents, setMuteStudents] = useState(false);
@@ -446,7 +446,7 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
       console.error('Failed to load starred messages:', e);
     }
     setReplyingTo(null);
-    setShowOlderGroupMessages(false);
+    setVisibleHistoryWeeks(0);
   }, [activeRoomId]);
 
   // Fallback API Polling when direct client-side firestore is denied/unavailable
@@ -1143,8 +1143,8 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
 
   const scrollToMessage = (messageId: string) => {
     let el = messageRefs.current[messageId];
-    if (!el && !showOlderGroupMessages) {
-      setShowOlderGroupMessages(true);
+    if (!el && visibleHistoryWeeks === 0) {
+      setVisibleHistoryWeeks(999);
       setTimeout(() => {
         const target = messageRefs.current[messageId];
         if (target) {
@@ -1981,33 +1981,49 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
                   yesterdayObj.setDate(yesterdayObj.getDate() - 1);
                   const yesterdayKey = getDateKeyIST(yesterdayObj);
 
-                  // Partition messages into today vs older messages
-                  const olderMessages: Message[] = [];
-                  const todayMessages: Message[] = [];
+                  // Calculate start of today in IST (00:00:00.000 IST)
+                  const [tYear, tMonth, tDay] = todayKey.split('-').map(Number);
+                  const startOfTodayISTMs = Date.UTC(tYear, tMonth - 1, tDay, 0, 0, 0, 0) - (5.5 * 60 * 60 * 1000);
+                  const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+
+                  // If visibleHistoryWeeks === 0, cutoff is start of today (only today's messages).
+                  // If visibleHistoryWeeks === W (W >= 1), cutoff is start of today minus W weeks (past W*7 days).
+                  // DMs show recent messages or full feed, while group chats paginate week-by-week.
+                  const currentCutoffMs = isGroupChat && visibleHistoryWeeks === 0
+                    ? startOfTodayISTMs
+                    : (isGroupChat && visibleHistoryWeeks < 999 ? startOfTodayISTMs - (visibleHistoryWeeks * ONE_WEEK_MS) : 0);
+
+                  const nextCutoffMs = startOfTodayISTMs - ((visibleHistoryWeeks + 1) * ONE_WEEK_MS);
+
+                  const visibleMessages: Message[] = [];
+                  const olderRemainingMessages: Message[] = [];
+                  let nextWeekMessagesCount = 0;
 
                   feedMessages.forEach(msg => {
-                    const msgKey = msg.createdAt ? getDateKeyIST(msg.createdAt) : todayKey;
-                    if (msgKey === todayKey) {
-                      todayMessages.push(msg);
+                    const d = parseDateInput(msg.createdAt) || new Date();
+                    const t = d.getTime();
+                    if (t >= currentCutoffMs) {
+                      visibleMessages.push(msg);
                     } else {
-                      olderMessages.push(msg);
+                      olderRemainingMessages.push(msg);
+                      if (t >= nextCutoffMs) {
+                        nextWeekMessagesCount++;
+                      }
                     }
                   });
 
-                  const isCollapsed = isGroupChat && !showOlderGroupMessages && olderMessages.length > 0;
-                  const visibleMessages = isCollapsed ? todayMessages : feedMessages;
-
+                  const nextBlockCount = nextWeekMessagesCount > 0 ? nextWeekMessagesCount : Math.min(olderRemainingMessages.length, 10);
                   let lastDateStr = '';
 
                   return (
                     <>
-                      {/* Collapsible toggle bar for group chats */}
-                      {isGroupChat && olderMessages.length > 0 && (
-                        <div style={{ display: 'flex', justifyContent: 'center', margin: '8px 0 4px 0', width: '100%' }}>
-                          {!showOlderGroupMessages ? (
+                      {/* Week-by-Week Collapsible toggle bar for group chats */}
+                      {isGroupChat && (olderRemainingMessages.length > 0 || visibleHistoryWeeks > 0) && (
+                        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', margin: '8px 0 6px 0', width: '100%', flexWrap: 'wrap' }}>
+                          {olderRemainingMessages.length > 0 ? (
                             <button
                               type="button"
-                              onClick={() => setShowOlderGroupMessages(true)}
+                              onClick={() => setVisibleHistoryWeeks(prev => (prev === 0 ? 1 : prev + 1))}
                               style={{
                                 display: 'inline-flex',
                                 alignItems: 'center',
@@ -2025,16 +2041,26 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
                               }}
                             >
                               <span>📜</span>
-                              <span>View Earlier Messages ({olderMessages.length} prior)</span>
+                              <span>
+                                {visibleHistoryWeeks === 0
+                                  ? `View Previous Week (${nextBlockCount} messages • ${olderRemainingMessages.length} prior)`
+                                  : `Load Previous Week (${nextBlockCount} messages • ${olderRemainingMessages.length} older remaining)`}
+                              </span>
                             </button>
                           ) : (
+                            <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 500, padding: '4px 8px' }}>
+                              ─── Beginning of conversation history ───
+                            </span>
+                          )}
+
+                          {visibleHistoryWeeks > 0 && (
                             <button
                               type="button"
-                              onClick={() => setShowOlderGroupMessages(false)}
+                              onClick={() => setVisibleHistoryWeeks(0)}
                               style={{
                                 display: 'inline-flex',
                                 alignItems: 'center',
-                                gap: '6px',
+                                gap: '4px',
                                 padding: '4px 12px',
                                 background: 'var(--surface-popover)',
                                 border: '1px solid var(--border-light)',
@@ -2047,36 +2073,37 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
                               }}
                             >
                               <span>▲</span>
-                              <span>Collapse Earlier Messages</span>
+                              <span>Collapse to Today</span>
                             </button>
                           )}
                         </div>
                       )}
 
-                      {/* Empty state for today in group chat if no messages today but older messages exist */}
-                      {isCollapsed && todayMessages.length === 0 && (
+                      {/* Empty state for today in group chat if no messages today and user has not loaded earlier history */}
+                      {isGroupChat && visibleHistoryWeeks === 0 && visibleMessages.length === 0 && olderRemainingMessages.length > 0 && (
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '36px 16px', textAlign: 'center', gap: '8px' }}>
                           <span style={{ fontSize: '28px' }}>💬</span>
                           <div style={{ fontWeight: 600, fontSize: '14px', color: 'var(--text)' }}>No messages sent today</div>
-                          <div style={{ fontSize: '12px', color: 'var(--text-muted)', maxWidth: '320px' }}>
-                            Earlier conversation history ({olderMessages.length} messages) is collapsed to keep group chat snappy.
+                          <div style={{ fontSize: '12px', color: 'var(--text-muted)', maxWidth: '340px' }}>
+                            Earlier conversation history ({olderRemainingMessages.length} messages) is organized week-by-week to keep group chat snappy.
                           </div>
                           <button
                             type="button"
-                            onClick={() => setShowOlderGroupMessages(true)}
+                            onClick={() => setVisibleHistoryWeeks(1)}
                             style={{
                               marginTop: '8px',
-                              padding: '6px 16px',
+                              padding: '7px 18px',
                               background: 'var(--accent)',
                               color: 'var(--text-on-accent)',
                               border: 'none',
                               borderRadius: '8px',
                               fontSize: '12px',
                               fontWeight: 600,
-                              cursor: 'pointer'
+                              cursor: 'pointer',
+                              boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
                             }}
                           >
-                            📜 View Previous History ({olderMessages.length})
+                            📜 View Previous Week ({nextBlockCount > 0 ? `${nextBlockCount} messages` : `${olderRemainingMessages.length} messages`})
                           </button>
                         </div>
                       )}
