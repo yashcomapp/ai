@@ -1225,6 +1225,7 @@ export class QuotientService {
     ] = await Promise.all([
       adminDb.collection('examAttempts').where('studentCode', '==', studentCode).get(),
       adminDb.collection('assignments').where('studentCode', '==', studentCode).get(),
+      // studentTopicMastery: Full document required for retention, SRS schedule, attempts, and confidence calculations
       adminDb.collection('studentTopicMastery').where('studentCode', '==', studentCode).get(),
       adminDb.collection('integrityScores').where('studentCode', '==', studentCode).get(),
       adminDb.collection('studentObservations').where('studentCode', '==', studentCode).get(),
@@ -1297,7 +1298,10 @@ export class QuotientService {
     ] = await Promise.all([
       adminDb.collection('examAttempts').get(),
       adminDb.collection('assignments').get(),
-      adminDb.collection('studentTopicMastery').select('studentCode', 'topicCode', 'mastery', 'confidence', 'topicClassification', 'targetQuestions', 'isRecoveryMastered').get(),
+      // studentTopicMastery: Full document required. computeStudentQuotientScore and calculateUnifiedMetrics
+      // depend on mastery, confidence, requiredConfidence, isRecoveryMastered, totalAttempts, questionsAttempted,
+      // lastRevisedAt, updatedAt, lastAttempt, and srsStage for retention, SRS schedule, and mastery calculations.
+      adminDb.collection('studentTopicMastery').get(),
       adminDb.collection('integrityScores').get(),
       adminDb.collection('studentObservations').get(),
       adminDb.collection('users').where('role', '==', 'student').select('studentCode', 'name', 'batchIds', 'batchId', 'class', 'className', 'status').get(),
