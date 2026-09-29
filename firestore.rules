@@ -523,6 +523,26 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
+    // ── questionDisputes ──────────────────────────────────────
+    match /questionDisputes/{docId} {
+      allow read:   if isAuth() && (isAdmin() || (isStudent() && resource.data.studentCode == myStudentCode()));
+      allow create: if isStudent() && request.resource.data.studentCode == myStudentCode();
+      allow update, delete: if isAdmin();
+    }
+
+    // ── examDisputeCounters & quarantinedQuestions ────────────
+    match /examDisputeCounters/{docId} {
+      allow read, write: if isAdmin();
+    }
+    match /quarantinedQuestions/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    // ── _rateLimits & internal utilities ──────────────────────
+    match /_rateLimits/{docId} {
+      allow read, write: if false; // server-side Admin SDK only
+    }
+
     // Helper to check room membership
     function isRoomParticipant(roomId) {
       return isAdmin() || get(/databases/$(database)/documents/chatRooms/$(roomId)).data.participants.hasAny([callerKey()]);

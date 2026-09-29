@@ -1153,7 +1153,9 @@ Return ONLY a valid JSON object matching the schema below:
           </div>
         </div>
         <div className="page-header-right" style={{ display: 'flex', gap: '8px' }}>
-          
+          <button className="btn btn-secondary" onClick={() => router.push('/admin')} style={{ padding: '6px 12px', fontSize: '12px' }}>
+            ← Back to Dashboard
+          </button>
           <button className="btn btn-primary" style={{ padding: '6px 12px', fontSize: '12px' }} onClick={() => setPdfSelectorOpen(true)}>📄 Export PDF</button>
           <button className="btn btn-secondary" onClick={triggerDeduplicationSweep}>🧹 Deduplicate</button>
           <button className="btn btn-secondary" onClick={triggerManualReindex}>🔄 Rebuild Index</button>

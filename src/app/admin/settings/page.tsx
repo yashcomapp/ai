@@ -420,7 +420,9 @@ export default function AdminSettingsPage() {
           </div>
         </div>
         <div className="page-header-right" style={{ display: 'flex', gap: '10px' }}>
-          
+          <button className="btn btn-secondary" onClick={() => router.push('/admin')} style={{ padding: '6px 12px', fontSize: '12px' }}>
+            ← Back to Dashboard
+          </button>
           <button className="btn btn-secondary" title="Logout" onClick={logout}>🚪</button>
         </div>
       </header>

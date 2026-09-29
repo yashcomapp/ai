@@ -3,12 +3,11 @@ import * as admin from 'firebase-admin';
 import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole } from '@/lib/auth';
 import { encrypt } from '@/lib/encryption';
+import { checkDistributedRateLimit } from '@/lib/rateLimit';
 const NAME_RE = /^[a-zA-Z\s.]+$/;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MOBILE_RE = /^[6789]\d{9}$/;
 const PASSWORD_RE = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
-
-const ipLimits = new Map<string, number[]>();
 
 export async function POST(req: NextRequest) {
   try {
@@ -17,16 +16,17 @@ export async function POST(req: NextRequest) {
       rawIp = rawIp.split(',')[0].trim();
     }
     const userAgent = req.headers.get('user-agent') || 'unknown-ua';
-    const rateLimitKey = `${rawIp}:${userAgent}`;
-    const now = Date.now();
+    const rateLimitKey = `register:${rawIp}:${userAgent}`;
 
-    const timestamps = ipLimits.get(rateLimitKey) || [];
-    const validTimestamps = timestamps.filter(t => now - t < 60000);
-    if (validTimestamps.length >= 5) {
+    const { allowed } = await checkDistributedRateLimit({
+      key: rateLimitKey,
+      limit: 5,
+      windowMs: 60000
+    });
+
+    if (!allowed) {
       return NextResponse.json({ message: 'Too many registration requests. Please try again in a minute.' }, { status: 429 });
     }
-    validTimestamps.push(now);
-    ipLimits.set(rateLimitKey, validTimestamps);
 
     const data = await req.json();
     const {

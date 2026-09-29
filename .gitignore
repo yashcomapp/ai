@@ -17,6 +17,7 @@ build/
 !public/manifest.json
 !firestore.indexes.json
 *.tsbuildinfo
+tsconfig.tsbuildinfo
 
 .vercel
 .firebase/
