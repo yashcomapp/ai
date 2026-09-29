@@ -63,12 +63,31 @@ export async function GET(req: NextRequest) {
       }
       
       const parentEmail = parentData?.email?.toLowerCase();
-      if (parentEmail) {
-        const querySnap = await adminDb.collection('users')
-          .where('role', '==', 'student')
-          .where('parentEmail', '==', parentEmail)
-          .get();
-        querySnap.docs.forEach(doc => {
+      const parentPhone = parentData?.phone || parentData?.parentPhone || parentData?.mobile;
+      if (parentEmail || parentPhone) {
+        const [emailSnap, phoneSnap] = await Promise.all([
+          parentEmail
+            ? adminDb.collection('users')
+                .where('role', '==', 'student')
+                .where('parentEmail', '==', parentEmail)
+                .get()
+                .catch(() => ({ docs: [] } as any))
+            : Promise.resolve({ docs: [] } as any),
+          parentPhone
+            ? adminDb.collection('users')
+                .where('role', '==', 'student')
+                .where('parentPhone', '==', parentPhone)
+                .get()
+                .catch(() => ({ docs: [] } as any))
+            : Promise.resolve({ docs: [] } as any)
+        ]);
+        emailSnap.docs.forEach((doc: any) => {
+          const data = doc.data();
+          if (data.studentCode && !studentCodes.includes(data.studentCode)) {
+            studentCodes.push(data.studentCode);
+          }
+        });
+        phoneSnap.docs.forEach((doc: any) => {
           const data = doc.data();
           if (data.studentCode && !studentCodes.includes(data.studentCode)) {
             studentCodes.push(data.studentCode);
@@ -338,12 +357,31 @@ export async function GET(req: NextRequest) {
           studentCodes = [parentData.studentCode];
         }
         const parentEmail = parentData?.email?.toLowerCase();
-        if (parentEmail) {
-          const querySnap = await adminDb.collection('users')
-            .where('role', '==', 'student')
-            .where('parentEmail', '==', parentEmail)
-            .get();
-          querySnap.docs.forEach(doc => {
+        const parentPhone = parentData?.phone || parentData?.parentPhone || parentData?.mobile;
+        if (parentEmail || parentPhone) {
+          const [emailSnap, phoneSnap] = await Promise.all([
+            parentEmail
+              ? adminDb.collection('users')
+                  .where('role', '==', 'student')
+                  .where('parentEmail', '==', parentEmail)
+                  .get()
+                  .catch(() => ({ docs: [] } as any))
+              : Promise.resolve({ docs: [] } as any),
+            parentPhone
+              ? adminDb.collection('users')
+                  .where('role', '==', 'student')
+                  .where('parentPhone', '==', parentPhone)
+                  .get()
+                  .catch(() => ({ docs: [] } as any))
+              : Promise.resolve({ docs: [] } as any)
+          ]);
+          emailSnap.docs.forEach((doc: any) => {
+            const data = doc.data();
+            if (data.studentCode && !studentCodes.includes(data.studentCode)) {
+              studentCodes.push(data.studentCode);
+            }
+          });
+          phoneSnap.docs.forEach((doc: any) => {
             const data = doc.data();
             if (data.studentCode && !studentCodes.includes(data.studentCode)) {
               studentCodes.push(data.studentCode);

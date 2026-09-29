@@ -90,7 +90,7 @@ export default function ParentReviewPanel() {
   const captureVerificationSnapshot = async (): Promise<string | null> => {
     try {
       if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
-        throw new Error('Camera hardware is not accessible on this device.');
+        return null;
       }
       // Fast single-track video capture without blocking audio hardware initialization
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -130,8 +130,8 @@ export default function ParentReviewPanel() {
       });
       return dataUrl;
     } catch (e: any) {
-      console.error('Camera verification snapshot failed:', e);
-      throw new Error(e.message || 'Camera access is required for parent verification.');
+      console.warn('Camera verification snapshot unavailable/denied:', e);
+      return null;
     }
   };
 
@@ -145,13 +145,8 @@ export default function ParentReviewPanel() {
           setCapturingSnapshot(true);
           try {
             photo = await captureVerificationSnapshot();
-            if (!photo) {
-              throw new Error('Verification snapshot could not be generated.');
-            }
           } catch (camErr: any) {
-            setCapturingSnapshot(false);
-            alert('⚠️ Camera access is required for Parent Exam Review Verification.\n\nPlease allow camera permission in your browser to verify this review.');
-            return;
+            console.warn('Camera verification skipped:', camErr);
           }
           setCapturingSnapshot(false);
         }
@@ -284,9 +279,6 @@ export default function ParentReviewPanel() {
       setSubjectiveReviews(subj);
       setEntranceReviews(entr);
       setIsAutonomousChild(data.isAutonomousChild || false);
-      if (data.isAutonomousChild) {
-        setActiveTab('objective');
-      }
 
       // Persist to local cache for instant offline/re-entry hydration
       try {
@@ -295,15 +287,38 @@ export default function ParentReviewPanel() {
         }
       } catch {}
 
-      // Auto-open review if query param "select" matches
+      // Auto-switch tab and open review if query params are present
       if (typeof window !== 'undefined') {
         const params = new URLSearchParams(window.location.search);
+        const tabParam = params.get('tab');
         const selectId = params.get('select');
+
+        if (tabParam && ['objective', 'subjective', 'practice', 'mock'].includes(tabParam)) {
+          setActiveTab(tabParam as any);
+        }
+
         if (selectId) {
           const allReviews = [...obj, ...prac, ...subj, ...entr];
           const found = allReviews.find(r => r.id === selectId);
           if (found) {
             setSelectedReview(found);
+            if (!tabParam) {
+              if (found.type === 'practice') setActiveTab('practice');
+              else if (found.type === 'subjective') setActiveTab('subjective');
+              else if (found.type === 'entrance') setActiveTab('mock');
+              else setActiveTab('objective');
+            }
+          }
+        } else if (!tabParam && !data.isAutonomousChild) {
+          // If objective has 0 pending but practice has pending, automatically switch to practice tab
+          const objPendingCount = obj.filter((r: any) => r.status === 'pending').length;
+          const pracPendingCount = prac.filter((r: any) => r.status === 'pending').length;
+          const subjPendingCount = subj.filter((r: any) => r.status === 'pending').length;
+
+          if (objPendingCount === 0 && pracPendingCount > 0) {
+            setActiveTab('practice');
+          } else if (objPendingCount === 0 && subjPendingCount > 0) {
+            setActiveTab('subjective');
           }
         }
       }
@@ -671,17 +686,9 @@ export default function ParentReviewPanel() {
     return result.sort((a, b) => (b.rawDate?.getTime() || 0) - (a.rawDate?.getTime() || 0));
   };
 
-  const isPracticeDigestAvailable = (dateKey: string) => {
-    const now = new Date();
-    const todayKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-    
-    if (dateKey < todayKey) return true; // Past dates are available
-    if (dateKey > todayKey) return false;
-
-    // Today: Available at or after 10:30 PM (22:30)
-    const hour = now.getHours();
-    const min = now.getMinutes();
-    return hour > 22 || (hour === 22 && min >= 30);
+  const isPracticeDigestAvailable = (_dateKey: string) => {
+    // Parents can review and approve completed practice sessions at any time
+    return true;
   };
 
   const handleApproveDayGroup = async (group: any) => {
@@ -882,7 +889,7 @@ export default function ParentReviewPanel() {
               <div>
                 <h3 style={{ fontSize: '13.5px', fontWeight: 800, color: 'var(--text)', margin: 0 }}>📚 Day-Wise Practice Register</h3>
                 <p style={{ margin: '3px 0 0 0', fontSize: '11px', color: 'var(--text-muted)' }}>
-                  Practice sets are consolidated daily. Today's practice digest opens for parent review after 10:30 PM.
+                  Practice sets are consolidated daily. Click any date or practice set to inspect detailed questions, answers, and solutions.
                 </p>
               </div>
             </div>
@@ -1067,14 +1074,35 @@ export default function ParentReviewPanel() {
               </div>
 
               {/* Practice Sets List */}
-              <h5 style={{ fontSize: '13px', fontWeight: 800, margin: '0 0 10px 0', color: 'var(--text)' }}>📝 Attempted Practice Sets:</h5>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <h5 style={{ fontSize: '13px', fontWeight: 800, margin: 0, color: 'var(--text)' }}>📝 Attempted Practice Sets:</h5>
+                <span style={{ fontSize: '11px', color: 'var(--accent)', fontWeight: 600 }}>💡 Click any set to view questions</span>
+              </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '250px', overflowY: 'auto' }}>
                 {selectedDayGroup.items.map((item: any) => (
-                  <div key={item.id} style={{ display: 'flex', flexDirection: 'column', gap: '6px', padding: '10px 12px', background: 'var(--bg-soft)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)' }}>
+                  <div 
+                    key={item.id} 
+                    onClick={() => {
+                      setSelectedReview(item);
+                      setSelectedDayGroup(null);
+                    }}
+                    style={{ 
+                      display: 'flex', 
+                      flexDirection: 'column', 
+                      gap: '6px', 
+                      padding: '10px 12px', 
+                      background: 'var(--bg-soft)', 
+                      borderRadius: 'var(--radius-sm)', 
+                      border: '1px solid var(--border-light)',
+                      cursor: 'pointer',
+                      transition: 'all 0.15s ease'
+                    }}
+                    title="Click to view detailed question-by-question scorecard"
+                  >
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                       <div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                          <strong style={{ fontSize: '12.5px', color: 'var(--text)' }}>{item.name}</strong>
+                          <strong style={{ fontSize: '12.5px', color: 'var(--accent)', textDecoration: 'underline' }}>{item.name}</strong>
                           {item.feedbackBadge && (
                             <span style={{
                               fontSize: '10px',
@@ -1093,7 +1121,7 @@ export default function ParentReviewPanel() {
                       </div>
                       <div style={{ textAlign: 'right' }}>
                         <strong style={{ fontSize: '13px', color: 'var(--accent)' }}>{item.scorePercent}%</strong>
-                        <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{item.correctCount}/{item.totalQuestions} Qs</div>
+                        <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{item.correctCount}/{item.totalQuestions} Qs ➔</div>
                       </div>
                     </div>
                     {item.parentAdvisory && (
@@ -1119,7 +1147,7 @@ export default function ParentReviewPanel() {
                   <div style={{ textAlign: 'center', padding: '10px', background: 'var(--success-bg)', color: 'var(--success)', fontWeight: 700, borderRadius: 'var(--radius-sm)' }}>
                     ✓ Entire Day Practice Approved
                   </div>
-                ) : isPracticeDigestAvailable(selectedDayGroup.dateKey) ? (
+                ) : (
                   <button
                     className="btn btn-primary"
                     onClick={() => {
@@ -1129,12 +1157,8 @@ export default function ParentReviewPanel() {
                     disabled={approving}
                     style={{ width: '100%', padding: '12px', fontSize: '13px', fontWeight: 800 }}
                   >
-                    ✅ Approve All Practices for {selectedDayGroup.dateFormatted}
+                    {approving ? 'Submitting approval...' : `✅ Approve All Practices for ${selectedDayGroup.dateFormatted}`}
                   </button>
-                ) : (
-                  <div style={{ textAlign: 'center', padding: '10px', background: 'var(--warning-bg)', color: 'var(--warning)', fontSize: '12px', fontWeight: 600, borderRadius: 'var(--radius-sm)' }}>
-                    ⏳ Today's practice is in progress. Full day digest will open for approval at 10:30 PM.
-                  </div>
                 )}
               </div>
             </div>

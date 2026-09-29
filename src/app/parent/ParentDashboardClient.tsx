@@ -1557,7 +1557,11 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
                 {pendingReviews.length > 0 ? (
                   <button
                     className="btn btn-primary"
-                    onClick={() => router.push(`/parent/review?child=${selectedChildCode}${pendingReviews[0]?.id ? `&select=${pendingReviews[0].id}` : ''}`)}
+                    onClick={() => {
+                      const firstPending = pendingReviews[0];
+                      const targetTab = firstPending?.type === 'practice' ? 'practice' : (firstPending?.type === 'subjective' ? 'subjective' : (firstPending?.type === 'entrance' ? 'mock' : 'objective'));
+                      router.push(`/parent/review?child=${selectedChildCode}&tab=${targetTab}${firstPending?.id ? `&select=${firstPending.id}` : ''}`);
+                    }}
                     style={{
                       padding: '5px 12px',
                       borderRadius: '16px',
