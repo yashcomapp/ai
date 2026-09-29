@@ -58,7 +58,13 @@ export default function ParentReviewPanel() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [children, setChildren] = useState<{ code: string; name: string }[]>([]);
-  const [selectedChild, setSelectedChild] = useState<string>('');
+  const [selectedChild, setSelectedChild] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('child') || params.get('studentCode') || '';
+    }
+    return '';
+  });
 
   // Review states
   const [reviewsLoading, setReviewsLoading] = useState(true);
@@ -192,6 +198,7 @@ export default function ParentReviewPanel() {
       try {
         const idToken = await firebaseUser.getIdToken();
         const res = await fetch('/api/parent/dashboard', {
+          cache: 'no-store',
           headers: {
             'Authorization': `Bearer ${idToken}`
           }
@@ -212,10 +219,10 @@ export default function ParentReviewPanel() {
           const childParam = params.get('child') || params.get('studentCode');
           if (childParam && mappedChildren.some((c: any) => c.code === childParam)) {
             setSelectedChild(childParam);
-          } else {
+          } else if (!selectedChild) {
             setSelectedChild(mappedChildren[0].code);
           }
-        } else {
+        } else if (!selectedChild) {
           setReviewsLoading(false);
         }
       } catch (err: any) {
@@ -233,17 +240,19 @@ export default function ParentReviewPanel() {
   const loadReviewsForChild = async (childCode: string) => {
     if (!firebaseUser || !childCode) return;
     
-    // Load local cache immediately for zero-flicker experience
+    // Load local cache immediately for zero-flicker experience if valid
     try {
       const cachedStr = typeof window !== 'undefined' ? localStorage.getItem(`yc_parent_reviews_${childCode}`) : null;
       if (cachedStr) {
         const cachedData = JSON.parse(cachedStr);
-        if (cachedData && Array.isArray(cachedData.practiceReviews)) {
-          setObjectiveReviews(cachedData.objectiveReviews || []);
-          setPracticeReviews(cachedData.practiceReviews || []);
-          setSubjectiveReviews(cachedData.subjectiveReviews || []);
-          setEntranceReviews(cachedData.entranceReviews || []);
-          setIsAutonomousChild(cachedData.isAutonomousChild || false);
+        if (cachedData && (Array.isArray(cachedData.objectiveReviews) || Array.isArray(cachedData.practiceReviews))) {
+          if ((cachedData.objectiveReviews || []).length > 0 || (cachedData.practiceReviews || []).length > 0) {
+            setObjectiveReviews(cachedData.objectiveReviews || []);
+            setPracticeReviews(cachedData.practiceReviews || []);
+            setSubjectiveReviews(cachedData.subjectiveReviews || []);
+            setEntranceReviews(cachedData.entranceReviews || []);
+            setIsAutonomousChild(cachedData.isAutonomousChild || false);
+          }
         }
       }
     } catch {}
@@ -253,6 +262,7 @@ export default function ParentReviewPanel() {
     try {
       let idToken = await firebaseUser.getIdToken();
       let res = await fetch(`/api/parent/review?studentCode=${childCode}`, {
+        cache: 'no-store',
         headers: {
           'Authorization': `Bearer ${idToken}`
         }
@@ -262,6 +272,7 @@ export default function ParentReviewPanel() {
       if (res.status === 401 || res.status === 403) {
         idToken = await firebaseUser.getIdToken(true);
         res = await fetch(`/api/parent/review?studentCode=${childCode}`, {
+          cache: 'no-store',
           headers: {
             'Authorization': `Bearer ${idToken}`
           }
@@ -279,6 +290,7 @@ export default function ParentReviewPanel() {
       const subj = data.subjectiveReviews || [];
       const entr = data.entranceReviews || [];
 
+      setError('');
       setObjectiveReviews(obj);
       setPracticeReviews(prac);
       setSubjectiveReviews(subj);

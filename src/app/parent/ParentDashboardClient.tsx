@@ -833,7 +833,19 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
   );
 
   const reviewsFetcher = async (url: string) => {
-    const resData = await fetcher(url);
+    if (!firebaseUser) return null;
+    const idToken = await firebaseUser.getIdToken();
+    const res = await fetch(url, {
+      cache: 'no-store',
+      headers: {
+        'Authorization': `Bearer ${idToken}`
+      }
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Failed to fetch reviews');
+    }
+    const resData = await res.json();
     if (resData && selectedChildCode) {
       try {
         localStorage.setItem(`yc_parent_reviews_cache_${selectedChildCode}`, JSON.stringify(resData));
@@ -855,8 +867,9 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
     reviewsFetcher,
     { 
       fallbackData: selectedChildCode === defaultChildCode ? (localReviewsCache || undefined) : undefined,
-      revalidateOnFocus: false,
-      dedupingInterval: 60000 
+      revalidateOnFocus: true,
+      revalidateOnMount: true,
+      dedupingInterval: 10000 
     }
   );
 

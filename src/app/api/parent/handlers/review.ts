@@ -18,8 +18,18 @@ async function resolveChildrenCodes(parentData: any): Promise<string[]> {
     childrenCodes.push(...parentData.studentCodes.filter(Boolean));
   } else if (parentData?.studentCode) {
     childrenCodes.push(parentData.studentCode);
-  } else if (parentData?.studentId) {
-    childrenCodes.push(parentData.studentId);
+  }
+  if (parentData?.studentId) {
+    if (parentData.studentId.startsWith('ST-')) {
+      if (!childrenCodes.includes(parentData.studentId)) childrenCodes.push(parentData.studentId);
+    } else {
+      try {
+        const uDoc = await adminDb.collection('users').doc(parentData.studentId).get();
+        if (uDoc.exists && uDoc.data()?.studentCode && !childrenCodes.includes(uDoc.data()!.studentCode)) {
+          childrenCodes.push(uDoc.data()!.studentCode);
+        }
+      } catch (e) {}
+    }
   }
 
   const parentEmail = parentData?.email?.toLowerCase();

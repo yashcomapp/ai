@@ -21,15 +21,26 @@ export async function getParentDashboardData(
   // Resolve child list
   let studentCodes: string[] = [];
   if (Array.isArray(parentData?.studentCodes)) {
-    studentCodes = parentData.studentCodes.filter(Boolean);
+    studentCodes.push(...parentData.studentCodes.filter(Boolean));
   } else if (parentData?.studentCode) {
-    studentCodes = [parentData.studentCode];
-  } else if (parentData?.studentId) {
-    studentCodes = [parentData.studentId];
+    studentCodes.push(parentData.studentCode);
+  }
+  if (parentData?.studentId) {
+    if (parentData.studentId.startsWith('ST-')) {
+      if (!studentCodes.includes(parentData.studentId)) studentCodes.push(parentData.studentId);
+    } else {
+      // It might be a student UID
+      try {
+        const uDoc = await adminDb.collection('users').doc(parentData.studentId).get();
+        if (uDoc.exists && uDoc.data()?.studentCode && !studentCodes.includes(uDoc.data()!.studentCode)) {
+          studentCodes.push(uDoc.data()!.studentCode);
+        }
+      } catch (e) {}
+    }
   }
 
   // Query students matching parent email or parent phone in parallel to discover all children/siblings
-  const parentPhone = parentData?.phone || parentData?.parentPhone;
+  const parentPhone = parentData?.phone || parentData?.parentPhone || parentData?.mobile;
   if (parentEmail || parentPhone) {
     const [emailSnap, phoneSnap] = await Promise.all([
       parentEmail
