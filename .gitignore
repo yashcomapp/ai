@@ -16,10 +16,11 @@ build/
 !tsconfig.json
 !public/manifest.json
 !firestore.indexes.json
-!firebase.json
 *.tsbuildinfo
 
 .vercel
+.firebase/
+Users/
 
 # Local scratch and one-off repair scripts
 src/scripts/
