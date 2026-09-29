@@ -1292,7 +1292,6 @@ export class QuotientService {
       usersSnap,
       examsSnap,
       subjectiveExamsSnap,
-      batchesSnap,
       parentReviewsSnap,
       batchAssignmentsSnap,
       evaluationsSnap
@@ -1305,10 +1304,10 @@ export class QuotientService {
       adminDb.collection('studentTopicMastery').get(),
       adminDb.collection('integrityScores').get(),
       adminDb.collection('studentObservations').get(),
-      adminDb.collection('users').where('role', '==', 'student').select('studentCode', 'name', 'email', 'isDemo', 'batchIds', 'batchId', 'class', 'className', 'status').get(),
+      // users: Full document required for isDemoUser checks (isDemo, email, parentEmail, name, studentName, studentCode) and batch/class mappings
+      adminDb.collection('users').where('role', '==', 'student').get(),
       adminDb.collection('exams').get(),
       adminDb.collection('subjectiveExams').get(),
-      adminDb.collection('batches').select('name').get(),
       // parentReviews: Full document required for calculateUnifiedMetrics (scorePercent, percentage, totalQuestions, questionsCount, topicCode, status) and PracticeQualityCalculator (pacing, sincerity)
       adminDb.collection('parentReviews').get(),
       adminDb.collection('batchAssignments').get(),
