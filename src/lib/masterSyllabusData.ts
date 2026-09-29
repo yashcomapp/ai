@@ -3687,12 +3687,12 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
     ]
   },
   {
-    "docId": "cbse_9_mgm",
+    "docId": "cbse_9_math",
     "board": "CBSE",
     "boardCode": "CBSE",
     "class": "9",
-    "subject": "Mathematics (Ganita Manjari)",
-    "subjectCode": "MGM",
+    "subject": "Mathematics",
+    "subjectCode": "MATH",
     "chapters": [
       {
         "number": "1",
@@ -3701,7 +3701,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "1.1",
             "name": "Real Numbers: Rational Numbers & Decimal Expansions",
-            "topicCode": "CBSE-9-MGM-1-1.1",
+            "topicCode": "CBSE-9-MATH-1-1.1",
             "subtopics": [
               "Definition of rational numbers p/q (q != 0)",
               "Terminating vs non-terminating recurring decimals",
@@ -3714,7 +3714,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "1.2",
             "name": "Irrational Numbers & Geometric Construction on Number Line",
-            "topicCode": "CBSE-9-MGM-1-1.2",
+            "topicCode": "CBSE-9-MATH-1-1.2",
             "subtopics": [
               "Definition of irrational numbers (non-terminating non-repeating)",
               "Constructing √2, √3, √5 on number line using Pythagoras spiral method",
@@ -3727,7 +3727,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "1.3",
             "name": "Operations on Real Numbers & Rationalisation of Surds",
-            "topicCode": "CBSE-9-MGM-1-1.3",
+            "topicCode": "CBSE-9-MATH-1-1.3",
             "subtopics": [
               "Properties of addition, subtraction, multiplication, division of irrationals",
               "Rationalising monomial and binomial denominators using conjugate surds (1/(a + √b))"
@@ -3739,7 +3739,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "1.4",
             "name": "Laws of Exponents for Real Numbers",
-            "topicCode": "CBSE-9-MGM-1-1.4",
+            "topicCode": "CBSE-9-MATH-1-1.4",
             "subtopics": [
               "Fractional exponents a^(p/q)",
               "Laws: a^p * a^q = a^(p+q), (a^p)^q = a^(pq), a^p / a^q = a^(p-q), a^p * b^p = (ab)^p"
@@ -3757,7 +3757,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "2.1",
             "name": "Polynomials in One Variable, Degree & Classification",
-            "topicCode": "CBSE-9-MGM-2-2.1",
+            "topicCode": "CBSE-9-MATH-2-2.1",
             "subtopics": [
               "Terms, coefficients, degree of polynomial",
               "Monomials, binomials, trinomials",
@@ -3770,7 +3770,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "2.2",
             "name": "Zeroes of a Polynomial & Geometric Meaning",
-            "topicCode": "CBSE-9-MGM-2-2.2",
+            "topicCode": "CBSE-9-MATH-2-2.2",
             "subtopics": [
               "Evaluating p(k) for given value k",
               "Finding zeroes of linear and quadratic polynomials algebraically"
@@ -3782,7 +3782,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "2.3",
             "name": "Remainder Theorem & Long Division Algorithm",
-            "topicCode": "CBSE-9-MGM-2-2.3",
+            "topicCode": "CBSE-9-MATH-2-2.3",
             "subtopics": [
               "Statement: If p(x) is divided by (x - a), remainder is p(a)",
               "Verifying polynomial division by long division method"
@@ -3796,7 +3796,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "2.4",
             "name": "Factor Theorem & Splitting Middle Term for Quadratics",
-            "topicCode": "CBSE-9-MGM-2-2.4",
+            "topicCode": "CBSE-9-MATH-2-2.4",
             "subtopics": [
               "Statement: (x - a) is a factor of p(x) if and only if p(a) = 0",
               "Factoring quadratic trinomials ax² + bx + c",
@@ -3811,7 +3811,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "2.5",
             "name": "Algebraic Identities (Squares, Cubes & Three Variables)",
-            "topicCode": "CBSE-9-MGM-2-2.5",
+            "topicCode": "CBSE-9-MATH-2-2.5",
             "subtopics": [
               "(x + y + z)² = x² + y² + z² + 2xy + 2yz + 2zx",
               "(x ± y)³ = x³ ± y³ ± 3xy(x ± y)",
@@ -3831,7 +3831,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "3.1",
             "name": "Cartesian Coordinate Plane, Axes & Quadrants",
-            "topicCode": "CBSE-9-MGM-3-3.1",
+            "topicCode": "CBSE-9-MATH-3-3.1",
             "subtopics": [
               "X-axis (abscissa) and Y-axis (ordinate)",
               "Origin (0,0)",
@@ -3844,7 +3844,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "3.2",
             "name": "Plotting Points & Reading Coordinates on Graph",
-            "topicCode": "CBSE-9-MGM-3-3.2",
+            "topicCode": "CBSE-9-MATH-3-3.2",
             "subtopics": [
               "Plotting points (x, y) with positive and negative coordinates",
               "Points lying on axes (x, 0) and (0, y)"
@@ -3862,7 +3862,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "4.1",
             "name": "Linear Equation Standard Form: ax + by + c = 0",
-            "topicCode": "CBSE-9-MGM-4-4.1",
+            "topicCode": "CBSE-9-MATH-4-4.1",
             "subtopics": [
               "Identifying coefficients a, b, c",
               "Expressing word statements as linear equations in two variables"
@@ -3874,7 +3874,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "4.2",
             "name": "Solutions of a Linear Equation in Two Variables",
-            "topicCode": "CBSE-9-MGM-4-4.2",
+            "topicCode": "CBSE-9-MATH-4-4.2",
             "subtopics": [
               "Infinitely many solutions property",
               "Finding four distinct solutions (x, y) for a given equation"
@@ -3886,7 +3886,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "4.3",
             "name": "Graph of a Linear Equation in Two Variables",
-            "topicCode": "CBSE-9-MGM-4-4.3",
+            "topicCode": "CBSE-9-MATH-4-4.3",
             "subtopics": [
               "Plotting solutions and drawing straight line graph",
               "Equations of lines parallel to X-axis (y = k) and Y-axis (x = k)"
@@ -3904,7 +3904,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "5.1",
             "name": "Euclid Definitions, Axioms & Historical Context",
-            "topicCode": "CBSE-9-MGM-5-5.1",
+            "topicCode": "CBSE-9-MATH-5-5.1",
             "subtopics": [
               "Point, line, surface definitions",
               "7 Euclidean Axioms (Things equal to same thing are equal, etc.)"
@@ -3916,7 +3916,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "5.2",
             "name": "Euclid Five Postulates & Parallel Postulate",
-            "topicCode": "CBSE-9-MGM-5-5.2",
+            "topicCode": "CBSE-9-MATH-5-5.2",
             "subtopics": [
               "Postulate 1 to 4: Straight line, terminated line, circle, right angles",
               "Postulate 5: Playfair axiom and equivalent versions of parallel postulate"
@@ -3934,7 +3934,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "6.1",
             "name": "Basic Terms: Ray, Line Segment, Collinear & Types of Angles",
-            "topicCode": "CBSE-9-MGM-6-6.1",
+            "topicCode": "CBSE-9-MATH-6-6.1",
             "subtopics": [
               "Acute, right, obtuse, straight, reflex angles",
               "Complementary and supplementary angles",
@@ -3947,7 +3947,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "6.2",
             "name": "Vertically Opposite Angles Theorem & Intersecting Lines",
-            "topicCode": "CBSE-9-MGM-6-6.2",
+            "topicCode": "CBSE-9-MATH-6-6.2",
             "subtopics": [
               "Proving vertically opposite angles are equal when two lines intersect"
             ],
@@ -3960,7 +3960,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "6.3",
             "name": "Parallel Lines & Transversal Angle Theorems",
-            "topicCode": "CBSE-9-MGM-6-6.3",
+            "topicCode": "CBSE-9-MATH-6-6.3",
             "subtopics": [
               "Corresponding angles axiom",
               "Alternate interior angles theorem and converse",
@@ -3976,7 +3976,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "6.4",
             "name": "Angle Sum Property of a Triangle & Exterior Angle Theorem",
-            "topicCode": "CBSE-9-MGM-6-6.4",
+            "topicCode": "CBSE-9-MATH-6-6.4",
             "subtopics": [
               "Sum of angles in a triangle is 180° theorem",
               "Exterior angle = sum of two interior opposite angles theorem"
@@ -3997,7 +3997,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "7.1",
             "name": "Congruence Criteria: SAS and ASA Axioms/Theorems",
-            "topicCode": "CBSE-9-MGM-7-7.1",
+            "topicCode": "CBSE-9-MATH-7-7.1",
             "subtopics": [
               "Side-Angle-Side (SAS) congruence axiom",
               "Angle-Side-Angle (ASA) congruence theorem and AAS corollary"
@@ -4011,7 +4011,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "7.2",
             "name": "Isosceles Triangle Theorems & Angle-Side Relationships",
-            "topicCode": "CBSE-9-MGM-7-7.2",
+            "topicCode": "CBSE-9-MATH-7-7.2",
             "subtopics": [
               "Angles opposite to equal sides of an isosceles triangle are equal theorem",
               "Sides opposite to equal angles of a triangle are equal theorem"
@@ -4026,7 +4026,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "7.3",
             "name": "SSS and RHS Congruence Criteria",
-            "topicCode": "CBSE-9-MGM-7-7.3",
+            "topicCode": "CBSE-9-MATH-7-7.3",
             "subtopics": [
               "Side-Side-Side (SSS) congruence rule",
               "Right angle-Hypotenuse-Side (RHS) congruence rule"
@@ -4041,7 +4041,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "7.4",
             "name": "Inequalities in a Triangle",
-            "topicCode": "CBSE-9-MGM-7-7.4",
+            "topicCode": "CBSE-9-MATH-7-7.4",
             "subtopics": [
               "Angle opposite to longer side is greater theorem",
               "Side opposite to greater angle is longer theorem",
@@ -4062,7 +4062,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "8.1",
             "name": "Angle Sum Property of a Quadrilateral (360°)",
-            "topicCode": "CBSE-9-MGM-8-8.1",
+            "topicCode": "CBSE-9-MATH-8-8.1",
             "subtopics": [
               "Proof that sum of four interior angles of a quadrilateral is 360°"
             ],
@@ -4073,7 +4073,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "8.2",
             "name": "Properties of Parallelograms & Theorems",
-            "topicCode": "CBSE-9-MGM-8-8.2",
+            "topicCode": "CBSE-9-MATH-8-8.2",
             "subtopics": [
               "Diagonal divides parallelogram into two congruent triangles",
               "Opposite sides and angles are equal theorems",
@@ -4089,7 +4089,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "8.3",
             "name": "The Midpoint Theorem & Its Converse",
-            "topicCode": "CBSE-9-MGM-8-8.3",
+            "topicCode": "CBSE-9-MATH-8-8.3",
             "subtopics": [
               "Segment joining midpoints of two sides of a triangle is parallel to third side and half of it",
               "Converse: Line drawn through midpoint of one side parallel to another side bisects third side"
@@ -4110,7 +4110,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "9.1",
             "name": "Circle Anatomy: Chord, Arc, Sector, Segment",
-            "topicCode": "CBSE-9-MGM-9-9.1",
+            "topicCode": "CBSE-9-MATH-9-9.1",
             "subtopics": [
               "Radius, diameter, chord, secant, tangent basics",
               "Minor/major arcs, minor/major sectors, segments"
@@ -4122,7 +4122,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "9.2",
             "name": "Perpendicular from Centre to Chord & Distance Theorems",
-            "topicCode": "CBSE-9-MGM-9-9.2",
+            "topicCode": "CBSE-9-MATH-9-9.2",
             "subtopics": [
               "Perpendicular from centre to chord bisects the chord theorem and converse",
               "Equal chords of a circle are equidistant from centre theorem and converse"
@@ -4137,7 +4137,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "9.3",
             "name": "Angle Subtended by Arc at Centre & Circumference",
-            "topicCode": "CBSE-9-MGM-9-9.3",
+            "topicCode": "CBSE-9-MATH-9-9.3",
             "subtopics": [
               "Angle subtended by arc at centre is double the angle subtended at remaining circumference",
               "Angles in same segment of a circle are equal theorem",
@@ -4153,7 +4153,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "9.4",
             "name": "Cyclic Quadrilaterals: Opposite Angle Sum Theorem",
-            "topicCode": "CBSE-9-MGM-9-9.4",
+            "topicCode": "CBSE-9-MATH-9-9.4",
             "subtopics": [
               "Opposite angles of cyclic quadrilateral are supplementary (sum = 180°)",
               "Converse: If opposite angles sum to 180°, quadrilateral is concyclic"
@@ -4174,7 +4174,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "10.1",
             "name": "Heron Formula Derivation & Semi-Perimeter",
-            "topicCode": "CBSE-9-MGM-10-10.1",
+            "topicCode": "CBSE-9-MATH-10-10.1",
             "subtopics": [
               "Semi-perimeter s = (a + b + c) / 2",
               "Area formula: A = √[s(s - a)(s - b)(s - c)]",
@@ -4187,7 +4187,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "10.2",
             "name": "Applications in Finding Areas of Quadrilaterals & Land Plots",
-            "topicCode": "CBSE-9-MGM-10-10.2",
+            "topicCode": "CBSE-9-MATH-10-10.2",
             "subtopics": [
               "Splitting quadrilaterals along diagonal into two triangles",
               "Real-world field and banner triangular design calculations"
@@ -4205,7 +4205,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "11.1",
             "name": "Surface Area & Volume of Right Circular Cone",
-            "topicCode": "CBSE-9-MGM-11-11.1",
+            "topicCode": "CBSE-9-MATH-11-11.1",
             "subtopics": [
               "Slant height formula: l = √(r² + h²)",
               "Curved Surface Area = πrl",
@@ -4219,7 +4219,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "11.2",
             "name": "Surface Area & Volume of Sphere and Hemisphere",
-            "topicCode": "CBSE-9-MGM-11-11.2",
+            "topicCode": "CBSE-9-MATH-11-11.2",
             "subtopics": [
               "Surface Area of Sphere = 4πr²",
               "Curved Surface Area of Hemisphere = 2πr²",
@@ -4240,7 +4240,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "12.1",
             "name": "Bar Graphs & Histograms with Varying Base Widths",
-            "topicCode": "CBSE-9-MGM-12-12.1",
+            "topicCode": "CBSE-9-MATH-12-12.1",
             "subtopics": [
               "Constructing bar graphs",
               "Histograms with uniform class width",
@@ -4253,7 +4253,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "12.2",
             "name": "Frequency Polygons Construction",
-            "topicCode": "CBSE-9-MGM-12-12.2",
+            "topicCode": "CBSE-9-MATH-12-12.2",
             "subtopics": [
               "Using mid-points / class marks (Upper limit + Lower limit)/2",
               "Constructing frequency polygon with and without histogram"
@@ -4267,12 +4267,12 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
     ]
   },
   {
-    "docId": "cbse_9_scie",
+    "docId": "cbse_9_sci",
     "board": "CBSE",
     "boardCode": "CBSE",
     "class": "9",
-    "subject": "Science (Exploration)",
-    "subjectCode": "SCIE",
+    "subject": "Science",
+    "subjectCode": "SCI",
     "chapters": [
       {
         "number": "1",
@@ -4281,7 +4281,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "1.1",
             "name": "Particulate Nature of Matter & Characteristics of Particles",
-            "topicCode": "CBSE-9-SCIE-1-1.1",
+            "topicCode": "CBSE-9-SCI-1-1.1",
             "subtopics": [
               "Matter made of tiny particles",
               "Particles have space between them, attract each other, and continuously move (Brownian motion)"
@@ -4293,7 +4293,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "1.2",
             "name": "States of Matter: Solid, Liquid, Gas (Density, Compressibility)",
-            "topicCode": "CBSE-9-SCIE-1-1.2",
+            "topicCode": "CBSE-9-SCI-1-1.2",
             "subtopics": [
               "Solid, liquid, gas comparison on shape, volume, rigidity, compressibility, diffusion"
             ],
@@ -4304,7 +4304,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "1.3",
             "name": "Change of State: Melting, Boiling & Latent Heat",
-            "topicCode": "CBSE-9-SCIE-1-1.3",
+            "topicCode": "CBSE-9-SCI-1-1.3",
             "subtopics": [
               "Melting point and Latent Heat of Fusion",
               "Boiling point and Latent Heat of Vaporisation",
@@ -4317,7 +4317,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "1.4",
             "name": "Effect of Pressure, Sublimation & Deposition",
-            "topicCode": "CBSE-9-SCIE-1-1.4",
+            "topicCode": "CBSE-9-SCI-1-1.4",
             "subtopics": [
               "Liquefaction of gases by increasing pressure and decreasing temperature",
               "Sublimation of camphor/ammonium chloride, dry ice (solid CO2)"
@@ -4329,7 +4329,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "1.5",
             "name": "Evaporation & Factors Affecting Evaporation",
-            "topicCode": "CBSE-9-SCIE-1-1.5",
+            "topicCode": "CBSE-9-SCI-1-1.5",
             "subtopics": [
               "Surface phenomenon vs bulk phenomenon",
               "Factors: surface area, temperature, humidity, wind speed",
@@ -4348,7 +4348,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "2.1",
             "name": "Pure Substances vs Mixtures (Elements, Compounds & Mixtures)",
-            "topicCode": "CBSE-9-SCIE-2-2.1",
+            "topicCode": "CBSE-9-SCI-2-2.1",
             "subtopics": [
               "Element definition (metals, non-metals, metalloids)",
               "Compounds: fixed composition by mass, distinct chemical properties",
@@ -4361,7 +4361,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "2.2",
             "name": "Solutions: Concentration, Saturated Solutions & Solubility",
-            "topicCode": "CBSE-9-SCIE-2-2.2",
+            "topicCode": "CBSE-9-SCI-2-2.2",
             "subtopics": [
               "Solute and solvent",
               "Mass by mass percentage & mass by volume percentage concentration formulas",
@@ -4374,7 +4374,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "2.3",
             "name": "Suspensions, Colloids & Tyndall Effect",
-            "topicCode": "CBSE-9-SCIE-2-2.3",
+            "topicCode": "CBSE-9-SCI-2-2.3",
             "subtopics": [
               "Properties of suspension: heterogeneous, visible particles, filtration separation",
               "Properties of colloid: Tyndall light scattering effect, Brownian motion, dispersed phase & dispersion medium types (sol, gel, emulsion, aerosol)"
@@ -4386,7 +4386,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "2.4",
             "name": "Separation Techniques of Mixtures",
-            "topicCode": "CBSE-9-SCIE-2-2.4",
+            "topicCode": "CBSE-9-SCI-2-2.4",
             "subtopics": [
               "Evaporation, centrifugation, separating funnel for immiscible liquids",
               "Sublimation, paper chromatography for dye separation",
@@ -4405,7 +4405,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "3.1",
             "name": "Laws of Chemical Combination (Conservation of Mass & Constant Proportions)",
-            "topicCode": "CBSE-9-SCIE-3-3.1",
+            "topicCode": "CBSE-9-SCI-3-3.1",
             "subtopics": [
               "Law of Conservation of Mass (Lavoisier)",
               "Law of Definite / Constant Proportions (Proust) with water and ammonia examples"
@@ -4420,7 +4420,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "3.2",
             "name": "Dalton Atomic Theory & Modern Atomic Symbols (IUPAC)",
-            "topicCode": "CBSE-9-SCIE-3-3.2",
+            "topicCode": "CBSE-9-SCI-3-3.2",
             "subtopics": [
               "Postulates of Dalton theory explaining chemical laws",
               "IUPAC symbols of elements and Latin names (Fe, Na, K, Cu, Au, Ag)"
@@ -4432,7 +4432,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "3.3",
             "name": "Atomic Mass, Unified Mass Unit (u) & Relative Atomic Mass",
-            "topicCode": "CBSE-9-SCIE-3-3.3",
+            "topicCode": "CBSE-9-SCI-3-3.3",
             "subtopics": [
               "Standard reference: Carbon-12 isotope (1/12th mass)",
               "Atomic mass scale definitions"
@@ -4444,7 +4444,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "3.4",
             "name": "Molecules of Elements, Compounds, Ions & Radicals",
-            "topicCode": "CBSE-9-SCIE-3-3.4",
+            "topicCode": "CBSE-9-SCI-3-3.4",
             "subtopics": [
               "Molecules of elements (monoatomic, diatomic, polyatomic e.g. He, O2, P4, S8)",
               "Cations (+) vs Anions (-), polyatomic ions (NH4+, SO4^2-, CO3^2-, NO3-)"
@@ -4456,7 +4456,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "3.5",
             "name": "Writing Chemical Formulae & Valency Cross-Over",
-            "topicCode": "CBSE-9-SCIE-3-3.5",
+            "topicCode": "CBSE-9-SCI-3-3.5",
             "subtopics": [
               "Valency rules and criss-cross method for binary compounds and polyatomic salts"
             ],
@@ -4467,7 +4467,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "3.6",
             "name": "Molecular Mass & Formula Unit Mass Calculations",
-            "topicCode": "CBSE-9-SCIE-3-3.6",
+            "topicCode": "CBSE-9-SCI-3-3.6",
             "subtopics": [
               "Calculating molecular mass by summing atomic masses of constituent atoms",
               "Formula unit mass of ionic compounds (e.g. NaCl, CaCl2)"
@@ -4485,7 +4485,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "4.1",
             "name": "Charged Particles: Electron (J.J. Thomson) & Proton (E. Goldstein Canal Rays)",
-            "topicCode": "CBSE-9-SCIE-4-4.1",
+            "topicCode": "CBSE-9-SCI-4-4.1",
             "subtopics": [
               "Discovery of cathode rays and electrons (e/m ratio)",
               "Canal rays / anode rays and proton discovery"
@@ -4497,7 +4497,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "4.2",
             "name": "Thomson Plum Pudding Model & Rutherford Alpha Scattering Experiment",
-            "topicCode": "CBSE-9-SCIE-4-4.2",
+            "topicCode": "CBSE-9-SCI-4-4.2",
             "subtopics": [
               "Thomson model limitations",
               "Rutherford alpha particle scattering with gold foil",
@@ -4511,7 +4511,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "4.3",
             "name": "Bohr Model of Atom & Energy Shells (K, L, M, N)",
-            "topicCode": "CBSE-9-SCIE-4-4.3",
+            "topicCode": "CBSE-9-SCI-4-4.3",
             "subtopics": [
               "Discrete non-radiating circular orbits",
               "Quantum energy transitions"
@@ -4523,7 +4523,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "4.4",
             "name": "Discovery of Neutrons (James Chadwick, 1932)",
-            "topicCode": "CBSE-9-SCIE-4-4.4",
+            "topicCode": "CBSE-9-SCI-4-4.4",
             "subtopics": [
               "Charge neutral particle in nucleus with mass equal to proton"
             ],
@@ -4534,7 +4534,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "4.5",
             "name": "Bohr-Bury Rules of Electron Distribution & Valency",
-            "topicCode": "CBSE-9-SCIE-4-4.5",
+            "topicCode": "CBSE-9-SCI-4-4.5",
             "subtopics": [
               "Max electrons in shell = 2n² (K=2, L=8, M=18, N=32)",
               "Octet rule for outermost valence shell",
@@ -4547,7 +4547,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "4.6",
             "name": "Atomic Number (Z), Mass Number (A), Isotopes & Isobars",
-            "topicCode": "CBSE-9-SCIE-4-4.6",
+            "topicCode": "CBSE-9-SCI-4-4.6",
             "subtopics": [
               "Z = protons, A = protons + neutrons",
               "Isotopes: same Z, different A (fractional atomic mass of Chlorine = 35.5 u)",
@@ -4567,7 +4567,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "5.1",
             "name": "Discovery of Cell & Cell Theory (Hooke, Leeuwenhoek, Schleiden, Schwann, Virchow)",
-            "topicCode": "CBSE-9-SCIE-5-5.1",
+            "topicCode": "CBSE-9-SCI-5-5.1",
             "subtopics": [
               "Robert Hooke cork cells (1665)",
               "Anton van Leeuwenhoek free living cells (1674)",
@@ -4580,7 +4580,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "5.2",
             "name": "Plasma Membrane: Structure, Diffusion & Osmosis (Hypotonic, Isotonic, Hypertonic)",
-            "topicCode": "CBSE-9-SCIE-5-5.2",
+            "topicCode": "CBSE-9-SCI-5-5.2",
             "subtopics": [
               "Phospholipid bilayer with proteins",
               "Diffusion of gases (CO2, O2)",
@@ -4593,7 +4593,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "5.3",
             "name": "Cell Wall, Plasmolysis & Turgidity in Plant Cells",
-            "topicCode": "CBSE-9-SCIE-5-5.3",
+            "topicCode": "CBSE-9-SCI-5-5.3",
             "subtopics": [
               "Cellulose composition, protection against osmotic burst"
             ],
@@ -4604,7 +4604,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "5.4",
             "name": "Nucleus, Chromosomes, DNA & Prokaryotic vs Eukaryotic Cells",
-            "topicCode": "CBSE-9-SCIE-5-5.4",
+            "topicCode": "CBSE-9-SCI-5-5.4",
             "subtopics": [
               "Nuclear envelope, nucleoplasm, nucleolus, chromatin threads",
               "Chromosomes containing DNA and genes",
@@ -4617,7 +4617,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "5.5",
             "name": "Cytoplasm & Cell Organelles (ER, Golgi, Lysosomes, Mitochondria, Plastids, Vacuoles)",
-            "topicCode": "CBSE-9-SCIE-5-5.5",
+            "topicCode": "CBSE-9-SCI-5-5.5",
             "subtopics": [
               "Endoplasmic Reticulum (RER & SER membrane biogenesis)",
               "Golgi apparatus (packaging and secretor)",
@@ -4639,7 +4639,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "6.1",
             "name": "Plant Tissues: Meristematic Tissues (Apical, Intercalary, Lateral)",
-            "topicCode": "CBSE-9-SCIE-6-6.1",
+            "topicCode": "CBSE-9-SCI-6-6.1",
             "subtopics": [
               "Characteristics of meristematic cells (dense cytoplasm, prominent nuclei, thin walls)",
               "Apical meristem (root and shoot tips length)",
@@ -4653,7 +4653,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "6.2",
             "name": "Simple Permanent Plant Tissues (Parenchyma, Collenchyma, Sclerenchyma)",
-            "topicCode": "CBSE-9-SCIE-6-6.2",
+            "topicCode": "CBSE-9-SCI-6-6.2",
             "subtopics": [
               "Parenchyma (storage, aerenchyma, chlorenchyma)",
               "Collenchyma (flexibility and mechanical support, pectin thickening)",
@@ -4666,7 +4666,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "6.3",
             "name": "Complex Permanent Plant Tissues: Xylem and Phloem",
-            "topicCode": "CBSE-9-SCIE-6-6.3",
+            "topicCode": "CBSE-9-SCI-6-6.3",
             "subtopics": [
               "Xylem elements: Tracheids, vessels, xylem parenchyma, xylem fibres (unidirectional water transport)",
               "Phloem elements: Sieve tubes, companion cells, phloem parenchyma, phloem fibres (bidirectional food translocation)"
@@ -4678,7 +4678,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "6.4",
             "name": "Animal Tissues: Epithelial Tissues (Squamous, Cuboidal, Columnar, Ciliated, Stratified)",
-            "topicCode": "CBSE-9-SCIE-6-6.4",
+            "topicCode": "CBSE-9-SCI-6-6.4",
             "subtopics": [
               "Simple squamous (alveoli, blood vessels)",
               "Stratified squamous (skin wear and tear)",
@@ -4692,7 +4692,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "6.5",
             "name": "Animal Tissues: Connective Tissues (Blood, Bone, Cartilage, Ligament, Tendon, Areolar, Adipose)",
-            "topicCode": "CBSE-9-SCIE-6-6.5",
+            "topicCode": "CBSE-9-SCI-6-6.5",
             "subtopics": [
               "Fluid connective tissue: Blood plasma, RBCs, WBCs, platelets",
               "Skeletal connective tissues: Bone (calcium-phosphate matrix), Cartilage (chondrocytes, ear/nose tips)",
@@ -4706,7 +4706,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "6.6",
             "name": "Animal Tissues: Muscular Tissue (Striated, Smooth, Cardiac) & Nervous Tissue (Neuron)",
-            "topicCode": "CBSE-9-SCIE-6-6.6",
+            "topicCode": "CBSE-9-SCI-6-6.6",
             "subtopics": [
               "Striated / skeletal muscle (voluntary, multinucleate, striations)",
               "Smooth / involuntary muscle (spindle shaped, unstriated, internal organs)",
@@ -4726,7 +4726,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "7.1",
             "name": "Distance vs Displacement & Uniform vs Non-Uniform Motion",
-            "topicCode": "CBSE-9-SCIE-7-7.1",
+            "topicCode": "CBSE-9-SCI-7-7.1",
             "subtopics": [
               "Scalar quantity distance vs vector quantity displacement",
               "Zero displacement with non-zero distance",
@@ -4739,7 +4739,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "7.2",
             "name": "Speed, Velocity & Average Speed/Velocity Formulas",
-            "topicCode": "CBSE-9-SCIE-7-7.2",
+            "topicCode": "CBSE-9-SCI-7-7.2",
             "subtopics": [
               "Speed = Distance / Time (m/s)",
               "Velocity = Displacement / Time",
@@ -4753,7 +4753,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "7.3",
             "name": "Acceleration (Uniform & Non-Uniform) & Retardation",
-            "topicCode": "CBSE-9-SCIE-7-7.3",
+            "topicCode": "CBSE-9-SCI-7-7.3",
             "subtopics": [
               "Acceleration formula: a = (v - u) / t",
               "SI unit m/s²",
@@ -4766,7 +4766,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "7.4",
             "name": "Graphical Representation: Distance-Time & Velocity-Time Graphs",
-            "topicCode": "CBSE-9-SCIE-7-7.4",
+            "topicCode": "CBSE-9-SCI-7-7.4",
             "subtopics": [
               "Slope of distance-time graph = Speed",
               "Slope of velocity-time graph = Acceleration",
@@ -4779,7 +4779,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "7.5",
             "name": "Derivation of Three Equations of Motion by Graphical Method",
-            "topicCode": "CBSE-9-SCIE-7-7.5",
+            "topicCode": "CBSE-9-SCI-7-7.5",
             "subtopics": [
               "First equation: v = u + at",
               "Second equation: s = ut + 1/2 * at²",
@@ -4794,7 +4794,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "7.6",
             "name": "Uniform Circular Motion & Centripetal Acceleration",
-            "topicCode": "CBSE-9-SCIE-7-7.6",
+            "topicCode": "CBSE-9-SCI-7-7.6",
             "subtopics": [
               "Speed constant but direction continuously changing",
               "Formula for circular speed: v = 2πr / T",
@@ -4813,7 +4813,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "8.1",
             "name": "Balanced & Unbalanced Forces and Galileo Inclined Plane Experiment",
-            "topicCode": "CBSE-9-SCIE-8-8.1",
+            "topicCode": "CBSE-9-SCI-8-8.1",
             "subtopics": [
               "Net zero force in balanced system",
               "Galileo deduction of inertia of moving bodies"
@@ -4825,7 +4825,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "8.2",
             "name": "Newton First Law of Motion, Inertia & Mass",
-            "topicCode": "CBSE-9-SCIE-8-8.2",
+            "topicCode": "CBSE-9-SCI-8-8.2",
             "subtopics": [
               "Statement of first law of motion",
               "Mass as quantitative measure of inertia (heavier object = more inertia)"
@@ -4839,7 +4839,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "8.3",
             "name": "Momentum (p = mv) & Newton Second Law of Motion (F = ma)",
-            "topicCode": "CBSE-9-SCIE-8-8.3",
+            "topicCode": "CBSE-9-SCI-8-8.3",
             "subtopics": [
               "Definition of linear momentum and SI unit kg·m/s",
               "Mathematical derivation: F = k * d(mv)/dt = ma",
@@ -4855,7 +4855,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "8.4",
             "name": "Newton Third Law of Motion: Action & Reaction Pairs",
-            "topicCode": "CBSE-9-SCIE-8-8.4",
+            "topicCode": "CBSE-9-SCI-8-8.4",
             "subtopics": [
               "Statement: To every action, there is an equal and opposite reaction",
               "Action and reaction act on two different bodies simultaneously",
@@ -4870,7 +4870,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "8.5",
             "name": "Law of Conservation of Linear Momentum & Recoil of Gun",
-            "topicCode": "CBSE-9-SCIE-8-8.5",
+            "topicCode": "CBSE-9-SCI-8-8.5",
             "subtopics": [
               "Total momentum before collision = Total momentum after collision (m1u1 + m2u2 = m1v1 + m2v2)",
               "Recoil velocity of gun formula: V = -(m/M) * v"
@@ -4890,7 +4890,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "9.1",
             "name": "Universal Law of Gravitation & Gravitational Constant (G)",
-            "topicCode": "CBSE-9-SCIE-9-9.1",
+            "topicCode": "CBSE-9-SCI-9-9.1",
             "subtopics": [
               "Formula: F = G * (m1 * m2) / r²",
               "Value and SI unit of G = 6.673 * 10^-11 N·m²/kg² (Cavendish)",
@@ -4905,7 +4905,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "9.2",
             "name": "Free Fall & Acceleration Due to Gravity (g = GM/R²)",
-            "topicCode": "CBSE-9-SCIE-9-9.2",
+            "topicCode": "CBSE-9-SCI-9-9.2",
             "subtopics": [
               "Free fall definition and independence of falling body mass",
               "Calculation of g on Earth surface = 9.8 m/s²",
@@ -4918,7 +4918,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "9.3",
             "name": "Motion of Objects Under Gravity (Equations with g)",
-            "topicCode": "CBSE-9-SCIE-9-9.3",
+            "topicCode": "CBSE-9-SCI-9-9.3",
             "subtopics": [
               "Modifying equations of motion: v = u + gt, h = ut + 1/2*gt², v² - u² = 2gh",
               "Sign conventions for upward and downward projectile motion"
@@ -4930,7 +4930,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "9.4",
             "name": "Mass vs Weight & Weight on the Moon (W_moon = 1/6 * W_earth)",
-            "topicCode": "CBSE-9-SCIE-9-9.4",
+            "topicCode": "CBSE-9-SCI-9-9.4",
             "subtopics": [
               "Mass is constant scalar quantity (kg)",
               "Weight is gravitational force vector W = mg (Newton)",
@@ -4943,7 +4943,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "9.5",
             "name": "Thrust, Pressure, Buoyancy & Archimedes Principle",
-            "topicCode": "CBSE-9-SCIE-9-9.5",
+            "topicCode": "CBSE-9-SCI-9-9.5",
             "subtopics": [
               "Thrust definition (perpendicular force) and Pressure = Thrust / Area",
               "Buoyant upthrust force exerted by liquids",
@@ -4965,7 +4965,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "10.1",
             "name": "Work Done by Constant Force (W = F * s * cosθ)",
-            "topicCode": "CBSE-9-SCIE-10-10.1",
+            "topicCode": "CBSE-9-SCI-10-10.1",
             "subtopics": [
               "Scientific conception of work",
               "Positive work (force along displacement), Negative work (friction opposing motion), Zero work (force perpendicular to displacement)",
@@ -4978,7 +4978,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "10.2",
             "name": "Kinetic Energy Formula (KE = 1/2 * m * v²)",
-            "topicCode": "CBSE-9-SCIE-10-10.2",
+            "topicCode": "CBSE-9-SCI-10-10.2",
             "subtopics": [
               "Definition of kinetic energy",
               "Mathematical derivation of KE = 1/2 * m * v²",
@@ -4991,7 +4991,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "10.3",
             "name": "Gravitational Potential Energy Formula (PE = mgh)",
-            "topicCode": "CBSE-9-SCIE-10-10.3",
+            "topicCode": "CBSE-9-SCI-10-10.3",
             "subtopics": [
               "Energy stored due to change in position or configuration",
               "Derivation of PE = mgh above ground reference level"
@@ -5003,7 +5003,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "10.4",
             "name": "Law of Conservation of Energy & Freely Falling Body Proof",
-            "topicCode": "CBSE-9-SCIE-10-10.4",
+            "topicCode": "CBSE-9-SCI-10-10.4",
             "subtopics": [
               "Statement: Energy cannot be created nor destroyed, only transformed",
               "Mathematical proof that Total Mechanical Energy (KE + PE) is constant at all points of free fall"
@@ -5017,7 +5017,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "10.5",
             "name": "Power: Rate of Doing Work & Commercial Unit (kWh)",
-            "topicCode": "CBSE-9-SCIE-10-10.5",
+            "topicCode": "CBSE-9-SCI-10-10.5",
             "subtopics": [
               "Power formula P = W / t (Watt, 1 W = 1 J/s)",
               "Kilowatt (kW) and Horsepower (1 hp = 746 W)",
@@ -5036,7 +5036,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "11.1",
             "name": "Production and Propagation of Longitudinal Sound Waves",
-            "topicCode": "CBSE-9-SCIE-11-11.1",
+            "topicCode": "CBSE-9-SCI-11-11.1",
             "subtopics": [
               "Vibrating tuning fork and propagation through air",
               "Compressions (regions of high pressure/density) and Rarefactions (low pressure/density)"
@@ -5048,7 +5048,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "11.2",
             "name": "Wave Characteristics: Frequency, Wavelength, Amplitude, Speed",
-            "topicCode": "CBSE-9-SCIE-11-11.2",
+            "topicCode": "CBSE-9-SCI-11-11.2",
             "subtopics": [
               "Wavelength (λ), Frequency (ν = 1/T), Amplitude (A)",
               "Wave speed relationship: v = ν * λ",
@@ -5061,7 +5061,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "11.3",
             "name": "Speed of Sound in Different Media & Sonic Boom",
-            "topicCode": "CBSE-9-SCIE-11-11.3",
+            "topicCode": "CBSE-9-SCI-11-11.3",
             "subtopics": [
               "Speed of sound in solids > liquids > gases",
               "Temperature dependence of speed of sound (344 m/s at 22°C in air)",
@@ -5074,7 +5074,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "11.4",
             "name": "Reflection of Sound, Echo & Reverberation",
-            "topicCode": "CBSE-9-SCIE-11-11.4",
+            "topicCode": "CBSE-9-SCI-11-11.4",
             "subtopics": [
               "Laws of reflection of sound",
               "Echo condition: Minimum obstacle distance = 17.2 m (persistence of hearing 0.1 s)",
@@ -5087,7 +5087,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "11.5",
             "name": "Applications of Ultrasound & SONAR (Sound Navigation and Ranging)",
-            "topicCode": "CBSE-9-SCIE-11-11.5",
+            "topicCode": "CBSE-9-SCI-11-11.5",
             "subtopics": [
               "Medical echocardiography, ultrasonography, kidney stone breaking",
               "Industrial metal flaw detection",
@@ -5106,7 +5106,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "12.1",
             "name": "Crop Variety Improvement & Plant Hybridisation",
-            "topicCode": "CBSE-9-SCIE-12-12.1",
+            "topicCode": "CBSE-9-SCI-12-12.1",
             "subtopics": [
               "Breeding for higher yield, improved quality, biotic and abiotic resistance, wider adaptability",
               "Hybridisation (intervarietal, interspecific, intergeneric) and GM crops"
@@ -5118,7 +5118,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "12.2",
             "name": "Crop Production Management: Nutrients, Manures & Fertilisers",
-            "topicCode": "CBSE-9-SCIE-12-12.2",
+            "topicCode": "CBSE-9-SCI-12-12.2",
             "subtopics": [
               "16 essential plant nutrients (Macro vs Micro nutrients)",
               "Organic manures (compost, vermicompost, green manure)",
@@ -5131,7 +5131,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "12.3",
             "name": "Irrigation Systems & Cropping Patterns (Mixed, Intercropping, Rotation)",
-            "topicCode": "CBSE-9-SCIE-12-12.3",
+            "topicCode": "CBSE-9-SCI-12-12.3",
             "subtopics": [
               "Wells, canal systems, river lift systems, tanks",
               "Mixed cropping (wheat + gram), Intercropping (soybean + maize), Crop rotation"
@@ -5143,7 +5143,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "12.4",
             "name": "Crop Protection Management: Weeds, Insect Pests & Diseases",
-            "topicCode": "CBSE-9-SCIE-12-12.4",
+            "topicCode": "CBSE-9-SCI-12-12.4",
             "subtopics": [
               "Weeds (Xanthium, Parthenium, Cyperinus)",
               "Insect pests (chewing, sucking, boring insects)",
@@ -5156,7 +5156,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "12.5",
             "name": "Animal Husbandry: Cattle Farming, Poultry, Fish Production & Apiculture",
-            "topicCode": "CBSE-9-SCIE-12-12.5",
+            "topicCode": "CBSE-9-SCI-12-12.5",
             "subtopics": [
               "Cattle farming: Milk producers (milch) vs Draught animals (Bos indicus, Bos bubalis)",
               "Poultry farming: Broilers (meat) vs Layers (eggs)",
@@ -5176,7 +5176,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "13.1",
             "name": "Living World, Cell Biology & Human Body Systems (7th Review)",
-            "topicCode": "CBSE-9-SCIE-13-13.1",
+            "topicCode": "CBSE-9-SCI-13-13.1",
             "subtopics": [
               "Adaptations in plants and animals across habitats",
               "Structure of plant and animal tissues & cell organelles",
@@ -5190,7 +5190,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "13.2",
             "name": "Motion, Force, Work, Heat & Static Electricity (7th Review)",
-            "topicCode": "CBSE-9-SCIE-13-13.2",
+            "topicCode": "CBSE-9-SCI-13-13.2",
             "subtopics": [
               "Types of motion: oscillatory, periodic, circular & speed calculations",
               "Force, work done & mechanical advantage of simple machines",
@@ -5204,7 +5204,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "13.3",
             "name": "Properties of Matter, Chemical Changes & Natural Resources (7th Review)",
-            "topicCode": "CBSE-9-SCIE-13-13.3",
+            "topicCode": "CBSE-9-SCI-13-13.3",
             "subtopics": [
               "Physical vs chemical changes and indicators of chemical reactions",
               "Elements, compounds & molecular formulae basics",
@@ -5224,7 +5224,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "14.1",
             "name": "Indian Scientific Institutions & Space Missions",
-            "topicCode": "CBSE-9-SCIE-14-14.1",
+            "topicCode": "CBSE-9-SCI-14-14.1",
             "subtopics": [
               "Indian Space Research Organisation (ISRO) & Satish Dhawan Space Centre",
               "Key missions: Chandrayaan lunar missions, Mangalyaan Mars Orbiter, Aditya-L1 solar observatory, Gaganyaan",
@@ -5238,7 +5238,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "14.2",
             "name": "Famous Scientists, Inventions & Nobel Breakthroughs",
-            "topicCode": "CBSE-9-SCIE-14-14.2",
+            "topicCode": "CBSE-9-SCI-14-14.2",
             "subtopics": [
               "Eminent Indian scientists: Dr. Homi J. Bhabha, Sir C.V. Raman (Raman Effect), Jagadish Chandra Bose, Srinivasa Ramanujan, Satyendra Nath Bose",
               "Global pioneer scientists: Isaac Newton, Albert Einstein, Marie Curie, Galileo Galilei, Michael Faraday, Louis Pasteur, Alexander Fleming",
@@ -5252,7 +5252,7 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
           {
             "number": "14.3",
             "name": "Environmental Milestones, Biodiversity Treaties & Emerging Science",
-            "topicCode": "CBSE-9-SCIE-14-14.3",
+            "topicCode": "CBSE-9-SCI-14-14.3",
             "subtopics": [
               "International ecological agreements: Montreal Protocol (ozone protection), Paris Climate Accord, Kyoto Protocol, Ramsar Wetlands Convention",
               "India flagship conservation initiatives: Project Tiger, Project Elephant, Devrai sacred groves, Chipko movement",
@@ -5261,6 +5261,1237 @@ export const MASTER_SYLLABUS_SUBJECTS: MasterSyllabusSubject[] = [
             "practiceSet": "Exercise 14.3",
             "theorems": [],
             "problemSet": "Problem Set 14"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "docId": "cbse_9_mgm",
+    "board": "CBSE",
+    "boardCode": "CBSE",
+    "class": "9",
+    "subject": "Mathematics (Ganita Manjari)",
+    "subjectCode": "MGM",
+    "chapters": [
+      {
+        "number": "1",
+        "name": "Orienting Yourself: The Use of Coordinates",
+        "topics": [
+          {
+            "number": "1.1",
+            "name": "Position and Coordinates on a Grid",
+            "topicCode": "CBSE-9-MGM-1-1.1",
+            "subtopics": [
+              "Cartesian coordinate system, origin, X and Y axes",
+              "Locating objects on grids and map coordinate systems"
+            ],
+            "practiceSet": "Exercise 1.1",
+            "theorems": [],
+            "problemSet": "Problem Set 1"
+          },
+          {
+            "number": "1.2",
+            "name": "Quadrants, Signs & Plotting Points",
+            "topicCode": "CBSE-9-MGM-1-1.2",
+            "subtopics": [
+              "Four quadrants and sign conventions (+,+, -,+, -,-, +,-)",
+              "Plotting coordinates (x, y) with positive and negative numbers",
+              "Points on axes (x, 0) and (0, y)"
+            ],
+            "practiceSet": "Exercise 1.2",
+            "theorems": [],
+            "problemSet": "Problem Set 1"
+          },
+          {
+            "number": "1.3",
+            "name": "Geometric Figures & Distances on Coordinate Grids",
+            "topicCode": "CBSE-9-MGM-1-1.3",
+            "subtopics": [
+              "Drawing geometric shapes using coordinates",
+              "Measuring horizontal and vertical distances on grid lines"
+            ],
+            "practiceSet": "Exercise 1.3",
+            "theorems": [],
+            "problemSet": "Problem Set 1"
+          }
+        ]
+      },
+      {
+        "number": "2",
+        "name": "Introduction to Linear Polynomials",
+        "topics": [
+          {
+            "number": "2.1",
+            "name": "Expressions to Linear Polynomials in One Variable",
+            "topicCode": "CBSE-9-MGM-2-2.1",
+            "subtopics": [
+              "Variables, constants, coefficients, and degree 1 polynomials",
+              "Distinction between algebraic expressions and polynomials"
+            ],
+            "practiceSet": "Exercise 2.1",
+            "theorems": [],
+            "problemSet": "Problem Set 2"
+          },
+          {
+            "number": "2.2",
+            "name": "Value of a Polynomial & Finding Zeroes",
+            "topicCode": "CBSE-9-MGM-2-2.2",
+            "subtopics": [
+              "Evaluating p(k) for given value k",
+              "Finding zero of linear polynomial ax + b algebraically"
+            ],
+            "practiceSet": "Exercise 2.2",
+            "theorems": [],
+            "problemSet": "Problem Set 2"
+          },
+          {
+            "number": "2.3",
+            "name": "Geometric Interpretation & Straight Line Graphs",
+            "topicCode": "CBSE-9-MGM-2-2.3",
+            "subtopics": [
+              "Graphing linear polynomials y = ax + b",
+              "Zero as x-intercept of the linear graph"
+            ],
+            "practiceSet": "Exercise 2.3",
+            "theorems": [],
+            "problemSet": "Problem Set 2"
+          }
+        ]
+      },
+      {
+        "number": "3",
+        "name": "The World of Numbers",
+        "topics": [
+          {
+            "number": "3.1",
+            "name": "Rational Numbers & Decimal Representations",
+            "topicCode": "CBSE-9-MGM-3-3.1",
+            "subtopics": [
+              "Definition of rational numbers p/q (q != 0)",
+              "Terminating vs non-terminating recurring decimal expansions",
+              "Converting repeating decimals 0.p̄ and 0.pq̄ to fraction form"
+            ],
+            "practiceSet": "Exercise 3.1",
+            "theorems": [],
+            "problemSet": "Problem Set 3"
+          },
+          {
+            "number": "3.2",
+            "name": "Irrational Numbers & Geometric Construction on Number Line",
+            "topicCode": "CBSE-9-MGM-3-3.2",
+            "subtopics": [
+              "Non-terminating non-repeating numbers",
+              "Constructing √2, √3, √5 using Pythagoras spiral method",
+              "Locating √x on number line"
+            ],
+            "practiceSet": "Exercise 3.2",
+            "theorems": [],
+            "problemSet": "Problem Set 3"
+          },
+          {
+            "number": "3.3",
+            "name": "Operations on Real Numbers & Rationalisation of Surds",
+            "topicCode": "CBSE-9-MGM-3-3.3",
+            "subtopics": [
+              "Properties of addition, subtraction, multiplication, division of real numbers",
+              "Rationalising binomial denominators with conjugate surds 1/(a + √b)"
+            ],
+            "practiceSet": "Exercise 3.3",
+            "theorems": [],
+            "problemSet": "Problem Set 3"
+          },
+          {
+            "number": "3.4",
+            "name": "Laws of Exponents for Real Numbers",
+            "topicCode": "CBSE-9-MGM-3-3.4",
+            "subtopics": [
+              "Fractional exponents a^(p/q)",
+              "Laws of exponents: a^p * a^q = a^(p+q), (a^p)^q = a^(pq), a^p/a^q = a^(p-q), a^p * b^p = (ab)^p"
+            ],
+            "practiceSet": "Exercise 3.4",
+            "theorems": [],
+            "problemSet": "Problem Set 3"
+          }
+        ]
+      },
+      {
+        "number": "4",
+        "name": "Exploring Algebraic Identities",
+        "topics": [
+          {
+            "number": "4.1",
+            "name": "Square Identities & Geometric Proofs",
+            "topicCode": "CBSE-9-MGM-4-4.1",
+            "subtopics": [
+              "Identity I: (a + b)² = a² + 2ab + b²",
+              "Identity II: (a - b)² = a² - 2ab + b²",
+              "Identity III: (a + b)(a - b) = a² - b²",
+              "Geometric area dissections proving identities"
+            ],
+            "practiceSet": "Exercise 4.1",
+            "theorems": [],
+            "problemSet": "Problem Set 4"
+          },
+          {
+            "number": "4.2",
+            "name": "Three-Variable Trinomial Squares",
+            "topicCode": "CBSE-9-MGM-4-4.2",
+            "subtopics": [
+              "Expansion: (x + y + z)² = x² + y² + z² + 2xy + 2yz + 2zx",
+              "Applications in algebraic simplification"
+            ],
+            "practiceSet": "Exercise 4.2",
+            "theorems": [],
+            "problemSet": "Problem Set 4"
+          },
+          {
+            "number": "4.3",
+            "name": "Cubic Identities & Factorisation",
+            "topicCode": "CBSE-9-MGM-4-4.3",
+            "subtopics": [
+              "(x ± y)³ = x³ ± y³ ± 3xy(x ± y)",
+              "x³ + y³ + z³ - 3xyz = (x + y + z)(x² + y² + z² - xy - yz - zx)",
+              "Conditional identity: If x + y + z = 0, x³ + y³ + z³ = 3xyz"
+            ],
+            "practiceSet": "Exercise 4.3",
+            "theorems": [],
+            "problemSet": "Problem Set 4"
+          },
+          {
+            "number": "4.4",
+            "name": "Factorisation using Identities & Splitting Middle Term",
+            "topicCode": "CBSE-9-MGM-4-4.4",
+            "subtopics": [
+              "Factoring quadratic trinomials ax² + bx + c",
+              "Factoring cubic expressions using trial and factor theorem"
+            ],
+            "practiceSet": "Exercise 4.4",
+            "theorems": [],
+            "problemSet": "Problem Set 4"
+          }
+        ]
+      },
+      {
+        "number": "5",
+        "name": "I'm Up and Down, and Round and Round",
+        "topics": [
+          {
+            "number": "5.1",
+            "name": "Periodic Patterns, Rotational & Line Symmetry",
+            "topicCode": "CBSE-9-MGM-5-5.1",
+            "subtopics": [
+              "Rotational symmetry and order of rotation",
+              "Symmetry axes and cyclic geometric transformations"
+            ],
+            "practiceSet": "Exercise 5.1",
+            "theorems": [],
+            "problemSet": "Problem Set 5"
+          },
+          {
+            "number": "5.2",
+            "name": "Circle Geometry: Chords, Arcs & Central Angles",
+            "topicCode": "CBSE-9-MGM-5-5.2",
+            "subtopics": [
+              "Circle elements: Radius, diameter, chord, sector, segment",
+              "Perpendicular from centre to chord bisects chord",
+              "Equal chords are equidistant from centre"
+            ],
+            "practiceSet": "Exercise 5.2",
+            "theorems": [],
+            "problemSet": "Problem Set 5"
+          },
+          {
+            "number": "5.3",
+            "name": "Inscribed Angles & Cyclic Quadrilaterals",
+            "topicCode": "CBSE-9-MGM-5-5.3",
+            "subtopics": [
+              "Angle subtended by arc at centre is double angle at circumference",
+              "Angle in a semicircle is 90°",
+              "Opposite angles of cyclic quadrilateral are supplementary (180°)"
+            ],
+            "practiceSet": "Exercise 5.3",
+            "theorems": [],
+            "problemSet": "Problem Set 5"
+          }
+        ]
+      },
+      {
+        "number": "6",
+        "name": "Measuring Space: Perimeter and Area",
+        "topics": [
+          {
+            "number": "6.1",
+            "name": "Perimeters and Areas of Plane Figures",
+            "topicCode": "CBSE-9-MGM-6-6.1",
+            "subtopics": [
+              "Perimeter and area of rectilinear figures",
+              "Area formulas for triangles, parallelograms, trapeziums"
+            ],
+            "practiceSet": "Exercise 6.1",
+            "theorems": [],
+            "problemSet": "Problem Set 6"
+          },
+          {
+            "number": "6.2",
+            "name": "Heron Formula Derivation & Triangles",
+            "topicCode": "CBSE-9-MGM-6-6.2",
+            "subtopics": [
+              "Semi-perimeter s = (a + b + c) / 2",
+              "Area formula: A = √[s(s - a)(s - b)(s - c)]",
+              "Area of equilateral and isosceles triangles"
+            ],
+            "practiceSet": "Exercise 6.2",
+            "theorems": [],
+            "problemSet": "Problem Set 6"
+          },
+          {
+            "number": "6.3",
+            "name": "Applications in Finding Areas of Polygons & Land Plots",
+            "topicCode": "CBSE-9-MGM-6-6.3",
+            "subtopics": [
+              "Dividing complex quadrilaterals along diagonals",
+              "Real-world field and land measurement problems"
+            ],
+            "practiceSet": "Exercise 6.3",
+            "theorems": [],
+            "problemSet": "Problem Set 6"
+          }
+        ]
+      },
+      {
+        "number": "7",
+        "name": "The Mathematics of Maybe: Introduction to Probability",
+        "topics": [
+          {
+            "number": "7.1",
+            "name": "Chance, Uncertainty & Random Experiments",
+            "topicCode": "CBSE-9-MGM-7-7.1",
+            "subtopics": [
+              "Concept of chance and outcome in random events",
+              "Sample space and elementary events"
+            ],
+            "practiceSet": "Exercise 7.1",
+            "theorems": [],
+            "problemSet": "Problem Set 7"
+          },
+          {
+            "number": "7.2",
+            "name": "Empirical vs Theoretical Probability",
+            "topicCode": "CBSE-9-MGM-7-7.2",
+            "subtopics": [
+              "Empirical probability formula: P(E) = Number of trials event occurred / Total trials",
+              "Theoretical probability P(E) = n(E) / n(S)",
+              "Probability scale from 0 (impossible) to 1 (certain)"
+            ],
+            "practiceSet": "Exercise 7.2",
+            "theorems": [],
+            "problemSet": "Problem Set 7"
+          },
+          {
+            "number": "7.3",
+            "name": "Probability in Daily Life & Simulations",
+            "topicCode": "CBSE-9-MGM-7-7.3",
+            "subtopics": [
+              "Coin tossing, dice rolling, spinning wheels",
+              "Applications in weather forecasting and decision making"
+            ],
+            "practiceSet": "Exercise 7.3",
+            "theorems": [],
+            "problemSet": "Problem Set 7"
+          }
+        ]
+      },
+      {
+        "number": "8",
+        "name": "Predicting What Comes Next?: Exploring Sequences and Progressions",
+        "topics": [
+          {
+            "number": "8.1",
+            "name": "Number Patterns, Sequences & General Term",
+            "topicCode": "CBSE-9-MGM-8-8.1",
+            "subtopics": [
+              "Identifying numerical and geometric patterns",
+              "Writing general term rules (nth term an)"
+            ],
+            "practiceSet": "Exercise 8.1",
+            "theorems": [],
+            "problemSet": "Problem Set 8"
+          },
+          {
+            "number": "8.2",
+            "name": "Introduction to Arithmetic Progressions (AP)",
+            "topicCode": "CBSE-9-MGM-8-8.2",
+            "subtopics": [
+              "First term a, common difference d",
+              "General form of AP: a, a+d, a+2d, ...",
+              "Finding terms in an AP sequence"
+            ],
+            "practiceSet": "Exercise 8.2",
+            "theorems": [],
+            "problemSet": "Problem Set 8"
+          },
+          {
+            "number": "8.3",
+            "name": "Geometric Patterns & Real-Life Growth Models",
+            "topicCode": "CBSE-9-MGM-8-8.3",
+            "subtopics": [
+              "Multiplicative sequences and doubling growth",
+              "Sequences in nature: Fibonacci pattern, tree branching"
+            ],
+            "practiceSet": "Exercise 8.3",
+            "theorems": [],
+            "problemSet": "Problem Set 8"
+          }
+        ]
+      },
+      {
+        "number": "9",
+        "name": "Propositions and their Converses",
+        "topics": [
+          {
+            "number": "9.1",
+            "name": "Mathematical Statements, Axioms & Deductive Logic",
+            "topicCode": "CBSE-9-MGM-9-9.1",
+            "subtopics": [
+              "Statements that are mathematically true or false",
+              "Axioms, postulates, definitions and theorems"
+            ],
+            "practiceSet": "Exercise 9.1",
+            "theorems": [],
+            "problemSet": "Problem Set 9"
+          },
+          {
+            "number": "9.2",
+            "name": "Conditional Statements (If-Then) & Converses",
+            "topicCode": "CBSE-9-MGM-9-9.2",
+            "subtopics": [
+              "Hypothesis and conclusion in implications",
+              "Formulating converse of a theorem",
+              "True vs false converses and counterexamples"
+            ],
+            "practiceSet": "Exercise 9.2",
+            "theorems": [],
+            "problemSet": "Problem Set 9"
+          },
+          {
+            "number": "9.3",
+            "name": "Direct Proofs & Proof by Contradiction",
+            "topicCode": "CBSE-9-MGM-9-9.3",
+            "subtopics": [
+              "Direct deductive proofs from axioms",
+              "Indirect proofs (proof by contradiction method)"
+            ],
+            "practiceSet": "Exercise 9.3",
+            "theorems": [],
+            "problemSet": "Problem Set 9"
+          }
+        ]
+      },
+      {
+        "number": "10",
+        "name": "How Quantities Combine: Understanding Data",
+        "topics": [
+          {
+            "number": "10.1",
+            "name": "Data Representation: Bar Graphs & Histograms",
+            "topicCode": "CBSE-9-MGM-10-10.1",
+            "subtopics": [
+              "Grouped frequency distribution tables",
+              "Constructing bar graphs and uniform histograms",
+              "Histograms with varying intervals: adjusted frequency"
+            ],
+            "practiceSet": "Exercise 10.1",
+            "theorems": [],
+            "problemSet": "Problem Set 10"
+          },
+          {
+            "number": "10.2",
+            "name": "Frequency Polygons & Data Distributions",
+            "topicCode": "CBSE-9-MGM-10-10.2",
+            "subtopics": [
+              "Class marks (Upper limit + Lower limit)/2",
+              "Constructing frequency polygons with and without histograms"
+            ],
+            "practiceSet": "Exercise 10.2",
+            "theorems": [],
+            "problemSet": "Problem Set 10"
+          },
+          {
+            "number": "10.3",
+            "name": "Measures of Central Tendency & Weighted Averages",
+            "topicCode": "CBSE-9-MGM-10-10.3",
+            "subtopics": [
+              "Mean, median, and mode for ungrouped data",
+              "Weighted arithmetic mean and mixing proportions"
+            ],
+            "practiceSet": "Exercise 10.3",
+            "theorems": [],
+            "problemSet": "Problem Set 10"
+          }
+        ]
+      },
+      {
+        "number": "11",
+        "name": "The World of Algorithms",
+        "topics": [
+          {
+            "number": "11.1",
+            "name": "Step-by-step Algorithms & Flowcharts",
+            "topicCode": "CBSE-9-MGM-11-11.1",
+            "subtopics": [
+              "Definition of algorithm as precise sequence of steps",
+              "Flowchart symbols and logical decision branching"
+            ],
+            "practiceSet": "Exercise 11.1",
+            "theorems": [],
+            "problemSet": "Problem Set 11"
+          },
+          {
+            "number": "11.2",
+            "name": "Division Algorithm & Euclid Subtraction Algorithm for GCD",
+            "topicCode": "CBSE-9-MGM-11-11.2",
+            "subtopics": [
+              "Division algorithm: Dividend = Divisor * Quotient + Remainder",
+              "Euclid's subtraction method for Greatest Common Divisor (GCD/HCF)"
+            ],
+            "practiceSet": "Exercise 11.2",
+            "theorems": [],
+            "problemSet": "Problem Set 11"
+          },
+          {
+            "number": "11.3",
+            "name": "Number Theoretic Algorithms & Prime Testing",
+            "topicCode": "CBSE-9-MGM-11-11.3",
+            "subtopics": [
+              "Sieve of Eratosthenes for prime numbers",
+              "Algorithms for divisibility tests and prime factorisation"
+            ],
+            "practiceSet": "Exercise 11.3",
+            "theorems": [],
+            "problemSet": "Problem Set 11"
+          }
+        ]
+      },
+      {
+        "number": "12",
+        "name": "Quadrilaterals",
+        "topics": [
+          {
+            "number": "12.1",
+            "name": "Angle Sum Property of a Quadrilateral (360°)",
+            "topicCode": "CBSE-9-MGM-12-12.1",
+            "subtopics": [
+              "Proof that sum of four interior angles of a quadrilateral is 360°"
+            ],
+            "practiceSet": "Exercise 12.1",
+            "theorems": [],
+            "problemSet": "Problem Set 12"
+          },
+          {
+            "number": "12.2",
+            "name": "Properties of Parallelograms & Theorems",
+            "topicCode": "CBSE-9-MGM-12-12.2",
+            "subtopics": [
+              "Diagonal divides parallelogram into two congruent triangles",
+              "Opposite sides and angles are equal theorems",
+              "Diagonals bisect each other theorem and converses"
+            ],
+            "practiceSet": "Exercise 12.2",
+            "theorems": [
+              "Parallelogram Diagonal Congruence Theorem",
+              "Parallelogram Diagonals Bisection Theorem"
+            ],
+            "problemSet": "Problem Set 12"
+          },
+          {
+            "number": "12.3",
+            "name": "The Midpoint Theorem & Its Converse",
+            "topicCode": "CBSE-9-MGM-12-12.3",
+            "subtopics": [
+              "Segment joining midpoints of two sides of a triangle is parallel to third side and half of it",
+              "Converse: Line drawn through midpoint of one side parallel to another side bisects third side"
+            ],
+            "practiceSet": "Exercise 12.3",
+            "theorems": [
+              "Midpoint Theorem",
+              "Converse of Midpoint Theorem"
+            ],
+            "problemSet": "Problem Set 12"
+          }
+        ]
+      },
+      {
+        "number": "13",
+        "name": "Two Variables, One Line",
+        "topics": [
+          {
+            "number": "13.1",
+            "name": "Linear Equation Standard Form: ax + by + c = 0",
+            "topicCode": "CBSE-9-MGM-13-13.1",
+            "subtopics": [
+              "Identifying coefficients a, b, c",
+              "Expressing word problems as two-variable linear equations"
+            ],
+            "practiceSet": "Exercise 13.1",
+            "theorems": [],
+            "problemSet": "Problem Set 13"
+          },
+          {
+            "number": "13.2",
+            "name": "Solutions of Linear Equations in Two Variables",
+            "topicCode": "CBSE-9-MGM-13-13.2",
+            "subtopics": [
+              "Infinitely many solutions property",
+              "Finding distinct solution pairs (x, y)"
+            ],
+            "practiceSet": "Exercise 13.2",
+            "theorems": [],
+            "problemSet": "Problem Set 13"
+          },
+          {
+            "number": "13.3",
+            "name": "Graph of Linear Equations & Intersecting Lines",
+            "topicCode": "CBSE-9-MGM-13-13.3",
+            "subtopics": [
+              "Plotting solutions and drawing straight line graph",
+              "Equations of lines parallel to axes (x = k, y = k)"
+            ],
+            "practiceSet": "Exercise 13.3",
+            "theorems": [],
+            "problemSet": "Problem Set 13"
+          }
+        ]
+      },
+      {
+        "number": "14",
+        "name": "Math of Space: Surface Area and Volume",
+        "topics": [
+          {
+            "number": "14.1",
+            "name": "Surface Area & Volume of Right Circular Cone",
+            "topicCode": "CBSE-9-MGM-14-14.1",
+            "subtopics": [
+              "Slant height formula: l = √(r² + h²)",
+              "Curved Surface Area = πrl",
+              "Total Surface Area = πr(r + l)",
+              "Volume = 1/3 * πr²h"
+            ],
+            "practiceSet": "Exercise 14.1",
+            "theorems": [],
+            "problemSet": "Problem Set 14"
+          },
+          {
+            "number": "14.2",
+            "name": "Surface Area & Volume of Sphere and Hemisphere",
+            "topicCode": "CBSE-9-MGM-14-14.2",
+            "subtopics": [
+              "Surface Area of Sphere = 4πr²",
+              "Curved Surface Area of Hemisphere = 2πr²",
+              "Total Surface Area of Hemisphere = 3πr²",
+              "Volume of Sphere = 4/3 * πr³",
+              "Volume of Hemisphere = 2/3 * πr³"
+            ],
+            "practiceSet": "Exercise 14.2",
+            "theorems": [],
+            "problemSet": "Problem Set 14"
+          },
+          {
+            "number": "14.3",
+            "name": "Composite 3D Solids & Real-World Mensuration",
+            "topicCode": "CBSE-9-MGM-14-14.3",
+            "subtopics": [
+              "Combining cones, cylinders and hemispheres",
+              "Volume and surface area in practical packaging and engineering"
+            ],
+            "practiceSet": "Exercise 14.3",
+            "theorems": [],
+            "problemSet": "Problem Set 14"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "docId": "cbse_9_scie",
+    "board": "CBSE",
+    "boardCode": "CBSE",
+    "class": "9",
+    "subject": "Science (Exploration)",
+    "subjectCode": "SCIE",
+    "chapters": [
+      {
+        "number": "1",
+        "name": "Exploration: Entering the World of Secondary Science",
+        "topics": [
+          {
+            "number": "1.1",
+            "name": "Scientific Method, Inquiry & Observation",
+            "topicCode": "CBSE-9-SCIE-1-1.1",
+            "subtopics": [
+              "Formulating hypotheses, designing controlled experiments",
+              "Qualitative vs quantitative observations, recording scientific data"
+            ],
+            "practiceSet": "Exercise 1.1",
+            "theorems": [],
+            "problemSet": "Problem Set 1"
+          },
+          {
+            "number": "1.2",
+            "name": "Science Tools, Safety & Laboratory Skills",
+            "topicCode": "CBSE-9-SCIE-1-1.2",
+            "subtopics": [
+              "Standard laboratory apparatus, hazard symbols and safety precautions",
+              "SI base and derived units, measurement accuracy and precision"
+            ],
+            "practiceSet": "Exercise 1.2",
+            "theorems": [],
+            "problemSet": "Problem Set 1"
+          }
+        ]
+      },
+      {
+        "number": "2",
+        "name": "Cell: The Building Block of Life",
+        "topics": [
+          {
+            "number": "2.1",
+            "name": "Discovery of Cell & Cell Theory",
+            "topicCode": "CBSE-9-SCIE-2-2.1",
+            "subtopics": [
+              "Robert Hooke cork cells (1665)",
+              "Anton van Leeuwenhoek free living cells",
+              "Cell Theory: Schleiden, Schwann, Virchow (Omnis cellula-e-cellula)"
+            ],
+            "practiceSet": "Exercise 2.1",
+            "theorems": [],
+            "problemSet": "Problem Set 2"
+          },
+          {
+            "number": "2.2",
+            "name": "Plasma Membrane: Structure, Diffusion & Osmosis",
+            "topicCode": "CBSE-9-SCIE-2-2.2",
+            "subtopics": [
+              "Phospholipid bilayer with embedded proteins",
+              "Diffusion of gases (CO2, O2)",
+              "Osmosis across semi-permeable membrane: endosmosis, exosmosis, plasmolysis"
+            ],
+            "practiceSet": "Exercise 2.2",
+            "theorems": [],
+            "problemSet": "Problem Set 2"
+          },
+          {
+            "number": "2.3",
+            "name": "Nucleus, Chromosomes & Cell Organelles",
+            "topicCode": "CBSE-9-SCIE-2-2.3",
+            "subtopics": [
+              "Nuclear envelope, nucleolus, chromatin and DNA genes",
+              "Prokaryotic vs Eukaryotic cell comparison",
+              "Endoplasmic Reticulum, Golgi apparatus, Lysosomes, Mitochondria, Plastids, Vacuoles"
+            ],
+            "practiceSet": "Exercise 2.3",
+            "theorems": [],
+            "problemSet": "Problem Set 2"
+          }
+        ]
+      },
+      {
+        "number": "3",
+        "name": "Tissues in Action",
+        "topics": [
+          {
+            "number": "3.1",
+            "name": "Plant Tissues: Meristematic & Simple Permanent",
+            "topicCode": "CBSE-9-SCIE-3-3.1",
+            "subtopics": [
+              "Apical, intercalary, lateral meristems (cambium)",
+              "Parenchyma (storage, aerenchyma, chlorenchyma)",
+              "Collenchyma (flexibility), Sclerenchyma (lignified walls)"
+            ],
+            "practiceSet": "Exercise 3.1",
+            "theorems": [],
+            "problemSet": "Problem Set 3"
+          },
+          {
+            "number": "3.2",
+            "name": "Complex Plant Tissues: Xylem and Phloem",
+            "topicCode": "CBSE-9-SCIE-3-3.2",
+            "subtopics": [
+              "Xylem: Tracheids, vessels, xylem parenchyma, fibres (water transport)",
+              "Phloem: Sieve tubes, companion cells, phloem parenchyma, fibres (food translocation)"
+            ],
+            "practiceSet": "Exercise 3.2",
+            "theorems": [],
+            "problemSet": "Problem Set 3"
+          },
+          {
+            "number": "3.3",
+            "name": "Animal Tissues: Epithelial, Connective, Muscular & Nervous",
+            "topicCode": "CBSE-9-SCIE-3-3.3",
+            "subtopics": [
+              "Epithelial tissues: Squamous, cuboidal, columnar, ciliated",
+              "Connective tissues: Blood, bone, cartilage, ligaments, tendons, areolar, adipose",
+              "Muscular tissue: Striated, smooth, cardiac",
+              "Nervous tissue: Neuron structure (cyton, dendrites, axon, synapse)"
+            ],
+            "practiceSet": "Exercise 3.3",
+            "theorems": [],
+            "problemSet": "Problem Set 3"
+          }
+        ]
+      },
+      {
+        "number": "4",
+        "name": "Describing Motion Around Us",
+        "topics": [
+          {
+            "number": "4.1",
+            "name": "Distance, Displacement, Speed & Velocity",
+            "topicCode": "CBSE-9-SCIE-4-4.1",
+            "subtopics": [
+              "Scalar distance vs vector displacement",
+              "Uniform vs non-uniform motion",
+              "Average speed and average velocity formulas"
+            ],
+            "practiceSet": "Exercise 4.1",
+            "theorems": [],
+            "problemSet": "Problem Set 4"
+          },
+          {
+            "number": "4.2",
+            "name": "Acceleration & Graphical Analysis of Motion",
+            "topicCode": "CBSE-9-SCIE-4-4.2",
+            "subtopics": [
+              "Acceleration formula: a = (v - u) / t (m/s²)",
+              "Distance-time graph slope = speed",
+              "Velocity-time graph slope = acceleration, area under v-t graph = displacement"
+            ],
+            "practiceSet": "Exercise 4.2",
+            "theorems": [],
+            "problemSet": "Problem Set 4"
+          },
+          {
+            "number": "4.3",
+            "name": "Equations of Motion & Circular Motion",
+            "topicCode": "CBSE-9-SCIE-4-4.3",
+            "subtopics": [
+              "Graphical derivation: v = u + at, s = ut + 1/2*at², v² - u² = 2as",
+              "Uniform circular motion and centripetal acceleration (v = 2πr/T)"
+            ],
+            "practiceSet": "Exercise 4.3",
+            "theorems": [
+              "Equations of Motion"
+            ],
+            "problemSet": "Problem Set 4"
+          }
+        ]
+      },
+      {
+        "number": "5",
+        "name": "Exploring Mixtures and their Separation",
+        "topics": [
+          {
+            "number": "5.1",
+            "name": "Pure Substances, Elements & Compounds",
+            "topicCode": "CBSE-9-SCIE-5-5.1",
+            "subtopics": [
+              "Elements: metals, non-metals, metalloids",
+              "Compounds: fixed mass ratio and chemical bonds",
+              "Homogeneous vs heterogeneous mixtures"
+            ],
+            "practiceSet": "Exercise 5.1",
+            "theorems": [],
+            "problemSet": "Problem Set 5"
+          },
+          {
+            "number": "5.2",
+            "name": "Solutions, Suspensions & Colloids",
+            "topicCode": "CBSE-9-SCIE-5-5.2",
+            "subtopics": [
+              "Solute and solvent, mass percentage concentration",
+              "Colloidal properties, Tyndall effect, dispersed phase and medium types"
+            ],
+            "practiceSet": "Exercise 5.2",
+            "theorems": [],
+            "problemSet": "Problem Set 5"
+          },
+          {
+            "number": "5.3",
+            "name": "Separation Techniques for Mixtures",
+            "topicCode": "CBSE-9-SCIE-5-5.3",
+            "subtopics": [
+              "Evaporation, centrifugation, separating funnel",
+              "Paper chromatography, simple distillation, fractional distillation for miscible liquids"
+            ],
+            "practiceSet": "Exercise 5.3",
+            "theorems": [],
+            "problemSet": "Problem Set 5"
+          }
+        ]
+      },
+      {
+        "number": "6",
+        "name": "How Forces Affect Motion",
+        "topics": [
+          {
+            "number": "6.1",
+            "name": "Balanced & Unbalanced Forces and Inertia",
+            "topicCode": "CBSE-9-SCIE-6-6.1",
+            "subtopics": [
+              "Net resultant forces",
+              "Galileo inclined plane experiment and concept of inertia",
+              "Newton First Law of Motion"
+            ],
+            "practiceSet": "Exercise 6.1",
+            "theorems": [
+              "Newton First Law of Motion"
+            ],
+            "problemSet": "Problem Set 6"
+          },
+          {
+            "number": "6.2",
+            "name": "Momentum & Newton Second Law of Motion",
+            "topicCode": "CBSE-9-SCIE-6-6.2",
+            "subtopics": [
+              "Linear momentum p = mv (kg·m/s)",
+              "Mathematical derivation: F = ma (Newton, N)",
+              "Impulsive forces in sports and daily life"
+            ],
+            "practiceSet": "Exercise 6.2",
+            "theorems": [
+              "Newton Second Law of Motion"
+            ],
+            "problemSet": "Problem Set 6"
+          },
+          {
+            "number": "6.3",
+            "name": "Newton Third Law & Conservation of Momentum",
+            "topicCode": "CBSE-9-SCIE-6-6.3",
+            "subtopics": [
+              "Action and reaction forces acting on distinct bodies",
+              "Law of conservation of linear momentum: m1u1 + m2u2 = m1v1 + m2v2",
+              "Recoil of gun and rocket propulsion"
+            ],
+            "practiceSet": "Exercise 6.3",
+            "theorems": [
+              "Newton Third Law of Motion",
+              "Law of Conservation of Momentum"
+            ],
+            "problemSet": "Problem Set 6"
+          }
+        ]
+      },
+      {
+        "number": "7",
+        "name": "Work, Energy, and Simple Machines",
+        "topics": [
+          {
+            "number": "7.1",
+            "name": "Work Done by Constant Force",
+            "topicCode": "CBSE-9-SCIE-7-7.1",
+            "subtopics": [
+              "Work formula: W = F * s (Joule, 1 J = 1 N·m)",
+              "Positive, negative, and zero work"
+            ],
+            "practiceSet": "Exercise 7.1",
+            "theorems": [],
+            "problemSet": "Problem Set 7"
+          },
+          {
+            "number": "7.2",
+            "name": "Kinetic and Potential Energy & Conservation Law",
+            "topicCode": "CBSE-9-SCIE-7-7.2",
+            "subtopics": [
+              "Kinetic energy formula: KE = 1/2 * m * v²",
+              "Gravitational potential energy formula: PE = mgh",
+              "Law of Conservation of Mechanical Energy"
+            ],
+            "practiceSet": "Exercise 7.2",
+            "theorems": [
+              "Law of Conservation of Energy"
+            ],
+            "problemSet": "Problem Set 7"
+          },
+          {
+            "number": "7.3",
+            "name": "Power & Commercial Unit of Energy",
+            "topicCode": "CBSE-9-SCIE-7-7.3",
+            "subtopics": [
+              "Power P = W / t (Watt, 1 W = 1 J/s)",
+              "Commercial electrical energy: 1 kWh = 3.6 * 10^6 Joules",
+              "Simple machines and mechanical advantage"
+            ],
+            "practiceSet": "Exercise 7.3",
+            "theorems": [],
+            "problemSet": "Problem Set 7"
+          }
+        ]
+      },
+      {
+        "number": "8",
+        "name": "Journey Inside the Atom",
+        "topics": [
+          {
+            "number": "8.1",
+            "name": "Subatomic Particles: Electrons, Protons & Neutrons",
+            "topicCode": "CBSE-9-SCIE-8-8.1",
+            "subtopics": [
+              "J.J. Thomson cathode ray experiments and electron discovery",
+              "Goldstein canal rays and proton discovery",
+              "Chadwick neutron discovery in nucleus"
+            ],
+            "practiceSet": "Exercise 8.1",
+            "theorems": [],
+            "problemSet": "Problem Set 8"
+          },
+          {
+            "number": "8.2",
+            "name": "Atomic Models: Thomson, Rutherford & Bohr",
+            "topicCode": "CBSE-9-SCIE-8-8.2",
+            "subtopics": [
+              "Thomson plum pudding model",
+              "Rutherford alpha particle gold foil scattering and nuclear model",
+              "Bohr planetary model with discrete circular energy orbits (K, L, M, N)"
+            ],
+            "practiceSet": "Exercise 8.2",
+            "theorems": [],
+            "problemSet": "Problem Set 8"
+          },
+          {
+            "number": "8.3",
+            "name": "Bohr-Bury Scheme, Valency, Isotopes & Isobars",
+            "topicCode": "CBSE-9-SCIE-8-8.3",
+            "subtopics": [
+              "Electron distribution rules (2n²)",
+              "Valency for first 20 elements",
+              "Atomic number (Z) and Mass number (A)",
+              "Isotopes (same Z, different A) and Isobars (same A, different Z)"
+            ],
+            "practiceSet": "Exercise 8.3",
+            "theorems": [],
+            "problemSet": "Problem Set 8"
+          }
+        ]
+      },
+      {
+        "number": "9",
+        "name": "Atomic Foundations of Matter",
+        "topics": [
+          {
+            "number": "9.1",
+            "name": "Laws of Chemical Combination",
+            "topicCode": "CBSE-9-SCIE-9-9.1",
+            "subtopics": [
+              "Law of Conservation of Mass (Lavoisier)",
+              "Law of Constant Proportions (Proust)"
+            ],
+            "practiceSet": "Exercise 9.1",
+            "theorems": [
+              "Law of Conservation of Mass",
+              "Law of Constant Proportions"
+            ],
+            "problemSet": "Problem Set 9"
+          },
+          {
+            "number": "9.2",
+            "name": "Dalton Atomic Theory, Molecules & Radicals",
+            "topicCode": "CBSE-9-SCIE-9-9.2",
+            "subtopics": [
+              "Postulates of Dalton atomic theory",
+              "Molecules of elements and compounds",
+              "Polyatomic ions and radicals (NH4+, SO4^2-, CO3^2-)"
+            ],
+            "practiceSet": "Exercise 9.2",
+            "theorems": [],
+            "problemSet": "Problem Set 9"
+          },
+          {
+            "number": "9.3",
+            "name": "Writing Chemical Formulae & Molecular Mass",
+            "topicCode": "CBSE-9-SCIE-9-9.3",
+            "subtopics": [
+              "Criss-cross valency method for ionic and covalent compounds",
+              "Calculating molecular mass and formula unit mass in unified atomic mass units (u)"
+            ],
+            "practiceSet": "Exercise 9.3",
+            "theorems": [],
+            "problemSet": "Problem Set 9"
+          }
+        ]
+      },
+      {
+        "number": "10",
+        "name": "Sound Waves: Characteristics and Applications",
+        "topics": [
+          {
+            "number": "10.1",
+            "name": "Production and Propagation of Sound Waves",
+            "topicCode": "CBSE-9-SCIE-10-10.1",
+            "subtopics": [
+              "Vibrating objects as source of sound",
+              "Longitudinal mechanical waves: compressions and rarefactions",
+              "Medium necessity (sound cannot travel in vacuum)"
+            ],
+            "practiceSet": "Exercise 10.1",
+            "theorems": [],
+            "problemSet": "Problem Set 10"
+          },
+          {
+            "number": "10.2",
+            "name": "Wave Parameters: Wavelength, Frequency, Amplitude & Speed",
+            "topicCode": "CBSE-9-SCIE-10-10.2",
+            "subtopics": [
+              "Wavelength (λ), frequency (ν = 1/T), amplitude (A), wave velocity (v = νλ)",
+              "Pitch, loudness and timbre/quality",
+              "Speed of sound in solids, liquids, gases"
+            ],
+            "practiceSet": "Exercise 10.2",
+            "theorems": [],
+            "problemSet": "Problem Set 10"
+          },
+          {
+            "number": "10.3",
+            "name": "Reflection of Sound, Echo, Reverberation & Ultrasound",
+            "topicCode": "CBSE-9-SCIE-10-10.3",
+            "subtopics": [
+              "Laws of reflection of sound",
+              "Echo conditions (minimum 17.2 m)",
+              "Reverberation and acoustic treatment",
+              "Ultrasound applications: echocardiography, ultrasonography, SONAR (2d = vt)"
+            ],
+            "practiceSet": "Exercise 10.3",
+            "theorems": [],
+            "problemSet": "Problem Set 10"
+          }
+        ]
+      },
+      {
+        "number": "11",
+        "name": "Reproduction: How Life Continues",
+        "topics": [
+          {
+            "number": "11.1",
+            "name": "Asexual Reproduction Modes",
+            "topicCode": "CBSE-9-SCIE-11-11.1",
+            "subtopics": [
+              "Binary and multiple fission (Amoeba, Plasmodium)",
+              "Budding (Hydra, Yeast), spore formation, fragmentation",
+              "Vegetative propagation in plants (cuttings, runners, layering)"
+            ],
+            "practiceSet": "Exercise 11.1",
+            "theorems": [],
+            "problemSet": "Problem Set 11"
+          },
+          {
+            "number": "11.2",
+            "name": "Sexual Reproduction in Flowering Plants",
+            "topicCode": "CBSE-9-SCIE-11-11.2",
+            "subtopics": [
+              "Structure of a flower: Sepals, petals, stamens (anther/filament), carpel (stigma/style/ovary)",
+              "Pollination (self vs cross) and fertilization process",
+              "Seed and fruit formation"
+            ],
+            "practiceSet": "Exercise 11.2",
+            "theorems": [],
+            "problemSet": "Problem Set 11"
+          },
+          {
+            "number": "11.3",
+            "name": "Human Reproduction & Adolescence",
+            "topicCode": "CBSE-9-SCIE-11-11.3",
+            "subtopics": [
+              "Male and female reproductive anatomy overview",
+              "Puberty, hormonal changes, gamete production",
+              "Reproductive hygiene and health awareness"
+            ],
+            "practiceSet": "Exercise 11.3",
+            "theorems": [],
+            "problemSet": "Problem Set 11"
+          }
+        ]
+      },
+      {
+        "number": "12",
+        "name": "Patterns in Life: Diversity and Classification",
+        "topics": [
+          {
+            "number": "12.1",
+            "name": "Basis of Biological Classification",
+            "topicCode": "CBSE-9-SCIE-12-12.1",
+            "subtopics": [
+              "Need for classification and hierarchy of taxonomic categories (Kingdom to Species)",
+              "Binomial nomenclature system (Linnaeus)"
+            ],
+            "practiceSet": "Exercise 12.1",
+            "theorems": [],
+            "problemSet": "Problem Set 12"
+          },
+          {
+            "number": "12.2",
+            "name": "Five Kingdom Classification Overview",
+            "topicCode": "CBSE-9-SCIE-12-12.2",
+            "subtopics": [
+              "Kingdom Monera, Protista, Fungi, Plantae, Animalia characteristics",
+              "Plant kingdom divisions (Thallophyta, Bryophyta, Pteridophyta, Gymnosperms, Angiosperms)",
+              "Animal kingdom non-chordates and chordates introduction"
+            ],
+            "practiceSet": "Exercise 12.2",
+            "theorems": [],
+            "problemSet": "Problem Set 12"
+          },
+          {
+            "number": "12.3",
+            "name": "Biodiversity & Ecological Balance",
+            "topicCode": "CBSE-9-SCIE-12-12.3",
+            "subtopics": [
+              "Significance of biodiversity in ecosystems",
+              "Threats to biodiversity and national/global conservation measures"
+            ],
+            "practiceSet": "Exercise 12.3",
+            "theorems": [],
+            "problemSet": "Problem Set 12"
+          }
+        ]
+      },
+      {
+        "number": "13",
+        "name": "Earth as a System: Energy, Matter, and Life",
+        "topics": [
+          {
+            "number": "13.1",
+            "name": "Earth Spheres & Biogeochemical Cycles",
+            "topicCode": "CBSE-9-SCIE-13-13.1",
+            "subtopics": [
+              "Atmosphere, hydrosphere, lithosphere, biosphere interactions",
+              "Water cycle, Nitrogen cycle (fixation, nitrification, denitrification), Carbon cycle"
+            ],
+            "practiceSet": "Exercise 13.1",
+            "theorems": [],
+            "problemSet": "Problem Set 13"
+          },
+          {
+            "number": "13.2",
+            "name": "Atmospheric Dynamics & Greenhouse Effect",
+            "topicCode": "CBSE-9-SCIE-13-13.2",
+            "subtopics": [
+              "Role of atmosphere in climate control, winds and rains",
+              "Greenhouse gases, global warming and ozone layer depletion"
+            ],
+            "practiceSet": "Exercise 13.2",
+            "theorems": [],
+            "problemSet": "Problem Set 13"
+          },
+          {
+            "number": "13.3",
+            "name": "Natural Resources & Sustainable Management",
+            "topicCode": "CBSE-9-SCIE-13-13.3",
+            "subtopics": [
+              "Soil erosion, water harvesting and conservation",
+              "Renewable vs non-renewable energy resources, sustainable development goals"
+            ],
+            "practiceSet": "Exercise 13.3",
+            "theorems": [],
+            "problemSet": "Problem Set 13"
           }
         ]
       }
