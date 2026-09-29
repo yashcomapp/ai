@@ -21,22 +21,14 @@ export async function getParentDashboardData(
   // Resolve child list
   let studentCodes: string[] = [];
   if (Array.isArray(parentData?.studentCodes)) {
-    studentCodes.push(...parentData.studentCodes.filter(Boolean));
-  } else if (parentData?.studentCode) {
-    studentCodes.push(parentData.studentCode);
+    parentData.studentCodes.forEach((code: any) => {
+      if (typeof code === 'string' && code.startsWith('ST-')) {
+        studentCodes.push(code);
+      }
+    });
   }
-  if (parentData?.studentId) {
-    if (parentData.studentId.startsWith('ST-')) {
-      if (!studentCodes.includes(parentData.studentId)) studentCodes.push(parentData.studentId);
-    } else {
-      // It might be a student UID
-      try {
-        const uDoc = await adminDb.collection('users').doc(parentData.studentId).get();
-        if (uDoc.exists && uDoc.data()?.studentCode && !studentCodes.includes(uDoc.data()!.studentCode)) {
-          studentCodes.push(uDoc.data()!.studentCode);
-        }
-      } catch (e) {}
-    }
+  if (typeof parentData?.studentCode === 'string' && parentData.studentCode.startsWith('ST-')) {
+    studentCodes.push(parentData.studentCode);
   }
 
   // Query students matching parent email or parent phone in parallel to discover all children/siblings
@@ -61,14 +53,14 @@ export async function getParentDashboardData(
 
     emailSnap.docs.forEach((doc: any) => {
       const data = doc.data();
-      if (data.studentCode && !studentCodes.includes(data.studentCode)) {
+      if (typeof data.studentCode === 'string' && data.studentCode.startsWith('ST-') && !studentCodes.includes(data.studentCode)) {
         studentCodes.push(data.studentCode);
       }
     });
 
     phoneSnap.docs.forEach((doc: any) => {
       const data = doc.data();
-      if (data.studentCode && !studentCodes.includes(data.studentCode)) {
+      if (typeof data.studentCode === 'string' && data.studentCode.startsWith('ST-') && !studentCodes.includes(data.studentCode)) {
         studentCodes.push(data.studentCode);
       }
     });

@@ -15,21 +15,14 @@ export const dynamic = 'force-dynamic';
 async function resolveChildrenCodes(parentData: any): Promise<string[]> {
   const childrenCodes: string[] = [];
   if (Array.isArray(parentData?.studentCodes)) {
-    childrenCodes.push(...parentData.studentCodes.filter(Boolean));
-  } else if (parentData?.studentCode) {
-    childrenCodes.push(parentData.studentCode);
+    parentData.studentCodes.forEach((code: any) => {
+      if (typeof code === 'string' && code.startsWith('ST-')) {
+        childrenCodes.push(code);
+      }
+    });
   }
-  if (parentData?.studentId) {
-    if (parentData.studentId.startsWith('ST-')) {
-      if (!childrenCodes.includes(parentData.studentId)) childrenCodes.push(parentData.studentId);
-    } else {
-      try {
-        const uDoc = await adminDb.collection('users').doc(parentData.studentId).get();
-        if (uDoc.exists && uDoc.data()?.studentCode && !childrenCodes.includes(uDoc.data()!.studentCode)) {
-          childrenCodes.push(uDoc.data()!.studentCode);
-        }
-      } catch (e) {}
-    }
+  if (typeof parentData?.studentCode === 'string' && parentData.studentCode.startsWith('ST-')) {
+    childrenCodes.push(parentData.studentCode);
   }
 
   const parentEmail = parentData?.email?.toLowerCase();
@@ -55,13 +48,13 @@ async function resolveChildrenCodes(parentData: any): Promise<string[]> {
 
       emailSnap.docs.forEach((doc: any) => {
         const data = doc.data();
-        if (data.studentCode && !childrenCodes.includes(data.studentCode)) {
+        if (typeof data.studentCode === 'string' && data.studentCode.startsWith('ST-') && !childrenCodes.includes(data.studentCode)) {
           childrenCodes.push(data.studentCode);
         }
       });
       phoneSnap.docs.forEach((doc: any) => {
         const data = doc.data();
-        if (data.studentCode && !childrenCodes.includes(data.studentCode)) {
+        if (typeof data.studentCode === 'string' && data.studentCode.startsWith('ST-') && !childrenCodes.includes(data.studentCode)) {
           childrenCodes.push(data.studentCode);
         }
       });
