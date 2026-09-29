@@ -5,7 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Script from 'next/script';
 import { useMathRender } from '@/hooks/useMathRender';
-import { preprocessMathText, parseAnswerList, isOptionSelectedByUser, isOptionCorrect, getQuestionCorrectAnswer, getRawOptionKey, getRawOptionText, isBlank, resolveOptionDisplayText } from '@/lib/questionTypes';
+import { preprocessMathText, parseAnswerList, isOptionSelectedByUser, isOptionCorrect, getQuestionCorrectAnswer, getRawOptionKey, getRawOptionText, isBlank, resolveOptionDisplayText, extractAssertionAndReason, isAssertionReasonType } from '@/lib/questionTypes';
 import { playNotificationSound } from '@/lib/audioUtils';
 
 interface Attempt {
@@ -2158,12 +2158,15 @@ function ExamReportContent() {
                                 </span>
                               </div>
 
-                              {bq?.type === 'assertion_reason' && bq.assertion && bq.reason ? (
-                                <div style={{ marginBottom: '6px', fontSize: '11.5px' }}>
-                                  <p style={{ margin: '2px 0' }}><strong>Assertion (A):</strong> <span className="math-container">{preprocessMathText(bq.assertion)}</span></p>
-                                  <p style={{ margin: '2px 0' }}><strong>Reason (R):</strong> <span className="math-container">{preprocessMathText(bq.reason)}</span></p>
-                                </div>
-                              ) : (
+                              {isAssertionReasonType(bq?.type) ? (() => {
+                                const { assertion, reason } = extractAssertionAndReason(bq || qd);
+                                return (
+                                  <div style={{ marginBottom: '6px', fontSize: '11.5px' }}>
+                                    <p style={{ margin: '2px 0' }}><strong>Assertion (A):</strong> <span className="math-container">{preprocessMathText(assertion)}</span></p>
+                                    <p style={{ margin: '2px 0' }}><strong>Reason (R):</strong> <span className="math-container">{preprocessMathText(reason)}</span></p>
+                                  </div>
+                                );
+                              })() : (
                                 <p className="math-container" style={{ fontSize: '11.5px', margin: '0 0 4px 0', fontWeight: 'bold', lineHeight: '1.3' }}>
                                   {preprocessMathText(qd.questionText || bq?.text || '')}
                                 </p>

@@ -1214,7 +1214,17 @@ function TopicPracticeContent() {
                           {qItem.isCorrect ? '✓ Correct' : '✕ Incorrect'}
                         </span>
                       </div>
-                      <div style={{ fontSize: '13px', lineHeight: '1.5', marginBottom: '8px', fontWeight: 500 }} dangerouslySetInnerHTML={{ __html: preprocessMathText(qItem.text || qItem.assertion || '') }} />
+                      {isAssertionReasonType(qItem.type) ? (() => {
+                        const { assertion, reason } = extractAssertionAndReason(qItem);
+                        return (
+                          <div style={{ margin: '6px 0 10px', display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '13px' }}>
+                            <p style={{ margin: 0 }}><strong>Assertion (A):</strong> <span className="math-container" dangerouslySetInnerHTML={{ __html: preprocessMathText(assertion) }} /></p>
+                            <p style={{ margin: 0 }}><strong>Reason (R):</strong> <span className="math-container" dangerouslySetInnerHTML={{ __html: preprocessMathText(reason) }} /></p>
+                          </div>
+                        );
+                      })() : (
+                        <div style={{ fontSize: '13px', lineHeight: '1.5', marginBottom: '8px', fontWeight: 500 }} dangerouslySetInnerHTML={{ __html: preprocessMathText(qItem.text || qItem.assertion || '') }} />
+                      )}
                       
                       {qItem.options && Array.isArray(qItem.options) && qItem.options.length > 0 && (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '8px' }}>

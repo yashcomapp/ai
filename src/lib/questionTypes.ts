@@ -431,34 +431,54 @@ export function extractAssertionAndReason(q: any): { assertion: string; reason: 
   let rawReason = String(q.reason || '').trim();
   const rawText = String(q.text || '').trim();
 
-  // If rawAssertion contains Reason text, or if both are empty and rawText exists:
-  const reasonRegex = /(?:Reason\s*\((?:R)\)|Reason\s*[:\-]|(?:\b|\n)R\s*[:\-])\s*/i;
-  if (rawAssertion.includes('Reason (R):') || rawAssertion.includes('Reason:') || rawAssertion.includes('(R):') || (!rawAssertion && !rawReason && rawText)) {
-    const combined = rawAssertion || rawText;
-    const parts = combined.split(reasonRegex);
+  // Normalize literal escaped \n and <br> in strings
+  const normalizeDelims = (s: string) => s.replace(/\\n/g, '\n').replace(/<br\s*\/?>/gi, '\n');
+
+  let sourceAssertion = normalizeDelims(rawAssertion || rawText);
+  let sourceReason = normalizeDelims(rawReason);
+
+  // Reason split regex: matches variants of Reason (R):, Reason:, (R):, R:, Reason (R), etc.
+  const reasonRegex = /(?:(?:\n|^|\s)\s*(?:Reason\s*\((?:R)\)|Reason\s*[:\-]|(?:\(R\)\s*[:\-]?)|(?:R\s*[:\-]|\bR\s*[:\-])))\s*[:\-]?\s*/i;
+
+  if (reasonRegex.test(sourceAssertion)) {
+    const parts = sourceAssertion.split(reasonRegex);
     if (parts.length >= 2) {
-      rawAssertion = parts[0];
-      rawReason = parts.slice(1).join(' ');
+      sourceAssertion = parts[0].trim();
+      if (!sourceReason) {
+        sourceReason = parts.slice(1).join(' ').trim();
+      }
+    }
+  } else if (!sourceReason && reasonRegex.test(normalizeDelims(rawText))) {
+    const parts = normalizeDelims(rawText).split(reasonRegex);
+    if (parts.length >= 2) {
+      sourceAssertion = parts[0].trim();
+      sourceReason = parts.slice(1).join(' ').trim();
     }
   }
 
-  // Strip redundant leading prefixes from assertion
-  const cleanAssertion = rawAssertion
+  // Strip redundant leading prefixes and HTML tags from assertion
+  const cleanAssertion = sourceAssertion
+    .replace(/^<\s*(?:strong|b|p|span)[^>]*>/i, '')
     .replace(/^Assertion\s*\((?:A)\)\s*[:\-]?\s*/i, '')
     .replace(/^Assertion\s*[:\-]?\s*/i, '')
     .replace(/^\(?A\)?\s*[:\-]\s*/i, '')
+    .replace(/^\(A\)\s*/i, '')
+    .replace(/^<\s*\/(?:strong|b|p|span)[^>]*>\s*/i, '')
     .trim();
 
-  // Strip redundant leading prefixes from reason
-  const cleanReason = rawReason
+  // Strip redundant leading prefixes and HTML tags from reason
+  const cleanReason = sourceReason
+    .replace(/^<\s*(?:strong|b|p|span)[^>]*>/i, '')
     .replace(/^Reason\s*\((?:R)\)\s*[:\-]?\s*/i, '')
     .replace(/^Reason\s*[:\-]?\s*/i, '')
     .replace(/^\(?R\)?\s*[:\-]\s*/i, '')
+    .replace(/^\(R\)\s*/i, '')
+    .replace(/^<\s*\/(?:strong|b|p|span)[^>]*>\s*/i, '')
     .trim();
 
   return {
-    assertion: cleanAssertion || rawAssertion || rawText,
-    reason: cleanReason || rawReason
+    assertion: cleanAssertion || sourceAssertion || rawText,
+    reason: cleanReason || sourceReason || ''
   };
 }
 
