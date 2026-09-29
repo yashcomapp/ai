@@ -12,6 +12,58 @@ import { getFromCache, setInCache, invalidateCache } from '@/lib/firebase/cache'
 
 export const dynamic = 'force-dynamic';
 
+function safeDateToISO(val: any): string | null {
+  if (!val) return null;
+  if (typeof val?.toDate === 'function') {
+    try {
+      return val.toDate().toISOString();
+    } catch {
+      return null;
+    }
+  }
+  if (typeof val === 'string') {
+    try {
+      const d = new Date(val);
+      return !isNaN(d.getTime()) ? d.toISOString() : val;
+    } catch {
+      return val;
+    }
+  }
+  if (val instanceof Date) {
+    return !isNaN(val.getTime()) ? val.toISOString() : null;
+  }
+  if (typeof val === 'number') {
+    try {
+      return new Date(val).toISOString();
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
+function safeDateToTimestamp(val: any): number {
+  if (!val) return 0;
+  if (typeof val?.toDate === 'function') {
+    try {
+      return val.toDate().getTime();
+    } catch {
+      return 0;
+    }
+  }
+  if (val instanceof Date) {
+    return !isNaN(val.getTime()) ? val.getTime() : 0;
+  }
+  if (typeof val === 'number') {
+    return val;
+  }
+  if (typeof val === 'string') {
+    const t = new Date(val).getTime();
+    return !isNaN(t) ? t : 0;
+  }
+  return 0;
+}
+
 async function resolveChildrenCodes(parentData: any): Promise<string[]> {
   const childrenCodes: string[] = [];
   if (Array.isArray(parentData?.studentCodes)) {
@@ -297,6 +349,8 @@ export async function GET(req: NextRequest) {
         }
 
         const resolvedActor = data.reviewedByActor || evalMap.get(doc.id)?.reviewedByActor || (isReviewed ? 'parent' : null);
+        const startedIso = safeDateToISO(data.startedAt);
+        const completedIso = safeDateToISO(data.completedAt) || safeDateToISO(data.submittedAt);
         return {
           id: doc.id,
           type: 'objective',
@@ -304,9 +358,9 @@ export async function GET(req: NextRequest) {
           name: topicName || data.examName || data.examCode || 'Objective Exam',
           subject: data.subjectName || data.subject || 'General',
           chapter: data.chapterName || data.chapter || '-',
-          date: data.completedAt?.toDate ? data.completedAt.toDate().toISOString() : data.completedAt || data.submittedAt?.toDate ? data.submittedAt.toDate().toISOString() : data.submittedAt || null,
-          startedAt: data.startedAt?.toDate ? data.startedAt.toDate().toISOString() : data.startedAt || null,
-          completedAt: data.completedAt?.toDate ? data.completedAt.toDate().toISOString() : data.completedAt || null,
+          date: completedIso || startedIso || null,
+          startedAt: startedIso,
+          completedAt: completedIso,
           score: data.score || 0,
           totalMarks: data.totalMarks || data.totalQuestions || 0,
           percentage: data.percentage || 0,
@@ -356,9 +410,10 @@ export async function GET(req: NextRequest) {
         displayChapter = sData?.chapterName || sData?.chapterTitle || sData?.chapter || (sData?.chapterNumber ? (String(sData.chapterNumber).startsWith('Chapter') ? String(sData.chapterNumber) : `Chapter ${sData.chapterNumber}`) : displayChapter) || 'General';
       }
 
-      const start = data.startedAt?.toDate ? data.startedAt.toDate() : (data.startedAt ? new Date(data.startedAt) : null);
-      const end = data.createdAt?.toDate ? data.createdAt.toDate() : (data.updatedAt?.toDate ? data.updatedAt.toDate() : null);
-      const rawTimestamp = start ? start.getTime() : (end ? end.getTime() : 0);
+      const startIso = safeDateToISO(data.startedAt);
+      const createdIso = safeDateToISO(data.createdAt);
+      const updatedIso = safeDateToISO(data.updatedAt);
+      const rawTimestamp = safeDateToTimestamp(data.startedAt) || safeDateToTimestamp(data.createdAt) || safeDateToTimestamp(data.updatedAt);
 
       return {
         id: doc.id,
@@ -367,7 +422,7 @@ export async function GET(req: NextRequest) {
         topicCode: data.topicCode || null,
         subject: displaySubject,
         chapter: displayChapter,
-        date: data.startedAt?.toDate ? data.startedAt.toDate().toISOString() : data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : data.startedAt || null,
+        date: startIso || createdIso || updatedIso || null,
         rawTimestamp,
         scorePercent: data.scorePercent || 0,
         correctCount: data.correctCount || 0,
@@ -437,6 +492,9 @@ export async function GET(req: NextRequest) {
         topicName = Array.from(examTopics).join(', ');
       }
 
+      const completedIso = safeDateToISO(data.completedAt) || safeDateToISO(data.createdAt);
+      const startedIso = safeDateToISO(data.startedAt);
+
       return {
         id: doc.id,
         attemptId: doc.id,
@@ -445,9 +503,9 @@ export async function GET(req: NextRequest) {
         name: topicName || exam.name || 'Subjective Exam',
         subject: exam.subjects?.[0] || exam.subjectName || 'General',
         chapter: exam.chapter || exam.chapterName || '-',
-        date: data.completedAt?.toDate ? data.completedAt.toDate().toISOString() : data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : null,
-        startedAt: data.startedAt?.toDate ? data.startedAt.toDate().toISOString() : null,
-        completedAt: data.completedAt?.toDate ? data.completedAt.toDate().toISOString() : null,
+        date: completedIso || startedIso || null,
+        startedAt: startedIso,
+        completedAt: completedIso,
         tabViolations: data.tabViolations || 0,
         noFaceCount: data.noFaceCount || 0,
         multipleFacesCount: data.multipleFacesCount || 0,
