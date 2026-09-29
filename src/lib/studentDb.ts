@@ -899,7 +899,15 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
     let needsAttentionTopicsList: any[] = [];
     let srsDueTopicsList: any[] = [];
     try {
-      const learningData = await getStudentLearningData(userData);
+      const learningData = await getStudentLearningData(userData, {
+        masterySnaps: masterySnapshot,
+        parentReviewsSnap: parentReviewsSnapshot,
+        reviewsSnap: reviewsSnapshot,
+        subAttemptsSnap: attemptsSnapshot,
+        evalsSnap: evaluationsSnapshot,
+        objAssignmentsSnap: { docs: [...batchAssignmentsSnapshot.docs, ...studentAssignmentsSnapshot.docs] },
+        subAssignmentsSnap: { docs: [...subAssignmentsSnapshot.docs, ...subStudentAssignmentsSnapshot.docs] }
+      });
       needsAttentionTopicsList = learningData?.needsAttention || [];
       srsDueTopicsList = (learningData?.revision || []).filter((t: any) => t.isSrsDue === true);
     } catch (e) {
@@ -996,7 +1004,19 @@ function calculatePriority(mastery: number, confidence: number, requiredConfiden
   return (100 - mastery) + Math.max(0, (requiredConfidence - confidence) * 2);
 }
 
-export async function getStudentLearningData(userData: any) {
+export interface PreloadedLearningData {
+  masterySnaps?: any;
+  parentReviewsSnap?: any;
+  attemptsSnap?: any;
+  reviewsSnap?: any;
+  subAttemptsSnap?: any;
+  objAssignmentsSnap?: any;
+  subAssignmentsSnap?: any;
+  evalsSnap?: any;
+  absentTopicCodes?: Set<string>;
+}
+
+export async function getStudentLearningData(userData: any, preloadedData?: PreloadedLearningData) {
   const studentCode = userData.studentCode;
   if (!studentCode) {
     throw new Error('Missing student identifier profile.');
@@ -1004,7 +1024,7 @@ export async function getStudentLearningData(userData: any) {
 
   const cacheKey = `learning_data_${studentCode}`;
   const cached = getFromCache<any>(cacheKey);
-  if (cached) return cached;
+  if (cached && !preloadedData) return cached;
 
   const batchIds: string[] = userData.batchIds || (userData.batchId ? [userData.batchId] : []);
 
@@ -1029,24 +1049,53 @@ export async function getStudentLearningData(userData: any) {
     }
   });
 
-  // 2. Fetch studentTopicMastery, practice reviews, attempts, and assignments in parallel
-  const [masterySnaps, parentReviewsSnap, attemptsSnap, reviewsSnap, subAttemptsSnap, objAssignmentsSnap, subAssignmentsSnap, evalsSnap] = await Promise.all([
-    adminDb.collection('studentTopicMastery').where('studentCode', '==', studentCode).get(),
-    adminDb.collection('parentReviews')
-      .where('studentCode', '==', studentCode)
-      .where('type', '==', 'practice')
-      .get(),
-    adminDb.collection('examAttempts').where('studentCode', '==', studentCode).get(),
-    adminDb.collection('reviews').where('studentCode', '==', studentCode).get(),
-    adminDb.collection('subjectiveAttempts').where('studentCode', '==', studentCode).get(),
-    batchIds.length > 0
-      ? adminDb.collection('batchAssignments').where('targetBatches', 'array-contains-any', batchIds).get()
-      : Promise.resolve({ docs: [] } as any),
-    batchIds.length > 0
-      ? adminDb.collection('subjectiveAssignments').where('targetBatches', 'array-contains-any', batchIds).get()
-      : Promise.resolve({ docs: [] } as any),
-    adminDb.collection('evaluations').where('studentCode', '==', studentCode).get()
-  ]);
+  // 2. Fetch or reuse studentTopicMastery, practice reviews, attempts, and assignments
+  let masterySnaps = preloadedData?.masterySnaps;
+  let parentReviewsSnap = preloadedData?.parentReviewsSnap;
+  let attemptsSnap = preloadedData?.attemptsSnap;
+  let reviewsSnap = preloadedData?.reviewsSnap;
+  let subAttemptsSnap = preloadedData?.subAttemptsSnap;
+  let objAssignmentsSnap = preloadedData?.objAssignmentsSnap;
+  let subAssignmentsSnap = preloadedData?.subAssignmentsSnap;
+  let evalsSnap = preloadedData?.evalsSnap;
+
+  if (!masterySnaps || !parentReviewsSnap || !reviewsSnap || !subAttemptsSnap || !evalsSnap) {
+    const [
+      fMastery,
+      fParentReviews,
+      fAttempts,
+      fReviews,
+      fSubAttempts,
+      fObjAssignments,
+      fSubAssignments,
+      fEvals
+    ] = await Promise.all([
+      masterySnaps || adminDb.collection('studentTopicMastery').where('studentCode', '==', studentCode).get(),
+      parentReviewsSnap || adminDb.collection('parentReviews')
+        .where('studentCode', '==', studentCode)
+        .where('type', '==', 'practice')
+        .get(),
+      attemptsSnap || adminDb.collection('examAttempts').where('studentCode', '==', studentCode).get(),
+      reviewsSnap || adminDb.collection('reviews').where('studentCode', '==', studentCode).get(),
+      subAttemptsSnap || adminDb.collection('subjectiveAttempts').where('studentCode', '==', studentCode).get(),
+      objAssignmentsSnap || (batchIds.length > 0
+        ? adminDb.collection('batchAssignments').where('targetBatches', 'array-contains-any', batchIds).get()
+        : Promise.resolve({ docs: [] } as any)),
+      subAssignmentsSnap || (batchIds.length > 0
+        ? adminDb.collection('subjectiveAssignments').where('targetBatches', 'array-contains-any', batchIds).get()
+        : Promise.resolve({ docs: [] } as any)),
+      evalsSnap || adminDb.collection('evaluations').where('studentCode', '==', studentCode).get()
+    ]);
+
+    masterySnaps = fMastery;
+    parentReviewsSnap = fParentReviews;
+    attemptsSnap = fAttempts;
+    reviewsSnap = fReviews;
+    subAttemptsSnap = fSubAttempts;
+    objAssignmentsSnap = fObjAssignments;
+    subAssignmentsSnap = fSubAssignments;
+    evalsSnap = fEvals;
+  }
 
   // Identify absent exams and collect their topics
   const attemptedExamIds = new Set([
@@ -1189,7 +1238,7 @@ export async function getStudentLearningData(userData: any) {
 
   // Populate masteryMap
   const masteryMap = new Map<string, any>();
-  masterySnaps.docs.forEach(doc => {
+  masterySnaps.docs.forEach((doc: any) => {
     const data = doc.data();
     if (data.topicCode) {
       masteryMap.set(data.topicCode, data);
@@ -1280,7 +1329,7 @@ export async function getStudentLearningData(userData: any) {
 
   const practiceCountMap = new Map<string, number>();
   const practiceQuestionsMap = new Map<string, number>();
-  parentReviewsSnap.docs.forEach(doc => {
+  parentReviewsSnap.docs.forEach((doc: any) => {
     const data = doc.data();
     const tCode = data.topicCode;
     if (tCode) {

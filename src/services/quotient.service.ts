@@ -982,7 +982,7 @@ export class QuotientService {
     const filteredSubjectiveExams = this.filterByDate(subjectiveExamsList, ['scheduledDate', 'createdAt'], startDate);
     const filteredEvaluations = this.filterByDate(rawEvaluations, ['createdAt', 'evaluatedAt', 'timestamp', 'date'], startDate);
 
-    const conductedObjectiveExams: any[] = [];
+    const conductedObjectiveExamsMap = new Map<string, any>();
 
     // 1. Gather all conducted objective exams matching student batch or class
     examsMap.forEach((exam: any) => {
@@ -992,7 +992,8 @@ export class QuotientService {
       const withinDate = this.isWithinDateRange(exam.scheduledDate || exam.createdAt || examDateStr, startDate);
 
       if (isMatch && isPastOrToday && withinDate) {
-        conductedObjectiveExams.push(exam);
+        const eId = exam.id || exam.examId;
+        if (eId) conductedObjectiveExamsMap.set(eId, exam);
       }
     });
 
@@ -1001,9 +1002,7 @@ export class QuotientService {
       const exam = examsMap.get(attData.examId);
       if (exam) {
         const eId = exam.id || exam.examId;
-        if (!conductedObjectiveExams.some(e => (e.id || e.examId) === eId)) {
-          conductedObjectiveExams.push(exam);
-        }
+        if (eId) conductedObjectiveExamsMap.set(eId, exam);
       }
     });
 
@@ -1012,23 +1011,25 @@ export class QuotientService {
       const exam = examsMap.get(assData.examId);
       if (exam) {
         const eId = exam.id || exam.examId;
-        if (!conductedObjectiveExams.some(e => (e.id || e.examId) === eId)) {
-          conductedObjectiveExams.push(exam);
-        }
+        if (eId) conductedObjectiveExamsMap.set(eId, exam);
       }
     });
 
+    const conductedObjectiveExams = Array.from(conductedObjectiveExamsMap.values());
+
     // 4. Gather all conducted subjective exams matching student batch or class
-    const conductedSubjectiveExams: any[] = [];
+    const conductedSubjectiveExamsMap = new Map<string, any>();
     filteredSubjectiveExams.forEach((subExam: any) => {
       const isMatch = isExamForStudent(subExam, studentCode, bIds, studentClass);
       const scheduledDateStr = subExam.scheduledDate || getExamDateKey(subExam) || todayDateStr;
       const isPastOrToday = scheduledDateStr <= todayDateStr;
       
       if (isMatch && isPastOrToday) {
-        conductedSubjectiveExams.push(subExam);
+        const sId = subExam.id || subExam.examId;
+        if (sId) conductedSubjectiveExamsMap.set(sId, subExam);
       }
     });
+    const conductedSubjectiveExams = Array.from(conductedSubjectiveExamsMap.values());
 
     // 5. Practice reviews filter
     const filteredReviews = this.filterByDate(rawReviews, ['timestamp', 'createdAt'], startDate);

@@ -442,7 +442,8 @@ export class ReportService {
           obsScore: obsComp?.score ?? 50,
           obsDetails: obsComp?.details?.parameters || [],
           parentName: pName,
-          parentMobile: pMobile
+          parentMobile: pMobile,
+          quotientData
         };
       } catch (e) {
         console.warn(`Failed to calculate LQ for student: ${student.studentCode}`, e);

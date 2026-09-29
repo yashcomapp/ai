@@ -25,6 +25,7 @@ interface StudentLQ {
   obsDetails?: { id: string; name: string; average: number; logsCount?: number }[];
   parentName?: string;
   parentMobile?: string;
+  quotientData?: any;
 }
 
 export default function LearningQuotientReportPage() {
@@ -372,18 +373,33 @@ _Empowering Conceptual Excellence_`;
   const handleOpenDetailsModal = async (student: StudentLQ) => {
     setSelectedCode(student.studentCode || '');
     setSelectedStudentInfo({ name: student.name, email: student.email });
-    setLoadingDetails(true);
     setShowDetailsModal(true);
+    setCommentsText('');
+    setIsCommentsEdited(false);
+
+    if (student.quotientData) {
+      setQuotientDetails(student.quotientData);
+      setParentMobile(student.parentMobile || '');
+      setParentName(student.parentName || '');
+      setStudentMobile('');
+      const autoComments = generateStudentComments(
+        { name: student.name, studentCode: student.studentCode, email: student.email },
+        student.quotientData
+      );
+      setCommentsText(autoComments);
+      setLoadingDetails(false);
+      return;
+    }
+
+    setLoadingDetails(true);
     setQuotientDetails(null);
     setParentMobile('');
     setParentName('');
     setStudentMobile('');
-    setCommentsText('');
-    setIsCommentsEdited(false);
 
     try {
       const idToken = await firebaseUser!.getIdToken();
-      const res = await getQuotientReport(idToken, student.studentCode);
+      const res = await getQuotientReport(idToken, student.studentCode, duration);
       if (res && res.success) {
         setQuotientDetails(res.quotientData);
         setParentMobile(res.parentMobile || '');
@@ -720,10 +736,20 @@ _Empowering Conceptual Excellence_`;
 
   const loadQueueStudentDetails = async (index: number, queue: any[]) => {
     if (!firebaseUser || index >= queue.length) return;
+    const student = queue[index];
+
+    // Priority 1: Instant in-memory lookup from precomputed bulk quotient data (0 extra API invocations)
+    const matched = students.find(s => s.studentCode === student.studentCode);
+    if (matched && matched.quotientData) {
+      setBroadcastActiveDetails(matched.quotientData);
+      setLoadingBroadcastDetails(false);
+      return;
+    }
+
+    // Fallback: Fetch if not found in memory
     setLoadingBroadcastDetails(true);
     setBroadcastActiveDetails(null);
     try {
-      const student = queue[index];
       const idToken = await firebaseUser.getIdToken();
       const res = await getQuotientReport(idToken, student.studentCode, duration);
       if (res && res.success) {
