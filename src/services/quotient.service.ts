@@ -832,6 +832,111 @@ export function isExamForStudent(exam: any, studentCode: string, bIds: string[],
   return false;
 }
 
+export interface ExamIndex {
+  byStudent: Map<string, any[]>;
+  byBatch: Map<string, any[]>;
+  byClass: Map<string, any[]>;
+  universal: any[];
+}
+
+export function buildExamIndex(exams: any[]): ExamIndex {
+  const byStudent = new Map<string, any[]>();
+  const byBatch = new Map<string, any[]>();
+  const byClass = new Map<string, any[]>();
+  const universal: any[] = [];
+
+  exams.forEach(exam => {
+    if (
+      exam.status === 'unassigned' ||
+      exam.status === 'archived_vault' ||
+      exam.status === 'draft' ||
+      exam.published === false ||
+      exam.isAssigned === false ||
+      exam.isArchivedVault === true ||
+      exam.assignmentStatus === 'unassigned'
+    ) {
+      return;
+    }
+
+    let hasSpecificTarget = false;
+
+    // Student index
+    if (Array.isArray(exam.targetStudents) && exam.targetStudents.length > 0) {
+      hasSpecificTarget = true;
+      exam.targetStudents.forEach((st: string) => {
+        if (!byStudent.has(st)) byStudent.set(st, []);
+        byStudent.get(st)!.push(exam);
+      });
+    }
+
+    // Batch index
+    const batches = new Set<string>();
+    if (exam.batchId) batches.add(exam.batchId);
+    if (Array.isArray(exam.batchIds)) exam.batchIds.forEach((b: string) => batches.add(b));
+    if (Array.isArray(exam.targetBatches)) exam.targetBatches.forEach((b: string) => batches.add(b));
+
+    if (batches.size > 0) {
+      hasSpecificTarget = true;
+      batches.forEach(bId => {
+        if (!byBatch.has(bId)) byBatch.set(bId, []);
+        byBatch.get(bId)!.push(exam);
+      });
+    }
+
+    // Class index
+    const rawClass = exam.class || exam.className;
+    if (rawClass) {
+      const normClass = String(rawClass).replace(/\D/g, '');
+      if (normClass) {
+        if (!byClass.has(normClass)) byClass.set(normClass, []);
+        byClass.get(normClass)!.push(exam);
+      }
+    }
+
+    if (!hasSpecificTarget && !rawClass) {
+      universal.push(exam);
+    }
+  });
+
+  return { byStudent, byBatch, byClass, universal };
+}
+
+export function getRelevantExamsForStudent(index: ExamIndex, studentCode: string, bIds: string[], studentClass?: string): any[] {
+  const matchedMap = new Map<string, any>();
+
+  // 1. Direct student matches
+  const directStudents = index.byStudent.get(studentCode) || [];
+  directStudents.forEach(e => matchedMap.set(e.id || e.examId, e));
+
+  // 2. Batch matches
+  bIds.forEach(bId => {
+    const batchExams = index.byBatch.get(bId) || [];
+    batchExams.forEach(e => matchedMap.set(e.id || e.examId, e));
+  });
+
+  // 3. Class matches (filtered for class-wide exams)
+  if (studentClass) {
+    const normStudentClass = String(studentClass).replace(/\D/g, '');
+    if (normStudentClass) {
+      const classExams = index.byClass.get(normStudentClass) || [];
+      classExams.forEach(e => {
+        if (isExamForStudent(e, studentCode, bIds, studentClass)) {
+          matchedMap.set(e.id || e.examId, e);
+        }
+      });
+    }
+  }
+
+  // 4. Universal exams
+  index.universal.forEach(e => {
+    if (isExamForStudent(e, studentCode, bIds, studentClass)) {
+      matchedMap.set(e.id || e.examId, e);
+    }
+  });
+
+  return Array.from(matchedMap.values());
+}
+
 export class QuotientService {
   private static calculators: ParameterCalculator[] = [
     new ExamPerformanceCalculator(),
@@ -972,26 +1077,34 @@ export class QuotientService {
     examsMap: Map<string, any>,
     subjectiveExamsList: any[],
     studentClass?: string,
-    rawEvaluations: any[] = []
+    rawEvaluations: any[] = [],
+    prebuiltObjIndex?: ExamIndex,
+    prebuiltSubjIndex?: ExamIndex
   ): QuotientResult {
     const todayDateStr = getDateKeyIST();
     const startDate = duration ? this.getStartDateForDuration(duration) : null;
 
     const filteredAttempts = this.filterByDate(rawAttempts, ['timestamp', 'createdAt', 'completedAt'], startDate);
     const filteredAssignments = this.filterByDate(rawAssignments, ['createdAt', 'dueDate'], startDate);
-    const filteredSubjectiveExams = this.filterByDate(subjectiveExamsList, ['scheduledDate', 'createdAt'], startDate);
     const filteredEvaluations = this.filterByDate(rawEvaluations, ['createdAt', 'evaluatedAt', 'timestamp', 'date'], startDate);
+
+    // Fast indexed candidate resolution (O(1) lookups instead of scanning entire collection)
+    const objIndex = prebuiltObjIndex || buildExamIndex(Array.from(examsMap.values()));
+    const candidateObjExams = getRelevantExamsForStudent(objIndex, studentCode, bIds, studentClass);
+
+    const subjIndex = prebuiltSubjIndex || buildExamIndex(subjectiveExamsList);
+    const candidateSubjExams = getRelevantExamsForStudent(subjIndex, studentCode, bIds, studentClass);
+    const filteredSubjectiveExams = this.filterByDate(candidateSubjExams, ['scheduledDate', 'createdAt'], startDate);
 
     const conductedObjectiveExamsMap = new Map<string, any>();
 
-    // 1. Gather all conducted objective exams matching student batch or class
-    examsMap.forEach((exam: any) => {
-      const isMatch = isExamForStudent(exam, studentCode, bIds, studentClass);
+    // 1. Gather all conducted objective exams matching student batch or class (from indexed candidate subset)
+    candidateObjExams.forEach((exam: any) => {
       const examDateStr = getExamDateKey(exam) || todayDateStr;
       const isPastOrToday = examDateStr <= todayDateStr;
       const withinDate = this.isWithinDateRange(exam.scheduledDate || exam.createdAt || examDateStr, startDate);
 
-      if (isMatch && isPastOrToday && withinDate) {
+      if (isPastOrToday && withinDate) {
         const eId = exam.id || exam.examId;
         if (eId) conductedObjectiveExamsMap.set(eId, exam);
       }
@@ -1017,14 +1130,13 @@ export class QuotientService {
 
     const conductedObjectiveExams = Array.from(conductedObjectiveExamsMap.values());
 
-    // 4. Gather all conducted subjective exams matching student batch or class
+    // 4. Gather all conducted subjective exams matching student batch or class (from indexed candidate subset)
     const conductedSubjectiveExamsMap = new Map<string, any>();
     filteredSubjectiveExams.forEach((subExam: any) => {
-      const isMatch = isExamForStudent(subExam, studentCode, bIds, studentClass);
       const scheduledDateStr = subExam.scheduledDate || getExamDateKey(subExam) || todayDateStr;
       const isPastOrToday = scheduledDateStr <= todayDateStr;
       
-      if (isMatch && isPastOrToday) {
+      if (isPastOrToday) {
         const sId = subExam.id || subExam.examId;
         if (sId) conductedSubjectiveExamsMap.set(sId, subExam);
       }
@@ -1373,6 +1485,8 @@ export class QuotientService {
     const evaluationsMap = groupByStudent(rawEvaluations);
 
     const resultsMap: Record<string, QuotientResult> = {};
+    const prebuiltObjIndex = buildExamIndex(Array.from(examsMap.values()));
+    const prebuiltSubjIndex = buildExamIndex(subjectiveExamsList);
 
     studentCodes.forEach(code => {
       const bIds = studentBatchesMap.get(code) || [];
@@ -1399,7 +1513,9 @@ export class QuotientService {
         examsMap,
         subjectiveExamsList,
         studentClass,
-        sEvaluations
+        sEvaluations,
+        prebuiltObjIndex,
+        prebuiltSubjIndex
       );
     });
 

@@ -45,6 +45,8 @@ export async function POST(req: NextRequest) {
         adminDb.collection('batchAssignments').where('examId', '==', doc021.id).get()
       ]);
 
+      const batch = adminDb.batch();
+
       // If 021 has an active assignment, copy its parameters over to 020's assignment
       if (!assign021Snap.empty) {
         const active021Data = assign021Snap.docs[0].data();
@@ -56,18 +58,19 @@ export async function POST(req: NextRequest) {
         };
 
         if (!assign020Snap.empty) {
-          await assign020Snap.docs[0].ref.set(updatedPayload);
+          batch.set(assign020Snap.docs[0].ref, updatedPayload);
           report.actions.push(`Updated existing assignment for 020 with active schedule from 021`);
         } else {
-          await adminDb.collection('batchAssignments').add(updatedPayload);
+          const newAssignRef = adminDb.collection('batchAssignments').doc();
+          batch.set(newAssignRef, updatedPayload);
           report.actions.push(`Created active assignment for 020 using schedule from 021`);
         }
 
-        // Delete redundant assignments of 021
-        for (const doc of assign021Snap.docs) {
-          await doc.ref.delete();
+        // Delete redundant assignments of 021 in batch
+        assign021Snap.docs.forEach(doc => {
+          batch.delete(doc.ref);
           report.actions.push(`Deleted duplicate assignment ${doc.id} for 021`);
-        }
+        });
       }
 
       // 3. Move any attempts or reviews from 021 to 020
@@ -76,19 +79,19 @@ export async function POST(req: NextRequest) {
         adminDb.collection('reviews').where('examId', '==', doc021.id).get()
       ]);
 
-      for (const att of attempts021.docs) {
-        await att.ref.update({ examId: doc020.id });
+      attempts021.docs.forEach(att => {
+        batch.update(att.ref, { examId: doc020.id });
         report.actions.push(`Re-linked attempt ${att.id} to 020`);
-      }
+      });
 
-      for (const rev of reviews021.docs) {
-        await rev.ref.update({ examId: doc020.id });
+      reviews021.docs.forEach(rev => {
+        batch.update(rev.ref, { examId: doc020.id });
         report.actions.push(`Re-linked review ${rev.id} to 020`);
-      }
+      });
 
       // 4. Update 020 exam name to reflect updated assignment date
       const updatedName = doc020.name.replace(/-\d{6}$/, '-250826');
-      await adminDb.collection('exams').doc(doc020.id).update({
+      batch.update(adminDb.collection('exams').doc(doc020.id), {
         name: updatedName,
         status: 'active',
         updatedAt: admin.firestore.FieldValue.serverTimestamp()
@@ -96,12 +99,15 @@ export async function POST(req: NextRequest) {
       report.actions.push(`Updated 020 exam name to ${updatedName}`);
 
       // 5. Delete the redundant 021 cloned exam document
-      await adminDb.collection('exams').doc(doc021.id).delete();
+      batch.delete(adminDb.collection('exams').doc(doc021.id));
       report.actions.push(`Deleted cloned exam document ${doc021.id}`);
 
       // 6. Reset counter for class 8 back to 21
-      await adminDb.collection('examCounters').doc('class-8').set({ nextSequence: 21 }, { merge: true });
+      batch.set(adminDb.collection('examCounters').doc('class-8'), { nextSequence: 21 }, { merge: true });
       report.actions.push(`Reset class-8 counter to sequence 21`);
+
+      // Commit all operations in 1 single atomic batch RPC
+      await batch.commit();
     } else if (doc020 && !doc021) {
       // Just ensure 020 is active and has clean single assignment
       const updatedName = doc020.name.replace(/-\d{6}$/, '-250826');

@@ -80,17 +80,18 @@ export async function GET(req: NextRequest) {
     const studentClassStr = String(studentClassRaw || '').trim().replace(/[^0-9]/g, '');
     const studentClassNum = studentClassStr ? Number(studentClassStr) : null;
 
-    // 3. Fetch all potential sources of exams and attempts in parallel
+    // 3. Fetch all student-scoped assignments, attempts, absence reasons, and direct subjective exams in parallel
     const [
       batchAssignmentsSnap,
       studentAssignmentsSnap,
       subAssignmentsSnap,
       subStudentAssignmentsSnap,
-      subjectiveExamsSnap,
       reviewsSnap,
       subjectiveAttemptsSnap,
-      examsSnap,
-      absenceReasonsSnap
+      absenceReasonsSnap,
+      directSubjBatchesSnap,
+      directSubjBatchesAnySnap,
+      directSubjStudentsSnap
     ] = await Promise.all([
       // Objective batch assignments
       batchIds.length > 0
@@ -120,11 +121,6 @@ export async function GET(req: NextRequest) {
         .where('status', '==', 'active')
         .get(),
 
-      // Subjective exams (classroom tests + home practices)
-      adminDb.collection('subjectiveExams')
-        .where('status', '==', 'active')
-        .get(),
-
       // Objective attempts (reviews collection is the source of truth)
       adminDb.collection('reviews')
         .where('studentCode', '==', studentCode)
@@ -135,12 +131,30 @@ export async function GET(req: NextRequest) {
         .where('studentCode', '==', studentCode)
         .get(),
 
-      // Objective exams
-      adminDb.collection('exams').get(),
-
       // Exam absence reasons
       adminDb.collection('examAbsenceReasons')
         .where('studentCode', '==', studentCode)
+        .get(),
+
+      // Direct Subjective exams for student's batches (targeted)
+      batchIds.length > 0
+        ? adminDb.collection('subjectiveExams')
+            .where('status', '==', 'active')
+            .where('batchId', 'in', batchIds)
+            .get()
+        : Promise.resolve({ docs: [] } as any),
+
+      batchIds.length > 0
+        ? adminDb.collection('subjectiveExams')
+            .where('status', '==', 'active')
+            .where('targetBatches', 'array-contains-any', batchIds)
+            .get()
+        : Promise.resolve({ docs: [] } as any),
+
+      // Direct Subjective exams for student directly
+      adminDb.collection('subjectiveExams')
+        .where('status', '==', 'active')
+        .where('targetStudents', 'array-contains', studentCode)
         .get()
     ]);
 
@@ -153,16 +167,56 @@ export async function GET(req: NextRequest) {
       }
     });
 
-    // Map objective exams metadata
-    const examsMetadata = new Map<string, any>();
-    examsSnap.docs.forEach(doc => {
-      examsMetadata.set(doc.id, doc.data());
+    // Collect all targeted subjective exams from direct batch queries
+    const subjectiveExamsMetadata = new Map<string, any>();
+    const allDirectSubjDocs = [
+      ...directSubjBatchesSnap.docs,
+      ...directSubjBatchesAnySnap.docs,
+      ...directSubjStudentsSnap.docs
+    ];
+    allDirectSubjDocs.forEach((doc: any) => {
+      subjectiveExamsMetadata.set(doc.id, doc.data());
     });
 
-    // Map subjective exams metadata
-    const subjectiveExamsMetadata = new Map<string, any>();
-    subjectiveExamsSnap.docs.forEach(doc => {
-      subjectiveExamsMetadata.set(doc.id, doc.data());
+    // Collect all unique referenced exam IDs to fetch strictly relevant documents via getAll()
+    const objectiveExamIds = new Set<string>();
+    [...batchAssignmentsSnap.docs, ...studentAssignmentsSnap.docs, ...reviewsSnap.docs].forEach((doc: any) => {
+      const data = doc.data();
+      const eid = data.examId || data.examCode;
+      if (eid && data.examType !== 'subjective' && data.examType !== 'entrance') {
+        objectiveExamIds.add(eid);
+      }
+    });
+
+    const additionalSubjExamIds = new Set<string>();
+    [...subAssignmentsSnap.docs, ...subStudentAssignmentsSnap.docs, ...subjectiveAttemptsSnap.docs].forEach((doc: any) => {
+      const data = doc.data();
+      const eid = data.examId;
+      if (eid && !subjectiveExamsMetadata.has(eid)) {
+        additionalSubjExamIds.add(eid);
+      }
+    });
+
+    // Targeted batch reads using getAll() instead of collection-wide scans
+    const objRefs = Array.from(objectiveExamIds).map(id => adminDb.collection('exams').doc(id));
+    const subjRefs = Array.from(additionalSubjExamIds).map(id => adminDb.collection('subjectiveExams').doc(id));
+
+    const [objSnaps, additionalSubjSnaps] = await Promise.all([
+      objRefs.length > 0 ? adminDb.getAll(...objRefs).catch(() => []) : [],
+      subjRefs.length > 0 ? adminDb.getAll(...subjRefs).catch(() => []) : []
+    ]);
+
+    const examsMetadata = new Map<string, any>();
+    objSnaps.forEach((snap: any) => {
+      if (snap && snap.exists) {
+        examsMetadata.set(snap.id, snap.data());
+      }
+    });
+
+    additionalSubjSnaps.forEach((snap: any) => {
+      if (snap && snap.exists) {
+        subjectiveExamsMetadata.set(snap.id, snap.data());
+      }
     });
 
     // Map objective attempts (from reviews collection)
@@ -272,7 +326,7 @@ export async function GET(req: NextRequest) {
     });
 
     // B. Process Classroom Tests & Home Practices (Type B: subjectiveExams directly assigned)
-    subjectiveExamsSnap.docs.forEach(doc => {
+    allDirectSubjDocs.forEach((doc: any) => {
       const examData = doc.data();
       const examId = doc.id;
 
