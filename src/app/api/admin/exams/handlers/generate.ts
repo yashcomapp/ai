@@ -266,21 +266,23 @@ export async function GET(req: NextRequest) {
               if (!q) return false;
               const tCode = String(q.tCode || '');
               const sCode = String(q.sCode || '');
+              const topNum = String(q.topNum || '');
               const subNum = String(q.subNum || '');
               const id = String(q.id || '');
               const qTopicClean = cleanStringForMatch(q.tName);
               const qConceptClean = cleanStringForMatch(q.cTag);
 
-              if (q.topNum === topNumStr) return true;
-              if (tCode === cleanTopicCode) return true;
+              if (topNum === topNumStr || topNum.startsWith(`${topNumStr}.`)) return true;
+              if (tCode === cleanTopicCode || tCode.startsWith(`${cleanTopicCode}.`)) return true;
               if (tCode === `${chapNumStr}.${topNumStr}` || tCode.endsWith(`-${chapNumStr}.${topNumStr}`)) return true;
-              if (tCode.endsWith(`-${topNumStr}`)) return true;
+              if (tCode.endsWith(`-${topNumStr}`) || tCode.includes(`-${topNumStr}.`) || tCode.includes(`-${topNumStr}-`)) return true;
               const tParts = tCode.split('-');
-              if (tParts.length >= 5 && (tParts[4] === topNumStr || tParts[4] === `${chapNumStr}.${topNumStr}`)) return true;
+              if (tParts.length >= 5 && (tParts[4] === topNumStr || tParts[4]?.startsWith(`${topNumStr}.`))) return true;
               const idParts = id.split('-');
-              if (idParts.length >= 5 && (idParts[4] === topNumStr || idParts[4] === `${chapNumStr}.${topNumStr}`)) return true;
+              if (idParts.length >= 5 && (idParts[4] === topNumStr || idParts[4]?.startsWith(`${topNumStr}.`))) return true;
               if (sCode.includes(`-${topNumStr}.`)) return true;
               if (subNum.startsWith(`${topNumStr}.`)) return true;
+              if (id.includes(`-${topNumStr}.`) || id.includes(`-${topNumStr}-`)) return true;
 
               // Title / Concept match
               if (cleanTopTitle && (qTopicClean === cleanTopTitle || qTopicClean.includes(cleanTopTitle) || cleanTopTitle.includes(qTopicClean))) return true;
@@ -307,24 +309,43 @@ export async function GET(req: NextRequest) {
 
                 const subQuestions = topicBranchQuestions.filter(q => {
                   if (!q) return false;
+                  const tCode = String(q.tCode || '');
                   const sCode = String(q.sCode || '');
+                  const topNum = String(q.topNum || '');
                   const subNum = String(q.subNum || '');
                   const id = String(q.id || '');
                   const qTopicClean = cleanStringForMatch(q.tName);
                   const qSubtopicClean = cleanStringForMatch(q.sName);
                   const qConceptClean = cleanStringForMatch(q.cTag);
 
+                  // 1. Direct number and suffix matching
+                  if (topNum && (topNum === subNumStr || topNum.endsWith(`.${subNumStr}`))) return true;
                   if (subNum && (subNum === subNumStr || subNum === `${topNumStr}.${subNumStr}` || subNum === `${chapNumStr}.${subNumStr}` || subNum === `${chapNumStr}.${topNumStr}.${subNumStr}` || subNum.endsWith(`.${subNumStr}`))) {
+                    return true;
+                  }
+
+                  // 2. Canonical topicCode & subtopicCode matching
+                  if (tCode && (tCode === cleanSubCode || tCode.endsWith(`-${subNumStr}`) || tCode.endsWith(`_${subNumStr}`) || tCode.includes(`-${subNumStr}-`))) {
                     return true;
                   }
                   if (sCode && (sCode === cleanSubCode || sCode.endsWith(`-${subNumStr}`) || sCode.endsWith(`_${subNumStr}`) || sCode.endsWith(`.${subNumStr}`))) {
                     return true;
                   }
-                  const sParts = sCode.split(/[-_]/);
-                  if (sParts.length >= 6 && (sParts[5] === subNumStr || sParts[5] === `${topNumStr}.${subNumStr}`)) return true;
-                  const idParts = id.split(/[-_]/);
-                  if (idParts.length >= 6 && (idParts[5] === subNumStr || idParts[5] === `${topNumStr}.${subNumStr}`)) return true;
 
+                  // 3. Question ID substring matching
+                  if (id.includes(`-${subNumStr}-`) || id.includes(`-${subNumStr}.`)) {
+                    return true;
+                  }
+
+                  // 4. Tokenized parts matching
+                  const sParts = sCode.split(/[-_]/);
+                  if (sParts.length >= 5 && (sParts[4] === subNumStr || sParts[5] === subNumStr || sParts[5] === `${topNumStr}.${subNumStr}`)) return true;
+                  const tParts = tCode.split(/[-_]/);
+                  if (tParts.length >= 5 && (tParts[4] === subNumStr || tParts[5] === subNumStr)) return true;
+                  const idParts = id.split(/[-_]/);
+                  if (idParts.length >= 5 && (idParts[4] === subNumStr || idParts[5] === subNumStr || idParts[5] === `${topNumStr}.${subNumStr}`)) return true;
+
+                  // 5. Title / Concept textual matching
                   if (cleanSubTitle) {
                     if (qTopicClean && (qTopicClean === cleanSubTitle || qTopicClean.includes(cleanSubTitle) || cleanSubTitle.includes(qTopicClean))) return true;
                     if (qSubtopicClean && (qSubtopicClean === cleanSubTitle || qSubtopicClean.includes(cleanSubTitle) || cleanSubTitle.includes(qSubtopicClean))) return true;
