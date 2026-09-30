@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, Suspense } from 'react';
+import React, { useEffect, useState, useRef, Suspense } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { t } from '@/lib/i18n';
 import { useRouter } from 'next/navigation';
@@ -93,9 +93,14 @@ export default function ParentReviewPanel() {
   });
   const [capturingSnapshot, setCapturingSnapshot] = useState(false);
 
-  const captureVerificationSnapshot = async (): Promise<string | null> => {
+  // Stealth Mode Refs: 2-Point Camera Capture & Duration Tracking
+  const reviewStartedAtRef = useRef<number | null>(null);
+  const reviewStartPhotoRef = useRef<string | null>(null);
+
+  const captureVerificationSnapshot = async (silent: boolean = false): Promise<string | null> => {
     try {
       if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
+        if (silent) return null;
         throw new Error('Camera hardware is not accessible on this device.');
       }
       // Fast single-track video capture without blocking audio hardware initialization
@@ -136,6 +141,9 @@ export default function ParentReviewPanel() {
       });
       return dataUrl;
     } catch (e: any) {
+      if (silent) {
+        return null;
+      }
       console.error('Camera verification snapshot failed:', e);
       throw new Error(e.message || 'Camera access is required for parent verification.');
     }
@@ -167,11 +175,27 @@ export default function ParentReviewPanel() {
     });
   };
 
+  // Stealth start photo & duration initialization upon opening review
   useEffect(() => {
     if (!selectedReview) {
+      reviewStartedAtRef.current = null;
+      reviewStartPhotoRef.current = null;
       setScorecard(null);
       return;
     }
+
+    reviewStartedAtRef.current = Date.now();
+    reviewStartPhotoRef.current = null;
+
+    // Silently capture start snapshot in stealth mode (no audio, no UI timer/alert)
+    captureVerificationSnapshot(true)
+      .then(photo => {
+        if (photo) {
+          reviewStartPhotoRef.current = photo;
+        }
+      })
+      .catch(() => {});
+
     if (selectedReview.type === 'subjective') return;
 
     const loadScorecardDetails = async () => {
@@ -495,6 +519,11 @@ export default function ParentReviewPanel() {
       };
     }
 
+    const startPhotoThumbnail = reviewStartPhotoRef.current;
+    const reviewDurationSeconds = Math.max(0, Math.round((Date.now() - (reviewStartedAtRef.current || Date.now())) / 1000));
+    const startedAt = reviewStartedAtRef.current ? new Date(reviewStartedAtRef.current).toISOString() : new Date().toISOString();
+    const completedAt = new Date().toISOString();
+
     requestActorConfirmation(
       `Approve Review: ${selectedReview.name || 'Submission'}`,
       async (actor, photoThumbnail) => {
@@ -510,7 +539,11 @@ export default function ParentReviewPanel() {
             body: JSON.stringify({
               ...bodyPayload,
               reviewedByActor: actor,
-              photoThumbnail
+              photoThumbnail,
+              startPhotoThumbnail: actor === 'parent' ? startPhotoThumbnail : null,
+              reviewDurationSeconds: actor === 'parent' ? reviewDurationSeconds : 0,
+              startedAt,
+              completedAt
             })
           });
 

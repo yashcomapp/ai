@@ -921,7 +921,8 @@ export async function POST(req: NextRequest) {
       await ReportCacheManager.invalidateReport('parent-pending-report').catch(() => null);
       await ReportCacheManager.invalidateReport('parent-sincerity-report').catch(() => null);
 
-      // Write parent sincerity log
+      // Write parent sincerity log with 2-point camera verification & duration
+      const resolvedDuration = Number(body.reviewDurationSeconds ?? body.durationSeconds) || 0;
       const sincerityLog = {
         reviewId: reviewId || (Array.isArray(reviewIds) ? reviewIds.join(',') : 'bulk'),
         type,
@@ -930,6 +931,10 @@ export async function POST(req: NextRequest) {
         reviewedByActor: actor,
         reviewedByEmail: parentEmail,
         photoThumbnail: actor === 'parent' ? (photoThumbnail || null) : null,
+        startPhotoThumbnail: actor === 'parent' ? (body.startPhotoThumbnail || null) : null,
+        durationSeconds: actor === 'parent' ? resolvedDuration : 0,
+        startedAt: body.startedAt || null,
+        completedAt: body.completedAt || null,
         expiresAt: expiresAt,
         photoPurged: false,
         timestamp: new Date().toISOString(),

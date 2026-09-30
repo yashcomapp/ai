@@ -927,6 +927,10 @@ export class ReportService {
         reviewedByActor: data.reviewedByActor === 'student' ? 'student' : 'parent',
         reviewedByEmail: data.reviewedByEmail || '',
         photoThumbnail: photo,
+        startPhotoThumbnail: data.startPhotoThumbnail || null,
+        durationSeconds: Number(data.durationSeconds) || 0,
+        startedAt: data.startedAt || null,
+        completedAt: data.completedAt || null,
         photoPurged: isPurged,
         expiresAt: data.expiresAt || null,
         timestamp: data.timestamp || (data.createdAt?.toDate?.()?.toISOString?.()) || new Date().toISOString()
@@ -979,6 +983,10 @@ export class ReportService {
         reviewedByActor: actor,
         reviewedByEmail: data.evaluatorName || '',
         photoThumbnail: null,
+        startPhotoThumbnail: null,
+        durationSeconds: 0,
+        startedAt: null,
+        completedAt: null,
         photoPurged: false,
         expiresAt: null,
         timestamp: data.createdAt?.toDate?.()?.toISOString?.() || new Date().toISOString()

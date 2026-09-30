@@ -19,6 +19,10 @@ interface SincerityRecord {
   reviewedByActor: 'parent' | 'student';
   reviewedByEmail?: string;
   photoThumbnail?: string | null;
+  startPhotoThumbnail?: string | null;
+  durationSeconds?: number;
+  startedAt?: string | null;
+  completedAt?: string | null;
   photoPurged?: boolean;
   expiresAt?: number | null;
   timestamp: string;
@@ -65,10 +69,14 @@ export default function ParentPendingReportPage() {
   // Photo viewer modal
   const [previewPhoto, setPreviewPhoto] = useState<{
     show: boolean;
-    photoUrl: string;
+    photoUrl?: string | null;
+    startPhotoUrl?: string | null;
+    durationSeconds?: number;
     studentName: string;
     examName: string;
     timestamp: string;
+    startedAt?: string | null;
+    completedAt?: string | null;
     expiresAt?: number | null;
   } | null>(null);
 
@@ -143,6 +151,14 @@ export default function ParentPendingReportPage() {
   }, [records, selectedBatchFilter, actorFilter, sessionTypeFilter, deferredSearch]);
 
   const formatDateIST = (dateStr: string) => dateStr ? formatDateTimeIST(dateStr) : '—';
+
+  const formatDuration = (seconds?: number) => {
+    if (!seconds || seconds <= 0) return null;
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    if (m === 0) return `${s}s`;
+    return `${m}m ${s > 0 ? `${s}s` : ''}`.trim();
+  };
 
   const getHoursUntilExpiry = (expiresAt?: number | null) => {
     if (!expiresAt) return null;
@@ -340,7 +356,10 @@ export default function ParentPendingReportPage() {
                 ) : (
                   filteredRecords.map(r => {
                     const isParent = r.reviewedByActor === 'parent';
-                    const hasPhoto = Boolean(r.photoThumbnail);
+                    const hasEndPhoto = Boolean(r.photoThumbnail);
+                    const hasStartPhoto = Boolean(r.startPhotoThumbnail);
+                    const hasTwoPointVerification = hasStartPhoto && hasEndPhoto;
+                    const durationText = formatDuration(r.durationSeconds);
                     const expiryLabel = getHoursUntilExpiry(r.expiresAt);
 
                     return (
@@ -383,32 +402,89 @@ export default function ParentPendingReportPage() {
                           )}
                         </td>
 
-                        {/* Photo Verification Thumbnail */}
+                        {/* Photo Verification Proof */}
                         <td style={{ padding: '12px 16px', textAlign: 'center' }}>
-                          {hasPhoto ? (
-                            <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+                          {hasTwoPointVerification ? (
+                            <div 
+                              style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: '4px', cursor: 'pointer' }}
+                              onClick={() => setPreviewPhoto({
+                                show: true,
+                                photoUrl: r.photoThumbnail,
+                                startPhotoUrl: r.startPhotoThumbnail,
+                                durationSeconds: r.durationSeconds,
+                                studentName: r.studentName,
+                                examName: r.examName,
+                                timestamp: r.timestamp,
+                                startedAt: r.startedAt,
+                                completedAt: r.completedAt,
+                                expiresAt: r.expiresAt
+                              })}
+                              title="Click to view full 2-point camera comparison"
+                            >
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                <div style={{ textAlign: 'center' }}>
+                                  <img 
+                                    src={r.startPhotoThumbnail!} 
+                                    alt="Start Proof"
+                                    style={{ width: '42px', height: '32px', objectFit: 'cover', borderRadius: '4px', border: '1px solid var(--border-light)' }} 
+                                  />
+                                  <div style={{ fontSize: '8.5px', color: 'var(--text-muted)', fontWeight: 600 }}>Start</div>
+                                </div>
+                                <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>➔</span>
+                                <div style={{ textAlign: 'center' }}>
+                                  <img 
+                                    src={r.photoThumbnail!} 
+                                    alt="End Proof"
+                                    style={{ width: '42px', height: '32px', objectFit: 'cover', borderRadius: '4px', border: '1px solid var(--accent)' }} 
+                                  />
+                                  <div style={{ fontSize: '8.5px', color: 'var(--accent)', fontWeight: 600 }}>End</div>
+                                </div>
+                              </div>
+                              {durationText && (
+                                <span style={{ fontSize: '9.5px', color: 'var(--text)', background: 'var(--bg-soft)', padding: '1px 6px', borderRadius: '8px', fontWeight: 600 }}>
+                                  ⏱️ {durationText}
+                                </span>
+                              )}
+                              {expiryLabel && (
+                                <span style={{ fontSize: '9px', color: 'var(--warning)', fontWeight: 600 }}>
+                                  ⏳ {expiryLabel}
+                                </span>
+                              )}
+                            </div>
+                          ) : hasEndPhoto ? (
+                            <div 
+                              style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: '4px', cursor: 'pointer' }}
+                              onClick={() => setPreviewPhoto({
+                                show: true,
+                                photoUrl: r.photoThumbnail,
+                                startPhotoUrl: null,
+                                durationSeconds: r.durationSeconds,
+                                studentName: r.studentName,
+                                examName: r.examName,
+                                timestamp: r.timestamp,
+                                startedAt: r.startedAt,
+                                completedAt: r.completedAt,
+                                expiresAt: r.expiresAt
+                              })}
+                            >
                               <img 
                                 src={r.photoThumbnail!} 
                                 alt="Verification Proof"
-                                onClick={() => setPreviewPhoto({
-                                  show: true,
-                                  photoUrl: r.photoThumbnail!,
-                                  studentName: r.studentName,
-                                  examName: r.examName,
-                                  timestamp: r.timestamp,
-                                  expiresAt: r.expiresAt
-                                })}
                                 style={{
                                   width: '48px',
                                   height: '36px',
                                   objectFit: 'cover',
                                   borderRadius: '4px',
                                   border: '1px solid var(--accent)',
-                                  cursor: 'pointer',
                                   boxShadow: '0 2px 4px rgba(0,0,0,0.15)'
                                 }}
                                 title="Click to enlarge verification photo"
                               />
+                              {durationText && (
+                                <span style={{ fontSize: '9.5px', color: 'var(--text)', background: 'var(--bg-soft)', padding: '1px 6px', borderRadius: '8px', fontWeight: 600 }}>
+                                  ⏱️ {durationText}
+                                </span>
+                              )}
                               {expiryLabel && (
                                 <span style={{ fontSize: '9px', color: 'var(--warning)', fontWeight: 600 }}>
                                   ⏳ {expiryLabel}
@@ -420,9 +496,12 @@ export default function ParentPendingReportPage() {
                               🔒 Auto-purged (24h)
                             </span>
                           ) : isParent ? (
-                            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                              Camera bypassed
-                            </span>
+                            <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
+                              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Camera bypassed</span>
+                              {durationText && (
+                                <span style={{ fontSize: '9.5px', color: 'var(--text-muted)' }}>⏱️ {durationText}</span>
+                              )}
+                            </div>
                           ) : (
                             <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>—</span>
                           )}
@@ -443,33 +522,80 @@ export default function ParentPendingReportPage() {
 
       </main>
 
-      {/* Photo Enlarge Modal */}
+      {/* Photo Enlarge & 2-Point Comparison Modal */}
       {previewPhoto?.show && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 12000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
-          <div style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', maxWidth: '420px', width: '100%', padding: '20px', border: '1px solid var(--border-light)', textAlign: 'center' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+          <div style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', maxWidth: previewPhoto.startPhotoUrl ? '620px' : '440px', width: '100%', padding: '20px', border: '1px solid var(--border-light)', textAlign: 'center' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
               <div style={{ textAlign: 'left' }}>
-                <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 700 }}>📷 Parent Verification Proof</h4>
-                <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{previewPhoto.studentName} · {previewPhoto.examName}</div>
+                <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 800 }}>
+                  📷 Parent Sincerity Verification Proof
+                </h4>
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                  {previewPhoto.studentName} · {previewPhoto.examName}
+                </div>
               </div>
               <button className="btn btn-secondary" style={{ padding: '2px 8px', fontSize: '11px' }} onClick={() => setPreviewPhoto(null)}>✕</button>
             </div>
 
-            <div style={{ borderRadius: 'var(--radius)', overflow: 'hidden', border: '1px solid var(--border-light)', marginBottom: '12px', background: 'var(--text-black)' }}>
-              <img 
-                src={previewPhoto.photoUrl} 
-                alt="Enlarged Proof" 
-                style={{ width: '100%', height: 'auto', display: 'block' }}
-              />
-            </div>
+            {/* 2-Point Comparison Layout vs Single Layout */}
+            {previewPhoto.startPhotoUrl && previewPhoto.photoUrl ? (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '14px' }}>
+                {/* 1. Start Capture */}
+                <div style={{ background: 'var(--bg-soft)', borderRadius: 'var(--radius)', padding: '8px', border: '1px solid var(--border-light)' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--success)', marginBottom: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+                    🟢 Start of Review
+                  </div>
+                  <div style={{ borderRadius: '4px', overflow: 'hidden', border: '1px solid var(--border-light)', background: '#000', height: '160px' }}>
+                    <img 
+                      src={previewPhoto.startPhotoUrl} 
+                      alt="Start of Review" 
+                      style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                    />
+                  </div>
+                  <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                    {previewPhoto.startedAt ? formatDateIST(previewPhoto.startedAt) : 'Session Start'}
+                  </div>
+                </div>
 
-            <div style={{ fontSize: '11px', color: 'var(--text-muted)', background: 'var(--bg-soft)', padding: '8px 12px', borderRadius: 'var(--radius)', marginBottom: '14px', textAlign: 'left' }}>
-              <div>📅 <strong>Timestamp:</strong> {formatDateIST(previewPhoto.timestamp)}</div>
-              <div>🛡️ <strong>Auto-Purge Policy:</strong> This snapshot is temporarily held for verification and automatically purged after 24 hours.</div>
+                {/* 2. End Capture */}
+                <div style={{ background: 'var(--bg-soft)', borderRadius: 'var(--radius)', padding: '8px', border: '1px solid var(--accent)' }}>
+                  <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--accent)', marginBottom: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+                    🏁 Final Approval
+                  </div>
+                  <div style={{ borderRadius: '4px', overflow: 'hidden', border: '1px solid var(--border-light)', background: '#000', height: '160px' }}>
+                    <img 
+                      src={previewPhoto.photoUrl} 
+                      alt="End of Review" 
+                      style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                    />
+                  </div>
+                  <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                    {previewPhoto.completedAt ? formatDateIST(previewPhoto.completedAt) : formatDateIST(previewPhoto.timestamp)}
+                  </div>
+                </div>
+              </div>
+            ) : previewPhoto.photoUrl ? (
+              <div style={{ borderRadius: 'var(--radius)', overflow: 'hidden', border: '1px solid var(--border-light)', marginBottom: '14px', background: '#000', maxHeight: '280px' }}>
+                <img 
+                  src={previewPhoto.photoUrl} 
+                  alt="Enlarged Proof" 
+                  style={{ width: '100%', maxHeight: '280px', objectFit: 'contain', display: 'block' }}
+                />
+              </div>
+            ) : null}
+
+            {/* Duration & Policy Info Banner */}
+            <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', background: 'var(--bg-soft)', padding: '10px 14px', borderRadius: 'var(--radius)', marginBottom: '14px', textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              {previewPhoto.durationSeconds && previewPhoto.durationSeconds > 0 ? (
+                <div>⏱️ <strong>Review Duration:</strong> <span style={{ color: 'var(--text)', fontWeight: 700 }}>{formatDuration(previewPhoto.durationSeconds)}</span></div>
+              ) : null}
+              <div>📅 <strong>Submitted IST:</strong> {formatDateIST(previewPhoto.timestamp)}</div>
+              <div>🛡️ <strong>Auto-Purge Policy:</strong> Snapshots are temporarily stored for parent audit and automatically purged after 24 hours.</div>
             </div>
 
             <button className="btn btn-primary" style={{ width: '100%', padding: '8px' }} onClick={() => setPreviewPhoto(null)}>
-              Close Preview
+              Close Comparison
             </button>
           </div>
         </div>
