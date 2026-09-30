@@ -14,8 +14,8 @@ export class ExamService {
   }> {
     const batchList = (studentBatchIds || []).filter(Boolean);
     const batchChunks: string[][] = [];
-    for (let i = 0; i < batchList.length; i += 10) {
-      batchChunks.push(batchList.slice(i, i + 10));
+    for (let i = 0; i < batchList.length; i += 30) {
+      batchChunks.push(batchList.slice(i, i + 30));
     }
 
     const objPromises: Promise<admin.firestore.QuerySnapshot>[] = [];

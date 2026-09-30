@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import * as admin from 'firebase-admin';
 import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole, verifyAnyRole } from '@/lib/auth';
 import { isDemoUser } from '@/lib/studentDb';
@@ -72,20 +73,22 @@ export async function GET(req: NextRequest) {
     // Load batch names map once for accurate human-readable naming
     const batchNamesMap = await getBatchNamesMap();
 
-    // Helper to get all inactive and demo studentCodes and emails
-    const allUsersSnap = await adminDb.collection('users').get();
-    const inactiveCodes = new Set<string>();
-    const inactiveEmails = new Set<string>();
-    allUsersSnap.docs.forEach(d => {
-      const data = d.data();
-      if (data.status === 'inactive' || isDemoUser(data)) {
+    if (admin) {
+      // Fetch only inactive users to filter deactivated communications from admin view
+      const inactiveUsersSnap = await adminDb.collection('users')
+        .where('status', '==', 'inactive')
+        .select('studentCode', 'email', 'parentEmail', 'isDemo', 'status')
+        .get();
+
+      const inactiveCodes = new Set<string>();
+      const inactiveEmails = new Set<string>();
+      inactiveUsersSnap.docs.forEach(d => {
+        const data = d.data();
         if (data.studentCode) inactiveCodes.add(data.studentCode.trim().toUpperCase());
         if (data.email) inactiveEmails.add(data.email.toLowerCase().trim());
         if (data.parentEmail) inactiveEmails.add(data.parentEmail.toLowerCase().trim());
-      }
-    });
+      });
 
-    if (admin) {
       // 1. Fetch all active batches and ensure class group rooms exist in chatRooms
       const batchesSnap = await adminDb.collection('batches').get();
       const activeBatches = batchesSnap.docs.filter(d => d.data().status !== 'inactive');
@@ -276,7 +279,7 @@ export async function GET(req: NextRequest) {
         }
 
         // 4. Handle parent auto-reconciliation
-        if (pEmail && !inactiveEmails.has(pEmail.toLowerCase().trim())) {
+        if (pEmail) {
           const pKey = `PR-${pEmail.toLowerCase().trim()}`;
           const parentSnap = await adminDb.collection('users')
             .where('role', '==', 'parent')
@@ -345,18 +348,25 @@ export async function GET(req: NextRequest) {
       const pCodes = parent.userData?.studentCodes || (parent.userData?.studentCode ? [parent.userData?.studentCode] : []);
 
       if (pKey && pCodes.length > 0) {
-        const uCodes = pCodes.map((sc: string) => sc.trim().toUpperCase()).filter((c: string) => !inactiveCodes.has(c));
+        const uCodes = pCodes.map((sc: string) => sc.trim().toUpperCase());
         if (uCodes.length === 0) {
           return NextResponse.json({ success: true, rooms: [] });
         }
 
-        // 1. Fetch all student profiles at once in a single query
+        // 1. Fetch all student profiles for parent's linked children (up to 30)
         const studentQuery = await adminDb.collection('users')
           .where('role', '==', 'student')
-          .where('studentCode', 'in', uCodes)
+          .where('studentCode', 'in', uCodes.slice(0, 30))
           .get();
 
-        const studentDocs = studentQuery.docs;
+        const studentDocs = studentQuery.docs.filter(d => {
+          const sd = d.data();
+          return sd.status !== 'inactive' && !isDemoUser(sd);
+        });
+
+        if (studentDocs.length === 0) {
+          return NextResponse.json({ success: true, rooms: [] });
+        }
         const dmRoomIds: string[] = [];
         const groupRoomIds: string[] = [];
         
@@ -621,22 +631,38 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: true, roomId: gRoomId, message: 'Group room already exists.' });
       }
 
-      // Fetch all students in batch to pre-set unread counts
-      const studentsSnap = await adminDb.collection('users')
-        .where('role', '==', 'student')
-        .get();
+      // Fetch students in this specific batch to pre-set unread counts
+      const [batchArrSnap, batchSingleSnap] = await Promise.all([
+        adminDb.collection('users')
+          .where('role', '==', 'student')
+          .where('batchIds', 'array-contains', batchId)
+          .get(),
+        adminDb.collection('users')
+          .where('role', '==', 'student')
+          .where('batchId', '==', batchId)
+          .get()
+      ]);
+
+      const seenStudentDocIds = new Set<string>();
+      const batchStudentDocs: admin.firestore.QueryDocumentSnapshot[] = [];
+      [...batchArrSnap.docs, ...batchSingleSnap.docs].forEach(doc => {
+        if (!seenStudentDocIds.has(doc.id)) {
+          seenStudentDocIds.add(doc.id);
+          batchStudentDocs.push(doc);
+        }
+      });
 
       const participants = [admin.decodedToken?.uid || 'admin'];
       const unreadCounts: Record<string, number> = {
         [admin.decodedToken?.uid || 'admin']: 0
       };
 
-      studentsSnap.docs.forEach(doc => {
+      batchStudentDocs.forEach(doc => {
         const d = doc.data();
+        if (d.status === 'inactive' || isDemoUser(d)) return;
         const sc = d.studentCode;
-        const sB = d.batchIds || (d.batchId ? [d.batchId] : []);
         
-        if (sc && sB.includes(batchId)) {
+        if (sc) {
           participants.push(sc);
           unreadCounts[sc] = 0;
           
