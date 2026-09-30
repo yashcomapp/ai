@@ -118,13 +118,28 @@ export async function GET(req: NextRequest) {
 
     if (!allQuestions) {
       let baseQuery: admin.firestore.Query = adminDb.collection('questions');
-      if (board) baseQuery = baseQuery.where('board', '==', board);
-      if (classNum) baseQuery = baseQuery.where('class', '==', classNum);
-      if (subject) baseQuery = baseQuery.where('subject', '==', subject);
+      if (board) {
+        const bLower = board.toLowerCase();
+        if (bLower.includes('cbse')) {
+          baseQuery = baseQuery.where('board', 'in', ['CBSE', 'cbse']);
+        } else if (bLower.includes('mh') || bLower.includes('maharashtra')) {
+          baseQuery = baseQuery.where('board', 'in', ['Maharashtra Board', 'MH', 'State Board', 'maharashtra', 'MH State Board']);
+        } else {
+          baseQuery = baseQuery.where('board', '==', board);
+        }
+      }
+      if (classNum) {
+        const numVal = parseInt(classNum, 10);
+        const classVals = isNaN(numVal) ? [classNum] : [String(classNum), numVal, `Class ${classNum}`];
+        baseQuery = baseQuery.where('class', 'in', classVals);
+      }
+      if (subject) {
+        baseQuery = baseQuery.where('subject', '==', subject);
+      }
 
       const baseSnap = await baseQuery.get();
       allQuestions = baseSnap.docs.map(doc => ({ id: doc.id, ...doc.data() as any }));
-      setInCache(cacheKey, allQuestions, 180000); // 3 mins cache
+      setInCache(cacheKey, allQuestions, 60000); // 1 min cache
     }
 
     // In-memory filter for chapter, topic, category, type, usageStatus
