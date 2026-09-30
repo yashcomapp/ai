@@ -22,11 +22,25 @@ export async function GET(request: NextRequest) {
       ...doc.data()
     }));
 
-    const assignSnap = await adminDb.collection('subjectiveAssignments').get();
-    const assignments = assignSnap.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
+    const examIds = exams.map(e => e.id);
+    let assignments: any[] = [];
+    if (examIds.length > 0) {
+      const examChunks: string[][] = [];
+      for (let i = 0; i < examIds.length; i += 30) {
+        examChunks.push(examIds.slice(i, i + 30));
+      }
+      const assignSnaps = await Promise.all(
+        examChunks.map(chunk => 
+          adminDb.collection('subjectiveAssignments')
+            .where('examId', 'in', chunk)
+            .get()
+        )
+      );
+      assignments = assignSnaps.flatMap(s => s.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })));
+    }
 
     return NextResponse.json({ exams, assignments });
   } catch (err: any) {
