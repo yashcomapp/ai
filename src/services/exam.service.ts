@@ -5,8 +5,87 @@ import { ProctoringViolations } from '@/types/attempt.types';
 
 export class ExamService {
   /**
+   * Helper to fetch active assignments targeted specifically to a student (by batch or direct assignment),
+   * avoiding full collection scans across tens of thousands of active assignments.
+   */
+  private static async fetchStudentActiveAssignments(studentCode: string, studentBatchIds: string[]): Promise<{
+    objAssignments: admin.firestore.QueryDocumentSnapshot[];
+    subAssignments: admin.firestore.QueryDocumentSnapshot[];
+  }> {
+    const batchList = (studentBatchIds || []).filter(Boolean);
+    const batchChunks: string[][] = [];
+    for (let i = 0; i < batchList.length; i += 10) {
+      batchChunks.push(batchList.slice(i, i + 10));
+    }
+
+    const objPromises: Promise<admin.firestore.QuerySnapshot>[] = [];
+    const subPromises: Promise<admin.firestore.QuerySnapshot>[] = [];
+
+    // 1. Batch-targeted assignments
+    batchChunks.forEach(chunk => {
+      objPromises.push(
+        adminDb.collection('batchAssignments')
+          .where('status', '==', 'active')
+          .where('targetBatches', 'array-contains-any', chunk)
+          .get()
+      );
+      subPromises.push(
+        adminDb.collection('subjectiveAssignments')
+          .where('status', '==', 'active')
+          .where('targetBatches', 'array-contains-any', chunk)
+          .get()
+      );
+    });
+
+    // 2. Student-specific assignments
+    if (studentCode) {
+      objPromises.push(
+        adminDb.collection('batchAssignments')
+          .where('status', '==', 'active')
+          .where('targetStudents', 'array-contains', studentCode)
+          .get()
+      );
+      subPromises.push(
+        adminDb.collection('subjectiveAssignments')
+          .where('status', '==', 'active')
+          .where('targetStudents', 'array-contains', studentCode)
+          .get()
+      );
+    }
+
+    const [objSnaps, subSnaps] = await Promise.all([
+      Promise.all(objPromises),
+      Promise.all(subPromises)
+    ]);
+
+    const seenObjDocIds = new Set<string>();
+    const objDocs: admin.firestore.QueryDocumentSnapshot[] = [];
+    objSnaps.forEach(snap => {
+      snap.docs.forEach(d => {
+        if (!seenObjDocIds.has(d.id)) {
+          seenObjDocIds.add(d.id);
+          objDocs.push(d);
+        }
+      });
+    });
+
+    const seenSubDocIds = new Set<string>();
+    const subDocs: admin.firestore.QueryDocumentSnapshot[] = [];
+    subSnaps.forEach(snap => {
+      snap.docs.forEach(d => {
+        if (!seenSubDocIds.has(d.id)) {
+          seenSubDocIds.add(d.id);
+          subDocs.push(d);
+        }
+      });
+    });
+
+    return { objAssignments: objDocs, subAssignments: subDocs };
+  }
+
+  /**
    * Checks whether the student has any unattempted and unacknowledged past scheduled exams.
-   * Batches all lookups to prevent N+1 queries.
+   * Batches all lookups to prevent N+1 queries and targets assignments to student.
    */
   static async verifyStudentPastExamAbsenceBlock(params: {
     studentCode: string;
@@ -17,16 +96,13 @@ export class ExamService {
     const { studentCode, studentBatchIds, currentExamId, evalMap } = params;
     const now = new Date();
 
-    const [allObjAssignmentsSnap, allSubAssignmentsSnap] = await Promise.all([
-      adminDb.collection('batchAssignments').where('status', '==', 'active').get(),
-      adminDb.collection('subjectiveAssignments').where('status', '==', 'active').get()
-    ]);
+    const { objAssignments, subAssignments } = await this.fetchStudentActiveAssignments(studentCode, studentBatchIds);
 
     const pastAssignedExams: Array<{ examId: string; endAt: Date }> = [];
     const seenExamIds = new Set<string>();
 
-    const collectPast = (snap: admin.firestore.QuerySnapshot) => {
-      snap.docs.forEach(doc => {
+    const collectPast = (docs: admin.firestore.QueryDocumentSnapshot[]) => {
+      docs.forEach(doc => {
         const data = doc.data();
         if (!data.examId || data.examId === currentExamId || seenExamIds.has(data.examId)) return;
         const targetType = data.targetType;
@@ -44,8 +120,8 @@ export class ExamService {
       });
     };
 
-    collectPast(allObjAssignmentsSnap);
-    collectPast(allSubAssignmentsSnap);
+    collectPast(objAssignments);
+    collectPast(subAssignments);
 
     if (pastAssignedExams.length === 0) {
       return { blocked: false };
@@ -173,16 +249,13 @@ export class ExamService {
     const { studentCode, studentBatchIds, objSnaps, subjSnaps, evalSnaps } = params;
     const now = new Date();
 
-    const [allObjAssignmentsSnap, allSubAssignmentsSnap] = await Promise.all([
-      adminDb.collection('batchAssignments').where('status', '==', 'active').get(),
-      adminDb.collection('subjectiveAssignments').where('status', '==', 'active').get()
-    ]);
+    const { objAssignments, subAssignments } = await this.fetchStudentActiveAssignments(studentCode, studentBatchIds);
 
     const pastAssignedExams: Array<{ examId: string; endAt: Date; collection: string }> = [];
     const seenExamIds = new Set<string>();
 
-    const collectPast = (snap: admin.firestore.QuerySnapshot, col: string) => {
-      snap.docs.forEach(doc => {
+    const collectPast = (docs: admin.firestore.QueryDocumentSnapshot[], col: string) => {
+      docs.forEach(doc => {
         const data = doc.data();
         if (!data.examId || seenExamIds.has(data.examId)) return;
         const targetType = data.targetType;
@@ -200,8 +273,8 @@ export class ExamService {
       });
     };
 
-    collectPast(allObjAssignmentsSnap, 'batchAssignments');
-    collectPast(allSubAssignmentsSnap, 'subjectiveAssignments');
+    collectPast(objAssignments, 'batchAssignments');
+    collectPast(subAssignments, 'subjectiveAssignments');
 
     if (pastAssignedExams.length === 0) return [];
 
