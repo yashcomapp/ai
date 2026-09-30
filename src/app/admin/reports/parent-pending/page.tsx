@@ -97,6 +97,9 @@ export default function ParentPendingReportPage() {
   // Filtered list using deferred value & memoization
   const filteredRecords = useMemo(() => {
     return records.filter(r => {
+      // Exclude generic Exam Paper Review
+      if (r.examName === 'Exam Paper Review' || r.type === 'Exam Review') return false;
+
       // 1. Batch filter
       if (selectedBatchFilter !== 'all') {
         if (!r.batchIds?.includes(selectedBatchFilter)) return false;

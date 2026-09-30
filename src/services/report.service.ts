@@ -844,7 +844,14 @@ export class ReportService {
       const data = doc.data();
       const rawType = data.type || '';
 
-      if (rawType === 'practice' || rawType === 'bulk_practice') {
+      if (
+        rawType === 'practice' || 
+        rawType === 'bulk_practice' || 
+        rawType === 'exam_review' || 
+        rawType === 'review' ||
+        data.examName === 'Exam Paper Review' ||
+        data.name === 'Exam Paper Review'
+      ) {
         return;
       }
 
@@ -880,6 +887,11 @@ export class ReportService {
       } else if (rawType === 'entrance' || rawType === 'mock') {
         displayType = 'Mock Exam';
         displayExamName = data.examName || 'Mock Entrance Exam Review';
+      }
+
+      // Strictly exclude generic "Exam Paper Review"
+      if (displayExamName === 'Exam Paper Review' || displayType === 'Exam Review') {
+        return;
       }
 
       if (data.studentCode) {
