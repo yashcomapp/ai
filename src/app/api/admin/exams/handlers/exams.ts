@@ -625,16 +625,12 @@ export async function GET(req: NextRequest) {
       subjExamsList,
       batchesList,
       studentsList,
-      objAssignList,
-      subjAssignList,
       parentsSnap
     ] = await Promise.all([
       adminDb.collection('exams').where('status', 'in', ['active', 'draft']).get(),
       adminDb.collection('subjectiveExams').where('status', 'in', ['active', 'draft']).get(),
       adminDb.collection('batches').select('name').get(),
       adminDb.collection('users').where('role', '==', 'student').select('studentCode', 'name', 'email', 'isDemo', 'rollNumber', 'batchIds', 'batchId', 'class', 'className', 'status').get(),
-      adminDb.collection('batchAssignments').where('status', 'in', ['active', 'draft']).get(),
-      adminDb.collection('subjectiveAssignments').where('status', 'in', ['active', 'draft']).get(),
       includeParents 
         ? adminDb.collection('users').where('role', '==', 'parent').select('email', 'studentCode', 'studentCodes', 'name').get()
         : Promise.resolve({ docs: [] } as any)
@@ -688,99 +684,130 @@ export async function GET(req: NextRequest) {
     }).filter((p: any): p is { email: string; displayName: string; studentCodes: string[] } => p !== null && !!p.email)
     .sort((a: any, b: any) => a.displayName.localeCompare(b.displayName)) : [];
 
-    // Targeted attempt counts: Query reviews and attempts only for currently active/draft exam IDs
-    const allExamIds = Array.from(new Set([
-      ...exams.map(e => e.id),
-      ...subjectiveExams.map(e => e.id)
-    ])).filter(Boolean);
+    // Target assignments and attempt counts strictly by active/draft exam IDs
+    const objExamIds = exams.map(e => e.id).filter(Boolean);
+    const subjExamIds = subjectiveExams.map(e => e.id).filter(Boolean);
+    const allExamIds = Array.from(new Set([...objExamIds, ...subjExamIds]));
+
+    const objChunks: string[][] = [];
+    for (let i = 0; i < objExamIds.length; i += 30) {
+      objChunks.push(objExamIds.slice(i, i + 30));
+    }
+
+    const subjChunks: string[][] = [];
+    for (let i = 0; i < subjExamIds.length; i += 30) {
+      subjChunks.push(subjExamIds.slice(i, i + 30));
+    }
+
+    const allChunks: string[][] = [];
+    for (let i = 0; i < allExamIds.length; i += 30) {
+      allChunks.push(allExamIds.slice(i, i + 30));
+    }
+
+    const [objAssignSnaps, subjAssignSnaps, reviewSnaps, attemptSnaps] = await Promise.all([
+      Promise.all(objChunks.map(chunk => 
+        adminDb.collection('batchAssignments')
+          .where('examId', 'in', chunk)
+          .where('status', 'in', ['active', 'draft'])
+          .get()
+          .catch(() => null)
+      )),
+      Promise.all(subjChunks.map(chunk => 
+        adminDb.collection('subjectiveAssignments')
+          .where('examId', 'in', chunk)
+          .where('status', 'in', ['active', 'draft'])
+          .get()
+          .catch(() => null)
+      )),
+      Promise.all(allChunks.map(chunk => 
+        adminDb.collection('reviews')
+          .where('examId', 'in', chunk)
+          .select('examId', 'startedAt')
+          .get()
+          .catch(() => null)
+      )),
+      Promise.all(allChunks.map(chunk => 
+        adminDb.collection('examAttempts')
+          .where('examId', 'in', chunk)
+          .select('examId', 'startedAt')
+          .get()
+          .catch(() => null)
+      ))
+    ]);
 
     const attemptCounts: { [key: string]: number } = {};
     const examAttemptsMap: { [key: string]: Set<string> } = {};
 
-    if (allExamIds.length > 0) {
-      const chunks: string[][] = [];
-      for (let i = 0; i < allExamIds.length; i += 30) {
-        chunks.push(allExamIds.slice(i, i + 30));
-      }
-
-      const reviewAndAttemptSnaps = await Promise.all(
-        chunks.flatMap(chunk => [
-          adminDb.collection('reviews')
-            .where('examId', 'in', chunk)
-            .select('examId', 'startedAt')
-            .get()
-            .catch(() => null),
-          adminDb.collection('examAttempts')
-            .where('examId', 'in', chunk)
-            .select('examId', 'startedAt')
-            .get()
-            .catch(() => null)
-        ])
-      );
-
-      reviewAndAttemptSnaps.forEach(snap => {
-        if (!snap) return;
-        snap.docs.forEach((doc: any) => {
-          const d = doc.data();
-          const eid = d.examId;
-          const startedAt = d.startedAt;
-          if (startedAt) {
-            const startDate = startedAt.toDate ? startedAt.toDate() : new Date(startedAt);
-            if (startDate < since) return;
-          }
-          const studentCode = doc.id.includes('_') ? doc.id.split('_').slice(1).join('_') : doc.id;
-          if (eid && studentCode) {
-            if (!examAttemptsMap[eid]) examAttemptsMap[eid] = new Set();
-            examAttemptsMap[eid].add(studentCode);
-          }
-        });
+    [...reviewSnaps, ...attemptSnaps].forEach(snap => {
+      if (!snap) return;
+      snap.docs.forEach((doc: any) => {
+        const d = doc.data();
+        const eid = d.examId;
+        const startedAt = d.startedAt;
+        if (startedAt) {
+          const startDate = startedAt.toDate ? startedAt.toDate() : new Date(startedAt);
+          if (startDate < since) return;
+        }
+        const studentCode = doc.id.includes('_') ? doc.id.split('_').slice(1).join('_') : doc.id;
+        if (eid && studentCode) {
+          if (!examAttemptsMap[eid]) examAttemptsMap[eid] = new Set();
+          examAttemptsMap[eid].add(studentCode);
+        }
       });
-
-      for (const eid in examAttemptsMap) {
-        attemptCounts[eid] = examAttemptsMap[eid].size;
-      }
-    }
-
-    const objAssignments = objAssignList.docs.map(doc => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        examId: data.examId,
-        collection: 'batchAssignments',
-        targetType: data.targetType || 'batch',
-        targetBatches: data.targetBatches || [],
-        targetStudents: data.targetStudents || [],
-        openMode: data.openMode || 'immediate',
-        startAt: data.startAt ? (data.startAt.toDate ? data.startAt.toDate() : new Date(data.startAt)) : null,
-        endAt: data.endAt ? (data.endAt.toDate ? data.endAt.toDate() : new Date(data.endAt)) : null,
-        attemptLimit: data.attemptLimit || 1,
-        examDuration: data.examDuration || 30,
-        lateEntryRestriction: data.lateEntryRestriction === true,
-        status: data.status || 'active',
-        createdAt: data.createdAt ? (data.createdAt.toDate ? data.createdAt.toDate() : new Date(data.createdAt)) : null
-      };
     });
 
-    const subjAssignments = subjAssignList.docs.map(doc => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        examId: data.examId,
-        collection: 'subjectiveAssignments',
-        targetType: data.targetType || 'batch',
-        targetBatches: data.targetBatches || [],
-        targetStudents: data.targetStudents || [],
-        openMode: data.openMode || 'immediate',
-        startAt: data.startAt ? (data.startAt.toDate ? data.startAt.toDate() : new Date(data.startAt)) : null,
-        endAt: data.endAt ? (data.endAt.toDate ? data.endAt.toDate() : new Date(data.endAt)) : null,
-        attemptLimit: data.attemptLimit || 1,
-        examMode: data.examMode || 'home',
-        classroomDuration: data.classroomDuration || 60,
-        classroomTimePerQ: data.classroomTimePerQ || 5,
-        lateEntryRestriction: data.lateEntryRestriction === true,
-        status: data.status || 'active',
-        createdAt: data.createdAt ? (data.createdAt.toDate ? data.createdAt.toDate() : new Date(data.createdAt)) : null
-      };
+    for (const eid in examAttemptsMap) {
+      attemptCounts[eid] = examAttemptsMap[eid].size;
+    }
+
+    const objAssignments: any[] = [];
+    objAssignSnaps.forEach(snap => {
+      if (!snap) return;
+      snap.docs.forEach((doc: any) => {
+        const data = doc.data();
+        objAssignments.push({
+          id: doc.id,
+          examId: data.examId,
+          collection: 'batchAssignments',
+          targetType: data.targetType || 'batch',
+          targetBatches: data.targetBatches || [],
+          targetStudents: data.targetStudents || [],
+          openMode: data.openMode || 'immediate',
+          startAt: data.startAt ? (data.startAt.toDate ? data.startAt.toDate() : new Date(data.startAt)) : null,
+          endAt: data.endAt ? (data.endAt.toDate ? data.endAt.toDate() : new Date(data.endAt)) : null,
+          attemptLimit: data.attemptLimit || 1,
+          examDuration: data.examDuration || 30,
+          lateEntryRestriction: data.lateEntryRestriction === true,
+          status: data.status || 'active',
+          createdAt: data.createdAt ? (data.createdAt.toDate ? data.createdAt.toDate() : new Date(data.createdAt)) : null
+        });
+      });
+    });
+
+    const subjAssignments: any[] = [];
+    subjAssignSnaps.forEach(snap => {
+      if (!snap) return;
+      snap.docs.forEach((doc: any) => {
+        const data = doc.data();
+        subjAssignments.push({
+          id: doc.id,
+          examId: data.examId,
+          collection: 'subjectiveAssignments',
+          targetType: data.targetType || 'batch',
+          targetBatches: data.targetBatches || [],
+          targetStudents: data.targetStudents || [],
+          openMode: data.openMode || 'immediate',
+          startAt: data.startAt ? (data.startAt.toDate ? data.startAt.toDate() : new Date(data.startAt)) : null,
+          endAt: data.endAt ? (data.endAt.toDate ? data.endAt.toDate() : new Date(data.endAt)) : null,
+          attemptLimit: data.attemptLimit || 1,
+          examMode: data.examMode || 'home',
+          classroomDuration: data.classroomDuration || 60,
+          classroomTimePerQ: data.classroomTimePerQ || 5,
+          lateEntryRestriction: data.lateEntryRestriction === true,
+          status: data.status || 'active',
+          createdAt: data.createdAt ? (data.createdAt.toDate ? data.createdAt.toDate() : new Date(data.createdAt)) : null
+        });
+      });
     });
 
     return NextResponse.json({
