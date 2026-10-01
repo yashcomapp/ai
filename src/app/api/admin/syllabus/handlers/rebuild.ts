@@ -83,7 +83,9 @@ async function runIndexRebuild() {
 
         const docRef = adminDb.collection('syllabusTopicIndex').doc(topicCode);
         batch.set(docRef, {
+          board: boardCode === 'CBSE' ? 'CBSE' : 'Maharashtra Board',
           boardCode,
+          class: String(classNum),
           classCode: String(classNum),
           subjectCode,
           subjectName,
@@ -134,7 +136,9 @@ async function runIndexRebuild() {
 
           const subRef = adminDb.collection('syllabusTopicIndex').doc(subCode);
           batch.set(subRef, {
+            board: boardCode === 'CBSE' ? 'CBSE' : 'Maharashtra Board',
             boardCode,
+            class: String(classNum),
             classCode: String(classNum),
             subjectCode,
             subjectName,

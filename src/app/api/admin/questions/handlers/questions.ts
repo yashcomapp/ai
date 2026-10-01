@@ -112,26 +112,21 @@ export async function GET(req: NextRequest) {
     const lastCode = searchParams.get('lastCode') || '';
     const usageStatus = searchParams.get('usageStatus') || '';
 
+    // Canonicalize board and class parameters according to SSOT
+    const cleanClass = classNum ? String(classNum).replace(/\D/g, '') : '';
+    const cleanBoard = board ? (board.toLowerCase().includes('cbse') ? 'CBSE' : 'Maharashtra Board') : '';
+
     // Fetch base documents matching board, class, subject (in-memory cached)
-    const cacheKey = `qb_base_${board}_${classNum}_${subject}`;
+    const cacheKey = `qb_base_${cleanBoard}_${cleanClass}_${subject}`;
     let allQuestions = getFromCache<any[]>(cacheKey);
 
     if (!allQuestions) {
       let baseQuery: admin.firestore.Query = adminDb.collection('questions');
-      if (board) {
-        const bLower = board.toLowerCase();
-        if (bLower.includes('cbse')) {
-          baseQuery = baseQuery.where('board', 'in', ['CBSE', 'cbse']);
-        } else if (bLower.includes('mh') || bLower.includes('maharashtra')) {
-          baseQuery = baseQuery.where('board', 'in', ['Maharashtra Board', 'MH', 'State Board', 'maharashtra', 'MH State Board']);
-        } else {
-          baseQuery = baseQuery.where('board', '==', board);
-        }
+      if (cleanBoard) {
+        baseQuery = baseQuery.where('board', '==', cleanBoard);
       }
-      if (classNum) {
-        const numVal = parseInt(classNum, 10);
-        const classVals = isNaN(numVal) ? [classNum] : [String(classNum), numVal, `Class ${classNum}`];
-        baseQuery = baseQuery.where('class', 'in', classVals);
+      if (cleanClass) {
+        baseQuery = baseQuery.where('class', '==', cleanClass);
       }
       if (subject) {
         baseQuery = baseQuery.where('subject', '==', subject);
@@ -410,11 +405,11 @@ export async function POST(req: NextRequest) {
           bloomLevel: normalizeBloomLevel(item.bloomLevel, item.difficulty, normalizedQType),
           board: finalBoard,
           boardCode: p.boardCode,
-          class: item.classNum || item.class,
+          class: String(item.classNum || item.class || '').replace(/\D/g, ''),
           subject: item.subjectName || item.subject,
           subjectCode: p.subjectCode,
-          chapterNumber: item.chapterNumber || '1',
-          topicNumber: item.topicNumber || '1.1',
+          chapterNumber: String(item.chapterNumber || '1').replace(/\D/g, ''),
+          topicNumber: String(item.topicNumber || '1.1').trim(),
           topicCode: topicCode,
           topic: finalTopicName,
           topicName: finalTopicName,
@@ -549,11 +544,11 @@ export async function POST(req: NextRequest) {
       bloomLevel: normalizeBloomLevel(bloomLevel, difficulty, normalizedQType),
       board: finalBoard,
       boardCode: boardCode,
-      class: classNum,
+      class: String(classNum).replace(/\D/g, ''),
       subject: subjectName,
       subjectCode: subjectCode,
-      chapterNumber: chapterNumber || '1',
-      topicNumber: topicNumber || '1.1',
+      chapterNumber: String(chapterNumber || '1').replace(/\D/g, ''),
+      topicNumber: String(topicNumber || '1.1').trim(),
       topicCode: topicCode,
       topic: finalTopicName,
       topicName: finalTopicName,
