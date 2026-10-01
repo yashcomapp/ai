@@ -7,6 +7,7 @@ import dynamic from 'next/dynamic';
 const ExportPdfModal = dynamic(() => import('@/components/ExportPdfModal').then(m => ({ default: m.ExportPdfModal })), { ssr: false });
 import Script from 'next/script';
 import { useMathRender } from '@/hooks/useMathRender';
+import { useAdminStudents } from '@/hooks/useAdminReferenceData';
 import { preprocessMathText, formatRichText } from '@/lib/questionTypes';
 
 interface AttemptRow {
@@ -67,32 +68,25 @@ function TeacherFinalReviewContent() {
   const [pdfSelectorOpen, setPdfSelectorOpen] = useState(false);
   useMathRender([activeQuestions, selectedAttemptId]);
 
+  const { students: swrStudents } = useAdminStudents();
+
+  useEffect(() => {
+    if (swrStudents && swrStudents.length > 0) {
+      const map: { [key: string]: string } = {};
+      swrStudents.forEach((s: any) => {
+        if (s.studentCode) {
+          map[s.studentCode] = s.name + (s.autonomous ? ' ⭐' : '');
+        }
+      });
+      setStudentMap(map);
+    }
+  }, [swrStudents]);
+
   const fetchAttempts = async () => {
     if (!firebaseUser || !examId) return;
     setLoading(true);
     try {
       const idToken = await firebaseUser.getIdToken();
-      
-      // Fetch student names map
-      try {
-        const stuRes = await fetch('/api/admin/students', {
-          headers: { 'Authorization': `Bearer ${idToken}` }
-        });
-        if (stuRes.ok) {
-          const stuData = await stuRes.json();
-          const map: {[key: string]: string} = {};
-          if (Array.isArray(stuData.students)) {
-            stuData.students.forEach((s: any) => {
-              if (s.studentCode) {
-                map[s.studentCode] = s.name + (s.autonomous ? ' ⭐' : '');
-              }
-            });
-          }
-          setStudentMap(map);
-        }
-      } catch (e) {
-        console.warn('Failed to load students mapping:', e);
-      }
 
       const res = await fetch(`/api/admin/exams/subjective?examId=${examId}`, {
         headers: {

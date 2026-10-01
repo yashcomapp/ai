@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
+import { invalidateAdminReferenceData } from '@/hooks/useAdminReferenceData';
 import dynamic from 'next/dynamic';
 const ExportPdfModal = dynamic(() => import('@/components/ExportPdfModal').then(m => ({ default: m.ExportPdfModal })), { ssr: false });
 
@@ -523,6 +524,7 @@ export default function AdminSyllabusPage() {
 
       alert('✅ Subject saved successfully!');
       setSubjectModal(prev => ({ ...prev, show: false }));
+      invalidateAdminReferenceData('syllabus');
       await fetchSubjects();
       // Rebuild index in backend automatically
       await fetch('/api/admin/syllabus/rebuild', {
@@ -561,6 +563,7 @@ export default function AdminSyllabusPage() {
       }
       const data = await res.json();
       alert(`✅ Subject deleted! Removed ${data.questionsDeleted} unused questions. (${data.questionsSkippedUsed} used questions were skipped for safety).`);
+      invalidateAdminReferenceData('syllabus');
       await fetchSubjects();
       if (selectedSubjectId === id) {
         setSelectedSubjectId('');
@@ -596,6 +599,7 @@ export default function AdminSyllabusPage() {
       const updated = { ...activeSubjectDoc, chapters };
       setActiveSubjectDoc(updated);
       setSubjects(prev => prev.map(s => s.id === updated.id ? updated : s));
+      invalidateAdminReferenceData('syllabus');
 
       // Rebuild index
       await fetch('/api/admin/syllabus/rebuild', {

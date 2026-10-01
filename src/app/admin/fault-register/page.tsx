@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { getDateKeyIST, formatDateDMY } from '@/lib/dateUtils';
+import { useAdminBatches } from '@/hooks/useAdminReferenceData';
 import { FaultCategory, StudentFaultEntry } from '@/services/fault.service';
 
 export default function AdminFaultRegisterPage() {
@@ -119,25 +120,14 @@ export default function AdminFaultRegisterPage() {
   const [activeNoteCatId, setActiveNoteCatId] = useState<string | null>(null);
   const [tempNoteText, setTempNoteText] = useState<string>('');
 
-  // 1. Fetch batches
+  // 1. Shared SWR Batches
+  const { batches: swrBatches } = useAdminBatches();
+
   useEffect(() => {
-    if (!firebaseUser) return;
-    const fetchBatches = async () => {
-      try {
-        const token = await firebaseUser.getIdToken();
-        const res = await fetch('/api/admin/batches', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setBatches(data.batches || data || []);
-        }
-      } catch (err) {
-        console.error('Failed to load batches:', err);
-      }
-    };
-    fetchBatches();
-  }, [firebaseUser]);
+    if (swrBatches && swrBatches.length > 0) {
+      setBatches(swrBatches);
+    }
+  }, [swrBatches]);
 
   // 2. Fetch Matrix Data
   const loadMatrix = useCallback(async () => {

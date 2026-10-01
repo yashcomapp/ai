@@ -28,6 +28,8 @@ interface Student {
   presenceState?: string;
 }
 
+import { useAdminStudents, invalidateAdminReferenceData } from '@/hooks/useAdminReferenceData';
+
 interface Batch {
   id: string;
   name: string;
@@ -37,9 +39,7 @@ export default function StudentsManager() {
   const { firebaseUser } = useAuth();
   const router = useRouter();
 
-  const [loading, setLoading] = useState(true);
-  const [students, setStudents] = useState<Student[]>([]);
-  const [batches, setBatches] = useState<Batch[]>([]);
+  const { students, batches, isLoading: loading, error: swrError, mutate: fetchStudents } = useAdminStudents<Student, Batch>();
   const [error, setError] = useState('');
 
   // Filtering / Sorting State
@@ -70,31 +70,6 @@ export default function StudentsManager() {
   const [resetModalOpen, setResetModalOpen] = useState(false);
   const [resetTargetStudent, setResetTargetStudent] = useState<Student | null>(null);
   const [resetSelection, setResetSelection] = useState<'student' | 'parent' | 'both'>('student');
-
-  const fetchStudents = async () => {
-    if (!firebaseUser) return;
-    try {
-      const idToken = await firebaseUser.getIdToken();
-      const res = await fetch('/api/admin/students', {
-        headers: {
-          'Authorization': `Bearer ${idToken}`
-        }
-      });
-      if (!res.ok) throw new Error('Failed to load students roster.');
-      const data = await res.json();
-      setStudents(data.students || []);
-      setBatches(data.batches || []);
-    } catch (err: any) {
-      console.error(err);
-      setError(err.message || 'Error fetching records.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchStudents();
-  }, [firebaseUser]);
 
   const handleToggleStatus = async (studentId: string, currentStatus: string) => {
     const nextStatus = currentStatus === 'active' ? 'inactive' : 'active';

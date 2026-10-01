@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useReports } from '@/hooks/useReports';
+import { useAdminStudents } from '@/hooks/useAdminReferenceData';
 import { formatDateDMY } from '@/lib/dateUtils';
 import dynamic from 'next/dynamic';
 const ExportPdfModal = dynamic(() => import('@/components/ExportPdfModal').then(m => ({ default: m.ExportPdfModal })), { ssr: false });
@@ -12,6 +13,7 @@ export default function UsageReportPage() {
   const { firebaseUser, logout, user } = useAuth();
   const router = useRouter();
   const { getUsageReport } = useReports();
+  const { students: swrStudents } = useAdminStudents();
 
   const [loading, setLoading] = useState(true);
   const [evaluations, setEvaluations] = useState<any[]>([]);
@@ -32,32 +34,22 @@ export default function UsageReportPage() {
   const [pdfSelectorOpen, setPdfSelectorOpen] = useState(false);
 
   useEffect(() => {
+    if (swrStudents && swrStudents.length > 0) {
+      const map: { [key: string]: string } = {};
+      swrStudents.forEach((s: any) => {
+        if (s.studentCode) {
+          map[s.studentCode] = s.name + (s.autonomous ? ' ⭐' : '');
+        }
+      });
+      setStudentMap(map);
+    }
+  }, [swrStudents]);
+
+  useEffect(() => {
     const loadUsageStats = async () => {
       if (!firebaseUser) return;
       try {
         const idToken = await firebaseUser.getIdToken();
-        
-        // Fetch student names map
-        try {
-          const stuRes = await fetch('/api/admin/students', {
-            headers: { 'Authorization': `Bearer ${idToken}` }
-          });
-          if (stuRes.ok) {
-            const stuData = await stuRes.json();
-            const map: {[key: string]: string} = {};
-            if (Array.isArray(stuData.students)) {
-              stuData.students.forEach((s: any) => {
-                if (s.studentCode) {
-                  map[s.studentCode] = s.name + (s.autonomous ? ' ⭐' : '');
-                }
-              });
-            }
-            setStudentMap(map);
-          }
-        } catch (e) {
-          console.warn('Failed to load students for mapping:', e);
-        }
-
         const data = await getUsageReport(idToken);
         if (data) {
           const evalsList = (data.evaluations || []).map((item: any) => ({

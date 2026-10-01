@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { formatDateDMY as formatDateStr, getDateKeyIST as getISTDateString } from '@/lib/dateUtils';
+import { useAdminBatches } from '@/hooks/useAdminReferenceData';
 import dynamic from 'next/dynamic';
 const ExportPdfModal = dynamic(() => import('@/components/ExportPdfModal').then(m => ({ default: m.ExportPdfModal })), { ssr: false });
 
@@ -82,27 +83,15 @@ export default function AdminAttendancePage() {
   const [newLeaveRemarks, setNewLeaveRemarks] = useState('');
   const [leaveLoading, setLeaveLoading] = useState(false);
 
-  // Fetch batches
+  // Shared SWR Batches
+  const { batches: swrBatches } = useAdminBatches();
+
   useEffect(() => {
-    async function loadBatches() {
-      if (!firebaseUser) return;
-      try {
-        const token = await firebaseUser.getIdToken();
-        const res = await fetch('/api/admin/batches', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (!res.ok) throw new Error('Failed to load batches');
-        const resData = await res.json();
-        setBatches(resData.batches || []);
-        if (resData.batches?.length > 0) {
-          setSelectedBatchId(resData.batches[0].id);
-        }
-      } catch (e: any) {
-        setError(e.message);
-      }
+    if (swrBatches && swrBatches.length > 0) {
+      setBatches(swrBatches);
+      setSelectedBatchId(prev => prev || swrBatches[0].id);
     }
-    loadBatches();
-  }, [firebaseUser]);
+  }, [swrBatches]);
 
   // Fetch leaves list
   async function loadLeaves() {

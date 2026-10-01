@@ -17,6 +17,8 @@ interface Batch {
   zoomMeetingActive?: boolean;
 }
 
+import { useAdminBatches, invalidateAdminReferenceData } from '@/hooks/useAdminReferenceData';
+
 interface Student {
   id: string;
   name: string;
@@ -29,10 +31,7 @@ interface Student {
 
 export default function BatchesManager() {
   const { firebaseUser } = useAuth();
-
-  const [loading, setLoading] = useState(true);
-  const [batches, setBatches] = useState<Batch[]>([]);
-  const [students, setStudents] = useState<Student[]>([]);
+  const { batches, students, isLoading: loading, error: swrError, mutate: fetchBatches } = useAdminBatches<Batch, Student>();
   const [error, setError] = useState('');
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -64,31 +63,6 @@ export default function BatchesManager() {
   const [rollNumber, setRollNumber] = useState('');
   const [feeStatus, setFeeStatus] = useState('pending');
   const [savingRoll, setSavingRoll] = useState(false);
-
-  const fetchBatches = async () => {
-    if (!firebaseUser) return;
-    try {
-      const idToken = await firebaseUser.getIdToken();
-      const res = await fetch('/api/admin/batches', {
-        headers: {
-          'Authorization': `Bearer ${idToken}`
-        }
-      });
-      if (!res.ok) throw new Error('Failed to fetch batches list.');
-      const data = await res.json();
-      setBatches(data.batches || []);
-      setStudents(data.students || []);
-    } catch (err: any) {
-      console.error(err);
-      setError(err.message || 'Error loading batches.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchBatches();
-  }, [firebaseUser]);
 
   // Open Batch Modal (Create/Edit)
   const handleOpenBatchModal = (batch?: Batch) => {
