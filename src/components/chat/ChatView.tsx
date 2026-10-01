@@ -9,6 +9,9 @@ import { db } from '@/lib/firebase/firestore';
 import { collection, query, orderBy, limit, onSnapshot, doc, deleteDoc } from 'firebase/firestore';
 import { renderMarkdown } from '@/lib/markdown';
 import { getDateKeyIST, formatDateIST, parseDateInput } from '@/lib/dateUtils';
+import MessageItem from '@/components/chat/MessageItem';
+import MessageComposer from '@/components/chat/MessageComposer';
+import ChatHeader from '@/components/chat/ChatHeader';
 import dynamic from 'next/dynamic';
 const NewDmModal = dynamic(() => import('@/components/chat/NewDmModal'), { ssr: false });
 const NewGroupModal = dynamic(() => import('@/components/chat/NewGroupModal'), { ssr: false });
@@ -1782,191 +1785,25 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
           {activeRoomId ? (
             <>
               {/* Active conversation Header */}
-              <div style={{ 
-                    padding: isMobile ? '6px 8px' : '6px 12px', 
-                    borderBottom: '1px solid var(--border)', 
-                    background: 'var(--surface-popover)', 
-                    display: 'flex', 
-                    flexDirection: isMobile ? 'column' : 'row',
-                    alignItems: isMobile ? 'stretch' : 'center',
-                    justifyContent: 'space-between',
-                    gap: isMobile ? '4px' : '8px', 
-                    zIndex: 5 
-                  }}>
-                    {/* Row 1: Back + Info */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, width: '100%', justifyContent: 'space-between' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
-                        {isMobile && (
-                          <button 
-                            onClick={() => setActiveRoomId('')} 
-                            style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '13px', padding: '4px 2px', color: 'var(--accent)', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '2px' }}
-                          >
-                            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
-                          </button>
-                        )}
-                        <div style={{ position: 'relative', flexShrink: 0 }}>
-                          <div style={{
-                            width: isMobile ? '30px' : '34px',
-                            height: isMobile ? '30px' : '34px',
-                            borderRadius: activeRoom?.type === 'group' ? '8px' : '50%',
-                            background: activeRoom?.type === 'group' ? getGroupBadgeColor(activeDisplayName) : 'var(--accent)',
-                            color: 'var(--text-on-accent)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontWeight: 'bold',
-                            fontSize: isMobile ? '11px' : '13px'
-                          }}>
-                            {activeRoom?.type === 'group' ? getGroupInitials(activeDisplayName) : (activeDisplayName ? activeDisplayName[0].toUpperCase() : 'S')}
-                          </div>
-                          <span style={{ position: 'absolute', bottom: '0px', right: '0px', width: '7px', height: '7px', borderRadius: '50%', background: 'var(--success)', border: '1.5px solid var(--surface-popover)' }} />
-                        </div>
-                        <div style={{ minWidth: 0, marginLeft: '2px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <h3 style={{ margin: 0, fontSize: isMobile ? '13px' : '14px', fontWeight: 600, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                            {activeDisplayName}
-                          </h3>
-                      {isMessageSelectMode && (
-                        <button
-                          onClick={() => {
-                            setIsMessageSelectMode(false);
-                            setSelectedMessageIds({});
-                          }}
-                          style={{
-                            background: 'rgba(239, 68, 68, 0.15)',
-                            border: '1px solid rgba(239, 68, 68, 0.3)',
-                            borderRadius: '4px',
-                            color: 'var(--danger)',
-                            padding: '2px 5px',
-                            fontSize: '9.5px',
-                            fontWeight: 'bold',
-                            cursor: 'pointer'
-                          }}
-                        >
-                          Cancel Select
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  {isMobile && (
-                    <button
-                      onClick={handleDeleteConversation}
-                      style={{
-                        background: 'rgba(239, 68, 68, 0.15)',
-                        border: '1px solid rgba(239, 68, 68, 0.4)',
-                        borderRadius: '6px',
-                        color: 'var(--danger)',
-                        padding: '4px 8px',
-                        fontSize: '12px',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                      }}
-                      title="Delete Conversation"
-                    >
-                      🗑️
-                    </button>
-                  )}
-                </div>
-
-                {/* Row 2: Mute switches and buttons */}
-                <div style={{ 
-                  display: 'flex', 
-                  gap: '6px', 
-                  alignItems: 'center', 
-                  justifyContent: 'space-between',
-                  flexWrap: 'wrap',
-                  width: isMobile ? '100%' : 'auto',
-                  borderTop: isMobile ? '1px solid var(--border-light)' : 'none',
-                  paddingTop: isMobile ? '4px' : '0',
-                  marginTop: isMobile ? '2px' : '0'
-                }}>
-                  {activeRoom?.type === 'group' && (
-                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center', fontSize: '10.5px', fontWeight: 600, color: 'var(--text-muted)' }}>
-                      <span>Mute:</span>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: '3px', cursor: 'pointer', userSelect: 'none' }}>
-                        <input
-                          type="checkbox"
-                          checked={muteStudents}
-                          onChange={(e) => handleToggleMute('students', e.target.checked)}
-                          style={{ width: '12px', height: '12px', cursor: 'pointer' }}
-                        />
-                        Student
-                      </label>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: '3px', cursor: 'pointer', userSelect: 'none' }}>
-                        <input
-                          type="checkbox"
-                          checked={muteParents}
-                          onChange={(e) => handleToggleMute('parents', e.target.checked)}
-                          style={{ width: '12px', height: '12px', cursor: 'pointer' }}
-                        />
-                        Parent
-                      </label>
-                    </div>
-                  )}
-
-                  <div style={{ display: 'flex', gap: '6px', marginLeft: 'auto' }}>
-
-                    {!isMobile && (
-                      <button
-                        onClick={handleDeleteConversation}
-                        style={{
-                          background: 'rgba(239, 68, 68, 0.15)',
-                          border: '1px solid rgba(239, 68, 68, 0.4)',
-                          borderRadius: '6px',
-                          color: 'var(--danger)',
-                          padding: '4px 8px',
-                          fontSize: '10.5px',
-                          fontWeight: 'bold',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '3px',
-                          transition: 'all 0.2s'
-                        }}
-                      >
-                        🗑️ Delete Chat
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Pinned Message Banner */}
-              {activeRoom?.pinnedMessage && (
-                <div style={{
-                  background: 'var(--surface-3)',
-                  borderBottom: '1px solid var(--border)',
-                  padding: '5px 12px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: '8px',
-                  zIndex: 4
-                }}>
-                  <div 
-                    onClick={() => scrollToMessage(activeRoom.pinnedMessage!.messageId)}
-                    style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', overflow: 'hidden', flex: 1 }}
-                  >
-                    <span style={{ fontSize: '12px' }}>📌</span>
-                    <div style={{ fontSize: '11px', minWidth: 0 }}>
-                      <span style={{ color: 'var(--accent)', fontWeight: 600 }}>Pinned Message: </span>
-                      <span style={{ color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'inline-block', maxWidth: '300px', verticalAlign: 'bottom' }}>
-                        {activeRoom.pinnedMessage.text}
-                      </span>
-                    </div>
-                  </div>
-                  <button
-                    onClick={handleUnpinMessage}
-                    style={{ background: 'transparent', border: 'none', color: 'var(--danger)', fontSize: '11px', cursor: 'pointer', padding: '1px 4px' }}
-                    title="Unpin Message"
-                  >
-                    ✕
-                  </button>
-                </div>
-              )}
-
+              <ChatHeader
+                isMobile={isMobile}
+                onBack={() => setActiveRoomId('')}
+                activeRoom={activeRoom}
+                activeDisplayName={activeDisplayName}
+                getGroupBadgeColor={getGroupBadgeColor}
+                getGroupInitials={getGroupInitials}
+                isMessageSelectMode={isMessageSelectMode}
+                onCancelSelect={() => {
+                  setIsMessageSelectMode(false);
+                  setSelectedMessageIds({});
+                }}
+                handleDeleteConversation={handleDeleteConversation}
+                muteStudents={muteStudents}
+                muteParents={muteParents}
+                handleToggleMute={handleToggleMute}
+                scrollToMessage={scrollToMessage}
+                handleUnpinMessage={handleUnpinMessage}
+              />
               {/* Message scrollable bubble feed */}
               <div 
                 style={{ 
@@ -2152,474 +1989,36 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
                         return (
                           <React.Fragment key={msg.messageId}>
                             {dateDivider}
-                        <div
-                          ref={(el) => { messageRefs.current[msg.messageId] = el; }}
-                          onTouchStart={() => handleLongPressStart(msg.messageId)}
-                          onTouchEnd={handleLongPressEnd}
-                          onTouchMove={handleLongPressEnd}
-                          onMouseDown={() => handleLongPressStart(msg.messageId)}
-                          onMouseUp={handleLongPressEnd}
-                          onMouseLeave={handleLongPressEnd}
-                          onClick={() => {
-                            if (isMessageSelectMode) {
-                              setSelectedMessageIds(prev => ({ ...prev, [msg.messageId]: !prev[msg.messageId] }));
-                            }
-                          }}
-                          style={{
-                            alignSelf: isMe ? 'flex-end' : 'flex-start',
-                            maxWidth: isMobile ? '88%' : '75%',
-                            display: 'flex',
-                            gap: '8px',
-                            marginTop: isSameSender ? '2px' : '8px',
-                            opacity: msg.isOptimistic ? 0.7 : 1,
-                            cursor: isMessageSelectMode ? 'pointer' : 'default',
-                            background: isMessageSelectMode && selectedMessageIds[msg.messageId] ? 'rgba(239, 68, 68, 0.05)' : 'transparent',
-                            borderRadius: '8px',
-                            padding: isMessageSelectMode ? '4px 8px' : '0'
-                          }}
-                        >
-                          {isMessageSelectMode && (
-                            <input 
-                              type="checkbox" 
-                              checked={!!selectedMessageIds[msg.messageId]}
-                              onChange={() => {}} // parent onClick handles toggle
-                              style={{ alignSelf: 'center', width: '16px', height: '16px', cursor: 'pointer', accentColor: 'var(--danger)', marginRight: '4px' }}
+                            <MessageItem
+                              msg={msg}
+                              adminUid={adminUid}
+                              isMobile={isMobile}
+                              isSameSender={Boolean(isSameSender)}
+                              isMessageSelectMode={isMessageSelectMode}
+                              isSelected={Boolean(selectedMessageIds[msg.messageId])}
+                              isStarred={Boolean(starredMessageIds[msg.messageId])}
+                              isPinned={activeRoom?.pinnedMessage?.messageId === msg.messageId}
+                              participantNames={participantNames}
+                              editingMessageId={editingMessageId}
+                              editingText={editingText}
+                              setEditingText={setEditingText}
+                              setEditingMessageId={setEditingMessageId}
+                              handleEditMessage={handleEditMessage}
+                              handleDeleteMessage={handleDeleteMessage}
+                              handleToggleReaction={handleToggleReaction}
+                              toggleStarMessage={toggleStarMessage}
+                              handlePinMessage={handlePinMessage}
+                              handleUnpinMessage={handleUnpinMessage}
+                              setReplyingTo={setReplyingTo}
+                              handleVotePoll={handleVotePoll}
+                              setShowReactorsModal={setShowReactorsModal}
+                              scrollToMessage={scrollToMessage}
+                              onLongPressStart={handleLongPressStart}
+                              onLongPressEnd={handleLongPressEnd}
+                              onSelectMessage={(id) => setSelectedMessageIds(prev => ({ ...prev, [id]: !prev[id] }))}
+                              onReadReceiptsClick={(m) => setReceiptsModalMessage(m)}
+                              messageRef={(el) => { messageRefs.current[msg.messageId] = el; }}
                             />
-                          )}
-                      {/* Avatar for incoming messages */}
-                      {!isMe && !isSameSender && (
-                        <div style={{
-                          width: '28px',
-                          height: '28px',
-                          borderRadius: '50%',
-                          background: 'var(--accent)',
-                          color: 'var(--text-on-accent)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontWeight: 'bold',
-                          fontSize: '10px',
-                          flexShrink: 0,
-                          marginTop: '4px'
-                        }}>
-                          {msg.senderName ? msg.senderName[0].toUpperCase() : 'U'}
-                        </div>
-                      )}
-                      
-                      {/* Spacer to align bubbles when avatar is missing */}
-                      {!isMe && isSameSender && <div style={{ width: '28px', flexShrink: 0 }} />}
-
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: isMe ? 'flex-end' : 'flex-start', minWidth: 0, width: '100%' }}>
-                        
-                        {/* Name header */}
-                        {!isMe && !isSameSender && (
-                          <span style={{ fontSize: '11px', color: 'var(--accent)', marginBottom: '3px', fontWeight: 600, paddingLeft: '4px' }}>
-                            {msg.senderName} ({msg.senderRole.toUpperCase()})
-                          </span>
-                        )}
-
-                        {/* Bubble */}
-                        <div
-                          onDoubleClick={() => {
-                            if (!msg.isDeleted && !msg.isOptimistic) {
-                              setReplyingTo(msg);
-                            }
-                          }}
-                          style={{
-                            background: isMe ? 'var(--accent)' : 'var(--surface)',
-                            color: isMe ? 'var(--text-on-accent)' : 'var(--text)',
-                            padding: '7px 11px',
-                            minWidth: 0,
-                            width: '100%',
-                            borderRadius: isMe 
-                              ? (isSameSender ? '12px 12px 12px 12px' : '12px 12px 3px 12px')
-                              : (isSameSender ? '12px 12px 12px 12px' : '12px 12px 12px 3px'),
-                            border: isMe ? 'none' : '1px solid var(--border-light)',
-                            fontSize: '13.5px',
-                            lineHeight: '1.4',
-                            position: 'relative',
-                            wordBreak: 'break-word',
-                            boxShadow: isMe ? '0 1px 4px rgba(37,99,235,0.2)' : '0 1px 4px rgba(0,0,0,0.05)'
-                          }}
-                        >
-                          {/* Quote message reference */}
-                          {msg.replyToId && (
-                            <div 
-                              onClick={() => scrollToMessage(msg.replyToId!)}
-                              style={{
-                                background: isMe ? 'rgba(0,0,0,0.15)' : 'var(--surface-2)',
-                                borderLeft: isMe ? '3px solid var(--info)' : '3px solid var(--accent)',
-                                padding: '4px 8px',
-                                borderRadius: '4px',
-                                marginBottom: '4px',
-                                fontSize: '11px',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                gap: '2px'
-                              }}
-                            >
-                              <div style={{ fontWeight: 600, color: isMe ? 'var(--info)' : 'var(--accent)' }}>{msg.replyToSenderName}</div>
-                              <div style={{ color: isMe ? 'rgba(255,255,255,0.85)' : 'var(--text-muted)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
-                                {msg.replyToText}
-                              </div>
-                            </div>
-                          )}
-
-                          {msg.isDeleted ? (
-                            <span style={{ fontStyle: 'italic', color: isMe ? 'rgba(255,255,255,0.7)' : 'var(--text-faint)' }}>🚫 This message was deleted</span>
-                          ) : editingMessageId === msg.messageId ? (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', minWidth: '220px' }}>
-                              <textarea
-                                value={editingText}
-                                onChange={(e) => setEditingText(e.target.value)}
-                                style={{
-                                  width: '100%',
-                                  background: 'var(--surface-2)',
-                                  border: '1px solid var(--accent)',
-                                  borderRadius: '6px',
-                                  color: 'var(--text)',
-                                  padding: '6px',
-                                  fontSize: '13px',
-                                  resize: 'none',
-                                  outline: 'none'
-                                }}
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Enter' && !e.shiftKey) {
-                                    e.preventDefault();
-                                    handleEditMessage(msg.messageId, editingText);
-                                  }
-                                }}
-                              />
-                              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '6px' }}>
-                                <button
-                                  onClick={() => setEditingMessageId('')}
-                                  style={{ background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-muted)', borderRadius: '4px', padding: '3px 8px', fontSize: '10px', cursor: 'pointer' }}
-                                >
-                                  Cancel
-                                </button>
-                                <button
-                                  onClick={() => handleEditMessage(msg.messageId, editingText)}
-                                  style={{ background: 'var(--accent)', border: 'none', color: 'var(--text-on-accent)', borderRadius: '4px', padding: '3px 8px', fontSize: '10px', cursor: 'pointer', fontWeight: 'bold' }}
-                                >
-                                  Save
-                                </button>
-                              </div>
-                            </div>
-                          ) : msg.type === 'poll' ? (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', minWidth: '240px' }}>
-                              <div style={{ fontWeight: 600, fontSize: '14px', display: 'flex', alignItems: 'center', gap: '6px', color: isMe ? 'var(--text-on-accent)' : 'var(--accent)' }}>
-                                📊 {msg.text}
-                              </div>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '6px' }}>
-                                {(msg.pollOptions || []).map((opt, oIdx) => {
-                                  const votesMap = msg.pollVotes || {};
-                                  const totalVotes = Object.keys(votesMap).length;
-                                  const hasVotedThis = votesMap[adminUid] === oIdx;
-                                  const percentage = totalVotes > 0 ? Math.round((opt.votesCount / totalVotes) * 100) : 0;
-                                  return (
-                                    <div
-                                      key={oIdx}
-                                      onClick={() => handleVotePoll(msg.messageId, oIdx)}
-                                      style={{
-                                        position: 'relative',
-                                        background: hasVotedThis ? (isMe ? 'rgba(255,255,255,0.2)' : 'var(--accent-soft)') : (isMe ? 'rgba(0,0,0,0.12)' : 'var(--surface-2)'),
-                                        border: hasVotedThis ? (isMe ? '1px solid var(--info)' : '1px solid var(--accent)') : (isMe ? '1px solid rgba(255,255,255,0.2)' : '1px solid var(--border-light)'),
-                                        borderRadius: '8px',
-                                        padding: '8px 12px',
-                                        cursor: 'pointer',
-                                        overflow: 'hidden',
-                                        display: 'flex',
-                                        flexDirection: 'column',
-                                        alignItems: 'flex-start',
-                                        fontSize: '13px',
-                                        transition: 'all 0.2s',
-                                        userSelect: 'none',
-                                        width: '100%'
-                                      }}
-                                    >
-                                      <div
-                                        style={{
-                                          position: 'absolute',
-                                          left: 0,
-                                          top: 0,
-                                          bottom: 0,
-                                          width: `${percentage}%`,
-                                          background: hasVotedThis ? (isMe ? 'rgba(255,255,255,0.15)' : 'rgba(37, 99, 235, 0.15)') : (isMe ? 'rgba(0,0,0,0.08)' : 'rgba(148, 163, 184, 0.08)'),
-                                          zIndex: 0,
-                                          transition: 'width 0.3s'
-                                        }}
-                                      />
-                                      {(() => {
-                                        const voterKeys = Object.entries(msg.pollVotes || {})
-                                          .filter(([_, oIdxVal]) => oIdxVal === oIdx)
-                                          .map(([vKey]) => participantNames[vKey] || vKey);
-                                        return (
-                                          <>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', zIndex: 1 }}>
-                                              <span style={{ fontWeight: 555 }}>{opt.text}</span>
-                                              <span style={{ fontSize: '11px', color: isMe ? 'rgba(255,255,255,0.85)' : 'var(--text-muted)' }}>
-                                                {opt.votesCount} votes ({percentage}%)
-                                              </span>
-                                            </div>
-                                            {voterKeys.length > 0 && (
-                                              <div style={{ fontSize: '10px', color: isMe ? 'rgba(255,255,255,0.75)' : 'var(--text-muted)', marginTop: '4px', zIndex: 1, textAlign: 'left', width: '100%', opacity: 0.85, whiteSpace: 'normal', wordBreak: 'break-word' }}>
-                                                Voters: {voterKeys.join(', ')}
-                                              </div>
-                                            )}
-                                          </>
-                                        );
-                                      })()}
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          ) : (
-                            <>
-                              <div className="selectable-text" style={{ wordBreak: 'break-word', whiteSpace: 'pre-wrap', fontSize: '13.5px' }} dangerouslySetInnerHTML={{ __html: renderMarkdown(msg.text, participantNames) }} />
-                              
-                              {/* Attachment box */}
-                              {hasAttachment && (
-                                <div style={{
-                                  marginTop: '6px',
-                                  background: isMe ? 'rgba(0,0,0,0.15)' : 'var(--surface-2)',
-                                  borderRadius: '6px',
-                                  padding: '6px 10px',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'space-between',
-                                  gap: '10px',
-                                  border: isMe ? '1px solid rgba(255,255,255,0.2)' : '1px solid var(--border)',
-                                  minWidth: '220px'
-                                }}>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                    <div style={{ background: 'var(--danger)', width: '28px', height: '30px', borderRadius: '4px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '8.5px', color: 'var(--text-white)' }}>
-                                      <span>FILE</span>
-                                    </div>
-                                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                      <span style={{ fontSize: '11.5px', fontWeight: 600, color: isMe ? 'var(--text-on-accent)' : 'var(--text)', maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{msg.text.split(' ').pop()}</span>
-                                      <span style={{ fontSize: '9.5px', color: isMe ? 'rgba(255,255,255,0.75)' : 'var(--text-muted)', marginTop: '1px' }}>Attachment Link</span>
-                                    </div>
-                                  </div>
-                                  <a href={msg.text.includes('(') ? msg.text.substring(msg.text.indexOf('(') + 1, msg.text.indexOf(')')) : msg.text} target="_blank" rel="noopener noreferrer" style={{ color: isMe ? 'var(--info)' : 'var(--accent)', cursor: 'pointer', display: 'flex', alignItems: 'center' }} title="Download file">
-                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg>
-                                  </a>
-                                </div>
-                              )}
-                            </>
-                          )}
-
-                          {/* Quick reactions summary inside the bubble */}
-                          {!msg.isDeleted && msg.reactions && (
-                            <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginTop: '4px' }}>
-                              {msg.reactions.thumbsup && msg.reactions.thumbsup.length > 0 && (
-                                <span 
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setShowReactorsModal({
-                                      isOpen: true,
-                                      thumbsup: msg.reactions?.thumbsup || [],
-                                      pray: msg.reactions?.pray || []
-                                    });
-                                  }}
-                                  style={{
-                                    fontSize: '10.5px',
-                                    background: msg.reactions.thumbsup.includes(adminUid) ? 'var(--accent-soft)' : (isMe ? 'rgba(0,0,0,0.12)' : 'var(--surface-2)'),
-                                    border: msg.reactions.thumbsup.includes(adminUid) ? '1px solid var(--accent)' : (isMe ? '1px solid rgba(255,255,255,0.2)' : '1px solid var(--border-light)'),
-                                    padding: '1px 5px',
-                                    borderRadius: '8px',
-                                    cursor: 'pointer',
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '2px',
-                                    userSelect: 'none'
-                                  }}
-                                  title={`Reacted by: ${msg.reactions.thumbsup.map(uid => participantNames[uid] || uid).join(', ')}`}
-                                >
-                                  👍 <span style={{ color: isMe ? 'rgba(255,255,255,0.85)' : 'var(--text-muted)', fontSize: '9.5px' }}>{msg.reactions.thumbsup.length}</span>
-                                </span>
-                              )}
-                              {msg.reactions.pray && msg.reactions.pray.length > 0 && (
-                                <span 
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setShowReactorsModal({
-                                      isOpen: true,
-                                      thumbsup: msg.reactions?.thumbsup || [],
-                                      pray: msg.reactions?.pray || []
-                                    });
-                                  }}
-                                  style={{
-                                    fontSize: '10.5px',
-                                    background: msg.reactions.pray.includes(adminUid) ? 'var(--accent-soft)' : (isMe ? 'rgba(0,0,0,0.12)' : 'var(--surface-2)'),
-                                    border: msg.reactions.pray.includes(adminUid) ? '1px solid var(--accent)' : (isMe ? '1px solid rgba(255,255,255,0.2)' : '1px solid var(--border-light)'),
-                                    padding: '1px 5px',
-                                    borderRadius: '8px',
-                                    cursor: 'pointer',
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '2px',
-                                    userSelect: 'none'
-                                  }}
-                                  title={`Reacted by: ${msg.reactions.pray.map(uid => participantNames[uid] || uid).join(', ')}`}
-                                >
-                                  🙏 <span style={{ color: isMe ? 'rgba(255,255,255,0.85)' : 'var(--text-muted)', fontSize: '9.5px' }}>{msg.reactions.pray.length}</span>
-                                </span>
-                              )}
-                            </div>
-                          )}
-                          
-          {/* Bubble Footer Meta (time + ticks) */}
-                          <div style={{ 
-                            display: 'flex', 
-                            justifyContent: 'flex-end', 
-                            alignItems: 'center', 
-                            gap: '4px', 
-                            fontSize: '10.5px', 
-                            color: isMe ? 'rgba(255,255,255,0.75)' : 'var(--text-faint)', 
-                            marginTop: '4px',
-                            textAlign: 'right',
-                            flexWrap: 'wrap'
-                          }}>
-                            {starredMessageIds[msg.messageId] && (
-                              <span style={{ color: 'var(--warning)', marginRight: '3px', fontSize: '11px' }} title="Starred Message">★</span>
-                            )}
-                            {msg.isEdited && <span style={{ fontStyle: 'italic', fontSize: '9.5px', color: isMe ? 'rgba(255,255,255,0.75)' : 'var(--text-faint)', marginRight: '3px' }}>edited</span>}
-                            <span>{new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-
-                            {/* Quick reactions */}
-                            {!msg.isDeleted && !msg.isOptimistic && (
-                              <>
-                                <span 
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleToggleReaction(msg.messageId, 'thumbsup');
-                                  }}
-                                  style={{ 
-                                    cursor: 'pointer', 
-                                    marginLeft: '10px', 
-                                    opacity: msg.reactions?.thumbsup?.includes(adminUid) ? 1 : 0.4,
-                                    fontSize: '15px',
-                                    display: 'inline-flex', 
-                                    alignItems: 'center',
-                                    userSelect: 'none'
-                                  }}
-                                  title="React Thumbs Up"
-                                >
-                                  👍
-                                </span>
-                                <span 
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleToggleReaction(msg.messageId, 'pray');
-                                  }}
-                                  style={{ 
-                                    cursor: 'pointer', 
-                                    marginLeft: '8px', 
-                                    opacity: msg.reactions?.pray?.includes(adminUid) ? 1 : 0.4,
-                                    fontSize: '15px',
-                                    display: 'inline-flex', 
-                                    alignItems: 'center',
-                                    userSelect: 'none'
-                                  }}
-                                  title="React Folding Hand"
-                                >
-                                  🙏
-                                </span>
-                              </>
-                            )}
-                            
-                            {/* Star Action */}
-                            {!msg.isDeleted && !msg.isOptimistic && (
-                              <span 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  toggleStarMessage(msg.messageId);
-                                }}
-                                style={{ color: starredMessageIds[msg.messageId] ? 'var(--warning)' : (isMe ? 'rgba(255,255,255,0.7)' : 'var(--text-faint)'), cursor: 'pointer', marginLeft: '10px', display: 'inline-flex', alignItems: 'center', padding: '2px' }}
-                                title={starredMessageIds[msg.messageId] ? "Unstar Message" : "Star Message"}
-                              >
-                                <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
-                              </span>
-                            )}
-
-                            {/* Reply Action */}
-                            {!msg.isDeleted && !msg.isOptimistic && (
-                              <span 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setReplyingTo(msg);
-                                }}
-                                style={{ color: isMe ? 'rgba(255,255,255,0.7)' : 'var(--text-faint)', cursor: 'pointer', marginLeft: '8px', display: 'inline-flex', alignItems: 'center', padding: '2px' }}
-                                title="Reply to message"
-                              >
-                                <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M10 9V5l-7 7 7 7v-4.1c5 0 8.5 1.6 11 5.1-1-5-4-10-11-11z"/></svg>
-                              </span>
-                            )}
-
-                            {/* Pin Action (Admin only) */}
-                            {!msg.isDeleted && !msg.isOptimistic && (
-                              <span 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  const isPinned = activeRoom?.pinnedMessage?.messageId === msg.messageId;
-                                  if (isPinned) handleUnpinMessage();
-                                  else handlePinMessage(msg.messageId);
-                                }}
-                                style={{ color: activeRoom?.pinnedMessage?.messageId === msg.messageId ? (isMe ? 'var(--info)' : 'var(--accent)') : (isMe ? 'rgba(255,255,255,0.7)' : 'var(--text-faint)'), cursor: 'pointer', marginLeft: '8px', display: 'inline-flex', alignItems: 'center', fontSize: '15px' }}
-                                title={activeRoom?.pinnedMessage?.messageId === msg.messageId ? "Unpin Message" : "Pin Message"}
-                              >
-                                📌
-                              </span>
-                            )}
-
-                            {/* Edit Action for Admin (no time limit, text type only) */}
-                            {!msg.isDeleted && !msg.isOptimistic && msg.type !== 'poll' && (
-                              <span 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setEditingMessageId(msg.messageId);
-                                  setEditingText(msg.text);
-                                }}
-                                style={{ color: isMe ? 'var(--info)' : 'var(--accent)', cursor: 'pointer', marginLeft: '8px', display: 'inline-flex', alignItems: 'center', padding: '2px' }}
-                                title="Edit message"
-                              >
-                                <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
-                              </span>
-                            )}
-
-                            {/* Delete Action for Admin (no limit) */}
-                            {!msg.isDeleted && !msg.isOptimistic && (
-                              <span 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDeleteMessage(msg.messageId);
-                                }}
-                                style={{ color: 'var(--danger)', cursor: 'pointer', marginLeft: '8px', display: 'inline-flex', alignItems: 'center', padding: '2px' }}
-                                title="Delete message"
-                              >
-                                <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
-                              </span>
-                            )}
-
-                            {isMe && !msg.isDeleted && (
-                              <span 
-                                onClick={() => setReceiptsModalMessage(msg)}
-                                style={{ display: 'inline-flex', cursor: 'pointer', marginLeft: '4px' }}
-                                title="View Read Receipts"
-                              >
-                                {readersCount > 0 ? (
-                                  <svg viewBox="0 0 16 15" width="16" height="15" fill="var(--info)"><path d="M15.01 3.3l-5.5 5.5-2.76-2.77-.88.88 3.64 3.64 6.38-6.37-.88-.88zm-5.56 5.5l-.89-.89-.88.88 1.77 1.77 1-.99-.88-.88-.12.12zm-3.8-1.92l-.88-.88-2.77 2.76-1.39-1.39-.88.88 2.27 2.27 3.65-3.64z"/></svg>
-                                ) : (
-                                  <svg viewBox="0 0 16 15" width="16" height="15" fill="rgba(255,255,255,0.6)"><path d="M15.01 3.3l-5.5 5.5-2.76-2.77-.88.88 3.64 3.64 6.38-6.37-.88-.88zm-5.56 5.5l-.89-.89-.88.88 1.77 1.77 1-.99-.88-.88-.12.12zm-3.8-1.92l-.88-.88-2.77 2.76-1.39-1.39-.88.88 2.27 2.27 3.65-3.64z"/></svg>
-                                )}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
                   </React.Fragment>
                 );
               })}
@@ -2630,285 +2029,30 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
               </div>
 
               {/* Message Typing Panel */}
-              {isMessageSelectMode ? (
-                <div style={{ padding: '14px 20px', background: 'rgba(239, 68, 68, 0.08)', borderTop: '1px solid rgba(239, 68, 68, 0.2)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', zIndex: 5 }}>
-                  <span style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--danger)' }}>
-                    🗑️ {Object.values(selectedMessageIds).filter(Boolean).length} messages selected for deletion
-                  </span>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsMessageSelectMode(false);
-                        setSelectedMessageIds({});
-                      }}
-                      style={{ background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-muted)', borderRadius: '8px', padding: '8px 16px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleBulkDeleteMessages}
-                      disabled={Object.values(selectedMessageIds).filter(Boolean).length === 0}
-                      style={{ background: 'var(--danger)', border: 'none', color: 'var(--text-white)', borderRadius: '8px', padding: '8px 16px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', opacity: Object.values(selectedMessageIds).filter(Boolean).length === 0 ? 0.5 : 1 }}
-                    >
-                      Delete Selected
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <form onSubmit={handleSendMessage} style={{ position: 'relative', padding: isMobile ? '6px 8px' : '6px 12px', background: 'var(--surface-popover)', display: 'flex', flexDirection: 'column', gap: '4px', zIndex: 5, borderTop: '1px solid var(--border)' }}>
-                
-                {/* Mention / Tag Suggestions dropdown */}
-                {showMentionSuggestions && mentionCandidates.length > 0 && (
-                  <div style={{
-                    position: 'absolute',
-                    bottom: '105%',
-                    left: '12px',
-                    width: '260px',
-                    background: 'var(--surface-popover)',
-                    border: '1px solid var(--border)',
-                    borderRadius: '8px',
-                    boxShadow: '0 -4px 12px rgba(0,0,0,0.15)',
-                    maxHeight: '150px',
-                    overflowY: 'auto',
-                    zIndex: 1000,
-                    padding: '4px 0',
-                    marginBottom: '4px'
-                  }}>
-                    {mentionCandidates.map((cand: any) => (
-                      <div
-                        key={cand.id}
-                        onClick={() => selectMention(cand.name)}
-                        style={{
-                          padding: '6px 10px',
-                          cursor: 'pointer',
-                          fontSize: '12px',
-                          color: 'var(--text)',
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center'
-                        }}
-                        onMouseEnter={(e) => e.currentTarget.style.background = 'var(--surface-2)'}
-                        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                      >
-                        <span style={{ fontWeight: 600 }}>{cand.name}</span>
-                        <span style={{ fontSize: '9.5px', color: 'var(--text-muted)' }}>{cand.id}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                
-                {/* Replying Draft Preview */}
-                {replyingTo && (
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    background: 'var(--surface-3)',
-                    borderLeft: '3px solid var(--accent)',
-                    padding: '4px 10px',
-                    borderRadius: '6px',
-                    marginBottom: '2px'
-                  }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', fontSize: '11px', overflow: 'hidden' }}>
-                      <span style={{ color: 'var(--accent)', fontWeight: 600 }}>Replying to {replyingTo.senderName}</span>
-                      <span style={{ color: 'var(--text-muted)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', maxWidth: '280px' }}>
-                        {replyingTo.text}
-                      </span>
-                    </div>
-                    <button 
-                      type="button" 
-                      onClick={() => setReplyingTo(null)}
-                      style={{ background: 'transparent', border: 'none', color: 'var(--danger)', fontSize: '12px', cursor: 'pointer', padding: '2px 4px' }}
-                    >
-                      ✕
-                    </button>
-                  </div>
-                )}
-
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', width: '100%' }}>
-                  {/* Attachment clip and smiley inside a single pill input wrapper */}
-                  <div style={{
-                    flex: 1,
-                    minWidth: '0',
-                    background: 'var(--surface)',
-                    border: '1px solid var(--border)',
-                    borderRadius: '18px',
-                    padding: '2px 10px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    minHeight: '34px',
-                    height: 'auto'
-                  }}>
-                    <div 
-                      onClick={() => setShowAttachmentMenu(prev => !prev)}
-                      style={{ color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center', position: 'relative' }} 
-                      title="Attach file or insert link"
-                    >
-                      <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M16.5 6v11.5c0 2.21-1.79 4-4 4s-4-1.79-4-4V5c0-3.31 2.69-6 6-6s6 2.69 6 6v10.5c0 4.42-3.58 8-8 8s-8-3.58-8-8V6h2v9.5c0 3.31 2.69 6 6 6s6-2.69 6-6V5c0-2.21-1.79-4-4-4s-4 1.79-4 4v12.5c0 1.1.9 2 2 2s2-.9 2-2V6h2z"/></svg>
-                      
-                      {showAttachmentMenu && (
-                        <div style={{
-                          position: 'absolute',
-                          bottom: '36px',
-                          left: '0',
-                          background: 'var(--surface-popover)',
-                          border: '1px solid var(--border)',
-                          borderRadius: '8px',
-                          padding: '4px 0',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          width: '130px',
-                          boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
-                          zIndex: 100
-                        }}>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setShowAttachmentMenu(false);
-                              fileInputRef.current?.click();
-                            }}
-                            style={{
-                              background: 'transparent',
-                              border: 'none',
-                              color: 'var(--text)',
-                              padding: '5px 10px',
-                              textAlign: 'left',
-                              fontSize: '11.5px',
-                              cursor: 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '5px',
-                              width: '100%'
-                            }}
-                            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--surface-2)'}
-                            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                          >
-                            📂 Upload File
-                          </button>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setShowAttachmentMenu(false);
-                              setShowLinkModal(true);
-                            }}
-                            style={{
-                              background: 'transparent',
-                              border: 'none',
-                              color: 'var(--text)',
-                              padding: '5px 10px',
-                              textAlign: 'left',
-                              fontSize: '11.5px',
-                              cursor: 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '5px',
-                              width: '100%'
-                            }}
-                            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--surface-2)'}
-                            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                          >
-                            🔗 Insert Link
-                          </button>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setShowAttachmentMenu(false);
-                              setShowPollModal(true);
-                            }}
-                            style={{
-                              background: 'transparent',
-                              border: 'none',
-                              color: 'var(--text)',
-                              padding: '5px 10px',
-                              textAlign: 'left',
-                              fontSize: '11.5px',
-                              cursor: 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '5px',
-                              width: '100%'
-                            }}
-                            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--surface-2)'}
-                            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                          >
-                            📊 Create Poll
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  <input 
-                    type="file" 
-                    ref={fileInputRef} 
-                    onChange={handleFileUpload} 
-                    style={{ display: 'none' }} 
-                  />
-                  <textarea
-                    value={inputText}
-                    onChange={(e) => handleInputChange(e.target.value)}
-                    placeholder="Type a message..."
-                    rows={1}
-                    style={{
-                      flex: 1,
-                      width: '100%',
-                      minWidth: '0',
-                      border: 'none',
-                      background: 'transparent',
-                      color: 'var(--text)',
-                      fontSize: '13.5px',
-                      resize: 'none',
-                      height: '20px',
-                      minHeight: '20px',
-                      maxHeight: '80px',
-                      outline: 'none',
-                      lineHeight: '1.3',
-                      padding: '1px 0',
-                      margin: 0,
-                      overflowY: 'auto'
-                    }}
-                    onBlur={() => {
-                      setTimeout(() => {
-                        window.scrollTo(0, 0);
-                      }, 100);
-                    }}
-                  />
-                  <div style={{ color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', alignItems: 'center' }} title="Emojis">
-                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 14H11v-2h2v2zm0-4H11V7h2v5z"/></svg>
-                  </div>
-                </div>
-
-                <button 
-                  type="submit" 
-                  style={{ 
-                    height: '34px', 
-                    borderRadius: '50%', 
-                    width: '34px', 
-                    minWidth: '34px', 
-                    padding: '0', 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'center', 
-                    background: 'var(--accent)', 
-                    border: 'none', 
-                    color: 'var(--text-white)', 
-                    cursor: 'pointer',
-                    boxShadow: '0 2px 6px rgba(79, 70, 229, 0.35)',
-                    transition: 'transform 0.1s'
-                  }}
-                  onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.95)'}
-                  onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                  title="Send message"
-                >
-                  <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor" style={{ transform: 'rotate(45deg)' }}><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
-                </button>
-                </div>
-              </form>
-              )}
+              <MessageComposer
+                isMobile={isMobile}
+                isMessageSelectMode={isMessageSelectMode}
+                selectedCount={Object.values(selectedMessageIds).filter(Boolean).length}
+                onCancelSelect={() => {
+                  setIsMessageSelectMode(false);
+                  setSelectedMessageIds({});
+                }}
+                onBulkDelete={handleBulkDeleteMessages}
+                handleSendMessage={handleSendMessage}
+                showMentionSuggestions={showMentionSuggestions}
+                mentionCandidates={mentionCandidates}
+                selectMention={selectMention}
+                replyingTo={replyingTo}
+                setReplyingTo={setReplyingTo}
+                showAttachmentMenu={showAttachmentMenu}
+                setShowAttachmentMenu={setShowAttachmentMenu}
+                fileInputRef={fileInputRef}
+                handleFileUpload={handleFileUpload}
+                setShowLinkModal={setShowLinkModal}
+                setShowPollModal={setShowPollModal}
+                inputText={inputText}
+                handleInputChange={handleInputChange}
+              />
             </>
           ) : (
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', gap: '16px', padding: '24px', textAlign: 'center' }}>

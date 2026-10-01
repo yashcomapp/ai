@@ -15,8 +15,10 @@ const TopicStatusBreakdownModal = dynamic(() => import('@/components/admin/exams
 import { useMathRender } from '@/hooks/useMathRender';
 import { useScorecard } from '@/hooks/useScorecard';
 import { exportUniversalExamPDF } from '@/lib/pdfExport';
-import { isBlank } from '@/lib/questionTypes';
 import { toISTDateTimeLocalInput, formatDateDMY, parseDateInput, getDateKeyIST } from '@/lib/dateUtils';
+import ObjectiveTab from '@/components/admin/exams/ObjectiveTab';
+import SubjectiveTab from '@/components/admin/exams/SubjectiveTab';
+import PracticeTab from '@/components/admin/exams/PracticeTab';
 
 interface Exam {
   id: string;
@@ -340,7 +342,7 @@ export default function AdminExamsPage() {
       return exam.scheduledDate <= todayIST;
     }
     
-    return exam.batchId || assignments.some(a => a.examId === exam.id && a.collection === 'subjectiveAssignments');
+    return Boolean(exam.batchId || assignments.some(a => a.examId === exam.id && a.collection === 'subjectiveAssignments'));
   };
 
   // Already Assigned sorting states & helpers
@@ -1539,1023 +1541,104 @@ export default function AdminExamsPage() {
 
         {/* Tab Content: Objective Exams */}
         {activeTab === 'objective' && (
-          <div>
-            <div className="filter-row" style={{ display: 'flex', gap: '10px', marginBottom: '16px', flexWrap: 'wrap' }}>
-              <input 
-                type="text" 
-                value={objFilterName}
-                placeholder="🔍 Filter by exam name..." 
-                onChange={(e) => setObjFilterName(e.target.value)}
-                style={{ flex: 1, minWidth: '220px', padding: '8px 12px', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', background: 'var(--surface)', color: 'var(--text)' }}
-              />
-              <input 
-                type="text" 
-                value={objFilterTopic}
-                placeholder="🔍 Filter by topic code..." 
-                onChange={(e) => setObjFilterTopic(e.target.value)}
-                style={{ flex: 1, minWidth: '220px', padding: '8px 12px', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', background: 'var(--surface)', color: 'var(--text)' }}
-              />
-              <button 
-                className="btn btn-secondary" 
-                onClick={() => { setObjFilterName(''); setObjFilterTopic(''); }}
-              >
-                Clear
-              </button>
-            </div>
-
-            {/* Section 1: Available for Assignment */}
-            <div id="objective-templates-section" style={{ marginBottom: '24px' }}>
-              <h3 style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text)', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                📋 Exams Available for Assignment
-              </h3>
-              <div className="card" style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', overflow: 'hidden' }}>
-                <div style={{ overflowX: 'auto' }}>
-                  <table className="reviews-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
-                    <thead>
-                      <tr style={{ background: 'var(--bg-soft)', borderBottom: '1px solid var(--border-light)', color: 'var(--text-muted)', fontSize: '12px' }}>
-                        <th style={{ padding: '12px 16px' }}>Exam Name</th>
-                        <th style={{ padding: '12px 16px' }}>Subject</th>
-                        <th style={{ padding: '12px 16px' }}>Topics</th>
-                        <th style={{ padding: '12px 16px' }}>Questions</th>
-                        <th style={{ padding: '12px 16px' }}>Marks</th>
-                        <th style={{ padding: '12px 16px', textAlign: 'right' }}>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredObjectiveExams.filter(exam => !exam.batchId && !assignments.some(a => a.examId === exam.id && a.collection === 'batchAssignments')).length === 0 ? (
-                        <tr>
-                          <td colSpan={6} style={{ padding: '30px', textAlign: 'center', color: 'var(--text-muted)' }}>No exams available for assignment.</td>
-                        </tr>
-                      ) : (
-                        filteredObjectiveExams
-                          .filter(exam => !exam.batchId && !assignments.some(a => a.examId === exam.id && a.collection === 'batchAssignments'))
-                          .map(exam => (
-                            <tr key={exam.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
-                              <td style={{ padding: '12px 16px', fontWeight: 600 }}>{exam.name}</td>
-                              <td style={{ padding: '12px 16px' }}>{exam.subjectName || exam.subjects?.[0] || '—'}</td>
-                              <td style={{ padding: '12px 16px' }}>{(exam.topicCodes || []).join(', ') || '—'}</td>
-                              <td style={{ padding: '12px 16px' }}>{exam.questionCount || exam.questions?.length || 0}</td>
-                              <td style={{ padding: '12px 16px' }}>{exam.totalMarks || 0}</td>
-                              <td style={{ padding: '12px 16px', textAlign: 'right' }}>
-                                <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
-                                  <button className="btn btn-primary" style={{ padding: '4px 10px', fontSize: '11px' }} onClick={() => handleOpenAssign(exam, 'objective')}>
-                                    📋 Assign
-                                  </button>
-                                  <button className="btn btn-secondary" style={{ padding: '4px 10px', fontSize: '11px', color: 'var(--danger)' }} onClick={() => handleDeleteExam(exam.id, exam.name, 'objective')}>
-                                    🗑️ Delete
-                                  </button>
-                                </div>
-                              </td>
-                            </tr>
-                          ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-
-            {/* Section 1b: Today's & Tomorrow's Exams */}
-            <div id="objective-today-tomorrow-section" style={{ marginBottom: '24px' }}>
-              <h3 style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text)', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                📅 Today's & Tomorrow's Exams
-              </h3>
-              <div className="card" style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', overflow: 'hidden' }}>
-                <div style={{ overflowX: 'auto' }}>
-                  <table className="reviews-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
-                    <thead>
-                      <tr style={{ background: 'var(--bg-soft)', borderBottom: '1px solid var(--border-light)', color: 'var(--text-muted)', fontSize: '12px' }}>
-                        <th style={{ padding: '12px 16px' }}>Exam Name</th>
-                        <th style={{ padding: '12px 16px' }}>Assigned To</th>
-                        <th style={{ padding: '12px 16px' }}>Assigned Date</th>
-                        <th style={{ padding: '12px 16px' }}>Status / Starts</th>
-                        <th style={{ padding: '12px 16px', textAlign: 'right' }}>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {(() => {
-                        const todayTomorrowExams = filteredObjectiveExams.filter(exam => 
-                          (exam.batchId || assignments.some(a => a.examId === exam.id && a.collection === 'batchAssignments')) &&
-                          isTodayOrTomorrow(exam, 'objective')
-                        );
-                        
-                        const sortedTodayTomorrowExams = [...todayTomorrowExams].sort((a, b) => {
-                          const timeA = getExamSortTimestamp(a, 'objective');
-                          const timeB = getExamSortTimestamp(b, 'objective');
-                          if (timeA !== timeB) return timeA - timeB;
-                          
-                          const classA = parseInt(getExamClass(a)) || 0;
-                          const classB = parseInt(getExamClass(b)) || 0;
-                          return classA - classB;
-                        });
-
-                        if (sortedTodayTomorrowExams.length === 0) {
-                          return (
-                            <tr>
-                              <td colSpan={5} style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)' }}>No exams scheduled for today or tomorrow.</td>
-                            </tr>
-                          );
-                        }
-                        
-                        return sortedTodayTomorrowExams.map(exam => {
-                          const count = attemptCounts[exam.id] || 0;
-                          const activeAssign = assignments.find(a => a.examId === exam.id && a.collection === 'batchAssignments');
-                          const rawStatus = activeAssign?.status || 'active';
-                          const scheduleStatus = getExamScheduleStatus(exam, activeAssign, 'objective');
-                          return (
-                            <tr key={exam.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
-                              <td style={{ padding: '12px 16px', fontWeight: 600 }}>
-                                {exam.name}
-                                <span style={{ marginLeft: '8px', fontSize: '9px', fontWeight: 700, background: 'rgba(59, 130, 246, 0.1)', color: 'var(--accent)', padding: '2px 6px', borderRadius: '4px' }}>
-                                  Class {getExamClass(exam)}
-                                </span>
-                              </td>
-                              <td style={{ padding: '12px 16px', fontSize: '11px', color: 'var(--text-muted)' }}>{getAssignedNames(exam.id, exam.batchId)}</td>
-                              <td style={{ padding: '12px 16px', fontSize: '11px', color: 'var(--text-muted)' }}>{getLatestAssignmentDate(exam.id, exam.assignedAt, exam)}</td>
-                              <td style={{ padding: '12px 16px' }}>
-                                 <div style={{ display: 'flex', gap: '6px', flexDirection: 'row', alignItems: 'center' }}>
-                                   <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: scheduleStatus.badgeBg, color: scheduleStatus.badgeColor, fontWeight: 700, whiteSpace: 'nowrap' }}>
-                                     {scheduleStatus.badgeText}
-                                   </span>
-                                   {count > 0 && (
-                                     <span style={{ fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-                                       ({count} starts)
-                                     </span>
-                                   )}
-                                 </div>
-                               </td>
-                               <td style={{ padding: '12px 16px', textAlign: 'right' }}>
-                                 <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end', flexWrap: 'nowrap', whiteSpace: 'nowrap' }}>
-                                   {activeAssign && activeAssign.openMode !== 'scheduled' && (
-                                     <button 
-                                       className={`btn ${rawStatus === 'active' ? 'btn-secondary' : 'btn-primary'}`} 
-                                       style={{ padding: '4px 10px', fontSize: '11px', background: rawStatus === 'active' ? 'var(--danger)' : 'var(--success)', color: 'white', border: 'none' }} 
-                                       onClick={() => toggleAssignmentStatus(activeAssign.id, 'batchAssignments', rawStatus === 'active' ? 'disabled' : 'active')}
-                                     >
-                                       {rawStatus === 'active' ? '🛑 Stop' : '🟢 Start'}
-                                     </button>
-                                   )}
-                                   <button className="btn btn-secondary" style={{ padding: '4px 10px', fontSize: '11px', background: 'var(--accent-tint)', color: 'var(--accent)', fontWeight: 600 }} onClick={() => exportUniversalExamPDF(exam, exam.questions || (exam as any).questionDetails || (exam as any).questionCodes || (exam as any).questionIds || [])}>
-                                     📄 PDF
-                                   </button>
-                                   <button className="btn btn-primary" style={{ padding: '4px 10px', fontSize: '11px' }} onClick={() => handleOpenAssign(exam, 'objective')}>
-                                     📋 Assign Again
-                                   </button>
-                                   <button className="btn btn-secondary" style={{ padding: '4px 10px', fontSize: '11px' }} onClick={() => router.push(`/admin/exam-report?examId=${exam.id}`)}>
-                                     📊 Report
-                                   </button>
-                                   <button 
-                                     className="btn btn-secondary" 
-                                     style={{ 
-                                       padding: '4px 10px', 
-                                       fontSize: '11px', 
-                                       opacity: count > 0 ? 0.5 : 1, 
-                                       cursor: count > 0 ? 'not-allowed' : 'pointer' 
-                                     }} 
-                                     disabled={count > 0}
-                                     onClick={() => handleOpenEdit(exam.id, exam.name, 'batchAssignments')}
-                                   >
-                                     ✏️ Edit
-                                   </button>
-                                   <button className="btn btn-secondary" style={{ padding: '4px 10px', fontSize: '11px', color: 'var(--danger)' }} onClick={() => handleDeleteExam(exam.id, exam.name, 'objective')}>
-                                     🗑️ Delete
-                                   </button>
-                                 </div>
-                               </td>
-                            </tr>
-                          );
-                        });
-                      })()}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-
-            {/* Section 2: Already Assigned */}
-            <div id="objective-assignments-section">
-              <h3 style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text)', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                📚 Exams Already Assigned
-              </h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {(() => {
-                  const assignedExamsList = filteredObjectiveExams.filter(exam => exam.batchId || assignments.some(a => a.examId === exam.id && a.collection === 'batchAssignments'));
-                  if (assignedExamsList.length === 0) {
-                    return (
-                      <div className="card" style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', padding: '30px', textAlign: 'center', color: 'var(--text-muted)' }}>
-                        No assigned exams found.
-                      </div>
-                    );
-                  }
-                  
-                  const classes = getGroupedClasses(assignedExamsList);
-                  return classes.map(cls => {
-                    const examsInClass = assignedExamsList.filter(exam => getExamClass(exam) === cls);
-                    const sortedExams = sortAssignedExams(examsInClass);
-                    const isExpanded = expandedClasses.has(`objective||${cls}`);
-                    
-                    return (
-                      <div key={cls} style={{ border: '1px solid var(--border-light)', borderRadius: 'var(--radius-lg)', background: 'var(--surface)', overflow: 'hidden' }}>
-                        <div 
-                          onClick={() => toggleClassExpanded(`objective||${cls}`)}
-                          style={{ padding: '14px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-soft)', cursor: 'pointer', borderBottom: isExpanded ? '1px solid var(--border-light)' : 'none' }}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span style={{ fontWeight: 'bold', fontSize: '13.5px', color: 'var(--accent)' }}>🏫 Class {cls}</span>
-                            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>({examsInClass.length} exams)</span>
-                          </div>
-                          <span style={{ fontSize: '10px', transition: 'transform 0.2s', transform: isExpanded ? 'rotate(180deg)' : 'none' }}>▼</span>
-                        </div>
-                        
-                        {isExpanded && (
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '12px' }}>
-                            {(() => {
-                              const subjectGroups = new Map<string, Exam[]>();
-                              sortedExams.forEach(exam => {
-                                const subj = getExamSubject(exam);
-                                if (!subjectGroups.has(subj)) subjectGroups.set(subj, []);
-                                subjectGroups.get(subj)!.push(exam);
-                              });
-
-                              return Array.from(subjectGroups.entries()).map(([subjName, subjExams]) => {
-                                const subjKey = `subj||objective||${cls}||${subjName}`;
-                                const isSubjExpanded = !collapsedSubjects.has(subjKey);
-
-                                const chapterGroups = new Map<string, Exam[]>();
-                                subjExams.forEach(exam => {
-                                  const chap = getExamChapter(exam);
-                                  if (!chapterGroups.has(chap)) chapterGroups.set(chap, []);
-                                  chapterGroups.get(chap)!.push(exam);
-                                });
-
-                                return (
-                                  <div key={subjKey} style={{ border: '1px solid var(--border-light)', borderRadius: 'var(--radius-md)', background: 'var(--surface-popover)', overflow: 'hidden' }}>
-                                    {/* Subject Line with count */}
-                                    <div 
-                                      onClick={() => toggleSubjectCollapsed(subjKey)}
-                                      style={{ padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-soft)', cursor: 'pointer', borderBottom: isSubjExpanded ? '1px solid var(--border-light)' : 'none' }}
-                                    >
-                                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <span style={{ fontWeight: 800, fontSize: '13px', color: 'var(--text)' }}>📖 {subjName}</span>
-                                        <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>({subjExams.length} {subjExams.length === 1 ? 'exam' : 'exams'})</span>
-                                      </div>
-                                      <span style={{ fontSize: '10px', transition: 'transform 0.2s', transform: isSubjExpanded ? 'rotate(180deg)' : 'none' }}>▼</span>
-                                    </div>
-
-                                    {/* Chapter hierarchy */}
-                                    {isSubjExpanded && (
-                                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '10px' }}>
-                                        {Array.from(chapterGroups.entries()).map(([chapName, chapExams]) => {
-                                          const chapKey = `chap||objective||${cls}||${subjName}||${chapName}`;
-                                          const isChapExpanded = !collapsedChapters.has(chapKey);
-
-                                          return (
-                                            <div key={chapKey} style={{ border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', background: 'var(--surface)', overflow: 'hidden' }}>
-                                              {/* Chapter Line with count */}
-                                              <div 
-                                                onClick={() => toggleChapterCollapsed(chapKey)}
-                                                style={{ padding: '8px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-soft)', cursor: 'pointer', borderBottom: isChapExpanded ? '1px solid var(--border-light)' : 'none' }}
-                                              >
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                  <span style={{ fontWeight: 700, fontSize: '12px', color: 'var(--accent)' }}>📘 {chapName}</span>
-                                                  <span style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>({chapExams.length} {chapExams.length === 1 ? 'exam' : 'exams'})</span>
-                                                </div>
-                                                <span style={{ fontSize: '9px', transition: 'transform 0.2s', transform: isChapExpanded ? 'rotate(180deg)' : 'none' }}>▼</span>
-                                              </div>
-
-                                              {/* Exam Table */}
-                                              {isChapExpanded && (
-                                                <div style={{ overflowX: 'auto' }}>
-                                                  <table className="reviews-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
-                                                    <thead>
-                                                      <tr style={{ background: 'var(--bg-soft)', borderBottom: '1px solid var(--border-light)', color: 'var(--text-muted)', fontSize: '12px' }}>
-                                                        <th style={{ padding: '10px 14px', cursor: 'pointer', userSelect: 'none' }} onClick={() => handleAssignedSort('name')}>
-                                                          Exam Name {assignedSortField === 'name' ? (assignedSortDir === 'asc' ? '🔼' : '🔽') : ''}
-                                                        </th>
-                                                        <th style={{ padding: '10px 14px' }}>Assigned To</th>
-                                                        <th style={{ padding: '10px 14px', cursor: 'pointer', userSelect: 'none' }} onClick={() => handleAssignedSort('date')}>
-                                                          Assigned Date {assignedSortField === 'date' ? (assignedSortDir === 'asc' ? '🔼' : '🔽') : ''}
-                                                        </th>
-                                                        <th style={{ padding: '10px 14px' }}>Status / Starts</th>
-                                                        <th style={{ padding: '10px 14px', textAlign: 'right' }}>Actions</th>
-                                                      </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                      {chapExams.map(exam => {
-                                                        const count = attemptCounts[exam.id] || 0;
-                                                        const activeAssign = assignments.find(a => a.examId === exam.id && a.collection === 'batchAssignments');
-const rawStatus = activeAssign?.status || 'active';
-const scheduleStatus = getExamScheduleStatus(exam, activeAssign, 'objective');
-                                                        
-                                                        return (
-                                                          <tr key={exam.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
-                                                            <td style={{ padding: '10px 14px', fontWeight: 600 }}>{exam.name}</td>
-                                                            <td style={{ padding: '10px 14px', fontSize: '11px', color: 'var(--text-muted)' }}>{getAssignedNames(exam.id, exam.batchId)}</td>
-                                                            <td style={{ padding: '10px 14px', fontSize: '11px', color: 'var(--text-muted)' }}>{getLatestAssignmentDate(exam.id, exam.assignedAt, exam)}</td>
-                                                            <td style={{ padding: '10px 14px' }}>
-                                                               <div style={{ display: 'flex', gap: '6px', flexDirection: 'row', alignItems: 'center' }}>
-                                                                 <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: scheduleStatus.badgeBg, color: scheduleStatus.badgeColor, fontWeight: 700, whiteSpace: 'nowrap' }}>
-  {scheduleStatus.badgeText}
-</span>
-                                                                 {count > 0 && (
-                                                                   <span style={{ fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-                                                                     ({count} starts)
-                                                                   </span>
-                                                                 )}
-                                                               </div>
-                                                             </td>
-                                                             <td style={{ padding: '10px 14px', textAlign: 'right' }}>
-                                                               <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end', flexWrap: 'nowrap', whiteSpace: 'nowrap' }}>
-                                                                 {activeAssign && activeAssign.openMode !== 'scheduled' && (
-                                                                   <button 
-                                                                     className={`btn ${rawStatus === 'active' ? 'btn-secondary' : 'btn-primary'}`} 
-                                                                     style={{ padding: '4px 10px', fontSize: '11px', background: rawStatus === 'active' ? 'var(--danger)' : 'var(--success)', color: 'white', border: 'none' }} 
-                                                                     onClick={() => toggleAssignmentStatus(activeAssign.id, 'batchAssignments', rawStatus === 'active' ? 'disabled' : 'active')}
-                                                                   >
-                                                                     {rawStatus === 'active' ? '🛑 Stop' : '🟢 Start'}
-                                                                   </button>
-                                                                 )}
-                                                                 <button className="btn btn-secondary" style={{ padding: '4px 10px', fontSize: '11px', background: 'var(--accent-tint)', color: 'var(--accent)', fontWeight: 600 }} onClick={() => exportUniversalExamPDF(exam, exam.questions || (exam as any).questionDetails || (exam as any).questionCodes || (exam as any).questionIds || [])}>
-                                                                   📄 PDF
-                                                                 </button>
-                                                                 <button className="btn btn-primary" style={{ padding: '4px 10px', fontSize: '11px' }} onClick={() => handleOpenAssign(exam, 'objective')}>
-                                                                   📋 Assign Again
-                                                                 </button>
-                                                                 <button className="btn btn-secondary" style={{ padding: '4px 10px', fontSize: '11px' }} onClick={() => router.push(`/admin/exam-report?examId=${encodeURIComponent(exam.id)}`)}>
-                                                                   📊 Report
-                                                                 </button>
-                                                                 <button 
-                                                                   className="btn btn-secondary" 
-                                                                   style={{ 
-                                                                     padding: '4px 10px', 
-                                                                     fontSize: '11px', 
-                                                                     opacity: count > 0 ? 0.5 : 1, 
-                                                                     cursor: count > 0 ? 'not-allowed' : 'pointer' 
-                                                                   }} 
-                                                                   disabled={count > 0}
-                                                                   onClick={() => handleOpenEdit(exam.id, exam.name, 'batchAssignments')}
-                                                                 >
-                                                                   ✏️ Edit
-                                                                 </button>
-                                                                 <button className="btn btn-secondary" style={{ padding: '4px 10px', fontSize: '11px', color: 'var(--danger)' }} onClick={() => handleDeleteExam(exam.id, exam.name, 'objective')}>
-                                                                   🗑️ Delete
-                                                                 </button>
-                                                               </div>
-                                                             </td>
-                                                          </tr>
-                                                        );
-                                                      })}
-                                                    </tbody>
-                                                  </table>
-                                                </div>
-                                              )}
-                                            </div>
-                                          );
-                                        })}
-                                      </div>
-                                    )}
-                                  </div>
-                                );
-                              });
-                            })()}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  });
-                })()}
-              </div>
-            </div>
-          </div>
+          <ObjectiveTab
+            filteredObjectiveExams={filteredObjectiveExams}
+            assignments={assignments}
+            attemptCounts={attemptCounts}
+            objFilterName={objFilterName}
+            setObjFilterName={setObjFilterName}
+            objFilterTopic={objFilterTopic}
+            setObjFilterTopic={setObjFilterTopic}
+            isTodayOrTomorrow={isTodayOrTomorrow}
+            getExamSortTimestamp={getExamSortTimestamp}
+            getExamClass={getExamClass}
+            getExamSubject={getExamSubject}
+            getExamChapter={getExamChapter}
+            getAssignedNames={getAssignedNames}
+            getLatestAssignmentDate={getLatestAssignmentDate}
+            getExamScheduleStatus={getExamScheduleStatus}
+            expandedClasses={expandedClasses}
+            toggleClassExpanded={toggleClassExpanded}
+            collapsedSubjects={collapsedSubjects}
+            toggleSubjectCollapsed={toggleSubjectCollapsed}
+            collapsedChapters={collapsedChapters}
+            toggleChapterCollapsed={toggleChapterCollapsed}
+            assignedSortField={assignedSortField}
+            assignedSortDir={assignedSortDir}
+            handleAssignedSort={handleAssignedSort}
+            sortAssignedExams={sortAssignedExams}
+            getGroupedClasses={getGroupedClasses}
+            handleOpenAssign={handleOpenAssign}
+            handleDeleteExam={handleDeleteExam}
+            toggleAssignmentStatus={toggleAssignmentStatus}
+            exportUniversalExamPDF={exportUniversalExamPDF}
+            handleOpenEdit={handleOpenEdit}
+            router={router}
+          />
         )}
 
         {/* Tab Content: Subjective Exams */}
         {activeTab === 'subjective' && (
-          <div>
-            <div className="filter-row" style={{ display: 'flex', gap: '10px', marginBottom: '16px', flexWrap: 'wrap' }}>
-              <input 
-                type="text" 
-                value={subjFilterName}
-                placeholder="🔍 Filter by exam name..." 
-                onChange={(e) => setSubjFilterName(e.target.value)}
-                style={{ flex: 1, minWidth: '220px', padding: '8px 12px', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', background: 'var(--surface)', color: 'var(--text)' }}
-              />
-              <input 
-                type="text" 
-                value={subjFilterTopic}
-                placeholder="🔍 Filter by topic code..." 
-                onChange={(e) => setSubjFilterTopic(e.target.value)}
-                style={{ flex: 1, minWidth: '220px', padding: '8px 12px', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', background: 'var(--surface)', color: 'var(--text)' }}
-              />
-              <button 
-                className="btn btn-secondary" 
-                onClick={() => { setSubjFilterName(''); setSubjFilterTopic(''); }}
-              >
-                Clear
-              </button>
-            </div>
-
-            {/* Section 1: Available for Assignment */}
-            <div id="subjective-templates-section" style={{ marginBottom: '24px' }}>
-              <h3 style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text)', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                📋 Subjective Exams Available for Assignment
-              </h3>
-              <div className="card" style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', overflow: 'hidden' }}>
-                <div style={{ overflowX: 'auto' }}>
-                  <table className="reviews-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
-                    <thead>
-                      <tr style={{ background: 'var(--bg-soft)', borderBottom: '1px solid var(--border-light)', color: 'var(--text-muted)', fontSize: '12px' }}>
-                        <th style={{ padding: '12px 16px' }}>Exam Name</th>
-                        <th style={{ padding: '12px 16px' }}>Subject</th>
-                        <th style={{ padding: '12px 16px' }}>Topics</th>
-                        <th style={{ padding: '12px 16px' }}>Mode</th>
-                        <th style={{ padding: '12px 16px' }}>Marks</th>
-                        <th style={{ padding: '12px 16px', textAlign: 'right' }}>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredSubjectiveExams.filter(isSubjectiveAvailableForAssignment).length === 0 ? (
-                        <tr>
-                          <td colSpan={6} style={{ padding: '30px', textAlign: 'center', color: 'var(--text-muted)' }}>No subjective exams available for assignment.</td>
-                        </tr>
-                      ) : (
-                        filteredSubjectiveExams
-                          .filter(isSubjectiveAvailableForAssignment)
-                          .map(exam => (
-                            <tr key={exam.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
-                              <td style={{ padding: '12px 16px', fontWeight: 600 }}>{exam.name}</td>
-                              <td style={{ padding: '12px 16px' }}>{exam.subjectName || exam.subjects?.[0] || '—'}</td>
-                              <td style={{ padding: '12px 16px' }}>{(exam.topicCodes || []).join(', ') || '—'}</td>
-                              <td style={{ padding: '12px 16px' }}>
-                                <span className="badge badge-info" style={{ fontSize: '10px' }}>🏠 Home</span>
-                              </td>
-                              <td style={{ padding: '12px 16px' }}>{exam.totalMarks || 0}</td>
-                              <td style={{ padding: '12px 16px', textAlign: 'right' }}>
-                                <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
-                                  <button className="btn btn-primary" style={{ padding: '4px 8px', fontSize: '10px' }} onClick={() => handleOpenAssign(exam, 'subjective')}>
-                                    📋 Assign
-                                  </button>
-                                  <button className="btn btn-secondary" style={{ padding: '4px 8px', fontSize: '10px', color: 'var(--danger)' }} onClick={() => handleDeleteExam(exam.id, exam.name, 'subjective')}>
-                                    🗑️ Delete
-                                  </button>
-                                </div>
-                              </td>
-                            </tr>
-                          ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-
-            {/* Section 1b: Today's & Tomorrow's Subjective Exams */}
-            <div id="subjective-today-tomorrow-section" style={{ marginBottom: '24px' }}>
-              <h3 style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text)', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                📅 Today's & Tomorrow's Subjective Exams
-              </h3>
-              <div className="card" style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', overflow: 'hidden' }}>
-                <div style={{ overflowX: 'auto' }}>
-                  <table className="reviews-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
-                    <thead>
-                      <tr style={{ background: 'var(--bg-soft)', borderBottom: '1px solid var(--border-light)', color: 'var(--text-muted)', fontSize: '12px' }}>
-                        <th style={{ padding: '12px 16px' }}>Exam Name</th>
-                        <th style={{ padding: '12px 16px' }}>Mode</th>
-                        <th style={{ padding: '12px 16px' }}>Peer Review</th>
-                        <th style={{ padding: '12px 16px' }}>Assigned To</th>
-                        <th style={{ padding: '12px 16px' }}>Status / Starts</th>
-                        <th style={{ padding: '12px 16px', textAlign: 'right' }}>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {(() => {
-                        const todayTomorrowExams = filteredSubjectiveExams.filter(exam => 
-                          (exam.batchId || assignments.some(a => a.examId === exam.id && a.collection === 'subjectiveAssignments')) &&
-                          isTodayOrTomorrow(exam, 'subjective')
-                        );
-                        
-                        const sortedTodayTomorrowExams = [...todayTomorrowExams].sort((a, b) => {
-                          const timeA = getExamSortTimestamp(a, 'subjective');
-                          const timeB = getExamSortTimestamp(b, 'subjective');
-                          if (timeA !== timeB) return timeA - timeB;
-                          
-                          const classA = parseInt(getExamClass(a)) || 0;
-                          const classB = parseInt(getExamClass(b)) || 0;
-                          return classA - classB;
-                        });
-
-                        if (sortedTodayTomorrowExams.length === 0) {
-                          return (
-                            <tr>
-                              <td colSpan={6} style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)' }}>No subjective exams scheduled for today or tomorrow.</td>
-                            </tr>
-                          );
-                        }
-                        
-                        return sortedTodayTomorrowExams.map(exam => {
-                          const activeAssign = assignments.find(a => a.examId === exam.id && a.collection === 'subjectiveAssignments');
-const rawStatus = activeAssign?.status || 'active';
-const scheduleStatus = getExamScheduleStatus(exam, activeAssign, 'subjective');
-                          const mode = activeAssign?.examMode || exam.mode || 'home';
-                          const peerStatus = exam.peerReviewStatus || 'not_started';
-                          const count = attemptCounts[exam.id] || 0;
-                          return (
-                            <tr key={exam.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
-                              <td style={{ padding: '12px 16px', fontWeight: 600 }}>
-                                {exam.name}
-                                <span style={{ marginLeft: '8px', fontSize: '9px', fontWeight: 700, background: 'rgba(59, 130, 246, 0.1)', color: 'var(--accent)', padding: '2px 6px', borderRadius: '4px' }}>
-                                  Class {getExamClass(exam)}
-                                </span>
-                              </td>
-                              <td style={{ padding: '12px 16px' }}>
-                                {mode === 'home' ? (
-                                  <span className="badge badge-info" style={{ fontSize: '10px' }}>🏠 Home</span>
-                                ) : (
-                                  <span className="badge badge-warning" style={{ fontSize: '10px' }}>🏫 Classroom</span>
-                                )}
-                              </td>
-                              <td style={{ padding: '12px 16px', textTransform: 'capitalize', fontSize: '12px' }}>
-                                {mode === 'classroom' ? (
-                                  peerStatus === 'not_started' ? (
-                                    <span style={{ color: 'var(--warning)' }}>⏳ Waiting</span>
-                                  ) : peerStatus === 'assigned' ? (
-                                    <span style={{ color: 'var(--accent)' }}>🔄 In Progress</span>
-                                  ) : (
-                                    <span style={{ color: 'var(--success)' }}>✅ Finished</span>
-                                  )
-                                ) : '—'}
-                              </td>
-                              <td style={{ padding: '12px 16px', fontSize: '11px', color: 'var(--text-muted)' }}>{getAssignedNames(exam.id, exam.batchId)}</td>
-                              <td style={{ padding: '12px 16px' }}>
-                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                   <div style={{ display: 'flex', gap: '6px', flexDirection: 'row', alignItems: 'center' }}>
-                                     <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: scheduleStatus.badgeBg, color: scheduleStatus.badgeColor, fontWeight: 700, whiteSpace: 'nowrap' }}>
-  {scheduleStatus.badgeText}
-</span>
-                                     {count > 0 && (
-                                       <span style={{ fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-                                         ({count} starts)
-                                       </span>
-                                     )}
-                                   </div>
-                                   <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                                     Assigned: {getLatestAssignmentDate(exam.id, exam.assignedAt, exam)}
-                                   </div>
-                                 </div>
-                               </td>
-                               <td style={{ padding: '12px 16px', textAlign: 'right' }}>
-                                 <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end', flexWrap: 'nowrap', whiteSpace: 'nowrap' }}>
-                                   {activeAssign && activeAssign.openMode !== 'scheduled' && (
-                                     <button 
-                                       className={`btn ${rawStatus === 'active' ? 'btn-secondary' : 'btn-primary'}`} 
-                                       style={{ padding: '4px 8px', fontSize: '10px', background: rawStatus === 'active' ? 'var(--danger)' : 'var(--success)', color: 'white', border: 'none' }} 
-                                       onClick={() => toggleAssignmentStatus(activeAssign.id, 'subjectiveAssignments', rawStatus === 'active' ? 'disabled' : 'active')}
-                                     >
-                                       {rawStatus === 'active' ? '🛑 Stop' : '🟢 Start'}
-                                     </button>
-                                   )}
-                                   <button className="btn btn-secondary" style={{ padding: '4px 8px', fontSize: '10px', background: 'var(--accent-tint)', color: 'var(--accent)', fontWeight: 600 }} onClick={() => exportUniversalExamPDF(exam, exam.questions || (exam as any).questionDetails || (exam as any).questionCodes || (exam as any).questionIds || [])}>
-                                     📄 PDF
-                                   </button>
-                                   <button className="btn btn-primary" style={{ padding: '4px 8px', fontSize: '10px' }} onClick={() => handleOpenAssign(exam, 'subjective')}>
-                                     📋 Assign Again
-                                   </button>
-                                   <button 
-                                     className="btn btn-secondary" 
-                                     style={{ 
-                                       padding: '4px 8px', 
-                                       fontSize: '10px', 
-                                       opacity: count > 0 ? 0.5 : 1, 
-                                       cursor: count > 0 ? 'not-allowed' : 'pointer' 
-                                     }} 
-                                     disabled={count > 0}
-                                     onClick={() => handleOpenEdit(exam.id, exam.name, 'subjectiveAssignments')}
-                                   >
-                                     ✏️ Edit
-                                   </button>
-                                   <button className="btn btn-secondary" style={{ padding: '4px 8px', fontSize: '10px' }} onClick={() => router.push(`/admin/teacher-final-review?examId=${exam.id}`)}>
-                                     Grade
-                                   </button>
-                                   <button className="btn btn-secondary" style={{ padding: '4px 8px', fontSize: '10px', color: 'var(--danger)' }} onClick={() => handleDeleteExam(exam.id, exam.name, 'subjective')}>
-                                     🗑️ Delete
-                                   </button>
-                                 </div>
-                               </td>
-                            </tr>
-                          );
-                        });
-                      })()}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-
-            {/* Section 2: Already Assigned */}
-            <div id="subjective-assignments-section">
-              <h3 style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text)', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                📚 Subjective Exams Already Assigned
-              </h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {(() => {
-                  const assignedExamsList = filteredSubjectiveExams.filter(isSubjectiveAlreadyAssigned);
-                  if (assignedExamsList.length === 0) {
-                    return (
-                      <div className="card" style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', padding: '30px', textAlign: 'center', color: 'var(--text-muted)' }}>
-                        No assigned subjective exams found.
-                      </div>
-                    );
-                  }
-                  
-                  const classes = getGroupedClasses(assignedExamsList);
-                  return classes.map(cls => {
-                    const examsInClass = assignedExamsList.filter(exam => getExamClass(exam) === cls);
-                    const sortedExams = sortAssignedExams(examsInClass);
-                    const isExpanded = expandedClasses.has(`subjective||${cls}`);
-                    
-                    return (
-                      <div key={cls} style={{ border: '1px solid var(--border-light)', borderRadius: 'var(--radius-lg)', background: 'var(--surface)', overflow: 'hidden' }}>
-                        <div 
-                          onClick={() => toggleClassExpanded(`subjective||${cls}`)}
-                          style={{ padding: '14px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-soft)', cursor: 'pointer', borderBottom: isExpanded ? '1px solid var(--border-light)' : 'none' }}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span style={{ fontWeight: 'bold', fontSize: '13.5px', color: 'var(--accent)' }}>🏫 Class {cls}</span>
-                            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>({examsInClass.length} subjective exams)</span>
-                          </div>
-                          <span style={{ fontSize: '10px', transition: 'transform 0.2s', transform: isExpanded ? 'rotate(180deg)' : 'none' }}>▼</span>
-                        </div>
-                        
-                        {isExpanded && (
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '12px' }}>
-                            {(() => {
-                              const subjectGroups = new Map<string, Exam[]>();
-                              sortedExams.forEach(exam => {
-                                const subj = getExamSubject(exam);
-                                if (!subjectGroups.has(subj)) subjectGroups.set(subj, []);
-                                subjectGroups.get(subj)!.push(exam);
-                              });
-
-                              return Array.from(subjectGroups.entries()).map(([subjName, subjExams]) => {
-                                const subjKey = `subj||subjective||${cls}||${subjName}`;
-                                const isSubjExpanded = !collapsedSubjects.has(subjKey);
-
-                                const chapterGroups = new Map<string, Exam[]>();
-                                subjExams.forEach(exam => {
-                                  const chap = getExamChapter(exam);
-                                  if (!chapterGroups.has(chap)) chapterGroups.set(chap, []);
-                                  chapterGroups.get(chap)!.push(exam);
-                                });
-
-                                return (
-                                  <div key={subjKey} style={{ border: '1px solid var(--border-light)', borderRadius: 'var(--radius-md)', background: 'var(--surface-popover)', overflow: 'hidden' }}>
-                                    {/* Subject Line with count */}
-                                    <div 
-                                      onClick={() => toggleSubjectCollapsed(subjKey)}
-                                      style={{ padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-soft)', cursor: 'pointer', borderBottom: isSubjExpanded ? '1px solid var(--border-light)' : 'none' }}
-                                    >
-                                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <span style={{ fontWeight: 800, fontSize: '13px', color: 'var(--text)' }}>📖 {subjName}</span>
-                                        <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>({subjExams.length} {subjExams.length === 1 ? 'exam' : 'exams'})</span>
-                                      </div>
-                                      <span style={{ fontSize: '10px', transition: 'transform 0.2s', transform: isSubjExpanded ? 'rotate(180deg)' : 'none' }}>▼</span>
-                                    </div>
-
-                                    {/* Chapter hierarchy */}
-                                    {isSubjExpanded && (
-                                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '10px' }}>
-                                        {Array.from(chapterGroups.entries()).map(([chapName, chapExams]) => {
-                                          const chapKey = `chap||subjective||${cls}||${subjName}||${chapName}`;
-                                          const isChapExpanded = !collapsedChapters.has(chapKey);
-
-                                          return (
-                                            <div key={chapKey} style={{ border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', background: 'var(--surface)', overflow: 'hidden' }}>
-                                              {/* Chapter Line with count */}
-                                              <div 
-                                                onClick={() => toggleChapterCollapsed(chapKey)}
-                                                style={{ padding: '8px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-soft)', cursor: 'pointer', borderBottom: isChapExpanded ? '1px solid var(--border-light)' : 'none' }}
-                                              >
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                  <span style={{ fontWeight: 700, fontSize: '12px', color: 'var(--accent)' }}>📘 {chapName}</span>
-                                                  <span style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>({chapExams.length} {chapExams.length === 1 ? 'exam' : 'exams'})</span>
-                                                </div>
-                                                <span style={{ fontSize: '9px', transition: 'transform 0.2s', transform: isChapExpanded ? 'rotate(180deg)' : 'none' }}>▼</span>
-                                              </div>
-
-                                              {/* Exam Table */}
-                                              {isChapExpanded && (
-                                                <div style={{ overflowX: 'auto' }}>
-                                                  <table className="reviews-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
-                                                    <thead>
-                                                      <tr style={{ background: 'var(--bg-soft)', borderBottom: '1px solid var(--border-light)', color: 'var(--text-muted)', fontSize: '12px' }}>
-                                                        <th style={{ padding: '10px 14px', cursor: 'pointer', userSelect: 'none' }} onClick={() => handleAssignedSort('name')}>
-                                                          Exam Name {assignedSortField === 'name' ? (assignedSortDir === 'asc' ? '🔼' : '🔽') : ''}
-                                                        </th>
-                                                        <th style={{ padding: '10px 14px' }}>Mode</th>
-                                                        <th style={{ padding: '10px 14px' }}>Peer Review</th>
-                                                        <th style={{ padding: '10px 14px' }}>Assigned To</th>
-                                                        <th style={{ padding: '10px 14px', cursor: 'pointer', userSelect: 'none' }} onClick={() => handleAssignedSort('date')}>
-                                                          Status / Starts {assignedSortField === 'date' ? (assignedSortDir === 'asc' ? '🔼' : '🔽') : ''}
-                                                        </th>
-                                                        <th style={{ padding: '10px 14px', textAlign: 'right' }}>Actions</th>
-                                                      </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                      {chapExams.map(exam => {
-                                                        const activeAssign = assignments.find(a => a.examId === exam.id && a.collection === 'subjectiveAssignments');
-const rawStatus = activeAssign?.status || 'active';
-const scheduleStatus = getExamScheduleStatus(exam, activeAssign, 'subjective');
-                                                        const mode = activeAssign?.examMode || exam.mode || 'home';
-                                                        const peerStatus = exam.peerReviewStatus || 'not_started';
-                                                        const count = attemptCounts[exam.id] || 0;
-                                                        
-                                                        return (
-                                                          <tr key={exam.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
-                                                            <td style={{ padding: '10px 14px', fontWeight: 600 }}>{exam.name}</td>
-                                                            <td style={{ padding: '10px 14px' }}>
-                                                              {mode === 'home' ? (
-                                                                <span className="badge badge-info" style={{ fontSize: '10px' }}>🏠 Home</span>
-                                                              ) : (
-                                                                <span className="badge badge-warning" style={{ fontSize: '10px' }}>🏫 Classroom</span>
-                                                              )}
-                                                            </td>
-                                                            <td style={{ padding: '10px 14px', textTransform: 'capitalize', fontSize: '12px' }}>
-                                                              {mode === 'classroom' ? (
-                                                                peerStatus === 'not_started' ? (
-                                                                  <span style={{ color: 'var(--warning)' }}>⏳ Waiting</span>
-                                                                ) : peerStatus === 'assigned' ? (
-                                                                  <span style={{ color: 'var(--accent)' }}>🔄 In Progress</span>
-                                                                ) : (
-                                                                  <span style={{ color: 'var(--success)' }}>✅ Finished</span>
-                                                                )
-                                                              ) : '—'}
-                                                            </td>
-                                                            <td style={{ padding: '10px 14px', fontSize: '11px', color: 'var(--text-muted)' }}>{getAssignedNames(exam.id, exam.batchId)}</td>
-                                                            <td style={{ padding: '10px 14px' }}>
-                                                               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                                                  <div style={{ display: 'flex', gap: '6px', flexDirection: 'row', alignItems: 'center' }}>
-                                                                   <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: scheduleStatus.badgeBg, color: scheduleStatus.badgeColor, fontWeight: 700, whiteSpace: 'nowrap' }}>
-  {scheduleStatus.badgeText}
-</span>
-                                                                   {count > 0 && (
-                                                                     <span style={{ fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-                                                                       ({count} starts)
-                                                                     </span>
-                                                                   )}
-                                                                 </div>
-                                                               </div>
-                                                             </td>
-                                                             <td style={{ padding: '10px 14px', textAlign: 'right' }}>
-                                                               <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end', flexWrap: 'nowrap', whiteSpace: 'nowrap' }}>
-                                                                 {activeAssign && activeAssign.openMode !== 'scheduled' && (
-                                                                   <button 
-                                                                     className={`btn ${rawStatus === 'active' ? 'btn-secondary' : 'btn-primary'}`} 
-                                                                     style={{ padding: '4px 10px', fontSize: '11px', background: rawStatus === 'active' ? 'var(--danger)' : 'var(--success)', color: 'white', border: 'none' }} 
-                                                                     onClick={() => toggleAssignmentStatus(activeAssign.id, 'subjectiveAssignments', rawStatus === 'active' ? 'disabled' : 'active')}
-                                                                   >
-                                                                     {rawStatus === 'active' ? '🛑 Stop' : '🟢 Start'}
-                                                                   </button>
-                                                                 )}
-                                                                 <button className="btn btn-secondary" style={{ padding: '4px 8px', fontSize: '10px', background: 'var(--accent-tint)', color: 'var(--accent)', fontWeight: 600 }} onClick={() => exportUniversalExamPDF(exam, exam.questions || (exam as any).questionDetails || (exam as any).questionCodes || (exam as any).questionIds || [])}>
-                                                                   📄 PDF
-                                                                 </button>
-                                                                 <button className="btn btn-primary" style={{ padding: '4px 8px', fontSize: '10px' }} onClick={() => handleOpenAssign(exam, 'subjective')}>
-                                                                   📋 Assign Again
-                                                                 </button>
-                                                                 <button 
-                                                                   className="btn btn-secondary" 
-                                                                   style={{ 
-                                                                     padding: '4px 8px', 
-                                                                     fontSize: '10px', 
-                                                                     opacity: count > 0 ? 0.5 : 1, 
-                                                                     cursor: count > 0 ? 'not-allowed' : 'pointer' 
-                                                                   }} 
-                                                                   disabled={count > 0}
-                                                                   onClick={() => handleOpenEdit(exam.id, exam.name, 'subjectiveAssignments')}
-                                                                 >
-                                                                   ✏️ Edit
-                                                                 </button>
-                                                                 <button className="btn btn-secondary" style={{ padding: '4px 8px', fontSize: '10px' }} onClick={() => router.push(`/admin/teacher-final-review?examId=${exam.id}`)}>
-                                                                   Grade
-                                                                 </button>
-                                                                 {mode === 'classroom' && (
-                                                                   <>
-                                                                     {peerStatus === 'not_started' && (
-                                                                       <button className="btn btn-primary" style={{ padding: '4px 8px', fontSize: '10px', background: 'var(--warning)', borderColor: 'var(--warning)' }} onClick={() => triggerPeerReviewLottery(exam.id, exam.name)}>
-                                                                         🎲 Lottery
-                                                                       </button>
-                                                                     )}
-                                                                     {peerStatus === 'assigned' && (
-                                                                       <button className="btn btn-secondary" style={{ padding: '4px 8px', fontSize: '10px' }} onClick={() => openPeerReviewStatus(exam.id, exam.name)}>
-                                                                         📊 Status
-                                                                       </button>
-                                                                     )}
-                                                                     <button 
-                                                                       className="btn btn-secondary" 
-                                                                       style={{ padding: '4px 8px', fontSize: '10px', background: 'var(--accent-tint)', color: 'var(--accent)', fontWeight: 600 }} 
-                                                                       onClick={() => openTruthTestReport(exam.id, exam.name)}
-                                                                     >
-                                                                       ⚖️ Truth Test
-                                                                     </button>
-                                                                   </>
-                                                                 )}
-                                                                 <button className="btn btn-secondary" style={{ padding: '4px 8px', fontSize: '10px', color: 'var(--danger)' }} onClick={() => handleDeleteExam(exam.id, exam.name, 'subjective')}>
-                                                                   🗑️ Delete
-                                                                 </button>
-                                                               </div>
-                                                             </td>
-                                                          </tr>
-                                                        );
-                                                      })}
-                                                    </tbody>
-                                                  </table>
-                                                </div>
-                                              )}
-                                            </div>
-                                          );
-                                        })}
-                                      </div>
-                                    )}
-                                  </div>
-                                );
-                              });
-                            })()}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  });
-                })()}
-              </div>
-            </div>
-          </div>
+          <SubjectiveTab
+            filteredSubjectiveExams={filteredSubjectiveExams}
+            assignments={assignments}
+            attemptCounts={attemptCounts}
+            subjFilterName={subjFilterName}
+            setSubjFilterName={setSubjFilterName}
+            subjFilterTopic={subjFilterTopic}
+            setSubjFilterTopic={setSubjFilterTopic}
+            isSubjectiveAvailableForAssignment={isSubjectiveAvailableForAssignment}
+            isSubjectiveAlreadyAssigned={isSubjectiveAlreadyAssigned}
+            isTodayOrTomorrow={isTodayOrTomorrow}
+            getExamSortTimestamp={getExamSortTimestamp}
+            getExamClass={getExamClass}
+            getExamSubject={getExamSubject}
+            getExamChapter={getExamChapter}
+            getAssignedNames={getAssignedNames}
+            getLatestAssignmentDate={getLatestAssignmentDate}
+            getExamScheduleStatus={getExamScheduleStatus}
+            expandedClasses={expandedClasses}
+            toggleClassExpanded={toggleClassExpanded}
+            collapsedSubjects={collapsedSubjects}
+            toggleSubjectCollapsed={toggleSubjectCollapsed}
+            collapsedChapters={collapsedChapters}
+            toggleChapterCollapsed={toggleChapterCollapsed}
+            assignedSortField={assignedSortField}
+            assignedSortDir={assignedSortDir}
+            handleAssignedSort={handleAssignedSort}
+            sortAssignedExams={sortAssignedExams}
+            getGroupedClasses={getGroupedClasses}
+            handleOpenAssign={handleOpenAssign}
+            handleDeleteExam={handleDeleteExam}
+            toggleAssignmentStatus={toggleAssignmentStatus}
+            exportUniversalExamPDF={exportUniversalExamPDF}
+            handleOpenEdit={handleOpenEdit}
+            triggerPeerReviewLottery={triggerPeerReviewLottery}
+            openPeerReviewStatus={openPeerReviewStatus}
+            openTruthTestReport={openTruthTestReport}
+            router={router}
+          />
         )}
 
         {/* Tab Content: Practice Track summary logs */}
         {activeTab === 'practice' && (
-          <div id="practice-tracks-section" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {/* Filters Bar */}
-            <div className="card" style={{ padding: '16px 20px', background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: '200px' }}>
-                <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>Filter by Batch</label>
-                <select 
-                  value={pracBatchFilter}
-                  onChange={(e) => setPracBatchFilter(e.target.value)}
-                  style={{ padding: '8px 12px', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', background: 'var(--bg-soft)', color: 'var(--text)', fontSize: '13px' }}
-                >
-                  <option value="all">All Batches</option>
-                  {batches.map(b => (
-                    <option key={b.id} value={b.id}>{b.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1, minWidth: '240px' }}>
-                <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>Search Student</label>
-                <input 
-                  type="text" 
-                  placeholder="Filter by student name..."
-                  value={pracSearchName}
-                  onChange={(e) => setPracSearchName(e.target.value)}
-                  style={{ padding: '8px 12px', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', background: 'var(--bg-soft)', color: 'var(--text)', fontSize: '13px' }}
-                />
-              </div>
-            </div>
-
-            {/* Batches & Student Lists */}
-            {loadingPracticeTracks ? (
-              <div className="card" style={{ padding: '60px 20px', textAlign: 'center', background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)' }}>
-                <div className="spinner" style={{ margin: '0 auto 12px' }}></div>
-                <div style={{ color: 'var(--text-muted)', fontSize: '13px', fontWeight: 600 }}>Loading practice tracks and topic mastery...</div>
-              </div>
-            ) : filteredPracticeBatches.map(({ batch, batchStudents, sortedStudents }) => {
-              const renderSortIndicator = (field: string) => {
-                if (pracSortField !== field) return <span style={{ color: 'var(--text-faint)', marginLeft: '4px' }}>⇅</span>;
-                return pracSortDir === 'asc' ? <span style={{ color: 'var(--accent)', marginLeft: '4px' }}>↑</span> : <span style={{ color: 'var(--accent)', marginLeft: '4px' }}>↓</span>;
-              };
-
-              return (
-                <div key={batch.id} className="card" style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', overflow: 'hidden', marginBottom: '16px' }}>
-                  <div style={{ background: 'var(--bg-soft)', padding: '12px 20px', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <h4 style={{ fontSize: '13px', fontWeight: 'bold', margin: 0, color: 'var(--text)' }}>
-                      📦 {batch.name} — <span style={{ color: 'var(--accent)' }}>{batchStudents.length} students</span>
-                    </h4>
-                  </div>
-
-                  <div style={{ overflowX: 'auto' }}>
-                    <table style={{ width: '100%', fontSize: '13px', borderCollapse: 'collapse', textAlign: 'left' }}>
-                      <thead>
-                        <tr style={{ background: 'var(--bg-soft)', borderBottom: '1px solid var(--border-light)', color: 'var(--text-muted)' }}>
-                          <th onClick={() => handlePracSort('student')} style={{ padding: '12px 16px', cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}>
-                            STUDENT {renderSortIndicator('student')}
-                          </th>
-                          <th onClick={() => handlePracSort('sessions')} style={{ padding: '12px 16px', cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}>
-                            SESSIONS {renderSortIndicator('sessions')}
-                          </th>
-                          <th onClick={() => handlePracSort('questions')} style={{ padding: '12px 16px', cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}>
-                            QUESTIONS {renderSortIndicator('questions')}
-                          </th>
-                          <th onClick={() => handlePracSort('score')} style={{ padding: '12px 16px', cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}>
-                            AVG SCORE {renderSortIndicator('score')}
-                          </th>
-                          <th onClick={() => handlePracSort('avgMastery')} style={{ padding: '12px 16px', cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}>
-                            AVG MASTERY {renderSortIndicator('avgMastery')}
-                          </th>
-                          <th onClick={() => handlePracSort('avgQuality')} style={{ padding: '12px 16px', cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}>
-                            QUALITY {renderSortIndicator('avgQuality')}
-                          </th>
-                          <th onClick={() => handlePracSort('masteryStats')} style={{ padding: '12px 16px', cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}>
-                            STATUS {renderSortIndicator('masteryStats')}
-                          </th>
-                          <th onClick={() => handlePracSort('active')} style={{ padding: '12px 16px', cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}>
-                            LAST SEEN {renderSortIndicator('active')}
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {sortedStudents.length === 0 ? (
-                          <tr>
-                            <td colSpan={8} style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)' }}>No students found in this batch.</td>
-                          </tr>
-                        ) : (
-                          sortedStudents.map(student => {
-                            const stats = practiceStats[student.studentCode] || { totalSessions: 0, questionsAttempted: 0, avgScore: 0, lastActive: null };
-                            const mastery = masteryStats[student.studentCode] || { avgMastery: 0, avgQuality: 100, mastered: 0, practicing: 0, needsAttention: 0 };
-                            const quality = mastery.avgQuality ?? 100;
-                            return (
-                              <tr 
-                                key={student.studentCode} 
-                                onClick={() => handleRowClick(student)}
-                                className="hover-row"
-                                style={{ borderBottom: '1px solid var(--border-light)', cursor: 'pointer', transition: 'background 0.2s' }}
-                              >
-                                <td style={{ padding: '12px 16px', fontWeight: 'bold' }}>{student.name}</td>
-                                <td style={{ padding: '12px 16px', textAlign: 'center' }}>{stats.totalSessions}</td>
-                                <td style={{ padding: '12px 16px', textAlign: 'center' }}>{stats.questionsAttempted}</td>
-                                <td style={{ padding: '12px 16px', fontWeight: 'bold', color: stats.totalSessions > 0 ? 'var(--accent)' : 'inherit' }}>
-                                  {stats.totalSessions > 0 ? `${stats.avgScore}%` : '—'}
-                                </td>
-                                <td style={{ padding: '12px 16px', fontWeight: 'bold' }}>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                    <span style={{ width: '28px' }}>{mastery.avgMastery}%</span>
-                                    <div style={{ width: '40px', height: '6px', background: 'var(--bg-soft)', borderRadius: '3px', overflow: 'hidden' }}>
-                                      <div style={{
-                                        width: `${mastery.avgMastery}%`,
-                                        height: '100%',
-                                        background: mastery.avgMastery >= 90 ? 'var(--success)' : mastery.avgMastery >= 50 ? 'var(--warning)' : 'var(--danger)'
-                                      }} />
-                                    </div>
-                                  </div>
-                                </td>
-                                <td style={{ padding: '12px 16px', fontWeight: 'bold' }}>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                    <span style={{ width: '28px' }}>{quality}%</span>
-                                    <div style={{ width: '40px', height: '6px', background: 'var(--bg-soft)', borderRadius: '3px', overflow: 'hidden' }}>
-                                      <div style={{
-                                        width: `${quality}%`,
-                                        height: '100%',
-                                        background: quality >= 80 ? 'var(--success)' : quality >= 50 ? 'var(--warning)' : 'var(--danger)'
-                                      }} />
-                                    </div>
-                                  </div>
-                                </td>
-                                <td style={{ padding: '12px 16px', whiteSpace: 'nowrap' }}>
-                                  <span 
-                                    onClick={(e) => openTopicStatusModal(student, 'mastered', e)} 
-                                    style={{ color: 'var(--success)', fontWeight: 700, cursor: 'pointer', padding: '3px 8px', borderRadius: '6px', background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.25)', transition: 'all 0.15s' }} 
-                                    title="Click to view Mastered Topics (>=90% accuracy & target confidence)"
-                                  >
-                                    🟢 {mastery.mastered}
-                                  </span>
-                                  <span 
-                                    onClick={(e) => openTopicStatusModal(student, 'practicing', e)} 
-                                    style={{ color: 'var(--warning)', fontWeight: 700, marginLeft: '6px', cursor: 'pointer', padding: '3px 8px', borderRadius: '6px', background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.25)', transition: 'all 0.15s' }} 
-                                    title="Click to view Practicing / In Progress Topics (50-89% or low confidence)"
-                                  >
-                                    🟡 {mastery.practicing}
-                                  </span>
-                                  <span 
-                                    onClick={(e) => openTopicStatusModal(student, 'needsAttention', e)} 
-                                    style={{ color: 'var(--danger)', fontWeight: 700, marginLeft: '6px', cursor: 'pointer', padding: '3px 8px', borderRadius: '6px', background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.25)', transition: 'all 0.15s' }} 
-                                    title="Click to view Needs Care / Focus Topics (<50%)"
-                                  >
-                                    🔴 {mastery.needsAttention}
-                                  </span>
-                                </td>
-                                <td style={{ padding: '12px 16px', color: 'var(--text-muted)' }}>
-                                  {stats.lastActive ? formatDateDMY(stats.lastActive) : 'Never'}
-                                </td>
-                              </tr>
-                            );
-                          })
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          <PracticeTab
+            batches={batches}
+            pracBatchFilter={pracBatchFilter}
+            setPracBatchFilter={setPracBatchFilter}
+            pracSearchName={pracSearchName}
+            setPracSearchName={setPracSearchName}
+            loadingPracticeTracks={loadingPracticeTracks}
+            filteredPracticeBatches={filteredPracticeBatches}
+            pracSortField={pracSortField}
+            pracSortDir={pracSortDir}
+            handlePracSort={handlePracSort}
+            practiceStats={practiceStats}
+            masteryStats={masteryStats}
+            handleRowClick={handleRowClick}
+            openTopicStatusModal={openTopicStatusModal}
+            formatDateDMY={formatDateDMY}
+          />
         )}
       </main>
 
