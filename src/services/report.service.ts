@@ -1150,9 +1150,11 @@ export class ReportService {
 
     homeExamIds = Array.from(new Set(homeExamIds));
 
-    const queries: Promise<any>[] = [
-      adminDb.collection('users').where('role', '==', 'student').get(),
-      adminDb.collection('subjectiveReviews').where('examId', '==', examId).get()
+    const reviewQueries: Promise<any>[] = [
+      adminDb.collection('subjectiveReviews')
+        .where('examId', '==', examId)
+        .select('examId', 'revieweeCode', 'studentCode', 'questionReviews')
+        .get()
     ];
 
     if (homeExamIds.length > 0) {
@@ -1161,31 +1163,68 @@ export class ReportService {
         adminDb.collection('subjectiveReviews')
           .where('examId', 'in', chunk)
           .where('reviewerType', '==', 'parent')
+          .select('examId', 'revieweeCode', 'studentCode', 'questionReviews')
           .get()
       );
-      queries.push(Promise.all(parentReviewsQueries));
+      reviewQueries.push(Promise.all(parentReviewsQueries));
     } else {
-      queries.push(Promise.resolve([]));
+      reviewQueries.push(Promise.resolve([]));
     }
 
     const classroomQuestionIds = classroomExam.questionIds || [];
     if (classroomQuestionIds.length > 0) {
       const refs = classroomQuestionIds.map((qid: string) => adminDb.collection('questions').doc(qid));
-      queries.push(adminDb.getAll(...refs).catch(() => []));
+      reviewQueries.push(adminDb.getAll(...refs).catch(() => []));
     } else {
-      queries.push(Promise.resolve([]));
+      reviewQueries.push(Promise.resolve([]));
     }
 
-    const [studentsSnap, classReviewsSnap, parentReviewsResult, questionsResult] = await Promise.all(queries);
+    const [classReviewsSnap, parentReviewsResult, questionsResult] = await Promise.all(reviewQueries);
+
+    // Extract only participating student codes from reviews
+    const studentCodesSet = new Set<string>();
+    classReviewsSnap.docs.forEach((doc: any) => {
+      const rev = doc.data();
+      const sCode = rev.revieweeCode || rev.studentCode;
+      if (sCode) studentCodesSet.add(sCode);
+    });
+
+    if (Array.isArray(parentReviewsResult)) {
+      parentReviewsResult.forEach((snap: any) => {
+        if (snap?.docs) {
+          snap.docs.forEach((doc: any) => {
+            const rev = doc.data();
+            const sCode = rev.revieweeCode || rev.studentCode;
+            if (sCode) studentCodesSet.add(sCode);
+          });
+        }
+      });
+    }
+
+    const participatingCodes = Array.from(studentCodesSet);
+    const studentChunks = chunkArray(participatingCodes, 30);
+    const studentSnaps = await Promise.all(
+      studentChunks.map(chunk =>
+        adminDb.collection('users')
+          .where('role', '==', 'student')
+          .where('studentCode', 'in', chunk)
+          .select('studentCode', 'name', 'status', 'autonomous', 'isAutonomous', 'mode')
+          .get()
+          .catch(() => null)
+      )
+    );
 
     const studentsMap = new Map<string, string>();
-    studentsSnap.docs.forEach((doc: any) => {
-      const d = doc.data();
-      if (d.status === 'inactive') return;
-      const sCode = d.studentCode || doc.id;
-      const isAuto = d.autonomous === true || d.isAutonomous === true || d.mode === 'autonomous';
-      const displayName = isAuto ? `# ${d.name || 'Student'}` : (d.name || 'Student');
-      studentsMap.set(sCode, displayName);
+    studentSnaps.forEach(snap => {
+      if (!snap) return;
+      snap.docs.forEach((doc: any) => {
+        const d = doc.data();
+        if (d.status === 'inactive') return;
+        const sCode = d.studentCode || doc.id;
+        const isAuto = d.autonomous === true || d.isAutonomous === true || d.mode === 'autonomous';
+        const displayName = isAuto ? `# ${d.name || 'Student'}` : (d.name || 'Student');
+        studentsMap.set(sCode, displayName);
+      });
     });
 
     const questionTextMap = new Map<string, string>();

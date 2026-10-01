@@ -1530,15 +1530,25 @@ export class QuotientService {
 
     // 4. Exams and Subjective Exams scoped by class if available
     const classList = Array.from(allClasses);
-    let objExamsQuery: Promise<FirebaseFirestore.QuerySnapshot>;
-    let subjExamsQuery: Promise<FirebaseFirestore.QuerySnapshot>;
+    let objExamsPromise: Promise<{ docs: any[] }>;
+    let subjExamsPromise: Promise<{ docs: any[] }>;
 
-    if (classList.length > 0 && classList.length <= 10) {
-      objExamsQuery = adminDb.collection('exams').where('class', 'in', classList).get();
-      subjExamsQuery = adminDb.collection('subjectiveExams').where('class', 'in', classList).get();
+    if (classList.length > 0) {
+      const classChunks: string[][] = [];
+      for (let i = 0; i < classList.length; i += 30) {
+        classChunks.push(classList.slice(i, i + 30));
+      }
+      objExamsPromise = Promise.all(
+        classChunks.map(chunk => adminDb.collection('exams').where('class', 'in', chunk).get().catch(() => null))
+      ).then(snaps => ({ docs: snaps.filter(Boolean).flatMap(s => s!.docs) }));
+
+      subjExamsPromise = Promise.all(
+        classChunks.map(chunk => adminDb.collection('subjectiveExams').where('class', 'in', chunk).get().catch(() => null))
+      ).then(snaps => ({ docs: snaps.filter(Boolean).flatMap(s => s!.docs) }));
     } else {
-      objExamsQuery = adminDb.collection('exams').get();
-      subjExamsQuery = adminDb.collection('subjectiveExams').get();
+      // When class is unknown, start empty and rely on targeted exam ID hydration from attempts, assignments & batch assignments
+      objExamsPromise = Promise.resolve({ docs: [] });
+      subjExamsPromise = Promise.resolve({ docs: [] });
     }
 
     // 5. Fetch all student-scoped operational collections in targeted chunked parallel queries
@@ -1563,16 +1573,58 @@ export class QuotientService {
       // parentReviews: Full document required for calculateUnifiedMetrics and PracticeQualityCalculator
       Promise.all(activeStudentChunks.map(chunk => adminDb.collection('parentReviews').where('studentCode', 'in', chunk).get().catch(() => null as any))),
       Promise.all(activeStudentChunks.map(chunk => adminDb.collection('evaluations').where('studentCode', 'in', chunk).get().catch(() => null as any))),
-      objExamsQuery,
-      subjExamsQuery,
+      objExamsPromise,
+      subjExamsPromise,
       ...baQueries
     ]);
 
     const examsMap = new Map<string, any>();
-    examsSnap.docs.forEach(doc => {
+    examsSnap.docs.forEach((doc: any) => {
       examsMap.set(doc.id, { id: doc.id, ...doc.data() });
     });
 
+    const subjectiveExamsMap = new Map<string, any>();
+    subjectiveExamsSnap.docs.forEach((doc: any) => {
+      subjectiveExamsMap.set(doc.id, { id: doc.id, ...doc.data() });
+    });
+
+    // Flatten chunked student documents
+    const flattenDocs = (snaps: any[]) => snaps.filter(Boolean).flatMap(s => s.docs);
+    const rawAttempts = flattenDocs(attemptsSnaps).map((d: any) => d.data()).filter((att: any) => att.examType !== 'entrance' && !isDemoUser(att));
+    const rawAssignments = flattenDocs(assignmentsSnaps).map((d: any) => d.data()).filter((ass: any) => ass.examType !== 'entrance' && !isDemoUser(ass));
+    const rawPractice = flattenDocs(practiceSnaps).map((d: any) => d.data()).filter((p: any) => !isDemoUser(p));
+    const rawIntegrity = flattenDocs(integritySnaps).map((d: any) => d.data()).filter((i: any) => !isDemoUser(i));
+    const rawObservations = flattenDocs(observationsSnaps).map((d: any) => d.data()).filter((o: any) => !isDemoUser(o));
+    const rawReviews = flattenDocs(reviewsSnaps).map((d: any) => d.data()).filter((r: any) => !isDemoUser(r));
+    const rawEvaluations = flattenDocs(evaluationsSnaps).map((d: any) => d.data()).filter((e: any) => !isDemoUser(e));
+
+    // Hydrate any referenced objective exams missing from class query (from attempts, assignments & batch assignments)
+    const referencedExamIds = new Set<string>();
+    rawAttempts.forEach((d: any) => { if (d.examId) referencedExamIds.add(d.examId); });
+    rawAssignments.forEach((d: any) => { if (d.examId) referencedExamIds.add(d.examId); });
+    baSnaps.forEach(snap => {
+      if (!snap) return;
+      snap.docs.forEach((doc: any) => {
+        const bData = doc.data();
+        if (bData?.examId) referencedExamIds.add(bData.examId);
+      });
+    });
+
+    const missingExamIds = Array.from(referencedExamIds).filter(id => !examsMap.has(id));
+    if (missingExamIds.length > 0) {
+      const chunks: string[][] = [];
+      for (let i = 0; i < missingExamIds.length; i += 100) {
+        chunks.push(missingExamIds.slice(i, i + 100));
+      }
+      const missingDocs = (await Promise.all(chunks.map(chunk => adminDb.getAll(...chunk.map(id => adminDb.collection('exams').doc(id)))))).flat();
+      missingDocs.forEach(doc => {
+        if (doc && doc.exists) {
+          examsMap.set(doc.id, { id: doc.id, ...doc.data() });
+        }
+      });
+    }
+
+    // Process batch assignments into examsMap
     const seenBaIds = new Set<string>();
     baSnaps.forEach(snap => {
       if (!snap) return;
@@ -1589,39 +1641,6 @@ export class QuotientService {
         }
       });
     });
-
-    const subjectiveExamsMap = new Map<string, any>();
-    subjectiveExamsSnap.docs.forEach(doc => {
-      subjectiveExamsMap.set(doc.id, { id: doc.id, ...doc.data() });
-    });
-
-    // Flatten chunked student documents
-    const flattenDocs = (snaps: any[]) => snaps.filter(Boolean).flatMap(s => s.docs);
-    const rawAttempts = flattenDocs(attemptsSnaps).map((d: any) => d.data()).filter((att: any) => att.examType !== 'entrance' && !isDemoUser(att));
-    const rawAssignments = flattenDocs(assignmentsSnaps).map((d: any) => d.data()).filter((ass: any) => ass.examType !== 'entrance' && !isDemoUser(ass));
-    const rawPractice = flattenDocs(practiceSnaps).map((d: any) => d.data()).filter((p: any) => !isDemoUser(p));
-    const rawIntegrity = flattenDocs(integritySnaps).map((d: any) => d.data()).filter((i: any) => !isDemoUser(i));
-    const rawObservations = flattenDocs(observationsSnaps).map((d: any) => d.data()).filter((o: any) => !isDemoUser(o));
-    const rawReviews = flattenDocs(reviewsSnaps).map((d: any) => d.data()).filter((r: any) => !isDemoUser(r));
-    const rawEvaluations = flattenDocs(evaluationsSnaps).map((d: any) => d.data()).filter((e: any) => !isDemoUser(e));
-
-    // Hydrate any referenced objective exams missing from class query
-    const referencedExamIds = new Set<string>();
-    rawAttempts.forEach((d: any) => { if (d.examId) referencedExamIds.add(d.examId); });
-    rawAssignments.forEach((d: any) => { if (d.examId) referencedExamIds.add(d.examId); });
-    const missingExamIds = Array.from(referencedExamIds).filter(id => !examsMap.has(id));
-    if (missingExamIds.length > 0) {
-      const chunks: string[][] = [];
-      for (let i = 0; i < missingExamIds.length; i += 100) {
-        chunks.push(missingExamIds.slice(i, i + 100));
-      }
-      const missingDocs = (await Promise.all(chunks.map(chunk => adminDb.getAll(...chunk.map(id => adminDb.collection('exams').doc(id)))))).flat();
-      missingDocs.forEach(doc => {
-        if (doc && doc.exists) {
-          examsMap.set(doc.id, { id: doc.id, ...doc.data() });
-        }
-      });
-    }
 
     // Hydrate any referenced subjective exams missing from class query
     const referencedSubjIds = new Set<string>();

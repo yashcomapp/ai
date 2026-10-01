@@ -1,9 +1,29 @@
+import * as admin from 'firebase-admin';
 import { adminDb } from './firebase/admin';
 
 interface CacheEntry<T> {
   data: T;
   expiry: number;
   isCompletedExam: boolean;
+}
+
+function generateKeyTags(key: string): string[] {
+  const tags = new Set<string>();
+  const lower = key.toLowerCase().trim();
+  tags.add(lower);
+
+  // Split by common delimiters: '-', '_', ':', '.'
+  const parts = lower.split(/[-_:/.]+/).filter(Boolean);
+  parts.forEach(p => tags.add(p));
+
+  // Progressive prefix combinations: e.g. "single-lq-ST001" -> "single", "single-lq", "single-lq-st001"
+  let progressive = '';
+  parts.forEach((p, idx) => {
+    progressive = idx === 0 ? p : `${progressive}-${p}`;
+    tags.add(progressive);
+  });
+
+  return Array.from(tags);
 }
 
 export class ReportCacheManager {
@@ -72,11 +92,13 @@ export class ReportCacheManager {
     // 1. Set in memory
     this.set(key, data, ttlSeconds, isCompletedExam);
 
-    // 2. Set in Firestore reportCache collection
+    // 2. Set in Firestore reportCache collection with searchable tags
     try {
       const expiry = Date.now() + ttlSeconds * 1000;
+      const tags = generateKeyTags(key);
       await adminDb.collection('reportCache').doc(key).set({
         key,
+        tags,
         data,
         expiry,
         isCompletedExam,
@@ -100,7 +122,7 @@ export class ReportCacheManager {
   }
 
   /**
-   * Invalidates all cache entries matching a pattern string from both memory and Firestore.
+   * Invalidates all cache entries matching a pattern string from both memory and Firestore using targeted queries.
    */
   static async invalidatePattern(pattern: string) {
     for (const key of this.cache.keys()) {
@@ -109,16 +131,34 @@ export class ReportCacheManager {
       }
     }
     try {
-      const snap = await adminDb.collection('reportCache').get();
-      const batch = adminDb.batch();
-      let deleteCount = 0;
-      snap.docs.forEach(doc => {
-        if (doc.id.includes(pattern)) {
-          batch.delete(doc.ref);
-          deleteCount++;
-        }
-      });
-      if (deleteCount > 0) {
+      const cleanPattern = pattern.toLowerCase().trim().replace(/[-_:]+$/, '');
+      const docMap = new Map<string, FirebaseFirestore.DocumentReference>();
+
+      // Targeted Query 1: by tag array-contains
+      if (cleanPattern) {
+        const tagSnap = await adminDb.collection('reportCache')
+          .where('tags', 'array-contains', cleanPattern)
+          .select('key')
+          .get()
+          .catch(() => null);
+        tagSnap?.docs.forEach(doc => docMap.set(doc.id, doc.ref));
+      }
+
+      // Targeted Query 2: by Document ID prefix range
+      const prefixSnap = await adminDb.collection('reportCache')
+        .where(admin.firestore.FieldPath.documentId(), '>=', pattern)
+        .where(admin.firestore.FieldPath.documentId(), '<=', pattern + '\uf8ff')
+        .select('key')
+        .get()
+        .catch(() => null);
+      prefixSnap?.docs.forEach(doc => docMap.set(doc.id, doc.ref));
+
+      // Delete matched documents in batches of 500
+      const docRefs = Array.from(docMap.values());
+      for (let i = 0; i < docRefs.length; i += 500) {
+        const batch = adminDb.batch();
+        const chunk = docRefs.slice(i, i + 500);
+        chunk.forEach(ref => batch.delete(ref));
         await batch.commit();
       }
     } catch (err) {
@@ -132,10 +172,14 @@ export class ReportCacheManager {
   static async clearAll() {
     this.clear();
     try {
-      const snap = await adminDb.collection('reportCache').get();
-      const batch = adminDb.batch();
-      snap.docs.forEach(doc => batch.delete(doc.ref));
-      await batch.commit();
+      const snap = await adminDb.collection('reportCache').select('key').get();
+      const docRefs = snap.docs.map(doc => doc.ref);
+      for (let i = 0; i < docRefs.length; i += 500) {
+        const batch = adminDb.batch();
+        const chunk = docRefs.slice(i, i + 500);
+        chunk.forEach(ref => batch.delete(ref));
+        await batch.commit();
+      }
     } catch (err) {
       console.warn('Failed to clear Firestore reportCache:', err);
     }
