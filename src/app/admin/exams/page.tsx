@@ -23,8 +23,12 @@ interface Exam {
   topicCodes?: string[];
   topicDisplay?: string;
   questionCount?: number;
-  questions?: string[];
+  questions?: any[];
+  questionCodes?: string[];
   questionIds?: string[];
+  duration?: number;
+  totalTime?: number;
+  examDuration?: number;
   totalMarks?: number;
   mode?: string;
   peerReviewStatus?: string;
@@ -32,6 +36,66 @@ interface Exam {
   assignedAt?: string | null;
   type?: string;
   scheduledDate?: string;
+}
+
+function getNormExamDuration(exam: Exam, type: 'objective' | 'subjective' = 'objective'): number {
+  if (typeof exam.duration === 'number' && exam.duration > 0) {
+    return exam.duration;
+  }
+  if (typeof exam.totalTime === 'number' && exam.totalTime > 0) {
+    return exam.totalTime;
+  }
+  if (typeof exam.examDuration === 'number' && exam.examDuration > 0) {
+    return exam.examDuration;
+  }
+
+  // Calculate from questions if available
+  const questions = Array.isArray(exam.questions) ? exam.questions : [];
+  const questionCodes = Array.isArray(exam.questionCodes) ? exam.questionCodes : [];
+
+  if (questions.length > 0) {
+    let textualCount = 0;
+    let numericalCount = 0;
+    questions.forEach((q: any) => {
+      const code = String(q?.questionCode || q?.code || q?.id || '');
+      const qType = String(q?.type || q?.questionType || '').toLowerCase();
+      const isNum = code.includes('-ONE-') || code.includes('-SSN-') || code.includes('-SLN-') ||
+                    qType.includes('numerical') || qType.includes('calculation') || qType === 'one';
+      if (isNum) {
+        numericalCount++;
+      } else {
+        textualCount++;
+      }
+    });
+    if (type === 'subjective') {
+      return Math.max(15, (textualCount * 3) + (numericalCount * 5));
+    }
+    return Math.max(1, (textualCount * 1) + (numericalCount * 2));
+  }
+
+  if (questionCodes.length > 0) {
+    let textualCount = 0;
+    let numericalCount = 0;
+    questionCodes.forEach((codeStr: string) => {
+      const code = String(codeStr || '');
+      const isNum = code.includes('-ONE-') || code.includes('-SSN-') || code.includes('-SLN-');
+      if (isNum) {
+        numericalCount++;
+      } else {
+        textualCount++;
+      }
+    });
+    if (type === 'subjective') {
+      return Math.max(15, (textualCount * 3) + (numericalCount * 5));
+    }
+    return Math.max(1, (textualCount * 1) + (numericalCount * 2));
+  }
+
+  if (typeof exam.questionCount === 'number' && exam.questionCount > 0) {
+    return type === 'subjective' ? Math.max(15, exam.questionCount * 5) : Math.max(1, exam.questionCount * 1);
+  }
+
+  return type === 'subjective' ? 60 : 30;
 }
 
 interface Batch {
@@ -321,6 +385,8 @@ export default function AdminExamsPage() {
     attemptLimit: number;
     lateEntryRestriction: boolean;
     // Objective specifics
+    normDuration: number;
+    overrideDuration: boolean;
     examDuration: number;
     // Subjective specifics
     examMode: 'home' | 'classroom';
@@ -341,6 +407,8 @@ export default function AdminExamsPage() {
     endAtStr: '',
     attemptLimit: 1,
     lateEntryRestriction: false,
+    normDuration: 30,
+    overrideDuration: false,
     examDuration: 30,
     examMode: 'home',
     classroomDuration: 60,
@@ -363,6 +431,8 @@ export default function AdminExamsPage() {
     startAtStr: string;
     endAtStr: string;
     attemptLimit: number;
+    normDuration: number;
+    overrideDuration: boolean;
     examDuration: number;
     lateEntryRestriction: boolean;
     isMorningTest?: boolean;
@@ -379,6 +449,8 @@ export default function AdminExamsPage() {
     startAtStr: '',
     endAtStr: '',
     attemptLimit: 1,
+    normDuration: 30,
+    overrideDuration: false,
     examDuration: 30,
     lateEntryRestriction: false,
     isMorningTest: false,
@@ -829,6 +901,7 @@ export default function AdminExamsPage() {
 
   // Create Assignment Action
   const handleOpenAssign = (exam: Exam, type: 'objective' | 'subjective') => {
+    const normDuration = getNormExamDuration(exam, type);
     setAssignModal({
       show: true,
       type,
@@ -842,9 +915,11 @@ export default function AdminExamsPage() {
       endAtStr: '',
       attemptLimit: 1,
       lateEntryRestriction: false,
-      examDuration: 30,
+      normDuration,
+      overrideDuration: false,
+      examDuration: normDuration,
       examMode: exam.mode === 'classroom' ? 'classroom' : 'home',
-      classroomDuration: 60,
+      classroomDuration: normDuration || 60,
       classroomTimePerQ: 5,
       isMorningTest: false,
       isEveningTest: false
@@ -891,6 +966,10 @@ export default function AdminExamsPage() {
       return;
     }
 
+    const exam = (collection === 'batchAssignments' ? exams : subjectiveExams).find(e => e.id === examId);
+    const normDuration = exam ? getNormExamDuration(exam, collection === 'batchAssignments' ? 'objective' : 'subjective') : (activeAssign.examDuration || 30);
+    const isOverridden = Boolean(activeAssign.examDuration && activeAssign.examDuration !== normDuration);
+
     setEditModal({
       show: true,
       id: activeAssign.id,
@@ -903,7 +982,9 @@ export default function AdminExamsPage() {
       startAtStr: activeAssign.startAt ? toISTString(activeAssign.startAt) : '',
       endAtStr: activeAssign.endAt ? toISTString(activeAssign.endAt) : '',
       attemptLimit: activeAssign.attemptLimit,
-      examDuration: activeAssign.examDuration || 30,
+      normDuration,
+      overrideDuration: isOverridden,
+      examDuration: activeAssign.examDuration || normDuration,
       lateEntryRestriction: activeAssign.lateEntryRestriction === true,
       isMorningTest: false,
       isEveningTest: false
@@ -2675,10 +2756,41 @@ export default function AdminExamsPage() {
               </div>
               {assignModal.type === 'objective' && (
                 <div style={{ flex: 1 }}>
-                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px' }}>Duration (Minutes)</label>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>
+                      Duration (Minutes)
+                    </label>
+                    <label style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', color: assignModal.overrideDuration ? 'var(--primary)' : 'var(--text-muted)' }}>
+                      <input 
+                        type="checkbox" 
+                        checked={assignModal.overrideDuration} 
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          setAssignModal(prev => {
+                            const dur = checked ? prev.examDuration : prev.normDuration;
+                            let updates: any = { overrideDuration: checked, examDuration: dur };
+                            if ((prev.isMorningTest || prev.isEveningTest) && prev.startAtStr && dur > 0) {
+                              const startDate = new Date(prev.startAtStr);
+                              const endDate = new Date(startDate.getTime() + dur * 60000);
+                              const endYear = endDate.getFullYear();
+                              const endMonth = String(endDate.getMonth() + 1).padStart(2, '0');
+                              const endDateStr = String(endDate.getDate()).padStart(2, '0');
+                              const endHours = String(endDate.getHours()).padStart(2, '0');
+                              const endMinutes = String(endDate.getMinutes()).padStart(2, '0');
+                              updates.endAtStr = `${endYear}-${endMonth}-${endDateStr}T${endHours}:${endMinutes}`;
+                            }
+                            return { ...prev, ...updates };
+                          });
+                        }}
+                        style={{ cursor: 'pointer' }}
+                      />
+                      <span>Override</span>
+                    </label>
+                  </div>
                   <input 
                     type="number" 
                     value={assignModal.examDuration === undefined || assignModal.examDuration === null ? '' : assignModal.examDuration} 
+                    disabled={!assignModal.overrideDuration}
                     onChange={(e) => {
                       const raw = e.target.value;
                       if (raw === '') {
@@ -2703,11 +2815,25 @@ export default function AdminExamsPage() {
                     }}
                     onBlur={() => {
                       if (!assignModal.examDuration || Number(assignModal.examDuration) < 1) {
-                        setAssignModal(prev => ({ ...prev, examDuration: 45 }));
+                        setAssignModal(prev => ({ ...prev, examDuration: prev.normDuration || 30 }));
                       }
                     }}
-                    style={{ width: '100%', padding: '5px 6px', background: 'var(--surface)', color: 'var(--text)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)' }}
+                    style={{ 
+                      width: '100%', 
+                      padding: '5px 6px', 
+                      background: assignModal.overrideDuration ? 'var(--surface)' : 'var(--surface-muted, rgba(255, 255, 255, 0.05))', 
+                      color: assignModal.overrideDuration ? 'var(--text)' : 'var(--text-muted)', 
+                      border: '1px solid var(--border-light)', 
+                      borderRadius: 'var(--radius-sm)',
+                      cursor: assignModal.overrideDuration ? 'text' : 'not-allowed',
+                      opacity: assignModal.overrideDuration ? 1 : 0.8
+                    }}
                   />
+                  {!assignModal.overrideDuration && (
+                    <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                      Auto-calculated from questions ({assignModal.normDuration} mins standard norm).
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -2981,10 +3107,41 @@ export default function AdminExamsPage() {
               </div>
               {editModal.collection === 'batchAssignments' && (
                 <div style={{ flex: 1 }}>
-                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px' }}>Duration (Minutes)</label>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>
+                      Duration (Minutes)
+                    </label>
+                    <label style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', color: editModal.overrideDuration ? 'var(--primary)' : 'var(--text-muted)' }}>
+                      <input 
+                        type="checkbox" 
+                        checked={editModal.overrideDuration} 
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          setEditModal(prev => {
+                            const dur = checked ? prev.examDuration : prev.normDuration;
+                            let updates: any = { overrideDuration: checked, examDuration: dur };
+                            if ((prev.isMorningTest || prev.isEveningTest) && prev.startAtStr && dur > 0) {
+                              const startDate = new Date(prev.startAtStr);
+                              const endDate = new Date(startDate.getTime() + dur * 60000);
+                              const endYear = endDate.getFullYear();
+                              const endMonth = String(endDate.getMonth() + 1).padStart(2, '0');
+                              const endDateStr = String(endDate.getDate()).padStart(2, '0');
+                              const endHours = String(endDate.getHours()).padStart(2, '0');
+                              const endMinutes = String(endDate.getMinutes()).padStart(2, '0');
+                              updates.endAtStr = `${endYear}-${endMonth}-${endDateStr}T${endHours}:${endMinutes}`;
+                            }
+                            return { ...prev, ...updates };
+                          });
+                        }}
+                        style={{ cursor: 'pointer' }}
+                      />
+                      <span>Override</span>
+                    </label>
+                  </div>
                   <input 
                     type="number" 
                     value={editModal.examDuration === undefined || editModal.examDuration === null ? '' : editModal.examDuration} 
+                    disabled={!editModal.overrideDuration}
                     onChange={(e) => {
                       const raw = e.target.value;
                       if (raw === '') {
@@ -3009,11 +3166,25 @@ export default function AdminExamsPage() {
                     }}
                     onBlur={() => {
                       if (!editModal.examDuration || Number(editModal.examDuration) < 1) {
-                        setEditModal(prev => ({ ...prev, examDuration: 45 }));
+                        setEditModal(prev => ({ ...prev, examDuration: prev.normDuration || 30 }));
                       }
                     }}
-                    style={{ width: '100%', padding: '5px 6px', background: 'var(--surface)', color: 'var(--text)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)' }}
+                    style={{ 
+                      width: '100%', 
+                      padding: '5px 6px', 
+                      background: editModal.overrideDuration ? 'var(--surface)' : 'var(--surface-muted, rgba(255, 255, 255, 0.05))', 
+                      color: editModal.overrideDuration ? 'var(--text)' : 'var(--text-muted)', 
+                      border: '1px solid var(--border-light)', 
+                      borderRadius: 'var(--radius-sm)',
+                      cursor: editModal.overrideDuration ? 'text' : 'not-allowed',
+                      opacity: editModal.overrideDuration ? 1 : 0.8
+                    }}
                   />
+                  {!editModal.overrideDuration && (
+                    <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                      Auto-calculated from questions ({editModal.normDuration} mins standard norm).
+                    </div>
+                  )}
                 </div>
               )}
             </div>
