@@ -19,6 +19,7 @@ import { toISTDateTimeLocalInput, formatDateDMY, parseDateInput, getDateKeyIST }
 import ObjectiveTab from '@/components/admin/exams/ObjectiveTab';
 import SubjectiveTab from '@/components/admin/exams/SubjectiveTab';
 import PracticeTab from '@/components/admin/exams/PracticeTab';
+import { isExamAssigned } from '@/components/admin/exams/types';
 
 interface Exam {
   id: string;
@@ -329,20 +330,11 @@ export default function AdminExamsPage() {
 
   const isSubjectiveAvailableForAssignment = (exam: Exam) => {
     if (exam.type === 'home_practice') return false;
-    return !exam.batchId && !assignments.some(a => a.examId === exam.id && a.collection === 'subjectiveAssignments');
+    return !isExamAssigned(exam, assignments, attemptCounts);
   };
 
   const isSubjectiveAlreadyAssigned = (exam: Exam) => {
-    const todayIST = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
-    const isWeeklySuite = exam.type === 'home_practice' || exam.type === 'classroom_test';
-    
-    if (isWeeklySuite) {
-      if (!exam.batchId) return false;
-      if (!exam.scheduledDate) return true;
-      return exam.scheduledDate <= todayIST;
-    }
-    
-    return Boolean(exam.batchId || assignments.some(a => a.examId === exam.id && a.collection === 'subjectiveAssignments'));
+    return isExamAssigned(exam, assignments, attemptCounts);
   };
 
   // Already Assigned sorting states & helpers

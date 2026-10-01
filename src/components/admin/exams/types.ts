@@ -19,11 +19,34 @@ export interface Exam {
   mode?: string;
   peerReviewStatus?: string;
   batchId?: string | null;
+  batchIds?: string[];
+  targetBatches?: string[];
+  targetStudents?: string[];
   assignedAt?: string | null;
-  type?: string;
   scheduledDate?: string;
+  availableFrom?: string;
+  isAssigned?: boolean;
+  assigned?: boolean;
+  status?: string;
+  type?: string;
   class?: string;
 }
+
+export const isExamAssigned = (
+  exam: Exam,
+  assignments: Assignment[] = [],
+  attemptCounts?: { [key: string]: number }
+): boolean => {
+  if (exam.batchId) return true;
+  if (Array.isArray(exam.batchIds) && exam.batchIds.length > 0) return true;
+  if (Array.isArray(exam.targetBatches) && exam.targetBatches.length > 0) return true;
+  if (Array.isArray(exam.targetStudents) && exam.targetStudents.length > 0) return true;
+  if (assignments.some(a => a.examId === exam.id)) return true;
+  if (exam.scheduledDate || exam.assignedAt || exam.availableFrom) return true;
+  if (exam.assigned === true || exam.isAssigned === true || exam.status === 'assigned') return true;
+  if (attemptCounts && (attemptCounts[exam.id] || 0) > 0) return true;
+  return false;
+};
 
 export interface Batch {
   id: string;

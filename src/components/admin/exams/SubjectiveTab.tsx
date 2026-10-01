@@ -182,7 +182,7 @@ export default function SubjectiveTab({
               <tbody>
                 {(() => {
                   const todayTomorrowExams = filteredSubjectiveExams.filter(exam => 
-                    (exam.batchId || assignments.some(a => a.examId === exam.id && a.collection === 'subjectiveAssignments')) &&
+                    isSubjectiveAlreadyAssigned(exam) &&
                     isTodayOrTomorrow(exam, 'subjective')
                   );
                   
@@ -205,7 +205,7 @@ export default function SubjectiveTab({
                   }
                   
                   return sortedTodayTomorrowExams.map(exam => {
-                    const activeAssign = assignments.find(a => a.examId === exam.id && a.collection === 'subjectiveAssignments');
+                    const activeAssign = assignments.find(a => a.examId === exam.id && a.collection === 'subjectiveAssignments') || assignments.find(a => a.examId === exam.id);
                     const rawStatus = activeAssign?.status || 'active';
                     const scheduleStatus = getExamScheduleStatus(exam, activeAssign, 'subjective');
                     const mode = activeAssign?.examMode || exam.mode || 'home';

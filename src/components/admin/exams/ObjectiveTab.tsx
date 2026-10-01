@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Exam, Assignment, ExamScheduleStatus } from './types';
+import { Exam, Assignment, ExamScheduleStatus, isExamAssigned } from './types';
 
 interface ObjectiveTabProps {
   filteredObjectiveExams: Exam[];
@@ -116,13 +116,13 @@ export default function ObjectiveTab({
                 </tr>
               </thead>
               <tbody>
-                {filteredObjectiveExams.filter(exam => !exam.batchId && !assignments.some(a => a.examId === exam.id && a.collection === 'batchAssignments')).length === 0 ? (
+                {filteredObjectiveExams.filter(exam => !isExamAssigned(exam, assignments, attemptCounts)).length === 0 ? (
                   <tr>
                     <td colSpan={6} style={{ padding: '30px', textAlign: 'center', color: 'var(--text-muted)' }}>No exams available for assignment.</td>
                   </tr>
                 ) : (
                   filteredObjectiveExams
-                    .filter(exam => !exam.batchId && !assignments.some(a => a.examId === exam.id && a.collection === 'batchAssignments'))
+                    .filter(exam => !isExamAssigned(exam, assignments, attemptCounts))
                     .map(exam => (
                       <tr key={exam.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
                         <td style={{ padding: '12px 16px', fontWeight: 600 }}>{exam.name}</td>
@@ -169,7 +169,7 @@ export default function ObjectiveTab({
               <tbody>
                 {(() => {
                   const todayTomorrowExams = filteredObjectiveExams.filter(exam => 
-                    (exam.batchId || assignments.some(a => a.examId === exam.id && a.collection === 'batchAssignments')) &&
+                    isExamAssigned(exam, assignments, attemptCounts) &&
                     isTodayOrTomorrow(exam, 'objective')
                   );
                   
@@ -193,7 +193,7 @@ export default function ObjectiveTab({
                   
                   return sortedTodayTomorrowExams.map(exam => {
                     const count = attemptCounts[exam.id] || 0;
-                    const activeAssign = assignments.find(a => a.examId === exam.id && a.collection === 'batchAssignments');
+                    const activeAssign = assignments.find(a => a.examId === exam.id && a.collection === 'batchAssignments') || assignments.find(a => a.examId === exam.id);
                     const rawStatus = activeAssign?.status || 'active';
                     const scheduleStatus = getExamScheduleStatus(exam, activeAssign, 'objective');
                     return (
@@ -224,7 +224,7 @@ export default function ObjectiveTab({
                               <button 
                                 className={`btn ${rawStatus === 'active' ? 'btn-secondary' : 'btn-primary'}`} 
                                 style={{ padding: '4px 10px', fontSize: '11px', background: rawStatus === 'active' ? 'var(--danger)' : 'var(--success)', color: 'white', border: 'none' }} 
-                                onClick={() => toggleAssignmentStatus(activeAssign.id, 'batchAssignments', rawStatus === 'active' ? 'disabled' : 'active')}
+                                onClick={() => toggleAssignmentStatus(activeAssign.id, activeAssign.collection || 'batchAssignments', rawStatus === 'active' ? 'disabled' : 'active')}
                               >
                                 {rawStatus === 'active' ? '🛑 Stop' : '🟢 Start'}
                               </button>
@@ -247,7 +247,7 @@ export default function ObjectiveTab({
                                 cursor: count > 0 ? 'not-allowed' : 'pointer' 
                               }} 
                               disabled={count > 0}
-                              onClick={() => handleOpenEdit(exam.id, exam.name, 'batchAssignments')}
+                              onClick={() => handleOpenEdit(exam.id, exam.name, activeAssign?.collection || 'batchAssignments')}
                             >
                               ✏️ Edit
                             </button>
@@ -273,7 +273,7 @@ export default function ObjectiveTab({
         </h3>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           {(() => {
-            const assignedExamsList = filteredObjectiveExams.filter(exam => exam.batchId || assignments.some(a => a.examId === exam.id && a.collection === 'batchAssignments'));
+            const assignedExamsList = filteredObjectiveExams.filter(exam => isExamAssigned(exam, assignments, attemptCounts));
             if (assignedExamsList.length === 0) {
               return (
                 <div className="card" style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', padding: '30px', textAlign: 'center', color: 'var(--text-muted)' }}>
