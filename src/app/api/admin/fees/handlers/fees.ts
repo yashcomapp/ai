@@ -93,12 +93,24 @@ export async function GET(req: NextRequest) {
       };
     }).filter(s => s.status === 'active' && !isDemoUser(s));
 
-    // 2. Fetch existing student fees records
-    const feesSnap = await adminDb.collection('studentFees').get();
+    // 2. Fetch existing student fees records only for active roster students
     const feesMap = new Map<string, any>();
-    feesSnap.docs.forEach(doc => {
-      feesMap.set(doc.id.toUpperCase(), normalizeStudentFeeRecord({ id: doc.id, ...doc.data() }));
-    });
+    const studentCodeRefs = students
+      .map(s => s.studentCode.trim().toUpperCase())
+      .filter(Boolean)
+      .map(code => adminDb.collection('studentFees').doc(code));
+
+    if (studentCodeRefs.length > 0) {
+      for (let i = 0; i < studentCodeRefs.length; i += 100) {
+        const chunkRefs = studentCodeRefs.slice(i, i + 100);
+        const chunkSnaps = await adminDb.getAll(...chunkRefs);
+        chunkSnaps.forEach(doc => {
+          if (doc.exists) {
+            feesMap.set(doc.id.toUpperCase(), normalizeStudentFeeRecord({ id: doc.id, ...doc.data() }));
+          }
+        });
+      }
+    }
 
     // Combine student list with their fee statuses
     const studentsWithFees = students.map(s => {
