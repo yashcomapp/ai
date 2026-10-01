@@ -618,6 +618,8 @@ export async function GET(req: NextRequest) {
     const since = new Date();
     since.setDate(since.getDate() - 90);
 
+    const includeParents = req.nextUrl.searchParams.get('includeParents') === 'true';
+
     const [
       examsList,
       subjExamsList,
@@ -633,11 +635,13 @@ export async function GET(req: NextRequest) {
       adminDb.collection('subjectiveExams').where('status', 'in', ['active', 'draft']).get(),
       adminDb.collection('batches').select('name').get(),
       adminDb.collection('users').where('role', '==', 'student').select('studentCode', 'name', 'email', 'isDemo', 'rollNumber', 'batchIds', 'batchId', 'class', 'className', 'status').get(),
-      adminDb.collection('batchAssignments').get(),
-      adminDb.collection('subjectiveAssignments').get(),
+      adminDb.collection('batchAssignments').where('status', 'in', ['active', 'draft']).get(),
+      adminDb.collection('subjectiveAssignments').where('status', 'in', ['active', 'draft']).get(),
       adminDb.collection('reviews').where('startedAt', '>=', since).select('examId').get(),
       adminDb.collection('examAttempts').where('startedAt', '>=', since).select('examId').get(),
-      adminDb.collection('users').where('role', '==', 'parent').select('email', 'studentCode', 'studentCodes', 'name').get()
+      includeParents 
+        ? adminDb.collection('users').where('role', '==', 'parent').select('email', 'studentCode', 'studentCodes', 'name').get()
+        : Promise.resolve({ docs: [] } as any)
     ]);
 
     const exams = examsList.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -660,7 +664,7 @@ export async function GET(req: NextRequest) {
       };
     }).filter(s => !!s.studentCode && s.status !== 'inactive' && !isDemoUser(s));
 
-    const parents = parentsSnap.docs.map(doc => {
+    const parents = includeParents ? parentsSnap.docs.map((doc: any) => {
       const data = doc.data();
       if (isDemoUser(data)) return null;
       const pEmail = data.email || '';
@@ -685,8 +689,8 @@ export async function GET(req: NextRequest) {
         displayName: displayName,
         studentCodes: pCodes
       };
-    }).filter((p): p is { email: string; displayName: string; studentCodes: string[] } => p !== null && !!p.email)
-    .sort((a, b) => a.displayName.localeCompare(b.displayName));
+    }).filter((p: any): p is { email: string; displayName: string; studentCodes: string[] } => p !== null && !!p.email)
+    .sort((a: any, b: any) => a.displayName.localeCompare(b.displayName)) : [];
 
     const attemptCounts: { [key: string]: number } = {};
     const examAttemptsMap: { [key: string]: Set<string> } = {};

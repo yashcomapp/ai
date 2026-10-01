@@ -148,7 +148,7 @@ export default function AdminNoticesPage() {
       const idToken = await firebaseUser.getIdToken();
       
       // Load batches and students list from exams api
-      const examsRes = await fetch('/api/admin/exams', {
+      const examsRes = await fetch('/api/admin/exams?includeParents=true', {
         headers: { 'Authorization': `Bearer ${idToken}` }
       });
       if (examsRes.ok) {
