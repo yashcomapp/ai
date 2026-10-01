@@ -140,15 +140,36 @@ export class ReportService {
     const endOfISTDay = new Date(`${targetDateStr}T23:59:59.999+05:30`);
     const now = new Date();
 
-    const [studentsSnap, batchesSnap, rawReviewsSnap, masterySnapWithDailyLock, masterySnapWithCooldown] = await Promise.all([
-      adminDb.collection('users').where('role', '==', 'student').get(),
-      adminDb.collection('batches').get(),
+    const [studentsSnap, batchesSnap, rawReviewsSnap, masterySnap] = await Promise.all([
+      adminDb.collection('users')
+        .where('role', '==', 'student')
+        .select('studentCode', 'name', 'status', 'batchId', 'batchIds', 'className', 'class', 'autonomous')
+        .get(),
+      adminDb.collection('batches').select('name').get(),
       adminDb.collection('parentReviews')
         .where('createdAt', '>=', startOfISTDay)
         .where('createdAt', '<=', endOfISTDay)
+        .select('studentCode', 'type', 'createdAt', 'startedAt')
         .get(),
-      adminDb.collection('studentTopicMastery').where('dailyLockedUntil', '>', now).get(),
-      adminDb.collection('studentTopicMastery').where('cooldownUntil', '>', now).get()
+      adminDb.collection('studentTopicMastery')
+        .where(
+          admin.firestore.Filter.or(
+            admin.firestore.Filter.where('dailyLockedUntil', '>', now),
+            admin.firestore.Filter.where('cooldownUntil', '>', now)
+          )
+        )
+        .select('studentCode', 'topicCode', 'dailyLockedUntil', 'cooldownUntil')
+        .get()
+        .catch(async () => {
+          const [snap1, snap2] = await Promise.all([
+            adminDb.collection('studentTopicMastery').where('dailyLockedUntil', '>', now).select('studentCode', 'topicCode', 'dailyLockedUntil', 'cooldownUntil').get().catch(() => null),
+            adminDb.collection('studentTopicMastery').where('cooldownUntil', '>', now).select('studentCode', 'topicCode', 'dailyLockedUntil', 'cooldownUntil').get().catch(() => null)
+          ]);
+          const docMap = new Map<string, any>();
+          snap1?.docs.forEach(d => docMap.set(d.id, d));
+          snap2?.docs.forEach(d => docMap.set(d.id, d));
+          return { docs: Array.from(docMap.values()) } as any;
+        })
     ]);
 
     const activeStudents = studentsSnap.docs
@@ -191,8 +212,7 @@ export class ReportService {
     });
 
     const activeMasteryDocs = new Map<string, any>();
-    masterySnapWithDailyLock.docs.forEach(doc => activeMasteryDocs.set(doc.id, doc.data()));
-    masterySnapWithCooldown.docs.forEach(doc => activeMasteryDocs.set(doc.id, doc.data()));
+    (masterySnap.docs as any[]).forEach((doc: any) => activeMasteryDocs.set(doc.id, doc.data()));
 
     const locksByStudent: Record<string, string[]> = {};
     for (const data of activeMasteryDocs.values()) {
@@ -654,7 +674,7 @@ export class ReportService {
     const endOfISTDay = new Date(`${targetDateStr}T23:59:59.999+05:30`);
 
     const [batchesSnap, students, parents, sessionLogsSnap] = await Promise.all([
-      adminDb.collection('batches').get(),
+      adminDb.collection('batches').select('name').get(),
       StudentRepository.listStudents(),
       StudentRepository.listParents(),
       adminDb.collection('session_logs')

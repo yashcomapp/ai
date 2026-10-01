@@ -106,11 +106,10 @@ export class FaultService {
         })
       : adminDb.collection('users').where('role', '==', 'student').get().then(s => s.docs);
 
-    const [categories, bDoc, studentDocs, faultDocsSnap] = await Promise.all([
+    const [categories, bDoc, studentDocs] = await Promise.all([
       this.getCategories(),
       isSpecificBatch ? adminDb.collection('batches').doc(batchId).get() : Promise.resolve(null),
-      studentsPromise,
-      adminDb.collection('faultRecords').where('date', '==', dateKey).get()
+      studentsPromise
     ]);
 
     let batchName = 'All Batches';
@@ -144,14 +143,32 @@ export class FaultService {
     // Sort students alphabetically
     filteredStudents.sort((a, b) => a.studentName.localeCompare(b.studentName));
 
-    // 3. Map existing fault records
+    // 3. Map existing fault records (direct targeted reads for specific batch)
     const existingFaultsMap = new Map<string, any>();
-    faultDocsSnap.docs.forEach(doc => {
-      const d = doc.data();
-      if (d.studentCode) {
-        existingFaultsMap.set(d.studentCode.toUpperCase(), d);
+    if (isSpecificBatch && filteredStudents.length > 0) {
+      const docRefs = filteredStudents.map(s => adminDb.collection('faultRecords').doc(`${s.studentCode.toUpperCase()}_${dateKey}`));
+      const chunks: FirebaseFirestore.DocumentReference[][] = [];
+      for (let i = 0; i < docRefs.length; i += 100) {
+        chunks.push(docRefs.slice(i, i + 100));
       }
-    });
+      const faultDocs = (await Promise.all(chunks.map(chunk => adminDb.getAll(...chunk)))).flat();
+      faultDocs.forEach(doc => {
+        if (doc && doc.exists) {
+          const d = doc.data();
+          if (d?.studentCode) {
+            existingFaultsMap.set(d.studentCode.toUpperCase(), d);
+          }
+        }
+      });
+    } else {
+      const faultDocsSnap = await adminDb.collection('faultRecords').where('date', '==', dateKey).get();
+      faultDocsSnap.docs.forEach(doc => {
+        const d = doc.data();
+        if (d.studentCode) {
+          existingFaultsMap.set(d.studentCode.toUpperCase(), d);
+        }
+      });
+    }
 
     // 4. Run scoped auto-detection for targeted students
     const autoDetections = await this.runAutoDetect(dateKey, filteredStudents);
@@ -230,6 +247,44 @@ export class FaultService {
 
     try {
       const now = new Date();
+
+      // Collect target batches from targetStudents
+      const targetBatchSet = new Set<string>();
+      targetStudents.forEach(s => {
+        if (s.batchId) targetBatchSet.add(s.batchId);
+        if (Array.isArray(s.batchIds)) {
+          s.batchIds.forEach(b => { if (b) targetBatchSet.add(b); });
+        }
+      });
+      const targetBatchList = Array.from(targetBatchSet).filter(Boolean);
+
+      let attendancePromise: Promise<{ docs: any[] }>;
+      if (targetBatchList.length > 0 && targetBatchList.length <= 30) {
+        attendancePromise = adminDb.collection('attendance')
+          .where('date', '==', dateKey)
+          .where('batchId', 'in', targetBatchList)
+          .get();
+      } else if (targetBatchList.length > 30) {
+        const chunks: string[][] = [];
+        for (let i = 0; i < targetBatchList.length; i += 30) {
+          chunks.push(targetBatchList.slice(i, i + 30));
+        }
+        attendancePromise = Promise.all(
+          chunks.map(chunk =>
+            adminDb.collection('attendance')
+              .where('date', '==', dateKey)
+              .where('batchId', 'in', chunk)
+              .get()
+              .catch(() => null)
+          )
+        ).then(snaps => {
+          const docs = snaps.filter(Boolean).flatMap(s => s!.docs);
+          return { docs };
+        });
+      } else {
+        attendancePromise = adminDb.collection('attendance').where('date', '==', dateKey).get();
+      }
+
       // 1. Fetch Attendance, Scheduled Exams (Objective + Subjective), Batch Assignments, Leaves and Declarations in parallel
       const [
         attendanceSnap,
@@ -238,7 +293,7 @@ export class FaultService {
         leavesSnap,
         declsSnap
       ] = await Promise.all([
-        adminDb.collection('attendance').where('date', '==', dateKey).get(),
+        attendancePromise,
         adminDb.collection('exams').where('scheduledDate', '==', dateKey).get(),
         adminDb.collection('subjectiveExams').where('scheduledDate', '==', dateKey).get(),
         adminDb.collection('leaveApplications').where('endDate', '>=', dateKey).get(),
