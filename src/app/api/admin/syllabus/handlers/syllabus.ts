@@ -70,8 +70,10 @@ export async function GET(req: NextRequest) {
         const classVal = subjectData.class !== undefined ? subjectData.class : '';
         const subjectVal = subjectData.subject || '';
 
+        const cleanClassVal = String(classVal).replace(/\D/g, '');
+
         const questionsSnap = await adminDb.collection('questions')
-          .where('class', 'in', [String(classVal), Number(classVal)].filter(v => v !== ''))
+          .where('class', '==', cleanClassVal)
           .get();
 
         questionsSnap.docs.forEach(doc => {
@@ -141,13 +143,13 @@ export async function GET(req: NextRequest) {
       let examsList: any[] = [];
       let subjectiveExamsList: any[] = [];
       try {
-        const classVal = subjectData.class !== undefined ? subjectData.class : '';
+        const cleanClassVal = String(subjectData.class !== undefined ? subjectData.class : '').replace(/\D/g, '');
         const [examsSnap, subjectiveExamsSnap] = await Promise.all([
           adminDb.collection('exams')
-            .where('class', 'in', [String(classVal), Number(classVal)].filter(v => v !== ''))
+            .where('class', '==', cleanClassVal)
             .get(),
           adminDb.collection('subjectiveExams')
-            .where('class', 'in', [String(classVal), Number(classVal)].filter(v => v !== ''))
+            .where('class', '==', cleanClassVal)
             .get()
         ]);
 

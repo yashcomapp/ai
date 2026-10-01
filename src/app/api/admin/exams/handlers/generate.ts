@@ -33,16 +33,18 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ message: 'Missing parameters (board, classNum, subject).' }, { status: 400 });
       }
 
+      const cleanClass = String(classNum).replace(/\D/g, '');
+
       // Query questions collection for matching class + query existing exams to cross-check used questions
       const [questionsSnap, existingObjExamsSnap, existingSubjExamsSnap] = await Promise.all([
         adminDb.collection('questions')
-          .where('class', 'in', [String(classNum), Number(classNum)].filter(v => v !== ''))
+          .where('class', '==', cleanClass)
           .get(),
         adminDb.collection('exams')
-          .where('class', 'in', [String(classNum), Number(classNum)].filter(v => v !== ''))
+          .where('class', '==', cleanClass)
           .get(),
         adminDb.collection('subjectiveExams')
-          .where('class', 'in', [String(classNum), Number(classNum)].filter(v => v !== ''))
+          .where('class', '==', cleanClass)
           .get()
       ]);
 
@@ -169,8 +171,10 @@ export async function GET(req: NextRequest) {
         const classVal = subjectData.class !== undefined ? subjectData.class : '';
         const subjectVal = subjectData.subject || '';
 
+        const cleanClassVal = String(classVal).replace(/\D/g, '');
+
         const questionsSnap = await adminDb.collection('questions')
-          .where('class', 'in', [String(classVal), Number(classVal)].filter(v => v !== ''))
+          .where('class', '==', cleanClassVal)
           .get();
 
         questionsList = questionsSnap.docs

@@ -10,14 +10,13 @@ export class MasteryService {
    */
   static isClass10(studentClass?: string | number | null, topicCode?: string | null): boolean {
     if (studentClass !== undefined && studentClass !== null) {
-      const str = String(studentClass).trim().toLowerCase();
-      if (str === '10' || str === 'class 10' || str === 'class 10th' || str === '10th' || str === 'x' || str.includes('10')) {
+      if (String(studentClass).replace(/\D/g, '') === '10') {
         return true;
       }
     }
     if (topicCode) {
       const parsed = parseTopicCode(topicCode);
-      if (parsed && (parsed.classNum === '10' || parsed.class === '10' || parsed.class === 'Class 10')) {
+      if (parsed && (parsed.class === '10' || parsed.classNum === '10')) {
         return true;
       }
     }
