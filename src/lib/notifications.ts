@@ -22,56 +22,78 @@ function isDuplicateNotification(dedupKey: string, cooldownMs = 60000): boolean 
 }
 
 /**
- * Resolves all parent UIDs associated with a given studentCode
+ * Resolves all parent UIDs associated with given studentCodes and/or parentEmails
+ */
+async function resolveParentUidsForStudents(studentCodes: string[], parentEmails: string[] = []): Promise<string[]> {
+  const parentUids = new Set<string>();
+  const cleanCodes = Array.from(new Set(studentCodes.map(c => (c || '').trim()).filter(Boolean)));
+  const cleanEmails = Array.from(new Set(parentEmails.map(e => (e || '').trim().toLowerCase()).filter(Boolean)));
+
+  const codeChunks: string[][] = [];
+  for (let i = 0; i < cleanCodes.length; i += 30) {
+    codeChunks.push(cleanCodes.slice(i, i + 30));
+  }
+
+  const emailChunks: string[][] = [];
+  for (let i = 0; i < cleanEmails.length; i += 30) {
+    emailChunks.push(cleanEmails.slice(i, i + 30));
+  }
+
+  const queries: Promise<any>[] = [];
+
+  codeChunks.forEach(chunk => {
+    queries.push(
+      adminDb.collection('users')
+        .where('role', '==', 'parent')
+        .where('studentCodes', 'array-contains-any', chunk)
+        .get()
+        .catch(() => null),
+      adminDb.collection('users')
+        .where('role', '==', 'parent')
+        .where('studentCode', 'in', chunk)
+        .get()
+        .catch(() => null)
+    );
+  });
+
+  emailChunks.forEach(chunk => {
+    queries.push(
+      adminDb.collection('users')
+        .where('role', '==', 'parent')
+        .where('email', 'in', chunk)
+        .get()
+        .catch(() => null)
+    );
+  });
+
+  const snaps = await Promise.all(queries);
+  snaps.forEach(snap => {
+    if (!snap) return;
+    snap.docs.forEach((d: any) => parentUids.add(d.id));
+  });
+
+  return Array.from(parentUids);
+}
+
+/**
+ * Resolves all parent UIDs associated with a single studentCode
  */
 async function resolveParentUids(studentCode: string): Promise<string[]> {
-  const parentUids = new Set<string>();
-
-  // 1. Fetch student user document to extract parentEmail
+  let parentEmail = '';
   try {
     const studentSnap = await adminDb.collection('users')
       .where('role', '==', 'student')
       .where('studentCode', '==', studentCode)
       .limit(1)
       .get();
-
-    let parentEmail = '';
     if (!studentSnap.empty) {
-      const studentData = studentSnap.docs[0].data();
-      parentEmail = studentData.parentEmail || '';
-    }
-
-    // 2. Query parents matching parentEmail
-    if (parentEmail) {
-      const emailParentsSnap = await adminDb.collection('users')
-        .where('role', '==', 'parent')
-        .where('email', '==', parentEmail.toLowerCase())
-        .get();
-      emailParentsSnap.docs.forEach(doc => parentUids.add(doc.id));
+      parentEmail = studentSnap.docs[0].data()?.parentEmail || '';
     }
   } catch (err) {
-    console.error('Error resolving parent by email:', err);
+    console.error('Error finding student parentEmail:', err);
   }
 
-  // 3. Query parents by studentCodes array
-  try {
-    const codesParentsSnap = await adminDb.collection('users')
-      .where('role', '==', 'parent')
-      .where('studentCodes', 'array-contains', studentCode)
-      .get();
-    codesParentsSnap.docs.forEach(doc => parentUids.add(doc.id));
-
-    // Fallback: search studentCode string matches
-    const singleCodeParentsSnap = await adminDb.collection('users')
-      .where('role', '==', 'parent')
-      .where('studentCode', '==', studentCode)
-      .get();
-    singleCodeParentsSnap.docs.forEach(doc => parentUids.add(doc.id));
-  } catch (err) {
-    console.error('Error resolving parents by student code mapping:', err);
-  }
-
-  return Array.from(parentUids);
+  return resolveParentUidsForStudents([studentCode], parentEmail ? [parentEmail] : []);
 }
 
 /**
@@ -260,83 +282,79 @@ export async function notifyNewExam(
 ) {
   try {
     const studentUids = new Set<string>();
-    const parentUids = new Set<string>();
-
-    // Fetch all parent users once to avoid sequential N+1 query loops
-    const parentsSnap = await adminDb.collection('users').where('role', '==', 'parent').get();
-    const parents = parentsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() as any }));
-
-    const findParentUidsInMemory = (studentCode: string, parentEmail?: string) => {
-      const uids = new Set<string>();
-      const normEmail = parentEmail ? parentEmail.toLowerCase() : '';
-      parents.forEach(p => {
-        const pEmail = p.email ? p.email.toLowerCase() : '';
-        if (normEmail && pEmail === normEmail) {
-          uids.add(p.id);
-        }
-        const pCodes = p.studentCodes || [];
-        if (pCodes.includes(studentCode)) {
-          uids.add(p.id);
-        }
-        if (p.singleCodeParentsSnap === studentCode || p.studentCode === studentCode) {
-          uids.add(p.id);
-        }
-      });
-      return Array.from(uids);
-    };
+    const studentCodes: string[] = [];
+    const parentEmails: string[] = [];
 
     if (targetType === 'student' && targetStudents.length > 0) {
-      // Fetch user ids of specific students
-      const studSnap = await adminDb.collection('users')
-        .where('role', '==', 'student')
-        .where('studentCode', 'in', targetStudents)
-        .get();
+      // Fetch user ids of specific students in chunks of 30
+      const studentChunks: string[][] = [];
+      for (let i = 0; i < targetStudents.length; i += 30) {
+        studentChunks.push(targetStudents.slice(i, i + 30));
+      }
 
-      studSnap.docs.forEach(doc => {
-        studentUids.add(doc.id);
-        const data = doc.data();
-        if (data.studentCode) {
-          const pUids = findParentUidsInMemory(data.studentCode, data.parentEmail);
-          pUids.forEach(uid => parentUids.add(uid));
-        }
+      const snaps = await Promise.all(
+        studentChunks.map(chunk =>
+          adminDb.collection('users')
+            .where('role', '==', 'student')
+            .where('studentCode', 'in', chunk)
+            .get()
+            .catch(() => null)
+        )
+      );
+
+      snaps.forEach(snap => {
+        if (!snap) return;
+        snap.docs.forEach(doc => {
+          studentUids.add(doc.id);
+          const data = doc.data();
+          if (data.studentCode) studentCodes.push(data.studentCode);
+          if (data.parentEmail) parentEmails.push(data.parentEmail);
+        });
       });
     } else if (targetType === 'batch' && targetBatches.length > 0) {
-      // Fetch all students belonging to the target batches
-      // Since a student can be mapped via batchId or batchIds array
-      const batchStudsSnap = await adminDb.collection('users')
-        .where('role', '==', 'student')
-        .get();
-
-      for (const doc of batchStudsSnap.docs) {
-        const data = doc.data();
-        const sBatchId = data.batchId;
-        const sBatchIds = data.batchIds || [];
-        const matchesBatch = targetBatches.includes(sBatchId) || sBatchIds.some((b: string) => targetBatches.includes(b));
-
-        if (matchesBatch) {
-          studentUids.add(doc.id);
-          if (data.studentCode) {
-            const pUids = findParentUidsInMemory(data.studentCode, data.parentEmail);
-            pUids.forEach(uid => parentUids.add(uid));
-          }
-        }
+      // Fetch only students belonging to the target batches using chunked array-contains-any and in queries
+      const batchChunks: string[][] = [];
+      for (let i = 0; i < targetBatches.length; i += 30) {
+        batchChunks.push(targetBatches.slice(i, i + 30));
       }
+
+      const snaps = await Promise.all(
+        batchChunks.flatMap(chunk => [
+          adminDb.collection('users')
+            .where('role', '==', 'student')
+            .where('batchIds', 'array-contains-any', chunk)
+            .get()
+            .catch(() => null),
+          adminDb.collection('users')
+            .where('role', '==', 'student')
+            .where('batchId', 'in', chunk)
+            .get()
+            .catch(() => null)
+        ])
+      );
+
+      snaps.forEach(snap => {
+        if (!snap) return;
+        snap.docs.forEach(doc => {
+          studentUids.add(doc.id);
+          const data = doc.data();
+          if (data.studentCode) studentCodes.push(data.studentCode);
+          if (data.parentEmail) parentEmails.push(data.parentEmail);
+        });
+      });
     } else {
       // Fallback: mixed or not specified, notify all active students
       const allStuds = await adminDb.collection('users').where('role', '==', 'student').get();
       for (const doc of allStuds.docs) {
         const data = doc.data();
         studentUids.add(doc.id);
-        if (data.studentCode) {
-          try {
-            const pUids = findParentUidsInMemory(data.studentCode, data.parentEmail);
-            pUids.forEach(uid => parentUids.add(uid));
-          } catch (err) {
-            console.error('Failed to resolve parents in notifyNewExam fallback:', err);
-          }
-        }
+        if (data.studentCode) studentCodes.push(data.studentCode);
+        if (data.parentEmail) parentEmails.push(data.parentEmail);
       }
     }
+
+    // Resolve targeted parents
+    const parentUids = await resolveParentUidsForStudents(studentCodes, parentEmails);
 
     // Resolve exam details for richer push notification body
     let examData: any = null;
@@ -524,74 +542,100 @@ export async function notifyNotice(
   try {
     const uids = new Set<string>();
 
-    // Fetch all parent users once to avoid sequential N+1 query loops
-    const parentsSnap = await adminDb.collection('users').where('role', '==', 'parent').get();
-    const parents = parentsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() as any }));
-
-    const findParentUidsInMemory = (studentCode: string, parentEmail?: string) => {
-      const parentUids = new Set<string>();
-      const normEmail = parentEmail ? parentEmail.toLowerCase() : '';
-      parents.forEach(p => {
-        const pEmail = p.email ? p.email.toLowerCase() : '';
-        if (normEmail && pEmail === normEmail) {
-          parentUids.add(p.id);
-        }
-        const pCodes = p.studentCodes || [];
-        if (pCodes.includes(studentCode)) {
-          parentUids.add(p.id);
-        }
-        if (p.singleCodeParentsSnap === studentCode || p.studentCode === studentCode) {
-          parentUids.add(p.id);
-        }
-      });
-      return Array.from(parentUids);
-    };
-
     if (targetType === 'all') {
       // Notify all parents and students
       const snaps = await adminDb.collection('users').get();
       snaps.docs.forEach(doc => uids.add(doc.id));
     } else if (targetType === 'batch' && targetValues.length > 0) {
       // Notify all students in this batch and their parents
-      const batchStudsSnap = await adminDb.collection('users')
-        .where('role', '==', 'student')
-        .get();
-
-      for (const doc of batchStudsSnap.docs) {
-        const data = doc.data();
-        const sBatchId = data.batchId;
-        const sBatchIds = data.batchIds || [];
-        const matchesBatch = targetValues.includes(sBatchId) || sBatchIds.some((b: string) => targetValues.includes(b));
-
-        if (matchesBatch) {
-          uids.add(doc.id);
-          if (data.studentCode) {
-            const pList = findParentUidsInMemory(data.studentCode, data.parentEmail);
-            pList.forEach(pUid => uids.add(pUid));
-          }
-        }
+      const batchChunks: string[][] = [];
+      for (let i = 0; i < targetValues.length; i += 30) {
+        batchChunks.push(targetValues.slice(i, i + 30));
       }
+
+      const studentCodes: string[] = [];
+      const parentEmails: string[] = [];
+
+      const snaps = await Promise.all(
+        batchChunks.flatMap(chunk => [
+          adminDb.collection('users')
+            .where('role', '==', 'student')
+            .where('batchIds', 'array-contains-any', chunk)
+            .get()
+            .catch(() => null),
+          adminDb.collection('users')
+            .where('role', '==', 'student')
+            .where('batchId', 'in', chunk)
+            .get()
+            .catch(() => null)
+        ])
+      );
+
+      snaps.forEach(snap => {
+        if (!snap) return;
+        snap.docs.forEach(doc => {
+          uids.add(doc.id);
+          const data = doc.data();
+          if (data.studentCode) studentCodes.push(data.studentCode);
+          if (data.parentEmail) parentEmails.push(data.parentEmail);
+        });
+      });
+
+      const parentUids = await resolveParentUidsForStudents(studentCodes, parentEmails);
+      parentUids.forEach(pUid => uids.add(pUid));
     } else if (targetType === 'student' && targetValues.length > 0) {
       // Notify specific students and their parents
-      const studSnap = await adminDb.collection('users')
-        .where('role', '==', 'student')
-        .where('studentCode', 'in', targetValues)
-        .get();
-      for (const doc of studSnap.docs) {
-        uids.add(doc.id);
-        const data = doc.data();
-        if (data.studentCode) {
-          const pList = findParentUidsInMemory(data.studentCode, data.parentEmail);
-          pList.forEach(pUid => uids.add(pUid));
-        }
+      const studentChunks: string[][] = [];
+      for (let i = 0; i < targetValues.length; i += 30) {
+        studentChunks.push(targetValues.slice(i, i + 30));
       }
+
+      const studentCodes: string[] = [];
+      const parentEmails: string[] = [];
+
+      const snaps = await Promise.all(
+        studentChunks.map(chunk =>
+          adminDb.collection('users')
+            .where('role', '==', 'student')
+            .where('studentCode', 'in', chunk)
+            .get()
+            .catch(() => null)
+        )
+      );
+
+      snaps.forEach(snap => {
+        if (!snap) return;
+        snap.docs.forEach(doc => {
+          uids.add(doc.id);
+          const data = doc.data();
+          if (data.studentCode) studentCodes.push(data.studentCode);
+          if (data.parentEmail) parentEmails.push(data.parentEmail);
+        });
+      });
+
+      const parentUids = await resolveParentUidsForStudents(studentCodes, parentEmails);
+      parentUids.forEach(pUid => uids.add(pUid));
     } else if (targetType === 'parent' && targetValues.length > 0) {
       // Notify specific parents matching email
-      const parentSnap = await adminDb.collection('users')
-        .where('role', '==', 'parent')
-        .where('email', 'in', targetValues.map(v => v.toLowerCase()))
-        .get();
-      parentSnap.docs.forEach(doc => uids.add(doc.id));
+      const emailChunks: string[][] = [];
+      for (let i = 0; i < targetValues.length; i += 30) {
+        emailChunks.push(targetValues.slice(i, i + 30));
+      }
+
+      const snaps = await Promise.all(
+        emailChunks.map(chunk =>
+          adminDb.collection('users')
+            .where('role', '==', 'parent')
+            .where('email', 'in', chunk.map(v => v.toLowerCase()))
+            .get()
+            .catch(() => null)
+        )
+      );
+
+      snaps.forEach(snap => {
+        if (!snap) return;
+        snap.docs.forEach(doc => uids.add(doc.id));
+      });
     }
 
     const displayTitle = 'YASHCOM';
