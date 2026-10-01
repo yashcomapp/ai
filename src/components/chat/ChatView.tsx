@@ -9,6 +9,14 @@ import { db } from '@/lib/firebase/firestore';
 import { collection, query, orderBy, limit, onSnapshot, doc, deleteDoc } from 'firebase/firestore';
 import { renderMarkdown } from '@/lib/markdown';
 import { getDateKeyIST, formatDateIST, parseDateInput } from '@/lib/dateUtils';
+import dynamic from 'next/dynamic';
+const NewDmModal = dynamic(() => import('@/components/chat/NewDmModal'), { ssr: false });
+const NewGroupModal = dynamic(() => import('@/components/chat/NewGroupModal'), { ssr: false });
+const LinkInputModal = dynamic(() => import('@/components/chat/LinkInputModal'), { ssr: false });
+const ReadReceiptsModal = dynamic(() => import('@/components/chat/ReadReceiptsModal'), { ssr: false });
+const PollCreationModal = dynamic(() => import('@/components/chat/PollCreationModal'), { ssr: false });
+const StarredMessagesModal = dynamic(() => import('@/components/chat/StarredMessagesModal'), { ssr: false });
+const ReactionsModal = dynamic(() => import('@/components/chat/ReactionsModal'), { ssr: false });
 
 interface ChatRoom {
   roomId: string;
@@ -2929,550 +2937,70 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
 
       </div>
 
-      {/* DM Modal Drawer */}
-      {showDmModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '16px' }}>
-          <div style={{ background: 'var(--surface-popover)', border: '1px solid var(--border)', borderRadius: '12px', maxWidth: '480px', width: '100%', maxHeight: '80vh', display: 'flex', flexDirection: 'column', boxShadow: '0 4px 24px rgba(0,0,0,0.3)', color: 'var(--text)' }}>
-            
-            <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: 'var(--text)' }}>💬 Start Private Direct Message</h3>
-              <button style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '1.5rem', color: 'var(--text-muted)', lineHeight: 1 }} onClick={() => setShowDmModal(false)}>×</button>
-            </div>
+      <NewDmModal 
+        showDmModal={showDmModal}
+        setShowDmModal={setShowDmModal}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        filteredStudents={filteredStudents}
+        handleStartDM={handleStartDM}
+      />
 
-            <div style={{ padding: '12px 20px', borderBottom: '1px solid var(--border)' }}>
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search student code or name..."
-                style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: '16px', outline: 'none' }}
-              />
-            </div>
+      <NewGroupModal 
+        showGroupModal={showGroupModal}
+        setShowGroupModal={setShowGroupModal}
+        batchesList={batchesList}
+        selectedBatchId={selectedBatchId}
+        setSelectedBatchId={setSelectedBatchId}
+        groupName={groupName}
+        setGroupName={setGroupName}
+        handleCreateGroup={handleCreateGroup}
+      />
 
-            <div style={{ flex: 1, overflowY: 'auto', padding: '10px' }}>
-              {filteredStudents.length === 0 ? (
-                <div style={{ color: 'var(--text-muted)', fontSize: '13px', padding: '20px', textAlign: 'center' }}>No matches found.</div>
-              ) : (
-                filteredStudents.map(student => (
-                  <div
-                    key={student.studentCode}
-                    onClick={() => handleStartDM(student.studentCode, student.name)}
-                    style={{
-                      padding: '10px 14px',
-                      borderRadius: '8px',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      transition: 'background 0.2s',
-                      marginBottom: '4px'
-                    }}
-                    onMouseEnter={(e) => e.currentTarget.style.background = 'var(--surface-2)'}
-                    onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                  >
-                    <div>
-                      <div style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--text)' }}>{student.name}</div>
-                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>Student</div>
-                    </div>
-                    <span style={{ fontSize: '12px', color: 'var(--accent)', fontWeight: 600 }}>Chat →</span>
-                  </div>
-                ))
-              )}
-            </div>
+      <LinkInputModal 
+        showLinkModal={showLinkModal}
+        setShowLinkModal={setShowLinkModal}
+        linkUrl={linkUrl}
+        setLinkUrl={setLinkUrl}
+        linkLabel={linkLabel}
+        setLinkLabel={setLinkLabel}
+        onInsertLink={(url, display) => {
+          setInputText(prev => prev + ` [${display}](${url}) `);
+        }}
+      />
 
-          </div>
-        </div>
-      )}
+      <ReadReceiptsModal 
+        receiptsModalMessage={receiptsModalMessage}
+        setReceiptsModalMessage={setReceiptsModalMessage}
+        participantNames={participantNames}
+        studentsList={studentsList}
+        firebaseUser={firebaseUser}
+      />
 
-      {/* Group Modal Drawer */}
-      {showGroupModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '16px' }}>
-          <div style={{ background: 'var(--surface-popover)', border: '1px solid var(--border)', borderRadius: '12px', maxWidth: '480px', width: '100%', boxShadow: '0 4px 24px rgba(0,0,0,0.3)', color: 'var(--text)' }}>
-            
-            <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: 'var(--text)' }}>👥 Setup Batch Group Chat</h3>
-              <button style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '1.5rem', color: 'var(--text-muted)', lineHeight: 1 }} onClick={() => setShowGroupModal(false)}>×</button>
-            </div>
+      <PollCreationModal 
+        showPollModal={showPollModal}
+        setShowPollModal={setShowPollModal}
+        pollQuestion={pollQuestion}
+        setPollQuestion={setPollQuestion}
+        pollOptionsInput={pollOptionsInput}
+        setPollOptionsInput={setPollOptionsInput}
+        handleCreatePoll={handleCreatePoll}
+      />
 
-            <form onSubmit={handleCreateGroup} style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)' }}>Select Batch</label>
-                <select
-                  value={selectedBatchId}
-                  onChange={(e) => {
-                    setSelectedBatchId(e.target.value);
-                    const bName = batchesList.find(b => b.id === e.target.value)?.name || '';
-                    setGroupName(`${bName} Chat Group`);
-                  }}
-                  style={{ padding: '8px 10px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: '16px', outline: 'none' }}
-                >
-                  {batchesList.map(b => (
-                    <option key={b.id} value={b.id}>{b.name}</option>
-                  ))}
-                </select>
-              </div>
+      <StarredMessagesModal 
+        showStarredModal={showStarredModal}
+        setShowStarredModal={setShowStarredModal}
+        messages={messages}
+        starredMessageIds={starredMessageIds}
+        toggleStarMessage={toggleStarMessage}
+        scrollToMessage={scrollToMessage}
+      />
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)' }}>Group Name</label>
-                <input
-                  type="text"
-                  required
-                  value={groupName}
-                  onChange={(e) => setGroupName(e.target.value)}
-                  style={{ padding: '8px 10px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: '16px', outline: 'none' }}
-                />
-              </div>
-
-              <button 
-                type="submit" 
-                style={{ 
-                  marginTop: '8px', 
-                  padding: '10px', 
-                  background: 'var(--accent)', 
-                  border: 'none', 
-                  color: 'var(--text-white)', 
-                  fontSize: '13px', 
-                  fontWeight: 600, 
-                  borderRadius: '6px', 
-                  cursor: 'pointer',
-                  boxShadow: '0 2px 8px rgba(79, 70, 229, 0.45)',
-                  transition: 'transform 0.1s'
-                }}
-                onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.98)'}
-                onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1)'}
-              >
-                Create Group Chat
-              </button>
-
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Hyperlink Input Modal */}
-      {showLinkModal && (
-        <div style={{
-          position: 'fixed',
-          inset: 0,
-          background: 'rgba(0, 0, 0, 0.6)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 10000,
-          backdropFilter: 'blur(4px)',
-          padding: '16px'
-        }}>
-          <div style={{
-            background: 'var(--surface-popover)',
-            border: '1px solid var(--border)',
-            borderRadius: '12px',
-            padding: '20px',
-            width: '320px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '12px'
-          }}>
-            <h4 style={{ margin: '0 0 4px 0', fontSize: '14px', fontWeight: 'bold', color: 'var(--text)' }}>🔗 Insert Hyperlink</h4>
-            
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Link Address:</span>
-              <input 
-                type="text"
-                value={linkUrl}
-                onChange={(e) => setLinkUrl(e.target.value)}
-                placeholder="https://example.com"
-                style={{ padding: '8px', fontSize: '16px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', outline: 'none' }}
-              />
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Display Text:</span>
-              <input 
-                type="text"
-                value={linkLabel}
-                onChange={(e) => setLinkLabel(e.target.value)}
-                placeholder="Maharashtra Board Syllabus"
-                style={{ padding: '8px', fontSize: '16px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', outline: 'none' }}
-              />
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '8px' }}>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowLinkModal(false);
-                  setLinkUrl('');
-                  setLinkLabel('');
-                }}
-                style={{ padding: '6px 12px', fontSize: '12px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-muted)', borderRadius: '6px', cursor: 'pointer' }}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  if (!linkUrl) return;
-                  const display = linkLabel.trim() || linkUrl;
-                  setInputText(prev => prev + ` [${display}](${linkUrl}) `);
-                  setShowLinkModal(false);
-                  setLinkUrl('');
-                  setLinkLabel('');
-                }}
-                style={{ padding: '6px 14px', fontSize: '12px', border: 'none', background: 'var(--accent)', color: 'var(--text-white)', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold' }}
-              >
-                Insert Link
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Read Receipts Modal */}
-      {receiptsModalMessage && (
-        <div style={{
-          position: 'fixed',
-          inset: 0,
-          background: 'rgba(0, 0, 0, 0.6)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 10000,
-          backdropFilter: 'blur(4px)',
-          padding: '16px'
-        }}>
-          <div style={{
-            background: 'var(--surface-popover)',
-            border: '1px solid var(--border)',
-            borderRadius: '12px',
-            padding: '20px',
-            width: '340px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '12px',
-            maxHeight: '80%',
-            overflowY: 'auto'
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 'bold', color: 'var(--text)' }}>✔️ Message Info (Read Receipts)</h4>
-              <button 
-                onClick={() => setReceiptsModalMessage(null)}
-                style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', fontSize: '16px', cursor: 'pointer' }}
-              >
-                ×
-              </button>
-            </div>
-            
-            <div style={{ padding: '10px', background: 'var(--surface-2)', borderRadius: '8px', fontSize: '12.5px', border: '1px solid var(--border)' }}>
-              <div style={{ color: 'var(--text-muted)', fontSize: '10px', textTransform: 'uppercase', marginBottom: '4px', fontWeight: 'bold' }}>Message Text</div>
-              <div style={{ wordBreak: 'break-word', color: 'var(--text)' }}>{receiptsModalMessage.text}</div>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '4px' }}>
-              <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 'bold', textTransform: 'uppercase' }}>Read By</span>
-              
-              {(() => {
-                const readBy = receiptsModalMessage.readBy || {};
-                const details: Array<{ name: string; role: string; time: string }> = [];
-                
-                const parseReadReceiptTime = (timeVal: any): string => {
-                  if (!timeVal) return '—';
-                  let dateObj: Date | null = null;
-                  
-                  if (typeof timeVal === 'string') {
-                    dateObj = new Date(timeVal);
-                  } else if (typeof timeVal === 'object') {
-                    if (typeof timeVal.seconds === 'number') {
-                      dateObj = new Date(timeVal.seconds * 1000);
-                    } else {
-                      let currentVal = timeVal;
-                      while (currentVal && typeof currentVal === 'object' && !Array.isArray(currentVal)) {
-                        if (typeof currentVal.seconds === 'number') {
-                          dateObj = new Date(currentVal.seconds * 1000);
-                          break;
-                        }
-                        const keys = Object.keys(currentVal);
-                        if (keys.length === 0) break;
-                        currentVal = currentVal[keys[0]];
-                      }
-                      if (typeof currentVal === 'string') {
-                        dateObj = new Date(currentVal);
-                      }
-                    }
-                  }
-                  
-                  if (!dateObj || isNaN(dateObj.getTime())) {
-                    return '—';
-                  }
-                  
-                  const day = String(dateObj.getDate()).padStart(2, '0');
-                  const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-                  const datePart = `${day}/${month}/${dateObj.getFullYear()}`;
-                  return dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' ' + datePart;
-                };
-
-                Object.entries(readBy).forEach(([uid, timeStr]) => {
-                  if (uid === receiptsModalMessage.senderId) return;
-                  let name = participantNames[uid] || uid;
-                  let role = 'student';
-                  
-                  if (uid.toLowerCase() === 'admin' || uid === firebaseUser?.uid) {
-                    name = participantNames['admin'] || 'Admin';
-                    role = 'admin';
-                  } else if (uid.startsWith('PR-')) {
-                    role = 'parent';
-                    const emailOrId = uid.substring(3).toLowerCase().trim();
-                    let student = studentsList.find((s: any) => s.parentEmail?.toLowerCase().trim() === emailOrId);
-                    if (!student) {
-                      student = studentsList.find((s: any) => s.studentCode === emailOrId);
-                    }
-                    if (student) {
-                      name = `${student.name} (Parent)`;
-                    } else if (name === uid || name.includes('@')) {
-                      name = 'Parent (P)';
-                    }
-                  } else {
-                    const student = studentsList.find((s: any) => s.studentCode === uid);
-                    if (student) {
-                      name = student.name;
-                    } else if (name === uid || name.includes('@') || /^ST-\d{4}-\d+$/i.test(name)) {
-                      name = 'Student';
-                    }
-                  }
-
-                  details.push({
-                    name,
-                    role,
-                    time: parseReadReceiptTime(timeStr)
-                  });
-                });
-
-                if (details.length === 0) {
-                  return <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontStyle: 'italic', textAlign: 'center', padding: '10px 0' }}>No one has read this message yet.</div>;
-                }
-
-                return details.map((reader, index) => (
-                  <div key={index} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: '1px solid var(--border)' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      <span style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text)' }}>{reader.name}</span>
-                      <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{reader.role.toUpperCase()}</span>
-                    </div>
-                    <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{reader.time}</span>
-                  </div>
-                ));
-              })()}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showPollModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '16px' }}>
-          <div style={{ background: 'var(--surface-popover)', border: '1px solid var(--border)', borderRadius: '12px', maxWidth: '400px', width: '100%', boxShadow: '0 4px 24px rgba(0,0,0,0.3)', color: 'var(--text)', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: 'var(--text)' }}>📊 Create Interactive Poll</h3>
-              <button style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '1.5rem', color: 'var(--text-muted)', lineHeight: 1 }} onClick={() => setShowPollModal(false)}>×</button>
-            </div>
-            <form onSubmit={handleCreatePoll} style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)' }}>Poll Question / Title</label>
-                <input
-                  type="text"
-                  required
-                  value={pollQuestion}
-                  onChange={(e) => setPollQuestion(e.target.value)}
-                  placeholder="e.g. Schedule extra revision class?"
-                  style={{ padding: '8px 10px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: '16px', outline: 'none' }}
-                />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)' }}>Options (at least 2)</label>
-                {pollOptionsInput.map((opt, idx) => (
-                  <div key={idx} style={{ display: 'flex', gap: '6px' }}>
-                    <input
-                      type="text"
-                      required={idx < 2}
-                      value={opt}
-                      onChange={(e) => {
-                        const updated = [...pollOptionsInput];
-                        updated[idx] = e.target.value;
-                        setPollOptionsInput(updated);
-                      }}
-                      placeholder={`Option ${idx + 1}`}
-                      style={{ flex: 1, padding: '8px 10px', borderRadius: '6px', border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text)', fontSize: '16px', outline: 'none' }}
-                    />
-                    {pollOptionsInput.length > 2 && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setPollOptionsInput(prev => prev.filter((_, i) => i !== idx));
-                        }}
-                        style={{ background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.4)', color: 'var(--danger)', borderRadius: '6px', padding: '0 8px', cursor: 'pointer' }}
-                      >
-                        ✕
-                      </button>
-                    )}
-                  </div>
-                ))}
-                {pollOptionsInput.length < 5 && (
-                  <button
-                    type="button"
-                    onClick={() => setPollOptionsInput(prev => [...prev, ''])}
-                    style={{ alignSelf: 'flex-start', background: 'transparent', border: 'none', color: 'var(--accent)', fontSize: '11px', fontWeight: 600, cursor: 'pointer', padding: '4px 0' }}
-                  >
-                    + Add Option
-                  </button>
-                )}
-              </div>
-              <button 
-                type="submit" 
-                style={{ 
-                  marginTop: '8px', 
-                  padding: '10px', 
-                  background: 'var(--accent)', 
-                  border: 'none', 
-                  color: 'var(--text-white)', 
-                  fontSize: '13px', 
-                  fontWeight: 600, 
-                  borderRadius: '6px', 
-                  cursor: 'pointer',
-                  boxShadow: '0 2px 8px rgba(79, 70, 229, 0.45)'
-                }}
-              >
-                Send Poll to Chat
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {showStarredModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '16px' }}>
-          <div style={{ background: 'var(--surface-popover)', border: '1px solid var(--border)', borderRadius: '12px', maxWidth: '480px', width: '100%', maxHeight: '85vh', display: 'flex', flexDirection: 'column', boxShadow: '0 4px 24px rgba(0,0,0,0.3)', color: 'var(--text)' }}>
-            <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: 'var(--warning)' }}>★ Starred Messages</h3>
-              <button style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '1.5rem', color: 'var(--text-muted)', lineHeight: 1 }} onClick={() => setShowStarredModal(false)}>×</button>
-            </div>
-            <div style={{ flex: 1, overflowY: 'auto', padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {(() => {
-                const starred = messages.filter(m => starredMessageIds[m.messageId]);
-                if (starred.length === 0) {
-                  return <div style={{ color: 'var(--text-muted)', fontStyle: 'italic', fontSize: '13px', padding: '24px', textAlign: 'center' }}>No messages starred in this room.</div>;
-                }
-                return starred.map(msg => (
-                  <div key={msg.messageId} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '8px', padding: '12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                      <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--accent)' }}>{msg.senderName}</span>
-                      <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{(() => {
-                        const d = new Date(msg.createdAt);
-                        if (isNaN(d.getTime())) return '';
-                        const day = String(d.getDate()).padStart(2, '0');
-                        const month = String(d.getMonth() + 1).padStart(2, '0');
-                        return `${day}/${month}/${d.getFullYear()}`;
-                      })()}</span>
-                    </div>
-                    <div style={{ fontSize: '13px', color: 'var(--text)', wordBreak: 'break-word' }}>
-                      {msg.text}
-                    </div>
-                    <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '6px' }}>
-                      <button
-                        onClick={() => toggleStarMessage(msg.messageId)}
-                        style={{ background: 'transparent', border: 'none', color: 'var(--danger)', fontSize: '11px', cursor: 'pointer' }}
-                      >
-                        Unstar
-                      </button>
-                      <button
-                        onClick={() => {
-                          setShowStarredModal(false);
-                          scrollToMessage(msg.messageId);
-                        }}
-                        style={{ background: 'rgba(99, 102, 241, 0.15)', border: '1px solid rgba(99, 102, 241, 0.4)', borderRadius: '4px', color: 'var(--accent)', fontSize: '11px', padding: '3px 8px', cursor: 'pointer' }}
-                      >
-                        Go to Message →
-                      </button>
-                    </div>
-                  </div>
-                ));
-              })()}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showReactorsModal && showReactorsModal.isOpen && (
-        <div 
-          style={{ 
-            position: 'fixed', 
-            inset: 0, 
-            background: 'rgba(0, 0, 0, 0.6)', 
-            backdropFilter: 'blur(4px)', 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center', 
-            zIndex: 99999, 
-            padding: '16px' 
-          }}
-          onClick={() => setShowReactorsModal(null)}
-        >
-          <div 
-            style={{ 
-              background: 'var(--surface-popover)', 
-              border: '1px solid var(--border)', 
-              borderRadius: '12px', 
-              maxWidth: '360px', 
-              width: '100%', 
-              boxShadow: '0 4px 24px rgba(0,0,0,0.3)', 
-              color: 'var(--text)', 
-              display: 'flex', 
-              flexDirection: 'column' 
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700 }}>Message Reactions</h3>
-              <button 
-                style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '1.5rem', color: 'var(--text-muted)', lineHeight: 1 }} 
-                onClick={() => setShowReactorsModal(null)}
-              >
-                ×
-              </button>
-            </div>
-            <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px', maxHeight: '300px', overflowY: 'auto' }}>
-              {showReactorsModal.thumbsup.length > 0 && (
-                <div>
-                  <h4 style={{ fontSize: '13px', fontWeight: 650, color: 'var(--accent)', margin: '0 0 8px 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    👍 Thumbs Up ({showReactorsModal.thumbsup.length})
-                  </h4>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', paddingLeft: '8px' }}>
-                    {showReactorsModal.thumbsup.map(uid => (
-                      <div key={uid} style={{ fontSize: '13.5px', color: 'var(--text)' }}>
-                        • {participantNames[uid] || uid}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {showReactorsModal.pray.length > 0 && (
-                <div>
-                  <h4 style={{ fontSize: '13px', fontWeight: 650, color: 'var(--warning)', margin: '0 0 8px 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    🙏 Folded Hands ({showReactorsModal.pray.length})
-                  </h4>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', paddingLeft: '8px' }}>
-                    {showReactorsModal.pray.map(uid => (
-                      <div key={uid} style={{ fontSize: '13.5px', color: 'var(--text)' }}>
-                        • {participantNames[uid] || uid}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {showReactorsModal.thumbsup.length === 0 && showReactorsModal.pray.length === 0 && (
-                <div style={{ color: 'var(--text-muted)', fontSize: '13px', textAlign: 'center' }}>No reactions yet.</div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      <ReactionsModal 
+        showReactorsModal={showReactorsModal}
+        setShowReactorsModal={setShowReactorsModal}
+        participantNames={participantNames}
+      />
 
     </div>
   );
