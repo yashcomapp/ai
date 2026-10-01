@@ -1,6 +1,7 @@
 import { adminDb } from '@/lib/firebase/admin';
 import * as admin from 'firebase-admin';
 import { sendPushNotification } from '@/lib/notifications';
+import { ChunkedBatch } from '@/lib/firebase/batch';
 
 export interface ExamNoticeResult {
   success: boolean;
@@ -45,12 +46,12 @@ export async function generateAndDispatchExamNotices(examId: string, bypassTimeC
     const totalMarks = examData.totalMarks || (isSubjective ? 100 : 120);
     const examDateStr = examData.date || new Date().toLocaleDateString('en-GB');
 
-    // 2. Fetch all reviews/attempts, batch assignments, and absence reasons in parallel
-    const [reviewsSnap, assignmentsSnap, studentsSnap, attendanceSnap, absenceReasonsSnap] = await Promise.all([
+    // 2. Fetch reviews/attempts, assignments, and absence reasons in parallel
+    const [reviewsSnap, objAssignSnap, subjAssignSnap, attendanceSnap, absenceReasonsSnap] = await Promise.all([
       adminDb.collection('reviews').where('examId', '==', examId).get(),
       adminDb.collection('batchAssignments').where('examId', '==', examId).get(),
-      adminDb.collection('users').where('role', '==', 'student').get(),
-      adminDb.collection('attendance').get(),
+      adminDb.collection('subjectiveAssignments').where('examId', '==', examId).get(),
+      adminDb.collection('attendance').select('records').get(),
       adminDb.collection('examAbsenceReasons').where('examId', '==', examId).get()
     ]);
 
@@ -63,30 +64,92 @@ export async function generateAndDispatchExamNotices(examId: string, bypassTimeC
       }
     });
 
-    // Map all student codes assigned to this exam
-    const assignedStudentCodes = new Set<string>();
-    const studentMap = new Map<string, any>();
+    // Extract target batches and explicit student codes from exam and assignments
+    const targetBatches = new Set<string>();
+    const explicitStudentCodes = new Set<string>();
 
-    studentsSnap.docs.forEach(doc => {
-      const data = doc.data();
-      if (data.studentCode) {
-        studentMap.set(data.studentCode, { id: doc.id, ...data });
-      }
+    if (examData.batchId) targetBatches.add(examData.batchId);
+    if (Array.isArray(examData.batchIds)) {
+      examData.batchIds.forEach((b: string) => { if (b) targetBatches.add(b); });
+    }
+
+    [...objAssignSnap.docs, ...subjAssignSnap.docs].forEach(doc => {
+      const ba = doc.data();
+      (ba.targetStudents || []).forEach((code: string) => { if (code) explicitStudentCodes.add(code); });
+      (ba.targetBatches || []).forEach((b: string) => { if (b) targetBatches.add(b); });
     });
 
-    assignmentsSnap.docs.forEach(doc => {
-      const ba = doc.data();
-      (ba.targetStudents || []).forEach((code: string) => assignedStudentCodes.add(code));
-      const targetBatches = ba.targetBatches || [];
-      if (targetBatches.length > 0) {
-        studentMap.forEach((student, code) => {
-          const sBatchIds = student.batchIds && student.batchIds.length ? student.batchIds : (student.batchId ? [student.batchId] : []);
-          if (sBatchIds.some((b: string) => targetBatches.includes(b))) {
-            assignedStudentCodes.add(code);
+    reviewsSnap.docs.forEach(doc => {
+      const code = doc.data().studentCode;
+      if (code) explicitStudentCodes.add(code);
+    });
+
+    // Query targeted students only
+    const studentMap = new Map<string, any>();
+    const assignedStudentCodes = new Set<string>();
+
+    const batchChunks: string[][] = [];
+    const batchArr = Array.from(targetBatches);
+    for (let i = 0; i < batchArr.length; i += 30) {
+      batchChunks.push(batchArr.slice(i, i + 30));
+    }
+
+    const studentCodeChunks: string[][] = [];
+    const studentCodeArr = Array.from(explicitStudentCodes);
+    for (let i = 0; i < studentCodeArr.length; i += 30) {
+      studentCodeChunks.push(studentCodeArr.slice(i, i + 30));
+    }
+
+    const studentQueries: Promise<any>[] = [];
+
+    batchChunks.forEach(chunk => {
+      studentQueries.push(
+        adminDb.collection('users')
+          .where('role', '==', 'student')
+          .where('batchIds', 'array-contains-any', chunk)
+          .get()
+          .catch(() => null),
+        adminDb.collection('users')
+          .where('role', '==', 'student')
+          .where('batchId', 'in', chunk)
+          .get()
+          .catch(() => null)
+      );
+    });
+
+    studentCodeChunks.forEach(chunk => {
+      studentQueries.push(
+        adminDb.collection('users')
+          .where('role', '==', 'student')
+          .where('studentCode', 'in', chunk)
+          .get()
+          .catch(() => null)
+      );
+    });
+
+    if (studentQueries.length === 0) {
+      // Fallback: active students
+      const fallbackSnap = await adminDb.collection('users').where('role', '==', 'student').get();
+      fallbackSnap.docs.forEach(doc => {
+        const data = doc.data();
+        if (data.studentCode) {
+          studentMap.set(data.studentCode, { id: doc.id, ...data });
+          assignedStudentCodes.add(data.studentCode);
+        }
+      });
+    } else {
+      const studentSnaps = await Promise.all(studentQueries);
+      studentSnaps.forEach(snap => {
+        if (!snap) return;
+        snap.docs.forEach((doc: any) => {
+          const data = doc.data();
+          if (data.studentCode) {
+            studentMap.set(data.studentCode, { id: doc.id, ...data });
+            assignedStudentCodes.add(data.studentCode);
           }
         });
-      }
-    });
+      });
+    }
 
     // 3. Process submitted reviews & compute ranks, average marks, and topper time
     const attempts: any[] = [];
@@ -139,7 +202,7 @@ export async function generateAndDispatchExamNotices(examId: string, bypassTimeC
 
     // Batch writer for notices
     const nowISO = new Date().toISOString();
-    const batchWriter = adminDb.batch();
+    const batchWriter = new ChunkedBatch(adminDb);
     let sentCount = 0;
 
     // 5. Generate Personalized Notices for each assigned student
