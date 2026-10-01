@@ -38,19 +38,35 @@ export async function GET(req: NextRequest) {
 
     if (studentCodes.length > 0) {
       try {
-        const usersSnap = await adminDb.collection('users').where('role', '==', 'student').get();
-        usersSnap.docs.forEach(doc => {
-          const u = doc.data();
-          const code = (u.studentCode || '').toUpperCase();
-          if (code) {
-            const cNum = u.classNum || u.class || '';
-            const cName = cNum ? `Class ${cNum}` : (u.className || u.batchName || '');
-            usersMap.set(code, {
-              className: cName,
-              classNum: String(cNum),
-              name: u.name || 'Student'
-            });
-          }
+        const chunkSize = 30;
+        const chunks: string[][] = [];
+        for (let i = 0; i < studentCodes.length; i += chunkSize) {
+          chunks.push(studentCodes.slice(i, i + chunkSize));
+        }
+
+        const userSnaps = await Promise.all(
+          chunks.map(chunk =>
+            adminDb.collection('users')
+              .where('role', '==', 'student')
+              .where('studentCode', 'in', chunk)
+              .get()
+          )
+        );
+
+        userSnaps.forEach(snap => {
+          snap.docs.forEach(doc => {
+            const u = doc.data();
+            const code = (u.studentCode || '').toUpperCase();
+            if (code) {
+              const cNum = u.classNum || u.class || '';
+              const cName = cNum ? `Class ${cNum}` : (u.className || u.batchName || '');
+              usersMap.set(code, {
+                className: cName,
+                classNum: String(cNum),
+                name: u.name || 'Student'
+              });
+            }
+          });
         });
       } catch (err) {
         console.warn('Failed to hydrate student profiles for disputes:', err);

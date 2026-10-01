@@ -4,6 +4,57 @@ import { verifyRole } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
+async function fetchTargetedParents(studentCodes: string[], parentEmails: string[] = []): Promise<FirebaseFirestore.DocumentSnapshot[]> {
+  const cleanCodes = Array.from(new Set(studentCodes.map(c => (c || '').trim()).filter(Boolean)));
+  const cleanEmails = Array.from(new Set(parentEmails.map(e => (e || '').trim().toLowerCase()).filter(Boolean)));
+
+  const codeChunks: string[][] = [];
+  for (let i = 0; i < cleanCodes.length; i += 30) {
+    codeChunks.push(cleanCodes.slice(i, i + 30));
+  }
+
+  const emailChunks: string[][] = [];
+  for (let i = 0; i < cleanEmails.length; i += 30) {
+    emailChunks.push(cleanEmails.slice(i, i + 30));
+  }
+
+  const queries: Promise<any>[] = [];
+
+  codeChunks.forEach(chunk => {
+    queries.push(
+      adminDb.collection('users')
+        .where('role', '==', 'parent')
+        .where('studentCodes', 'array-contains-any', chunk)
+        .get()
+        .catch(() => null),
+      adminDb.collection('users')
+        .where('role', '==', 'parent')
+        .where('studentCode', 'in', chunk)
+        .get()
+        .catch(() => null)
+    );
+  });
+
+  emailChunks.forEach(chunk => {
+    queries.push(
+      adminDb.collection('users')
+        .where('role', '==', 'parent')
+        .where('email', 'in', chunk)
+        .get()
+        .catch(() => null)
+    );
+  });
+
+  const snaps = await Promise.all(queries);
+  const parentMap = new Map<string, FirebaseFirestore.DocumentSnapshot>();
+  snaps.forEach(snap => {
+    if (!snap) return;
+    snap.docs.forEach((d: any) => parentMap.set(d.id, d));
+  });
+
+  return Array.from(parentMap.values());
+}
+
 export async function GET(req: NextRequest) {
   try {
     const adminUser = await verifyRole(req, 'admin');
@@ -26,13 +77,147 @@ export async function GET(req: NextRequest) {
     const targetType = noticeData.targetType || 'all';
     const targetValues = noticeData.targetValues || [];
 
-    // 2. Fetch all student profiles, parent profiles, batches, and seen logs
-    const [studentsSnap, parentsSnap, batchesSnap, seenLogsSnap] = await Promise.all([
-      adminDb.collection('users').where('role', '==', 'student').get(),
-      adminDb.collection('users').where('role', '==', 'parent').get(),
+    // 2. Fetch batches, seen logs, and targeted student & parent profiles
+    const [batchesSnap, seenLogsSnap] = await Promise.all([
       adminDb.collection('batches').get(),
       adminDb.collection('noticeSeenLogs').where('noticeId', '==', noticeId).get()
     ]);
+
+    let studentDocs: FirebaseFirestore.DocumentSnapshot[] = [];
+    let parentDocs: FirebaseFirestore.DocumentSnapshot[] = [];
+
+    if (targetType === 'batch' && targetValues.length > 0) {
+      const batchChunks: string[][] = [];
+      for (let i = 0; i < targetValues.length; i += 30) {
+        batchChunks.push(targetValues.slice(i, i + 30));
+      }
+
+      const studSnaps = await Promise.all(
+        batchChunks.flatMap(chunk => [
+          adminDb.collection('users')
+            .where('role', '==', 'student')
+            .where('batchIds', 'array-contains-any', chunk)
+            .get()
+            .catch(() => null),
+          adminDb.collection('users')
+            .where('role', '==', 'student')
+            .where('batchId', 'in', chunk)
+            .get()
+            .catch(() => null)
+        ])
+      );
+
+      const studMap = new Map<string, FirebaseFirestore.DocumentSnapshot>();
+      studSnaps.forEach(s => {
+        if (!s) return;
+        s.docs.forEach(d => studMap.set(d.id, d));
+      });
+      studentDocs = Array.from(studMap.values());
+
+      const studentCodes: string[] = [];
+      const parentEmails: string[] = [];
+      studentDocs.forEach(d => {
+        const data = d.data();
+        if (data?.studentCode) studentCodes.push(data.studentCode);
+        if (data?.parentEmail) parentEmails.push(data.parentEmail);
+      });
+
+      parentDocs = await fetchTargetedParents(studentCodes, parentEmails);
+    } else if (targetType === 'student' && targetValues.length > 0) {
+      const codeChunks: string[][] = [];
+      for (let i = 0; i < targetValues.length; i += 30) {
+        codeChunks.push(targetValues.slice(i, i + 30));
+      }
+
+      const studSnaps = await Promise.all(
+        codeChunks.map(chunk =>
+          adminDb.collection('users')
+            .where('role', '==', 'student')
+            .where('studentCode', 'in', chunk)
+            .get()
+            .catch(() => null)
+        )
+      );
+
+      const studMap = new Map<string, FirebaseFirestore.DocumentSnapshot>();
+      studSnaps.forEach(s => {
+        if (!s) return;
+        s.docs.forEach(d => studMap.set(d.id, d));
+      });
+      studentDocs = Array.from(studMap.values());
+
+      const studentCodes: string[] = [];
+      const parentEmails: string[] = [];
+      studentDocs.forEach(d => {
+        const data = d.data();
+        if (data?.studentCode) studentCodes.push(data.studentCode);
+        if (data?.parentEmail) parentEmails.push(data.parentEmail);
+      });
+
+      parentDocs = await fetchTargetedParents(studentCodes, parentEmails);
+    } else if (targetType === 'parent' && targetValues.length > 0) {
+      const emailChunks: string[][] = [];
+      for (let i = 0; i < targetValues.length; i += 30) {
+        emailChunks.push(targetValues.slice(i, i + 30));
+      }
+
+      const pSnaps = await Promise.all(
+        emailChunks.map(chunk =>
+          adminDb.collection('users')
+            .where('role', '==', 'parent')
+            .where('email', 'in', chunk.map(e => e.toLowerCase().trim()))
+            .get()
+            .catch(() => null)
+        )
+      );
+
+      const pMap = new Map<string, FirebaseFirestore.DocumentSnapshot>();
+      pSnaps.forEach(s => {
+        if (!s) return;
+        s.docs.forEach(d => pMap.set(d.id, d));
+      });
+      parentDocs = Array.from(pMap.values());
+
+      const studentCodes = new Set<string>();
+      parentDocs.forEach(d => {
+        const pd = d.data();
+        if (pd?.studentCode) studentCodes.add(pd.studentCode);
+        if (Array.isArray(pd?.studentCodes)) {
+          pd.studentCodes.forEach((c: string) => { if (c) studentCodes.add(c); });
+        }
+      });
+
+      const studCodeArr = Array.from(studentCodes);
+      const codeChunks: string[][] = [];
+      for (let i = 0; i < studCodeArr.length; i += 30) {
+        codeChunks.push(studCodeArr.slice(i, i + 30));
+      }
+
+      const studSnaps = await Promise.all(
+        codeChunks.map(chunk =>
+          adminDb.collection('users')
+            .where('role', '==', 'student')
+            .where('studentCode', 'in', chunk)
+            .get()
+            .catch(() => null)
+        )
+      );
+
+      const studMap = new Map<string, FirebaseFirestore.DocumentSnapshot>();
+      studSnaps.forEach(s => {
+        if (!s) return;
+        s.docs.forEach(d => studMap.set(d.id, d));
+      });
+      studentDocs = Array.from(studMap.values());
+    } else {
+      // Fallback for targetType === 'all' or empty target
+      const [allStudentsSnap, allParentsSnap] = await Promise.all([
+        adminDb.collection('users').where('role', '==', 'student').get(),
+        adminDb.collection('users').where('role', '==', 'parent').get()
+      ]);
+      studentDocs = allStudentsSnap.docs;
+      parentDocs = allParentsSnap.docs;
+    }
 
     // Map batches for name resolution
     const batchesMap = new Map<string, string>();
@@ -42,9 +227,9 @@ export async function GET(req: NextRequest) {
 
     // Map parent emails to push status
     const parentsMapByEmail = new Map<string, boolean>();
-    parentsSnap.docs.forEach(doc => {
-      const d = doc.data();
-      if (d.email) {
+    parentDocs.forEach(doc => {
+      const d = doc.data() as any;
+      if (d?.email) {
         parentsMapByEmail.set(d.email.toLowerCase().trim(), Array.isArray(d.fcmTokens) && d.fcmTokens.length > 0);
       }
     });
@@ -66,8 +251,8 @@ export async function GET(req: NextRequest) {
     const targetStudents: any[] = [];
     const targetParents: any[] = [];
 
-    const studentsList = studentsSnap.docs.map(doc => {
-      const d = doc.data();
+    const studentsList = studentDocs.map(doc => {
+      const d = doc.data() as any;
       return {
         uid: doc.id,
         studentCode: d.studentCode || '',
@@ -83,8 +268,8 @@ export async function GET(req: NextRequest) {
     }).filter(s => s.status !== 'inactive');
 
     const parentDetailsMap = new Map<string, { studentNames: string[], autonomous: boolean, studentCodes: string[] }>();
-    parentsSnap.docs.forEach(doc => {
-      const d = doc.data();
+    parentDocs.forEach(doc => {
+      const d = doc.data() as any;
       const pEmail = d.email?.toLowerCase().trim();
       if (!pEmail) return;
 
@@ -118,8 +303,8 @@ export async function GET(req: NextRequest) {
       studentsList.forEach(s => {
         targetStudents.push(s);
       });
-      parentsSnap.docs.forEach(pDoc => {
-        const pd = pDoc.data();
+      parentDocs.forEach(pDoc => {
+        const pd = pDoc.data() as any;
         const pEmail = pd.email?.toLowerCase().trim();
         if (pEmail) {
           const details = getParentDetails(pEmail);
@@ -141,8 +326,8 @@ export async function GET(req: NextRequest) {
           targetStudents.push(s);
         }
       });
-      parentsSnap.docs.forEach(pDoc => {
-        const pd = pDoc.data();
+      parentDocs.forEach(pDoc => {
+        const pd = pDoc.data() as any;
         const pEmail = pd.email?.toLowerCase().trim();
         if (pEmail) {
           const details = getParentDetails(pEmail);
@@ -169,8 +354,8 @@ export async function GET(req: NextRequest) {
           targetStudents.push(s);
         }
       });
-      parentsSnap.docs.forEach(pDoc => {
-        const pd = pDoc.data();
+      parentDocs.forEach(pDoc => {
+        const pd = pDoc.data() as any;
         const pEmail = pd.email?.toLowerCase().trim();
         if (pEmail) {
           const details = getParentDetails(pEmail);
