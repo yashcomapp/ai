@@ -7,6 +7,7 @@ import { useMathRender } from '@/hooks/useMathRender';
 import { preprocessMathText, robustParseAIJson, validateQuestion } from '@/lib/questionTypes';
 import { highlightModelAnswerKeywords } from '@/lib/pdfExport';
 import { toISTDateTimeLocalInput, getDateKeyIST } from '@/lib/dateUtils';
+import { fetchCachedSyllabusSubject } from '@/hooks/useAdminReferenceData';
 import InPlaceAiGenerator from '@/components/admin/classroom-test/InPlaceAiGenerator';
 import dynamic from 'next/dynamic';
 const ScheduledSuitesManagerModal = dynamic(() => import('@/components/admin/classroom-test/ScheduledSuitesManagerModal'), { ssr: false });
@@ -220,18 +221,14 @@ export default function AdminClassroomTestPage() {
         return;
       }
       try {
-        const idToken = await firebaseUser.getIdToken();
         const allChapters: any[] = [];
         
         await Promise.all(selectedSubjects.map(async (subj) => {
           const docId = syllabusSubjects[selectedBoard]?.[selectedClass]?.[subj]?.docId;
           if (!docId) return;
           
-          const res = await fetch(`/api/admin/syllabus?subjectId=${docId}`, {
-            headers: { 'Authorization': `Bearer ${idToken}` }
-          });
-          if (res.ok) {
-            const data = await res.json();
+          const data = await fetchCachedSyllabusSubject(docId, firebaseUser);
+          if (data) {
             const list = data.chapters || [];
             list.forEach((ch: any) => {
               allChapters.push({

@@ -105,10 +105,28 @@ export function useAdminSyllabus(options?: { enabled?: boolean; subjectId?: stri
   };
 }
 
+const SYLLABUS_SUBJECT_CLIENT_CACHE = new Map<string, { data: any; timestamp: number }>();
+
+export async function fetchCachedSyllabusSubject(subjectId: string, firebaseUser: any) {
+  if (!subjectId || !firebaseUser) return null;
+  const cached = SYLLABUS_SUBJECT_CLIENT_CACHE.get(subjectId);
+  if (cached && Date.now() - cached.timestamp < 120000) {
+    return cached.data;
+  }
+  const data = await fetchWithToken(`/api/admin/syllabus?subjectId=${encodeURIComponent(subjectId)}`, firebaseUser);
+  if (data) {
+    SYLLABUS_SUBJECT_CLIENT_CACHE.set(subjectId, { data, timestamp: Date.now() });
+  }
+  return data;
+}
+
 /**
  * Invalidate all admin reference caches after a mutation
  */
 export function invalidateAdminReferenceData(target?: 'batches' | 'students' | 'syllabus' | 'all') {
+  if (!target || target === 'all' || target === 'syllabus') {
+    SYLLABUS_SUBJECT_CLIENT_CACHE.clear();
+  }
   if (!target || target === 'all') {
     globalMutate((key: any) => typeof key === 'string' && key.startsWith('/api/admin/batches'));
     globalMutate((key: any) => typeof key === 'string' && key.startsWith('/api/admin/students'));

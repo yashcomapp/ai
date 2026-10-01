@@ -6,8 +6,6 @@ import { t } from '@/lib/i18n';
 import { useRouter } from 'next/navigation';
 import useSWR from 'swr';
 import { fetchWithToken } from '@/lib/swrFetcher';
-import { collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
-import { db } from '@/lib/firebase/firestore';
 import TopBarTimeTracker from '@/components/TopBarTimeTracker';
 import { 
   TrendingUp, 
