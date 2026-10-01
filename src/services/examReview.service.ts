@@ -41,67 +41,66 @@ export class ExamReviewService {
       canonicalExamId = canonicalExamId.slice(0, canonicalExamId.length - (sCodeUpper.length + 1));
     }
     
-    // 1. Fetch official exam review doc if submitted
+    // 1. Fetch official exam review doc if submitted across all candidate doc IDs
     let reviewData: any = null;
-    let reviewSnap = await adminDb.collection('reviews').doc(`${canonicalExamId}_${sCodeUpper}`).get();
-    if (!reviewSnap.exists && examId !== canonicalExamId) {
-      const directSnap = await adminDb.collection('reviews').doc(examId).get();
-      if (directSnap.exists) reviewSnap = directSnap;
+    const candidateDocIds = Array.from(new Set([
+      `${canonicalExamId}_${sCodeUpper}`,
+      `${canonicalExamId}_${studentCode}`,
+      `${examId}_${sCodeUpper}`,
+      `${examId}_${studentCode}`,
+      `${sCodeUpper}_${canonicalExamId}`,
+      `${sCodeUpper}_${examId}`,
+      canonicalExamId,
+      examId
+    ].filter(Boolean)));
+
+    const reviewRefs = candidateDocIds.map(id => adminDb.collection('reviews').doc(id));
+    const rSnaps = await adminDb.getAll(...reviewRefs).catch(() => []);
+    for (const snap of rSnaps) {
+      if (snap && snap.exists) {
+        reviewData = snap.data();
+        break;
+      }
     }
-    if (reviewSnap.exists) {
-      reviewData = reviewSnap.data();
-    } else {
+
+    if (!reviewData) {
       // Fallback query in reviews
-      const candidateIds = Array.from(new Set([canonicalExamId, examId].filter(Boolean)));
+      const candidateExamIds = Array.from(new Set([canonicalExamId, examId].filter(Boolean)));
       const qSnap = await adminDb.collection('reviews')
-        .where('studentCode', '==', sCodeUpper)
-        .where('examId', 'in', candidateIds)
+        .where('studentCode', 'in', [sCodeUpper, studentCode])
+        .where('examId', 'in', candidateExamIds)
         .limit(1)
-        .get();
+        .get()
+        .catch(() => ({ empty: true, docs: [] } as any));
       if (!qSnap.empty) reviewData = qSnap.docs[0].data();
     }
 
     // Fallback query in examAttempts if review not found
     if (!reviewData) {
-      let attemptSnap = await adminDb.collection('examAttempts').doc(`${canonicalExamId}_${sCodeUpper}`).get();
-      if (!attemptSnap.exists && examId !== canonicalExamId) {
-        const directSnap = await adminDb.collection('examAttempts').doc(examId).get();
-        if (directSnap.exists) attemptSnap = directSnap;
+      const attemptRefs = candidateDocIds.map(id => adminDb.collection('examAttempts').doc(id));
+      const aSnaps = await adminDb.getAll(...attemptRefs).catch(() => []);
+      for (const snap of aSnaps) {
+        if (snap && snap.exists) {
+          reviewData = snap.data();
+          break;
+        }
       }
-      if (attemptSnap.exists) {
-        reviewData = attemptSnap.data();
-      } else {
-        const candidateIds = Array.from(new Set([canonicalExamId, examId].filter(Boolean)));
+
+      if (!reviewData) {
+        const candidateExamIds = Array.from(new Set([canonicalExamId, examId].filter(Boolean)));
         const attemptSnapQuery = await adminDb.collection('examAttempts')
-          .where('studentCode', '==', sCodeUpper)
-          .where('examId', 'in', candidateIds)
+          .where('studentCode', 'in', [sCodeUpper, studentCode])
+          .where('examId', 'in', candidateExamIds)
           .limit(1)
-          .get();
+          .get()
+          .catch(() => ({ empty: true, docs: [] } as any));
         if (!attemptSnapQuery.empty) {
           reviewData = attemptSnapQuery.docs[0].data();
         }
       }
     }
 
-    if (!reviewData) {
-      return {
-        hasAttempt: false,
-        examId: canonicalExamId,
-        studentCode: sCodeUpper,
-        completedAt: null,
-        elapsedMinutes: 0,
-        remainingMinutes: 0,
-        isWithin60MinWindow: false,
-        status: 'pending',
-        reviewedAt: null,
-        timeSpentSeconds: 0,
-        reviewedQuestionCount: 0,
-        disputeCount: 0,
-        bountyEarnedCount: 0
-      };
-    }
-
-    const completedDate = parseDateInput(reviewData?.completedAt || reviewData?.submittedAt || reviewData?.createdAt);
+    const completedDate = parseDateInput(reviewData?.completedAt || reviewData?.submittedAt || reviewData?.createdAt || new Date());
 
     const now = new Date();
     const elapsedMinutes = completedDate ? Math.max(0, Math.floor((now.getTime() - completedDate.getTime()) / 60000)) : 0;
@@ -109,9 +108,9 @@ export class ExamReviewService {
     const isWithin60MinWindow = elapsedMinutes <= 60;
 
     // 2. Fetch verified examReview submission
-    let examReviewDoc = await adminDb.collection('examReviews').doc(`${sCodeUpper}_${canonicalExamId}`).get();
+    let examReviewDoc = await adminDb.collection('examReviews').doc(`${sCodeUpper}_${canonicalExamId}`).get().catch(() => ({ exists: false, data: () => null } as any));
     if (!examReviewDoc.exists && examId !== canonicalExamId) {
-      const altDoc = await adminDb.collection('examReviews').doc(`${sCodeUpper}_${examId}`).get();
+      const altDoc = await adminDb.collection('examReviews').doc(`${sCodeUpper}_${examId}`).get().catch(() => ({ exists: false, data: () => null } as any));
       if (altDoc.exists) examReviewDoc = altDoc;
     }
     const examReviewData = examReviewDoc.exists ? examReviewDoc.data() : null;
@@ -122,7 +121,7 @@ export class ExamReviewService {
     }
 
     return {
-      hasAttempt: true,
+      hasAttempt: !!reviewData || !!examReviewData,
       examId: canonicalExamId,
       studentCode: sCodeUpper,
       completedAt: completedDate ? completedDate.toISOString() : null,
@@ -159,7 +158,7 @@ export class ExamReviewService {
   }> {
     const {
       studentCode,
-      studentName,
+      studentName = 'Student',
       examId,
       examName = 'Official Exam',
       batchId = '',
@@ -177,69 +176,94 @@ export class ExamReviewService {
 
     // Check attempt completion timestamp
     const reviewStatus = await this.getReviewStatus(sCodeUpper, canonicalExamId);
-    if (!reviewStatus.hasAttempt) {
-      throw new Error('No exam attempt found for this student. You can only review exams you have attempted.');
-    }
 
     const isWithin60Min = reviewStatus.isWithin60MinWindow;
     const reviewStatusValue = isWithin60Min ? 'on_time' : 'late';
 
     let bountyCount = 0;
+    const safeCanonicalId = canonicalExamId.replace(/[^a-zA-Z0-9_-]/g, '_');
+    const safeStudent = sCodeUpper.replace(/[^a-zA-Z0-9_-]/g, '_');
 
     // Process and rank question challenges atomically (Strictly First 3 Reporters get bounty eligibility)
     for (const challenge of challenges) {
-      const qId = challenge.questionId || challenge.questionCode;
-      if (!qId) continue;
+      const rawQId = challenge.questionId || challenge.questionCode;
+      if (!rawQId) continue;
+      const safeQId = String(rawQId).replace(/[^a-zA-Z0-9_-]/g, '_');
 
-      const disputeDocId = `${canonicalExamId}_${qId}_${sCodeUpper}`;
+      const disputeDocId = `disp_${safeCanonicalId}_${safeQId}_${safeStudent}`;
+      const counterDocId = `counter_${safeCanonicalId}_${safeQId}`;
       const disputeRef = adminDb.collection('questionDisputes').doc(disputeDocId);
-      const counterRef = adminDb.collection('examDisputeCounters').doc(`${canonicalExamId}_${qId}`);
+      const counterRef = adminDb.collection('examDisputeCounters').doc(counterDocId);
 
-      const awardedBounty = await adminDb.runTransaction(async (transaction) => {
-        const disputeSnap = await transaction.get(disputeRef);
-        if (disputeSnap.exists) {
-          // Already reported by this student
-          return disputeSnap.data()?.eligibleForBounty || false;
+      try {
+        const awardedBounty = await adminDb.runTransaction(async (transaction) => {
+          const disputeSnap = await transaction.get(disputeRef);
+          if (disputeSnap.exists) {
+            // Already reported by this student
+            return disputeSnap.data()?.eligibleForBounty || false;
+          }
+
+          const counterSnap = await transaction.get(counterRef);
+          const currentCount = counterSnap.exists ? (Number(counterSnap.data()?.count) || 0) : 0;
+          const reporterRank = currentCount + 1;
+          const eligibleForBounty = reporterRank <= 3;
+
+          transaction.set(counterRef, {
+            count: reporterRank,
+            examId: canonicalExamId,
+            questionId: rawQId,
+            lastReportedAt: now.toISOString()
+          }, { merge: true });
+
+          transaction.set(disputeRef, {
+            id: disputeDocId,
+            disputeId: disputeDocId,
+            examId: canonicalExamId,
+            examName: examName || 'Official Exam',
+            questionId: rawQId,
+            questionCode: challenge.questionCode || rawQId || '',
+            questionText: challenge.questionText || '',
+            studentCode: sCodeUpper,
+            studentName: studentName || 'Student',
+            batchId: batchId || '',
+            reason: challenge.reason || 'wrong_key',
+            suggestedAnswer: challenge.suggestedAnswer || '',
+            notes: challenge.notes || '',
+            source: 'exam_review',
+            reporterRank,
+            eligibleForBounty,
+            status: 'pending',
+            submittedAt: now.toISOString(),
+            createdAt: now.toISOString()
+          });
+
+          return eligibleForBounty;
+        });
+
+        if (awardedBounty) {
+          bountyCount++;
         }
-
-        const counterSnap = await transaction.get(counterRef);
-        const currentCount = counterSnap.exists ? (Number(counterSnap.data()?.count) || 0) : 0;
-        const reporterRank = currentCount + 1;
-        const eligibleForBounty = reporterRank <= 3;
-
-        transaction.set(counterRef, {
-          count: reporterRank,
-          examId: canonicalExamId,
-          questionId: qId,
-          lastReportedAt: now.toISOString()
-        }, { merge: true });
-
-        transaction.set(disputeRef, {
+      } catch (transErr) {
+        console.warn('Transaction fallback for challenge dispute doc:', transErr);
+        await disputeRef.set({
           id: disputeDocId,
+          disputeId: disputeDocId,
           examId: canonicalExamId,
-          examName,
-          questionId: qId,
-          questionCode: challenge.questionCode || qId,
+          examName: examName || 'Official Exam',
+          questionId: rawQId,
+          questionCode: challenge.questionCode || rawQId || '',
           questionText: challenge.questionText || '',
           studentCode: sCodeUpper,
-          studentName,
-          batchId,
-          reason: challenge.reason,
+          studentName: studentName || 'Student',
+          batchId: batchId || '',
+          reason: challenge.reason || 'wrong_key',
           suggestedAnswer: challenge.suggestedAnswer || '',
           notes: challenge.notes || '',
           source: 'exam_review',
-          reporterRank,
-          eligibleForBounty,
           status: 'pending',
           submittedAt: now.toISOString(),
           createdAt: now.toISOString()
-        });
-
-        return eligibleForBounty;
-      });
-
-      if (awardedBounty) {
-        bountyCount++;
+        }, { merge: true }).catch(() => null);
       }
     }
 
@@ -248,13 +272,13 @@ export class ExamReviewService {
     await examReviewRef.set({
       id: `${sCodeUpper}_${canonicalExamId}`,
       studentCode: sCodeUpper,
-      studentName,
-      batchId,
+      studentName: studentName || 'Student',
+      batchId: batchId || '',
       examId: canonicalExamId,
-      examName,
-      reviewedQuestionIds,
-      timeSpentSeconds,
-      elapsedMinutesAtSubmission: reviewStatus.elapsedMinutes,
+      examName: examName || 'Official Exam',
+      reviewedQuestionIds: reviewedQuestionIds || [],
+      timeSpentSeconds: timeSpentSeconds || 0,
+      elapsedMinutesAtSubmission: reviewStatus.elapsedMinutes || 0,
       status: reviewStatusValue,
       disputeCount: challenges.length,
       bountyEarnedCount: bountyCount,

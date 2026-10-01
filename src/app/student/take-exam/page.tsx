@@ -123,6 +123,29 @@ function TakeExamContent() {
   const [reviewedQuestions, setReviewedQuestions] = useState<Set<number>>(new Set());
   const [selectedReasons, setSelectedReasons] = useState<{[key: number]: string}>({});
   const [reviewScores, setReviewScores] = useState<{ score: number, totalMarks: number, percentage: number } | null>(null);
+  const [reviewSecondsRemaining, setReviewSecondsRemaining] = useState(0);
+
+  useEffect(() => {
+    if (!reviewModalOpen) {
+      setReviewSecondsRemaining(0);
+      return;
+    }
+    const totalMistakes = wrongAnswers.length + unattemptedQuestions.length;
+    const targetSeconds = Math.min(45, Math.max(10, totalMistakes * 6));
+    setReviewSecondsRemaining(targetSeconds);
+
+    const timer = setInterval(() => {
+      setReviewSecondsRemaining(prev => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [reviewModalOpen, wrongAnswers.length, unattemptedQuestions.length]);
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
   const [showResultModal, setShowResultModal] = useState(false);
   const [activeViolationWarning, setActiveViolationWarning] = useState<string | null>(null);
@@ -1931,31 +1954,15 @@ function TakeExamContent() {
                       : `Reviewed: ${reviewedCount}/${totalToReview} completed. Click "I Understand" for each question above.`
                     }
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', flexWrap: 'wrap' }}>
-                    {!isAllReviewed && totalToReview > 0 && (
-                      <button
-                        type="button"
-                        className="btn btn-secondary"
-                        onClick={() => {
-                          const updatedReasons = { ...selectedReasons };
-                          const allIndices = new Set<number>();
-                          questionsToReview.forEach(q => {
-                            allIndices.add(q.globalIdx);
-                            if (!updatedReasons[q.globalIdx]) {
-                              updatedReasons[q.globalIdx] = 'Concept';
-                            }
-                          });
-                          setSelectedReasons(updatedReasons);
-                          setReviewedQuestions(allIndices);
-                        }}
-                        style={{ padding: '10px 18px', fontSize: '12px', fontWeight: 600 }}
-                      >
-                        ✓ Mark All As Understood
-                      </button>
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
+                    {reviewSecondsRemaining > 0 && (
+                      <span style={{ fontSize: '11px', color: 'var(--warning)', fontWeight: 700, padding: '4px 8px', background: 'var(--warning-bg)', borderRadius: '4px', border: '1px solid var(--warning-border)' }}>
+                        ⏳ Please carefully review solutions ({reviewSecondsRemaining}s remaining)
+                      </span>
                     )}
                     <button 
                       className="btn btn-primary" 
-                      disabled={!isAllReviewed || reviewSubmitting} 
+                      disabled={!isAllReviewed || reviewSecondsRemaining > 0 || reviewSubmitting} 
                       onClick={async () => {
                         setReviewSubmitting(true);
                         try {
@@ -1993,7 +2000,12 @@ function TakeExamContent() {
                       }}
                       style={{ padding: '10px 24px' }}
                     >
-                      {reviewSubmitting ? 'Submitting...' : '🚀 Final Submit to Parents'}
+                      {reviewSubmitting 
+                        ? 'Submitting...' 
+                        : reviewSecondsRemaining > 0
+                          ? `⏳ Reading & Reflection (${reviewSecondsRemaining}s)`
+                          : '🚀 Final Submit to Parents'
+                      }
                     </button>
                   </div>
                 </div>

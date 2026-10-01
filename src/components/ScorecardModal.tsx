@@ -84,7 +84,7 @@ interface ScorecardModalProps {
 
 export default function ScorecardModal({ scorecard, loading, onClose, actionButton }: ScorecardModalProps) {
   const { user, firebaseUser } = useAuth();
-  const [questionFilterTab, setQuestionFilterTab] = useState<'all' | 'correct' | 'incorrect' | 'unanswered'>('all');
+  const [questionFilterTab, setQuestionFilterTab] = useState<'all' | 'needs_review' | 'correct' | 'incorrect' | 'unanswered'>('needs_review');
 
   // Interactive Review & 60-Minute Accountability State
   const isOfficialExam = scorecard?.examType !== 'practice' && scorecard?.examType !== 'entrance';
@@ -102,6 +102,35 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
   const [challengeReason, setChallengeReason] = useState<string>('wrong_key');
   const [challengeSuggestedAnswer, setChallengeSuggestedAnswer] = useState<string>('B');
   const [challengeNotes, setChallengeNotes] = useState<string>('');
+
+  // Questions needing review (strictly incorrect + unanswered)
+  const questionsNeedingReview = React.useMemo(() => {
+    return scorecard?.questions?.filter(q => !q.isCorrect || isBlank(q.userAnswer)) || [];
+  }, [scorecard]);
+
+  // Reading pacing timer (minimum reading seconds based on number of mistakes)
+  const [reviewSecondsRemaining, setReviewSecondsRemaining] = useState<number>(0);
+
+  useEffect(() => {
+    if (!scorecard || questionsNeedingReview.length === 0) {
+      setReviewSecondsRemaining(0);
+      return;
+    }
+    const targetSeconds = Math.min(45, Math.max(10, questionsNeedingReview.length * 6));
+    setReviewSecondsRemaining(targetSeconds);
+
+    const interval = setInterval(() => {
+      setReviewSecondsRemaining(prev => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [scorecard?.id, questionsNeedingReview.length]);
 
   useEffect(() => {
     if (scorecard?.submittedAt) {
@@ -129,7 +158,7 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
   if (!scorecard && !loading) return null;
 
   const correctCount = scorecard?.questions && scorecard.questions.length > 0
-    ? scorecard.questions.filter(q => q.isCorrect).length
+    ? scorecard.questions.filter(q => q.isCorrect && !isBlank(q.userAnswer)).length
     : (scorecard?.score || 0);
   const incorrectCount = scorecard?.questions && scorecard.questions.length > 0
     ? scorecard.questions.filter(q => !q.isCorrect && !isBlank(q.userAnswer)).length
@@ -140,11 +169,20 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
 
   const filteredQuestions = scorecard?.questions?.filter(q => {
     const blank = isBlank(q.userAnswer);
-    if (questionFilterTab === 'correct') return q.isCorrect;
+    if (questionFilterTab === 'needs_review') return !q.isCorrect || blank;
+    if (questionFilterTab === 'correct') return q.isCorrect && !blank;
     if (questionFilterTab === 'incorrect') return !q.isCorrect && !blank;
     if (questionFilterTab === 'unanswered') return !q.isCorrect && blank;
     return true;
   }) || [];
+
+  const reviewedMistakesCount = questionsNeedingReview.filter(q => {
+    const qId = q.questionCode || q.id;
+    return reviewedQuestionIds.has(qId) || !!challenges[qId];
+  }).length;
+
+  const isReviewComplete = questionsNeedingReview.length === 0 || reviewedMistakesCount >= questionsNeedingReview.length;
+  const canSubmitReview = isReviewComplete && reviewSecondsRemaining === 0;
 
   const remainingMins = Math.max(0, 60 - elapsedMinutes);
   const isWithin60Min = elapsedMinutes <= 60;
@@ -186,12 +224,14 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
     setReviewSubmittedSuccess(null);
     try {
       const token = await firebaseUser.getIdToken();
-      const timeSpentSecs = Math.max(10, Math.floor((Date.now() - startTimeRef.current) / 1000));
+      const timeSpentSecs = Math.max(12, Math.floor((Date.now() - startTimeRef.current) / 1000));
       const sCode = (user.studentCode || scorecard.studentCode || '').trim().toUpperCase();
       let examId = scorecard.examId || scorecard.examCode || scorecard.id;
       if (examId && sCode && examId.toUpperCase().endsWith(`_${sCode}`)) {
         examId = examId.slice(0, examId.length - (sCode.length + 1));
       }
+
+      const challengeList = Object.values(challenges);
 
       const res = await fetch('/api/student/exam-review', {
         method: 'POST',
@@ -203,19 +243,26 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
           examId,
           examName: scorecard.examName,
           reviewedQuestionIds: Array.from(reviewedQuestionIds),
-          challenges: Object.values(challenges),
+          challenges: challengeList,
           timeSpentSeconds: timeSpentSecs
         })
       });
 
       const data = await res.json();
       if (res.ok) {
-        setReviewSubmittedSuccess(data.message || '✅ Verified review submitted successfully!');
+        setReviewSubmittedSuccess(
+          data.message || (challengeList.length > 0 
+            ? `✅ Verified review submitted with ${challengeList.length} question challenge(s)!` 
+            : '✅ Verified review submitted successfully!')
+        );
+        if (scorecard) {
+          scorecard.status = 'pending';
+        }
       } else {
-        alert('Error submitting review: ' + data.message);
+        alert('Error submitting review: ' + (data.message || 'Failed to submit review'));
       }
     } catch (err: any) {
-      alert('Error: ' + err.message);
+      alert('Error submitting review: ' + err.message);
     } finally {
       setReviewSubmitting(false);
     }
@@ -344,36 +391,21 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
               </div>
 
               {/* Filter Tabs Bar */}
-              <div className="outcome-tabs" style={{ display: 'flex', gap: '6px', marginBottom: '10px', borderBottom: '1px solid var(--border-light)', paddingBottom: '8px' }}>
+              <div className="outcome-tabs" style={{ display: 'flex', gap: '6px', marginBottom: '10px', borderBottom: '1px solid var(--border-light)', paddingBottom: '8px', flexWrap: 'wrap' }}>
                 <button 
-                  onClick={() => setQuestionFilterTab('all')} 
+                  onClick={() => setQuestionFilterTab('needs_review')} 
                   style={{
                     padding: '4px 10px',
                     fontSize: '11px',
                     fontWeight: 'bold',
                     borderRadius: 'var(--radius-sm)',
-                    border: questionFilterTab === 'all' ? '1px solid var(--accent)' : '1px solid var(--border-light)',
-                    background: questionFilterTab === 'all' ? 'var(--accent-soft)' : 'transparent',
-                    color: questionFilterTab === 'all' ? 'var(--accent)' : 'var(--text-muted)',
+                    border: questionFilterTab === 'needs_review' ? '1.5px solid var(--warning)' : '1px solid var(--border-light)',
+                    background: questionFilterTab === 'needs_review' ? 'var(--warning-bg)' : 'transparent',
+                    color: questionFilterTab === 'needs_review' ? 'var(--warning)' : 'var(--text-muted)',
                     cursor: 'pointer'
                   }}
                 >
-                  All ({scorecard.questions.length})
-                </button>
-                <button 
-                  onClick={() => setQuestionFilterTab('correct')} 
-                  style={{
-                    padding: '4px 10px',
-                    fontSize: '11px',
-                    fontWeight: 'bold',
-                    borderRadius: 'var(--radius-sm)',
-                    border: questionFilterTab === 'correct' ? '1px solid var(--success)' : '1px solid var(--border-light)',
-                    background: questionFilterTab === 'correct' ? 'var(--success-bg)' : 'transparent',
-                    color: questionFilterTab === 'correct' ? 'var(--success)' : 'var(--text-muted)',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Correct ({correctCount})
+                  ⚠️ Needs Review ({questionsNeedingReview.length})
                 </button>
                 <button 
                   onClick={() => setQuestionFilterTab('incorrect')} 
@@ -405,6 +437,36 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
                 >
                   Unanswered ({unansweredCount})
                 </button>
+                <button 
+                  onClick={() => setQuestionFilterTab('correct')} 
+                  style={{
+                    padding: '4px 10px',
+                    fontSize: '11px',
+                    fontWeight: 'bold',
+                    borderRadius: 'var(--radius-sm)',
+                    border: questionFilterTab === 'correct' ? '1px solid var(--success)' : '1px solid var(--border-light)',
+                    background: questionFilterTab === 'correct' ? 'var(--success-bg)' : 'transparent',
+                    color: questionFilterTab === 'correct' ? 'var(--success)' : 'var(--text-muted)',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Correct ({correctCount})
+                </button>
+                <button 
+                  onClick={() => setQuestionFilterTab('all')} 
+                  style={{
+                    padding: '4px 10px',
+                    fontSize: '11px',
+                    fontWeight: 'bold',
+                    borderRadius: 'var(--radius-sm)',
+                    border: questionFilterTab === 'all' ? '1px solid var(--accent)' : '1px solid var(--border-light)',
+                    background: questionFilterTab === 'all' ? 'var(--accent-soft)' : 'transparent',
+                    color: questionFilterTab === 'all' ? 'var(--accent)' : 'var(--text-muted)',
+                    cursor: 'pointer'
+                  }}
+                >
+                  All ({scorecard.questions.length})
+                </button>
               </div>
 
               {/* Question Cards */}
@@ -412,7 +474,7 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
                 <h5 style={{ fontSize: '12px', fontWeight: 'bold', margin: 0 }}>🔍 Question-by-Question Audit</h5>
                 {isOfficialExam && user?.role === 'student' && (
                   <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                    Verified: <strong>{reviewedQuestionIds.size}</strong> / {scorecard.questions.length}
+                    Mistakes Verified: <strong style={{ color: isReviewComplete ? 'var(--success)' : 'var(--warning)' }}>{reviewedMistakesCount}</strong> / {questionsNeedingReview.length}
                   </span>
                 )}
               </div>
@@ -644,15 +706,31 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
         <div className="modal-footer" style={{ padding: '12px 18px', borderTop: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
           <div>
             {isOfficialExam && user?.role === 'student' && (
-              <button
-                type="button"
-                className="btn btn-primary btn-sm"
-                onClick={handleSubmitReview}
-                disabled={reviewSubmitting || reviewedQuestionIds.size === 0}
-                style={{ fontWeight: 700, fontSize: '12px', padding: '6px 14px' }}
-              >
-                {reviewSubmitting ? 'Submitting...' : `🚀 Complete Verified Review (${reviewedQuestionIds.size}/${scorecard?.questions.length || 0})`}
-              </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                {reviewSecondsRemaining > 0 && (
+                  <span style={{ fontSize: '11px', color: 'var(--warning)', fontWeight: 700, padding: '4px 8px', background: 'var(--warning-bg)', borderRadius: '4px', border: '1px solid var(--warning-border)' }}>
+                    ⏳ Please carefully review questions ({reviewSecondsRemaining}s remaining)
+                  </span>
+                )}
+                <button
+                  type="button"
+                  className="btn btn-primary btn-sm"
+                  onClick={handleSubmitReview}
+                  disabled={reviewSubmitting || !canSubmitReview || scorecard?.status === 'approved' || scorecard?.status === 'pending'}
+                  style={{ fontWeight: 700, fontSize: '12px', padding: '6px 14px' }}
+                >
+                  {reviewSubmitting 
+                    ? 'Submitting...' 
+                    : reviewSecondsRemaining > 0
+                      ? `⏳ Reading & Reflection (${reviewSecondsRemaining}s)`
+                      : !isReviewComplete
+                        ? `🔍 Verify All Mistakes (${reviewedMistakesCount}/${questionsNeedingReview.length})`
+                        : (scorecard?.status === 'approved' || scorecard?.status === 'pending')
+                          ? '✅ Verified Review Submitted'
+                          : `🚀 Complete Verified Review (${reviewedMistakesCount}/${questionsNeedingReview.length}${Object.keys(challenges).length > 0 ? ` • ${Object.keys(challenges).length} Challenge(s)` : ''})`
+                  }
+                </button>
+              </div>
             )}
           </div>
 
