@@ -11,6 +11,10 @@ import { SyllabusSelector } from '@/components/SyllabusSelector';
 import { useSyllabusSelector } from '@/hooks/useSyllabusSelector';
 import { distributeCountsByWeight as distributeCountsByWeightLib, buildObjectiveSchema } from '@/lib/syllabusUtils';
 import Image from 'next/image';
+import dynamic from 'next/dynamic';
+const BulkSaveProgressModal = dynamic(() => import('@/components/admin/create-qb/BulkSaveProgressModal'), { ssr: false });
+const ThemedConfirmModal = dynamic(() => import('@/components/admin/create-qb/ThemedConfirmModal'), { ssr: false });
+const ThemedAlertModal = dynamic(() => import('@/components/admin/create-qb/ThemedAlertModal'), { ssr: false });
 interface SyllabusEntry {
   docId: string;
   board: string;
@@ -2600,95 +2604,32 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
 
 
 
-      {/* Bulk Save Progress Modal */}
-      {savingProgress && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 20000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div className="card" style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', padding: '30px', maxWidth: '420px', width: '90%', textAlign: 'center', border: '1px solid var(--border-light)', margin: 'auto' }}>
-            <h3 style={{ margin: '0 0 6px', color: 'var(--text)', fontSize: '16px' }}>💾 Saving Questions...</h3>
-            <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '18px' }}>
-              Writing database records sequentially. Do not close this browser tab.
-            </p>
-            <div style={{ width: '100%', height: '14px', borderRadius: '8px', background: 'var(--bg-soft)', overflow: 'hidden', border: '1px solid var(--border-light)' }}>
-              <div style={{ height: '100%', width: `${savePercentage}%`, background: 'var(--accent)', borderRadius: '8px', transition: 'width 0.2s ease' }} />
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px', fontSize: '11px', color: 'var(--text-muted)' }}>
-              <span>Progress: {savePercentage}%</span>
-              <span>{saveStats.current} / {saveStats.total} Saved</span>
-            </div>
-          </div>
-        </div>
-      )}
+      <BulkSaveProgressModal 
+        savingProgress={savingProgress}
+        savePercentage={savePercentage}
+        saveStats={saveStats}
+      />
 
+      <ThemedConfirmModal 
+        showConfirmModal={showConfirmModal}
+        setShowConfirmModal={setShowConfirmModal}
+        confirmTitle={confirmTitle}
+        confirmMessage={confirmMessage}
+        onConfirmCallback={onConfirmCallback}
+        onCancelCallback={onCancelCallback}
+        setOnConfirmCallback={setOnConfirmCallback}
+        setOnCancelCallback={setOnCancelCallback}
+      />
 
-
-      {/* Themed Confirmation Modal */}
-      {showConfirmModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.45)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 30000 }}>
-          <div className="card" style={{ background: 'var(--surface-popover)', border: '1px solid var(--border-popover)', padding: '24px', borderRadius: 'var(--radius-lg)', maxWidth: '440px', width: '90%', display: 'flex', flexDirection: 'column', gap: '16px', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
-            <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 'bold', color: 'var(--text)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              ❓ {confirmTitle || 'Confirm Action'}
-            </h3>
-            <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-muted)', lineHeight: '1.5' }}>
-              {confirmMessage}
-            </p>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '4px' }}>
-              <button 
-                type="button" 
-                className="btn btn-secondary" 
-                onClick={() => {
-                  setShowConfirmModal(false);
-                  if (onCancelCallback) onCancelCallback();
-                  setOnConfirmCallback(null);
-                  setOnCancelCallback(null);
-                }}
-              >
-                Cancel
-              </button>
-              <button 
-                type="button" 
-                className="btn btn-primary" 
-                onClick={() => {
-                  setShowConfirmModal(false);
-                  if (onConfirmCallback) onConfirmCallback();
-                  setOnConfirmCallback(null);
-                  setOnCancelCallback(null);
-                }}
-              >
-                Confirm
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Themed Alert Modal */}
-      {showAlertModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.45)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 30000 }}>
-          <div className="card" style={{ background: 'var(--surface-popover)', border: '1px solid var(--border-popover)', padding: '24px', borderRadius: 'var(--radius-lg)', maxWidth: '440px', width: '90%', display: 'flex', flexDirection: 'column', gap: '16px', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}>
-            <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 'bold', color: 'var(--text)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              {alertTitle?.toLowerCase().includes('success') ? '✅' : '⚠️'} {alertTitle || 'Notice'}
-            </h3>
-            <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-muted)', lineHeight: '1.5' }}>
-              {alertMessage}
-            </p>
-            {alertHasOkButton && (
-              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '4px' }}>
-                <button 
-                  type="button" 
-                  className="btn btn-primary" 
-                  onClick={() => {
-                    setShowAlertModal(false);
-                    if (onAlertCloseCallback) onAlertCloseCallback();
-                    setOnAlertCloseCallback(null);
-                  }}
-                >
-                  OK
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      <ThemedAlertModal 
+        showAlertModal={showAlertModal}
+        setShowAlertModal={setShowAlertModal}
+        alertTitle={alertTitle}
+        alertMessage={alertMessage}
+        alertHasOkButton={alertHasOkButton}
+        onAlertCloseCallback={onAlertCloseCallback}
+        setOnAlertCloseCallback={setOnAlertCloseCallback}
+      />
 
     </div>
   );
