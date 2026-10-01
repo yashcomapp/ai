@@ -399,21 +399,15 @@ export async function GET(req: NextRequest) {
       since.setDate(since.getDate() - 90);
 
       const [
-        examsList,
-        subjExamsList,
         studentsList,
         parentReviewsSnap,
         masterySnap
       ] = await Promise.all([
-        adminDb.collection('exams').where('status', 'in', ['active', 'draft']).get(),
-        adminDb.collection('subjectiveExams').where('status', 'in', ['active', 'draft']).get(),
         adminDb.collection('users').where('role', '==', 'student').select('studentCode', 'name', 'email', 'isDemo', 'rollNumber', 'batchIds', 'batchId', 'class', 'className', 'status').get(),
         adminDb.collection('parentReviews').where('startedAt', '>=', since).select('studentCode', 'topicCode', 'totalQuestions', 'questionsCount', 'percentage', 'scorePercent', 'score', 'totalMarks', 'sincerityPacingScore', 'durationSpent', 'startedAt', 'createdAt').get(),
         adminDb.collection('studentTopicMastery').select('studentCode', 'topicCode', 'mastery', 'confidence', 'topicClassification', 'targetQuestions', 'isRecoveryMastered').get()
       ]);
 
-      const exams = examsList.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      const subjectiveExams = subjExamsList.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       const students = studentsList.docs.map(doc => {
         const data = doc.data();
         return {
@@ -527,24 +521,7 @@ export async function GET(req: NextRequest) {
       const studentConductedTopicsMap: Record<string, string[]> = {};
       students.forEach(s => {
         const code = s.studentCode;
-        const bIds = s.batchIds || (s.batchId ? [s.batchId] : []);
-        const studentClass = (s as any).class || (s as any).className || '';
-
         const topicsSet = new Set<string>();
-
-        exams.forEach((exam: any) => {
-          const examDateStr = getExamDateKey(exam) || todayDateStr;
-          if (examDateStr <= todayDateStr && isExamForStudent(exam, code, bIds, studentClass)) {
-            getObjectiveExamTopics(exam).forEach(t => topicsSet.add(t));
-          }
-        });
-
-        subjectiveExams.forEach((exam: any) => {
-          const examDateStr = getExamDateKey(exam) || todayDateStr;
-          if (examDateStr <= todayDateStr && isExamForStudent(exam, code, bIds, studentClass)) {
-            getSubjectiveExamTopics(exam).forEach(t => topicsSet.add(t));
-          }
-        });
 
         if (studentTopicMasteryMap[code]) {
           studentTopicMasteryMap[code].forEach((_, t) => topicsSet.add(t));
