@@ -48,31 +48,108 @@ export async function GET(req: NextRequest) {
     const studentCodeParam = req.nextUrl.searchParams.get('studentCode');
 
     if (action === 'studentTopicStatus' && studentCodeParam) {
-      const [studentUserSnap, masterySnap, parentReviewsSnap, examsSnap, subjExamsSnap] = await Promise.all([
+      // 1. Fetch student user document, mastery, and parent reviews
+      const [studentUserSnap, masterySnap, parentReviewsSnap] = await Promise.all([
         adminDb.collection('users').where('studentCode', '==', studentCodeParam).where('role', '==', 'student').limit(1).get(),
         adminDb.collection('studentTopicMastery').where('studentCode', '==', studentCodeParam).get(),
-        adminDb.collection('parentReviews').where('studentCode', '==', studentCodeParam).get(),
-        adminDb.collection('exams').where('status', 'in', ['active', 'draft']).get(),
-        adminDb.collection('subjectiveExams').where('status', 'in', ['active', 'draft']).get()
+        adminDb.collection('parentReviews').where('studentCode', '==', studentCodeParam).get()
       ]);
 
       const studentUser = studentUserSnap.docs[0]?.data();
       const bIds = studentUser?.batchIds || (studentUser?.batchId ? [studentUser.batchId] : []);
       const studentClass = studentUser?.class || studentUser?.className || '';
+      const cleanClass = String(studentClass).replace(/\D/g, '');
       const todayDateStr = getDateKeyIST();
+
+      // 2. Targeted batch assignment queries
+      const baQueries: Promise<FirebaseFirestore.QuerySnapshot>[] = [
+        adminDb.collection('batchAssignments').where('targetStudents', 'array-contains', studentCodeParam).get()
+      ];
+      if (bIds.length > 0) {
+        const chunks: string[][] = [];
+        for (let i = 0; i < bIds.length; i += 10) {
+          chunks.push(bIds.slice(i, i + 10));
+        }
+        chunks.forEach(chunk => {
+          baQueries.push(adminDb.collection('batchAssignments').where('targetBatches', 'array-contains-any', chunk).get());
+        });
+      }
+
+      // 3. Class-scoped active/draft exams
+      const objExamsQuery = cleanClass
+        ? adminDb.collection('exams').where('class', '==', cleanClass).where('status', 'in', ['active', 'draft']).get()
+        : adminDb.collection('exams').where('status', 'in', ['active', 'draft']).limit(200).get();
+
+      const subjExamsQuery = cleanClass
+        ? adminDb.collection('subjectiveExams').where('class', '==', cleanClass).where('status', 'in', ['active', 'draft']).get()
+        : adminDb.collection('subjectiveExams').where('status', 'in', ['active', 'draft']).limit(200).get();
+
+      const [examsSnap, subjExamsSnap, ...baSnaps] = await Promise.all([
+        objExamsQuery,
+        subjExamsQuery,
+        ...baQueries
+      ]);
+
+      const examsMap = new Map<string, any>();
+      examsSnap.docs.forEach(doc => {
+        examsMap.set(doc.id, { id: doc.id, ...doc.data() });
+      });
+
+      const subjExamsMap = new Map<string, any>();
+      subjExamsSnap.docs.forEach(doc => {
+        subjExamsMap.set(doc.id, { id: doc.id, ...doc.data() });
+      });
+
+      const assignedExamIds = new Set<string>();
+      baSnaps.forEach(snap => {
+        snap.docs.forEach(doc => {
+          const bData = doc.data();
+          if (bData.examId) {
+            assignedExamIds.add(bData.examId);
+            if (examsMap.has(bData.examId)) {
+              const ex = examsMap.get(bData.examId);
+              const tBatches = new Set([...(ex.targetBatches || []), ...(bData.targetBatches || [])]);
+              const tStudents = new Set([...(ex.targetStudents || []), ...(bData.targetStudents || [])]);
+              ex.targetBatches = Array.from(tBatches);
+              ex.targetStudents = Array.from(tStudents);
+            }
+          }
+        });
+      });
+
+      // Hydrate any missing assigned objective/subjective exams not in class query
+      const missingObjIds = Array.from(assignedExamIds).filter(id => !examsMap.has(id));
+      if (missingObjIds.length > 0) {
+        const refs = missingObjIds.map(id => adminDb.collection('exams').doc(id));
+        const missingDocs = await adminDb.getAll(...refs);
+        missingDocs.forEach(doc => {
+          if (doc.exists) {
+            examsMap.set(doc.id, { id: doc.id, ...doc.data() });
+          }
+        });
+      }
+
+      const missingSubjIds = Array.from(assignedExamIds).filter(id => !subjExamsMap.has(id) && !examsMap.has(id));
+      if (missingSubjIds.length > 0) {
+        const refs = missingSubjIds.map(id => adminDb.collection('subjectiveExams').doc(id));
+        const missingDocs = await adminDb.getAll(...refs);
+        missingDocs.forEach(doc => {
+          if (doc.exists) {
+            subjExamsMap.set(doc.id, { id: doc.id, ...doc.data() });
+          }
+        });
+      }
 
       const conductedTopicsSet = new Set<string>();
 
-      examsSnap.docs.forEach(doc => {
-        const exam = { id: doc.id, ...doc.data() };
+      examsMap.forEach(exam => {
         const examDateStr = getExamDateKey(exam) || todayDateStr;
         if (examDateStr <= todayDateStr && isExamForStudent(exam, studentCodeParam, bIds, studentClass)) {
           getObjectiveExamTopics(exam).forEach(t => conductedTopicsSet.add(t));
         }
       });
 
-      subjExamsSnap.docs.forEach(doc => {
-        const exam = { id: doc.id, ...doc.data() };
+      subjExamsMap.forEach(exam => {
         const examDateStr = getExamDateKey(exam) || todayDateStr;
         if (examDateStr <= todayDateStr && isExamForStudent(exam, studentCodeParam, bIds, studentClass)) {
           getSubjectiveExamTopics(exam).forEach(t => conductedTopicsSet.add(t));
