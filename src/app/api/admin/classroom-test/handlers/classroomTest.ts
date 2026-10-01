@@ -4,6 +4,7 @@ import { verifyRole } from '@/lib/auth';
 import { NextRequest } from 'next/server';
 import { ChunkedBatch } from '@/lib/firebase/batch';
 import { shuffleArray, isQuestionQuarantined } from '@/lib/questionTypes';
+import { getDateKeyIST } from '@/lib/dateUtils';
 
 export async function GET(request: NextRequest) {
   try {
@@ -96,7 +97,7 @@ export async function POST(request: Request) {
 
     // 2. Build unique Exam ID
     const now = new Date();
-    const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
+    const dateStr = getDateKeyIST(now).replace(/-/g, '');
     const timeStr = now.toTimeString().slice(0, 8).replace(/:/g, '');
     const rand = Math.floor(100 + Math.random() * 900);
     const firstSubj = targetSubjects[0] || '';
