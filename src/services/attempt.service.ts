@@ -31,6 +31,7 @@ export class AttemptService {
     violations?: any;
     abandoned?: boolean;
     disputedQuestionIds?: string[];
+    isLate?: boolean;
   }): Promise<{
     alreadySubmitted: boolean;
     score: number;
@@ -59,7 +60,8 @@ export class AttemptService {
       micBypassed,
       violations,
       abandoned,
-      disputedQuestionIds = []
+      disputedQuestionIds = [],
+      isLate: passedIsLate
     } = params;
 
     const disputedSet = new Set((disputedQuestionIds || []).map(id => String(id).trim().toLowerCase()));
@@ -261,6 +263,28 @@ export class AttemptService {
       const { integrityScore } = IntegrityService.calculateScore(tabViolations, proctoringViolations);
       const suspiciousLevel = (integrityScore < 70 || proctoringViolationTriggered) ? 'red' : (integrityScore < 90 ? 'yellow' : 'green');
 
+      // Check if student started late (> 2 minutes after scheduled startAt)
+      let isLate = Boolean(passedIsLate);
+      let lateMinutes = 0;
+
+      if (assignmentsSnap && !assignmentsSnap.empty) {
+        const assignDoc = assignmentsSnap.docs.find(d => {
+          const aData = d.data();
+          return aData && (aData.openMode === 'scheduled' || aData.startAt);
+        });
+        if (assignDoc) {
+          const aData = assignDoc.data();
+          const scheduledStart = aData.startAt?.toDate ? aData.startAt.toDate() : (aData.startAt ? new Date(aData.startAt) : null);
+          if (effectiveStartedAt && scheduledStart && !isNaN(effectiveStartedAt.getTime()) && !isNaN(scheduledStart.getTime())) {
+            const delayMs = effectiveStartedAt.getTime() - scheduledStart.getTime();
+            if (delayMs > 2 * 60 * 1000) {
+              isLate = true;
+              lateMinutes = Math.floor(delayMs / 60000);
+            }
+          }
+        }
+      }
+
       // Write 1. Create Exam Attempt using AttemptRepository in tx
       const attemptData = {
         examId: examId,
@@ -278,6 +302,9 @@ export class AttemptService {
         percentage: percentage,
         durationSpent: authoritativeDurationSpent,
         isOvertime: isOvertime,
+        isLate: isLate,
+        lateMinutes: lateMinutes,
+        lateRemark: isLate ? 'LATE' : null,
         integrityScore: integrityScore,
         suspiciousLevel: suspiciousLevel,
         tabViolations: tabViolations || 0,
@@ -308,6 +335,9 @@ export class AttemptService {
         percentage: percentage,
         durationSpent: authoritativeDurationSpent,
         isOvertime: isOvertime,
+        isLate: isLate,
+        lateMinutes: lateMinutes,
+        lateRemark: isLate ? 'LATE' : null,
         tabViolations: tabViolations || 0,
         proctoringViolations: proctoringViolations || { noFace: 0, multipleFaces: 0, lookingAway: 0, headMovement: 0 },
         wrongAnswers: wrongAnswers,

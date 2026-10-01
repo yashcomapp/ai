@@ -16,6 +16,7 @@ interface UseLiveExamProps {
   autonomous?: boolean;
   started?: boolean;
   mock?: boolean;
+  isLate?: boolean;
 }
 
 const RTC_CONFIG = {
@@ -46,7 +47,8 @@ export function useLiveExam({
   cameraVideoRef,
   autonomous,
   started = true,
-  mock = false
+  mock = false,
+  isLate = false
 }: UseLiveExamProps) {
   const [tabViolations, setTabViolations] = useState(0);
   const [awayTimeTotal, setAwayTimeTotal] = useState(0);
@@ -272,6 +274,7 @@ export function useLiveExam({
       totalQuestions,
       answeredCount,
       autonomous: autonomous || false,
+      isLate: Boolean(isLate),
       status: 'in-progress',
       cameraAvailable: !!stream,
       micAvailable: stream ? stream.getAudioTracks().length > 0 && stream.getAudioTracks()[0].enabled : false,

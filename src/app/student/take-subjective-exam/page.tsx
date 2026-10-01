@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef, useState, useCallback, Suspense } from 'react';
+import React, { useEffect, useRef, useState, useCallback, useMemo, Suspense } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Script from 'next/script';
@@ -102,10 +102,16 @@ function TakeSubjectiveExamContent() {
 
   // Own Exam states
   const [attemptId, setAttemptId] = useState('');
-  
+  const [assignment, setAssignment] = useState<any>(null);
   const [startedAt, setStartedAt] = useState('');
   const [started, setStarted] = useState(false);
 
+  const isLateStart = useMemo(() => {
+    if (!assignment || assignment.openMode !== 'scheduled' || !assignment.startAt || !startedAt) return false;
+    const startMs = new Date(assignment.startAt).getTime();
+    const actualStartMs = new Date(startedAt).getTime();
+    return (actualStartMs - startMs) > 2 * 60 * 1000;
+  }, [assignment, startedAt]);
 
   const [remainingSecondsState, setRemainingSecondsState] = useState(0);
   const [submitting, setSubmitting] = useState(false);
@@ -181,7 +187,8 @@ function TakeSubjectiveExamContent() {
     answeredCount: null,
     cameraVideoRef: videoRef,
     autonomous: (user as any)?.autonomous || false,
-    started: started && !examSubmitted
+    started: started && !examSubmitted,
+    isLate: isLateStart
   });
 
   const audioLevel = useAudioLevel(cameraStream);
@@ -302,6 +309,7 @@ function TakeSubjectiveExamContent() {
 
       setExamData(resData.examData);
       setQuestions(resData.questions);
+      setAssignment(resData.assignment || null);
       
       if (mode === 'peer-review') {
         setRevieweeCode(resData.revieweeCode);
@@ -457,6 +465,7 @@ function TakeSubjectiveExamContent() {
         },
         body: JSON.stringify({
           attemptId,
+          isLate: isLateStart,
           tabViolations,
           noFaceCount: proctoringViolations.noFace,
           multipleFacesCount: proctoringViolations.multipleFaces,

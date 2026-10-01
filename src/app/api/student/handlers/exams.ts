@@ -492,7 +492,8 @@ export async function POST(req: NextRequest) {
       proctoringViolationTriggered: !!proctoringViolationTriggered,
       micBypassed: micBypassed !== undefined ? !!micBypassed : undefined,
       violations: body.violations || null,
-      disputedQuestionIds: Array.isArray(disputedQuestionIds) ? disputedQuestionIds : []
+      disputedQuestionIds: Array.isArray(disputedQuestionIds) ? disputedQuestionIds : [],
+      isLate: Boolean(body.isLate)
     });
 
     return NextResponse.json({

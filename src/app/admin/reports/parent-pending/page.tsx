@@ -24,6 +24,7 @@ interface SincerityRecord {
   startedAt?: string | null;
   completedAt?: string | null;
   photoPurged?: boolean;
+  isLate?: boolean;
   expiresAt?: number | null;
   timestamp: string;
 }
@@ -366,7 +367,14 @@ export default function ParentPendingReportPage() {
                       <tr key={r.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
                         {/* Student Name & Class (Never studentCode) */}
                         <td style={{ padding: '12px 16px' }}>
-                          <div style={{ fontWeight: 700, color: 'var(--text)' }}>{r.studentName}</div>
+                          <div style={{ fontWeight: 700, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            {r.isLate && (
+                              <span style={{ fontSize: '9.5px', background: 'rgba(239, 68, 68, 0.15)', color: 'var(--danger, #ef4444)', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '1px 5px', borderRadius: '4px', fontWeight: 800, whiteSpace: 'nowrap' }}>
+                                ⏰ LATE
+                              </span>
+                            )}
+                            <span>{r.studentName}</span>
+                          </div>
                           <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{r.className || 'General'}</div>
                         </td>
 

@@ -31,6 +31,7 @@ interface Session {
   status: string;
   cameraAvailable: boolean;
   micAvailable?: boolean;
+  isLate?: boolean;
   lastActive: any;
 }
 
@@ -584,6 +585,11 @@ export default function AdminLiveMonitorPage() {
                     return (
                       <tr key={s.id} style={{ borderBottom: '1px solid var(--border-light)', background: stale ? 'rgba(245, 158, 11, 0.04)' : 'transparent' }}>
                         <td style={{ padding: '12px 16px', fontWeight: 600 }}>
+                          {s.isLate && (
+                            <span style={{ marginRight: '6px', color: '#ef4444', background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '1px 5px', borderRadius: '4px', fontSize: '10px', fontWeight: 800 }}>
+                              ⏰ LATE
+                            </span>
+                          )}
                           👤 {s.studentName || 'Student'}{(s as any).autonomous ? ' ⭐' : ''}
                           {s.micAvailable === false && (
                             <span style={{ marginLeft: '6px', color: 'var(--warning)', background: 'rgba(245, 158, 11, 0.1)', padding: '1px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 700 }} title="Microphone Offline / Bypassed">

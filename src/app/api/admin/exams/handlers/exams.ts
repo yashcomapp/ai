@@ -38,6 +38,15 @@ const updateExamNameWithAssignedDate = (currentName: string, assignedDate: Date)
   return currentName;
 };
 
+const is6amOr9pmSlot = (d: Date) => {
+  try {
+    const hr = Number(d.toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata', hour: '2-digit', hour12: false }));
+    return hr === 6 || hr === 21;
+  } catch {
+    return false;
+  }
+};
+
 export async function GET(req: NextRequest) {
   try {
     const adminUser = await verifyRole(req, 'admin');
@@ -986,7 +995,7 @@ export async function POST(req: NextRequest) {
       startAt: admin.firestore.Timestamp.fromDate(startAt),
       endAt: admin.firestore.Timestamp.fromDate(endAt),
       attemptLimit: Number(attemptLimit) || 1,
-      lateEntryRestriction: lateEntryRestriction === true,
+      lateEntryRestriction: lateEntryRestriction === true || (lateEntryRestriction !== false && is6amOr9pmSlot(startAt)),
       status: 'active',
       createdBy: (adminUser.decodedToken?.email || adminUser.userData?.email) || 'admin@yashcom.com',
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -1150,7 +1159,7 @@ export async function PUT(req: NextRequest) {
       startAt: admin.firestore.Timestamp.fromDate(updatedStart),
       endAt: admin.firestore.Timestamp.fromDate(updatedEnd),
       attemptLimit: Number(attemptLimit) || 1,
-      lateEntryRestriction: lateEntryRestriction === true,
+      lateEntryRestriction: lateEntryRestriction === true || (lateEntryRestriction !== false && is6amOr9pmSlot(updatedStart)),
       updatedAt: admin.firestore.FieldValue.serverTimestamp()
     };
 

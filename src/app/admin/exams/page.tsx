@@ -2772,6 +2772,7 @@ const scheduleStatus = getExamScheduleStatus(exam, activeAssign, 'subjective');
                         let updates: any = { isMorningTest: checked, isEveningTest: false };
                         if (checked) {
                           updates.openMode = 'scheduled';
+                          updates.lateEntryRestriction = true;
                           const duration = prev.type === 'objective' ? prev.examDuration : (prev.examMode === 'classroom' ? prev.classroomDuration : 60);
                           const times = getMorningTestTimes(duration);
                           updates.startAtStr = times.startStr;
@@ -2792,6 +2793,7 @@ const scheduleStatus = getExamScheduleStatus(exam, activeAssign, 'subjective');
                         let updates: any = { isEveningTest: checked, isMorningTest: false };
                         if (checked) {
                           updates.openMode = 'scheduled';
+                          updates.lateEntryRestriction = true;
                           const duration = prev.type === 'objective' ? prev.examDuration : (prev.examMode === 'classroom' ? prev.classroomDuration : 60);
                           const times = getEveningTestTimes(duration);
                           updates.startAtStr = times.startStr;
@@ -2815,10 +2817,12 @@ const scheduleStatus = getExamScheduleStatus(exam, activeAssign, 'subjective');
                         disabled={assignModal.isMorningTest || assignModal.isEveningTest}
                         onChange={(e) => {
                           const val = e.target.value;
+                          const is6or9 = /T(06|21):/.test(val) || val.includes('06:00') || val.includes('21:00');
                           setAssignModal(prev => ({ 
                             ...prev, 
                             startAtStr: val, 
-                            endAtStr: val 
+                            endAtStr: val,
+                            lateEntryRestriction: is6or9 ? true : prev.lateEntryRestriction
                           }));
                         }}
                         style={{ width: '100%', padding: '5px 6px', background: 'var(--surface)', color: 'var(--text)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)' }}
@@ -3125,6 +3129,7 @@ const scheduleStatus = getExamScheduleStatus(exam, activeAssign, 'subjective');
                         let updates: any = { isMorningTest: checked, isEveningTest: false };
                         if (checked) {
                           updates.openMode = 'scheduled';
+                          updates.lateEntryRestriction = true;
                           const times = getMorningTestTimes(prev.examDuration || 30);
                           updates.startAtStr = times.startStr;
                           updates.endAtStr = times.endStr;
@@ -3144,6 +3149,7 @@ const scheduleStatus = getExamScheduleStatus(exam, activeAssign, 'subjective');
                         let updates: any = { isEveningTest: checked, isMorningTest: false };
                         if (checked) {
                           updates.openMode = 'scheduled';
+                          updates.lateEntryRestriction = true;
                           const times = getEveningTestTimes(prev.examDuration || 30);
                           updates.startAtStr = times.startStr;
                           updates.endAtStr = times.endStr;
@@ -3166,10 +3172,12 @@ const scheduleStatus = getExamScheduleStatus(exam, activeAssign, 'subjective');
                         disabled={editModal.isMorningTest || editModal.isEveningTest}
                         onChange={(e) => {
                           const val = e.target.value;
+                          const is6or9 = /T(06|21):/.test(val) || val.includes('06:00') || val.includes('21:00');
                           setEditModal(prev => ({ 
                             ...prev, 
                             startAtStr: val, 
-                            endAtStr: val 
+                            endAtStr: val,
+                            lateEntryRestriction: is6or9 ? true : prev.lateEntryRestriction
                           }));
                         }}
                         style={{ width: '100%', padding: '5px 6px', background: 'var(--surface)', color: 'var(--text)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)' }}

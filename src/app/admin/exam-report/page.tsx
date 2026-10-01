@@ -35,6 +35,9 @@ interface Attempt {
   abandoned?: boolean;
   micAvailable?: boolean;
   violations?: any;
+  isLate?: boolean;
+  lateMinutes?: number;
+  lateRemark?: string;
 }
 
 interface Exam {
@@ -930,7 +933,7 @@ function ExamReportContent() {
 
       let rowsHtml = filteredAttempts.map(a => {
         const stud = students.find(s => s.studentCode === a.studentCode);
-        const nameText = a.studentName + (stud?.autonomous ? ' ⭐' : '');
+        const nameText = (a.isLate ? '[LATE] ' : '') + a.studentName + (stud?.autonomous ? ' ⭐' : '');
         const isPending = a.status === 'pending';
         const statusDate = a.reviewedAt || a.completedAt;
         const startDate = a.startedAt || a.completedAt;
@@ -1350,6 +1353,11 @@ function ExamReportContent() {
                           style={{ borderBottom: '1px solid var(--border-light)', cursor: 'pointer' }}
                         >
                           <td style={{ padding: '7px 10px', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                            {a.isLate && (
+                              <span style={{ marginRight: '6px', color: '#ef4444', background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '1px 5px', borderRadius: '4px', fontSize: '10px', fontWeight: 800 }}>
+                                ⏰ LATE
+                              </span>
+                            )}
                             {a.studentName}{students.find(s => s.studentCode === a.studentCode)?.autonomous ? ' ⭐' : ''}
                             {a.micAvailable === false && (
                               <span style={{ marginLeft: '6px', color: 'var(--warning)', background: 'var(--warning-bg, rgba(217, 119, 6, 0.1))', padding: '1px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 700 }} title="Microphone Bypassed / Offline">
@@ -1542,6 +1550,11 @@ function ExamReportContent() {
                           onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
                         >
                           <td style={{ padding: '7px 10px', fontWeight: 600 }}>
+                            {a.isLate && (
+                              <span style={{ marginRight: '6px', color: '#ef4444', background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '1px 5px', borderRadius: '4px', fontSize: '10px', fontWeight: 800 }}>
+                                ⏰ LATE
+                              </span>
+                            )}
                             👤 {a.studentName}
                             {a.micAvailable === false && (
                               <span style={{ marginLeft: '6px', color: 'var(--warning)', background: 'var(--warning-bg, rgba(217, 119, 6, 0.1))', padding: '1px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 700 }} title="Microphone Bypassed / Offline">
@@ -1955,8 +1968,13 @@ function ExamReportContent() {
           <div className="modal-content" style={{ background: 'var(--surface-popover)', border: '1px solid var(--border-popover)', borderRadius: 'var(--radius)', maxWidth: '850px', width: '100%', maxHeight: '92vh', display: 'flex', flexDirection: 'column', overflowY: 'hidden' }}>
             
             <div className="modal-header" style={{ padding: '8px 12px', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h4 style={{ margin: 0, fontSize: '13px', fontWeight: 'bold', color: 'var(--text)' }}>
-                👤 Student Attempt Details: {selectedAttempt.studentName}{students.find(s => s.studentCode === selectedAttempt.studentCode)?.autonomous ? ' ⭐' : ''}
+              <h4 style={{ margin: 0, fontSize: '13px', fontWeight: 'bold', color: 'var(--text)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                {selectedAttempt.isLate && (
+                  <span style={{ color: '#ef4444', background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '1px 5px', borderRadius: '4px', fontSize: '10px', fontWeight: 800 }}>
+                    ⏰ LATE
+                  </span>
+                )}
+                <span>👤 Student Attempt Details: {selectedAttempt.studentName}{students.find(s => s.studentCode === selectedAttempt.studentCode)?.autonomous ? ' ⭐' : ''}</span>
               </h4>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <button 

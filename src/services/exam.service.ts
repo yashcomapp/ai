@@ -402,6 +402,7 @@ export class ExamService {
     violations?: any;
     abandoned?: boolean;
     disputedQuestionIds?: string[];
+    isLate?: boolean;
   }) {
     return AttemptService.submitAttempt(params);
   }

@@ -1019,6 +1019,7 @@ export class ReportService {
         durationSeconds: Number(data.durationSeconds) || 0,
         startedAt: data.startedAt || null,
         completedAt: data.completedAt || null,
+        isLate: Boolean(data.isLate),
         photoPurged: isPurged,
         expiresAt: data.expiresAt || null,
         timestamp: data.timestamp || (data.createdAt?.toDate?.()?.toISOString?.()) || new Date().toISOString()
@@ -1075,6 +1076,7 @@ export class ReportService {
         durationSeconds: 0,
         startedAt: null,
         completedAt: null,
+        isLate: Boolean(data.isLate),
         photoPurged: false,
         expiresAt: null,
         timestamp: data.createdAt?.toDate?.()?.toISOString?.() || new Date().toISOString()

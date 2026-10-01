@@ -310,14 +310,17 @@ export async function GET(req: NextRequest) {
 
 
 
+    let matchingAssignment: any = null;
     let isAssigned = assignmentQuery.docs.some(doc => {
       const data = doc.data();
       const targetType = data.targetType;
-      if (targetType === 'student') {
-        return Array.isArray(data.targetStudents) && data.targetStudents.includes(studentCode);
-      } else {
-        return Array.isArray(data.targetBatches) && data.targetBatches.some((b: string) => studentBatchIds.includes(b));
+      const match = targetType === 'student'
+        ? Array.isArray(data.targetStudents) && data.targetStudents.includes(studentCode)
+        : Array.isArray(data.targetBatches) && data.targetBatches.some((b: string) => studentBatchIds.includes(b));
+      if (match && !matchingAssignment) {
+        matchingAssignment = { id: doc.id, ...data };
       }
+      return match;
     });
 
     if (!isAssigned && examData.type === 'home_practice') {
@@ -329,6 +332,18 @@ export async function GET(req: NextRequest) {
 
     if (!isAssigned) {
       return NextResponse.json({ message: 'Access Denied: You are not assigned to take this exam.' }, { status: 403 });
+    }
+
+    // Enforce 5-minute late entry limit for scheduled slots
+    if (matchingAssignment && matchingAssignment.openMode === 'scheduled' && matchingAssignment.startAt && matchingAssignment.lateEntryRestriction === true) {
+      const startAtMs = matchingAssignment.startAt?.toDate ? matchingAssignment.startAt.toDate().getTime() : new Date(matchingAssignment.startAt).getTime();
+      const lateLimitMs = startAtMs + (5 * 60 * 1000);
+      if (Date.now() > lateLimitMs) {
+        return NextResponse.json({
+          status: 'blocked',
+          message: 'Late entry is not allowed. You cannot start the exam more than 5 minutes after the scheduled start time.'
+        }, { status: 403 });
+      }
     }
 
     // Check attempt limits
@@ -402,6 +417,19 @@ export async function GET(req: NextRequest) {
       const startedAtDate = new Date();
       const endsAtDate = new Date(startedAtDate.getTime() + totalTime * 60 * 1000);
 
+      let isLate = false;
+      let lateMinutes = 0;
+      let lateRemark = '';
+      if (matchingAssignment && matchingAssignment.openMode === 'scheduled' && matchingAssignment.startAt) {
+        const scheduledStartMs = matchingAssignment.startAt?.toDate ? matchingAssignment.startAt.toDate().getTime() : new Date(matchingAssignment.startAt).getTime();
+        const startDiffMs = startedAtDate.getTime() - scheduledStartMs;
+        if (startDiffMs > 2 * 60 * 1000) {
+          isLate = true;
+          lateMinutes = Math.max(1, Math.round(startDiffMs / 60000));
+          lateRemark = 'LATE';
+        }
+      }
+
       const newAttempt = {
         examId: examId,
         examName: cleanSubjectiveExamName(examData) || examData.name || 'Subjective Exam',
@@ -414,6 +442,9 @@ export async function GET(req: NextRequest) {
         totalMarks: examData.totalMarks || 0,
         startedAt: startedAtDate,
         endsAt: endsAtDate,
+        isLate,
+        lateMinutes,
+        lateRemark,
         createdAt: new Date()
       };
 
@@ -447,6 +478,7 @@ export async function GET(req: NextRequest) {
       status: 'active',
       mode,
       examData: { id: examSnap.id, ...examData, name: cleanSubjectiveExamName(examData) },
+      assignment: matchingAssignment || null,
       questions,
       attemptId: finalAttemptId,
       remainingSeconds,
@@ -535,10 +567,39 @@ export async function POST(req: NextRequest) {
       authoritativeTimeSpent = Math.min(Number(timeSpentSeconds) || examDurationSeconds, examDurationSeconds);
     }
 
-    const submissionUpdates = {
+    let isLate = Boolean(attemptData.isLate || body.isLate);
+    let lateMinutes = attemptData.lateMinutes || (isLate ? 1 : 0);
+    let lateRemark = attemptData.lateRemark || (isLate ? 'LATE' : '');
+
+    if (!isLate && effectiveStartedAt) {
+      try {
+        const assignSnap = await adminDb.collection('subjectiveAssignments')
+          .where('examId', '==', attemptData.examId)
+          .where('status', '==', 'active')
+          .limit(1)
+          .get();
+        if (!assignSnap.empty) {
+          const assignData = assignSnap.docs[0].data();
+          if (assignData.openMode === 'scheduled' && assignData.startAt) {
+            const schStart = assignData.startAt?.toDate ? assignData.startAt.toDate().getTime() : new Date(assignData.startAt).getTime();
+            const delayMs = effectiveStartedAt.getTime() - schStart;
+            if (delayMs > 2 * 60 * 1000) {
+              isLate = true;
+              lateMinutes = Math.max(1, Math.round(delayMs / 60000));
+              lateRemark = 'LATE';
+            }
+          }
+        }
+      } catch {}
+    }
+
+    const submissionUpdates: any = {
       status: 'completed',
       completedAt: new Date(),
       questionSnapshot: questions,
+      isLate,
+      lateMinutes,
+      lateRemark,
       tabViolations: Number(tabViolations) || 0,
       noFaceCount: Number(noFaceCount) || 0,
       multipleFacesCount: Number(multipleFacesCount) || 0,

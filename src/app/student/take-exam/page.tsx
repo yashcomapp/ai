@@ -80,6 +80,7 @@ function TakeExamContent() {
   const examId = searchParams.get('examId') || searchParams.get('id');
 
   const [exam, setExam] = useState<Exam | null>(null);
+  const [assignment, setAssignment] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -271,6 +272,12 @@ function TakeExamContent() {
     });
   }, [questionsToReview, questionFilterTab]);
 
+  const isLateStart = useMemo(() => {
+    if (!assignment || assignment.openMode !== 'scheduled' || !assignment.startAt) return false;
+    const startMs = new Date(assignment.startAt).getTime();
+    return (startedAt - startMs) > 2 * 60 * 1000;
+  }, [assignment, startedAt]);
+
   const {
     tabViolations,
     setTabViolations,
@@ -295,7 +302,8 @@ function TakeExamContent() {
     answeredCount,
     cameraVideoRef: videoRef,
     autonomous: (user as any)?.autonomous || false,
-    started: !cameraModalOpen && !examSubmitted
+    started: !cameraModalOpen && !examSubmitted,
+    isLate: isLateStart
   });
 
   const activeQuestionForHeuristic = exam?.questions?.[currentQIndex];
@@ -477,6 +485,7 @@ function TakeExamContent() {
         }
 
         setExam(data.exam);
+        setAssignment(data.assignment || null);
         
         // Initialize userAnswers array
         const initialAnswers = data.exam.questions.map(() => ({ answer: '', timeSpentSeconds: 0 }));
@@ -675,6 +684,13 @@ function TakeExamContent() {
 
     try {
       const idToken = await firebaseUser!.getIdToken();
+      const isLateStart = Boolean(
+        assignment &&
+        assignment.openMode === 'scheduled' &&
+        assignment.startAt &&
+        (startedAt - new Date(assignment.startAt).getTime() > 2 * 60 * 1000)
+      );
+
       const res = await fetch('/api/student/exams', {
         method: 'POST',
         headers: {
@@ -688,6 +704,7 @@ function TakeExamContent() {
           tabViolations: activeTabViolations,
           proctoringViolations,
           startedAt,
+          isLate: isLateStart,
           proctoringViolationTriggered: !!proctoringViolationTriggered,
           micBypassed: !!micBypassed,
           disputedQuestionIds: Array.from(disputedQuestionIds),
