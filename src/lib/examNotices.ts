@@ -47,11 +47,10 @@ export async function generateAndDispatchExamNotices(examId: string, bypassTimeC
     const examDateStr = examData.date || new Date().toLocaleDateString('en-GB');
 
     // 2. Fetch reviews/attempts, assignments, and absence reasons in parallel
-    const [reviewsSnap, objAssignSnap, subjAssignSnap, attendanceSnap, absenceReasonsSnap] = await Promise.all([
+    const [reviewsSnap, objAssignSnap, subjAssignSnap, absenceReasonsSnap] = await Promise.all([
       adminDb.collection('reviews').where('examId', '==', examId).get(),
       adminDb.collection('batchAssignments').where('examId', '==', examId).get(),
       adminDb.collection('subjectiveAssignments').where('examId', '==', examId).get(),
-      adminDb.collection('attendance').select('records').get(),
       adminDb.collection('examAbsenceReasons').where('examId', '==', examId).get()
     ]);
 
@@ -135,6 +134,10 @@ export async function generateAndDispatchExamNotices(examId: string, bypassTimeC
         if (data.studentCode) {
           studentMap.set(data.studentCode, { id: doc.id, ...data });
           assignedStudentCodes.add(data.studentCode);
+          if (data.batchId) targetBatches.add(data.batchId);
+          if (Array.isArray(data.batchIds)) {
+            data.batchIds.forEach((b: string) => { if (b) targetBatches.add(b); });
+          }
         }
       });
     } else {
@@ -146,6 +149,10 @@ export async function generateAndDispatchExamNotices(examId: string, bypassTimeC
           if (data.studentCode) {
             studentMap.set(data.studentCode, { id: doc.id, ...data });
             assignedStudentCodes.add(data.studentCode);
+            if (data.batchId) targetBatches.add(data.batchId);
+            if (Array.isArray(data.batchIds)) {
+              data.batchIds.forEach((b: string) => { if (b) targetBatches.add(b); });
+            }
           }
         });
       });
@@ -187,18 +194,41 @@ export async function generateAndDispatchExamNotices(examId: string, bypassTimeC
       }
     });
 
-    // 4. Calculate cumulative exam absence counts per student
+    // 4. Calculate cumulative exam absence counts per student from target batches' attendance
     const absenceCountMap = new Map<string, number>();
-    attendanceSnap.docs.forEach(doc => {
-      const attData = doc.data();
-      const records = attData.records || {};
-      Object.keys(records).forEach(code => {
-        const r = records[code];
-        if (r && r.status === 'absent') {
-          absenceCountMap.set(code, (absenceCountMap.get(code) || 0) + 1);
-        }
+    const attendanceBatchArr = Array.from(targetBatches).filter(Boolean);
+    const attendanceChunks: string[][] = [];
+    for (let i = 0; i < attendanceBatchArr.length; i += 30) {
+      attendanceChunks.push(attendanceBatchArr.slice(i, i + 30));
+    }
+
+    if (attendanceChunks.length > 0) {
+      const attendanceSnaps = await Promise.all(
+        attendanceChunks.map(chunk =>
+          adminDb.collection('attendance')
+            .where('batchId', 'in', chunk)
+            .select('records')
+            .get()
+            .catch(() => null)
+        )
+      );
+
+      attendanceSnaps.forEach(snap => {
+        if (!snap) return;
+        snap.docs.forEach(doc => {
+          const attData = doc.data();
+          const records = attData.records || {};
+          Object.keys(records).forEach(code => {
+            const r = records[code];
+            if (r && r.status === 'absent') {
+              const count = (absenceCountMap.get(code) || 0) + 1;
+              absenceCountMap.set(code, count);
+              absenceCountMap.set(code.toUpperCase(), count);
+            }
+          });
+        });
       });
-    });
+    }
 
     // Batch writer for notices
     const nowISO = new Date().toISOString();
