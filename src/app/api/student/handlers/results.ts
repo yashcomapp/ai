@@ -123,8 +123,15 @@ export async function GET(req: NextRequest) {
       if (id.includes('+')) idVariants.add(id.replace(/\+/g, ' '));
       if (studentCode) {
         idVariants.add(`${studentCode}_${id}`);
-        if (id.includes(' ')) idVariants.add(`${studentCode}_${id.replace(/ /g, '+')}`);
-        if (id.includes('+')) idVariants.add(`${studentCode}_${id.replace(/\+/g, ' ')}`);
+        idVariants.add(`${id}_${studentCode}`);
+        if (id.includes(' ')) {
+          idVariants.add(`${studentCode}_${id.replace(/ /g, '+')}`);
+          idVariants.add(`${id.replace(/ /g, '+')}_${studentCode}`);
+        }
+        if (id.includes('+')) {
+          idVariants.add(`${studentCode}_${id.replace(/\+/g, ' ')}`);
+          idVariants.add(`${id.replace(/\+/g, ' ')}_${studentCode}`);
+        }
       }
 
       const candidateRefs: admin.firestore.DocumentReference[] = [];

@@ -261,6 +261,60 @@ export class ExamReviewService {
       submittedAt: now.toISOString()
     }, { merge: true });
 
+    // Also update reviews and examAttempts collections status to unlock pending student reviews
+    try {
+      const userSnap = await adminDb.collection('users').where('studentCode', '==', sCodeUpper).limit(1).get().catch(() => null);
+      const isAutonomous = userSnap && !userSnap.empty && userSnap.docs[0].data()?.autonomous === true;
+      const targetStatus = isAutonomous ? 'approved' : 'pending';
+
+      const candidateDocIds = Array.from(new Set([
+        `${canonicalExamId}_${studentCode}`,
+        `${canonicalExamId}_${sCodeUpper}`,
+        `${examId}_${studentCode}`,
+        `${examId}_${sCodeUpper}`,
+        canonicalExamId,
+        examId
+      ].filter(Boolean)));
+
+      const reviewRefs = candidateDocIds.map(id => adminDb.collection('reviews').doc(id));
+      const rSnaps = await adminDb.getAll(...reviewRefs).catch(() => []);
+      for (const snap of rSnaps) {
+        if (snap && snap.exists) {
+          const currentRevStatus = snap.data()?.status;
+          if (currentRevStatus === 'student_review' || isAutonomous) {
+            await snap.ref.update({
+              status: targetStatus,
+              studentReviewedAt: now,
+              updatedAt: now
+            }).catch(() => null);
+          }
+        }
+      }
+
+      const attemptRefs = candidateDocIds.map(id => adminDb.collection('examAttempts').doc(id));
+      const aSnaps = await adminDb.getAll(...attemptRefs).catch(() => []);
+      for (const snap of aSnaps) {
+        if (snap && snap.exists) {
+          await snap.ref.update({
+            studentReviewedAt: now,
+            updatedAt: now
+          }).catch(() => null);
+        }
+      }
+    } catch (revErr) {
+      console.warn('Could not sync status to reviews doc:', revErr);
+    }
+
+    // Invalidate caches
+    try {
+      invalidateCache(studentCode);
+      invalidateCache(sCodeUpper);
+      invalidateCache(`student_results_${studentCode}`);
+      invalidateCache(`student_results_${sCodeUpper}`);
+      invalidateCache(`parent_reviews_${studentCode}`);
+      invalidateCache(`parent_reviews_${sCodeUpper}`);
+    } catch {}
+
     return {
       success: true,
       status: reviewStatusValue,

@@ -1887,8 +1887,11 @@ function TakeExamContent() {
 
                         <button 
                           className={`btn btn-sm ${isUnderstood ? 'btn-success' : 'btn-primary'}`}
-                          disabled={isUnderstood || !selectedReasons[qItem.globalIdx]}
+                          disabled={isUnderstood}
                           onClick={() => {
+                            if (!selectedReasons[qItem.globalIdx]) {
+                              setSelectedReasons(prev => ({ ...prev, [qItem.globalIdx]: 'Concept' }));
+                            }
                             setReviewedQuestions(prev => {
                               const next = new Set(prev);
                               next.add(qItem.globalIdx);
@@ -1928,13 +1931,41 @@ function TakeExamContent() {
                       : `Reviewed: ${reviewedCount}/${totalToReview} completed. Click "I Understand" for each question above.`
                     }
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', flexWrap: 'wrap' }}>
+                    {!isAllReviewed && totalToReview > 0 && (
+                      <button
+                        type="button"
+                        className="btn btn-secondary"
+                        onClick={() => {
+                          const updatedReasons = { ...selectedReasons };
+                          const allIndices = new Set<number>();
+                          questionsToReview.forEach(q => {
+                            allIndices.add(q.globalIdx);
+                            if (!updatedReasons[q.globalIdx]) {
+                              updatedReasons[q.globalIdx] = 'Concept';
+                            }
+                          });
+                          setSelectedReasons(updatedReasons);
+                          setReviewedQuestions(allIndices);
+                        }}
+                        style={{ padding: '10px 18px', fontSize: '12px', fontWeight: 600 }}
+                      >
+                        ✓ Mark All As Understood
+                      </button>
+                    )}
                     <button 
                       className="btn btn-primary" 
                       disabled={!isAllReviewed || reviewSubmitting} 
                       onClick={async () => {
                         setReviewSubmitting(true);
                         try {
+                          const finalReasons: Record<string, string> = { ...selectedReasons };
+                          questionsToReview.forEach(q => {
+                            if (!finalReasons[q.globalIdx]) {
+                              finalReasons[q.globalIdx] = 'Concept';
+                            }
+                          });
+
                           const idToken = await firebaseUser!.getIdToken();
                           const res = await fetch('/api/student/exams', {
                             method: 'PUT',
@@ -1944,7 +1975,7 @@ function TakeExamContent() {
                             },
                             body: JSON.stringify({ 
                               examId,
-                              wrongAnswerReasons: selectedReasons
+                              wrongAnswerReasons: finalReasons
                             })
                           });
                           if (!res.ok) {

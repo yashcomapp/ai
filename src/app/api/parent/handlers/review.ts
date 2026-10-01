@@ -919,8 +919,10 @@ export async function POST(req: NextRequest) {
     }
 
     if (success) {
-      // Invalidate in-memory parent reviews cache
+      // Invalidate in-memory parent reviews and student results cache
       invalidateCache(`parent_reviews_${childStudentCode}`);
+      invalidateCache(`student_results_${childStudentCode}`);
+      invalidateCache(childStudentCode);
 
       // Invalidate parent pending / sincerity report caches
       await ReportCacheManager.invalidateReport('parent-pending-report').catch(() => null);
