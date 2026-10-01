@@ -10,7 +10,7 @@ import { useMathRender } from '@/hooks/useMathRender';
 import { useScorecard } from '@/hooks/useScorecard';
 import { exportUniversalExamPDF } from '@/lib/pdfExport';
 import { isBlank } from '@/lib/questionTypes';
-import { toISTDateTimeLocalInput, formatDateDMY } from '@/lib/dateUtils';
+import { toISTDateTimeLocalInput, formatDateDMY, parseDateInput, getDateKeyIST } from '@/lib/dateUtils';
 
 interface Exam {
   id: string;
@@ -96,6 +96,149 @@ function getNormExamDuration(exam: Exam, type: 'objective' | 'subjective' = 'obj
   }
 
   return type === 'subjective' ? 60 : 30;
+}
+
+interface ExamScheduleStatus {
+  state: 'active' | 'closed' | 'upcoming' | 'disabled';
+  badgeBg: string;
+  badgeColor: string;
+  badgeText: string;
+}
+
+function getExamScheduleStatus(
+  exam: Exam,
+  activeAssign?: Assignment,
+  examType: 'objective' | 'subjective' = 'objective'
+): ExamScheduleStatus {
+  if (activeAssign?.status === 'disabled') {
+    return {
+      state: 'disabled',
+      badgeBg: 'rgba(239, 68, 68, 0.15)',
+      badgeColor: 'var(--danger)',
+      badgeText: '🛑 Stopped / Disabled'
+    };
+  }
+
+  const nowMs = Date.now();
+  const todayIST = getDateKeyIST(new Date());
+
+  if (activeAssign) {
+    const startDate = parseDateInput(activeAssign.startAt || activeAssign.createdAt);
+    const endDate = parseDateInput(activeAssign.endAt);
+
+    if (endDate) {
+      if (nowMs > endDate.getTime()) {
+        return {
+          state: 'closed',
+          badgeBg: 'rgba(107, 114, 128, 0.15)',
+          badgeColor: 'var(--text-muted)',
+          badgeText: '🏁 Closed / Over'
+        };
+      }
+      if (startDate && nowMs < startDate.getTime()) {
+        return {
+          state: 'upcoming',
+          badgeBg: 'rgba(245, 158, 11, 0.15)',
+          badgeColor: 'var(--warning, #f59e0b)',
+          badgeText: '⏳ Upcoming'
+        };
+      }
+      return {
+        state: 'active',
+        badgeBg: 'rgba(16, 185, 129, 0.15)',
+        badgeColor: 'var(--success)',
+        badgeText: '🟢 Active / Open'
+      };
+    }
+
+    if (startDate) {
+      const durationMin = activeAssign.examDuration || activeAssign.classroomDuration || getNormExamDuration(exam, examType);
+      const calculatedEndMs = startDate.getTime() + (durationMin * 60 * 1000);
+      const startKeyIST = getDateKeyIST(startDate);
+
+      if (nowMs < startDate.getTime()) {
+        return {
+          state: 'upcoming',
+          badgeBg: 'rgba(245, 158, 11, 0.15)',
+          badgeColor: 'var(--warning, #f59e0b)',
+          badgeText: '⏳ Upcoming'
+        };
+      }
+
+      // If scheduled time window has elapsed or the scheduled assignment date is in the past
+      if (nowMs > calculatedEndMs || startKeyIST < todayIST) {
+        return {
+          state: 'closed',
+          badgeBg: 'rgba(107, 114, 128, 0.15)',
+          badgeColor: 'var(--text-muted)',
+          badgeText: '🏁 Closed / Over'
+        };
+      }
+
+      return {
+        state: 'active',
+        badgeBg: 'rgba(16, 185, 129, 0.15)',
+        badgeColor: 'var(--success)',
+        badgeText: '🟢 Active / Open'
+      };
+    }
+  }
+
+  // Fallback when activeAssign is not present but exam has scheduledDate or assignedAt
+  if (exam.scheduledDate) {
+    if (exam.scheduledDate < todayIST) {
+      return {
+        state: 'closed',
+        badgeBg: 'rgba(107, 114, 128, 0.15)',
+        badgeColor: 'var(--text-muted)',
+        badgeText: '🏁 Closed / Over'
+      };
+    }
+    if (exam.scheduledDate > todayIST) {
+      return {
+        state: 'upcoming',
+        badgeBg: 'rgba(245, 158, 11, 0.15)',
+        badgeColor: 'var(--warning, #f59e0b)',
+        badgeText: '⏳ Upcoming'
+      };
+    }
+    return {
+      state: 'active',
+      badgeBg: 'rgba(16, 185, 129, 0.15)',
+      badgeColor: 'var(--success)',
+      badgeText: '🟢 Active / Open'
+    };
+  }
+
+  if (exam.assignedAt) {
+    const assignedDate = parseDateInput(exam.assignedAt);
+    if (assignedDate) {
+      const assignedDateKey = getDateKeyIST(assignedDate);
+      if (assignedDateKey < todayIST) {
+        return {
+          state: 'closed',
+          badgeBg: 'rgba(107, 114, 128, 0.15)',
+          badgeColor: 'var(--text-muted)',
+          badgeText: '🏁 Closed / Over'
+        };
+      }
+      if (assignedDateKey > todayIST) {
+        return {
+          state: 'upcoming',
+          badgeBg: 'rgba(245, 158, 11, 0.15)',
+          badgeColor: 'var(--warning, #f59e0b)',
+          badgeText: '⏳ Upcoming'
+        };
+      }
+    }
+  }
+
+  return {
+    state: 'active',
+    badgeBg: 'rgba(16, 185, 129, 0.15)',
+    badgeColor: 'var(--success)',
+    badgeText: '🟢 Active / Open'
+  };
 }
 
 interface Batch {
@@ -1511,7 +1654,8 @@ export default function AdminExamsPage() {
                         return sortedTodayTomorrowExams.map(exam => {
                           const count = attemptCounts[exam.id] || 0;
                           const activeAssign = assignments.find(a => a.examId === exam.id && a.collection === 'batchAssignments');
-                          const status = activeAssign?.status || 'active';
+                          const rawStatus = activeAssign?.status || 'active';
+                          const scheduleStatus = getExamScheduleStatus(exam, activeAssign, 'objective');
                           return (
                             <tr key={exam.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
                               <td style={{ padding: '12px 16px', fontWeight: 600 }}>
@@ -1524,15 +1668,9 @@ export default function AdminExamsPage() {
                               <td style={{ padding: '12px 16px', fontSize: '11px', color: 'var(--text-muted)' }}>{getLatestAssignmentDate(exam.id, exam.assignedAt, exam)}</td>
                               <td style={{ padding: '12px 16px' }}>
                                  <div style={{ display: 'flex', gap: '6px', flexDirection: 'row', alignItems: 'center' }}>
-                                   {status === 'active' ? (
-                                     <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: 'rgba(16, 185, 129, 0.15)', color: 'var(--success)', fontWeight: 700, whiteSpace: 'nowrap' }}>
-                                       🟢 Active / Open
-                                     </span>
-                                   ) : (
-                                     <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: 'rgba(239, 68, 68, 0.15)', color: 'var(--danger)', fontWeight: 700, whiteSpace: 'nowrap' }}>
-                                       🛑 Stopped / Disabled
-                                     </span>
-                                   )}
+                                   <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: scheduleStatus.badgeBg, color: scheduleStatus.badgeColor, fontWeight: 700, whiteSpace: 'nowrap' }}>
+                                     {scheduleStatus.badgeText}
+                                   </span>
                                    {count > 0 && (
                                      <span style={{ fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
                                        ({count} starts)
@@ -1544,11 +1682,11 @@ export default function AdminExamsPage() {
                                  <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end', flexWrap: 'nowrap', whiteSpace: 'nowrap' }}>
                                    {activeAssign && activeAssign.openMode !== 'scheduled' && (
                                      <button 
-                                       className={`btn ${status === 'active' ? 'btn-secondary' : 'btn-primary'}`} 
-                                       style={{ padding: '4px 10px', fontSize: '11px', background: status === 'active' ? 'var(--danger)' : 'var(--success)', color: 'white', border: 'none' }} 
-                                       onClick={() => toggleAssignmentStatus(activeAssign.id, 'batchAssignments', status === 'active' ? 'disabled' : 'active')}
+                                       className={`btn ${rawStatus === 'active' ? 'btn-secondary' : 'btn-primary'}`} 
+                                       style={{ padding: '4px 10px', fontSize: '11px', background: rawStatus === 'active' ? 'var(--danger)' : 'var(--success)', color: 'white', border: 'none' }} 
+                                       onClick={() => toggleAssignmentStatus(activeAssign.id, 'batchAssignments', rawStatus === 'active' ? 'disabled' : 'active')}
                                      >
-                                       {status === 'active' ? '🛑 Stop' : '🟢 Start'}
+                                       {rawStatus === 'active' ? '🛑 Stop' : '🟢 Start'}
                                      </button>
                                    )}
                                    <button className="btn btn-secondary" style={{ padding: '4px 10px', fontSize: '11px', background: 'var(--accent-tint)', color: 'var(--accent)', fontWeight: 600 }} onClick={() => exportUniversalExamPDF(exam, exam.questions || (exam as any).questionDetails || (exam as any).questionCodes || (exam as any).questionIds || [])}>
@@ -1700,7 +1838,8 @@ export default function AdminExamsPage() {
                                                       {chapExams.map(exam => {
                                                         const count = attemptCounts[exam.id] || 0;
                                                         const activeAssign = assignments.find(a => a.examId === exam.id && a.collection === 'batchAssignments');
-                                                        const status = activeAssign?.status || 'active';
+const rawStatus = activeAssign?.status || 'active';
+const scheduleStatus = getExamScheduleStatus(exam, activeAssign, 'objective');
                                                         
                                                         return (
                                                           <tr key={exam.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
@@ -1709,15 +1848,9 @@ export default function AdminExamsPage() {
                                                             <td style={{ padding: '10px 14px', fontSize: '11px', color: 'var(--text-muted)' }}>{getLatestAssignmentDate(exam.id, exam.assignedAt, exam)}</td>
                                                             <td style={{ padding: '10px 14px' }}>
                                                                <div style={{ display: 'flex', gap: '6px', flexDirection: 'row', alignItems: 'center' }}>
-                                                                 {status === 'active' ? (
-                                                                   <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: 'rgba(16, 185, 129, 0.15)', color: 'var(--success)', fontWeight: 700, whiteSpace: 'nowrap' }}>
-                                                                     🟢 Active / Open
-                                                                   </span>
-                                                                 ) : (
-                                                                   <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: 'rgba(239, 68, 68, 0.15)', color: 'var(--danger)', fontWeight: 700, whiteSpace: 'nowrap' }}>
-                                                                     🛑 Stopped / Disabled
-                                                                   </span>
-                                                                 )}
+                                                                 <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: scheduleStatus.badgeBg, color: scheduleStatus.badgeColor, fontWeight: 700, whiteSpace: 'nowrap' }}>
+  {scheduleStatus.badgeText}
+</span>
                                                                  {count > 0 && (
                                                                    <span style={{ fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
                                                                      ({count} starts)
@@ -1729,11 +1862,11 @@ export default function AdminExamsPage() {
                                                                <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end', flexWrap: 'nowrap', whiteSpace: 'nowrap' }}>
                                                                  {activeAssign && activeAssign.openMode !== 'scheduled' && (
                                                                    <button 
-                                                                     className={`btn ${status === 'active' ? 'btn-secondary' : 'btn-primary'}`} 
-                                                                     style={{ padding: '4px 10px', fontSize: '11px', background: status === 'active' ? 'var(--danger)' : 'var(--success)', color: 'white', border: 'none' }} 
-                                                                     onClick={() => toggleAssignmentStatus(activeAssign.id, 'batchAssignments', status === 'active' ? 'disabled' : 'active')}
+                                                                     className={`btn ${rawStatus === 'active' ? 'btn-secondary' : 'btn-primary'}`} 
+                                                                     style={{ padding: '4px 10px', fontSize: '11px', background: rawStatus === 'active' ? 'var(--danger)' : 'var(--success)', color: 'white', border: 'none' }} 
+                                                                     onClick={() => toggleAssignmentStatus(activeAssign.id, 'batchAssignments', rawStatus === 'active' ? 'disabled' : 'active')}
                                                                    >
-                                                                     {status === 'active' ? '🛑 Stop' : '🟢 Start'}
+                                                                     {rawStatus === 'active' ? '🛑 Stop' : '🟢 Start'}
                                                                    </button>
                                                                  )}
                                                                  <button className="btn btn-secondary" style={{ padding: '4px 10px', fontSize: '11px', background: 'var(--accent-tint)', color: 'var(--accent)', fontWeight: 600 }} onClick={() => exportUniversalExamPDF(exam, exam.questions || (exam as any).questionDetails || (exam as any).questionCodes || (exam as any).questionIds || [])}>
@@ -1915,7 +2048,8 @@ export default function AdminExamsPage() {
                         
                         return sortedTodayTomorrowExams.map(exam => {
                           const activeAssign = assignments.find(a => a.examId === exam.id && a.collection === 'subjectiveAssignments');
-                          const status = activeAssign?.status || 'active';
+const rawStatus = activeAssign?.status || 'active';
+const scheduleStatus = getExamScheduleStatus(exam, activeAssign, 'subjective');
                           const mode = activeAssign?.examMode || exam.mode || 'home';
                           const peerStatus = exam.peerReviewStatus || 'not_started';
                           const count = attemptCounts[exam.id] || 0;
@@ -1949,15 +2083,9 @@ export default function AdminExamsPage() {
                               <td style={{ padding: '12px 16px' }}>
                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                                    <div style={{ display: 'flex', gap: '6px', flexDirection: 'row', alignItems: 'center' }}>
-                                     {status === 'active' ? (
-                                       <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: 'rgba(16, 185, 129, 0.15)', color: 'var(--success)', fontWeight: 700, whiteSpace: 'nowrap' }}>
-                                         🟢 Active / Open
-                                       </span>
-                                     ) : (
-                                       <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: 'rgba(239, 68, 68, 0.15)', color: 'var(--danger)', fontWeight: 700, whiteSpace: 'nowrap' }}>
-                                         🛑 Stopped / Disabled
-                                       </span>
-                                     )}
+                                     <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: scheduleStatus.badgeBg, color: scheduleStatus.badgeColor, fontWeight: 700, whiteSpace: 'nowrap' }}>
+  {scheduleStatus.badgeText}
+</span>
                                      {count > 0 && (
                                        <span style={{ fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
                                          ({count} starts)
@@ -1973,11 +2101,11 @@ export default function AdminExamsPage() {
                                  <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end', flexWrap: 'nowrap', whiteSpace: 'nowrap' }}>
                                    {activeAssign && activeAssign.openMode !== 'scheduled' && (
                                      <button 
-                                       className={`btn ${status === 'active' ? 'btn-secondary' : 'btn-primary'}`} 
-                                       style={{ padding: '4px 8px', fontSize: '10px', background: status === 'active' ? 'var(--danger)' : 'var(--success)', color: 'white', border: 'none' }} 
-                                       onClick={() => toggleAssignmentStatus(activeAssign.id, 'subjectiveAssignments', status === 'active' ? 'disabled' : 'active')}
+                                       className={`btn ${rawStatus === 'active' ? 'btn-secondary' : 'btn-primary'}`} 
+                                       style={{ padding: '4px 8px', fontSize: '10px', background: rawStatus === 'active' ? 'var(--danger)' : 'var(--success)', color: 'white', border: 'none' }} 
+                                       onClick={() => toggleAssignmentStatus(activeAssign.id, 'subjectiveAssignments', rawStatus === 'active' ? 'disabled' : 'active')}
                                      >
-                                       {status === 'active' ? '🛑 Stop' : '🟢 Start'}
+                                       {rawStatus === 'active' ? '🛑 Stop' : '🟢 Start'}
                                      </button>
                                    )}
                                    <button className="btn btn-secondary" style={{ padding: '4px 8px', fontSize: '10px', background: 'var(--accent-tint)', color: 'var(--accent)', fontWeight: 600 }} onClick={() => exportUniversalExamPDF(exam, exam.questions || (exam as any).questionDetails || (exam as any).questionCodes || (exam as any).questionIds || [])}>
@@ -2129,7 +2257,8 @@ export default function AdminExamsPage() {
                                                     <tbody>
                                                       {chapExams.map(exam => {
                                                         const activeAssign = assignments.find(a => a.examId === exam.id && a.collection === 'subjectiveAssignments');
-                                                        const status = activeAssign?.status || 'active';
+const rawStatus = activeAssign?.status || 'active';
+const scheduleStatus = getExamScheduleStatus(exam, activeAssign, 'subjective');
                                                         const mode = activeAssign?.examMode || exam.mode || 'home';
                                                         const peerStatus = exam.peerReviewStatus || 'not_started';
                                                         const count = attemptCounts[exam.id] || 0;
@@ -2159,15 +2288,9 @@ export default function AdminExamsPage() {
                                                             <td style={{ padding: '10px 14px' }}>
                                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                                                                   <div style={{ display: 'flex', gap: '6px', flexDirection: 'row', alignItems: 'center' }}>
-                                                                   {status === 'active' ? (
-                                                                     <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: 'rgba(16, 185, 129, 0.15)', color: 'var(--success)', fontWeight: 700, whiteSpace: 'nowrap' }}>
-                                                                       🟢 Active / Open
-                                                                     </span>
-                                                                   ) : (
-                                                                     <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: 'rgba(239, 68, 68, 0.15)', color: 'var(--danger)', fontWeight: 700, whiteSpace: 'nowrap' }}>
-                                                                       🛑 Stopped / Disabled
-                                                                     </span>
-                                                                   )}
+                                                                   <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: scheduleStatus.badgeBg, color: scheduleStatus.badgeColor, fontWeight: 700, whiteSpace: 'nowrap' }}>
+  {scheduleStatus.badgeText}
+</span>
                                                                    {count > 0 && (
                                                                      <span style={{ fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
                                                                        ({count} starts)
@@ -2180,11 +2303,11 @@ export default function AdminExamsPage() {
                                                                <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end', flexWrap: 'nowrap', whiteSpace: 'nowrap' }}>
                                                                  {activeAssign && activeAssign.openMode !== 'scheduled' && (
                                                                    <button 
-                                                                     className={`btn ${status === 'active' ? 'btn-secondary' : 'btn-primary'}`} 
-                                                                     style={{ padding: '4px 10px', fontSize: '11px', background: status === 'active' ? 'var(--danger)' : 'var(--success)', color: 'white', border: 'none' }} 
-                                                                     onClick={() => toggleAssignmentStatus(activeAssign.id, 'subjectiveAssignments', status === 'active' ? 'disabled' : 'active')}
+                                                                     className={`btn ${rawStatus === 'active' ? 'btn-secondary' : 'btn-primary'}`} 
+                                                                     style={{ padding: '4px 10px', fontSize: '11px', background: rawStatus === 'active' ? 'var(--danger)' : 'var(--success)', color: 'white', border: 'none' }} 
+                                                                     onClick={() => toggleAssignmentStatus(activeAssign.id, 'subjectiveAssignments', rawStatus === 'active' ? 'disabled' : 'active')}
                                                                    >
-                                                                     {status === 'active' ? '🛑 Stop' : '🟢 Start'}
+                                                                     {rawStatus === 'active' ? '🛑 Stop' : '🟢 Start'}
                                                                    </button>
                                                                  )}
                                                                  <button className="btn btn-secondary" style={{ padding: '4px 8px', fontSize: '10px', background: 'var(--accent-tint)', color: 'var(--accent)', fontWeight: 600 }} onClick={() => exportUniversalExamPDF(exam, exam.questions || (exam as any).questionDetails || (exam as any).questionCodes || (exam as any).questionIds || [])}>
