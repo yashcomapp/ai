@@ -1,6 +1,6 @@
 import { adminDb } from '@/lib/firebase/admin';
 import * as admin from 'firebase-admin';
-import { sendPushNotification } from '@/lib/notifications';
+import { sendBulkPersonalizedPushNotifications, BulkPersonalizedNotificationItem } from '@/lib/notifications';
 import { ChunkedBatch } from '@/lib/firebase/batch';
 
 export interface ExamNoticeResult {
@@ -172,16 +172,19 @@ export async function generateAndDispatchExamNotices(examId: string, bypassTimeC
 
     // 3. Process submitted reviews & compute ranks, average marks, and topper time
     const attempts: any[] = [];
+    const attemptMap = new Map<string, any>();
     reviewsSnap.docs.forEach(doc => {
       const data = doc.data();
       if (data.studentCode) {
-        attempts.push({
+        const att = {
           id: doc.id,
           studentCode: data.studentCode,
           score: data.score || 0,
           percentage: data.percentage || (data.score ? Math.round((data.score / totalMarks) * 100) : 0),
           durationSpent: data.durationSpent || 0 // seconds
-        });
+        };
+        attempts.push(att);
+        attemptMap.set(data.studentCode, att);
       }
     });
 
@@ -242,15 +245,16 @@ export async function generateAndDispatchExamNotices(examId: string, bypassTimeC
       });
     }
 
-    // Batch writer for notices
+    // Batch writer for notices & personalized push queue
     const nowISO = new Date().toISOString();
     const batchWriter = new ChunkedBatch(adminDb);
+    const pushQueue: BulkPersonalizedNotificationItem[] = [];
     let sentCount = 0;
 
     // 5. Generate Personalized Notices for each assigned student
     for (const code of Array.from(assignedStudentCodes)) {
       const student = studentMap.get(code);
-      const attempt = attempts.find(a => a.studentCode === code);
+      const attempt = attemptMap.get(code);
       const isPresent = !!attempt;
 
       let type = 'general';
@@ -321,19 +325,31 @@ ${recordedReason ? `• Recorded Reason: ${recordedReason}\n` : ''}⚠️ कु
         sentCount++;
       }
 
-      // Trigger Push Notification asynchronously to parent and student
+      // Queue personalized Push Notification for bulk dispatch
       if (student && student.id) {
-        sendPushNotification(
-          [student.id],
+        pushQueue.push({
+          userId: student.id,
           title,
-          isPresent
+          body: isPresent
             ? `Rank #${rankMap.get(code)}: ${attempt.score}/${totalMarks} (${attempt.percentage}%)`
-            : `🚨 ABSENT for ${examTitle}. Action required.`
-        ).catch(err => console.error(`Error sending push notification for ${code}:`, err));
+            : `🚨 ABSENT for ${examTitle}. Action required.`,
+          data: {
+            type: isPresent ? 'exam_result' : 'exam_absent',
+            examId,
+            studentCode: code
+          }
+        });
       }
     }
 
     await batchWriter.commit();
+
+    // 6. Bulk dispatch all personalized push notifications in a single batched operation
+    if (pushQueue.length > 0) {
+      sendBulkPersonalizedPushNotifications(pushQueue).catch(err =>
+        console.error('Error sending bulk personalized push notifications for examNotices:', err)
+      );
+    }
 
     return {
       success: true,

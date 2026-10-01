@@ -254,6 +254,202 @@ export async function sendPushNotification(
   }
 }
 
+export interface BulkPersonalizedNotificationItem {
+  userId: string;
+  title: string;
+  body: string;
+  data?: Record<string, string>;
+  tokens?: string[];
+}
+
+/**
+ * Sends personalized push notifications to multiple users in bulk with chunked FCM & Firestore operations
+ */
+export async function sendBulkPersonalizedPushNotifications(
+  items: BulkPersonalizedNotificationItem[]
+) {
+  if (!items || items.length === 0) return;
+
+  try {
+    // 1. Collect all user IDs needing token lookup
+    const uidToItemMap = new Map<string, BulkPersonalizedNotificationItem[]>();
+    const uidsToFetch: string[] = [];
+
+    items.forEach(item => {
+      if (!item.userId) return;
+      const list = uidToItemMap.get(item.userId) || [];
+      list.push(item);
+      uidToItemMap.set(item.userId, list);
+
+      if (!item.tokens || item.tokens.length === 0) {
+        if (!uidsToFetch.includes(item.userId)) {
+          uidsToFetch.push(item.userId);
+        }
+      }
+    });
+
+    // 2. Fetch tokens for UIDs in chunks of 30
+    const uidToTokensMap = new Map<string, string[]>();
+
+    // Pre-populate with any explicitly provided tokens
+    items.forEach(item => {
+      if (item.tokens && item.tokens.length > 0) {
+        const existing = uidToTokensMap.get(item.userId) || [];
+        item.tokens.forEach(t => {
+          if (t && !existing.includes(t)) existing.push(t);
+        });
+        uidToTokensMap.set(item.userId, existing);
+      }
+    });
+
+    if (uidsToFetch.length > 0) {
+      const uidChunks: string[][] = [];
+      for (let i = 0; i < uidsToFetch.length; i += 30) {
+        uidChunks.push(uidsToFetch.slice(i, i + 30));
+      }
+
+      const userSnaps = await Promise.all(
+        uidChunks.map(chunk =>
+          adminDb.collection('users')
+            .where(admin.firestore.FieldPath.documentId(), 'in', chunk)
+            .select('fcmTokens')
+            .get()
+            .catch(err => {
+              console.error('Error fetching user tokens in bulk personalized push:', err);
+              return null;
+            })
+        )
+      );
+
+      userSnaps.forEach(snap => {
+        if (!snap || snap.empty) return;
+        snap.docs.forEach(doc => {
+          const uData = doc.data();
+          if (Array.isArray(uData.fcmTokens)) {
+            const validTokens = uData.fcmTokens.filter((t: any) => typeof t === 'string' && t.trim().length > 0);
+            const existing = uidToTokensMap.get(doc.id) || [];
+            validTokens.forEach((t: string) => {
+              if (!existing.includes(t)) existing.push(t);
+            });
+            uidToTokensMap.set(doc.id, existing);
+          }
+        });
+      });
+    }
+
+    // 3. Build individual FCM messages & track token -> uid for dead token pruning
+    const tokenToUidMap = new Map<string, string>();
+    const fcmMessages: any[] = [];
+
+    items.forEach(item => {
+      const userTokens = uidToTokensMap.get(item.userId) || [];
+      userTokens.forEach(token => {
+        tokenToUidMap.set(token, item.userId);
+        fcmMessages.push({
+          token,
+          data: {
+            title: item.title,
+            body: item.body,
+            ...(item.data || {})
+          }
+        });
+      });
+    });
+
+    if (fcmMessages.length === 0) {
+      console.log(`No active FCM tokens found across ${items.length} personalized notification targets.`);
+      return;
+    }
+
+    // 4. Multicast in chunks of 500
+    const FCM_CHUNK_SIZE = 500;
+    const fcmChunks: any[][] = [];
+    for (let i = 0; i < fcmMessages.length; i += FCM_CHUNK_SIZE) {
+      fcmChunks.push(fcmMessages.slice(i, i + FCM_CHUNK_SIZE));
+    }
+
+    let successCount = 0;
+    let failureCount = 0;
+    const deadTokensByUid = new Map<string, string[]>();
+
+    await Promise.all(fcmChunks.map(async (chunk) => {
+      try {
+        const response = await admin.messaging().sendEach(chunk);
+        successCount += response.successCount;
+        failureCount += response.failureCount;
+
+        response.responses.forEach((resp, idx) => {
+          if (!resp.success && resp.error) {
+            const errorCode = resp.error.code;
+            if (
+              errorCode === 'messaging/registration-token-not-registered' ||
+              errorCode === 'messaging/invalid-registration-token'
+            ) {
+              const deadToken = chunk[idx]?.token;
+              const uid = deadToken ? tokenToUidMap.get(deadToken) : null;
+              if (deadToken && uid) {
+                const list = deadTokensByUid.get(uid) || [];
+                list.push(deadToken);
+                deadTokensByUid.set(uid, list);
+              }
+            }
+          }
+        });
+      } catch (fcmErr) {
+        console.error('Error sending personalized FCM chunk:', fcmErr);
+        failureCount += chunk.length;
+      }
+    }));
+
+    console.log(`Personalized FCM multicast complete: sent ${successCount} of ${fcmMessages.length} messages (failed: ${failureCount}).`);
+
+    // 5. Prune dead tokens asynchronously
+    if (deadTokensByUid.size > 0) {
+      try {
+        const pruneBatch = adminDb.batch();
+        deadTokensByUid.forEach((tokensToRemove, uid) => {
+          const userRef = adminDb.collection('users').doc(uid);
+          pruneBatch.update(userRef, {
+            fcmTokens: admin.firestore.FieldValue.arrayRemove(...tokensToRemove)
+          });
+        });
+        await pruneBatch.commit();
+        console.log(`Pruned ${deadTokensByUid.size} users' unregistered FCM tokens.`);
+      } catch (pruneErr) {
+        console.warn('Failed to prune dead FCM tokens in bulk send:', pruneErr);
+      }
+    }
+
+    // 6. Log history in batch
+    try {
+      const BATCH_CHUNK_SIZE = 500;
+      const historyChunks: BulkPersonalizedNotificationItem[][] = [];
+      for (let i = 0; i < items.length; i += BATCH_CHUNK_SIZE) {
+        historyChunks.push(items.slice(i, i + BATCH_CHUNK_SIZE));
+      }
+
+      await Promise.all(historyChunks.map(async (chunk) => {
+        const batch = adminDb.batch();
+        chunk.forEach(item => {
+          const logRef = adminDb.collection('pushNotificationsHistory').doc();
+          batch.set(logRef, {
+            userId: item.userId,
+            title: item.title,
+            body: item.body,
+            data: item.data || null,
+            sentAt: admin.firestore.FieldValue.serverTimestamp()
+          });
+        });
+        await batch.commit();
+      }));
+    } catch (logErr) {
+      console.error('Error logging personalized push notification history:', logErr);
+    }
+  } catch (error) {
+    console.error('Error in sendBulkPersonalizedPushNotifications:', error);
+  }
+}
+
 /**
  * 1. Event: New Exam Assigned to both Students/Parents
  */
