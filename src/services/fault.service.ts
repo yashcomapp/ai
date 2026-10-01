@@ -86,10 +86,30 @@ export class FaultService {
     const isSpecificBatch = batchId && batchId !== 'all';
 
     // 1. Fetch categories, batch info, students, and existing fault records in parallel
-    const [categories, bDoc, studentsSnap, faultDocsSnap] = await Promise.all([
+    const studentsPromise = isSpecificBatch
+      ? Promise.all([
+          adminDb.collection('users')
+            .where('role', '==', 'student')
+            .where('batchIds', 'array-contains', batchId)
+            .get()
+            .catch(() => null),
+          adminDb.collection('users')
+            .where('role', '==', 'student')
+            .where('batchId', '==', batchId)
+            .get()
+            .catch(() => null)
+        ]).then(([s1, s2]) => {
+          const docMap = new Map<string, any>();
+          s1?.docs.forEach(d => docMap.set(d.id, d));
+          s2?.docs.forEach(d => docMap.set(d.id, d));
+          return Array.from(docMap.values());
+        })
+      : adminDb.collection('users').where('role', '==', 'student').get().then(s => s.docs);
+
+    const [categories, bDoc, studentDocs, faultDocsSnap] = await Promise.all([
       this.getCategories(),
       isSpecificBatch ? adminDb.collection('batches').doc(batchId).get() : Promise.resolve(null),
-      adminDb.collection('users').where('role', '==', 'student').get(),
+      studentsPromise,
       adminDb.collection('faultRecords').where('date', '==', dateKey).get()
     ]);
 
@@ -99,7 +119,7 @@ export class FaultService {
     }
 
     // 2. Filter active students for the selected batch
-    const allActiveStudents = studentsSnap.docs
+    const allActiveStudents = studentDocs
       .map(doc => {
         const d = doc.data();
         const bIds: string[] = Array.isArray(d.batchIds) ? d.batchIds : (d.batchId ? [d.batchId] : []);
@@ -369,31 +389,45 @@ export class FaultService {
 
       // B. Check Missed Scheduled Exams (Objective + Subjective) & 60-Min Reviews on this Date
       if (objExamIds.length > 0 || subjExamIds.length > 0) {
-        // Fetch reviews, examReviews, and subjectiveAttempts for all scheduled exams
+        const objChunks: string[][] = [];
+        for (let i = 0; i < objExamIds.length; i += 30) {
+          objChunks.push(objExamIds.slice(i, i + 30));
+        }
+
+        const subjChunks: string[][] = [];
+        for (let i = 0; i < subjExamIds.length; i += 30) {
+          subjChunks.push(subjExamIds.slice(i, i + 30));
+        }
+
+        // Fetch reviews, examReviews, and subjectiveAttempts in parallel chunks
         const [objReviewsSnaps, examReviewsSnaps, subjAttemptsSnaps, subjReviewsSnaps] = await Promise.all([
-          Promise.all(objExamIds.map(eId =>
+          Promise.all(objChunks.map(chunk =>
             adminDb.collection('reviews')
-              .where('examId', '==', eId)
+              .where('examId', 'in', chunk)
               .select('studentCode', 'examId', 'completedAt', 'submittedAt', 'createdAt', 'examName', 'examType')
               .get()
+              .catch(() => null)
           )),
-          Promise.all(objExamIds.map(eId =>
+          Promise.all(objChunks.map(chunk =>
             adminDb.collection('examReviews')
-              .where('examId', '==', eId)
+              .where('examId', 'in', chunk)
               .select('studentCode', 'examId')
               .get()
+              .catch(() => null)
           )),
-          Promise.all(subjExamIds.map(eId =>
+          Promise.all(subjChunks.map(chunk =>
             adminDb.collection('subjectiveAttempts')
-              .where('examId', '==', eId)
+              .where('examId', 'in', chunk)
               .select('studentCode', 'examId', 'completedAt', 'submittedAt', 'createdAt')
               .get()
+              .catch(() => null)
           )),
-          Promise.all(subjExamIds.map(eId =>
+          Promise.all(subjChunks.map(chunk =>
             adminDb.collection('reviews')
-              .where('examId', '==', eId)
+              .where('examId', 'in', chunk)
               .select('studentCode', 'examId')
               .get()
+              .catch(() => null)
           ))
         ]);
 
@@ -402,6 +436,7 @@ export class FaultService {
         const completedExams: Array<{ studentCode: string; examId: string; examName: string; completedAt: any }> = [];
 
         examReviewsSnaps.forEach(snap => {
+          if (!snap) return;
           snap.docs.forEach(doc => {
             const d = doc.data();
             if (d.studentCode && d.examId) {
@@ -411,6 +446,7 @@ export class FaultService {
         });
 
         objReviewsSnaps.forEach(snap => {
+          if (!snap) return;
           snap.docs.forEach(doc => {
             const d = doc.data();
             const sCode = (d.studentCode || '').toUpperCase();
@@ -429,6 +465,7 @@ export class FaultService {
         });
 
         subjAttemptsSnaps.forEach(snap => {
+          if (!snap) return;
           snap.docs.forEach(doc => {
             const d = doc.data();
             const sCode = (d.studentCode || '').toUpperCase();
@@ -439,6 +476,7 @@ export class FaultService {
         });
 
         subjReviewsSnaps.forEach(snap => {
+          if (!snap) return;
           snap.docs.forEach(doc => {
             const d = doc.data();
             const sCode = (d.studentCode || '').toUpperCase();

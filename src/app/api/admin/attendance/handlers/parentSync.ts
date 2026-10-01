@@ -45,9 +45,10 @@ export async function GET(req: NextRequest) {
       .filter(s => s.role === 'student' && s.status !== 'inactive');
 
     // 2. Fetch sync records for this date
-    // Query parentReviews with type == 'daily_5min_sync'
+    // Query parentReviews with type == 'daily_5min_sync' and date == dateParam
     const syncReviewsSnap = await adminDb.collection('parentReviews')
       .where('type', '==', 'daily_5min_sync')
+      .where('date', '==', dateParam)
       .get();
 
     // Build map of studentCode -> sync record matching target date

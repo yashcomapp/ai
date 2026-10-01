@@ -86,8 +86,11 @@ export class ReportService {
    */
   static async getIntegrityReport() {
     const [scoresSnap, studentsSnap] = await Promise.all([
-      adminDb.collection('integrityScores').get(),
-      adminDb.collection('users').where('role', '==', 'student').get()
+      adminDb.collection('integrityScores').select('integrityScore', 'score').get(),
+      adminDb.collection('users')
+        .where('role', '==', 'student')
+        .select('name', 'email', 'studentCode', 'rollNumber', 'class', 'status', 'isDemo')
+        .get()
     ]);
 
     const scores = scoresSnap.docs.map(doc => {
@@ -672,6 +675,29 @@ export class ReportService {
     const groupedMap = new Map<string, any[]>();
     batches.forEach(b => groupedMap.set(b.id, []));
     const unassignedMembers: any[] = [];
+    const assignedParentIds = new Set<string>();
+
+    // Pre-index parents by studentCode and parentEmail for O(1) matching
+    const parentsByStudentCode = new Map<string, any[]>();
+    const parentsByEmail = new Map<string, any[]>();
+
+    parents.forEach(p => {
+      if (Array.isArray(p.studentCodes)) {
+        p.studentCodes.forEach((code: string) => {
+          if (code) {
+            const list = parentsByStudentCode.get(code.toUpperCase()) || [];
+            list.push(p);
+            parentsByStudentCode.set(code.toUpperCase(), list);
+          }
+        });
+      }
+      if (p.email) {
+        const pEmail = p.email.toLowerCase().trim();
+        const list = parentsByEmail.get(pEmail) || [];
+        list.push(p);
+        parentsByEmail.set(pEmail, list);
+      }
+    });
 
     students.forEach(s => {
       const memberObj = {
@@ -697,46 +723,51 @@ export class ReportService {
         unassignedMembers.push(memberObj);
       }
 
-      parents.forEach(p => {
-        const isLinkedByCode = s.studentCode && p.studentCodes.includes(s.studentCode);
-        const isLinkedByEmail = s.parentEmail && p.email === s.parentEmail;
-        
-        if (isLinkedByCode || isLinkedByEmail) {
-          const parentMemberObj = {
-            id: p.id,
-            name: p.name,
-            email: p.email,
-            role: p.role,
-            linkedStudentName: s.name,
-            lastActiveAt: p.lastActiveAt,
-            lastLoginAt: p.lastLoginAt,
-            presenceState: p.presenceState,
-            currentPage: p.currentPage,
-            currentPagePath: p.currentPagePath
-          };
+      // Match linked parents in O(1) time
+      const matchedParentsSet = new Set<any>();
+      if (s.studentCode) {
+        const byCode = parentsByStudentCode.get(s.studentCode.toUpperCase()) || [];
+        byCode.forEach(p => matchedParentsSet.add(p));
+      }
+      if (s.parentEmail) {
+        const byEmail = parentsByEmail.get(s.parentEmail.toLowerCase().trim()) || [];
+        byEmail.forEach(p => matchedParentsSet.add(p));
+      }
 
-          if (s.batchIds && s.batchIds.length > 0) {
-            s.batchIds.forEach((bId: string) => {
-              if (groupedMap.has(bId)) {
-                const list = groupedMap.get(bId)!;
-                if (!list.some(existing => existing.id === p.id)) {
-                  list.push(parentMemberObj);
-                }
+      matchedParentsSet.forEach(p => {
+        assignedParentIds.add(p.id);
+        const parentMemberObj = {
+          id: p.id,
+          name: p.name,
+          email: p.email,
+          role: p.role,
+          linkedStudentName: s.name,
+          lastActiveAt: p.lastActiveAt,
+          lastLoginAt: p.lastLoginAt,
+          presenceState: p.presenceState,
+          currentPage: p.currentPage,
+          currentPagePath: p.currentPagePath
+        };
+
+        if (s.batchIds && s.batchIds.length > 0) {
+          s.batchIds.forEach((bId: string) => {
+            if (groupedMap.has(bId)) {
+              const list = groupedMap.get(bId)!;
+              if (!list.some(existing => existing.id === p.id)) {
+                list.push(parentMemberObj);
               }
-            });
-          } else {
-            if (!unassignedMembers.some(existing => existing.id === p.id)) {
-              unassignedMembers.push(parentMemberObj);
             }
+          });
+        } else {
+          if (!unassignedMembers.some(existing => existing.id === p.id)) {
+            unassignedMembers.push(parentMemberObj);
           }
         }
       });
     });
 
     parents.forEach(p => {
-      const isAlreadyAdded = Array.from(groupedMap.values()).some(list => list.some(m => m.id === p.id)) ||
-                             unassignedMembers.some(m => m.id === p.id);
-      if (!isAlreadyAdded) {
+      if (!assignedParentIds.has(p.id) && !unassignedMembers.some(m => m.id === p.id)) {
         unassignedMembers.push({
           id: p.id,
           name: p.name,
