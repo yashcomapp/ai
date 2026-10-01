@@ -338,7 +338,7 @@ export class ReportService {
 
     const [students, batchesSnap, parameters] = await Promise.all([
       StudentRepository.listStudents(),
-      adminDb.collection('batches').get(),
+      adminDb.collection('batches').select('name').get(),
       QuotientService.getParameters()
     ]);
 
@@ -360,31 +360,68 @@ export class ReportService {
       await ReportCacheManager.setReport(cacheKey, quotientsMap, 300);
     }
     
-    const [parentsSnap, registrationsSnap] = await Promise.all([
-      adminDb.collection('users').where('role', '==', 'parent').get(),
-      adminDb.collection('registrations').get()
-    ]);
+    // Chunked targeted queries for parents and registrations associated with loaded students
+    const parentEmailList = Array.from(new Set(students.map(s => (s.parentEmail || '').toLowerCase().trim()).filter(Boolean)));
+    const parentEmailChunks: string[][] = [];
+    for (let i = 0; i < parentEmailList.length; i += 30) {
+      parentEmailChunks.push(parentEmailList.slice(i, i + 30));
+    }
+
+    const studentEmailList = Array.from(new Set(students.map(s => (s.email || '').toLowerCase().trim()).filter(Boolean)));
+    const studentEmailChunks: string[][] = [];
+    for (let i = 0; i < studentEmailList.length; i += 30) {
+      studentEmailChunks.push(studentEmailList.slice(i, i + 30));
+    }
 
     const parentsMap: Record<string, { name: string; mobile: string }> = {};
-    parentsSnap.docs.forEach(doc => {
-      const data = doc.data();
-      if (data.email) {
-        parentsMap[data.email.toLowerCase()] = {
-          name: data.name || '',
-          mobile: data.mobile || ''
-        };
-      }
+    const registrationsMap: Record<string, { parentName: string; parentMobile: string }> = {};
+
+    const [parentSnaps, registrationSnaps] = await Promise.all([
+      Promise.all(
+        parentEmailChunks.map(chunk =>
+          adminDb.collection('users')
+            .where('role', '==', 'parent')
+            .where('email', 'in', chunk)
+            .select('name', 'mobile', 'email')
+            .get()
+            .catch(() => null)
+        )
+      ),
+      Promise.all(
+        studentEmailChunks.map(chunk =>
+          adminDb.collection('registrations')
+            .where('studentEmail', 'in', chunk)
+            .select('parentName', 'parentMobile', 'studentEmail')
+            .get()
+            .catch(() => null)
+        )
+      )
+    ]);
+
+    parentSnaps.forEach(snap => {
+      if (!snap) return;
+      snap.docs.forEach(doc => {
+        const data = doc.data();
+        if (data.email) {
+          parentsMap[data.email.toLowerCase().trim()] = {
+            name: data.name || '',
+            mobile: data.mobile || ''
+          };
+        }
+      });
     });
 
-    const registrationsMap: Record<string, { parentName: string; parentMobile: string }> = {};
-    registrationsSnap.docs.forEach(doc => {
-      const data = doc.data();
-      if (data.studentEmail) {
-        registrationsMap[data.studentEmail.toLowerCase()] = {
-          parentName: data.parentName || '',
-          parentMobile: data.parentMobile || ''
-        };
-      }
+    registrationSnaps.forEach(snap => {
+      if (!snap) return;
+      snap.docs.forEach(doc => {
+        const data = doc.data();
+        if (data.studentEmail) {
+          registrationsMap[data.studentEmail.toLowerCase().trim()] = {
+            parentName: data.parentName || '',
+            parentMobile: data.parentMobile || ''
+          };
+        }
+      });
     });
 
     const studentsWithLQ = students.map((student) => {
