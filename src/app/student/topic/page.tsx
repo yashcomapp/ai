@@ -66,9 +66,6 @@ function TopicPracticeContent() {
   const [error, setError] = useState('');
   const [data, setData] = useState<PracticeData | null>(null);
   const [requireTextbookStudy, setRequireTextbookStudy] = useState(false);
-  const [examCategory, setExamCategory] = useState<'standard' | 'foundation'>('standard');
-  const [showUnlockModal, setShowUnlockModal] = useState(false);
-  const [unlockedSelected, setUnlockedSelected] = useState(false);
   const [textbookStudyMessage, setTextbookStudyMessage] = useState('');
   const [textbookConfirmedCheck, setTextbookConfirmedCheck] = useState(false);
   const [confirmingTextbook, setConfirmingTextbook] = useState(false);
@@ -234,7 +231,6 @@ function TopicPracticeContent() {
         category,
         size: isRecoveryMode ? 8 : 6,
         idToken,
-        examCategory: 'standard',
         mode
       });
       if (pData) {
@@ -256,10 +252,6 @@ function TopicPracticeContent() {
         setUserAnswers(new Array(pData.questions.length).fill(''));
         setSubmittedAnswers(new Array(pData.questions.length).fill(false));
         setQuestionResults(new Array(pData.questions.length).fill(null));
-        
-        if (pData.masteryAtStart >= 80 && (pData.totalAttemptedCount || 0) < 30 && !unlockedSelected) {
-          setShowUnlockModal(true);
-        }
       } else {
         throw new Error('Failed to load practice questions');
       }
@@ -269,37 +261,6 @@ function TopicPracticeContent() {
     } finally {
       isFetchingRef.current = false;
       setLoading(false);
-    }
-  };
-
-  const handleProceedFromUnlock = async () => {
-    setUnlockedSelected(true);
-    setShowUnlockModal(false);
-    
-    if (examCategory === 'foundation') {
-      setLoading(true);
-      try {
-        const idToken = await firebaseUser!.getIdToken();
-        const pData = await startSession({
-          topicCode,
-          category,
-          size: 6,
-          idToken,
-          examCategory: 'foundation'
-        });
-        if (pData) {
-          setData(pData);
-          setUserAnswers(new Array(pData.questions.length).fill(''));
-          setSubmittedAnswers(new Array(pData.questions.length).fill(false));
-        } else {
-          throw new Error('Failed to load foundation practice questions');
-        }
-      } catch (err: any) {
-        console.error(err);
-        setError(err.message || 'Error generating foundation challenge practice set');
-      } finally {
-        setLoading(false);
-      }
     }
   };
 
@@ -1362,7 +1323,7 @@ function TopicPracticeContent() {
 
 
       {/* Camera permission modal */}
-      {!showUnlockModal && cameraModalOpen && (
+      {cameraModalOpen && (
         <div className="camera-modal" style={{ position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.65)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', zIndex: 20000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '40px 20px', overflowY: 'auto' }}>
           <div className="camera-modal-content" style={{ background: 'var(--surface-popover)', border: '1px solid var(--border-popover)', borderRadius: 'var(--radius)', padding: '30px', maxWidth: '500px', width: '90%', textAlign: 'center', boxShadow: 'var(--shadow-lg)', margin: '0 auto' }}>
             <h2>System Hardware Pre-Check</h2>
@@ -1470,68 +1431,6 @@ function TopicPracticeContent() {
                 Start Practice / Proceed
               </button>
             )}
-          </div>
-        </div>
-      )}
-      {/* Champion Challenge selection modal overlay */}
-      {showUnlockModal && (
-        <div className="camera-modal" style={{ position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.65)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', zIndex: 20000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-          <div className="camera-modal-content" style={{ background: 'var(--surface-popover)', border: '1px solid var(--border-popover)', borderRadius: 'var(--radius)', padding: '30px', maxWidth: '500px', width: '90%', textAlign: 'center', boxShadow: 'var(--shadow-lg)', margin: '0 auto' }}>
-            <div style={{ fontSize: '3rem', marginBottom: '15px' }}>🏆</div>
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text)', marginBottom: '10px' }}>Champion Challenge Unlocked!</h2>
-            <p style={{ fontSize: '13.5px', color: 'var(--text-muted)', lineHeight: '1.6', marginBottom: '24px' }}>
-              Champion Challenge Unlocked! You have mastered the core concepts of this topic with a score of <strong style={{ color: 'var(--accent)' }}>{data?.masteryAtStart}%</strong>! Ready to test your skills at higher levels?
-            </p>
-            
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px', textAlign: 'left' }}>
-              <div 
-                onClick={() => setExamCategory('standard')}
-                style={{ 
-                  padding: '12px 16px', 
-                  borderRadius: 'var(--radius-sm)', 
-                  border: `2px solid ${examCategory === 'standard' ? 'var(--accent)' : 'var(--border-light)'}`, 
-                  background: examCategory === 'standard' ? 'var(--accent-soft)' : 'var(--bg-soft)', 
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                  <span style={{ fontSize: '1.2rem' }}>📘</span>
-                  <h4 style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>Standard Syllabus</h4>
-                </div>
-                <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0, lineHeight: '1.4' }}>
-                  Practice core textbook-level questions to maintain concept clarity and board preparation.
-                </p>
-              </div>
-
-              <div 
-                onClick={() => setExamCategory('foundation')}
-                style={{ 
-                  padding: '12px 16px', 
-                  borderRadius: 'var(--radius-sm)', 
-                  border: `2px solid ${examCategory === 'foundation' ? 'var(--accent)' : 'var(--border-light)'}`, 
-                  background: examCategory === 'foundation' ? 'var(--accent-soft)' : 'var(--bg-soft)', 
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                  <span style={{ fontSize: '1.2rem' }}>🚀</span>
-                  <h4 style={{ margin: 0, fontWeight: 700, fontSize: '13px' }}>Champion Mode</h4>
-                </div>
-                <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0, lineHeight: '1.4' }}>
-                  Challenge yourself with advanced foundation & logical problems. Damped mastery drop on wrong answers!
-                </p>
-              </div>
-            </div>
-
-            <button 
-              className="btn btn-primary" 
-              onClick={handleProceedFromUnlock}
-              style={{ width: '100%', padding: '10px', borderRadius: '30px', fontWeight: 700 }}
-            >
-              Confirm &amp; Proceed
-            </button>
           </div>
         </div>
       )}

@@ -14,7 +14,6 @@ export function usePractice() {
     category: string;
     size: number;
     idToken: string;
-    examCategory?: string;
     mode?: string;
   }) => {
     if (isBusyRef.current) return null;
@@ -22,9 +21,8 @@ export function usePractice() {
     setLoading(true);
     setError(null);
     try {
-      const examCatQuery = params.examCategory ? `&examCategory=${params.examCategory}` : '';
       const modeQuery = params.mode ? `&mode=${params.mode}` : '';
-      const res = await fetch(`/api/student/practice?topicCode=${params.topicCode}&category=${params.category}&size=${params.size}${examCatQuery}${modeQuery}`, {
+      const res = await fetch(`/api/student/practice?topicCode=${params.topicCode}&category=${params.category}&size=${params.size}${modeQuery}`, {
         headers: { 'Authorization': `Bearer ${params.idToken}` }
       });
       if (!res.ok) {

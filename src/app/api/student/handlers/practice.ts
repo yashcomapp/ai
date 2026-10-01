@@ -36,7 +36,6 @@ export async function GET(req: NextRequest) {
     const topicCode = searchParams.get('topicCode') || '';
     const category = searchParams.get('category') || 'needsAttention';
     const size = Number(searchParams.get('size') || '5');
-    const examCategory = searchParams.get('examCategory') || 'standard';
     const mode = searchParams.get('mode') || '';
     const isRecoveryMode = mode === 'recovery';
 
@@ -218,7 +217,7 @@ export async function GET(req: NextRequest) {
       if (isQuestionQuarantined(q)) return false;
       // ZERO-COLLISION: Exclude questions strictly designated for formal exams or mock tests
       if (q.vault && q.vault !== 'practice') return false;
-      if (examCategory === 'foundation' ? q.examCategory !== 'foundation' : (q.examCategory && q.examCategory !== 'standard')) return false;
+      if (q.examCategory && q.examCategory !== 'standard') return false;
       // MCQs must have at least 2 valid options to be served in practice mode
       if ((isSingleChoiceType(q.type) || isMultipleChoiceType(q.type)) && (!Array.isArray(q.options) || q.options.length < 2)) {
         return false;
