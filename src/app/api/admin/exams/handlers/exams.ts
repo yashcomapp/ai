@@ -5,6 +5,7 @@ import { verifyRole } from '@/lib/auth';
 import { ChunkedBatch } from '@/lib/firebase/batch';
 import { notifyNewExam } from '@/lib/notifications';
 import { getDateKeyIST } from '@/lib/dateUtils';
+import { ReportCacheManager } from '@/lib/reportCache';
 import { getRequiredConfidence, isDemoUser } from '@/lib/studentDb';
 import { evaluateSessionSincerity } from '@/lib/practiceTimeUtils';
 import { getCanonicalSubjectName, parseTopicCode } from '@/lib/questionTypes';
@@ -395,20 +396,34 @@ export async function GET(req: NextRequest) {
     }
 
     if (action === 'practiceTracks') {
+      const batchIdParam = req.nextUrl.searchParams.get('batchId');
+      const cacheKey = `practice-tracks-report-${batchIdParam || 'all'}`;
+      const cached = await ReportCacheManager.getReport<any>(cacheKey);
+      if (cached) {
+        return NextResponse.json(cached);
+      }
+
       const since = new Date();
       since.setDate(since.getDate() - 90);
 
-      const [
-        studentsList,
-        parentReviewsSnap,
-        masterySnap
-      ] = await Promise.all([
-        adminDb.collection('users').where('role', '==', 'student').select('studentCode', 'name', 'email', 'isDemo', 'rollNumber', 'batchIds', 'batchId', 'class', 'className', 'status').get(),
-        adminDb.collection('parentReviews').where('startedAt', '>=', since).select('studentCode', 'topicCode', 'totalQuestions', 'questionsCount', 'percentage', 'scorePercent', 'score', 'totalMarks', 'sincerityPacingScore', 'durationSpent', 'startedAt', 'createdAt').get(),
-        adminDb.collection('studentTopicMastery').select('studentCode', 'topicCode', 'mastery', 'confidence', 'topicClassification', 'targetQuestions', 'isRecoveryMastered').get()
-      ]);
+      let studentsPromise: Promise<any>;
+      if (batchIdParam) {
+        studentsPromise = Promise.all([
+          adminDb.collection('users').where('role', '==', 'student').where('batchId', '==', batchIdParam).select('studentCode', 'name', 'email', 'isDemo', 'rollNumber', 'batchIds', 'batchId', 'class', 'className', 'status').get(),
+          adminDb.collection('users').where('role', '==', 'student').where('batchIds', 'array-contains', batchIdParam).select('studentCode', 'name', 'email', 'isDemo', 'rollNumber', 'batchIds', 'batchId', 'class', 'className', 'status').get()
+        ]).then(([s1, s2]) => {
+          const docMap = new Map<string, any>();
+          s1.docs.forEach(d => docMap.set(d.id, d));
+          s2.docs.forEach(d => docMap.set(d.id, d));
+          return { docs: Array.from(docMap.values()) };
+        });
+      } else {
+        studentsPromise = adminDb.collection('users').where('role', '==', 'student').select('studentCode', 'name', 'email', 'isDemo', 'rollNumber', 'batchIds', 'batchId', 'class', 'className', 'status').get();
+      }
 
-      const students = studentsList.docs.map(doc => {
+      const studentsList = await studentsPromise;
+
+      const students = studentsList.docs.map((doc: any) => {
         const data = doc.data();
         return {
           id: doc.id,
@@ -422,12 +437,49 @@ export async function GET(req: NextRequest) {
           className: data.className || data.class || '',
           status: data.status || 'active'
         };
-      }).filter(s => !!s.studentCode && s.status !== 'inactive' && !isDemoUser(s));
+      }).filter((s: any) => !!s.studentCode && s.status !== 'inactive' && !isDemoUser(s));
+
+      const studentCodes = students.map((s: any) => s.studentCode);
+      let parentReviewsDocs: any[] = [];
+      let masteryDocs: any[] = [];
+
+      if (batchIdParam && studentCodes.length > 0) {
+        const chunks: string[][] = [];
+        for (let i = 0; i < studentCodes.length; i += 30) {
+          chunks.push(studentCodes.slice(i, i + 30));
+        }
+        const [reviewsSnaps, masterySnaps] = await Promise.all([
+          Promise.all(chunks.map(chunk =>
+            adminDb.collection('parentReviews')
+              .where('studentCode', 'in', chunk)
+              .where('startedAt', '>=', since)
+              .select('studentCode', 'topicCode', 'totalQuestions', 'questionsCount', 'percentage', 'scorePercent', 'score', 'totalMarks', 'sincerityPacingScore', 'durationSpent', 'startedAt', 'createdAt')
+              .get()
+              .catch(() => null)
+          )),
+          Promise.all(chunks.map(chunk =>
+            adminDb.collection('studentTopicMastery')
+              .where('studentCode', 'in', chunk)
+              .select('studentCode', 'topicCode', 'mastery', 'confidence', 'topicClassification', 'targetQuestions', 'isRecoveryMastered')
+              .get()
+              .catch(() => null)
+          ))
+        ]);
+        parentReviewsDocs = reviewsSnaps.filter(Boolean).flatMap(s => s!.docs);
+        masteryDocs = masterySnaps.filter(Boolean).flatMap(s => s!.docs);
+      } else {
+        const [parentReviewsSnap, masterySnap] = await Promise.all([
+          adminDb.collection('parentReviews').where('startedAt', '>=', since).select('studentCode', 'topicCode', 'totalQuestions', 'questionsCount', 'percentage', 'scorePercent', 'score', 'totalMarks', 'sincerityPacingScore', 'durationSpent', 'startedAt', 'createdAt').get(),
+          adminDb.collection('studentTopicMastery').select('studentCode', 'topicCode', 'mastery', 'confidence', 'topicClassification', 'targetQuestions', 'isRecoveryMastered').get()
+        ]);
+        parentReviewsDocs = parentReviewsSnap.docs;
+        masteryDocs = masterySnap.docs;
+      }
 
       const practiceStats: Record<string, { totalSessions: number, questionsAttempted: number, avgScore: number, lastActive: string | null }> = {};
       const studentPacingMap: Record<string, number[]> = {};
 
-      parentReviewsSnap.docs.forEach(doc => {
+      parentReviewsDocs.forEach(doc => {
         const data = doc.data();
         const code = data.studentCode;
         if (!code) return;
@@ -481,7 +533,7 @@ export async function GET(req: NextRequest) {
 
       const todayDateStr = getDateKeyIST();
       const studentTopicPracticeMap: Record<string, Map<string, number>> = {};
-      parentReviewsSnap.docs.forEach(doc => {
+      parentReviewsDocs.forEach(doc => {
         const data = doc.data();
         const code = data.studentCode;
         const tCode = data.topicCode;
@@ -495,7 +547,7 @@ export async function GET(req: NextRequest) {
       });
 
       const studentTopicMasteryMap: Record<string, Map<string, { mastery: number, confidence: number, reqConf?: number, isRecoveryMastered?: boolean }>> = {};
-      masterySnap.docs.forEach(doc => {
+      masteryDocs.forEach(doc => {
         const data = doc.data();
         const code = data.studentCode;
         if (!code) return;
@@ -519,7 +571,7 @@ export async function GET(req: NextRequest) {
       });
 
       const studentConductedTopicsMap: Record<string, string[]> = {};
-      students.forEach(s => {
+      students.forEach((s: any) => {
         const code = s.studentCode;
         const topicsSet = new Set<string>();
 
@@ -534,7 +586,7 @@ export async function GET(req: NextRequest) {
       });
 
       const masteryStats: Record<string, { avgMastery: number, avgQuality: number, mastered: number, practicing: number, needsAttention: number }> = {};
-      students.forEach(s => {
+      students.forEach((s: any) => {
         const code = s.studentCode;
         const conductedTopics = studentConductedTopicsMap[code] || [];
         const masteryMap = studentTopicMasteryMap[code] || new Map();
@@ -612,7 +664,10 @@ export async function GET(req: NextRequest) {
         };
       });
 
-      return NextResponse.json({ practiceStats, masteryStats });
+      const responsePayload = { practiceStats, masteryStats };
+      await ReportCacheManager.setReport(cacheKey, responsePayload, 180);
+
+      return NextResponse.json(responsePayload);
     }
 
     const since = new Date();

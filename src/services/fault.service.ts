@@ -294,16 +294,31 @@ export class FaultService {
         declsSnap
       ] = await Promise.all([
         attendancePromise,
-        adminDb.collection('exams').where('scheduledDate', '==', dateKey).get(),
-        adminDb.collection('subjectiveExams').where('scheduledDate', '==', dateKey).get(),
-        adminDb.collection('leaveApplications').where('endDate', '>=', dateKey).get(),
-        adminDb.collection('attendanceDeclarations').where('endDate', '>=', dateKey).get()
+        adminDb.collection('exams')
+          .where('scheduledDate', '==', dateKey)
+          .select('scheduledDate', 'date', 'targetStudents', 'studentCodes', 'classNum', 'class', 'targetBatches', 'assignedBatches', 'batchIds', 'batchId', 'title', 'subjectName', 'totalMarks')
+          .get(),
+        adminDb.collection('subjectiveExams')
+          .where('scheduledDate', '==', dateKey)
+          .select('scheduledDate', 'date', 'targetStudents', 'studentCodes', 'classNum', 'class', 'targetBatches', 'assignedBatches', 'batchIds', 'batchId', 'title', 'subjectName', 'totalMarks')
+          .get(),
+        adminDb.collection('leaveApplications')
+          .where('endDate', '>=', dateKey)
+          .select('studentCode', 'startDate', 'endDate', 'status', 'reason')
+          .get(),
+        adminDb.collection('attendanceDeclarations')
+          .where('endDate', '>=', dateKey)
+          .select('studentCode', 'startDate', 'endDate', 'status', 'reason')
+          .get()
       ]);
 
       // Fallback check for subjective exams that might store date under 'date'
       let subjExamsDocs = scheduledSubjExamsSnap.docs;
       if (subjExamsDocs.length === 0) {
-        const altSubjSnap = await adminDb.collection('subjectiveExams').where('date', '==', dateKey).get();
+        const altSubjSnap = await adminDb.collection('subjectiveExams')
+          .where('date', '==', dateKey)
+          .select('scheduledDate', 'date', 'targetStudents', 'studentCodes', 'classNum', 'class', 'targetBatches', 'assignedBatches', 'batchIds', 'batchId', 'title', 'subjectName', 'totalMarks')
+          .get();
         subjExamsDocs = altSubjSnap.docs;
       }
 
