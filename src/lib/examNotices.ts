@@ -46,12 +46,24 @@ export async function generateAndDispatchExamNotices(examId: string, bypassTimeC
     const totalMarks = examData.totalMarks || (isSubjective ? 100 : 120);
     const examDateStr = examData.date || new Date().toLocaleDateString('en-GB');
 
-    // 2. Fetch reviews/attempts, assignments, and absence reasons in parallel
+    // 2. Fetch reviews/attempts, assignments, and absence reasons in parallel with narrow field projections
     const [reviewsSnap, objAssignSnap, subjAssignSnap, absenceReasonsSnap] = await Promise.all([
-      adminDb.collection('reviews').where('examId', '==', examId).get(),
-      adminDb.collection('batchAssignments').where('examId', '==', examId).get(),
-      adminDb.collection('subjectiveAssignments').where('examId', '==', examId).get(),
-      adminDb.collection('examAbsenceReasons').where('examId', '==', examId).get()
+      adminDb.collection('reviews')
+        .where('examId', '==', examId)
+        .select('studentCode', 'score', 'percentage', 'durationSpent')
+        .get(),
+      adminDb.collection('batchAssignments')
+        .where('examId', '==', examId)
+        .select('targetStudents', 'targetBatches')
+        .get(),
+      adminDb.collection('subjectiveAssignments')
+        .where('examId', '==', examId)
+        .select('targetStudents', 'targetBatches')
+        .get(),
+      adminDb.collection('examAbsenceReasons')
+        .where('examId', '==', examId)
+        .select('studentCode', 'reason')
+        .get()
     ]);
 
     // Map recorded absence reasons by studentCode
