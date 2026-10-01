@@ -138,14 +138,21 @@ export async function GET(req: NextRequest) {
       }
       const attemptData = attemptSnap.data()!;
       
-      if (parent) {
-        const childrenCodes = await resolveChildrenCodes(parent.userData);
-        if (!childrenCodes.includes(attemptData.studentCode)) {
-          return NextResponse.json({ message: 'Access denied.' }, { status: 403 });
-        }
+      // Parallelize children validation, exam loading, and review lookup
+      const [childrenCodes, examSnap, reviewSnap] = await Promise.all([
+        parent ? resolveChildrenCodes(parent.userData) : Promise.resolve([]),
+        attemptData.examId ? adminDb.collection('subjectiveExams').doc(attemptData.examId).get() : Promise.resolve({ exists: false, data: () => ({}) } as any),
+        adminDb.collection('subjectiveReviews')
+          .where('attemptId', '==', attemptId)
+          .limit(1)
+          .get()
+          .catch(() => ({ empty: true, docs: [] } as any))
+      ]);
+
+      if (parent && !childrenCodes.includes(attemptData.studentCode)) {
+        return NextResponse.json({ message: 'Access denied.' }, { status: 403 });
       }
 
-      const examSnap = await adminDb.collection('subjectiveExams').doc(attemptData.examId).get();
       const examData = examSnap.exists ? examSnap.data()! : {};
 
       let questions = attemptData.questionSnapshot || [];
@@ -160,10 +167,6 @@ export async function GET(req: NextRequest) {
         }
       }
 
-      const reviewSnap = await adminDb.collection('subjectiveReviews')
-        .where('attemptId', '==', attemptId)
-        .limit(1)
-        .get();
       const existingReview = !reviewSnap.empty ? reviewSnap.docs[0].data() : null;
 
       return NextResponse.json({
@@ -560,19 +563,21 @@ export async function POST(req: NextRequest) {
     const actor = reviewedByActor === 'student' ? 'student' : 'parent';
     const expiresAt = Date.now() + 24 * 60 * 60 * 1000;
 
-    // Verify access
-    const childrenCodes = await resolveChildrenCodes(parent.userData);
+    // Verify access and fetch child user details in parallel
+    const [childrenCodes, studentQuerySnap] = await Promise.all([
+      resolveChildrenCodes(parent.userData),
+      adminDb.collection('users')
+        .where('role', '==', 'student')
+        .where('studentCode', '==', childStudentCode)
+        .limit(1)
+        .get()
+        .catch(() => null)
+    ]);
+
     if (!childrenCodes.includes(childStudentCode)) {
       return NextResponse.json({ message: 'Access denied to this student review.' }, { status: 403 });
     }
 
-    // Fetch child user details using queries since user docs are keyed by uid
-    const studentQuerySnap = await adminDb.collection('users')
-      .where('role', '==', 'student')
-      .where('studentCode', '==', childStudentCode)
-      .limit(1)
-      .get()
-      .catch(() => null);
     const childName = studentQuerySnap && !studentQuerySnap.empty
       ? (studentQuerySnap.docs[0].data()?.name || childStudentCode)
       : childStudentCode;

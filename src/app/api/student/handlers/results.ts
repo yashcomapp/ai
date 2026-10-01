@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import * as admin from 'firebase-admin';
 import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole, verifyAnyRole } from '@/lib/auth';
 import { IntegrityService } from '@/services/integrity.service';
@@ -110,90 +111,57 @@ export async function GET(req: NextRequest) {
     }
 
     if (id) {
-      // 1. Fetch details of a single review submission (try reviews first, then parentReviews)
-      let resolvedId = id;
-      let reviewSnap = await adminDb.collection('reviews').doc(resolvedId).get();
-      if (!reviewSnap.exists && id.includes(' ')) {
-        const altId = id.replace(/ /g, '+');
-        const altSnap = await adminDb.collection('reviews').doc(altId).get();
-        if (altSnap.exists) {
-          reviewSnap = altSnap;
-          resolvedId = altId;
-        }
-      }
-      if (!reviewSnap.exists && id.includes('+')) {
-        const altId = id.replace(/\+/g, ' ');
-        const altSnap = await adminDb.collection('reviews').doc(altId).get();
-        if (altSnap.exists) {
-          reviewSnap = altSnap;
-          resolvedId = altId;
-        }
-      }
-
       let reviewData: any = null;
       let isPractice = false;
       let evaluationsList: any[] = [];
       let isSubjective = false;
       let evaluationsSnap: any = { docs: [] };
 
-      if (reviewSnap.exists) {
-        reviewData = reviewSnap.data()!;
-      } else {
-        let pSnap = await adminDb.collection('parentReviews').doc(resolvedId).get();
-        if (!pSnap.exists && id.includes(' ')) {
-          const altId = id.replace(/ /g, '+');
-          const altSnap = await adminDb.collection('parentReviews').doc(altId).get();
-          if (altSnap.exists) pSnap = altSnap;
-        }
-        if (pSnap.exists) {
-          reviewData = pSnap.data()!;
-          isPractice = true;
-        } else {
-          // Try loading from subjectiveAttempts!
-          let subSnap = await adminDb.collection('subjectiveAttempts').doc(resolvedId).get();
-          if (!subSnap.exists && id.includes(' ')) {
-            const altId = id.replace(/ /g, '+');
-            const altSnap = await adminDb.collection('subjectiveAttempts').doc(altId).get();
-            if (altSnap.exists) subSnap = altSnap;
-          }
-          if (subSnap.exists) {
-            const subData = subSnap.data()!;
+      // 1. Build list of candidate document IDs (including whitespace/+ variants and composite keys)
+      const idVariants = new Set<string>([id]);
+      if (id.includes(' ')) idVariants.add(id.replace(/ /g, '+'));
+      if (id.includes('+')) idVariants.add(id.replace(/\+/g, ' '));
+      if (studentCode) {
+        idVariants.add(`${studentCode}_${id}`);
+        if (id.includes(' ')) idVariants.add(`${studentCode}_${id.replace(/ /g, '+')}`);
+        if (id.includes('+')) idVariants.add(`${studentCode}_${id.replace(/\+/g, ' ')}`);
+      }
+
+      const candidateRefs: admin.firestore.DocumentReference[] = [];
+      const refMeta: Array<{ collection: 'reviews' | 'parentReviews' | 'subjectiveAttempts'; docId: string }> = [];
+
+      idVariants.forEach(candId => {
+        candidateRefs.push(adminDb.collection('reviews').doc(candId));
+        refMeta.push({ collection: 'reviews', docId: candId });
+
+        candidateRefs.push(adminDb.collection('parentReviews').doc(candId));
+        refMeta.push({ collection: 'parentReviews', docId: candId });
+
+        candidateRefs.push(adminDb.collection('subjectiveAttempts').doc(candId));
+        refMeta.push({ collection: 'subjectiveAttempts', docId: candId });
+      });
+
+      // Concurrent single-round-trip batch fetch across candidate references
+      const directSnaps = await adminDb.getAll(...candidateRefs).catch(() => []);
+      
+      // Prioritized resolution: reviews > parentReviews > subjectiveAttempts
+      for (let i = 0; i < directSnaps.length; i++) {
+        const snap = directSnaps[i];
+        if (snap && snap.exists) {
+          const meta = refMeta[i];
+          const data = snap.data()!;
+          if (meta.collection === 'reviews' && !reviewData) {
+            reviewData = data;
+            break;
+          } else if (meta.collection === 'parentReviews' && !reviewData) {
+            reviewData = data;
+            isPractice = true;
+            break;
+          } else if (meta.collection === 'subjectiveAttempts' && !reviewData) {
+            const subData = data;
             isSubjective = true;
-
-            // Load evaluations and reviews for this attempt
-            const [evalSnap, subReviewsSnap] = await Promise.all([
-              adminDb.collection('evaluations')
-                .where('attemptId', '==', id)
-                .get(),
-              adminDb.collection('subjectiveReviews')
-                .where('attemptId', '==', id)
-                .get()
-            ]);
-
-            const evalsList = evalSnap.docs.map(doc => doc.data());
-            
-            // Merge subjectiveReviews into evalsList
-            subReviewsSnap.docs.forEach(doc => {
-              const rData = doc.data();
-              if (Array.isArray(rData.questionReviews)) {
-                rData.questionReviews.forEach((qr: any) => {
-                  evalsList.push({
-                    questionId: qr.questionId,
-                    evaluatorType: rData.reviewerType || 'parent',
-                    evaluatorName: rData.reviewerId || 'Evaluator',
-                    marksAwarded: Number(qr.marksAwarded) || 0,
-                    maxMarks: Number(qr.maxMarks) || 0,
-                    feedback: qr.feedback || '',
-                    stepMarks: qr.stepMarks || [],
-                    attemptId: rData.attemptId,
-                    examId: rData.examId
-                  });
-                });
-              }
-            });
-
             reviewData = {
-              id: subSnap.id,
+              id: snap.id,
               studentCode: subData.studentCode,
               examId: subData.examId,
               examCode: subData.examId,
@@ -217,101 +185,98 @@ export async function GET(req: NextRequest) {
                 marks: q.marks
               }))
             };
-
-            evaluationsList = evalsList;
+            break;
           }
         }
       }
 
+      // If still not found and studentCode is provided, run query fallback concurrently
       if (!reviewData && studentCode) {
-        // Try looking up review by composite ID ${studentCode}_${id}
-        const compSnap = await adminDb.collection('reviews').doc(`${studentCode}_${id}`).get();
-        if (compSnap.exists) {
-          reviewData = compSnap.data()!;
-        } else {
-          // Try looking up review by query
-          const qSnap = await adminDb.collection('reviews')
+        const [qSnap, subQSnap] = await Promise.all([
+          adminDb.collection('reviews')
             .where('studentCode', '==', studentCode)
             .where('examId', '==', id)
             .limit(1)
-            .get();
-          if (!qSnap.empty) {
-            reviewData = qSnap.docs[0].data();
-          } else {
-            // Try looking up subjectiveAttempt by query
-            const subQSnap = await adminDb.collection('subjectiveAttempts')
-              .where('studentCode', '==', studentCode)
-              .where('examId', '==', id)
-              .limit(1)
-              .get();
-            if (!subQSnap.empty) {
-              const subDoc = subQSnap.docs[0];
-              const subData = subDoc.data();
-              isSubjective = true;
+            .get()
+            .catch(() => ({ empty: true, docs: [] } as any)),
+          adminDb.collection('subjectiveAttempts')
+            .where('studentCode', '==', studentCode)
+            .where('examId', '==', id)
+            .limit(1)
+            .get()
+            .catch(() => ({ empty: true, docs: [] } as any))
+        ]);
 
-              const [evalSnap, subReviewsSnap] = await Promise.all([
-                adminDb.collection('evaluations')
-                  .where('attemptId', '==', subDoc.id)
-                  .get(),
-                adminDb.collection('subjectiveReviews')
-                  .where('attemptId', '==', subDoc.id)
-                  .get()
-              ]);
-
-              const evalsList = evalSnap.docs.map(doc => doc.data());
-              subReviewsSnap.docs.forEach(doc => {
-                const rData = doc.data();
-                if (Array.isArray(rData.questionReviews)) {
-                  rData.questionReviews.forEach((qr: any) => {
-                    evalsList.push({
-                      questionId: qr.questionId,
-                      evaluatorType: rData.reviewerType || 'parent',
-                      evaluatorName: rData.reviewerId || 'Evaluator',
-                      marksAwarded: Number(qr.marksAwarded) || 0,
-                      maxMarks: Number(qr.maxMarks) || 0,
-                      feedback: qr.feedback || '',
-                      stepMarks: qr.stepMarks || [],
-                      attemptId: rData.attemptId,
-                      examId: rData.examId
-                    });
-                  });
-                }
-              });
-
-              reviewData = {
-                id: subDoc.id,
-                studentCode: subData.studentCode,
-                examId: subData.examId,
-                examCode: subData.examId,
-                examName: subData.examName || '',
-                examType: 'subjective',
-                score: subData.finalScore !== undefined ? subData.finalScore : (subData.peerScore !== undefined ? subData.peerScore : (subData.parentScore !== undefined ? subData.parentScore : 0)),
-                totalMarks: subData.totalMarks || 0,
-                totalQuestions: subData.questionIds?.length || 0,
-                percentage: subData.totalMarks > 0 ? Math.round(((subData.finalScore !== undefined ? subData.finalScore : (subData.peerScore !== undefined ? subData.peerScore : (subData.parentScore !== undefined ? subData.parentScore : 0))) / (subData.totalMarks || 1)) * 100) : 0,
-                durationSpent: subData.timeSpentSeconds || 0,
-                submittedAt: subData.completedAt || subData.startedAt || null,
-                status: subData.status,
-                tabViolations: subData.tabViolations || 0,
-                proctoringViolations: subData.violations || {},
-                questionCodes: [],
-                questionDetails: (subData.questionSnapshot || []).map((q: any) => ({
-                  questionId: q.id,
-                  questionCode: q.questionCode,
-                  text: q.text,
-                  type: q.type || 'subjective',
-                  marks: q.marks
-                }))
-              };
-
-              evaluationsList = evalsList;
-            }
-          }
+        if (!qSnap.empty) {
+          reviewData = qSnap.docs[0].data();
+        } else if (!subQSnap.empty) {
+          const subDoc = subQSnap.docs[0];
+          const subData = subDoc.data();
+          isSubjective = true;
+          reviewData = {
+            id: subDoc.id,
+            studentCode: subData.studentCode,
+            examId: subData.examId,
+            examCode: subData.examId,
+            examName: subData.examName || '',
+            examType: 'subjective',
+            score: subData.finalScore !== undefined ? subData.finalScore : (subData.peerScore !== undefined ? subData.peerScore : (subData.parentScore !== undefined ? subData.parentScore : 0)),
+            totalMarks: subData.totalMarks || 0,
+            totalQuestions: subData.questionIds?.length || 0,
+            percentage: subData.totalMarks > 0 ? Math.round(((subData.finalScore !== undefined ? subData.finalScore : (subData.peerScore !== undefined ? subData.peerScore : (subData.parentScore !== undefined ? subData.parentScore : 0))) / (subData.totalMarks || 1)) * 100) : 0,
+            durationSpent: subData.timeSpentSeconds || 0,
+            submittedAt: subData.completedAt || subData.startedAt || null,
+            status: subData.status,
+            tabViolations: subData.tabViolations || 0,
+            proctoringViolations: subData.violations || {},
+            questionCodes: [],
+            questionDetails: (subData.questionSnapshot || []).map((q: any) => ({
+              questionId: q.id,
+              questionCode: q.questionCode,
+              text: q.text,
+              type: q.type || 'subjective',
+              marks: q.marks
+            }))
+          };
         }
       }
 
       if (!reviewData) {
         return NextResponse.json({ message: 'Result report not found. The student may have been absent or no scorecard was recorded.' }, { status: 404 });
+      }
+
+      // Next: Load secondary evaluations/reviews for subjective attempts
+      if (isSubjective) {
+        const attemptTargetId = reviewData.id || id;
+        const [evalSnap, subReviewsSnap] = await Promise.all([
+          adminDb.collection('evaluations')
+            .where('attemptId', '==', attemptTargetId)
+            .get(),
+          adminDb.collection('subjectiveReviews')
+            .where('attemptId', '==', attemptTargetId)
+            .get()
+        ]);
+
+        const evalsList = evalSnap.docs.map(doc => doc.data());
+        subReviewsSnap.docs.forEach(doc => {
+          const rData = doc.data();
+          if (Array.isArray(rData.questionReviews)) {
+            rData.questionReviews.forEach((qr: any) => {
+              evalsList.push({
+                questionId: qr.questionId,
+                evaluatorType: rData.reviewerType || 'parent',
+                evaluatorName: rData.reviewerId || 'Evaluator',
+                marksAwarded: Number(qr.marksAwarded) || 0,
+                maxMarks: Number(qr.maxMarks) || 0,
+                feedback: qr.feedback || '',
+                stepMarks: qr.stepMarks || [],
+                attemptId: rData.attemptId,
+                examId: rData.examId
+              });
+            });
+          }
+        });
+        evaluationsList = evalsList;
       }
 
       // Check results release constraint for autonomous students

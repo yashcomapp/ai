@@ -26,7 +26,21 @@ export async function GET(req: NextRequest) {
       }
       const attempt = attemptSnap.data()!;
 
-      const examSnap = await adminDb.collection('subjectiveExams').doc(attempt.examId).get();
+      // Parallelize exam doc fetch, evaluations query, and subjectiveReviews query
+      const [examSnap, evaluationsSnap, reviewsSnap] = await Promise.all([
+        attempt.examId
+          ? adminDb.collection('subjectiveExams').doc(attempt.examId).get().catch(() => ({ exists: false, data: () => ({}) } as any))
+          : Promise.resolve({ exists: false, data: () => ({}) } as any),
+        adminDb.collection('evaluations')
+          .where('attemptId', '==', attemptId)
+          .get()
+          .catch(() => ({ docs: [] } as any)),
+        adminDb.collection('subjectiveReviews')
+          .where('attemptId', '==', attemptId)
+          .get()
+          .catch(() => ({ docs: [] } as any))
+      ]);
+
       const exam = examSnap.exists ? examSnap.data()! : {};
 
       // Load questions (favoring questionSnapshot if saved, then inline exam.questions)
@@ -46,27 +60,18 @@ export async function GET(req: NextRequest) {
         }
       }
 
-      // Load evaluations and subjectiveReviews for student attempt
-      const [evaluationsSnap, reviewsSnap] = await Promise.all([
-        adminDb.collection('evaluations')
-          .where('attemptId', '==', attemptId)
-          .get(),
-        adminDb.collection('subjectiveReviews')
-          .where('attemptId', '==', attemptId)
-          .get()
-      ]);
-
-      let evaluationsList = evaluationsSnap.docs.map(doc => doc.data());
-      if (evaluationsList.length === 0) {
+      let evaluationsList = evaluationsSnap.docs.map((doc: any) => doc.data());
+      if (evaluationsList.length === 0 && attempt.studentCode && attempt.examId) {
         const fallbackSnap = await adminDb.collection('evaluations')
           .where('studentCode', '==', attempt.studentCode)
           .where('examId', '==', attempt.examId)
-          .get();
-        evaluationsList = fallbackSnap.docs.map(doc => doc.data());
+          .get()
+          .catch(() => ({ docs: [] } as any));
+        evaluationsList = fallbackSnap.docs.map((doc: any) => doc.data());
       }
 
       // Merge per-question review items from subjectiveReviews
-      reviewsSnap.docs.forEach(doc => {
+      reviewsSnap.docs.forEach((doc: any) => {
         const rData = doc.data();
         if (Array.isArray(rData.questionReviews)) {
           rData.questionReviews.forEach((qr: any) => {
