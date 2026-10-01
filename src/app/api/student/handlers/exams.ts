@@ -7,6 +7,7 @@ import { ExamService } from '@/services/exam.service';
 import { deriveTopicCodeFromQuestionCode } from '@/lib/questionTypes';
 import { generateAndDispatchExamNotices } from '@/lib/examNotices';
 import { invalidateCache } from '@/lib/firebase/cache';
+import { ExamReviewService } from '@/services/examReview.service';
 export const dynamic = 'force-dynamic';
 
 
@@ -524,101 +525,28 @@ export async function PUT(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { examId, wrongAnswerReasons } = body;
+    const { examId, wrongAnswerReasons, reviewedQuestionIds, challenges, timeSpentSeconds, examName } = body;
     const studentCode = student.userData?.studentCode || '';
+    const studentName = student.userData?.name || 'Student';
+    const batchId = student.userData?.batchId || (Array.isArray(student.userData?.batchIds) ? student.userData.batchIds[0] : '');
 
     if (!examId || !studentCode) {
       return NextResponse.json({ message: 'Missing examId or studentCode' }, { status: 400 });
     }
 
-    const sCodeUpper = studentCode.trim().toUpperCase();
-    let canonicalExamId = examId.trim();
-    if (sCodeUpper && canonicalExamId.toUpperCase().endsWith(`_${sCodeUpper}`)) {
-      canonicalExamId = canonicalExamId.slice(0, canonicalExamId.length - (sCodeUpper.length + 1));
-    }
-
-    const candidateDocIds = Array.from(new Set([
-      `${canonicalExamId}_${studentCode}`,
-      `${canonicalExamId}_${sCodeUpper}`,
-      `${examId}_${studentCode}`,
-      `${examId}_${sCodeUpper}`,
+    const result = await ExamReviewService.submitReview({
+      studentCode,
+      studentName,
+      batchId,
       examId,
-      canonicalExamId
-    ].filter(Boolean)));
-
-    let reviewRef: admin.firestore.DocumentReference | null = null;
-    let reviewDocData: any = null;
-
-    const refs = candidateDocIds.map(id => adminDb.collection('reviews').doc(id));
-    const snaps = await adminDb.getAll(...refs).catch(() => []);
-    for (let i = 0; i < snaps.length; i++) {
-      const snap = snaps[i];
-      if (snap && snap.exists) {
-        reviewRef = snap.ref;
-        reviewDocData = snap.data();
-        break;
-      }
-    }
-
-    if (!reviewRef && studentCode) {
-      const qSnap = await adminDb.collection('reviews')
-        .where('studentCode', 'in', [studentCode, sCodeUpper])
-        .where('examId', 'in', [canonicalExamId, examId])
-        .limit(1)
-        .get();
-      if (!qSnap.empty) {
-        reviewRef = qSnap.docs[0].ref;
-        reviewDocData = qSnap.docs[0].data();
-      }
-    }
-
-    if (!reviewRef || !reviewDocData) {
-      return NextResponse.json({ message: 'Review doc not found' }, { status: 404 });
-    }
-
-    const currentStatus = reviewDocData.status;
-    const isAutonomous = student.userData?.autonomous === true;
-    const targetStatus = isAutonomous ? 'approved' : 'pending';
-
-    const updates: any = {
-      status: targetStatus,
-      studentReviewedAt: admin.firestore.FieldValue.serverTimestamp(),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp()
-    };
-    if (wrongAnswerReasons) {
-      updates.wrongAnswerReasons = wrongAnswerReasons;
-    }
-
-    await reviewRef.update(updates);
-
-    // Also update matching examAttempts document
-    try {
-      const attemptCandidateRefs = candidateDocIds.map(id => adminDb.collection('examAttempts').doc(id));
-      const attemptSnaps = await adminDb.getAll(...attemptCandidateRefs).catch(() => []);
-      const foundAttempt = attemptSnaps.find(s => s && s.exists);
-      if (foundAttempt) {
-        await foundAttempt.ref.update({
-          studentReviewedAt: admin.firestore.FieldValue.serverTimestamp(),
-          updatedAt: admin.firestore.FieldValue.serverTimestamp()
-        }).catch(() => null);
-      }
-    } catch {}
-
-    // Invalidate all related in-memory caches
-    try {
-      invalidateCache(studentCode);
-      invalidateCache(sCodeUpper);
-      invalidateCache(`student_results_${studentCode}`);
-      invalidateCache(`student_results_${sCodeUpper}`);
-      invalidateCache(`parent_reviews_${studentCode}`);
-      invalidateCache(`parent_reviews_${sCodeUpper}`);
-    } catch {}
-
-    return NextResponse.json({ 
-      success: true, 
-      status: targetStatus,
-      message: isAutonomous ? 'Status updated to approved' : 'Status updated to pending' 
+      examName,
+      wrongAnswerReasons,
+      reviewedQuestionIds: reviewedQuestionIds || [],
+      challenges: challenges || [],
+      timeSpentSeconds: timeSpentSeconds || 0
     });
+
+    return NextResponse.json(result);
   } catch (error: any) {
     console.error('API update review status error:', error);
     return NextResponse.json({ message: error.message || 'Internal Server Error' }, { status: 500 });

@@ -142,13 +142,14 @@ export class ExamReviewService {
    */
   static async submitReview(params: {
     studentCode: string;
-    studentName: string;
+    studentName?: string;
     examId: string;
     examName?: string;
     batchId?: string;
-    reviewedQuestionIds: string[];
-    challenges: QuestionDisputeInput[];
-    timeSpentSeconds: number;
+    reviewedQuestionIds?: string[];
+    wrongAnswerReasons?: Record<string | number, string>;
+    challenges?: QuestionDisputeInput[];
+    timeSpentSeconds?: number;
   }): Promise<{
     success: boolean;
     status: 'on_time' | 'late';
@@ -162,9 +163,10 @@ export class ExamReviewService {
       examId,
       examName = 'Official Exam',
       batchId = '',
-      reviewedQuestionIds,
+      reviewedQuestionIds = [],
+      wrongAnswerReasons,
       challenges = [],
-      timeSpentSeconds
+      timeSpentSeconds = 0
     } = params;
 
     const sCodeUpper = studentCode.trim().toUpperCase();
@@ -300,17 +302,22 @@ export class ExamReviewService {
         examId
       ].filter(Boolean)));
 
+      const updatePayload: Record<string, any> = {
+        status: targetStatus,
+        studentReviewedAt: now,
+        updatedAt: now
+      };
+      if (wrongAnswerReasons && Object.keys(wrongAnswerReasons).length > 0) {
+        updatePayload.wrongAnswerReasons = wrongAnswerReasons;
+      }
+
       const reviewRefs = candidateDocIds.map(id => adminDb.collection('reviews').doc(id));
       const rSnaps = await adminDb.getAll(...reviewRefs).catch(() => []);
       for (const snap of rSnaps) {
         if (snap && snap.exists) {
           const currentRevStatus = snap.data()?.status;
-          if (currentRevStatus === 'student_review' || isAutonomous) {
-            await snap.ref.update({
-              status: targetStatus,
-              studentReviewedAt: now,
-              updatedAt: now
-            }).catch(() => null);
+          if (currentRevStatus === 'student_review' || isAutonomous || wrongAnswerReasons) {
+            await snap.ref.update(updatePayload).catch(() => null);
           }
         }
       }
@@ -319,10 +326,7 @@ export class ExamReviewService {
       const aSnaps = await adminDb.getAll(...attemptRefs).catch(() => []);
       for (const snap of aSnaps) {
         if (snap && snap.exists) {
-          await snap.ref.update({
-            studentReviewedAt: now,
-            updatedAt: now
-          }).catch(() => null);
+          await snap.ref.update(updatePayload).catch(() => null);
         }
       }
     } catch (revErr) {
