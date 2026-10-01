@@ -1323,7 +1323,32 @@ export class QuotientService {
       studentClass = userData.class || userData.className || '';
     }
 
-    // 2. Fetch student specific records and all exams in parallel
+    const cleanClass = String(studentClass).replace(/\D/g, '');
+
+    // 2. Targeted batch assignment queries (student direct + student batches)
+    const baQueries: Promise<FirebaseFirestore.QuerySnapshot>[] = [
+      adminDb.collection('batchAssignments').where('targetStudents', 'array-contains', studentCode).get()
+    ];
+    if (bIds.length > 0) {
+      const chunks: string[][] = [];
+      for (let i = 0; i < bIds.length; i += 10) {
+        chunks.push(bIds.slice(i, i + 10));
+      }
+      chunks.forEach(chunk => {
+        baQueries.push(adminDb.collection('batchAssignments').where('targetBatches', 'array-contains-any', chunk).get());
+      });
+    }
+
+    // 3. Targeted class-scoped exams queries (fallback to recent if class unknown)
+    const objExamsQuery = cleanClass 
+      ? adminDb.collection('exams').where('class', '==', cleanClass).get()
+      : adminDb.collection('exams').limit(200).get();
+
+    const subjExamsQuery = cleanClass
+      ? adminDb.collection('subjectiveExams').where('class', '==', cleanClass).get()
+      : adminDb.collection('subjectiveExams').limit(200).get();
+
+    // 4. Fetch student specific records and targeted exams in parallel
     const [
       attemptsSnap,
       assignmentsSnap,
@@ -1333,8 +1358,8 @@ export class QuotientService {
       parentReviewsSnap,
       examsSnap,
       subjectiveExamsSnap,
-      batchAssignmentsSnap,
-      evaluationsSnap
+      evaluationsSnap,
+      ...baSnaps
     ] = await Promise.all([
       adminDb.collection('examAttempts').where('studentCode', '==', studentCode).get(),
       adminDb.collection('assignments').where('studentCode', '==', studentCode).get(),
@@ -1344,10 +1369,10 @@ export class QuotientService {
       adminDb.collection('studentObservations').where('studentCode', '==', studentCode).get(),
       // parentReviews: Full document required for calculateUnifiedMetrics (scorePercent, percentage, totalQuestions, questionsCount, topicCode, status) and PracticeQualityCalculator (pacing, sincerity)
       adminDb.collection('parentReviews').where('studentCode', '==', studentCode).get(),
-      adminDb.collection('exams').get(),
-      adminDb.collection('subjectiveExams').get(),
-      adminDb.collection('batchAssignments').get(),
-      adminDb.collection('evaluations').where('studentCode', '==', studentCode).get()
+      objExamsQuery,
+      subjExamsQuery,
+      adminDb.collection('evaluations').where('studentCode', '==', studentCode).get(),
+      ...baQueries
     ]);
 
     const examsMap = new Map();
@@ -1355,16 +1380,55 @@ export class QuotientService {
       examsMap.set(doc.id, { id: doc.id, ...doc.data() });
     });
 
-    batchAssignmentsSnap.docs.forEach(doc => {
-      const bData = doc.data();
-      if (bData.examId && examsMap.has(bData.examId)) {
-        const ex = examsMap.get(bData.examId);
-        const tBatches = new Set([...(ex.targetBatches || []), ...(bData.targetBatches || [])]);
-        const tStudents = new Set([...(ex.targetStudents || []), ...(bData.targetStudents || [])]);
-        ex.targetBatches = Array.from(tBatches);
-        ex.targetStudents = Array.from(tStudents);
-      }
+    const seenBaIds = new Set<string>();
+    baSnaps.forEach(snap => {
+      snap.docs.forEach(doc => {
+        if (seenBaIds.has(doc.id)) return;
+        seenBaIds.add(doc.id);
+        const bData = doc.data();
+        if (bData.examId && examsMap.has(bData.examId)) {
+          const ex = examsMap.get(bData.examId);
+          const tBatches = new Set([...(ex.targetBatches || []), ...(bData.targetBatches || [])]);
+          const tStudents = new Set([...(ex.targetStudents || []), ...(bData.targetStudents || [])]);
+          ex.targetBatches = Array.from(tBatches);
+          ex.targetStudents = Array.from(tStudents);
+        }
+      });
     });
+
+    // Hydrate any referenced objective exams not in class subset
+    const referencedExamIds = new Set<string>();
+    attemptsSnap.docs.forEach(d => { const eId = d.data().examId; if (eId) referencedExamIds.add(eId); });
+    assignmentsSnap.docs.forEach(d => { const eId = d.data().examId; if (eId) referencedExamIds.add(eId); });
+    const missingExamIds = Array.from(referencedExamIds).filter(id => !examsMap.has(id));
+    if (missingExamIds.length > 0) {
+      const refs = missingExamIds.map(id => adminDb.collection('exams').doc(id));
+      const missingDocs = await adminDb.getAll(...refs);
+      missingDocs.forEach(doc => {
+        if (doc.exists) {
+          examsMap.set(doc.id, { id: doc.id, ...doc.data() });
+        }
+      });
+    }
+
+    // Hydrate subjective exams and any referenced subjective exams not in class subset
+    const subjectiveExamsMap = new Map<string, any>();
+    subjectiveExamsSnap.docs.forEach(doc => {
+      subjectiveExamsMap.set(doc.id, { id: doc.id, ...doc.data() });
+    });
+    const referencedSubjIds = new Set<string>();
+    evaluationsSnap.docs.forEach(d => { const eId = d.data().examId; if (eId) referencedSubjIds.add(eId); });
+    const missingSubjIds = Array.from(referencedSubjIds).filter(id => !subjectiveExamsMap.has(id));
+    if (missingSubjIds.length > 0) {
+      const refs = missingSubjIds.map(id => adminDb.collection('subjectiveExams').doc(id));
+      const missingDocs = await adminDb.getAll(...refs);
+      missingDocs.forEach(doc => {
+        if (doc.exists) {
+          subjectiveExamsMap.set(doc.id, { id: doc.id, ...doc.data() });
+        }
+      });
+    }
+    const subjectiveExamsList = Array.from(subjectiveExamsMap.values());
 
     const rawAttempts = attemptsSnap.docs.map((doc: any) => doc.data() as any).filter((att: any) => att.examType !== 'entrance');
     const rawAssignments = assignmentsSnap.docs.map((doc: any) => doc.data() as any).filter((ass: any) => ass.examType !== 'entrance');
@@ -1372,7 +1436,6 @@ export class QuotientService {
     const rawIntegrity = integritySnap.docs.map((doc: any) => doc.data() as any);
     const rawObservations = observationsSnap.docs.map((doc: any) => doc.data() as any);
     const rawReviews = parentReviewsSnap.docs.map((doc: any) => doc.data() as any);
-    const subjectiveExamsList = subjectiveExamsSnap.docs.map((doc: any) => ({ id: doc.id, ...doc.data() }));
     const rawEvaluations = evaluationsSnap.docs.map((doc: any) => doc.data() as any);
 
     return this.computeStudentQuotientScore(
