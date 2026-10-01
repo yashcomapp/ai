@@ -627,8 +627,6 @@ export async function GET(req: NextRequest) {
       studentsList,
       objAssignList,
       subjAssignList,
-      reviewsSnap,
-      attemptsSnap,
       parentsSnap
     ] = await Promise.all([
       adminDb.collection('exams').where('status', 'in', ['active', 'draft']).get(),
@@ -637,8 +635,6 @@ export async function GET(req: NextRequest) {
       adminDb.collection('users').where('role', '==', 'student').select('studentCode', 'name', 'email', 'isDemo', 'rollNumber', 'batchIds', 'batchId', 'class', 'className', 'status').get(),
       adminDb.collection('batchAssignments').where('status', 'in', ['active', 'draft']).get(),
       adminDb.collection('subjectiveAssignments').where('status', 'in', ['active', 'draft']).get(),
-      adminDb.collection('reviews').where('startedAt', '>=', since).select('examId').get(),
-      adminDb.collection('examAttempts').where('startedAt', '>=', since).select('examId').get(),
       includeParents 
         ? adminDb.collection('users').where('role', '==', 'parent').select('email', 'studentCode', 'studentCodes', 'name').get()
         : Promise.resolve({ docs: [] } as any)
@@ -692,29 +688,57 @@ export async function GET(req: NextRequest) {
     }).filter((p: any): p is { email: string; displayName: string; studentCodes: string[] } => p !== null && !!p.email)
     .sort((a: any, b: any) => a.displayName.localeCompare(b.displayName)) : [];
 
+    // Targeted attempt counts: Query reviews and attempts only for currently active/draft exam IDs
+    const allExamIds = Array.from(new Set([
+      ...exams.map(e => e.id),
+      ...subjectiveExams.map(e => e.id)
+    ])).filter(Boolean);
+
     const attemptCounts: { [key: string]: number } = {};
     const examAttemptsMap: { [key: string]: Set<string> } = {};
 
-    reviewsSnap.docs.forEach(doc => {
-      const eid = doc.data().examId;
-      const studentCode = doc.id.includes('_') ? doc.id.split('_').slice(1).join('_') : doc.id;
-      if (eid && studentCode) {
-        if (!examAttemptsMap[eid]) examAttemptsMap[eid] = new Set();
-        examAttemptsMap[eid].add(studentCode);
+    if (allExamIds.length > 0) {
+      const chunks: string[][] = [];
+      for (let i = 0; i < allExamIds.length; i += 30) {
+        chunks.push(allExamIds.slice(i, i + 30));
       }
-    });
 
-    attemptsSnap.docs.forEach(doc => {
-      const eid = doc.data().examId;
-      const studentCode = doc.id.includes('_') ? doc.id.split('_').slice(1).join('_') : doc.id;
-      if (eid && studentCode) {
-        if (!examAttemptsMap[eid]) examAttemptsMap[eid] = new Set();
-        examAttemptsMap[eid].add(studentCode);
+      const reviewAndAttemptSnaps = await Promise.all(
+        chunks.flatMap(chunk => [
+          adminDb.collection('reviews')
+            .where('examId', 'in', chunk)
+            .select('examId', 'startedAt')
+            .get()
+            .catch(() => null),
+          adminDb.collection('examAttempts')
+            .where('examId', 'in', chunk)
+            .select('examId', 'startedAt')
+            .get()
+            .catch(() => null)
+        ])
+      );
+
+      reviewAndAttemptSnaps.forEach(snap => {
+        if (!snap) return;
+        snap.docs.forEach((doc: any) => {
+          const d = doc.data();
+          const eid = d.examId;
+          const startedAt = d.startedAt;
+          if (startedAt) {
+            const startDate = startedAt.toDate ? startedAt.toDate() : new Date(startedAt);
+            if (startDate < since) return;
+          }
+          const studentCode = doc.id.includes('_') ? doc.id.split('_').slice(1).join('_') : doc.id;
+          if (eid && studentCode) {
+            if (!examAttemptsMap[eid]) examAttemptsMap[eid] = new Set();
+            examAttemptsMap[eid].add(studentCode);
+          }
+        });
+      });
+
+      for (const eid in examAttemptsMap) {
+        attemptCounts[eid] = examAttemptsMap[eid].size;
       }
-    });
-
-    for (const eid in examAttemptsMap) {
-      attemptCounts[eid] = examAttemptsMap[eid].size;
     }
 
     const objAssignments = objAssignList.docs.map(doc => {
