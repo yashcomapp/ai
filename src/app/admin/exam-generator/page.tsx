@@ -443,7 +443,6 @@ export default function AdminExamGeneratorPage() {
 
     if (!firebaseUser) return;
     
-    setFetchingPool(true);
     try {
       const idToken = await firebaseUser.getIdToken();
       const allChaptersList: any[] = [];
@@ -523,8 +522,6 @@ export default function AdminExamGeneratorPage() {
       }
     } catch (err) {
       console.error(err);
-    } finally {
-      setFetchingPool(false);
     }
   };
 

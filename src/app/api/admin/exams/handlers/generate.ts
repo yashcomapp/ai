@@ -6,8 +6,20 @@ import { verifyRole } from '@/lib/auth';
 import { ChunkedBatch } from '@/lib/firebase/batch';
 export const dynamic = 'force-dynamic';
 
+const INITIAL_METADATA_TTL = 300000; // 5 minutes
+let INITIAL_METADATA_CACHE: { data: any; timestamp: number } | null = null;
+
+const SYLLABUS_DOC_TTL = 300000; // 5 minutes cache for calculated counts
 const SYLLABUS_DOC_CACHE = new Map<string, { data: any; timestamp: number }>();
-const CACHE_TTL = 30000; // 30 seconds cache for calculated counts
+
+const POOL_CACHE_TTL = 60000; // 60 seconds cache for candidate question pools
+const POOL_CACHE = new Map<string, { data: any; timestamp: number }>();
+
+export function clearGenerateCaches() {
+  INITIAL_METADATA_CACHE = null;
+  SYLLABUS_DOC_CACHE.clear();
+  POOL_CACHE.clear();
+}
 
 export async function GET(req: NextRequest) {
   try {
@@ -34,6 +46,11 @@ export async function GET(req: NextRequest) {
       }
 
       const cleanClass = String(classNum).replace(/\D/g, '');
+      const poolCacheKey = `${board}_${cleanClass}_${subject}_${topicNumbers.slice().sort().join('|')}_${questionType}_${examCategory}`;
+      const cachedPool = POOL_CACHE.get(poolCacheKey);
+      if (cachedPool && (Date.now() - cachedPool.timestamp < POOL_CACHE_TTL)) {
+        return NextResponse.json(cachedPool.data);
+      }
 
       // Query questions collection for matching class + query existing exams to cross-check used questions
       const [questionsSnap, existingObjExamsSnap, existingSubjExamsSnap] = await Promise.all([
@@ -148,13 +165,15 @@ export async function GET(req: NextRequest) {
           return typeMatch && unusedMatch && categoryMatch && topicMatch;
         });
 
-      return NextResponse.json({ success: true, count: pool.length, questions: pool, pool });
+      const poolResponse = { success: true, count: pool.length, questions: pool, pool };
+      POOL_CACHE.set(poolCacheKey, { data: poolResponse, timestamp: Date.now() });
+      return NextResponse.json(poolResponse);
     }
 
     // Action B: Fetch single syllabus document with live calculated question counts
     if (docId) {
       const cached = SYLLABUS_DOC_CACHE.get(docId);
-      if (cached && (Date.now() - cached.timestamp < CACHE_TTL)) {
+      if (cached && (Date.now() - cached.timestamp < SYLLABUS_DOC_TTL)) {
         return NextResponse.json(cached.data);
       }
 
@@ -170,12 +189,23 @@ export async function GET(req: NextRequest) {
         const boardVal = subjectData.board || '';
         const classVal = subjectData.class !== undefined ? subjectData.class : '';
         const subjectVal = subjectData.subject || '';
+        const subjectCodeVal = subjectData.subjectCode || '';
 
         const cleanClassVal = String(classVal).replace(/\D/g, '');
 
-        const questionsSnap = await adminDb.collection('questions')
-          .where('class', '==', cleanClassVal)
-          .get();
+        let questionsSnap: admin.firestore.QuerySnapshot | null = null;
+        if (subjectCodeVal) {
+          questionsSnap = await adminDb.collection('questions')
+            .where('class', '==', cleanClassVal)
+            .where('subjectCode', '==', subjectCodeVal)
+            .get();
+        }
+
+        if (!questionsSnap || questionsSnap.empty) {
+          questionsSnap = await adminDb.collection('questions')
+            .where('class', '==', cleanClassVal)
+            .get();
+        }
 
         questionsList = questionsSnap.docs
           .map(doc => {
@@ -382,6 +412,10 @@ export async function GET(req: NextRequest) {
     }
 
     // Default Action: Load templates, live syllabus collection, and metadata codes
+    if (INITIAL_METADATA_CACHE && (Date.now() - INITIAL_METADATA_CACHE.timestamp < INITIAL_METADATA_TTL)) {
+      return NextResponse.json(INITIAL_METADATA_CACHE.data);
+    }
+
     const [
       templatesSnap,
       syllabusSnap,
@@ -439,12 +473,15 @@ export async function GET(req: NextRequest) {
       subjects: subjectsMap
     };
 
-    return NextResponse.json({
+    const initialData = {
       templates,
       syllabusSubjects,
       boardCodes,
       subjectCodes
-    });
+    };
+
+    INITIAL_METADATA_CACHE = { data: initialData, timestamp: Date.now() };
+    return NextResponse.json(initialData);
 
   } catch (error: any) {
     console.error('API load exam generator metrics error:', error);
@@ -467,7 +504,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'Missing parameters (action).' }, { status: 400 });
     }
 
-    SYLLABUS_DOC_CACHE.clear();
+    clearGenerateCaches();
 
     // Compile and Save Final Exam
     if (action === 'saveExam') {
