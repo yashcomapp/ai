@@ -5,6 +5,7 @@ import { getDateKeyIST as getISTDateString } from '@/lib/dateUtils';
 import { isDemoUser } from '@/lib/studentDb';
 import { toNonNegativeNumber } from '@/lib/validationUtils';
 import { normalizeStudentFeeRecord } from '@/lib/feeUtils';
+import { ChunkedBatch } from '@/lib/firebase/batch';
 
 export const dynamic = 'force-dynamic';
 
@@ -55,7 +56,15 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const studentCode = searchParams.get('studentCode');
 
-    // 1. Fetch all student profiles and batches
+    // Fast targeted path for single student fee lookup
+    if (studentCode) {
+      const codeUpper = studentCode.trim().toUpperCase();
+      const feeDoc = await adminDb.collection('studentFees').doc(codeUpper).get();
+      const feeRecord = feeDoc.exists ? normalizeStudentFeeRecord({ id: feeDoc.id, ...feeDoc.data() }) : null;
+      return NextResponse.json({ success: true, feeRecord });
+    }
+
+    // 1. Fetch all student profiles and batches for admin roster
     const [studentsSnap, batchesSnap] = await Promise.all([
       adminDb.collection('users').where('role', '==', 'student').get(),
       adminDb.collection('batches').get()
@@ -90,12 +99,6 @@ export async function GET(req: NextRequest) {
     feesSnap.docs.forEach(doc => {
       feesMap.set(doc.id.toUpperCase(), normalizeStudentFeeRecord({ id: doc.id, ...doc.data() }));
     });
-
-    if (studentCode) {
-      const codeUpper = studentCode.trim().toUpperCase();
-      const feeRecord = feesMap.get(codeUpper) || null;
-      return NextResponse.json({ success: true, feeRecord });
-    }
 
     // Combine student list with their fee statuses
     const studentsWithFees = students.map(s => {
@@ -191,6 +194,7 @@ export async function POST(req: NextRequest) {
       const targetStudents = studentsSnap.docs.map(doc => {
         const d = doc.data();
         return {
+          userRef: doc.ref,
           uid: doc.id,
           name: d.name || '',
           studentCode: (d.studentCode || '').trim().toUpperCase(),
@@ -210,8 +214,48 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'No active students found matching criteria.' }, { status: 404 });
       }
 
-      const existingFeesSnap = await adminDb.collection('studentFees').get();
-      const existingFeesSet = new Set(existingFeesSnap.docs.map(doc => doc.id.toUpperCase()));
+      // Check existing studentFees only for target students if onlyUnconfigured is true
+      const existingFeesSet = new Set<string>();
+      if (onlyUnconfigured) {
+        const studentFeeRefs = targetStudents.map(s => adminDb.collection('studentFees').doc(s.studentCode));
+        for (let i = 0; i < studentFeeRefs.length; i += 100) {
+          const chunkRefs = studentFeeRefs.slice(i, i + 100);
+          const snaps = await adminDb.getAll(...chunkRefs);
+          snaps.forEach(snap => {
+            if (snap.exists) {
+              existingFeesSet.add(snap.id.toUpperCase());
+            }
+          });
+        }
+      }
+
+      const studentsToUpdate = onlyUnconfigured
+        ? targetStudents.filter(s => !existingFeesSet.has(s.studentCode))
+        : targetStudents;
+
+      if (studentsToUpdate.length === 0) {
+        return NextResponse.json({ 
+          success: true, 
+          count: 0, 
+          message: 'All matching students already have fee configurations.' 
+        });
+      }
+
+      // Fetch historical feeTransactions in chunks of 30 for all target students to preserve transaction parity
+      const updateCodes = studentsToUpdate.map(s => s.studentCode);
+      const txMap = new Map<string, any[]>();
+      for (let i = 0; i < updateCodes.length; i += 30) {
+        const chunk = updateCodes.slice(i, i + 30);
+        const txSnap = await adminDb.collection('feeTransactions')
+          .where('studentCode', 'in', chunk)
+          .get();
+        txSnap.docs.forEach(d => {
+          const tx = d.data();
+          const c = (tx.studentCode || '').trim().toUpperCase();
+          if (!txMap.has(c)) txMap.set(c, []);
+          txMap.get(c)!.push(tx);
+        });
+      }
 
       const formattedInstallments = (tmplData.installments || []).map((inst: any, idx: number) => ({
         installmentId: `inst_${idx + 1}`,
@@ -222,14 +266,11 @@ export async function POST(req: NextRequest) {
         paidAt: null
       }));
 
-      let updatedCount = 0;
-      for (const student of targetStudents) {
-        if (onlyUnconfigured && existingFeesSet.has(student.studentCode)) {
-          continue;
-        }
+      const chunkedBatch = new ChunkedBatch(adminDb);
+      const nowIso = new Date().toISOString();
 
-        const feeRef = adminDb.collection('studentFees').doc(student.studentCode);
-        const record = {
+      for (const student of studentsToUpdate) {
+        const rawRecord = {
           studentCode: student.studentCode,
           studentName: student.name,
           classNum: student.classNum,
@@ -240,18 +281,35 @@ export async function POST(req: NextRequest) {
           installments: formattedInstallments,
           templateId: tmplDoc.id,
           templateName: tmplData.name || '',
-          updatedAt: new Date().toISOString()
+          updatedAt: nowIso
         };
 
-        await feeRef.set(record, { merge: false });
-        await recalculateStudentFeeStats(student.studentCode);
-        updatedCount++;
+        const studentTxs = txMap.get(student.studentCode) || [];
+        const normalized = normalizeStudentFeeRecord(rawRecord, studentTxs);
+
+        const feeDocRef = adminDb.collection('studentFees').doc(student.studentCode);
+        chunkedBatch.set(feeDocRef, {
+          ...rawRecord,
+          totalPaidAmount: normalized.totalPaidAmount,
+          outstandingAmount: normalized.outstandingAmount,
+          feeStatus: normalized.feeStatus,
+          hasOverdueInstallment: normalized.hasOverdueInstallment,
+          nextInstallmentDueDate: normalized.nextInstallmentDueDate,
+          installments: normalized.installments,
+          updatedAt: nowIso
+        }, { merge: false });
+
+        chunkedBatch.update(student.userRef, {
+          feeStatus: normalized.feeStatus
+        });
       }
+
+      await chunkedBatch.commit();
 
       return NextResponse.json({ 
         success: true, 
-        count: updatedCount, 
-        message: `Successfully applied "${tmplData.name}" to ${updatedCount} student(s).` 
+        count: studentsToUpdate.length, 
+        message: `Successfully applied "${tmplData.name}" to ${studentsToUpdate.length} student(s).` 
       });
     }
 
