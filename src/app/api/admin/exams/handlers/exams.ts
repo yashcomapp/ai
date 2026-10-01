@@ -1203,36 +1203,38 @@ export async function DELETE(req: NextRequest) {
     if (assignedQuestionCodes.length > 0) {
       try {
         const uniqueCandidateCodes = Array.from(new Set(assignedQuestionCodes));
-        const [remainingObjSnap, remainingSubjSnap] = await Promise.all([
-          adminDb.collection('exams').get(),
-          adminDb.collection('subjectiveExams').get()
-        ]);
-
         const otherActiveCodes = new Set<string>();
-        remainingObjSnap.docs.forEach(doc => {
-          if (doc.id === examId) return;
-          const edata = doc.data();
-          const codes = edata.questionCodes || edata.questionIds || [];
-          codes.forEach((c: any) => { if (c) otherActiveCodes.add(String(c).trim()); });
-          if (Array.isArray(edata.questions)) {
-            edata.questions.forEach((q: any) => {
-              if (q?.id) otherActiveCodes.add(String(q.id).trim());
-              if (q?.questionCode) otherActiveCodes.add(String(q.questionCode).trim());
-            });
-          }
-        });
-        remainingSubjSnap.docs.forEach(doc => {
-          if (doc.id === examId) return;
-          const edata = doc.data();
-          const codes = edata.questionCodes || edata.questionIds || [];
-          codes.forEach((c: any) => { if (c) otherActiveCodes.add(String(c).trim()); });
-          if (Array.isArray(edata.questions)) {
-            edata.questions.forEach((q: any) => {
-              if (q?.id) otherActiveCodes.add(String(q.id).trim());
-              if (q?.questionCode) otherActiveCodes.add(String(q.questionCode).trim());
-            });
-          }
-        });
+
+        // Query only exams that actually contain the candidate question codes/ids
+        for (let i = 0; i < uniqueCandidateCodes.length; i += 30) {
+          const chunk = uniqueCandidateCodes.slice(i, i + 30);
+          const [objCodesSnap, objIdsSnap, subjCodesSnap, subjIdsSnap] = await Promise.all([
+            adminDb.collection('exams').where('questionCodes', 'array-contains-any', chunk).get().catch(() => null),
+            adminDb.collection('exams').where('questionIds', 'array-contains-any', chunk).get().catch(() => null),
+            adminDb.collection('subjectiveExams').where('questionCodes', 'array-contains-any', chunk).get().catch(() => null),
+            adminDb.collection('subjectiveExams').where('questionIds', 'array-contains-any', chunk).get().catch(() => null)
+          ]);
+
+          const checkDocs = [
+            ...(objCodesSnap ? objCodesSnap.docs : []),
+            ...(objIdsSnap ? objIdsSnap.docs : []),
+            ...(subjCodesSnap ? subjCodesSnap.docs : []),
+            ...(subjIdsSnap ? subjIdsSnap.docs : [])
+          ];
+
+          checkDocs.forEach(doc => {
+            if (doc.id === examId) return;
+            const edata = doc.data();
+            const codes = edata.questionCodes || edata.questionIds || [];
+            codes.forEach((c: any) => { if (c) otherActiveCodes.add(String(c).trim()); });
+            if (Array.isArray(edata.questions)) {
+              edata.questions.forEach((q: any) => {
+                if (q?.id) otherActiveCodes.add(String(q.id).trim());
+                if (q?.questionCode) otherActiveCodes.add(String(q.questionCode).trim());
+              });
+            }
+          });
+        }
 
         const codesToRelease = uniqueCandidateCodes.filter(c => !otherActiveCodes.has(c));
         if (codesToRelease.length > 0) {
