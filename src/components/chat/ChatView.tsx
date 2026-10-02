@@ -654,21 +654,6 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
 
       if (!res.ok) throw new Error('Failed to deliver message');
       setPendingMessages(prev => prev.filter(m => m.messageId !== tempId));
-
-      // Refresh messages immediately to eliminate send delay
-      const fetchRes = await fetch(`/api/chat/messages?roomId=${activeRoomId}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (fetchRes.ok) {
-        const data = await fetchRes.json();
-        if (data.success && data.messages) {
-          const mapped = data.messages.map((m: any) => ({
-            messageId: m.messageId || m.id,
-            ...m
-          }));
-          setMessages(mapped);
-        }
-      }
     } catch (e: any) {
       setPendingMessages(prev => prev.filter(m => m.messageId !== tempId));
       alert(e.message);
@@ -730,20 +715,6 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
 
       if (!res.ok) throw new Error('Failed to deliver file');
       setPendingMessages(prev => prev.filter(m => m.messageId !== tempId));
-
-      const refreshRes = await fetch(`/api/chat/messages?roomId=${activeRoomId}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (refreshRes.ok) {
-        const data = await refreshRes.json();
-        if (data.success && data.messages) {
-          const mapped = data.messages.map((m: any) => ({
-            messageId: m.messageId || m.id,
-            ...m
-          }));
-          setMessages(mapped);
-        }
-      }
     } catch (err: any) {
       setPendingMessages(prev => prev.filter(m => m.messageId !== tempId));
       alert('Failed to send file: ' + err.message);
@@ -1096,20 +1067,6 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
       setShowPollModal(false);
       setPollQuestion('');
       setPollOptionsInput(['', '']);
-
-      const fetchRes = await fetch(`/api/chat/messages?roomId=${activeRoomId}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (fetchRes.ok) {
-        const data = await fetchRes.json();
-        if (data.success && data.messages) {
-          const mapped = data.messages.map((m: any) => ({
-            messageId: m.messageId || m.id,
-            ...m
-          }));
-          setMessages(mapped);
-        }
-      }
     } catch (e: any) {
       alert(e.message);
     }
