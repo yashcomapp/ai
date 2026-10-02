@@ -379,7 +379,28 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
       return;
     }
 
-    const fetchInitialMessages = async () => {
+    // Fetch participant metadata (name mappings) without fetching duplicate message history
+    const fetchParticipantMetadata = async () => {
+      try {
+        const token = await firebaseUser!.getIdToken();
+        const res = await fetch(`/api/chat/messages?roomId=${activeRoomId}&metaOnly=true`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.participantNames) {
+            setParticipantNames(data.participantNames);
+          }
+        }
+      } catch (e) {
+        console.error('Failed to fetch participant metadata via API:', e);
+      }
+    };
+
+    fetchParticipantMetadata();
+
+    // Fallback message fetcher: used ONLY if Firestore onSnapshot subscription fails
+    const fetchFallbackMessages = async () => {
       try {
         const token = await firebaseUser!.getIdToken();
         const res = await fetch(`/api/chat/messages?roomId=${activeRoomId}`, {
@@ -399,14 +420,11 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
           }
         }
       } catch (e) {
-        console.error('Failed to fetch messages initially via API:', e);
+        console.error('Failed to fetch messages in fallback mode via API:', e);
       }
     };
 
-    // Unconditionally fetch initial messages to populate participantNames mapping
-    fetchInitialMessages();
-
-    // Set up Firestore snapshot listener
+    // Set up Firestore snapshot listener as the authoritative live message source
     let unsubscribe = () => {};
     try {
       const q = query(
@@ -425,12 +443,12 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
       }, (error) => {
         console.warn("Firestore snapshot subscription failed. Falling back to API polling:", error);
         setUseApiPolling(true);
-        fetchInitialMessages();
+        fetchFallbackMessages();
       });
     } catch (err) {
       console.warn("Failed to subscribe to Firestore snapshots. Falling back to API polling:", err);
       setUseApiPolling(true);
-      fetchInitialMessages();
+      fetchFallbackMessages();
     }
 
     // Populate active room mutes

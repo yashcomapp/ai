@@ -122,16 +122,21 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    const messagesSnap = await roomRef
-      .collection('messages')
-      .orderBy('createdAt', 'desc')
-      .limit(100)
-      .get();
+    const metaOnly = searchParams.get('metaOnly') === 'true' || searchParams.get('participantsOnly') === 'true';
 
-    const messages = messagesSnap.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    })).reverse();
+    let messages: any[] = [];
+    if (!metaOnly) {
+      const messagesSnap = await roomRef
+        .collection('messages')
+        .orderBy('createdAt', 'desc')
+        .limit(100)
+        .get();
+
+      messages = messagesSnap.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })).reverse();
+    }
 
     // Resolve participant names
     const participantNames: Record<string, string> = {};
