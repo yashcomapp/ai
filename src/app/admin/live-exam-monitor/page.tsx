@@ -28,6 +28,12 @@ interface Session {
     headMovementCount?: number;
     awayTimeTotal?: number;
   };
+  proctoringSnapshots?: Array<{
+    timestamp: number;
+    reason: string;
+    imageData: string;
+  }>;
+  proctoringSnapshotsExpiresAt?: string;
   status: string;
   cameraAvailable: boolean;
   micAvailable?: boolean;
@@ -66,6 +72,21 @@ export default function AdminLiveMonitorPage() {
 
   // Heartbeat staleness ticker
   const [tickerTime, setTickerTime] = useState(Date.now());
+
+  // Proctoring Snapshots Modal State
+  const [snapshotsModal, setSnapshotsModal] = useState<{
+    show: boolean;
+    studentName: string;
+    examName: string;
+    snapshots: Array<{ timestamp: number; reason: string; imageData: string }>;
+    selectedImage: string | null;
+  }>({
+    show: false,
+    studentName: '',
+    examName: '',
+    snapshots: [],
+    selectedImage: null
+  });
 
   // WebRTC Video Modal State
   const [videoModal, setVideoModal] = useState({
@@ -194,6 +215,22 @@ export default function AdminLiveMonitorPage() {
 
       return sortDir === 'asc' ? valA - valB : valB - valA;
     });
+  };
+
+  // Open snapshots modal
+  const handleOpenSnapshotsModal = (session: Session) => {
+    const snaps = session.proctoringSnapshots || [];
+    setSnapshotsModal({
+      show: true,
+      studentName: session.studentName || session.studentCode,
+      examName: session.examName || session.examId,
+      snapshots: snaps,
+      selectedImage: snaps[0]?.imageData || null
+    });
+  };
+
+  const handleCloseSnapshotsModal = () => {
+    setSnapshotsModal(prev => ({ ...prev, show: false, selectedImage: null }));
   };
 
   // Close peer connection and modal
@@ -622,14 +659,26 @@ export default function AdminLiveMonitorPage() {
                         <td style={{ padding: '12px 16px' }}>{renderViolationsBadge(s.violations)}</td>
                         <td style={{ padding: '12px 16px', color: 'var(--text-muted)', fontSize: '11px' }}>{timeAgo(s.lastActive)}</td>
                         <td style={{ padding: '12px 16px', textAlign: 'right' }}>
-                          <button 
-                            className="btn btn-secondary btn-sm" 
-                            disabled={!s.cameraAvailable}
-                            style={{ fontSize: '11px', padding: '4px 10px' }}
-                            onClick={() => handleOpenVideoFeed(s.examId, s.studentCode, s.studentName || s.studentCode)}
-                          >
-                            📷 {s.cameraAvailable ? 'View Feed' : 'No Camera'}
-                          </button>
+                          <div style={{ display: 'inline-flex', gap: '6px', alignItems: 'center', justifyContent: 'flex-end' }}>
+                            {s.proctoringSnapshots && s.proctoringSnapshots.length > 0 && (
+                              <button 
+                                className="btn btn-secondary btn-sm" 
+                                style={{ fontSize: '11px', padding: '4px 8px', background: 'rgba(59, 130, 246, 0.12)', color: 'var(--accent)', borderColor: 'rgba(59, 130, 246, 0.3)', fontWeight: 700 }}
+                                onClick={() => handleOpenSnapshotsModal(s)}
+                                title="View auto-captured proctoring snapshots"
+                              >
+                                📸 Photos ({s.proctoringSnapshots.length})
+                              </button>
+                            )}
+                            <button 
+                              className="btn btn-secondary btn-sm" 
+                              disabled={!s.cameraAvailable}
+                              style={{ fontSize: '11px', padding: '4px 10px' }}
+                              onClick={() => handleOpenVideoFeed(s.examId, s.studentCode, s.studentName || s.studentCode)}
+                            >
+                              📷 {s.cameraAvailable ? 'Live Feed' : 'No Camera'}
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -640,6 +689,89 @@ export default function AdminLiveMonitorPage() {
           </div>
         </div>
       </main>
+
+      {/* Snapshots Modal Overlay (Admin Confidential) */}
+      {snapshotsModal.show && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+          <div style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', maxWidth: '680px', width: '100%', maxHeight: '90vh', display: 'flex', flexDirection: 'column', border: '1px solid var(--border-light)', overflow: 'hidden' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-light)', padding: '14px 20px', background: 'var(--bg-soft)' }}>
+              <div>
+                <h3 style={{ fontSize: '14px', fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  📸 Proctoring Snapshots: {snapshotsModal.studentName}
+                </h3>
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                  {snapshotsModal.examName} • {snapshotsModal.snapshots.length} photo(s) captured
+                </span>
+              </div>
+              <button className="btn btn-secondary" style={{ padding: '2px 8px', fontSize: '12px' }} onClick={handleCloseSnapshotsModal}>✕</button>
+            </div>
+
+            <div style={{ padding: '16px 20px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {/* Privacy Notice Banner */}
+              <div style={{ background: 'rgba(59, 130, 246, 0.08)', border: '1px solid rgba(59, 130, 246, 0.25)', borderRadius: '6px', padding: '8px 12px', fontSize: '11px', color: 'var(--accent)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span>🔒</span>
+                <span>
+                  <strong>Strictly Confidential (Admin Only):</strong> These photos are automatically captured during proctoring events and will be permanently purged 18 hours after the exam.
+                </span>
+              </div>
+
+              {/* Main Selected Image Preview */}
+              {snapshotsModal.selectedImage && (
+                <div style={{ width: '100%', background: '#000', borderRadius: '8px', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', maxHeight: '340px' }}>
+                  <img 
+                    src={snapshotsModal.selectedImage} 
+                    alt="Proctoring Snapshot" 
+                    style={{ maxHeight: '340px', maxWidth: '100%', objectFit: 'contain' }}
+                  />
+                </div>
+              )}
+
+              {/* Thumbnails Strip */}
+              <div>
+                <div style={{ fontSize: '11.5px', fontWeight: 700, marginBottom: '8px', color: 'var(--text-muted)' }}>
+                  Captured Moments ({snapshotsModal.snapshots.length}/5 max):
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: '10px' }}>
+                  {snapshotsModal.snapshots.map((snap, idx) => {
+                    const isSelected = snapshotsModal.selectedImage === snap.imageData;
+                    const dateStr = snap.timestamp ? new Date(snap.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : `#${idx + 1}`;
+                    return (
+                      <div 
+                        key={idx} 
+                        onClick={() => setSnapshotsModal(prev => ({ ...prev, selectedImage: snap.imageData }))}
+                        style={{
+                          border: isSelected ? '2px solid var(--accent)' : '1px solid var(--border-light)',
+                          borderRadius: '6px',
+                          overflow: 'hidden',
+                          cursor: 'pointer',
+                          background: 'var(--bg-soft)',
+                          transition: 'all 0.15s ease'
+                        }}
+                      >
+                        <div style={{ aspectRatio: '4/3', background: '#000', overflow: 'hidden' }}>
+                          <img src={snap.imageData} alt={`Snapshot ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        </div>
+                        <div style={{ padding: '4px 6px', fontSize: '9.5px', background: 'var(--surface)' }}>
+                          <div style={{ fontWeight: 700, color: 'var(--text)' }}>⏱️ {dateStr}</div>
+                          <div style={{ color: 'var(--warning)', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={snap.reason}>
+                            {snap.reason || 'Movement'}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            <div style={{ borderTop: '1px solid var(--border-light)', padding: '10px 20px', background: 'var(--bg-soft)', display: 'flex', justifyContent: 'flex-end' }}>
+              <button className="btn btn-secondary btn-sm" onClick={handleCloseSnapshotsModal}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Video stream Modal Overlay */}
       {videoModal.show && (

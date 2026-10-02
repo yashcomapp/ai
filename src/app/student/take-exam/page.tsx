@@ -311,6 +311,8 @@ function TakeExamContent() {
     cameraStatus,
     cameraStream,
     micBypassed,
+    proctoringSnapshots,
+    addProctoringSnapshot,
     startCameraStream,
     stopCameraStream,
     cleanupProctoring
@@ -401,6 +403,7 @@ function TakeExamContent() {
     stopCameraStream,
     cleanupLiveExam: cleanupProctoring,
     isNumerical: isNumerical,
+    onSnapshotCaptured: addProctoringSnapshot,
     onViolation: (type) => {
       if (type === 'tab_switch') {
         // Tab switch violations are strictly managed and debounced by useLiveExam SSOT hook
@@ -737,7 +740,8 @@ function TakeExamContent() {
             multipleFacesCount: proctoringViolations.multipleFaces || 0,
             lookingAwayCount: proctoringViolations.lookingAway || 0,
             headMovementCount: proctoringViolations.headMovement || 0,
-            screenshots: []
+            screenshots: proctoringSnapshots,
+            proctoringSnapshots: proctoringSnapshots
           }
         })
       });

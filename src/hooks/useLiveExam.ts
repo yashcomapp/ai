@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { rtdb } from '@/lib/firebase/rtdb';
 import { getLiveSessionRef, createLiveSession, updateLiveSession } from '@/lib/proctoring';
+import { ProctoringSnapshot } from './useProctoring';
 import { ref, onValue, set, push, off, remove } from 'firebase/database';
 
 interface UseLiveExamProps {
@@ -69,6 +70,23 @@ export function useLiveExam({
   const [cameraStatus, setCameraStatus] = useState('');
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
   const [micBypassed, setMicBypassed] = useState(false);
+  const [proctoringSnapshots, setProctoringSnapshots] = useState<ProctoringSnapshot[]>([]);
+  const proctoringSnapshotsRef = useRef<ProctoringSnapshot[]>([]);
+
+  const addProctoringSnapshot = useCallback((snapshot: ProctoringSnapshot) => {
+    if (proctoringSnapshotsRef.current.length >= 5) return;
+    const updated = [...proctoringSnapshotsRef.current, snapshot];
+    proctoringSnapshotsRef.current = updated;
+    setProctoringSnapshots(updated);
+
+    // Sync to Firestore live session doc
+    if (liveSessionDocRef.current) {
+      updateLiveSession(liveSessionDocRef.current, {
+        proctoringSnapshots: updated,
+        proctoringSnapshotsExpiresAt: new Date(Date.now() + 18 * 60 * 60 * 1000).toISOString()
+      }).catch(err => console.warn('[useLiveExam] Failed to sync snapshot:', err));
+    }
+  }, []);
 
   const [isInterrupted, setIsInterrupted] = useState<boolean>(false);
   const isInterruptedRef = useRef<boolean>(false);
@@ -604,6 +622,8 @@ export function useLiveExam({
     cameraStatus,
     cameraStream,
     micBypassed,
+    proctoringSnapshots,
+    addProctoringSnapshot,
     startCameraStream,
     stopCameraStream,
     cleanupProctoring

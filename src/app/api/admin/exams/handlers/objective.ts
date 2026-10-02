@@ -99,15 +99,26 @@ export async function GET(req: NextRequest) {
       return NextResponse.json(cached);
     }
 
-    // Load reviews, assignments, students, batches, syllabus, and parent evaluations in parallel
-    const [reviewsSnap, assignmentsSnap, studentsSnap, batchesSnap, syllabusList, evalSnaps] = await Promise.all([
+    // Load reviews, attempts, assignments, students, batches, syllabus, and parent evaluations in parallel
+    const [reviewsSnap, attemptsSnap, assignmentsSnap, studentsSnap, batchesSnap, syllabusList, evalSnaps] = await Promise.all([
       adminDb.collection('reviews').where('examId', '==', resolvedExamId).get(),
+      adminDb.collection('examAttempts').where('examId', '==', resolvedExamId).get(),
       adminDb.collection('batchAssignments').where('examId', '==', resolvedExamId).get(),
       adminDb.collection('users').where('role', '==', 'student').select('studentCode', 'name', 'batchId', 'batchIds', 'autonomous', 'status', 'lastLoginAt', 'lastActiveAt').get(),
       adminDb.collection('batches').select('name').get(),
       getCachedSyllabus(),
       adminDb.collection('evaluations').where('examId', '==', resolvedExamId).get()
     ]);
+
+    const attemptsMap = new Map<string, any>();
+    attemptsSnap.docs.forEach(doc => {
+      const d = doc.data();
+      attemptsMap.set(doc.id, d);
+      if (d.studentCode) {
+        attemptsMap.set(`${resolvedExamId}_${d.studentCode}`, d);
+        attemptsMap.set(d.studentCode, d);
+      }
+    });
 
     const evalApprovedMap = new Map<string, any>();
     evalSnaps.docs.forEach(doc => {
@@ -162,11 +173,13 @@ export async function GET(req: NextRequest) {
       });
     }
 
+    const nowMs = Date.now();
     const attempts = reviewsSnap.docs.map(doc => {
       const data = doc.data();
-      const rawStarted = data.startedAt || data.createdAt;
+      const rawAttempt = attemptsMap.get(doc.id) || attemptsMap.get(`${resolvedExamId}_${data.studentCode}`) || attemptsMap.get(data.studentCode) || {};
+      const rawStarted = data.startedAt || rawAttempt.startedAt || data.createdAt;
       const startedAt = rawStarted ? (rawStarted.toDate ? rawStarted.toDate() : new Date(rawStarted)) : null;
-      const rawCompleted = data.completedAt || data.updatedAt;
+      const rawCompleted = data.completedAt || rawAttempt.completedAt || data.updatedAt;
       const completedAt = rawCompleted ? (rawCompleted.toDate ? rawCompleted.toDate() : new Date(rawCompleted)) : null;
       const isApproved = data.status === 'approved' || !!evalApprovedMap.get(doc.id) || !!evalApprovedMap.get(`${examId}_${data.studentCode}`);
       const evalInfo = evalApprovedMap.get(doc.id) || evalApprovedMap.get(`${examId}_${data.studentCode}`);
@@ -178,12 +191,22 @@ export async function GET(req: NextRequest) {
         isAttempted: qd.isAttempted !== undefined ? Boolean(qd.isAttempted) : Boolean(qd.isCorrect || (qd.userAnswer !== undefined && qd.userAnswer !== null && qd.userAnswer !== ''))
       }));
 
+      // 18-hour auto-purge check for proctoring snapshots
+      const rawSnapshots = rawAttempt.proctoringSnapshots || data.proctoringSnapshots || [];
+      const snapshotsExpiresAt = rawAttempt.proctoringSnapshotsExpiresAt || data.proctoringSnapshotsExpiresAt || null;
+      const expiryMs = snapshotsExpiresAt ? new Date(snapshotsExpiresAt).getTime() : (completedAt ? completedAt.getTime() + 18 * 60 * 60 * 1000 : null);
+      const isExpired = expiryMs ? nowMs > expiryMs : false;
+      const validSnapshots = isExpired ? [] : (Array.isArray(rawSnapshots) ? rawSnapshots : []);
+
       return {
         id: doc.id,
         ...data,
         questionDetails: qDetails,
         totalMarks: data.totalMarks || examData.totalMarks || 0,
         status: isApproved ? 'approved' : (data.status || 'pending'),
+        proctoringSnapshots: validSnapshots,
+        proctoringSnapshotsExpiresAt: snapshotsExpiresAt,
+        proctoringSnapshotsPurged: isExpired,
         startedAt: startedAt ? (startedAt.toISOString ? startedAt.toISOString() : new Date(startedAt).toISOString()) : null,
         completedAt: completedAt ? (completedAt.toISOString ? completedAt.toISOString() : new Date(completedAt).toISOString()) : null,
         reviewedAt: reviewedAt ? (reviewedAt.toISOString ? reviewedAt.toISOString() : new Date(reviewedAt).toISOString()) : null

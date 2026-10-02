@@ -1,6 +1,31 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { calculateHeadPose, checkLookingAway, checkExcessiveMovement, HeadPose, PROCTOR_THRESHOLDS } from '@/utils/headPose';
 
+export interface ProctoringSnapshot {
+  id: string;
+  timestamp: string; // ISO string
+  type: 'random_check' | 'movement' | 'gaze' | 'multiple_faces' | 'no_face' | 'initial_check';
+  reason: string;
+  imageBase64: string; // JPEG data URL
+}
+
+export function captureCameraSnapshot(videoEl: HTMLVideoElement | null, maxDim: number = 320, quality: number = 0.6): string | null {
+  if (!videoEl || !videoEl.videoWidth || !videoEl.videoHeight) return null;
+  try {
+    const canvas = document.createElement('canvas');
+    const scale = Math.min(1, maxDim / Math.max(videoEl.videoWidth, videoEl.videoHeight));
+    canvas.width = Math.round(videoEl.videoWidth * scale);
+    canvas.height = Math.round(videoEl.videoHeight * scale);
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+    ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+    return canvas.toDataURL('image/jpeg', quality);
+  } catch (err) {
+    console.warn('[proctoring] Failed to capture snapshot:', err);
+    return null;
+  }
+}
+
 interface ProctoringConfig {
   videoRef: React.RefObject<HTMLVideoElement | null>;
   enabled?: boolean;
@@ -18,6 +43,7 @@ interface ProctoringConfig {
 
   // Custom Callbacks
   onViolation?: (type: 'gaze' | 'no_face' | 'movement' | 'multiple_faces' | 'tab_switch', details: string, screenshotDataUrl?: string | null) => void;
+  onSnapshotCaptured?: (snapshot: ProctoringSnapshot) => void;
   onStatusChange?: (status: string, statusClass: 'success' | 'warning' | 'error') => void;
   isNumerical?: boolean;
 }
@@ -33,6 +59,7 @@ export function useProctoring({
   stopCameraStream,
   cleanupLiveExam,
   onViolation,
+  onSnapshotCaptured,
   onStatusChange,
   isNumerical = false
 }: ProctoringConfig) {
@@ -75,6 +102,50 @@ export function useProctoring({
   useEffect(() => {
     isNumericalRef.current = isNumerical;
   }, [isNumerical]);
+
+  const snapshotsCountRef = useRef<number>(0);
+  const lastSnapshotTimeRef = useRef<number>(0);
+
+  const takeSnapshot = useCallback((type: ProctoringSnapshot['type'], reason: string) => {
+    if (snapshotsCountRef.current >= 5) return;
+    const now = Date.now();
+    if (snapshotsCountRef.current > 0 && now - lastSnapshotTimeRef.current < 15000) return;
+
+    const base64 = captureCameraSnapshot(videoRef.current);
+    if (!base64) return;
+
+    snapshotsCountRef.current += 1;
+    lastSnapshotTimeRef.current = now;
+
+    const snapshot: ProctoringSnapshot = {
+      id: `snap_${now}_${snapshotsCountRef.current}`,
+      timestamp: new Date(now).toISOString(),
+      type,
+      reason,
+      imageBase64: base64
+    };
+
+    onSnapshotCaptured?.(snapshot);
+  }, [videoRef, onSnapshotCaptured]);
+
+  // Periodic automated snapshots (initial check + random intervals)
+  useEffect(() => {
+    if (!enabled) return;
+    const initialTimer = setTimeout(() => {
+      takeSnapshot('initial_check', 'Initial proctoring identity check');
+    }, 10000);
+
+    const intervalTimer = setInterval(() => {
+      if (snapshotsCountRef.current < 5) {
+        takeSnapshot('random_check', `Periodic random audit #${snapshotsCountRef.current + 1}`);
+      }
+    }, 2.5 * 60 * 1000);
+
+    return () => {
+      clearTimeout(initialTimer);
+      clearInterval(intervalTimer);
+    };
+  }, [enabled, takeSnapshot]);
 
   const updateStatus = useCallback((status: string, statusClass: 'success' | 'warning' | 'error') => {
     setFaceStatus(status);
@@ -127,6 +198,7 @@ export function useProctoring({
       const effectiveDebounce = (isLookingDown && isNumericalRef.current) ? 4500 : PROCTOR_THRESHOLDS.LOOKING_AWAY.DEBOUNCE_MS;
       if (now - lookingAwayStartRef.current > effectiveDebounce) {
         onViolation?.('gaze', 'Looking away from screen for too long', null);
+        takeSnapshot('gaze', 'Looking away from screen');
         lookingAwayStartRef.current = now; // reset to throttle
       }
     } else {
@@ -139,12 +211,13 @@ export function useProctoring({
       }
       if (now - headMovementStartRef.current > PROCTOR_THRESHOLDS.EXCESSIVE_MOVEMENT.DEBOUNCE_MS) {
         onViolation?.('movement', 'Too much head movement detected', null);
+        takeSnapshot('movement', 'Excessive head movement');
         headMovementStartRef.current = null;
       }
     } else {
       headMovementStartRef.current = null;
     }
-  }, [onViolation]);
+  }, [onViolation, takeSnapshot]);
 
   const onFaceMeshResults = useCallback((results: any) => {
     let faceCount = results.multiFaceLandmarks ? results.multiFaceLandmarks.length : 0;
@@ -192,6 +265,7 @@ export function useProctoring({
         if (now - lastNoFaceLogRef.current > 15000) {
           lastNoFaceLogRef.current = now;
           onViolation?.('no_face', wasLookingDown ? 'No face detected (likely looking down calculating)' : 'No face detected in camera stream', null);
+          takeSnapshot('no_face', 'No face visible in camera');
         }
       }
     } else if (faceCount === 1) {
@@ -213,6 +287,7 @@ export function useProctoring({
         if (now - lastMultipleLogRef.current > 3000) {
           lastMultipleLogRef.current = now;
           onViolation?.('multiple_faces', `Multiple faces detected: ${faceCount}`, null);
+          takeSnapshot('multiple_faces', `Multiple faces detected (${faceCount})`);
         }
       } else {
         updateStatus('👤 Face Verified', 'success');
@@ -221,7 +296,7 @@ export function useProctoring({
         processGazeAndPose(landmarks);
       }
     }
-  }, [onViolation, processGazeAndPose, updateStatus]);
+  }, [onViolation, processGazeAndPose, updateStatus, takeSnapshot]);
 
   const onFaceMeshResultsRef = useRef(onFaceMeshResults);
   useEffect(() => {

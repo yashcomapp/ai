@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import * as admin from 'firebase-admin';
 import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole } from '@/lib/auth';
 import { ChunkedBatch } from '@/lib/firebase/batch';
@@ -581,6 +582,70 @@ export async function POST(req: NextRequest) {
         message: `Successfully migrated ${migratedCount} legacy questions, and normalized ${boardNormalizedCount} board references.` 
       });
     }
+
+    if (action === 'purgeExpiredSnapshots') {
+      const now = new Date();
+      const cutoff18h = new Date(now.getTime() - 18 * 60 * 60 * 1000);
+      let purgedAttemptsCount = 0;
+      let purgedSessionsCount = 0;
+
+      // 1. Purge from examAttempts
+      const attemptsSnap = await adminDb.collection('examAttempts').get();
+      const attemptBatch = new ChunkedBatch(adminDb);
+      attemptsSnap.docs.forEach(doc => {
+        const d = doc.data();
+        const hasSnapshots = Array.isArray(d.proctoringSnapshots) && d.proctoringSnapshots.length > 0;
+        if (!hasSnapshots) return;
+
+        const rawCompleted = d.completedAt || d.createdAt;
+        const completedDate = rawCompleted?.toDate ? rawCompleted.toDate() : (rawCompleted ? new Date(rawCompleted) : null);
+        const expiresAt = d.proctoringSnapshotsExpiresAt ? new Date(d.proctoringSnapshotsExpiresAt) : null;
+
+        const isExpired = (expiresAt && expiresAt.getTime() <= now.getTime()) ||
+                          (completedDate && completedDate.getTime() <= cutoff18h.getTime());
+
+        if (isExpired) {
+          attemptBatch.update(doc.ref, {
+            proctoringSnapshots: [],
+            proctoringSnapshotsPurgedAt: admin.firestore.FieldValue.serverTimestamp()
+          });
+          purgedAttemptsCount++;
+        }
+      });
+      await attemptBatch.commit();
+
+      // 2. Purge from liveExamSessions older than 18 hours
+      const liveSnap = await adminDb.collection('liveExamSessions').get();
+      const liveBatch = new ChunkedBatch(adminDb);
+      liveSnap.docs.forEach(doc => {
+        const d = doc.data();
+        const hasSnapshots = Array.isArray(d.proctoringSnapshots) && d.proctoringSnapshots.length > 0;
+        if (!hasSnapshots) return;
+
+        const rawLastActive = d.lastActive || d.updatedAt || d.createdAt;
+        const lastActiveDate = rawLastActive?.toDate ? rawLastActive.toDate() : (rawLastActive ? new Date(rawLastActive) : null);
+        const expiresAt = d.proctoringSnapshotsExpiresAt ? new Date(d.proctoringSnapshotsExpiresAt) : null;
+
+        const isExpired = (expiresAt && expiresAt.getTime() <= now.getTime()) ||
+                          (lastActiveDate && lastActiveDate.getTime() <= cutoff18h.getTime());
+
+        if (isExpired) {
+          liveBatch.update(doc.ref, {
+            proctoringSnapshots: []
+          });
+          purgedSessionsCount++;
+        }
+      });
+      await liveBatch.commit();
+
+      return NextResponse.json({
+        success: true,
+        message: `Purged expired proctoring snapshots (Attempts: ${purgedAttemptsCount}, Live Sessions: ${purgedSessionsCount}).`,
+        purgedAttemptsCount,
+        purgedSessionsCount
+      });
+    }
+
     return NextResponse.json({ success: false, error: 'Invalid cleanup action' }, { status: 400 });
   } catch (err: any) {
     console.error('API cleanup processing error:', err);

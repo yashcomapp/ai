@@ -35,6 +35,13 @@ interface Attempt {
   abandoned?: boolean;
   micAvailable?: boolean;
   violations?: any;
+  proctoringSnapshots?: Array<{
+    timestamp: number;
+    reason: string;
+    imageData: string;
+  }>;
+  proctoringSnapshotsExpiresAt?: string | null;
+  proctoringSnapshotsPurged?: boolean;
   isLate?: boolean;
   lateMinutes?: number;
   lateRemark?: string;
@@ -123,6 +130,7 @@ function ExamReportContent() {
   const [votersModalOpen, setVotersModalOpen] = useState(false);
   const [votersList, setVotersList] = useState<string[]>([]);
   const [votersTitle, setVotersTitle] = useState('');
+  const [previewSnapshot, setPreviewSnapshot] = useState<{ src: string; reason: string; timestamp?: number } | null>(null);
 
   // Re-scoring modal states
   const [editAnswerOpen, setEditAnswerOpen] = useState(false);
@@ -2055,6 +2063,69 @@ function ExamReportContent() {
                 </div>
               </div>
 
+              {/* Admin-Only Proctoring Audit Snapshots (Max 5, auto-purged after 18h) */}
+              {(() => {
+                const snapshots = selectedAttempt.proctoringSnapshots || [];
+                const isPurged = selectedAttempt.proctoringSnapshotsPurged || (snapshots.length === 0 && selectedAttempt.completedAt && (Date.now() - new Date(selectedAttempt.completedAt).getTime() > 18 * 60 * 60 * 1000));
+                
+                if (snapshots.length === 0 && !isPurged) return null;
+
+                return (
+                  <div style={{
+                    background: 'var(--surface)',
+                    border: '1px solid var(--border-light)',
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '8px 12px',
+                    marginBottom: '10px'
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: snapshots.length > 0 ? '8px' : '0' }}>
+                      <span style={{ fontSize: '11.5px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        📸 Proctoring Snapshots ({snapshots.length}/5)
+                      </span>
+                      <span style={{ fontSize: '10px', color: 'var(--accent)', background: 'rgba(59, 130, 246, 0.08)', padding: '2px 6px', borderRadius: '4px', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
+                        🔒 Confidential • Auto-purges 18h post-exam
+                      </span>
+                    </div>
+
+                    {isPurged && snapshots.length === 0 ? (
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic', padding: '4px 0' }}>
+                        🔒 Proctoring camera captures have been permanently auto-purged per 18-hour retention limit.
+                      </div>
+                    ) : (
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(95px, 1fr))', gap: '8px' }}>
+                        {snapshots.map((s, idx) => {
+                          const dateStr = s.timestamp ? new Date(s.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : `#${idx + 1}`;
+                          return (
+                            <div 
+                              key={idx}
+                              onClick={() => setPreviewSnapshot({ src: s.imageData, reason: s.reason, timestamp: s.timestamp })}
+                              style={{
+                                border: '1px solid var(--border-light)',
+                                borderRadius: '4px',
+                                overflow: 'hidden',
+                                cursor: 'pointer',
+                                background: 'var(--bg-soft)'
+                              }}
+                              title="Click to zoom preview"
+                            >
+                              <div style={{ aspectRatio: '4/3', background: '#000', overflow: 'hidden' }}>
+                                <img src={s.imageData} alt={`Snapshot ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                              </div>
+                              <div style={{ padding: '3px 5px', fontSize: '9px', background: 'var(--surface)' }}>
+                                <div style={{ fontWeight: 700 }}>⏱️ {dateStr}</div>
+                                <div style={{ color: 'var(--warning)', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={s.reason}>
+                                  {s.reason || 'Audit'}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
               {selectedAttempt && (
                   <div>
                     <div className="outcome-tabs" style={{ display: 'flex', gap: '4px', marginBottom: '8px', borderBottom: '1px solid var(--border-light)', paddingBottom: '6px' }}>
@@ -2470,6 +2541,32 @@ function ExamReportContent() {
               >
                 {reassigning ? '🔄 Reassigning...' : 'Confirm Reassign'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Proctoring Snapshot Zoom Modal */}
+      {previewSnapshot && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 30000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+          <div style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', maxWidth: '600px', width: '100%', border: '1px solid var(--border-light)', overflow: 'hidden' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid var(--border-light)', background: 'var(--bg-soft)' }}>
+              <div>
+                <h4 style={{ margin: 0, fontSize: '13px', fontWeight: 700 }}>
+                  📸 Proctoring Snapshot Detail
+                </h4>
+                <span style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>
+                  {previewSnapshot.timestamp ? new Date(previewSnapshot.timestamp).toLocaleTimeString() : ''} • Reason: <strong style={{ color: 'var(--warning)' }}>{previewSnapshot.reason || 'Audit'}</strong>
+                </span>
+              </div>
+              <button className="close-modal" onClick={() => setPreviewSnapshot(null)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '1.2rem' }}>✕</button>
+            </div>
+            <div style={{ padding: '16px', background: '#000', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+              <img src={previewSnapshot.src} alt="Proctoring Zoom" style={{ maxWidth: '100%', maxHeight: '60vh', objectFit: 'contain' }} />
+            </div>
+            <div style={{ padding: '10px 16px', background: 'var(--bg-soft)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', color: 'var(--text-muted)' }}>
+              <span>🔒 Admin-only log • Auto-purges after 18h</span>
+              <button className="btn btn-secondary btn-sm" onClick={() => setPreviewSnapshot(null)}>Close</button>
             </div>
           </div>
         </div>

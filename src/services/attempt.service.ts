@@ -312,6 +312,8 @@ export class AttemptService {
         proctoringViolationTriggered: !!proctoringViolationTriggered,
         micAvailable: micBypassed !== undefined ? !micBypassed : true,
         violations: violations || null,
+        proctoringSnapshots: violations?.screenshots || violations?.proctoringSnapshots || [],
+        proctoringSnapshotsExpiresAt: new Date(Date.now() + 18 * 60 * 60 * 1000).toISOString(),
         completedAt: admin.firestore.FieldValue.serverTimestamp(),
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
         abandoned: abandoned ? true : admin.firestore.FieldValue.delete()
