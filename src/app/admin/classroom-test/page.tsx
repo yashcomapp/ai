@@ -750,6 +750,7 @@ For each topic listed above, generate a focused set of authentic questions (5 to
 ${isMath ? `
 - For Mathematics, 100% of the questions MUST be taken directly from the official textbook exercises, practice sets, problem sets, or solved examples.
 - Specify the exact textbook reference in "sourceSection" (e.g., "${isMH ? 'Practice Set 2.1: Q3' : 'Exercise 3.2: Q4'}").
+- VECTOR SVG FIGURES: If a question references or requires a diagram, embed a standalone <svg viewBox='0 0 320 160' ...>...</svg> vector directly inside the "text" field with single quotes for attributes.
 ` : ''}
 
 STRICT VERBATIM & KEYWORD HIGHLIGHTING RULES:

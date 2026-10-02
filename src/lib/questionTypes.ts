@@ -969,11 +969,12 @@ export function validateQuestion(q: any, questionType: 'objective' | 'subjective
   const isSubjective = questionType === 'subjective' || 
     (questionType === 'all_in_one' && (isSubjectiveType(canonicalType) || (q.marks && !q.options?.length && canonicalType !== 'ONE')));
 
-  // Check for phantom diagram / figure references without image
-  if (!q.imageUrl && !q.figureUrl) {
+  // Check for phantom diagram / figure references without image or SVG figure
+  const hasFigure = Boolean(q.imageUrl || q.figureUrl || q.figureSvg || textStr.includes('<svg'));
+  if (!hasFigure) {
     const phantomRegex = /\b(as shown in the (figure|diagram|image|illustration|graph|circuit)|refer to the (figure|diagram|image|table)|in the given (figure|diagram|graph|circuit)|shown in the diagram below|see figure below)\b/i;
     if (phantomRegex.test(textStr)) {
-      errors.push('Phantom figure reference detected without an uploaded image. Remove diagram references or attach an image.');
+      errors.push('Phantom figure reference detected without an uploaded image or SVG figure. Attach a figure or remove diagram references.');
     }
   }
 

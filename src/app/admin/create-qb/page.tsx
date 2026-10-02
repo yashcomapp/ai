@@ -762,11 +762,37 @@ Output ALL ${total} questions enclosed within a SINGLE Markdown JSON code block:
 3. SINGLE COMPLETE SUITE: DO NOT split across multiple turns or ask the user to type "NEXT". Generate all ${total} questions completely in this single code box.`;
     };
 
+    const isGeometryTopic = isMath || promptTopics.some(t => {
+      const text = `${t.subject || ''} ${t.chapterName || ''} ${t.topic || ''}`.toLowerCase();
+      return /geometr|triangle|quadrilateral|circle|congruen|similarity|pythagor|parallel line|transversal|altitude|median|area|trigonometr|mensuration|chord|tangent|rhombus|trapez|parallelogram|sector|segment|incenter|circumcenter/i.test(text);
+    });
+
+    const buildVectorFigureInstruction = () => {
+      if (!isGeometryTopic && !uploadedImageBase64) return '';
+      return `
+========================================
+VECTOR SVG FIGURE INSTRUCTIONS (GEOMETRY & DIAGRAMS):
+========================================
+When generating questions that require or reference a geometric figure / diagram:
+1. Embed a standalone, valid <svg ...>...</svg> vector diagram directly inside the "text" field.
+2. SVG Standards:
+   - Must use \`viewBox="0 0 320 160"\` with \`width="100%"\` and \`style="max-width:320px;height:auto;display:block;margin:10px auto;"\`.
+   - Use high-contrast stroke colors: \`stroke="currentColor"\` or primary blue \`stroke="#2563eb"\`, green \`stroke="#16a34a"\`, and red \`stroke="#dc2626"\`.
+   - Polygons / Shapes: \`fill="none"\` or light shaded \`fill="rgba(37,99,235,0.1)"\`.
+   - Vertex Labels: Use bold text tags e.g. \`<text x="75" y="22" font-size="13" font-weight="bold" fill="currentColor">A</text>\`.
+   - Congruence Marks: Mark equal sides with red/green tick lines (\`<line x1="50" y1="70" x2="60" y2="80" stroke="#dc2626" stroke-width="2"/>\`).
+   - Equal Angles: Mark with arc paths (\`<path d="M 45 115 A 15 15 0 0 0 42 100" fill="none" stroke="#f59e0b" stroke-width="1.8"/>\`).
+   - Right Angles (90°): Mark with a small square corner path (\`<path d="M 150 110 L 160 110 L 160 120" fill="none" stroke="#dc2626" stroke-width="1.5"/>\`).
+   - Circles & Chords: Use \`<circle cx="150" cy="80" r="65" fill="none" stroke="#2563eb" stroke-width="2"/>\` and chord lines with center dot.
+   - Do NOT use unescaped double quotes inside SVG attributes within the JSON string. Use single quotes for all SVG attributes (e.g. <svg viewBox='0 0 320 160' ...>).
+`;
+    };
+
     const buildNegativeConstraints = () => {
       return `========================================
 CRITICAL NEGATIVE CONSTRAINTS (ZERO-TOLERANCE RULES):
 ========================================
-1. ZERO PHANTOM FIGURES / DIAGRAMS: Strictly DO NOT generate questions referencing diagrams, figures, graphs, or tables (e.g. "as shown in the figure", "refer to diagram", "in the figure above", "from the table below", "fig 1.1"). Every question must be 100% self-contained in text unless an image is explicitly provided.
+1. ZERO UNATTACHED PHANTOM FIGURES: If a question references a diagram (e.g. "as shown in the figure", "in the given figure", "observe the diagram"), it MUST embed the complete <svg> vector diagram directly in the "text" field or have an attached image. Never generate text referring to a figure without providing the SVG figure.
 2. ZERO DUMMY OR LAZY OPTIONS: Every distractor option must be a plausible, realistic scientific/mathematical choice. NEVER output "None of these", "All of the above", "Both A and B", "Option A", or placeholder text.
 3. STRICT MATH ESCAPING: Wrap all math expressions in \\( ... \\) with double-escaped backslashes. Wrap chemical formulas in \\ce{...}.
 4. RANDOMIZE CORRECT ANSWER KEYS: Distribute correct answers evenly across index 0, 1, 2, 3 (A, B, C, D). Do NOT always place the correct answer as Option A.
@@ -908,6 +934,7 @@ MANDATORY CONTEXT ID RULE
 ========================================
 Use contextId CTX-001, CTX-002, etc. matching the context block. Do NOT repeat contextId.
 ${buildImageInstruction()}
+${buildVectorFigureInstruction()}
 
 ========================================
 CRITICAL RULES & LEVEL/SOURCE FIDELITY:
@@ -1049,6 +1076,7 @@ CRITICAL BOARD FIDELITY & ZERO-INVENTION RULES:
    - Wrap chemical formulas in \\ce{...} or standard notation.
 
 ${buildImageInstruction()}
+${buildVectorFigureInstruction()}
 
 ========================================
 CRITICAL JSON & MARKDOWN ESCAPING RULES:
