@@ -54,10 +54,10 @@ export default function TopBarTimeTracker({ targetUid }: TopBarTimeTrackerProps)
   useEffect(() => {
     if (targetUid) return;
 
-    const TICK_MS = 1000;
+    const TICK_MS = 10000;
     const timer = setInterval(() => {
       if (document.hasFocus() && document.visibilityState === 'visible') {
-        setExtraSeconds(prev => prev + 1);
+        setExtraSeconds(prev => prev + 10);
       }
     }, TICK_MS);
 
