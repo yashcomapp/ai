@@ -113,6 +113,8 @@ export default function StudentResults({ initialData }: { initialData?: { result
     {
       fallbackData: initialData || localCache || undefined,
       revalidateOnFocus: false,
+      revalidateOnMount: !(initialData || localCache),
+      revalidateIfStale: !(initialData || localCache),
       dedupingInterval: 60000
     }
   );

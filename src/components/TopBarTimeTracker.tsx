@@ -1,8 +1,10 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import useSWR from 'swr';
 import { useAuth } from '@/context/AuthContext';
 import { formatDurationHM } from '@/lib/dateUtils';
+import { fetchWithToken } from '@/lib/swrFetcher';
 
 interface TimeLogStats {
   todaySeconds: number;
@@ -20,36 +22,24 @@ interface TopBarTimeTrackerProps {
 
 export default function TopBarTimeTracker({ targetUid }: TopBarTimeTrackerProps) {
   const { firebaseUser } = useAuth();
-  const [stats, setStats] = useState<TimeLogStats | null>(null);
   const [extraSeconds, setExtraSeconds] = useState(0);
 
+  const url = targetUid ? `/api/user/time-log?uid=${encodeURIComponent(targetUid)}` : '/api/user/time-log';
+
+  const { data: stats } = useSWR<TimeLogStats>(
+    firebaseUser ? url : null,
+    (fetchUrl: string) => fetchWithToken(fetchUrl, firebaseUser),
+    {
+      revalidateOnFocus: false,
+      revalidateIfStale: false,
+      dedupingInterval: 300000, // 5-minute dedupe period to prevent mount refetches
+      keepPreviousData: true,
+    }
+  );
+
   useEffect(() => {
-    if (!firebaseUser) return;
-
-    const fetchStats = async () => {
-      try {
-        const idToken = await firebaseUser.getIdToken();
-        let url = '/api/user/time-log';
-        if (targetUid) {
-          url += `?uid=${targetUid}`;
-        }
-        const res = await fetch(url, {
-          headers: {
-            'Authorization': `Bearer ${idToken}`
-          }
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setStats(data);
-          setExtraSeconds(0);
-        }
-      } catch (e) {
-        console.warn('Failed to fetch topbar time stats:', e);
-      }
-    };
-
-    fetchStats();
-  }, [firebaseUser, targetUid]);
+    setExtraSeconds(0);
+  }, [stats]);
 
   useEffect(() => {
     if (targetUid) return;

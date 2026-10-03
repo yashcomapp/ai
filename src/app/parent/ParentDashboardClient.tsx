@@ -410,26 +410,43 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
     }
   }, [selectedChildCode]);
 
-  // 1. Fetch parent dashboard initial (children list)
-  const { data: initialData, error: initialError, isLoading: initialLoading } = useSWR<ParentDashboardData>(
-    firebaseUser ? '/api/parent/dashboard' : null,
-    fetcher,
+  // 1. Single unified SWR hook for parent dashboard (fetches active child + children list)
+  const dashboardSwrKey = firebaseUser 
+    ? (selectedChildCode ? `/api/parent/dashboard?studentCode=${encodeURIComponent(selectedChildCode)}` : '/api/parent/dashboard')
+    : null;
+
+  const { data: dashboardData, error: dashboardError, isLoading: dashboardLoading } = useSWR<ParentDashboardData>(
+    dashboardSwrKey,
+    async (url: string) => {
+      const resData = await fetcher(url);
+      if (resData && selectedChildCode) {
+        try {
+          localStorage.setItem(`yc_parent_dashboard_cache_${selectedChildCode}`, JSON.stringify(resData));
+        } catch (e) {
+          console.warn('Failed to save parent dashboard cache:', e);
+        }
+      }
+      return resData;
+    },
     { 
-      fallbackData: serverInitialData || undefined,
-      revalidateOnFocus: false, 
+      fallbackData: selectedChildCode === defaultChildCode ? serverInitialData : (localCache || undefined),
+      revalidateOnFocus: false,
+      revalidateOnMount: !(serverInitialData || localCache),
+      revalidateIfStale: !(serverInitialData || localCache),
+      keepPreviousData: true,
       dedupingInterval: 60000 
     }
   );
 
   // Auto-select valid child on load
   useEffect(() => {
-    if (initialData?.children && initialData.children.length > 0) {
-      const validCodes = initialData.children.map((c: any) => c.studentCode);
+    if (dashboardData?.children && dashboardData.children.length > 0) {
+      const validCodes = dashboardData.children.map((c: any) => c.studentCode);
       if (!selectedChildCode || !validCodes.includes(selectedChildCode)) {
-        setSelectedChildCode(initialData.children[0].studentCode);
+        setSelectedChildCode(dashboardData.children[0].studentCode);
       }
     }
-  }, [initialData, selectedChildCode]);
+  }, [dashboardData, selectedChildCode]);
 
   useEffect(() => {
     if (!firebaseUser) return;
@@ -506,30 +523,6 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
     };
   }, [firebaseUser]);
 
-  const childFetcher = async (url: string) => {
-    const resData = await fetcher(url);
-    if (resData && selectedChildCode) {
-      try {
-        localStorage.setItem(`yc_parent_dashboard_cache_${selectedChildCode}`, JSON.stringify(resData));
-      } catch (e) {
-        console.warn('Failed to save parent dashboard cache:', e);
-      }
-    }
-    return resData;
-  };
-
-  // 2. Fetch selected child stats
-  const { data: childData, error: childError, isLoading: childLoading } = useSWR<ParentDashboardData>(
-    firebaseUser && selectedChildCode ? `/api/parent/dashboard?studentCode=${selectedChildCode}` : null,
-    childFetcher,
-    { 
-      fallbackData: selectedChildCode === defaultChildCode ? serverInitialData : (localCache || undefined),
-      revalidateOnFocus: false, 
-      keepPreviousData: true,
-      dedupingInterval: 60000 
-    }
-  );
-
   const reviewsFetcher = async (url: string) => {
     if (!firebaseUser) return null;
     const idToken = await firebaseUser.getIdToken();
@@ -554,7 +547,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
     return resData;
   };
 
-  // 3. Fetch reviews for selected child
+  // 2. Fetch reviews for selected child
   const { data: reviewsData } = useSWR<{
     objectiveReviews: ReviewItem[];
     practiceReviews: ReviewItem[];
@@ -566,23 +559,25 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
     {
       fallbackData: localReviewsCache || undefined,
       revalidateOnFocus: false,
+      revalidateOnMount: !localReviewsCache,
+      revalidateIfStale: !localReviewsCache,
       dedupingInterval: 60000
     }
   );
 
-  const children = initialData?.children || serverInitialData?.children || [];
-  const data = childData || serverInitialData || localCache;
+  const children = dashboardData?.children || serverInitialData?.children || [];
+  const data = dashboardData || serverInitialData || localCache;
 
   const objectiveReviews = reviewsData?.objectiveReviews || (selectedChildCode === defaultChildCode ? localReviewsCache?.objectiveReviews : []) || [];
   const practiceReviews = reviewsData?.practiceReviews || (selectedChildCode === defaultChildCode ? localReviewsCache?.practiceReviews : []) || [];
   const subjectiveReviews = reviewsData?.subjectiveReviews || (selectedChildCode === defaultChildCode ? localReviewsCache?.subjectiveReviews : []) || [];
 
-  const isGlobalLoading = authLoading || (initialLoading && !initialData && !localCache) || (!initialData && !initialError);
-  const isChildDataLoading = isGlobalLoading || (childLoading && !data && !localCache);
+  const isGlobalLoading = authLoading || (dashboardLoading && !data && !localCache) || (!dashboardData && !dashboardError && !serverInitialData && !localCache);
+  const isChildDataLoading = isGlobalLoading || (dashboardLoading && !data && !localCache);
 
-  const fatalError = (initialError?.message && (initialError.message.toLowerCase().includes('autonomous') || initialError.message.toLowerCase().includes('disabled') || initialError.message.toLowerCase().includes('unauthorized') || initialError.message.toLowerCase().includes('access denied'))) 
-    ? initialError.message 
-    : (!initialData && !localCache && initialError?.message ? initialError.message : '');
+  const fatalError = (dashboardError?.message && (dashboardError.message.toLowerCase().includes('autonomous') || dashboardError.message.toLowerCase().includes('disabled') || dashboardError.message.toLowerCase().includes('unauthorized') || dashboardError.message.toLowerCase().includes('access denied'))) 
+    ? dashboardError.message 
+    : (!dashboardData && !localCache && dashboardError?.message ? dashboardError.message : '');
 
   if (fatalError) {
     const isAutonomousError = fatalError.toLowerCase().includes('autonomous') || fatalError.toLowerCase().includes('disabled');
@@ -685,7 +680,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
         <ParentQuickActions
           selectedChildCode={selectedChildCode}
           data={data}
-          childData={childData}
+          childData={data}
         />
       </div>
 
@@ -743,7 +738,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
         handleCompleteDailySync={handleCompleteDailySync}
         captureSyncSnapshot={captureSyncSnapshot}
         activeChildName={syncStudentName}
-        childData={childData || data}
+        childData={data}
         syncVideoRef={syncVideoRef}
         syncLiveStream={syncLiveStream}
       />

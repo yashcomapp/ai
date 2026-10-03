@@ -9,6 +9,7 @@ import Script from 'next/script';
 import TimeTracker from '@/components/TimeTracker';
 import PushNotificationManager from '@/components/PushNotificationManager';
 import ToastContainer from '@/components/ToastContainer';
+import SWRProvider from '@/components/SWRProvider';
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -63,12 +64,14 @@ export default function RootLayout({
         </Script>
         <ThemeProvider>
           <AuthProvider>
-            <TimeTracker />
-            <PushNotificationManager />
-            <ToastContainer />
-            <div className="app-shell">
-              {children}
-            </div>
+            <SWRProvider>
+              <TimeTracker />
+              <PushNotificationManager />
+              <ToastContainer />
+              <div className="app-shell">
+                {children}
+              </div>
+            </SWRProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>

@@ -113,7 +113,11 @@ export default function TimeTracker() {
 
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'hidden' && pendingSecondsRef.current > 0) {
-        flushTime('background');
+        const timeSinceLastFlush = Date.now() - lastFlushTimeRef.current;
+        // Minimum 60-second cooldown between background/tab-hide flushes
+        if (timeSinceLastFlush >= 60000) {
+          flushTime('background');
+        }
       } else if (document.visibilityState === 'visible') {
         resetActivity();
       }
