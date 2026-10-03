@@ -19,7 +19,6 @@ import { PracticeHardwareModal } from '@/components/student/practice/PracticeHar
 import { PracticeProctorBar } from '@/components/student/practice/PracticeProctorBar';
 import { PracticeQuestionCard } from '@/components/student/practice/PracticeQuestionCard';
 import { PracticeFeedbackModal } from '@/components/student/practice/PracticeFeedbackModal';
-import { PracticeReportModal } from '@/components/student/practice/PracticeReportModal';
 import { PracticeCompletionView } from '@/components/student/practice/PracticeCompletionView';
 
 interface QuestionItem {
@@ -98,13 +97,6 @@ function TopicPracticeContent() {
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [feedbackCorrect, setFeedbackCorrect] = useState(false);
   const [explanationTimer, setExplanationTimer] = useState(0);
-
-  // Question Dispute & Bypass states
-  const [disputedQuestionIds, setDisputedQuestionIds] = useState<Set<string>>(new Set());
-  const [reportModalOpen, setReportModalOpen] = useState(false);
-  const [reportReason, setReportReason] = useState('missing_options');
-  const [reportNotes, setReportNotes] = useState('');
-  const [isSubmittingReport, setIsSubmittingReport] = useState(false);
 
   // Timers
   const [totalSeconds, setTotalSeconds] = useState(0);
@@ -461,89 +453,6 @@ function TopicPracticeContent() {
     setStarted(true);
   };
 
-  const captureElementScreenshot = async (element: HTMLElement | null): Promise<string | null> => {
-    if (!element) return null;
-    try {
-      const w = window as any;
-      if (!w.html2canvas) {
-        await new Promise<void>((resolve, reject) => {
-          const s = document.createElement('script');
-          s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
-          s.onload = () => resolve();
-          s.onerror = () => reject(new Error('Failed to load html2canvas.'));
-          document.head.appendChild(s);
-        });
-      }
-      const canvas = await w.html2canvas(element, { scale: 1.2, useCORS: true, backgroundColor: 'var(--surface-2)' });
-      let outputCanvas = canvas;
-      if (canvas.width > 800) {
-        const scaled = document.createElement('canvas');
-        const ratio = 800 / canvas.width;
-        scaled.width = 800;
-        scaled.height = Math.round(canvas.height * ratio);
-        const ctx = scaled.getContext('2d');
-        if (ctx) {
-          ctx.drawImage(canvas, 0, 0, scaled.width, scaled.height);
-          outputCanvas = scaled;
-        }
-      }
-      return outputCanvas.toDataURL('image/jpeg', 0.65);
-    } catch (err) {
-      console.warn('Screenshot capture failed:', err);
-      return null;
-    }
-  };
-
-  const handleReportQuestion = async () => {
-    if (!data || !firebaseUser || isSubmittingReport) return;
-    const currentQ = data.questions[currentQIndex];
-    if (!currentQ) return;
-
-    setIsSubmittingReport(true);
-    try {
-      const screenshotData = await captureElementScreenshot(questionContainerRef.current);
-      const idToken = await firebaseUser.getIdToken();
-
-      const res = await fetch('/api/student/disputes', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${idToken}`
-        },
-        body: JSON.stringify({
-          questionId: currentQ.id,
-          questionCode: currentQ.questionCode,
-          topicCode,
-          source: 'practice',
-          sessionId,
-          reason: reportReason,
-          notes: reportNotes,
-          screenshotData,
-          questionText: currentQ.text || currentQ.assertion || ''
-        })
-      });
-
-      if (!res.ok) {
-        throw new Error('Failed to submit question report.');
-      }
-
-      setDisputedQuestionIds(prev => new Set(prev).add(currentQ.id));
-      setReportModalOpen(false);
-      setReportNotes('');
-      alert('🚩 Question reported successfully! It has been excluded from your score and topic mastery calculations.');
-
-      if (currentQIndex < data.questions.length - 1) {
-        setCurrentQIndex(currentQIndex + 1);
-      } else {
-        handleFinishPractice();
-      }
-    } catch (err: any) {
-      alert('Error reporting question: ' + (err.message || 'Unknown error'));
-    } finally {
-      setIsSubmittingReport(false);
-    }
-  };
-
   // Submit single question answer for immediate feedback
   const handleSubmitQuestion = () => {
     if (!data) return;
@@ -659,7 +568,6 @@ function TopicPracticeContent() {
           sessionId,
           mode,
           isRecoveryMode,
-          disputedQuestionIds: Array.from(disputedQuestionIds),
           violations: {
             tabOutCount: tabViolations,
             noFaceCount,
@@ -913,12 +821,10 @@ function TopicPracticeContent() {
             totalQuestions={data.questions.length}
             userAnswer={uAns}
             isQSubmitted={isQSubmitted}
-            isDisputed={disputedQuestionIds.has(q.id)}
             isSubmittingPractice={isSubmittingPractice}
             feedbackCorrect={feedbackCorrect}
             explanationTimer={explanationTimer}
             questionContainerRef={questionContainerRef}
-            onOpenReportModal={() => setReportModalOpen(true)}
             onCheckboxChange={handleCheckboxChange}
             onRadioChange={handleRadioChange}
             onTextAnswerChange={handleTextAnswerChange}
@@ -937,18 +843,6 @@ function TopicPracticeContent() {
         explanationTimer={explanationTimer}
         isSubmittingPractice={isSubmittingPractice}
         onNext={handleNext}
-      />
-
-      {/* Report Question Issue Modal */}
-      <PracticeReportModal
-        isOpen={reportModalOpen}
-        reportReason={reportReason}
-        setReportReason={setReportReason}
-        reportNotes={reportNotes}
-        setReportNotes={setReportNotes}
-        isSubmittingReport={isSubmittingReport}
-        onClose={() => setReportModalOpen(false)}
-        onSubmitReport={handleReportQuestion}
       />
     </div>
   );

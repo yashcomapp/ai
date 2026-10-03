@@ -152,96 +152,6 @@ function TakeExamContent() {
   const [questionFilterTab, setQuestionFilterTab] = useState<'all' | 'incorrect' | 'unanswered'>('all');
   const [autoSubmittedReason, setAutoSubmittedReason] = useState<string | null>(null);
 
-  // Question Dispute & Bypass states
-  const [disputedQuestionIds, setDisputedQuestionIds] = useState<Set<string>>(new Set());
-  const [reportModalOpen, setReportModalOpen] = useState(false);
-  const [reportReason, setReportReason] = useState('missing_options');
-  const [reportNotes, setReportNotes] = useState('');
-  const [isSubmittingReport, setIsSubmittingReport] = useState(false);
-
-  const captureElementScreenshot = async (element: HTMLElement | null): Promise<string | null> => {
-    if (!element) return null;
-    try {
-      const w = window as any;
-      if (!w.html2canvas) {
-        await new Promise<void>((resolve, reject) => {
-          const s = document.createElement('script');
-          s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
-          s.onload = () => resolve();
-          s.onerror = () => reject(new Error('Failed to load html2canvas.'));
-          document.head.appendChild(s);
-        });
-      }
-      const canvas = await w.html2canvas(element, { scale: 1.2, useCORS: true, backgroundColor: 'var(--surface-2)' });
-      let outputCanvas = canvas;
-      if (canvas.width > 800) {
-        const scaled = document.createElement('canvas');
-        const ratio = 800 / canvas.width;
-        scaled.width = 800;
-        scaled.height = Math.round(canvas.height * ratio);
-        const ctx = scaled.getContext('2d');
-        if (ctx) {
-          ctx.drawImage(canvas, 0, 0, scaled.width, scaled.height);
-          outputCanvas = scaled;
-        }
-      }
-      return outputCanvas.toDataURL('image/jpeg', 0.65);
-    } catch (err) {
-      console.warn('Screenshot capture failed:', err);
-      return null;
-    }
-  };
-
-  const handleReportQuestion = async () => {
-    if (!exam || !firebaseUser || isSubmittingReport) return;
-    const currentQ = exam.questions[currentQIndex];
-    if (!currentQ) return;
-
-    setIsSubmittingReport(true);
-    try {
-      const screenshotData = await captureElementScreenshot(questionContainerRef.current);
-      const idToken = await firebaseUser.getIdToken();
-
-      const res = await fetch('/api/student/disputes', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${idToken}`
-        },
-        body: JSON.stringify({
-          questionId: currentQ.id,
-          questionCode: currentQ.questionCode,
-          topicCode: (currentQ as any).topicCode || '',
-          source: 'exam',
-          examId,
-          reason: reportReason,
-          notes: reportNotes,
-          screenshotData,
-          questionText: currentQ.text || (currentQ as any).assertion || ''
-        })
-      });
-
-      if (!res.ok) {
-        throw new Error('Failed to submit question report.');
-      }
-
-      const qKey = currentQ.id || currentQ.questionCode || String(currentQIndex);
-      setDisputedQuestionIds(prev => new Set(prev).add(qKey));
-      setReportModalOpen(false);
-      setReportNotes('');
-      alert('🚩 Question reported successfully! It has been excluded from your score with zero penalty.');
-
-      // Advance to next question automatically if available
-      if (currentQIndex < exam.questions.length - 1) {
-        setCurrentQIndex(currentQIndex + 1);
-      }
-    } catch (err: any) {
-      alert('Error reporting question: ' + (err.message || 'Unknown error'));
-    } finally {
-      setIsSubmittingReport(false);
-    }
-  };
-
   // Refs
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
@@ -733,7 +643,6 @@ function TakeExamContent() {
           isLate: isLateStart,
           proctoringViolationTriggered: !!proctoringViolationTriggered,
           micBypassed: !!micBypassed,
-          disputedQuestionIds: Array.from(disputedQuestionIds),
           violations: {
             tabOutCount: activeTabViolations,
             noFaceCount: proctoringViolations.noFace || 0,
@@ -1257,33 +1166,6 @@ function TakeExamContent() {
               <span>Question {currentQIndex + 1} of {exam.questions.length}</span>
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                 <span className="badge">{currentQuestion.marks || 1} Marks</span>
-                {!disputedQuestionIds.has(currentQuestion.id || currentQuestion.questionCode || String(currentQIndex)) && (
-                  <button
-                    type="button"
-                    onClick={() => setReportModalOpen(true)}
-                    style={{
-                      background: 'transparent',
-                      border: '1px solid var(--danger)',
-                      color: 'var(--danger)',
-                      borderRadius: '4px',
-                      padding: '2px 8px',
-                      fontSize: '10.5px',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '3px'
-                    }}
-                    title="Report defective question (missing options, broken formula, wrong text)"
-                  >
-                    🚩 Report Issue
-                  </button>
-                )}
-                {disputedQuestionIds.has(currentQuestion.id || currentQuestion.questionCode || String(currentQIndex)) && (
-                  <span style={{ fontSize: '10.5px', color: 'var(--warning)', fontWeight: 'bold' }}>
-                    ⚠️ Bypassed
-                  </span>
-                )}
               </div>
             </div>
 
@@ -2048,75 +1930,6 @@ function TakeExamContent() {
             <button className="btn btn-primary" onClick={() => router.push('/student')} style={{ width: '100%', padding: '12px', fontSize: '14px', fontWeight: 'bold', marginTop: '10px' }}>
               Go to Student Dashboard
             </button>
-          </div>
-        </div>
-      )}
-
-      {/* Report Question Issue Modal */}
-      {reportModalOpen && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.6)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', zIndex: 30000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-          <div style={{ background: 'var(--surface-popover)', border: '1px solid var(--border-popover)', borderRadius: 'var(--radius-lg)', padding: '24px', maxWidth: '480px', width: '100%', boxShadow: 'var(--shadow-lg)' }}>
-            <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              🚩 Report Question &amp; Skip
-            </h3>
-            <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: '1.4', marginBottom: '16px' }}>
-              If there is a defect with this question (missing options, broken symbols, incomplete text), you can report it. An automated screenshot proof will be captured and sent to your teacher, and this question will be <strong>excluded from your score and total marks with zero penalty</strong>.
-            </p>
-
-            <div style={{ marginBottom: '14px' }}>
-              <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, marginBottom: '6px', color: 'var(--text)' }}>
-                Issue Category:
-              </label>
-              <select 
-                value={reportReason}
-                onChange={(e) => setReportReason(e.target.value)}
-                style={{ width: '100%', padding: '10px 12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)', background: 'var(--surface)', color: 'var(--text)', fontSize: '13px' }}
-              >
-                <option value="missing_options">Missing Options / No Choices</option>
-                <option value="broken_formula">Broken Formula / LaTeX / Image</option>
-                <option value="incorrect_text">Incomplete or Incorrect Question Text</option>
-                <option value="duplicate_options">Duplicate / Confusing Options</option>
-                <option value="other">Other Issue</option>
-              </select>
-            </div>
-
-            <div style={{ marginBottom: '16px' }}>
-              <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, marginBottom: '6px', color: 'var(--text)' }}>
-                Additional Notes (Optional):
-              </label>
-              <textarea 
-                value={reportNotes}
-                onChange={(e) => setReportNotes(e.target.value)}
-                placeholder="Describe what looks wrong..."
-                rows={2}
-                style={{ width: '100%', padding: '8px 12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)', background: 'var(--surface)', color: 'var(--text)', fontSize: '13px', resize: 'none' }}
-              />
-            </div>
-
-            <div style={{ background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.2)', borderRadius: 'var(--radius-sm)', padding: '10px 12px', fontSize: '11.5px', color: 'var(--success)', marginBottom: '18px' }}>
-              📷 <strong>Automated Proof:</strong> A clean visual snapshot of this question card will be captured and attached automatically for teacher review.
-            </div>
-
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <button 
-                type="button"
-                className="btn btn-secondary" 
-                onClick={() => setReportModalOpen(false)}
-                disabled={isSubmittingReport}
-                style={{ flex: 1 }}
-              >
-                Cancel
-              </button>
-              <button 
-                type="button"
-                className="btn btn-primary" 
-                onClick={handleReportQuestion}
-                disabled={isSubmittingReport}
-                style={{ flex: 1, background: 'var(--danger)', borderColor: 'var(--danger)' }}
-              >
-                {isSubmittingReport ? 'Reporting...' : 'Bypass & Report'}
-              </button>
-            </div>
           </div>
         </div>
       )}

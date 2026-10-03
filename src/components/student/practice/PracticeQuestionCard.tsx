@@ -21,12 +21,12 @@ interface PracticeQuestionCardProps {
   totalQuestions: number;
   userAnswer: string;
   isQSubmitted: boolean;
-  isDisputed: boolean;
+  isDisputed?: boolean;
   isSubmittingPractice: boolean;
   feedbackCorrect: boolean;
   explanationTimer: number;
   questionContainerRef: React.RefObject<HTMLDivElement | null>;
-  onOpenReportModal: () => void;
+  onOpenReportModal?: () => void;
   onCheckboxChange: (letter: string) => void;
   onRadioChange: (choice: string) => void;
   onTextAnswerChange: (text: string) => void;
@@ -41,12 +41,10 @@ export function PracticeQuestionCard({
   totalQuestions,
   userAnswer,
   isQSubmitted,
-  isDisputed,
   isSubmittingPractice,
   feedbackCorrect,
   explanationTimer,
   questionContainerRef,
-  onOpenReportModal,
   onCheckboxChange,
   onRadioChange,
   onTextAnswerChange,
@@ -80,33 +78,6 @@ export function PracticeQuestionCard({
             <span className="badge badge-secondary" style={{ textTransform: 'uppercase', fontSize: '10px' }}>
               {question.difficulty} • {question.bloomLevel}
             </span>
-            {!isQSubmitted && !isDisputed && (
-              <button
-                type="button"
-                onClick={onOpenReportModal}
-                style={{
-                  background: 'transparent',
-                  border: '1px solid var(--danger)',
-                  color: 'var(--danger)',
-                  borderRadius: '4px',
-                  padding: '2px 8px',
-                  fontSize: '10.5px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '3px'
-                }}
-                title="Report defective question (missing options, broken formula, wrong text)"
-              >
-                🚩 Report Issue
-              </button>
-            )}
-            {isDisputed && (
-              <span style={{ fontSize: '10.5px', color: 'var(--warning)', fontWeight: 'bold' }}>
-                ⚠️ Bypassed
-              </span>
-            )}
           </div>
         </div>
 

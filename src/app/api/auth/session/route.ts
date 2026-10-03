@@ -157,16 +157,21 @@ export async function POST(req: NextRequest) {
       await userDocRef.set(updateData, { merge: true });
       invalidateUserCache(uid);
 
-      // Async non-blocking session audit log
-      adminDb.collection('session_logs').add({
-        uid,
-        email: email || userData.email || '',
-        name: userData.name || userData.displayName || email || role,
-        role,
-        batchIds: userData.batchIds || [],
-        timestamp: admin.firestore.FieldValue.serverTimestamp(),
-        type: 'login'
-      }).catch((e) => console.error('Session log write failed:', e));
+      // Async non-blocking session audit log with 5-minute debounce
+      const lastLoginTime = userData.lastLoginAt?.toMillis ? userData.lastLoginAt.toMillis() : (userData.lastLoginAt ? new Date(userData.lastLoginAt).getTime() : 0);
+      const isRecentLogin = lastLoginTime > 0 && (Date.now() - lastLoginTime < 5 * 60 * 1000);
+
+      if (!isRecentLogin) {
+        adminDb.collection('session_logs').add({
+          uid,
+          email: email || userData.email || '',
+          name: userData.name || userData.displayName || email || role,
+          role,
+          batchIds: userData.batchIds || [],
+          timestamp: admin.firestore.FieldValue.serverTimestamp(),
+          type: 'login'
+        }).catch((e) => console.error('Session log write failed:', e));
+      }
 
       // Async non-blocking login notification
       if (role === 'student') {

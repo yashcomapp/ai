@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { GET as getQuestions, POST as postQuestions, DELETE as deleteQuestions } from '../handlers/questions';
 import { GET as getAuditExplanations, POST as postAuditExplanations } from '../handlers/auditExplanations';
 import { GET as getAuditNumerical, POST as postAuditNumerical } from '../handlers/auditNumerical';
-import { GET as getDisputes, POST as postDisputes, DELETE as deleteDisputes } from '../handlers/disputes';
 import { POST as postHarmonize } from '../handlers/harmonize';
 
 export const dynamic = 'force-dynamic';
@@ -19,8 +18,6 @@ export async function GET(req: NextRequest, { params }: { params: { slug?: strin
         return await getAuditExplanations(req);
       case 'audit-numerical':
         return await getAuditNumerical(req);
-      case 'disputes':
-        return await getDisputes(req);
       default:
         return NextResponse.json({ message: `Unknown question GET route: ${subroute}` }, { status: 404 });
     }
@@ -42,8 +39,6 @@ export async function POST(req: NextRequest, { params }: { params: { slug?: stri
         return await postAuditExplanations(req);
       case 'audit-numerical':
         return await postAuditNumerical(req);
-      case 'disputes':
-        return await postDisputes(req);
       case 'harmonize':
         return await postHarmonize(req);
       default:
@@ -63,8 +58,6 @@ export async function DELETE(req: NextRequest, { params }: { params: { slug?: st
     switch (subroute) {
       case '':
         return await deleteQuestions(req);
-      case 'disputes':
-        return await deleteDisputes(req);
       default:
         return NextResponse.json({ message: `Unknown question DELETE route: ${subroute}` }, { status: 404 });
     }

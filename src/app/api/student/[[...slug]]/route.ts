@@ -5,7 +5,6 @@ import { GET as getPractice, POST as postPractice } from '../handlers/practice';
 import { GET as getResults } from '../handlers/results';
 import { GET as getFees } from '../handlers/fees';
 import { GET as getSettings, POST as postSettings } from '../handlers/settings';
-import { POST as postDisputes } from '../handlers/disputes';
 import { GET as getExamRegister, POST as postExamRegister } from '../handlers/examRegister';
 import { GET as getExamReview, POST as postExamReview } from '../handlers/examReview';
 import { GET as getAttendance, POST as postAttendance } from '../handlers/attendance';
@@ -65,8 +64,6 @@ export async function POST(req: NextRequest, { params }: { params: { slug?: stri
         return await postPractice(req);
       case 'settings':
         return await postSettings(req);
-      case 'disputes':
-        return await postDisputes(req);
       case 'exam-register':
         return await postExamRegister(req);
       case 'exam-review':
