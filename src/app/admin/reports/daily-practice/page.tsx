@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useMemo, useDeferredValue } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
+import { formatDateDMY } from '@/lib/dateUtils';
 
 interface StudentSummary {
   studentCode: string;
@@ -153,12 +154,7 @@ export default function DailyPracticeSummaryPage() {
 
   // Format date nicely for display
   const formatDisplayDate = (dateStr: string) => {
-    try {
-      const dateObj = new Date(dateStr + 'T00:00:00');
-      return dateObj.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
-    } catch {
-      return dateStr;
-    }
+    return formatDateDMY(dateStr);
   };
 
   const getLockTag = (student: StudentSummary) => {

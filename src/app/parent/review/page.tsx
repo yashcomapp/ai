@@ -565,9 +565,7 @@ export default function ParentReviewPanel() {
 
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return '-';
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return '-';
-    return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    return formatDateIST(dateStr) || '-';
   };
 
   const formatDuration = (seconds: number) => {

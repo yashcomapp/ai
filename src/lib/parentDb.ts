@@ -1,6 +1,6 @@
 import { adminDb } from '@/lib/firebase/admin';
 import { deriveTopicCodeFromQuestionCode } from '@/lib/questionTypes';
-import { getDateKeyIST } from '@/lib/dateUtils';
+import { getDateKeyIST, formatDateDMY } from '@/lib/dateUtils';
 import { chunkArray } from '@/lib/firestoreUtils';
 import { calculateUnifiedMetrics, extractConductedTopicCodes } from '@/lib/dashboardMetrics';
 import { calculateProctoringIntegrityScore } from '@/lib/proctoring';
@@ -750,7 +750,7 @@ export async function getParentDashboardData(
     marks: item.marks,
     integrity: item.integrity,
     status: item.status,
-    dateStr: item.date.toLocaleDateString('en-IN', { month: 'short', day: 'numeric', timeZone: 'Asia/Kolkata' }),
+    dateStr: formatDateDMY(item.date),
     date: item.date.toISOString()
   }));
 

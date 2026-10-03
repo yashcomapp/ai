@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useMathRender } from '@/hooks/useMathRender';
 import { preprocessMathText, parseAnswerList, isOptionSelectedByUser, isOptionCorrect, getQuestionCorrectAnswer, getRawOptionKey, getRawOptionText, isBlank, resolveOptionDisplayText, extractAssertionAndReason, isAssertionReasonType } from '@/lib/questionTypes';
 import { playNotificationSound } from '@/lib/audioUtils';
-import { getDateKeyIST } from '@/lib/dateUtils';
+import { getDateKeyIST, formatDateDMY, formatTimeIST } from '@/lib/dateUtils';
 
 interface Attempt {
   id: string;
@@ -80,16 +80,12 @@ interface Batch {
 function formatAbsentLogin(lastLoginAt?: string | null) {
   if (!lastLoginAt) return '(Never Logged In)';
   try {
-    const loginDate = new Date(lastLoginAt);
-    const today = new Date();
-    const isToday = loginDate.getDate() === today.getDate() &&
-                    loginDate.getMonth() === today.getMonth() &&
-                    loginDate.getFullYear() === today.getFullYear();
-    const timeStr = loginDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const isToday = getDateKeyIST(lastLoginAt) === getDateKeyIST(new Date());
+    const timeStr = formatTimeIST(lastLoginAt);
     if (isToday) {
       return `(Login: ${timeStr})`;
     }
-    const dateStr = loginDate.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    const dateStr = formatDateDMY(lastLoginAt);
     return `(Login: ${dateStr}, ${timeStr})`;
   } catch (e) {
     return '(Never Logged In)';

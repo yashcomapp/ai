@@ -1,3 +1,4 @@
+import { formatDateDMY } from '@/lib/dateUtils';
 import { auth } from '@/lib/firebase/client';
 import { KATEX_AUTO_RENDER_OPTIONS } from './questionTypes';
 import { getScoreColor } from './dashboardMetrics';
@@ -957,7 +958,7 @@ export async function exportStudentMonthlyReportPDF(params: {
 
   const { student, quotientDetails, comments } = params;
   const reportMonth = new Date().toLocaleString('en-IN', { month: 'long', year: 'numeric' });
-  const generationDate = new Date().toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' });
+  const generationDate = formatDateDMY(new Date());
 
   // Map components for easier access
   const examComp = quotientDetails.components.find(c => c.parameterId === 'exam') || { score: 0, details: {} };

@@ -216,8 +216,8 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
     fetcher,
     {
       revalidateOnFocus: false,
-      revalidateOnMount: !(initialData || localCache),
-      revalidateIfStale: !(initialData || localCache),
+      revalidateOnMount: !initialData,
+      revalidateIfStale: !initialData,
       dedupingInterval: 60000,
       keepPreviousData: true,
       fallbackData: initialData || localCache

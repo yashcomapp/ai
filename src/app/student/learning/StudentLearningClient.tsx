@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useMemo, useDeferredValue } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import useSWR from 'swr';
-import { fetchWithToken } from '@/lib/swrFetcher';
+import { fetchWithToken, FetchError } from '@/lib/swrFetcher';
 import { useToggleSet } from '@/hooks/useToggleSet';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
@@ -71,7 +71,7 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
         setLocalCache(JSON.parse(cached));
       }
     } catch (e) {
-      console.warn('Failed to load learning cache:', e);
+      console.warn('Failed to load cached learning data:', e);
     }
   }, []);
 
@@ -79,11 +79,22 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
     try {
       const data = await fetchWithToken(url, firebaseUser);
       if (data) {
-        localStorage.setItem('yc_student_learning_cache', JSON.stringify(data));
+        try {
+          localStorage.setItem('yc_student_learning_cache', JSON.stringify(data));
+        } catch (e) {
+          console.warn('Failed to save learning cache:', e);
+        }
       }
       return data;
     } catch (err: any) {
-      throw new Error('⛔ Permission Denied: Learning OS access is restricted for Autonomous Student accounts.');
+      if (err instanceof FetchError && err.status === 403) {
+        throw new FetchError(
+          '⛔ Permission Denied: Learning OS access is restricted for Autonomous Student accounts.',
+          403,
+          err.info
+        );
+      }
+      throw err;
     }
   };
 
@@ -93,8 +104,8 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
     {
       fallbackData: initialData || localCache || undefined,
       revalidateOnFocus: false,
-      revalidateOnMount: !(initialData || localCache),
-      revalidateIfStale: !(initialData || localCache),
+      revalidateOnMount: !initialData,
+      revalidateIfStale: !initialData,
       dedupingInterval: 60000
     }
   );

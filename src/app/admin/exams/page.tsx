@@ -15,7 +15,7 @@ const TopicStatusBreakdownModal = dynamic(() => import('@/components/admin/exams
 import { useMathRender } from '@/hooks/useMathRender';
 import { useScorecard } from '@/hooks/useScorecard';
 import { exportUniversalExamPDF } from '@/lib/pdfExport';
-import { toISTDateTimeLocalInput, formatDateDMY, parseDateInput, getDateKeyIST } from '@/lib/dateUtils';
+import { toISTDateTimeLocalInput, formatDateDMY, parseDateInput, getDateKeyIST, formatDateTimeIST } from '@/lib/dateUtils';
 import ObjectiveTab from '@/components/admin/exams/ObjectiveTab';
 import SubjectiveTab from '@/components/admin/exams/SubjectiveTab';
 import PracticeTab from '@/components/admin/exams/PracticeTab';
@@ -501,7 +501,7 @@ export default function AdminExamsPage() {
       return { dateStr: '—', timeStr: '—' };
     }
     return {
-      dateStr: examDate.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short' }),
+      dateStr: formatDateDMY(examDate),
       timeStr: examDate.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' })
     };
   };
@@ -992,13 +992,13 @@ export default function AdminExamsPage() {
     if (list.length === 0) {
       const fallbackDate = exam?.scheduledDate || examAssignedAt || (exam as any)?.availableFrom;
       if (fallbackDate) {
-        return new Date(fallbackDate).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+        return formatDateTimeIST(fallbackDate);
       }
       return '—';
     }
     const dates = list.map(a => new Date(a.startAt || a.createdAt!));
     const maxDate = new Date(Math.max(...dates.map(d => d.getTime())));
-    return maxDate.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+    return formatDateTimeIST(maxDate);
   };  const getMorningTestTimes = (durationMinutes: number) => {
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);

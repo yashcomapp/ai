@@ -19,13 +19,13 @@ export default function SWRProvider({ children }: { children: React.ReactNode })
             return;
           }
 
-          // 2. 5xx Server / Network Errors -> Limited to max 2 retries
-          if (retryCount >= 2) {
+          // 2. 5xx Server / Network Errors -> Limited to max 2 retries (SWR passes retryCount = 1 on first failure)
+          if (retryCount > 2) {
             return;
           }
 
-          // Retry with exponential backoff (e.g. 3s, 6s)
-          const delay = Math.min(3000 * Math.pow(2, retryCount), 15000);
+          // Retry with backoff (3s on retry 1, 6s on retry 2)
+          const delay = Math.min(3000 * retryCount, 15000);
           setTimeout(() => revalidate({ retryCount }), delay);
         }
       }}
