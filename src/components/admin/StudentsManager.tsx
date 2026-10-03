@@ -70,6 +70,37 @@ export default function StudentsManager() {
   const [resetModalOpen, setResetModalOpen] = useState(false);
   const [resetTargetStudent, setResetTargetStudent] = useState<Student | null>(null);
   const [resetSelection, setResetSelection] = useState<'student' | 'parent' | 'both'>('student');
+  const [togglingAutonomousId, setTogglingAutonomousId] = useState<string | null>(null);
+
+  const handleToggleAutonomous = async (studentId: string, studentName: string, currentAutonomous: boolean) => {
+    const nextAutonomous = !currentAutonomous;
+    const modeLabel = nextAutonomous ? 'Autonomous Mode (A)' : 'Regular Mode (R)';
+    if (!confirm(`Switch "${studentName}" to ${modeLabel}?\n\n${nextAutonomous ? '• Parent exam review requirements will be removed.\n• Linked parent account will be deactivated.' : '• Parent exam review requirements will be restored.\n• Linked parent account will be reactivated.'}`)) {
+      return;
+    }
+
+    try {
+      setTogglingAutonomousId(studentId);
+      const idToken = await firebaseUser!.getIdToken();
+      const res = await fetch('/api/admin/students', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`
+        },
+        body: JSON.stringify({
+          studentId,
+          updateData: { autonomous: nextAutonomous }
+        })
+      });
+      if (!res.ok) throw new Error('Failed to update student mode.');
+      await fetchStudents();
+    } catch (err: any) {
+      alert(err.message || 'Mode toggle failed.');
+    } finally {
+      setTogglingAutonomousId(null);
+    }
+  };
 
   const handleToggleStatus = async (studentId: string, currentStatus: string) => {
     const nextStatus = currentStatus === 'active' ? 'inactive' : 'active';
@@ -365,7 +396,9 @@ export default function StudentsManager() {
                           {s.autonomous ? '⭐ ' : ''}{s.name || '—'}
                         </button>
                       </td>
-                      <td style={{ padding: '12px 16px' }}>{s.email || '—'}</td>
+                      <td style={{ padding: '12px 16px', maxWidth: '170px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={s.email || ''}>
+                        {s.email || '—'}
+                      </td>
                       <td style={{ padding: '12px 16px' }}>
                         <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
                           {(s.batchIds || []).map(bId => {
@@ -385,7 +418,26 @@ export default function StudentsManager() {
                         </span>
                       </td>
                       <td style={{ padding: '12px 16px', textAlign: 'right' }}>
-                        <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
+                        <div style={{ display: 'flex', gap: '5px', justifyContent: 'flex-end', alignItems: 'center' }}>
+                          <button 
+                            className="btn btn-sm" 
+                            style={{ 
+                              padding: '3px 8px', 
+                              fontSize: '11px', 
+                              fontWeight: 800, 
+                              borderRadius: '4px',
+                              background: s.autonomous ? 'rgba(168, 85, 247, 0.16)' : 'var(--bg-soft)',
+                              color: s.autonomous ? 'var(--purple, #c084fc)' : 'var(--text-muted)',
+                              border: s.autonomous ? '1px solid rgba(168, 85, 247, 0.45)' : '1px solid var(--border-light)',
+                              cursor: 'pointer',
+                              whiteSpace: 'nowrap'
+                            }} 
+                            onClick={() => handleToggleAutonomous(s.id, s.name, !!s.autonomous)} 
+                            disabled={togglingAutonomousId === s.id}
+                            title={s.autonomous ? 'Autonomous Mode (A) - Click to switch to Regular (R)' : 'Regular Mode (R) - Click to switch to Autonomous (A)'}
+                          >
+                            {togglingAutonomousId === s.id ? '...' : (s.autonomous ? '⭐ A' : 'R')}
+                          </button>
                           <button className="btn btn-secondary btn-sm" style={{ padding: '3px 8px', fontSize: '11px' }} onClick={() => handleOpenViewModal(s)} title="View Student Info">View</button>
                           <button className="btn btn-secondary btn-sm" style={{ padding: '3px 8px', fontSize: '11px' }} onClick={() => handleOpenEditModal(s)} title="Edit Student Profile">Edit</button>
                           <button className="btn btn-secondary btn-sm" style={{ padding: '3px 8px', fontSize: '11px' }} onClick={() => handleOpenResetModal(s)} title="Send Password Reset Link">Reset Key</button>
