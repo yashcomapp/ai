@@ -521,11 +521,24 @@ export async function GET(req: NextRequest) {
       };
     });
 
+    const todayKeyIST = getDateKeyIST(new Date());
+
+    const isTodayReview = (r: any) => {
+      const dateStr = r.date || r.completedAt || r.startedAt;
+      if (!dateStr) return false;
+      return getDateKeyIST(dateStr) === todayKeyIST;
+    };
+
+    const currentDayObjectiveReviews = objectiveReviews.filter(isTodayReview);
+    const currentDayPracticeReviews = practiceReviews.filter(isTodayReview);
+    const currentDaySubjectiveReviews = subjectiveReviews.filter(isTodayReview);
+    const currentDayEntranceReviews = entranceReviews.filter(isTodayReview);
+
     const responseData = {
-      objectiveReviews,
-      practiceReviews,
-      subjectiveReviews,
-      entranceReviews,
+      objectiveReviews: currentDayObjectiveReviews,
+      practiceReviews: currentDayPracticeReviews,
+      subjectiveReviews: currentDaySubjectiveReviews,
+      entranceReviews: currentDayEntranceReviews,
       isAutonomousChild: isAutonomous
     };
 
@@ -853,30 +866,6 @@ export async function POST(req: NextRequest) {
         await ReportCacheManager.invalidateReport(`exam-report-subjective-${aData.examId}`).catch(() => null);
         await ReportCacheManager.invalidateReport(`truth-test-report-${aData.examId}`).catch(() => null);
       }
-
-      success = true;
-    } else if (type === 'daily_5min_sync') {
-      const syncDocId = reviewId || `sync-${childStudentCode}-${Date.now()}`;
-      const reviewDocRef = adminDb.collection('parentReviews').doc(syncDocId);
-      const syncData = {
-        id: syncDocId,
-        type: 'daily_5min_sync',
-        childStudentCode,
-        studentCode: childStudentCode,
-        studentName: childName,
-        parentEmail,
-        reviewedBy: parentEmail,
-        reviewedByActor: actor,
-        feedback: body.feedback || 'Daily 5-Min Parent-Child Sync Completed',
-        photoThumbnail: body.photoThumbnail || photoThumbnail || null,
-        parentStatus: 'approved',
-        status: 'completed',
-        reviewedAt: new Date(),
-        createdAt: new Date(),
-        date: getDateKeyIST()
-      };
-
-      await reviewDocRef.set(syncData, { merge: true });
       success = true;
     } else if (type === 'absent_exam' || type === 'absence_acknowledgement') {
       const targetExamId = body.examId || (reviewId ? reviewId.replace('absent_', '').replace(`_${childStudentCode}`, '') : '');

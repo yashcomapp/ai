@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { rtdb } from '@/lib/firebase/rtdb';
 import { getLiveSessionRef, createLiveSession, updateLiveSession } from '@/lib/proctoring';
 import { ProctoringSnapshot } from './useProctoring';
+import { getMidnightIST } from '@/lib/dateUtils';
 import { ref, onValue, set, push, off, remove } from 'firebase/database';
 
 interface UseLiveExamProps {
@@ -83,7 +84,7 @@ export function useLiveExam({
     if (liveSessionDocRef.current) {
       updateLiveSession(liveSessionDocRef.current, {
         proctoringSnapshots: updated,
-        proctoringSnapshotsExpiresAt: new Date(Date.now() + 18 * 60 * 60 * 1000).toISOString()
+        proctoringSnapshotsExpiresAt: getMidnightIST(new Date()).toISOString()
       }).catch(err => console.warn('[useLiveExam] Failed to sync snapshot:', err));
     }
   }, []);

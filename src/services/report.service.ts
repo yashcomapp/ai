@@ -956,17 +956,13 @@ export class ReportService {
       const studentInfo = activeStudentsMap.get(data.studentCode);
       if (!studentInfo) return;
 
-      const isDailySync = rawType === 'daily_5min_sync' || rawType === 'sync';
       let photo = data.photoThumbnail || null;
       let isPurged = Boolean(data.photoPurged);
 
       let displayType = 'Exam Review';
       let displayExamName = data.examName || 'Exam Paper Review';
 
-      if (isDailySync) {
-        displayType = 'Sync Session';
-        displayExamName = data.examName || 'Daily 5-Min Parent-Kid Sync';
-      } else if (rawType === 'objective') {
+      if (rawType === 'objective') {
         displayType = 'Objective Exam';
         displayExamName = data.examName || 'Objective Exam Paper Review';
       } else if (rawType === 'subjective') {
@@ -975,6 +971,9 @@ export class ReportService {
       } else if (rawType === 'entrance' || rawType === 'mock') {
         displayType = 'Mock Exam';
         displayExamName = data.examName || 'Mock Entrance Exam Review';
+      } else if (rawType === 'practice') {
+        displayType = 'Practice Review';
+        displayExamName = data.examName || 'Practice Review';
       }
 
       // Strictly exclude generic "Exam Paper Review"

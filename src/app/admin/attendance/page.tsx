@@ -5,8 +5,6 @@ import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { formatDateDMY as formatDateStr, getDateKeyIST as getISTDateString } from '@/lib/dateUtils';
 import { useAdminBatches } from '@/hooks/useAdminReferenceData';
-import dynamic from 'next/dynamic';
-const ExportPdfModal = dynamic(() => import('@/components/ExportPdfModal').then(m => ({ default: m.ExportPdfModal })), { ssr: false });
 
 interface StudentRecord {
   studentCode: string;
@@ -47,9 +45,6 @@ export default function AdminAttendancePage() {
   const { firebaseUser } = useAuth();
   const router = useRouter();
 
-  // Tab View
-  const [activeTab, setActiveTab] = useState<'classroom' | 'parent_sync'>('classroom');
-
   const todayStr = getISTDateString();
   const [selectedDate, setSelectedDate] = useState(todayStr);
   const [batches, setBatches] = useState<Batch[]>([]);
@@ -60,16 +55,6 @@ export default function AdminAttendancePage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
-
-  // Parent-Child 5-Min Sync Attendance State
-  const [syncDate, setSyncDate] = useState(todayStr);
-  const [syncBatchId, setSyncBatchId] = useState('all');
-  const [syncData, setSyncData] = useState<{
-    summary: { totalStudents: number; completedCount: number; pendingCount: number; syncPercentage: number };
-    records: Array<{ studentCode: string; studentName: string; className: string; batchName: string; status: 'completed' | 'pending'; completedAt: string; reviewedBy: string; feedback: string }>;
-  } | null>(null);
-  const [syncLoading, setSyncLoading] = useState(false);
-  const [pdfModalOpen, setPdfModalOpen] = useState(false);
 
   // Leaves management
   const [leaves, setLeaves] = useState<Leave[]>([]);
@@ -144,37 +129,8 @@ export default function AdminAttendancePage() {
   }
 
   useEffect(() => {
-    if (activeTab === 'classroom') {
-      fetchRoster();
-    }
-  }, [selectedBatchId, firebaseUser, selectedDate, activeTab]);
-
-  // Fetch Parent-Child 5-Min Sync Attendance
-  const fetchParentSyncAttendance = async () => {
-    if (!firebaseUser) return;
-    setSyncLoading(true);
-    setError('');
-    try {
-      const token = await firebaseUser.getIdToken();
-      const res = await fetch(`/api/admin/attendance/parent-sync?date=${syncDate}&batchId=${syncBatchId}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (!res.ok) throw new Error('Failed to load parent sync attendance');
-      const resData = await res.json();
-      setSyncData(resData);
-    } catch (e: any) {
-      console.error('Parent sync attendance fetch error:', e);
-      setError(e.message);
-    } finally {
-      setSyncLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (activeTab === 'parent_sync') {
-      fetchParentSyncAttendance();
-    }
-  }, [activeTab, syncDate, syncBatchId, firebaseUser]);
+    fetchRoster();
+  }, [selectedBatchId, firebaseUser, selectedDate]);
 
   const handleApproveLeave = async (leaveId: string) => {
     if (!firebaseUser) return;
@@ -365,57 +321,11 @@ export default function AdminAttendancePage() {
           </div>
         </div>
 
-        {/* Top Tab Bar */}
-        <div style={{ display: 'flex', gap: '8px', borderBottom: '1.5px solid var(--border-light)', paddingBottom: '8px' }}>
-          <button
-            onClick={() => setActiveTab('classroom')}
-            style={{
-              padding: '10px 18px',
-              border: 'none',
-              cursor: 'pointer',
-              background: 'none',
-              fontWeight: 700,
-              fontSize: '14px',
-              borderBottom: activeTab === 'classroom' ? '2.5px solid var(--accent)' : 'none',
-              color: activeTab === 'classroom' ? 'var(--accent)' : 'var(--text-muted)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px'
-            }}
-          >
-            <span>Classroom Attendance</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('parent_sync')}
-            style={{
-              padding: '10px 18px',
-              border: 'none',
-              cursor: 'pointer',
-              background: 'none',
-              fontWeight: 700,
-              fontSize: '14px',
-              borderBottom: activeTab === 'parent_sync' ? '2.5px solid var(--purple)' : 'none',
-              color: activeTab === 'parent_sync' ? 'var(--purple)' : 'var(--text-muted)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px'
-            }}
-          >
-            <span>Parent-Child 5-Min Sync Attendance</span>
-            {syncData?.summary?.completedCount ? (
-              <span style={{ fontSize: '11px', background: 'var(--purple)', color: 'var(--text-white)', padding: '1px 6px', borderRadius: '10px', fontWeight: 800 }}>
-                {syncData.summary.completedCount}
-              </span>
-            ) : null}
-          </button>
-        </div>
 
         {error && <div className="alert-box alert-box-danger">{error}</div>}
         {successMsg && <div className="alert-box alert-box-success">{successMsg}</div>}
 
-        {/* VIEW 1: Classroom Attendance */}
-        {activeTab === 'classroom' && (
-          <>
+        {/* Classroom Attendance */}
             {/* Batch Selector & Target Date */}
             <div className="card" style={{ padding: '16px 20px', background: 'var(--surface)', display: 'flex', gap: '24px', alignItems: 'center', flexWrap: 'wrap', border: '1px solid var(--border-light)', borderRadius: 'var(--radius)' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -654,153 +564,7 @@ export default function AdminAttendancePage() {
                 </button>
               </div>
             </div>
-          </>
-        )}
-
-        {/* VIEW 2: Daily Parent-Child 5-Min Sync Attendance */}
-        {activeTab === 'parent_sync' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {/* Filter & Export Bar */}
-            <div className="card" style={{ padding: '16px 20px', background: 'var(--surface)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', border: '1px solid var(--border-light)', borderRadius: 'var(--radius)' }}>
-              <div style={{ display: 'flex', gap: '20px', alignItems: 'center', flexWrap: 'wrap' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '10px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Select Batch</label>
-                  <select
-                    value={syncBatchId}
-                    onChange={(e) => setSyncBatchId(e.target.value)}
-                    style={{ padding: '8px 12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)', background: 'var(--bg-soft)', color: 'var(--text)', fontWeight: 600, outline: 'none' }}
-                  >
-                    <option value="all">All Batches</option>
-                    {batches.map(b => (
-                      <option key={b.id} value={b.id}>{b.name} (Class {b.classNum})</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '10px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Target Date</label>
-                  <input
-                    type="date"
-                    value={syncDate}
-                    max={todayStr}
-                    onChange={(e) => setSyncDate(e.target.value)}
-                    style={{ padding: '8px 12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)', background: 'var(--bg-soft)', color: 'var(--text)', fontWeight: 600 }}
-                  />
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                <button 
-                  className="btn btn-secondary btn-sm"
-                  onClick={() => fetchParentSyncAttendance()}
-                  disabled={syncLoading}
-                >
-                  🔄 Refresh
-                </button>
-                <button 
-                  className="btn btn-primary btn-sm"
-                  onClick={() => setPdfModalOpen(true)}
-                  disabled={syncLoading || !syncData || syncData.records.length === 0}
-                  style={{ background: 'linear-gradient(135deg, var(--purple), var(--accent))', border: 'none' }}
-                >
-                  📄 Export PDF (No Photos)
-                </button>
-              </div>
-            </div>
-
-            {/* Summary Statistics Card */}
-            <div id="parent-sync-summary-section" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px' }}>
-              <div className="card" style={{ background: 'var(--surface)', padding: '16px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', textAlign: 'center' }}>
-                <div style={{ fontSize: '20px', fontWeight: 800 }}>{syncData?.summary?.totalStudents ?? '—'}</div>
-                <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>👥 Total Enrolled</div>
-              </div>
-              <div className="card" style={{ background: 'var(--surface)', padding: '16px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', textAlign: 'center' }}>
-                <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--success)' }}>{syncData?.summary?.completedCount ?? '—'}</div>
-                <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>🟢 Sync Completed</div>
-              </div>
-              <div className="card" style={{ background: 'var(--surface)', padding: '16px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', textAlign: 'center' }}>
-                <div style={{ fontSize: '20px', fontWeight: 800, color: (syncData?.summary?.pendingCount || 0) > 0 ? 'var(--danger)' : 'var(--text)' }}>
-                  {syncData?.summary?.pendingCount ?? '—'}
-                </div>
-                <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>🔴 Pending / Missed</div>
-              </div>
-              <div className="card" style={{ background: 'var(--surface)', padding: '16px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', textAlign: 'center' }}>
-                <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--purple)' }}>{syncData?.summary?.syncPercentage ?? 0}%</div>
-                <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>📊 Sincerity Rate</div>
-              </div>
-            </div>
-
-            {/* Attendance Table (Clean - Zero Photos) */}
-            <div id="parent-sync-table-section" className="card" style={{ background: 'var(--surface)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
-              <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 'bold' }}>
-                  Daily 5-Min Parent-Child Sync Register &mdash; {formatDateStr(syncDate)}
-                </h3>
-                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                  {syncBatchId === 'all' ? 'All Batches' : batches.find(b => b.id === syncBatchId)?.name || 'Selected Batch'}
-                </span>
-              </div>
-
-              {syncLoading ? (
-                <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>Loading sync records...</div>
-              ) : !syncData || syncData.records.length === 0 ? (
-                <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>No student records found.</div>
-              ) : (
-                <div style={{ overflowX: 'auto' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
-                    <thead>
-                      <tr style={{ background: 'var(--bg-soft)', borderBottom: '1px solid var(--border-light)', color: 'var(--text-muted)', fontSize: '11px', textTransform: 'uppercase' }}>
-                        <th style={{ padding: '10px 14px', width: '40px' }}>#</th>
-                        <th style={{ padding: '10px 14px' }}>Student</th>
-                        <th style={{ padding: '10px 14px' }}>Class / Batch</th>
-                        <th style={{ padding: '10px 14px' }}>Sync Status</th>
-                        <th style={{ padding: '10px 14px' }}>Time (IST)</th>
-                        <th style={{ padding: '10px 14px' }}>Reviewed By</th>
-                        <th style={{ padding: '10px 14px' }}>Discussion Notes / Feedback</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {syncData.records.map((rec, idx) => (
-                        <tr key={rec.studentCode} style={{ borderBottom: '1px solid var(--border-light)' }}>
-                          <td style={{ padding: '10px 14px', color: 'var(--text-muted)', fontSize: '12px' }}>{idx + 1}</td>
-                          <td style={{ padding: '10px 14px', fontWeight: 600 }}>👤 {rec.studentName}</td>
-                          <td style={{ padding: '10px 14px', color: 'var(--text-muted)', fontSize: '12px' }}>{rec.batchName} ({rec.className})</td>
-                          <td style={{ padding: '10px 14px' }}>
-                            {rec.status === 'completed' ? (
-                              <span style={{ background: 'rgba(34, 197, 94, 0.15)', color: 'var(--success)', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700 }}>
-                                🟢 Verified
-                              </span>
-                            ) : (
-                              <span style={{ background: 'rgba(239, 68, 68, 0.15)', color: 'var(--danger)', padding: '3px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700 }}>
-                                ⏳ Pending
-                              </span>
-                            )}
-                          </td>
-                          <td style={{ padding: '10px 14px', fontSize: '12px', color: 'var(--text-muted)' }}>{rec.completedAt}</td>
-                          <td style={{ padding: '10px 14px', fontSize: '12px' }}>{rec.reviewedBy}</td>
-                          <td style={{ padding: '10px 14px', fontSize: '12px', color: 'var(--text-muted)' }}>{rec.feedback}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-
-            {/* Export PDF Modal */}
-            <ExportPdfModal
-              isOpen={pdfModalOpen}
-              onClose={() => setPdfModalOpen(false)}
-              filename={`Parent-Sync-Attendance-${syncDate}-${syncBatchId}`}
-              title={`Daily Parent-Child 5-Min Sync Attendance — ${formatDateStr(syncDate)}`}
-              sections={[
-                { id: 'summary', name: 'Attendance Summary Metrics', elementId: 'parent-sync-summary-section' },
-                { id: 'table', name: 'Student Sync Register (Without Photos)', elementId: 'parent-sync-table-section' }
-              ]}
-            />
           </div>
-        )}
-      </div>
 
       {/* Leaves Modal */}
       {showLeaveModal && (

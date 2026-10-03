@@ -7,6 +7,7 @@ import { AttemptRepository } from '@/repositories/attempt.repository';
 import { ProctoringViolations, QuestionDetail, ExamAttempt } from '@/types/attempt.types';
 import { deriveTopicCodeFromQuestionCode, isMultipleChoiceType, parseAnswerList, resolveOptionDisplayText } from '@/lib/questionTypes';
 import { invalidateCache } from '@/lib/firebase/cache';
+import { getMidnightIST } from '@/lib/dateUtils';
 
 export class AttemptService {
   /**
@@ -313,7 +314,7 @@ export class AttemptService {
         micAvailable: micBypassed !== undefined ? !micBypassed : true,
         violations: violations || null,
         proctoringSnapshots: violations?.screenshots || violations?.proctoringSnapshots || [],
-        proctoringSnapshotsExpiresAt: new Date(Date.now() + 18 * 60 * 60 * 1000).toISOString(),
+        proctoringSnapshotsExpiresAt: getMidnightIST(new Date()).toISOString(),
         completedAt: admin.firestore.FieldValue.serverTimestamp(),
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
         abandoned: abandoned ? true : admin.firestore.FieldValue.delete()

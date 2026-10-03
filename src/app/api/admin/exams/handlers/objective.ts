@@ -7,6 +7,7 @@ import { evaluateQuestionAnswer } from '@/lib/questionTypes';
 import { getCachedSyllabus } from '@/lib/firebase/cache';
 import { ReportCacheManager } from '@/lib/reportCache';
 import { isDemoUser } from '@/lib/studentDb';
+import { getDateKeyIST, getMidnightIST } from '@/lib/dateUtils';
 export const dynamic = 'force-dynamic';
 
 async function resolveObjectiveExam(inputExamId: string) {
@@ -191,11 +192,13 @@ export async function GET(req: NextRequest) {
         isAttempted: qd.isAttempted !== undefined ? Boolean(qd.isAttempted) : Boolean(qd.isCorrect || (qd.userAnswer !== undefined && qd.userAnswer !== null && qd.userAnswer !== ''))
       }));
 
-      // 18-hour auto-purge check for proctoring snapshots
+      // Automatic same-day 12 AM IST auto-purge check for proctoring snapshots
       const rawSnapshots = rawAttempt.proctoringSnapshots || data.proctoringSnapshots || [];
-      const snapshotsExpiresAt = rawAttempt.proctoringSnapshotsExpiresAt || data.proctoringSnapshotsExpiresAt || null;
-      const expiryMs = snapshotsExpiresAt ? new Date(snapshotsExpiresAt).getTime() : (completedAt ? completedAt.getTime() + 18 * 60 * 60 * 1000 : null);
-      const isExpired = expiryMs ? nowMs > expiryMs : false;
+      const snapshotsExpiresAt = rawAttempt.proctoringSnapshotsExpiresAt || data.proctoringSnapshotsExpiresAt || (completedAt ? getMidnightIST(completedAt).toISOString() : (startedAt ? getMidnightIST(startedAt).toISOString() : null));
+      const todayKeyIST = getDateKeyIST(new Date());
+      const attemptDateKey = completedAt ? getDateKeyIST(completedAt) : (startedAt ? getDateKeyIST(startedAt) : null);
+      const isPastDay = attemptDateKey ? attemptDateKey < todayKeyIST : false;
+      const isExpired = isPastDay || (snapshotsExpiresAt ? nowMs >= new Date(snapshotsExpiresAt).getTime() : false);
       const validSnapshots = isExpired ? [] : (Array.isArray(rawSnapshots) ? rawSnapshots : []);
 
       return {

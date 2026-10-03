@@ -263,3 +263,19 @@ export function formatToYYYYMMDD(val?: string | null): string {
   }
   return clean;
 }
+
+/**
+ * Calculates the exact 12:00 AM (midnight) expiration Date in IST for a given date.
+ * All captures/screenshots sent or generated on date D expire at 12:00:00 AM IST at the start of day D+1 (i.e. end of day D).
+ */
+export function getMidnightIST(dateInput?: any): Date {
+  const d = parseDateInput(dateInput) || new Date();
+  const dateKey = getDateKeyIST(d); // e.g. "2026-10-03"
+  const [year, month, day] = dateKey.split('-').map(Number);
+  
+  // Midnight at the end of the day in IST is equivalent to:
+  // (Day + 1) at 00:00:00 IST -> which in UTC is (Day) 18:30:00 UTC (since IST is UTC+5:30)
+  const nextDayUtc = new Date(Date.UTC(year, month - 1, day + 1, 0, 0, 0, 0) - (5.5 * 60 * 60 * 1000));
+  return nextDayUtc;
+}
+

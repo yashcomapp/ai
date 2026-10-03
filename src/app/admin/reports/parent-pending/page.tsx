@@ -123,9 +123,7 @@ export default function ParentPendingReportPage() {
       if (sessionTypeFilter !== 'all') {
         const t = (r.type || '').toLowerCase();
         const name = (r.examName || '').toLowerCase();
-        if (sessionTypeFilter === 'daily_5min_sync') {
-          if (t !== 'daily_5min_sync' && !name.includes('daily') && !name.includes('sync')) return false;
-        } else if (sessionTypeFilter === 'objective') {
+        if (sessionTypeFilter === 'objective') {
           if (t !== 'objective' && t !== 'obj' && !name.includes('objective')) return false;
         } else if (sessionTypeFilter === 'practice') {
           if (t !== 'practice' && !name.includes('practice')) return false;
@@ -317,7 +315,6 @@ export default function ParentPendingReportPage() {
               style={{ fontSize: '12px', padding: '6px 10px', borderRadius: 'var(--radius)', background: 'var(--bg-soft)', width: 'auto' }}
             >
               <option value="all">All Session Types</option>
-              <option value="daily_5min_sync">🌙 Daily Sync</option>
               <option value="objective">📝 Objective Exam</option>
               <option value="practice">📚 Practice Review</option>
               <option value="subjective">✍️ Subjective Exam</option>

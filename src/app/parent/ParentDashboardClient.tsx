@@ -6,21 +6,18 @@ import { useRouter } from 'next/navigation';
 import useSWR from 'swr';
 import { fetchWithToken } from '@/lib/swrFetcher';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
-import { useLiveExam } from '@/hooks/useLiveExam';
 import {
   ParentDashboardData,
   ReviewItem,
   ParentNotice,
   ParentHeader,
   ParentChildBar,
-  ParentDailySyncBanner,
   ParentGlanceCard,
   ParentSrsCard,
   ParentActionLedger,
   ParentQuickActions,
   ParentSnapshotModals,
-  ParentNoticeModals,
-  DailySyncModal
+  ParentNoticeModals
 } from '@/components/parent';
 
 export default function ParentDashboardClient({ initialData: serverInitialData }: { initialData?: ParentDashboardData }) {
@@ -63,182 +60,6 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
     setAlertTitle(title);
     setAlertMsg(msg);
     setShowAlert(true);
-  };
-
-  // Daily 5-Min Sync Ritual States
-  const SYNC_TOTAL_SECONDS = 300; // 5 minutes mandatory
-  const [dailySyncOpen, setDailySyncOpen] = useState(false);
-  const [syncSecondsRemaining, setSyncSecondsRemaining] = useState<number>(SYNC_TOTAL_SECONDS);
-  const [dailySyncStep, setDailySyncStep] = useState<1 | 2 | 3>(1);
-  const [dailySyncFeedback, setDailySyncFeedback] = useState<'excellent' | 'good' | 'needs_attention'>('excellent');
-  const [dailySyncPhoto, setDailySyncPhoto] = useState<string | null>(null);
-  const [dailySyncSubmitting, setDailySyncSubmitting] = useState(false);
-  const [dailySyncDoneToday, setDailySyncDoneToday] = useState(false);
-
-  // 5-minute mandatory countdown timer
-  useEffect(() => {
-    let interval: NodeJS.Timeout | null = null;
-    if (dailySyncOpen && syncSecondsRemaining > 0) {
-      interval = setInterval(() => {
-        setSyncSecondsRemaining(prev => Math.max(0, prev - 1));
-      }, 1000);
-    }
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [dailySyncOpen, syncSecondsRemaining]);
-
-  // Prevent browser window/tab close or reload during mandatory 5-min sync
-  useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (dailySyncOpen && syncSecondsRemaining > 0) {
-        e.preventDefault();
-        e.returnValue = 'A mandatory 5-minute Parent-Child Sync is in progress. Please complete the full 5 minutes before leaving.';
-        return e.returnValue;
-      }
-    };
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [dailySyncOpen, syncSecondsRemaining]);
-
-  const formatSyncTimer = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-  };
-
-  // Check if current IST time is in 9:30 PM - 10:30 PM slot
-  const isSyncTimeSlot = () => {
-    try {
-      const nowIST = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
-      const mins = nowIST.getHours() * 60 + nowIST.getMinutes();
-      const start = 21 * 60 + 30; // 9:30 PM = 1290 mins
-      const end = 22 * 60 + 30;   // 10:30 PM = 1350 mins
-      return mins >= start && mins <= end;
-    } catch (e) {
-      return false;
-    }
-  };
-
-  const syncVideoRef = useRef<HTMLVideoElement | null>(null);
-
-  const effectiveSyncChildCode = selectedChildCode || (serverInitialData?.children && serverInitialData.children[0]?.studentCode) || serverInitialData?.childInfo?.studentCode || '';
-  const activeSyncChild = (serverInitialData?.children || []).find((c: any) => c.studentCode === effectiveSyncChildCode)
-    || serverInitialData?.childInfo;
-  const syncStudentName = activeSyncChild?.name || 'Child';
-
-  const {
-    startCameraStream: startSyncLiveExam,
-    stopCameraStream: stopSyncLiveExam,
-    cameraStream: syncLiveStream
-  } = useLiveExam({
-    examId: `daily-sync-${effectiveSyncChildCode || 'child'}`,
-    examName: `Daily 5-Min Parent-Child Sync (${syncStudentName})`,
-    studentCode: effectiveSyncChildCode,
-    studentName: syncStudentName,
-    examType: 'sync' as any,
-    totalQuestions: 3,
-    currentQuestionIndex: dailySyncStep,
-    answeredCount: dailySyncStep,
-    cameraVideoRef: syncVideoRef,
-    started: dailySyncOpen
-  });
-
-  // Automatically start live camera and broadcasting when sync container opens
-  useEffect(() => {
-    if (dailySyncOpen) {
-      startSyncLiveExam().catch(err => console.warn('Failed to start sync live camera:', err));
-    } else {
-      stopSyncLiveExam();
-    }
-  }, [dailySyncOpen]);
-
-  // Keep sync video element attached to live camera stream
-  useEffect(() => {
-    if (syncVideoRef.current && syncLiveStream && syncVideoRef.current.srcObject !== syncLiveStream) {
-      syncVideoRef.current.srcObject = syncLiveStream;
-      syncVideoRef.current.play().catch(() => {});
-    }
-  }, [syncLiveStream, dailySyncOpen]);
-
-  const captureSyncSnapshot = async (): Promise<string | null> => {
-    try {
-      if (syncVideoRef.current && syncVideoRef.current.videoWidth) {
-        const canvas = document.createElement('canvas');
-        canvas.width = 320;
-        canvas.height = 240;
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-          ctx.drawImage(syncVideoRef.current, 0, 0, 320, 240);
-          const dataUrl = canvas.toDataURL('image/jpeg', 0.65);
-          setDailySyncPhoto(dataUrl);
-          return dataUrl;
-        }
-      }
-
-      if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) return null;
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { width: { ideal: 320 }, height: { ideal: 240 }, facingMode: 'user' },
-        audio: false
-      });
-      const video = document.createElement('video');
-      video.playsInline = true;
-      video.muted = true;
-      video.srcObject = stream;
-      await video.play();
-
-      await new Promise(res => setTimeout(res, 350));
-
-      const canvas = document.createElement('canvas');
-      canvas.width = 320;
-      canvas.height = 240;
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        ctx.drawImage(video, 0, 0, 320, 240);
-      }
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.65);
-      stream.getTracks().forEach(t => t.stop());
-      setDailySyncPhoto(dataUrl);
-      return dataUrl;
-    } catch (e) {
-      console.warn('Sync snapshot skipped:', e);
-      return null;
-    }
-  };
-
-  const handleCompleteDailySync = async () => {
-    if (!firebaseUser || !selectedChildCode || dailySyncSubmitting) return;
-    setDailySyncSubmitting(true);
-    try {
-      let photo = dailySyncPhoto;
-      if (!photo) {
-        photo = await captureSyncSnapshot();
-      }
-
-      const idToken = await firebaseUser.getIdToken();
-      await fetch('/api/parent/review', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${idToken}`
-        },
-        body: JSON.stringify({
-          type: 'daily_5min_sync',
-          reviewId: `daily-sync-${Date.now()}`,
-          childStudentCode: selectedChildCode,
-          reviewedByActor: 'parent',
-          photoThumbnail: photo
-        })
-      });
-
-      setDailySyncDoneToday(true);
-      setDailySyncOpen(false);
-      triggerAlert('✅ Daily 5-Min Sync Completed!', 'Your daily parent-child review has been verified and recorded with photo proof.');
-    } catch (err: any) {
-      triggerAlert('Error', err.message || 'Failed to record daily sync');
-    } finally {
-      setDailySyncSubmitting(false);
-    }
   };
 
   const [mounted, setMounted] = useState(false);
@@ -643,23 +464,6 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
           onSelectChild={setSelectedChildCode}
         />
 
-        {/* ROW 2: Daily 5-Min Parent-Kid Sync Banner */}
-        <ParentDailySyncBanner
-          isLoading={isChildDataLoading}
-          dailySyncDoneToday={dailySyncDoneToday}
-          isSyncTimeSlot={isSyncTimeSlot()}
-          onStartSync={() => {
-            if (!isSyncTimeSlot()) {
-              triggerAlert('Slot Closed', 'The Daily 5-Min Parent-Child Sync is strictly accessible during the 9:30 PM – 10:30 PM IST window.');
-              return;
-            }
-            setDailySyncStep(1);
-            setDailySyncPhoto(null);
-            setSyncSecondsRemaining(300);
-            setDailySyncOpen(true);
-          }}
-        />
-
         {/* CARD 1: Child at a Glance */}
         <ParentGlanceCard
           isLoading={isChildDataLoading}
@@ -722,25 +526,6 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
         setAbsenceReason={setAbsenceReason}
         absenceRemarks={absenceRemarks}
         setAbsenceRemarks={setAbsenceRemarks}
-      />
-
-      {/* DAILY 5-MIN SYNC EXAM-LIKE CONTAINER MODAL */}
-      <DailySyncModal
-        isOpen={dailySyncOpen}
-        onClose={() => setDailySyncOpen(false)}
-        syncSecondsRemaining={syncSecondsRemaining}
-        formatSyncTimer={formatSyncTimer}
-        dailySyncStep={dailySyncStep}
-        setDailySyncStep={setDailySyncStep}
-        dailySyncFeedback={dailySyncFeedback}
-        setDailySyncFeedback={setDailySyncFeedback}
-        dailySyncSubmitting={dailySyncSubmitting}
-        handleCompleteDailySync={handleCompleteDailySync}
-        captureSyncSnapshot={captureSyncSnapshot}
-        activeChildName={syncStudentName}
-        childData={data}
-        syncVideoRef={syncVideoRef}
-        syncLiveStream={syncLiveStream}
       />
     </div>
   );

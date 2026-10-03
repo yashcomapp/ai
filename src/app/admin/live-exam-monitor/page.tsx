@@ -62,7 +62,7 @@ export default function AdminLiveMonitorPage() {
   const router = useRouter();
 
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'exam' | 'practice' | 'sync'>('exam');
+  const [activeTab, setActiveTab] = useState<'exam' | 'practice'>('exam');
   const [sessions, setSessions] = useState<{ [key: string]: Session }>({});
 
   // Sorting and PDF export states
@@ -180,17 +180,11 @@ export default function AdminLiveMonitorPage() {
   };
 
   // Filter list by tab and remove abandoned sessions
-  const getFilteredList = (type: 'exam' | 'practice' | 'sync') => {
+  const getFilteredList = (type: 'exam' | 'practice') => {
     const list = Object.values(sessions)
       .filter(s => {
-        const isSync = s.examId?.startsWith('daily-sync') || 
-                       s.examName?.toLowerCase().includes('daily 5-min') || 
-                       s.examName?.toLowerCase().includes('parent-child') ||
-                       s.examType === 'sync' ||
-                       (s as any).type === 'sync';
-        if (type === 'sync') return isSync && !isAbandoned(s.lastActive);
-        if (type === 'practice') return s.examType === 'practice' && !isSync && !isAbandoned(s.lastActive);
-        return s.examType !== 'practice' && !isSync && !isAbandoned(s.lastActive);
+        if (type === 'practice') return s.examType === 'practice' && !isAbandoned(s.lastActive);
+        return s.examType !== 'practice' && !isAbandoned(s.lastActive);
       });
 
     return list.sort((a, b) => {
@@ -485,7 +479,6 @@ export default function AdminLiveMonitorPage() {
         <div className="tabs-container" style={{ display: 'flex', gap: '8px', borderBottom: '1.5px solid var(--border-light)', paddingBottom: '8px' }}>
           {(() => {
             const examCount = getFilteredList('exam').length;
-            const syncCount = getFilteredList('sync').length;
             const practiceCount = getFilteredList('practice').length;
 
             return (
@@ -512,38 +505,6 @@ export default function AdminLiveMonitorPage() {
                       {examCount}
                     </span>
                   )}
-                </button>
-
-                <button 
-                  className={`tab-btn ${activeTab === 'sync' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('sync')}
-                  style={{
-                    padding: '8px 16px',
-                    border: 'none',
-                    cursor: 'pointer',
-                    background: 'none',
-                    fontWeight: 700,
-                    borderBottom: activeTab === 'sync' ? '2.5px solid var(--purple)' : 'none',
-                    color: activeTab === 'sync' ? 'var(--purple)' : 'var(--text-muted)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px'
-                  }}
-                >
-                  <span>Parent-Child Sync</span>
-                  {syncCount > 0 ? (
-                    <span style={{
-                      fontSize: '11px',
-                      background: 'linear-gradient(135deg, var(--purple), var(--accent))',
-                      color: 'var(--text-white)',
-                      padding: '1px 7px',
-                      borderRadius: '10px',
-                      fontWeight: 800,
-                      boxShadow: '0 0 8px rgba(168, 85, 247, 0.6)'
-                    }}>
-                      {syncCount} LIVE
-                    </span>
-                  ) : null}
                 </button>
 
                 <button 
@@ -593,7 +554,7 @@ export default function AdminLiveMonitorPage() {
                   <th onClick={() => handleSort('studentName')} style={{ padding: '12px 16px', cursor: 'pointer', userSelect: 'none' }}>
                     Student {sortField === 'studentName' ? (sortDir === 'asc' ? '▲' : '▼') : '⇅'}
                   </th>
-                  <th style={{ padding: '12px 16px' }}>{activeTab === 'exam' ? 'Exam' : activeTab === 'sync' ? 'Ritual / Session' : 'Topic'}</th>
+                  <th style={{ padding: '12px 16px' }}>{activeTab === 'exam' ? 'Exam' : 'Topic'}</th>
                   <th onClick={() => handleSort('status')} style={{ padding: '12px 16px', cursor: 'pointer', userSelect: 'none' }}>
                     Status {sortField === 'status' ? (sortDir === 'asc' ? '▲' : '▼') : '⇅'}
                   </th>
@@ -611,7 +572,7 @@ export default function AdminLiveMonitorPage() {
                 {list.length === 0 ? (
                   <tr>
                     <td colSpan={7} style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
-                      📭 No active {activeTab === 'exam' ? 'exam' : activeTab === 'sync' ? 'Parent-Child Sync' : 'practice'} sessions right now.
+                      📭 No active {activeTab === 'exam' ? 'exam' : 'practice'} sessions right now.
                     </td>
                   </tr>
                 ) : (

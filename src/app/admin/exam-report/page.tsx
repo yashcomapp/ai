@@ -3,10 +3,10 @@
 import React, { useEffect, useState, useMemo, Suspense } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Script from 'next/script';
 import { useMathRender } from '@/hooks/useMathRender';
 import { preprocessMathText, parseAnswerList, isOptionSelectedByUser, isOptionCorrect, getQuestionCorrectAnswer, getRawOptionKey, getRawOptionText, isBlank, resolveOptionDisplayText, extractAssertionAndReason, isAssertionReasonType } from '@/lib/questionTypes';
 import { playNotificationSound } from '@/lib/audioUtils';
+import { getDateKeyIST } from '@/lib/dateUtils';
 
 interface Attempt {
   id: string;
@@ -2063,10 +2063,12 @@ function ExamReportContent() {
                 </div>
               </div>
 
-              {/* Admin-Only Proctoring Audit Snapshots (Max 5, auto-purged after 18h) */}
+              {/* Admin-Only Proctoring Audit Snapshots (Max 5, auto-purged at 12:00 AM on same day) */}
               {(() => {
                 const snapshots = selectedAttempt.proctoringSnapshots || [];
-                const isPurged = selectedAttempt.proctoringSnapshotsPurged || (snapshots.length === 0 && selectedAttempt.completedAt && (Date.now() - new Date(selectedAttempt.completedAt).getTime() > 18 * 60 * 60 * 1000));
+                const isPastDay = selectedAttempt.completedAt ? (getDateKeyIST(selectedAttempt.completedAt) < getDateKeyIST(new Date())) : (selectedAttempt.startedAt ? (getDateKeyIST(selectedAttempt.startedAt) < getDateKeyIST(new Date())) : false);
+                const isExpired = selectedAttempt.proctoringSnapshotsExpiresAt ? (new Date() >= new Date(selectedAttempt.proctoringSnapshotsExpiresAt)) : false;
+                const isPurged = selectedAttempt.proctoringSnapshotsPurged || isPastDay || isExpired || (snapshots.length === 0 && selectedAttempt.completedAt && isPastDay);
                 
                 if (snapshots.length === 0 && !isPurged) return null;
 
@@ -2083,13 +2085,13 @@ function ExamReportContent() {
                         📸 Proctoring Snapshots ({snapshots.length}/5)
                       </span>
                       <span style={{ fontSize: '10px', color: 'var(--accent)', background: 'rgba(59, 130, 246, 0.08)', padding: '2px 6px', borderRadius: '4px', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
-                        🔒 Confidential • Auto-purges 18h post-exam
+                        🔒 Confidential • Auto-purged at 12:00 AM
                       </span>
                     </div>
 
                     {isPurged && snapshots.length === 0 ? (
                       <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic', padding: '4px 0' }}>
-                        🔒 Proctoring camera captures have been permanently auto-purged per 18-hour retention limit.
+                        🔒 Proctoring camera captures have been permanently auto-purged per same-day 12:00 AM retention limit.
                       </div>
                     ) : (
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(95px, 1fr))', gap: '8px' }}>
