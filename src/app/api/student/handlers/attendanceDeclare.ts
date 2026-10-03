@@ -146,8 +146,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid status. Choose present or leave.' }, { status: 400 });
     }
 
-    if (status === 'leave' && role !== 'parent') {
-      return NextResponse.json({ error: 'Forbidden. Only parent accounts can declare excused leaves.' }, { status: 403 });
+    const isAutonomous = role === 'student' && session.userData?.autonomous === true;
+    if (status === 'leave' && role !== 'parent' && !isAutonomous) {
+      return NextResponse.json({ error: 'Forbidden. Only parent accounts or autonomous students can declare excused leaves.' }, { status: 403 });
     }
 
     // Resolve today's date in IST YYYY-MM-DD

@@ -362,7 +362,7 @@ export default function StudentsManager() {
                           onClick={() => router.push(`/exam-register?studentCode=${s.studentCode}`)}
                           style={{ background: 'none', border: 'none', color: 'var(--accent)', fontWeight: 700, padding: 0, cursor: 'pointer', textAlign: 'left' }}
                         >
-                          {s.autonomous ? '🔒 ' : ''}{s.name || '—'}
+                          {s.autonomous ? '⭐ ' : ''}{s.name || '—'}
                         </button>
                       </td>
                       <td style={{ padding: '12px 16px' }}>{s.email || '—'}</td>
@@ -566,7 +566,7 @@ export default function StudentsManager() {
                   Autonomous Student Mode
                 </label>
                 <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginLeft: '18px', lineHeight: 1.2 }}>
-                  Restricts subjective exams, blocks parent login.
+                  Removes parent exam review requirements and deactivates parent login.
                 </div>
               </div>
 

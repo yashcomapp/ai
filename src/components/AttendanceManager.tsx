@@ -357,7 +357,7 @@ export default function AttendanceManager({ role }: AttendanceManagerProps) {
             )}
           </div>
 
-          {role === 'parent' && (
+          {(role === 'parent' || (user as any)?.autonomous === true) && (
             <>
               {/* Section 2: Leave Request (Future Dates) with Red Border */}
               <div style={{

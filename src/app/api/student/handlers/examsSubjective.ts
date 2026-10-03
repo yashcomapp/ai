@@ -108,9 +108,6 @@ export async function GET(req: NextRequest) {
     if (!student) {
       return NextResponse.json({ message: 'Unauthorized. Student role required.' }, { status: 403 });
     }
-    if (student.userData?.autonomous === true) {
-      return NextResponse.json({ message: 'Access Denied. Subjective exams are restricted for this student account.' }, { status: 403 });
-    }
     const { searchParams } = new URL(req.url);
     const examId = searchParams.get('examId') || '';
     const mode = searchParams.get('mode') || 'home';

@@ -11,10 +11,6 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ message: 'Unauthorized. Student role required.' }, { status: 403 });
     }
 
-    if (student.userData?.autonomous === true) {
-      return NextResponse.json({ message: 'Access Denied: Autonomous mode students do not have access to Learning OS.' }, { status: 403 });
-    }
-
     const data = await getStudentLearningData(student.userData);
     return NextResponse.json(data, {
       headers: {

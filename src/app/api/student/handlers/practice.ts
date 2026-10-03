@@ -22,10 +22,6 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ message: 'Unauthorized. Student role required.' }, { status: 403 });
     }
 
-    if (student.userData?.autonomous === true) {
-      return NextResponse.json({ message: 'Access Denied: Autonomous mode students are not permitted to take topic practice sessions.' }, { status: 403 });
-    }
-
     const studentCode = student.userData?.studentCode;
     const studentName = student.userData?.name || 'Student';
     if (!studentCode) {
@@ -642,10 +638,6 @@ export async function POST(req: NextRequest) {
     const student = await verifyRole(req, 'student');
     if (!student) {
       return NextResponse.json({ message: 'Unauthorized. Student role required.' }, { status: 403 });
-    }
-
-    if (student.userData?.autonomous === true) {
-      return NextResponse.json({ message: 'Access Denied: Autonomous mode students are not permitted to take topic practice sessions.' }, { status: 403 });
     }
 
     const studentCode = student.userData?.studentCode;

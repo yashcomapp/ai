@@ -110,6 +110,11 @@ export async function POST(req: NextRequest) {
     const activeSessionToken = userData.activeSessionToken || null;
 
     if (userData.status === 'inactive' && role !== 'admin') {
+      if (role === 'parent' && userData.deactivationReason === 'student_autonomous') {
+        return NextResponse.json({ 
+          message: 'Parent portal access is disabled as your student is registered in Autonomous Mode (parent exam reviews are not required).' 
+        }, { status: 403 });
+      }
       return NextResponse.json({ message: 'Your account has been disabled. Please contact admin.' }, { status: 403 });
     }
 

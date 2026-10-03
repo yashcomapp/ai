@@ -350,7 +350,7 @@ export class AttemptService {
         suspiciousLevel: suspiciousLevel,
         startedAt: startedAt ? new Date(startedAt) : null,
         completedAt: admin.firestore.FieldValue.serverTimestamp(),
-        status: isAutonomous ? 'approved' : ((wrongAnswers.length === 0 && unattempted.length === 0) ? 'pending' : 'student_review'),
+        status: (wrongAnswers.length === 0 && unattempted.length === 0) ? (isAutonomous ? 'approved' : 'pending') : 'student_review',
         proctoringViolationTriggered: !!proctoringViolationTriggered,
         micAvailable: micBypassed !== undefined ? !micBypassed : true,
         violations: violations || null,

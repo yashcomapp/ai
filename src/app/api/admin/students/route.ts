@@ -97,7 +97,56 @@ export async function POST(request: Request) {
     delete cleanUpdates.role;
     cleanUpdates.updatedAt = new Date();
 
-    await adminDb.collection('users').doc(studentId).update(cleanUpdates);
+    const studentDocRef = adminDb.collection('users').doc(studentId);
+    const studentSnap = await studentDocRef.get();
+    const studentData = studentSnap.exists ? studentSnap.data() || {} : {};
+    const studentCode = studentData.studentCode;
+    const parentEmail = (cleanUpdates.parentEmail || studentData.parentEmail || '').trim().toLowerCase();
+
+    await studentDocRef.update(cleanUpdates);
+
+    // If autonomous mode is modified, synchronize linked parent user account status
+    if (cleanUpdates.autonomous !== undefined) {
+      const isAutonomous = cleanUpdates.autonomous === true;
+      const parentUserDocs: any[] = [];
+
+      if (studentCode) {
+        const [snapByCode, snapByArray] = await Promise.all([
+          adminDb.collection('users').where('role', '==', 'parent').where('studentCode', '==', studentCode).get(),
+          adminDb.collection('users').where('role', '==', 'parent').where('studentCodes', 'array-contains', studentCode).get()
+        ]);
+        snapByCode.docs.forEach(d => {
+          if (!parentUserDocs.some(existing => existing.id === d.id)) parentUserDocs.push(d);
+        });
+        snapByArray.docs.forEach(d => {
+          if (!parentUserDocs.some(existing => existing.id === d.id)) parentUserDocs.push(d);
+        });
+      }
+
+      if (parentEmail) {
+        const snapByEmail = await adminDb.collection('users').where('role', '==', 'parent').where('email', '==', parentEmail).get();
+        snapByEmail.docs.forEach(d => {
+          if (!parentUserDocs.some(existing => existing.id === d.id)) parentUserDocs.push(d);
+        });
+      }
+
+      for (const pDoc of parentUserDocs) {
+        if (isAutonomous) {
+          await pDoc.ref.update({
+            status: 'inactive',
+            deactivationReason: 'student_autonomous',
+            updatedAt: new Date()
+          });
+        } else {
+          await pDoc.ref.update({
+            status: 'active',
+            deactivationReason: null,
+            updatedAt: new Date()
+          });
+        }
+      }
+    }
+
     invalidateCache('admin_students_list');
     
     return NextResponse.json({ success: true });
