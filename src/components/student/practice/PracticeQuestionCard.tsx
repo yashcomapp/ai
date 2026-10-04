@@ -88,19 +88,21 @@ export function PracticeQuestionCard({
               <div className="assertion-reason-container" style={{ margin: '15px 0' }}>
                 <div style={{ background: 'var(--bg-soft)', padding: '12px 16px', borderRadius: 'var(--radius-sm)', marginBottom: '10px' }}>
                   <strong>Assertion (A):</strong>
-                  <p className="math-container" style={{ marginTop: '4px', fontSize: '14px' }}>{preprocessMathText(assertion)}</p>
+                  <p className="math-container" style={{ marginTop: '4px', fontSize: '14px' }} dangerouslySetInnerHTML={{ __html: preprocessMathText(assertion) }} />
                 </div>
                 <div style={{ background: 'var(--bg-soft)', padding: '12px 16px', borderRadius: 'var(--radius-sm)' }}>
                   <strong>Reason (R):</strong>
-                  <p className="math-container" style={{ marginTop: '4px', fontSize: '14px' }}>{preprocessMathText(reason)}</p>
+                  <p className="math-container" style={{ marginTop: '4px', fontSize: '14px' }} dangerouslySetInnerHTML={{ __html: preprocessMathText(reason) }} />
                 </div>
               </div>
             );
           }
           return (
-            <h3 className="math-container" style={{ fontSize: '16px', fontWeight: 700, margin: '15px 0 20px', lineHeight: '1.5' }}>
-              {preprocessMathText(question.text || '')}
-            </h3>
+            <h3 
+              className="math-container" 
+              style={{ fontSize: '16px', fontWeight: 700, margin: '15px 0 20px', lineHeight: '1.5' }}
+              dangerouslySetInnerHTML={{ __html: preprocessMathText(question.text || '') }}
+            />
           );
         })()}
 

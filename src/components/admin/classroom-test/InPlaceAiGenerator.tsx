@@ -169,6 +169,12 @@ export default function InPlaceAiGenerator({
                     }}
                     style={{ fontSize: '11px' }}
                   />
+                  {/* Live Math & Diagram Render Preview */}
+                  <div 
+                    className="math-container" 
+                    style={{ fontSize: '11px', color: 'var(--text)', marginTop: '4px', padding: '6px 10px', background: 'var(--surface)', border: '1px dashed var(--border-light)', borderRadius: '4px', minHeight: '18px', whiteSpace: 'pre-line' }}
+                    dangerouslySetInnerHTML={{ __html: preprocessMathText(q.text || '') }}
+                  />
                 </div>
 
                 {/* Editable Model Answer */}

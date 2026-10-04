@@ -76,7 +76,15 @@ export function preprocessMathText(text: any): string {
   // Resolve nested delimiters enclosing text: \(text1\(text2\)text3\) -> text1\(text2\)text3
   str = str.replace(/\\\(([^()]*?)\\\(([^()]*?)\\\)([^()]*?)\\\)/g, '$1\\($2\\)$3');
 
-  // 1. Extract all math blocks to prevent modifying parentheses/brackets inside them
+  // 1. Extract all SVG blocks and HTML tags to prevent modifying attributes or coordinates inside them
+  const preservedHtmlBlocks: string[] = [];
+  str = str.replace(/<svg[\s\S]*?<\/svg>/gi, (match) => {
+    const placeholder = `§§HTMLBLOCK${preservedHtmlBlocks.length}§§`;
+    preservedHtmlBlocks.push(match);
+    return placeholder;
+  });
+
+  // 2. Extract all math blocks to prevent modifying parentheses/brackets inside them
   const mathBlocks: string[] = [];
   const mathRegex = /(\\\[[\s\S]*?\\\]|\\\([\s\S]*?\\\))/g;
   
@@ -86,7 +94,7 @@ export function preprocessMathText(text: any): string {
     return placeholder;
   });
 
-  // 2. Perform conversions only on the text outside math blocks
+  // 3. Perform conversions only on the text outside math and SVG blocks
   // Safely replace ([ ... ]) with \([ ... ]\) to restore math delimiters for options without corrupting solutions
   str = str.replace(/(?<!\\)\(\[([^\]]+)\]\)/g, '\\([$1]\\)');
 
@@ -106,7 +114,7 @@ export function preprocessMathText(text: any): string {
     const trimmed = match.trim();
     if (!trimmed) return match;
     // Skip if it matches the placeholder format
-    if (/§§MATHBLOCK\d+§§/.test(trimmed)) return match;
+    if (/§§(MATHBLOCK|HTMLBLOCK)\d+§§/.test(trimmed)) return match;
     // Don't wrap if it is already wrapped
     if (trimmed.startsWith('\\(') || trimmed.endsWith('\\)')) return match;
     if (trimmed.startsWith('\\[') || trimmed.endsWith('\\]')) return match;
@@ -115,9 +123,14 @@ export function preprocessMathText(text: any): string {
     return `\\(${trimmed}\\)`;
   });
 
-  // 3. Restore all math blocks
+  // 4. Restore all math blocks
   mathBlocks.forEach((block, idx) => {
     str = str.replace(`§§MATHBLOCK${idx}§§`, block);
+  });
+
+  // 5. Restore all preserved SVG/HTML blocks
+  preservedHtmlBlocks.forEach((block, idx) => {
+    str = str.replace(`§§HTMLBLOCK${idx}§§`, block);
   });
 
   if (MATH_PREPROCESS_CACHE.size >= MAX_MATH_CACHE_SIZE) {

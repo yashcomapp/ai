@@ -95,22 +95,28 @@ export function PracticeFeedbackModal({
           {!isCorrect && (
             <div style={{ background: 'var(--bg-soft)', padding: '16px 18px', borderRadius: 'var(--radius-sm)', overflowY: 'auto', maxHeight: '260px', border: '1px solid var(--border-light)', textAlign: 'left' }}>
               <strong style={{ color: 'var(--accent)', display: 'block', marginBottom: '8px', fontSize: '15px' }}>💡 Detailed Explanation &amp; Solution:</strong>
-              <div className="math-container" style={{ lineHeight: '1.6', fontSize: '14.5px', color: 'var(--text)' }}>
-                {question.solution || question.explanation ? (
-                  preprocessMathText(question.solution || question.explanation)
-                ) : (
-                  <span>Analyze the key concepts: The correct choice is <strong>{getCorrectOptionText(question)}</strong>. Review topic definitions and core principles to reinforce this concept.</span>
-                )}
-              </div>
+              {question.solution || question.explanation ? (
+                <div 
+                  className="math-container" 
+                  style={{ lineHeight: '1.6', fontSize: '14.5px', color: 'var(--text)' }}
+                  dangerouslySetInnerHTML={{ __html: preprocessMathText(question.solution || question.explanation) }}
+                />
+              ) : (
+                <div className="math-container" style={{ lineHeight: '1.6', fontSize: '14.5px', color: 'var(--text)' }}>
+                  Analyze the key concepts: The correct choice is <strong>{getCorrectOptionText(question)}</strong>. Review topic definitions and core principles to reinforce this concept.
+                </div>
+              )}
             </div>
           )}
           {isCorrect && (
             <div style={{ background: 'rgba(16, 185, 129, 0.08)', padding: '18px 20px', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
               <p style={{ margin: 0, fontWeight: 700, fontSize: '16px', color: 'var(--success)' }}>🎉 Well done! You evaluated this statement correctly.</p>
               {(question.solution || question.explanation) && (
-                <div className="math-container" style={{ marginTop: '12px', fontSize: '14.5px', lineHeight: '1.6', color: 'var(--text)', textAlign: 'left' }}>
-                  <strong style={{ color: 'var(--text-muted)' }}>Solution Note:</strong> {preprocessMathText(question.solution || question.explanation)}
-                </div>
+                <div 
+                  className="math-container" 
+                  style={{ marginTop: '12px', fontSize: '14.5px', lineHeight: '1.6', color: 'var(--text)', textAlign: 'left' }}
+                  dangerouslySetInnerHTML={{ __html: `<strong style="color: var(--text-muted)">Solution Note:</strong> ${preprocessMathText(question.solution || question.explanation)}` }}
+                />
               )}
             </div>
           )}

@@ -1174,9 +1174,8 @@ function TakeExamContent() {
               <div 
                 className="math-container"
                 style={{ fontSize: '15px', lineHeight: '1.6', marginBottom: '16px', whiteSpace: 'pre-line' }}
-              >
-                {preprocessMathText(currentQuestion.text)}
-              </div>
+                dangerouslySetInnerHTML={{ __html: preprocessMathText(currentQuestion.text) }}
+              />
             )}
 
             {/* Options Area based on type */}

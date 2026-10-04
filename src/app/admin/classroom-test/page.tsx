@@ -650,8 +650,9 @@ For each topic listed above, generate a focused set of authentic questions (5 to
 - 100% BOARD-SPECIFIC EXCLUSIVITY: All questions, terminology, and expected answers MUST strictly belong to ${selectedBoard}. ${pyqGuideline}
 - ABSOLUTELY ZERO INVENTED / SYNTHETIC QUESTIONS: Every single question MUST be an authentic, real question sourced directly from official ${officialTextbook} (Chapter-End Exercises, In-Text questions ${isMH ? 'like "Can you tell?", "Use your brain power", "Think about it"' : ''}) or actual past ${selectedBoard} Board Exam papers. Strictly DO NOT make up fictional hypothetical scenarios.
 ${isMath ? `
-- For Mathematics, 100% of the questions MUST be taken directly from the official textbook exercises, practice sets, problem sets, or solved examples.
-- Specify the exact textbook reference in "sourceSection" (e.g., "${isMH ? 'Practice Set 2.1: Q3' : 'Exercise 3.2: Q4'}").
+- For Mathematics, 100% of the questions MUST be taken directly from official textbook exercises, practice sets, problem sets, or solved examples.
+- Specify the exact textbook reference in "sourceSection" (e.g., "${isMH ? 'Practice Set 13.1: Q1' : 'Exercise 7.1: Q2'}").
+- MANDATORY VECTOR SVG FIGURES FOR GEOMETRY / DIAGRAM TOPICS: If a question references or requires a diagram (e.g. triangles, congruence, quadrilaterals, circles, transversals), embed a standalone <svg viewBox='0 0 320 150' width='100%' style='max-width:320px;height:auto;display:block;margin:10px auto;'>...</svg> vector diagram directly inside the "text" string using single quotes for all SVG attributes.
 ` : ''}
 
 STRICT VERBATIM & KEYWORD HIGHLIGHTING RULES:
@@ -723,7 +724,7 @@ OUTPUT FORMAT: Return ONLY a valid JSON array of objects with schema:
       : (isMH ? `STRICT EXCLUSION: Do NOT generate questions from CBSE (NCERT), ICSE, or other national boards.` : '');
 
     const samplePyq = isCBSE ? 'CBSE Board 2022' : (isMH ? 'MSBSHSE March 2020' : `${selectedBoard} Board 2021`);
-    const sampleSource = isCBSE ? 'NCERT Exercise Q3' : (isMH ? 'Balbharti Exercise Q2(a)' : 'Textbook Exercise Q1');
+    const sampleSource = isCBSE ? 'NCERT Exercise Q3' : (isMH ? 'Balbharti Practice Set 13.1 Q1' : 'Textbook Exercise Q1');
 
     const promptText = `
 ROLE & GOAL:
@@ -748,9 +749,9 @@ For each topic listed above, generate a focused set of authentic questions (5 to
 - 100% BOARD-SPECIFIC EXCLUSIVITY: All questions, terminology, and expected answers MUST strictly belong to ${selectedBoard}. ${pyqGuideline}
 - ABSOLUTELY ZERO INVENTED / SYNTHETIC QUESTIONS: Every single question MUST be an authentic, real question sourced directly from official ${officialTextbook} (Chapter-End Exercises, In-Text questions ${isMH ? 'like "Can you tell?", "Use your brain power", "Think about it"' : ''}) or actual past ${selectedBoard} Board Exam papers. Strictly DO NOT make up fictional hypothetical scenarios.
 ${isMath ? `
-- For Mathematics, 100% of the questions MUST be taken directly from the official textbook exercises, practice sets, problem sets, or solved examples.
-- Specify the exact textbook reference in "sourceSection" (e.g., "${isMH ? 'Practice Set 2.1: Q3' : 'Exercise 3.2: Q4'}").
-- VECTOR SVG FIGURES: If a question references or requires a diagram, embed a standalone <svg viewBox='0 0 320 160' ...>...</svg> vector directly inside the "text" field with single quotes for attributes.
+- For Mathematics, 100% of the questions MUST be taken directly from official textbook exercises, practice sets, problem sets, or solved examples.
+- Specify the exact textbook reference in "sourceSection" (e.g., "${isMH ? 'Practice Set 13.1: Q1' : 'Exercise 7.1: Q2'}").
+- MANDATORY VECTOR SVG FIGURES FOR GEOMETRY / DIAGRAM TOPICS: If a question references or requires a diagram (e.g. triangles, congruence, quadrilaterals, circles, transversals), embed a standalone <svg viewBox='0 0 320 150' width='100%' style='max-width:320px;height:auto;display:block;margin:10px auto;'>...</svg> vector diagram directly inside the "text" string using single quotes for all SVG attributes.
 ` : ''}
 
 STRICT VERBATIM & KEYWORD HIGHLIGHTING RULES:
