@@ -86,6 +86,8 @@ export async function POST(req: NextRequest) {
     const grade = gradeMatch ? gradeMatch[0] : 'X';
     const tempId = `TEMP-${grade}-${Math.floor(100000 + Math.random() * 900000)}`;
 
+    const isAutonomous = data.autonomous !== undefined ? Boolean(data.autonomous) : true;
+
     const registration = {
       studentName: studentName.trim(),
       studentEmail: studentEmail.trim().toLowerCase(),
@@ -102,6 +104,7 @@ export async function POST(req: NextRequest) {
       batchId,
       batchName,
       tempId,
+      autonomous: isAutonomous,
       password: encrypt(dobPassword),
       status: 'pending',
       createdAt: admin.firestore.FieldValue.serverTimestamp()

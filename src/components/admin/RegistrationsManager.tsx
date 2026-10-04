@@ -24,6 +24,7 @@ interface Registration {
   batchId: string;
   batchName: string;
   tempId: string;
+  autonomous?: boolean;
   status: 'pending' | 'approved' | 'rejected';
   createdAt: string;
 }
@@ -62,6 +63,7 @@ export default function RegistrationsManager() {
     parentEmail: '',
     parentMobile: '',
     parentRelation: '',
+    autonomous: true,
     status: 'pending' as 'pending' | 'approved' | 'rejected',
     password: ''
   });
@@ -90,8 +92,10 @@ export default function RegistrationsManager() {
     fetchRegistrations();
   }, [firebaseUser]);
 
-  const handleApprove = async (id: string) => {
-    if (!confirm('Approve this registration? This will create student and parent accounts.')) return;
+  const handleApprove = async (id: string, isAuto?: boolean) => {
+    const reg = registrations.find(r => r.id === id);
+    const targetAuto = typeof isAuto === 'boolean' ? isAuto : (reg?.autonomous !== false);
+    if (!confirm(`Approve this registration as ${targetAuto ? '⭐ Autonomous (Parent review bypassed)' : 'Regular'}? This will create student and parent accounts.`)) return;
     
     setLoading(true);
     try {
@@ -102,7 +106,7 @@ export default function RegistrationsManager() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${idToken}`
         },
-        body: JSON.stringify({ id, action: 'approve' })
+        body: JSON.stringify({ id, action: 'approve', autonomous: targetAuto })
       });
 
       const resData = await res.json();
@@ -184,6 +188,7 @@ export default function RegistrationsManager() {
       parentEmail: reg.parentEmail || '',
       parentMobile: reg.parentMobile || '',
       parentRelation: reg.parentRelation || '',
+      autonomous: reg.autonomous !== false,
       status: reg.status || 'pending',
       password: ''
     });
@@ -342,7 +347,12 @@ export default function RegistrationsManager() {
                 <tr key={reg.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
                   <td style={{ padding: '10px' }}><code>{reg.tempId || '-'}</code></td>
                   <td style={{ padding: '10px' }}>
-                    <strong>{reg.studentName}</strong>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <strong>{reg.studentName}</strong>
+                      <span className="badge" style={{ fontSize: '9px', padding: '2px 6px', background: reg.autonomous !== false ? 'rgba(16, 185, 129, 0.15)' : 'rgba(156, 163, 175, 0.15)', color: reg.autonomous !== false ? '#059669' : 'var(--text-muted)' }}>
+                        {reg.autonomous !== false ? '⭐ Autonomous' : 'Regular'}
+                      </span>
+                    </div>
                     <div style={{ color: 'var(--text-muted)', fontSize: '10px' }}>{reg.studentEmail}</div>
                   </td>
                   <td style={{ padding: '10px' }}>{reg.batchName}</td>
@@ -362,7 +372,7 @@ export default function RegistrationsManager() {
                       <button className="btn btn-primary" style={{ fontSize: '10px', padding: '4px 8px' }} onClick={() => handleOpenEdit(reg)} title="Edit">Edit</button>
                       {reg.status === 'pending' && (
                         <>
-                          <button className="btn btn-success" style={{ fontSize: '10px', padding: '4px 8px' }} onClick={() => handleApprove(reg.id)} title="Approve">Approve</button>
+                          <button className="btn btn-success" style={{ fontSize: '10px', padding: '4px 8px' }} onClick={() => handleApprove(reg.id, true)} title="Approve as Autonomous">Approve</button>
                           <button className="btn btn-danger" style={{ fontSize: '10px', padding: '4px 8px' }} onClick={() => handleReject(reg.id)} title="Reject">Reject</button>
                         </>
                       )}
@@ -395,6 +405,12 @@ export default function RegistrationsManager() {
                 <div><label style={{ display: 'block', fontSize: '10px', color: 'var(--text-muted)' }}>Gender</label><span>{selectedReg.gender}</span></div>
                 <div><label style={{ display: 'block', fontSize: '10px', color: 'var(--text-muted)' }}>Blood Group</label><span>{selectedReg.bloodGroup}</span></div>
                 <div><label style={{ display: 'block', fontSize: '10px', color: 'var(--text-muted)' }}>Batch</label><span>{selectedReg.batchName}</span></div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '10px', color: 'var(--text-muted)' }}>Mode</label>
+                  <span className="badge" style={{ fontSize: '10px', background: selectedReg.autonomous !== false ? 'rgba(16, 185, 129, 0.15)' : 'rgba(156, 163, 175, 0.15)', color: selectedReg.autonomous !== false ? '#059669' : 'var(--text-muted)' }}>
+                    {selectedReg.autonomous !== false ? '⭐ Autonomous (Parent review bypassed)' : 'Regular'}
+                  </span>
+                </div>
                 <div style={{ gridColumn: '1/-1' }}><label style={{ display: 'block', fontSize: '10px', color: 'var(--text-muted)' }}>Address</label><span>{selectedReg.address}</span></div>
                 
                 <div style={{ gridColumn: '1/-1', fontWeight: 'bold', color: 'var(--accent)', borderBottom: '1px solid var(--border-light)', paddingBottom: '4px', marginTop: '12px' }}>PARENT</div>
@@ -412,7 +428,8 @@ export default function RegistrationsManager() {
             <div className="modal-footer" style={{ display: 'flex', gap: '8px', padding: '12px 16px', borderTop: '1px solid var(--border-light)', justifyContent: 'flex-end' }}>
               {selectedReg.status === 'pending' && (
                 <>
-                  <button className="btn btn-success" onClick={() => { handleApprove(selectedReg.id); setViewModalOpen(false); }}>Approve</button>
+                  <button className="btn btn-success" onClick={() => { handleApprove(selectedReg.id, true); setViewModalOpen(false); }}>Approve (Autonomous)</button>
+                  <button className="btn btn-secondary" onClick={() => { handleApprove(selectedReg.id, false); setViewModalOpen(false); }}>Approve (Regular)</button>
                   <button className="btn btn-danger" onClick={() => { handleReject(selectedReg.id); setViewModalOpen(false); }}>Reject</button>
                 </>
               )}
@@ -432,6 +449,18 @@ export default function RegistrationsManager() {
             </div>
             <div className="modal-body" style={{ padding: '20px' }}>
               <div className="edit-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 12px', fontSize: '13px' }}>
+                <div style={{ gridColumn: '1/-1', display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 14px', background: 'var(--surface-2)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)' }}>
+                  <input 
+                    type="checkbox" 
+                    id="edit-autonomous"
+                    checked={editFields.autonomous}
+                    onChange={(e) => setEditFields(prev => ({ ...prev, autonomous: e.target.checked }))}
+                    style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                  />
+                  <label htmlFor="edit-autonomous" style={{ fontSize: '12px', fontWeight: 600, cursor: 'pointer', margin: 0, color: 'var(--text)' }}>
+                    ⭐ Autonomous Student Mode (Recommended — parent reviews bypassed)
+                  </label>
+                </div>
                 <div>
                   <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)' }}>Student Name</label>
                   <input 

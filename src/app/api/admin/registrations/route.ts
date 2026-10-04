@@ -174,8 +174,14 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      // Step 2d: Save Student document to users collection
-      const isAutonomous = regData.autonomous === true;
+      // Step 2d: Save Student document to users collection (defaults to Autonomous)
+      let isAutonomous = true;
+      if (typeof autonomous === 'boolean') {
+        isAutonomous = autonomous;
+      } else if (typeof regData.autonomous === 'boolean') {
+        isAutonomous = regData.autonomous;
+      }
+
       const studentUserRef = adminDb.collection('users').doc(studentId);
       await studentUserRef.set({
         name: regData.studentName,
@@ -381,6 +387,7 @@ export async function PUT(req: NextRequest) {
       parentMobile: updates.parentMobile,
       parentRelation: updates.parentRelation,
       status: updates.status,
+      autonomous: typeof updates.autonomous === 'boolean' ? updates.autonomous : true,
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       updatedBy: (adminUser.decodedToken?.email || adminUser.userData?.email)
     };

@@ -92,8 +92,15 @@ export class ExamService {
     studentBatchIds: string[];
     currentExamId: string;
     evalMap?: Set<string> | Map<string, any>;
+    isAutonomous?: boolean;
   }): Promise<{ blocked: boolean; examTitle?: string; message?: string }> {
-    const { studentCode, studentBatchIds, currentExamId, evalMap } = params;
+    const { studentCode, studentBatchIds, currentExamId, evalMap, isAutonomous } = params;
+    
+    // Autonomous students do not have active parent accounts to acknowledge absences
+    if (isAutonomous) {
+      return { blocked: false };
+    }
+
     const now = new Date();
 
     const { objAssignments, subAssignments } = await this.fetchStudentActiveAssignments(studentCode, studentBatchIds);

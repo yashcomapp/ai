@@ -221,7 +221,7 @@ export async function GET(req: NextRequest) {
     for (const revDoc of pendingObj.docs) {
       const data = revDoc.data();
       const isApprovedByEval = evalMap.has(revDoc.id) || (data.examId && evalMap.has(data.examId));
-      if (isApprovedByEval || (isAutonomous && data.status === 'pending')) {
+      if (isApprovedByEval || (isAutonomous && (data.status === 'pending' || data.status === 'student_review'))) {
         // Auto-heal status in Firestore
         revDoc.ref.update({ status: 'approved', updatedAt: new Date() }).catch(() => null);
       } else {
@@ -252,7 +252,8 @@ export async function GET(req: NextRequest) {
       studentCode,
       studentBatchIds,
       currentExamId: examId,
-      evalMap
+      evalMap,
+      isAutonomous
     });
 
     if (absenceCheck.blocked) {
