@@ -43,6 +43,10 @@ async function generateReport() {
 
   studentsSnap.forEach(doc => {
     const d = doc.data();
+    // Rule 2C: Inactive students MUST be completely excluded from all active loops, rosters, and reports
+    if (d.status === 'inactive') {
+      return;
+    }
     const batchName = batchMap[d.batchId] || d.batch || d.batchName || d.className || 'Unassigned';
     students.push({
       studentCode: d.studentCode || doc.id,
@@ -170,40 +174,55 @@ async function generateReport() {
   setCols(wsReg);
   XLSX.utils.book_append_sheet(wb, wsReg, 'Regular (Only)');
 
+  console.log('\n--- ACTIVE STUDENTS SUMMARY ---');
+  console.log(JSON.stringify(summaryRows, null, 2));
+  console.log(`Total Active Students: ${students.length}`);
+
   // Output paths
   const outputDir = path.resolve(__dirname, '..', 'reports');
-  if (!fs.existsSync(outputDir)) {
-    fs.mkdirSync(outputDir, { recursive: true });
-  }
-
-  const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-  const xlsxPath = path.join(outputDir, `Autonomous_vs_Regular_Students_${timestamp}.xlsx`);
-  const fixedXlsxPath = path.join(outputDir, `Autonomous_and_Regular_Students_Batchwise.xlsx`);
-  const fixedXlsPath = path.join(outputDir, `Autonomous_and_Regular_Students_Batchwise.xls`);
-  const csvPath = path.join(outputDir, `Autonomous_and_Regular_Students_Batchwise.csv`);
-
-  XLSX.writeFile(wb, xlsxPath);
-  XLSX.writeFile(wb, fixedXlsxPath);
-  XLSX.writeFile(wb, fixedXlsPath, { bookType: 'biff8' });
-
-  // Generate clean CSV for master list
-  const csvContent = XLSX.utils.sheet_to_csv(wsMaster);
-  fs.writeFileSync(csvPath, csvContent, 'utf-8');
-
-  // Also copy to public/reports/ so user can download directly if needed
   const publicReportsDir = path.resolve(__dirname, '..', 'public', 'reports');
-  if (!fs.existsSync(publicReportsDir)) {
-    fs.mkdirSync(publicReportsDir, { recursive: true });
-  }
-  fs.copyFileSync(fixedXlsxPath, path.join(publicReportsDir, 'Autonomous_and_Regular_Students_Batchwise.xlsx'));
-  fs.copyFileSync(fixedXlsPath, path.join(publicReportsDir, 'Autonomous_and_Regular_Students_Batchwise.xls'));
-  fs.copyFileSync(csvPath, path.join(publicReportsDir, 'Autonomous_and_Regular_Students_Batchwise.csv'));
+  const artifactDir = path.resolve('C:\\Users\\Admin\\.gemini\\antigravity\\brain\\056b7be2-e1b9-410d-9f9c-72232de89289');
 
-  console.log('Reports generated successfully:');
-  console.log(`- XLSX: ${fixedXlsxPath}`);
-  console.log(`- XLS: ${fixedXlsPath}`);
-  console.log(`- CSV: ${csvPath}`);
-  console.log(`- Public URL: /reports/Autonomous_and_Regular_Students_Batchwise.xlsx`);
+  [outputDir, publicReportsDir, artifactDir].forEach(dir => {
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  });
+
+  const safeWrite = (fn, desc) => {
+    try {
+      fn();
+    } catch (e) {
+      console.warn(`Could not write ${desc}: ${e.message}`);
+    }
+  };
+
+  const fixedXlsx = path.join(outputDir, 'Autonomous_and_Regular_Active_Students_Batchwise.xlsx');
+  const fixedXls = path.join(outputDir, 'Autonomous_and_Regular_Active_Students_Batchwise.xls');
+  const fixedCsv = path.join(outputDir, 'Autonomous_and_Regular_Active_Students_Batchwise.csv');
+
+  const defaultXlsx = path.join(outputDir, 'Autonomous_and_Regular_Students_Batchwise.xlsx');
+  const defaultXls = path.join(outputDir, 'Autonomous_and_Regular_Students_Batchwise.xls');
+  const defaultCsv = path.join(outputDir, 'Autonomous_and_Regular_Students_Batchwise.csv');
+
+  safeWrite(() => XLSX.writeFile(wb, fixedXlsx), 'fixedXlsx');
+  safeWrite(() => XLSX.writeFile(wb, fixedXls, { bookType: 'biff8' }), 'fixedXls');
+  const csvContent = XLSX.utils.sheet_to_csv(wsMaster);
+  safeWrite(() => fs.writeFileSync(fixedCsv, csvContent, 'utf-8'), 'fixedCsv');
+
+  safeWrite(() => XLSX.writeFile(wb, defaultXlsx), 'defaultXlsx');
+  safeWrite(() => XLSX.writeFile(wb, defaultXls, { bookType: 'biff8' }), 'defaultXls');
+  safeWrite(() => fs.writeFileSync(defaultCsv, csvContent, 'utf-8'), 'defaultCsv');
+
+  // Copy to public/reports and artifacts
+  [publicReportsDir, artifactDir].forEach(targetDir => {
+    safeWrite(() => XLSX.writeFile(wb, path.join(targetDir, 'Autonomous_and_Regular_Active_Students_Batchwise.xlsx')), targetDir);
+    safeWrite(() => XLSX.writeFile(wb, path.join(targetDir, 'Autonomous_and_Regular_Active_Students_Batchwise.xls'), { bookType: 'biff8' }), targetDir);
+    safeWrite(() => fs.writeFileSync(path.join(targetDir, 'Autonomous_and_Regular_Active_Students_Batchwise.csv'), csvContent, 'utf-8'), targetDir);
+    safeWrite(() => XLSX.writeFile(wb, path.join(targetDir, 'Autonomous_and_Regular_Students_Batchwise.xlsx')), targetDir);
+    safeWrite(() => XLSX.writeFile(wb, path.join(targetDir, 'Autonomous_and_Regular_Students_Batchwise.xls'), { bookType: 'biff8' }), targetDir);
+    safeWrite(() => fs.writeFileSync(path.join(targetDir, 'Autonomous_and_Regular_Students_Batchwise.csv'), csvContent, 'utf-8'), targetDir);
+  });
+
+  console.log('\nActive Student Reports Generated Successfully.');
 }
 
 generateReport().catch(console.error);
