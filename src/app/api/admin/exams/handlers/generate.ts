@@ -46,6 +46,7 @@ export async function GET(req: NextRequest) {
       }
 
       const cleanClass = String(classNum).replace(/\D/g, '');
+      const classVariations = Array.from(new Set([cleanClass, Number(cleanClass), classNum].filter(v => v !== undefined && v !== '')));
       const poolCacheKey = `${board}_${cleanClass}_${subject}_${topicNumbers.slice().sort().join('|')}_${questionType}_${examCategory}`;
       const cachedPool = POOL_CACHE.get(poolCacheKey);
       if (cachedPool && (Date.now() - cachedPool.timestamp < POOL_CACHE_TTL)) {
@@ -55,13 +56,13 @@ export async function GET(req: NextRequest) {
       // Query questions collection for matching class + query existing exams to cross-check used questions
       const [questionsSnap, existingObjExamsSnap, existingSubjExamsSnap] = await Promise.all([
         adminDb.collection('questions')
-          .where('class', '==', cleanClass)
+          .where('class', 'in', classVariations)
           .get(),
         adminDb.collection('exams')
-          .where('class', '==', cleanClass)
+          .where('class', 'in', classVariations)
           .get(),
         adminDb.collection('subjectiveExams')
-          .where('class', '==', cleanClass)
+          .where('class', 'in', classVariations)
           .get()
       ]);
 
@@ -192,18 +193,26 @@ export async function GET(req: NextRequest) {
         const subjectCodeVal = subjectData.subjectCode || '';
 
         const cleanClassVal = String(classVal).replace(/\D/g, '');
+        const classVariations = Array.from(new Set([cleanClassVal, Number(cleanClassVal), classVal].filter(v => v !== undefined && v !== '')));
 
         let questionsSnap: admin.firestore.QuerySnapshot | null = null;
         if (subjectCodeVal) {
+          const subjectAliases = [
+            subjectCodeVal, 
+            subjectCodeVal.toLowerCase(), 
+            subjectCodeVal.toUpperCase(),
+            ...(subjectCodeVal === 'MTH' ? ['MATH'] : subjectCodeVal === 'MATH' ? ['MTH'] : [])
+          ];
           questionsSnap = await adminDb.collection('questions')
-            .where('class', '==', cleanClassVal)
-            .where('subjectCode', '==', subjectCodeVal)
-            .get();
+            .where('class', 'in', classVariations)
+            .where('subjectCode', 'in', subjectAliases)
+            .get()
+            .catch(() => null);
         }
 
         if (!questionsSnap || questionsSnap.empty) {
           questionsSnap = await adminDb.collection('questions')
-            .where('class', '==', cleanClassVal)
+            .where('class', 'in', classVariations)
             .get();
         }
 
@@ -219,6 +228,8 @@ export async function GET(req: NextRequest) {
                            (String(boardVal).toLowerCase().includes('mh') && (b.includes('mh') || b.includes('maharashtra')));
             const sMatch = s === String(subjectVal).toLowerCase() || 
                            sc === String(subjectData.subjectCode || '').toLowerCase() ||
+                           (sc === 'math' && String(subjectData.subjectCode || '').toLowerCase() === 'mth') ||
+                           (sc === 'mth' && String(subjectData.subjectCode || '').toLowerCase() === 'math') ||
                            s.includes(String(subjectVal).toLowerCase()) ||
                            String(subjectVal).toLowerCase().includes(s);
             if (!bMatch || !sMatch) return null;
