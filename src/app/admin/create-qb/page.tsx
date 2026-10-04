@@ -9,7 +9,18 @@ import { preprocessMathText, toCanonicalQuestionType, robustParseAIJson, validat
 import { highlightModelAnswerKeywords } from '@/lib/pdfExport';
 import { SyllabusSelector } from '@/components/SyllabusSelector';
 import { useSyllabusSelector } from '@/hooks/useSyllabusSelector';
-import { distributeCountsByWeight as distributeCountsByWeightLib, buildObjectiveSchema } from '@/lib/syllabusUtils';
+import { 
+  distributeCountsByWeight as distributeCountsByWeightLib, 
+  buildObjectiveSchema,
+
+  getCanonicalBoardCode,
+  getCanonicalBoardName,
+  getCanonicalClass,
+  getCanonicalSubjectCode,
+  getCanonicalTopicCode,
+  extractChapterFromTopic
+} from '@/lib/syllabusUtils';
+
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
 const BulkSaveProgressModal = dynamic(() => import('@/components/admin/create-qb/BulkSaveProgressModal'), { ssr: false });
@@ -1372,12 +1383,13 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
 
       // Build payload array for single atomic bulkSave request
       const formattedQuestions = questionsList.map(q => {
-        const bCode = boardCodes?.[selectedBoard] || (selectedBoard?.toUpperCase().includes('CBSE') ? 'CBSE' : 'MH');
+        const bCode = getCanonicalBoardCode(selectedBoard);
         const sName = q.subject || getSelectedSubjectsList()[0] || '';
-        const sCode = subjectCodes?.[sName] || 'MTH';
-        const chNum = String(q.chapterNumber || '1');
-        const tNum = String(q.topicNumber || '1.1');
-        const canonicalTopicCode = `${bCode}-${selectedClass}-${sCode}-${chNum}-${tNum}`;
+        const cleanClass = getCanonicalClass(selectedClass);
+        const sCode = getCanonicalSubjectCode(bCode, cleanClass, sName);
+        const tNum = String(q.topicNumber || '1.1').trim();
+        const chNum = extractChapterFromTopic(tNum, q.chapterNumber);
+        const canonicalTopicCode = getCanonicalTopicCode(bCode, cleanClass, sCode, chNum, tNum);
 
         return {
           qtype: toCanonicalQuestionType(q.type || 'OSC'),
@@ -1392,9 +1404,9 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
           pyqInfo: q.pyqInfo || '',
           difficulty: q.difficulty || 'medium',
           bloomLevel: q.bloomLevel || 'Remember',
-          board: selectedBoard,
+          board: getCanonicalBoardName(selectedBoard),
           boardCode: bCode,
-          classNum: selectedClass,
+          classNum: cleanClass,
           subjectName: sName,
           subjectCode: sCode,
           chapterNumber: chNum,
@@ -1409,6 +1421,7 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
           conceptTag: q.conceptTag || q.topicName || q.topic || ''
         };
       });
+
 
       // Try instant atomic bulkSave API first
       let bulkSuccess = false;

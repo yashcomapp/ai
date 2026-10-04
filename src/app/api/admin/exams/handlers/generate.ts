@@ -4,7 +4,14 @@ import { adminDb } from '@/lib/firebase/admin';
 import { OBJECTIVE_QUESTION_TYPES, SUBJECTIVE_QUESTION_TYPES, toCanonicalQuestionType, CANONICAL_OBJECTIVE_TYPES, CANONICAL_SUBJECTIVE_TYPES, cleanStringForMatch, isQuestionQuarantined } from '@/lib/questionTypes';
 import { verifyRole } from '@/lib/auth';
 import { ChunkedBatch } from '@/lib/firebase/batch';
+import { 
+  getCanonicalBoardCode, 
+  getCanonicalBoardName, 
+  getCanonicalClass, 
+  getCanonicalSubjectCode 
+} from '@/lib/syllabusUtils';
 export const dynamic = 'force-dynamic';
+
 
 const INITIAL_METADATA_TTL = 300000; // 5 minutes
 let INITIAL_METADATA_CACHE: { data: any; timestamp: number } | null = null;
@@ -455,11 +462,11 @@ export async function GET(req: NextRequest) {
 
     syllabusSnap.docs.forEach(doc => {
       const data = doc.data();
-      const board = data.board || 'Maharashtra Board';
-      const cls = String(data.class || '8');
+      const board = getCanonicalBoardName(data.board);
+      const cls = getCanonicalClass(data.class);
       const subject = data.subject;
-      const subjectCode = data.subjectCode;
-      const bCode = data.boardCode || (board.toLowerCase().includes('cbse') ? 'CBSE' : board.toLowerCase().includes('icse') ? 'ICSE' : 'MH');
+      const bCode = getCanonicalBoardCode(data.boardCode || board);
+      const subjectCode = data.subjectCode || getCanonicalSubjectCode(bCode, cls, subject);
 
       if (board && subject) {
         boardCodes[board] = bCode;
@@ -531,21 +538,18 @@ export async function POST(req: NextRequest) {
         questionChunks.push(validQuestionCodes.slice(i, i + 30));
       }
 
-      const [boardCodesSnap, subjectCodesSnap, ...questionSnaps] = await Promise.all([
-        adminDb.collection('config').doc('boardCodes').get(),
-        adminDb.collection('config').doc('subjectCodes').get(),
-        ...questionChunks.map(chunk =>
+      const questionSnaps = await Promise.all(
+        questionChunks.map(chunk =>
           adminDb.collection('questions')
             .where(admin.firestore.FieldPath.documentId(), 'in', chunk)
             .get()
         )
-      ]);
-      
-      const boardCodes = boardCodesSnap.exists ? boardCodesSnap.data()! : {};
-      const subjectCodes = subjectCodesSnap.exists ? subjectCodesSnap.data()! : {};
+      );
 
-      const boardCode = boardCodes[board] || board.substring(0, 4).toUpperCase();
-      const subjectCode = subjectCodes[subjectName] || subjectName.substring(0, 4).toUpperCase();
+      const boardCode = getCanonicalBoardCode(board);
+      const cleanClass = getCanonicalClass(classNum);
+      const subjectCode = getCanonicalSubjectCode(boardCode, cleanClass, subjectName);
+
 
       // Check if all selected questions are subjective
       let isAllSubjective = false;

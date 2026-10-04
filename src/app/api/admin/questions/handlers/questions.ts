@@ -6,6 +6,16 @@ import { QuestionRepository } from '@/repositories/question.repository';
 import { ChunkedBatch } from '@/lib/firebase/batch';
 import { validateQuestion, normalizeBloomLevel, OBJECTIVE_QUESTION_TYPES, SUBJECTIVE_QUESTION_TYPES, QUESTION_TYPE_MAP, cleanStringForMatch, toCanonicalQuestionType, isObjectiveType, isSubjectiveType } from '@/lib/questionTypes';
 import { getFromCache, setInCache, invalidateCache } from '@/lib/firebase/cache';
+import { 
+  getCanonicalBoardCode, 
+  getCanonicalBoardName, 
+  getCanonicalClass, 
+  getCanonicalSubjectCode, 
+  getCanonicalTopicCode, 
+  getCanonicalQuestionCode, 
+  extractChapterFromTopic 
+} from '@/lib/syllabusUtils';
+
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
@@ -297,17 +307,14 @@ export async function POST(req: NextRequest) {
           return NextResponse.json({ message: `Question #${idx + 1} is missing required fields.` }, { status: 400 });
         }
 
-        let finalBoard = String(board).trim();
-        if (finalBoard === 'MSBSHSE' || finalBoard === 'MH') {
-          finalBoard = 'Maharashtra Board';
-        }
-
-        const boardCode = boardCodes[board] || board.substring(0, 4).toUpperCase();
-        const subjectCode = subjectCodes[subjectName] || subjectName.substring(0, 4).toUpperCase();
+        const finalBoard = getCanonicalBoardName(board);
+        const boardCode = getCanonicalBoardCode(board);
+        const cleanClass = getCanonicalClass(classNum);
+        const subjectCode = getCanonicalSubjectCode(boardCode, cleanClass, subjectName);
         const typeCode = toCanonicalQuestionType(qtype);
-        const chapterPart = item.chapterNumber || '01';
-        const topicPart = item.topicNumber || '1.1';
-        const topicCode = `${boardCode}-${classNum}-${subjectCode}-${chapterPart}-${topicPart}`;
+        const topicPart = String(item.topicNumber || '1.1').trim();
+        const chapterPart = extractChapterFromTopic(topicPart, item.chapterNumber);
+        const topicCode = getCanonicalTopicCode(boardCode, cleanClass, subjectCode, chapterPart, topicPart);
         const counterId = `${topicCode}-${typeCode}`;
 
         const isNew = !item.id && !item.questionCode;
@@ -321,6 +328,7 @@ export async function POST(req: NextRequest) {
           qtype,
           finalBoard,
           boardCode,
+          cleanClass,
           subjectCode,
           typeCode,
           chapterPart,
@@ -375,7 +383,7 @@ export async function POST(req: NextRequest) {
 
       for (let idx = 0; idx < processedItems.length; idx++) {
         const p = processedItems[idx];
-        const { item, isNew, qtype, finalBoard, topicPart, topicCode, counterId } = p;
+        const { item, isNew, qtype, finalBoard, topicPart, chapterPart, topicCode, counterId } = p;
 
         let finalCode = item.id || item.questionCode || '';
         if (isNew) {
@@ -405,11 +413,11 @@ export async function POST(req: NextRequest) {
           bloomLevel: normalizeBloomLevel(item.bloomLevel, item.difficulty, normalizedQType),
           board: finalBoard,
           boardCode: p.boardCode,
-          class: String(item.classNum || item.class || '').replace(/\D/g, ''),
+          class: p.cleanClass,
           subject: item.subjectName || item.subject,
           subjectCode: p.subjectCode,
-          chapterNumber: String(item.chapterNumber || '1').replace(/\D/g, ''),
-          topicNumber: String(item.topicNumber || '1.1').trim(),
+          chapterNumber: chapterPart,
+          topicNumber: topicPart,
           topicCode: topicCode,
           topic: finalTopicName,
           topicName: finalTopicName,
@@ -451,30 +459,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'Missing required parameters.' }, { status: 400 });
     }
 
-    let finalBoard = String(board).trim();
-    if (finalBoard === 'MSBSHSE' || finalBoard === 'MH') {
-      finalBoard = 'Maharashtra Board';
-    }
-
-    // Load board codes and subject codes maps
-    const boardCodesSnap = await adminDb.collection('config').doc('boardCodes').get();
-    const subjectCodesSnap = await adminDb.collection('config').doc('subjectCodes').get();
-    const boardCodes = boardCodesSnap.exists ? boardCodesSnap.data()! : {};
-    const subjectCodes = subjectCodesSnap.exists ? subjectCodesSnap.data()! : {};
-
-    const boardCode = boardCodes[board] || board.substring(0, 4).toUpperCase();
-    const subjectCode = subjectCodes[subjectName] || subjectName.substring(0, 4).toUpperCase();
-
+    const finalBoard = getCanonicalBoardName(board);
+    const boardCode = getCanonicalBoardCode(board);
+    const cleanClass = getCanonicalClass(classNum);
+    const subjectCode = getCanonicalSubjectCode(boardCode, cleanClass, subjectName);
     const typeCode = QUESTION_TYPE_MAP[qtype]?.code || 'SSA';
+    const topicPart = String(topicNumber || '1.1').trim();
+    const chapterPart = extractChapterFromTopic(topicPart, chapterNumber);
+    const topicCode = getCanonicalTopicCode(boardCode, cleanClass, subjectCode, chapterPart, topicPart);
 
     let finalCode = id || '';
 
     // If adding a new question, compile sequential ID via transaction
     if (!finalCode) {
-      const chapterPart = chapterNumber || '01';
-      const topicPart = topicNumber || '1.1';
-      const topicCode = `${boardCode}-${classNum}-${subjectCode}-${chapterPart}-${topicPart}`;
-
       const counterId = `${topicCode}-${typeCode}`;
       const counterRef = adminDb.collection('questionCounters').doc(counterId);
 
@@ -508,11 +505,9 @@ export async function POST(req: NextRequest) {
       subjective_define: 1,
       subjective_laws: 1
     };
+
     // Resolve clean topic name using master syllabus index
     let finalTopicName = (topic || topicName || '').trim();
-    const chapterPart = chapterNumber || '01';
-    const topicPart = topicNumber || '1.1';
-    const topicCode = `${boardCode}-${classNum}-${subjectCode}-${chapterPart}-${topicPart}`;
 
     try {
       const syllabusDoc = await adminDb.collection('syllabusTopicIndex').doc(topicCode).get();
@@ -544,11 +539,11 @@ export async function POST(req: NextRequest) {
       bloomLevel: normalizeBloomLevel(bloomLevel, difficulty, normalizedQType),
       board: finalBoard,
       boardCode: boardCode,
-      class: String(classNum).replace(/\D/g, ''),
+      class: cleanClass,
       subject: subjectName,
       subjectCode: subjectCode,
-      chapterNumber: String(chapterNumber || '1').replace(/\D/g, ''),
-      topicNumber: String(topicNumber || '1.1').trim(),
+      chapterNumber: chapterPart,
+      topicNumber: topicPart,
       topicCode: topicCode,
       topic: finalTopicName,
       topicName: finalTopicName,
@@ -572,6 +567,7 @@ export async function POST(req: NextRequest) {
     if (validationErrors.length > 0) {
       return NextResponse.json({ message: `Question validation failed: ${validationErrors.join(', ')}` }, { status: 400 });
     }
+
 
     if (!id) {
       questionDoc.createdAt = admin.firestore.FieldValue.serverTimestamp();

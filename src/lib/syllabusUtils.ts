@@ -82,3 +82,136 @@ export function buildObjectiveSchema(Schema: any, typeIds: string[]) {
     }),
   });
 }
+
+/**
+ * SSOT Canonical Board Code Standard (Rule 2L & 2R)
+ */
+export function getCanonicalBoardCode(board: any): 'CBSE' | 'MH' {
+  const b = String(board || '').toUpperCase();
+  if (b.includes('CBSE')) return 'CBSE';
+  return 'MH';
+}
+
+/**
+ * SSOT Canonical Board Full Name Standard
+ */
+export function getCanonicalBoardName(board: any): 'CBSE' | 'Maharashtra Board' {
+  const code = getCanonicalBoardCode(board);
+  return code === 'CBSE' ? 'CBSE' : 'Maharashtra Board';
+}
+
+/**
+ * SSOT Canonical Class String Standard ('8', '9', '10')
+ */
+export function getCanonicalClass(classNum: any): string {
+  const clean = String(classNum || '8').replace(/\D/g, '');
+  return clean || '8';
+}
+
+/**
+ * SSOT Canonical Subject Code Standard (Rule 2L & 2R)
+ */
+export function getCanonicalSubjectCode(board: any, classNum: any, subjectNameOrCode: any): string {
+  const bCode = getCanonicalBoardCode(board);
+  const cls = getCanonicalClass(classNum);
+  const upper = String(subjectNameOrCode || '').trim().toUpperCase();
+
+  // 1. Direct match on known canonical subject codes
+  if (bCode === 'CBSE') {
+    if (cls === '8' && (upper === 'MGP1' || upper === 'MGP2' || upper === 'CURI')) return upper;
+    if (cls === '9' && (upper === 'MGM' || upper === 'SCIE')) return upper;
+    if (cls === '10' && (upper === 'MATH' || upper === 'SCI')) return upper;
+  } else if (bCode === 'MH') {
+    if (cls === '8' && (upper === 'MTH' || upper === 'SCI')) return upper;
+    if (cls === '9' && (upper === 'MTH1' || upper === 'MTH2' || upper === 'SCIT')) return upper;
+    if (cls === '10' && (upper === 'MTH1' || upper === 'MTH2' || upper === 'SCIT1' || upper === 'SCIT2')) return upper;
+  }
+
+  // 2. Normalized lowercase alphanumeric matching
+  const s = String(subjectNameOrCode || '').toLowerCase().replace(/[\s\-_():]+/g, '');
+
+  if (bCode === 'CBSE') {
+    if (cls === '8') {
+      if (s.includes('mgp2') || s.includes('part2') || s.includes('p2') || s.includes('2')) return 'MGP2';
+      if (s.includes('curi') || s.includes('sci')) return 'CURI';
+      return 'MGP1';
+    }
+    if (cls === '9') {
+      if (s.includes('sci') || s.includes('scie') || s.includes('exploration')) return 'SCIE';
+      return 'MGM';
+    }
+    if (cls === '10') {
+      if (s.includes('sci')) return 'SCI';
+      return 'MATH';
+    }
+  }
+
+  // MH (Maharashtra Board)
+  if (cls === '8') {
+    if (s.includes('sci')) return 'SCI';
+    return 'MTH';
+  }
+  if (cls === '9') {
+    if (s.includes('sci') || s.includes('scit')) return 'SCIT';
+    if (s.includes('geometry') || s.includes('mth2') || s.includes('part2') || s.includes('2')) return 'MTH2';
+    return 'MTH1';
+  }
+  if (cls === '10') {
+    if (s.includes('sci') || s.includes('technology') || s.includes('scit')) {
+      if (s.includes('2') || s.includes('part2') || s.includes('scit2')) return 'SCIT2';
+      return 'SCIT1';
+    }
+    if (s.includes('geometry') || s.includes('mth2') || s.includes('part2') || s.includes('2')) return 'MTH2';
+    return 'MTH1';
+  }
+
+  return 'MTH';
+}
+
+
+/**
+ * Extracts true chapter number from topicNumber prefix if present (e.g. "4.1.1" -> "4", "13.2" -> "13")
+ */
+export function extractChapterFromTopic(topicNumber: any, fallbackChapter?: any): string {
+  const tStr = String(topicNumber || '').trim();
+  const match = tStr.match(/^(\d+)\./);
+  if (match && match[1]) {
+    return match[1];
+  }
+  const cleanFb = String(fallbackChapter || '1').replace(/\D/g, '');
+  return cleanFb || '1';
+}
+
+/**
+ * SSOT Canonical Topic Code Standard: `${boardCode}-${class}-${subjectCode}-${chapterNumber}-${topicNumber}`
+ */
+export function getCanonicalTopicCode(
+  board: any,
+  classNum: any,
+  subjectNameOrCode: any,
+  chapterNumber: any,
+  topicNumber: any
+): string {
+  const bCode = getCanonicalBoardCode(board);
+  const cls = getCanonicalClass(classNum);
+  const sCode = getCanonicalSubjectCode(board, classNum, subjectNameOrCode);
+  let tNum = String(topicNumber || '1.1').trim();
+  const chNum = extractChapterFromTopic(tNum, chapterNumber);
+  if (!tNum.includes('.')) {
+    tNum = `${chNum}.${tNum}`;
+  }
+  return `${bCode}-${cls}-${sCode}-${chNum}-${tNum}`;
+}
+
+/**
+ * SSOT Canonical Question Code Standard: `${topicCode}-${typeCode}-${sequence}`
+ */
+export function getCanonicalQuestionCode(
+  topicCode: string,
+  typeCode: string,
+  sequence: number | string
+): string {
+  const seqStr = String(sequence || '1').padStart(3, '0').slice(-3);
+  return `${topicCode}-${typeCode}-${seqStr}`;
+}
+

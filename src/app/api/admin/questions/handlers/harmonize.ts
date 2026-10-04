@@ -8,37 +8,15 @@ import { invalidateCache } from '@/lib/firebase/cache';
 
 export const dynamic = 'force-dynamic';
 
-// Canonical Subject Code Map according to AGENTS.md Section L
-const CANONICAL_SUBJECT_MAP: Record<string, { board: string; class: string; subjectCode: string; subjectName: string }> = {
-  // CBSE Class 8
-  'CBSE_8_GANI': { board: 'CBSE', class: '8', subjectCode: 'MGP1', subjectName: 'Ganit Prakash 1' },
-  'CBSE_8_MATH': { board: 'CBSE', class: '8', subjectCode: 'MGP1', subjectName: 'Ganit Prakash 1' },
-  'CBSE_8_MATHEMATICS': { board: 'CBSE', class: '8', subjectCode: 'MGP1', subjectName: 'Ganit Prakash 1' },
-  'CBSE_8_SCIE': { board: 'CBSE', class: '8', subjectCode: 'CURI', subjectName: 'Curiosity' },
-  'CBSE_8_SCIENCE': { board: 'CBSE', class: '8', subjectCode: 'CURI', subjectName: 'Curiosity' },
-  // CBSE Class 9
-  'CBSE_9_MATH': { board: 'CBSE', class: '9', subjectCode: 'MGM', subjectName: 'Mathematics - Ganita Manjari' },
-  'CBSE_9_MATHEMATICS': { board: 'CBSE', class: '9', subjectCode: 'MGM', subjectName: 'Mathematics - Ganita Manjari' },
-  'CBSE_9_SCIE': { board: 'CBSE', class: '9', subjectCode: 'SCIE', subjectName: 'Science - Exploration' },
-  'CBSE_9_SCIENCE': { board: 'CBSE', class: '9', subjectCode: 'SCIE', subjectName: 'Science - Exploration' },
-  // CBSE Class 10
-  'CBSE_10_MATH': { board: 'CBSE', class: '10', subjectCode: 'MATH', subjectName: 'Mathematics' },
-  'CBSE_10_MATHEMATICS': { board: 'CBSE', class: '10', subjectCode: 'MATH', subjectName: 'Mathematics' },
-  'CBSE_10_SCIE': { board: 'CBSE', class: '10', subjectCode: 'SCI', subjectName: 'Science' },
-  'CBSE_10_SCIENCE': { board: 'CBSE', class: '10', subjectCode: 'SCI', subjectName: 'Science' },
-  // MH Class 8
-  'MH_8_SCI': { board: 'MH', class: '8', subjectCode: 'SCI', subjectName: 'General Science' },
-  'MH_8_SCIENCE': { board: 'MH', class: '8', subjectCode: 'SCI', subjectName: 'General Science' },
-  // MH Class 9
-  'MH_9_MTH1': { board: 'MH', class: '9', subjectCode: 'MTH1', subjectName: 'Algebra' },
-  'MH_9_MTH2': { board: 'MH', class: '9', subjectCode: 'MTH2', subjectName: 'Geometry' },
-  'MH_9_SCIT': { board: 'MH', class: '9', subjectCode: 'SCIT', subjectName: 'Science & Technology' },
-  // MH Class 10
-  'MH_10_MTH1': { board: 'MH', class: '10', subjectCode: 'MTH1', subjectName: 'Algebra' },
-  'MH_10_MTH2': { board: 'MH', class: '10', subjectCode: 'MTH2', subjectName: 'Geometry' },
-  'MH_10_SCIT1': { board: 'MH', class: '10', subjectCode: 'SCIT1', subjectName: 'Science & Tech Part 1' },
-  'MH_10_SCIT2': { board: 'MH', class: '10', subjectCode: 'SCIT2', subjectName: 'Science & Tech Part 2' }
-};
+import { 
+  getCanonicalBoardCode, 
+  getCanonicalBoardName, 
+  getCanonicalClass, 
+  getCanonicalSubjectCode, 
+  getCanonicalTopicCode, 
+  getCanonicalQuestionCode, 
+  extractChapterFromTopic 
+} from '@/lib/syllabusUtils';
 
 export async function POST(req: NextRequest) {
   try {
@@ -55,6 +33,11 @@ export async function POST(req: NextRequest) {
       adminDb.collection('questions').get(),
       adminDb.collection('syllabusTopicIndex').get()
     ]);
+
+    const topicIndexMap = new Map<string, string>();
+    topicIndexSnap.docs.forEach(doc => {
+      topicIndexMap.set(doc.id, doc.data()?.topicName || '');
+    });
 
     const stats = {
       totalScanned: questionsSnap.size,
@@ -78,22 +61,15 @@ export async function POST(req: NextRequest) {
       const changes: string[] = [];
 
       // A. Standardize Board / Class / Subject / SubjectCode
-      let board = String(data.board || 'CBSE').trim().toUpperCase();
-      if (board === 'MAHARASHTRA') board = 'MH';
-      let classNum = String(data.class || '8').trim();
-      let rawSubject = String(data.subject || data.subjectName || data.subjectCode || '').trim().toUpperCase();
+      const rawBoard = data.board || data.boardCode || 'MH';
+      const boardCode = getCanonicalBoardCode(rawBoard);
+      const finalBoard = getCanonicalBoardName(rawBoard);
+      const classNum = getCanonicalClass(data.class || data.classNum || '8');
+      const rawSubject = data.subject || data.subjectName || data.subjectCode || 'Mathematics';
+      const subjectCode = getCanonicalSubjectCode(boardCode, classNum, rawSubject);
 
-      // Lookup canonical subject definition
-      const lookupKey = `${board}_${classNum}_${rawSubject}`;
-      const canonicalSubj = CANONICAL_SUBJECT_MAP[lookupKey];
-
-      let subjectCode = data.subjectCode || (canonicalSubj ? canonicalSubj.subjectCode : rawSubject);
-      let subjectName = data.subjectName || data.subject || (canonicalSubj ? canonicalSubj.subjectName : rawSubject);
-
-      if (canonicalSubj && (data.subjectCode !== canonicalSubj.subjectCode || data.subject !== canonicalSubj.subjectName)) {
-        changes.push(`SubjectCode updated: ${data.subjectCode || rawSubject} -> ${canonicalSubj.subjectCode}`);
-        subjectCode = canonicalSubj.subjectCode;
-        subjectName = canonicalSubj.subjectName;
+      if (data.boardCode !== boardCode || data.board !== finalBoard || data.class !== classNum || data.subjectCode !== subjectCode) {
+        changes.push(`Normalized identifiers: board=${boardCode}, class=${classNum}, subj=${subjectCode}`);
         isModified = true;
         stats.migratedSubjectCodes++;
       }
@@ -111,19 +87,18 @@ export async function POST(req: NextRequest) {
       }
 
       // C. Standardize Topic Code & Question Code
-      let chapterNumber = String(data.chapterNumber || data.chapter || '1').replace(/^Ch\.?\s*/i, '').trim();
       let topicNumber = String(data.topicNumber || data.subtopicNumber || '1.1').trim();
+      const chapterNumber = extractChapterFromTopic(topicNumber, data.chapterNumber || data.chapter);
       if (!topicNumber.includes('.')) {
         topicNumber = `${chapterNumber}.${topicNumber}`;
       }
 
-      const canonicalTopicCode = `${board}-${classNum}-${subjectCode}-${chapterNumber}-${topicNumber}`;
+      const canonicalTopicCode = getCanonicalTopicCode(boardCode, classNum, subjectCode, chapterNumber, topicNumber);
       let topicCode = data.topicCode || canonicalTopicCode;
 
-      if (topicCode.includes('-GANI-') || (topicCode.includes('-SCIE-') && classNum === '8')) {
-        const oldTopic = topicCode;
-        topicCode = topicCode.replace('-GANI-', '-MGP1-').replace('-SCIE-', '-CURI-');
-        changes.push(`TopicCode updated: ${oldTopic} -> ${topicCode}`);
+      if (topicCode !== canonicalTopicCode) {
+        changes.push(`TopicCode updated: ${topicCode} -> ${canonicalTopicCode}`);
+        topicCode = canonicalTopicCode;
         isModified = true;
         stats.topicCodeUpdated++;
       }
@@ -140,11 +115,12 @@ export async function POST(req: NextRequest) {
         sequenceStr = String(currentDocId).padStart(3, '0');
       }
 
-      const canonicalQuestionCode = `${canonicalTopicCode}-${typeCode}-${sequenceStr}`;
+      const canonicalQuestionCode = getCanonicalQuestionCode(canonicalTopicCode, typeCode, sequenceStr);
       let questionCode = data.questionCode || canonicalQuestionCode;
 
-      if (questionCode.includes('-GANI-') || (questionCode.includes('-SCIE-') && classNum === '8')) {
-        questionCode = questionCode.replace('-GANI-', '-MGP1-').replace('-SCIE-', '-CURI-');
+      if (questionCode !== canonicalQuestionCode) {
+        changes.push(`QuestionCode updated: ${questionCode} -> ${canonicalQuestionCode}`);
+        questionCode = canonicalQuestionCode;
         isModified = true;
       }
 
@@ -178,16 +154,22 @@ export async function POST(req: NextRequest) {
         }
       }
 
+      // Resolve topic name from index if available
+      const resolvedTopicName = topicIndexMap.get(canonicalTopicCode) || data.topicName || data.topic || '';
+
       if (isModified || isAutoId) {
         const updatedQuestion = {
           ...data,
-          board,
+          board: finalBoard,
+          boardCode,
           class: classNum,
-          subject: subjectName,
+          subject: data.subject || rawSubject,
           subjectCode,
           chapterNumber,
           topicNumber,
-          topicCode,
+          topicCode: canonicalTopicCode,
+          topic: resolvedTopicName,
+          topicName: resolvedTopicName,
           type: currentType,
           typeCode,
           marks,
@@ -212,6 +194,7 @@ export async function POST(req: NextRequest) {
         stats.details.push(`• ${targetDocId}: ${changes.join('; ')}`);
       }
     }
+
 
     // Helper to remap any question code/ID across all migrations
     const remapQuestionCode = (c: string): string => {
