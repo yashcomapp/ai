@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { id, action } = body;
+    const { id, action, autonomous } = body;
 
     if (!id || !action) {
       return NextResponse.json({ message: 'Missing registration ID or action.' }, { status: 400 });

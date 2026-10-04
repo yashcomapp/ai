@@ -15,10 +15,57 @@ async function getAuthHeaders(): Promise<Record<string, string>> {
   return {};
 }
 
-function sanitizeElementForLightPrint(element: HTMLElement) {
+function sanitizeElementForLightPrint(element: HTMLElement, sourceElement?: HTMLElement | null) {
   // Remove interactive and non-printable elements
   element.querySelectorAll('button, .btn, input[type="button"], input[type="submit"], [role="button"], .no-print, [data-no-print]').forEach(btn => {
     btn.remove();
+  });
+
+  // Bake privacy blur into verification proof captures so html2canvas renders them blurred
+  const cloneImgs = Array.from(element.querySelectorAll<HTMLImageElement>('img'));
+  const sourceImgs = sourceElement ? Array.from(sourceElement.querySelectorAll<HTMLImageElement>('img')) : null;
+
+  cloneImgs.forEach((cloneImg, idx) => {
+    const sourceImg = (sourceImgs && sourceImgs[idx]) ? sourceImgs[idx] : cloneImg;
+    const isVerificationProof = 
+      cloneImg.getAttribute('data-blurred') === 'true' || 
+      cloneImg.classList.contains('blurred-capture') ||
+      Boolean(cloneImg.closest('.verification-proof-cell')) ||
+      Boolean(cloneImg.style.filter && cloneImg.style.filter.includes('blur'));
+
+    if (isVerificationProof && sourceImg.src) {
+      try {
+        const w = sourceImg.naturalWidth || sourceImg.width || 84;
+        const h = sourceImg.naturalHeight || sourceImg.height || 64;
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(w, 42);
+        canvas.height = Math.max(h, 32);
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          // Downscale to 10x8 for strong anonymization & information loss
+          const tiny = document.createElement('canvas');
+          tiny.width = 10;
+          tiny.height = 8;
+          const tinyCtx = tiny.getContext('2d');
+          if (tinyCtx) {
+            tinyCtx.drawImage(sourceImg, 0, 0, 10, 8);
+            ctx.imageSmoothingEnabled = true;
+            if ('imageSmoothingQuality' in ctx) {
+              (ctx as any).imageSmoothingQuality = 'high';
+            }
+            if ('filter' in ctx) {
+              ctx.filter = 'blur(6px)';
+            }
+            ctx.drawImage(tiny, 0, 0, canvas.width, canvas.height);
+            cloneImg.src = canvas.toDataURL('image/jpeg', 0.85);
+            cloneImg.style.filter = 'none';
+            cloneImg.style.transform = 'none';
+          }
+        }
+      } catch (err) {
+        console.warn('Privacy blur baking error during PDF preparation:', err);
+      }
+    }
   });
 
   // Remove action headers and action columns in tables if labeled Actions
@@ -332,7 +379,7 @@ export async function exportToPDF(params: {
     const el = document.getElementById(sec.elementId);
     if (el) {
       const clone = el.cloneNode(true) as HTMLElement;
-      sanitizeElementForLightPrint(clone);
+      sanitizeElementForLightPrint(clone, el);
 
       const sectionWrapper = document.createElement('div');
       sectionWrapper.style.marginBottom = '25px';

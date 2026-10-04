@@ -66,6 +66,8 @@ export default function ParentPendingReportPage() {
   const [actorFilter, setActorFilter] = useState<'all' | 'parent' | 'student' | 'photo'>('all');
   const [sessionTypeFilter, setSessionTypeFilter] = useState<string>('all');
   const [pdfSelectorOpen, setPdfSelectorOpen] = useState(false);
+  // Privacy blur state for verification proof thumbnails (default: true)
+  const [blurCaptures, setBlurCaptures] = useState(true);
 
   // Photo viewer modal
   const [previewPhoto, setPreviewPhoto] = useState<{
@@ -321,6 +323,31 @@ export default function ParentPendingReportPage() {
               <option value="entrance">🎯 Entrance Mock</option>
             </select>
           </div>
+          
+          {/* Privacy Blur Toggle */}
+          <div style={{ flex: '0 0 auto' }}>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => setBlurCaptures(prev => !prev)}
+              style={{
+                fontSize: '12px',
+                padding: '6px 12px',
+                borderRadius: 'var(--radius)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                background: blurCaptures ? 'rgba(59, 130, 246, 0.12)' : 'var(--bg-soft)',
+                border: blurCaptures ? '1px solid rgba(59, 130, 246, 0.4)' : '1px solid var(--border-light)',
+                color: blurCaptures ? 'var(--primary)' : 'var(--text-muted)',
+                fontWeight: 600,
+                cursor: 'pointer'
+              }}
+              title={blurCaptures ? 'Verification captures are blurred for privacy (Click to reveal)' : 'Verification captures are visible (Click to blur)'}
+            >
+              <span>{blurCaptures ? '🔒 Privacy Blur: ON' : '👁️ Privacy Blur: OFF'}</span>
+            </button>
+          </div>
 
         </div>
 
@@ -408,7 +435,7 @@ export default function ParentPendingReportPage() {
                         </td>
 
                         {/* Photo Verification Proof */}
-                        <td style={{ padding: '12px 16px', textAlign: 'center' }}>
+                        <td className="verification-proof-cell" style={{ padding: '12px 16px', textAlign: 'center' }}>
                           {hasTwoPointVerification ? (
                             <div 
                               style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: '4px', cursor: 'pointer' }}
@@ -428,21 +455,63 @@ export default function ParentPendingReportPage() {
                             >
                               <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                                 <div style={{ textAlign: 'center' }}>
-                                  <img 
-                                    src={r.startPhotoThumbnail!} 
-                                    alt="Start Proof"
-                                    style={{ width: '42px', height: '32px', objectFit: 'cover', borderRadius: '4px', border: '1px solid var(--border-light)' }} 
-                                  />
-                                  <div style={{ fontSize: '8.5px', color: 'var(--text-muted)', fontWeight: 600 }}>Start</div>
+                                  <div style={{
+                                    width: '42px',
+                                    height: '32px',
+                                    borderRadius: '4px',
+                                    overflow: 'hidden',
+                                    border: '1px solid var(--border-light)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    background: '#000'
+                                  }}>
+                                    <img 
+                                      src={r.startPhotoThumbnail!} 
+                                      alt="Start Proof"
+                                      className="blurred-capture"
+                                      data-blurred={blurCaptures ? "true" : "false"}
+                                      style={{
+                                        width: '100%',
+                                        height: '100%',
+                                        objectFit: 'cover',
+                                        filter: blurCaptures ? 'blur(6px)' : 'none',
+                                        transform: blurCaptures ? 'scale(1.18)' : 'none',
+                                        transition: 'filter 0.2s ease, transform 0.2s ease'
+                                      }} 
+                                    />
+                                  </div>
+                                  <div style={{ fontSize: '8.5px', color: 'var(--text-muted)', fontWeight: 600, marginTop: '2px' }}>Start</div>
                                 </div>
                                 <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>➔</span>
                                 <div style={{ textAlign: 'center' }}>
-                                  <img 
-                                    src={r.photoThumbnail!} 
-                                    alt="End Proof"
-                                    style={{ width: '42px', height: '32px', objectFit: 'cover', borderRadius: '4px', border: '1px solid var(--accent)' }} 
-                                  />
-                                  <div style={{ fontSize: '8.5px', color: 'var(--accent)', fontWeight: 600 }}>End</div>
+                                  <div style={{
+                                    width: '42px',
+                                    height: '32px',
+                                    borderRadius: '4px',
+                                    overflow: 'hidden',
+                                    border: '1px solid var(--accent)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    background: '#000'
+                                  }}>
+                                    <img 
+                                      src={r.photoThumbnail!} 
+                                      alt="End Proof"
+                                      className="blurred-capture"
+                                      data-blurred={blurCaptures ? "true" : "false"}
+                                      style={{
+                                        width: '100%',
+                                        height: '100%',
+                                        objectFit: 'cover',
+                                        filter: blurCaptures ? 'blur(6px)' : 'none',
+                                        transform: blurCaptures ? 'scale(1.18)' : 'none',
+                                        transition: 'filter 0.2s ease, transform 0.2s ease'
+                                      }} 
+                                    />
+                                  </div>
+                                  <div style={{ fontSize: '8.5px', color: 'var(--accent)', fontWeight: 600, marginTop: '2px' }}>End</div>
                                 </div>
                               </div>
                               {durationText && (
@@ -472,19 +541,34 @@ export default function ParentPendingReportPage() {
                                 expiresAt: r.expiresAt
                               })}
                             >
-                              <img 
-                                src={r.photoThumbnail!} 
-                                alt="Verification Proof"
-                                style={{
-                                  width: '48px',
-                                  height: '36px',
-                                  objectFit: 'cover',
-                                  borderRadius: '4px',
-                                  border: '1px solid var(--accent)',
-                                  boxShadow: '0 2px 4px rgba(0,0,0,0.15)'
-                                }}
-                                title="Click to enlarge verification photo"
-                              />
+                              <div style={{
+                                width: '48px',
+                                height: '36px',
+                                borderRadius: '4px',
+                                overflow: 'hidden',
+                                border: '1px solid var(--accent)',
+                                boxShadow: '0 2px 4px rgba(0,0,0,0.15)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                background: '#000'
+                              }}>
+                                <img 
+                                  src={r.photoThumbnail!} 
+                                  alt="Verification Proof"
+                                  className="blurred-capture"
+                                  data-blurred={blurCaptures ? "true" : "false"}
+                                  style={{
+                                    width: '100%',
+                                    height: '100%',
+                                    objectFit: 'cover',
+                                    filter: blurCaptures ? 'blur(6px)' : 'none',
+                                    transform: blurCaptures ? 'scale(1.18)' : 'none',
+                                    transition: 'filter 0.2s ease, transform 0.2s ease'
+                                  }}
+                                  title="Click to enlarge verification photo"
+                                />
+                              </div>
                               {durationText && (
                                 <span style={{ fontSize: '9.5px', color: 'var(--text)', background: 'var(--bg-soft)', padding: '1px 6px', borderRadius: '8px', fontWeight: 600 }}>
                                   ⏱️ {durationText}
@@ -596,6 +680,7 @@ export default function ParentPendingReportPage() {
                 <div>⏱️ <strong>Review Duration:</strong> <span style={{ color: 'var(--text)', fontWeight: 700 }}>{formatDuration(previewPhoto.durationSeconds)}</span></div>
               ) : null}
               <div>📅 <strong>Submitted IST:</strong> {formatDateIST(previewPhoto.timestamp)}</div>
+              <div>🔒 <strong>Privacy Protection:</strong> Snapshots in the main audit table are blurred to preserve student and parent privacy.</div>
               <div>🛡️ <strong>Auto-Purge Policy:</strong> Snapshots are temporarily stored for parent audit and automatically purged after 24 hours.</div>
             </div>
 
