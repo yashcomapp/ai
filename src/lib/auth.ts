@@ -71,6 +71,11 @@ export async function verifyAnyRole(
 
   if (!userData) return null;
 
+  // Rule: Inactive non-admin accounts must be blocked centrally at the authorization boundary
+  if (userData.status === 'inactive' && (userData.role || '').toLowerCase() !== 'admin') {
+    return null;
+  }
+
   const userRole = (userData.role || '').toLowerCase() as UserRole;
   if (roles.includes(userRole)) {
     // Curfew check for student role

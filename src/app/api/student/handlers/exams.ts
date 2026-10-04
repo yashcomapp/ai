@@ -215,13 +215,15 @@ export async function GET(req: NextRequest) {
       evalMap.add(doc.id);
     });
 
+    const isAutonomous = student.userData?.autonomous === true;
+
     let genuinelyPendingObj: admin.firestore.DocumentSnapshot | null = null;
     for (const revDoc of pendingObj.docs) {
       const data = revDoc.data();
       const isApprovedByEval = evalMap.has(revDoc.id) || (data.examId && evalMap.has(data.examId));
-      if (isApprovedByEval) {
+      if (isApprovedByEval || (isAutonomous && data.status === 'pending')) {
         // Auto-heal status in Firestore
-        revDoc.ref.update({ status: 'approved' }).catch(() => null);
+        revDoc.ref.update({ status: 'approved', updatedAt: new Date() }).catch(() => null);
       } else {
         genuinelyPendingObj = revDoc;
         break;

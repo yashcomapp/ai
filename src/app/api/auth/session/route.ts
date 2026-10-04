@@ -109,6 +109,21 @@ export async function POST(req: NextRequest) {
     const studentCode = userData.studentCode || '';
     const activeSessionToken = userData.activeSessionToken || null;
 
+    if (role === 'parent' && userData.status !== 'inactive') {
+      const fullyAuto = await isParentFullyAutonomous(userData, email);
+      if (fullyAuto) {
+        await userDocRef.update({
+          status: 'inactive',
+          deactivationReason: 'student_autonomous',
+          updatedAt: new Date()
+        }).catch(() => null);
+        invalidateUserCache(uid);
+        return NextResponse.json({ 
+          message: 'Parent portal access is disabled as your student is registered in Autonomous Mode (parent exam reviews are not required).' 
+        }, { status: 403 });
+      }
+    }
+
     if (userData.status === 'inactive' && role !== 'admin') {
       if (role === 'parent' && userData.deactivationReason === 'student_autonomous') {
         return NextResponse.json({ 

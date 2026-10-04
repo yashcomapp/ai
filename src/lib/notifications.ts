@@ -69,7 +69,12 @@ async function resolveParentUidsForStudents(studentCodes: string[], parentEmails
   const snaps = await Promise.all(queries);
   snaps.forEach(snap => {
     if (!snap) return;
-    snap.docs.forEach((d: any) => parentUids.add(d.id));
+    snap.docs.forEach((d: any) => {
+      const data = d.data() || {};
+      if (data.status !== 'inactive') {
+        parentUids.add(d.id);
+      }
+    });
   });
 
   return Array.from(parentUids);
@@ -87,7 +92,12 @@ async function resolveParentUids(studentCode: string): Promise<string[]> {
       .limit(1)
       .get();
     if (!studentSnap.empty) {
-      parentEmail = studentSnap.docs[0].data()?.parentEmail || '';
+      const sData = studentSnap.docs[0].data() || {};
+      if (sData.autonomous === true) {
+        // Autonomous students do not require parent reviews/notifications
+        return [];
+      }
+      parentEmail = sData.parentEmail || '';
     }
   } catch (err) {
     console.error('Error finding student parentEmail:', err);

@@ -565,9 +565,28 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'Missing required parameters (studentCode, examId)' }, { status: 400 });
     }
 
-    const docRef = adminDb.collection('examAbsenceReasons').doc(`${studentCode}_${examId}`);
+    // Ownership check (Rule 1 & Security: Prevent IDOR)
+    const callerRole = caller.role;
+    const targetStudentCode = String(studentCode).trim().toUpperCase();
+
+    if (callerRole === 'student') {
+      const callerStudentCode = (caller.userData?.studentCode || '').trim().toUpperCase();
+      if (callerStudentCode !== targetStudentCode) {
+        return NextResponse.json({ message: 'Forbidden: You can only submit absence reasons for your own account.' }, { status: 403 });
+      }
+    } else if (callerRole === 'parent') {
+      const singleCode = (caller.userData?.studentCode || '').trim().toUpperCase();
+      const codeArray = Array.isArray(caller.userData?.studentCodes)
+        ? caller.userData.studentCodes.map((c: string) => String(c).trim().toUpperCase())
+        : (singleCode ? [singleCode] : []);
+      if (!codeArray.includes(targetStudentCode)) {
+        return NextResponse.json({ message: 'Forbidden: You can only submit absence reasons for your linked children.' }, { status: 403 });
+      }
+    }
+
+    const docRef = adminDb.collection('examAbsenceReasons').doc(`${targetStudentCode}_${examId}`);
     await docRef.set({
-      studentCode,
+      studentCode: targetStudentCode,
       examId,
       reason: reason ? reason.trim() : '',
       updatedBy: caller.userData?.email || caller.decodedToken?.email || 'User',

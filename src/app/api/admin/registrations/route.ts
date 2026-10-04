@@ -175,6 +175,7 @@ export async function POST(req: NextRequest) {
       }
 
       // Step 2d: Save Student document to users collection
+      const isAutonomous = regData.autonomous === true;
       const studentUserRef = adminDb.collection('users').doc(studentId);
       await studentUserRef.set({
         name: regData.studentName,
@@ -186,6 +187,7 @@ export async function POST(req: NextRequest) {
         role: 'student',
         batchIds: regData.batchId ? [regData.batchId] : [],
         status: 'active',
+        autonomous: isAutonomous,
         parentEmail: regData.parentEmail || null,
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
         registeredFrom: id
@@ -258,13 +260,15 @@ export async function POST(req: NextRequest) {
           newStudentNames = Array.from(new Set([...currentNames, regData.studentName].filter(Boolean)));
         }
 
-        // Save Parent document to users collection
+        // Save Parent document to users collection (deactivated if child is autonomous)
         const parentUserRef = adminDb.collection('users').doc(parentId);
         await parentUserRef.set({
           name: regData.parentName,
           email: regData.parentEmail,
           mobile: regData.parentMobile,
           role: 'parent',
+          status: isAutonomous ? 'inactive' : (existingParentData?.status || 'active'),
+          deactivationReason: isAutonomous ? 'student_autonomous' : (existingParentData?.deactivationReason || null),
           studentId: studentId,
           studentCode: studentCode,
           studentName: regData.studentName,

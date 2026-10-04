@@ -487,24 +487,26 @@ export class PracticeService {
           .where('role', '==', 'student')
           .limit(1)
           .get();
-        const studentName = !studentDocSnap.empty 
-          ? (studentDocSnap.docs[0].data().name || studentDocSnap.docs[0].data().displayName || studentCode) 
-          : studentCode;
+        const studentDocData = !studentDocSnap.empty ? studentDocSnap.docs[0].data() : {};
+        const isAutonomous = studentDocData?.autonomous === true;
+        const studentName = studentDocData?.name || studentDocData?.displayName || studentCode;
         
-        notifyReviewPending({
-          studentCode,
-          studentName,
-          topicName,
-          scorePercent,
-          reviewId: logId,
-          startedAt: new Date(Date.now() - (durationSpent || 0) * 1000),
-          completedAt: now,
-          durationSpentSec: durationSpent || 0,
-          tabViolations: violations?.tabOutCount || 0,
-          gazeViolations: violations?.lookingAwayCount || 0
-        }).catch(err => {
-          console.error('Error sending review pending notification:', err);
-        });
+        if (!isAutonomous) {
+          notifyReviewPending({
+            studentCode,
+            studentName,
+            topicName,
+            scorePercent,
+            reviewId: logId,
+            startedAt: new Date(Date.now() - (durationSpent || 0) * 1000),
+            completedAt: now,
+            durationSpentSec: durationSpent || 0,
+            tabViolations: violations?.tabOutCount || 0,
+            gazeViolations: violations?.lookingAwayCount || 0
+          }).catch(err => {
+            console.error('Error sending review pending notification:', err);
+          });
+        }
       } catch (err) {
         console.warn('Failed to write to parentReviews collection:', err);
       }

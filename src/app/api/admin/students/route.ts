@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { adminDb, adminAuth } from '@/lib/firebase/admin';
-import { verifyRole } from '@/lib/auth';
+import { verifyRole, invalidateUserCache } from '@/lib/auth';
 import { ChunkedBatch } from '@/lib/firebase/batch';
 import { getFromCache, setInCache, invalidateCache } from '@/lib/firebase/cache';
 import { isDemoUser } from '@/lib/studentDb';
@@ -105,9 +105,53 @@ export async function POST(request: Request) {
 
     await studentDocRef.update(cleanUpdates);
 
-    // If autonomous mode is modified, synchronize linked parent user account status
+    // If autonomous mode is modified, synchronize linked parent user account status & auto-approve legacy pending reviews
     if (cleanUpdates.autonomous !== undefined) {
       const isAutonomous = cleanUpdates.autonomous === true;
+
+      // 1. If switched to Autonomous, auto-approve any legacy pending parent reviews for this student
+      if (isAutonomous && studentCode) {
+        try {
+          const pendingReviewsSnap = await adminDb.collection('reviews')
+            .where('studentCode', '==', studentCode)
+            .where('status', '==', 'pending')
+            .get();
+          
+          if (!pendingReviewsSnap.empty) {
+            const revBatch = adminDb.batch();
+            pendingReviewsSnap.docs.forEach(doc => {
+              revBatch.update(doc.ref, {
+                status: 'approved',
+                updatedAt: new Date(),
+                autoApprovedAutonomous: true
+              });
+            });
+            await revBatch.commit();
+          }
+
+          // Also check examAttempts
+          const pendingAttemptsSnap = await adminDb.collection('examAttempts')
+            .where('studentCode', '==', studentCode)
+            .where('status', '==', 'pending')
+            .get();
+          
+          if (!pendingAttemptsSnap.empty) {
+            const attBatch = adminDb.batch();
+            pendingAttemptsSnap.docs.forEach(doc => {
+              attBatch.update(doc.ref, {
+                status: 'approved',
+                updatedAt: new Date(),
+                autoApprovedAutonomous: true
+              });
+            });
+            await attBatch.commit();
+          }
+        } catch (mErr) {
+          console.warn('Could not auto-approve pending reviews on autonomous toggle:', mErr);
+        }
+      }
+
+      // 2. Synchronize linked parent accounts safely (handling multi-student siblings)
       const parentUserDocs: any[] = [];
 
       if (studentCode) {
@@ -131,22 +175,57 @@ export async function POST(request: Request) {
       }
 
       for (const pDoc of parentUserDocs) {
+        const pData = pDoc.data() || {};
+        invalidateUserCache(pDoc.id);
+
         if (isAutonomous) {
-          await pDoc.ref.update({
-            status: 'inactive',
-            deactivationReason: 'student_autonomous',
-            updatedAt: new Date()
-          });
+          // Check if parent has any other non-autonomous active child before deactivating
+          let allCodes: string[] = [];
+          if (Array.isArray(pData.studentCodes)) {
+            allCodes = pData.studentCodes.filter(Boolean);
+          } else if (pData.studentCode) {
+            allCodes = [pData.studentCode];
+          }
+
+          let hasOtherRegularChild = false;
+          if (allCodes.length > 1) {
+            const otherCodes = allCodes.filter(c => c !== studentCode);
+            if (otherCodes.length > 0) {
+              const otherStudentsSnap = await adminDb.collection('users')
+                .where('role', '==', 'student')
+                .where('studentCode', 'in', otherCodes.slice(0, 30))
+                .get();
+              
+              hasOtherRegularChild = otherStudentsSnap.docs.some(d => {
+                const s = d.data();
+                return s.status === 'active' && s.autonomous !== true;
+              });
+            }
+          }
+
+          if (!hasOtherRegularChild) {
+            await pDoc.ref.update({
+              status: 'inactive',
+              deactivationReason: 'student_autonomous',
+              updatedAt: new Date()
+            });
+          }
         } else {
-          await pDoc.ref.update({
-            status: 'active',
-            deactivationReason: null,
-            updatedAt: new Date()
-          });
+          // Only reactivate if deactivated specifically due to autonomous student mode
+          if (pData.deactivationReason === 'student_autonomous' || !pData.status || pData.status === 'inactive') {
+            if (pData.deactivationReason === 'student_autonomous') {
+              await pDoc.ref.update({
+                status: 'active',
+                deactivationReason: null,
+                updatedAt: new Date()
+              });
+            }
+          }
         }
       }
     }
 
+    invalidateUserCache(studentId);
     invalidateCache('admin_students_list');
     
     return NextResponse.json({ success: true });
