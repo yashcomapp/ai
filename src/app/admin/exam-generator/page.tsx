@@ -540,8 +540,13 @@ export default function AdminExamGeneratorPage() {
     const tTopicName = String(t.topicName || t.topic || '').trim().toLowerCase();
     const tTopicTitle = String(t.name || t.title || '').trim().toLowerCase();
 
+    const normalizeCode = (c: string) => String(c || '').trim().replace('-MATH-', '-MTH-');
+    const normQTopCode = normalizeCode(qTopCode);
+    const normTTopCode = normalizeCode(tTopCode);
+    const normQCode = normalizeCode(qCode);
+
     if (tTopNum && (qTopNum === tTopNum || qTopNum.endsWith(`.${tTopNum}`) || tTopNum.endsWith(`.${qTopNum}`))) return true;
-    if (tTopCode && (qTopCode === tTopCode || qTopCode.endsWith(`-${tTopCode}`) || qCode.includes(`-${tTopCode}-`))) return true;
+    if (tTopCode && (normQTopCode === normTTopCode || normQTopCode.endsWith(`-${normTTopCode}`) || normQCode.includes(`-${normTTopCode}-`))) return true;
 
     const targetNames = [tTopicName, tTopicTitle].filter(Boolean);
     const questionNames = [qTopicName, qSubtopicName, qConceptTag].filter(Boolean);

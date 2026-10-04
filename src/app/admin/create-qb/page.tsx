@@ -1445,7 +1445,7 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
           subjectCode: sCode,
           chapterNumber: chNum,
           topicNumber: tNum,
-          topicCode: q.topicCode || canonicalTopicCode,
+          topicCode: canonicalTopicCode,
           topic: q.topic || q.topicName || '',
           topicName: q.topicName || q.topic || '',
           keywords: q.keywords || [],

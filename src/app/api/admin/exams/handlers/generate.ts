@@ -146,18 +146,23 @@ export async function GET(req: NextRequest) {
           const qSubtopicName = String(q.subtopic || q.subtopicName || '').trim().toLowerCase();
           const qConceptTag = String(q.conceptTag || '').trim().toLowerCase();
           const qCode = String(q.questionCode || q.id || '').trim();
+          const normalizeCode = (c: string) => String(c || '').trim().replace('-MATH-', '-MTH-');
+          const normQTopCode = normalizeCode(qTopCode);
+          const normQSubCode = normalizeCode(qSubCode);
+          const normQCode = normalizeCode(qCode);
 
           const topicMatch = searchTopics.some(tNum => {
             const tLower = tNum.toLowerCase();
-            if (qTopNum === tNum || qSubNum === tNum || qTopCode === tNum || qSubCode === tNum) return true;
-            if (qTopCode.endsWith(`-${tNum}`) || qSubCode.endsWith(`-${tNum}`)) return true;
-            if (qTopCode.includes(`-${tNum}-`) || qSubCode.includes(`-${tNum}-`)) return true;
-            if (qCode.includes(`-${tNum}-`) || qCode.includes(`-${tNum}.`)) return true;
+            const normTNum = normalizeCode(tNum);
+            if (qTopNum === tNum || qSubNum === tNum || normQTopCode === normTNum || normQSubCode === normTNum) return true;
+            if (normQTopCode.endsWith(`-${normTNum}`) || normQSubCode.endsWith(`-${normTNum}`)) return true;
+            if (normQTopCode.includes(`-${normTNum}-`) || normQSubCode.includes(`-${normTNum}-`)) return true;
+            if (normQCode.includes(`-${normTNum}-`) || normQCode.includes(`-${normTNum}.`)) return true;
 
             // Stripped subpart matches (e.g. searching 2.1 in 1.1 or vice versa)
             if (tNum.includes('.')) {
               const subPart = tNum.split('.').slice(1).join('.');
-              if (subPart && (qTopNum === subPart || qSubNum === subPart || qCode.includes(`-${subPart}-`))) return true;
+              if (subPart && (qTopNum === subPart || qSubNum === subPart || normQCode.includes(`-${subPart}-`))) return true;
             }
 
             // Name / Title / ConceptTag match

@@ -386,7 +386,7 @@ export async function POST(req: NextRequest) {
         const { item, isNew, qtype, finalBoard, topicPart, chapterPart, topicCode, counterId } = p;
 
         let finalCode = item.id || item.questionCode || '';
-        if (isNew) {
+        if (isNew || !finalCode.startsWith(`${counterId}-`)) {
           const seqNum = currentSeqOffset[counterId]++;
           const seqStr = String(seqNum).padStart(3, '0');
           finalCode = `${counterId}-${seqStr}`;
