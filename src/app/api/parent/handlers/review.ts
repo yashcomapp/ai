@@ -521,24 +521,22 @@ export async function GET(req: NextRequest) {
       };
     });
 
-    const todayKeyIST = getDateKeyIST(new Date());
-
-    const isTodayReview = (r: any) => {
-      const dateStr = r.date || r.completedAt || r.startedAt;
-      if (!dateStr) return false;
-      return getDateKeyIST(dateStr) === todayKeyIST;
+    const sortByDateDesc = (a: any, b: any) => {
+      const timeA = safeDateToTimestamp(a.date || a.completedAt || a.startedAt);
+      const timeB = safeDateToTimestamp(b.date || b.completedAt || b.startedAt);
+      return timeB - timeA;
     };
 
-    const currentDayObjectiveReviews = objectiveReviews.filter(isTodayReview);
-    const currentDayPracticeReviews = practiceReviews.filter(isTodayReview);
-    const currentDaySubjectiveReviews = subjectiveReviews.filter(isTodayReview);
-    const currentDayEntranceReviews = entranceReviews.filter(isTodayReview);
+    const sortedObjectiveReviews = objectiveReviews.sort(sortByDateDesc);
+    const sortedPracticeReviews = practiceReviews.sort(sortByDateDesc);
+    const sortedSubjectiveReviews = subjectiveReviews.sort(sortByDateDesc);
+    const sortedEntranceReviews = entranceReviews.sort(sortByDateDesc);
 
     const responseData = {
-      objectiveReviews: currentDayObjectiveReviews,
-      practiceReviews: currentDayPracticeReviews,
-      subjectiveReviews: currentDaySubjectiveReviews,
-      entranceReviews: currentDayEntranceReviews,
+      objectiveReviews: sortedObjectiveReviews,
+      practiceReviews: sortedPracticeReviews,
+      subjectiveReviews: sortedSubjectiveReviews,
+      entranceReviews: sortedEntranceReviews,
       isAutonomousChild: isAutonomous
     };
 
