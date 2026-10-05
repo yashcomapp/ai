@@ -175,6 +175,7 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
       subStudentAssignmentsSnapshot,
       masterySnapshot,
       attemptsSnapshot,
+      examAttemptsSnapshot,
       evaluationsSnapshot,
       syllabusList,
       classroomExamsSnap,
@@ -218,6 +219,9 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
 
       // Fetch student's attempts to filter out completed subjective exams
       adminDb.collection('subjectiveAttempts').where('studentCode', '==', studentCode).get(),
+
+      // Fetch student's objective exam attempts
+      adminDb.collection('examAttempts').where('studentCode', '==', studentCode).get(),
 
       // Fetch evaluations (all evaluations regardless of evaluatorType: teacher, parent, peer)
       adminDb.collection('evaluations')
@@ -912,7 +916,7 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
         masterySnaps: masterySnapshot,
         parentReviewsSnap: parentReviewsSnapshot,
         reviewsSnap: reviewsSnapshot,
-        attemptsSnap: reviewsSnapshot,
+        attemptsSnap: examAttemptsSnapshot,
         subAttemptsSnap: attemptsSnapshot,
         evalsSnap: evaluationsSnapshot,
         objAssignmentsSnap: { docs: [...batchAssignmentsSnapshot.docs, ...studentAssignmentsSnapshot.docs] },
