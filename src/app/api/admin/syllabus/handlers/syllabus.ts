@@ -3,6 +3,12 @@ import * as admin from 'firebase-admin';
 import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole, verifyAnyRole } from '@/lib/auth';
 import { getCachedSyllabusList, getFromCache, setInCache, invalidateCache } from '@/lib/firebase/cache';
+import { 
+  getCanonicalBoardCode, 
+  getCanonicalBoardName, 
+  getCanonicalClass, 
+  getCanonicalSubjectCode 
+} from '@/lib/syllabusUtils';
 export const dynamic = 'force-dynamic';
 
 const matchTopicCode = (examTopicCodes: any, cleanCode: string, number: string, chapNum: string) => {
@@ -394,11 +400,11 @@ async function syncSyllabusConfigTree() {
 
     syllabusSnap.docs.forEach(doc => {
       const data = doc.data();
-      const board = data.board || 'Maharashtra Board';
-      const cls = String(data.class || '8');
+      const board = getCanonicalBoardName(data.board);
+      const cls = getCanonicalClass(data.class);
       const subject = data.subject;
-      const subjectCode = data.subjectCode;
-      const bCode = data.boardCode || (board.toLowerCase().includes('cbse') ? 'CBSE' : board.toLowerCase().includes('icse') ? 'ICSE' : 'MH');
+      const bCode = getCanonicalBoardCode(data.boardCode || board);
+      const subjectCode = data.subjectCode || getCanonicalSubjectCode(bCode, cls, subject);
 
       if (board && subject) {
         boardCodes[board] = bCode;
@@ -440,18 +446,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'Missing parameters (docId, board, classNum, subjectName).' }, { status: 400 });
     }
 
-    // Resolve subjectCode
-    const subjectCodesSnap = await adminDb.collection('config').doc('subjectCodes').get();
-    const subjectCodes = subjectCodesSnap.exists ? subjectCodesSnap.data()! : {};
-    const subjectCode = subjectCodes[subjectName] || subjectName.substring(0, 4).toUpperCase();
+    const finalBoard = getCanonicalBoardName(board);
+    const bCode = getCanonicalBoardCode(board);
+    const cleanClass = getCanonicalClass(classNum);
+    const subjectCode = body.subjectCode || getCanonicalSubjectCode(bCode, cleanClass, subjectName);
 
     // Check existing to carry forward chapters if empty/unset
     const existingSnap = await adminDb.collection('syllabus').doc(docId).get();
     const existingData = existingSnap.exists ? existingSnap.data()! : {};
 
     const subjectData = {
-      board: board.trim(),
-      class: classNum.trim(),
+      board: finalBoard,
+      boardCode: bCode,
+      class: cleanClass,
       subject: subjectName.trim(),
       subjectCode,
       chapters: Array.isArray(chapters) ? chapters : (existingData.chapters || []),
