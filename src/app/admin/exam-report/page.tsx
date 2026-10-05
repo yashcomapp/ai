@@ -121,6 +121,8 @@ function ExamReportContent() {
   const [studentModalOpen, setStudentModalOpen] = useState(false);
   const [selectedAttempt, setSelectedAttempt] = useState<Attempt | null>(null);
   const [questionFilterTab, setQuestionFilterTab] = useState<'all' | 'correct' | 'incorrect' | 'unanswered'>('all');
+  const [attemptViewMode, setAttemptViewMode] = useState<'flashcard' | 'list'>('flashcard');
+  const [attemptCardIndex, setAttemptCardIndex] = useState<number>(0);
   const [questionModalOpen, setQuestionModalOpen] = useState(false);
   const [activeQuestionStat, setActiveQuestionStat] = useState<any>(null);
   const [votersModalOpen, setVotersModalOpen] = useState(false);
@@ -1353,7 +1355,14 @@ function ExamReportContent() {
                         <tr 
                           key={a.id} 
                           className="student-row" 
-                          onClick={() => { setSelectedAttempt(a); setStudentModalOpen(true); }}
+                          onClick={() => { 
+                            setSelectedAttempt(a); 
+                            setAttemptCardIndex(0);
+                            const qDetails = a.questionDetails || [];
+                            const hasMistakes = qDetails.some((qd: any) => !qd.isCorrect || isBlank(qd));
+                            setQuestionFilterTab(hasMistakes ? 'incorrect' : 'all');
+                            setStudentModalOpen(true); 
+                          }}
                           style={{ borderBottom: '1px solid var(--border-light)', cursor: 'pointer' }}
                         >
                           <td style={{ padding: '7px 10px', fontWeight: 600, whiteSpace: 'nowrap' }}>
@@ -1549,7 +1558,14 @@ function ExamReportContent() {
                         <tr 
                           key={a.id} 
                           style={{ borderBottom: '1px solid var(--border-light)', cursor: 'pointer', transition: 'background 0.2s' }}
-                          onClick={() => { setSelectedAttempt(a); setStudentModalOpen(true); }}
+                          onClick={() => { 
+                            setSelectedAttempt(a); 
+                            setAttemptCardIndex(0);
+                            const qDetails = a.questionDetails || [];
+                            const hasMistakes = qDetails.some((qd: any) => !qd.isCorrect || isBlank(qd));
+                            setQuestionFilterTab(hasMistakes ? 'incorrect' : 'all');
+                            setStudentModalOpen(true); 
+                          }}
                           onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--bg-soft)'; }}
                           onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
                         >
@@ -1981,6 +1997,42 @@ function ExamReportContent() {
                 <span>👤 Student Attempt Details: {selectedAttempt.studentName}{students.find(s => s.studentCode === selectedAttempt.studentCode)?.autonomous ? ' ⭐' : ''}</span>
               </h4>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {/* View Mode Switcher */}
+                <div style={{ display: 'inline-flex', background: 'var(--bg, #f1f5f9)', padding: '2px', borderRadius: '6px', border: '1px solid var(--border-light, #cbd5e1)' }}>
+                  <button
+                    type="button"
+                    onClick={() => setAttemptViewMode('flashcard')}
+                    style={{
+                      padding: '2px 8px',
+                      fontSize: '10.5px',
+                      fontWeight: 800,
+                      borderRadius: '4px',
+                      border: 'none',
+                      cursor: 'pointer',
+                      background: attemptViewMode === 'flashcard' ? 'var(--accent)' : 'transparent',
+                      color: attemptViewMode === 'flashcard' ? '#ffffff' : 'var(--text-muted)'
+                    }}
+                  >
+                    🗂️ Flashcard
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAttemptViewMode('list')}
+                    style={{
+                      padding: '2px 8px',
+                      fontSize: '10.5px',
+                      fontWeight: 800,
+                      borderRadius: '4px',
+                      border: 'none',
+                      cursor: 'pointer',
+                      background: attemptViewMode === 'list' ? 'var(--accent)' : 'transparent',
+                      color: attemptViewMode === 'list' ? '#ffffff' : 'var(--text-muted)'
+                    }}
+                  >
+                    📜 List
+                  </button>
+                </div>
+
                 <button 
                   className="btn btn-secondary btn-sm" 
                   style={{ padding: '2px 8px', fontSize: '11px', color: 'var(--danger)', borderColor: 'var(--danger)' }}
@@ -2126,30 +2178,33 @@ function ExamReportContent() {
 
               {selectedAttempt && (
                   <div>
-                    <div className="outcome-tabs" style={{ display: 'flex', gap: '4px', marginBottom: '8px', borderBottom: '1px solid var(--border-light)', paddingBottom: '6px' }}>
+                    {/* Filter Tabs Bar */}
+                    <div className="outcome-tabs" style={{ display: 'flex', gap: '6px', marginBottom: '10px', borderBottom: '1px solid var(--border-light)', paddingBottom: '8px', flexWrap: 'wrap' }}>
                       <button 
-                        onClick={() => setQuestionFilterTab('all')} 
+                        type="button"
+                        onClick={() => { setQuestionFilterTab(incorrectCount + unansweredCount > 0 ? 'incorrect' : 'all'); setAttemptCardIndex(0); }} 
                         style={{
-                          padding: '3px 8px',
+                          padding: '4px 10px',
                           fontSize: '11px',
                           fontWeight: 'bold',
-                          borderRadius: 'var(--radius-sm)',
-                          border: questionFilterTab === 'all' ? '1px solid var(--accent)' : '1px solid var(--border-light)',
-                          background: questionFilterTab === 'all' ? 'var(--accent-soft)' : 'transparent',
-                          color: questionFilterTab === 'all' ? 'var(--accent)' : 'var(--text-muted)',
+                          borderRadius: '16px',
+                          border: questionFilterTab === 'incorrect' || (questionFilterTab as string) === 'needs_review' ? '2px solid var(--danger)' : '1px solid var(--border-light)',
+                          background: questionFilterTab === 'incorrect' || (questionFilterTab as string) === 'needs_review' ? 'var(--danger-bg)' : 'transparent',
+                          color: questionFilterTab === 'incorrect' || (questionFilterTab as string) === 'needs_review' ? 'var(--danger)' : 'var(--text-muted)',
                           cursor: 'pointer'
                         }}
                       >
-                        All ({totalQuestionsCount})
+                        ⚠️ Mistakes ({incorrectCount + unansweredCount})
                       </button>
                       <button 
-                        onClick={() => setQuestionFilterTab('correct')} 
+                        type="button"
+                        onClick={() => { setQuestionFilterTab('correct'); setAttemptCardIndex(0); }} 
                         style={{
-                          padding: '3px 8px',
+                          padding: '4px 10px',
                           fontSize: '11px',
                           fontWeight: 'bold',
-                          borderRadius: 'var(--radius-sm)',
-                          border: questionFilterTab === 'correct' ? '1px solid var(--success)' : '1px solid var(--border-light)',
+                          borderRadius: '16px',
+                          border: questionFilterTab === 'correct' ? '2px solid var(--success)' : '1px solid var(--border-light)',
                           background: questionFilterTab === 'correct' ? 'var(--success-bg)' : 'transparent',
                           color: questionFilterTab === 'correct' ? 'var(--success)' : 'var(--text-muted)',
                           cursor: 'pointer'
@@ -2158,107 +2213,122 @@ function ExamReportContent() {
                         Correct ({correctCount})
                       </button>
                       <button 
-                        onClick={() => setQuestionFilterTab('incorrect')} 
+                        type="button"
+                        onClick={() => { setQuestionFilterTab('all'); setAttemptCardIndex(0); }} 
                         style={{
-                          padding: '3px 8px',
+                          padding: '4px 10px',
                           fontSize: '11px',
                           fontWeight: 'bold',
-                          borderRadius: 'var(--radius-sm)',
-                          border: questionFilterTab === 'incorrect' ? '1px solid var(--danger)' : '1px solid var(--border-light)',
-                          background: questionFilterTab === 'incorrect' ? 'var(--danger-bg)' : 'transparent',
-                          color: questionFilterTab === 'incorrect' ? 'var(--danger)' : 'var(--text-muted)',
+                          borderRadius: '16px',
+                          border: questionFilterTab === 'all' ? '2px solid var(--accent)' : '1px solid var(--border-light)',
+                          background: questionFilterTab === 'all' ? 'var(--accent-soft)' : 'transparent',
+                          color: questionFilterTab === 'all' ? 'var(--accent)' : 'var(--text-muted)',
                           cursor: 'pointer'
                         }}
                       >
-                        Incorrect ({incorrectCount})
-                      </button>
-                      <button 
-                        onClick={() => setQuestionFilterTab('unanswered')} 
-                        style={{
-                          padding: '3px 8px',
-                          fontSize: '11px',
-                          fontWeight: 'bold',
-                          borderRadius: 'var(--radius-sm)',
-                          border: questionFilterTab === 'unanswered' ? '1px solid var(--text-muted)' : '1px solid var(--border-light)',
-                          background: questionFilterTab === 'unanswered' ? 'var(--bg-soft)' : 'transparent',
-                          color: 'var(--text-muted)',
-                          cursor: 'pointer'
-                        }}
-                      >
-                        Unanswered ({unansweredCount})
+                        All ({totalQuestionsCount})
                       </button>
                     </div>
 
-                    <h5 style={{ fontSize: '11.5px', fontWeight: 'bold', marginBottom: '6px', paddingBottom: '2px', color: 'var(--text)' }}>
-                      🔍 Question Audit List
-                    </h5>
+                    {/* FLASHCARD MODE */}
+                    {attemptViewMode === 'flashcard' && (
+                      <div>
+                        {/* Stepper Palette */}
+                        <div style={{ display: 'flex', gap: '5px', overflowX: 'auto', paddingBottom: '8px', marginBottom: '10px', alignItems: 'center' }}>
+                          {filteredQDs.map((qd: any, idx: number) => {
+                            const isCorr = qd.isCorrect;
+                            const isCur = attemptCardIndex === idx;
+                            const qNumber = qd.qNumber || (selectedAttempt?.questionDetails ? selectedAttempt.questionDetails.indexOf(qd) + 1 : idx + 1);
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      {filteredQDs.length === 0 ? (
-                        <div style={{ textAlign: 'center', padding: '12px 0', color: 'var(--text-faint)', fontSize: '11.5px' }}>📭 No questions match this filter.</div>
-                      ) : (
-                        filteredQDs.map((qd: any, qIdx: number) => {
+                            return (
+                              <button
+                                key={`fc_step_${qd.questionId || idx}`}
+                                type="button"
+                                onClick={() => setAttemptCardIndex(idx)}
+                                style={{
+                                  padding: '4px 10px',
+                                  borderRadius: '12px',
+                                  fontSize: '11px',
+                                  fontWeight: 800,
+                                  cursor: 'pointer',
+                                  flexShrink: 0,
+                                  border: isCur ? '2px solid var(--accent)' : '1px solid var(--border-light)',
+                                  background: isCur ? 'var(--accent)' : isCorr ? 'var(--success-bg)' : 'var(--danger-bg)',
+                                  color: isCur ? '#ffffff' : isCorr ? 'var(--success)' : 'var(--danger)',
+                                  transform: isCur ? 'scale(1.05)' : 'scale(1)',
+                                  transition: 'all 0.15s ease'
+                                }}
+                              >
+                                {isCorr ? '🟢' : '🔴'} Q{qNumber}
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        {/* Current Question Flashcard */}
+                        {filteredQDs.length === 0 ? (
+                          <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--text-faint)', fontSize: '12px' }}>📭 No questions match this filter.</div>
+                        ) : (() => {
+                          const safeIdx = Math.min(attemptCardIndex, filteredQDs.length - 1);
+                          const qd = filteredQDs[safeIdx] || filteredQDs[0];
                           const isCorrect = qd.isCorrect;
                           const isUnattempted = isBlank(qd);
                           const bq = questionsMap[qd.questionCode] || null;
                           const explanation = bq?.solution || '';
                           const studentReason = getStudentReasonForQuestion(selectedAttempt, qd);
+                          const qNumber = qd.qNumber || (selectedAttempt?.questionDetails ? selectedAttempt.questionDetails.indexOf(qd) + 1 : safeIdx + 1);
 
                           return (
-                            <div 
-                              key={qd.questionId || qIdx} 
-                              style={{
-                                width: '100%',
-                                padding: '8px 10px',
-                                borderRadius: 'var(--radius-sm)',
-                                border: '1.5px solid var(--review-card-border)',
-                                background: 'var(--review-card-bg)',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                gap: '4px'
-                              }}
-                            >
-                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-light)', paddingBottom: '3px', fontSize: '10.5px', color: 'var(--text-muted)' }}>
-                                <div style={{ display: 'flex', alignItems: 'center' }}>
-                                  <span style={{ fontWeight: 600 }}>Q{(() => {
-                                    if (qd.qNumber != null && qd.qNumber !== '') return qd.qNumber;
-                                    const actualIdx = selectedAttempt?.questionDetails
-                                      ? selectedAttempt.questionDetails.indexOf(qd)
-                                      : -1;
-                                    return actualIdx !== -1 ? actualIdx + 1 : qIdx + 1;
-                                  })()} ({bq?.difficulty?.toUpperCase() || 'MEDIUM'} • {bq?.bloomLevel || 'Understand'} • Time: {formatSeconds(qd.timeSpentSeconds || 0)})</span>
+                            <div style={{
+                              background: 'var(--surface)',
+                              border: '1.5px solid var(--border-light)',
+                              borderRadius: 'var(--radius)',
+                              padding: '14px 16px',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: '10px'
+                            }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-light)', paddingBottom: '6px', fontSize: '11.5px', color: 'var(--text-muted)' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                  <span style={{ fontWeight: 800, color: 'var(--text)' }}>
+                                    Card {safeIdx + 1} of {filteredQDs.length} (Q{qNumber})
+                                  </span>
+                                  <span>•</span>
+                                  <span>{bq?.difficulty?.toUpperCase() || 'MEDIUM'}</span>
+                                  <span>•</span>
+                                  <span>Time: {formatSeconds(qd.timeSpentSeconds || 0)}</span>
                                   {studentReason && (
-                                    <span style={{ background: 'var(--warning-bg)', color: 'var(--warning)', padding: '1px 5px', borderRadius: '4px', fontSize: '9px', fontWeight: 'bold', marginLeft: '6px' }}>
-                                      ⚠️ Reason: {studentReason}
+                                    <span style={{ background: 'var(--warning-bg)', color: 'var(--warning)', padding: '1px 5px', borderRadius: '4px', fontSize: '9.5px', fontWeight: 'bold' }}>
+                                      ⚠️ {studentReason}
                                     </span>
                                   )}
                                 </div>
-                                <span style={{ 
-                                  fontWeight: 'bold', 
-                                  fontSize: '9.5px',
-                                  padding: '1px 5px',
+                                <span style={{
+                                  fontWeight: 800,
+                                  fontSize: '10px',
+                                  padding: '2px 8px',
                                   borderRadius: '10px',
                                   background: isUnattempted ? 'var(--bg-soft)' : (isCorrect ? 'var(--success-bg)' : 'var(--danger-bg)'),
-                                  color: isUnattempted ? 'var(--text-muted)' : (isCorrect ? 'var(--success)' : 'var(--danger)') 
+                                  color: isUnattempted ? 'var(--text-muted)' : (isCorrect ? 'var(--success)' : 'var(--danger)')
                                 }}>
-                                  {isUnattempted ? 'Unattempted' : (isCorrect ? 'Correct' : 'Incorrect')}
+                                  {isUnattempted ? '⚪ Unattempted' : (isCorrect ? '🟢 Correct' : '🔴 Incorrect')}
                                 </span>
                               </div>
 
+                              {/* Question Text */}
                               {isAssertionReasonType(bq?.type) ? (() => {
                                 const { assertion, reason } = extractAssertionAndReason(bq || qd);
                                 return (
-                                  <div style={{ marginBottom: '6px', fontSize: '11.5px' }}>
+                                  <div style={{ fontSize: '12.5px' }}>
                                     <p style={{ margin: '2px 0' }}><strong>Assertion (A):</strong> <span className="math-container">{preprocessMathText(assertion)}</span></p>
                                     <p style={{ margin: '2px 0' }}><strong>Reason (R):</strong> <span className="math-container">{preprocessMathText(reason)}</span></p>
                                   </div>
                                 );
                               })() : (
-                                <p className="math-container" style={{ fontSize: '11.5px', margin: '0 0 4px 0', fontWeight: 'bold', lineHeight: '1.3' }}>
-                                  {preprocessMathText(qd.questionText || bq?.text || '')}
-                                </p>
+                                <div className="math-container" style={{ fontSize: '13px', fontWeight: 700, lineHeight: '1.4', color: 'var(--text)' }} dangerouslySetInnerHTML={{ __html: preprocessMathText(qd.questionText || bq?.text || '') }} />
                               )}
 
+                              {/* Options */}
                               {bq?.options && bq.options.length > 0 ? (
                                 <AuditQuestionOptions
                                   options={bq.options}
@@ -2269,39 +2339,171 @@ function ExamReportContent() {
                                 />
                               ) : null}
 
-                              {/* Answers Side-by-Side Grid */}
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', fontSize: '11px', background: 'var(--surface-3)', padding: '5px 7px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)' }}>
-                                <div style={{ lineHeight: '1.25' }}>
+                              {/* Student vs Correct Answer */}
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', fontSize: '11.5px', background: 'var(--surface-3)', padding: '6px 10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)' }}>
+                                <div>
                                   <strong style={{ color: 'var(--text-muted)', marginRight: '6px' }}>Student Answer:</strong>
-                                  <span className="math-container" style={{ color: 'var(--text)', fontWeight: 600 }}>
-                                    {preprocessMathText(
-                                      isUnattempted 
-                                        ? '(blank)' 
-                                        : getOptionText(qd.questionCode, qd.userAnswer)
-                                    )}
+                                  <span className="math-container" style={{ color: isCorrect ? 'var(--success)' : 'var(--danger)', fontWeight: 700 }}>
+                                    {isUnattempted ? '(blank)' : getOptionText(qd.questionCode, qd.userAnswer)}
                                   </span>
                                 </div>
-                                <div style={{ lineHeight: '1.25' }}>
+                                <div>
                                   <strong style={{ color: 'var(--text-muted)', marginRight: '6px' }}>Correct Answer:</strong>
                                   <span className="math-container" style={{ color: 'var(--success)', fontWeight: 'bold' }}>
-                                    {preprocessMathText(
-                                      getOptionText(qd.questionCode, Array.isArray(qd.correctAnswer) ? qd.correctAnswer.join(', ') : qd.correctAnswer)
-                                    )}
+                                    {getOptionText(qd.questionCode, Array.isArray(qd.correctAnswer) ? qd.correctAnswer.join(', ') : qd.correctAnswer)}
                                   </span>
                                 </div>
                               </div>
 
+                              {/* Solution */}
                               {explanation && (
-                                <div style={{ marginTop: '4px', fontSize: '11px', color: 'var(--text-muted)', borderTop: '1px dashed var(--border-light)', paddingTop: '4px' }}>
-                                  <strong>Solution Explanation:</strong>
-                                  <p className="math-container" style={{ margin: '2px 0 0 0', lineHeight: '1.3' }}>{preprocessMathText(explanation)}</p>
+                                <div style={{ background: 'var(--bg-soft)', padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border-light)', fontSize: '11.5px', color: 'var(--text)' }}>
+                                  <strong style={{ color: 'var(--accent)', display: 'block', marginBottom: '2px' }}>💡 Solution Explanation:</strong>
+                                  <p className="math-container" style={{ margin: 0, lineHeight: '1.35' }}>{preprocessMathText(explanation)}</p>
                                 </div>
                               )}
+
+                              {/* Bottom Navigation */}
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '8px', borderTop: '1px solid var(--border-light)' }}>
+                                <button
+                                  type="button"
+                                  className="btn btn-secondary btn-sm"
+                                  onClick={() => setAttemptCardIndex(prev => Math.max(0, prev - 1))}
+                                  disabled={safeIdx === 0}
+                                  style={{ padding: '4px 12px', fontSize: '11px', fontWeight: 700 }}
+                                >
+                                  ← Prev
+                                </button>
+                                <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>
+                                  Card {safeIdx + 1} of {filteredQDs.length}
+                                </span>
+                                <button
+                                  type="button"
+                                  className="btn btn-primary btn-sm"
+                                  onClick={() => setAttemptCardIndex(prev => Math.min(filteredQDs.length - 1, prev + 1))}
+                                  disabled={safeIdx >= filteredQDs.length - 1}
+                                  style={{ padding: '4px 14px', fontSize: '11px', fontWeight: 700 }}
+                                >
+                                  Next →
+                                </button>
+                              </div>
                             </div>
                           );
-                        })
-                      )}
-                    </div>
+                        })()}
+                      </div>
+                    )}
+
+                    {/* LIST MODE */}
+                    {attemptViewMode === 'list' && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        {filteredQDs.length === 0 ? (
+                          <div style={{ textAlign: 'center', padding: '12px 0', color: 'var(--text-faint)', fontSize: '11.5px' }}>📭 No questions match this filter.</div>
+                        ) : (
+                          filteredQDs.map((qd: any, qIdx: number) => {
+                            const isCorrect = qd.isCorrect;
+                            const isUnattempted = isBlank(qd);
+                            const bq = questionsMap[qd.questionCode] || null;
+                            const explanation = bq?.solution || '';
+                            const studentReason = getStudentReasonForQuestion(selectedAttempt, qd);
+
+                            return (
+                              <div 
+                                key={qd.questionId || qIdx} 
+                                style={{
+                                  width: '100%',
+                                  padding: '8px 10px',
+                                  borderRadius: 'var(--radius-sm)',
+                                  border: '1.5px solid var(--review-card-border)',
+                                  background: 'var(--review-card-bg)',
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  gap: '4px'
+                                }}
+                              >
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-light)', paddingBottom: '3px', fontSize: '10.5px', color: 'var(--text-muted)' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center' }}>
+                                    <span style={{ fontWeight: 600 }}>Q{(() => {
+                                      if (qd.qNumber != null && qd.qNumber !== '') return qd.qNumber;
+                                      const actualIdx = selectedAttempt?.questionDetails
+                                        ? selectedAttempt.questionDetails.indexOf(qd)
+                                        : -1;
+                                      return actualIdx !== -1 ? actualIdx + 1 : qIdx + 1;
+                                    })()} ({bq?.difficulty?.toUpperCase() || 'MEDIUM'} • {bq?.bloomLevel || 'Understand'} • Time: {formatSeconds(qd.timeSpentSeconds || 0)})</span>
+                                    {studentReason && (
+                                      <span style={{ background: 'var(--warning-bg)', color: 'var(--warning)', padding: '1px 5px', borderRadius: '4px', fontSize: '9px', fontWeight: 'bold', marginLeft: '6px' }}>
+                                        ⚠️ Reason: {studentReason}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <span style={{ 
+                                    fontWeight: 'bold', 
+                                    fontSize: '9.5px',
+                                    padding: '1px 5px',
+                                    borderRadius: '10px',
+                                    background: isUnattempted ? 'var(--bg-soft)' : (isCorrect ? 'var(--success-bg)' : 'var(--danger-bg)'),
+                                    color: isUnattempted ? 'var(--text-muted)' : (isCorrect ? 'var(--success)' : 'var(--danger)') 
+                                  }}>
+                                    {isUnattempted ? 'Unattempted' : (isCorrect ? 'Correct' : 'Incorrect')}
+                                  </span>
+                                </div>
+
+                                {isAssertionReasonType(bq?.type) ? (() => {
+                                  const { assertion, reason } = extractAssertionAndReason(bq || qd);
+                                  return (
+                                    <div style={{ marginBottom: '6px', fontSize: '11.5px' }}>
+                                      <p style={{ margin: '2px 0' }}><strong>Assertion (A):</strong> <span className="math-container">{preprocessMathText(assertion)}</span></p>
+                                      <p style={{ margin: '2px 0' }}><strong>Reason (R):</strong> <span className="math-container">{preprocessMathText(reason)}</span></p>
+                                    </div>
+                                  );
+                                })() : (
+                                  <p className="math-container" style={{ fontSize: '11.5px', margin: '0 0 4px 0', fontWeight: 'bold', lineHeight: '1.3' }}>
+                                    {preprocessMathText(qd.questionText || bq?.text || '')}
+                                  </p>
+                                )}
+
+                                {bq?.options && bq.options.length > 0 ? (
+                                  <AuditQuestionOptions
+                                    options={bq.options}
+                                    correctAnswer={bq.correctAnswer || bq.answer || bq.correct_answer}
+                                    correctAnswers={bq.correctAnswers}
+                                    userAnswer={qd.userAnswer}
+                                    isCorrect={isCorrect}
+                                  />
+                                ) : null}
+
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', fontSize: '11px', background: 'var(--surface-3)', padding: '5px 7px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)' }}>
+                                  <div style={{ lineHeight: '1.25' }}>
+                                    <strong style={{ color: 'var(--text-muted)', marginRight: '6px' }}>Student Answer:</strong>
+                                    <span className="math-container" style={{ color: 'var(--text)', fontWeight: 600 }}>
+                                      {preprocessMathText(
+                                        isUnattempted 
+                                          ? '(blank)' 
+                                          : getOptionText(qd.questionCode, qd.userAnswer)
+                                      )}
+                                    </span>
+                                  </div>
+                                  <div style={{ lineHeight: '1.25' }}>
+                                    <strong style={{ color: 'var(--text-muted)', marginRight: '6px' }}>Correct Answer:</strong>
+                                    <span className="math-container" style={{ color: 'var(--success)', fontWeight: 'bold' }}>
+                                      {preprocessMathText(
+                                        getOptionText(qd.questionCode, Array.isArray(qd.correctAnswer) ? qd.correctAnswer.join(', ') : qd.correctAnswer)
+                                      )}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                {explanation && (
+                                  <div style={{ marginTop: '4px', fontSize: '11px', color: 'var(--text-muted)', borderTop: '1px dashed var(--border-light)', paddingTop: '4px' }}>
+                                    <strong>Solution Explanation:</strong>
+                                    <p className="math-container" style={{ margin: '2px 0 0 0', lineHeight: '1.3' }}>{preprocessMathText(explanation)}</p>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })
+                        )}
+                      </div>
+                    )}
                   </div>
               )}
             </div>
