@@ -12,6 +12,7 @@ import { GET as getAttendanceDeclare, POST as postAttendanceDeclare, DELETE as d
 import { GET as getExams, POST as postExams, PUT as putExams } from '../handlers/exams';
 import { GET as getExamsSubjective, POST as postExamsSubjective } from '../handlers/examsSubjective';
 import { POST as postExamsPeerReview } from '../handlers/examsPeerReview';
+import { GET as getBookmarks, POST as postBookmarks } from '../handlers/bookmarks';
 
 export const dynamic = 'force-dynamic';
 
@@ -45,6 +46,8 @@ export async function GET(req: NextRequest, { params }: { params: { slug?: strin
         return await getExams(req);
       case 'exams/subjective':
         return await getExamsSubjective(req);
+      case 'bookmarks':
+        return await getBookmarks(req);
       default:
         return NextResponse.json({ message: `Unknown student GET route: ${subroute}` }, { status: 404 });
     }
@@ -78,6 +81,8 @@ export async function POST(req: NextRequest, { params }: { params: { slug?: stri
         return await postExamsSubjective(req);
       case 'exams/subjective/peer-review':
         return await postExamsPeerReview(req);
+      case 'bookmarks':
+        return await postBookmarks(req);
       default:
         return NextResponse.json({ message: `Unknown student POST route: ${subroute}` }, { status: 404 });
     }

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useMathRender } from '@/hooks/useMathRender';
 import { 
@@ -39,8 +39,13 @@ interface QuestionDetailsItem {
   correctAnswer: string;
   correctAnswers: string[];
   marks?: number;
+  timeSpent?: number;
+  durationSpent?: number;
   steps?: any[];
   evaluations?: any[];
+  subjectCode?: string;
+  topicCode?: string;
+  chapterNumber?: string | number;
 }
 
 export interface DetailedScorecard {
@@ -84,7 +89,21 @@ interface ScorecardModalProps {
 
 export default function ScorecardModal({ scorecard, loading, onClose, actionButton }: ScorecardModalProps) {
   const { user, firebaseUser } = useAuth();
-  const [questionFilterTab, setQuestionFilterTab] = useState<'all' | 'needs_review' | 'correct' | 'incorrect' | 'unanswered'>('needs_review');
+  
+  // View mode: Flashcard (default) vs Full List
+  const [viewMode, setViewMode] = useState<'flashcard' | 'list'>('flashcard');
+  const [questionFilterTab, setQuestionFilterTab] = useState<'needs_review' | 'incorrect' | 'unanswered' | 'correct' | 'all'>('needs_review');
+  const [cardIndex, setCardIndex] = useState<number>(0);
+
+  // Bookmarks State
+  const [bookmarkedCodes, setBookmarkedCodes] = useState<Set<string>>(new Set());
+  const [bookmarkLoading, setBookmarkLoading] = useState<string | null>(null);
+
+  // 30-Second Partnership Sign-Off State (Pills)
+  const [teachBackRating, setTeachBackRating] = useState<'confident' | 'good' | 'needs_help' | null>(null);
+  const [notebooksChecked, setNotebooksChecked] = useState<boolean>(false);
+  const [bagReady, setBagReady] = useState<boolean>(false);
+  const [parentNote, setParentNote] = useState<string>('');
 
   // Interactive Review & 60-Minute Accountability State
   const isOfficialExam = scorecard?.examType !== 'practice' && scorecard?.examType !== 'entrance';
@@ -104,9 +123,45 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
   const [challengeNotes, setChallengeNotes] = useState<string>('');
 
   // Questions needing review (strictly incorrect + unanswered)
-  const questionsNeedingReview = React.useMemo(() => {
+  const questionsNeedingReview = useMemo(() => {
     return scorecard?.questions?.filter(q => !q.isCorrect || isBlank(q.userAnswer)) || [];
   }, [scorecard]);
+
+  // Adjust default filter tab based on mistakes existence
+  useEffect(() => {
+    if (scorecard) {
+      if (questionsNeedingReview.length > 0) {
+        setQuestionFilterTab('needs_review');
+      } else {
+        setQuestionFilterTab('all');
+      }
+      setCardIndex(0);
+    }
+  }, [scorecard?.id, questionsNeedingReview.length]);
+
+  // Fetch initial bookmarks for this student
+  useEffect(() => {
+    const fetchBookmarks = async () => {
+      if (!firebaseUser) return;
+      try {
+        const token = await firebaseUser.getIdToken();
+        const sCode = user?.studentCode || scorecard?.studentCode || '';
+        const res = await fetch(`/api/student/bookmarks${sCode ? `?studentCode=${encodeURIComponent(sCode)}` : ''}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data.bookmarks)) {
+            const set = new Set<string>(data.bookmarks.map((b: any) => String(b.questionCode)));
+            setBookmarkedCodes(set);
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to fetch bookmarks:', err);
+      }
+    };
+    fetchBookmarks();
+  }, [firebaseUser, user?.studentCode, scorecard?.studentCode]);
 
   // Reading pacing timer (minimum reading seconds based on number of mistakes)
   const [reviewSecondsRemaining, setReviewSecondsRemaining] = useState<number>(0);
@@ -142,8 +197,8 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
     }
   }, [scorecard]);
 
-  // Dynamically load KaTeX and auto-render math expressions when scorecard changes or tab changes
-  useMathRender([scorecard, questionFilterTab, challengeTargetQ]);
+  // Dynamically load KaTeX and auto-render math expressions when scorecard changes or card changes
+  useMathRender([scorecard, questionFilterTab, cardIndex, viewMode, challengeTargetQ]);
 
   const formatDate = (dateStr: string | null) => {
     return formatDateTimeIST(dateStr) || '-';
@@ -197,6 +252,56 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
     });
   };
 
+  // Toggle Bookmark
+  const handleToggleBookmark = async (q: QuestionDetailsItem) => {
+    const qCode = q.questionCode || q.id;
+    if (!qCode || !firebaseUser) return;
+    setBookmarkLoading(qCode);
+    try {
+      const token = await firebaseUser.getIdToken();
+      const isCurrentlyBookmarked = bookmarkedCodes.has(qCode);
+      
+      // Optimistic update
+      setBookmarkedCodes(prev => {
+        const next = new Set(prev);
+        if (isCurrentlyBookmarked) next.delete(qCode);
+        else next.add(qCode);
+        return next;
+      });
+
+      const res = await fetch('/api/student/bookmarks', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          questionCode: qCode,
+          questionText: q.text,
+          subjectCode: q.subjectCode || scorecard?.subject,
+          topicCode: q.topicCode || scorecard?.topicCode,
+          chapterNumber: q.chapterNumber || scorecard?.chapter,
+          examId: scorecard?.id,
+          action: 'toggle'
+        })
+      });
+
+      if (!res.ok) {
+        // Revert on failure
+        setBookmarkedCodes(prev => {
+          const next = new Set(prev);
+          if (isCurrentlyBookmarked) next.add(qCode);
+          else next.delete(qCode);
+          return next;
+        });
+      }
+    } catch (err) {
+      console.error('Bookmark toggle error:', err);
+    } finally {
+      setBookmarkLoading(null);
+    }
+  };
+
   // Submit challenge
   const handleSaveChallenge = () => {
     if (!challengeTargetQ) return;
@@ -212,7 +317,6 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
         notes: challengeNotes
       }
     }));
-    // Also mark as reviewed
     setReviewedQuestionIds(prev => new Set(prev).add(qId));
     setChallengeTargetQ(null);
   };
@@ -244,7 +348,13 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
           examName: scorecard.examName,
           reviewedQuestionIds: Array.from(reviewedQuestionIds),
           challenges: challengeList,
-          timeSpentSeconds: timeSpentSecs
+          timeSpentSeconds: timeSpentSecs,
+          partnershipLog: {
+            teachBackRating,
+            notebooksChecked,
+            bagReady,
+            parentNote
+          }
         })
       });
 
@@ -256,7 +366,7 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
             : '✅ Verified review submitted successfully!')
         );
         if (scorecard) {
-          scorecard.status = 'pending';
+          scorecard.status = 'approved';
         }
       } else {
         alert('Error submitting review: ' + (data.message || 'Failed to submit review'));
@@ -268,29 +378,162 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
     }
   };
 
+  // Helper to render question options in Flashcard & List modes
+  const renderOptionsList = (q: QuestionDetailsItem, isUnanswered: boolean) => {
+    const isAssertionReason = isAssertionReasonType(q.type);
+    const optionsToRender = (q.options && q.options.length > 0)
+      ? q.options
+      : (isAssertionReason ? DEFAULT_ASSERTION_REASON_OPTIONS : []);
+
+    if (optionsToRender.length > 0) {
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '10px' }}>
+          {optionsToRender.map((opt: any, oi: number) => {
+            const optKey = getRawOptionKey(opt);
+            const optText = getRawOptionText(opt);
+            const correctAns = getQuestionCorrectAnswer(q);
+            
+            let isCorrectOpt = isOptionCorrect(correctAns, optKey, oi, optText, optionsToRender);
+            const isUserOpt = isOptionSelectedByUser(q.userAnswer, optKey, oi, optText, optionsToRender);
+
+            if (q.isCorrect && isUserOpt) {
+              isCorrectOpt = true;
+            }
+
+            let border = '1px solid var(--review-option-border, #e2e8f0)';
+            let background = 'var(--review-option-bg, #ffffff)';
+            let color = 'var(--text, #1e293b)';
+            let prefix = '';
+
+            if (isCorrectOpt) {
+              border = '2px solid var(--success, #16a34a)';
+              background = 'var(--success-bg, #f0fdf4)';
+              color = 'var(--success, #15803d)';
+              prefix = isUserOpt ? '🎯 ' : '✅ ';
+            } else if (isUserOpt) {
+              border = '2px solid var(--danger, #dc2626)';
+              background = 'rgba(220, 38, 38, 0.08)';
+              color = 'var(--danger, #b91c1c)';
+              prefix = '❌ ';
+            }
+
+            const letterLabel = String.fromCharCode(65 + oi);
+
+            return (
+              <div 
+                key={oi} 
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'flex-start', 
+                  gap: '8px',
+                  padding: '8px 12px', 
+                  border, 
+                  borderRadius: 'var(--radius, 8px)', 
+                  background,
+                  color,
+                  fontSize: '13px',
+                  fontWeight: (isCorrectOpt || isUserOpt) ? 700 : 500,
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                <span style={{ fontWeight: 800, minWidth: '28px', flexShrink: 0 }}>
+                  {prefix ? `${prefix}(${letterLabel})` : `(${letterLabel})`}
+                </span>
+                <span className="math-container" style={{ flex: 1, lineHeight: '1.4' }}>{preprocessMathText(stripOptionLabel(optText))}</span>
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '12.5px', background: 'var(--bg-soft, #f8fafc)', padding: '10px 12px', borderRadius: 'var(--radius, 8px)', border: '1px solid var(--border-light, #e2e8f0)', marginBottom: '10px' }}>
+        <div>
+          <strong style={{ color: 'var(--text-muted, #64748b)', marginRight: '8px' }}>Your Answer:</strong>
+          <span className="math-container" style={{ color: isUnanswered ? 'var(--text-muted, #64748b)' : (q.isCorrect ? 'var(--success, #16a34a)' : 'var(--danger, #dc2626)'), fontWeight: 700 }}>
+            {isUnanswered ? '(blank / unattempted)' : preprocessMathText(formatUserAnswerSummary(q.options || [], q.userAnswer))}
+          </span>
+        </div>
+        <div>
+          <strong style={{ color: 'var(--text-muted, #64748b)', marginRight: '8px' }}>Correct Answer:</strong>
+          <span className="math-container" style={{ color: 'var(--success, #16a34a)', fontWeight: 700 }}>
+            {preprocessMathText(formatUserAnswerSummary(q.options || [], getQuestionCorrectAnswer(q)))}
+          </span>
+        </div>
+      </div>
+    );
+  };
+
+  // Total cards in Flashcard Mode: filtered questions + 1 final sign-off card
+  const totalCards = filteredQuestions.length + 1;
+  const isFinalCard = cardIndex === filteredQuestions.length;
+  const currentQ = !isFinalCard && filteredQuestions[cardIndex] ? filteredQuestions[cardIndex] : null;
+
   return (
-    <div className="modal show" style={{ position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.45)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)', zIndex: 35000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '10px 8px' }}>
-      <div className="modal-content" style={{ background: 'var(--surface-popover)', border: '1px solid var(--border-popover)', borderRadius: 'var(--radius-lg)', maxWidth: '880px', width: '100%', height: 'fit-content', maxHeight: '94vh', display: 'flex', flexDirection: 'column', overflowY: 'hidden' }}>
+    <div className="modal show" style={{ position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.55)', backdropFilter: 'blur(5px)', WebkitBackdropFilter: 'blur(5px)', zIndex: 35000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '10px 8px' }}>
+      <div className="modal-content" style={{ background: 'var(--surface-popover, #ffffff)', border: '1px solid var(--border-popover, #cbd5e1)', borderRadius: 'var(--radius-lg, 14px)', maxWidth: '920px', width: '100%', height: 'fit-content', maxHeight: '95vh', display: 'flex', flexDirection: 'column', overflowY: 'hidden', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)' }}>
         
         {/* Header */}
-        <div className="modal-header" style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 'bold' }}>
-              📊 {scorecard?.examType === 'practice' ? 'Practice Review Scorecard' : 'Exam Review & Verification Scorecard'}
+        <div className="modal-header" style={{ padding: '12px 18px', borderBottom: '1px solid var(--border-light, #e2e8f0)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-soft, #f8fafc)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+            <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: 'var(--text, #0f172a)' }}>
+              📊 {scorecard?.examType === 'practice' ? 'Practice Review' : 'Exam Review & Reflection'}
             </h4>
             {scorecard?.examType === 'practice' && scorecard?.practiceNumber && (
-              <span style={{ background: 'var(--accent)', color: 'var(--text-on-accent)', fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '12px' }}>
+              <span style={{ background: 'var(--accent, #4f46e5)', color: '#ffffff', fontSize: '11px', fontWeight: 800, padding: '3px 10px', borderRadius: '12px' }}>
                 Practice #{scorecard.practiceNumber}
               </span>
             )}
           </div>
-          <button className="close-modal" onClick={onClose} style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '1.2rem', color: 'var(--text-muted)' }}>✕</button>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            {/* View Mode Toggle */}
+            <div style={{ display: 'inline-flex', background: 'var(--bg, #f1f5f9)', padding: '2px', borderRadius: '8px', border: '1px solid var(--border-light, #cbd5e1)' }}>
+              <button
+                type="button"
+                onClick={() => setViewMode('flashcard')}
+                style={{
+                  padding: '4px 10px',
+                  fontSize: '11px',
+                  fontWeight: 800,
+                  borderRadius: '6px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  background: viewMode === 'flashcard' ? 'var(--accent, #4f46e5)' : 'transparent',
+                  color: viewMode === 'flashcard' ? '#ffffff' : 'var(--text-muted, #64748b)',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                🗂️ Flashcard View
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('list')}
+                style={{
+                  padding: '4px 10px',
+                  fontSize: '11px',
+                  fontWeight: 800,
+                  borderRadius: '6px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  background: viewMode === 'list' ? 'var(--accent, #4f46e5)' : 'transparent',
+                  color: viewMode === 'list' ? '#ffffff' : 'var(--text-muted, #64748b)',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                📜 Full List
+              </button>
+            </div>
+
+            <button className="close-modal" onClick={onClose} style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '1.4rem', color: 'var(--text-muted, #64748b)', padding: '0 4px', lineHeight: 1 }}>✕</button>
+          </div>
         </div>
 
-        <div id="scorecard-details-section" className="modal-body math-container" style={{ padding: '12px 14px', overflowY: 'auto', flex: 1 }}>
+        <div id="scorecard-details-section" className="modal-body math-container" style={{ padding: '14px 18px', overflowY: 'auto', flex: 1 }}>
           {loading && (
-            <div style={{ textAlign: 'center', padding: '24px 0' }}>
-              <div className="spinner" style={{ margin: '0 auto 10px' }}></div> Loading details...
+            <div style={{ textAlign: 'center', padding: '30px 0' }}>
+              <div className="spinner" style={{ margin: '0 auto 12px' }}></div> Loading review scorecard...
             </div>
           )}
 
@@ -299,369 +542,367 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
               {/* 60-Minute Accountability Banner for Official Exams */}
               {isOfficialExam && user?.role === 'student' && (
                 <div style={{
-                  background: isWithin60Min ? 'var(--warning-bg)' : 'var(--danger-bg)',
-                  border: `1px solid ${isWithin60Min ? 'var(--warning-border)' : 'var(--danger-border)'}`,
-                  borderRadius: 'var(--radius-sm)',
-                  padding: '8px 12px',
-                  marginBottom: '10px',
+                  background: isWithin60Min ? 'var(--warning-bg, #fefce8)' : 'var(--danger-bg, #fef2f2)',
+                  border: `1px solid ${isWithin60Min ? 'var(--warning-border, #fde047)' : 'var(--danger-border, #fecaca)'}`,
+                  borderRadius: 'var(--radius, 8px)',
+                  padding: '8px 14px',
+                  marginBottom: '12px',
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
                   flexWrap: 'wrap',
                   gap: '6px'
                 }}>
-                  <div style={{ fontSize: '11.5px', color: isWithin60Min ? 'var(--text)' : 'var(--danger)', fontWeight: 600 }}>
+                  <div style={{ fontSize: '12px', color: isWithin60Min ? 'var(--text, #1e293b)' : 'var(--danger, #dc2626)', fontWeight: 600 }}>
                     {isWithin60Min ? (
                       <span>⏱️ <strong>60-Min Review Window:</strong> {remainingMins}m remaining to verify mistakes without being flagged in Fault Register!</span>
                     ) : (
                       <span>⚠️ <strong>Review Window Expired:</strong> {elapsedMinutes}m elapsed since exam. Review will be recorded as Late.</span>
                     )}
                   </div>
-                  <div style={{ fontSize: '10.5px', color: 'var(--warning)', fontWeight: 700 }}>
-                    🏆 First 3 to spot genuine question/key errors earn +2 Diligence points!
+                  <div style={{ fontSize: '11px', color: 'var(--warning, #d97706)', fontWeight: 700 }}>
+                    🏆 Spot question/key errors to earn +2 Diligence points!
                   </div>
                 </div>
               )}
 
               {reviewSubmittedSuccess && (
-                <div style={{ background: 'var(--success-bg)', color: 'var(--success)', border: '1px solid var(--success-border)', padding: '8px 12px', borderRadius: 'var(--radius-sm)', fontSize: '12px', fontWeight: 700, marginBottom: '10px' }}>
+                <div style={{ background: 'var(--success-bg, #f0fdf4)', color: 'var(--success, #16a34a)', border: '1px solid var(--success-border, #bbf7d0)', padding: '10px 14px', borderRadius: 'var(--radius, 8px)', fontSize: '13px', fontWeight: 700, marginBottom: '12px' }}>
                   {reviewSubmittedSuccess}
                 </div>
               )}
 
-              {/* Compact Horizontal Summary Bar */}
+              {/* Compact Summary Header Bar */}
               <div style={{ 
-                background: 'var(--bg-soft)', 
-                padding: '8px 12px', 
-                borderRadius: 'var(--radius-sm)', 
+                background: 'var(--bg-soft, #f8fafc)', 
+                padding: '10px 14px', 
+                borderRadius: 'var(--radius, 8px)', 
                 display: 'flex', 
                 flexDirection: 'row', 
                 flexWrap: 'wrap', 
-                gap: '8px 16px', 
-                marginBottom: '10px',
-                border: '1px solid var(--border-light)'
+                gap: '8px 18px', 
+                marginBottom: '12px',
+                border: '1px solid var(--border-light, #e2e8f0)'
               }}>
-                {scorecard.subject && scorecard.subject !== 'General' && (
-                  <div style={{ fontSize: '11px', lineHeight: '1.3' }}>
-                    <strong style={{ color: 'var(--text-muted)' }}>Subject:</strong>{' '}
-                    <span style={{ fontWeight: 600 }}>{scorecard.subject}</span>
+                {scorecard.subject && (
+                  <div style={{ fontSize: '12px', lineHeight: '1.3' }}>
+                    <strong style={{ color: 'var(--text-muted, #64748b)' }}>Subject:</strong>{' '}
+                    <span style={{ fontWeight: 700 }}>{scorecard.subject}</span>
                   </div>
                 )}
-                {scorecard.chapter && scorecard.chapter !== 'General' && scorecard.chapter !== 'General Chapter' && (
-                  <div style={{ fontSize: '11px', lineHeight: '1.3' }}>
-                    <strong style={{ color: 'var(--text-muted)' }}>Chapter:</strong>{' '}
-                    <span style={{ fontWeight: 600 }}>{scorecard.chapter}</span>
+                {scorecard.chapter && (
+                  <div style={{ fontSize: '12px', lineHeight: '1.3' }}>
+                    <strong style={{ color: 'var(--text-muted, #64748b)' }}>Chapter:</strong>{' '}
+                    <span style={{ fontWeight: 700 }}>{scorecard.chapter}</span>
                   </div>
                 )}
-                <div style={{ fontSize: '11px', lineHeight: '1.3' }}>
-                  <strong style={{ color: 'var(--text-muted)' }}>{scorecard.examType === 'practice' ? 'Topic' : 'Exam ID'}:</strong>{' '}
-                  <span style={{ fontWeight: 600 }}>
-                    {scorecard.examType === 'practice' ? (scorecard.topicName || scorecard.examName) : scorecard.examName}
-                    {scorecard.examType === 'practice' && scorecard.topicCode && scorecard.topicCode !== (scorecard.topicName || scorecard.examName) ? ` (${scorecard.topicCode})` : ''}
+                <div style={{ fontSize: '12px', lineHeight: '1.3' }}>
+                  <strong style={{ color: 'var(--text-muted, #64748b)' }}>Score:</strong>{' '}
+                  <span style={{ fontWeight: 800, color: scorecard.percentage >= 80 ? 'var(--success, #16a34a)' : scorecard.percentage >= 50 ? 'var(--warning, #d97706)' : 'var(--danger, #dc2626)' }}>
+                    {scorecard.score} / {scorecard.totalMarks} ({scorecard.percentage}%)
                   </span>
                 </div>
-                {scorecard.examType === 'practice' && (scorecard.practiceNumber !== undefined && scorecard.practiceNumber !== null) && (
-                  <div style={{ fontSize: '11px', lineHeight: '1.3' }}>
-                    <strong style={{ color: 'var(--text-muted)' }}>Practice Set:</strong>{' '}
-                    <span style={{ fontWeight: 700, color: 'var(--accent)' }}>Practice #{scorecard.practiceNumber}</span>
-                  </div>
-                )}
-                <div style={{ fontSize: '11px', lineHeight: '1.3' }}>
-                  <strong style={{ color: 'var(--text-muted)' }}>Date & Time:</strong>{' '}
-                  <span style={{ fontWeight: 600 }}>{formatDate(scorecard.submittedAt)}</span>
+                <div style={{ fontSize: '12px', lineHeight: '1.3' }}>
+                  <strong style={{ color: 'var(--text-muted, #64748b)' }}>Time Spent:</strong>{' '}
+                  <span style={{ fontWeight: 700 }}>{formatDuration(scorecard.durationSpent)}</span>
                 </div>
-                <div style={{ fontSize: '11px', lineHeight: '1.3' }}>
-                  <strong style={{ color: 'var(--text-muted)' }}>Time Spent:</strong>{' '}
-                  <span style={{ fontWeight: 600 }}>{formatDuration(scorecard.durationSpent)}</span>
-                </div>
-                <div style={{ fontSize: '11px', lineHeight: '1.3' }}>
-                  <strong style={{ color: 'var(--text-muted)' }}>Score:</strong>{' '}
-                  <span style={{ fontWeight: 600 }}>{scorecard.score} / {scorecard.totalMarks} ({scorecard.percentage}%)</span>
-                </div>
-                <div style={{ fontSize: '11px', lineHeight: '1.3' }}>
-                  <strong style={{ color: 'var(--text-muted)' }}>Integrity:</strong>{' '}
-                  <span style={{ fontWeight: 600, color: scorecard.integrityScore < 70 ? 'var(--danger)' : scorecard.integrityScore < 90 ? 'var(--warning)' : 'var(--success)' }}>
+                <div style={{ fontSize: '12px', lineHeight: '1.3' }}>
+                  <strong style={{ color: 'var(--text-muted, #64748b)' }}>Integrity:</strong>{' '}
+                  <span style={{ fontWeight: 700, color: scorecard.integrityScore < 70 ? 'var(--danger, #dc2626)' : 'var(--success, #16a34a)' }}>
                     {scorecard.integrityScore} / 100
                   </span>
-                </div>
-                <div style={{ fontSize: '11px', lineHeight: '1.3' }}>
-                  <strong style={{ color: 'var(--text-muted)' }}>Tab Out:</strong>{' '}
-                  <span style={{ fontWeight: 600 }}>{scorecard.tabViolations} times</span>
                 </div>
               </div>
 
               {/* Filter Tabs Bar */}
-              <div className="outcome-tabs" style={{ display: 'flex', gap: '6px', marginBottom: '10px', borderBottom: '1px solid var(--border-light)', paddingBottom: '8px', flexWrap: 'wrap' }}>
+              <div className="outcome-tabs" style={{ display: 'flex', gap: '6px', marginBottom: '12px', borderBottom: '1px solid var(--border-light, #e2e8f0)', paddingBottom: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
                 <button 
-                  onClick={() => setQuestionFilterTab('needs_review')} 
+                  type="button"
+                  onClick={() => { setQuestionFilterTab('needs_review'); setCardIndex(0); }} 
                   style={{
-                    padding: '4px 10px',
-                    fontSize: '11px',
-                    fontWeight: 'bold',
-                    borderRadius: 'var(--radius-sm)',
-                    border: questionFilterTab === 'needs_review' ? '1.5px solid var(--warning)' : '1px solid var(--border-light)',
-                    background: questionFilterTab === 'needs_review' ? 'var(--warning-bg)' : 'transparent',
-                    color: questionFilterTab === 'needs_review' ? 'var(--warning)' : 'var(--text-muted)',
+                    padding: '5px 12px',
+                    fontSize: '12px',
+                    fontWeight: 800,
+                    borderRadius: '20px',
+                    border: questionFilterTab === 'needs_review' ? '2px solid var(--warning, #d97706)' : '1px solid var(--border-light, #cbd5e1)',
+                    background: questionFilterTab === 'needs_review' ? 'var(--warning-bg, #fefce8)' : 'transparent',
+                    color: questionFilterTab === 'needs_review' ? 'var(--warning, #b45309)' : 'var(--text-muted, #64748b)',
                     cursor: 'pointer'
                   }}
                 >
-                  ⚠️ Needs Review ({questionsNeedingReview.length})
+                  ⚠️ Mistakes Only ({questionsNeedingReview.length})
                 </button>
                 <button 
-                  onClick={() => setQuestionFilterTab('incorrect')} 
+                  type="button"
+                  onClick={() => { setQuestionFilterTab('incorrect'); setCardIndex(0); }} 
                   style={{
-                    padding: '4px 10px',
-                    fontSize: '11px',
-                    fontWeight: 'bold',
-                    borderRadius: 'var(--radius-sm)',
-                    border: questionFilterTab === 'incorrect' ? '1px solid var(--danger)' : '1px solid var(--border-light)',
-                    background: questionFilterTab === 'incorrect' ? 'var(--danger-bg)' : 'transparent',
-                    color: questionFilterTab === 'incorrect' ? 'var(--danger)' : 'var(--text-muted)',
+                    padding: '5px 12px',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    borderRadius: '20px',
+                    border: questionFilterTab === 'incorrect' ? '2px solid var(--danger, #dc2626)' : '1px solid var(--border-light, #cbd5e1)',
+                    background: questionFilterTab === 'incorrect' ? 'var(--danger-bg, #fef2f2)' : 'transparent',
+                    color: questionFilterTab === 'incorrect' ? 'var(--danger, #dc2626)' : 'var(--text-muted, #64748b)',
                     cursor: 'pointer'
                   }}
                 >
                   Incorrect ({incorrectCount})
                 </button>
                 <button 
-                  onClick={() => setQuestionFilterTab('unanswered')} 
+                  type="button"
+                  onClick={() => { setQuestionFilterTab('correct'); setCardIndex(0); }} 
                   style={{
-                    padding: '4px 10px',
-                    fontSize: '11px',
-                    fontWeight: 'bold',
-                    borderRadius: 'var(--radius-sm)',
-                    border: questionFilterTab === 'unanswered' ? '1px solid var(--text-muted)' : '1px solid var(--border-light)',
-                    background: questionFilterTab === 'unanswered' ? 'var(--bg-soft)' : 'transparent',
-                    color: 'var(--text-muted)',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Unanswered ({unansweredCount})
-                </button>
-                <button 
-                  onClick={() => setQuestionFilterTab('correct')} 
-                  style={{
-                    padding: '4px 10px',
-                    fontSize: '11px',
-                    fontWeight: 'bold',
-                    borderRadius: 'var(--radius-sm)',
-                    border: questionFilterTab === 'correct' ? '1px solid var(--success)' : '1px solid var(--border-light)',
-                    background: questionFilterTab === 'correct' ? 'var(--success-bg)' : 'transparent',
-                    color: questionFilterTab === 'correct' ? 'var(--success)' : 'var(--text-muted)',
+                    padding: '5px 12px',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    borderRadius: '20px',
+                    border: questionFilterTab === 'correct' ? '2px solid var(--success, #16a34a)' : '1px solid var(--border-light, #cbd5e1)',
+                    background: questionFilterTab === 'correct' ? 'var(--success-bg, #f0fdf4)' : 'transparent',
+                    color: questionFilterTab === 'correct' ? 'var(--success, #16a34a)' : 'var(--text-muted, #64748b)',
                     cursor: 'pointer'
                   }}
                 >
                   Correct ({correctCount})
                 </button>
                 <button 
-                  onClick={() => setQuestionFilterTab('all')} 
+                  type="button"
+                  onClick={() => { setQuestionFilterTab('all'); setCardIndex(0); }} 
                   style={{
-                    padding: '4px 10px',
-                    fontSize: '11px',
-                    fontWeight: 'bold',
-                    borderRadius: 'var(--radius-sm)',
-                    border: questionFilterTab === 'all' ? '1px solid var(--accent)' : '1px solid var(--border-light)',
-                    background: questionFilterTab === 'all' ? 'var(--accent-soft)' : 'transparent',
-                    color: questionFilterTab === 'all' ? 'var(--accent)' : 'var(--text-muted)',
+                    padding: '5px 12px',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    borderRadius: '20px',
+                    border: questionFilterTab === 'all' ? '2px solid var(--accent, #4f46e5)' : '1px solid var(--border-light, #cbd5e1)',
+                    background: questionFilterTab === 'all' ? 'var(--accent-soft, #eef2ff)' : 'transparent',
+                    color: questionFilterTab === 'all' ? 'var(--accent, #4f46e5)' : 'var(--text-muted, #64748b)',
                     cursor: 'pointer'
                   }}
                 >
-                  All ({scorecard.questions.length})
+                  All Questions ({scorecard.questions.length})
                 </button>
               </div>
 
-              {/* Question Cards */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                <h5 style={{ fontSize: '12px', fontWeight: 'bold', margin: 0 }}>🔍 Question-by-Question Audit</h5>
-                {isOfficialExam && user?.role === 'student' && (
-                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                    Mistakes Verified: <strong style={{ color: isReviewComplete ? 'var(--success)' : 'var(--warning)' }}>{reviewedMistakesCount}</strong> / {questionsNeedingReview.length}
-                  </span>
-                )}
-              </div>
+              {/* ============================================================ */}
+              {/* MODE A: FLASHCARD SYSTEM (1 Question at a Time)               */}
+              {/* ============================================================ */}
+              {viewMode === 'flashcard' && (
+                <div>
+                  {/* Top Question Stepper Palette */}
+                  <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '10px', marginBottom: '12px', alignItems: 'center' }}>
+                    {filteredQuestions.map((q, idx) => {
+                      const isUnans = isBlank(q.userAnswer);
+                      const isCur = cardIndex === idx;
+                      const isUnderstood = reviewedQuestionIds.has(q.questionCode || q.id);
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {filteredQuestions.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '20px 0', color: 'var(--text-faint)', fontSize: '12px' }}>📭 No questions match this filter.</div>
-                ) : (
-                  filteredQuestions.map((q, idx) => {
+                      return (
+                        <button
+                          key={`step_${q.id || idx}_${idx}`}
+                          type="button"
+                          onClick={() => setCardIndex(idx)}
+                          style={{
+                            padding: '6px 12px',
+                            borderRadius: '16px',
+                            fontSize: '11.5px',
+                            fontWeight: 800,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            flexShrink: 0,
+                            border: isCur ? '2px solid var(--accent, #4f46e5)' : '1px solid var(--border-light, #cbd5e1)',
+                            background: isCur 
+                              ? 'var(--accent, #4f46e5)' 
+                              : isUnans 
+                                ? 'var(--bg-soft, #f8fafc)' 
+                                : q.isCorrect 
+                                  ? 'var(--success-bg, #f0fdf4)' 
+                                  : 'var(--danger-bg, #fef2f2)',
+                            color: isCur 
+                              ? '#ffffff' 
+                              : isUnans 
+                                ? 'var(--text-muted, #64748b)' 
+                                : q.isCorrect 
+                                  ? 'var(--success, #16a34a)' 
+                                  : 'var(--danger, #dc2626)',
+                            transform: isCur ? 'scale(1.05)' : 'scale(1)',
+                            transition: 'all 0.15s ease'
+                          }}
+                        >
+                          <span>{isUnans ? '⚪' : q.isCorrect ? '🟢' : '🔴'}</span>
+                          <span>Q{scorecard.questions.indexOf(q) !== -1 ? scorecard.questions.indexOf(q) + 1 : idx + 1}</span>
+                          {isUnderstood && <span style={{ fontSize: '10px' }}>✓</span>}
+                        </button>
+                      );
+                    })}
+
+                    {/* Final Finish & Sign-off Step Pill */}
+                    <button
+                      type="button"
+                      onClick={() => setCardIndex(filteredQuestions.length)}
+                      style={{
+                        padding: '6px 14px',
+                        borderRadius: '16px',
+                        fontSize: '11.5px',
+                        fontWeight: 800,
+                        cursor: 'pointer',
+                        flexShrink: 0,
+                        border: isFinalCard ? '2px solid var(--accent, #4f46e5)' : '1px solid var(--border-light, #cbd5e1)',
+                        background: isFinalCard ? 'var(--accent, #4f46e5)' : 'var(--bg-soft, #f8fafc)',
+                        color: isFinalCard ? '#ffffff' : 'var(--text, #1e293b)',
+                        transform: isFinalCard ? 'scale(1.05)' : 'scale(1)',
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      🏁 Summary & Sign-off
+                    </button>
+                  </div>
+
+                  {/* FLASHCARD BODY: Question Card OR Final Summary Card */}
+                  {!isFinalCard && currentQ ? (() => {
+                    const q = currentQ;
                     const isUnanswered = isBlank(q.userAnswer);
                     const qId = q.questionCode || q.id;
                     const isUnderstood = reviewedQuestionIds.has(qId);
                     const challenge = challenges[qId];
+                    const isBookmarked = bookmarkedCodes.has(qId);
+                    const timeSpentOnQ = q.timeSpent || q.durationSpent || 0;
+
+                    // Telemetry Behavioral Clues
+                    const isRushed = timeSpentOnQ > 0 && timeSpentOnQ < 8 && !q.isCorrect;
+                    const isStruggled = timeSpentOnQ > 150;
+                    const isFastFluency = q.isCorrect && timeSpentOnQ > 0 && timeSpentOnQ < 12;
 
                     return (
-                      <div 
-                        key={`${q.id || idx}_${idx}`} 
-                        style={{
-                          width: '100%',
-                          padding: '10px 12px',
-                          borderRadius: 'var(--radius-sm)',
-                          border: isUnderstood ? '1.5px solid var(--accent)' : '1.5px solid var(--review-card-border)',
-                          background: 'var(--review-card-bg)',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: '6px'
-                        }}
-                      >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-light)', paddingBottom: '4px', fontSize: '11px', color: 'var(--text-muted)' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <span style={{ fontWeight: 600 }}>
-                              Q{scorecard.questions.indexOf(q) !== -1 ? scorecard.questions.indexOf(q) + 1 : idx + 1}{' '}
-                              ({(q.difficulty || 'MEDIUM').toUpperCase()} • {q.bloomLevel || 'Understand'})
+                      <div style={{
+                        background: 'var(--surface, #ffffff)',
+                        border: '2px solid var(--border-light, #e2e8f0)',
+                        borderRadius: 'var(--radius-lg, 12px)',
+                        padding: '16px 20px',
+                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '12px'
+                      }}>
+                        {/* Top Card Bar */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-light, #e2e8f0)', paddingBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text, #0f172a)' }}>
+                              Card {cardIndex + 1} of {filteredQuestions.length}
                             </span>
-                            {(() => {
-                              const reason = getReasonForQuestion(q, scorecard);
-                              if (!reason) return null;
-                              return (
-                                <span style={{ background: 'var(--warning-bg)', color: 'var(--warning)', border: '1px solid rgba(251, 191, 36, 0.25)', padding: '1px 5px', borderRadius: '4px', fontSize: '9px', fontWeight: 'bold' }}>
-                                  ⚠️ Reason: {reason}
-                                </span>
-                              );
-                            })()}
+                            <span style={{ fontSize: '11px', color: 'var(--text-muted, #64748b)', background: 'var(--bg-soft, #f1f5f9)', padding: '2px 8px', borderRadius: '6px', fontWeight: 600 }}>
+                              Q{scorecard.questions.indexOf(q) !== -1 ? scorecard.questions.indexOf(q) + 1 : cardIndex + 1} • {(q.difficulty || 'MEDIUM').toUpperCase()}
+                            </span>
+                            {/* Behavioral Telemetry Tag */}
+                            {isRushed && (
+                              <span style={{ background: 'var(--warning-bg, #fefce8)', color: 'var(--warning, #b45309)', border: '1px solid var(--warning-border, #fde047)', fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '12px' }}>
+                                ⚡ Solved Fast ({timeSpentOnQ}s) — Possible Rush
+                              </span>
+                            )}
+                            {isStruggled && (
+                              <span style={{ background: 'var(--accent-soft, #eef2ff)', color: 'var(--accent, #4f46e5)', border: '1px solid var(--border-light, #c7d2fe)', fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '12px' }}>
+                                ⏳ Spent {formatDuration(timeSpentOnQ)} — Deep Struggle
+                              </span>
+                            )}
+                            {isFastFluency && (
+                              <span style={{ background: 'var(--success-bg, #f0fdf4)', color: 'var(--success, #16a34a)', border: '1px solid var(--success-border, #bbf7d0)', fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '12px' }}>
+                                🎯 Fast Fluency ({timeSpentOnQ}s)
+                              </span>
+                            )}
                           </div>
 
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            {/* 1-Tap Bookmark Button */}
+                            <button
+                              type="button"
+                              onClick={() => handleToggleBookmark(q)}
+                              disabled={bookmarkLoading === qId}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                padding: '4px 10px',
+                                borderRadius: '16px',
+                                fontSize: '11.5px',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                border: isBookmarked ? '1.5px solid #eab308' : '1px solid var(--border-light, #cbd5e1)',
+                                background: isBookmarked ? '#fefce8' : 'var(--bg-soft, #f8fafc)',
+                                color: isBookmarked ? '#a16207' : 'var(--text-muted, #64748b)',
+                                transition: 'all 0.15s ease'
+                              }}
+                            >
+                              <span>{isBookmarked ? '⭐' : '☆'}</span>
+                              <span>{isBookmarked ? 'In Tricky Vault' : 'Bookmark'}</span>
+                            </button>
+
+                            {/* Status Badge */}
                             <span style={{ 
-                              fontWeight: 'bold', 
-                              fontSize: '10px',
-                              padding: '1px 6px',
-                              borderRadius: '10px',
-                              background: isUnanswered ? 'var(--bg-soft)' : (q.isCorrect ? 'var(--success-bg)' : 'var(--danger-bg)'),
-                              color: isUnanswered ? 'var(--text-muted)' : (q.isCorrect ? 'var(--success)' : 'var(--danger)') 
+                              fontWeight: 800, 
+                              fontSize: '11px',
+                              padding: '3px 10px',
+                              borderRadius: '12px',
+                              background: isUnanswered ? 'var(--bg-soft, #f1f5f9)' : (q.isCorrect ? 'var(--success-bg, #f0fdf4)' : 'var(--danger-bg, #fef2f2)'),
+                              color: isUnanswered ? 'var(--text-muted, #64748b)' : (q.isCorrect ? 'var(--success, #16a34a)' : 'var(--danger, #dc2626)') 
                             }}>
-                              {isUnanswered ? 'Unattempted' : (q.isCorrect ? 'Correct' : 'Incorrect')}
+                              {isUnanswered ? '⚪ Unattempted' : (q.isCorrect ? '🟢 Correct' : '🔴 Incorrect')}
                             </span>
                           </div>
                         </div>
 
+                        {/* Question Text */}
                         {isAssertionReasonType(q.type) ? (() => {
                           const { assertion, reason } = extractAssertionAndReason(q);
                           return (
-                            <div style={{ marginBottom: '8px', fontSize: '12.5px' }}>
-                              <p style={{ margin: '2px 0' }}><strong>Assertion (A):</strong> <span className="math-container" dangerouslySetInnerHTML={{ __html: preprocessMathText(assertion) }} /></p>
-                              <p style={{ margin: '2px 0' }}><strong>Reason (R):</strong> <span className="math-container" dangerouslySetInnerHTML={{ __html: preprocessMathText(reason) }} /></p>
+                            <div style={{ fontSize: '13.5px', lineHeight: '1.4' }}>
+                              <p style={{ margin: '3px 0' }}><strong>Assertion (A):</strong> <span className="math-container" dangerouslySetInnerHTML={{ __html: preprocessMathText(assertion) }} /></p>
+                              <p style={{ margin: '3px 0' }}><strong>Reason (R):</strong> <span className="math-container" dangerouslySetInnerHTML={{ __html: preprocessMathText(reason) }} /></p>
                             </div>
                           );
                         })() : (
-                          <p className="math-container" style={{ fontSize: '12.5px', margin: '0 0 6px 0', fontWeight: 'bold', lineHeight: '1.35', color: 'var(--text)' }} dangerouslySetInnerHTML={{ __html: preprocessMathText(q.text || '') }} />
+                          <div className="math-container" style={{ fontSize: '14px', fontWeight: 700, lineHeight: '1.45', color: 'var(--text, #0f172a)' }} dangerouslySetInnerHTML={{ __html: preprocessMathText(q.text || '') }} />
                         )}
 
-                        {/* Options List breakdown */}
-                        {(() => {
-                          const isAssertionReason = isAssertionReasonType(q.type);
-                          const optionsToRender = (q.options && q.options.length > 0)
-                            ? q.options
-                            : (isAssertionReason ? DEFAULT_ASSERTION_REASON_OPTIONS : []);
+                        {/* Options List */}
+                        {renderOptionsList(q, isUnanswered)}
 
-                          if (optionsToRender.length > 0) {
-                            return (
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '8px' }}>
-                                {optionsToRender.map((opt: any, oi: number) => {
-                                  const optKey = getRawOptionKey(opt);
-                                  const optText = getRawOptionText(opt);
-                                  const correctAns = getQuestionCorrectAnswer(q);
-                                  
-                                  let isCorrectOpt = isOptionCorrect(correctAns, optKey, oi, optText, optionsToRender);
-                                  const isUserOpt = isOptionSelectedByUser(q.userAnswer, optKey, oi, optText, optionsToRender);
-
-                                  if (q.isCorrect && isUserOpt) {
-                                    isCorrectOpt = true;
-                                  }
-
-                                  let border = '1px solid var(--review-option-border)';
-                                  let background = 'var(--review-option-bg)';
-                                  let color = 'var(--text)';
-                                  let prefix = '';
-
-                                  if (isCorrectOpt) {
-                                    border = '1.5px solid var(--success)';
-                                    background = 'var(--success-bg)';
-                                    color = 'var(--success)';
-                                    prefix = isUserOpt ? '🎯 ' : '✅ ';
-                                  } else if (isUserOpt) {
-                                    border = '1.5px solid var(--danger)';
-                                    background = 'rgba(220, 38, 38, 0.08)';
-                                    color = 'var(--danger)';
-                                    prefix = '❌ ';
-                                  }
-
-                                  const letterLabel = String.fromCharCode(65 + oi);
-
-                                  return (
-                                    <div 
-                                      key={oi} 
-                                      style={{ 
-                                        display: 'flex', 
-                                        alignItems: 'flex-start', 
-                                        gap: '6px',
-                                        padding: '6px 10px', 
-                                        border, 
-                                        borderRadius: 'var(--radius-sm)', 
-                                        background,
-                                        color,
-                                        fontSize: '11.5px',
-                                        fontWeight: (isCorrectOpt || isUserOpt) ? 600 : 400
-                                      }}
-                                    >
-                                      <span style={{ fontWeight: 'bold', minWidth: '24px', flexShrink: 0 }}>
-                                        {prefix ? `${prefix}(${letterLabel})` : `(${letterLabel})`}
-                                      </span>
-                                      <span className="math-container" style={{ flex: 1 }}>{preprocessMathText(stripOptionLabel(optText))}</span>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            );
-                          }
-
-                          // Non-option question fallback (e.g. Numerical or Fill in Blank without options)
-                          return (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '11.5px', background: 'var(--surface-3, rgba(0,0,0,0.03))', padding: '6px 10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)', marginBottom: '8px' }}>
-                              <div>
-                                <strong style={{ color: 'var(--text-muted)', marginRight: '6px' }}>Your Answer:</strong>
-                                <span className="math-container" style={{ color: isUnanswered ? 'var(--text-muted)' : (q.isCorrect ? 'var(--success)' : 'var(--danger)'), fontWeight: 600 }}>
-                                  {isUnanswered ? '(blank)' : preprocessMathText(formatUserAnswerSummary(q.options || [], q.userAnswer))}
-                                </span>
-                              </div>
-                              <div>
-                                <strong style={{ color: 'var(--text-muted)', marginRight: '6px' }}>Correct Answer:</strong>
-                                <span className="math-container" style={{ color: 'var(--success)', fontWeight: 600 }}>
-                                  {preprocessMathText(formatUserAnswerSummary(q.options || [], getQuestionCorrectAnswer(q)))}
-                                </span>
-                              </div>
-                            </div>
-                          );
-                        })()}
-
-                        {/* Solution & Explanation */}
+                        {/* Step-by-Step Solution Card */}
                         {q.solution && (
-                          <div style={{ marginTop: '4px', fontSize: '11.5px', color: 'var(--text-muted)', borderTop: '1px dashed var(--border-light)', paddingTop: '6px' }}>
-                            <strong>Solution Explanation:</strong>
-                            <p className="math-container" style={{ margin: '2px 0 0 0', lineHeight: '1.35' }}>{preprocessMathText(q.solution)}</p>
+                          <div style={{
+                            background: 'var(--bg-soft, #f8fafc)',
+                            border: '1px solid var(--border-light, #e2e8f0)',
+                            borderRadius: 'var(--radius, 8px)',
+                            padding: '10px 14px',
+                            fontSize: '12.5px',
+                            color: 'var(--text, #1e293b)'
+                          }}>
+                            <div style={{ fontWeight: 800, color: 'var(--accent, #4f46e5)', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              💡 Step-by-Step Solution & Concept:
+                            </div>
+                            <div className="math-container" style={{ lineHeight: '1.4' }} dangerouslySetInnerHTML={{ __html: preprocessMathText(q.solution) }} />
                           </div>
                         )}
 
-                        {/* Interactive Verification & Challenge Buttons (Student Exam Review) */}
-                        {isOfficialExam && user?.role === 'student' && (
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px', marginTop: '6px', paddingTop: '6px', borderTop: '1px solid var(--border-light)' }}>
-                            <div style={{ display: 'flex', gap: '6px' }}>
-                              <button
-                                type="button"
-                                onClick={() => toggleUnderstood(qId)}
-                                style={{
-                                  padding: '3px 8px',
-                                  borderRadius: '12px',
-                                  fontSize: '10.5px',
-                                  fontWeight: 700,
-                                  border: isUnderstood ? '1px solid var(--success)' : '1px solid var(--border-light)',
-                                  background: isUnderstood ? 'var(--success-bg)' : 'transparent',
-                                  color: isUnderstood ? 'var(--success)' : 'var(--text-muted)',
-                                  cursor: 'pointer'
-                                }}
-                              >
-                                {isUnderstood ? '✓ Understood' : 'Mark as Understood'}
-                              </button>
+                        {/* Bottom Question Controls & Challenge Button */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', paddingTop: '10px', borderTop: '1px solid var(--border-light, #e2e8f0)' }}>
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <button
+                              type="button"
+                              onClick={() => toggleUnderstood(qId)}
+                              style={{
+                                padding: '5px 12px',
+                                borderRadius: '16px',
+                                fontSize: '11.5px',
+                                fontWeight: 700,
+                                border: isUnderstood ? '1.5px solid var(--success, #16a34a)' : '1px solid var(--border-light, #cbd5e1)',
+                                background: isUnderstood ? 'var(--success-bg, #f0fdf4)' : 'transparent',
+                                color: isUnderstood ? 'var(--success, #16a34a)' : 'var(--text-muted, #64748b)',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              {isUnderstood ? '✓ Discussed & Understood' : 'Mark as Understood'}
+                            </button>
 
+                            {isOfficialExam && user?.role === 'student' && (
                               <button
                                 type="button"
                                 onClick={() => {
@@ -671,71 +912,343 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
                                   setChallengeNotes('');
                                 }}
                                 style={{
-                                  padding: '3px 8px',
-                                  borderRadius: '12px',
-                                  fontSize: '10.5px',
+                                  padding: '5px 12px',
+                                  borderRadius: '16px',
+                                  fontSize: '11.5px',
                                   fontWeight: 700,
-                                  border: challenge ? '1px solid var(--warning-border)' : '1px solid var(--border-light)',
-                                  background: challenge ? 'var(--warning-bg)' : 'transparent',
-                                  color: challenge ? 'var(--warning)' : 'var(--text-muted)',
+                                  border: challenge ? '1.5px solid var(--warning-border, #fde047)' : '1px solid var(--border-light, #cbd5e1)',
+                                  background: challenge ? 'var(--warning-bg, #fefce8)' : 'transparent',
+                                  color: challenge ? 'var(--warning, #b45309)' : 'var(--text-muted, #64748b)',
                                   cursor: 'pointer'
                                 }}
                               >
                                 {challenge ? '⚠️ Challenged' : '⚠️ Challenge Key / Error'}
                               </button>
-                            </div>
-
-                            {challenge && (
-                              <span style={{ fontSize: '10px', color: 'var(--warning)', fontWeight: 600 }}>
-                                Flagged: {challenge.reason} ({challenge.suggestedAnswer})
-                              </span>
                             )}
                           </div>
-                        )}
+
+                          {/* Next / Prev Buttons */}
+                          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                            <button
+                              type="button"
+                              className="btn btn-secondary btn-sm"
+                              onClick={() => setCardIndex(prev => Math.max(0, prev - 1))}
+                              disabled={cardIndex === 0}
+                              style={{ fontWeight: 700, padding: '5px 12px' }}
+                            >
+                              ← Prev
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-primary btn-sm"
+                              onClick={() => setCardIndex(prev => Math.min(filteredQuestions.length, prev + 1))}
+                              style={{ fontWeight: 700, padding: '5px 14px' }}
+                            >
+                              {cardIndex === filteredQuestions.length - 1 ? 'Go to Summary 🏁 →' : 'Next →'}
+                            </button>
+                          </div>
+                        </div>
 
                       </div>
                     );
-                  })
-                )}
-              </div>
+                  })() : (
+                    /* ============================================================ */
+                    /* FINAL COMPLETION & 30-SECOND PARTNERSHIP SIGN-OFF CARD       */
+                    /* ============================================================ */
+                    <div style={{
+                      background: 'var(--surface, #ffffff)',
+                      border: '2px solid var(--accent, #4f46e5)',
+                      borderRadius: 'var(--radius-lg, 12px)',
+                      padding: '20px 24px',
+                      boxShadow: '0 8px 24px rgba(79, 70, 229, 0.12)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '16px'
+                    }}>
+                      <div style={{ textAlign: 'center', borderBottom: '1px solid var(--border-light, #e2e8f0)', paddingBottom: '12px' }}>
+                        <div style={{ fontSize: '32px', marginBottom: '4px' }}>🏁</div>
+                        <h3 style={{ margin: '0 0 4px', fontSize: '18px', fontWeight: 800, color: 'var(--text, #0f172a)' }}>
+                          Review Complete!
+                        </h3>
+                        <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-muted, #64748b)' }}>
+                          Score: <strong>{scorecard.score}/{scorecard.totalMarks} ({scorecard.percentage}%)</strong> • Time: <strong>{formatDuration(scorecard.durationSpent)}</strong> • Integrity: <strong>{scorecard.integrityScore}/100</strong>
+                        </p>
+                      </div>
+
+                      {/* 30-Second Partnership Section */}
+                      <div style={{ background: 'var(--bg-soft, #f8fafc)', borderRadius: 'var(--radius, 10px)', padding: '14px 16px', border: '1px solid var(--border-light, #e2e8f0)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        <div style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text, #0f172a)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          🤝 30-Second Parent-Kid Partnership Touchpoint
+                        </div>
+
+                        {/* Pillar 1: Teach-Back Check */}
+                        <div>
+                          <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted, #64748b)', marginBottom: '6px' }}>
+                            🗣️ आज काय शिकला / आज क्या पढ़ा? (Child Explained Concept):
+                          </div>
+                          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                            {[
+                              { key: 'confident', label: '🌟 Confident / स्पष्ट सांगितले' },
+                              { key: 'good', label: '👍 Good / ठीक-ठाक' },
+                              { key: 'needs_help', label: '⚠️ Needs Revision / रिव्हिजन हवे' }
+                            ].map(item => {
+                              const isSel = teachBackRating === item.key;
+                              return (
+                                <button
+                                  key={item.key}
+                                  type="button"
+                                  onClick={() => setTeachBackRating(item.key as any)}
+                                  style={{
+                                    padding: '6px 14px',
+                                    borderRadius: '20px',
+                                    fontSize: '12px',
+                                    fontWeight: 700,
+                                    cursor: 'pointer',
+                                    border: isSel ? '2px solid var(--accent, #4f46e5)' : '1px solid var(--border-light, #cbd5e1)',
+                                    background: isSel ? 'var(--accent, #4f46e5)' : '#ffffff',
+                                    color: isSel ? '#ffffff' : 'var(--text, #1e293b)',
+                                    transition: 'all 0.15s ease'
+                                  }}
+                                >
+                                  {item.label}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {/* Pillar 2 & 3: Routine Check (Notebooks & Bag) */}
+                        <div>
+                          <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted, #64748b)', marginBottom: '6px' }}>
+                            📋 Routine & Readiness Check:
+                          </div>
+                          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                            <button
+                              type="button"
+                              onClick={() => setNotebooksChecked(prev => !prev)}
+                              style={{
+                                padding: '6px 14px',
+                                borderRadius: '20px',
+                                fontSize: '12px',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                border: notebooksChecked ? '2px solid var(--success, #16a34a)' : '1px solid var(--border-light, #cbd5e1)',
+                                background: notebooksChecked ? 'var(--success-bg, #f0fdf4)' : '#ffffff',
+                                color: notebooksChecked ? 'var(--success, #16a34a)' : 'var(--text-muted, #64748b)',
+                                transition: 'all 0.15s ease'
+                              }}
+                            >
+                              📚 Notebooks Checked {notebooksChecked ? '✓' : ''}
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => setBagReady(prev => !prev)}
+                              style={{
+                                padding: '6px 14px',
+                                borderRadius: '20px',
+                                fontSize: '12px',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                border: bagReady ? '2px solid var(--success, #16a34a)' : '1px solid var(--border-light, #cbd5e1)',
+                                background: bagReady ? 'var(--success-bg, #f0fdf4)' : '#ffffff',
+                                color: bagReady ? 'var(--success, #16a34a)' : 'var(--text-muted, #64748b)',
+                                transition: 'all 0.15s ease'
+                              }}
+                            >
+                              🎒 Bag & Timetable Ready {bagReady ? '✓' : ''}
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Pillar 4: Optional Note */}
+                        <div>
+                          <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted, #64748b)', marginBottom: '4px' }}>
+                            💬 Note for Teacher (Optional):
+                          </div>
+                          <input
+                            type="text"
+                            value={parentNote}
+                            onChange={(e) => setParentNote(e.target.value)}
+                            placeholder="e.g. Understood chapter 13 well; excited about geometry."
+                            style={{ width: '100%', padding: '8px 12px', fontSize: '12px', borderRadius: '6px', border: '1px solid var(--border-light, #cbd5e1)', background: '#ffffff' }}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Navigation & Action Footer for Final Card */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', paddingTop: '10px' }}>
+                        <button
+                          type="button"
+                          className="btn btn-secondary btn-sm"
+                          onClick={() => setCardIndex(filteredQuestions.length - 1)}
+                          style={{ fontWeight: 700 }}
+                        >
+                          ← Back to Questions
+                        </button>
+
+                        <div style={{ display: 'flex', gap: '10px' }}>
+                          {actionButton}
+                        </div>
+                      </div>
+
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* ============================================================ */}
+              {/* MODE B: CLASSIC FULL LIST VIEW (Scrollable)                  */}
+              {/* ============================================================ */}
+              {viewMode === 'list' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {filteredQuestions.length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--text-faint, #94a3b8)', fontSize: '13px' }}>📭 No questions match this filter.</div>
+                  ) : (
+                    filteredQuestions.map((q, idx) => {
+                      const isUnanswered = isBlank(q.userAnswer);
+                      const qId = q.questionCode || q.id;
+                      const isUnderstood = reviewedQuestionIds.has(qId);
+                      const challenge = challenges[qId];
+                      const isBookmarked = bookmarkedCodes.has(qId);
+
+                      return (
+                        <div 
+                          key={`${q.id || idx}_${idx}`} 
+                          style={{
+                            width: '100%',
+                            padding: '12px 16px',
+                            borderRadius: 'var(--radius, 8px)',
+                            border: isUnderstood ? '1.5px solid var(--accent, #4f46e5)' : '1.5px solid var(--border-light, #e2e8f0)',
+                            background: 'var(--surface, #ffffff)',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '8px'
+                          }}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-light, #e2e8f0)', paddingBottom: '6px', fontSize: '12px', color: 'var(--text-muted, #64748b)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span style={{ fontWeight: 700 }}>
+                                Q{scorecard.questions.indexOf(q) !== -1 ? scorecard.questions.indexOf(q) + 1 : idx + 1}{' '}
+                                ({(q.difficulty || 'MEDIUM').toUpperCase()} • {q.bloomLevel || 'Understand'})
+                              </span>
+                            </div>
+
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <button
+                                type="button"
+                                onClick={() => handleToggleBookmark(q)}
+                                style={{
+                                  padding: '2px 8px',
+                                  borderRadius: '12px',
+                                  fontSize: '11px',
+                                  fontWeight: 700,
+                                  cursor: 'pointer',
+                                  border: isBookmarked ? '1px solid #eab308' : '1px solid var(--border-light, #cbd5e1)',
+                                  background: isBookmarked ? '#fefce8' : 'transparent',
+                                  color: isBookmarked ? '#a16207' : 'var(--text-muted, #64748b)'
+                                }}
+                              >
+                                {isBookmarked ? '⭐ Saved' : '☆ Bookmark'}
+                              </button>
+
+                              <span style={{ 
+                                fontWeight: 800, 
+                                fontSize: '11px',
+                                padding: '2px 8px',
+                                borderRadius: '10px',
+                                background: isUnanswered ? 'var(--bg-soft, #f1f5f9)' : (q.isCorrect ? 'var(--success-bg, #f0fdf4)' : 'var(--danger-bg, #fef2f2)'),
+                                color: isUnanswered ? 'var(--text-muted, #64748b)' : (q.isCorrect ? 'var(--success, #16a34a)' : 'var(--danger, #dc2626)') 
+                              }}>
+                                {isUnanswered ? 'Unattempted' : (q.isCorrect ? 'Correct' : 'Incorrect')}
+                              </span>
+                            </div>
+                          </div>
+
+                          {isAssertionReasonType(q.type) ? (() => {
+                            const { assertion, reason } = extractAssertionAndReason(q);
+                            return (
+                              <div style={{ fontSize: '13px' }}>
+                                <p style={{ margin: '2px 0' }}><strong>Assertion (A):</strong> <span className="math-container" dangerouslySetInnerHTML={{ __html: preprocessMathText(assertion) }} /></p>
+                                <p style={{ margin: '2px 0' }}><strong>Reason (R):</strong> <span className="math-container" dangerouslySetInnerHTML={{ __html: preprocessMathText(reason) }} /></p>
+                              </div>
+                            );
+                          })() : (
+                            <p className="math-container" style={{ fontSize: '13px', margin: '0 0 6px 0', fontWeight: 700, lineHeight: '1.4', color: 'var(--text, #0f172a)' }} dangerouslySetInnerHTML={{ __html: preprocessMathText(q.text || '') }} />
+                          )}
+
+                          {renderOptionsList(q, isUnanswered)}
+
+                          {q.solution && (
+                            <div style={{ marginTop: '4px', fontSize: '12px', color: 'var(--text-muted, #64748b)', borderTop: '1px dashed var(--border-light, #e2e8f0)', paddingTop: '6px' }}>
+                              <strong>Solution Explanation:</strong>
+                              <p className="math-container" style={{ margin: '2px 0 0 0', lineHeight: '1.4' }}>{preprocessMathText(q.solution)}</p>
+                            </div>
+                          )}
+
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px', marginTop: '6px', paddingTop: '6px', borderTop: '1px solid var(--border-light, #e2e8f0)' }}>
+                            <button
+                              type="button"
+                              onClick={() => toggleUnderstood(qId)}
+                              style={{
+                                padding: '4px 10px',
+                                borderRadius: '12px',
+                                fontSize: '11px',
+                                fontWeight: 700,
+                                border: isUnderstood ? '1px solid var(--success, #16a34a)' : '1px solid var(--border-light, #cbd5e1)',
+                                background: isUnderstood ? 'var(--success-bg, #f0fdf4)' : 'transparent',
+                                color: isUnderstood ? 'var(--success, #16a34a)' : 'var(--text-muted, #64748b)',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              {isUnderstood ? '✓ Understood' : 'Mark as Understood'}
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              )}
+
             </div>
           )}
         </div>
 
         {/* Footer */}
-        <div className="modal-footer" style={{ padding: '12px 18px', borderTop: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+        <div className="modal-footer" style={{ padding: '12px 20px', borderTop: '1px solid var(--border-light, #e2e8f0)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', background: 'var(--bg-soft, #f8fafc)' }}>
           <div>
             {isOfficialExam && user?.role === 'student' && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                 {reviewSecondsRemaining > 0 && (
-                  <span style={{ fontSize: '11px', color: 'var(--warning)', fontWeight: 700, padding: '4px 8px', background: 'var(--warning-bg)', borderRadius: '4px', border: '1px solid var(--warning-border)' }}>
-                    ⏳ Please carefully review questions ({reviewSecondsRemaining}s remaining)
+                  <span style={{ fontSize: '11.5px', color: 'var(--warning, #b45309)', fontWeight: 700, padding: '4px 10px', background: 'var(--warning-bg, #fefce8)', borderRadius: '6px', border: '1px solid var(--warning-border, #fde047)' }}>
+                    ⏳ Reviewing reflection ({reviewSecondsRemaining}s)
                   </span>
                 )}
                 <button
                   type="button"
                   className="btn btn-primary btn-sm"
                   onClick={handleSubmitReview}
-                  disabled={reviewSubmitting || !canSubmitReview || scorecard?.status === 'approved' || scorecard?.status === 'pending'}
-                  style={{ fontWeight: 700, fontSize: '12px', padding: '6px 14px' }}
+                  disabled={reviewSubmitting || !canSubmitReview || scorecard?.status === 'approved'}
+                  style={{ fontWeight: 800, fontSize: '12px', padding: '6px 16px' }}
                 >
                   {reviewSubmitting 
                     ? 'Submitting...' 
                     : reviewSecondsRemaining > 0
                       ? `⏳ Reading & Reflection (${reviewSecondsRemaining}s)`
                       : !isReviewComplete
-                        ? `🔍 Verify All Mistakes (${reviewedMistakesCount}/${questionsNeedingReview.length})`
-                        : (scorecard?.status === 'approved' || scorecard?.status === 'pending')
-                          ? '✅ Verified Review Submitted'
-                          : `🚀 Complete Verified Review (${reviewedMistakesCount}/${questionsNeedingReview.length}${Object.keys(challenges).length > 0 ? ` • ${Object.keys(challenges).length} Challenge(s)` : ''})`
+                        ? `🔍 Verify Mistakes (${reviewedMistakesCount}/${questionsNeedingReview.length})`
+                        : scorecard?.status === 'approved'
+                          ? '✅ Review Verified & Approved'
+                          : `🚀 Complete Verified Review (${reviewedMistakesCount}/${questionsNeedingReview.length})`
                   }
                 </button>
               </div>
             )}
           </div>
 
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <button className="btn btn-secondary btn-sm" onClick={onClose}>Close</button>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button className="btn btn-secondary btn-sm" onClick={onClose} style={{ fontWeight: 700 }}>Close</button>
             {actionButton}
           </div>
         </div>
@@ -745,21 +1258,21 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
       {/* Challenge Question Dialog */}
       {challengeTargetQ && (
         <div className="modal show" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 40000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px' }}>
-          <div className="modal-content" style={{ background: 'var(--surface)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-lg)', maxWidth: '460px', width: '100%', padding: '18px' }}>
+          <div className="modal-content" style={{ background: 'var(--surface, #ffffff)', border: '1px solid var(--border-light, #cbd5e1)', borderRadius: 'var(--radius-lg, 12px)', maxWidth: '460px', width: '100%', padding: '20px' }}>
             <h4 style={{ margin: '0 0 6px', fontSize: '14px', fontWeight: 800 }}>
               ⚠️ Challenge Question / Answer Key
             </h4>
-            <p style={{ margin: '0 0 10px', fontSize: '11px', color: 'var(--text-muted)' }}>
+            <p style={{ margin: '0 0 10px', fontSize: '11px', color: 'var(--text-muted, #64748b)' }}>
               Question: <strong>{challengeTargetQ.questionCode || challengeTargetQ.id}</strong>
             </p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '3px' }}>Issue Type</label>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: 'var(--text-muted, #64748b)', marginBottom: '3px' }}>Issue Type</label>
                 <select
                   value={challengeReason}
                   onChange={(e) => setChallengeReason(e.target.value)}
-                  style={{ width: '100%', padding: '6px', fontSize: '12px', borderRadius: '4px', border: '1px solid var(--border-light)', background: 'var(--surface)', color: 'var(--text)' }}
+                  style={{ width: '100%', padding: '6px', fontSize: '12px', borderRadius: '4px', border: '1px solid var(--border-light, #cbd5e1)', background: 'var(--surface, #ffffff)', color: 'var(--text, #0f172a)' }}
                 >
                   <option value="wrong_key">Wrong Answer Key (Key given is incorrect)</option>
                   <option value="typo">Typo / Ambiguity in Question Text</option>
@@ -770,24 +1283,24 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '3px' }}>Your Suggested Correct Option / Answer</label>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: 'var(--text-muted, #64748b)', marginBottom: '3px' }}>Your Suggested Correct Option / Answer</label>
                 <input
                   type="text"
                   value={challengeSuggestedAnswer}
                   onChange={(e) => setChallengeSuggestedAnswer(e.target.value)}
                   placeholder="e.g. B or Option (C)"
-                  style={{ width: '100%', padding: '6px', fontSize: '12px', borderRadius: '4px', border: '1px solid var(--border-light)', background: 'var(--surface)', color: 'var(--text)' }}
+                  style={{ width: '100%', padding: '6px', fontSize: '12px', borderRadius: '4px', border: '1px solid var(--border-light, #cbd5e1)', background: 'var(--surface, #ffffff)', color: 'var(--text, #0f172a)' }}
                 />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '3px' }}>Your Explanation / Proof</label>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: 'var(--text-muted, #64748b)', marginBottom: '3px' }}>Your Explanation / Proof</label>
                 <textarea
                   rows={2}
                   value={challengeNotes}
                   onChange={(e) => setChallengeNotes(e.target.value)}
                   placeholder="e.g. As per NCERT Chapter 5 pg 42, force is mass x acceleration..."
-                  style={{ width: '100%', padding: '6px', fontSize: '11px', borderRadius: '4px', border: '1px solid var(--border-light)', background: 'var(--bg)', color: 'var(--text)' }}
+                  style={{ width: '100%', padding: '6px', fontSize: '11px', borderRadius: '4px', border: '1px solid var(--border-light, #cbd5e1)', background: 'var(--bg, #f8fafc)', color: 'var(--text, #0f172a)' }}
                 />
               </div>
 
