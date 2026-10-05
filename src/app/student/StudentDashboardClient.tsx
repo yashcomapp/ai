@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { t } from '@/lib/i18n';
 import { useRouter } from 'next/navigation';
@@ -211,14 +211,25 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
     }
   }, []);
 
-  const { data, error, isLoading } = useSWR<DashboardData>(
+  // Live Clock Ticker: updates every 1 second to dynamically unlock scheduled exams precisely when startAt arrives
+  const [nowMs, setNowMs] = useState<number>(Date.now());
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setNowMs(Date.now());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const { data, error, isLoading, mutate } = useSWR<DashboardData>(
     firebaseUser ? '/api/student/dashboard' : null,
     fetcher,
     {
-      revalidateOnFocus: false,
-      revalidateOnMount: !initialData,
-      revalidateIfStale: !initialData,
-      dedupingInterval: 60000,
+      revalidateOnFocus: true,
+      revalidateOnReconnect: true,
+      revalidateOnMount: true,
+      revalidateIfStale: true,
+      dedupingInterval: 5000,
+      refreshInterval: 15000, // Poll every 15s in background so exam releases / completions reflect immediately
       keepPreviousData: true,
       fallbackData: initialData || localCache
     }
@@ -429,7 +440,57 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
   const pendingSelfReviews: any[] = (activeData as any)?.pendingSelfReviews || [];
   const pendingAbsences: any[] = (activeData as any)?.pendingAbsences || [];
   const activeSrsDue: any[] = (activeData as any)?.srsDueTopics || [];
-  const exams = activeData?.exams || { pendingObjectiveExams: [], scheduledObjectiveExams: [], pendingSubjectiveExams: [], scheduledSubjectiveExams: [], dailyHomePractices: [], studyChips: [] };
+  const rawExams = activeData?.exams || { pendingObjectiveExams: [], scheduledObjectiveExams: [], pendingSubjectiveExams: [], scheduledSubjectiveExams: [], dailyHomePractices: [], studyChips: [] };
+  
+  // Real-time dynamic promotion: If client clock has reached startAt, immediately unlock exam with Start button without waiting for manual refresh
+  const exams = useMemo(() => {
+    const pendingObj = [...(rawExams.pendingObjectiveExams || [])];
+    const scheduledObj: ExamItem[] = [];
+
+    (rawExams.scheduledObjectiveExams || []).forEach(exam => {
+      const startMs = exam.startAt ? new Date(exam.startAt).getTime() : 0;
+      if (startMs > 0 && nowMs >= startMs) {
+        // Automatically promoted to active pending exam with Start button!
+        pendingObj.push(exam);
+      } else {
+        scheduledObj.push(exam);
+      }
+    });
+
+    const pendingSub = [...(rawExams.pendingSubjectiveExams || [])];
+    const scheduledSub: ExamItem[] = [];
+
+    (rawExams.scheduledSubjectiveExams || []).forEach(exam => {
+      const startMs = exam.startAt ? new Date(exam.startAt).getTime() : 0;
+      if (startMs > 0 && nowMs >= startMs) {
+        pendingSub.push(exam);
+      } else {
+        scheduledSub.push(exam);
+      }
+    });
+
+    const pendingEnt = [...(rawExams.pendingEntranceExams || [])];
+    const scheduledEnt: ExamItem[] = [];
+
+    (rawExams.scheduledEntranceExams || []).forEach(exam => {
+      const startMs = exam.startAt ? new Date(exam.startAt).getTime() : 0;
+      if (startMs > 0 && nowMs >= startMs) {
+        pendingEnt.push(exam);
+      } else {
+        scheduledEnt.push(exam);
+      }
+    });
+
+    return {
+      ...rawExams,
+      pendingObjectiveExams: pendingObj,
+      scheduledObjectiveExams: scheduledObj,
+      pendingSubjectiveExams: pendingSub,
+      scheduledSubjectiveExams: scheduledSub,
+      pendingEntranceExams: pendingEnt,
+      scheduledEntranceExams: scheduledEnt
+    };
+  }, [rawExams, nowMs]);
   const greeting = getGreeting();
   const firstName = profile?.name ? profile.name.split(' ')[0] : '';
   const hasActionItems = Boolean(

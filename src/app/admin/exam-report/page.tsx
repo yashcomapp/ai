@@ -168,8 +168,9 @@ function ExamReportContent() {
     const d = String(tomorrow.getDate()).padStart(2, '0');
     const startStr = `${y}-${m}-${d}T06:00`;
 
+    const slotMinutes = Math.max(60, (durationMinutes || 30) + 30);
     const endDate = new Date(tomorrow);
-    endDate.setHours(6, durationMinutes, 0, 0);
+    endDate.setHours(6, slotMinutes, 0, 0);
     const ey = endDate.getFullYear();
     const em = String(endDate.getMonth() + 1).padStart(2, '0');
     const ed = String(endDate.getDate()).padStart(2, '0');
@@ -190,8 +191,9 @@ function ExamReportContent() {
     const d = String(target.getDate()).padStart(2, '0');
     const startStr = `${y}-${m}-${d}T21:00`;
 
+    const slotMinutes = Math.max(60, (durationMinutes || 30) + 30);
     const endDate = new Date(target);
-    endDate.setHours(21, durationMinutes, 0, 0);
+    endDate.setHours(21, slotMinutes, 0, 0);
     const ey = endDate.getFullYear();
     const em = String(endDate.getMonth() + 1).padStart(2, '0');
     const ed = String(endDate.getDate()).padStart(2, '0');
