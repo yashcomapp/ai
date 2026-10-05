@@ -200,7 +200,7 @@ export class ExamReviewService {
 
     // Also update reviews and examAttempts collections status to unlock pending student reviews
     try {
-      const userSnap = await adminDb.collection('users').where('studentCode', '==', sCodeUpper).limit(1).get().catch(() => null);
+      const userSnap = await adminDb.collection('users').where('studentCode', '==', sCodeUpper).where('role', '==', 'student').limit(1).get().catch(() => null);
       const isAutonomous = userSnap && !userSnap.empty && userSnap.docs[0].data()?.autonomous === true;
       const targetStatus = isAutonomous ? 'approved' : 'pending';
 
