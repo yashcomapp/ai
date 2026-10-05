@@ -15,6 +15,7 @@ import {
   getCanonicalQuestionCode, 
   extractChapterFromTopic 
 } from '@/lib/syllabusUtils';
+import { syncTopicCountsToSyllabus } from '@/lib/syllabusSync';
 
 export const dynamic = 'force-dynamic';
 
@@ -450,6 +451,10 @@ export async function POST(req: NextRequest) {
 
       await batch.commit();
       invalidateCache('qb_base_');
+
+      // Zero-lag SSOT sync for all affected topics in syllabus & syllabusTopicIndex
+      await syncTopicCountsToSyllabus(uniqueTopicCodes);
+
       return NextResponse.json({ success: true, count: processedItems.length, savedCount: processedItems.length });
     }
 
@@ -578,6 +583,9 @@ export async function POST(req: NextRequest) {
     await adminDb.collection('questions').doc(finalCode).set(questionDoc, { merge: true });
     invalidateCache('qb_base_');
 
+    // Zero-lag SSOT sync for the topic in syllabus & syllabusTopicIndex
+    await syncTopicCountsToSyllabus([topicCode]);
+
     return NextResponse.json({ success: true, questionCode: finalCode });
 
   } catch (error: any) {
@@ -615,8 +623,14 @@ export async function DELETE(req: NextRequest) {
         }, { status: 400 });
       }
 
+      const topicCode = qData.topicCode || '';
       await qRef.delete();
       invalidateCache('qb_base_');
+
+      if (topicCode) {
+        await syncTopicCountsToSyllabus([topicCode]);
+      }
+
       return NextResponse.json({ success: true });
     }
 
@@ -629,11 +643,13 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ message: 'Missing parameters (ids).' }, { status: 400 });
     }
 
+    const refs = ids.map(qCode => adminDb.collection('questions').doc(qCode));
+    const snaps = await adminDb.getAll(...refs).catch(() => []);
+    const validSnaps = snaps.filter(s => s && s.exists);
+
     if (!isForce) {
-      const refs = ids.map(qCode => adminDb.collection('questions').doc(qCode));
-      const snaps = await adminDb.getAll(...refs).catch(() => []);
-      const usedQuestions = snaps
-        .filter(s => s && s.exists && (s.data()?.usedInClassroomTest === true || Number(s.data()?.timesUsed) > 0))
+      const usedQuestions = validSnaps
+        .filter(s => s.data()?.usedInClassroomTest === true || Number(s.data()?.timesUsed) > 0)
         .map(s => s.id || s.data()?.questionCode);
 
       if (usedQuestions.length > 0) {
@@ -644,6 +660,10 @@ export async function DELETE(req: NextRequest) {
       }
     }
 
+    const affectedTopicCodes = Array.from(new Set(
+      validSnaps.map(s => s.data()?.topicCode).filter(Boolean) as string[]
+    ));
+
     const batch = new ChunkedBatch(adminDb);
     ids.forEach(qCode => {
       const docRef = adminDb.collection('questions').doc(qCode);
@@ -651,6 +671,10 @@ export async function DELETE(req: NextRequest) {
     });
     await batch.commit();
     invalidateCache('qb_base_');
+
+    if (affectedTopicCodes.length > 0) {
+      await syncTopicCountsToSyllabus(affectedTopicCodes);
+    }
 
     return NextResponse.json({ success: true, count: ids.length });
 
