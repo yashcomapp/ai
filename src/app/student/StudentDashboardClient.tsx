@@ -226,12 +226,10 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
     firebaseUser ? '/api/student/dashboard' : null,
     fetcher,
     {
-      revalidateOnFocus: true,
-      revalidateOnReconnect: true,
-      revalidateOnMount: true,
-      revalidateIfStale: true,
-      dedupingInterval: 5000,
-      refreshInterval: 15000, // Poll every 15s in background so exam releases / completions reflect immediately
+      revalidateOnFocus: false,
+      revalidateOnMount: !initialData,
+      revalidateIfStale: !initialData,
+      dedupingInterval: 60000,
       keepPreviousData: true,
       fallbackData: initialData || localCache
     }
