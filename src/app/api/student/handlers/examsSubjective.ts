@@ -175,6 +175,7 @@ export async function GET(req: NextRequest) {
       try {
         const revieweeUserSnap = await adminDb.collection('users')
           .where('studentCode', '==', revieweeCode)
+          .where('role', '==', 'student')
           .limit(1)
           .get();
         if (!revieweeUserSnap.empty) {
