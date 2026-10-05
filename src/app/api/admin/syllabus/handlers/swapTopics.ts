@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole } from '@/lib/auth';
+import { syncTopicCountsToSyllabus } from '@/lib/syllabusSync';
 
 export async function POST(req: NextRequest) {
   try {
@@ -147,6 +148,9 @@ export async function POST(req: NextRequest) {
       chapters,
       updatedAt: new Date()
     });
+
+    // Zero-lag SSOT sync for both swapped topic codes
+    await syncTopicCountsToSyllabus([newCodeA, newCodeB]);
 
     const totalMigrated = questionsA.length + questionsB.length;
 
