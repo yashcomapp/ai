@@ -341,8 +341,7 @@ export function EditAssignmentModal({
                         let updates: any = { overrideDuration: checked, examDuration: dur };
                         if ((prev.isMorningTest || prev.isEveningTest) && prev.startAtStr && dur && dur > 0) {
                           const startDate = new Date(prev.startAtStr);
-                          const slotDur = Math.max(60, dur + 30);
-                          const endDate = new Date(startDate.getTime() + slotDur * 60000);
+                          const endDate = new Date(startDate.getTime() + dur * 60000);
                           const endYear = endDate.getFullYear();
                           const endMonth = String(endDate.getMonth() + 1).padStart(2, '0');
                           const endDateStr = String(endDate.getDate()).padStart(2, '0');
@@ -373,8 +372,7 @@ export function EditAssignmentModal({
                     let updates: any = { examDuration: isNaN(dur) ? '' : dur };
                     if ((prev.isMorningTest || prev.isEveningTest) && prev.startAtStr && !isNaN(dur) && dur > 0) {
                       const startDate = new Date(prev.startAtStr);
-                      const slotDur = Math.max(60, dur + 30);
-                      const endDate = new Date(startDate.getTime() + slotDur * 60000);
+                      const endDate = new Date(startDate.getTime() + dur * 60000);
                       const endYear = endDate.getFullYear();
                       const endMonth = String(endDate.getMonth() + 1).padStart(2, '0');
                       const endDateStr = String(endDate.getDate()).padStart(2, '0');

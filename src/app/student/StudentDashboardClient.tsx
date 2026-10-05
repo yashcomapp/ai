@@ -48,6 +48,8 @@ interface ExamItem {
   topicCode?: string;
   mode?: string;
   startAt?: string;
+  endAt?: string;
+  lateEntryRestriction?: boolean;
 }
 
 interface DashboardData {
@@ -959,36 +961,72 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
                 <div className="no-exams" style={{ textAlign: 'center', color: 'var(--text-faint)', padding: '16px 0', fontSize: '12.5px' }}>No pending objective exams</div>
               ) : (
                 <>
-                  {exams.pendingObjectiveExams.map((exam) => (
-                    <div key={exam.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', background: 'var(--surface-2)', borderRadius: '8px', border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
-                      <div style={{ flex: 1, minWidth: 0, paddingRight: '8px' }}>
-                        <div className="pending-exam-name" style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={exam.name}>{exam.name}</div>
-                        <div className="pending-exam-details" style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '1px' }}>
-                          {exam.subject} • {exam.questionsCount} Qs • {exam.duration} mins • {exam.totalMarks} Marks
-                        </div>
-                      </div>
-                      <button className="btn btn-primary btn-sm" style={{ padding: '4px 10px', fontSize: '11px' }} onClick={() => handleStartExam(exam.id, false)}>
-                        Start
-                      </button>
-                    </div>
-                  ))}
-                  {exams.scheduledObjectiveExams.map((exam) => (
-                    <div key={exam.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', background: 'var(--surface-2)', borderRadius: '8px', border: '1px solid var(--border)', opacity: 0.85 }}>
-                      <div style={{ flex: 1, minWidth: 0, paddingRight: '8px' }}>
-                        <div className="pending-exam-name" style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={exam.name}>{exam.name}</div>
-                        <div className="pending-exam-details" style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '1px' }}>
-                          {exam.subject} • {exam.questionsCount} Qs • {exam.duration} mins • {exam.totalMarks} Marks
-                          <div style={{ marginTop: '2px', color: 'var(--warning)', fontWeight: 700, fontSize: '10.5px', display: 'flex', alignItems: 'center', gap: '3px' }}>
-                            <Clock size={11} color="var(--warning)" />
-                            <span>Starts: {exam.startAt ? new Date(exam.startAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—'}</span>
+                  {exams.pendingObjectiveExams.map((exam) => {
+                    const startMs = exam.startAt ? new Date(exam.startAt).getTime() : 0;
+                    const lateLimitMs = (startMs > 0 && exam.lateEntryRestriction === true) ? startMs + (5 * 60 * 1000) : 0;
+                    const isLateLocked = lateLimitMs > 0 && nowMs > lateLimitMs;
+                    const secondsLeftToJoin = lateLimitMs > 0 ? Math.max(0, Math.floor((lateLimitMs - nowMs) / 1000)) : 0;
+                    const minsLeft = Math.floor(secondsLeftToJoin / 60);
+                    const secsLeft = secondsLeftToJoin % 60;
+
+                    return (
+                      <div key={exam.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', background: 'var(--surface-2)', borderRadius: '8px', border: isLateLocked ? '1px solid var(--danger-border, rgba(239, 68, 68, 0.4))' : '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
+                        <div style={{ flex: 1, minWidth: 0, paddingRight: '8px' }}>
+                          <div className="pending-exam-name" style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={exam.name}>{exam.name}</div>
+                          <div className="pending-exam-details" style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '1px' }}>
+                            {exam.subject} • {exam.questionsCount} Qs • {exam.duration} mins • {exam.totalMarks} Marks
+                            {isLateLocked ? (
+                              <div style={{ marginTop: '2px', color: 'var(--danger)', fontWeight: 700, fontSize: '10.5px', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                                <AlertTriangle size={11} color="var(--danger)" />
+                                <span>⛔ Entry Closed (Late entry allowed only within 5 mins)</span>
+                              </div>
+                            ) : lateLimitMs > 0 ? (
+                              <div style={{ marginTop: '2px', color: 'var(--success)', fontWeight: 700, fontSize: '10.5px', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                                <Clock size={11} color="var(--success)" />
+                                <span>🟢 LIVE • Entry closes in: {minsLeft}m {String(secsLeft).padStart(2, '0')}s</span>
+                              </div>
+                            ) : null}
                           </div>
                         </div>
+                        {isLateLocked ? (
+                          <button className="btn btn-secondary btn-sm" style={{ padding: '4px 8px', fontSize: '10.5px', opacity: 0.6, cursor: 'not-allowed', background: 'var(--surface-3)', color: 'var(--danger)' }} disabled>
+                            Closed
+                          </button>
+                        ) : (
+                          <button className="btn btn-primary btn-sm" style={{ padding: '4px 10px', fontSize: '11px' }} onClick={() => handleStartExam(exam.id, false)}>
+                            Start
+                          </button>
+                        )}
                       </div>
-                      <button className="btn btn-secondary btn-sm" style={{ padding: '4px 8px', fontSize: '10.5px' }} disabled>
-                        Locked
-                      </button>
-                    </div>
-                  ))}
+                    );
+                  })}
+                  {exams.scheduledObjectiveExams.map((exam) => {
+                    const startMs = exam.startAt ? new Date(exam.startAt).getTime() : 0;
+                    const secondsUntilStart = startMs > 0 ? Math.max(0, Math.floor((startMs - nowMs) / 1000)) : 0;
+                    const minsUntil = Math.floor(secondsUntilStart / 60);
+                    const secsUntil = secondsUntilStart % 60;
+
+                    return (
+                      <div key={exam.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', background: 'var(--surface-2)', borderRadius: '8px', border: '1px solid var(--border)', opacity: 0.85 }}>
+                        <div style={{ flex: 1, minWidth: 0, paddingRight: '8px' }}>
+                          <div className="pending-exam-name" style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={exam.name}>{exam.name}</div>
+                          <div className="pending-exam-details" style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '1px' }}>
+                            {exam.subject} • {exam.questionsCount} Qs • {exam.duration} mins • {exam.totalMarks} Marks
+                            <div style={{ marginTop: '2px', color: 'var(--warning)', fontWeight: 700, fontSize: '10.5px', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                              <Clock size={11} color="var(--warning)" />
+                              <span>
+                                Starts: {exam.startAt ? new Date(exam.startAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—'}
+                                {secondsUntilStart > 0 && secondsUntilStart < 3600 ? ` (in ${minsUntil}m ${String(secsUntil).padStart(2, '0')}s)` : ''}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        <button className="btn btn-secondary btn-sm" style={{ padding: '4px 8px', fontSize: '10.5px' }} disabled>
+                          Locked
+                        </button>
+                      </div>
+                    );
+                  })}
                 </>
               )}
             </div>
@@ -1001,36 +1039,72 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
                 <div className="no-exams" style={{ textAlign: 'center', color: 'var(--text-faint)', padding: '16px 0', fontSize: '12.5px' }}>No pending subjective exams</div>
               ) : (
                 <>
-                  {exams.pendingSubjectiveExams.map((exam) => (
-                    <div key={exam.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', background: 'var(--surface-2)', borderRadius: '8px', border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
-                      <div style={{ flex: 1, minWidth: 0, paddingRight: '8px' }}>
-                        <div className="pending-exam-name" style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={exam.name}>{exam.name}</div>
-                        <div className="pending-exam-details" style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '1px' }}>
-                          {exam.subject} • {exam.questionsCount} Qs • {exam.totalTime} mins • {exam.totalMarks} Marks • Mode: {exam.mode}
-                        </div>
-                      </div>
-                      <button className="btn btn-primary btn-sm" style={{ padding: '4px 10px', fontSize: '11px' }} onClick={() => handleStartExam(exam.id, true)}>
-                        Start
-                      </button>
-                    </div>
-                  ))}
-                  {exams.scheduledSubjectiveExams.map((exam) => (
-                    <div key={exam.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', background: 'var(--surface-2)', borderRadius: '8px', border: '1px solid var(--border)', opacity: 0.85 }}>
-                      <div style={{ flex: 1, minWidth: 0, paddingRight: '8px' }}>
-                        <div className="pending-exam-name" style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={exam.name}>{exam.name}</div>
-                        <div className="pending-exam-details" style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                          {exam.subject} • {exam.questionsCount} Qs • {exam.totalTime} mins • {exam.totalMarks} Marks • Mode: {exam.mode}
-                          <div style={{ marginTop: '2px', color: 'var(--warning)', fontWeight: 600, fontSize: '10.5px', display: 'flex', alignItems: 'center', gap: '3px' }}>
-                            <Clock size={11} color="var(--warning)" />
-                            <span>Starts: {exam.startAt ? new Date(exam.startAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—'}</span>
+                  {exams.pendingSubjectiveExams.map((exam) => {
+                    const startMs = exam.startAt ? new Date(exam.startAt).getTime() : 0;
+                    const lateLimitMs = (startMs > 0 && exam.lateEntryRestriction === true) ? startMs + (5 * 60 * 1000) : 0;
+                    const isLateLocked = lateLimitMs > 0 && nowMs > lateLimitMs;
+                    const secondsLeftToJoin = lateLimitMs > 0 ? Math.max(0, Math.floor((lateLimitMs - nowMs) / 1000)) : 0;
+                    const minsLeft = Math.floor(secondsLeftToJoin / 60);
+                    const secsLeft = secondsLeftToJoin % 60;
+
+                    return (
+                      <div key={exam.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', background: 'var(--surface-2)', borderRadius: '8px', border: isLateLocked ? '1px solid var(--danger-border, rgba(239, 68, 68, 0.4))' : '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
+                        <div style={{ flex: 1, minWidth: 0, paddingRight: '8px' }}>
+                          <div className="pending-exam-name" style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={exam.name}>{exam.name}</div>
+                          <div className="pending-exam-details" style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '1px' }}>
+                            {exam.subject} • {exam.questionsCount} Qs • {exam.totalTime} mins • {exam.totalMarks} Marks • Mode: {exam.mode}
+                            {isLateLocked ? (
+                              <div style={{ marginTop: '2px', color: 'var(--danger)', fontWeight: 700, fontSize: '10.5px', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                                <AlertTriangle size={11} color="var(--danger)" />
+                                <span>⛔ Entry Closed (Late entry allowed only within 5 mins)</span>
+                              </div>
+                            ) : lateLimitMs > 0 ? (
+                              <div style={{ marginTop: '2px', color: 'var(--success)', fontWeight: 700, fontSize: '10.5px', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                                <Clock size={11} color="var(--success)" />
+                                <span>🟢 LIVE • Entry closes in: {minsLeft}m {String(secsLeft).padStart(2, '0')}s</span>
+                              </div>
+                            ) : null}
                           </div>
                         </div>
+                        {isLateLocked ? (
+                          <button className="btn btn-secondary btn-sm" style={{ padding: '4px 8px', fontSize: '10.5px', opacity: 0.6, cursor: 'not-allowed' }} disabled>
+                            Closed
+                          </button>
+                        ) : (
+                          <button className="btn btn-primary btn-sm" style={{ padding: '4px 10px', fontSize: '11px' }} onClick={() => handleStartExam(exam.id, true)}>
+                            Start
+                          </button>
+                        )}
                       </div>
-                      <button className="start-exam-small subjective" disabled style={{ background: 'var(--text-faint)', color: 'var(--text-muted)', border: 'none', padding: '4px 10px', borderRadius: '20px', fontSize: '10.5px', fontWeight: 600, cursor: 'not-allowed', flexShrink: 0 }}>
-                        Locked
-                      </button>
-                    </div>
-                  ))}
+                    );
+                  })}
+                  {exams.scheduledSubjectiveExams.map((exam) => {
+                    const startMs = exam.startAt ? new Date(exam.startAt).getTime() : 0;
+                    const secondsUntilStart = startMs > 0 ? Math.max(0, Math.floor((startMs - nowMs) / 1000)) : 0;
+                    const minsUntil = Math.floor(secondsUntilStart / 60);
+                    const secsUntil = secondsUntilStart % 60;
+
+                    return (
+                      <div key={exam.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 10px', background: 'var(--surface-2)', borderRadius: '8px', border: '1px solid var(--border)', opacity: 0.85 }}>
+                        <div style={{ flex: 1, minWidth: 0, paddingRight: '8px' }}>
+                          <div className="pending-exam-name" style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={exam.name}>{exam.name}</div>
+                          <div className="pending-exam-details" style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                            {exam.subject} • {exam.questionsCount} Qs • {exam.totalTime} mins • {exam.totalMarks} Marks • Mode: {exam.mode}
+                            <div style={{ marginTop: '2px', color: 'var(--warning)', fontWeight: 600, fontSize: '10.5px', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                              <Clock size={11} color="var(--warning)" />
+                              <span>
+                                Starts: {exam.startAt ? new Date(exam.startAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '—'}
+                                {secondsUntilStart > 0 && secondsUntilStart < 3600 ? ` (in ${minsUntil}m ${String(secsUntil).padStart(2, '0')}s)` : ''}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        <button className="start-exam-small subjective" disabled style={{ background: 'var(--text-faint)', color: 'var(--text-muted)', border: 'none', padding: '4px 10px', borderRadius: '20px', fontSize: '10.5px', fontWeight: 600, cursor: 'not-allowed', flexShrink: 0 }}>
+                          Locked
+                        </button>
+                      </div>
+                    );
+                  })}
                 </>
               )}
             </div>

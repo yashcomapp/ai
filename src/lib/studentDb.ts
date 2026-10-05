@@ -534,6 +534,8 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
       if (!alreadyReviewed) {
         const examData = objExamsMap.get(examId);
         if (examData && examData.status === 'active') {
+          const sAt = assignment.startAt?.toDate ? assignment.startAt.toDate() : (assignment.startAt ? new Date(assignment.startAt) : null);
+          const eAt = assignment.endAt?.toDate ? assignment.endAt.toDate() : (assignment.endAt ? new Date(assignment.endAt) : null);
           pendingObjectiveExams.push({
             id: examId,
             name: resolveTopicNames(syllabusList, examData) || examData.name || 'Objective Exam',
@@ -543,7 +545,10 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
             totalMarks: examData.totalMarks || 0,
             chapterNumber: examData.chapterNumber,
             chapter: examData.chapter,
-            topicCode: examData.topicCode || ''
+            topicCode: examData.topicCode || '',
+            startAt: sAt ? sAt.toISOString() : null,
+            endAt: eAt ? eAt.toISOString() : null,
+            lateEntryRestriction: assignment.lateEntryRestriction === true
           });
         }
       }
@@ -553,6 +558,8 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
       if (assignment.examType === 'entrance') continue;
       const examData = objExamsMap.get(assignment.examId);
       if (examData) {
+        const sAt = assignment._startAt || (assignment.startAt?.toDate ? assignment.startAt.toDate() : (assignment.startAt ? new Date(assignment.startAt) : null));
+        const eAt = assignment.endAt?.toDate ? assignment.endAt.toDate() : (assignment.endAt ? new Date(assignment.endAt) : null);
         scheduledObjectiveExams.push({
           id: assignment.examId,
           name: resolveTopicNames(syllabusList, examData) || examData.name || 'Objective Exam',
@@ -563,7 +570,9 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
           chapterNumber: examData.chapterNumber,
           chapter: examData.chapter,
           topicCode: examData.topicCode || '',
-          startAt: assignment._startAt
+          startAt: sAt ? (sAt.toISOString ? sAt.toISOString() : new Date(sAt).toISOString()) : null,
+          endAt: eAt ? eAt.toISOString() : null,
+          lateEntryRestriction: assignment.lateEntryRestriction === true
         });
       }
     }
