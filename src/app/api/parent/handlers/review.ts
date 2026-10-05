@@ -291,26 +291,39 @@ export async function GET(req: NextRequest) {
       evalSnaps
     });
 
-    // Batch query syllabusTopicIndex for all resolved topic codes
+    // Batch query syllabusTopicIndex for all resolved topic codes (with in-memory cache)
     const syllabusMap = new Map<string, any>();
     const uniqueTopicCodes = Array.from(allTopicCodes);
     if (uniqueTopicCodes.length > 0) {
-      const chunks = chunkArray(uniqueTopicCodes, 30);
-      const snaps = await Promise.all(
-        chunks.map(chunk =>
-          adminDb.collection('syllabusTopicIndex')
-            .where('topicCode', 'in', chunk)
-            .get()
-        )
-      );
-      snaps.forEach(syllabusSnap => {
-        syllabusSnap.docs.forEach(doc => {
-          const d = doc.data();
-          if (d.topicCode) {
-            syllabusMap.set(d.topicCode, d);
-          }
-        });
+      const missingCodes: string[] = [];
+      uniqueTopicCodes.forEach(code => {
+        const cached = getFromCache<any>(`topic_index_${code}`);
+        if (cached) {
+          syllabusMap.set(code, cached);
+        } else {
+          missingCodes.push(code);
+        }
       });
+
+      if (missingCodes.length > 0) {
+        const chunks = chunkArray(missingCodes, 30);
+        const snaps = await Promise.all(
+          chunks.map(chunk =>
+            adminDb.collection('syllabusTopicIndex')
+              .where('topicCode', 'in', chunk)
+              .get()
+          )
+        );
+        snaps.forEach(syllabusSnap => {
+          syllabusSnap.docs.forEach(doc => {
+            const d = doc.data();
+            if (d.topicCode) {
+              syllabusMap.set(d.topicCode, d);
+              setInCache(`topic_index_${d.topicCode}`, d, 600000); // 10 minutes cache
+            }
+          });
+        });
+      }
     }
 
     // 1. Map Objective reviews

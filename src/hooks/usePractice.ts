@@ -35,7 +35,10 @@ export function usePractice() {
         }
         throw new Error(errData.message || 'Failed to start practice session.');
       }
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
+      if (data.requireRecoveryMode || data.allowRecovery || data.requireTextbookStudy) {
+        return data;
+      }
       setQuestions(data.questions || []);
       setMasteryAtStart(data.masteryAtStart || 0);
       setIdealTimeSeconds(data.idealTimeSeconds || 0);

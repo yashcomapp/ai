@@ -48,34 +48,6 @@ export async function GET(req: NextRequest) {
       .get();
     const completedPractices = countSnap.data().count;
 
-    // Silently close any existing in-progress practice attempts to allow seamless re-entry/retries
-    const activeSnap = await adminDb.collection('practiceAttempts')
-      .where('studentCode', '==', studentCode)
-      .where('topicCode', '==', topicCode)
-      .where('status', '==', 'in-progress')
-      .get();
-    
-    if (!activeSnap.empty) {
-      const batch = adminDb.batch();
-      activeSnap.docs.forEach(doc => {
-        batch.update(doc.ref, {
-          status: 'completed',
-          completedAt: new Date(),
-          abandoned: true
-        });
-      });
-      await batch.commit();
-    }
-
-    // Create a new in-progress attempt doc
-    await adminDb.collection('practiceAttempts').add({
-      studentCode,
-      topicCode,
-      status: 'in-progress',
-      startedAt: new Date(),
-      createdAt: new Date()
-    });
-
     // 1.1 Load mastery and history
     let mastery = 0;
     let questionHistory: any[] = [];
@@ -135,10 +107,11 @@ export async function GET(req: NextRequest) {
     // If practice limit reached and not in recovery mode, prompt to enter Guided Recovery Diagnostic
     if (isPracticeLimitReached && !isRecoveryMode) {
       return NextResponse.json({
+        locked: true,
         message: `Maximum limit of ${maxSessionsAllowed} practice sessions reached for this topic. Take the Guided Recovery Diagnostic (8 targeted questions) to strengthen core concepts and achieve Mastery.`,
         allowRecovery: true,
         requireRecoveryMode: true
-      }, { status: 403 });
+      }, { status: 200 });
     }
 
     // If entering recovery mode: enforce Next-Day IST and Parent/Teacher Approval Gate
@@ -148,61 +121,95 @@ export async function GET(req: NextRequest) {
       // 1. Same-Day Gate: Student must wait until tomorrow to allow overnight sleep consolidation
       if (!isNextCalendarDay && !recoveryImmediateUnlocked) {
         return NextResponse.json({
+          locked: true,
           requireRecoveryMode: true,
           allowRecovery: true,
           lockType: 'recovery_next_day',
           message: `You have completed your ${maxSessionsAllowed} practice sessions for today. Please review your textbook notes today. Your Guided Recovery Diagnostic will be available tomorrow anytime.`
-        }, { status: 403 });
+        }, { status: 200 });
       }
 
       // 2. Parent / Teacher Approval Gate: Must be approved by parent or teacher
       if (!recoveryApproved && !recoveryImmediateUnlocked) {
         return NextResponse.json({
+          locked: true,
           requireRecoveryMode: true,
           allowRecovery: true,
           lockType: 'recovery_awaiting_approval',
           message: 'Your Guided Recovery Diagnostic is unlocked for today! Please ask your parent or teacher to confirm your textbook review to begin.'
-        }, { status: 403 });
+        }, { status: 200 });
       }
     }
 
     // GUARDRAIL 1: Daily Pacing Cap (Anti-Spam per Topic: Max 2 sessions for minor, 3 for medium/major)
     if (dailySessions >= maxSessionsAllowed && !isRecoveryMode && !isRevisionMode) {
       return NextResponse.json({
+        locked: true,
         requireTextbookStudy: true,
         lockType: 'daily',
         message: `You have completed ${maxSessionsAllowed} practice sessions on this topic today. Please review your textbook notes and return tomorrow with a fresh mind.`
-      }, { status: 403 });
+      }, { status: 200 });
     }
 
     // Active daily lock check
     if (dailyLockedUntil && dailyLockedUntil > now && !isRecoveryMode && !isRevisionMode) {
       return NextResponse.json({
+        locked: true,
         requireTextbookStudy: true,
         lockType: 'daily',
         message: "You have completed multiple practice sets on this topic today without reaching mastery. Please rest, review your textbook notes, and return tomorrow to try again."
-      }, { status: 403 });
+      }, { status: 200 });
     }
 
     // GUARDRAIL 2: Cognitive Cooldown Lock (30-min assimilation after textbook study confirmation)
     if (cooldownUntil && cooldownUntil > now && !isRecoveryMode && !isRevisionMode) {
       const minutesLeft = Math.ceil((cooldownUntil.getTime() - now.getTime()) / 60000);
       return NextResponse.json({
+        locked: true,
         requireTextbookStudy: true,
         lockType: 'cooldown',
         cooldownUntil: cooldownUntil.toISOString(),
         message: `Great job reviewing! Please wait ${minutesLeft} minutes to let the concepts settle in before trying the tests again.`
-      }, { status: 403 });
+      }, { status: 200 });
     }
 
     // GUARDRAIL 3: Study Break & Textbook Lock (When struggling: 12+ practice questions attempted, mastery < 75%, not yet confirmed)
     if (practiceQuestionsAttempted >= 12 && mastery < 75 && !textbookReadConfirmed && !isRecoveryMode && !isRevisionMode) {
       return NextResponse.json({
+        locked: true,
         requireTextbookStudy: true,
         lockType: 'initial',
         message: "Let's take a break from tests. Please read your textbook and review your class notes for this chapter before trying again."
-      }, { status: 403 });
+      }, { status: 200 });
     }
+
+    // Lock checks passed: silently close any existing in-progress practice attempts to allow seamless re-entry/retries
+    const activeSnap = await adminDb.collection('practiceAttempts')
+      .where('studentCode', '==', studentCode)
+      .where('topicCode', '==', topicCode)
+      .where('status', '==', 'in-progress')
+      .get();
+    
+    if (!activeSnap.empty) {
+      const batch = adminDb.batch();
+      activeSnap.docs.forEach(doc => {
+        batch.update(doc.ref, {
+          status: 'completed',
+          completedAt: new Date(),
+          abandoned: true
+        });
+      });
+      await batch.commit();
+    }
+
+    // Create a new in-progress attempt doc
+    await adminDb.collection('practiceAttempts').add({
+      studentCode,
+      topicCode,
+      status: 'in-progress',
+      startedAt: new Date(),
+      createdAt: new Date()
+    });
 
     const finalSize = isRecoveryMode ? 8 : (isRevisionMode ? (size || getSrsMicroSetSize(topicClassification)) : (size || 6));
 

@@ -912,6 +912,7 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
         masterySnaps: masterySnapshot,
         parentReviewsSnap: parentReviewsSnapshot,
         reviewsSnap: reviewsSnapshot,
+        attemptsSnap: reviewsSnapshot,
         subAttemptsSnap: attemptsSnapshot,
         evalsSnap: evaluationsSnapshot,
         objAssignmentsSnap: { docs: [...batchAssignmentsSnapshot.docs, ...studentAssignmentsSnapshot.docs] },
@@ -1068,7 +1069,7 @@ export async function getStudentLearningData(userData: any, preloadedData?: Prel
   let subAssignmentsSnap = preloadedData?.subAssignmentsSnap;
   let evalsSnap = preloadedData?.evalsSnap;
 
-  if (!masterySnaps || !parentReviewsSnap || !reviewsSnap || !subAttemptsSnap || !evalsSnap) {
+  if (!masterySnaps || !parentReviewsSnap || !reviewsSnap || !attemptsSnap || !subAttemptsSnap || !evalsSnap) {
     const [
       fMastery,
       fParentReviews,
@@ -1108,10 +1109,10 @@ export async function getStudentLearningData(userData: any, preloadedData?: Prel
 
   // Identify absent exams and collect their topics
   const attemptedExamIds = new Set([
-    ...attemptsSnap.docs.map((d: any) => d.data().examId),
-    ...reviewsSnap.docs.map((d: any) => d.data().examId),
-    ...subAttemptsSnap.docs.map((d: any) => d.data().examId),
-    ...evalsSnap.docs.map((d: any) => {
+    ...(attemptsSnap?.docs || []).map((d: any) => d.data().examId),
+    ...(reviewsSnap?.docs || []).map((d: any) => d.data().examId),
+    ...(subAttemptsSnap?.docs || []).map((d: any) => d.data().examId),
+    ...(evalsSnap?.docs || []).map((d: any) => {
       const dt = d.data();
       if (dt.examId) return dt.examId;
       if (dt.legacyId && dt.legacyId.includes('_ST-')) return dt.legacyId.split('_ST-')[0];
