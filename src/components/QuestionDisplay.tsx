@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState, useCallback, useMemo } from 'react';
 import Image from 'next/image';
 import {
   formatRichText,
@@ -23,42 +23,75 @@ import {
 } from '@/lib/questionTypes';
 
 /* =========================================================================
-   1. Universal Rich Math & SVG Diagram Renderer
+   1. Universal Rich Math & SVG Diagram Renderer (Flicker-Free SSOT)
    ========================================================================= */
 
-interface RichMathTextProps {
+const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
+
+export interface RichMathTextProps {
   content: any;
   className?: string;
   style?: React.CSSProperties;
   inline?: boolean;
   as?: 'div' | 'span' | 'p' | 'h2' | 'h3' | 'h4' | 'label';
   onClick?: (e: React.MouseEvent<HTMLElement>) => void;
+  onDiagramClick?: (svgHtml: string) => void;
   title?: string;
 }
 
-export const RichMathText: React.FC<RichMathTextProps> = ({
+export const RichMathText: React.FC<RichMathTextProps> = React.memo(({
   content,
   className = '',
   style,
   inline = false,
   as,
   onClick,
+  onDiagramClick,
   title
 }) => {
   const containerRef = useRef<HTMLElement | null>(null);
-  const formattedHtml = formatRichText(content || '');
+  const lastHtmlRef = useRef<string>('');
+  const formattedHtml = useMemo(() => formatRichText(content || ''), [content]);
 
-  useEffect(() => {
-    if (!containerRef.current) return;
+  useIsomorphicLayoutEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    // If content has not changed and element already has rendered KaTeX, skip
+    if (lastHtmlRef.current === formattedHtml && (el.dataset.rendered === 'true' || el.querySelector('.katex'))) {
+      return;
+    }
+
+    lastHtmlRef.current = formattedHtml;
+    el.innerHTML = formattedHtml;
+
     const win = typeof window !== 'undefined' ? (window as any) : null;
     if (win && win.renderMathInElement) {
       try {
-        win.renderMathInElement(containerRef.current, KATEX_AUTO_RENDER_OPTIONS);
+        win.renderMathInElement(el, KATEX_AUTO_RENDER_OPTIONS);
+        el.dataset.rendered = 'true';
       } catch (err) {
         console.warn('RichMathText renderMathInElement failed:', err);
       }
+    } else {
+      el.dataset.rendered = 'false';
     }
   }, [formattedHtml]);
+
+  const handleClick = (e: React.MouseEvent<HTMLElement>) => {
+    if (onClick) onClick(e);
+    const target = e.target as HTMLElement | SVGElement | null;
+    const diagramWrapper = target?.closest('.zoomable-diagram-wrapper');
+    const svgEl = target?.closest('svg');
+    if (diagramWrapper || svgEl) {
+      const actualSvg = (diagramWrapper?.querySelector('svg') || svgEl) as SVGElement | null;
+      if (actualSvg && onDiagramClick) {
+        e.preventDefault();
+        e.stopPropagation();
+        onDiagramClick(actualSvg.outerHTML);
+      }
+    }
+  };
 
   const Component = (as || (inline ? 'span' : 'div')) as any;
   const combinedClass = `math-container ${className}`.trim();
@@ -68,10 +101,384 @@ export const RichMathText: React.FC<RichMathTextProps> = ({
       ref={containerRef}
       className={combinedClass}
       style={style}
-      onClick={onClick}
+      onClick={handleClick}
       title={title}
-      dangerouslySetInnerHTML={{ __html: formattedHtml }}
+      suppressHydrationWarning
     />
+  );
+});
+RichMathText.displayName = 'RichMathText';
+
+/* =========================================================================
+   1.5. Interactive Diagram & Image Zoom Lightbox Modal
+   ========================================================================= */
+
+export interface DiagramMedia {
+  type: 'svg' | 'image';
+  content: string;
+  title?: string;
+}
+
+export interface DiagramZoomModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  media: DiagramMedia | null;
+}
+
+export const DiagramZoomModal: React.FC<DiagramZoomModalProps> = ({
+  isOpen,
+  onClose,
+  media
+}) => {
+  const [scale, setScale] = useState(1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [touchDistance, setTouchDistance] = useState<number | null>(null);
+
+  // Reset zoom and pan whenever modal opens or media changes
+  useEffect(() => {
+    if (isOpen) {
+      setScale(1);
+      setPan({ x: 0, y: 0 });
+      setIsDragging(false);
+      setTouchDistance(null);
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = originalOverflow;
+      };
+    }
+  }, [isOpen, media]);
+
+  // Keyboard shortcut handler (Escape to close, +/-/0 to zoom)
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+      else if (e.key === '+' || e.key === '=') {
+        setScale(s => Math.min(5, Math.round((s + 0.5) * 10) / 10));
+      } else if (e.key === '-') {
+        setScale(s => Math.max(0.6, Math.round((s - 0.5) * 10) / 10));
+      } else if (e.key === '0') {
+        setScale(1);
+        setPan({ x: 0, y: 0 });
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
+  if (!isOpen || !media) return null;
+
+  const handleZoomIn = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setScale(s => Math.min(5, Math.round((s + 0.5) * 10) / 10));
+  };
+
+  const handleZoomOut = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setScale(s => Math.max(0.6, Math.round((s - 0.5) * 10) / 10));
+  };
+
+  const handleReset = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setScale(1);
+    setPan({ x: 0, y: 0 });
+  };
+
+  const handleWheel = (e: React.WheelEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const delta = e.deltaY > 0 ? -0.2 : 0.2;
+    setScale(s => Math.max(0.6, Math.min(5, Math.round((s + delta) * 10) / 10)));
+  };
+
+  // Mouse pan drag
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (e.button !== 0) return; // Only left mouse button
+    setIsDragging(true);
+    setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging) return;
+    setPan({ x: e.clientX - dragStart.x, y: e.clientY - dragStart.y });
+  };
+
+  const handleMouseUp = () => setIsDragging(false);
+
+  // Touch pan & pinch-to-zoom
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 1) {
+      setIsDragging(true);
+      setDragStart({ x: e.touches[0].clientX - pan.x, y: e.touches[0].clientY - pan.y });
+    } else if (e.touches.length === 2) {
+      setIsDragging(false);
+      const dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      setTouchDistance(dist);
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (e.touches.length === 1 && isDragging) {
+      setPan({ x: e.touches[0].clientX - dragStart.x, y: e.touches[0].clientY - dragStart.y });
+    } else if (e.touches.length === 2 && touchDistance !== null) {
+      const dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      const factor = dist / touchDistance;
+      setScale(s => Math.max(0.6, Math.min(5, Math.round((s * factor) * 10) / 10)));
+      setTouchDistance(dist);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    setIsDragging(false);
+    setTouchDistance(null);
+  };
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Figure Inspection Modal"
+      onClick={onClose}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 999999,
+        background: 'rgba(10, 15, 29, 0.92)',
+        backdropFilter: 'blur(8px)',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '16px',
+        userSelect: 'none'
+      }}
+    >
+      {/* Top Controls Bar */}
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          width: '100%',
+          maxWidth: '900px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '12px',
+          padding: '10px 16px',
+          background: 'rgba(255, 255, 255, 0.08)',
+          borderRadius: '12px',
+          border: '1px solid rgba(255, 255, 255, 0.12)',
+          color: '#ffffff'
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ fontSize: '18px' }}>📐</span>
+          <div>
+            <div style={{ fontWeight: 700, fontSize: '14px', letterSpacing: '0.2px' }}>
+              {media.title || 'Figure Inspection'}
+            </div>
+            <div style={{ fontSize: '11px', color: 'rgba(255, 255, 255, 0.6)' }}>
+              Zoom & pan to inspect fine markings & angles
+            </div>
+          </div>
+        </div>
+
+        {/* Zoom Controls */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button
+            type="button"
+            onClick={handleZoomOut}
+            disabled={scale <= 0.6}
+            style={{
+              background: 'rgba(255, 255, 255, 0.15)',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              color: '#ffffff',
+              borderRadius: '6px',
+              width: '34px',
+              height: '34px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '18px',
+              fontWeight: 'bold',
+              cursor: scale <= 0.6 ? 'not-allowed' : 'pointer',
+              opacity: scale <= 0.6 ? 0.4 : 1
+            }}
+            title="Zoom Out (-)"
+          >
+            −
+          </button>
+
+          <span
+            style={{
+              minWidth: '54px',
+              textAlign: 'center',
+              fontSize: '13px',
+              fontWeight: 700,
+              padding: '6px 8px',
+              background: 'rgba(255, 255, 255, 0.12)',
+              borderRadius: '6px'
+            }}
+          >
+            {Math.round(scale * 100)}%
+          </span>
+
+          <button
+            type="button"
+            onClick={handleZoomIn}
+            disabled={scale >= 5}
+            style={{
+              background: 'rgba(255, 255, 255, 0.15)',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              color: '#ffffff',
+              borderRadius: '6px',
+              width: '34px',
+              height: '34px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '18px',
+              fontWeight: 'bold',
+              cursor: scale >= 5 ? 'not-allowed' : 'pointer',
+              opacity: scale >= 5 ? 0.4 : 1
+            }}
+            title="Zoom In (+)"
+          >
+            +
+          </button>
+
+          <button
+            type="button"
+            onClick={handleReset}
+            style={{
+              background: 'rgba(255, 255, 255, 0.12)',
+              border: '1px solid rgba(255, 255, 255, 0.18)',
+              color: '#ffffff',
+              borderRadius: '6px',
+              padding: '6px 12px',
+              fontSize: '12px',
+              fontWeight: 600,
+              cursor: 'pointer'
+            }}
+            title="Reset Zoom (0)"
+          >
+            ↺ Reset
+          </button>
+
+          <button
+            type="button"
+            onClick={onClose}
+            style={{
+              background: 'rgba(239, 68, 68, 0.25)',
+              border: '1px solid rgba(239, 68, 68, 0.4)',
+              color: '#fca5a5',
+              borderRadius: '6px',
+              padding: '6px 14px',
+              fontSize: '13px',
+              fontWeight: 700,
+              cursor: 'pointer',
+              marginLeft: '4px'
+            }}
+            title="Close (Esc)"
+          >
+            ✕ Close
+          </button>
+        </div>
+      </div>
+
+      {/* Main Pannable/Zoomable Viewport */}
+      <div
+        onWheel={handleWheel}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onClick={e => e.stopPropagation()}
+        style={{
+          flex: 1,
+          width: '100%',
+          maxWidth: '1000px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          overflow: 'hidden',
+          position: 'relative',
+          cursor: isDragging ? 'grabbing' : (scale > 1 ? 'grab' : 'default'),
+          touchAction: 'none'
+        }}
+      >
+        <div
+          style={{
+            transform: `translate(${pan.x}px, ${pan.y}px) scale(${scale})`,
+            transformOrigin: 'center center',
+            transition: isDragging ? 'none' : 'transform 0.12s cubic-bezier(0.16, 1, 0.3, 1)',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: '#ffffff',
+            borderRadius: '14px',
+            padding: '24px',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)',
+            maxWidth: '92vw',
+            maxHeight: '75vh'
+          }}
+        >
+          {media.type === 'svg' ? (
+            <div
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+              dangerouslySetInnerHTML={{ __html: media.content }}
+            />
+          ) : (
+            <img
+              src={media.content}
+              alt={media.title || 'Enlarged figure'}
+              style={{
+                maxWidth: '85vw',
+                maxHeight: '70vh',
+                objectFit: 'contain',
+                borderRadius: '8px'
+              }}
+              draggable={false}
+            />
+          )}
+        </div>
+      </div>
+
+      {/* Bottom Hint Bar */}
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          fontSize: '12px',
+          color: 'rgba(255, 255, 255, 0.65)',
+          background: 'rgba(255, 255, 255, 0.05)',
+          padding: '6px 16px',
+          borderRadius: '20px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px'
+        }}
+      >
+        <span>💡</span>
+        <span>Pinch or use <strong>+</strong> / <strong>−</strong> to zoom • Drag to pan • Tap <strong>✕</strong> or backdrop to close</span>
+      </div>
+    </div>
   );
 };
 
@@ -168,7 +575,7 @@ export interface QuestionDisplayProps {
    3. Canonical SSOT QuestionDisplay Component
    ========================================================================= */
 
-export const QuestionDisplay: React.FC<QuestionDisplayProps> = ({
+export const QuestionDisplay: React.FC<QuestionDisplayProps> = React.memo(({
   question,
   text,
   type,
@@ -197,6 +604,17 @@ export const QuestionDisplay: React.FC<QuestionDisplayProps> = ({
   className = '',
   style
 }) => {
+  // Zoomable diagram & image modal state
+  const [zoomedDiagram, setZoomedDiagram] = useState<DiagramMedia | null>(null);
+
+  const handleDiagramClick = useCallback((svgHtml: string) => {
+    setZoomedDiagram({
+      type: 'svg',
+      content: svgHtml,
+      title: 'Figure Inspection'
+    });
+  }, []);
+
   // Resolve properties with fallback hierarchy
   const qText = text ?? question?.text ?? question?.questionText ?? '';
   const qType = type ?? question?.type ?? '';
@@ -251,10 +669,10 @@ export const QuestionDisplay: React.FC<QuestionDisplayProps> = ({
           )}
           <div style={{ background: 'var(--bg-soft, #f8fafc)', border: '1px solid var(--border-light, #e2e8f0)', borderRadius: '6px', padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
             <div>
-              <strong>Assertion (A):</strong> <RichMathText content={assertion} inline />
+              <strong>Assertion (A):</strong> <RichMathText content={assertion} inline onDiagramClick={handleDiagramClick} />
             </div>
             <div>
-              <strong>Reason (R):</strong> <RichMathText content={reason} inline />
+              <strong>Reason (R):</strong> <RichMathText content={reason} inline onDiagramClick={handleDiagramClick} />
             </div>
           </div>
         </div>
@@ -271,7 +689,7 @@ export const QuestionDisplay: React.FC<QuestionDisplayProps> = ({
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px' }}>
             <div style={{ flex: 1, minWidth: 0 }}>
               {reactNodePrefix && <span style={{ fontWeight: 700, marginRight: '4px' }}>{reactNodePrefix}</span>}
-              <RichMathText content={combinedText} inline={!reactNodePrefix} />
+              <RichMathText content={combinedText} inline={!reactNodePrefix} onDiagramClick={handleDiagramClick} />
               {showQuestionCode && qCode && (
                 <span className="badge badge-secondary" style={{ fontSize: '10px', marginLeft: '6px', opacity: 0.85 }}>
                   {qCode}
@@ -281,7 +699,7 @@ export const QuestionDisplay: React.FC<QuestionDisplayProps> = ({
             {headerRight && <div style={{ flexShrink: 0 }}>{headerRight}</div>}
           </div>
         ) : (
-          <RichMathText content={combinedText} />
+          <RichMathText content={combinedText} onDiagramClick={handleDiagramClick} />
         )}
       </div>
     );
@@ -439,7 +857,7 @@ export const QuestionDisplay: React.FC<QuestionDisplayProps> = ({
                 style={{ width: '17px', height: '17px' }}
               />
               <span style={{ fontWeight: 700 }}>({letter})</span>
-              <RichMathText content={stripOptionLabel(optText)} inline style={{ flex: 1 }} />
+              <RichMathText content={stripOptionLabel(optText)} inline style={{ flex: 1 }} onDiagramClick={handleDiagramClick} />
               {badge}
             </div>
           );
@@ -503,7 +921,7 @@ export const QuestionDisplay: React.FC<QuestionDisplayProps> = ({
             >
               {prefixIcon && <span>{prefixIcon}</span>}
               <span style={{ fontWeight: 700 }}>({letter})</span>
-              <RichMathText content={stripOptionLabel(optText)} inline style={{ flex: 1 }} />
+              <RichMathText content={stripOptionLabel(optText)} inline style={{ flex: 1 }} onDiagramClick={handleDiagramClick} />
             </div>
           );
         })}
@@ -513,13 +931,13 @@ export const QuestionDisplay: React.FC<QuestionDisplayProps> = ({
           <div>
             <strong style={{ color: 'var(--text-muted, #64748b)', marginRight: '6px' }}>Student Answer:</strong>
             <span style={{ color: effectiveIsCorrect ? 'var(--success, #16a34a)' : 'var(--danger, #dc2626)', fontWeight: 700 }}>
-              {isUnanswered ? '(blank / unattempted)' : <RichMathText content={stripOptionLabel(String(qUserAnswer))} inline />}
+              {isUnanswered ? '(blank / unattempted)' : <RichMathText content={stripOptionLabel(String(qUserAnswer))} inline onDiagramClick={handleDiagramClick} />}
             </span>
           </div>
           <div>
             <strong style={{ color: 'var(--text-muted, #64748b)', marginRight: '6px' }}>Correct Answer:</strong>
             <span style={{ color: 'var(--success, #16a34a)', fontWeight: 'bold' }}>
-              <RichMathText content={stripOptionLabel(Array.isArray(qCorrectAnswer) ? qCorrectAnswer.join(', ') : String(qCorrectAnswer))} inline />
+              <RichMathText content={stripOptionLabel(Array.isArray(qCorrectAnswer) ? qCorrectAnswer.join(', ') : String(qCorrectAnswer))} inline onDiagramClick={handleDiagramClick} />
             </span>
           </div>
         </div>
@@ -561,7 +979,7 @@ export const QuestionDisplay: React.FC<QuestionDisplayProps> = ({
                   <span style={{ fontWeight: 700, color: isCorrectOpt ? 'var(--success, #16a34a)' : 'inherit' }}>
                     {isCorrectOpt ? '✅ ' : ''}({letter})
                   </span>
-                  <RichMathText content={stripOptionLabel(optText)} inline style={{ flex: 1 }} />
+                  <RichMathText content={stripOptionLabel(optText)} inline style={{ flex: 1 }} onDiagramClick={handleDiagramClick} />
                 </div>
                 {typeof vote.count === 'number' && (
                   <span
@@ -586,7 +1004,7 @@ export const QuestionDisplay: React.FC<QuestionDisplayProps> = ({
         ) : (
           qCorrectAnswer && (
             <div style={{ padding: '8px 12px', border: '1.5px solid var(--success, #16a34a)', borderRadius: '8px', background: 'rgba(22, 163, 74, 0.08)', fontSize: '12px', fontWeight: 600 }}>
-              ✅ Correct Answer: <RichMathText content={Array.isArray(qCorrectAnswer) ? qCorrectAnswer.join(', ') : String(qCorrectAnswer)} inline />
+              ✅ Correct Answer: <RichMathText content={Array.isArray(qCorrectAnswer) ? qCorrectAnswer.join(', ') : String(qCorrectAnswer)} inline onDiagramClick={handleDiagramClick} />
             </div>
           )
         )}
@@ -630,14 +1048,14 @@ export const QuestionDisplay: React.FC<QuestionDisplayProps> = ({
               <span style={{ fontWeight: 700, color: isCorrectOpt ? 'var(--success, #16a34a)' : 'inherit' }}>
                 {isCorrectOpt ? '✅ ' : ''}({letter})
               </span>
-              <RichMathText content={stripOptionLabel(optText)} inline style={{ flex: 1 }} />
+              <RichMathText content={stripOptionLabel(optText)} inline style={{ flex: 1 }} onDiagramClick={handleDiagramClick} />
             </div>
           );
         })}
 
         {!resolvedOptions && qCorrectAnswer && (
           <div style={{ fontSize: '11.5px', marginTop: '4px', color: 'var(--success, #16a34a)', fontWeight: 600 }}>
-            <strong>Correct Answer:</strong> <RichMathText content={Array.isArray(qCorrectAnswer) ? qCorrectAnswer.join(', ') : String(qCorrectAnswer)} inline />
+            <strong>Correct Answer:</strong> <RichMathText content={Array.isArray(qCorrectAnswer) ? qCorrectAnswer.join(', ') : String(qCorrectAnswer)} inline onDiagramClick={handleDiagramClick} />
           </div>
         )}
       </div>
@@ -668,7 +1086,7 @@ export const QuestionDisplay: React.FC<QuestionDisplayProps> = ({
         <div style={{ fontWeight: 700, color: 'var(--text, #0f172a)', marginBottom: '4px' }}>
           {label}
         </div>
-        <RichMathText content={qExplanation} />
+        <RichMathText content={qExplanation} onDiagramClick={handleDiagramClick} />
       </div>
     );
   };
@@ -681,16 +1099,43 @@ export const QuestionDisplay: React.FC<QuestionDisplayProps> = ({
       {/* 1. Stem */}
       {renderStem()}
 
-      {/* 2. Optional Image */}
+      {/* 2. Optional Image (Clickable Zoom Inspection) */}
       {qImage && (
-        <div style={{ margin: '8px 0 12px' }}>
-          <Image
-            src={qImage}
-            alt="Question illustration"
-            width={320}
-            height={200}
-            style={{ objectFit: 'contain', borderRadius: '6px', border: '1px solid var(--border-light, #e2e8f0)' }}
-          />
+        <div
+          className="zoomable-image-wrapper"
+          style={{ margin: '8px 0 12px', position: 'relative', display: 'inline-block', cursor: 'zoom-in' }}
+          onClick={() => setZoomedDiagram({ type: 'image', content: qImage, title: 'Figure Inspection' })}
+          title="Click or tap to zoom figure"
+        >
+          <div style={{ position: 'relative', display: 'inline-block' }}>
+            <Image
+              src={qImage}
+              alt="Question illustration"
+              width={320}
+              height={200}
+              style={{ objectFit: 'contain', borderRadius: '6px', border: '1px solid var(--border-light, #e2e8f0)' }}
+            />
+            <div style={{
+              position: 'absolute',
+              top: '6px',
+              right: '6px',
+              background: 'rgba(15,23,42,0.8)',
+              color: '#ffffff',
+              padding: '2px 8px',
+              borderRadius: '4px',
+              fontSize: '11px',
+              fontWeight: 600,
+              pointerEvents: 'none',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px',
+              backdropFilter: 'blur(4px)',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+              letterSpacing: '0.3px'
+            }}>
+              🔍 Zoom
+            </div>
+          </div>
         </div>
       )}
 
@@ -706,9 +1151,17 @@ export const QuestionDisplay: React.FC<QuestionDisplayProps> = ({
 
       {/* 4. Explanation / Solution */}
       {(mode === 'review' || mode === 'report' || mode === 'bank' || mode === 'preview' || (mode === 'practice' && isSubmitted)) && renderExplanation()}
+
+      {/* 5. Diagram & Image Zoom Lightbox Modal */}
+      <DiagramZoomModal
+        isOpen={!!zoomedDiagram}
+        onClose={() => setZoomedDiagram(null)}
+        media={zoomedDiagram}
+      />
     </div>
   );
-};
+});
+QuestionDisplay.displayName = 'QuestionDisplay';
 
 /* =========================================================================
    Compatibility Sub-Component Exports (Aliases to Single Method)

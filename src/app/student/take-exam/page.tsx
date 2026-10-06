@@ -793,6 +793,20 @@ function TakeExamContent() {
   const currentQuestion = exam.questions[currentQIndex];
   const currentAnswerObj = userAnswers[currentQIndex];
   const currentAnswer = currentAnswerObj?.answer || '';
+
+  const handleSelectOptionCurrent = useCallback((letter: string) => {
+    if (!currentQuestion) return;
+    if (isMultipleChoiceType(currentQuestion.type)) {
+      handleCheckboxOption(currentQIndex, letter);
+    } else {
+      handleSelectOption(currentQIndex, letter);
+    }
+  }, [currentQuestion, currentQIndex]);
+
+  const handleTextInputCurrent = useCallback((val: string) => {
+    handleTextInput(currentQIndex, val);
+  }, [currentQIndex]);
+
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
       {/* Fullscreen & Focus Lockout Overlay */}
@@ -1175,14 +1189,8 @@ function TakeExamContent() {
               mode="exam"
               question={currentQuestion}
               userAnswer={currentAnswer}
-              onSelectOption={(letter) => {
-                if (isMultipleChoiceType(currentQuestion.type)) {
-                  handleCheckboxOption(currentQIndex, letter);
-                } else {
-                  handleSelectOption(currentQIndex, letter);
-                }
-              }}
-              onTextInput={(val) => handleTextInput(currentQIndex, val)}
+              onSelectOption={handleSelectOptionCurrent}
+              onTextInput={handleTextInputCurrent}
             />
           </div>
 

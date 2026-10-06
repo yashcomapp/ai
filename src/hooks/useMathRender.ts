@@ -74,8 +74,8 @@ export function useMathRender(dependencyArray: any[] = []) {
 
           const containers = document.querySelectorAll('.math-container');
           containers.forEach((container: any) => {
-            // Avoid re-rendering if it already contains parsed KaTeX elements
-            if (container.querySelector('.katex')) {
+            // Avoid re-rendering if it already contains parsed KaTeX elements or is marked as rendered
+            if (container.querySelector('.katex') || container.dataset.rendered === 'true') {
               return;
             }
 
@@ -100,6 +100,7 @@ export function useMathRender(dependencyArray: any[] = []) {
 
             // Render math inside this container specifically rather than scanning document.body
             win.renderMathInElement(container, KATEX_AUTO_RENDER_OPTIONS);
+            container.dataset.rendered = 'true';
           });
 
           // Reconnect the observer
@@ -122,9 +123,29 @@ export function useMathRender(dependencyArray: any[] = []) {
       t2 = setTimeout(runAutoRender, 400);
 
       // Setup MutationObserver to watch for dynamic DOM insertions/updates (e.g. modals opening, API loads)
+      // Strictly ignore timer ticks, audio level changes, or mutations without .math-container
       if (typeof window !== 'undefined' && typeof MutationObserver !== 'undefined') {
         let timeoutId: any = null;
-        observer = new MutationObserver(() => {
+        observer = new MutationObserver((mutations) => {
+          let hasRelevantNode = false;
+          for (let i = 0; i < mutations.length; i++) {
+            const m = mutations[i];
+            if (m.type === 'childList') {
+              for (let j = 0; j < m.addedNodes.length; j++) {
+                const node = m.addedNodes[j] as HTMLElement;
+                if (node.nodeType === Node.ELEMENT_NODE) {
+                  if (node.classList?.contains('math-container') || node.querySelector?.('.math-container')) {
+                    hasRelevantNode = true;
+                    break;
+                  }
+                }
+              }
+            }
+            if (hasRelevantNode) break;
+          }
+
+          if (!hasRelevantNode) return;
+
           if (timeoutId) clearTimeout(timeoutId);
           timeoutId = setTimeout(runAutoRender, 80);
         });

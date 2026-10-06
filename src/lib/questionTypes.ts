@@ -174,9 +174,10 @@ export function formatRichText(text: any): string {
   // Convert markdown underline (__text__) to HTML <u>
   str = str.replace(/__([^_]+)__/g, '<u>$1</u>');
 
-  // 2. Restore preserved pristine SVG blocks
+  // 2. Restore preserved pristine SVG blocks (wrapped in zoomable wrapper for interactive diagram inspection)
   preservedSvgs.forEach((svg, idx) => {
-    str = str.replace(`§§SVGTAG${idx}§§`, svg);
+    const wrappedSvg = `<div class="zoomable-diagram-wrapper" style="position: relative; display: inline-block; max-width: 100%; cursor: zoom-in; margin: 8px 0; border-radius: 8px; vertical-align: middle;" title="Click or tap to zoom figure"><span class="zoom-diagram-badge" style="position: absolute; top: 6px; right: 6px; z-index: 2; background: rgba(15,23,42,0.8); color: #ffffff; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; pointer-events: none; display: inline-flex; align-items: center; gap: 4px; backdrop-filter: blur(4px); box-shadow: 0 1px 3px rgba(0,0,0,0.3); letter-spacing: 0.3px;">🔍 Zoom</span>${svg}</div>`;
+    str = str.replace(`§§SVGTAG${idx}§§`, wrappedSvg);
   });
 
   if (RICH_TEXT_CACHE.size >= MAX_MATH_CACHE_SIZE) {
