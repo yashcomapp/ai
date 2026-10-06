@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as admin from 'firebase-admin';
 import { adminDb, adminAuth } from '@/lib/firebase/admin';
-import { verifyRole } from '@/lib/auth';
+import { verifyRole, invalidateUserCache } from '@/lib/auth';
 import { decrypt } from '@/lib/encryption';
 export async function GET(req: NextRequest) {
   try {
@@ -266,15 +266,55 @@ export async function POST(req: NextRequest) {
           newStudentNames = Array.from(new Set([...currentNames, regData.studentName].filter(Boolean)));
         }
 
-        // Save Parent document to users collection (deactivated if child is autonomous)
+        // Determine parent status and deactivation reason (handling multi-student siblings)
+        let parentStatus = isAutonomous ? 'inactive' : 'active';
+        let parentDeactivationReason: string | null = isAutonomous ? 'student_autonomous' : null;
+
+        if (existingParentData) {
+          if (isAutonomous) {
+            // Check if any existing sibling is active & Regular
+            const otherCodes = newStudentCodes.filter(c => c !== studentCode);
+            let hasOtherRegularChild = false;
+            if (otherCodes.length > 0) {
+              const otherStudentsSnap = await adminDb.collection('users')
+                .where('role', '==', 'student')
+                .where('studentCode', 'in', otherCodes.slice(0, 30))
+                .get();
+              hasOtherRegularChild = otherStudentsSnap.docs.some(d => {
+                const s = d.data();
+                return s.status === 'active' && s.autonomous !== true;
+              });
+            }
+
+            if (hasOtherRegularChild) {
+              // Parent must remain active for the Regular sibling
+              parentStatus = existingParentData.status || 'active';
+              parentDeactivationReason = existingParentData.deactivationReason || null;
+            } else {
+              parentStatus = 'inactive';
+              parentDeactivationReason = 'student_autonomous';
+            }
+          } else {
+            // New child is Regular -> reactivate if previously deactivated for student_autonomous
+            if (existingParentData.deactivationReason === 'student_autonomous') {
+              parentStatus = 'active';
+              parentDeactivationReason = null;
+            } else {
+              parentStatus = existingParentData.status || 'active';
+              parentDeactivationReason = existingParentData.deactivationReason || null;
+            }
+          }
+        }
+
+        // Save Parent document to users collection
         const parentUserRef = adminDb.collection('users').doc(parentId);
         await parentUserRef.set({
           name: regData.parentName,
           email: regData.parentEmail,
           mobile: regData.parentMobile,
           role: 'parent',
-          status: isAutonomous ? 'inactive' : (existingParentData?.status || 'active'),
-          deactivationReason: isAutonomous ? 'student_autonomous' : (existingParentData?.deactivationReason || null),
+          status: parentStatus,
+          deactivationReason: parentDeactivationReason,
           studentId: studentId,
           studentCode: studentCode,
           studentName: regData.studentName,
@@ -284,6 +324,8 @@ export async function POST(req: NextRequest) {
           createdAt: existingParentData?.createdAt || admin.firestore.FieldValue.serverTimestamp(),
           registeredFrom: id
         }, { merge: true });
+
+        invalidateUserCache(parentId);
       } else {
         parentMsg = ' (no parent account created - email was not provided)';
       }

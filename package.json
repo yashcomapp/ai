@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "db:backup": "node scripts/db-backup.js",
-    "db:restore": "node scripts/db-restore.js"
+    "db:restore": "node scripts/db-restore.js",
+    "sweep:autonomous": "node scripts/sweep-autonomous-reviews.js"
   },
   "dependencies": {
     "@vercel/speed-insights": "^2.0.0",

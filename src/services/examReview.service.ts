@@ -518,6 +518,180 @@ export class ExamReviewService {
       message: `Successfully batch re-evaluated ${studentsUpdated} student exam submissions.`
     };
   }
+
+  /**
+   * Sweeps and auto-approves pending reviews, exam attempts, parentReviews, and evaluations
+   * for all autonomous students (or a specific student if studentCode is supplied).
+   */
+  static async sweepAutonomousReviews(targetStudentCode?: string) {
+    let studentCodes: string[] = [];
+    if (targetStudentCode) {
+      studentCodes = [targetStudentCode.trim().toUpperCase()];
+    } else {
+      const autoStudentsSnap = await adminDb.collection('users')
+        .where('role', '==', 'student')
+        .where('autonomous', '==', true)
+        .get();
+      studentCodes = Array.from(new Set(
+        autoStudentsSnap.docs
+          .map(d => (d.data().studentCode || '').trim().toUpperCase())
+          .filter(Boolean)
+      ));
+    }
+
+    if (studentCodes.length === 0) {
+      return {
+        success: true,
+        studentsScanned: 0,
+        reviewsApproved: 0,
+        attemptsApproved: 0,
+        parentReviewsApproved: 0,
+        evaluationsApproved: 0,
+        message: 'No autonomous students found to sweep.'
+      };
+    }
+
+    let reviewsApproved = 0;
+    let attemptsApproved = 0;
+    let parentReviewsApproved = 0;
+    let evaluationsApproved = 0;
+
+    // Process in chunks of 30 for Firestore 'in' queries
+    const chunks: string[][] = [];
+    for (let i = 0; i < studentCodes.length; i += 30) {
+      chunks.push(studentCodes.slice(i, i + 30));
+    }
+
+    const now = new Date();
+
+    for (const chunk of chunks) {
+      // 1. Sweep 'reviews' collection
+      const pendingReviewsSnap = await adminDb.collection('reviews')
+        .where('studentCode', 'in', chunk)
+        .where('status', 'in', ['pending', 'student_review'])
+        .get()
+        .catch(() => ({ docs: [] } as any));
+
+      if (pendingReviewsSnap.docs && pendingReviewsSnap.docs.length > 0) {
+        let batch = adminDb.batch();
+        let bCount = 0;
+        for (const doc of pendingReviewsSnap.docs) {
+          batch.update(doc.ref, {
+            status: 'approved',
+            autoApprovedAutonomous: true,
+            updatedAt: now
+          });
+          bCount++;
+          reviewsApproved++;
+          if (bCount === 400) {
+            await batch.commit();
+            batch = adminDb.batch();
+            bCount = 0;
+          }
+        }
+        if (bCount > 0) {
+          await batch.commit();
+        }
+      }
+
+      // 2. Sweep 'examAttempts' collection
+      const pendingAttemptsSnap = await adminDb.collection('examAttempts')
+        .where('studentCode', 'in', chunk)
+        .where('status', 'in', ['pending', 'student_review'])
+        .get()
+        .catch(() => ({ docs: [] } as any));
+
+      if (pendingAttemptsSnap.docs && pendingAttemptsSnap.docs.length > 0) {
+        let batch = adminDb.batch();
+        let bCount = 0;
+        for (const doc of pendingAttemptsSnap.docs) {
+          batch.update(doc.ref, {
+            status: 'approved',
+            autoApprovedAutonomous: true,
+            updatedAt: now
+          });
+          bCount++;
+          attemptsApproved++;
+          if (bCount === 400) {
+            await batch.commit();
+            batch = adminDb.batch();
+            bCount = 0;
+          }
+        }
+        if (bCount > 0) {
+          await batch.commit();
+        }
+      }
+
+      // 3. Sweep 'parentReviews' collection
+      const pendingParentReviewsSnap = await adminDb.collection('parentReviews')
+        .where('studentCode', 'in', chunk)
+        .where('status', '==', 'pending')
+        .get()
+        .catch(() => ({ docs: [] } as any));
+
+      if (pendingParentReviewsSnap.docs && pendingParentReviewsSnap.docs.length > 0) {
+        let batch = adminDb.batch();
+        let bCount = 0;
+        for (const doc of pendingParentReviewsSnap.docs) {
+          batch.update(doc.ref, {
+            status: 'approved',
+            autoApprovedAutonomous: true,
+            updatedAt: now
+          });
+          bCount++;
+          parentReviewsApproved++;
+          if (bCount === 400) {
+            await batch.commit();
+            batch = adminDb.batch();
+            bCount = 0;
+          }
+        }
+        if (bCount > 0) {
+          await batch.commit();
+        }
+      }
+
+      // 4. Sweep 'evaluations' collection
+      const pendingEvalsSnap = await adminDb.collection('evaluations')
+        .where('studentCode', 'in', chunk)
+        .where('status', 'in', ['pending', 'pending_parent'])
+        .get()
+        .catch(() => ({ docs: [] } as any));
+
+      if (pendingEvalsSnap.docs && pendingEvalsSnap.docs.length > 0) {
+        let batch = adminDb.batch();
+        let bCount = 0;
+        for (const doc of pendingEvalsSnap.docs) {
+          batch.update(doc.ref, {
+            status: 'approved',
+            autoApprovedAutonomous: true,
+            updatedAt: now
+          });
+          bCount++;
+          evaluationsApproved++;
+          if (bCount === 400) {
+            await batch.commit();
+            batch = adminDb.batch();
+            bCount = 0;
+          }
+        }
+        if (bCount > 0) {
+          await batch.commit();
+        }
+      }
+    }
+
+    return {
+      success: true,
+      studentsScanned: studentCodes.length,
+      reviewsApproved,
+      attemptsApproved,
+      parentReviewsApproved,
+      evaluationsApproved,
+      message: `Swept ${studentCodes.length} autonomous students: approved ${reviewsApproved} reviews, ${attemptsApproved} attempts, ${parentReviewsApproved} parentReviews, ${evaluationsApproved} evaluations.`
+    };
+  }
 }
 
 function deriveTopicCode(qCode: string): string {

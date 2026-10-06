@@ -4,6 +4,7 @@ import { verifyRole, invalidateUserCache } from '@/lib/auth';
 import { ChunkedBatch } from '@/lib/firebase/batch';
 import { getFromCache, setInCache, invalidateCache } from '@/lib/firebase/cache';
 import { isDemoUser } from '@/lib/studentDb';
+import { ExamReviewService } from '@/services/examReview.service';
 
 export async function GET(request: Request) {
   try {
@@ -84,6 +85,12 @@ export async function POST(request: Request) {
     const admin = await verifyRole(request, 'admin');
     if (!admin) return NextResponse.json({ message: 'Unauthorized. Admin role required.' }, { status: 403 });
     const body = await request.json();
+
+    if (body.action === 'sweep_autonomous') {
+      const result = await ExamReviewService.sweepAutonomousReviews(body.studentCode);
+      return NextResponse.json(result);
+    }
+
     const { studentId, updateData } = body;
     
     if (!studentId || !updateData) {
@@ -112,40 +119,7 @@ export async function POST(request: Request) {
       // 1. If switched to Autonomous, auto-approve any legacy pending parent reviews for this student
       if (isAutonomous && studentCode) {
         try {
-          const pendingReviewsSnap = await adminDb.collection('reviews')
-            .where('studentCode', '==', studentCode)
-            .where('status', '==', 'pending')
-            .get();
-          
-          if (!pendingReviewsSnap.empty) {
-            const revBatch = adminDb.batch();
-            pendingReviewsSnap.docs.forEach(doc => {
-              revBatch.update(doc.ref, {
-                status: 'approved',
-                updatedAt: new Date(),
-                autoApprovedAutonomous: true
-              });
-            });
-            await revBatch.commit();
-          }
-
-          // Also check examAttempts
-          const pendingAttemptsSnap = await adminDb.collection('examAttempts')
-            .where('studentCode', '==', studentCode)
-            .where('status', '==', 'pending')
-            .get();
-          
-          if (!pendingAttemptsSnap.empty) {
-            const attBatch = adminDb.batch();
-            pendingAttemptsSnap.docs.forEach(doc => {
-              attBatch.update(doc.ref, {
-                status: 'approved',
-                updatedAt: new Date(),
-                autoApprovedAutonomous: true
-              });
-            });
-            await attBatch.commit();
-          }
+          await ExamReviewService.sweepAutonomousReviews(studentCode);
         } catch (mErr) {
           console.warn('Could not auto-approve pending reviews on autonomous toggle:', mErr);
         }
@@ -209,6 +183,7 @@ export async function POST(request: Request) {
               deactivationReason: 'student_autonomous',
               updatedAt: new Date()
             });
+            invalidateUserCache(pDoc.id);
           }
         } else {
           // Only reactivate if deactivated specifically due to autonomous student mode
@@ -219,6 +194,7 @@ export async function POST(request: Request) {
                 deactivationReason: null,
                 updatedAt: new Date()
               });
+              invalidateUserCache(pDoc.id);
             }
           }
         }
