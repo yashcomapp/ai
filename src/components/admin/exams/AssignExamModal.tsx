@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import DateTimeInputDMY from '@/components/DateTimeInputDMY';
 
 interface Batch {
   id: string;
@@ -325,12 +326,10 @@ export function AssignExamModal({
               <div style={{ display: 'flex', gap: '10px' }}>
                 <div style={{ flex: 1 }}>
                   <label style={{ display: 'block', fontSize: '10px', color: 'var(--text-muted)' }}>Start Datetime</label>
-                  <input 
-                    type="datetime-local" 
+                  <DateTimeInputDMY 
                     value={assignModal.startAtStr}
                     disabled={assignModal.isMorningTest || assignModal.isEveningTest}
-                    onChange={(e) => {
-                      const val = e.target.value;
+                    onChange={(val) => {
                       const is6or9 = /T(06|21):/.test(val) || val.includes('06:00') || val.includes('21:00');
                       setAssignModal(prev => ({ 
                         ...prev, 
@@ -339,17 +338,14 @@ export function AssignExamModal({
                         lateEntryRestriction: is6or9 ? true : prev.lateEntryRestriction
                       }));
                     }}
-                    style={{ width: '100%', padding: '5px 6px', background: 'var(--surface)', color: 'var(--text)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)' }}
                   />
                 </div>
                 <div style={{ flex: 1 }}>
                   <label style={{ display: 'block', fontSize: '10px', color: 'var(--text-muted)' }}>End Datetime</label>
-                  <input 
-                    type="datetime-local" 
+                  <DateTimeInputDMY 
                     value={assignModal.endAtStr}
                     disabled={assignModal.isMorningTest || assignModal.isEveningTest}
-                    onChange={(e) => setAssignModal(prev => ({ ...prev, endAtStr: e.target.value }))}
-                    style={{ width: '100%', padding: '5px 6px', background: 'var(--surface)', color: 'var(--text)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)' }}
+                    onChange={(val) => setAssignModal(prev => ({ ...prev, endAtStr: val }))}
                   />
                 </div>
               </div>

@@ -1,3 +1,4 @@
+import DateInputDMY from '@/components/DateInputDMY';
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -410,27 +411,13 @@ export default function AttendanceManager({ role }: AttendanceManagerProps) {
                       {/* Start Date */}
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                         <span style={{ fontSize: '12px', fontWeight: 600 }}>Start Date:</span>
-                        <input 
-                          type="date" 
-                          value={declStart}
-                          min={tomorrowStr}
-                          onChange={(e) => setDeclStart(e.target.value)}
-                          required
-                          style={{ padding: '6px 10px', fontSize: '12px', borderRadius: '4px', border: '1px solid var(--border-light)', background: 'var(--bg-soft)', color: 'var(--text)' }}
-                        />
+                        <DateInputDMY value={declStart} min={tomorrowStr} onChange={(val) => setDeclStart(val)} required style={{ width: '140px' }} inputStyle={{ padding: '6px 28px 6px 10px', background: 'var(--bg-soft)' }} />
                       </div>
 
                       {/* End Date */}
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                         <span style={{ fontSize: '12px', fontWeight: 600 }}>End Date:</span>
-                        <input 
-                          type="date" 
-                          value={declEnd}
-                          min={tomorrowStr || declStart}
-                          onChange={(e) => setDeclEnd(e.target.value)}
-                          required
-                          style={{ padding: '6px 10px', fontSize: '12px', borderRadius: '4px', border: '1px solid var(--border-light)', background: 'var(--bg-soft)', color: 'var(--text)' }}
-                        />
+                        <DateInputDMY value={declEnd} min={tomorrowStr || declStart} onChange={(val) => setDeclEnd(val)} required style={{ width: '140px' }} inputStyle={{ padding: '6px 28px 6px 10px', background: 'var(--bg-soft)' }} />
                       </div>
                     </div>
                   )}

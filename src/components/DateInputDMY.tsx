@@ -13,6 +13,9 @@ interface DateInputDMYProps {
   required?: boolean;
   className?: string;
   style?: React.CSSProperties;
+  inputStyle?: React.CSSProperties;
+  min?: string;
+  max?: string;
 }
 
 /**
@@ -29,7 +32,10 @@ export default function DateInputDMY({
   disabled = false,
   required = false,
   className,
-  style
+  style,
+  inputStyle,
+  min,
+  max
 }: DateInputDMYProps) {
   const datePickerRef = useRef<HTMLInputElement>(null);
   
@@ -131,7 +137,8 @@ export default function DateInputDMY({
           fontFamily: 'monospace, inherit',
           letterSpacing: '0.3px',
           outline: 'none',
-          transition: 'border-color 0.15s ease'
+          transition: 'border-color 0.15s ease',
+          ...inputStyle
         }}
       />
 
@@ -140,6 +147,8 @@ export default function DateInputDMY({
         ref={datePickerRef}
         type="date"
         value={isoValue}
+        min={min}
+        max={max}
         onChange={handlePickerChange}
         tabIndex={-1}
         aria-hidden="true"

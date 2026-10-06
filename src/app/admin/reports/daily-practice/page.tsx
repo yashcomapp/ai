@@ -1,3 +1,4 @@
+import DateInputDMY from '@/components/DateInputDMY';
 'use client';
 
 import React, { useEffect, useState, useMemo, useDeferredValue } from 'react';
@@ -294,21 +295,7 @@ export default function DailyPracticeSummaryPage() {
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-muted)' }}>Date:</span>
-              <input
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                style={{
-                  padding: '7px 12px',
-                  borderRadius: 'var(--radius-sm)',
-                  border: '1px solid var(--border-light)',
-                  background: 'var(--bg-soft)',
-                  color: 'var(--text)',
-                  fontSize: '12px',
-                  fontWeight: 700,
-                  cursor: 'pointer'
-                }}
-              />
+              <DateInputDMY value={selectedDate} onChange={(val) => setSelectedDate(val)} style={{ width: '140px' }} inputStyle={{ padding: '7px 28px 7px 10px', background: 'var(--bg-soft)', fontWeight: 700 }} />
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>

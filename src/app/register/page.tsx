@@ -1,3 +1,4 @@
+import DateInputDMY from '@/components/DateInputDMY';
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -285,14 +286,7 @@ export default function RegisterPage() {
             <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '8px' }}>
               <div className="form-group">
                 <label>Date of Birth <span className="req" style={{ color: 'var(--danger)' }}>*</span></label>
-                <input 
-                  type="date" 
-                  name="dob"
-                  value={formData.dob}
-                  onChange={handleInputChange}
-                  onBlur={handleBlur}
-                  className={validationErrors.dob ? 'invalid' : ''}
-                />
+                <DateInputDMY value={formData.dob} onChange={(val) => handleInputChange({ target: { name: 'dob', value: val } } as any)} className={validationErrors.dob ? 'invalid' : ''} />
                 {validationErrors.dob && <div className="field-error show" style={{ fontSize: '0.75rem', color: 'var(--danger)', marginTop: '4px' }}>{validationErrors.dob}</div>}
               </div>
             </div>

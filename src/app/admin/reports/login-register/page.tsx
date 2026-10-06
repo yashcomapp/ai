@@ -1,3 +1,4 @@
+import DateInputDMY from '@/components/DateInputDMY';
 'use client';
 
 import React, { useEffect, useState } from 'react';
@@ -295,14 +296,7 @@ export default function LoginRegisterReportPage() {
             <option value="parent">Parents Only</option>
           </select>
 
-          <input 
-            type="date"
-            className="form-input"
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            style={{ width: '150px' }}
-            title="Select log date"
-          />
+          <DateInputDMY value={selectedDate} onChange={(val) => setSelectedDate(val)} style={{ width: '150px' }} inputStyle={{ padding: '6px 28px 6px 10px' }} />
 
           <div style={{ display: 'flex', gap: '6px', fontSize: '12px', color: 'var(--text-muted)' }}>
             <span style={{ alignSelf: 'center' }}>Sort by:</span>

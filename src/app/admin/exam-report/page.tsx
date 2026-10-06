@@ -1,3 +1,4 @@
+import DateTimeInputDMY from '@/components/DateTimeInputDMY';
 'use client';
 
 import React, { useEffect, useState, useMemo, Suspense } from 'react';
@@ -2625,27 +2626,11 @@ function ExamReportContent() {
                   <div style={{ display: 'flex', gap: '10px' }}>
                     <div style={{ flex: 1 }}>
                       <label style={{ display: 'block', fontSize: '10px', color: 'var(--text-muted)', marginBottom: '3px' }}>Start Datetime</label>
-                      <input 
-                        type="datetime-local" 
-                        value={reassignStartAtStr}
-                        disabled={!!reassignPresetSlot}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          setReassignStartAtStr(val);
-                          setReassignEndAtStr(val);
-                        }}
-                        style={{ width: '100%', padding: '8px', background: 'var(--surface)', color: 'var(--text)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)' }}
-                      />
+                      <DateTimeInputDMY value={reassignStartAtStr} disabled={!!reassignPresetSlot} onChange={(val) => { setReassignStartAtStr(val); setReassignEndAtStr(val); }} />
                     </div>
                     <div style={{ flex: 1 }}>
                       <label style={{ display: 'block', fontSize: '10px', color: 'var(--text-muted)', marginBottom: '3px' }}>End Datetime</label>
-                      <input 
-                        type="datetime-local" 
-                        value={reassignEndAtStr}
-                        disabled={!!reassignPresetSlot}
-                        onChange={(e) => setReassignEndAtStr(e.target.value)}
-                        style={{ width: '100%', padding: '8px', background: 'var(--surface)', color: 'var(--text)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)' }}
-                      />
+                      <DateTimeInputDMY value={reassignEndAtStr} disabled={!!reassignPresetSlot} onChange={(val) => setReassignEndAtStr(val)} />
                     </div>
                   </div>
                   {/* Late Entry Restriction Options */}

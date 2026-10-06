@@ -1,3 +1,4 @@
+import DateTimeInputDMY from '@/components/DateTimeInputDMY';
 'use client';
 
 import React from 'react';
@@ -60,22 +61,12 @@ export function SaturdayAssignModal({
 
           <div className="form-group">
             <label style={{ fontSize: '11px', fontWeight: 600, display: 'block', marginBottom: '4px' }}>Start Datetime (local)</label>
-            <input 
-              type="datetime-local" 
-              className="form-input"
-              value={saturdayAssignModal.startAtStr}
-              onChange={(e) => setSaturdayAssignModal(prev => ({ ...prev, startAtStr: e.target.value }))}
-            />
+            <DateTimeInputDMY value={saturdayAssignModal.startAtStr} onChange={(val) => setSaturdayAssignModal(prev => ({ ...prev, startAtStr: val }))} />
           </div>
 
           <div className="form-group">
             <label style={{ fontSize: '11px', fontWeight: 600, display: 'block', marginBottom: '4px' }}>End Datetime (local)</label>
-            <input 
-              type="datetime-local" 
-              className="form-input"
-              value={saturdayAssignModal.endAtStr}
-              onChange={(e) => setSaturdayAssignModal(prev => ({ ...prev, endAtStr: e.target.value }))}
-            />
+            <DateTimeInputDMY value={saturdayAssignModal.endAtStr} onChange={(val) => setSaturdayAssignModal(prev => ({ ...prev, endAtStr: val }))} />
           </div>
 
           <div className="form-group">

@@ -1,3 +1,5 @@
+import DateInputDMY from '@/components/DateInputDMY';
+import DateTimeInputDMY from '@/components/DateTimeInputDMY';
 'use client';
 
 import React, { useEffect, useState } from 'react';
@@ -778,13 +780,7 @@ export default function AdminNoticesPage() {
               {noticeType === 'schedule' && (
                 <div>
                   <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px' }}>Schedule Date</label>
-                  <input 
-                    type="date" 
-                    value={noticeDate} 
-                    onChange={(e) => setNoticeDate(e.target.value)}
-                    required
-                    style={{ width: '100%', padding: '10px 12px', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-md)', background: 'var(--bg-soft)', color: 'var(--text)', outline: 'none', fontSize: '13px' }}
-                  />
+                  <DateInputDMY value={noticeDate} onChange={(val) => setNoticeDate(val)} required inputStyle={{ padding: '10px 30px 10px 12px', background: 'var(--bg-soft)', fontSize: '13px' }} />
                 </div>
               )}
             </div>
@@ -1093,22 +1089,12 @@ export default function AdminNoticesPage() {
             <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap', flex: 1 }}>
               <div>
                 <label style={{ display: 'block', fontSize: '10px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '4px' }}>📅 Scheduled Start Time</label>
-                <input 
-                  type="datetime-local" 
-                  value={maintenanceStart}
-                  onChange={(e) => setMaintenanceStart(e.target.value)}
-                  style={{ padding: '6px 10px', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', background: 'var(--surface)', color: 'var(--text)', fontSize: '12px' }}
-                />
+                <DateTimeInputDMY value={maintenanceStart} onChange={(val) => setMaintenanceStart(val)} style={{ width: '200px' }} />
               </div>
 
               <div>
                 <label style={{ display: 'block', fontSize: '10px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '4px' }}>🏁 Scheduled End Time</label>
-                <input 
-                  type="datetime-local" 
-                  value={maintenanceEnd}
-                  onChange={(e) => setMaintenanceEnd(e.target.value)}
-                  style={{ padding: '6px 10px', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', background: 'var(--surface)', color: 'var(--text)', fontSize: '12px' }}
-                />
+                <DateTimeInputDMY value={maintenanceEnd} onChange={(val) => setMaintenanceEnd(val)} style={{ width: '200px' }} />
               </div>
 
               <div style={{ alignSelf: 'flex-end' }}>

@@ -1,3 +1,4 @@
+import DateInputDMY from '@/components/DateInputDMY';
 'use client';
 
 import React, { useEffect, useState } from 'react';
@@ -1925,12 +1926,7 @@ OUTPUT FORMAT: Return ONLY a valid JSON array of objects with schema:
               {testType === 'weekly_suite' ? (
                 <div className="form-group">
                   <label style={{ fontSize: '11px', fontWeight: 600 }}>📅 Week Calendar Date (Pick Any Date)</label>
-                  <input 
-                    type="date" 
-                    className="form-input" 
-                    value={weekStartDate} 
-                    onChange={(e) => setWeekStartDate(e.target.value)} 
-                  />
+                  <DateInputDMY value={weekStartDate} onChange={(val) => setWeekStartDate(val)} />
                 </div>
               ) : (
                 <div className="form-group">

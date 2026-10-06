@@ -5,6 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { formatDateDMY as formatDateStr, getDateKeyIST as getISTDateString } from '@/lib/dateUtils';
 import { useAdminBatches } from '@/hooks/useAdminReferenceData';
+import DateInputDMY from '@/components/DateInputDMY';
 
 interface StudentRecord {
   studentCode: string;
@@ -343,12 +344,12 @@ export default function AdminAttendancePage() {
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <label style={{ fontSize: '10px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Target Date</label>
-                <input
-                  type="date"
+                <DateInputDMY
                   value={selectedDate}
                   max={todayStr}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                  style={{ padding: '8px 12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)', background: 'var(--bg-soft)', color: 'var(--text)', fontWeight: 600 }}
+                  onChange={(val) => setSelectedDate(val)}
+                  style={{ width: '150px' }}
+                  inputStyle={{ padding: '8px 30px 8px 12px', background: 'var(--bg-soft)', fontWeight: 600 }}
                 />
               </div>
             </div>
@@ -608,22 +609,20 @@ export default function AdminAttendancePage() {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     <label style={{ fontSize: '11px', fontWeight: 600 }}>Start Date</label>
-                    <input
-                      type="date"
+                    <DateInputDMY
                       required
                       value={newLeaveStart}
-                      onChange={(e) => setNewLeaveStart(e.target.value)}
-                      style={{ padding: '8px 10px', borderRadius: '4px', border: '1px solid var(--border-light)', background: 'var(--bg-soft)', color: 'var(--text)' }}
+                      onChange={(val) => setNewLeaveStart(val)}
+                      inputStyle={{ padding: '8px 28px 8px 10px', background: 'var(--bg-soft)' }}
                     />
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     <label style={{ fontSize: '11px', fontWeight: 600 }}>End Date</label>
-                    <input
-                      type="date"
+                    <DateInputDMY
                       required
                       value={newLeaveEnd}
-                      onChange={(e) => setNewLeaveEnd(e.target.value)}
-                      style={{ padding: '8px 10px', borderRadius: '4px', border: '1px solid var(--border-light)', background: 'var(--bg-soft)', color: 'var(--text)' }}
+                      onChange={(val) => setNewLeaveEnd(val)}
+                      inputStyle={{ padding: '8px 28px 8px 10px', background: 'var(--bg-soft)' }}
                     />
                   </div>
                 </div>

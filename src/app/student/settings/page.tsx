@@ -1,3 +1,4 @@
+import DateInputDMY from '@/components/DateInputDMY';
 'use client';
 
 import React, { useEffect, useState } from 'react';
@@ -332,12 +333,7 @@ export default function StudentSettingsPage() {
                 </div>
                 <div>
                   <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, marginBottom: '5px', color: 'var(--text-muted)' }}>Date of Birth</label>
-                  <input 
-                    type="date" 
-                    value={profile.dob} 
-                    onChange={e => setProfile({ ...profile, dob: e.target.value })}
-                    style={{ width: '100%', padding: '8px 12px', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', fontSize: '13px', background: 'var(--surface)', color: 'var(--text)' }}
-                  />
+                  <DateInputDMY value={profile.dob} onChange={(val) => setProfile({ ...profile, dob: val })} />
                 </div>
                 <button type="submit" className="btn btn-primary" disabled={savingProfile} style={{ marginTop: '10px' }}>
                   {savingProfile ? 'Saving Changes...' : '💾 Save Profile'}

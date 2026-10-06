@@ -5,6 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { getDateKeyIST, formatDateDMY } from '@/lib/dateUtils';
 import { useAdminBatches } from '@/hooks/useAdminReferenceData';
+import DateInputDMY from '@/components/DateInputDMY';
 import { FaultCategory, StudentFaultEntry } from '@/services/fault.service';
 
 export default function AdminFaultRegisterPage() {
@@ -437,11 +438,11 @@ export default function AdminFaultRegisterPage() {
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap', background: 'var(--surface-light)', padding: '10px 14px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)' }}>📅 Date:</label>
-            <input
-              type="date"
+            <DateInputDMY
               value={date}
-              onChange={(e) => setDate(e.target.value)}
-              style={{ padding: '4px 8px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)', background: 'var(--surface)', color: 'var(--text)', fontSize: '12px', height: '30px' }}
+              onChange={(val) => setDate(val)}
+              style={{ width: '130px' }}
+              inputStyle={{ height: '30px', padding: '4px 26px 4px 8px', fontSize: '12px' }}
             />
           </div>
 
