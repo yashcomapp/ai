@@ -351,30 +351,6 @@ export default function AdminDashboard() {
                   </span>
                 </div>
 
-                {/* Chip 3: Attendance */}
-                <div 
-                  onClick={() => router.push('/admin/attendance')}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '6px 10px',
-                    background: 'var(--surface-2)',
-                    borderRadius: 'var(--radius-sm)',
-                    cursor: 'pointer',
-                    transition: 'all 0.18s ease',
-                    border: '1px solid var(--border)'
-                  }}
-                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'translateY(0)'; }}
-                >
-                  <span style={{ fontSize: '11.5px', fontWeight: 600, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    Attendance
-                  </span>
-                  <span style={{ fontSize: '12.5px', fontWeight: 800, color: 'var(--info)' }}>
-                    {stats.todayAttendanceRate !== null ? `${stats.todayAttendanceRate}%` : '--'}
-                  </span>
-                </div>
               </div>
 
               {/* Card 2: Communication & Accounts Stats */}
@@ -457,7 +433,6 @@ export default function AdminDashboard() {
                 <button className="btn btn-secondary" style={{ width: '100%', fontSize: '11.5px', fontWeight: 600, padding: '6px 8px', whiteSpace: 'nowrap', borderRadius: 'var(--radius-sm)', background: 'var(--surface-2)', color: 'var(--text)', border: '1px solid var(--border)' }} onClick={() => router.push('/admin/fault-register')}>📋 Fault Register</button>
                 <button className="btn btn-secondary" style={{ width: '100%', fontSize: '11.5px', fontWeight: 600, padding: '6px 8px', whiteSpace: 'nowrap', borderRadius: 'var(--radius-sm)', background: 'var(--surface-2)', color: 'var(--text)', border: '1px solid var(--border)' }} onClick={() => router.push('/admin/fees')}>Fees Manager</button>
                 <button className="btn btn-secondary" style={{ width: '100%', fontSize: '11.5px', fontWeight: 600, padding: '6px 8px', whiteSpace: 'nowrap', borderRadius: 'var(--radius-sm)', background: 'var(--surface-2)', color: 'var(--text)', border: '1px solid var(--border)' }} onClick={() => router.push('/admin/chat')}>Live Chat Center</button>
-                <button className="btn btn-secondary" style={{ width: '100%', fontSize: '11.5px', fontWeight: 600, padding: '6px 8px', whiteSpace: 'nowrap', borderRadius: 'var(--radius-sm)', background: 'var(--surface-2)', color: 'var(--text)', border: '1px solid var(--border)' }} onClick={() => router.push('/admin/batches')}>Batches & Students</button>
               </div>
             </div>
 
