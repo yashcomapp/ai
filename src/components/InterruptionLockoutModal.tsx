@@ -16,7 +16,7 @@ export function InterruptionLockoutModal({
   isOpen,
   tabViolations,
   maxViolations = 3,
-  durationSeconds = 20,
+  durationSeconds = 45,
   isSubmitting = false,
   onManualResume,
   onTimeoutAutoSubmit
@@ -228,7 +228,17 @@ export function InterruptionLockoutModal({
             </div>
 
             <button
-              onClick={onManualResume}
+              onClick={() => {
+                try {
+                  window.focus();
+                } catch {}
+                try {
+                  if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+                    document.documentElement.requestFullscreen().catch(() => {});
+                  }
+                } catch {}
+                onManualResume();
+              }}
               style={{
                 width: '100%',
                 padding: '14px 20px',

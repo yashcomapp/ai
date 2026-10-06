@@ -99,6 +99,10 @@ export function useLiveExam({
     lastReturnTimeRef.current = now;
     setIsInterrupted(false);
 
+    try {
+      window.focus();
+    } catch {}
+
     // Attempt to restore fullscreen on mobile/desktop
     try {
       if (!document.fullscreenElement && document.documentElement.requestFullscreen) {

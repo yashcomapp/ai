@@ -198,8 +198,6 @@ function TakeSubjectiveExamContent() {
     faceStatusClass,
     noFaceDetected,
     isLookingAway,
-    isFullscreen,
-    isWindowFocused,
     permissionBlocked,
     micAttemptsRemaining,
     setMicAttemptsRemaining,
@@ -212,8 +210,8 @@ function TakeSubjectiveExamContent() {
     enabled: started && !!cameraStream,
     lockdownShortcuts: true,
     lockdownContextMenu: true,
-    lockdownWindowFocus: true,
-    lockdownFullscreen: true,
+    lockdownWindowFocus: false, // Managed exclusively by useLiveExam SSOT (Rule 2.S)
+    lockdownFullscreen: false,  // Managed exclusively by useLiveExam SSOT (Rule 2.S)
     startCameraStream,
     stopCameraStream,
     cleanupLiveExam: cleanupProctoring,
@@ -627,75 +625,7 @@ function TakeSubjectiveExamContent() {
 
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      {/* Fullscreen & Focus Lockout Overlay */}
-      {(!isFullscreen || !isWindowFocused) && started && !examSubmitted && (
-        <div style={{
-          position: 'fixed',
-          inset: 0,
-          background: 'rgba(0, 0, 0, 0.9)',
-          backdropFilter: 'blur(16px)',
-          WebkitBackdropFilter: 'blur(16px)',
-          zIndex: 99999,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '20px',
-          color: 'var(--text)'
-        }}>
-          <div style={{
-            background: 'var(--surface-popover)',
-            border: '1px solid var(--border-popover)',
-            borderRadius: '16px',
-            padding: '40px 30px',
-            maxWidth: '480px',
-            width: '100%',
-            textAlign: 'center',
-            boxShadow: 'var(--shadow-xl)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '20px'
-          }}>
-            <div style={{ fontSize: '60px' }}>⚠️</div>
-            {!isFullscreen ? (
-              <>
-                <h2 style={{ fontSize: '22px', fontWeight: 800, margin: 0, color: 'var(--text)' }}>
-                  Fullscreen Required
-                </h2>
-                <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: '1.6', margin: 0 }}>
-                  To maintain the integrity of this exam, you must stay in fullscreen mode. Your test progress is temporarily paused. 
-                </p>
-                <button
-                  className="btn btn-primary"
-                  onClick={() => {
-                    document.documentElement.requestFullscreen().catch(() => {});
-                  }}
-                  style={{
-                    width: '100%',
-                    padding: '14px',
-                    fontSize: '15px',
-                    fontWeight: 'bold',
-                    marginTop: '10px'
-                  }}
-                >
-                  Re-enter Fullscreen
-                </button>
-              </>
-            ) : (
-              <>
-                <h2 style={{ fontSize: '22px', fontWeight: 800, margin: 0, color: 'var(--text)' }}>
-                  Window Focus Lost!
-                </h2>
-                <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: '1.6', margin: 0 }}>
-                  To maintain the integrity of this exam, you must keep the exam window focused. You cannot click out, switch tabs, or use split screen during the exam.
-                </p>
-                <div style={{ color: 'var(--warning)', fontWeight: 700, fontSize: '13px', marginTop: '10px' }}>
-                  Please click or tap here to resume focus.
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      )}
+
       {/* Script Injections for MediaPipe (Lazy loaded when modal is open) */}
       {mode !== 'peer-review' && cameraModalOpen && (
         <>
@@ -814,13 +744,22 @@ function TakeSubjectiveExamContent() {
         </div>
       )}
 
-      {/* Interruption Lockout & Resume Modal (Phone call / tab switch recovery) */}
+      {/* Interruption Lockout & Resume Modal (Phone call / tab switch recovery SSOT) */}
       <InterruptionLockoutModal
         isOpen={(isInterrupted || tabViolations >= 3) && started}
         tabViolations={tabViolations}
         maxViolations={3}
+        durationSeconds={45}
         isSubmitting={submitting}
         onManualResume={() => {
+          try {
+            window.focus();
+          } catch {}
+          try {
+            if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+              document.documentElement.requestFullscreen().catch(() => {});
+            }
+          } catch {}
           resumeExam();
         }}
         onTimeoutAutoSubmit={() => {
