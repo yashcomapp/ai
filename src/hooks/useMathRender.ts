@@ -86,7 +86,7 @@ export function useMathRender(dependencyArray: any[] = []) {
             );
             let node;
             while ((node = walk.nextNode())) {
-              if (node.parentElement && node.parentElement.closest('.katex')) {
+              if (node.parentElement && (node.parentElement.closest('.katex') || node.parentElement.closest('svg'))) {
                 continue;
               }
               let text = node.nodeValue || '';

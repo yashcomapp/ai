@@ -5,7 +5,8 @@ import React, { useEffect, useState, useMemo, Suspense } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useMathRender } from '@/hooks/useMathRender';
-import { preprocessMathText, parseAnswerList, isOptionSelectedByUser, isOptionCorrect, getQuestionCorrectAnswer, getRawOptionKey, getRawOptionText, isBlank, resolveOptionDisplayText, extractAssertionAndReason, isAssertionReasonType } from '@/lib/questionTypes';
+import { preprocessMathText, formatRichText, parseAnswerList, isOptionSelectedByUser, isOptionCorrect, getQuestionCorrectAnswer, getRawOptionKey, getRawOptionText, isBlank, resolveOptionDisplayText, extractAssertionAndReason, isAssertionReasonType } from '@/lib/questionTypes';
+import { RichMathText, QuestionStemDisplay, QuestionExplanationDisplay, QuestionOptionRow } from '@/components/QuestionDisplay';
 import { playNotificationSound } from '@/lib/audioUtils';
 import { getDateKeyIST, formatDateDMY, formatTimeIST } from '@/lib/dateUtils';
 
@@ -1039,14 +1040,14 @@ function ExamReportContent() {
         if (s.explanation) {
           explHtml = `
             <div class="explanation-box" style="margin-top: 10px; padding: 8px 12px; border-radius: 6px; font-size: 11px; line-height: 1.4;">
-              <strong>💡 Explanation:</strong> ${preprocessMathText(s.explanation)}
+              <strong>💡 Explanation:</strong> ${formatRichText(s.explanation)}
             </div>
           `;
         }
 
         cardDiv.innerHTML = `
           <div style="font-weight: 700; font-size: 12px; margin-bottom: 6px;">
-            Q${(s.idx ?? idx) + 1}. ${preprocessMathText(s.questionText)}
+            Q${(s.idx ?? idx) + 1}. ${formatRichText(s.questionText)}
           </div>
           <div style="height: 6px; border-radius: 3px; background: var(--border-light); overflow: hidden; margin-bottom: 6px;">
             <div style="height: 100%; background: var(--success); width: ${pctCorrect}%;"></div>
@@ -1640,22 +1641,25 @@ function ExamReportContent() {
                     className="card pq-card" 
                     style={{ background: 'var(--bg-soft)', borderLeft: '4px solid var(--accent)', padding: '10px 12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)', position: 'relative' }}
                   >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '10px' }}>
-                      <div style={{ fontWeight: 600, fontSize: '12.5px' }} className="math-container">
-                        Q{(s.idx ?? idx) + 1}. {preprocessMathText(questionTextRaw)}
-                      </div>
-                      <button 
-                        className="btn btn-secondary btn-sm" 
-                        style={{ padding: '2px 8px', fontSize: '10.5px', flexShrink: 0 }}
-                        onClick={() => {
-                          setEditingQuestion(s);
-                          setSelectedCorrectOption(s.correctAnswer);
-                          setEditAnswerOpen(true);
-                        }}
-                      >
-                        ✏️ Edit Answer
-                      </button>
-                    </div>
+                    <QuestionStemDisplay
+                      prefix={`Q${(s.idx ?? idx) + 1}. `}
+                      text={questionTextRaw}
+                      type={s.type}
+                      style={{ fontWeight: 600, fontSize: '12.5px' }}
+                      headerRight={
+                        <button 
+                          className="btn btn-secondary btn-sm" 
+                          style={{ padding: '2px 8px', fontSize: '10.5px', flexShrink: 0 }}
+                          onClick={() => {
+                            setEditingQuestion(s);
+                            setSelectedCorrectOption(s.correctAnswer);
+                            setEditAnswerOpen(true);
+                          }}
+                        >
+                          ✏️ Edit Answer
+                        </button>
+                      }
+                    />
 
                     <div className="pq-bar-track" style={{ height: '6px', borderRadius: '3px', background: 'var(--bg)', overflow: 'hidden', marginTop: '8px' }}>
                       <div className="pq-bar-fill" style={{ height: '100%', background: 'var(--success)', width: `${pctCorrect}%` }}></div>
@@ -1683,39 +1687,25 @@ function ExamReportContent() {
                             : s.correctAnswer === optKey;
 
                           return (
-                            <div 
-                              key={oi} 
-                              style={{ 
-                                display: 'flex', 
-                                justifyContent: 'space-between', 
-                                alignItems: 'center', 
-                                padding: '6px 10px', 
-                                border: isCorrectOpt ? '1.5px solid var(--success)' : '1px solid var(--border-light)', 
-                                borderRadius: '8px',
-                                background: isCorrectOpt ? 'var(--success-bg, rgba(26,165,78,0.07))' : 'var(--surface)',
-                                fontSize: '12px'
+                            <QuestionOptionRow
+                              key={oi}
+                              index={oi}
+                              text={optText}
+                              isCorrect={isCorrectOpt}
+                              voteCount={vote.count}
+                              onVoteClick={() => {
+                                setVotersTitle(`Option: ${optKey}`);
+                                setVotersList(vote.students || []);
+                                setVotersModalOpen(true);
                               }}
-                            >
-                              <span className="math-container">{isCorrectOpt ? '✅ ' : ''}{preprocessMathText(optText)}</span>
-                              <span 
-                                className="pq-option-count" 
-                                onClick={() => {
-                                  setVotersTitle(`Option: ${optKey}`);
-                                  setVotersList(vote.students || []);
-                                  setVotersModalOpen(true);
-                                }}
-                                style={{ background: 'var(--bg-soft)', borderRadius: '12px', padding: '2px 10px', fontWeight: 700, cursor: 'pointer' }}
-                              >
-                                {vote.count}
-                              </span>
-                            </div>
+                            />
                           );
                         })}
                       </div>
                     ) : (
                       s.correctAnswer && (
                         <div style={{ padding: '8px 12px', border: '1.5px solid var(--success)', borderRadius: '8px', background: 'var(--success-bg, rgba(26,165,78,0.07))', fontSize: '12px', fontWeight: 600, marginBottom: '10px' }} className="math-container">
-                          ✅ Correct Answer: {Array.isArray(s.correctAnswer) ? s.correctAnswer.join(', ') : String(s.correctAnswer)}
+                          ✅ Correct Answer: <RichMathText content={Array.isArray(s.correctAnswer) ? s.correctAnswer.join(', ') : String(s.correctAnswer)} inline />
                         </div>
                       )
                     )}
@@ -1729,20 +1719,17 @@ function ExamReportContent() {
 
                     {/* Explanation / Solution block (Theme-aware styles) */}
                     {s.explanation ? (
-                      <div 
-                        className="pq-explanation math-container" 
-                        style={{ 
-                          marginTop: '10px', 
-                          padding: '10px 12px', 
-                          background: 'rgba(255, 255, 255, 0.05)', 
-                          borderRadius: '8px', 
-                          fontSize: '12px', 
-                          color: 'var(--text)', 
-                          border: '1px solid var(--border-light)' 
+                      <QuestionExplanationDisplay
+                        explanation={s.explanation}
+                        style={{
+                          marginTop: '10px',
+                          padding: '10px 12px',
+                          background: 'rgba(255, 255, 255, 0.05)',
+                          borderRadius: '8px',
+                          fontSize: '12px',
+                          border: '1px solid var(--border-light)'
                         }}
-                      >
-                        <strong>💡 Explanation:</strong> {preprocessMathText(s.explanation)}
-                      </div>
+                      />
                     ) : (
                       s.correctAnswer && (
                         <div 
@@ -1909,12 +1896,11 @@ function ExamReportContent() {
             <h3 style={{ borderBottom: '1px solid var(--border-light)', paddingBottom: '8px', marginBottom: '15px' }}>✏️ Edit Correct Answer</h3>
             
             <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <div 
+              <QuestionStemDisplay
+                text={editingQuestion.questionText}
+                type={editingQuestion.type}
                 style={{ fontWeight: 600, fontSize: '13px', marginBottom: '10px' }}
-                className="math-container"
-              >
-                {preprocessMathText(editingQuestion.questionText)}
-              </div>
+              />
               
               {editingQuestion.options && editingQuestion.options.length > 0 ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -1947,7 +1933,7 @@ function ExamReportContent() {
                           onChange={() => setSelectedCorrectOption(optKey)} 
                         />
                         <span style={{ fontWeight: 700, color: 'var(--accent)' }}>{String.fromCharCode(65 + oi)}.</span>
-                        <span className="math-container">{preprocessMathText(optText)}</span>
+                        <RichMathText content={optText} inline />
                       </label>
                     );
                   })}
@@ -2317,17 +2303,11 @@ function ExamReportContent() {
                               </div>
 
                               {/* Question Text */}
-                              {isAssertionReasonType(bq?.type) ? (() => {
-                                const { assertion, reason } = extractAssertionAndReason(bq || qd);
-                                return (
-                                  <div style={{ fontSize: '12.5px' }}>
-                                    <p style={{ margin: '2px 0' }}><strong>Assertion (A):</strong> <span className="math-container">{preprocessMathText(assertion)}</span></p>
-                                    <p style={{ margin: '2px 0' }}><strong>Reason (R):</strong> <span className="math-container">{preprocessMathText(reason)}</span></p>
-                                  </div>
-                                );
-                              })() : (
-                                <div className="math-container" style={{ fontSize: '13px', fontWeight: 700, lineHeight: '1.4', color: 'var(--text)' }} dangerouslySetInnerHTML={{ __html: preprocessMathText(qd.questionText || bq?.text || '') }} />
-                              )}
+                              <QuestionStemDisplay
+                                text={qd.questionText || bq?.text || ''}
+                                type={bq?.type || qd.type}
+                                style={{ fontSize: '13px', fontWeight: 700, lineHeight: '1.4', color: 'var(--text)' }}
+                              />
 
                               {/* Options */}
                               {bq?.options && bq.options.length > 0 ? (
@@ -2358,10 +2338,10 @@ function ExamReportContent() {
 
                               {/* Solution */}
                               {explanation && (
-                                <div style={{ background: 'var(--bg-soft)', padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border-light)', fontSize: '11.5px', color: 'var(--text)' }}>
-                                  <strong style={{ color: 'var(--accent)', display: 'block', marginBottom: '2px' }}>💡 Solution Explanation:</strong>
-                                  <p className="math-container" style={{ margin: 0, lineHeight: '1.35' }}>{preprocessMathText(explanation)}</p>
-                                </div>
+                                <QuestionExplanationDisplay
+                                  explanation={explanation}
+                                  style={{ marginTop: '0', fontSize: '11.5px', color: 'var(--text)' }}
+                                />
                               )}
 
                               {/* Bottom Navigation */}
@@ -2448,19 +2428,11 @@ function ExamReportContent() {
                                   </span>
                                 </div>
 
-                                {isAssertionReasonType(bq?.type) ? (() => {
-                                  const { assertion, reason } = extractAssertionAndReason(bq || qd);
-                                  return (
-                                    <div style={{ marginBottom: '6px', fontSize: '11.5px' }}>
-                                      <p style={{ margin: '2px 0' }}><strong>Assertion (A):</strong> <span className="math-container">{preprocessMathText(assertion)}</span></p>
-                                      <p style={{ margin: '2px 0' }}><strong>Reason (R):</strong> <span className="math-container">{preprocessMathText(reason)}</span></p>
-                                    </div>
-                                  );
-                                })() : (
-                                  <p className="math-container" style={{ fontSize: '11.5px', margin: '0 0 4px 0', fontWeight: 'bold', lineHeight: '1.3' }}>
-                                    {preprocessMathText(qd.questionText || bq?.text || '')}
-                                  </p>
-                                )}
+                                <QuestionStemDisplay
+                                  text={qd.questionText || bq?.text || ''}
+                                  type={bq?.type || qd.type}
+                                  style={{ fontSize: '11.5px', margin: '0 0 4px 0', fontWeight: 'bold', lineHeight: '1.3' }}
+                                />
 
                                 {bq?.options && bq.options.length > 0 ? (
                                   <AuditQuestionOptions
@@ -2494,10 +2466,10 @@ function ExamReportContent() {
                                 </div>
 
                                 {explanation && (
-                                  <div style={{ marginTop: '4px', fontSize: '11px', color: 'var(--text-muted)', borderTop: '1px dashed var(--border-light)', paddingTop: '4px' }}>
-                                    <strong>Solution Explanation:</strong>
-                                    <p className="math-container" style={{ margin: '2px 0 0 0', lineHeight: '1.3' }}>{preprocessMathText(explanation)}</p>
-                                  </div>
+                                  <QuestionExplanationDisplay
+                                    explanation={explanation}
+                                    style={{ marginTop: '4px', fontSize: '11px' }}
+                                  />
                                 )}
                               </div>
                             );
@@ -2837,7 +2809,7 @@ const AuditQuestionOptions = React.memo(({
             }}
           >
             {prefix && <span style={{ marginRight: '2px' }}>{prefix}</span>}
-            <span className="math-container">{preprocessMathText(optText)}</span>
+            <RichMathText content={optText} inline />
           </div>
         );
       })}

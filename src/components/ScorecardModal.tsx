@@ -20,6 +20,7 @@ import {
   stripOptionLabel,
   DEFAULT_ASSERTION_REASON_OPTIONS
 } from '@/lib/questionTypes';
+import { RichMathText, QuestionStemDisplay, QuestionExplanationDisplay } from '@/components/QuestionDisplay';
 import { formatDateTimeIST, parseDateInput } from '@/lib/dateUtils';
 
 interface QuestionDetailsItem {
@@ -850,36 +851,29 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
                         </div>
 
                         {/* Question Text */}
-                        {isAssertionReasonType(q.type) ? (() => {
-                          const { assertion, reason } = extractAssertionAndReason(q);
-                          return (
-                            <div style={{ fontSize: '13.5px', lineHeight: '1.4' }}>
-                              <p style={{ margin: '3px 0' }}><strong>Assertion (A):</strong> <span className="math-container" dangerouslySetInnerHTML={{ __html: preprocessMathText(assertion) }} /></p>
-                              <p style={{ margin: '3px 0' }}><strong>Reason (R):</strong> <span className="math-container" dangerouslySetInnerHTML={{ __html: preprocessMathText(reason) }} /></p>
-                            </div>
-                          );
-                        })() : (
-                          <div className="math-container" style={{ fontSize: '14px', fontWeight: 700, lineHeight: '1.45', color: 'var(--text, #0f172a)' }} dangerouslySetInnerHTML={{ __html: preprocessMathText(q.text || '') }} />
-                        )}
+                        <QuestionStemDisplay
+                          text={q.text || ''}
+                          type={q.type}
+                          style={{ fontSize: '14px', fontWeight: 700, lineHeight: '1.45', color: 'var(--text, #0f172a)' }}
+                        />
 
                         {/* Options List */}
                         {renderOptionsList(q, isUnanswered)}
 
                         {/* Step-by-Step Solution Card */}
                         {q.solution && (
-                          <div style={{
-                            background: 'var(--bg-soft, #f8fafc)',
-                            border: '1px solid var(--border-light, #e2e8f0)',
-                            borderRadius: 'var(--radius, 8px)',
-                            padding: '10px 14px',
-                            fontSize: '12.5px',
-                            color: 'var(--text, #1e293b)'
-                          }}>
-                            <div style={{ fontWeight: 800, color: 'var(--accent, #4f46e5)', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                              💡 Step-by-Step Solution & Concept:
-                            </div>
-                            <div className="math-container" style={{ lineHeight: '1.4' }} dangerouslySetInnerHTML={{ __html: preprocessMathText(q.solution) }} />
-                          </div>
+                          <QuestionExplanationDisplay
+                            explanation={q.solution}
+                            label="💡 Step-by-Step Solution & Concept:"
+                            style={{
+                              background: 'var(--bg-soft, #f8fafc)',
+                              border: '1px solid var(--border-light, #e2e8f0)',
+                              borderRadius: 'var(--radius, 8px)',
+                              padding: '10px 14px',
+                              fontSize: '12.5px',
+                              color: 'var(--text, #1e293b)'
+                            }}
+                          />
                         )}
 
                         {/* Bottom Question Controls & Challenge Button */}
@@ -1165,25 +1159,20 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
                             </div>
                           </div>
 
-                          {isAssertionReasonType(q.type) ? (() => {
-                            const { assertion, reason } = extractAssertionAndReason(q);
-                            return (
-                              <div style={{ fontSize: '13px' }}>
-                                <p style={{ margin: '2px 0' }}><strong>Assertion (A):</strong> <span className="math-container" dangerouslySetInnerHTML={{ __html: preprocessMathText(assertion) }} /></p>
-                                <p style={{ margin: '2px 0' }}><strong>Reason (R):</strong> <span className="math-container" dangerouslySetInnerHTML={{ __html: preprocessMathText(reason) }} /></p>
-                              </div>
-                            );
-                          })() : (
-                            <p className="math-container" style={{ fontSize: '13px', margin: '0 0 6px 0', fontWeight: 700, lineHeight: '1.4', color: 'var(--text, #0f172a)' }} dangerouslySetInnerHTML={{ __html: preprocessMathText(q.text || '') }} />
-                          )}
+                          <QuestionStemDisplay
+                            text={q.text || ''}
+                            type={q.type}
+                            style={{ fontSize: '13px', margin: '0 0 6px 0', fontWeight: 700, lineHeight: '1.4', color: 'var(--text, #0f172a)' }}
+                          />
 
                           {renderOptionsList(q, isUnanswered)}
 
                           {q.solution && (
-                            <div style={{ marginTop: '4px', fontSize: '12px', color: 'var(--text-muted, #64748b)', borderTop: '1px dashed var(--border-light, #e2e8f0)', paddingTop: '6px' }}>
-                              <strong>Solution Explanation:</strong>
-                              <p className="math-container" style={{ margin: '2px 0 0 0', lineHeight: '1.4' }}>{preprocessMathText(q.solution)}</p>
-                            </div>
+                            <QuestionExplanationDisplay
+                              explanation={q.solution}
+                              label="Solution Explanation:"
+                              style={{ marginTop: '4px', fontSize: '12px' }}
+                            />
                           )}
 
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px', marginTop: '6px', paddingTop: '6px', borderTop: '1px solid var(--border-light, #e2e8f0)' }}>

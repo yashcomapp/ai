@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useMathRender } from '@/hooks/useMathRender';
 import { preprocessMathText, parseAnswerList, resolveOptionDisplayText } from '@/lib/questionTypes';
+import { QuestionStemDisplay, QuestionExplanationDisplay } from '@/components/QuestionDisplay';
 
 interface StudentSelfReflectionModalProps {
   examId: string;
@@ -349,10 +350,10 @@ export default function StudentSelfReflectionModal({
                         </div>
 
                         {/* Question Text */}
-                        <div
-                          className="math-container"
+                        <QuestionStemDisplay
+                          text={qItem.questionText || ''}
+                          type={qItem.type}
                           style={{ fontSize: '13px', lineHeight: '1.5', color: 'var(--text)', fontWeight: 600 }}
-                          dangerouslySetInnerHTML={{ __html: preprocessMathText(qItem.questionText || '') }}
                         />
 
                         {/* Options preview if available */}
@@ -423,10 +424,11 @@ export default function StudentSelfReflectionModal({
                         </div>
 
                         {explanation && (
-                          <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', borderTop: '1px dashed var(--border-light)', paddingTop: '6px' }}>
-                            <strong style={{ color: 'var(--info)' }}>Solution Explanation:</strong>
-                            <div className="math-container" style={{ margin: '3px 0 0 0', lineHeight: '1.4' }} dangerouslySetInnerHTML={{ __html: preprocessMathText(explanation) }} />
-                          </div>
+                          <QuestionExplanationDisplay
+                            explanation={explanation}
+                            label="Solution Explanation:"
+                            style={{ marginTop: '0', fontSize: '11.5px', color: 'var(--text-muted)' }}
+                          />
                         )}
 
                         {/* Error Reason Classification Box */}

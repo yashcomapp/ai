@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import {
   preprocessMathText,
   stripOptionLabel,
@@ -14,6 +13,7 @@ import {
   parseAnswerList,
   isOptionMatch
 } from '@/lib/questionTypes';
+import { QuestionStemDisplay, RichMathText } from '@/components/QuestionDisplay';
 
 interface PracticeQuestionCardProps {
   question: any;
@@ -81,30 +81,11 @@ export function PracticeQuestionCard({
           </div>
         </div>
 
-        {(() => {
-          if (isAssertionReasonType(question.type)) {
-            const { assertion, reason } = extractAssertionAndReason(question);
-            return (
-              <div className="assertion-reason-container" style={{ margin: '15px 0' }}>
-                <div style={{ background: 'var(--bg-soft)', padding: '12px 16px', borderRadius: 'var(--radius-sm)', marginBottom: '10px' }}>
-                  <strong>Assertion (A):</strong>
-                  <p className="math-container" style={{ marginTop: '4px', fontSize: '14px' }} dangerouslySetInnerHTML={{ __html: preprocessMathText(assertion) }} />
-                </div>
-                <div style={{ background: 'var(--bg-soft)', padding: '12px 16px', borderRadius: 'var(--radius-sm)' }}>
-                  <strong>Reason (R):</strong>
-                  <p className="math-container" style={{ marginTop: '4px', fontSize: '14px' }} dangerouslySetInnerHTML={{ __html: preprocessMathText(reason) }} />
-                </div>
-              </div>
-            );
-          }
-          return (
-            <h3 
-              className="math-container" 
-              style={{ fontSize: '16px', fontWeight: 700, margin: '15px 0 20px', lineHeight: '1.5' }}
-              dangerouslySetInnerHTML={{ __html: preprocessMathText(question.text || '') }}
-            />
-          );
-        })()}
+        <QuestionStemDisplay
+          text={question.text || ''}
+          type={question.type}
+          style={{ fontSize: '16px', fontWeight: 700, margin: '15px 0 20px', lineHeight: '1.5' }}
+        />
 
         {/* Options Selector Layout */}
         <div className="options-container" style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '16px' }}>

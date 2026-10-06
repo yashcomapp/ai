@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Script from 'next/script';
 import { useMathRender } from '@/hooks/useMathRender';
 import { preprocessMathText, toCanonicalQuestionType, robustParseAIJson, validateQuestion, normalizeOptionText, cleanOptionPrefix, cleanStringForMatch, isOptionMatch, shuffleArray, normalizeBloomLevel, BLOOM_TAXONOMY_MAP } from '@/lib/questionTypes';
+import { QuestionStemDisplay, QuestionExplanationDisplay } from '@/components/QuestionDisplay';
 import { highlightModelAnswerKeywords } from '@/lib/pdfExport';
 import { SyllabusSelector } from '@/components/SyllabusSelector';
 import { useSyllabusSelector } from '@/hooks/useSyllabusSelector';
@@ -2701,12 +2702,14 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
                               outline: 'none'
                             }}
                           />
-                          {/* Live Math Render Preview */}
-                          <div 
-                            className="math-container" 
-                            style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '4px', padding: '4px 8px', background: 'rgba(255, 255, 255, 0.03)', border: '1px dashed var(--border-light)', borderRadius: '4px', minHeight: '18px', whiteSpace: 'pre-line' }}
-                            dangerouslySetInnerHTML={{ __html: preprocessMathText(q.text) }}
-                          />
+                          {/* Live Math & Diagram Render Preview */}
+                          <div style={{ marginTop: '4px' }}>
+                            <QuestionStemDisplay
+                              text={q.text}
+                              type={q.type}
+                              style={{ fontSize: '11.5px', color: 'var(--text-muted)', padding: '4px 8px', background: 'rgba(255, 255, 255, 0.03)', border: '1px dashed var(--border-light)', borderRadius: '4px', minHeight: '18px' }}
+                            />
+                          </div>
                         </div>
 
                         {/* Proctoring Settings */}
@@ -3019,10 +3022,11 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
                                   fontStyle: 'italic'
                                 }}
                               />
-                              {/* Live Math Render Preview */}
-                              <div className="math-container" style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px', padding: '4px 8px', background: 'rgba(255, 255, 255, 0.03)', border: '1px dashed var(--border-light)', borderRadius: '4px', minHeight: '18px', whiteSpace: 'pre-line' }}>
-                                {preprocessMathText(q.solution || '')}
-                              </div>
+                              {/* Live Math & Diagram Render Preview */}
+                              <QuestionExplanationDisplay
+                                explanation={q.solution || ''}
+                                style={{ marginTop: '4px', padding: '4px 8px', background: 'rgba(255, 255, 255, 0.03)', border: '1px dashed var(--border-light)', borderRadius: '4px', minHeight: '18px' }}
+                              />
                             </div>
                           </>
                         )}

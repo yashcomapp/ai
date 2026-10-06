@@ -5,6 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Script from 'next/script';
 import { stripOptionLabel, preprocessMathText, parseAnswerList, isOptionSelectedByUser, isOptionCorrect, getQuestionCorrectAnswer, getRawOptionKey, getRawOptionText, extractAssertionAndReason, isMultipleChoiceType, isSingleChoiceType, isTrueFalseType, isAssertionReasonType, isNumericalType, isFillBlanksType, isObjectiveType, resolveOptionDisplayText, DEFAULT_ASSERTION_REASON_OPTIONS } from '@/lib/questionTypes';
+import { RichMathText, QuestionStemDisplay, QuestionExplanationDisplay } from '@/components/QuestionDisplay';
 import { useMathRender } from '@/hooks/useMathRender';
 import { db } from '@/lib/firebase/firestore';
 import { useExamTimer } from '@/hooks/useExamTimer';
@@ -1170,13 +1171,11 @@ function TakeExamContent() {
             </div>
 
 
-            {!isAssertionReasonType(currentQuestion.type) && (
-              <div 
-                className="math-container"
-                style={{ fontSize: '15px', lineHeight: '1.6', marginBottom: '16px', whiteSpace: 'pre-line' }}
-                dangerouslySetInnerHTML={{ __html: preprocessMathText(currentQuestion.text) }}
-              />
-            )}
+            <QuestionStemDisplay
+              text={currentQuestion.text}
+              type={currentQuestion.type}
+              style={{ fontSize: '15px', lineHeight: '1.6', marginBottom: '16px' }}
+            />
 
             {/* Options Area based on type */}
             <div style={{ padding: '0 0 10px' }}>
@@ -1286,22 +1285,7 @@ function TakeExamContent() {
                 }
                 
                 return (
-                  <div>
-                    <div className="assertion-box" style={{ background: 'var(--accent-soft)', padding: '15px', borderRadius: 'var(--radius-sm)', marginBottom: '15px' }}>
-                      <div 
-                        className="math-container"
-                        style={{ padding: '8px 0 8px 12px', borderLeft: '3px solid var(--accent)', margin: '4px 0', fontSize: '14px' }}
-                      >
-                        <strong>Assertion (A):</strong> <span dangerouslySetInnerHTML={{ __html: preprocessMathText(assertion) }} />
-                      </div>
-                      <div 
-                        className="math-container"
-                        style={{ padding: '8px 0 8px 12px', borderLeft: '3px solid var(--accent)', margin: '4px 0', fontSize: '14px' }}
-                      >
-                        <strong>Reason (R):</strong> <span dangerouslySetInnerHTML={{ __html: preprocessMathText(reason) }} />
-                      </div>
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                       {arOptions.map((opt) => {
                         const selected = currentAnswer === opt.code;
                         return (
@@ -1322,7 +1306,6 @@ function TakeExamContent() {
                         );
                       })}
                     </div>
-                  </div>
                 );
               })()}
 
@@ -1608,17 +1591,11 @@ function TakeExamContent() {
                            </span>
                          </div>
 
-                        {isAssertionReasonType(matchingQ?.type) ? (() => {
-                          const { assertion, reason } = extractAssertionAndReason(matchingQ);
-                          return (
-                            <div style={{ marginBottom: '12px', fontSize: '13px' }}>
-                              <p style={{ margin: '4px 0' }}><strong>Assertion (A):</strong> <span className="math-container">{preprocessMathText(assertion)}</span></p>
-                              <p style={{ margin: '4px 0' }}><strong>Reason (R):</strong> <span className="math-container">{preprocessMathText(reason)}</span></p>
-                            </div>
-                          );
-                        })() : (
-                          <div className="math-container" style={{ fontSize: '13px', margin: '0 0 12px 0', fontWeight: 'bold', lineHeight: '1.4' }} dangerouslySetInnerHTML={{ __html: preprocessMathText(qItem.questionText) }} />
-                        )}
+                        <QuestionStemDisplay
+                          text={qItem.questionText}
+                          type={matchingQ?.type}
+                          style={{ fontSize: '13px', margin: '0 0 12px 0', fontWeight: 'bold', lineHeight: '1.4' }}
+                        />
 
                         {/* Options list rendering matching result scorecard */}
                         {(() => {
@@ -1707,10 +1684,10 @@ function TakeExamContent() {
                         </div>
 
                         {explanation && (
-                          <div style={{ marginTop: '12px', fontSize: '12px', color: 'var(--text-muted)', borderTop: '1px dashed var(--border-light)', paddingTop: '8px', marginBottom: '12px' }}>
-                            <strong>Solution Explanation:</strong>
-                            <p className="math-container" style={{ margin: '4px 0 0 0', lineHeight: '1.4' }}>{preprocessMathText(explanation)}</p>
-                          </div>
+                          <QuestionExplanationDisplay
+                            explanation={explanation}
+                            style={{ marginTop: '12px', fontSize: '12px', marginBottom: '12px' }}
+                          />
                         )}
 
                         {/* Error classification box (exactly two lines of buttons in a nice box) */}

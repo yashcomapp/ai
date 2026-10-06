@@ -152,6 +152,16 @@ export function formatRichText(text: any): string {
   const processedMath = preprocessMathText(text);
   let str = String(processedMath);
 
+  // 1. Extract and preserve all SVG blocks to prevent modifying attributes or coordinates or inserting invalid HTML tags
+  const preservedSvgs: string[] = [];
+  str = str.replace(/<svg[\s\S]*?<\/svg>/gi, (match) => {
+    // Clean any accidental <br> tags that may have been previously injected inside SVG
+    const cleanedSvg = match.replace(/<br\s*\/?>/gi, '\n');
+    const placeholder = `§§SVGTAG${preservedSvgs.length}§§`;
+    preservedSvgs.push(cleanedSvg);
+    return placeholder;
+  });
+
   // Convert literal newlines (\\n) and actual newlines (\n) to actual <br/> tags since this is output as HTML
   str = str.replace(/(?:\\n|\n)(?![a-zA-Z])/g, '<br/>');
 
@@ -163,6 +173,11 @@ export function formatRichText(text: any): string {
 
   // Convert markdown underline (__text__) to HTML <u>
   str = str.replace(/__([^_]+)__/g, '<u>$1</u>');
+
+  // 2. Restore preserved pristine SVG blocks
+  preservedSvgs.forEach((svg, idx) => {
+    str = str.replace(`§§SVGTAG${idx}§§`, svg);
+  });
 
   if (RICH_TEXT_CACHE.size >= MAX_MATH_CACHE_SIZE) {
     const firstKey = RICH_TEXT_CACHE.keys().next().value;
@@ -665,6 +680,7 @@ export const KATEX_AUTO_RENDER_OPTIONS = {
     { left: '\\(', right: '\\)', display: false },
     { left: '\\[', right: '\\]', display: true }
   ],
+  ignoredTags: ["script", "noscript", "style", "textarea", "pre", "code", "annotation", "annotation-xml", "svg"],
   throwOnError: false
 };
 

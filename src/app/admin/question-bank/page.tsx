@@ -21,6 +21,7 @@ import {
   stripOptionLabel,
   DEFAULT_ASSERTION_REASON_OPTIONS
 } from '@/lib/questionTypes';
+import { QuestionStemDisplay, QuestionExplanationDisplay } from '@/components/QuestionDisplay';
 import Image from 'next/image';
 interface Question {
   id?: string;
@@ -1094,21 +1095,13 @@ ${JSON.stringify(missingList, null, 2)}`;
                       </div>
 
                       {/* Question Text / Assertion-Reason Content */}
-                      {q.type === 'assertion_reason' ? (() => {
-                        const { assertion, reason } = extractAssertionAndReason(q);
-                        return (
-                          <div style={{ marginBottom: '4px', fontSize: '12.5px' }}>
-                            {assertion && <p style={{ margin: '2px 0' }}><strong>Assertion (A):</strong> <span className="math-container" dangerouslySetInnerHTML={{ __html: preprocessMathText(assertion) }} /></p>}
-                            {reason && <p style={{ margin: '2px 0' }}><strong>Reason (R):</strong> <span className="math-container" dangerouslySetInnerHTML={{ __html: preprocessMathText(reason) }} /></p>}
-                          </div>
-                        );
-                      })() : (
-                        <p 
-                          className="math-container" 
-                          style={{ fontSize: '12.5px', margin: '2px 0 6px 0', fontWeight: 'bold', lineHeight: '1.35', color: 'var(--text)' }}
-                          dangerouslySetInnerHTML={{ __html: `${preprocessMathText(q.text)}${q.questionCode ? ` (${q.questionCode})` : ''}` }}
-                        />
-                      )}
+                      <QuestionStemDisplay
+                        text={q.text}
+                        type={q.type}
+                        questionCode={q.questionCode}
+                        showQuestionCode={true}
+                        style={{ fontSize: '12.5px', margin: '2px 0 6px 0', fontWeight: 'bold', lineHeight: '1.35', color: 'var(--text)' }}
+                      />
 
                       {/* Figure / Image */}
                       {q.imageUrl && (
@@ -1184,10 +1177,11 @@ ${JSON.stringify(missingList, null, 2)}`;
 
                       {/* Explanation / Solution box */}
                       {q.solution && (
-                        <div style={{ marginTop: '4px', fontSize: '11.5px', color: 'var(--text-muted)', borderTop: '1px dashed var(--border-light)', paddingTop: '6px' }}>
-                          <strong style={{ color: 'var(--text)' }}>Explanation:</strong>
-                          <p className="math-container" style={{ margin: '2px 0 0 0', lineHeight: '1.35' }} dangerouslySetInnerHTML={{ __html: preprocessMathText(q.solution) }} />
-                        </div>
+                        <QuestionExplanationDisplay
+                          explanation={q.solution}
+                          label="Explanation:"
+                          style={{ marginTop: '4px', fontSize: '11.5px', color: 'var(--text-muted)' }}
+                        />
                       )}
                     </div>
                   );
