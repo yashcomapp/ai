@@ -753,36 +753,20 @@ export async function GET(req: NextRequest) {
     const subjExamIds = subjectiveExams.map(e => e.id).filter(Boolean);
     const allExamIds = Array.from(new Set([...objExamIds, ...subjExamIds]));
 
-    const objChunks: string[][] = [];
-    for (let i = 0; i < objExamIds.length; i += 30) {
-      objChunks.push(objExamIds.slice(i, i + 30));
-    }
-
-    const subjChunks: string[][] = [];
-    for (let i = 0; i < subjExamIds.length; i += 30) {
-      subjChunks.push(subjExamIds.slice(i, i + 30));
-    }
-
     const allChunks: string[][] = [];
     for (let i = 0; i < allExamIds.length; i += 30) {
       allChunks.push(allExamIds.slice(i, i + 30));
     }
 
-    const [objAssignSnaps, subjAssignSnaps, reviewSnaps, attemptSnaps] = await Promise.all([
-      Promise.all(objChunks.map(chunk => 
-        adminDb.collection('batchAssignments')
-          .where('examId', 'in', chunk)
-          .where('status', 'in', ['active', 'draft'])
-          .get()
-          .catch(() => null)
-      )),
-      Promise.all(subjChunks.map(chunk => 
-        adminDb.collection('subjectiveAssignments')
-          .where('examId', 'in', chunk)
-          .where('status', 'in', ['active', 'draft'])
-          .get()
-          .catch(() => null)
-      )),
+    const [objAssignSnap, subjAssignSnap, reviewSnaps, attemptSnaps] = await Promise.all([
+      adminDb.collection('batchAssignments').get().catch(err => {
+        console.error('Error fetching batchAssignments:', err);
+        return { docs: [] } as any;
+      }),
+      adminDb.collection('subjectiveAssignments').get().catch(err => {
+        console.error('Error fetching subjectiveAssignments:', err);
+        return { docs: [] } as any;
+      }),
       Promise.all(allChunks.map(chunk => 
         adminDb.collection('reviews')
           .where('examId', 'in', chunk)
@@ -825,52 +809,48 @@ export async function GET(req: NextRequest) {
     }
 
     const objAssignments: any[] = [];
-    objAssignSnaps.forEach(snap => {
-      if (!snap) return;
-      snap.docs.forEach((doc: any) => {
-        const data = doc.data();
-        objAssignments.push({
-          id: doc.id,
-          examId: data.examId,
-          collection: 'batchAssignments',
-          targetType: data.targetType || 'batch',
-          targetBatches: data.targetBatches || [],
-          targetStudents: data.targetStudents || [],
-          openMode: data.openMode || 'immediate',
-          startAt: data.startAt ? (data.startAt.toDate ? data.startAt.toDate() : new Date(data.startAt)) : null,
-          endAt: data.endAt ? (data.endAt.toDate ? data.endAt.toDate() : new Date(data.endAt)) : null,
-          attemptLimit: data.attemptLimit || 1,
-          examDuration: data.examDuration || 30,
-          lateEntryRestriction: data.lateEntryRestriction === true,
-          status: data.status || 'active',
-          createdAt: data.createdAt ? (data.createdAt.toDate ? data.createdAt.toDate() : new Date(data.createdAt)) : null
-        });
+    objAssignSnap.docs.forEach((doc: any) => {
+      const data = doc.data();
+      if (data.status && data.status !== 'active' && data.status !== 'draft') return;
+      objAssignments.push({
+        id: doc.id,
+        examId: data.examId,
+        collection: 'batchAssignments',
+        targetType: data.targetType || 'batch',
+        targetBatches: data.targetBatches || [],
+        targetStudents: data.targetStudents || [],
+        openMode: data.openMode || 'immediate',
+        startAt: data.startAt ? (data.startAt.toDate ? data.startAt.toDate() : new Date(data.startAt)) : null,
+        endAt: data.endAt ? (data.endAt.toDate ? data.endAt.toDate() : new Date(data.endAt)) : null,
+        attemptLimit: data.attemptLimit || 1,
+        examDuration: data.examDuration || 30,
+        lateEntryRestriction: data.lateEntryRestriction === true,
+        status: data.status || 'active',
+        createdAt: data.createdAt ? (data.createdAt.toDate ? data.createdAt.toDate() : new Date(data.createdAt)) : null
       });
     });
 
     const subjAssignments: any[] = [];
-    subjAssignSnaps.forEach(snap => {
-      if (!snap) return;
-      snap.docs.forEach((doc: any) => {
-        const data = doc.data();
-        subjAssignments.push({
-          id: doc.id,
-          examId: data.examId,
-          collection: 'subjectiveAssignments',
-          targetType: data.targetType || 'batch',
-          targetBatches: data.targetBatches || [],
-          targetStudents: data.targetStudents || [],
-          openMode: data.openMode || 'immediate',
-          startAt: data.startAt ? (data.startAt.toDate ? data.startAt.toDate() : new Date(data.startAt)) : null,
-          endAt: data.endAt ? (data.endAt.toDate ? data.endAt.toDate() : new Date(data.endAt)) : null,
-          attemptLimit: data.attemptLimit || 1,
-          examMode: data.examMode || 'home',
-          classroomDuration: data.classroomDuration || 60,
-          classroomTimePerQ: data.classroomTimePerQ || 5,
-          lateEntryRestriction: data.lateEntryRestriction === true,
-          status: data.status || 'active',
-          createdAt: data.createdAt ? (data.createdAt.toDate ? data.createdAt.toDate() : new Date(data.createdAt)) : null
-        });
+    subjAssignSnap.docs.forEach((doc: any) => {
+      const data = doc.data();
+      if (data.status && data.status !== 'active' && data.status !== 'draft') return;
+      subjAssignments.push({
+        id: doc.id,
+        examId: data.examId,
+        collection: 'subjectiveAssignments',
+        targetType: data.targetType || 'batch',
+        targetBatches: data.targetBatches || [],
+        targetStudents: data.targetStudents || [],
+        openMode: data.openMode || 'immediate',
+        startAt: data.startAt ? (data.startAt.toDate ? data.startAt.toDate() : new Date(data.startAt)) : null,
+        endAt: data.endAt ? (data.endAt.toDate ? data.endAt.toDate() : new Date(data.endAt)) : null,
+        attemptLimit: data.attemptLimit || 1,
+        examMode: data.examMode || 'home',
+        classroomDuration: data.classroomDuration || 60,
+        classroomTimePerQ: data.classroomTimePerQ || 5,
+        lateEntryRestriction: data.lateEntryRestriction === true,
+        status: data.status || 'active',
+        createdAt: data.createdAt ? (data.createdAt.toDate ? data.createdAt.toDate() : new Date(data.createdAt)) : null
       });
     });
 

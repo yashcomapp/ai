@@ -474,12 +474,12 @@ export default function AdminExamsPage() {
       }
     }
     if (!examDate || isNaN(examDate.getTime())) return false;
-    const todayStr = new Date().toLocaleDateString('en-CA');
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const tomorrowStr = tomorrow.toLocaleDateString('en-CA');
-    const examDateStr = examDate.toLocaleDateString('en-CA');
-    return examDateStr === todayStr || examDateStr === tomorrowStr;
+    const todayKeyIST = getDateKeyIST(new Date());
+    const tomorrowDate = new Date();
+    tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+    const tomorrowKeyIST = getDateKeyIST(tomorrowDate);
+    const examDateKeyIST = getDateKeyIST(examDate);
+    return examDateKeyIST === todayKeyIST || examDateKeyIST === tomorrowKeyIST;
   };
 
   const getExamAssignedDateTime = (exam: Exam, type: 'objective' | 'subjective') => {
