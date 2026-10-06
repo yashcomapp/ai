@@ -972,9 +972,7 @@ function TakeSubjectiveExamContent() {
                 </div>
 
                 <div style={{ padding: '20px' }}>
-                  <p className="math-container" style={{ fontSize: '15px', color: 'var(--text)', lineHeight: 1.6, whiteSpace: 'pre-line' }}>
-                     {preprocessMathText(q.text)}
-                  </p>
+                  <div className="math-container" style={{ fontSize: '15px', color: 'var(--text)', lineHeight: 1.6, whiteSpace: 'pre-line' }} dangerouslySetInnerHTML={{ __html: preprocessMathText(q.text) }} />
                 </div>
 
                 {/* Peer Review Model Answer & Grading Fields */}

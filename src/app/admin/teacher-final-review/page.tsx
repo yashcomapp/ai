@@ -651,9 +651,7 @@ function TeacherFinalReviewContent() {
                         </div>
 
                         <div style={{ padding: '16px' }}>
-                          <p className="math-container" style={{ fontSize: '14px', color: 'var(--text)', margin: '0 0 16px 0', lineHeight: 1.6, whiteSpace: 'pre-line', fontWeight: 600 }}>
-                            {preprocessMathText(q.text)}
-                          </p>
+                          <div className="math-container" style={{ fontSize: '14px', color: 'var(--text)', margin: '0 0 16px 0', lineHeight: 1.6, whiteSpace: 'pre-line', fontWeight: 600 }} dangerouslySetInnerHTML={{ __html: preprocessMathText(q.text) }} />
 
                           {/* Per-Question Parent Graded Score Badge */}
                           {(parentVal || activeAttempt?.parentScore !== undefined) && (

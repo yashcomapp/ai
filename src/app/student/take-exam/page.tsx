@@ -1292,13 +1292,13 @@ function TakeExamContent() {
                         className="math-container"
                         style={{ padding: '8px 0 8px 12px', borderLeft: '3px solid var(--accent)', margin: '4px 0', fontSize: '14px' }}
                       >
-                        <strong>Assertion (A):</strong> {preprocessMathText(assertion)}
+                        <strong>Assertion (A):</strong> <span dangerouslySetInnerHTML={{ __html: preprocessMathText(assertion) }} />
                       </div>
                       <div 
                         className="math-container"
                         style={{ padding: '8px 0 8px 12px', borderLeft: '3px solid var(--accent)', margin: '4px 0', fontSize: '14px' }}
                       >
-                        <strong>Reason (R):</strong> {preprocessMathText(reason)}
+                        <strong>Reason (R):</strong> <span dangerouslySetInnerHTML={{ __html: preprocessMathText(reason) }} />
                       </div>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -1617,9 +1617,7 @@ function TakeExamContent() {
                             </div>
                           );
                         })() : (
-                          <p className="math-container" style={{ fontSize: '13px', margin: '0 0 12px 0', fontWeight: 'bold', lineHeight: '1.4' }}>
-                            {preprocessMathText(qItem.questionText)}
-                          </p>
+                          <div className="math-container" style={{ fontSize: '13px', margin: '0 0 12px 0', fontWeight: 'bold', lineHeight: '1.4' }} dangerouslySetInnerHTML={{ __html: preprocessMathText(qItem.questionText) }} />
                         )}
 
                         {/* Options list rendering matching result scorecard */}

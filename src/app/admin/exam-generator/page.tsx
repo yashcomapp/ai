@@ -1837,9 +1837,8 @@ Return ONLY valid JSON. No markdown wrappers or extra commentary.`;
                   <div 
                     className="math-container" 
                     style={{ fontSize: '12.5px', fontWeight: 'bold', lineHeight: '1.35', color: 'var(--text)', width: '100%', wordBreak: 'break-word', margin: '2px 0 4px 0' }} 
-                  >
-                    {preprocessMathText(q.text)}
-                  </div>
+                    dangerouslySetInnerHTML={{ __html: preprocessMathText(q.text) }} 
+                  />
                   
                   {/* Render Options if MCQ */}
                   {q.options && q.options.length > 0 && (
@@ -1852,7 +1851,7 @@ Return ONLY valid JSON. No markdown wrappers or extra commentary.`;
                          return (
                            <div key={oi} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '4px 8px', background: isCorrect ? 'var(--success-bg)' : 'var(--review-option-bg)', borderRadius: 'var(--radius-sm)', border: isCorrect ? '1.5px solid var(--success)' : '1px solid var(--review-option-border)', color: isCorrect ? 'var(--success)' : 'var(--text)', fontWeight: isCorrect ? 600 : 400 }}>
                              <span style={{ fontWeight: 700, flexShrink: 0 }}>{isCorrect ? '✅ ' : ''}{label}.</span> 
-                             <span className="math-container" style={{ flex: 1, wordBreak: 'break-word' }}>{preprocessMathText(opt)}</span>
+                             <span className="math-container" style={{ flex: 1, wordBreak: 'break-word' }} dangerouslySetInnerHTML={{ __html: preprocessMathText(opt) }} />
                            </div>
                          );
                        })}
@@ -1862,7 +1861,7 @@ Return ONLY valid JSON. No markdown wrappers or extra commentary.`;
                   {/* Correct Answers Banner */}
                   {(q.correctAnswer || (q.correctAnswers && q.correctAnswers.length > 0)) && (
                     <div style={{ fontSize: '11.5px', color: 'var(--success)', fontWeight: 700, padding: '4px 8px', background: 'rgba(16, 185, 129, 0.08)', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(16, 185, 129, 0.2)', width: '100%' }}>
-                      ✓ Correct Answer: <span className="math-container" style={{ fontWeight: 600 }}>{preprocessMathText(q.correctAnswers && q.correctAnswers.length > 0 ? q.correctAnswers.join(', ') : q.correctAnswer)}</span>
+                      ✓ Correct Answer: <span className="math-container" style={{ fontWeight: 600 }} dangerouslySetInnerHTML={{ __html: preprocessMathText(q.correctAnswers && q.correctAnswers.length > 0 ? q.correctAnswers.join(', ') : q.correctAnswer) }} />
                     </div>
                   )}
 

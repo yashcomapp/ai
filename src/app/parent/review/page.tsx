@@ -1282,9 +1282,7 @@ export default function ParentReviewPanel() {
                             </div>
 
                             <div style={{ padding: '16px' }}>
-                              <p className="math-container" style={{ fontSize: '13.5px', color: 'var(--text)', lineHeight: 1.5, margin: 0, whiteSpace: 'pre-line', fontWeight: 600 }}>
-                                {preprocessMathText(q.text)}{q.questionCode ? ` (${q.questionCode})` : ''}
-                              </p>
+                              <div className="math-container" style={{ fontSize: '13.5px', color: 'var(--text)', lineHeight: 1.5, margin: 0, whiteSpace: 'pre-line', fontWeight: 600 }} dangerouslySetInnerHTML={{ __html: `${preprocessMathText(q.text)}${q.questionCode ? ` (${q.questionCode})` : ''}` }} />
                             </div>
 
                             <div style={{ borderTop: '1px dashed var(--border)', background: 'var(--surface-2)', padding: '14px' }}>
