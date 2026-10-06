@@ -9,6 +9,7 @@ const ScorecardModal = dynamic(() => import('@/components/ScorecardModal'), { ss
 import { useMathRender } from '@/hooks/useMathRender';
 import { useScorecard } from '@/hooks/useScorecard';
 import { preprocessMathText, formatRichText, parseAnswerList, isOptionSelectedByUser, isBlank, getReasonForQuestion, getRawOptionKey, getRawOptionText, formatUserAnswerSummary } from '@/lib/questionTypes';
+import QuestionDisplay from '@/components/QuestionDisplay';
 import { highlightModelAnswerKeywords } from '@/lib/pdfExport';
 import { formatDateIST, getDateKeyIST, formatDateTimeIST } from '@/lib/dateUtils';
 
@@ -1282,7 +1283,12 @@ export default function ParentReviewPanel() {
                             </div>
 
                             <div style={{ padding: '16px' }}>
-                              <div className="math-container" style={{ fontSize: '13.5px', color: 'var(--text)', lineHeight: 1.5, margin: 0, whiteSpace: 'pre-line', fontWeight: 600 }} dangerouslySetInnerHTML={{ __html: `${preprocessMathText(q.text)}${q.questionCode ? ` (${q.questionCode})` : ''}` }} />
+                              <QuestionDisplay
+                                question={q}
+                                mode="stem-only"
+                                showQuestionCode={true}
+                                style={{ fontSize: '13.5px', color: 'var(--text)', lineHeight: 1.5, margin: 0, fontWeight: 600 }}
+                              />
                             </div>
 
                             <div style={{ borderTop: '1px dashed var(--border)', background: 'var(--surface-2)', padding: '14px' }}>

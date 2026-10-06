@@ -6,7 +6,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useMathRender } from '@/hooks/useMathRender';
 import { preprocessMathText, formatRichText, parseAnswerList, isOptionSelectedByUser, isOptionCorrect, getQuestionCorrectAnswer, getRawOptionKey, getRawOptionText, isBlank, resolveOptionDisplayText, extractAssertionAndReason, isAssertionReasonType } from '@/lib/questionTypes';
-import { RichMathText, QuestionStemDisplay, QuestionExplanationDisplay, QuestionOptionRow } from '@/components/QuestionDisplay';
+import QuestionDisplay, { RichMathText } from '@/components/QuestionDisplay';
 import { playNotificationSound } from '@/lib/audioUtils';
 import { getDateKeyIST, formatDateDMY, formatTimeIST } from '@/lib/dateUtils';
 
@@ -1641,11 +1641,14 @@ function ExamReportContent() {
                     className="card pq-card" 
                     style={{ background: 'var(--bg-soft)', borderLeft: '4px solid var(--accent)', padding: '10px 12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)', position: 'relative' }}
                   >
-                    <QuestionStemDisplay
+                    <QuestionDisplay
                       prefix={`Q${(s.idx ?? idx) + 1}. `}
                       text={questionTextRaw}
                       type={s.type}
-                      style={{ fontWeight: 600, fontSize: '12.5px' }}
+                      options={s.options}
+                      correctAnswer={s.correctAnswer}
+                      explanation={s.explanation}
+                      mode="report"
                       headerRight={
                         <button 
                           className="btn btn-secondary btn-sm" 
@@ -1659,95 +1662,24 @@ function ExamReportContent() {
                           ✏️ Edit Answer
                         </button>
                       }
-                    />
-
-                    <div className="pq-bar-track" style={{ height: '6px', borderRadius: '3px', background: 'var(--bg)', overflow: 'hidden', marginTop: '8px' }}>
-                      <div className="pq-bar-fill" style={{ height: '100%', background: 'var(--success)', width: `${pctCorrect}%` }}></div>
-                    </div>
-
-                    <div style={{ fontSize: '11px', margin: '8px 0 12px', color: 'var(--text-muted)' }}>
-                      ✅ <span style={{ textDecoration: 'underline', cursor: 'pointer', fontWeight: 600 }} onClick={() => { setActiveQuestionStat(s); setQuestionModalOpen(true); }}>{s.correct} correct</span> &nbsp;•&nbsp;
-                      ❌ <span style={{ textDecoration: 'underline', cursor: 'pointer', fontWeight: 600 }} onClick={() => { setActiveQuestionStat(s); setQuestionModalOpen(true); }}>{s.incorrect} incorrect</span> &nbsp;•&nbsp;
-                      ➖ <span style={{ textDecoration: 'underline', cursor: 'pointer', fontWeight: 600 }} onClick={() => { setActiveQuestionStat(s); setQuestionModalOpen(true); }}>{s.unanswered} unanswered</span>
-                    </div>
-
-                    {/* Options breakdown votes */}
-                    {s.options && s.options.length > 0 ? (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '10px' }}>
-                        {s.options.map((opt: any, oi: number) => {
-                          const optKey = getRawOptionKey(opt);
-                          const optText = getRawOptionText(opt);
-                          const vote = s.optionVotes[optKey] || 
-                                       s.optionVotes[optText] || 
-                                       s.optionVotes[String(oi)] || 
-                                       s.optionVotes[String.fromCharCode(65 + oi)] || 
-                                       { count: 0, students: [] };
-                          const isCorrectOpt = Array.isArray(s.correctAnswer)
-                            ? s.correctAnswer.includes(optKey)
-                            : s.correctAnswer === optKey;
-
-                          return (
-                            <QuestionOptionRow
-                              key={oi}
-                              index={oi}
-                              text={optText}
-                              isCorrect={isCorrectOpt}
-                              voteCount={vote.count}
-                              onVoteClick={() => {
-                                setVotersTitle(`Option: ${optKey}`);
-                                setVotersList(vote.students || []);
-                                setVotersModalOpen(true);
-                              }}
-                            />
-                          );
-                        })}
+                      optionVotes={s.optionVotes}
+                      onVoteClick={(optKey, students) => {
+                        setVotersTitle(`Option: ${optKey}`);
+                        setVotersList(students || []);
+                        setVotersModalOpen(true);
+                      }}
+                      style={{ fontWeight: 600, fontSize: '12.5px' }}
+                    >
+                      <div className="pq-bar-track" style={{ height: '6px', borderRadius: '3px', background: 'var(--bg)', overflow: 'hidden', margin: '4px 0 8px 0' }}>
+                        <div className="pq-bar-fill" style={{ height: '100%', background: 'var(--success)', width: `${pctCorrect}%` }}></div>
                       </div>
-                    ) : (
-                      s.correctAnswer && (
-                        <div style={{ padding: '8px 12px', border: '1.5px solid var(--success)', borderRadius: '8px', background: 'var(--success-bg, rgba(26,165,78,0.07))', fontSize: '12px', fontWeight: 600, marginBottom: '10px' }} className="math-container">
-                          ✅ Correct Answer: <RichMathText content={Array.isArray(s.correctAnswer) ? s.correctAnswer.join(', ') : String(s.correctAnswer)} inline />
-                        </div>
-                      )
-                    )}
 
-                    {/* Explicit summary of the correct answer when options list is rendered */}
-                    {s.options && s.options.length > 0 && s.correctAnswer && (
-                      <div style={{ fontSize: '12px', color: 'var(--success)', fontWeight: 700, margin: '8px 0' }}>
-                        ℹ️ Correct Answer: Option {Array.isArray(s.correctAnswer) ? s.correctAnswer.join(', ') : String(s.correctAnswer)}
+                      <div style={{ fontSize: '11px', margin: '0 0 10px 0', color: 'var(--text-muted)' }}>
+                        ✅ <span style={{ textDecoration: 'underline', cursor: 'pointer', fontWeight: 600 }} onClick={() => { setActiveQuestionStat(s); setQuestionModalOpen(true); }}>{s.correct} correct</span> &nbsp;•&nbsp;
+                        ❌ <span style={{ textDecoration: 'underline', cursor: 'pointer', fontWeight: 600 }} onClick={() => { setActiveQuestionStat(s); setQuestionModalOpen(true); }}>{s.incorrect} incorrect</span> &nbsp;•&nbsp;
+                        ➖ <span style={{ textDecoration: 'underline', cursor: 'pointer', fontWeight: 600 }} onClick={() => { setActiveQuestionStat(s); setQuestionModalOpen(true); }}>{s.unanswered} unanswered</span>
                       </div>
-                    )}
-
-                    {/* Explanation / Solution block (Theme-aware styles) */}
-                    {s.explanation ? (
-                      <QuestionExplanationDisplay
-                        explanation={s.explanation}
-                        style={{
-                          marginTop: '10px',
-                          padding: '10px 12px',
-                          background: 'rgba(255, 255, 255, 0.05)',
-                          borderRadius: '8px',
-                          fontSize: '12px',
-                          border: '1px solid var(--border-light)'
-                        }}
-                      />
-                    ) : (
-                      s.correctAnswer && (
-                        <div 
-                          className="pq-explanation" 
-                          style={{ 
-                            marginTop: '10px', 
-                            padding: '8px 12px', 
-                            background: 'rgba(255, 255, 255, 0.02)', 
-                            borderRadius: '8px', 
-                            fontSize: '11px', 
-                            color: 'var(--text-muted)', 
-                            border: '1px solid var(--border-light)' 
-                          }}
-                        >
-                          💡 No explanation mapped for this question.
-                        </div>
-                      )
-                    )}
+                    </QuestionDisplay>
                   </div>
                 );
               })}
@@ -1896,10 +1828,10 @@ function ExamReportContent() {
             <h3 style={{ borderBottom: '1px solid var(--border-light)', paddingBottom: '8px', marginBottom: '15px' }}>✏️ Edit Correct Answer</h3>
             
             <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <QuestionStemDisplay
+              <QuestionDisplay
+                mode="stem-only"
                 text={editingQuestion.questionText}
                 type={editingQuestion.type}
-                style={{ fontWeight: 600, fontSize: '13px', marginBottom: '10px' }}
               />
               
               {editingQuestion.options && editingQuestion.options.length > 0 ? (
@@ -2302,47 +2234,24 @@ function ExamReportContent() {
                                 </span>
                               </div>
 
-                              {/* Question Text */}
-                              <QuestionStemDisplay
-                                text={qd.questionText || bq?.text || ''}
-                                type={bq?.type || qd.type}
-                                style={{ fontSize: '13px', fontWeight: 700, lineHeight: '1.4', color: 'var(--text)' }}
+                              {/* Question Details via SSOT QuestionDisplay */}
+                              <QuestionDisplay
+                                mode="review"
+                                question={{
+                                  text: qd.questionText || bq?.text || '',
+                                  type: bq?.type || qd.type,
+                                  options: bq?.options,
+                                  correctAnswer: bq?.correctAnswer || bq?.answer || bq?.correct_answer || qd.correctAnswer,
+                                  correctAnswers: bq?.correctAnswers || qd.correctAnswers,
+                                  userAnswer: isUnattempted ? '' : (getOptionText(qd.questionCode, qd.userAnswer) || qd.userAnswer),
+                                  solution: explanation,
+                                  isCorrect: isCorrect
+                                }}
+                                isCorrect={isCorrect}
+                                userAnswer={isUnattempted ? '' : (getOptionText(qd.questionCode, qd.userAnswer) || qd.userAnswer)}
+                                correctAnswer={getOptionText(qd.questionCode, Array.isArray(qd.correctAnswer) ? qd.correctAnswer.join(', ') : qd.correctAnswer) || bq?.correctAnswer || qd.correctAnswer}
+                                explanation={explanation}
                               />
-
-                              {/* Options */}
-                              {bq?.options && bq.options.length > 0 ? (
-                                <AuditQuestionOptions
-                                  options={bq.options}
-                                  correctAnswer={bq.correctAnswer || bq.answer || bq.correct_answer}
-                                  correctAnswers={bq.correctAnswers}
-                                  userAnswer={qd.userAnswer}
-                                  isCorrect={isCorrect}
-                                />
-                              ) : null}
-
-                              {/* Student vs Correct Answer */}
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', fontSize: '11.5px', background: 'var(--surface-3)', padding: '6px 10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)' }}>
-                                <div>
-                                  <strong style={{ color: 'var(--text-muted)', marginRight: '6px' }}>Student Answer:</strong>
-                                  <span className="math-container" style={{ color: isCorrect ? 'var(--success)' : 'var(--danger)', fontWeight: 700 }}>
-                                    {isUnattempted ? '(blank)' : getOptionText(qd.questionCode, qd.userAnswer)}
-                                  </span>
-                                </div>
-                                <div>
-                                  <strong style={{ color: 'var(--text-muted)', marginRight: '6px' }}>Correct Answer:</strong>
-                                  <span className="math-container" style={{ color: 'var(--success)', fontWeight: 'bold' }}>
-                                    {getOptionText(qd.questionCode, Array.isArray(qd.correctAnswer) ? qd.correctAnswer.join(', ') : qd.correctAnswer)}
-                                  </span>
-                                </div>
-                              </div>
-
-                              {/* Solution */}
-                              {explanation && (
-                                <QuestionExplanationDisplay
-                                  explanation={explanation}
-                                  style={{ marginTop: '0', fontSize: '11.5px', color: 'var(--text)' }}
-                                />
-                              )}
 
                               {/* Bottom Navigation */}
                               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '8px', borderTop: '1px solid var(--border-light)' }}>
@@ -2428,49 +2337,23 @@ function ExamReportContent() {
                                   </span>
                                 </div>
 
-                                <QuestionStemDisplay
-                                  text={qd.questionText || bq?.text || ''}
-                                  type={bq?.type || qd.type}
-                                  style={{ fontSize: '11.5px', margin: '0 0 4px 0', fontWeight: 'bold', lineHeight: '1.3' }}
+                                <QuestionDisplay
+                                  mode="review"
+                                  question={{
+                                    text: qd.questionText || bq?.text || '',
+                                    type: bq?.type || qd.type,
+                                    options: bq?.options,
+                                    correctAnswer: bq?.correctAnswer || bq?.answer || bq?.correct_answer || qd.correctAnswer,
+                                    correctAnswers: bq?.correctAnswers || qd.correctAnswers,
+                                    userAnswer: isUnattempted ? '' : (getOptionText(qd.questionCode, qd.userAnswer) || qd.userAnswer),
+                                    solution: explanation,
+                                    isCorrect: isCorrect
+                                  }}
+                                  isCorrect={isCorrect}
+                                  userAnswer={isUnattempted ? '' : (getOptionText(qd.questionCode, qd.userAnswer) || qd.userAnswer)}
+                                  correctAnswer={getOptionText(qd.questionCode, Array.isArray(qd.correctAnswer) ? qd.correctAnswer.join(', ') : qd.correctAnswer) || bq?.correctAnswer || qd.correctAnswer}
+                                  explanation={explanation}
                                 />
-
-                                {bq?.options && bq.options.length > 0 ? (
-                                  <AuditQuestionOptions
-                                    options={bq.options}
-                                    correctAnswer={bq.correctAnswer || bq.answer || bq.correct_answer}
-                                    correctAnswers={bq.correctAnswers}
-                                    userAnswer={qd.userAnswer}
-                                    isCorrect={isCorrect}
-                                  />
-                                ) : null}
-
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', fontSize: '11px', background: 'var(--surface-3)', padding: '5px 7px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)' }}>
-                                  <div style={{ lineHeight: '1.25' }}>
-                                    <strong style={{ color: 'var(--text-muted)', marginRight: '6px' }}>Student Answer:</strong>
-                                    <span className="math-container" style={{ color: 'var(--text)', fontWeight: 600 }}>
-                                      {preprocessMathText(
-                                        isUnattempted 
-                                          ? '(blank)' 
-                                          : getOptionText(qd.questionCode, qd.userAnswer)
-                                      )}
-                                    </span>
-                                  </div>
-                                  <div style={{ lineHeight: '1.25' }}>
-                                    <strong style={{ color: 'var(--text-muted)', marginRight: '6px' }}>Correct Answer:</strong>
-                                    <span className="math-container" style={{ color: 'var(--success)', fontWeight: 'bold' }}>
-                                      {preprocessMathText(
-                                        getOptionText(qd.questionCode, Array.isArray(qd.correctAnswer) ? qd.correctAnswer.join(', ') : qd.correctAnswer)
-                                      )}
-                                    </span>
-                                  </div>
-                                </div>
-
-                                {explanation && (
-                                  <QuestionExplanationDisplay
-                                    explanation={explanation}
-                                    style={{ marginTop: '4px', fontSize: '11px' }}
-                                  />
-                                )}
                               </div>
                             );
                           })
@@ -2747,73 +2630,3 @@ export default function ExamReportPage() {
   );
 }
 
-const AuditQuestionOptions = React.memo(({
-  options,
-  correctAnswer,
-  correctAnswers,
-  userAnswer,
-  isCorrect
-}: {
-  options: any[];
-  correctAnswer: any;
-  correctAnswers: any;
-  userAnswer: any;
-  isCorrect?: boolean;
-}) => {
-  const correctAns = (Array.isArray(correctAnswers) && correctAnswers.length > 0) ? correctAnswers : correctAnswer;
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '8px' }}>
-      {options.map((opt: any, oi: number) => {
-        const optKey = getRawOptionKey(opt);
-        const optText = getRawOptionText(opt);
-        
-        let isCorrectOpt = isOptionCorrect(correctAns, optKey, oi, optText, options);
-        const isUserOpt = isOptionSelectedByUser(userAnswer, optKey, oi, optText, options);
-
-        // Failsafe: if the question was evaluated as correct and user selected this option, it IS correct!
-        if (isCorrect && isUserOpt) {
-          isCorrectOpt = true;
-        }
-
-        let border = '1px solid var(--review-option-border)';
-        let background = 'var(--review-option-bg)';
-        let color = 'var(--text)';
-        let prefix = '';
-
-        if (isCorrectOpt) {
-          border = '1.5px solid var(--success)';
-          background = 'var(--success-bg)';
-          color = 'var(--success)';
-          prefix = isUserOpt ? '🎯 ' : '✅ ';
-        } else if (isUserOpt) {
-          border = '1.5px solid var(--danger)';
-          background = 'rgba(220, 38, 38, 0.08)';
-          color = 'var(--danger)';
-          prefix = '❌ ';
-        }
-
-        return (
-          <div 
-            key={oi} 
-            style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '6px',
-              padding: '6px 10px', 
-              border, 
-              borderRadius: 'var(--radius-sm)', 
-              background,
-              color,
-              fontSize: '11.5px',
-              fontWeight: (isCorrectOpt || isUserOpt) ? 600 : 400
-            }}
-          >
-            {prefix && <span style={{ marginRight: '2px' }}>{prefix}</span>}
-            <RichMathText content={optText} inline />
-          </div>
-        );
-      })}
-    </div>
-  );
-});
-AuditQuestionOptions.displayName = 'AuditQuestionOptions';

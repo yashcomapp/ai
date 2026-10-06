@@ -5,7 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Script from 'next/script';
 import { stripOptionLabel, preprocessMathText, parseAnswerList, isOptionSelectedByUser, isOptionCorrect, getQuestionCorrectAnswer, getRawOptionKey, getRawOptionText, extractAssertionAndReason, isMultipleChoiceType, isSingleChoiceType, isTrueFalseType, isAssertionReasonType, isNumericalType, isFillBlanksType, isObjectiveType, resolveOptionDisplayText, DEFAULT_ASSERTION_REASON_OPTIONS } from '@/lib/questionTypes';
-import { RichMathText, QuestionStemDisplay, QuestionExplanationDisplay } from '@/components/QuestionDisplay';
+import QuestionDisplay, { RichMathText } from '@/components/QuestionDisplay';
 import { useMathRender } from '@/hooks/useMathRender';
 import { db } from '@/lib/firebase/firestore';
 import { useExamTimer } from '@/hooks/useExamTimer';
@@ -1171,190 +1171,19 @@ function TakeExamContent() {
             </div>
 
 
-            <QuestionStemDisplay
-              text={currentQuestion.text}
-              type={currentQuestion.type}
-              style={{ fontSize: '15px', lineHeight: '1.6', marginBottom: '16px' }}
-            />
-
-            {/* Options Area based on type */}
-            <div style={{ padding: '0 0 10px' }}>
-              {/* 1. Single MCQ / Any question with options */}
-              {/* 1. Single MCQ (Single choice options) */}
-              {!isMultipleChoiceType(currentQuestion.type) && !isTrueFalseType(currentQuestion.type) && !isAssertionReasonType(currentQuestion.type) && Array.isArray(currentQuestion.options) && currentQuestion.options.length > 0 && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {currentQuestion.options.map((opt, oIdx) => {
-                    const letter = String.fromCharCode(65 + oIdx);
-                    const selected = currentAnswer === letter;
-                    return (
-                      <div 
-                        key={`${currentQuestion.id}-${oIdx}`}
-                        onClick={() => handleSelectOption(currentQIndex, letter)}
-                        className="option"
-                        style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: selected ? 'var(--accent-soft)' : 'var(--surface-2)', borderRadius: 'var(--radius-sm)', cursor: 'pointer', border: selected ? '1px solid var(--accent)' : '1px solid transparent' }}
-                      >
-                        <input type="radio" checked={selected} readOnly style={{ width: '18px', height: '18px' }} />
-                        <label 
-                          className="math-container"
-                          style={{ fontSize: '14px', cursor: 'pointer' }}
-                        >
-                          <strong>{letter}.</strong> {preprocessMathText(stripOptionLabel(opt))}
-                        </label>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-
-              {/* 2. Multiple MCQ */}
-              {isMultipleChoiceType(currentQuestion.type) && currentQuestion.options && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {currentQuestion.options.map((opt, oIdx) => {
-                    const letter = String.fromCharCode(65 + oIdx);
-                    let checked = false;
-                    try {
-                      checked = JSON.parse(currentAnswer || '[]').includes(letter);
-                    } catch {}
-                    
-                    return (
-                      <div 
-                        key={`${currentQuestion.id}-${oIdx}`}
-                        onClick={() => handleCheckboxOption(currentQIndex, letter)}
-                        className="option"
-                        style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: checked ? 'var(--accent-soft)' : 'var(--surface-2)', borderRadius: 'var(--radius-sm)', cursor: 'pointer', border: checked ? '1px solid var(--accent)' : '1px solid transparent' }}
-                      >
-                        <input type="checkbox" checked={checked} readOnly style={{ width: '18px', height: '18px' }} />
-                        <label 
-                          className="math-container"
-                          style={{ fontSize: '14px', cursor: 'pointer' }}
-                        >
-                          <strong>{letter}.</strong> {preprocessMathText(stripOptionLabel(opt))}
-                        </label>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-
-              {/* 3. True / False */}
-              {isTrueFalseType(currentQuestion.type) && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {['True', 'False'].map((val) => {
-                    const selected = currentAnswer === val;
-                    return (
-                      <div 
-                        key={`${currentQuestion.id}-${val}`}
-                        onClick={() => handleSelectOption(currentQIndex, val)}
-                        className="option"
-                        style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: selected ? 'var(--accent-soft)' : 'var(--surface-2)', borderRadius: 'var(--radius-sm)', cursor: 'pointer', border: selected ? '1px solid var(--accent)' : '1px solid transparent' }}
-                      >
-                        <input type="radio" checked={selected} readOnly style={{ width: '18px', height: '18px' }} />
-                        <label style={{ fontSize: '14px', cursor: 'pointer' }}>{val}</label>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-
-              {/* 4. Assertion & Reason */}
-              {isAssertionReasonType(currentQuestion.type) && (() => {
-                const { assertion, reason } = extractAssertionAndReason(currentQuestion);
-                
-                const defaultArOptions = [
-                  { code: 'A', text: 'Both Assertion (A) and Reason (R) are true, and Reason (R) is the correct explanation of Assertion (A).' },
-                  { code: 'B', text: 'Both Assertion (A) and Reason (R) are true, but Reason (R) is NOT the correct explanation of Assertion (A).' },
-                  { code: 'C', text: 'Assertion (A) is true, but Reason (R) is false.' },
-                  { code: 'D', text: 'Assertion (A) is false, but Reason (R) is true.' }
-                ];
-
-                let arOptions = defaultArOptions;
-                if (Array.isArray(currentQuestion.options) && currentQuestion.options.length > 0) {
-                  arOptions = currentQuestion.options.map((opt: any, oIdx: number) => {
-                    const letter = String.fromCharCode(65 + oIdx);
-                    if (typeof opt === 'string') {
-                      return { code: letter, text: opt };
-                    }
-                    if (opt && typeof opt === 'object') {
-                      return {
-                        code: opt.code || opt.value || letter,
-                        text: opt.text || opt.value || opt.label || String(opt)
-                      };
-                    }
-                    return { code: letter, text: String(opt) };
-                  });
+            <QuestionDisplay
+              mode="exam"
+              question={currentQuestion}
+              userAnswer={currentAnswer}
+              onSelectOption={(letter) => {
+                if (isMultipleChoiceType(currentQuestion.type)) {
+                  handleCheckboxOption(currentQIndex, letter);
+                } else {
+                  handleSelectOption(currentQIndex, letter);
                 }
-                
-                return (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      {arOptions.map((opt) => {
-                        const selected = currentAnswer === opt.code;
-                        return (
-                          <div 
-                            key={`${currentQuestion.id}-${opt.code}`}
-                            onClick={() => handleSelectOption(currentQIndex, opt.code)}
-                            className="option"
-                            style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', background: selected ? 'var(--accent-soft)' : 'var(--surface-2)', borderRadius: 'var(--radius-sm)', cursor: 'pointer', border: selected ? '1px solid var(--accent)' : '1px solid transparent' }}
-                          >
-                            <input type="radio" checked={selected} readOnly style={{ width: '18px', height: '18px' }} />
-                            <label 
-                              className="math-container"
-                              style={{ fontSize: '14px', cursor: 'pointer' }}
-                            >
-                              <strong>({opt.code})</strong> {preprocessMathText(stripOptionLabel(opt.text))}
-                            </label>
-                          </div>
-                        );
-                      })}
-                    </div>
-                );
-              })()}
-
-              {/* 5. Numerical and its variants (when no options provided) */}
-              {isNumericalType(currentQuestion.type) && (!Array.isArray(currentQuestion.options) || currentQuestion.options.length === 0) && (
-                <div>
-                  <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '6px' }}>Type Numerical Value:</label>
-                  <input 
-                    type="number" 
-                    value={currentAnswer}
-                    onChange={(e) => handleTextInput(currentQIndex, e.target.value)}
-                    placeholder="Enter numbers only..."
-                    style={{ width: '100%', padding: '10px', border: '1.5px solid var(--border)', borderRadius: 'var(--radius-sm)', fontSize: '14px' }}
-                  />
-                </div>
-              )}
-
-              {/* 6. Fill in the Blanks */}
-              {isFillBlanksType(currentQuestion.type) && (
-                <div>
-                  <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '6px' }}>Type Missing Word:</label>
-                  <input 
-                    type="text" 
-                    value={currentAnswer}
-                    onChange={(e) => handleTextInput(currentQIndex, e.target.value)}
-                    placeholder="Type answer here..."
-                    style={{ width: '100%', padding: '10px', border: '1.5px solid var(--border)', borderRadius: 'var(--radius-sm)', fontSize: '14px' }}
-                  />
-                </div>
-              )}
-
-              {/* 7. Subjective explanations (all subjective variants) */}
-              {(currentQuestion.type === 'subjective' || 
-                currentQuestion.type.startsWith('subjective_') || 
-                currentQuestion.type.startsWith('sub_') || 
-                currentQuestion.type === 'scientific_reasoning' || 
-                currentQuestion.type === 'differentiate' || 
-                currentQuestion.type === 'laws_principles') && (
-                <div>
-                  <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '6px' }}>Write Explanation:</label>
-                  <textarea 
-                    value={currentAnswer}
-                    onChange={(e) => handleTextInput(currentQIndex, e.target.value)}
-                    placeholder="Type detailed answer here..."
-                    style={{ width: '100%', padding: '10px', border: '1.5px solid var(--border)', borderRadius: 'var(--radius-sm)', minHeight: '120px', resize: 'vertical', fontSize: '14px' }}
-                  />
-                </div>
-              )}
-            </div>
+              }}
+              onTextInput={(val) => handleTextInput(currentQIndex, val)}
+            />
           </div>
 
           {/* Navigation Buttons */}
@@ -1591,104 +1420,23 @@ function TakeExamContent() {
                            </span>
                          </div>
 
-                        <QuestionStemDisplay
-                          text={qItem.questionText}
-                          type={matchingQ?.type}
-                          style={{ fontSize: '13px', margin: '0 0 12px 0', fontWeight: 'bold', lineHeight: '1.4' }}
+                        {/* Question Details via SSOT QuestionDisplay */}
+                        <QuestionDisplay
+                          mode="review"
+                          question={{
+                            text: qItem.questionText,
+                            type: matchingQ?.type,
+                            options: matchingQ?.options,
+                            correctAnswer: getQuestionCorrectAnswer(matchingQ) || qItem.correctAnswer,
+                            userAnswer: isUnanswered ? '' : qItem.userAnswer,
+                            solution: explanation,
+                            isCorrect: false
+                          }}
+                          isCorrect={false}
+                          userAnswer={isUnanswered ? '' : (getOptionText(qItem.questionText, qItem.userAnswer || '') || qItem.userAnswer)}
+                          correctAnswer={getOptionText(qItem.questionText, qItem.correctAnswer) || qItem.correctAnswer}
+                          explanation={explanation}
                         />
-
-                        {/* Options list rendering matching result scorecard */}
-                        {(() => {
-                          const isAssertionReason = isAssertionReasonType(matchingQ?.type);
-                          const optionsToRender = (matchingQ?.options && matchingQ.options.length > 0)
-                            ? matchingQ.options
-                            : (isAssertionReason ? DEFAULT_ASSERTION_REASON_OPTIONS : []);
-
-                          if (optionsToRender.length > 0) {
-                            return (
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '12px' }}>
-                                {optionsToRender.map((opt: any, oi: number) => {
-                                  const optKey = getRawOptionKey(opt);
-                                  const optText = getRawOptionText(opt);
-                                  
-                                  const correctAns = getQuestionCorrectAnswer(matchingQ) || qItem.correctAnswer;
-                                  const isCorrectOpt = isOptionCorrect(correctAns, optKey, oi, optText, optionsToRender);
-                                  const isUserOpt = isOptionSelectedByUser(qItem.userAnswer, optKey, oi, optText, optionsToRender);
-
-                                  let border = '1px solid var(--review-option-border)';
-                                  let background = 'var(--review-option-bg)';
-                                  let color = 'var(--text)';
-                                  let prefix = '';
-
-                                  if (isCorrectOpt) {
-                                    border = '1.5px solid var(--success)';
-                                    background = 'var(--success-bg)';
-                                    color = 'var(--success)';
-                                    prefix = isUserOpt ? '🎯 ' : '✅ ';
-                                  } else if (isUserOpt) {
-                                    border = '1.5px solid var(--danger)';
-                                    background = 'rgba(220, 38, 38, 0.08)';
-                                    color = 'var(--danger)';
-                                    prefix = '❌ ';
-                                  }
-
-                                  const letterLabel = String.fromCharCode(65 + oi);
-
-                                  return (
-                                    <div 
-                                      key={oi} 
-                                      style={{ 
-                                        display: 'flex', 
-                                        alignItems: 'flex-start', 
-                                        gap: '6px',
-                                        padding: '8px 12px', 
-                                        border, 
-                                        borderRadius: 'var(--radius-sm)', 
-                                        background,
-                                        color,
-                                        fontSize: '12px',
-                                        fontWeight: (isCorrectOpt || isUserOpt) ? 600 : 400
-                                      }}
-                                    >
-                                      <span style={{ fontWeight: 'bold', minWidth: '24px', flexShrink: 0 }}>
-                                        {prefix ? `${prefix}(${letterLabel})` : `(${letterLabel})`}
-                                      </span>
-                                      <span className="math-container" style={{ flex: 1 }}>{preprocessMathText(stripOptionLabel(optText))}</span>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            );
-                          }
-                          return null;
-                        })()}
-
-                        {/* Answers Side-by-Side Grid */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '12px', background: 'var(--surface-3)', padding: '8px 10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)', marginBottom: '12px' }}>
-                          <div style={{ lineHeight: '1.4' }}>
-                            <strong style={{ color: 'var(--text-muted)', marginRight: '6px' }}>Your Answer:</strong>
-                            <span className="math-container" style={{ color: 'var(--text)', fontWeight: 600 }}>
-                              {preprocessMathText(
-                                isUnanswered ? '(blank)' : getOptionText(qItem.questionText, qItem.userAnswer || '')
-                              )}
-                            </span>
-                          </div>
-                          <div style={{ lineHeight: '1.4' }}>
-                            <strong style={{ color: 'var(--text-muted)', marginRight: '6px' }}>Correct Answer:</strong>
-                            <span className="math-container" style={{ color: 'var(--success)', fontWeight: 'bold' }}>
-                              {preprocessMathText(
-                                getOptionText(qItem.questionText, qItem.correctAnswer)
-                              )}
-                            </span>
-                          </div>
-                        </div>
-
-                        {explanation && (
-                          <QuestionExplanationDisplay
-                            explanation={explanation}
-                            style={{ marginTop: '12px', fontSize: '12px', marginBottom: '12px' }}
-                          />
-                        )}
 
                         {/* Error classification box (exactly two lines of buttons in a nice box) */}
                         <div style={{ 

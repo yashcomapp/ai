@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useMathRender } from '@/hooks/useMathRender';
 import { preprocessMathText, parseAnswerList, resolveOptionDisplayText } from '@/lib/questionTypes';
-import { QuestionStemDisplay, QuestionExplanationDisplay } from '@/components/QuestionDisplay';
+import QuestionDisplay from '@/components/QuestionDisplay';
 
 interface StudentSelfReflectionModalProps {
   examId: string;
@@ -349,87 +349,23 @@ export default function StudentSelfReflectionModal({
                           </span>
                         </div>
 
-                        {/* Question Text */}
-                        <QuestionStemDisplay
-                          text={qItem.questionText || ''}
-                          type={qItem.type}
-                          style={{ fontSize: '13px', lineHeight: '1.5', color: 'var(--text)', fontWeight: 600 }}
+                        {/* Question Details via SSOT QuestionDisplay */}
+                        <QuestionDisplay
+                          mode="review"
+                          question={{
+                            text: qItem.questionText || '',
+                            type: qItem.type,
+                            options: qItem.options,
+                            correctAnswer: getOptionText(qItem, qItem.correctAnswer) || qItem.correctAnswer,
+                            userAnswer: isUnanswered ? '' : (getOptionText(qItem, qItem.userAnswer) || qItem.userAnswer),
+                            solution: explanation,
+                            isCorrect: false
+                          }}
+                          isCorrect={false}
+                          userAnswer={isUnanswered ? '' : (getOptionText(qItem, qItem.userAnswer) || qItem.userAnswer)}
+                          correctAnswer={getOptionText(qItem, qItem.correctAnswer) || qItem.correctAnswer}
+                          explanation={explanation}
                         />
-
-                        {/* Options preview if available */}
-                        {Array.isArray(qItem.options) && qItem.options.length > 0 && (
-                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '6px', margin: '4px 0' }}>
-                            {qItem.options.map((opt: any, oi: number) => {
-                              const optText = typeof opt === 'object' ? (opt.text || opt.code || '') : String(opt);
-                              const isCorrectOpt = String(qItem.correctAnswer || '').includes(String.fromCharCode(65 + oi)) ||
-                                String(qItem.correctAnswer || '').includes(optText);
-                              const isUserOpt = String(qItem.userAnswer || '').includes(String.fromCharCode(65 + oi)) ||
-                                String(qItem.userAnswer || '').includes(optText);
-
-                              let border = '1px solid var(--border-light)';
-                              let background = 'var(--surface)';
-                              let color = 'var(--text-muted)';
-                              let prefix = '';
-
-                              if (isCorrectOpt) {
-                                border = '1px solid var(--success-border, rgba(46, 204, 113, 0.6))';
-                                background = 'var(--success-bg, rgba(46, 204, 113, 0.12))';
-                                color = 'var(--success)';
-                                prefix = '✓ ';
-                              } else if (isUserOpt) {
-                                border = '1px solid var(--danger-border, rgba(239, 68, 68, 0.6))';
-                                background = 'var(--danger-bg, rgba(239, 68, 68, 0.12))';
-                                color = 'var(--danger)';
-                                prefix = '✗ ';
-                              }
-
-                              return (
-                                <div
-                                  key={oi}
-                                  style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '6px',
-                                    padding: '6px 10px',
-                                    border,
-                                    borderRadius: 'var(--radius-sm)',
-                                    background,
-                                    color,
-                                    fontSize: '11.5px',
-                                    fontWeight: (isCorrectOpt || isUserOpt) ? 600 : 400
-                                  }}
-                                >
-                                  {prefix && <span>{prefix}</span>}
-                                  <span className="math-container" dangerouslySetInnerHTML={{ __html: preprocessMathText(optText) }} />
-                                </div>
-                              );
-                            })}
-                          </div>
-                        )}
-
-                        {/* Answers comparison */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '11.5px', background: 'var(--surface-2)', padding: '8px 10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)', margin: '4px 0' }}>
-                          <div>
-                            <strong style={{ color: 'var(--text-muted)', marginRight: '6px' }}>Your Answer:</strong>
-                            <span className="math-container" style={{ color: 'var(--text)', fontWeight: 600 }}>
-                              {isUnanswered ? '(blank)' : getOptionText(qItem, qItem.userAnswer)}
-                            </span>
-                          </div>
-                          <div>
-                            <strong style={{ color: 'var(--text-muted)', marginRight: '6px' }}>Correct Answer:</strong>
-                            <span className="math-container" style={{ color: 'var(--success)', fontWeight: 'bold' }}>
-                              {getOptionText(qItem, qItem.correctAnswer)}
-                            </span>
-                          </div>
-                        </div>
-
-                        {explanation && (
-                          <QuestionExplanationDisplay
-                            explanation={explanation}
-                            label="Solution Explanation:"
-                            style={{ marginTop: '0', fontSize: '11.5px', color: 'var(--text-muted)' }}
-                          />
-                        )}
 
                         {/* Error Reason Classification Box */}
                         <div style={{

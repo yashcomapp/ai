@@ -17,10 +17,9 @@ import {
   formatUserAnswerSummary,
   isAssertionReasonType,
   isObjectiveType,
-  stripOptionLabel,
   DEFAULT_ASSERTION_REASON_OPTIONS
 } from '@/lib/questionTypes';
-import { RichMathText, QuestionStemDisplay, QuestionExplanationDisplay } from '@/components/QuestionDisplay';
+import QuestionDisplay, { RichMathText } from '@/components/QuestionDisplay';
 import { formatDateTimeIST, parseDateInput } from '@/lib/dateUtils';
 
 interface QuestionDetailsItem {
@@ -379,92 +378,7 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
     }
   };
 
-  // Helper to render question options in Flashcard & List modes
-  const renderOptionsList = (q: QuestionDetailsItem, isUnanswered: boolean) => {
-    const isAssertionReason = isAssertionReasonType(q.type);
-    const optionsToRender = (q.options && q.options.length > 0)
-      ? q.options
-      : (isAssertionReason ? DEFAULT_ASSERTION_REASON_OPTIONS : []);
 
-    if (optionsToRender.length > 0) {
-      return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '10px' }}>
-          {optionsToRender.map((opt: any, oi: number) => {
-            const optKey = getRawOptionKey(opt);
-            const optText = getRawOptionText(opt);
-            const correctAns = getQuestionCorrectAnswer(q);
-            
-            let isCorrectOpt = isOptionCorrect(correctAns, optKey, oi, optText, optionsToRender);
-            const isUserOpt = isOptionSelectedByUser(q.userAnswer, optKey, oi, optText, optionsToRender);
-
-            if (q.isCorrect && isUserOpt) {
-              isCorrectOpt = true;
-            }
-
-            let border = '1px solid var(--review-option-border, #e2e8f0)';
-            let background = 'var(--review-option-bg, #ffffff)';
-            let color = 'var(--text, #1e293b)';
-            let prefix = '';
-
-            if (isCorrectOpt) {
-              border = '2px solid var(--success, #16a34a)';
-              background = 'var(--success-bg, #f0fdf4)';
-              color = 'var(--success, #15803d)';
-              prefix = isUserOpt ? '🎯 ' : '✅ ';
-            } else if (isUserOpt) {
-              border = '2px solid var(--danger, #dc2626)';
-              background = 'rgba(220, 38, 38, 0.08)';
-              color = 'var(--danger, #b91c1c)';
-              prefix = '❌ ';
-            }
-
-            const letterLabel = String.fromCharCode(65 + oi);
-
-            return (
-              <div 
-                key={oi} 
-                style={{ 
-                  display: 'flex', 
-                  alignItems: 'flex-start', 
-                  gap: '8px',
-                  padding: '8px 12px', 
-                  border, 
-                  borderRadius: 'var(--radius, 8px)', 
-                  background,
-                  color,
-                  fontSize: '13px',
-                  fontWeight: (isCorrectOpt || isUserOpt) ? 700 : 500,
-                  transition: 'all 0.15s ease'
-                }}
-              >
-                <span style={{ fontWeight: 800, minWidth: '28px', flexShrink: 0 }}>
-                  {prefix ? `${prefix}(${letterLabel})` : `(${letterLabel})`}
-                </span>
-                <span className="math-container" style={{ flex: 1, lineHeight: '1.4' }}>{preprocessMathText(stripOptionLabel(optText))}</span>
-              </div>
-            );
-          })}
-        </div>
-      );
-    }
-
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '12.5px', background: 'var(--bg-soft, #f8fafc)', padding: '10px 12px', borderRadius: 'var(--radius, 8px)', border: '1px solid var(--border-light, #e2e8f0)', marginBottom: '10px' }}>
-        <div>
-          <strong style={{ color: 'var(--text-muted, #64748b)', marginRight: '8px' }}>Your Answer:</strong>
-          <span className="math-container" style={{ color: isUnanswered ? 'var(--text-muted, #64748b)' : (q.isCorrect ? 'var(--success, #16a34a)' : 'var(--danger, #dc2626)'), fontWeight: 700 }}>
-            {isUnanswered ? '(blank / unattempted)' : preprocessMathText(formatUserAnswerSummary(q.options || [], q.userAnswer))}
-          </span>
-        </div>
-        <div>
-          <strong style={{ color: 'var(--text-muted, #64748b)', marginRight: '8px' }}>Correct Answer:</strong>
-          <span className="math-container" style={{ color: 'var(--success, #16a34a)', fontWeight: 700 }}>
-            {preprocessMathText(formatUserAnswerSummary(q.options || [], getQuestionCorrectAnswer(q)))}
-          </span>
-        </div>
-      </div>
-    );
-  };
 
   // Total cards in Flashcard Mode: filtered questions + 1 final sign-off card
   const totalCards = filteredQuestions.length + 1;
@@ -850,31 +764,16 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
                           </div>
                         </div>
 
-                        {/* Question Text */}
-                        <QuestionStemDisplay
-                          text={q.text || ''}
-                          type={q.type}
-                          style={{ fontSize: '14px', fontWeight: 700, lineHeight: '1.45', color: 'var(--text, #0f172a)' }}
+                        {/* Question Details via SSOT QuestionDisplay */}
+                        <QuestionDisplay
+                          mode="review"
+                          question={q}
+                          isCorrect={q.isCorrect}
+                          userAnswer={isUnanswered ? '' : q.userAnswer}
+                          correctAnswer={getQuestionCorrectAnswer(q)}
+                          explanation={q.solution}
+                          explanationLabel="💡 Step-by-Step Solution & Concept:"
                         />
-
-                        {/* Options List */}
-                        {renderOptionsList(q, isUnanswered)}
-
-                        {/* Step-by-Step Solution Card */}
-                        {q.solution && (
-                          <QuestionExplanationDisplay
-                            explanation={q.solution}
-                            label="💡 Step-by-Step Solution & Concept:"
-                            style={{
-                              background: 'var(--bg-soft, #f8fafc)',
-                              border: '1px solid var(--border-light, #e2e8f0)',
-                              borderRadius: 'var(--radius, 8px)',
-                              padding: '10px 14px',
-                              fontSize: '12.5px',
-                              color: 'var(--text, #1e293b)'
-                            }}
-                          />
-                        )}
 
                         {/* Bottom Question Controls & Challenge Button */}
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', paddingTop: '10px', borderTop: '1px solid var(--border-light, #e2e8f0)' }}>
@@ -1159,21 +1058,16 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
                             </div>
                           </div>
 
-                          <QuestionStemDisplay
-                            text={q.text || ''}
-                            type={q.type}
-                            style={{ fontSize: '13px', margin: '0 0 6px 0', fontWeight: 700, lineHeight: '1.4', color: 'var(--text, #0f172a)' }}
+                          {/* Question Details via SSOT QuestionDisplay */}
+                          <QuestionDisplay
+                            mode="review"
+                            question={q}
+                            isCorrect={q.isCorrect}
+                            userAnswer={isUnanswered ? '' : q.userAnswer}
+                            correctAnswer={getQuestionCorrectAnswer(q)}
+                            explanation={q.solution}
+                            explanationLabel="💡 Step-by-Step Solution & Concept:"
                           />
-
-                          {renderOptionsList(q, isUnanswered)}
-
-                          {q.solution && (
-                            <QuestionExplanationDisplay
-                              explanation={q.solution}
-                              label="Solution Explanation:"
-                              style={{ marginTop: '4px', fontSize: '12px' }}
-                            />
-                          )}
 
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px', marginTop: '6px', paddingTop: '6px', borderTop: '1px solid var(--border-light, #e2e8f0)' }}>
                             <button

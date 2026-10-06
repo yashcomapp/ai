@@ -21,7 +21,7 @@ import {
   stripOptionLabel,
   DEFAULT_ASSERTION_REASON_OPTIONS
 } from '@/lib/questionTypes';
-import { QuestionStemDisplay, QuestionExplanationDisplay } from '@/components/QuestionDisplay';
+import QuestionDisplay from '@/components/QuestionDisplay';
 import Image from 'next/image';
 interface Question {
   id?: string;
@@ -1094,95 +1094,13 @@ ${JSON.stringify(missingList, null, 2)}`;
                         </div>
                       </div>
 
-                      {/* Question Text / Assertion-Reason Content */}
-                      <QuestionStemDisplay
-                        text={q.text}
-                        type={q.type}
-                        questionCode={q.questionCode}
+                      {/* Question Details via SSOT QuestionDisplay */}
+                      <QuestionDisplay
+                        mode="bank"
+                        question={q}
                         showQuestionCode={true}
-                        style={{ fontSize: '12.5px', margin: '2px 0 6px 0', fontWeight: 'bold', lineHeight: '1.35', color: 'var(--text)' }}
+                        questionCode={q.questionCode}
                       />
-
-                      {/* Figure / Image */}
-                      {q.imageUrl && (
-                        <div style={{ margin: '4px 0' }}>
-                          <Image src={q.imageUrl} alt="Question figure" width={200} height={150} style={{ objectFit: 'contain', borderRadius: '4px', border: '1px solid var(--border-light)' }} />
-                        </div>
-                      )}
-
-                      {/* Render Options list breakdown (ScorecardModal style) */}
-                      {((q.options && q.options.length > 0) || isAssertionReasonType(q.type)) && (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '6px' }}>
-                          {(q.options && q.options.length > 0 ? q.options : DEFAULT_ASSERTION_REASON_OPTIONS).map((opt, oi, allOpts) => {
-                            const optKey = getRawOptionKey(opt);
-                            const optText = getRawOptionText(opt);
-                            const correctAns = getQuestionCorrectAnswer(q);
-                            const isCorrectOpt = isOptionCorrect(correctAns, optKey, oi, optText, allOpts);
-
-                            let border = '1px solid var(--review-option-border)';
-                            let background = 'var(--review-option-bg)';
-                            let color = 'var(--text)';
-                            let prefix = '';
-
-                            if (isCorrectOpt) {
-                              border = '1.5px solid var(--success)';
-                              background = 'var(--success-bg)';
-                              color = 'var(--success)';
-                              prefix = '✅ ';
-                            }
-
-                            return (
-                              <div 
-                                key={oi}
-                                style={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: '6px',
-                                  padding: '4px 8px',
-                                  border,
-                                  borderRadius: 'var(--radius-sm)',
-                                  background,
-                                  color,
-                                  fontSize: '11.5px',
-                                  fontWeight: isCorrectOpt ? 600 : 400
-                                }}
-                              >
-                                <span style={{ fontWeight: 700, minWidth: '24px', flexShrink: 0 }}>{prefix}({String.fromCharCode(65 + oi)})</span>
-                                <span className="math-container" style={{ flex: 1 }} dangerouslySetInnerHTML={{ __html: preprocessMathText(stripOptionLabel(optText)) }} />
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-
-                      {/* Correct Answer Summary Box */}
-                      {(() => {
-                        const correctDisplay = Array.isArray(q.correctAnswer)
-                          ? q.correctAnswer.map((ca: any) => formatUserAnswerSummary(q.options || [], ca)).join(', ')
-                          : (Array.isArray(q.correctAnswers) && q.correctAnswers.length > 0
-                              ? q.correctAnswers.map((ca: any) => formatUserAnswerSummary(q.options || [], ca)).join(', ')
-                              : (q.correctAnswer ? formatUserAnswerSummary(q.options || [], q.correctAnswer) : ''));
-
-                        return correctDisplay ? (
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', fontSize: '11.5px', background: 'var(--surface-3)', padding: '5px 8px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)' }}>
-                            <div style={{ lineHeight: '1.3' }}>
-                              <strong style={{ color: 'var(--text-muted)', marginRight: '6px' }}>Correct Answer:</strong>
-                              <span className="math-container" style={{ color: 'var(--success)', fontWeight: 'bold' }}>
-                                {preprocessMathText(correctDisplay)}
-                              </span>
-                            </div>
-                          </div>
-                        ) : null;
-                      })()}
-
-                      {/* Explanation / Solution box */}
-                      {q.solution && (
-                        <QuestionExplanationDisplay
-                          explanation={q.solution}
-                          label="Explanation:"
-                          style={{ marginTop: '4px', fontSize: '11.5px', color: 'var(--text-muted)' }}
-                        />
-                      )}
                     </div>
                   );
                 })
