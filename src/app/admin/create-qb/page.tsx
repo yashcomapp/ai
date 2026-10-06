@@ -569,17 +569,17 @@ function CreateQBContent() {
       const currentVal = Number(defaultPerTopicCount) || 80;
       if (currentVal > 20) {
         setDefaultPerTopicCount(10);
-        if (selectedTopics[0]) {
-          setTopicCustomCounts({ [topicKey(selectedTopics[0])]: 10 });
-        }
+        const newCounts = { ...topicCustomCounts };
+        selectedTopics.forEach(t => { newCounts[topicKey(t)] = 10; });
+        setTopicCustomCounts(newCounts);
       }
     } else {
       const currentVal = Number(defaultPerTopicCount) || 10;
       if (currentVal < 30) {
         setDefaultPerTopicCount(80);
-        if (selectedTopics[0]) {
-          setTopicCustomCounts({ [topicKey(selectedTopics[0])]: 80 });
-        }
+        const newCounts = { ...topicCustomCounts };
+        selectedTopics.forEach(t => { newCounts[topicKey(t)] = 80; });
+        setTopicCustomCounts(newCounts);
       }
     }
   };
@@ -609,7 +609,9 @@ function CreateQBContent() {
   };
 
   const getVaultBreakdown = (count: number) => {
-    if (count === 50) {
+    if (count === 30) {
+      return { practice: 18, exam: 12 };
+    } else if (count === 50) {
       return { practice: 30, exam: 20 };
     } else if (count === 80) {
       return { practice: 50, exam: 30 };
@@ -623,25 +625,41 @@ function CreateQBContent() {
   };
 
   const getTotalTargetQuestions = (): number => {
-    return typeof defaultPerTopicCount === 'number' ? defaultPerTopicCount : (parseInt(String(defaultPerTopicCount), 10) || 80);
+    const fallbackCount = typeof defaultPerTopicCount === 'number' ? defaultPerTopicCount : (parseInt(String(defaultPerTopicCount), 10) || (questionType === 'subjective' ? 10 : 80));
+    if (selectedTopics.length <= 1) {
+      return fallbackCount;
+    }
+    const promptTopics = getPromptTargetTopics();
+    if (topicWeightageMode === 'custom_counts') {
+      return promptTopics.reduce((sum, top) => {
+        const k = topicKey(top);
+        const raw = topicCustomCounts[k];
+        const val = typeof raw === 'number' ? raw : (raw !== undefined && raw !== '' ? (parseInt(String(raw), 10) || fallbackCount) : fallbackCount);
+        return sum + val;
+      }, 0);
+    }
+    return promptTopics.length * fallbackCount;
   };
 
   const getEffectiveTopicCounts = (scope: 'all' | 'practice_only' | 'exam_only' = promptScope): Record<string, number> => {
     const map: Record<string, number> = {};
-    const count = getTotalTargetQuestions();
+    const fallbackCount = typeof defaultPerTopicCount === 'number' ? defaultPerTopicCount : (parseInt(String(defaultPerTopicCount), 10) || (questionType === 'subjective' ? 10 : 80));
     const promptTopics = getPromptTargetTopics();
     promptTopics.forEach(t => {
+      const k = topicKey(t);
+      const raw = topicWeightageMode === 'custom_counts' ? topicCustomCounts[k] : undefined;
+      const baseCount = typeof raw === 'number' ? raw : (raw !== undefined && raw !== '' ? (parseInt(String(raw), 10) || fallbackCount) : fallbackCount);
       if (questionType === 'objective') {
-        const { practice, exam } = getVaultBreakdown(count);
+        const { practice, exam } = getVaultBreakdown(baseCount);
         if (scope === 'practice_only') {
-          map[topicKey(t)] = practice;
+          map[k] = practice;
         } else if (scope === 'exam_only') {
-          map[topicKey(t)] = exam;
+          map[k] = exam;
         } else {
-          map[topicKey(t)] = count;
+          map[k] = baseCount;
         }
       } else {
-        map[topicKey(t)] = count;
+        map[k] = baseCount;
       }
     });
     return map;
@@ -765,14 +783,10 @@ In addition to the topic-based questions:
     const subj = getSelectedSubjectsList()[0] || '';
     const isMath = /math|algebra|geometry|ganit/i.test(subj);
     const isFoundation = examCategory === 'foundation';
-    const totalQs = getTotalTargetQuestions() || 10;
-    const { practice: totalPracticeQs, exam: totalExamQs } = getVaultBreakdown(totalQs);
-    const effectiveTargetQs = type === 'objective'
-      ? (scope === 'practice_only' ? totalPracticeQs : (scope === 'exam_only' ? totalExamQs : totalQs))
-      : totalQs;
     const topicCounts = getEffectiveTopicCounts(scope);
-    const ctx = buildTopicsContextBlock(topicCounts);
     const promptTopics = getPromptTargetTopics();
+    const effectiveTargetQs = Object.values(topicCounts).reduce((sum, c) => sum + (Number(c) || 0), 0) || 10;
+    const ctx = buildTopicsContextBlock(topicCounts);
 
     let requirementsSection = '';
     if (paramRequirements) {
@@ -971,17 +985,26 @@ For this batch, generate EXACTLY ${effectiveTargetQs} QUESTIONS tagged strictly 
    - ZERO questions in practice vault for this batch. All ${effectiveTargetQs} questions must be tagged "vault": "exam".
 `;
       } else {
+        const totalPractice = promptTopics.reduce((sum, t) => {
+          const cnt = topicCounts[topicKey(t)] || (Number(defaultPerTopicCount) || 80);
+          return sum + getVaultBreakdown(cnt).practice;
+        }, 0);
+        const totalExam = effectiveTargetQs - totalPractice;
+        const topicHeader = promptTopics.length === 1
+          ? `For each topic (EXACTLY ${effectiveTargetQs} Questions Total), generate and tag questions strictly into the 2 Storage Vaults:`
+          : `For each topic, generate and tag questions strictly into the 2 Storage Vaults matching the per-topic quotas specified below (EXACTLY ${effectiveTargetQs} Questions Total across ${promptTopics.length} topics):`;
+
         vaultPartitionGuide = allowNumericals ? `
 ========================================
 UNIVERSAL 2-VAULT PARTITION REQUIREMENT:
 ========================================
-For each topic (${totalQs} Questions Total), generate and tag questions strictly into the 2 Storage Vaults:
-1. 🟢 PRACTICE VAULT ("vault": "practice") — EXACTLY ${totalPracticeQs} QUESTIONS:
+${topicHeader}
+1. 🟢 PRACTICE VAULT ("vault": "practice") — EXACTLY ${totalPractice} QUESTIONS TOTAL (~60%):
    - Dedicated for student self-paced practice, diagnostic recovery, and spaced repetition (SRS).
    - Distribution: Foundation & Recall (~30%) + Conceptual Reasoning (~40%) + Numerical & Application (~30%).
    - Mix: OSC, OMC, OTF, OAR, ONE.
 
-2. 🔵 EXAM VAULT ("vault": "exam") — EXACTLY ${totalExamQs} QUESTIONS:
+2. 🔵 EXAM VAULT ("vault": "exam") — EXACTLY ${totalExam} QUESTIONS TOTAL (~40%):
    - Reserved exclusively for teacher classroom tests, chapter tests, and scheduled term exams (must be fresh and unseen by students).
    - Distribution: Core Recall (~25%) + Conceptual Reasoning (~40%) + Numerical & Higher Application (~35%).
    - Mix: OSC, OMC, OTF, OAR, ONE.
@@ -989,13 +1012,13 @@ For each topic (${totalQs} Questions Total), generate and tag questions strictly
 ========================================
 UNIVERSAL 2-VAULT PARTITION REQUIREMENT (THEORY ONLY - ZERO NUMERICALS):
 ========================================
-For each topic (${totalQs} Questions Total), generate and tag questions strictly into the 2 Storage Vaults:
-1. 🟢 PRACTICE VAULT ("vault": "practice") — EXACTLY ${totalPracticeQs} QUESTIONS:
+${topicHeader}
+1. 🟢 PRACTICE VAULT ("vault": "practice") — EXACTLY ${totalPractice} QUESTIONS TOTAL (~60%):
    - Dedicated for student self-paced practice, diagnostic recovery, and spaced repetition (SRS).
    - Distribution: Foundation & Recall (~35%) + Conceptual Reasoning (~40%) + Application & Mechanisms (~25%).
    - Mix: OSC, OMC, OTF, OAR. (NO ONE / NO NUMERICALS).
 
-2. 🔵 EXAM VAULT ("vault": "exam") — EXACTLY ${totalExamQs} QUESTIONS:
+2. 🔵 EXAM VAULT ("vault": "exam") — EXACTLY ${totalExam} QUESTIONS TOTAL (~40%):
    - Reserved exclusively for teacher classroom tests, chapter tests, and scheduled term exams (must be fresh and unseen by students).
    - Distribution: Core Recall (~30%) + Conceptual Reasoning (~40%) + Applied Scenarios (~30%).
    - Mix: OSC, OMC, OTF, OAR. (NO ONE / NO NUMERICALS).
@@ -1127,15 +1150,15 @@ ${buildNegativeConstraints()}`;
       const samplePyq = isCBSE ? 'CBSE Board 2022' : (isMH ? 'MSBSHSE March 2020' : `${selectedBoard} Board 2021`);
       const sampleSource = isCBSE ? 'NCERT Exercise Q3' : (isMH ? 'Balbharti Exercise Q2(a)' : 'Textbook Exercise Q1');
 
-      const defCount = Math.max(1, Math.round(totalQs * 0.25));
-      const shortCount = Math.max(2, Math.round(totalQs * 0.50));
-      const longCount = Math.max(1, totalQs - defCount - shortCount);
+      const defCount = Math.max(1, Math.round(effectiveTargetQs * 0.25));
+      const shortCount = Math.max(2, Math.round(effectiveTargetQs * 0.50));
+      const longCount = Math.max(1, effectiveTargetQs - defCount - shortCount);
 
       const questionBreakdownInstruction = isMath ? `
 ========================================
-MATHEMATICS SUBJECTIVE REQUIREMENTS (${totalQs} Questions Total):
+MATHEMATICS SUBJECTIVE REQUIREMENTS (${effectiveTargetQs} Questions Total):
 ========================================
-Generate EXACTLY ${totalQs} authentic subjective mathematics questions strictly sourced from ${boardFullName}:
+Generate EXACTLY ${effectiveTargetQs} authentic subjective mathematics questions strictly sourced from ${boardFullName}:
 - 1-Mark short questions/formulas (type: "subjective_define", marks: 1, ${defCount} questions: direct formulas, statements of theorems, or definitions).
 - 2-Mark short specific / reasoned problems (type: "numerical_short" or "subjective_short", marks: 2, ${shortCount} questions: 2-4 step calculations or proofs).
 - 4-Mark long analytical / derivation problems (type: "numerical_long" or "subjective_long", marks: 4, ${longCount} questions: multi-step comprehensive problems, geometric proofs, or word problems).
@@ -1143,27 +1166,27 @@ Generate EXACTLY ${totalQs} authentic subjective mathematics questions strictly 
 - Reference tagging: Specify the exact source in "sourceSection" (e.g., "${isMH ? 'Practice Set 2.1: Q3' : 'Exercise 3.2: Q4'}").
 ` : `
 ========================================
-SCIENCE & GENERAL SUBJECTIVE REQUIREMENTS (${totalQs} Questions Total):
+SCIENCE & GENERAL SUBJECTIVE REQUIREMENTS (${effectiveTargetQs} Questions Total):
 ========================================
-Generate EXACTLY ${totalQs} authentic subjective questions strictly sourced from ${boardFullName}:
+Generate EXACTLY ${effectiveTargetQs} authentic subjective questions strictly sourced from ${boardFullName}:
 - 1-Mark Definition / Laws / Principles (type: "subjective_define" or "subjective_laws", marks: 1, ${defCount} questions).
 - 2-Mark Short Answers / Scientific Reasons / Distinguish Between / Short Notes (type: "subjective_short" or "subjective_reason" or "subjective_notes", marks: 2, ${shortCount} questions).
 - 4-Mark Long Answers / Detailed Mechanisms / Experimental Setups / Derivations (type: "subjective_long", marks: 4, ${longCount} questions).
 ${allowNumericals ? `- For calculative physics/chemistry topics, include authentic textbook numericals ("numerical_short" 2M / "numerical_long" 4M) strictly matching ${officialTextbook}.` : '- ZERO INVENTED NUMERICALS: For qualitative/theoretical topics, strictly DO NOT generate any numerical problems. Focus exclusively on authentic conceptual questions.'}
 `;
 
-      (window as any).lastPromptMeta = { mode: 'subjective', totalQs };
+      (window as any).lastPromptMeta = { mode: 'subjective', totalQs: effectiveTargetQs };
 
       return `========================================
 ROLE AND TARGET BOARD SPECIFICATION:
 ========================================
 You are an official Senior Paper Setter and Curriculum Author for the ${boardFullName}.
 
-Your mission is to generate EXACTLY ${totalQs} authentic, textbook-verbatim subjective questions exclusively for:
+Your mission is to generate EXACTLY ${effectiveTargetQs} authentic, textbook-verbatim subjective questions exclusively for:
 - Target Board: ${selectedBoard} (${boardFullName})
 - Target Class: ${selectedClass}
 - Subject: ${subj}
-- Target Scope: 5 to 10 focused high-yield questions (${totalQs} Qs specified)
+- Target Scope: authentic high-yield questions (${effectiveTargetQs} Qs specified)
 - Source Authority: ${officialTextbook}
 ${exclusionRule ? `- ${exclusionRule}` : ''}
 ${topicDistributionSummary}
@@ -1832,7 +1855,7 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
 
           </div>
           
-          {/* Subjects checkboxes & Single Topic Selector */}
+          {/* Subjects checkboxes & Topics Selector */}
           <SyllabusSelector
             availableSubjects={availableSubjects}
             selectedSubjects={selectedSubjects}
@@ -1845,18 +1868,31 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
             availableTopics={currentAllTopics}
             selectedTopics={selectedTopics}
             onToggleTopic={(topic) => {
-              setSelectedTopics([topic]);
-              const count = topic.targetQuestions || (defaultPerTopicCount ? Number(defaultPerTopicCount) : 80);
-              setDefaultPerTopicCount(count);
-              setTopicCustomCounts({ [topicKey(topic)]: count });
+              handleToggleTopic(topic);
+              const k = topicKey(topic);
+              if (!topicCustomCounts[k]) {
+                const count = topic.targetQuestions || (defaultPerTopicCount ? Number(defaultPerTopicCount) : (questionType === 'subjective' ? 10 : 80));
+                setTopicCustomCounts(prev => ({ ...prev, [k]: count }));
+              }
             }}
-            onSelectAllTopics={() => {}}
-            onDeselectAllTopics={() => setSelectedTopics([])}
-            singleTopicSelect={true}
+            onSelectAllTopics={() => {
+              handleSelectAllTopics(currentAllTopics);
+              const newCounts = { ...topicCustomCounts };
+              const count = defaultPerTopicCount ? Number(defaultPerTopicCount) : (questionType === 'subjective' ? 10 : 80);
+              currentAllTopics.forEach(t => {
+                if (!(t as any).hasSubtopics) {
+                  const k = topicKey(t);
+                  if (!newCounts[k]) newCounts[k] = t.targetQuestions || count;
+                }
+              });
+              setTopicCustomCounts(newCounts);
+            }}
+            onDeselectAllTopics={() => handleDeselectAllTopics(currentAllTopics)}
+            singleTopicSelect={false}
           />
 
-          {/* Single Topic Target Question Quota (Compact) */}
-          {selectedTopics.length > 0 && (
+          {/* Topic Target Question Quota (Single & Multiple Topics Support) */}
+          {selectedTopics.length === 1 && (
             <div style={{ marginTop: '8px', borderTop: '1px solid var(--border-light)', paddingTop: '8px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px', flexWrap: 'wrap', gap: '6px' }}>
                 <h3 style={{ fontSize: '11.5px', fontWeight: 800, margin: 0, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.03em' }}>Target Question Quota</h3>
@@ -1865,7 +1901,7 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
                 </span>
               </div>
 
-              {/* Unified Compact Topic & Preset Bar */}
+              {/* Unified Compact Single Topic & Preset Bar */}
               <div style={{ background: 'var(--bg-soft)', padding: '6px 10px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
                 <div style={{ minWidth: '200px', flex: '1 1 auto' }}>
                   <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text)', lineHeight: 1.2 }}>
@@ -1974,7 +2010,7 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                     <input
                       type="number"
-                      min={5}
+                      min={1}
                       max={100}
                       value={defaultPerTopicCount}
                       onChange={(e) => {
@@ -1992,9 +2028,10 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
                       }}
                       onBlur={() => {
                         if (defaultPerTopicCount === '' || Number(defaultPerTopicCount) < 1) {
-                          setDefaultPerTopicCount(80);
+                          const def = questionType === 'subjective' ? 10 : 80;
+                          setDefaultPerTopicCount(def);
                           if (selectedTopics[0]) {
-                            setTopicCustomCounts({ [topicKey(selectedTopics[0])]: 80 });
+                            setTopicCustomCounts({ [topicKey(selectedTopics[0])]: def });
                           }
                         }
                       }}
@@ -2004,6 +2041,168 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
                   </div>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* Multi-Topic Target Question Quota Panel */}
+          {selectedTopics.length > 1 && (
+            <div style={{ marginTop: '10px', borderTop: '1px solid var(--border-light)', paddingTop: '10px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <h3 style={{ fontSize: '12px', fontWeight: 800, margin: 0, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                    Target Question Quota ({selectedTopics.length} Topics Selected)
+                  </h3>
+                  <div className="segmented-track" style={{ padding: '2px' }}>
+                    <button
+                      type="button"
+                      className={`pill-btn ${topicWeightageMode === 'equal' ? 'active' : ''}`}
+                      style={{ padding: '2px 8px', fontSize: '10px' }}
+                      onClick={() => setTopicWeightageMode('equal')}
+                    >
+                      Equal Per Topic
+                    </button>
+                    <button
+                      type="button"
+                      className={`pill-btn ${topicWeightageMode === 'custom_counts' ? 'active' : ''}`}
+                      style={{ padding: '2px 8px', fontSize: '10px' }}
+                      onClick={() => setTopicWeightageMode('custom_counts')}
+                    >
+                      Custom Per Topic
+                    </button>
+                  </div>
+                </div>
+                <span className="badge-pill" style={{ fontSize: '11px', padding: '3px 10px' }}>
+                  Total Target: <strong style={{ color: 'var(--text)' }}>{getTotalTargetQuestions()} Questions</strong>
+                </span>
+              </div>
+
+              {/* Presets Bar */}
+              <div style={{ background: 'var(--bg-soft)', padding: '8px 12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)' }}>
+                    {topicWeightageMode === 'equal' ? 'Preset Per Topic:' : 'Apply Preset to All:'}
+                  </span>
+                  <div className="segmented-track" style={{ padding: '2px' }}>
+                    {questionType === 'subjective' ? (
+                      <>
+                        {[5, 8, 10, 15].map(cnt => (
+                          <button
+                            key={cnt}
+                            type="button"
+                            className={`pill-btn ${Number(defaultPerTopicCount) === cnt ? 'active' : ''}`}
+                            style={{ padding: '3px 8px', fontSize: '10.5px' }}
+                            onClick={() => {
+                              setDefaultPerTopicCount(cnt);
+                              const newCounts = { ...topicCustomCounts };
+                              selectedTopics.forEach(t => { newCounts[topicKey(t)] = cnt; });
+                              setTopicCustomCounts(newCounts);
+                            }}
+                          >
+                            {cnt === 5 ? 'Core (5)' : cnt === 8 ? 'Standard (8)' : cnt === 10 ? 'Comp (10)' : 'Full (15)'}
+                          </button>
+                        ))}
+                      </>
+                    ) : (
+                      <>
+                        {[50, 80, 90].map(cnt => (
+                          <button
+                            key={cnt}
+                            type="button"
+                            className={`pill-btn ${Number(defaultPerTopicCount) === cnt ? 'active' : ''}`}
+                            style={{ padding: '3px 8px', fontSize: '10.5px' }}
+                            onClick={() => {
+                              setDefaultPerTopicCount(cnt);
+                              const newCounts = { ...topicCustomCounts };
+                              selectedTopics.forEach(t => { newCounts[topicKey(t)] = cnt; });
+                              setTopicCustomCounts(newCounts);
+                            }}
+                          >
+                            {cnt === 50 ? 'Minor (50)' : cnt === 80 ? 'Medium (80)' : 'Major (90)'}
+                          </button>
+                        ))}
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {topicWeightageMode === 'equal' && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11.5px' }}>
+                    <span style={{ color: 'var(--text-muted)' }}>Questions per topic:</span>
+                    <input
+                      type="number"
+                      min={1}
+                      max={100}
+                      value={defaultPerTopicCount}
+                      onChange={(e) => {
+                        const raw = e.target.value;
+                        if (raw === '') {
+                          setDefaultPerTopicCount('');
+                        } else {
+                          const val = parseInt(raw, 10);
+                          const v = isNaN(val) ? '' : Math.max(1, val);
+                          setDefaultPerTopicCount(v);
+                          if (v) {
+                            const newCounts = { ...topicCustomCounts };
+                            selectedTopics.forEach(t => { newCounts[topicKey(t)] = v; });
+                            setTopicCustomCounts(newCounts);
+                          }
+                        }
+                      }}
+                      onBlur={() => {
+                        if (defaultPerTopicCount === '' || Number(defaultPerTopicCount) < 1) {
+                          const def = questionType === 'subjective' ? 10 : 80;
+                          setDefaultPerTopicCount(def);
+                          const newCounts = { ...topicCustomCounts };
+                          selectedTopics.forEach(t => { newCounts[topicKey(t)] = def; });
+                          setTopicCustomCounts(newCounts);
+                        }
+                      }}
+                      style={{ width: '48px', padding: '3px 5px', textAlign: 'center', border: '1px solid var(--border-light)', borderRadius: '4px', background: 'var(--surface)', color: 'var(--text)', fontWeight: 700, fontSize: '11.5px' }}
+                    />
+                    <span style={{ fontWeight: 600, color: 'var(--text-muted)' }}>
+                      ({selectedTopics.length} topics × {defaultPerTopicCount || 0} = <strong style={{ color: 'var(--text)' }}>{selectedTopics.length * (Number(defaultPerTopicCount) || 0)} Total</strong>)
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Custom Count Topic Breakdown Grid (when custom_counts is active) */}
+              {topicWeightageMode === 'custom_counts' && (
+                <div style={{ marginTop: '8px', maxHeight: '180px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '4px', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', padding: '6px', background: 'var(--surface)' }}>
+                  {selectedTopics.map((top, idx) => {
+                    const k = topicKey(top);
+                    const currentCount = topicCustomCounts[k] !== undefined && topicCustomCounts[k] !== '' ? topicCustomCounts[k] : defaultPerTopicCount;
+                    return (
+                      <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '4px 8px', borderRadius: '4px', background: 'var(--bg-soft)', fontSize: '11.5px' }}>
+                        <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '75%' }}>
+                          <span style={{ fontWeight: 600, color: 'var(--text)' }}>{top.topic}</span>
+                          <span style={{ color: 'var(--text-muted)', fontSize: '10px', marginLeft: '6px' }}>({top.chapterName})</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <input
+                            type="number"
+                            min={1}
+                            max={100}
+                            value={currentCount}
+                            onChange={(e) => {
+                              const raw = e.target.value;
+                              const val = raw === '' ? '' : Math.max(1, parseInt(raw, 10) || 1);
+                              handleTopicCustomCountChange(top, val);
+                            }}
+                            onBlur={() => {
+                              if (topicCustomCounts[k] === '' || topicCustomCounts[k] === undefined) {
+                                handleTopicCustomCountChange(top, Number(defaultPerTopicCount) || (questionType === 'subjective' ? 10 : 80));
+                              }
+                            }}
+                            style={{ width: '48px', padding: '2px 4px', textAlign: 'center', border: '1px solid var(--border-light)', borderRadius: '4px', background: 'var(--surface)', color: 'var(--text)', fontWeight: 700, fontSize: '11px' }}
+                          />
+                          <span style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>Qs</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
         </div>
