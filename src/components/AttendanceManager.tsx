@@ -1,5 +1,6 @@
-import DateInputDMY from '@/components/DateInputDMY';
 'use client';
+
+import DateInputDMY from '@/components/DateInputDMY';
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';

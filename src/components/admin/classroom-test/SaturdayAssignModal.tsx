@@ -1,5 +1,6 @@
-import DateTimeInputDMY from '@/components/DateTimeInputDMY';
 'use client';
+
+import DateTimeInputDMY from '@/components/DateTimeInputDMY';
 
 import React from 'react';
 

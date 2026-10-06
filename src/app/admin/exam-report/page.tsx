@@ -1,6 +1,6 @@
-import DateTimeInputDMY from '@/components/DateTimeInputDMY';
 'use client';
 
+import DateTimeInputDMY from '@/components/DateTimeInputDMY';
 import React, { useEffect, useState, useMemo, Suspense } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
