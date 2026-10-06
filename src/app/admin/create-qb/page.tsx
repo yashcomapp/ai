@@ -154,6 +154,7 @@ function CreateQBContent() {
   const [aiPasteText, setAiPasteText] = useState('');
   const [generatedQuestions, setGeneratedQuestions] = useState<any[]>([]);
   const [previewFilter, setPreviewFilter] = useState<'all' | 'issues'>('all');
+  const [promptScope, setPromptScope] = useState<'all' | 'practice_only' | 'exam_only'>('all');
   useMathRender([generatedQuestions]);
 
 
@@ -607,16 +608,41 @@ function CreateQBContent() {
     return leafTopics.length > 0 ? leafTopics : selectedTopics;
   };
 
+  const getVaultBreakdown = (count: number) => {
+    if (count === 50) {
+      return { practice: 30, exam: 20 };
+    } else if (count === 80) {
+      return { practice: 50, exam: 30 };
+    } else if (count === 90) {
+      return { practice: 55, exam: 35 };
+    } else {
+      const practice = Math.round(count * 0.6);
+      const exam = Math.max(0, count - practice);
+      return { practice, exam };
+    }
+  };
+
   const getTotalTargetQuestions = (): number => {
     return typeof defaultPerTopicCount === 'number' ? defaultPerTopicCount : (parseInt(String(defaultPerTopicCount), 10) || 80);
   };
 
-  const getEffectiveTopicCounts = (): Record<string, number> => {
+  const getEffectiveTopicCounts = (scope: 'all' | 'practice_only' | 'exam_only' = promptScope): Record<string, number> => {
     const map: Record<string, number> = {};
     const count = getTotalTargetQuestions();
     const promptTopics = getPromptTargetTopics();
     promptTopics.forEach(t => {
-      map[topicKey(t)] = count;
+      if (questionType === 'objective') {
+        const { practice, exam } = getVaultBreakdown(count);
+        if (scope === 'practice_only') {
+          map[topicKey(t)] = practice;
+        } else if (scope === 'exam_only') {
+          map[topicKey(t)] = exam;
+        } else {
+          map[topicKey(t)] = count;
+        }
+      } else {
+        map[topicKey(t)] = count;
+      }
     });
     return map;
   };
@@ -731,7 +757,7 @@ In addition to the topic-based questions:
   };
 
   // Compile prompt string
-  const compilePrompt = (type: 'objective' | 'subjective') => {
+  const compilePrompt = (type: 'objective' | 'subjective', scope: 'all' | 'practice_only' | 'exam_only' = promptScope) => {
     if (!selectedBoard || !selectedClass || getSelectedSubjectsCount() === 0 || selectedTopics.length === 0) {
       return '';
     }
@@ -740,7 +766,11 @@ In addition to the topic-based questions:
     const isMath = /math|algebra|geometry|ganit/i.test(subj);
     const isFoundation = examCategory === 'foundation';
     const totalQs = getTotalTargetQuestions() || 10;
-    const topicCounts = getEffectiveTopicCounts();
+    const { practice: totalPracticeQs, exam: totalExamQs } = getVaultBreakdown(totalQs);
+    const effectiveTargetQs = type === 'objective'
+      ? (scope === 'practice_only' ? totalPracticeQs : (scope === 'exam_only' ? totalExamQs : totalQs))
+      : totalQs;
+    const topicCounts = getEffectiveTopicCounts(scope);
     const ctx = buildTopicsContextBlock(topicCounts);
     const promptTopics = getPromptTargetTopics();
 
@@ -757,10 +787,13 @@ In addition to the topic-based questions:
     const allowNumericals = isMath || includeNumericals;
 
     const buildBatchInstruction = (total: number) => {
+      const scopeTag = scope === 'practice_only' 
+        ? ' (ALL tagged "vault": "practice")' 
+        : (scope === 'exam_only' ? ' (ALL tagged "vault": "exam")' : '');
       return `========================================
 OUTPUT FORMAT (STRICT MARKDOWN JSON CODE BOX REQUIRED):
 ========================================
-TOTAL QUESTIONS TO GENERATE: EXACTLY ${total} questions across ${promptTopics.length} topic(s).
+TOTAL QUESTIONS TO GENERATE: EXACTLY ${total} questions across ${promptTopics.length} topic(s)${scopeTag}.
 Output ALL ${total} questions enclosed within a SINGLE Markdown JSON code block:
 \`\`\`json
 [
@@ -845,9 +878,9 @@ CRITICAL NEGATIVE CONSTRAINTS (ZERO-TOLERANCE RULES):
     };
 
     if (type === 'objective') {
-      const easyC = Math.round((isFoundation ? 0.10 : 0.30) * totalQs);
-      const medC = Math.round((isFoundation ? 0.40 : 0.50) * totalQs);
-      const hardC = Math.max(0, totalQs - easyC - medC);
+      const easyC = Math.round((isFoundation ? 0.10 : 0.30) * effectiveTargetQs);
+      const medC = Math.round((isFoundation ? 0.40 : 0.50) * effectiveTargetQs);
+      const hardC = Math.max(0, effectiveTargetQs - easyC - medC);
 
       // Canonical Question Types across all levels:
       const canonicalTypeGuide = allowNumericals ? `
@@ -888,23 +921,57 @@ CRITICAL NEGATIVE CONSTRAINTS (ZERO-TOLERANCE RULES):
    * Canonical Answer Rules for OAR: "A" = Both true & R explains A | "B" = Both true & R does NOT explain A | "C" = A true & R false | "D" = A false & R true. Do NOT include options array for assertion_reason.
 `;
 
-      const getVaultBreakdown = (count: number) => {
-        if (count === 50) {
-          return { practice: 30, exam: 20 };
-        } else if (count === 80) {
-          return { practice: 50, exam: 30 };
-        } else if (count === 90) {
-          return { practice: 55, exam: 35 };
-        } else {
-          const practice = Math.round(count * 0.6);
-          const exam = Math.max(0, count - practice);
-          return { practice, exam };
-        }
-      };
-
-      const { practice: totalPracticeQs, exam: totalExamQs } = getVaultBreakdown(totalQs);
-
-      const vaultPartitionGuide = allowNumericals ? `
+      let vaultPartitionGuide = '';
+      if (scope === 'practice_only') {
+        vaultPartitionGuide = allowNumericals ? `
+========================================
+PARTITION REQUIREMENT (PRACTICE VAULT ONLY - FAST BATCH 1):
+========================================
+For this batch, generate EXACTLY ${effectiveTargetQs} QUESTIONS tagged strictly into the 🟢 PRACTICE VAULT:
+1. 🟢 PRACTICE VAULT ("vault": "practice") — EXACTLY ${effectiveTargetQs} QUESTIONS:
+   - "vault": "practice" MUST be specified on EVERY question object.
+   - Dedicated for student self-paced practice, diagnostic recovery, and spaced repetition (SRS).
+   - Distribution: Foundation & Recall (~30%) + Conceptual Reasoning (~40%) + Numerical & Application (~30%).
+   - Mix: OSC, OMC, OTF, OAR, ONE.
+   - ZERO questions in exam vault for this batch. All ${effectiveTargetQs} questions must be tagged "vault": "practice".
+` : `
+========================================
+PARTITION REQUIREMENT (PRACTICE VAULT ONLY - FAST BATCH 1 - ZERO NUMERICALS):
+========================================
+For this batch, generate EXACTLY ${effectiveTargetQs} QUESTIONS tagged strictly into the 🟢 PRACTICE VAULT:
+1. 🟢 PRACTICE VAULT ("vault": "practice") — EXACTLY ${effectiveTargetQs} QUESTIONS:
+   - "vault": "practice" MUST be specified on EVERY question object.
+   - Dedicated for student self-paced practice, diagnostic recovery, and spaced repetition (SRS).
+   - Distribution: Foundation & Recall (~35%) + Conceptual Reasoning (~40%) + Application & Mechanisms (~25%).
+   - Mix: OSC, OMC, OTF, OAR. (NO ONE / NO NUMERICALS).
+   - ZERO questions in exam vault for this batch. All ${effectiveTargetQs} questions must be tagged "vault": "practice".
+`;
+      } else if (scope === 'exam_only') {
+        vaultPartitionGuide = allowNumericals ? `
+========================================
+EXAM VAULT PARTITION REQUIREMENT (FAST BATCH 2):
+========================================
+For this batch, generate EXACTLY ${effectiveTargetQs} QUESTIONS tagged strictly into the 🔵 EXAM VAULT:
+2. 🔵 EXAM VAULT ("vault": "exam") — EXACTLY ${effectiveTargetQs} QUESTIONS:
+   - "vault": "exam" MUST be specified on EVERY question object.
+   - Reserved exclusively for teacher classroom tests, chapter tests, and scheduled term exams (must be fresh and unseen by students).
+   - Distribution: Core Recall (~25%) + Conceptual Reasoning (~40%) + Numerical & Higher Application (~35%).
+   - Mix: OSC, OMC, OTF, OAR, ONE.
+   - ZERO questions in practice vault for this batch. All ${effectiveTargetQs} questions must be tagged "vault": "exam".
+` : `
+========================================
+EXAM VAULT PARTITION REQUIREMENT (FAST BATCH 2 - ZERO NUMERICALS):
+========================================
+For this batch, generate EXACTLY ${effectiveTargetQs} QUESTIONS tagged strictly into the 🔵 EXAM VAULT:
+2. 🔵 EXAM VAULT ("vault": "exam") — EXACTLY ${effectiveTargetQs} QUESTIONS:
+   - "vault": "exam" MUST be specified on EVERY question object.
+   - Reserved exclusively for teacher classroom tests, chapter tests, and scheduled term exams (must be fresh and unseen by students).
+   - Distribution: Core Recall (~30%) + Conceptual Reasoning (~40%) + Applied Scenarios (~30%).
+   - Mix: OSC, OMC, OTF, OAR. (NO ONE / NO NUMERICALS).
+   - ZERO questions in practice vault for this batch. All ${effectiveTargetQs} questions must be tagged "vault": "exam".
+`;
+      } else {
+        vaultPartitionGuide = allowNumericals ? `
 ========================================
 UNIVERSAL 2-VAULT PARTITION REQUIREMENT:
 ========================================
@@ -933,15 +1000,22 @@ For each topic (${totalQs} Questions Total), generate and tag questions strictly
    - Distribution: Core Recall (~30%) + Conceptual Reasoning (~40%) + Applied Scenarios (~30%).
    - Mix: OSC, OMC, OTF, OAR. (NO ONE / NO NUMERICALS).
 `;
+      }
 
-      (window as any).lastPromptMeta = { mode: 'objective', totalQs };
+      (window as any).lastPromptMeta = { mode: 'objective', totalQs: effectiveTargetQs, scope };
 
       let topicDistributionSummary = '\n\n========================================\nPER-TOPIC QUESTION ALLOCATION QUOTAS:\n========================================';
       promptTopics.forEach(tp => {
         const k = topicKey(tp);
-        const cnt = topicCounts[k] || 80;
-        const { practice, exam } = getVaultBreakdown(cnt);
-        topicDistributionSummary += `\n- ${tp.subject ? '[' + tp.subject + '] ' : ''}${tp.topic}: EXACTLY ${cnt} questions (${practice} Practice/SRS + ${exam} Exam)`;
+        const cnt = topicCounts[k] || effectiveTargetQs;
+        if (scope === 'practice_only') {
+          topicDistributionSummary += `\n- ${tp.subject ? '[' + tp.subject + '] ' : ''}${tp.topic}: EXACTLY ${cnt} questions (PRACTICE VAULT ONLY - Batch 1 of 2)`;
+        } else if (scope === 'exam_only') {
+          topicDistributionSummary += `\n- ${tp.subject ? '[' + tp.subject + '] ' : ''}${tp.topic}: EXACTLY ${cnt} questions (EXAM VAULT ONLY - Batch 2 of 2)`;
+        } else {
+          const { practice, exam } = getVaultBreakdown(cnt);
+          topicDistributionSummary += `\n- ${tp.subject ? '[' + tp.subject + '] ' : ''}${tp.topic}: EXACTLY ${cnt} questions (${practice} Practice/SRS + ${exam} Exam)`;
+        }
       });
 
       const roleBlock = `========================================
@@ -949,8 +1023,14 @@ ROLE AND PEDAGOGICAL OBJECTIVE
 ========================================
 Act as an expert Master Educator and Curriculum Specialist under the ${selectedBoard} Class ${selectedClass} curriculum.
 
-Generate a complete, scientifically balanced Question Suite of EXACTLY ${totalQs} OBJECTIVE questions matching the per-topic quotas specified below.
+Generate a complete, scientifically balanced Question Suite of EXACTLY ${effectiveTargetQs} OBJECTIVE questions ${scope === 'practice_only' ? 'strictly for the PRACTICE VAULT (Batch 1 of 2) ' : (scope === 'exam_only' ? 'strictly for the EXAM VAULT (Batch 2 of 2) ' : '')}matching the per-topic quotas specified below.
 ${requirementsSection}`;
+
+      const totalDetailsLine = scope === 'practice_only'
+        ? `EXACTLY ${effectiveTargetQs} (PRACTICE VAULT ONLY - Batch 1 of 2)`
+        : (scope === 'exam_only'
+          ? `EXACTLY ${effectiveTargetQs} (EXAM VAULT ONLY - Batch 2 of 2)`
+          : `EXACTLY ${effectiveTargetQs} (in ONE single complete JSON array)`);
 
       return `${roleBlock}
 ========================================
@@ -960,9 +1040,9 @@ QUESTION BANK DETAILS:
 - Class: ${selectedClass}
 - Track: ${isFoundation ? 'Foundation / Olympiad (HOTS)' : 'Standard Curriculum'}
 - Subject Mode: ${allowNumericals ? 'Numericals & Calculations Enabled' : 'Theory & Conceptual Only (Zero Numericals)'}
-- Total Questions: EXACTLY ${totalQs} (in ONE single complete JSON array)
+- Total Questions: ${totalDetailsLine}
 
-${buildBatchInstruction(totalQs)}
+${buildBatchInstruction(effectiveTargetQs)}
 
 ${vaultPartitionGuide}
 
@@ -1156,7 +1236,7 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
   };
 
   // Compile instructions templates for Gemini AI
-  const handleGeneratePrompt = () => {
+  const handleGeneratePrompt = (overrideScope?: 'all' | 'practice_only' | 'exam_only') => {
     if (!selectedBoard || !selectedClass || getSelectedSubjectsCount() === 0 || selectedTopics.length === 0) {
       triggerAlert('Configuration Required', 'Please configure Board, Class, Subjects, and Topics first.');
       return;
@@ -1167,14 +1247,21 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
         return;
       }
     }
-    const text = compilePrompt(questionType);
+    const scopeToUse = overrideScope || promptScope;
+    const text = compilePrompt(questionType, scopeToUse);
     setAiPrompt(text);
 
     if (text) {
+      const copyMsg = scopeToUse === 'practice_only'
+        ? '⚡ Practice Vault prompt (Batch 1) copied to clipboard! Paste into Gemini, then paste Gemini\'s response below.'
+        : (scopeToUse === 'exam_only'
+          ? '⚡ Exam Vault prompt (Batch 2) copied to clipboard! Paste into Gemini, then click "Append to Current" below.'
+          : '⚡ Prompt generated and copied to clipboard successfully!');
+
       try {
         navigator.clipboard.writeText(text)
           .then(() => {
-            triggerAlert('Success', '⚡ Prompt generated and copied to clipboard successfully!', undefined, false, 1000);
+            triggerAlert('Success', copyMsg, undefined, false, 1500);
           })
           .catch(() => {
             const ta = document.createElement('textarea');
@@ -1186,7 +1273,7 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
             ta.select();
             document.execCommand('copy');
             document.body.removeChild(ta);
-            triggerAlert('Success', '⚡ Prompt generated and copied to clipboard successfully!', undefined, false, 1000);
+            triggerAlert('Success', copyMsg, undefined, false, 1500);
           });
       } catch {
         const ta = document.createElement('textarea');
@@ -1198,7 +1285,7 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
         ta.select();
         document.execCommand('copy');
         document.body.removeChild(ta);
-        triggerAlert('Success', '⚡ Prompt generated and copied to clipboard successfully!', undefined, false, 1000);
+        triggerAlert('Success', copyMsg, undefined, false, 1500);
       }
     }
 
@@ -1349,7 +1436,7 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
       requiresFigure: !!q.requiresFigure || (q.text || '').toLowerCase().includes('figure') || (q.text || '').toLowerCase().includes('diagram') || (q.text || '').toLowerCase().includes('fig.'),
       imageUrl: q.imageUrl || '',
       examCategory: q.examCategory || examCategory,
-      vault: q.vault || vault,
+      vault: q.vault || (promptScope === 'practice_only' ? 'practice' : (promptScope === 'exam_only' ? 'exam' : vault)),
       conceptTag: q.conceptTag || finalTopicName,
       source: 'ai_generated',
       createdAt: new Date().toISOString(),
@@ -1593,16 +1680,22 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
         setGeneratedQuestions(combined);
         setAiPasteText('');
         const validation = validateQuestionsForSave(combined);
+        const pCount = combined.filter(q => q.vault === 'practice').length;
+        const eCount = combined.filter(q => q.vault === 'exam').length;
         if (!validation.valid) {
-          triggerAlert('Questions Appended with Warnings', `✅ Appended ${transformed.length} questions (Total: ${combined.length}), but ${validation.errors.length} issue(s) need attention.`);
+          triggerAlert('Questions Appended with Warnings', `✅ Appended ${transformed.length} questions (Total: ${combined.length} — 🟢 ${pCount} Practice, 🔵 ${eCount} Exam), but ${validation.errors.length} issue(s) need attention.`);
         } else {
-          triggerAlert('Questions Appended', `✅ Successfully appended ${transformed.length} questions! Total preview pool: ${combined.length} questions.`);
+          triggerAlert('Questions Appended', `✅ Successfully appended ${transformed.length} questions! Total preview pool: ${combined.length} questions (🟢 ${pCount} Practice + 🔵 ${eCount} Exam).`);
         }
       } else {
         setGeneratedQuestions(transformed);
         const validation = validateQuestionsForSave(transformed);
+        const pCount = transformed.filter(q => q.vault === 'practice').length;
+        const eCount = transformed.filter(q => q.vault === 'exam').length;
         if (!validation.valid) {
-          triggerAlert('Success with Warnings', `✅ Successfully parsed ${transformed.length} questions, but ${validation.errors.length} issue(s) need attention. Review or fix/delete them below before saving.`);
+          triggerAlert('Success with Warnings', `✅ Successfully parsed ${transformed.length} questions (🟢 ${pCount} Practice, 🔵 ${eCount} Exam), but ${validation.errors.length} issue(s) need attention. Review or fix/delete them below before saving.`);
+        } else {
+          triggerAlert('Success', `✅ Successfully parsed ${transformed.length} questions (🟢 ${pCount} Practice, 🔵 ${eCount} Exam)! Preview available below.`);
         }
       }
       
@@ -1960,6 +2053,64 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
                   </span>
                 </label>
 
+                {/* Batch Scope Selector (Fast 2-Batch Partitioning) */}
+                {questionType === 'objective' && (() => {
+                  const breakdown = getVaultBreakdown(getTotalTargetQuestions() || 30);
+                  return (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)' }}>Batch:</span>
+                      <div className="segmented-track" style={{ padding: '2px' }}>
+                        <button
+                          type="button"
+                          className={`pill-btn ${promptScope === 'practice_only' ? 'active' : ''}`}
+                          style={{
+                            padding: '3px 9px',
+                            fontSize: '10.5px',
+                            fontWeight: 700,
+                            color: promptScope === 'practice_only' ? 'var(--success)' : undefined
+                          }}
+                          onClick={() => {
+                            setPromptScope('practice_only');
+                            handleGeneratePrompt('practice_only');
+                          }}
+                          title="Step 1: Generate Practice Vault questions (~1.5 min)"
+                        >
+                          ⚡ 1️⃣ Practice Vault ({breakdown.practice} Qs)
+                        </button>
+                        <button
+                          type="button"
+                          className={`pill-btn ${promptScope === 'exam_only' ? 'active' : ''}`}
+                          style={{
+                            padding: '3px 9px',
+                            fontSize: '10.5px',
+                            fontWeight: 700,
+                            color: promptScope === 'exam_only' ? 'var(--primary)' : undefined
+                          }}
+                          onClick={() => {
+                            setPromptScope('exam_only');
+                            handleGeneratePrompt('exam_only');
+                          }}
+                          title="Step 2: Generate Exam Vault questions (~1 min)"
+                        >
+                          ⚡ 2️⃣ Exam Vault ({breakdown.exam} Qs)
+                        </button>
+                        <button
+                          type="button"
+                          className={`pill-btn ${promptScope === 'all' ? 'active' : ''}`}
+                          style={{ padding: '3px 9px', fontSize: '10.5px' }}
+                          onClick={() => {
+                            setPromptScope('all');
+                            handleGeneratePrompt('all');
+                          }}
+                          title="Generate entire suite in a single monolithic prompt"
+                        >
+                          📦 Full Suite ({getTotalTargetQuestions() || 30} Qs)
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })()}
+
                 {/* Optional Image Upload */}
                 <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                   <input type="file" id="questionImageInput" accept="image/*" onChange={handleImageSelected} style={{ fontSize: '11px', maxWidth: '180px' }} />
@@ -1974,7 +2125,7 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
                 <button className="btn btn-secondary btn-sm" onClick={clearAllSelections} style={{ padding: '6px 12px', fontSize: '11.5px' }}>
                   Clear All
                 </button>
-                <button className="btn btn-primary btn-sm" onClick={handleGeneratePrompt} style={{ padding: '6px 14px', fontSize: '11.5px', fontWeight: 700 }}>
+                <button className="btn btn-primary btn-sm" onClick={() => handleGeneratePrompt()} style={{ padding: '6px 14px', fontSize: '11.5px', fontWeight: 700 }}>
                   🔧 Generate &amp; Copy AI Prompt
                 </button>
               </div>
@@ -1995,6 +2146,54 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
             )}
           </div>
         )}
+
+        {/* Fast Batch Progress Banner */}
+        {selectedTopics.length > 0 && questionType === 'objective' && promptScope !== 'all' && (() => {
+          const breakdown = getVaultBreakdown(getTotalTargetQuestions() || 30);
+          const pLoaded = generatedQuestions.filter(q => q.vault === 'practice').length;
+          const eLoaded = generatedQuestions.filter(q => q.vault === 'exam').length;
+          return (
+            <div style={{
+              padding: '8px 14px',
+              background: promptScope === 'practice_only' ? 'rgba(34,197,94,0.08)' : 'rgba(59,130,246,0.08)',
+              border: `1px solid ${promptScope === 'practice_only' ? 'rgba(34,197,94,0.25)' : 'rgba(59,130,246,0.25)'}`,
+              borderRadius: 'var(--radius-md)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              fontSize: '11.5px',
+              flexWrap: 'wrap',
+              gap: '8px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '14px' }}>{promptScope === 'practice_only' ? '🟢' : '🔵'}</span>
+                <div>
+                  <strong>{promptScope === 'practice_only' ? `Step 1 of 2: Practice Vault (${breakdown.practice} Qs)` : `Step 2 of 2: Exam Vault (${breakdown.exam} Qs)`}</strong>
+                  {' — '}
+                  <span style={{ color: 'var(--text-secondary)' }}>
+                    {promptScope === 'practice_only'
+                      ? `Fast ~1.5 min generation. Paste Gemini\'s response below & click "Parse & Preview". Loaded: ${pLoaded}/${breakdown.practice}.`
+                      : `Fast ~1 min generation. Paste Gemini\'s response below & click "Append to Current". Loaded: ${eLoaded}/${breakdown.exam}.`}
+                  </span>
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-sm"
+                  style={{ padding: '3px 10px', fontSize: '11px', fontWeight: 600 }}
+                  onClick={() => {
+                    const next = promptScope === 'practice_only' ? 'exam_only' : 'practice_only';
+                    setPromptScope(next);
+                    handleGeneratePrompt(next);
+                  }}
+                >
+                  Switch to {promptScope === 'practice_only' ? '2️⃣ Exam Vault' : '1️⃣ Practice Vault'} ➔
+                </button>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Card 3: AI Workspace Prompt and response */}
         <div id="aiWorkspaceSection" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '10px' }}>
@@ -2055,17 +2254,27 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
             {generatedQuestions.length > 0 ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span className="badge-pill">
-                  📦 {generatedQuestions.length} Questions Loaded in Preview
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                <span className="badge-pill" style={{ background: 'var(--success-bg)', color: 'var(--success)', fontWeight: 800 }}>
+                  📦 {generatedQuestions.length} Questions Loaded
                 </span>
-                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                  (Or paste additional questions and click &quot;Append More Questions&quot;)
+                <span style={{ fontSize: '11.5px', fontWeight: 600, color: 'var(--text)' }}>
+                  (🟢 {generatedQuestions.filter(q => q.vault === 'practice').length} Practice, 🔵 {generatedQuestions.filter(q => q.vault === 'exam').length} Exam)
                 </span>
+                {generatedQuestions.filter(q => q.vault === 'practice').length > 0 && generatedQuestions.filter(q => q.vault === 'exam').length === 0 && (
+                  <span style={{ fontSize: '11px', color: 'var(--accent)', fontWeight: 700 }}>
+                    💡 Next: Click &quot;⚡ 2️⃣ Exam Vault&quot; above to copy Exam prompt, paste here &amp; click &quot;➕ Append to Current&quot;!
+                  </span>
+                )}
+                {generatedQuestions.filter(q => q.vault === 'practice').length > 0 && generatedQuestions.filter(q => q.vault === 'exam').length > 0 && (
+                  <span style={{ fontSize: '11px', color: 'var(--success)', fontWeight: 700 }}>
+                    🎉 Full Suite Assembled! Review below &amp; click &quot;Save all to Question Bank&quot;.
+                  </span>
+                )}
               </div>
             ) : (
               <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                💡 Tip: Paste the complete JSON array generated by AI and click &quot;Parse &amp; Preview Questions&quot;.
+                💡 Tip: Paste the JSON array generated by AI and click &quot;Parse &amp; Preview Questions&quot;.
               </div>
             )}
 
@@ -2075,9 +2284,10 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
                   type="button"
                   className="btn btn-success"
                   onClick={() => handleParseJSON(true)}
-                  style={{ padding: '9px 18px', fontWeight: 700, fontSize: '12px' }}
+                  style={{ padding: '9px 18px', fontWeight: 800, fontSize: '12px' }}
+                  title="Merges newly pasted questions into current preview without deleting existing questions"
                 >
-                  ➕ Append More Questions
+                  ➕ Append to Current ({generatedQuestions.length} Loaded)
                 </button>
               )}
               <button 
@@ -2086,7 +2296,7 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
                 onClick={() => handleParseJSON(false)} 
                 style={{ padding: '9px 22px', fontWeight: 800, fontSize: '12.5px' }}
               >
-                ⚙️ Parse &amp; Preview Questions
+                {generatedQuestions.length > 0 ? '🔄 Replace Preview' : '⚙️ Parse &amp; Preview Questions'}
               </button>
             </div>
           </div>
