@@ -8,6 +8,7 @@ import { getCachedSyllabus } from '@/lib/firebase/cache';
 import { ReportCacheManager } from '@/lib/reportCache';
 import { isDemoUser } from '@/lib/studentDb';
 import { getDateKeyIST, getMidnightIST } from '@/lib/dateUtils';
+import { MasteryService } from '@/services/mastery.service';
 export const dynamic = 'force-dynamic';
 
 async function resolveObjectiveExam(inputExamId: string) {
@@ -484,6 +485,23 @@ export async function POST(req: NextRequest) {
       }
 
       await Promise.all(deletePromises);
+
+      if (targetExamId && targetStudentCode) {
+        try {
+          const examDoc = await adminDb.collection('exams').doc(targetExamId).get();
+          const eData = examDoc.exists ? examDoc.data() : null;
+          const targetTopicCodes: string[] = [];
+          if (eData?.topicCode) targetTopicCodes.push(eData.topicCode);
+          if (Array.isArray(eData?.topicCodes)) eData.topicCodes.forEach((tc: any) => targetTopicCodes.push(String(tc)));
+          await MasteryService.recalculateOrPurgeTopicsForStudent({
+            studentCode: targetStudentCode,
+            excludedExamId: targetExamId,
+            candidateTopicCodes: targetTopicCodes
+          });
+        } catch (mErr) {
+          console.warn('Error recalculating topics for deleted attempt:', mErr);
+        }
+      }
 
       if (targetExamId) {
         await ReportCacheManager.invalidateReport(`exam-report-objective-${targetExamId}`);

@@ -10,6 +10,7 @@ import { getRequiredConfidence, isDemoUser } from '@/lib/studentDb';
 import { evaluateSessionSincerity } from '@/lib/practiceTimeUtils';
 import { getCanonicalSubjectName, parseTopicCode } from '@/lib/questionTypes';
 import { getObjectiveExamTopics, getSubjectiveExamTopics, getExamDateKey, isExamForStudent } from '@/services/quotient.service';
+import { ExamService } from '@/services/exam.service';
 export const dynamic = 'force-dynamic';
 
 const parseIST = (dateStr: string) => {
@@ -1196,182 +1197,12 @@ export async function DELETE(req: NextRequest) {
     const examId = searchParams.get('examId') || '';
     const type = searchParams.get('type') || ''; // 'objective' or 'subjective'
 
-    if (!examId || !type) {
-      return NextResponse.json({ message: 'Missing parameters (examId, type).' }, { status: 400 });
+    if (!examId) {
+      return NextResponse.json({ message: 'Missing parameter (examId).' }, { status: 400 });
     }
 
-    // Retrieve the target exam document first to inspect questions to release
-    const targetCollection = type === 'objective' ? 'exams' : 'subjectiveExams';
-    const targetExamDoc = await adminDb.collection(targetCollection).doc(examId).get();
-    const targetExamData = targetExamDoc.exists ? targetExamDoc.data() : null;
-
-    const assignedQuestionCodes: string[] = [];
-    if (targetExamData) {
-      const codes = targetExamData.questionCodes || targetExamData.questionIds || [];
-      codes.forEach((c: any) => { if (c) assignedQuestionCodes.push(String(c).trim()); });
-      if (Array.isArray(targetExamData.questions)) {
-        targetExamData.questions.forEach((q: any) => {
-          if (q?.id) assignedQuestionCodes.push(String(q.id).trim());
-          if (q?.questionCode) assignedQuestionCodes.push(String(q.questionCode).trim());
-        });
-      }
-    }
-
-    const batch = new ChunkedBatch(adminDb);
-    let deletedCount = 0;
-
-    if (type === 'objective') {
-      // Delete from exams collection
-      const examRef = adminDb.collection('exams').doc(examId);
-      batch.delete(examRef);
-      deletedCount++;
-
-      // Delete corresponding batchAssignments
-      const assignmentsSnap = await adminDb.collection('batchAssignments').where('examId', '==', examId).get();
-      assignmentsSnap.docs.forEach(doc => {
-        batch.delete(doc.ref);
-        deletedCount++;
-      });
-
-      // Delete examAttempts
-      const attemptsSnap = await adminDb.collection('examAttempts').where('examId', '==', examId).get();
-      attemptsSnap.docs.forEach(doc => {
-        batch.delete(doc.ref);
-        deletedCount++;
-      });
-
-      // Delete reviews written by this exam (Finding #3)
-      const reviewsSnap = await adminDb.collection('reviews').where('examId', '==', examId).get();
-      reviewsSnap.docs.forEach(doc => {
-        batch.delete(doc.ref);
-        deletedCount++;
-      });
-
-      // Delete studentTopicMastery written by this exam
-      const masterySnap = await adminDb.collection('studentTopicMastery').where('examId', '==', examId).get();
-      masterySnap.docs.forEach(doc => {
-        batch.delete(doc.ref);
-        deletedCount++;
-      });
-
-    } else {
-      // Delete from subjectiveExams collection
-      const examRef = adminDb.collection('subjectiveExams').doc(examId);
-      batch.delete(examRef);
-      deletedCount++;
-
-      // Delete subjectiveAssignments
-      const assignmentsSnap = await adminDb.collection('subjectiveAssignments').where('examId', '==', examId).get();
-      assignmentsSnap.docs.forEach(doc => {
-        batch.delete(doc.ref);
-        deletedCount++;
-      });
-
-      // Delete subjectiveAttempts
-      const attemptsSnap = await adminDb.collection('subjectiveAttempts').where('examId', '==', examId).get();
-      attemptsSnap.docs.forEach(doc => {
-        batch.delete(doc.ref);
-        deletedCount++;
-      });
-
-      // Delete peerAssignments
-      const peerSnap = await adminDb.collection('peerAssignments').where('examId', '==', examId).get();
-      peerSnap.docs.forEach(doc => {
-        batch.delete(doc.ref);
-        deletedCount++;
-      });
-
-      // Delete evaluations
-      const evalSnap = await adminDb.collection('evaluations').where('examId', '==', examId).get();
-      evalSnap.docs.forEach(doc => {
-        batch.delete(doc.ref);
-        deletedCount++;
-      });
-
-      // Delete subjectiveReviews
-      const reviewsSnap = await adminDb.collection('subjectiveReviews').where('examId', '==', examId).get();
-      reviewsSnap.docs.forEach(doc => {
-        batch.delete(doc.ref);
-        deletedCount++;
-      });
-    }
-
-    await batch.commit();
-
-    // Release questions back into question bank vault if not locked by other active exams
-    if (assignedQuestionCodes.length > 0) {
-      try {
-        const uniqueCandidateCodes = Array.from(new Set(assignedQuestionCodes));
-        const otherActiveCodes = new Set<string>();
-
-        // Query only exams that actually contain the candidate question codes/ids
-        for (let i = 0; i < uniqueCandidateCodes.length; i += 30) {
-          const chunk = uniqueCandidateCodes.slice(i, i + 30);
-          const [objCodesSnap, objIdsSnap, subjCodesSnap, subjIdsSnap] = await Promise.all([
-            adminDb.collection('exams').where('questionCodes', 'array-contains-any', chunk).get().catch(() => null),
-            adminDb.collection('exams').where('questionIds', 'array-contains-any', chunk).get().catch(() => null),
-            adminDb.collection('subjectiveExams').where('questionCodes', 'array-contains-any', chunk).get().catch(() => null),
-            adminDb.collection('subjectiveExams').where('questionIds', 'array-contains-any', chunk).get().catch(() => null)
-          ]);
-
-          const checkDocs = [
-            ...(objCodesSnap ? objCodesSnap.docs : []),
-            ...(objIdsSnap ? objIdsSnap.docs : []),
-            ...(subjCodesSnap ? subjCodesSnap.docs : []),
-            ...(subjIdsSnap ? subjIdsSnap.docs : [])
-          ];
-
-          checkDocs.forEach(doc => {
-            if (doc.id === examId) return;
-            const edata = doc.data();
-            const codes = edata.questionCodes || edata.questionIds || [];
-            codes.forEach((c: any) => { if (c) otherActiveCodes.add(String(c).trim()); });
-            if (Array.isArray(edata.questions)) {
-              edata.questions.forEach((q: any) => {
-                if (q?.id) otherActiveCodes.add(String(q.id).trim());
-                if (q?.questionCode) otherActiveCodes.add(String(q.questionCode).trim());
-              });
-            }
-          });
-        }
-
-        const codesToRelease = uniqueCandidateCodes.filter(c => !otherActiveCodes.has(c));
-        if (codesToRelease.length > 0) {
-          const releaseBatch = new ChunkedBatch(adminDb);
-          for (const code of codesToRelease) {
-            const qRef = adminDb.collection('questions').doc(code);
-            releaseBatch.set(qRef, { usedInClassroomTest: false }, { merge: true });
-          }
-
-          for (let i = 0; i < codesToRelease.length; i += 30) {
-            const chunk = codesToRelease.slice(i, i + 30);
-            try {
-              const matchedSnap = await adminDb.collection('questions')
-                .where('questionCode', 'in', chunk)
-                .get();
-              matchedSnap.docs.forEach(qDoc => {
-                releaseBatch.set(qDoc.ref, { usedInClassroomTest: false }, { merge: true });
-              });
-            } catch (mErr) {
-              console.warn('Matched question release lookup warning:', mErr);
-            }
-          }
-
-          await releaseBatch.commit();
-        }
-      } catch (relErr) {
-        console.warn('Failed to release questions during exam delete:', relErr);
-      }
-    }
-
-    // Auto re-sync class counters to highest remaining active exam sequence
-    try {
-      await reSyncClassExamCounters();
-    } catch (e) {
-      console.warn('Error auto re-syncing exam counters after delete:', e);
-    }
-
-    return NextResponse.json({ success: true, deletedCount });
+    const result = await ExamService.deleteExamCompletely(examId, type);
+    return NextResponse.json(result);
 
   } catch (error: any) {
     console.error('API delete exam error:', error);
@@ -1379,42 +1210,3 @@ export async function DELETE(req: NextRequest) {
   }
 }
 
-async function reSyncClassExamCounters() {
-  const classes = ['6', '7', '8', '9', '10', '11', '12'];
-  
-  const [objDocs, subjDocs] = await Promise.all([
-    adminDb.collection('exams').select('class', 'sequence', 'name').get(),
-    adminDb.collection('subjectiveExams').select('class', 'sequence', 'name').get()
-  ]);
-
-  const classMaxSeq: Record<string, number> = {};
-
-  const processDoc = (data: any) => {
-    const classNum = String(data.class || '').trim();
-    if (!classNum) return;
-
-    let seq = Number(data.sequence) || 0;
-    if (!seq && data.name) {
-      const match = data.name.match(/^(\d{3})-/);
-      if (match) {
-        seq = parseInt(match[1], 10);
-      }
-    }
-
-    if (seq > 0) {
-      classMaxSeq[classNum] = Math.max(classMaxSeq[classNum] || 0, seq);
-    }
-  };
-
-  objDocs.docs.forEach(doc => processDoc(doc.data()));
-  subjDocs.docs.forEach(doc => processDoc(doc.data()));
-
-  const batch = adminDb.batch();
-  classes.forEach(cNum => {
-    const maxS = classMaxSeq[cNum] || 0;
-    const ref = adminDb.collection('examCounters').doc(`class-${cNum}`);
-    batch.set(ref, { nextSequence: maxS + 1 }, { merge: true });
-  });
-
-  await batch.commit();
-}

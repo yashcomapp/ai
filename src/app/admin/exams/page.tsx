@@ -1302,7 +1302,7 @@ export default function AdminExamsPage() {
 
   // Delete Action
   const handleDeleteExam = async (examId: string, examName: string, type: 'objective' | 'subjective') => {
-    if (!confirm(`⚠️ WARNING: Deleting "${examName}" will permanently remove the exam AND all student attempts, scores, and evaluations. This cannot be undone. Continue?`)) {
+    if (!confirm(`⚠️ WARNING: Deleting "${examName}" will permanently remove the exam, all student attempts, scores, evaluations, learning records, and topic masteries, and release all questions back to the Question Bank.\n\nThis cannot be undone. Continue?`)) {
       return;
     }
     if (!firebaseUser) return;
@@ -1317,10 +1317,11 @@ export default function AdminExamsPage() {
       });
 
       if (!res.ok) {
-        throw new Error('Failed to delete exam.');
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.message || 'Failed to delete exam.');
       }
 
-      alert('✅ Exam and all related attempts deleted successfully!');
+      alert('✅ Exam, student attempts, learning masteries, and question allocations deleted and rolled back successfully!');
       await loadData();
     } catch (err: any) {
       alert(err.message || 'Error deleting exam.');

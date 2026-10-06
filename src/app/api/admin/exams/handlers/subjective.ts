@@ -445,6 +445,24 @@ export async function POST(req: NextRequest) {
       }
 
       await batch.commit();
+
+      if (examId && attempt.studentCode) {
+        try {
+          const examDoc = await adminDb.collection('subjectiveExams').doc(examId).get();
+          const eData = examDoc.exists ? examDoc.data() : null;
+          const targetTopicCodes: string[] = [];
+          if (eData?.topicCode) targetTopicCodes.push(eData.topicCode);
+          if (Array.isArray(eData?.topicCodes)) eData.topicCodes.forEach((tc: any) => targetTopicCodes.push(String(tc)));
+          await MasteryService.recalculateOrPurgeTopicsForStudent({
+            studentCode: attempt.studentCode,
+            excludedExamId: examId,
+            candidateTopicCodes: targetTopicCodes
+          });
+        } catch (mErr) {
+          console.warn('Error recalculating topics for deleted subjective attempt:', mErr);
+        }
+      }
+
       return NextResponse.json({ success: true, message: 'Attempt reset successfully.' });
     }
 

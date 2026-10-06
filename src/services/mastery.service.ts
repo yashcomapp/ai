@@ -3,6 +3,7 @@ import { getDateKeyIST } from '@/lib/dateUtils';
 import { adminDb } from '@/lib/firebase/admin';
 import * as admin from 'firebase-admin';
 import { parseTopicCode, deriveTopicCodeFromQuestionCode } from '@/lib/questionTypes';
+import { invalidateCache } from '@/lib/firebase/cache';
 
 export class MasteryService {
   /**
@@ -296,5 +297,212 @@ export class MasteryService {
     }
 
     return { updatedCount: topicCodes.length, isClass10: true };
+  }
+
+  /**
+   * Recalculates or completely purges studentTopicMastery records for a student when an exam is deleted or an attempt is reset.
+   * If there are 0 surviving exam attempts or practice sessions for that topic, the studentTopicMastery document is DELETED.
+   * If surviving attempts exist, the topic mastery is cleanly recalculated using only the surviving records.
+   */
+  static async recalculateOrPurgeTopicsForStudent(params: {
+    studentCode: string;
+    excludedExamId: string;
+    candidateTopicCodes: string[];
+  }): Promise<{ deletedCount: number; updatedCount: number }> {
+    const { studentCode, excludedExamId, candidateTopicCodes } = params;
+    if (!studentCode) return { deletedCount: 0, updatedCount: 0 };
+
+    let deletedCount = 0;
+    let updatedCount = 0;
+
+    // 1. Fetch student's existing studentTopicMastery documents
+    const masterySnap = await adminDb.collection('studentTopicMastery')
+      .where('studentCode', '==', studentCode)
+      .get();
+
+    if (masterySnap.empty && candidateTopicCodes.length === 0) {
+      return { deletedCount: 0, updatedCount: 0 };
+    }
+
+    // Identify candidate topics to inspect
+    const targetTopics = new Set<string>(candidateTopicCodes.filter(Boolean));
+    masterySnap.docs.forEach(doc => {
+      const data = doc.data();
+      if (data.lastExamCode === excludedExamId) {
+        if (data.topicCode) targetTopics.add(data.topicCode);
+      }
+    });
+
+    if (targetTopics.size === 0) {
+      return { deletedCount: 0, updatedCount: 0 };
+    }
+
+    // 2. Fetch all surviving objective reviews, subjective evaluations, and practice reviews in parallel
+    const [objReviewsSnap, subjEvalsSnap, practicesSnap] = await Promise.all([
+      adminDb.collection('reviews').where('studentCode', '==', studentCode).get(),
+      adminDb.collection('evaluations').where('studentCode', '==', studentCode).get(),
+      adminDb.collection('parentReviews').where('studentCode', '==', studentCode).where('type', '==', 'practice').get()
+    ]);
+
+    const survivingObjReviews = objReviewsSnap.docs
+      .filter(d => d.data().examId !== excludedExamId && d.id !== `${excludedExamId}_${studentCode}`)
+      .map(d => d.data());
+
+    const survivingSubjEvals = subjEvalsSnap.docs
+      .filter(d => d.data().examId !== excludedExamId && !d.id.startsWith(`${excludedExamId}_`))
+      .map(d => d.data());
+
+    const survivingPractices = practicesSnap.docs
+      .filter(d => d.data().examId !== excludedExamId)
+      .map(d => d.data());
+
+    const existingMasteryByTopic = new Map<string, any>();
+    masterySnap.docs.forEach(doc => {
+      const d = doc.data();
+      if (d.topicCode) existingMasteryByTopic.set(d.topicCode, { ref: doc.ref, data: d });
+    });
+
+    // 3. For each candidate topic, check for surviving evaluations
+    for (const tCode of Array.from(targetTopics)) {
+      const survivingEvaluations: Array<{
+        id: string;
+        difficulty?: string;
+        bloomLevel?: string;
+        isCorrect?: boolean;
+        marksAwarded?: number;
+        maxMarks?: number;
+        isDisputed?: boolean;
+        examCategory?: string;
+      }> = [];
+
+      let latestExamCode = '';
+
+      // Check surviving objective reviews
+      survivingObjReviews.forEach(rev => {
+        const details = rev.questionDetails || [];
+        details.forEach((qd: any) => {
+          const qTopic = qd.topicCode || deriveTopicCodeFromQuestionCode(qd.questionCode);
+          if (qTopic === tCode || (qTopic && qTopic.startsWith(tCode + '.'))) {
+            survivingEvaluations.push({
+              id: qd.id || qd.questionCode || `qd_${Math.random()}`,
+              difficulty: qd.difficulty || 'medium',
+              bloomLevel: qd.bloomLevel || 'Understand',
+              isCorrect: !!qd.isCorrect,
+              marksAwarded: qd.marks,
+              maxMarks: qd.marks,
+              isDisputed: !!qd.isDisputed,
+              examCategory: rev.examCategory || 'standard'
+            });
+            if (rev.examId) latestExamCode = rev.examId;
+          }
+        });
+      });
+
+      // Check surviving subjective evaluations
+      survivingSubjEvals.forEach(ev => {
+        const qReviews = ev.questionReviews || [];
+        qReviews.forEach((qr: any) => {
+          const qTopic = qr.topicCode || deriveTopicCodeFromQuestionCode(qr.questionCode || qr.questionId);
+          if (qTopic === tCode || (qTopic && qTopic.startsWith(tCode + '.'))) {
+            const earnedRatio = (qr.maxMarks > 0) ? (qr.marksAwarded / qr.maxMarks) : 0;
+            survivingEvaluations.push({
+              id: qr.questionId || qr.questionCode || `qr_${Math.random()}`,
+              difficulty: qr.difficulty || 'medium',
+              bloomLevel: qr.bloomLevel || 'Understand',
+              isCorrect: earnedRatio >= 0.5,
+              marksAwarded: qr.marksAwarded,
+              maxMarks: qr.maxMarks,
+              isDisputed: false,
+              examCategory: 'standard'
+            });
+            if (ev.examId) latestExamCode = ev.examId;
+          }
+        });
+      });
+
+      // Check surviving practice reviews
+      survivingPractices.forEach(pr => {
+        if (pr.topicCode === tCode || (pr.topicCode && pr.topicCode.startsWith(tCode + '.'))) {
+          if (Array.isArray(pr.questionDetails) && pr.questionDetails.length > 0) {
+            pr.questionDetails.forEach((qd: any) => {
+              survivingEvaluations.push({
+                id: qd.id || qd.questionCode || `pr_${Math.random()}`,
+                difficulty: qd.difficulty || 'medium',
+                bloomLevel: qd.bloomLevel || 'Understand',
+                isCorrect: !!qd.isCorrect,
+                marksAwarded: qd.marksAwarded ?? (qd.isCorrect ? 4 : 0),
+                maxMarks: qd.maxMarks || 4,
+                isDisputed: !!qd.isDisputed,
+                examCategory: 'standard'
+              });
+            });
+          } else {
+            const qCount = Number(pr.questionsCount || pr.totalQuestions || 0);
+            const scorePct = Number(pr.scorePercent || 0);
+            const correctCount = Math.round((scorePct / 100) * qCount);
+            for (let i = 0; i < qCount; i++) {
+              survivingEvaluations.push({
+                id: `pr_syn_${tCode}_${i}`,
+                difficulty: 'medium',
+                bloomLevel: 'Understand',
+                isCorrect: i < correctCount,
+                marksAwarded: i < correctCount ? 4 : 0,
+                maxMarks: 4,
+                isDisputed: false,
+                examCategory: 'standard'
+              });
+            }
+          }
+        }
+      });
+
+      const existingEntry = existingMasteryByTopic.get(tCode);
+      const masteryRef = existingEntry ? existingEntry.ref : adminDb.collection('studentTopicMastery').doc(`${studentCode}_${tCode}`);
+
+      if (survivingEvaluations.length === 0) {
+        // Zero surviving records: DELETE the document so the topic completely disappears
+        if (existingEntry) {
+          await masteryRef.delete();
+          deletedCount++;
+        }
+      } else {
+        // Recalculate using only surviving evaluations
+        const existingData = existingEntry ? existingEntry.data : {};
+        const baseline = {
+          studentCode,
+          topicCode: tCode,
+          mastery: 0,
+          confidence: 0,
+          questionsAttempted: 0,
+          questionsCorrect: 0,
+          questionsWrong: 0,
+          weightedPointsEarned: 0,
+          weightedPointsPossible: 0,
+          practiceQuestionsAttempted: 0,
+          examQuestionsAttempted: 0,
+          lastExamCode: latestExamCode,
+          questionHistory: [] as any[],
+          createdAt: existingData.createdAt || new Date(),
+          topicName: existingData.topicName || '',
+          chapterName: existingData.chapterName || '',
+          topicClassification: existingData.topicClassification || 'medium'
+        };
+
+        const updated = MasteryService.calculateTopicMasteryUpdate(baseline, survivingEvaluations, latestExamCode);
+        await masteryRef.set(updated, { merge: false });
+        updatedCount++;
+      }
+    }
+
+    // Invalidate caches for this student
+    try {
+      invalidateCache(studentCode);
+      invalidateCache(`learning_data_${studentCode}`);
+      invalidateCache(`student_dashboard_fn_${studentCode}`);
+      invalidateCache(`student_results_${studentCode}`);
+      invalidateCache(`parent_reviews_${studentCode}`);
+    } catch {}
+
+    return { deletedCount, updatedCount };
   }
 }
