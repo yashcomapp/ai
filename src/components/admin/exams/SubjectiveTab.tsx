@@ -21,12 +21,16 @@ interface SubjectiveTabProps {
   getAssignedNames: (examId: string, directBatchId?: string | null) => string;
   getLatestAssignmentDate: (examId: string, assignedAt?: string | null, exam?: Exam) => string;
   getExamScheduleStatus: (exam: Exam, activeAssign?: Assignment, examType?: 'objective' | 'subjective') => ExamScheduleStatus;
+  isAssignedSectionExpanded?: boolean;
+  setIsAssignedSectionExpanded?: React.Dispatch<React.SetStateAction<boolean>>;
   expandedClasses: Set<string>;
   toggleClassExpanded: (clsKey: string) => void;
-  collapsedSubjects: Set<string>;
-  toggleSubjectCollapsed: (key: string) => void;
-  collapsedChapters: Set<string>;
-  toggleChapterCollapsed: (key: string) => void;
+  expandedSubjects: Set<string>;
+  toggleSubjectExpanded: (key: string) => void;
+  expandedChapters: Set<string>;
+  toggleChapterExpanded: (key: string) => void;
+  expandAllAssigned?: (type: 'objective' | 'subjective', list: Exam[]) => void;
+  collapseAllAssigned?: (type: 'objective' | 'subjective') => void;
   assignedSortField: 'name' | 'date';
   assignedSortDir: 'asc' | 'desc';
   handleAssignedSort: (field: 'name' | 'date') => void;
@@ -61,12 +65,16 @@ export default function SubjectiveTab({
   getAssignedNames,
   getLatestAssignmentDate,
   getExamScheduleStatus,
+  isAssignedSectionExpanded = false,
+  setIsAssignedSectionExpanded,
   expandedClasses,
   toggleClassExpanded,
-  collapsedSubjects,
-  toggleSubjectCollapsed,
-  collapsedChapters,
-  toggleChapterCollapsed,
+  expandedSubjects,
+  toggleSubjectExpanded,
+  expandedChapters,
+  toggleChapterExpanded,
+  expandAllAssigned,
+  collapseAllAssigned,
   assignedSortField,
   assignedSortDir,
   handleAssignedSort,
@@ -305,94 +313,144 @@ export default function SubjectiveTab({
 
       {/* Section 2: Already Assigned */}
       <div id="subjective-assignments-section">
-        <h3 style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text)', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-          📚 Subjective Exams Already Assigned
-        </h3>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          {(() => {
-            const assignedExamsList = filteredSubjectiveExams.filter(isSubjectiveAlreadyAssigned);
-            if (assignedExamsList.length === 0) {
-              return (
-                <div className="card" style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', padding: '30px', textAlign: 'center', color: 'var(--text-muted)' }}>
-                  No assigned subjective exams found.
+        {(() => {
+          const assignedExamsList = filteredSubjectiveExams.filter(isSubjectiveAlreadyAssigned);
+          return (
+            <>
+              <div 
+                onClick={() => setIsAssignedSectionExpanded?.(prev => !prev)}
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'space-between',
+                  padding: '12px 16px',
+                  background: 'var(--bg-soft)',
+                  border: '1px solid var(--border-light)',
+                  borderRadius: 'var(--radius-md)',
+                  marginBottom: isAssignedSectionExpanded ? '12px' : '0px',
+                  cursor: 'pointer',
+                  userSelect: 'none',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <h3 style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text)', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    📚 Subjective Exams Already Assigned
+                  </h3>
+                  <span style={{ fontSize: '12px', fontWeight: 700, padding: '2px 8px', borderRadius: '12px', background: 'var(--accent-tint)', color: 'var(--accent)' }}>
+                    {assignedExamsList.length} exams
+                  </span>
                 </div>
-              );
-            }
-            
-            const classes = getGroupedClasses(assignedExamsList);
-            return classes.map(cls => {
-              const examsInClass = assignedExamsList.filter(exam => getExamClass(exam) === cls);
-              const sortedExams = sortAssignedExams(examsInClass);
-              const isExpanded = expandedClasses.has(`subjective||${cls}`);
-              
-              return (
-                <div key={cls} style={{ border: '1px solid var(--border-light)', borderRadius: 'var(--radius-lg)', background: 'var(--surface)', overflow: 'hidden' }}>
-                  <div 
-                    onClick={() => toggleClassExpanded(`subjective||${cls}`)}
-                    style={{ padding: '14px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-soft)', cursor: 'pointer', borderBottom: isExpanded ? '1px solid var(--border-light)' : 'none' }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span style={{ fontWeight: 'bold', fontSize: '13.5px', color: 'var(--accent)' }}>🏫 Class {cls}</span>
-                      <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>({examsInClass.length} subjective exams)</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  {isAssignedSectionExpanded && (
+                    <div style={{ display: 'flex', gap: '6px' }} onClick={e => e.stopPropagation()}>
+                      <button
+                        type="button"
+                        className="btn btn-secondary"
+                        style={{ padding: '3px 8px', fontSize: '11px', fontWeight: 600 }}
+                        onClick={() => expandAllAssigned?.('subjective', assignedExamsList)}
+                        title="Expand all classes, subjects, and chapters"
+                      >
+                        ⊞ Expand All
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-secondary"
+                        style={{ padding: '3px 8px', fontSize: '11px', fontWeight: 600 }}
+                        onClick={() => collapseAllAssigned?.('subjective')}
+                        title="Collapse all classes, subjects, and chapters"
+                      >
+                        ⊟ Collapse All
+                      </button>
                     </div>
-                    <span style={{ fontSize: '10px', transition: 'transform 0.2s', transform: isExpanded ? 'rotate(180deg)' : 'none' }}>▼</span>
-                  </div>
-                  
-                  {isExpanded && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '12px' }}>
-                      {(() => {
-                        const subjectGroups = new Map<string, Exam[]>();
-                        sortedExams.forEach(exam => {
-                          const subj = getExamSubject(exam);
-                          if (!subjectGroups.has(subj)) subjectGroups.set(subj, []);
-                          subjectGroups.get(subj)!.push(exam);
-                        });
+                  )}
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    {isAssignedSectionExpanded ? 'Click to Collapse ▲' : 'Click to Expand ▼'}
+                  </span>
+                </div>
+              </div>
 
-                        return Array.from(subjectGroups.entries()).map(([subjName, subjExams]) => {
-                          const subjKey = `subj||subjective||${cls}||${subjName}`;
-                          const isSubjExpanded = !collapsedSubjects.has(subjKey);
-
-                          const chapterGroups = new Map<string, Exam[]>();
-                          subjExams.forEach(exam => {
-                            const chap = getExamChapter(exam);
-                            if (!chapterGroups.has(chap)) chapterGroups.set(chap, []);
-                            chapterGroups.get(chap)!.push(exam);
-                          });
-
-                          return (
-                            <div key={subjKey} style={{ border: '1px solid var(--border-light)', borderRadius: 'var(--radius-md)', background: 'var(--surface-popover)', overflow: 'hidden' }}>
-                              {/* Subject Line with count */}
-                              <div 
-                                onClick={() => toggleSubjectCollapsed(subjKey)}
-                                style={{ padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-soft)', cursor: 'pointer', borderBottom: isSubjExpanded ? '1px solid var(--border-light)' : 'none' }}
-                              >
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                  <span style={{ fontWeight: 800, fontSize: '13px', color: 'var(--text)' }}>📖 {subjName}</span>
-                                  <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>({subjExams.length} {subjExams.length === 1 ? 'exam' : 'exams'})</span>
-                                </div>
-                                <span style={{ fontSize: '10px', transition: 'transform 0.2s', transform: isSubjExpanded ? 'rotate(180deg)' : 'none' }}>▼</span>
+              {isAssignedSectionExpanded && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {assignedExamsList.length === 0 ? (
+                    <div className="card" style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', padding: '30px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                      No assigned subjective exams found.
+                    </div>
+                  ) : (
+                    (() => {
+                      const classes = getGroupedClasses(assignedExamsList);
+                      return classes.map(cls => {
+                        const examsInClass = assignedExamsList.filter(exam => getExamClass(exam) === cls);
+                        const sortedExams = sortAssignedExams(examsInClass);
+                        const isExpanded = expandedClasses.has(`subjective||${cls}`);
+                        
+                        return (
+                          <div key={cls} style={{ border: '1px solid var(--border-light)', borderRadius: 'var(--radius-lg)', background: 'var(--surface)', overflow: 'hidden' }}>
+                            <div 
+                              onClick={() => toggleClassExpanded(`subjective||${cls}`)}
+                              style={{ padding: '14px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-soft)', cursor: 'pointer', borderBottom: isExpanded ? '1px solid var(--border-light)' : 'none' }}
+                            >
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <span style={{ fontWeight: 'bold', fontSize: '13.5px', color: 'var(--accent)' }}>🏫 Class {cls}</span>
+                                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>({examsInClass.length} subjective exams)</span>
                               </div>
+                              <span style={{ fontSize: '10px', transition: 'transform 0.2s', transform: isExpanded ? 'rotate(180deg)' : 'none' }}>▼</span>
+                            </div>
+                            
+                            {isExpanded && (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '12px' }}>
+                                {(() => {
+                                  const subjectGroups = new Map<string, Exam[]>();
+                                  sortedExams.forEach(exam => {
+                                    const subj = getExamSubject(exam);
+                                    if (!subjectGroups.has(subj)) subjectGroups.set(subj, []);
+                                    subjectGroups.get(subj)!.push(exam);
+                                  });
 
-                              {/* Chapter hierarchy */}
-                              {isSubjExpanded && (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '10px' }}>
-                                  {Array.from(chapterGroups.entries()).map(([chapName, chapExams]) => {
-                                    const chapKey = `chap||subjective||${cls}||${subjName}||${chapName}`;
-                                    const isChapExpanded = !collapsedChapters.has(chapKey);
+                                  return Array.from(subjectGroups.entries()).map(([subjName, subjExams]) => {
+                                    const subjKey = `subj||subjective||${cls}||${subjName}`;
+                                    const isSubjExpanded = expandedSubjects.has(subjKey);
+
+                                    const chapterGroups = new Map<string, Exam[]>();
+                                    subjExams.forEach(exam => {
+                                      const chap = getExamChapter(exam);
+                                      if (!chapterGroups.has(chap)) chapterGroups.set(chap, []);
+                                      chapterGroups.get(chap)!.push(exam);
+                                    });
 
                                     return (
-                                      <div key={chapKey} style={{ border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', background: 'var(--surface)', overflow: 'hidden' }}>
-                                        {/* Chapter Line with count */}
+                                      <div key={subjKey} style={{ border: '1px solid var(--border-light)', borderRadius: 'var(--radius-md)', background: 'var(--surface-popover)', overflow: 'hidden' }}>
+                                        {/* Subject Line with count */}
                                         <div 
-                                          onClick={() => toggleChapterCollapsed(chapKey)}
-                                          style={{ padding: '8px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-soft)', cursor: 'pointer', borderBottom: isChapExpanded ? '1px solid var(--border-light)' : 'none' }}
+                                          onClick={() => toggleSubjectExpanded(subjKey)}
+                                          style={{ padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-soft)', cursor: 'pointer', borderBottom: isSubjExpanded ? '1px solid var(--border-light)' : 'none' }}
                                         >
                                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            <span style={{ fontWeight: 700, fontSize: '12px', color: 'var(--accent)' }}>📘 {chapName}</span>
-                                            <span style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>({chapExams.length} {chapExams.length === 1 ? 'exam' : 'exams'})</span>
+                                            <span style={{ fontWeight: 800, fontSize: '13px', color: 'var(--text)' }}>📖 {subjName}</span>
+                                            <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>({subjExams.length} {subjExams.length === 1 ? 'exam' : 'exams'})</span>
                                           </div>
-                                          <span style={{ fontSize: '9px', transition: 'transform 0.2s', transform: isChapExpanded ? 'rotate(180deg)' : 'none' }}>▼</span>
+                                          <span style={{ fontSize: '10px', transition: 'transform 0.2s', transform: isSubjExpanded ? 'rotate(180deg)' : 'none' }}>▼</span>
                                         </div>
+
+                                        {/* Chapter hierarchy */}
+                                        {isSubjExpanded && (
+                                          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', padding: '10px' }}>
+                                            {Array.from(chapterGroups.entries()).map(([chapName, chapExams]) => {
+                                              const chapKey = `chap||subjective||${cls}||${subjName}||${chapName}`;
+                                              const isChapExpanded = expandedChapters.has(chapKey);
+
+                                              return (
+                                                <div key={chapKey} style={{ border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', background: 'var(--surface)', overflow: 'hidden' }}>
+                                                  {/* Chapter Line with count */}
+                                                  <div 
+                                                    onClick={() => toggleChapterExpanded(chapKey)}
+                                                    style={{ padding: '8px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-soft)', cursor: 'pointer', borderBottom: isChapExpanded ? '1px solid var(--border-light)' : 'none' }}
+                                                  >
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                      <span style={{ fontWeight: 700, fontSize: '12px', color: 'var(--accent)' }}>📘 {chapName}</span>
+                                                      <span style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>({chapExams.length} {chapExams.length === 1 ? 'exam' : 'exams'})</span>
+                                                    </div>
+                                                    <span style={{ fontSize: '9px', transition: 'transform 0.2s', transform: isChapExpanded ? 'rotate(180deg)' : 'none' }}>▼</span>
+                                                  </div>
 
                                         {/* Exam Table */}
                                         {isChapExpanded && (
@@ -535,10 +593,15 @@ export default function SubjectiveTab({
                     </div>
                   )}
                 </div>
-              );
-            });
-          })()}
-        </div>
+                        );
+                      });
+                    })()
+                  )}
+                </div>
+              )}
+            </>
+          );
+        })()}
       </div>
     </div>
   );

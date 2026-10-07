@@ -341,8 +341,10 @@ export default function AdminExamsPage() {
   const [assignedSortField, setAssignedSortField] = useState<'name' | 'date'>('date');
   const [assignedSortDir, setAssignedSortDir] = useState<'asc' | 'desc'>('desc');
   const [expandedClasses, setExpandedClasses] = useState<Set<string>>(new Set());
-  const [collapsedSubjects, setCollapsedSubjects] = useState<Set<string>>(new Set());
-  const [collapsedChapters, setCollapsedChapters] = useState<Set<string>>(new Set());
+  const [expandedSubjects, setExpandedSubjects] = useState<Set<string>>(new Set());
+  const [expandedChapters, setExpandedChapters] = useState<Set<string>>(new Set());
+  const [isObjAssignedSectionExpanded, setIsObjAssignedSectionExpanded] = useState(false);
+  const [isSubjAssignedSectionExpanded, setIsSubjAssignedSectionExpanded] = useState(false);
   const [pdfSelectorOpen, setPdfSelectorOpen] = useState(false);
 
   const toggleClassExpanded = (clsKey: string) => {
@@ -354,8 +356,8 @@ export default function AdminExamsPage() {
     });
   };
 
-  const toggleSubjectCollapsed = (key: string) => {
-    setCollapsedSubjects(prev => {
+  const toggleSubjectExpanded = (key: string) => {
+    setExpandedSubjects(prev => {
       const next = new Set(prev);
       if (next.has(key)) next.delete(key);
       else next.add(key);
@@ -363,11 +365,51 @@ export default function AdminExamsPage() {
     });
   };
 
-  const toggleChapterCollapsed = (key: string) => {
-    setCollapsedChapters(prev => {
+  const toggleChapterExpanded = (key: string) => {
+    setExpandedChapters(prev => {
       const next = new Set(prev);
       if (next.has(key)) next.delete(key);
       else next.add(key);
+      return next;
+    });
+  };
+
+  const expandAllAssigned = (type: 'objective' | 'subjective', examsList: Exam[]) => {
+    const nextClasses = new Set(expandedClasses);
+    const nextSubjects = new Set(expandedSubjects);
+    const nextChapters = new Set(expandedChapters);
+
+    const classes = getGroupedClasses(examsList);
+    classes.forEach(cls => {
+      nextClasses.add(`${type}||${cls}`);
+      const examsInClass = examsList.filter(exam => getExamClass(exam) === cls);
+      examsInClass.forEach(exam => {
+        const subj = getExamSubject(exam);
+        const chap = getExamChapter(exam);
+        nextSubjects.add(`subj||${type}||${cls}||${subj}`);
+        nextChapters.add(`chap||${type}||${cls}||${subj}||${chap}`);
+      });
+    });
+
+    setExpandedClasses(nextClasses);
+    setExpandedSubjects(nextSubjects);
+    setExpandedChapters(nextChapters);
+  };
+
+  const collapseAllAssigned = (type: 'objective' | 'subjective') => {
+    setExpandedClasses(prev => {
+      const next = new Set(prev);
+      Array.from(next).forEach(k => { if (k.startsWith(`${type}||`)) next.delete(k); });
+      return next;
+    });
+    setExpandedSubjects(prev => {
+      const next = new Set(prev);
+      Array.from(next).forEach(k => { if (k.startsWith(`subj||${type}||`)) next.delete(k); });
+      return next;
+    });
+    setExpandedChapters(prev => {
+      const next = new Set(prev);
+      Array.from(next).forEach(k => { if (k.startsWith(`chap||${type}||`)) next.delete(k); });
       return next;
     });
   };
@@ -1554,10 +1596,14 @@ export default function AdminExamsPage() {
             getExamScheduleStatus={getExamScheduleStatus}
             expandedClasses={expandedClasses}
             toggleClassExpanded={toggleClassExpanded}
-            collapsedSubjects={collapsedSubjects}
-            toggleSubjectCollapsed={toggleSubjectCollapsed}
-            collapsedChapters={collapsedChapters}
-            toggleChapterCollapsed={toggleChapterCollapsed}
+            isAssignedSectionExpanded={isObjAssignedSectionExpanded}
+            setIsAssignedSectionExpanded={setIsObjAssignedSectionExpanded}
+            expandedSubjects={expandedSubjects}
+            toggleSubjectExpanded={toggleSubjectExpanded}
+            expandedChapters={expandedChapters}
+            toggleChapterExpanded={toggleChapterExpanded}
+            expandAllAssigned={expandAllAssigned}
+            collapseAllAssigned={collapseAllAssigned}
             assignedSortField={assignedSortField}
             assignedSortDir={assignedSortDir}
             handleAssignedSort={handleAssignedSort}
@@ -1594,10 +1640,14 @@ export default function AdminExamsPage() {
             getExamScheduleStatus={getExamScheduleStatus}
             expandedClasses={expandedClasses}
             toggleClassExpanded={toggleClassExpanded}
-            collapsedSubjects={collapsedSubjects}
-            toggleSubjectCollapsed={toggleSubjectCollapsed}
-            collapsedChapters={collapsedChapters}
-            toggleChapterCollapsed={toggleChapterCollapsed}
+            isAssignedSectionExpanded={isSubjAssignedSectionExpanded}
+            setIsAssignedSectionExpanded={setIsSubjAssignedSectionExpanded}
+            expandedSubjects={expandedSubjects}
+            toggleSubjectExpanded={toggleSubjectExpanded}
+            expandedChapters={expandedChapters}
+            toggleChapterExpanded={toggleChapterExpanded}
+            expandAllAssigned={expandAllAssigned}
+            collapseAllAssigned={collapseAllAssigned}
             assignedSortField={assignedSortField}
             assignedSortDir={assignedSortDir}
             handleAssignedSort={handleAssignedSort}
