@@ -26,8 +26,6 @@ import {
    1. Universal Rich Math & SVG Diagram Renderer (Flicker-Free SSOT)
    ========================================================================= */
 
-const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
-
 export interface RichMathTextProps {
   content: any;
   className?: string;
@@ -53,43 +51,58 @@ export const RichMathText: React.FC<RichMathTextProps> = React.memo(({
   const lastHtmlRef = useRef<string>('');
   const formattedHtml = useMemo(() => formatRichText(content || ''), [content]);
 
-  useIsomorphicLayoutEffect(() => {
+  useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
 
     // If content has not changed and element already has rendered KaTeX, skip
-    if (lastHtmlRef.current === formattedHtml && (el.dataset.rendered === 'true' || el.querySelector('.katex'))) {
+    if (lastHtmlRef.current === formattedHtml && (el.dataset.rendered === 'true' || el.querySelector?.('.katex'))) {
       return;
     }
 
-    lastHtmlRef.current = formattedHtml;
-    el.innerHTML = formattedHtml;
+    try {
+      lastHtmlRef.current = formattedHtml;
+      el.innerHTML = formattedHtml;
 
-    const win = typeof window !== 'undefined' ? (window as any) : null;
-    if (win && win.renderMathInElement) {
-      try {
-        win.renderMathInElement(el, KATEX_AUTO_RENDER_OPTIONS);
-        el.dataset.rendered = 'true';
-      } catch (err) {
-        console.warn('RichMathText renderMathInElement failed:', err);
+      const win = typeof window !== 'undefined' ? (window as any) : null;
+      if (win && typeof win.renderMathInElement === 'function') {
+        try {
+          win.renderMathInElement(el, KATEX_AUTO_RENDER_OPTIONS);
+          el.dataset.rendered = 'true';
+        } catch (err) {
+          console.warn('RichMathText renderMathInElement failed:', err);
+        }
+      } else {
+        el.dataset.rendered = 'false';
       }
-    } else {
-      el.dataset.rendered = 'false';
+    } catch (err) {
+      console.warn('RichMathText innerHTML assignment failed:', err);
     }
   }, [formattedHtml]);
 
   const handleClick = (e: React.MouseEvent<HTMLElement>) => {
-    if (onClick) onClick(e);
-    const target = e.target as HTMLElement | SVGElement | null;
-    const diagramWrapper = target?.closest('.zoomable-diagram-wrapper');
-    const svgEl = target?.closest('svg');
-    if (diagramWrapper || svgEl) {
-      const actualSvg = (diagramWrapper?.querySelector('svg') || svgEl) as SVGElement | null;
-      if (actualSvg && onDiagramClick) {
-        e.preventDefault();
-        e.stopPropagation();
-        onDiagramClick(actualSvg.outerHTML);
+    if (onClick) {
+      try {
+        onClick(e);
+      } catch (err) {
+        console.warn('RichMathText onClick error:', err);
       }
+    }
+    try {
+      const target = e.target as HTMLElement | SVGElement | null;
+      if (!target || typeof target.closest !== 'function') return;
+      const diagramWrapper = target.closest('.zoomable-diagram-wrapper');
+      const svgEl = target.closest('svg');
+      if (diagramWrapper || svgEl) {
+        const actualSvg = (diagramWrapper?.querySelector('svg') || svgEl) as SVGElement | null;
+        if (actualSvg && onDiagramClick) {
+          e.preventDefault();
+          e.stopPropagation();
+          onDiagramClick(actualSvg.outerHTML);
+        }
+      }
+    } catch (err) {
+      console.warn('RichMathText diagram click error:', err);
     }
   };
 
@@ -642,7 +655,11 @@ export const QuestionDisplay: React.FC<QuestionDisplayProps> = React.memo(({
   // Evaluate evaluation correctness if not explicitly supplied
   const effectiveIsCorrect = typeof isCorrect === 'boolean'
     ? isCorrect
-    : (question?.isCorrect ?? (qUserAnswer && qCorrectAnswer && normalizeOptionAnswer(qUserAnswer, resolvedOptions || []) === normalizeOptionAnswer(qCorrectAnswer, resolvedOptions || [])));
+    : (question?.isCorrect ?? Boolean(
+        qUserAnswer &&
+        qCorrectAnswer &&
+        normalizeOptionAnswer(qUserAnswer, resolvedOptions || []) === normalizeOptionAnswer(qCorrectAnswer, resolvedOptions || [])
+      ));
 
   const isUnanswered = !qUserAnswer || String(qUserAnswer).trim() === '' || String(qUserAnswer).toLowerCase() === 'blank';
 

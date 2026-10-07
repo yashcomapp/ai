@@ -52,6 +52,15 @@ export function parseDateInput(dateInput?: any): Date | null {
 }
 
 /**
+ * Parses any date/timestamp format into epoch milliseconds.
+ * Returns 0 if input is null, undefined, or invalid. Never returns NaN.
+ */
+export function parseDateToMs(dateInput?: any): number {
+  const d = parseDateInput(dateInput);
+  return d ? d.getTime() : 0;
+}
+
+/**
  * Formats a Date/Timestamp into 12-hour or 24-hour time string in IST
  * Example: "05:09 PM" or "5:09 pm"
  */

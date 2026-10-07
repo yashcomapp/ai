@@ -8,6 +8,7 @@ import { deriveTopicCodeFromQuestionCode } from '@/lib/questionTypes';
 import { generateAndDispatchExamNotices } from '@/lib/examNotices';
 import { invalidateCache } from '@/lib/firebase/cache';
 import { ExamReviewService } from '@/services/examReview.service';
+import { parseDateInput } from '@/lib/dateUtils';
 export const dynamic = 'force-dynamic';
 
 
@@ -20,7 +21,7 @@ export async function GET(req: NextRequest) {
     }
 
     const { searchParams } = new URL(req.url);
-    const examId = searchParams.get('id');
+    const examId = searchParams.get('id') || searchParams.get('examId');
 
     if (!examId) {
       return NextResponse.json({ message: 'Missing exam ID' }, { status: 400 });
@@ -393,8 +394,8 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    const startAtDate = assignment?.startAt?.toDate ? assignment.startAt.toDate() : assignment?.startAt ? new Date(assignment.startAt) : null;
-    const endAtDate = assignment?.endAt?.toDate ? assignment.endAt.toDate() : assignment?.endAt ? new Date(assignment.endAt) : null;
+    const startAtDate = parseDateInput(assignment?.startAt);
+    const endAtDate = parseDateInput(assignment?.endAt);
 
     return NextResponse.json({
       exam: secureExam,

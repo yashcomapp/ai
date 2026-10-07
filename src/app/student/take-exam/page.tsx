@@ -14,6 +14,8 @@ import { useAudioLevel } from '@/hooks/useAudioLevel';
 import { calculateHeadPose, checkLookingAway, checkExcessiveMovement } from '@/utils/headPose';
 import { useProctoring } from '@/hooks/useProctoring';
 import { InterruptionLockoutModal } from '@/components/InterruptionLockoutModal';
+import { ExamErrorBoundary } from '@/components/ExamErrorBoundary';
+import { parseDateToMs } from '@/lib/dateUtils';
 
 const RTC_CONFIG = {
   iceServers: [
@@ -208,7 +210,8 @@ function TakeExamContent() {
 
   const isLateStart = useMemo(() => {
     if (!assignment || assignment.openMode !== 'scheduled' || !assignment.startAt) return false;
-    const startMs = new Date(assignment.startAt).getTime();
+    const startMs = parseDateToMs(assignment.startAt);
+    if (startMs <= 0) return false;
     return (startedAt - startMs) > 2 * 60 * 1000;
   }, [assignment, startedAt]);
 
@@ -411,10 +414,12 @@ function TakeExamContent() {
         if (!isResuming && data.assignment && data.assignment.openMode === 'scheduled' && data.assignment.startAt) {
           const enforceLate = data.assignment.lateEntryRestriction === true;
           if (enforceLate) {
-            const startAtMs = new Date(data.assignment.startAt).getTime();
-            const lateLimitMs = startAtMs + (5 * 60 * 1000); // 5 minutes late limit
-            if (Date.now() > lateLimitMs) {
-              throw new Error('Late entry is not allowed. You cannot start the exam more than 5 minutes after the scheduled start time.');
+            const startAtMs = parseDateToMs(data.assignment.startAt);
+            if (startAtMs > 0) {
+              const lateLimitMs = startAtMs + (5 * 60 * 1000); // 5 minutes late limit
+              if (Date.now() > lateLimitMs) {
+                throw new Error('Late entry is not allowed. You cannot start the exam more than 5 minutes after the scheduled start time.');
+              }
             }
           }
         }
@@ -425,14 +430,21 @@ function TakeExamContent() {
         // Initialize userAnswers array
         const initialAnswers = data.exam.questions.map(() => ({ answer: '', timeSpentSeconds: 0 }));
         
-        let initialTimeRemaining = data.exam.duration * 60;
+        let initialTimeRemaining = (data.exam?.duration || 30) * 60;
         if (data.assignment && data.assignment.openMode === 'scheduled' && data.assignment.endAt) {
-          const endAtMs = new Date(data.assignment.endAt).getTime();
-          const secondsUntilEnd = Math.floor((endAtMs - Date.now()) / 1000);
-          if (secondsUntilEnd <= 0) {
-            throw new Error('The scheduled time for this exam has already ended.');
+          const endAtMs = parseDateToMs(data.assignment.endAt);
+          if (endAtMs > 0) {
+            const secondsUntilEnd = Math.floor((endAtMs - Date.now()) / 1000);
+            if (secondsUntilEnd <= 0) {
+              throw new Error('The scheduled time for this exam has already ended.');
+            }
+            if (!isNaN(secondsUntilEnd) && secondsUntilEnd > 0) {
+              initialTimeRemaining = Math.min(initialTimeRemaining, secondsUntilEnd);
+            }
           }
-          initialTimeRemaining = Math.min(initialTimeRemaining, secondsUntilEnd);
+        }
+        if (isNaN(initialTimeRemaining) || initialTimeRemaining <= 0) {
+          initialTimeRemaining = (data.exam?.duration || 30) * 60;
         }
 
         // Check autosave
@@ -444,11 +456,18 @@ function TakeExamContent() {
               setUserAnswers(parsed.userAnswers || initialAnswers);
               setCurrentQIndex(parsed.currentQIndex || 0);
               
-              let resumedTime = parsed.timeRemaining || (data.exam.duration * 60);
+              let resumedTime = parsed.timeRemaining || ((data.exam?.duration || 30) * 60);
               if (data.assignment && data.assignment.openMode === 'scheduled' && data.assignment.endAt) {
-                const endAtMs = new Date(data.assignment.endAt).getTime();
-                const secondsUntilEnd = Math.floor((endAtMs - Date.now()) / 1000);
-                resumedTime = Math.min(resumedTime, Math.max(0, secondsUntilEnd));
+                const endAtMs = parseDateToMs(data.assignment.endAt);
+                if (endAtMs > 0) {
+                  const secondsUntilEnd = Math.floor((endAtMs - Date.now()) / 1000);
+                  if (!isNaN(secondsUntilEnd)) {
+                    resumedTime = Math.min(resumedTime, Math.max(0, secondsUntilEnd));
+                  }
+                }
+              }
+              if (isNaN(resumedTime) || resumedTime <= 0) {
+                resumedTime = (data.exam?.duration || 30) * 60;
               }
               
               setTimeRemaining(resumedTime);
@@ -619,11 +638,12 @@ function TakeExamContent() {
 
     try {
       const idToken = await firebaseUser!.getIdToken();
+      const startMs = parseDateToMs(assignment?.startAt);
       const isLateStart = Boolean(
         assignment &&
         assignment.openMode === 'scheduled' &&
-        assignment.startAt &&
-        (startedAt - new Date(assignment.startAt).getTime() > 2 * 60 * 1000)
+        startMs > 0 &&
+        (startedAt - startMs > 2 * 60 * 1000)
       );
 
       const res = await fetch('/api/student/exams', {
@@ -1606,14 +1626,16 @@ function TakeExamContent() {
 
 export default function TakeExamPage() {
   return (
-    <React.Suspense fallback={
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: 'var(--bg)' }}>
-        <div className="loading" style={{ display: 'block' }}>
-          <div className="spinner"></div> Loading exam...
+    <ExamErrorBoundary fallbackTitle="Objective Exam Workspace Recovery">
+      <React.Suspense fallback={
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: 'var(--bg)' }}>
+          <div className="loading" style={{ display: 'block' }}>
+            <div className="spinner"></div> Loading exam...
+          </div>
         </div>
-      </div>
-    }>
-      <TakeExamContent />
-    </React.Suspense>
+      }>
+        <TakeExamContent />
+      </React.Suspense>
+    </ExamErrorBoundary>
   );
 }

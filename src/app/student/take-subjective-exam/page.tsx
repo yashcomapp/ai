@@ -12,8 +12,9 @@ import { useProctoring } from '@/hooks/useProctoring';
 import { useLiveExam } from '@/hooks/useLiveExam';
 import { useAudioLevel } from '@/hooks/useAudioLevel';
 import { preprocessMathText, formatRichText } from '@/lib/questionTypes';
-import { formatDuration } from '@/lib/dateUtils';
+import { formatDuration, parseDateToMs } from '@/lib/dateUtils';
 import { InterruptionLockoutModal } from '@/components/InterruptionLockoutModal';
+import { ExamErrorBoundary } from '@/components/ExamErrorBoundary';
 
 const RTC_CONFIG = {
   iceServers: [
@@ -108,8 +109,9 @@ function TakeSubjectiveExamContent() {
 
   const isLateStart = useMemo(() => {
     if (!assignment || assignment.openMode !== 'scheduled' || !assignment.startAt || !startedAt) return false;
-    const startMs = new Date(assignment.startAt).getTime();
-    const actualStartMs = new Date(startedAt).getTime();
+    const startMs = parseDateToMs(assignment.startAt);
+    const actualStartMs = parseDateToMs(startedAt);
+    if (startMs <= 0 || actualStartMs <= 0) return false;
     return (actualStartMs - startMs) > 2 * 60 * 1000;
   }, [assignment, startedAt]);
 
@@ -1113,14 +1115,16 @@ function TakeSubjectiveExamContent() {
 
 export default function StudentSubjectiveExam() {
   return (
-    <Suspense fallback={
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: 'var(--bg)' }}>
-        <div className="loading" style={{ display: 'block' }}>
-          <div className="spinner"></div> Loading subjective exam...
+    <ExamErrorBoundary fallbackTitle="Subjective Exam Workspace Recovery">
+      <Suspense fallback={
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: 'var(--bg)' }}>
+          <div className="loading" style={{ display: 'block' }}>
+            <div className="spinner"></div> Loading subjective exam...
+          </div>
         </div>
-      </div>
-    }>
-      <TakeSubjectiveExamContent />
-    </Suspense>
+      }>
+        <TakeSubjectiveExamContent />
+      </Suspense>
+    </ExamErrorBoundary>
   );
 }

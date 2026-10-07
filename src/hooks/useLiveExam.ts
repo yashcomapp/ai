@@ -525,6 +525,11 @@ export function useLiveExam({
     let cameraErrorName = '';
     let micErrorName = '';
 
+    if (typeof navigator === 'undefined' || !navigator.mediaDevices || typeof navigator.mediaDevices.getUserMedia !== 'function') {
+      setCameraStatus('❌ Media devices not supported or not accessible on this device.');
+      return { success: false, cameraDenied: false, micDenied: false };
+    }
+
     // Test Video
     try {
       const vStream = await navigator.mediaDevices.getUserMedia({ video: true });

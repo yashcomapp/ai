@@ -127,27 +127,40 @@ export function useMathRender(dependencyArray: any[] = []) {
       if (typeof window !== 'undefined' && typeof MutationObserver !== 'undefined') {
         let timeoutId: any = null;
         observer = new MutationObserver((mutations) => {
-          let hasRelevantNode = false;
-          for (let i = 0; i < mutations.length; i++) {
-            const m = mutations[i];
-            if (m.type === 'childList') {
-              for (let j = 0; j < m.addedNodes.length; j++) {
-                const node = m.addedNodes[j] as HTMLElement;
-                if (node.nodeType === Node.ELEMENT_NODE) {
-                  if (node.classList?.contains('math-container') || node.querySelector?.('.math-container')) {
-                    hasRelevantNode = true;
-                    break;
+          try {
+            let hasRelevantNode = false;
+            for (let i = 0; i < mutations.length; i++) {
+              const m = mutations[i];
+              if (m.type === 'childList' && m.addedNodes) {
+                for (let j = 0; j < m.addedNodes.length; j++) {
+                  const node = m.addedNodes[j] as any;
+                  if (node && node.nodeType === 1) {
+                    const hasClass = typeof node.classList?.contains === 'function' && node.classList.contains('math-container');
+                    const hasChild = typeof node.querySelector === 'function' && node.querySelector('.math-container') !== null;
+                    if (hasClass || hasChild) {
+                      hasRelevantNode = true;
+                      break;
+                    }
                   }
                 }
               }
+              if (hasRelevantNode) break;
             }
-            if (hasRelevantNode) break;
+
+            if (!hasRelevantNode) return;
+
+            if (timeoutId) clearTimeout(timeoutId);
+            timeoutId = setTimeout(() => {
+              try {
+                runAutoRender();
+              } catch (e) {
+                console.warn('[useMathRender] auto render error:', e);
+              }
+            }, 80);
+          } catch (e) {
+            // Never let mutation inspection crash the app
+            console.warn('[useMathRender] observer callback error:', e);
           }
-
-          if (!hasRelevantNode) return;
-
-          if (timeoutId) clearTimeout(timeoutId);
-          timeoutId = setTimeout(runAutoRender, 80);
         });
         observer.observe(document.body, {
           childList: true,
