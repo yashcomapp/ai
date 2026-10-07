@@ -336,12 +336,6 @@ export function toLocalISOString(date: Date = new Date()): string {
  */
 export function formatCompactExamName(name?: string | null): string {
   if (!name) return '';
-  return String(name)
-    .replace(/-(?:MH|CBSE|ICSE)-(?:Class\s*)?(\d+)-/i, '-')
-    .replace(/\[Class\s*\d+\]|\(Class\s*\d+\)/gi, '')
-    .replace(/\bClass\s*\d+\s*[-–:]\s*/gi, '')
-    .replace(/\s*-\s*-\s*/g, ' - ')
-    .replace(/--+/g, '-')
-    .trim();
+  return String(name).trim();
 }
 
