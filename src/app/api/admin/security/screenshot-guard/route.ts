@@ -14,10 +14,10 @@ export interface ExamSecurityConfig {
 }
 
 const DEFAULT_CONFIG: ExamSecurityConfig = {
-  screenshotGuardEnabled: true,
-  blurOnFocusLoss: true,
+  screenshotGuardEnabled: false,
+  blurOnFocusLoss: false,
   forensicWatermark: true,
-  clearClipboardOnPrint: true
+  clearClipboardOnPrint: false
 };
 
 export async function GET(req: NextRequest) {

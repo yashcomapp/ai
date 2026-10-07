@@ -117,8 +117,12 @@ export function useScreenshotGuard({
     };
 
     // 2. Window Blur / Focus Handling (Anti-Snipping & Background Cloak)
+    // On mobile devices (Android/iOS), virtual keyboards, scrolling address bars, and system overlays
+    // frequently fire window.blur and visibility changes. Mobile devices are exempt to prevent false blurs.
+    const isMobile = typeof navigator !== 'undefined' && (/Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || ('ontouchstart' in window && window.innerWidth <= 1024));
+
     const handleBlur = () => {
-      if (blurOnFocusLoss) {
+      if (blurOnFocusLoss && !isMobile) {
         setIsObscured(true);
       }
     };
@@ -132,7 +136,7 @@ export function useScreenshotGuard({
     };
 
     const handleVisibilityChange = () => {
-      if (document.hidden) {
+      if (document.hidden && !isMobile) {
         setIsObscured(true);
       } else {
         if (obscureTimeoutRef.current) clearTimeout(obscureTimeoutRef.current);
