@@ -219,7 +219,7 @@ export function PracticeCompletionView({
                         </div>
                       );
                     })() : (
-                      <div style={{ fontSize: '13px', lineHeight: '1.5', marginBottom: '8px', fontWeight: 500 }} dangerouslySetInnerHTML={{ __html: preprocessMathText(qItem.text || qItem.assertion || '') }} />
+                      <div className="math-container" style={{ fontSize: '13px', lineHeight: '1.5', marginBottom: '8px', fontWeight: 500 }} dangerouslySetInnerHTML={{ __html: preprocessMathText(qItem.text || qItem.assertion || '') }} />
                     )}
                     
                     {qItem.options && Array.isArray(qItem.options) && qItem.options.length > 0 && (
@@ -246,7 +246,7 @@ export function PracticeCompletionView({
                           return (
                             <div key={optIdx} style={{ padding: '6px 10px', fontSize: '12px', borderRadius: '4px', background: optBg, border: `1px solid ${optBorder}`, color: optColor, display: 'flex', gap: '6px' }}>
                               <span style={{ fontWeight: 700 }}>({optKey})</span>
-                              <span dangerouslySetInnerHTML={{ __html: preprocessMathText(optText) }} />
+                              <span className="math-container" dangerouslySetInnerHTML={{ __html: preprocessMathText(optText) }} />
                               {isSelected && <span style={{ marginLeft: 'auto', fontWeight: 700, fontSize: '11px' }}>[Your Answer]</span>}
                               {isRight && <span style={{ marginLeft: isSelected ? '4px' : 'auto', fontWeight: 700, fontSize: '11px' }}>[Correct]</span>}
                             </div>
@@ -258,7 +258,7 @@ export function PracticeCompletionView({
                     {qItem.solution && (
                       <div style={{ marginTop: '8px', padding: '8px 10px', background: 'var(--bg-soft)', borderRadius: '4px', fontSize: '12px', borderLeft: '3px solid var(--accent)' }}>
                         <strong style={{ color: 'var(--accent)' }}>Explanation:</strong>{' '}
-                        <span dangerouslySetInnerHTML={{ __html: preprocessMathText(qItem.solution) }} />
+                        <span className="math-container" dangerouslySetInnerHTML={{ __html: preprocessMathText(qItem.solution) }} />
                       </div>
                     )}
                   </div>

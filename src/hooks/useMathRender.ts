@@ -72,10 +72,10 @@ export function useMathRender(dependencyArray: any[] = []) {
             observer.disconnect();
           }
 
-          const containers = document.querySelectorAll('.math-container');
+          const containers = document.querySelectorAll('.math-container, [data-math="true"]');
           containers.forEach((container: any) => {
-            // Avoid re-rendering if it already contains parsed KaTeX elements or is marked as rendered
-            if (container.querySelector('.katex') || container.dataset.rendered === 'true') {
+            // Avoid re-rendering if it already contains parsed KaTeX elements
+            if (container.querySelector('.katex')) {
               return;
             }
 

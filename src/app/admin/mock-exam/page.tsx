@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useMathRender } from '@/hooks/useMathRender';
 import { preprocessMathText } from '@/lib/questionTypes';
+import { RichMathText } from '@/components/QuestionDisplay';
 
 interface MockQuestion {
   id?: string;
@@ -338,7 +339,7 @@ function AdminMockExamContent() {
         {/* Left: Question Area */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {currentQ ? (
-            <div className="card" style={{ background: 'var(--surface)', padding: '24px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)' }}>
+            <div key={currentIndex} className="card" style={{ background: 'var(--surface)', padding: '24px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)' }}>
               {/* Question Header */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid var(--border-light)', paddingBottom: '12px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -362,9 +363,10 @@ function AdminMockExamContent() {
               </div>
 
               {/* Question Text */}
-              <div 
+              <RichMathText 
+                content={currentQ.text || currentQ.questionText || ''}
+                className="math-container"
                 style={{ fontSize: '15px', lineHeight: 1.6, marginBottom: '20px', color: 'var(--text)', whiteSpace: 'pre-wrap' }}
-                dangerouslySetInnerHTML={{ __html: preprocessMathText(currentQ.text || currentQ.questionText || '') }}
               />
 
               {/* Optional Diagram / Image */}
@@ -437,9 +439,10 @@ function AdminMockExamContent() {
                       }}>
                         {key}
                       </div>
-                      <div 
+                      <RichMathText 
+                        content={text}
+                        className="math-container"
                         style={{ fontSize: '14px', flex: 1, whiteSpace: 'pre-wrap' }}
-                        dangerouslySetInnerHTML={{ __html: preprocessMathText(text) }}
                       />
                       {(revealKeyMode || isSubmitted) && isCorrect && (
                         <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--success)' }}>
@@ -463,9 +466,10 @@ function AdminMockExamContent() {
                   <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--accent)', marginBottom: '6px' }}>
                     💡 Model Solution & Step-by-Step Explanation:
                   </div>
-                  <div 
+                  <RichMathText 
+                    content={currentQ.solution || currentQ.explanation || ''}
+                    className="math-container"
                     style={{ fontSize: '13.5px', lineHeight: 1.6, color: 'var(--text)', whiteSpace: 'pre-wrap' }}
-                    dangerouslySetInnerHTML={{ __html: preprocessMathText(currentQ.solution || currentQ.explanation || '') }}
                   />
                 </div>
               )}
