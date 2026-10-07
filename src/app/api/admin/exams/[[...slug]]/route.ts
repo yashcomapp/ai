@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { GET as getExams, POST as postExams, PUT as putExams, DELETE as deleteExams } from '../handlers/exams';
 import { GET as getGenerate, POST as postGenerate } from '../handlers/generate';
 import { GET as getLottery, POST as postLottery } from '../handlers/lottery';
-import { GET as getObjective, POST as postObjective } from '../handlers/objective';
-import { GET as getSubjective, POST as postSubjective } from '../handlers/subjective';
+import { GET as getObjective, POST as postObjective, PUT as putObjective } from '../handlers/objective';
+import { GET as getSubjective, POST as postSubjective, PUT as putSubjective } from '../handlers/subjective';
 import { GET as getMock } from '../handlers/mock';
 import { POST as postBroadcastResults } from '../handlers/broadcastResults';
 import { POST as postConsolidate } from '../handlers/consolidate';
@@ -11,6 +11,7 @@ import { POST as postRescheduleToday } from '../handlers/rescheduleToday';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
+
 
 export async function GET(req: NextRequest, { params }: { params: { slug?: string[] } | Promise<{ slug?: string[] }> }) {
   try {
@@ -78,6 +79,10 @@ export async function PUT(req: NextRequest, { params }: { params: { slug?: strin
     switch (subroute) {
       case '':
         return await putExams(req);
+      case 'objective':
+        return await putObjective(req);
+      case 'subjective':
+        return await putSubjective(req);
       default:
         return NextResponse.json({ message: `Unknown exam PUT route: ${subroute}` }, { status: 404 });
     }

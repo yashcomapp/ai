@@ -30,6 +30,9 @@ export async function GET(req: NextRequest) {
     }
 
     const data = await getParentDashboardData(parentEmail, parentData, selectedStudentCode === 'all' ? null : selectedStudentCode, rangeDays);
+    if (!data.children || data.children.length === 0) {
+      return NextResponse.json({ message: 'No active enrolled students are linked to this parent account. Access is restricted.' }, { status: 403 });
+    }
     setInCache(cacheKey, data, 20000); // 20s in-memory cache
 
     return NextResponse.json(data, {

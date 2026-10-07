@@ -158,10 +158,6 @@ export function useReports() {
     }
   };
 
-  const getExamAttendanceReport = async (idToken: string) => {
-    return fetchReport('/api/admin/reports/exam-attendance', idToken);
-  };
-
   return {
     loading,
     error,
@@ -169,7 +165,6 @@ export function useReports() {
     getIntegrityReport,
     getParentPendingReport,
     getQuotientReport,
-    getExamAttendanceReport,
     saveClassObservation,
     saveQuotientParameter,
     deleteQuotientParameter,

@@ -16,6 +16,7 @@ export async function GET(req: NextRequest, { params }: { params: { slug?: strin
       case 'notification-history':
         return await getNotificationHistory(req);
       case 'review':
+      case 'reviews':
         return await getReview(req);
       default:
         return NextResponse.json({ message: `Unknown parent GET route: ${subroute}` }, { status: 404 });
@@ -33,6 +34,7 @@ export async function POST(req: NextRequest, { params }: { params: { slug?: stri
 
     switch (subroute) {
       case 'review':
+      case 'reviews':
         return await postReview(req);
       default:
         return NextResponse.json({ message: `Unknown parent POST route: ${subroute}` }, { status: 404 });

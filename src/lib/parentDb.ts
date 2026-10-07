@@ -80,7 +80,7 @@ export async function getParentDashboardData(
     results.forEach(snap => {
       snap.docs.forEach(doc => {
         const data = doc.data();
-        if (data.role === 'student') {
+        if (data.role === 'student' && data.status !== 'inactive') {
           childrenDocs.push({
             uid: doc.id,
             ...data

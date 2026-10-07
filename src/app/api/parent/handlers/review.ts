@@ -100,13 +100,13 @@ async function resolveChildrenCodes(parentData: any): Promise<string[]> {
 
       emailSnap.docs.forEach((doc: any) => {
         const data = doc.data();
-        if (typeof data.studentCode === 'string' && data.studentCode.startsWith('ST-') && !childrenCodes.includes(data.studentCode)) {
+        if (data.status !== 'inactive' && typeof data.studentCode === 'string' && data.studentCode.startsWith('ST-') && !childrenCodes.includes(data.studentCode)) {
           childrenCodes.push(data.studentCode);
         }
       });
       phoneSnap.docs.forEach((doc: any) => {
         const data = doc.data();
-        if (typeof data.studentCode === 'string' && data.studentCode.startsWith('ST-') && !childrenCodes.includes(data.studentCode)) {
+        if (data.status !== 'inactive' && typeof data.studentCode === 'string' && data.studentCode.startsWith('ST-') && !childrenCodes.includes(data.studentCode)) {
           childrenCodes.push(data.studentCode);
         }
       });
@@ -115,7 +115,27 @@ async function resolveChildrenCodes(parentData: any): Promise<string[]> {
     }
   }
 
-  return Array.from(new Set(childrenCodes.filter(Boolean)));
+  const uniqueCodes = Array.from(new Set(childrenCodes.filter(Boolean)));
+  if (uniqueCodes.length === 0) return [];
+
+  // Filter out any deactivated student accounts
+  const chunks = chunkArray(uniqueCodes, 30);
+  const activeCodes: string[] = [];
+  await Promise.all(chunks.map(async chunk => {
+    const snap = await adminDb.collection('users')
+      .where('role', '==', 'student')
+      .where('studentCode', 'in', chunk)
+      .get()
+      .catch(() => ({ docs: [] } as any));
+    snap.docs.forEach((d: any) => {
+      const sData = d.data();
+      if (sData.status !== 'inactive' && sData.studentCode) {
+        activeCodes.push(sData.studentCode);
+      }
+    });
+  }));
+
+  return Array.from(new Set(activeCodes));
 }
 
 // 1. GET - Load reviews for child student

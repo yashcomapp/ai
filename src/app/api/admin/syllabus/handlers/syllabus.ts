@@ -541,7 +541,7 @@ export async function DELETE(req: NextRequest) {
   }
 }
 
-// 4. PUT - Save syllabus hierarchy (chapters list) for a subject
+// 4. PUT - Save syllabus hierarchy (chapters list) or edit subject metadata
 export async function PUT(req: NextRequest) {
   try {
     const adminUser = await verifyRole(req, 'admin');
@@ -550,22 +550,58 @@ export async function PUT(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { id, chapters } = body;
+    const docId = body.id || body.docId;
 
-    if (!id || !Array.isArray(chapters)) {
-      return NextResponse.json({ message: 'Missing parameters (id, chapters).' }, { status: 400 });
+    if (!docId) {
+      return NextResponse.json({ message: 'Missing subject ID parameter (id or docId).' }, { status: 400 });
     }
 
-    await adminDb.collection('syllabus').doc(id).update({
-      chapters,
-      updatedAt: new Date()
-    });
-    await syncSyllabusConfigTree();
+    // Case 1: Editing subject metadata (board, classNum, subjectName, subjectCode)
+    if (body.board || body.classNum || body.subjectName || body.subjectCode) {
+      const { board, classNum, subjectName } = body;
+      const updateData: Record<string, any> = { updatedAt: new Date() };
 
-    return NextResponse.json({ success: true, message: 'Syllabus hierarchy updated successfully.' });
+      if (board) {
+        updateData.board = getCanonicalBoardName(board);
+        updateData.boardCode = getCanonicalBoardCode(board);
+      }
+      if (classNum) {
+        updateData.class = getCanonicalClass(classNum);
+      }
+      if (subjectName) {
+        updateData.subject = subjectName.trim();
+      }
+      if (body.subjectCode) {
+        updateData.subjectCode = body.subjectCode;
+      } else if (updateData.boardCode && updateData.class && updateData.subject) {
+        updateData.subjectCode = getCanonicalSubjectCode(updateData.boardCode, updateData.class, updateData.subject);
+      }
+
+      if (Array.isArray(body.chapters)) {
+        updateData.chapters = body.chapters;
+      }
+
+      await adminDb.collection('syllabus').doc(docId).set(updateData, { merge: true });
+      await syncSyllabusConfigTree();
+
+      return NextResponse.json({ success: true, message: 'Subject details updated successfully.' });
+    }
+
+    // Case 2: Hierarchy / chapters reorder or update
+    if (Array.isArray(body.chapters)) {
+      await adminDb.collection('syllabus').doc(docId).update({
+        chapters: body.chapters,
+        updatedAt: new Date()
+      });
+      await syncSyllabusConfigTree();
+
+      return NextResponse.json({ success: true, message: 'Syllabus hierarchy updated successfully.' });
+    }
+
+    return NextResponse.json({ message: 'Missing parameters (chapters or subject details).' }, { status: 400 });
 
   } catch (error: any) {
-    console.error('API update syllabus hierarchy error:', error);
+    console.error('API update syllabus error:', error);
     return NextResponse.json({ message: error.message || 'Internal Server Error' }, { status: 500 });
   }
 }

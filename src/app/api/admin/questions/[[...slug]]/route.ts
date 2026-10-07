@@ -3,6 +3,7 @@ import { GET as getQuestions, POST as postQuestions, DELETE as deleteQuestions }
 import { GET as getAuditExplanations, POST as postAuditExplanations } from '../handlers/auditExplanations';
 import { GET as getAuditNumerical, POST as postAuditNumerical } from '../handlers/auditNumerical';
 import { POST as postHarmonize } from '../handlers/harmonize';
+import { GET as getDisputes, POST as postDisputes } from '../handlers/disputes';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,6 +19,8 @@ export async function GET(req: NextRequest, { params }: { params: { slug?: strin
         return await getAuditExplanations(req);
       case 'audit-numerical':
         return await getAuditNumerical(req);
+      case 'disputes':
+        return await getDisputes(req);
       default:
         return NextResponse.json({ message: `Unknown question GET route: ${subroute}` }, { status: 404 });
     }
@@ -41,6 +44,8 @@ export async function POST(req: NextRequest, { params }: { params: { slug?: stri
         return await postAuditNumerical(req);
       case 'harmonize':
         return await postHarmonize(req);
+      case 'disputes':
+        return await postDisputes(req);
       default:
         return NextResponse.json({ message: `Unknown question POST route: ${subroute}` }, { status: 404 });
     }

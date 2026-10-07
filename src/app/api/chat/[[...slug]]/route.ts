@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { GET as getRooms, POST as postRooms } from '../handlers/rooms';
+import { GET as getRooms, POST as postRooms, DELETE as deleteRooms } from '../handlers/rooms';
 import { GET as getMessages, POST as postMessages, PATCH as patchMessages, DELETE as deleteMessages } from '../handlers/messages';
 
 export const dynamic = 'force-dynamic';
@@ -65,6 +65,8 @@ export async function DELETE(req: NextRequest, { params }: { params: { slug?: st
     const subroute = (resolvedParams.slug || []).join('/');
 
     switch (subroute) {
+      case '':
+        return await deleteRooms(req);
       case 'messages':
         return await deleteMessages(req);
       default:
