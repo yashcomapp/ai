@@ -16,7 +16,6 @@ import { useProctoring } from '@/hooks/useProctoring';
 import { InterruptionLockoutModal } from '@/components/InterruptionLockoutModal';
 import { ExamErrorBoundary } from '@/components/ExamErrorBoundary';
 import { parseDateToMs } from '@/lib/dateUtils';
-import { ScreenshotShield } from '@/components/ScreenshotShield';
 
 const RTC_CONFIG = {
   iceServers: [
@@ -75,10 +74,6 @@ interface Exam {
   chapter?: string;
   topicName?: string;
   questions: Question[];
-  screenshotGuard?: boolean;
-  watermarkEnabled?: boolean;
-  blurOnFocusLoss?: boolean;
-  clearClipboardOnPrint?: boolean;
 }
 
 function TakeExamContent() {
@@ -842,16 +837,7 @@ function TakeExamContent() {
   }, [safeQIndex]);
 
   return (
-    <ScreenshotShield
-      enabled={!cameraModalOpen && !examSubmitted && !reviewModalOpen && exam?.screenshotGuard !== false}
-      watermarkEnabled={exam?.watermarkEnabled !== false}
-      blurOnFocusLoss={exam?.blurOnFocusLoss !== false}
-      clearClipboardOnPrint={exam?.clearClipboardOnPrint !== false}
-      studentName={user?.name || ''}
-      studentBatch={(user as any)?.className || (user as any)?.class || ''}
-      examTitle={exam?.name || ''}
-    >
-      <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
+    <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
       {/* Floating Alert Banner for active proctoring violations */}
       {activeViolationWarning && (
         <div style={{
@@ -1641,8 +1627,7 @@ function TakeExamContent() {
           </div>
         </div>
       )}
-      </div>
-    </ScreenshotShield>
+    </div>
   );
 }
 

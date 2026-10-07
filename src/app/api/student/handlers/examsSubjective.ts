@@ -484,35 +484,16 @@ export async function GET(req: NextRequest) {
       return safeQuestion;
     });
 
-    // Fetch live system exam security settings
-    const securityDoc = await adminDb.collection('config').doc('examSecurity').get().catch(() => null);
-    const globalSecurity = securityDoc?.exists ? securityDoc.data() : {
-      screenshotGuardEnabled: true,
-      blurOnFocusLoss: true,
-      forensicWatermark: true,
-      clearClipboardOnPrint: true
-    };
-
-    const isGuardEnabled = typeof matchingAssignment?.screenshotGuard === 'boolean'
-      ? matchingAssignment.screenshotGuard
-      : typeof examData.screenshotGuard === 'boolean'
-        ? examData.screenshotGuard
-        : (globalSecurity?.screenshotGuardEnabled !== false);
-
-    const examDataWithSecurity = {
+    const cleanExamData = {
       id: examSnap.id,
       ...examData,
-      name: cleanSubjectiveExamName(examData),
-      screenshotGuard: isGuardEnabled,
-      watermarkEnabled: isGuardEnabled && (globalSecurity?.forensicWatermark !== false),
-      blurOnFocusLoss: isGuardEnabled && (globalSecurity?.blurOnFocusLoss !== false),
-      clearClipboardOnPrint: isGuardEnabled && (globalSecurity?.clearClipboardOnPrint !== false)
+      name: cleanSubjectiveExamName(examData)
     };
 
     return NextResponse.json({
       status: 'active',
       mode,
-      examData: examDataWithSecurity,
+      examData: cleanExamData,
       assignment: matchingAssignment || null,
       questions,
       attemptId: finalAttemptId,
