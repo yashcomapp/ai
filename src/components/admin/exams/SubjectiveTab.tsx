@@ -2,7 +2,6 @@
 
 import React from 'react';
 import { Exam, Assignment, ExamScheduleStatus } from './types';
-import { formatCompactExamName } from '@/lib/dateUtils';
 
 interface SubjectiveTabProps {
   filteredSubjectiveExams: Exam[];
@@ -144,7 +143,7 @@ export default function SubjectiveTab({
                     .filter(isSubjectiveAvailableForAssignment)
                     .map(exam => (
                       <tr key={exam.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
-                        <td style={{ padding: '4px 8px', fontWeight: 600 }}>{formatCompactExamName(exam.name)}</td>
+                        <td style={{ padding: '4px 8px', fontWeight: 600 }}>{exam.name}</td>
                         <td style={{ padding: '4px 8px' }}>{exam.subjectName || exam.subjects?.[0] || '—'}</td>
                         <td style={{ padding: '4px 8px' }}>{(exam.topicCodes || []).join(', ') || '—'}</td>
                         <td style={{ padding: '4px 8px' }}>
@@ -223,7 +222,7 @@ export default function SubjectiveTab({
                     return (
                       <tr key={exam.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
                         <td style={{ padding: '4px 8px', fontWeight: 600 }}>
-                          {formatCompactExamName(exam.name)}
+                          {exam.name}
                         </td>
                         <td style={{ padding: '4px 8px' }}>
                           {mode === 'home' ? (
@@ -479,7 +478,7 @@ export default function SubjectiveTab({
                                                   
                                                   return (
                                                     <tr key={exam.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
-                                                      <td style={{ padding: '4px 8px', fontWeight: 600 }}>{formatCompactExamName(exam.name)}</td>
+                                                      <td style={{ padding: '4px 8px', fontWeight: 600 }}>{exam.name}</td>
                                                       <td style={{ padding: '4px 8px' }}>
                                                         {mode === 'home' ? (
                                                           <span className="badge badge-info" style={{ fontSize: '10px' }}>🏠 Home</span>

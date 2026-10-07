@@ -8,7 +8,7 @@ import { useMathRender } from '@/hooks/useMathRender';
 import { preprocessMathText, formatRichText, parseAnswerList, isOptionSelectedByUser, isOptionCorrect, getQuestionCorrectAnswer, getRawOptionKey, getRawOptionText, isBlank, resolveOptionDisplayText, extractAssertionAndReason, isAssertionReasonType } from '@/lib/questionTypes';
 import QuestionDisplay, { RichMathText } from '@/components/QuestionDisplay';
 import { playNotificationSound } from '@/lib/audioUtils';
-import { getDateKeyIST, formatDateDMY, formatTimeIST, calculateEndDatetime, formatCompactExamName } from '@/lib/dateUtils';
+import { getDateKeyIST, formatDateDMY, formatTimeIST, calculateEndDatetime } from '@/lib/dateUtils';
 
 interface Attempt {
   id: string;
@@ -1201,7 +1201,7 @@ function ExamReportContent() {
           <span className="brand" style={{ fontSize: '18px', fontWeight: 800, cursor: 'pointer' }} onClick={() => router.push('/admin')}>YASHCOM</span>
           <div>
             <h1 style={{ fontSize: '16px', margin: 0, display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-              Exam Report: {formatCompactExamName(exam.name || exam.subjectName || exam.id)}
+              Exam Report: {exam.name || exam.subjectName || exam.id}
               <span className="badge" style={{ fontSize: '11px', fontWeight: 600, padding: '2px 8px', background: 'var(--surface-3)', border: '1px solid var(--border-light)', borderRadius: '6px' }}>
                 {exam.id}
               </span>
@@ -1232,7 +1232,7 @@ function ExamReportContent() {
               className="btn btn-secondary" 
               disabled={broadcastingNotices}
               onClick={async () => {
-                if (!confirm(`Are you sure you want to broadcast personalized result & absence notices to all assigned students and parents for exam '${formatCompactExamName(exam.name)}'?`)) return;
+                if (!confirm(`Are you sure you want to broadcast personalized result & absence notices to all assigned students and parents for exam '${exam.name}'?`)) return;
                 setBroadcastingNotices(true);
                 try {
                   const token = await firebaseUser!.getIdToken();
@@ -2464,7 +2464,7 @@ function ExamReportContent() {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.45)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', zIndex: 20000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', maxWidth: '450px', width: '90%', padding: '24px', display: 'flex', flexDirection: 'column', gap: '15px', boxShadow: 'var(--shadow-lg)' }}>
             <h3 style={{ fontSize: '16px', fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-              🔄 Reassign Exam: {formatCompactExamName(exam.name)}
+              🔄 Reassign Exam: {exam.name}
             </h3>
 
             {/* Selected students list */}

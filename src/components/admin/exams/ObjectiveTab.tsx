@@ -2,7 +2,6 @@
 
 import React from 'react';
 import { Exam, Assignment, ExamScheduleStatus, isExamAssigned } from './types';
-import { formatCompactExamName } from '@/lib/dateUtils';
 
 interface ObjectiveTabProps {
   filteredObjectiveExams: Exam[];
@@ -134,7 +133,7 @@ export default function ObjectiveTab({
                     .filter(exam => !isExamAssigned(exam, assignments, attemptCounts))
                     .map(exam => (
                       <tr key={exam.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
-                        <td style={{ padding: '4px 8px', fontWeight: 600 }}>{formatCompactExamName(exam.name)}</td>
+                        <td style={{ padding: '4px 8px', fontWeight: 600 }}>{exam.name}</td>
                         <td style={{ padding: '4px 8px' }}>{exam.subjectName || exam.subjects?.[0] || '—'}</td>
                         <td style={{ padding: '4px 8px' }}>{(exam.topicCodes || []).join(', ') || '—'}</td>
                         <td style={{ padding: '4px 8px' }}>{exam.questionCount || exam.questions?.length || 0}</td>
@@ -208,7 +207,7 @@ export default function ObjectiveTab({
                     return (
                       <tr key={exam.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
                         <td style={{ padding: '4px 8px', fontWeight: 600 }}>
-                          {formatCompactExamName(exam.name)}
+                          {exam.name}
                         </td>
                         <td style={{ padding: '4px 8px', fontSize: '11px', color: 'var(--text-muted)' }}>{getAssignedNames(exam.id, exam.batchId)}</td>
                         <td style={{ padding: '4px 8px', fontSize: '11px', color: 'var(--text-muted)' }}>{getLatestAssignmentDate(exam.id, exam.assignedAt, exam)}</td>
@@ -439,7 +438,7 @@ export default function ObjectiveTab({
                                                             
                                                             return (
                                                               <tr key={exam.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
-                                                                <td style={{ padding: '4px 8px', fontWeight: 600 }}>{formatCompactExamName(exam.name)}</td>
+                                                                <td style={{ padding: '4px 8px', fontWeight: 600 }}>{exam.name}</td>
                                                                 <td style={{ padding: '4px 8px', fontSize: '11px', color: 'var(--text-muted)' }}>{getAssignedNames(exam.id, exam.batchId)}</td>
                                                                 <td style={{ padding: '4px 8px', fontSize: '11px', color: 'var(--text-muted)' }}>{getLatestAssignmentDate(exam.id, exam.assignedAt, exam)}</td>
                                                                 <td style={{ padding: '4px 8px' }}>
