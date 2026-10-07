@@ -9,6 +9,7 @@ import { ReportCacheManager } from '@/lib/reportCache';
 import { isDemoUser } from '@/lib/studentDb';
 import { getDateKeyIST, getMidnightIST } from '@/lib/dateUtils';
 import { MasteryService } from '@/services/mastery.service';
+import { ExamService } from '@/services/exam.service';
 export const dynamic = 'force-dynamic';
 
 async function resolveObjectiveExam(inputExamId: string) {
@@ -516,6 +517,20 @@ export async function POST(req: NextRequest) {
         adminDb.collection('examAttempts').doc(attemptId).update(updates)
       ]);
       return NextResponse.json({ message: 'Attempt updated successfully.' });
+    }
+
+    if (action === 'resetAllAttempts') {
+      const { examId, targetType, targetStudents } = body;
+      if (!examId) {
+        return NextResponse.json({ message: 'Missing examId parameter.' }, { status: 400 });
+      }
+      const result = await ExamService.resetExamAttemptsAndRecordsForReassignment({
+        examId,
+        type: 'objective',
+        targetType: targetType || 'batch',
+        targetStudents: targetStudents || []
+      });
+      return NextResponse.json({ message: 'All attempts reset successfully.', ...result });
     }
 
     return NextResponse.json({ message: 'Invalid action.' }, { status: 400 });

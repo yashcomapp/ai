@@ -896,8 +896,22 @@ export async function POST(req: NextRequest) {
       examMode, // 'home' or 'classroom'
       classroomDuration,
       classroomTimePerQ,
-      lateEntryRestriction
+      lateEntryRestriction,
+      action
     } = body;
+
+    if (action === 'resetAttempts') {
+      if (!examId) {
+        return NextResponse.json({ message: 'Missing examId parameter.' }, { status: 400 });
+      }
+      const resetResult = await ExamService.resetExamAttemptsAndRecordsForReassignment({
+        examId,
+        type: type || 'objective',
+        targetType: targetType || 'batch',
+        targetStudents: targetStudents || []
+      });
+      return NextResponse.json({ success: true, message: 'All attempts and records reset successfully.', details: resetResult });
+    }
 
     if (!examId || !type) {
       return NextResponse.json({ message: 'Missing parameters (examId, type).' }, { status: 400 });
@@ -1008,6 +1022,20 @@ export async function POST(req: NextRequest) {
         assignmentDocId = docRef.id;
       }
 
+      // Reassigned exam or target students: wipe previous attempts & recalculate mastery
+      if (!existingSnap.empty || body.resetAttempts || targetType === 'student') {
+        try {
+          await ExamService.resetExamAttemptsAndRecordsForReassignment({
+            examId,
+            type: 'objective',
+            targetType: targetType || 'batch',
+            targetStudents: targetStudents || []
+          });
+        } catch (resetErr) {
+          console.warn('Objective reassignment reset warning:', resetErr);
+        }
+      }
+
       try {
         await notifyNewExam(
           examId,
@@ -1058,6 +1086,20 @@ export async function POST(req: NextRequest) {
         assignmentDocId = docRef.id;
       }
 
+      // Reassigned exam or target students: wipe previous attempts & recalculate mastery
+      if (!existingSnap.empty || body.resetAttempts || targetType === 'student') {
+        try {
+          await ExamService.resetExamAttemptsAndRecordsForReassignment({
+            examId,
+            type: 'subjective',
+            targetType: targetType || 'batch',
+            targetStudents: targetStudents || []
+          });
+        } catch (resetErr) {
+          console.warn('Subjective reassignment reset warning:', resetErr);
+        }
+      }
+
       try {
         await notifyNewExam(
           examId,
@@ -1100,7 +1142,8 @@ export async function PUT(req: NextRequest) {
       lateEntryRestriction,
       targetType,
       targetBatches,
-      targetStudents
+      targetStudents,
+      resetAttempts
     } = body;
 
     if (!id || !collection) {
@@ -1174,6 +1217,21 @@ export async function PUT(req: NextRequest) {
         }
       } catch (err) {
         console.warn('Failed to update exam name during assignment schedule update:', err);
+      }
+    }
+
+    const isRescheduled = assignData.startAt && Math.abs(updatedStart.getTime() - (assignData.startAt.toDate ? assignData.startAt.toDate().getTime() : new Date(assignData.startAt).getTime())) > 600000;
+    if ((resetAttempts || isRescheduled) && assignData.examId) {
+      try {
+        const examType = collection === 'batchAssignments' ? 'objective' : 'subjective';
+        await ExamService.resetExamAttemptsAndRecordsForReassignment({
+          examId: assignData.examId,
+          type: examType,
+          targetType: targetType || assignData.targetType || 'batch',
+          targetStudents: targetStudents || assignData.targetStudents || []
+        });
+      } catch (resetErr) {
+        console.warn('Assignment reschedule reset error (non-fatal):', resetErr);
       }
     }
 

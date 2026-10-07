@@ -155,6 +155,7 @@ function ExamReportContent() {
   const [reassignLateEntryRestriction, setReassignLateEntryRestriction] = useState(false);
   const [reassignPresetSlot, setReassignPresetSlot] = useState<'6am' | '9pm' | null>(null);
   const [reassigning, setReassigning] = useState(false);
+  const [resettingAll, setResettingAll] = useState(false);
 
   const toLocalISOString = (date: Date) => {
     const tzoffset = date.getTimezoneOffset() * 60000;
@@ -661,6 +662,39 @@ function ExamReportContent() {
       alert(`❌ Reassignment failed: ${err.message}`);
     } finally {
       setReassigning(false);
+    }
+  };
+
+  const handleResetAllAttempts = async () => {
+    if (!firebaseUser || !exam || resettingAll) return;
+    if (!confirm(`Are you sure you want to reset all student attempts and records for '${exam.name}'?\n\nThis will remove previous attempts, scores, and evaluations so all students can take the exam cleanly and start counts drop to 0.`)) return;
+    
+    setResettingAll(true);
+    try {
+      const idToken = await firebaseUser.getIdToken();
+      const res = await fetch('/api/admin/exams/objective', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`
+        },
+        body: JSON.stringify({
+          action: 'resetAllAttempts',
+          examId: exam.id
+        })
+      });
+
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.message || 'Failed to reset attempts.');
+      }
+
+      alert('✅ All student attempts and records have been reset! Start count is 0.');
+      await fetchReport();
+    } catch (err: any) {
+      alert(`❌ Error: ${err.message || 'Failed to reset attempts'}`);
+    } finally {
+      setResettingAll(false);
     }
   };
 
@@ -1220,6 +1254,15 @@ function ExamReportContent() {
               style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 600, padding: '5px 12px', background: 'var(--purple-bg, rgba(139, 92, 246, 0.15))', color: 'var(--purple)', border: '1px solid var(--purple-border, rgba(139, 92, 246, 0.3))' }}
             >
               {broadcastingNotices ? '⏳ Broadcasting...' : '📢 Broadcast Results'}
+            </button>
+            <button 
+              className="btn btn-secondary" 
+              disabled={resettingAll}
+              onClick={handleResetAllAttempts}
+              title="Reset all student attempts, evaluations, and scores so all students can take the exam cleanly"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 600, padding: '5px 12px', background: 'rgba(239, 68, 68, 0.12)', color: 'var(--danger)', border: '1px solid rgba(239, 68, 68, 0.25)' }}
+            >
+              {resettingAll ? '⏳ Resetting...' : '🔄 Reset All Attempts'}
             </button>
             <button 
               className="btn btn-primary" 

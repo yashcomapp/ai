@@ -5,6 +5,7 @@ import { verifyRole } from '@/lib/auth';
 import { ReportCacheManager } from '@/lib/reportCache';
 import { chunkArray } from '@/lib/firestoreUtils';
 import { MasteryService } from '@/services/mastery.service';
+import { ExamService } from '@/services/exam.service';
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
@@ -464,6 +465,20 @@ export async function POST(req: NextRequest) {
       }
 
       return NextResponse.json({ success: true, message: 'Attempt reset successfully.' });
+    }
+
+    if (action === 'resetAllAttempts') {
+      const { examId, targetType, targetStudents } = body;
+      if (!examId) {
+        return NextResponse.json({ message: 'Missing examId parameter.' }, { status: 400 });
+      }
+      const result = await ExamService.resetExamAttemptsAndRecordsForReassignment({
+        examId,
+        type: 'subjective',
+        targetType: targetType || 'batch',
+        targetStudents: targetStudents || []
+      });
+      return NextResponse.json({ message: 'All subjective attempts reset successfully.', ...result });
     }
 
     const { questionReviews, totalScore } = body;

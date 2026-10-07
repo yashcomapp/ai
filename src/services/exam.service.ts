@@ -805,4 +805,188 @@ export class ExamService {
 
     await batch.commit();
   }
+
+  /**
+   * Resets all past attempts, reviews, evaluations, absence records, and mastery
+   * for an exam when it is reassigned or assigned again.
+   * Ensures start counts drop to 0 and all students can take the exam cleanly.
+   */
+  static async resetExamAttemptsAndRecordsForReassignment(params: {
+    examId: string;
+    type?: 'objective' | 'subjective';
+    targetType?: 'batch' | 'student' | 'mixed';
+    targetStudents?: string[];
+  }): Promise<{
+    success: boolean;
+    examId: string;
+    attemptsDeleted: number;
+    reviewsDeleted: number;
+    evaluationsDeleted: number;
+    absenceReasonsDeleted: number;
+    masteryRecalculated: number;
+  }> {
+    const { examId, type = 'objective', targetType = 'batch', targetStudents = [] } = params;
+    if (!examId) throw new Error('Missing examId parameter.');
+
+    // 1. Fetch exam details to derive candidate topics
+    const [objExamSnap, subjExamSnap] = await Promise.all([
+      adminDb.collection('exams').doc(examId).get(),
+      adminDb.collection('subjectiveExams').doc(examId).get()
+    ]);
+
+    const targetExamDoc = objExamSnap.exists ? objExamSnap : (subjExamSnap.exists ? subjExamSnap : null);
+    const targetExamData = targetExamDoc ? targetExamDoc.data() : null;
+
+    const affectedTopicCodes = new Set<string>();
+    if (targetExamData) {
+      if (targetExamData.topicCode) affectedTopicCodes.add(String(targetExamData.topicCode).trim());
+      if (Array.isArray(targetExamData.topicCodes)) {
+        targetExamData.topicCodes.forEach((tc: any) => { if (tc) affectedTopicCodes.add(String(tc).trim()); });
+      }
+      if (Array.isArray(targetExamData.questions)) {
+        targetExamData.questions.forEach((q: any) => {
+          if (q && typeof q === 'object' && q.topicCode) {
+            affectedTopicCodes.add(String(q.topicCode).trim());
+          }
+        });
+      }
+    }
+
+    // 2. Query attempts, reviews, evaluations, absence reasons, and peer assignments
+    const [
+      objAttemptsSnap,
+      subjAttemptsSnap,
+      reviewsSnap,
+      subjReviewsSnap,
+      evalsSnap,
+      peerAssignSnap,
+      absenceSnap
+    ] = await Promise.all([
+      adminDb.collection('examAttempts').where('examId', '==', examId).get(),
+      adminDb.collection('subjectiveAttempts').where('examId', '==', examId).get(),
+      adminDb.collection('reviews').where('examId', '==', examId).get(),
+      adminDb.collection('subjectiveReviews').where('examId', '==', examId).get(),
+      adminDb.collection('evaluations').where('examId', '==', examId).get(),
+      adminDb.collection('peerAssignments').where('examId', '==', examId).get(),
+      adminDb.collection('examAbsenceReasons').where('examId', '==', examId).get().catch(() => ({ docs: [] } as any))
+    ]);
+
+    const isSpecificStudentFilter = targetType === 'student' && targetStudents.length > 0;
+    const filterSet = isSpecificStudentFilter ? new Set(targetStudents.map(s => String(s).trim())) : null;
+
+    const affectedStudentCodes = new Set<string>();
+    if (filterSet) {
+      filterSet.forEach(sc => affectedStudentCodes.add(sc));
+    }
+
+    const shouldDeleteDoc = (data: any, docId: string): boolean => {
+      const sc = data?.studentCode || (docId.includes('_') ? docId.split('_').slice(1).join('_') : '');
+      if (sc) affectedStudentCodes.add(sc);
+      if (!filterSet) return true;
+      return filterSet.has(sc) || filterSet.has(docId);
+    };
+
+    const batch = new ChunkedBatch(adminDb);
+    let attemptsDeleted = 0;
+    let reviewsDeleted = 0;
+    let evaluationsDeleted = 0;
+    let absenceReasonsDeleted = 0;
+
+    objAttemptsSnap.docs.forEach(doc => {
+      if (shouldDeleteDoc(doc.data(), doc.id)) {
+        batch.delete(doc.ref);
+        attemptsDeleted++;
+      }
+    });
+
+    subjAttemptsSnap.docs.forEach(doc => {
+      if (shouldDeleteDoc(doc.data(), doc.id)) {
+        batch.delete(doc.ref);
+        attemptsDeleted++;
+      }
+    });
+
+    reviewsSnap.docs.forEach(doc => {
+      if (shouldDeleteDoc(doc.data(), doc.id)) {
+        batch.delete(doc.ref);
+        reviewsDeleted++;
+      }
+    });
+
+    subjReviewsSnap.docs.forEach(doc => {
+      if (shouldDeleteDoc(doc.data(), doc.id)) {
+        batch.delete(doc.ref);
+        reviewsDeleted++;
+      }
+    });
+
+    evalsSnap.docs.forEach(doc => {
+      if (shouldDeleteDoc(doc.data(), doc.id)) {
+        batch.delete(doc.ref);
+        evaluationsDeleted++;
+      }
+    });
+
+    peerAssignSnap.docs.forEach(doc => {
+      if (shouldDeleteDoc(doc.data(), doc.id)) {
+        batch.delete(doc.ref);
+      }
+    });
+
+    absenceSnap.docs.forEach((doc: any) => {
+      if (shouldDeleteDoc(doc.data(), doc.id)) {
+        batch.delete(doc.ref);
+        absenceReasonsDeleted++;
+      }
+    });
+
+    // Also explicitly delete composite doc IDs for all affected student codes
+    for (const sc of Array.from(affectedStudentCodes)) {
+      batch.delete(adminDb.collection('examAttempts').doc(`${examId}_${sc}`));
+      batch.delete(adminDb.collection('subjectiveAttempts').doc(`${examId}_${sc}`));
+      batch.delete(adminDb.collection('reviews').doc(`${examId}_${sc}`));
+      batch.delete(adminDb.collection('subjectiveReviews').doc(`${examId}_${sc}`));
+      batch.delete(adminDb.collection('examAbsenceReasons').doc(`${sc}_${examId}`));
+    }
+
+    await batch.commit();
+
+    // Recalculate or purge topic mastery for affected students
+    let masteryRecalculated = 0;
+    const candidateTopicArray = Array.from(affectedTopicCodes);
+
+    for (const studentCode of Array.from(affectedStudentCodes)) {
+      try {
+        const { updatedCount } = await MasteryService.recalculateOrPurgeTopicsForStudent({
+          studentCode,
+          excludedExamId: examId,
+          candidateTopicCodes: candidateTopicArray
+        });
+        masteryRecalculated += updatedCount;
+      } catch (err) {
+        console.warn(`Mastery recalculation warning for student ${studentCode} during reassignment reset:`, err);
+      }
+    }
+
+    // Invalidate caches
+    try {
+      invalidateCache('admin_dashboard_');
+      invalidateCache('admin_students_list');
+      await Promise.all([
+        ReportCacheManager.invalidateReport(`exam-report-objective-${examId}`),
+        ReportCacheManager.invalidateReport(`exam-report-subjective-${examId}`),
+        ReportCacheManager.invalidateReport(`truth-test-report-${examId}`)
+      ]);
+    } catch {}
+
+    return {
+      success: true,
+      examId,
+      attemptsDeleted,
+      reviewsDeleted,
+      evaluationsDeleted,
+      absenceReasonsDeleted,
+      masteryRecalculated
+    };
+  }
 }
