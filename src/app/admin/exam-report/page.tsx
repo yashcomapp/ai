@@ -1299,12 +1299,12 @@ function ExamReportContent() {
               <table className="reviews-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12.5px', textAlign: 'left' }}>
                 <thead>
                   <tr style={{ background: 'var(--bg-soft)', borderBottom: '1px solid var(--border-light)', color: 'var(--text-muted)', fontSize: '11.5px' }}>
-                    <th onClick={() => handleSortStudent('name')} style={{ padding: '7px 10px', cursor: 'pointer', whiteSpace: 'nowrap' }}>Student Name ⇅</th>
-                    <th onClick={() => handleSortStudent('score')} style={{ padding: '7px 10px', cursor: 'pointer', whiteSpace: 'nowrap' }}>Score ⇅</th>
-                    <th onClick={() => handleSortStudent('time')} style={{ padding: '7px 10px', cursor: 'pointer', whiteSpace: 'nowrap' }}>Time Taken ⇅</th>
-                    <th onClick={() => handleSortStudent('status')} style={{ padding: '7px 10px', cursor: 'pointer', whiteSpace: 'nowrap' }}>Status ⇅</th>
-                    <th onClick={() => handleSortStudent('date')} style={{ padding: '7px 10px', cursor: 'pointer', whiteSpace: 'nowrap' }}>Start Date/Time ⇅</th>
-                    <th style={{ padding: '7px 10px', textAlign: 'right', whiteSpace: 'nowrap' }}>Actions</th>
+                    <th onClick={() => handleSortStudent('name')} style={{ padding: '5px 8px', cursor: 'pointer', whiteSpace: 'nowrap' }}>Student Name ⇅</th>
+                    <th onClick={() => handleSortStudent('score')} style={{ padding: '5px 8px', cursor: 'pointer', whiteSpace: 'nowrap' }}>Score ⇅</th>
+                    <th onClick={() => handleSortStudent('time')} style={{ padding: '5px 8px', cursor: 'pointer', whiteSpace: 'nowrap' }}>Time Taken ⇅</th>
+                    <th onClick={() => handleSortStudent('status')} style={{ padding: '5px 8px', cursor: 'pointer', whiteSpace: 'nowrap' }}>Status ⇅</th>
+                    <th onClick={() => handleSortStudent('date')} style={{ padding: '5px 8px', cursor: 'pointer', whiteSpace: 'nowrap' }}>Start Date/Time ⇅</th>
+                    <th style={{ padding: '5px 8px', textAlign: 'right', whiteSpace: 'nowrap' }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1313,22 +1313,22 @@ function ExamReportContent() {
                     <tr 
                       style={{ borderBottom: '1px solid var(--border-light)', background: 'var(--danger-bg, rgba(234, 108, 117, 0.10))' }}
                     >
-                      <td colSpan={6} style={{ padding: '10px 14px', color: 'var(--danger)' }}>
-                        <div style={{ textAlign: 'center', fontWeight: 800, fontSize: '12.5px', marginBottom: '6px', color: 'var(--danger)', letterSpacing: '0.2px' }}>
+                      <td colSpan={6} style={{ padding: '8px 12px', color: 'var(--danger)' }}>
+                        <div style={{ textAlign: 'center', fontWeight: 800, fontSize: '12px', marginBottom: '4px', color: 'var(--danger)', letterSpacing: '0.2px' }}>
                           🔴 Absent Students ({notStartedStudents.length})
                         </div>
                         <div style={{ 
                           display: 'grid', 
                           gridTemplateColumns: 'repeat(3, 1fr)', 
-                          gap: '6px 12px',
-                          fontSize: '12px',
+                          gap: '4px 10px',
+                          fontSize: '11.5px',
                           fontWeight: 600,
                           color: 'var(--danger)'
                         }}>
                           {[...notStartedStudents]
                             .sort((a, b) => a.name.localeCompare(b.name))
                             .map(a => (
-                              <div key={a.code} style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--danger)', fontWeight: 600, fontSize: '12px' }} title={`${a.name} - ${formatAbsentLogin(a.lastLoginAt)}`}>
+                              <div key={a.code} style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--danger)', fontWeight: 600, fontSize: '11.5px' }} title={`${a.name} - ${formatAbsentLogin(a.lastLoginAt)}`}>
                                 • {a.name}{' '}
                                 <span style={{ fontSize: '10px', fontWeight: 500, color: 'var(--danger-muted)', opacity: 0.9, marginLeft: '4px' }}>
                                   {formatAbsentLogin(a.lastLoginAt)}
@@ -1344,7 +1344,7 @@ function ExamReportContent() {
                   {/* Submitted Attempts */}
                   {filteredAttempts.length === 0 && ((activeFilter && activeFilter !== 'all') || notStartedStudents.length === 0) ? (
                     <tr>
-                      <td colSpan={6} style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)' }}>📭 No attempts matching the criteria.</td>
+                      <td colSpan={6} style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)' }}>📭 No attempts matching the criteria.</td>
                     </tr>
                   ) : (
                     filteredAttempts.map(a => {
@@ -1367,7 +1367,7 @@ function ExamReportContent() {
                           }}
                           style={{ borderBottom: '1px solid var(--border-light)', cursor: 'pointer' }}
                         >
-                          <td style={{ padding: '7px 10px', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                          <td style={{ padding: '5px 8px', fontWeight: 600, whiteSpace: 'nowrap' }}>
                             {a.isLate && (
                               <span style={{ marginRight: '6px', color: '#ef4444', background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '1px 5px', borderRadius: '4px', fontSize: '10px', fontWeight: 800 }}>
                                 ⏰ LATE
@@ -1385,11 +1385,11 @@ function ExamReportContent() {
                               </span>
                             )}
                           </td>
-                          <td style={{ padding: '7px 10px', fontWeight: 700, color: scoreColor(a.percentage), whiteSpace: 'nowrap' }}>
+                          <td style={{ padding: '5px 8px', fontWeight: 700, color: scoreColor(a.percentage), whiteSpace: 'nowrap' }}>
                             {scoreVal} / {a.totalMarks} ({a.percentage}%)
                           </td>
-                          <td style={{ padding: '7px 10px', whiteSpace: 'nowrap' }}>{formatSeconds(getReviewTimeTaken(a))}</td>
-                          <td style={{ padding: '7px 10px', whiteSpace: 'nowrap' }}>
+                          <td style={{ padding: '5px 8px', whiteSpace: 'nowrap' }}>{formatSeconds(getReviewTimeTaken(a))}</td>
+                          <td style={{ padding: '5px 8px', whiteSpace: 'nowrap' }}>
                             <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                               <span style={{ fontSize: '10px', padding: '1px 6px', borderRadius: '8px', background: isPending ? 'var(--warning-bg)' : 'var(--success-bg)', color: isPending ? 'var(--warning)' : 'var(--success)', fontWeight: 700 }}>
                                 {a.status}
@@ -1399,14 +1399,24 @@ function ExamReportContent() {
                               </span>
                             </div>
                           </td>
-                          <td style={{ padding: '7px 10px', whiteSpace: 'nowrap' }}>{formatDate(startDate)}</td>
-                          <td style={{ padding: '7px 10px', textAlign: 'right', whiteSpace: 'nowrap' }} onClick={(e) => e.stopPropagation()}>
+                          <td style={{ padding: '5px 8px', whiteSpace: 'nowrap' }}>{formatDate(startDate)}</td>
+                          <td style={{ padding: '5px 8px', textAlign: 'right', whiteSpace: 'nowrap' }} onClick={(e) => e.stopPropagation()}>
                             <button 
-                              className="btn btn-secondary btn-sm" 
-                              style={{ padding: '2px 8px', fontSize: '11px' }}
+                              type="button"
+                              style={{ 
+                                background: 'transparent', 
+                                border: 'none', 
+                                padding: '0 4px', 
+                                fontSize: '11px', 
+                                fontWeight: 600, 
+                                color: 'var(--text-muted)', 
+                                textDecoration: 'underline', 
+                                cursor: 'pointer' 
+                              }}
                               onClick={() => handleResetAttempt(a.id, a.studentName)}
+                              title={`Reset attempt for ${a.studentName}`}
                             >
-                              🔄 Reset
+                              Reset
                             </button>
                           </td>
                         </tr>
@@ -1515,12 +1525,12 @@ function ExamReportContent() {
               <table className="reviews-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12.5px', textAlign: 'left' }}>
                 <thead>
                   <tr style={{ background: 'var(--bg-soft)', borderBottom: '1px solid var(--border-light)', color: 'var(--text-muted)', fontSize: '11.5px' }}>
-                    <th style={{ padding: '7px 10px', whiteSpace: 'nowrap' }}>Student Name</th>
-                    <th style={{ padding: '7px 10px', whiteSpace: 'nowrap' }}>Score</th>
-                    <th style={{ padding: '7px 10px', whiteSpace: 'nowrap' }}>Tab Violations</th>
-                    <th style={{ padding: '7px 10px', whiteSpace: 'nowrap' }}>Auto-Submission Reason</th>
-                    <th style={{ padding: '7px 10px', whiteSpace: 'nowrap' }}>Date/Time</th>
-                    <th style={{ padding: '7px 10px', textAlign: 'right', whiteSpace: 'nowrap' }}>Actions</th>
+                    <th style={{ padding: '5px 8px', whiteSpace: 'nowrap' }}>Student Name</th>
+                    <th style={{ padding: '5px 8px', whiteSpace: 'nowrap' }}>Score</th>
+                    <th style={{ padding: '5px 8px', whiteSpace: 'nowrap' }}>Tab Violations</th>
+                    <th style={{ padding: '5px 8px', whiteSpace: 'nowrap' }}>Auto-Submission Reason</th>
+                    <th style={{ padding: '5px 8px', whiteSpace: 'nowrap' }}>Date/Time</th>
+                    <th style={{ padding: '5px 8px', textAlign: 'right', whiteSpace: 'nowrap' }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1571,7 +1581,7 @@ function ExamReportContent() {
                           onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--bg-soft)'; }}
                           onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
                         >
-                          <td style={{ padding: '7px 10px', fontWeight: 600 }}>
+                          <td style={{ padding: '5px 8px', fontWeight: 600 }}>
                             {a.isLate && (
                               <span style={{ marginRight: '6px', color: '#ef4444', background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '1px 5px', borderRadius: '4px', fontSize: '10px', fontWeight: 800 }}>
                                 ⏰ LATE
@@ -1584,25 +1594,35 @@ function ExamReportContent() {
                               </span>
                             )}
                           </td>
-                          <td style={{ padding: '7px 10px', fontWeight: 700, color: 'var(--danger)' }}>
+                          <td style={{ padding: '5px 8px', fontWeight: 700, color: 'var(--danger)' }}>
                             {a.abandoned ? '0 (Abandoned)' : `${scoreVal} / ${a.totalMarks} (${a.percentage}%)`}
                           </td>
-                          <td style={{ padding: '7px 10px', fontWeight: 700 }}>
+                          <td style={{ padding: '5px 8px', fontWeight: 700 }}>
                             {a.abandoned ? '—' : `${a.tabViolations || 0} / 3`}
                           </td>
-                          <td style={{ padding: '7px 10px', color: 'var(--danger)', fontWeight: 600 }}>
+                          <td style={{ padding: '5px 8px', color: 'var(--danger)', fontWeight: 600 }}>
                             {getAutoSubmitReason(a)}
                           </td>
-                          <td style={{ padding: '7px 10px', whiteSpace: 'nowrap' }}>
+                          <td style={{ padding: '5px 8px', whiteSpace: 'nowrap' }}>
                             {completedAt ? completedAt.toLocaleString() : '—'}
                           </td>
-                          <td style={{ padding: '7px 10px', textAlign: 'right', whiteSpace: 'nowrap' }} onClick={(e) => e.stopPropagation()}>
+                          <td style={{ padding: '5px 8px', textAlign: 'right', whiteSpace: 'nowrap' }} onClick={(e) => e.stopPropagation()}>
                             <button 
-                              className="btn btn-secondary btn-sm" 
-                              style={{ padding: '2px 8px', fontSize: '11px' }}
+                              type="button"
+                              style={{ 
+                                background: 'transparent', 
+                                border: 'none', 
+                                padding: '0 4px', 
+                                fontSize: '11px', 
+                                fontWeight: 600, 
+                                color: 'var(--text-muted)', 
+                                textDecoration: 'underline', 
+                                cursor: 'pointer' 
+                              }}
                               onClick={() => handleResetAttempt(a.id, a.studentName)}
+                              title={`Reset attempt for ${a.studentName}`}
                             >
-                              🔄 Reset
+                              Reset
                             </button>
                           </td>
                         </tr>
@@ -1953,8 +1973,8 @@ function ExamReportContent() {
                 </div>
 
                 <button 
-                  className="btn btn-secondary btn-sm" 
-                  style={{ padding: '2px 8px', fontSize: '11px', color: 'var(--danger)', borderColor: 'var(--danger)' }}
+                  type="button"
+                  style={{ background: 'transparent', border: 'none', padding: '2px 6px', fontSize: '11px', color: 'var(--danger)', textDecoration: 'underline', cursor: 'pointer', fontWeight: 600 }}
                   onClick={async () => {
                     const studentName = selectedAttempt.studentName;
                     const attemptId = selectedAttempt.id;
@@ -1964,7 +1984,7 @@ function ExamReportContent() {
                   }}
                   title="Reset student attempt and allow retake"
                 >
-                  🔄 Reset
+                  Reset
                 </button>
                 <button className="close-modal" onClick={() => { setStudentModalOpen(false); setSelectedAttempt(null); }} style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '1.1rem', padding: '2px 4px' }}>✕</button>
               </div>
@@ -2366,8 +2386,8 @@ function ExamReportContent() {
 
             <div className="modal-footer" style={{ padding: '8px 12px', borderTop: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', background: 'var(--surface)' }}>
               <button 
-                className="btn btn-secondary btn-sm" 
-                style={{ padding: '4px 10px', fontSize: '11px', color: 'var(--danger)', borderColor: 'var(--danger)', fontWeight: 700 }}
+                type="button"
+                style={{ background: 'transparent', border: 'none', padding: '4px 8px', fontSize: '11px', color: 'var(--danger)', textDecoration: 'underline', cursor: 'pointer', fontWeight: 600 }}
                 onClick={async () => {
                   const studentName = selectedAttempt.studentName;
                   const attemptId = selectedAttempt.id;
@@ -2376,7 +2396,7 @@ function ExamReportContent() {
                   await handleResetAttempt(attemptId, studentName);
                 }}
               >
-                🔄 Reset Attempt
+                Reset Attempt
               </button>
               <button className="btn btn-secondary btn-sm" style={{ padding: '4px 10px', fontSize: '11px' }} onClick={() => { setStudentModalOpen(false); setSelectedAttempt(null); }}>Close</button>
             </div>

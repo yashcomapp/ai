@@ -105,7 +105,7 @@ export default function PracticeTab({
       ) : filteredPracticeBatches.map(({ batch, batchStudents, sortedStudents }) => {
         return (
           <div key={batch.id} className="card" style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', overflow: 'hidden', marginBottom: '16px' }}>
-            <div style={{ background: 'var(--bg-soft)', padding: '12px 20px', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ background: 'var(--bg-soft)', padding: '8px 14px', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h4 style={{ fontSize: '13px', fontWeight: 'bold', margin: 0, color: 'var(--text)' }}>
                 📦 {batch.name} — <span style={{ color: 'var(--accent)' }}>{batchStudents.length} students</span>
               </h4>
@@ -115,28 +115,28 @@ export default function PracticeTab({
               <table style={{ width: '100%', fontSize: '13px', borderCollapse: 'collapse', textAlign: 'left' }}>
                 <thead>
                   <tr style={{ background: 'var(--bg-soft)', borderBottom: '1px solid var(--border-light)', color: 'var(--text-muted)' }}>
-                    <th onClick={() => handlePracSort('student')} style={{ padding: '12px 16px', cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}>
+                    <th onClick={() => handlePracSort('student')} style={{ padding: '6px 10px', cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}>
                       STUDENT {renderSortIndicator('student')}
                     </th>
-                    <th onClick={() => handlePracSort('sessions')} style={{ padding: '12px 16px', cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}>
+                    <th onClick={() => handlePracSort('sessions')} style={{ padding: '6px 10px', cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}>
                       SESSIONS {renderSortIndicator('sessions')}
                     </th>
-                    <th onClick={() => handlePracSort('questions')} style={{ padding: '12px 16px', cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}>
+                    <th onClick={() => handlePracSort('questions')} style={{ padding: '6px 10px', cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}>
                       QUESTIONS {renderSortIndicator('questions')}
                     </th>
-                    <th onClick={() => handlePracSort('score')} style={{ padding: '12px 16px', cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}>
+                    <th onClick={() => handlePracSort('score')} style={{ padding: '6px 10px', cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}>
                       AVG SCORE {renderSortIndicator('score')}
                     </th>
-                    <th onClick={() => handlePracSort('avgMastery')} style={{ padding: '12px 16px', cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}>
+                    <th onClick={() => handlePracSort('avgMastery')} style={{ padding: '6px 10px', cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}>
                       AVG MASTERY {renderSortIndicator('avgMastery')}
                     </th>
-                    <th onClick={() => handlePracSort('avgQuality')} style={{ padding: '12px 16px', cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}>
+                    <th onClick={() => handlePracSort('avgQuality')} style={{ padding: '6px 10px', cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}>
                       QUALITY {renderSortIndicator('avgQuality')}
                     </th>
-                    <th onClick={() => handlePracSort('masteryStats')} style={{ padding: '12px 16px', cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}>
+                    <th onClick={() => handlePracSort('masteryStats')} style={{ padding: '6px 10px', cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}>
                       STATUS {renderSortIndicator('masteryStats')}
                     </th>
-                    <th onClick={() => handlePracSort('active')} style={{ padding: '12px 16px', cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}>
+                    <th onClick={() => handlePracSort('active')} style={{ padding: '6px 10px', cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}>
                       LAST SEEN {renderSortIndicator('active')}
                     </th>
                   </tr>
@@ -144,7 +144,7 @@ export default function PracticeTab({
                 <tbody>
                   {sortedStudents.length === 0 ? (
                     <tr>
-                      <td colSpan={8} style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)' }}>No students found in this batch.</td>
+                      <td colSpan={8} style={{ padding: '16px', textAlign: 'center', color: 'var(--text-muted)' }}>No students found in this batch.</td>
                     </tr>
                   ) : (
                     sortedStudents.map(student => {
@@ -158,13 +158,13 @@ export default function PracticeTab({
                           className="hover-row"
                           style={{ borderBottom: '1px solid var(--border-light)', cursor: 'pointer', transition: 'background 0.2s' }}
                         >
-                          <td style={{ padding: '12px 16px', fontWeight: 'bold' }}>{student.name}</td>
-                          <td style={{ padding: '12px 16px', textAlign: 'center' }}>{stats.totalSessions}</td>
-                          <td style={{ padding: '12px 16px', textAlign: 'center' }}>{stats.questionsAttempted}</td>
-                          <td style={{ padding: '12px 16px', fontWeight: 'bold', color: stats.totalSessions > 0 ? 'var(--accent)' : 'inherit' }}>
+                          <td style={{ padding: '6px 10px', fontWeight: 'bold' }}>{student.name}</td>
+                          <td style={{ padding: '6px 10px', textAlign: 'center' }}>{stats.totalSessions}</td>
+                          <td style={{ padding: '6px 10px', textAlign: 'center' }}>{stats.questionsAttempted}</td>
+                          <td style={{ padding: '6px 10px', fontWeight: 'bold', color: stats.totalSessions > 0 ? 'var(--accent)' : 'inherit' }}>
                             {stats.totalSessions > 0 ? `${stats.avgScore}%` : '—'}
                           </td>
-                          <td style={{ padding: '12px 16px', fontWeight: 'bold' }}>
+                          <td style={{ padding: '6px 10px', fontWeight: 'bold' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                               <span style={{ width: '28px' }}>{mastery.avgMastery}%</span>
                               <div style={{ width: '40px', height: '6px', background: 'var(--bg-soft)', borderRadius: '3px', overflow: 'hidden' }}>
@@ -176,7 +176,7 @@ export default function PracticeTab({
                               </div>
                             </div>
                           </td>
-                          <td style={{ padding: '12px 16px', fontWeight: 'bold' }}>
+                          <td style={{ padding: '6px 10px', fontWeight: 'bold' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                               <span style={{ width: '28px' }}>{quality}%</span>
                               <div style={{ width: '40px', height: '6px', background: 'var(--bg-soft)', borderRadius: '3px', overflow: 'hidden' }}>
@@ -188,30 +188,30 @@ export default function PracticeTab({
                               </div>
                             </div>
                           </td>
-                          <td style={{ padding: '12px 16px', whiteSpace: 'nowrap' }}>
+                          <td style={{ padding: '6px 10px', whiteSpace: 'nowrap' }}>
                             <span 
                               onClick={(e) => openTopicStatusModal(student, 'mastered', e)} 
-                              style={{ color: 'var(--success)', fontWeight: 700, cursor: 'pointer', padding: '3px 8px', borderRadius: '6px', background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.25)', transition: 'all 0.15s' }} 
+                              style={{ color: 'var(--success)', fontWeight: 700, cursor: 'pointer', padding: '2px 6px', borderRadius: '6px', background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.25)', transition: 'all 0.15s' }} 
                               title="Click to view Mastered Topics (>=90% accuracy & target confidence)"
                             >
                               🟢 {mastery.mastered}
                             </span>
                             <span 
                               onClick={(e) => openTopicStatusModal(student, 'practicing', e)} 
-                              style={{ color: 'var(--warning)', fontWeight: 700, marginLeft: '6px', cursor: 'pointer', padding: '3px 8px', borderRadius: '6px', background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.25)', transition: 'all 0.15s' }} 
+                              style={{ color: 'var(--warning)', fontWeight: 700, marginLeft: '6px', cursor: 'pointer', padding: '2px 6px', borderRadius: '6px', background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.25)', transition: 'all 0.15s' }} 
                               title="Click to view Practicing / In Progress Topics (50-89% or low confidence)"
                             >
                               🟡 {mastery.practicing}
                             </span>
                             <span 
                               onClick={(e) => openTopicStatusModal(student, 'needsAttention', e)} 
-                              style={{ color: 'var(--danger)', fontWeight: 700, marginLeft: '6px', cursor: 'pointer', padding: '3px 8px', borderRadius: '6px', background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.25)', transition: 'all 0.15s' }} 
+                              style={{ color: 'var(--danger)', fontWeight: 700, marginLeft: '6px', cursor: 'pointer', padding: '2px 6px', borderRadius: '6px', background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.25)', transition: 'all 0.15s' }} 
                               title="Click to view Needs Care / Focus Topics (<50%)"
                             >
                               🔴 {mastery.needsAttention}
                             </span>
                           </td>
-                          <td style={{ padding: '12px 16px', color: 'var(--text-muted)' }}>
+                          <td style={{ padding: '6px 10px', color: 'var(--text-muted)' }}>
                             {stats.lastActive ? formatDateDMY(stats.lastActive) : 'Never'}
                           </td>
                         </tr>
