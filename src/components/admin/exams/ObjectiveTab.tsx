@@ -140,6 +140,9 @@ export default function ObjectiveTab({
                         <td style={{ padding: '4px 8px' }}>{exam.totalMarks || 0}</td>
                         <td style={{ padding: '4px 8px', textAlign: 'right' }}>
                           <div style={{ display: 'flex', gap: '4px', justifyContent: 'flex-end' }}>
+                            <button className="btn btn-secondary" style={{ padding: '2px 6px', fontSize: '10.5px', background: 'var(--accent-tint)', color: 'var(--accent)', fontWeight: 600 }} onClick={() => router.push(`/admin/mock-exam?examId=${encodeURIComponent(exam.id)}`)}>
+                              🧪 Mock Test
+                            </button>
                             <button className="btn btn-primary" style={{ padding: '2px 6px', fontSize: '10.5px' }} onClick={() => handleOpenAssign(exam, 'objective')}>
                               📋 Assign
                             </button>
@@ -234,6 +237,9 @@ export default function ObjectiveTab({
                                 {rawStatus === 'active' ? '🛑 Stop' : '🟢 Start'}
                               </button>
                             )}
+                            <button className="btn btn-secondary" style={{ padding: '2px 6px', fontSize: '10.5px', background: 'var(--accent-tint)', color: 'var(--accent)', fontWeight: 600 }} onClick={() => router.push(`/admin/mock-exam?examId=${encodeURIComponent(exam.id)}`)}>
+                              🧪 Mock Test
+                            </button>
                             <button className="btn btn-secondary" style={{ padding: '2px 6px', fontSize: '10.5px', background: 'var(--accent-tint)', color: 'var(--accent)', fontWeight: 600 }} onClick={() => exportUniversalExamPDF(exam, exam.questions || (exam as any).questionDetails || (exam as any).questionCodes || (exam as any).questionIds || [])}>
                               📄 PDF
                             </button>
@@ -464,6 +470,9 @@ export default function ObjectiveTab({
                                                                         {rawStatus === 'active' ? '🛑 Stop' : '🟢 Start'}
                                                                       </button>
                                                                     )}
+                                                                    <button className="btn btn-secondary" style={{ padding: '3px 8px', fontSize: '11px', background: 'var(--accent-tint)', color: 'var(--accent)', fontWeight: 600 }} onClick={() => router.push(`/admin/mock-exam?examId=${encodeURIComponent(exam.id)}`)}>
+                                                                      🧪 Mock Test
+                                                                    </button>
                                                                     <button className="btn btn-secondary" style={{ padding: '3px 8px', fontSize: '11px', background: 'var(--accent-tint)', color: 'var(--accent)', fontWeight: 600 }} onClick={() => exportUniversalExamPDF(exam, exam.questions || (exam as any).questionDetails || (exam as any).questionCodes || (exam as any).questionIds || [])}>
                                                                       📄 PDF
                                                                     </button>

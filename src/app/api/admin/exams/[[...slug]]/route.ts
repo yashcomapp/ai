@@ -4,6 +4,7 @@ import { GET as getGenerate, POST as postGenerate } from '../handlers/generate';
 import { GET as getLottery, POST as postLottery } from '../handlers/lottery';
 import { GET as getObjective, POST as postObjective } from '../handlers/objective';
 import { GET as getSubjective, POST as postSubjective } from '../handlers/subjective';
+import { GET as getMock } from '../handlers/mock';
 import { POST as postBroadcastResults } from '../handlers/broadcastResults';
 import { POST as postConsolidate } from '../handlers/consolidate';
 import { POST as postRescheduleToday } from '../handlers/rescheduleToday';
@@ -27,6 +28,8 @@ export async function GET(req: NextRequest, { params }: { params: { slug?: strin
         return await getObjective(req);
       case 'subjective':
         return await getSubjective(req);
+      case 'mock':
+        return await getMock(req);
       default:
         return NextResponse.json({ message: `Unknown exam GET route: ${subroute}` }, { status: 404 });
     }
