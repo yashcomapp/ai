@@ -114,7 +114,13 @@ export class ExamService {
     const checkActive = (docs: admin.firestore.QueryDocumentSnapshot[]) => {
       docs.forEach(doc => {
         const data = doc.data();
-        if (data.examId && data.endAt) {
+        if (!data.examId) return;
+        if (data.status === 'disabled') return;
+        if (data.openMode === 'immediate' || !data.endAt) {
+          currentlyActiveExamIds.add(data.examId);
+          return;
+        }
+        if (data.endAt) {
           const endAtDate = data.endAt.toDate ? data.endAt.toDate() : new Date(data.endAt);
           if (now <= endAtDate) {
             currentlyActiveExamIds.add(data.examId);
@@ -283,7 +289,13 @@ export class ExamService {
     const checkActive = (docs: admin.firestore.QueryDocumentSnapshot[]) => {
       docs.forEach(doc => {
         const data = doc.data();
-        if (data.examId && data.endAt) {
+        if (!data.examId) return;
+        if (data.status === 'disabled') return;
+        if (data.openMode === 'immediate' || !data.endAt) {
+          currentlyActiveExamIds.add(data.examId);
+          return;
+        }
+        if (data.endAt) {
           const endAtDate = data.endAt.toDate ? data.endAt.toDate() : new Date(data.endAt);
           if (now <= endAtDate) {
             currentlyActiveExamIds.add(data.examId);

@@ -771,14 +771,14 @@ export async function GET(req: NextRequest) {
       Promise.all(allChunks.map(chunk => 
         adminDb.collection('reviews')
           .where('examId', 'in', chunk)
-          .select('examId', 'startedAt')
+          .select('examId', 'startedAt', 'status')
           .get()
           .catch(() => null)
       )),
       Promise.all(allChunks.map(chunk => 
         adminDb.collection('examAttempts')
           .where('examId', 'in', chunk)
-          .select('examId', 'startedAt')
+          .select('examId', 'startedAt', 'status')
           .get()
           .catch(() => null)
       ))
@@ -791,6 +791,7 @@ export async function GET(req: NextRequest) {
       if (!snap) return;
       snap.docs.forEach((doc: any) => {
         const d = doc.data();
+        if (d.status === 'precheck') return;
         const eid = d.examId;
         const startedAt = d.startedAt;
         if (startedAt) {
@@ -1023,7 +1024,7 @@ export async function POST(req: NextRequest) {
       }
 
       // Reassigned exam or target students: wipe previous attempts & recalculate mastery
-      if (!existingSnap.empty || body.resetAttempts || targetType === 'student') {
+      if (!existingSnap.empty || body.resetAttempts || targetType === 'student' || body.action === 'reassign') {
         try {
           await ExamService.resetExamAttemptsAndRecordsForReassignment({
             examId,
@@ -1087,7 +1088,7 @@ export async function POST(req: NextRequest) {
       }
 
       // Reassigned exam or target students: wipe previous attempts & recalculate mastery
-      if (!existingSnap.empty || body.resetAttempts || targetType === 'student') {
+      if (!existingSnap.empty || body.resetAttempts || targetType === 'student' || body.action === 'reassign') {
         try {
           await ExamService.resetExamAttemptsAndRecordsForReassignment({
             examId,

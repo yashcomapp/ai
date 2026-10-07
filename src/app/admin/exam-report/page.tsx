@@ -8,7 +8,7 @@ import { useMathRender } from '@/hooks/useMathRender';
 import { preprocessMathText, formatRichText, parseAnswerList, isOptionSelectedByUser, isOptionCorrect, getQuestionCorrectAnswer, getRawOptionKey, getRawOptionText, isBlank, resolveOptionDisplayText, extractAssertionAndReason, isAssertionReasonType } from '@/lib/questionTypes';
 import QuestionDisplay, { RichMathText } from '@/components/QuestionDisplay';
 import { playNotificationSound } from '@/lib/audioUtils';
-import { getDateKeyIST, formatDateDMY, formatTimeIST, calculateEndDatetime } from '@/lib/dateUtils';
+import { getDateKeyIST, formatDateDMY, formatTimeIST, calculateEndDatetime, formatCompactExamName } from '@/lib/dateUtils';
 
 interface Attempt {
   id: string;
@@ -59,6 +59,8 @@ interface Exam {
   topicCodes?: string[];
   topicNames?: string[];
   totalMarks?: number;
+  duration?: number;
+  durationMinutes?: number;
   questions?: string[];
   questionCodes?: string[];
 }
@@ -206,7 +208,7 @@ function ExamReportContent() {
   };
 
   const openReassignModal = () => {
-    const dur = exam?.totalMarks ? (exam as any).duration || 30 : 30;
+    const dur = Number(exam?.duration || exam?.durationMinutes) || 30;
     setReassignDuration(dur);
     setReassignAttemptLimit(1);
     setReassignOpenMode('immediate');
@@ -214,9 +216,9 @@ function ExamReportContent() {
     setReassignLateEntryRestriction(true);
     
     const now = new Date();
-    const oneHourLater = new Date(now.getTime() + 60 * 60 * 1000);
-    setReassignStartAtStr(toLocalISOString(now));
-    setReassignEndAtStr(toLocalISOString(oneHourLater));
+    const startStr = toLocalISOString(now);
+    setReassignStartAtStr(startStr);
+    setReassignEndAtStr(calculateEndDatetime(startStr, dur));
     
     setReassignModalOpen(true);
   };
@@ -640,6 +642,7 @@ function ExamReportContent() {
           targetType: 'student',
           targetBatches: [],
           targetStudents: studentsArr,
+          resetAttempts: true,
           openMode: reassignOpenMode,
           startAtStr: reassignStartAtStr,
           endAtStr: reassignEndAtStr,
@@ -1198,7 +1201,7 @@ function ExamReportContent() {
           <span className="brand" style={{ fontSize: '18px', fontWeight: 800, cursor: 'pointer' }} onClick={() => router.push('/admin')}>YASHCOM</span>
           <div>
             <h1 style={{ fontSize: '16px', margin: 0, display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-              Exam Report: {exam.name || exam.subjectName || exam.id}
+              Exam Report: {formatCompactExamName(exam.name || exam.subjectName || exam.id)}
               <span className="badge" style={{ fontSize: '11px', fontWeight: 600, padding: '2px 8px', background: 'var(--surface-3)', border: '1px solid var(--border-light)', borderRadius: '6px' }}>
                 {exam.id}
               </span>
@@ -1224,12 +1227,12 @@ function ExamReportContent() {
           >
             ← Back to Exams
           </button>
-          <div style={{ display: 'flex', gap: '6px' }}>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
             <button 
               className="btn btn-secondary" 
               disabled={broadcastingNotices}
               onClick={async () => {
-                if (!confirm(`Are you sure you want to broadcast personalized result & absence notices to all assigned students and parents for exam '${exam.name}'?`)) return;
+                if (!confirm(`Are you sure you want to broadcast personalized result & absence notices to all assigned students and parents for exam '${formatCompactExamName(exam.name)}'?`)) return;
                 setBroadcastingNotices(true);
                 try {
                   const token = await firebaseUser!.getIdToken();
@@ -1255,15 +1258,25 @@ function ExamReportContent() {
             >
               {broadcastingNotices ? '⏳ Broadcasting...' : '📢 Broadcast Results'}
             </button>
-            <button 
-              className="btn btn-secondary" 
-              disabled={resettingAll}
-              onClick={handleResetAllAttempts}
+            <span 
+              role="button"
+              tabIndex={0}
+              onClick={resettingAll ? undefined : handleResetAllAttempts}
               title="Reset all student attempts, evaluations, and scores so all students can take the exam cleanly"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 600, padding: '5px 12px', background: 'rgba(239, 68, 68, 0.12)', color: 'var(--danger)', border: '1px solid rgba(239, 68, 68, 0.25)' }}
+              style={{
+                cursor: resettingAll ? 'not-allowed' : 'pointer',
+                fontSize: '11.5px',
+                fontWeight: 600,
+                color: 'var(--danger)',
+                textDecoration: 'underline',
+                textUnderlineOffset: '3px',
+                opacity: resettingAll ? 0.6 : 1,
+                alignSelf: 'center',
+                padding: '4px 6px'
+              }}
             >
-              {resettingAll ? '⏳ Resetting...' : '🔄 Reset All Attempts'}
-            </button>
+              {resettingAll ? 'Resetting...' : 'Reset All Attempts'}
+            </span>
             <button 
               className="btn btn-primary" 
               onClick={() => setPdfSelectorOpen(true)}
@@ -2451,7 +2464,7 @@ function ExamReportContent() {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.45)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', zIndex: 20000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', maxWidth: '450px', width: '90%', padding: '24px', display: 'flex', flexDirection: 'column', gap: '15px', boxShadow: 'var(--shadow-lg)' }}>
             <h3 style={{ fontSize: '16px', fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-              🔄 Reassign Exam: {exam.name}
+              🔄 Reassign Exam: {formatCompactExamName(exam.name)}
             </h3>
 
             {/* Selected students list */}
@@ -2495,9 +2508,9 @@ function ExamReportContent() {
                     onChange={() => {
                       setReassignOpenMode('scheduled');
                       setReassignPresetSlot(null);
-                      if (reassignStartAtStr) {
-                        setReassignEndAtStr(calculateEndDatetime(reassignStartAtStr, reassignDuration || 30));
-                      }
+                      const start = reassignStartAtStr || toLocalISOString(new Date());
+                      setReassignStartAtStr(start);
+                      setReassignEndAtStr(calculateEndDatetime(start, reassignDuration || 30));
                     }} 
                     style={{ cursor: 'pointer' }}
                   /> Scheduled

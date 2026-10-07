@@ -35,11 +35,59 @@ export class ExamErrorBoundary extends Component<Props, State> {
       error,
       errorInfo
     });
+
+    // Fire-and-forget report to server for administrative visibility
+    try {
+      if (typeof window !== 'undefined' && window.location) {
+        fetch('/api/admin/fault-register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'client_crash',
+            type: 'exam_error_boundary',
+            url: window.location.href,
+            message: error?.message || 'Unknown error',
+            stack: error?.stack || null,
+            componentStack: errorInfo?.componentStack || null,
+            userAgent: navigator.userAgent,
+            timestamp: new Date().toISOString()
+          })
+        }).catch(() => null);
+      }
+    } catch {}
   }
 
+  private clearExamLocalCache = () => {
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        const keysToRemove: string[] = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i);
+          if (k && (k.startsWith('exam_state_') || k.startsWith('subjective_exam_state_'))) {
+            keysToRemove.push(k);
+          }
+        }
+        keysToRemove.forEach(k => localStorage.removeItem(k));
+      }
+    } catch {}
+  };
+
   private handleReload = () => {
+    this.clearExamLocalCache();
     if (this.props.onReset) {
-      this.props.onReset();
+      try {
+        this.props.onReset();
+      } catch {}
+    }
+    window.location.reload();
+  };
+
+  private handleClearCacheAndRestart = () => {
+    this.clearExamLocalCache();
+    if (this.props.onReset) {
+      try {
+        this.props.onReset();
+      } catch {}
     }
     window.location.reload();
   };
@@ -175,10 +223,31 @@ export class ExamErrorBoundary extends Component<Props, State> {
               </button>
 
               <button
+                onClick={this.handleClearCacheAndRestart}
+                style={{
+                  width: '100%',
+                  padding: '11px 18px',
+                  borderRadius: '10px',
+                  background: 'rgba(234, 179, 8, 0.1)',
+                  color: '#facc15',
+                  border: '1px solid rgba(234, 179, 8, 0.3)',
+                  fontWeight: 600,
+                  fontSize: '13px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px'
+                }}
+              >
+                🧹 Clear Exam Cache & Restart Fresh
+              </button>
+
+              <button
                 onClick={this.handleReturnToDashboard}
                 style={{
                   width: '100%',
-                  padding: '12px 18px',
+                  padding: '11px 18px',
                   borderRadius: '10px',
                   background: 'transparent',
                   color: 'var(--text-muted, #94a3b8)',

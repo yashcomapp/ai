@@ -241,7 +241,7 @@ function TakeExamContent() {
     studentCode: user?.studentCode || '',
     studentName: user?.name || user?.email || 'Student',
     examType: 'mcq',
-    totalQuestions: exam?.questions.length || null,
+    totalQuestions: exam?.questions?.length || null,
     currentQuestionIndex: currentQIndex,
     answeredCount,
     cameraVideoRef: videoRef,
@@ -457,9 +457,18 @@ function TakeExamContent() {
           const saved = localStorage.getItem(getSaveKey());
           if (saved) {
             const parsed = JSON.parse(saved);
-            if (parsed.examId === examId && Date.now() - parsed.timestamp < 3600000) {
-              setUserAnswers(parsed.userAnswers || initialAnswers);
-              setCurrentQIndex(parsed.currentQIndex || 0);
+            const totalQuestionsCount = (data.exam?.questions || []).length;
+            if (parsed.examId === examId && Date.now() - parsed.timestamp < 3600000 && totalQuestionsCount > 0) {
+              const safeIndex = Math.max(0, Math.min(totalQuestionsCount - 1, Number(parsed.currentQIndex) || 0));
+              let safeAnswers = initialAnswers;
+              if (Array.isArray(parsed.userAnswers) && parsed.userAnswers.length === totalQuestionsCount) {
+                safeAnswers = parsed.userAnswers;
+              } else if (Array.isArray(parsed.userAnswers)) {
+                safeAnswers = initialAnswers.map((defaultAns: any, i: number) => parsed.userAnswers[i] || defaultAns);
+              }
+
+              setUserAnswers(safeAnswers);
+              setCurrentQIndex(safeIndex);
               
               let resumedTime = parsed.timeRemaining || ((data.exam?.duration || 30) * 60);
               if (data.assignment && data.assignment.openMode === 'scheduled' && data.assignment.endAt) {
@@ -813,22 +822,24 @@ function TakeExamContent() {
     );
   }
 
-  const currentQuestion = exam.questions[currentQIndex];
-  const currentAnswerObj = userAnswers[currentQIndex];
+  const totalQCount = exam?.questions?.length || 1;
+  const safeQIndex = Math.max(0, Math.min(totalQCount - 1, currentQIndex));
+  const currentQuestion = exam?.questions?.[safeQIndex] || exam?.questions?.[0] || { id: 'fallback', text: '', options: [], marks: 1, type: 'mcq' };
+  const currentAnswerObj = userAnswers[safeQIndex];
   const currentAnswer = currentAnswerObj?.answer || '';
 
   const handleSelectOptionCurrent = useCallback((letter: string) => {
     if (!currentQuestion) return;
     if (isMultipleChoiceType(currentQuestion.type)) {
-      handleCheckboxOption(currentQIndex, letter);
+      handleCheckboxOption(safeQIndex, letter);
     } else {
-      handleSelectOption(currentQIndex, letter);
+      handleSelectOption(safeQIndex, letter);
     }
-  }, [currentQuestion, currentQIndex]);
+  }, [currentQuestion, safeQIndex]);
 
   const handleTextInputCurrent = useCallback((val: string) => {
-    handleTextInput(currentQIndex, val);
-  }, [currentQIndex]);
+    handleTextInput(safeQIndex, val);
+  }, [safeQIndex]);
 
   return (
     <ScreenshotShield
@@ -889,13 +900,9 @@ function TakeExamContent() {
           }
         }}
       />
-      {/* Script Injections for MediaPipe (Lazy loaded when modal is open) */}
-      {cameraModalOpen && (
-        <>
-          <Script src="/libs/mediapipe/face_mesh.js" strategy="lazyOnload" />
-          <Script src="/libs/mediapipe/camera_utils.js" strategy="lazyOnload" />
-        </>
-      )}
+      {/* Script Injections for MediaPipe (Idempotent lazy loading) */}
+      <Script src="/libs/mediapipe/face_mesh.js" strategy="lazyOnload" />
+      <Script src="/libs/mediapipe/camera_utils.js" strategy="lazyOnload" />
 
 
       {cameraModalOpen && (
@@ -1079,7 +1086,7 @@ function TakeExamContent() {
               overflow: 'hidden',
               textOverflow: 'ellipsis'
             }}>
-              {faceStatus.replace(' Detected', '').replace(' Verified', '')}
+              {(faceStatus || '').replace(' Detected', '').replace(' Verified', '')}
             </div>
           </div>
 
@@ -1147,11 +1154,11 @@ function TakeExamContent() {
           </div>
 
           {/* Question Card */}
-          <div ref={questionContainerRef} key={currentQuestion.id} className="card" style={{ background: 'var(--surface)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-lg)', padding: '16px', marginBottom: '12px' }}>
+          <div ref={questionContainerRef} key={currentQuestion?.id || safeQIndex} className="card" style={{ background: 'var(--surface)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-lg)', padding: '16px', marginBottom: '12px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-light)', paddingBottom: '8px', marginBottom: '12px', color: 'var(--text-muted)', fontSize: '12px' }}>
-              <span>Question {currentQIndex + 1} of {exam.questions.length}</span>
+              <span>Question {safeQIndex + 1} of {exam.questions.length}</span>
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                <span className="badge">{currentQuestion.marks || 1} Marks</span>
+                <span className="badge">{currentQuestion?.marks || 1} Marks</span>
               </div>
             </div>
 
@@ -1641,7 +1648,23 @@ function TakeExamContent() {
 
 export default function TakeExamPage() {
   return (
-    <ExamErrorBoundary fallbackTitle="Objective Exam Workspace Recovery">
+    <ExamErrorBoundary
+      fallbackTitle="Objective Exam Workspace Recovery"
+      onReset={() => {
+        try {
+          if (typeof window !== 'undefined' && window.localStorage) {
+            const keysToRemove: string[] = [];
+            for (let i = 0; i < localStorage.length; i++) {
+              const k = localStorage.key(i);
+              if (k && k.startsWith('exam_state_')) {
+                keysToRemove.push(k);
+              }
+            }
+            keysToRemove.forEach(k => localStorage.removeItem(k));
+          }
+        } catch {}
+      }}
+    >
       <React.Suspense fallback={
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: 'var(--bg)' }}>
           <div className="loading" style={{ display: 'block' }}>

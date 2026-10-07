@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Exam, Assignment, ExamScheduleStatus, isExamAssigned } from './types';
+import { formatCompactExamName } from '@/lib/dateUtils';
 
 interface ObjectiveTabProps {
   filteredObjectiveExams: Exam[];
@@ -112,38 +113,38 @@ export default function ObjectiveTab({
         </h3>
         <div className="card" style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', overflow: 'hidden' }}>
           <div style={{ overflowX: 'auto' }}>
-            <table className="reviews-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
+            <table className="reviews-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12.5px' }}>
               <thead>
-                <tr style={{ background: 'var(--bg-soft)', borderBottom: '1px solid var(--border-light)', color: 'var(--text-muted)', fontSize: '12px' }}>
-                  <th style={{ padding: '6px 10px' }}>Exam Name</th>
-                  <th style={{ padding: '6px 10px' }}>Subject</th>
-                  <th style={{ padding: '6px 10px' }}>Topics</th>
-                  <th style={{ padding: '6px 10px' }}>Questions</th>
-                  <th style={{ padding: '6px 10px' }}>Marks</th>
-                  <th style={{ padding: '6px 10px', textAlign: 'right' }}>Actions</th>
+                <tr style={{ background: 'var(--bg-soft)', borderBottom: '1px solid var(--border-light)', color: 'var(--text-muted)', fontSize: '11.5px' }}>
+                  <th style={{ padding: '4px 8px' }}>Exam Name</th>
+                  <th style={{ padding: '4px 8px' }}>Subject</th>
+                  <th style={{ padding: '4px 8px' }}>Topics</th>
+                  <th style={{ padding: '4px 8px' }}>Questions</th>
+                  <th style={{ padding: '4px 8px' }}>Marks</th>
+                  <th style={{ padding: '4px 8px', textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredObjectiveExams.filter(exam => !isExamAssigned(exam, assignments, attemptCounts)).length === 0 ? (
                   <tr>
-                    <td colSpan={6} style={{ padding: '16px', textAlign: 'center', color: 'var(--text-muted)' }}>No exams available for assignment.</td>
+                    <td colSpan={6} style={{ padding: '12px', textAlign: 'center', color: 'var(--text-muted)' }}>No exams available for assignment.</td>
                   </tr>
                 ) : (
                   filteredObjectiveExams
                     .filter(exam => !isExamAssigned(exam, assignments, attemptCounts))
                     .map(exam => (
                       <tr key={exam.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
-                        <td style={{ padding: '6px 10px', fontWeight: 600 }}>{exam.name}</td>
-                        <td style={{ padding: '6px 10px' }}>{exam.subjectName || exam.subjects?.[0] || '—'}</td>
-                        <td style={{ padding: '6px 10px' }}>{(exam.topicCodes || []).join(', ') || '—'}</td>
-                        <td style={{ padding: '6px 10px' }}>{exam.questionCount || exam.questions?.length || 0}</td>
-                        <td style={{ padding: '6px 10px' }}>{exam.totalMarks || 0}</td>
-                        <td style={{ padding: '6px 10px', textAlign: 'right' }}>
-                          <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
-                            <button className="btn btn-primary" style={{ padding: '3px 8px', fontSize: '11px' }} onClick={() => handleOpenAssign(exam, 'objective')}>
+                        <td style={{ padding: '4px 8px', fontWeight: 600 }}>{formatCompactExamName(exam.name)}</td>
+                        <td style={{ padding: '4px 8px' }}>{exam.subjectName || exam.subjects?.[0] || '—'}</td>
+                        <td style={{ padding: '4px 8px' }}>{(exam.topicCodes || []).join(', ') || '—'}</td>
+                        <td style={{ padding: '4px 8px' }}>{exam.questionCount || exam.questions?.length || 0}</td>
+                        <td style={{ padding: '4px 8px' }}>{exam.totalMarks || 0}</td>
+                        <td style={{ padding: '4px 8px', textAlign: 'right' }}>
+                          <div style={{ display: 'flex', gap: '4px', justifyContent: 'flex-end' }}>
+                            <button className="btn btn-primary" style={{ padding: '2px 6px', fontSize: '10.5px' }} onClick={() => handleOpenAssign(exam, 'objective')}>
                               📋 Assign
                             </button>
-                            <button className="btn btn-secondary" style={{ padding: '3px 8px', fontSize: '11px', color: 'var(--danger)' }} onClick={() => handleDeleteExam(exam.id, exam.name, 'objective')}>
+                            <button className="btn btn-secondary" style={{ padding: '2px 6px', fontSize: '10.5px', color: 'var(--danger)' }} onClick={() => handleDeleteExam(exam.id, exam.name, 'objective')}>
                               🗑️ Delete
                             </button>
                           </div>
@@ -164,14 +165,14 @@ export default function ObjectiveTab({
         </h3>
         <div className="card" style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', overflow: 'hidden' }}>
           <div style={{ overflowX: 'auto' }}>
-            <table className="reviews-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
+            <table className="reviews-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12.5px' }}>
               <thead>
-                <tr style={{ background: 'var(--bg-soft)', borderBottom: '1px solid var(--border-light)', color: 'var(--text-muted)', fontSize: '12px' }}>
-                  <th style={{ padding: '6px 10px' }}>Exam Name</th>
-                  <th style={{ padding: '6px 10px' }}>Assigned To</th>
-                  <th style={{ padding: '6px 10px' }}>Assigned Date</th>
-                  <th style={{ padding: '6px 10px' }}>Status / Starts</th>
-                  <th style={{ padding: '6px 10px', textAlign: 'right' }}>Actions</th>
+                <tr style={{ background: 'var(--bg-soft)', borderBottom: '1px solid var(--border-light)', color: 'var(--text-muted)', fontSize: '11.5px' }}>
+                  <th style={{ padding: '4px 8px' }}>Exam Name</th>
+                  <th style={{ padding: '4px 8px' }}>Assigned To</th>
+                  <th style={{ padding: '4px 8px' }}>Assigned Date</th>
+                  <th style={{ padding: '4px 8px' }}>Status / Starts</th>
+                  <th style={{ padding: '4px 8px', textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -194,7 +195,7 @@ export default function ObjectiveTab({
                   if (sortedTodayTomorrowExams.length === 0) {
                     return (
                       <tr>
-                        <td colSpan={5} style={{ padding: '16px', textAlign: 'center', color: 'var(--text-muted)' }}>No exams scheduled for today or tomorrow.</td>
+                        <td colSpan={5} style={{ padding: '12px', textAlign: 'center', color: 'var(--text-muted)' }}>No exams scheduled for today or tomorrow.</td>
                       </tr>
                     );
                   }
@@ -206,14 +207,14 @@ export default function ObjectiveTab({
                     const scheduleStatus = getExamScheduleStatus(exam, activeAssign, 'objective');
                     return (
                       <tr key={exam.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
-                        <td style={{ padding: '6px 10px', fontWeight: 600 }}>
-                          {exam.name}
+                        <td style={{ padding: '4px 8px', fontWeight: 600 }}>
+                          {formatCompactExamName(exam.name)}
                         </td>
-                        <td style={{ padding: '6px 10px', fontSize: '11px', color: 'var(--text-muted)' }}>{getAssignedNames(exam.id, exam.batchId)}</td>
-                        <td style={{ padding: '6px 10px', fontSize: '11px', color: 'var(--text-muted)' }}>{getLatestAssignmentDate(exam.id, exam.assignedAt, exam)}</td>
-                        <td style={{ padding: '6px 10px' }}>
+                        <td style={{ padding: '4px 8px', fontSize: '11px', color: 'var(--text-muted)' }}>{getAssignedNames(exam.id, exam.batchId)}</td>
+                        <td style={{ padding: '4px 8px', fontSize: '11px', color: 'var(--text-muted)' }}>{getLatestAssignmentDate(exam.id, exam.assignedAt, exam)}</td>
+                        <td style={{ padding: '4px 8px' }}>
                           <div style={{ display: 'flex', gap: '6px', flexDirection: 'row', alignItems: 'center' }}>
-                            <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: scheduleStatus.badgeBg, color: scheduleStatus.badgeColor, fontWeight: 700, whiteSpace: 'nowrap' }}>
+                            <span style={{ fontSize: '10px', padding: '1px 6px', borderRadius: '10px', background: scheduleStatus.badgeBg, color: scheduleStatus.badgeColor, fontWeight: 700, whiteSpace: 'nowrap' }}>
                               {scheduleStatus.badgeText}
                             </span>
                             {count > 0 && (
@@ -223,31 +224,31 @@ export default function ObjectiveTab({
                             )}
                           </div>
                         </td>
-                        <td style={{ padding: '6px 10px', textAlign: 'right' }}>
-                          <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end', flexWrap: 'nowrap', whiteSpace: 'nowrap' }}>
+                        <td style={{ padding: '4px 8px', textAlign: 'right' }}>
+                          <div style={{ display: 'flex', gap: '4px', justifyContent: 'flex-end', flexWrap: 'nowrap', whiteSpace: 'nowrap' }}>
                             {activeAssign && activeAssign.openMode !== 'scheduled' && (
                               <button 
                                 className={`btn ${rawStatus === 'active' ? 'btn-secondary' : 'btn-primary'}`} 
-                                style={{ padding: '3px 8px', fontSize: '11px', background: rawStatus === 'active' ? 'var(--danger)' : 'var(--success)', color: 'white', border: 'none' }} 
+                                style={{ padding: '2px 6px', fontSize: '10.5px', background: rawStatus === 'active' ? 'var(--danger)' : 'var(--success)', color: 'white', border: 'none' }} 
                                 onClick={() => toggleAssignmentStatus(activeAssign.id, activeAssign.collection || 'batchAssignments', rawStatus === 'active' ? 'disabled' : 'active')}
                               >
                                 {rawStatus === 'active' ? '🛑 Stop' : '🟢 Start'}
                               </button>
                             )}
-                            <button className="btn btn-secondary" style={{ padding: '3px 8px', fontSize: '11px', background: 'var(--accent-tint)', color: 'var(--accent)', fontWeight: 600 }} onClick={() => exportUniversalExamPDF(exam, exam.questions || (exam as any).questionDetails || (exam as any).questionCodes || (exam as any).questionIds || [])}>
+                            <button className="btn btn-secondary" style={{ padding: '2px 6px', fontSize: '10.5px', background: 'var(--accent-tint)', color: 'var(--accent)', fontWeight: 600 }} onClick={() => exportUniversalExamPDF(exam, exam.questions || (exam as any).questionDetails || (exam as any).questionCodes || (exam as any).questionIds || [])}>
                               📄 PDF
                             </button>
-                            <button className="btn btn-primary" style={{ padding: '3px 8px', fontSize: '11px' }} onClick={() => handleOpenAssign(exam, 'objective')}>
+                            <button className="btn btn-primary" style={{ padding: '2px 6px', fontSize: '10.5px' }} onClick={() => handleOpenAssign(exam, 'objective')}>
                               📋 Assign Again
                             </button>
-                            <button className="btn btn-secondary" style={{ padding: '3px 8px', fontSize: '11px' }} onClick={() => router.push(`/admin/exam-report?examId=${exam.id}`)}>
+                            <button className="btn btn-secondary" style={{ padding: '2px 6px', fontSize: '10.5px' }} onClick={() => router.push(`/admin/exam-report?examId=${exam.id}`)}>
                               📊 Report
                             </button>
                             <button 
                               className="btn btn-secondary" 
                               style={{ 
-                                padding: '3px 8px', 
-                                fontSize: '11px', 
+                                padding: '2px 6px', 
+                                fontSize: '10.5px', 
                                 opacity: count > 0 ? 0.5 : 1, 
                                 cursor: count > 0 ? 'not-allowed' : 'pointer' 
                               }} 
@@ -256,7 +257,7 @@ export default function ObjectiveTab({
                             >
                               ✏️ Edit
                             </button>
-                            <button className="btn btn-secondary" style={{ padding: '3px 8px', fontSize: '11px', color: 'var(--danger)' }} onClick={() => handleDeleteExam(exam.id, exam.name, 'objective')}>
+                            <button className="btn btn-secondary" style={{ padding: '2px 6px', fontSize: '10.5px', color: 'var(--danger)' }} onClick={() => handleDeleteExam(exam.id, exam.name, 'objective')}>
                               🗑️ Delete
                             </button>
                           </div>
@@ -403,7 +404,7 @@ export default function ObjectiveTab({
                                                   {/* Chapter Line with count */}
                                                   <div 
                                                     onClick={() => toggleChapterExpanded(chapKey)}
-                                                    style={{ padding: '6px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-soft)', cursor: 'pointer', borderBottom: isChapExpanded ? '1px solid var(--border-light)' : 'none' }}
+                                                    style={{ padding: '4px 8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-soft)', cursor: 'pointer', borderBottom: isChapExpanded ? '1px solid var(--border-light)' : 'none' }}
                                                   >
                                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                                       <span style={{ fontWeight: 700, fontSize: '11.5px', color: 'var(--accent)' }}>📘 {chapName}</span>
@@ -418,15 +419,15 @@ export default function ObjectiveTab({
                                                       <table className="reviews-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
                                                         <thead>
                                                           <tr style={{ background: 'var(--bg-soft)', borderBottom: '1px solid var(--border-light)', color: 'var(--text-muted)', fontSize: '12px' }}>
-                                                            <th style={{ padding: '6px 10px', cursor: 'pointer', userSelect: 'none' }} onClick={() => handleAssignedSort('name')}>
+                                                            <th style={{ padding: '4px 8px', cursor: 'pointer', userSelect: 'none' }} onClick={() => handleAssignedSort('name')}>
                                                               Exam Name {assignedSortField === 'name' ? (assignedSortDir === 'asc' ? '🔼' : '🔽') : ''}
                                                             </th>
-                                                            <th style={{ padding: '6px 10px' }}>Assigned To</th>
-                                                            <th style={{ padding: '6px 10px', cursor: 'pointer', userSelect: 'none' }} onClick={() => handleAssignedSort('date')}>
+                                                            <th style={{ padding: '4px 8px' }}>Assigned To</th>
+                                                            <th style={{ padding: '4px 8px', cursor: 'pointer', userSelect: 'none' }} onClick={() => handleAssignedSort('date')}>
                                                               Assigned Date {assignedSortField === 'date' ? (assignedSortDir === 'asc' ? '🔼' : '🔽') : ''}
                                                             </th>
-                                                            <th style={{ padding: '6px 10px' }}>Status / Starts</th>
-                                                            <th style={{ padding: '6px 10px', textAlign: 'right' }}>Actions</th>
+                                                            <th style={{ padding: '4px 8px' }}>Status / Starts</th>
+                                                            <th style={{ padding: '4px 8px', textAlign: 'right' }}>Actions</th>
                                                           </tr>
                                                         </thead>
                                                         <tbody>
@@ -438,10 +439,10 @@ export default function ObjectiveTab({
                                                             
                                                             return (
                                                               <tr key={exam.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
-                                                                <td style={{ padding: '6px 10px', fontWeight: 600 }}>{exam.name}</td>
-                                                                <td style={{ padding: '6px 10px', fontSize: '11px', color: 'var(--text-muted)' }}>{getAssignedNames(exam.id, exam.batchId)}</td>
-                                                                <td style={{ padding: '6px 10px', fontSize: '11px', color: 'var(--text-muted)' }}>{getLatestAssignmentDate(exam.id, exam.assignedAt, exam)}</td>
-                                                                <td style={{ padding: '6px 10px' }}>
+                                                                <td style={{ padding: '4px 8px', fontWeight: 600 }}>{formatCompactExamName(exam.name)}</td>
+                                                                <td style={{ padding: '4px 8px', fontSize: '11px', color: 'var(--text-muted)' }}>{getAssignedNames(exam.id, exam.batchId)}</td>
+                                                                <td style={{ padding: '4px 8px', fontSize: '11px', color: 'var(--text-muted)' }}>{getLatestAssignmentDate(exam.id, exam.assignedAt, exam)}</td>
+                                                                <td style={{ padding: '4px 8px' }}>
                                                                   <div style={{ display: 'flex', gap: '6px', flexDirection: 'row', alignItems: 'center' }}>
                                                                     <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: scheduleStatus.badgeBg, color: scheduleStatus.badgeColor, fontWeight: 700, whiteSpace: 'nowrap' }}>
                                                                       {scheduleStatus.badgeText}
@@ -453,7 +454,7 @@ export default function ObjectiveTab({
                                                                     )}
                                                                   </div>
                                                                 </td>
-                                                                <td style={{ padding: '6px 10px', textAlign: 'right' }}>
+                                                                <td style={{ padding: '4px 8px', textAlign: 'right' }}>
                                                                   <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end', flexWrap: 'nowrap', whiteSpace: 'nowrap' }}>
                                                                     {activeAssign && activeAssign.openMode !== 'scheduled' && (
                                                                       <button 

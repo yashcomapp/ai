@@ -316,3 +316,32 @@ export function calculateEndDatetime(startIso?: string | null, durationMinutes?:
   return `${yStr}-${mStr}-${dStr}T${hStr}:${minStr}`;
 }
 
+/**
+ * Formats a Date object into local HTML datetime-local ISO format: YYYY-MM-DDTHH:mm
+ */
+export function toLocalISOString(date: Date = new Date()): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  const h = String(date.getHours()).padStart(2, '0');
+  const min = String(date.getMinutes()).padStart(2, '0');
+  return `${y}-${m}-${d}T${h}:${min}`;
+}
+
+/**
+ * Strips board and class code tags from exam names for compact, clean UI display across admin and reports.
+ * e.g. "016-MH-10-Space Missions-10.1-10.2-071026" -> "016-Space Missions-10.1-10.2-071026"
+ * e.g. "003-CBSE-8-Exploring Forces-5.2-180926" -> "003-Exploring Forces-5.2-180926"
+ * e.g. "Space Missions [Class 10]" -> "Space Missions"
+ */
+export function formatCompactExamName(name?: string | null): string {
+  if (!name) return '';
+  return String(name)
+    .replace(/-(?:MH|CBSE|ICSE)-(?:Class\s*)?(\d+)-/i, '-')
+    .replace(/\[Class\s*\d+\]|\(Class\s*\d+\)/gi, '')
+    .replace(/\bClass\s*\d+\s*[-–:]\s*/gi, '')
+    .replace(/\s*-\s*-\s*/g, ' - ')
+    .replace(/--+/g, '-')
+    .trim();
+}
+

@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Exam, Assignment, ExamScheduleStatus } from './types';
+import { formatCompactExamName } from '@/lib/dateUtils';
 
 interface SubjectiveTabProps {
   filteredSubjectiveExams: Exam[];
@@ -125,12 +126,12 @@ export default function SubjectiveTab({
             <table className="reviews-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
               <thead>
                 <tr style={{ background: 'var(--bg-soft)', borderBottom: '1px solid var(--border-light)', color: 'var(--text-muted)', fontSize: '12px' }}>
-                  <th style={{ padding: '6px 10px' }}>Exam Name</th>
-                  <th style={{ padding: '6px 10px' }}>Subject</th>
-                  <th style={{ padding: '6px 10px' }}>Topics</th>
-                  <th style={{ padding: '6px 10px' }}>Mode</th>
-                  <th style={{ padding: '6px 10px' }}>Marks</th>
-                  <th style={{ padding: '6px 10px', textAlign: 'right' }}>Actions</th>
+                  <th style={{ padding: '4px 8px' }}>Exam Name</th>
+                  <th style={{ padding: '4px 8px' }}>Subject</th>
+                  <th style={{ padding: '4px 8px' }}>Topics</th>
+                  <th style={{ padding: '4px 8px' }}>Mode</th>
+                  <th style={{ padding: '4px 8px' }}>Marks</th>
+                  <th style={{ padding: '4px 8px', textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -143,14 +144,14 @@ export default function SubjectiveTab({
                     .filter(isSubjectiveAvailableForAssignment)
                     .map(exam => (
                       <tr key={exam.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
-                        <td style={{ padding: '6px 10px', fontWeight: 600 }}>{exam.name}</td>
-                        <td style={{ padding: '6px 10px' }}>{exam.subjectName || exam.subjects?.[0] || '—'}</td>
-                        <td style={{ padding: '6px 10px' }}>{(exam.topicCodes || []).join(', ') || '—'}</td>
-                        <td style={{ padding: '6px 10px' }}>
+                        <td style={{ padding: '4px 8px', fontWeight: 600 }}>{formatCompactExamName(exam.name)}</td>
+                        <td style={{ padding: '4px 8px' }}>{exam.subjectName || exam.subjects?.[0] || '—'}</td>
+                        <td style={{ padding: '4px 8px' }}>{(exam.topicCodes || []).join(', ') || '—'}</td>
+                        <td style={{ padding: '4px 8px' }}>
                           <span className="badge badge-info" style={{ fontSize: '10px' }}>🏠 Home</span>
                         </td>
-                        <td style={{ padding: '6px 10px' }}>{exam.totalMarks || 0}</td>
-                        <td style={{ padding: '6px 10px', textAlign: 'right' }}>
+                        <td style={{ padding: '4px 8px' }}>{exam.totalMarks || 0}</td>
+                        <td style={{ padding: '4px 8px', textAlign: 'right' }}>
                           <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
                             <button className="btn btn-primary" style={{ padding: '3px 8px', fontSize: '10.5px' }} onClick={() => handleOpenAssign(exam, 'subjective')}>
                               📋 Assign
@@ -179,12 +180,12 @@ export default function SubjectiveTab({
             <table className="reviews-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
               <thead>
                 <tr style={{ background: 'var(--bg-soft)', borderBottom: '1px solid var(--border-light)', color: 'var(--text-muted)', fontSize: '12px' }}>
-                  <th style={{ padding: '6px 10px' }}>Exam Name</th>
-                  <th style={{ padding: '6px 10px' }}>Mode</th>
-                  <th style={{ padding: '6px 10px' }}>Peer Review</th>
-                  <th style={{ padding: '6px 10px' }}>Assigned To</th>
-                  <th style={{ padding: '6px 10px' }}>Status / Starts</th>
-                  <th style={{ padding: '6px 10px', textAlign: 'right' }}>Actions</th>
+                  <th style={{ padding: '4px 8px' }}>Exam Name</th>
+                  <th style={{ padding: '4px 8px' }}>Mode</th>
+                  <th style={{ padding: '4px 8px' }}>Peer Review</th>
+                  <th style={{ padding: '4px 8px' }}>Assigned To</th>
+                  <th style={{ padding: '4px 8px' }}>Status / Starts</th>
+                  <th style={{ padding: '4px 8px', textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -221,17 +222,17 @@ export default function SubjectiveTab({
                     const count = attemptCounts[exam.id] || 0;
                     return (
                       <tr key={exam.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
-                        <td style={{ padding: '6px 10px', fontWeight: 600 }}>
-                          {exam.name}
+                        <td style={{ padding: '4px 8px', fontWeight: 600 }}>
+                          {formatCompactExamName(exam.name)}
                         </td>
-                        <td style={{ padding: '6px 10px' }}>
+                        <td style={{ padding: '4px 8px' }}>
                           {mode === 'home' ? (
                             <span className="badge badge-info" style={{ fontSize: '10px' }}>🏠 Home</span>
                           ) : (
                             <span className="badge badge-warning" style={{ fontSize: '10px' }}>🏫 Classroom</span>
                           )}
                         </td>
-                        <td style={{ padding: '6px 10px', textTransform: 'capitalize', fontSize: '12px' }}>
+                        <td style={{ padding: '4px 8px', textTransform: 'capitalize', fontSize: '12px' }}>
                           {mode === 'classroom' ? (
                             peerStatus === 'not_started' ? (
                               <span style={{ color: 'var(--warning)' }}>⏳ Waiting</span>
@@ -242,8 +243,8 @@ export default function SubjectiveTab({
                             )
                           ) : '—'}
                         </td>
-                        <td style={{ padding: '6px 10px', fontSize: '11px', color: 'var(--text-muted)' }}>{getAssignedNames(exam.id, exam.batchId)}</td>
-                        <td style={{ padding: '6px 10px' }}>
+                        <td style={{ padding: '4px 8px', fontSize: '11px', color: 'var(--text-muted)' }}>{getAssignedNames(exam.id, exam.batchId)}</td>
+                        <td style={{ padding: '4px 8px' }}>
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                             <div style={{ display: 'flex', gap: '6px', flexDirection: 'row', alignItems: 'center' }}>
                               <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: scheduleStatus.badgeBg, color: scheduleStatus.badgeColor, fontWeight: 700, whiteSpace: 'nowrap' }}>
@@ -260,7 +261,7 @@ export default function SubjectiveTab({
                             </div>
                           </div>
                         </td>
-                        <td style={{ padding: '6px 10px', textAlign: 'right' }}>
+                        <td style={{ padding: '4px 8px', textAlign: 'right' }}>
                           <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end', flexWrap: 'nowrap', whiteSpace: 'nowrap' }}>
                             {activeAssign && activeAssign.openMode !== 'scheduled' && (
                               <button 
@@ -440,7 +441,7 @@ export default function SubjectiveTab({
                                                   {/* Chapter Line with count */}
                                                   <div 
                                                     onClick={() => toggleChapterExpanded(chapKey)}
-                                                    style={{ padding: '6px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-soft)', cursor: 'pointer', borderBottom: isChapExpanded ? '1px solid var(--border-light)' : 'none' }}
+                                                    style={{ padding: '4px 8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-soft)', cursor: 'pointer', borderBottom: isChapExpanded ? '1px solid var(--border-light)' : 'none' }}
                                                   >
                                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                                       <span style={{ fontWeight: 700, fontSize: '11.5px', color: 'var(--accent)' }}>📘 {chapName}</span>
@@ -455,16 +456,16 @@ export default function SubjectiveTab({
                                             <table className="reviews-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
                                               <thead>
                                                 <tr style={{ background: 'var(--bg-soft)', borderBottom: '1px solid var(--border-light)', color: 'var(--text-muted)', fontSize: '12px' }}>
-                                                  <th style={{ padding: '6px 10px', cursor: 'pointer', userSelect: 'none' }} onClick={() => handleAssignedSort('name')}>
+                                                  <th style={{ padding: '4px 8px', cursor: 'pointer', userSelect: 'none' }} onClick={() => handleAssignedSort('name')}>
                                                     Exam Name {assignedSortField === 'name' ? (assignedSortDir === 'asc' ? '🔼' : '🔽') : ''}
                                                   </th>
-                                                  <th style={{ padding: '6px 10px' }}>Mode</th>
-                                                  <th style={{ padding: '6px 10px' }}>Peer Review</th>
-                                                  <th style={{ padding: '6px 10px' }}>Assigned To</th>
-                                                  <th style={{ padding: '6px 10px', cursor: 'pointer', userSelect: 'none' }} onClick={() => handleAssignedSort('date')}>
+                                                  <th style={{ padding: '4px 8px' }}>Mode</th>
+                                                  <th style={{ padding: '4px 8px' }}>Peer Review</th>
+                                                  <th style={{ padding: '4px 8px' }}>Assigned To</th>
+                                                  <th style={{ padding: '4px 8px', cursor: 'pointer', userSelect: 'none' }} onClick={() => handleAssignedSort('date')}>
                                                     Status / Starts {assignedSortField === 'date' ? (assignedSortDir === 'asc' ? '🔼' : '🔽') : ''}
                                                   </th>
-                                                  <th style={{ padding: '6px 10px', textAlign: 'right' }}>Actions</th>
+                                                  <th style={{ padding: '4px 8px', textAlign: 'right' }}>Actions</th>
                                                 </tr>
                                               </thead>
                                               <tbody>
@@ -478,15 +479,15 @@ export default function SubjectiveTab({
                                                   
                                                   return (
                                                     <tr key={exam.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
-                                                      <td style={{ padding: '6px 10px', fontWeight: 600 }}>{exam.name}</td>
-                                                      <td style={{ padding: '6px 10px' }}>
+                                                      <td style={{ padding: '4px 8px', fontWeight: 600 }}>{formatCompactExamName(exam.name)}</td>
+                                                      <td style={{ padding: '4px 8px' }}>
                                                         {mode === 'home' ? (
                                                           <span className="badge badge-info" style={{ fontSize: '10px' }}>🏠 Home</span>
                                                         ) : (
                                                           <span className="badge badge-warning" style={{ fontSize: '10px' }}>🏫 Classroom</span>
                                                         )}
                                                       </td>
-                                                      <td style={{ padding: '6px 10px', textTransform: 'capitalize', fontSize: '12px' }}>
+                                                      <td style={{ padding: '4px 8px', textTransform: 'capitalize', fontSize: '12px' }}>
                                                         {mode === 'classroom' ? (
                                                           peerStatus === 'not_started' ? (
                                                             <span style={{ color: 'var(--warning)' }}>⏳ Waiting</span>
@@ -497,8 +498,8 @@ export default function SubjectiveTab({
                                                           )
                                                         ) : '—'}
                                                       </td>
-                                                      <td style={{ padding: '6px 10px', fontSize: '11px', color: 'var(--text-muted)' }}>{getAssignedNames(exam.id, exam.batchId)}</td>
-                                                      <td style={{ padding: '6px 10px' }}>
+                                                      <td style={{ padding: '4px 8px', fontSize: '11px', color: 'var(--text-muted)' }}>{getAssignedNames(exam.id, exam.batchId)}</td>
+                                                      <td style={{ padding: '4px 8px' }}>
                                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                                                           <div style={{ display: 'flex', gap: '6px', flexDirection: 'row', alignItems: 'center' }}>
                                                             <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: scheduleStatus.badgeBg, color: scheduleStatus.badgeColor, fontWeight: 700, whiteSpace: 'nowrap' }}>
@@ -512,7 +513,7 @@ export default function SubjectiveTab({
                                                           </div>
                                                         </div>
                                                       </td>
-                                                      <td style={{ padding: '6px 10px', textAlign: 'right' }}>
+                                                      <td style={{ padding: '4px 8px', textAlign: 'right' }}>
                                                         <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end', flexWrap: 'nowrap', whiteSpace: 'nowrap' }}>
                                                           {activeAssign && activeAssign.openMode !== 'scheduled' && (
                                                             <button 

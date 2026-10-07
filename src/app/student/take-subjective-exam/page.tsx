@@ -189,7 +189,7 @@ function TakeSubjectiveExamContent() {
     studentCode: user?.studentCode || (firebaseUser?.email ? firebaseUser.email.split('@')[0] : 'student'),
     studentName: user?.name || firebaseUser?.displayName || firebaseUser?.email || 'Student',
     examType: 'subjective',
-    totalQuestions: questions.length || null,
+    totalQuestions: questions?.length || null,
     currentQuestionIndex: null,
     answeredCount: null,
     cameraVideoRef: videoRef,
@@ -642,13 +642,9 @@ function TakeSubjectiveExamContent() {
     >
       <div style={{ background: 'var(--bg)', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
 
-      {/* Script Injections for MediaPipe (Lazy loaded when modal is open) */}
-      {mode !== 'peer-review' && cameraModalOpen && (
-        <>
-          <Script src="/libs/mediapipe/face_mesh.js" strategy="lazyOnload" />
-          <Script src="/libs/mediapipe/camera_utils.js" strategy="lazyOnload" />
-        </>
-      )}
+      {/* Script Injections for MediaPipe (Idempotent lazy loading) */}
+      <Script src="/libs/mediapipe/face_mesh.js" strategy="lazyOnload" />
+      <Script src="/libs/mediapipe/camera_utils.js" strategy="lazyOnload" />
 
 
       {/* Top Header */}
@@ -1130,7 +1126,23 @@ function TakeSubjectiveExamContent() {
 
 export default function StudentSubjectiveExam() {
   return (
-    <ExamErrorBoundary fallbackTitle="Subjective Exam Workspace Recovery">
+    <ExamErrorBoundary
+      fallbackTitle="Subjective Exam Workspace Recovery"
+      onReset={() => {
+        try {
+          if (typeof window !== 'undefined' && window.localStorage) {
+            const keysToRemove: string[] = [];
+            for (let i = 0; i < localStorage.length; i++) {
+              const k = localStorage.key(i);
+              if (k && k.startsWith('subjective_exam_state_')) {
+                keysToRemove.push(k);
+              }
+            }
+            keysToRemove.forEach(k => localStorage.removeItem(k));
+          }
+        } catch {}
+      }}
+    >
       <Suspense fallback={
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: 'var(--bg)' }}>
           <div className="loading" style={{ display: 'block' }}>

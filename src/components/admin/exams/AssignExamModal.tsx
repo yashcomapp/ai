@@ -2,7 +2,7 @@
 
 import React from 'react';
 import DateTimeInputDMY from '@/components/DateTimeInputDMY';
-import { calculateEndDatetime } from '@/lib/dateUtils';
+import { calculateEndDatetime, toLocalISOString } from '@/lib/dateUtils';
 
 interface Batch {
   id: string;
@@ -320,11 +320,16 @@ export function AssignExamModal({
                 checked={assignModal.openMode === 'scheduled' && !assignModal.isMorningTest && !assignModal.isEveningTest} 
                 onChange={() => setAssignModal(prev => {
                   const dur = getModalDuration(prev);
-                  let updates: any = { openMode: 'scheduled', isMorningTest: false, isEveningTest: false };
-                  if (prev.startAtStr) {
-                    updates.endAtStr = calculateEndDatetime(prev.startAtStr, dur);
-                  }
-                  return { ...prev, ...updates };
+                  const start = prev.startAtStr || toLocalISOString(new Date());
+                  const end = calculateEndDatetime(start, dur);
+                  return {
+                    ...prev,
+                    openMode: 'scheduled',
+                    isMorningTest: false,
+                    isEveningTest: false,
+                    startAtStr: start,
+                    endAtStr: end
+                  };
                 })} 
               /> Scheduled
             </label>
