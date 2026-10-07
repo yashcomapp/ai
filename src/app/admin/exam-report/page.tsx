@@ -8,7 +8,7 @@ import { useMathRender } from '@/hooks/useMathRender';
 import { preprocessMathText, formatRichText, parseAnswerList, isOptionSelectedByUser, isOptionCorrect, getQuestionCorrectAnswer, getRawOptionKey, getRawOptionText, isBlank, resolveOptionDisplayText, extractAssertionAndReason, isAssertionReasonType } from '@/lib/questionTypes';
 import QuestionDisplay, { RichMathText } from '@/components/QuestionDisplay';
 import { playNotificationSound } from '@/lib/audioUtils';
-import { getDateKeyIST, formatDateDMY, formatTimeIST } from '@/lib/dateUtils';
+import { getDateKeyIST, formatDateDMY, formatTimeIST, calculateEndDatetime } from '@/lib/dateUtils';
 
 interface Attempt {
   id: string;
@@ -2452,6 +2452,9 @@ function ExamReportContent() {
                     onChange={() => {
                       setReassignOpenMode('scheduled');
                       setReassignPresetSlot(null);
+                      if (reassignStartAtStr) {
+                        setReassignEndAtStr(calculateEndDatetime(reassignStartAtStr, reassignDuration || 30));
+                      }
                     }} 
                     style={{ cursor: 'pointer' }}
                   /> Scheduled
@@ -2501,7 +2504,14 @@ function ExamReportContent() {
                   <div style={{ display: 'flex', gap: '10px' }}>
                     <div style={{ flex: 1 }}>
                       <label style={{ display: 'block', fontSize: '10px', color: 'var(--text-muted)', marginBottom: '3px' }}>Start Datetime</label>
-                      <DateTimeInputDMY value={reassignStartAtStr} disabled={!!reassignPresetSlot} onChange={(val) => { setReassignStartAtStr(val); setReassignEndAtStr(val); }} />
+                      <DateTimeInputDMY 
+                        value={reassignStartAtStr} 
+                        disabled={!!reassignPresetSlot} 
+                        onChange={(val) => { 
+                          setReassignStartAtStr(val); 
+                          setReassignEndAtStr(calculateEndDatetime(val, reassignDuration || 30)); 
+                        }} 
+                      />
                     </div>
                     <div style={{ flex: 1 }}>
                       <label style={{ display: 'block', fontSize: '10px', color: 'var(--text-muted)', marginBottom: '3px' }}>End Datetime</label>
@@ -2564,20 +2574,17 @@ function ExamReportContent() {
                     }
                     const dur = Number(raw);
                     setReassignDuration(isNaN(dur) ? '' as any : dur);
-                    if (reassignPresetSlot && reassignStartAtStr && !isNaN(dur) && dur > 0) {
-                      const startDate = new Date(reassignStartAtStr);
-                      const endDate = new Date(startDate.getTime() + dur * 60000);
-                      const endYear = endDate.getFullYear();
-                      const endMonth = String(endDate.getMonth() + 1).padStart(2, '0');
-                      const endDateStr = String(endDate.getDate()).padStart(2, '0');
-                      const endHours = String(endDate.getHours()).padStart(2, '0');
-                      const endMinutes = String(endDate.getMinutes()).padStart(2, '0');
-                      setReassignEndAtStr(`${endYear}-${endMonth}-${endDateStr}T${endHours}:${endMinutes}`);
+                    if (reassignStartAtStr && !isNaN(dur) && dur > 0) {
+                      setReassignEndAtStr(calculateEndDatetime(reassignStartAtStr, dur));
                     }
                   }}
                   onBlur={() => {
                     if (!reassignDuration || Number(reassignDuration) < 1) {
-                      setReassignDuration(45);
+                      const fallback = 45;
+                      setReassignDuration(fallback);
+                      if (reassignStartAtStr) {
+                        setReassignEndAtStr(calculateEndDatetime(reassignStartAtStr, fallback));
+                      }
                     }
                   }}
                   style={{ width: '100%', padding: '8px', background: 'var(--surface)', color: 'var(--text)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', fontSize: '13px' }}

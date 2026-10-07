@@ -288,3 +288,31 @@ export function getMidnightIST(dateInput?: any): Date {
   return nextDayUtc;
 }
 
+/**
+ * Auto-calculates end datetime string (YYYY-MM-DDTHH:mm) from a start datetime and duration in minutes.
+ * Correctly carries across hours, days, months, and years without timezone distortion.
+ */
+export function calculateEndDatetime(startIso?: string | null, durationMinutes?: number | null): string {
+  if (!startIso) return '';
+  const dur = Number(durationMinutes);
+  if (isNaN(dur) || dur <= 0) return String(startIso).trim();
+  
+  const clean = String(startIso).trim();
+  const [datePart, timePart] = clean.split('T');
+  if (!datePart || !timePart) return clean;
+  
+  const [year, month, day] = datePart.split('-').map(Number);
+  const [hours, minutes] = timePart.split(':').map(Number);
+  if (isNaN(year) || isNaN(month) || isNaN(day) || isNaN(hours) || isNaN(minutes)) {
+    return clean;
+  }
+  
+  const d = new Date(year, month - 1, day, hours, minutes + dur);
+  const yStr = d.getFullYear();
+  const mStr = String(d.getMonth() + 1).padStart(2, '0');
+  const dStr = String(d.getDate()).padStart(2, '0');
+  const hStr = String(d.getHours()).padStart(2, '0');
+  const minStr = String(d.getMinutes()).padStart(2, '0');
+  return `${yStr}-${mStr}-${dStr}T${hStr}:${minStr}`;
+}
+

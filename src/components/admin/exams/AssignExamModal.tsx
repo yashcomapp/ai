@@ -2,6 +2,7 @@
 
 import React from 'react';
 import DateTimeInputDMY from '@/components/DateTimeInputDMY';
+import { calculateEndDatetime } from '@/lib/dateUtils';
 
 interface Batch {
   id: string;
@@ -55,6 +56,16 @@ interface AssignExamModalProps {
   assigning: boolean;
 }
 
+function getModalDuration(modal: AssignModalState): number {
+  if (modal.type === 'objective') {
+    return Number(modal.overrideDuration ? modal.examDuration : modal.normDuration) || 30;
+  }
+  if (modal.examMode === 'classroom') {
+    return Number(modal.classroomDuration) || 45;
+  }
+  return Number(modal.normDuration) || 60;
+}
+
 export function AssignExamModal({
   assignModal,
   setAssignModal,
@@ -99,7 +110,14 @@ export function AssignExamModal({
                   type="radio" 
                   name="examMode" 
                   checked={assignModal.examMode === 'home'} 
-                  onChange={() => setAssignModal(prev => ({ ...prev, examMode: 'home' }))} 
+                  onChange={() => setAssignModal(prev => {
+                    const dur = Number(prev.normDuration) || 60;
+                    return {
+                      ...prev,
+                      examMode: 'home',
+                      endAtStr: prev.startAtStr ? calculateEndDatetime(prev.startAtStr, dur) : prev.endAtStr
+                    };
+                  })} 
                 /> 🏠 Home Mode (Parent review)
               </label>
               <label style={{ fontSize: '12px', cursor: 'pointer' }}>
@@ -107,7 +125,14 @@ export function AssignExamModal({
                   type="radio" 
                   name="examMode" 
                   checked={assignModal.examMode === 'classroom'} 
-                  onChange={() => setAssignModal(prev => ({ ...prev, examMode: 'classroom' }))} 
+                  onChange={() => setAssignModal(prev => {
+                    const dur = Number(prev.classroomDuration) || 45;
+                    return {
+                      ...prev,
+                      examMode: 'classroom',
+                      endAtStr: prev.startAtStr ? calculateEndDatetime(prev.startAtStr, dur) : prev.endAtStr
+                    };
+                  })} 
                 /> 🏫 Classroom Mode (Peer Lottery)
               </label>
             </div>
@@ -125,12 +150,31 @@ export function AssignExamModal({
                   value={assignModal.classroomDuration === undefined || assignModal.classroomDuration === null ? '' : assignModal.classroomDuration} 
                   onChange={(e) => {
                     const raw = e.target.value;
-                    setAssignModal(prev => ({ ...prev, classroomDuration: raw === '' ? ('' as any) : Number(raw) }));
+                    if (raw === '') {
+                      setAssignModal(prev => ({ ...prev, classroomDuration: '' as any }));
+                      return;
+                    }
+                    const dur = Number(raw);
+                    setAssignModal(prev => {
+                      let updates: any = { classroomDuration: isNaN(dur) ? '' : dur };
+                      if (prev.startAtStr && !isNaN(dur) && dur > 0) {
+                        updates.endAtStr = calculateEndDatetime(prev.startAtStr, dur);
+                      }
+                      return { ...prev, ...updates };
+                    });
                   }}
                   onBlur={() => {
-                    if (!assignModal.classroomDuration || isNaN(Number(assignModal.classroomDuration))) {
-                      setAssignModal(prev => ({ ...prev, classroomDuration: 45 }));
-                    }
+                    setAssignModal(prev => {
+                      if (!prev.classroomDuration || isNaN(Number(prev.classroomDuration))) {
+                        const fallback = 45;
+                        return {
+                          ...prev,
+                          classroomDuration: fallback,
+                          endAtStr: prev.startAtStr ? calculateEndDatetime(prev.startAtStr, fallback) : prev.endAtStr
+                        };
+                      }
+                      return prev;
+                    });
                   }}
                   style={{ width: '80px', padding: '4px', background: 'var(--surface)', color: 'var(--text)', border: '1px solid var(--border-light)' }}
                 />
@@ -274,7 +318,14 @@ export function AssignExamModal({
                 type="radio" 
                 name="openMode" 
                 checked={assignModal.openMode === 'scheduled' && !assignModal.isMorningTest && !assignModal.isEveningTest} 
-                onChange={() => setAssignModal(prev => ({ ...prev, openMode: 'scheduled', isMorningTest: false, isEveningTest: false }))} 
+                onChange={() => setAssignModal(prev => {
+                  const dur = getModalDuration(prev);
+                  let updates: any = { openMode: 'scheduled', isMorningTest: false, isEveningTest: false };
+                  if (prev.startAtStr) {
+                    updates.endAtStr = calculateEndDatetime(prev.startAtStr, dur);
+                  }
+                  return { ...prev, ...updates };
+                })} 
               /> Scheduled
             </label>
             <label style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', whiteSpace: 'nowrap', background: assignModal.isMorningTest ? 'rgba(52, 152, 219, 0.2)' : 'rgba(52, 152, 219, 0.08)', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(52, 152, 219, 0.25)' }}>
@@ -331,12 +382,15 @@ export function AssignExamModal({
                     disabled={assignModal.isMorningTest || assignModal.isEveningTest}
                     onChange={(val) => {
                       const is6or9 = /T(06|21):/.test(val) || val.includes('06:00') || val.includes('21:00');
-                      setAssignModal(prev => ({ 
-                        ...prev, 
-                        startAtStr: val, 
-                        endAtStr: val,
-                        lateEntryRestriction: is6or9 ? true : prev.lateEntryRestriction
-                      }));
+                      setAssignModal(prev => {
+                        const dur = getModalDuration(prev);
+                        return { 
+                          ...prev, 
+                          startAtStr: val, 
+                          endAtStr: calculateEndDatetime(val, dur),
+                          lateEntryRestriction: is6or9 ? true : prev.lateEntryRestriction
+                        };
+                      });
                     }}
                   />
                 </div>
@@ -404,17 +458,10 @@ export function AssignExamModal({
                     onChange={(e) => {
                       const checked = e.target.checked;
                       setAssignModal(prev => {
-                        const dur = checked ? prev.examDuration : prev.normDuration;
+                        const dur = checked ? (Number(prev.examDuration) || prev.normDuration || 30) : (prev.normDuration || 30);
                         let updates: any = { overrideDuration: checked, examDuration: dur };
-                        if ((prev.isMorningTest || prev.isEveningTest) && prev.startAtStr && dur && dur > 0) {
-                          const startDate = new Date(prev.startAtStr);
-                          const endDate = new Date(startDate.getTime() + dur * 60000);
-                          const endYear = endDate.getFullYear();
-                          const endMonth = String(endDate.getMonth() + 1).padStart(2, '0');
-                          const endDateStr = String(endDate.getDate()).padStart(2, '0');
-                          const endHours = String(endDate.getHours()).padStart(2, '0');
-                          const endMinutes = String(endDate.getMinutes()).padStart(2, '0');
-                          updates.endAtStr = `${endYear}-${endMonth}-${endDateStr}T${endHours}:${endMinutes}`;
+                        if (prev.startAtStr && dur && dur > 0) {
+                          updates.endAtStr = calculateEndDatetime(prev.startAtStr, dur);
                         }
                         return { ...prev, ...updates };
                       });
@@ -437,23 +484,24 @@ export function AssignExamModal({
                   const dur = Number(raw);
                   setAssignModal(prev => {
                     let updates: any = { examDuration: isNaN(dur) ? '' : dur };
-                    if ((prev.isMorningTest || prev.isEveningTest) && prev.startAtStr && !isNaN(dur) && dur > 0) {
-                      const startDate = new Date(prev.startAtStr);
-                      const endDate = new Date(startDate.getTime() + dur * 60000);
-                      const endYear = endDate.getFullYear();
-                      const endMonth = String(endDate.getMonth() + 1).padStart(2, '0');
-                      const endDateStr = String(endDate.getDate()).padStart(2, '0');
-                      const endHours = String(endDate.getHours()).padStart(2, '0');
-                      const endMinutes = String(endDate.getMinutes()).padStart(2, '0');
-                      updates.endAtStr = `${endYear}-${endMonth}-${endDateStr}T${endHours}:${endMinutes}`;
+                    if (prev.startAtStr && !isNaN(dur) && dur > 0) {
+                      updates.endAtStr = calculateEndDatetime(prev.startAtStr, dur);
                     }
                     return { ...prev, ...updates };
                   });
                 }}
                 onBlur={() => {
-                  if (!assignModal.examDuration || Number(assignModal.examDuration) < 1) {
-                    setAssignModal(prev => ({ ...prev, examDuration: prev.normDuration || 30 }));
-                  }
+                  setAssignModal(prev => {
+                    if (!prev.examDuration || Number(prev.examDuration) < 1) {
+                      const fallback = prev.normDuration || 30;
+                      return {
+                        ...prev,
+                        examDuration: fallback,
+                        endAtStr: prev.startAtStr ? calculateEndDatetime(prev.startAtStr, fallback) : prev.endAtStr
+                      };
+                    }
+                    return prev;
+                  });
                 }}
                 style={{ 
                   width: '100%', 

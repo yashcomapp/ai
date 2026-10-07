@@ -1,6 +1,7 @@
 'use client';
 
 import DateTimeInputDMY from '@/components/DateTimeInputDMY';
+import { calculateEndDatetime } from '@/lib/dateUtils';
 
 import React from 'react';
 
@@ -62,7 +63,17 @@ export function SaturdayAssignModal({
 
           <div className="form-group">
             <label style={{ fontSize: '11px', fontWeight: 600, display: 'block', marginBottom: '4px' }}>Start Datetime (local)</label>
-            <DateTimeInputDMY value={saturdayAssignModal.startAtStr} onChange={(val) => setSaturdayAssignModal(prev => ({ ...prev, startAtStr: val }))} />
+            <DateTimeInputDMY 
+              value={saturdayAssignModal.startAtStr} 
+              onChange={(val) => {
+                const dur = Number(saturdayAssignModal.examDuration) || 60;
+                setSaturdayAssignModal(prev => ({ 
+                  ...prev, 
+                  startAtStr: val, 
+                  endAtStr: calculateEndDatetime(val, dur) 
+                }));
+              }} 
+            />
           </div>
 
           <div className="form-group">
@@ -84,12 +95,22 @@ export function SaturdayAssignModal({
                   setSaturdayAssignModal(prev => ({ ...prev, examDuration: '' as any }));
                 } else {
                   const val = parseInt(raw, 10);
-                  setSaturdayAssignModal(prev => ({ ...prev, examDuration: isNaN(val) ? '' as any : Math.max(5, Math.min(300, val)) }));
+                  const validVal = isNaN(val) ? '' as any : Math.max(5, Math.min(300, val));
+                  setSaturdayAssignModal(prev => ({ 
+                    ...prev, 
+                    examDuration: validVal,
+                    endAtStr: prev.startAtStr && typeof validVal === 'number' ? calculateEndDatetime(prev.startAtStr, validVal) : prev.endAtStr
+                  }));
                 }
               }}
               onBlur={() => {
                 if (!saturdayAssignModal.examDuration || Number(saturdayAssignModal.examDuration) < 5) {
-                  setSaturdayAssignModal(prev => ({ ...prev, examDuration: 60 }));
+                  const fallback = 60;
+                  setSaturdayAssignModal(prev => ({ 
+                    ...prev, 
+                    examDuration: fallback,
+                    endAtStr: prev.startAtStr ? calculateEndDatetime(prev.startAtStr, fallback) : prev.endAtStr
+                  }));
                 }
               }}
             />

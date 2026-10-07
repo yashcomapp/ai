@@ -2,6 +2,7 @@
 
 import React from 'react';
 import DateTimeInputDMY from '@/components/DateTimeInputDMY';
+import { calculateEndDatetime } from '@/lib/dateUtils';
 
 interface Batch {
   id: string;
@@ -205,7 +206,16 @@ export function EditAssignmentModal({
                 type="radio" 
                 name="editOpenMode" 
                 checked={editModal.openMode === 'scheduled' && !editModal.isMorningTest && !editModal.isEveningTest} 
-                onChange={() => setEditModal(prev => ({ ...prev, openMode: 'scheduled', isMorningTest: false, isEveningTest: false }))} 
+                onChange={() => setEditModal(prev => {
+                  const dur = Number(prev.examDuration) || prev.normDuration || 30;
+                  return {
+                    ...prev,
+                    openMode: 'scheduled',
+                    isMorningTest: false,
+                    isEveningTest: false,
+                    endAtStr: prev.startAtStr ? calculateEndDatetime(prev.startAtStr, dur) : prev.endAtStr
+                  };
+                })} 
               /> Scheduled
             </label>
             <label style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', whiteSpace: 'nowrap', background: editModal.isMorningTest ? 'rgba(52, 152, 219, 0.2)' : 'rgba(52, 152, 219, 0.08)', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(52, 152, 219, 0.25)' }}>
@@ -260,12 +270,15 @@ export function EditAssignmentModal({
                     disabled={editModal.isMorningTest || editModal.isEveningTest}
                     onChange={(val) => {
                       const is6or9 = /T(06|21):/.test(val) || val.includes('06:00') || val.includes('21:00');
-                      setEditModal(prev => ({ 
-                        ...prev, 
-                        startAtStr: val, 
-                        endAtStr: val,
-                        lateEntryRestriction: is6or9 ? true : prev.lateEntryRestriction
-                      }));
+                      setEditModal(prev => {
+                        const dur = Number(prev.examDuration) || prev.normDuration || 30;
+                        return { 
+                          ...prev, 
+                          startAtStr: val, 
+                          endAtStr: calculateEndDatetime(val, dur),
+                          lateEntryRestriction: is6or9 ? true : prev.lateEntryRestriction
+                        };
+                      });
                     }}
                   />
                 </div>
@@ -333,17 +346,10 @@ export function EditAssignmentModal({
                     onChange={(e) => {
                       const checked = e.target.checked;
                       setEditModal(prev => {
-                        const dur = checked ? prev.examDuration : prev.normDuration;
+                        const dur = checked ? (Number(prev.examDuration) || prev.normDuration || 30) : (prev.normDuration || 30);
                         let updates: any = { overrideDuration: checked, examDuration: dur };
-                        if ((prev.isMorningTest || prev.isEveningTest) && prev.startAtStr && dur && dur > 0) {
-                          const startDate = new Date(prev.startAtStr);
-                          const endDate = new Date(startDate.getTime() + dur * 60000);
-                          const endYear = endDate.getFullYear();
-                          const endMonth = String(endDate.getMonth() + 1).padStart(2, '0');
-                          const endDateStr = String(endDate.getDate()).padStart(2, '0');
-                          const endHours = String(endDate.getHours()).padStart(2, '0');
-                          const endMinutes = String(endDate.getMinutes()).padStart(2, '0');
-                          updates.endAtStr = `${endYear}-${endMonth}-${endDateStr}T${endHours}:${endMinutes}`;
+                        if (prev.startAtStr && dur && dur > 0) {
+                          updates.endAtStr = calculateEndDatetime(prev.startAtStr, dur);
                         }
                         return { ...prev, ...updates };
                       });
@@ -366,22 +372,20 @@ export function EditAssignmentModal({
                   const dur = Number(raw);
                   setEditModal(prev => {
                     let updates: any = { examDuration: isNaN(dur) ? '' : dur };
-                    if ((prev.isMorningTest || prev.isEveningTest) && prev.startAtStr && !isNaN(dur) && dur > 0) {
-                      const startDate = new Date(prev.startAtStr);
-                      const endDate = new Date(startDate.getTime() + dur * 60000);
-                      const endYear = endDate.getFullYear();
-                      const endMonth = String(endDate.getMonth() + 1).padStart(2, '0');
-                      const endDateStr = String(endDate.getDate()).padStart(2, '0');
-                      const endHours = String(endDate.getHours()).padStart(2, '0');
-                      const endMinutes = String(endDate.getMinutes()).padStart(2, '0');
-                      updates.endAtStr = `${endYear}-${endMonth}-${endDateStr}T${endHours}:${endMinutes}`;
+                    if (prev.startAtStr && !isNaN(dur) && dur > 0) {
+                      updates.endAtStr = calculateEndDatetime(prev.startAtStr, dur);
                     }
                     return { ...prev, ...updates };
                   });
                 }}
                 onBlur={() => {
                   if (!editModal.examDuration || Number(editModal.examDuration) < 1) {
-                    setEditModal(prev => ({ ...prev, examDuration: prev.normDuration || 30 }));
+                    const fallbackDur = editModal.normDuration || 30;
+                    setEditModal(prev => ({
+                      ...prev,
+                      examDuration: fallbackDur,
+                      endAtStr: prev.startAtStr ? calculateEndDatetime(prev.startAtStr, fallbackDur) : prev.endAtStr
+                    }));
                   }
                 }}
                 style={{ 
