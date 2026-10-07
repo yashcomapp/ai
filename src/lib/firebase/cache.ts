@@ -73,19 +73,3 @@ export async function getCachedSyllabusList(): Promise<any[]> {
   setInCache(cacheKey, list, 600000); // 10 mins
   return list;
 }
-
-/**
- * Retrieves config document with in-memory caching.
- */
-export async function getCachedConfigDoc(docName: string): Promise<any> {
-  const cacheKey = `config-${docName}`;
-  const cached = getFromCache<any>(cacheKey);
-  if (cached) return cached;
-
-  const snap = await adminDb.collection('config').doc(docName).get();
-  const data = snap.exists ? snap.data() : null;
-  if (data) {
-    setInCache(cacheKey, data, 600000); // 10 mins
-  }
-  return data;
-}

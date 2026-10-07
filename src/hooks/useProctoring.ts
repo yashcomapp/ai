@@ -9,7 +9,7 @@ export interface ProctoringSnapshot {
   imageBase64: string; // JPEG data URL
 }
 
-export function captureCameraSnapshot(videoEl: HTMLVideoElement | null, maxDim: number = 320, quality: number = 0.6): string | null {
+function captureCameraSnapshot(videoEl: HTMLVideoElement | null, maxDim: number = 320, quality: number = 0.6): string | null {
   if (!videoEl || !videoEl.videoWidth || !videoEl.videoHeight) return null;
   try {
     const canvas = document.createElement('canvas');

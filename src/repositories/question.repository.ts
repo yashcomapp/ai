@@ -27,24 +27,6 @@ export class QuestionRepository {
   }
 
   /**
-   * Fetch pagination count plus questions list
-   */
-  static async getPaginatedList(page: number, limitVal: number): Promise<{ questions: QuestionItem[]; total: number }> {
-    const q = this.collection.orderBy('questionCode', 'asc');
-    const offset = (page - 1) * limitVal;
-
-    const [listSnap, totalSnap] = await Promise.all([
-      q.offset(offset).limit(limitVal).get(),
-      this.collection.count().get()
-    ]);
-
-    const questions = listSnap.docs.map(doc => ({ id: doc.id, ...doc.data() } as QuestionItem));
-    const total = totalSnap.data().count;
-
-    return { questions, total };
-  }
-
-  /**
    * Scan for duplicate questions by text mapping (select text only for low footprint)
    */
   static async getDuplicateGroups(

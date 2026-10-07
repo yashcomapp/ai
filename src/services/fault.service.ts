@@ -12,7 +12,7 @@ export interface FaultCategory {
   isDefault?: boolean;
 }
 
-export const DEFAULT_FAULT_CATEGORIES: FaultCategory[] = [
+const DEFAULT_FAULT_CATEGORIES: FaultCategory[] = [
   { id: 'no_exam_review', name: 'No Exam Review (>60m)', category: 'review', target: 'student', autoDetectKey: 'no_exam_review', icon: '⏱️', isDefault: true },
   { id: 'no_absent_comm', name: 'No Communication on Absence', category: 'punctuality', target: 'shared', autoDetectKey: 'no_absent_comm', icon: '📞', isDefault: true },
   { id: 'exam_absent', name: 'Exam Absenteeism', category: 'punctuality', target: 'student', autoDetectKey: 'exam_absent', icon: '📝', isDefault: true },
@@ -703,63 +703,5 @@ export class FaultService {
     });
 
     await batch.commit();
-  }
-
-  /**
-   * Fetches historical timeline of faults for a student (Parent & Student views)
-   */
-  static async getStudentTimeline(studentCode: string): Promise<{
-    summary: { totalIncidents: number; thisMonthCount: number; categoryBreakdown: Record<string, number> };
-    records: Array<{ date: string; faults: string[]; notes: Record<string, string>; recordedBy?: string; updatedAt: string }>;
-  }> {
-    const sCodeUpper = studentCode.trim().toUpperCase();
-    const snap = await adminDb.collection('faultRecords')
-      .where('studentCode', '==', sCodeUpper)
-      .get();
-
-    const records: Array<any> = [];
-    const categoryBreakdown: Record<string, number> = {};
-    let totalIncidents = 0;
-    let thisMonthCount = 0;
-
-    const currentMonthPrefix = getDateKeyIST().slice(0, 7); // "YYYY-MM"
-
-    snap.docs.forEach(doc => {
-      const data = doc.data();
-      const date = data.date || '';
-      const faultsMap = data.faults || {};
-      const activeFaults = Object.keys(faultsMap).filter(k => faultsMap[k]);
-
-      if (activeFaults.length > 0) {
-        totalIncidents += activeFaults.length;
-        if (date.startsWith(currentMonthPrefix)) {
-          thisMonthCount += activeFaults.length;
-        }
-
-        activeFaults.forEach(f => {
-          categoryBreakdown[f] = (categoryBreakdown[f] || 0) + 1;
-        });
-
-        records.push({
-          date,
-          faults: activeFaults,
-          notes: data.notes || {},
-          recordedBy: data.recordedBy,
-          updatedAt: data.updatedAt || date
-        });
-      }
-    });
-
-    // Sort descending by date
-    records.sort((a, b) => b.date.localeCompare(a.date));
-
-    return {
-      summary: {
-        totalIncidents,
-        thisMonthCount,
-        categoryBreakdown
-      },
-      records
-    };
   }
 }

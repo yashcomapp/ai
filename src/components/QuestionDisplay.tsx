@@ -132,13 +132,13 @@ export interface DiagramMedia {
   title?: string;
 }
 
-export interface DiagramZoomModalProps {
+interface DiagramZoomModalProps {
   isOpen: boolean;
   onClose: () => void;
   media: DiagramMedia | null;
 }
 
-export const DiagramZoomModal: React.FC<DiagramZoomModalProps> = ({
+const DiagramZoomModal: React.FC<DiagramZoomModalProps> = ({
   isOpen,
   onClose,
   media
@@ -1214,89 +1214,6 @@ export const QuestionExplanationDisplay: React.FC<{ explanation: any; label?: st
         {label}
       </div>
       <RichMathText content={explanation} />
-    </div>
-  );
-};
-
-export const QuestionOptionRow: React.FC<{
-  index: number;
-  label?: string;
-  text: any;
-  isCorrect?: boolean;
-  isSelected?: boolean;
-  voteCount?: number;
-  onVoteClick?: () => void;
-  onClick?: () => void;
-  style?: React.CSSProperties;
-}> = ({
-  index,
-  label,
-  text,
-  isCorrect,
-  isSelected,
-  voteCount,
-  onVoteClick,
-  onClick,
-  style
-}) => {
-  const optLetter = label || String.fromCharCode(65 + index);
-  const cleanText = stripOptionLabel(text);
-
-  let border = '1px solid var(--border-light, #e2e8f0)';
-  let bg = 'var(--surface, #ffffff)';
-  if (isCorrect) {
-    border = '1.5px solid var(--success, #16a34a)';
-    bg = 'rgba(22, 163, 74, 0.08)';
-  } else if (isSelected) {
-    border = '1.5px solid var(--accent, #2563eb)';
-    bg = 'rgba(37, 99, 235, 0.08)';
-  }
-
-  return (
-    <div
-      onClick={onClick}
-      style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: '7px 12px',
-        borderRadius: '8px',
-        border,
-        background: bg,
-        fontSize: '12px',
-        lineHeight: '1.4',
-        cursor: onClick ? 'pointer' : 'default',
-        ...style
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, minWidth: 0 }}>
-        <span style={{ fontWeight: 700, flexShrink: 0, color: isCorrect ? 'var(--success, #16a34a)' : 'inherit' }}>
-          {isCorrect ? '✅ ' : ''}({optLetter})
-        </span>
-        <RichMathText content={cleanText} inline style={{ flex: 1 }} />
-      </div>
-      {typeof voteCount === 'number' && (
-        <span
-          className="pq-option-count"
-          onClick={(e) => {
-            if (onVoteClick) {
-              e.stopPropagation();
-              onVoteClick();
-            }
-          }}
-          style={{
-            background: 'var(--bg-soft, #f1f5f9)',
-            borderRadius: '12px',
-            padding: '2px 10px',
-            fontWeight: 700,
-            fontSize: '11px',
-            marginLeft: '8px',
-            cursor: onVoteClick ? 'pointer' : 'default'
-          }}
-        >
-          {voteCount}
-        </span>
-      )}
     </div>
   );
 };

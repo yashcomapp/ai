@@ -13,7 +13,7 @@ const STOP_WORDS = new Set([
   'called', 'known', 'named', 'termed', 'defined', 'considered', 'given', 'following'
 ]);
 
-export function normalizeQuestionText(text: string): string {
+function normalizeQuestionText(text: string): string {
   if (!text) return '';
   return text
     .toLowerCase()
@@ -24,7 +24,7 @@ export function normalizeQuestionText(text: string): string {
     .trim();
 }
 
-export function extractTokens(text: string, removeStopWords = true): string[] {
+function extractTokens(text: string, removeStopWords = true): string[] {
   const norm = normalizeQuestionText(text);
   if (!norm) return [];
   const words = norm.split(' ').filter(w => w.length > 0);
@@ -56,7 +56,7 @@ function levenshtein<T>(a: T[], b: T[]): number {
   return dp[m][n];
 }
 
-export function calculateDiceSimilarity(tokensA: string[], tokensB: string[]): number {
+function calculateDiceSimilarity(tokensA: string[], tokensB: string[]): number {
   if (tokensA.length === 0 && tokensB.length === 0) return 1.0;
   if (tokensA.length === 0 || tokensB.length === 0) return 0.0;
 
@@ -71,7 +71,7 @@ export function calculateDiceSimilarity(tokensA: string[], tokensB: string[]): n
   return (2 * intersection) / (tokensA.length + tokensB.length);
 }
 
-export function calculateWordSequenceSimilarity(wordsA: string[], wordsB: string[]): number {
+function calculateWordSequenceSimilarity(wordsA: string[], wordsB: string[]): number {
   if (wordsA.length === 0 && wordsB.length === 0) return 1.0;
   if (wordsA.length === 0 || wordsB.length === 0) return 0.0;
 
@@ -80,7 +80,7 @@ export function calculateWordSequenceSimilarity(wordsA: string[], wordsB: string
   return 1 - dist / maxLen;
 }
 
-export function getQuestionComparableText(q: any): string {
+function getQuestionComparableText(q: any): string {
   if (!q) return '';
   if (q.type === 'assertion_reason' || (q.assertion && q.reason)) {
     return `${q.assertion || ''} ${q.reason || ''}`.trim();
@@ -88,7 +88,7 @@ export function getQuestionComparableText(q: any): string {
   return (q.text || q.questionText || q.question || '').trim();
 }
 
-export function getResolvedCorrectAnswerText(q: any): string {
+function getResolvedCorrectAnswerText(q: any): string {
   if (!q) return '';
   if (q.correctAnswerText) return q.correctAnswerText.trim().toLowerCase();
   

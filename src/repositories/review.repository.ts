@@ -44,20 +44,4 @@ export class ReviewRepository {
       ref.set(data);
     }
   }
-
-  /**
-   * Updates subjective attempt attributes inside a transaction.
-   */
-  static updateSubjectiveAttempt(
-    attemptId: string,
-    data: any,
-    tx?: admin.firestore.Transaction
-  ): void {
-    const ref = adminDb.collection('subjectiveAttempts').doc(attemptId);
-    if (tx) {
-      tx.update(ref, data);
-    } else {
-      ref.update(data);
-    }
-  }
 }

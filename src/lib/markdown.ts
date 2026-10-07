@@ -7,7 +7,7 @@
  * Validates whether a URL uses an approved, safe scheme (http, https, mailto, tel, or safe base64 media).
  * Blocks javascript:, vbscript:, data:text/html, and other arbitrary script execution vectors.
  */
-export function isSafeUrl(rawUrl: string): boolean {
+function isSafeUrl(rawUrl: string): boolean {
   if (!rawUrl) return false;
   const trimmed = rawUrl.trim();
 

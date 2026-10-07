@@ -1,11 +1,10 @@
 import { adminDb } from '@/lib/firebase/admin';
-import { Exam, Assignment } from '@/types/exam.types';
+import { Exam } from '@/types/exam.types';
 import { QuestionItem } from '@/types/question.types';
 
 export class ExamRepository {
   private static examsCollection = adminDb.collection('exams');
   private static questionsCollection = adminDb.collection('questions');
-  private static assignmentsCollection = adminDb.collection('batchAssignments');
 
   /**
    * Fetch exam by ID (supports direct canonical lookup, alias docs, and legacy exam IDs)
@@ -128,17 +127,5 @@ export class ExamRepository {
     }
 
     return rawQuestions;
-  }
-
-  /**
-   * Fetch assignments matching studentCode and examId
-   */
-  static async getAssignmentsForStudentExam(examId: string, studentCode: string): Promise<Assignment[]> {
-    const snap = await this.assignmentsCollection
-      .where('examId', '==', examId)
-      .where('studentCode', '==', studentCode)
-      .get();
-      
-    return snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Assignment));
   }
 }

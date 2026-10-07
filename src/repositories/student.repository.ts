@@ -1,10 +1,9 @@
 import { adminDb } from '@/lib/firebase/admin';
-import { StudentProfile, StudentTopicMastery, WeeklyIntegrity } from '@/types/user.types';
+import { StudentProfile, StudentTopicMastery } from '@/types/user.types';
 import { isDemoUser } from '@/lib/studentDb';
 
 export class StudentRepository {
   private static masteryCollection = adminDb.collection('studentTopicMastery');
-  private static integrityCollection = adminDb.collection('integrityScores');
 
   /**
    * Fetch topic mastery by student code and topic code
@@ -14,16 +13,6 @@ export class StudentRepository {
     const doc = await this.masteryCollection.doc(docId).get();
     if (!doc.exists) return null;
     return { id: doc.id, ...doc.data() } as StudentTopicMastery;
-  }
-
-  /**
-   * Fetch weekly integrity score
-   */
-  static async getWeeklyIntegrityScore(studentCode: string, year: number, week: number): Promise<WeeklyIntegrity | null> {
-    const docId = `${studentCode}_${year}_${week}`;
-    const doc = await this.integrityCollection.doc(docId).get();
-    if (!doc.exists) return null;
-    return doc.data() as WeeklyIntegrity;
   }
 
   /**

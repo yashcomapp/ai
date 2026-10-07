@@ -81,7 +81,7 @@ export async function verifyAnyRole(
     // Curfew check for student role
     if (userRole === 'student') {
       const email = (decodedToken.email || userData.email || '').toLowerCase();
-      const curfewBypassEmail = (process.env.CURFEW_BYPASS_EMAIL || '').toLowerCase();
+      const curfewBypassEmail = (process.env.CURFEW_BYPASS_EMAIL || process.env.NEXT_PUBLIC_CURFEW_BYPASS_EMAIL || '').toLowerCase();
       if (email !== curfewBypassEmail && !userData.curfewBypass) {
         const nowUtc = Date.now();
         const istOffset = 5.5 * 60 * 60 * 1000;

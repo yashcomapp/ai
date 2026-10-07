@@ -3,7 +3,7 @@
  * GUARANTEED Timezone: IST (Asia/Kolkata, UTC+05:30) everywhere across client and server.
  */
 
-export const IST_TIMEZONE = 'Asia/Kolkata';
+const IST_TIMEZONE = 'Asia/Kolkata';
 
 /**
  * Universal date parser that reliably parses:
@@ -326,17 +326,5 @@ export function toLocalISOString(date: Date = new Date()): string {
   const h = String(date.getHours()).padStart(2, '0');
   const min = String(date.getMinutes()).padStart(2, '0');
   return `${y}-${m}-${d}T${h}:${min}`;
-}
-
-/**
- * Compactly formats exam display names for UI presentation while preserving canonical database identifiers.
- * Shortens board and class tags:
- * - Removes delimiter between board and class: -MH-10- -> -MH10-, -MH-8- -> -MH8-
- * - Shortens CBSE to CB: -CBSE-9- -> -CB9-, -CBSE-8- -> -CB8-
- * e.g. "016-MH-10-Space Missions-10.1-10.2-061026" -> "016-MH10-Space Missions-10.1-10.2-061026"
- * e.g. "002-CBSE-8-Exploring Forces-5.1-160926" -> "002-CB8-Exploring Forces-5.1-160926"
- */
-export function formatCompactExamName(name?: string | null): string {
-  return String(name || '').trim();
 }
 

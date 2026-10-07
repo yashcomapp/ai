@@ -70,41 +70,6 @@ export function useAdminStudents<TStudent = any, TBatch = any>(options?: { enabl
   };
 }
 
-/**
- * Shared SWR hook for Admin Syllabus reference data (/api/admin/syllabus)
- */
-export function useAdminSyllabus(options?: { enabled?: boolean; subjectId?: string }) {
-  const { firebaseUser } = useAuth();
-  const enabled = options?.enabled ?? true;
-  const subjectId = options?.subjectId;
-
-  const url = subjectId 
-    ? `/api/admin/syllabus?subjectId=${encodeURIComponent(subjectId)}`
-    : '/api/admin/syllabus';
-
-  const swrKey = firebaseUser && enabled ? url : null;
-
-  const { data, error, isLoading, isValidating, mutate } = useSWR<any>(
-    swrKey,
-    (fetchUrl: string) => fetchWithToken(fetchUrl, firebaseUser),
-    {
-      revalidateOnFocus: false,
-      dedupingInterval: 120000, // 2 minutes client cache
-      keepPreviousData: true
-    }
-  );
-
-  return {
-    syllabusList: Array.isArray(data) ? data : (data?.syllabusList || []),
-    subjectData: Array.isArray(data) ? null : data,
-    raw: data,
-    isLoading: !data && !error && isLoading,
-    isValidating,
-    error: error?.message || null,
-    mutate
-  };
-}
-
 const SYLLABUS_SUBJECT_CLIENT_CACHE = new Map<string, { data: any; timestamp: number }>();
 
 export async function fetchCachedSyllabusSubject(subjectId: string, firebaseUser: any) {

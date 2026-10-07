@@ -142,7 +142,7 @@ export async function POST(req: NextRequest) {
 
       if (role === 'student') {
         const userEmail = (email || userData.email || '').toLowerCase();
-        const curfewBypassEmail = (process.env.CURFEW_BYPASS_EMAIL || '').toLowerCase();
+        const curfewBypassEmail = (process.env.CURFEW_BYPASS_EMAIL || process.env.NEXT_PUBLIC_CURFEW_BYPASS_EMAIL || '').toLowerCase();
         const isBypassed = userEmail === 's@c.com' || userEmail === 'p@c.com' || userEmail === 'a@c.com' || userEmail === curfewBypassEmail || !!userData.curfewBypass || !!userData.maintenanceBypass;
         if (!isBypassed) {
           const nowUtc = Date.now();

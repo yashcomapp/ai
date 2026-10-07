@@ -17,7 +17,7 @@ interface DateTimeInputDMYProps {
 /**
  * Converts YYYY-MM-DDTHH:mm to DD/MM/YYYY hh:mm AM/PM
  */
-export function formatToDDMMYYYYTime(isoStr?: string | null): string {
+function formatToDDMMYYYYTime(isoStr?: string | null): string {
   if (!isoStr) return '';
   const clean = String(isoStr).trim();
   const [datePart, timePart] = clean.split('T');

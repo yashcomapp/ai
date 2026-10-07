@@ -1,16 +1,16 @@
-﻿/**
+/**
  * Practice Time Sincerity & Question Velocity Utilities
  * Dynamically computes minimum and ideal reading/solving times based on question complexity,
  * type, text length, and mathematical notation.
  */
 
-export interface QuestionTimeProfile {
+interface QuestionTimeProfile {
   minSeconds: number;
   idealSeconds: number;
   category: 'factual' | 'conceptual' | 'numerical';
 }
 
-export function getQuestionTimeProfile(q: any): QuestionTimeProfile {
+function getQuestionTimeProfile(q: any): QuestionTimeProfile {
   const type = String(q?.type || q?.questionType || '').toLowerCase();
   const text = String(q?.text || q?.assertion || '');
   const isMath = text.includes('\\frac') || text.includes('\\sqrt') || text.includes('\\int') || text.includes('=') || /[0-9]+\s*[\+\-\*\/]\s*[0-9]+/.test(text);

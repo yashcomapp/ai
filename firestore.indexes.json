@@ -19,24 +19,6 @@
       ]
     },
     {
-      "collectionGroup": "questionRequests",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "topicCode",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "status",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "__name__",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
       "collectionGroup": "userTimeLog",
       "queryScope": "COLLECTION",
       "fields": [
@@ -131,24 +113,6 @@
       ]
     },
     {
-      "collectionGroup": "practiceSessions",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "studentCode",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "startedAt",
-          "order": "DESCENDING"
-        },
-        {
-          "fieldPath": "__name__",
-          "order": "DESCENDING"
-        }
-      ]
-    },
-    {
       "collectionGroup": "examAttempts",
       "queryScope": "COLLECTION",
       "fields": [
@@ -199,42 +163,6 @@
         {
           "fieldPath": "__name__",
           "order": "ASCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "subjectiveComparisons",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "studentCode",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "computedAt",
-          "order": "DESCENDING"
-        },
-        {
-          "fieldPath": "__name__",
-          "order": "DESCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "questionRequests",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "status",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "requestedAt",
-          "order": "DESCENDING"
-        },
-        {
-          "fieldPath": "__name__",
-          "order": "DESCENDING"
         }
       ]
     },
@@ -348,24 +276,6 @@
         },
         {
           "fieldPath": "questionCode",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "__name__",
-          "order": "ASCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "practiceSessions",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "studentCode",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "endedAt",
           "order": "ASCENDING"
         },
         {
@@ -624,24 +534,6 @@
         },
         {
           "fieldPath": "createdAt",
-          "order": "DESCENDING"
-        },
-        {
-          "fieldPath": "__name__",
-          "order": "DESCENDING"
-        }
-      ]
-    },
-    {
-      "collectionGroup": "studentMastery",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "studentCode",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "mastery",
           "order": "DESCENDING"
         },
         {

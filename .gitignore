@@ -14,7 +14,6 @@ build/
 *.json
 !package.json
 !tsconfig.json
-!public/manifest.json
 !firestore.indexes.json
 *.tsbuildinfo
 tsconfig.tsbuildinfo
@@ -27,6 +26,8 @@ Users/
 src/scripts/
 scratch/
 backups/
+reports/
+public/reports/
 
 # debug/inspect helper scripts at root
 inspect-*.js

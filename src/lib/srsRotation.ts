@@ -24,9 +24,9 @@ export interface QuestionAttemptLog {
   timestamp?: number | string;
 }
 
-export const SRS_INTERVAL_DAYS = [4, 7, 14, 30, 60, 90];
+const SRS_INTERVAL_DAYS = [4, 7, 14, 30, 60, 90];
 
-export const SRS_STAGE_LABELS = [
+const SRS_STAGE_LABELS = [
   'Stage 1 (4-Day Refresher)',
   'Stage 2 (7-Day Refresher)',
   'Stage 3 (14-Day Refresher)',

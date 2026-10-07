@@ -178,14 +178,10 @@ async function generateReport() {
   console.log(JSON.stringify(summaryRows, null, 2));
   console.log(`Total Active Students: ${students.length}`);
 
-  // Output paths
+  // Output paths - do NOT output to public/ to prevent unauthenticated PII exposure
   const outputDir = path.resolve(__dirname, '..', 'reports');
-  const publicReportsDir = path.resolve(__dirname, '..', 'public', 'reports');
-  const artifactDir = path.resolve('C:\\Users\\Admin\\.gemini\\antigravity\\brain\\056b7be2-e1b9-410d-9f9c-72232de89289');
 
-  [outputDir, publicReportsDir, artifactDir].forEach(dir => {
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  });
+  if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
 
   const safeWrite = (fn, desc) => {
     try {
@@ -211,16 +207,6 @@ async function generateReport() {
   safeWrite(() => XLSX.writeFile(wb, defaultXlsx), 'defaultXlsx');
   safeWrite(() => XLSX.writeFile(wb, defaultXls, { bookType: 'biff8' }), 'defaultXls');
   safeWrite(() => fs.writeFileSync(defaultCsv, csvContent, 'utf-8'), 'defaultCsv');
-
-  // Copy to public/reports and artifacts
-  [publicReportsDir, artifactDir].forEach(targetDir => {
-    safeWrite(() => XLSX.writeFile(wb, path.join(targetDir, 'Autonomous_and_Regular_Active_Students_Batchwise.xlsx')), targetDir);
-    safeWrite(() => XLSX.writeFile(wb, path.join(targetDir, 'Autonomous_and_Regular_Active_Students_Batchwise.xls'), { bookType: 'biff8' }), targetDir);
-    safeWrite(() => fs.writeFileSync(path.join(targetDir, 'Autonomous_and_Regular_Active_Students_Batchwise.csv'), csvContent, 'utf-8'), targetDir);
-    safeWrite(() => XLSX.writeFile(wb, path.join(targetDir, 'Autonomous_and_Regular_Students_Batchwise.xlsx')), targetDir);
-    safeWrite(() => XLSX.writeFile(wb, path.join(targetDir, 'Autonomous_and_Regular_Students_Batchwise.xls'), { bookType: 'biff8' }), targetDir);
-    safeWrite(() => fs.writeFileSync(path.join(targetDir, 'Autonomous_and_Regular_Students_Batchwise.csv'), csvContent, 'utf-8'), targetDir);
-  });
 
   console.log('\nActive Student Reports Generated Successfully.');
 }

@@ -242,38 +242,10 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // ── subjectiveComparisons ────────────────────────────────────
-    match /subjectiveComparisons/{docId} {
-      allow read:   if isAuth() && (isAdmin()
-                       || (isParent() && isMyChildCode(resource.data.studentCode))
-                       || (isStudent() && resource.data.studentCode == myStudentCode()));
-      allow create: if isAdmin() || (isParent() && isMyChildCode(request.resource.data.studentCode));
-      allow update, delete: if isAdmin();
-    }
-
     // ── peer assignments ──────────────────────────────────────
     match /peerAssignments/{docId} {
       allow read:  if isAuth();
       allow write: if isAdmin();
-    }
-
-    // ── practice & mastery ────────────────────────────────────
-    match /practiceSessions/{docId} {
-      allow read:   if isAuth() && (isAdmin()
-                       || (isParent() && isMyChildCode(resource.data.studentCode))
-                       || (isStudent()
-                           && resource.data.studentCode == myStudentCode()));
-      allow create: if isAdmin()
-                    || (isStudent()
-                        && isValidStudentCode(request.resource.data.studentCode)
-                        && request.resource.data.studentCode == myStudentCode());
-      allow update: if isAdmin()
-                    || (isStudent()
-                        && resource.data.studentCode == myStudentCode()
-                        && request.resource.data.studentCode == myStudentCode()
-                        && request.resource.data.diff(resource.data).affectedKeys()
-                                         .hasOnly(['answers', 'currentQuestionIndex', 'timeRemaining', 'lastActiveAt', 'updatedAt', 'proctoringEvents', 'tabViolations', 'status', 'submittedAt', 'completedAt', 'startedAt']));
-      allow delete: if isAdmin();
     }
 
     // ── live exam monitoring (heartbeat + WebRTC signaling) ────
@@ -332,21 +304,6 @@ service cloud.firestore {
       allow write:  if isAdmin();
     }
 
-    // ── remedial tests ────────────────────────────────────────
-    match /remedialTests/{docId} {
-      allow read:   if isAuth() && (isAdmin()
-                       || (isParent() && isMyChildCode(resource.data.studentCode))
-                       || (isStudent() && resource.data.studentCode == myStudentCode()));
-      allow create: if isAdmin();
-      allow update: if isAdmin()
-                    || (isParent()
-                        && isMyChildCode(resource.data.studentCode)
-                        && request.resource.data.diff(resource.data).affectedKeys()
-                                         .hasOnly(['parentApproved', 'parentApprovedAt', 'updatedAt']));
-      allow delete: if isAdmin();
-    }
-
-
     // ── config ────────────────────────────────────────────────
     match /config/{docId} {
       allow read:  if isAuth();
@@ -400,21 +357,7 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // ── studentWeakTopics ─────────────────────────────────────
-    match /studentWeakTopics/{docId} {
-      allow read:   if isAuth() && (isAdmin()
-                       || (isParent() && isMyChildCode(resource.data.studentCode))
-                       || (isStudent()
-                           && resource.data.studentCode == myStudentCode()));
-      allow write:  if isAdmin();
-    }
 
-    // ── studentProgress ───────────────────────────────────────
-    // Doc ID is the Firebase UID (auth identity, not a student data field).
-    match /studentProgress/{docId} {
-      allow read:   if isAuth() && (isAdmin() || docId == uid());
-      allow write:  if isAdmin();
-    }
 
     // ── masteryExamLog ────────────────────────────────────────
     match /masteryExamLog/{docId} {
@@ -422,34 +365,7 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // ── auditLog ──────────────────────────────────────────────
-    match /auditLog/{docId} {
-      allow read:         if isAdmin();
-      allow create:       if isAuth();
-      allow update, delete: if isAdmin();
-    }
 
-    // ── integrityAuditLogs ────────────────────────────────────
-    match /integrityAuditLogs/{docId} {
-      allow read:         if isAdmin();
-      allow create:       if isAuth();
-      allow update, delete: if isAdmin();
-    }
-
-    // ── systemErrors ──────────────────────────────────────────
-    // 🔴 FIX: no rule entry existed — deny-all catch-all silently swallowed
-    // every write (already inside a best-effort .catch(() => {}) at every
-    // call site, so this failure mode was invisible). Non-fatal monitoring
-    // log written from masteryService.js (processExamResult's
-    // profileAggregationService failure path) and practiceService.js
-    // (auto-request-on-generate failure path) — both student-triggered
-    // flows. No page reads this collection yet; same create-only/admin-read
-    // pattern as auditLog/integrityAuditLogs above.
-    match /systemErrors/{docId} {
-      allow read:         if isAdmin();
-      allow create:       if isAuth();
-      allow update, delete: if isAdmin();
-    }
 
     // ── attendanceDeclarations ────────────────────────────────
     match /attendanceDeclarations/{docId} {
@@ -463,17 +379,7 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
-    // ── questionDisputes ──────────────────────────────────────
-    match /questionDisputes/{docId} {
-      allow read:   if isAuth() && (isAdmin() || (isStudent() && resource.data.studentCode == myStudentCode()));
-      allow create: if isStudent() && request.resource.data.studentCode == myStudentCode();
-      allow update, delete: if isAdmin();
-    }
-
-    // ── examDisputeCounters & quarantinedQuestions ────────────
-    match /examDisputeCounters/{docId} {
-      allow read, write: if isAdmin();
-    }
+    // ── quarantinedQuestions ──────────────────────────────────
     match /quarantinedQuestions/{docId} {
       allow read, write: if isAdmin();
     }

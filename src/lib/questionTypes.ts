@@ -511,7 +511,7 @@ export function extractAssertionAndReason(q: any): { assertion: string; reason: 
   };
 }
 
-export const CANONICAL_SUBJECT_NAMES: Record<string, string> = {
+const CANONICAL_SUBJECT_NAMES: Record<string, string> = {
   // CBSE
   'MGP1': 'Mathematics (Ganit Prakash 1)',
   'CURI': 'Science (Curiosity)',
@@ -910,7 +910,7 @@ export function smartJsonParse(str: string): any {
   }
 }
 
-export function restoreLatex(obj: any): any {
+function restoreLatex(obj: any): any {
   if (typeof obj === 'string') {
     return obj.replace(/\\\\/g, '\\');
   }
