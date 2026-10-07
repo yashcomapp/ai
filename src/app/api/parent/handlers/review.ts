@@ -291,6 +291,21 @@ export async function GET(req: NextRequest) {
       evalSnaps
     });
 
+    // Query active assignments to identify currently active / reassigned exams
+    const { objAssignments, subAssignments } = await ExamService.fetchStudentActiveAssignments(studentCode, studentBatchIds);
+    const activeExamStartMap = new Map<string, Date>();
+    const now = new Date();
+    [...objAssignments, ...subAssignments].forEach(d => {
+      const data = d.data();
+      if (data.examId && data.endAt) {
+        const endAtDate = data.endAt.toDate ? data.endAt.toDate() : new Date(data.endAt);
+        if (now <= endAtDate) {
+          const startAtDate = data.startAt?.toDate ? data.startAt.toDate() : (data.startAt ? new Date(data.startAt) : new Date(0));
+          activeExamStartMap.set(data.examId, startAtDate);
+        }
+      }
+    });
+
     // Batch query syllabusTopicIndex for all resolved topic codes (with in-memory cache)
     const syllabusMap = new Map<string, any>();
     const uniqueTopicCodes = Array.from(allTopicCodes);
@@ -332,6 +347,16 @@ export async function GET(req: NextRequest) {
         const data = doc.data();
         // Skip practice sessions stored in reviews collection
         if (data.examType === 'practice') return null;
+
+        // If this exam has been reassigned or currently has an active schedule:
+        // Any previous attempt/review from before the active assignment is excluded so parents never see stale attempts
+        if (data.examId && activeExamStartMap.has(data.examId)) {
+          const activeStart = activeExamStartMap.get(data.examId)!;
+          const revDate = data.completedAt?.toDate ? data.completedAt.toDate() : (data.completedAt ? new Date(data.completedAt) : (data.startedAt?.toDate ? data.startedAt.toDate() : (data.startedAt ? new Date(data.startedAt) : null)));
+          if (!revDate || revDate < activeStart) {
+            return null;
+          }
+        }
 
         let topicName = '';
         const examTopics = new Set<string>();
@@ -487,6 +512,17 @@ export async function GET(req: NextRequest) {
     // 3. Map Subjective reviews
     const subjectiveReviews = subjSnaps.docs.map(doc => {
       const data = doc.data();
+
+      // If this exam has been reassigned or currently has an active schedule:
+      // Any previous attempt/review from before the active assignment is excluded so parents never see stale attempts
+      if (data.examId && activeExamStartMap.has(data.examId)) {
+        const activeStart = activeExamStartMap.get(data.examId)!;
+        const attemptDate = data.completedAt?.toDate ? data.completedAt.toDate() : (data.completedAt ? new Date(data.completedAt) : (data.createdAt?.toDate ? data.createdAt.toDate() : null));
+        if (!attemptDate || attemptDate < activeStart) {
+          return null;
+        }
+      }
+
       const exam = examsMap.get(data.examId) || {};
       const isReviewed = data.status === 'approved' || 
                          data.parentStatus === 'approved' || 
@@ -532,7 +568,7 @@ export async function GET(req: NextRequest) {
         reviewedByActor: resolvedActor,
         proctoringViolationTriggered: data.proctoringViolationTriggered || false
       };
-    });
+    }).filter(Boolean) as any[];
 
     const sortByDateDesc = (a: any, b: any) => {
       const timeA = safeDateToTimestamp(a.date || a.completedAt || a.startedAt);

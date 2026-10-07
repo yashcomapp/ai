@@ -11,9 +11,8 @@ import { ReportCacheManager } from '@/lib/reportCache';
 export class ExamService {
   /**
    * Helper to fetch active assignments targeted specifically to a student (by batch or direct assignment),
-   * avoiding full collection scans across tens of thousands of active assignments.
    */
-  private static async fetchStudentActiveAssignments(studentCode: string, studentBatchIds: string[]): Promise<{
+  public static async fetchStudentActiveAssignments(studentCode: string, studentBatchIds: string[]): Promise<{
     objAssignments: admin.firestore.QueryDocumentSnapshot[];
     subAssignments: admin.firestore.QueryDocumentSnapshot[];
   }> {
@@ -110,13 +109,29 @@ export class ExamService {
 
     const { objAssignments, subAssignments } = await this.fetchStudentActiveAssignments(studentCode, studentBatchIds);
 
+    // Identify exams that are currently active or upcoming (reassigned or scheduled in the future/today)
+    const currentlyActiveExamIds = new Set<string>();
+    const checkActive = (docs: admin.firestore.QueryDocumentSnapshot[]) => {
+      docs.forEach(doc => {
+        const data = doc.data();
+        if (data.examId && data.endAt) {
+          const endAtDate = data.endAt.toDate ? data.endAt.toDate() : new Date(data.endAt);
+          if (now <= endAtDate) {
+            currentlyActiveExamIds.add(data.examId);
+          }
+        }
+      });
+    };
+    checkActive(objAssignments);
+    checkActive(subAssignments);
+
     const pastAssignedExams: Array<{ examId: string; endAt: Date }> = [];
     const seenExamIds = new Set<string>();
 
     const collectPast = (docs: admin.firestore.QueryDocumentSnapshot[]) => {
       docs.forEach(doc => {
         const data = doc.data();
-        if (!data.examId || data.examId === currentExamId || seenExamIds.has(data.examId)) return;
+        if (!data.examId || data.examId === currentExamId || currentlyActiveExamIds.has(data.examId) || seenExamIds.has(data.examId)) return;
         const targetType = data.targetType;
         const isTargeted = targetType === 'student'
           ? (Array.isArray(data.targetStudents) && data.targetStudents.includes(studentCode))
@@ -263,13 +278,29 @@ export class ExamService {
 
     const { objAssignments, subAssignments } = await this.fetchStudentActiveAssignments(studentCode, studentBatchIds);
 
+    // Identify exams that are currently active or upcoming (reassigned or scheduled in the future/today)
+    const currentlyActiveExamIds = new Set<string>();
+    const checkActive = (docs: admin.firestore.QueryDocumentSnapshot[]) => {
+      docs.forEach(doc => {
+        const data = doc.data();
+        if (data.examId && data.endAt) {
+          const endAtDate = data.endAt.toDate ? data.endAt.toDate() : new Date(data.endAt);
+          if (now <= endAtDate) {
+            currentlyActiveExamIds.add(data.examId);
+          }
+        }
+      });
+    };
+    checkActive(objAssignments);
+    checkActive(subAssignments);
+
     const pastAssignedExams: Array<{ examId: string; endAt: Date; collection: string }> = [];
     const seenExamIds = new Set<string>();
 
     const collectPast = (docs: admin.firestore.QueryDocumentSnapshot[], col: string) => {
       docs.forEach(doc => {
         const data = doc.data();
-        if (!data.examId || seenExamIds.has(data.examId)) return;
+        if (!data.examId || currentlyActiveExamIds.has(data.examId) || seenExamIds.has(data.examId)) return;
         const targetType = data.targetType;
         const isTargeted = targetType === 'student'
           ? (Array.isArray(data.targetStudents) && data.targetStudents.includes(studentCode))
@@ -512,7 +543,8 @@ export class ExamService {
       objAssignSnap,
       subjAssignSnap,
       noticesSnap,
-      absenceSnap
+      absenceSnap,
+      parentReviewsSnap
     ] = await Promise.all([
       adminDb.collection('examAttempts').where('examId', '==', examId).get(),
       adminDb.collection('subjectiveAttempts').where('examId', '==', examId).get(),
@@ -523,7 +555,8 @@ export class ExamService {
       adminDb.collection('batchAssignments').where('examId', '==', examId).get(),
       adminDb.collection('subjectiveAssignments').where('examId', '==', examId).get(),
       adminDb.collection('notices').where('examId', '==', examId).get(),
-      adminDb.collection('examAbsenceReasons').where('examId', '==', examId).get().catch(() => ({ docs: [] } as any))
+      adminDb.collection('examAbsenceReasons').where('examId', '==', examId).get().catch(() => ({ docs: [], size: 0 } as any)),
+      adminDb.collection('parentReviews').where('examId', '==', examId).get().catch(() => ({ docs: [], size: 0 } as any))
     ]);
 
     // Harvest studentCodes, extra questions, and topics from attempts & reviews
@@ -616,13 +649,18 @@ export class ExamService {
     const absenceReasonsDeleted = absenceSnap.docs.length;
     absenceSnap.docs.forEach((d: any) => batch.delete(d.ref));
 
-    // Also ensure composite IDs `${examId}_${studentCode}` are queued for deletion
+    const parentReviewsDeleted = parentReviewsSnap.docs.length;
+    parentReviewsSnap.docs.forEach((d: any) => batch.delete(d.ref));
+
+    // Also ensure composite IDs `${examId}_${studentCode}` and `${sc}_${examId}` are queued for deletion
     for (const sc of Array.from(affectedStudentCodes)) {
       batch.delete(adminDb.collection('examAttempts').doc(`${examId}_${sc}`));
       batch.delete(adminDb.collection('reviews').doc(`${examId}_${sc}`));
       batch.delete(adminDb.collection('subjectiveAttempts').doc(`${examId}_${sc}`));
       batch.delete(adminDb.collection('subjectiveReviews').doc(`${examId}_${sc}`));
       batch.delete(adminDb.collection('examAbsenceReasons').doc(`${sc}_${examId}`));
+      batch.delete(adminDb.collection('parentReviews').doc(`${examId}_${sc}`));
+      batch.delete(adminDb.collection('parentReviews').doc(`${sc}_${examId}`));
     }
 
     await batch.commit();
@@ -860,7 +898,8 @@ export class ExamService {
       subjReviewsSnap,
       evalsSnap,
       peerAssignSnap,
-      absenceSnap
+      absenceSnap,
+      parentReviewsSnap
     ] = await Promise.all([
       adminDb.collection('examAttempts').where('examId', '==', examId).get(),
       adminDb.collection('subjectiveAttempts').where('examId', '==', examId).get(),
@@ -868,7 +907,8 @@ export class ExamService {
       adminDb.collection('subjectiveReviews').where('examId', '==', examId).get(),
       adminDb.collection('evaluations').where('examId', '==', examId).get(),
       adminDb.collection('peerAssignments').where('examId', '==', examId).get(),
-      adminDb.collection('examAbsenceReasons').where('examId', '==', examId).get().catch(() => ({ docs: [] } as any))
+      adminDb.collection('examAbsenceReasons').where('examId', '==', examId).get().catch(() => ({ docs: [] } as any)),
+      adminDb.collection('parentReviews').where('examId', '==', examId).get().catch(() => ({ docs: [] } as any))
     ]);
 
     const isSpecificStudentFilter = targetType === 'student' && targetStudents.length > 0;
@@ -940,6 +980,12 @@ export class ExamService {
       }
     });
 
+    parentReviewsSnap.docs.forEach((doc: any) => {
+      if (shouldDeleteDoc(doc.data(), doc.id)) {
+        batch.delete(doc.ref);
+      }
+    });
+
     // Also explicitly delete composite doc IDs for all affected student codes
     for (const sc of Array.from(affectedStudentCodes)) {
       batch.delete(adminDb.collection('examAttempts').doc(`${examId}_${sc}`));
@@ -947,6 +993,8 @@ export class ExamService {
       batch.delete(adminDb.collection('reviews').doc(`${examId}_${sc}`));
       batch.delete(adminDb.collection('subjectiveReviews').doc(`${examId}_${sc}`));
       batch.delete(adminDb.collection('examAbsenceReasons').doc(`${sc}_${examId}`));
+      batch.delete(adminDb.collection('parentReviews').doc(`${examId}_${sc}`));
+      batch.delete(adminDb.collection('parentReviews').doc(`${sc}_${examId}`));
     }
 
     await batch.commit();

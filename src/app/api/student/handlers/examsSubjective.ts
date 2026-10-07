@@ -231,6 +231,10 @@ export async function GET(req: NextRequest) {
     let genuinelyPendingObj: admin.firestore.DocumentSnapshot | null = null;
     for (const revDoc of pendingObj.docs) {
       const data = revDoc.data();
+      // Skip if this review belongs to the exam currently being taken (reassigned)
+      if (data.examId === examId || revDoc.id === `${examId}_${studentCode}` || revDoc.id.includes(examId)) {
+        continue;
+      }
       const isApprovedByEval = evalMap.has(revDoc.id) || (data.examId && evalMap.has(data.examId));
       if (isApprovedByEval || (isAutonomous && (data.status === 'pending' || data.status === 'student_review'))) {
         // Auto-heal status in Firestore
@@ -241,14 +245,19 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    if (genuinelyPendingObj || !pendingSub.empty || !pendingPeer.empty) {
+    const genuinelyPendingSubDocs = pendingSub.docs.filter(d => {
+      const dData = d.data();
+      return dData.examId !== examId && d.id !== `${examId}_${studentCode}` && !d.id.includes(examId);
+    });
+
+    if (genuinelyPendingObj || genuinelyPendingSubDocs.length > 0 || !pendingPeer.empty) {
       let pendingType = 'a pending review';
       if (genuinelyPendingObj) {
         const revDoc = genuinelyPendingObj.data()!;
         pendingType = revDoc.status === 'student_review' 
           ? 'an objective exam self-reflection' 
           : 'a pending parent sign-off on your previous exam';
-      } else if (!pendingSub.empty || !pendingPeer.empty) {
+      } else if (genuinelyPendingSubDocs.length > 0 || !pendingPeer.empty) {
         pendingType = 'a classmate peer-grading assignment';
       }
 
