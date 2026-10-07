@@ -475,10 +475,35 @@ export async function GET(req: NextRequest) {
       return safeQuestion;
     });
 
+    // Fetch live system exam security settings
+    const securityDoc = await adminDb.collection('config').doc('examSecurity').get().catch(() => null);
+    const globalSecurity = securityDoc?.exists ? securityDoc.data() : {
+      screenshotGuardEnabled: true,
+      blurOnFocusLoss: true,
+      forensicWatermark: true,
+      clearClipboardOnPrint: true
+    };
+
+    const isGuardEnabled = typeof matchingAssignment?.screenshotGuard === 'boolean'
+      ? matchingAssignment.screenshotGuard
+      : typeof examData.screenshotGuard === 'boolean'
+        ? examData.screenshotGuard
+        : (globalSecurity?.screenshotGuardEnabled !== false);
+
+    const examDataWithSecurity = {
+      id: examSnap.id,
+      ...examData,
+      name: cleanSubjectiveExamName(examData),
+      screenshotGuard: isGuardEnabled,
+      watermarkEnabled: isGuardEnabled && (globalSecurity?.forensicWatermark !== false),
+      blurOnFocusLoss: isGuardEnabled && (globalSecurity?.blurOnFocusLoss !== false),
+      clearClipboardOnPrint: isGuardEnabled && (globalSecurity?.clearClipboardOnPrint !== false)
+    };
+
     return NextResponse.json({
       status: 'active',
       mode,
-      examData: { id: examSnap.id, ...examData, name: cleanSubjectiveExamName(examData) },
+      examData: examDataWithSecurity,
       assignment: matchingAssignment || null,
       questions,
       attemptId: finalAttemptId,

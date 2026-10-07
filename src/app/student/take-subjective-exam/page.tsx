@@ -15,6 +15,7 @@ import { preprocessMathText, formatRichText } from '@/lib/questionTypes';
 import { formatDuration, parseDateToMs } from '@/lib/dateUtils';
 import { InterruptionLockoutModal } from '@/components/InterruptionLockoutModal';
 import { ExamErrorBoundary } from '@/components/ExamErrorBoundary';
+import { ScreenshotShield } from '@/components/ScreenshotShield';
 
 const RTC_CONFIG = {
   iceServers: [
@@ -61,6 +62,10 @@ interface ExamData {
   mode?: string;
   type?: string;
   questionIds?: string[];
+  screenshotGuard?: boolean;
+  watermarkEnabled?: boolean;
+  blurOnFocusLoss?: boolean;
+  clearClipboardOnPrint?: boolean;
 }
 
 const ModelAnswerBox = React.memo(function ModelAnswerBox({ html }: { html: string }) {
@@ -626,7 +631,16 @@ function TakeSubjectiveExamContent() {
   }
 
   return (
-    <div style={{ background: 'var(--bg)', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <ScreenshotShield
+      enabled={!examSubmitted && (mode === 'peer-review' || !cameraModalOpen) && examData?.screenshotGuard !== false}
+      watermarkEnabled={examData?.watermarkEnabled !== false}
+      blurOnFocusLoss={examData?.blurOnFocusLoss !== false}
+      clearClipboardOnPrint={examData?.clearClipboardOnPrint !== false}
+      studentName={user?.name || ''}
+      studentBatch={(user as any)?.className || (user as any)?.class || ''}
+      examTitle={examData?.name || ''}
+    >
+      <div style={{ background: 'var(--bg)', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
 
       {/* Script Injections for MediaPipe (Lazy loaded when modal is open) */}
       {mode !== 'peer-review' && cameraModalOpen && (
@@ -1110,6 +1124,7 @@ function TakeSubjectiveExamContent() {
         </div>
       )}
     </div>
+    </ScreenshotShield>
   );
 }
 

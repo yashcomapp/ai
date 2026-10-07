@@ -397,8 +397,31 @@ export async function GET(req: NextRequest) {
     const startAtDate = parseDateInput(assignment?.startAt);
     const endAtDate = parseDateInput(assignment?.endAt);
 
+    // Fetch live system exam security settings
+    const securityDoc = await adminDb.collection('config').doc('examSecurity').get().catch(() => null);
+    const globalSecurity = securityDoc?.exists ? securityDoc.data() : {
+      screenshotGuardEnabled: true,
+      blurOnFocusLoss: true,
+      forensicWatermark: true,
+      clearClipboardOnPrint: true
+    };
+
+    const isGuardEnabled = typeof assignment?.screenshotGuard === 'boolean'
+      ? assignment.screenshotGuard
+      : typeof (examData as any)?.screenshotGuard === 'boolean'
+        ? (examData as any).screenshotGuard
+        : (globalSecurity?.screenshotGuardEnabled !== false);
+
+    const examWithSecurity = {
+      ...secureExam,
+      screenshotGuard: isGuardEnabled,
+      watermarkEnabled: isGuardEnabled && (globalSecurity?.forensicWatermark !== false),
+      blurOnFocusLoss: isGuardEnabled && (globalSecurity?.blurOnFocusLoss !== false),
+      clearClipboardOnPrint: isGuardEnabled && (globalSecurity?.clearClipboardOnPrint !== false)
+    };
+
     return NextResponse.json({
-      exam: secureExam,
+      exam: examWithSecurity,
       assignment: assignment ? {
         openMode: assignment.openMode || 'immediate',
         startAt: startAtDate ? startAtDate.toISOString() : null,

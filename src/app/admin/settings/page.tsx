@@ -19,7 +19,18 @@ export default function AdminSettingsPage() {
   const router = useRouter();
 
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'password' | 'backup' | 'utils' | 'cleanup'>('password');
+  const [activeTab, setActiveTab] = useState<'password' | 'backup' | 'utils' | 'cleanup' | 'security'>('password');
+
+  // Exam Security / Screenshot Guard states
+  const [securityConfig, setSecurityConfig] = useState({
+    screenshotGuardEnabled: true,
+    blurOnFocusLoss: true,
+    forensicWatermark: true,
+    clearClipboardOnPrint: true
+  });
+  const [loadingSecurity, setLoadingSecurity] = useState(false);
+  const [savingSecurity, setSavingSecurity] = useState(false);
+  const [securityStatusMsg, setSecurityStatusMsg] = useState('');
 
   // Password change states
   const [newPassword, setNewPassword] = useState('');
@@ -392,6 +403,66 @@ export default function AdminSettingsPage() {
     }
   };
 
+  // Exam Security handlers
+  const fetchSecurityConfig = async () => {
+    if (!firebaseUser) return;
+    setLoadingSecurity(true);
+    try {
+      const idToken = await firebaseUser.getIdToken();
+      const res = await fetch('/api/admin/security/screenshot-guard', {
+        headers: { 'Authorization': `Bearer ${idToken}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.config) {
+          setSecurityConfig(data.config);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load security config:', err);
+    } finally {
+      setLoadingSecurity(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'security') {
+      fetchSecurityConfig();
+    }
+  }, [activeTab, firebaseUser]);
+
+  const handleToggleSecurity = async (key: keyof typeof securityConfig) => {
+    if (!firebaseUser) return;
+    const newConfig = {
+      ...securityConfig,
+      [key]: !securityConfig[key]
+    };
+    setSecurityConfig(newConfig);
+    setSavingSecurity(true);
+    setSecurityStatusMsg('');
+
+    try {
+      const idToken = await firebaseUser.getIdToken();
+      const res = await fetch('/api/admin/security/screenshot-guard', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`
+        },
+        body: JSON.stringify(newConfig)
+      });
+      if (!res.ok) throw new Error('Failed to update security configuration');
+      setSecurityStatusMsg('✅ Security settings updated in real time!');
+      setTimeout(() => setSecurityStatusMsg(''), 3000);
+    } catch (err: any) {
+      alert(`❌ Failed to update security settings: ${err.message}`);
+      // Revert on error
+      fetchSecurityConfig();
+    } finally {
+      setSavingSecurity(false);
+    }
+  };
+
   // Launch browser printing preview
   const handlePrintExam = (examId: string) => {
     window.open(`/student/take-subjective-exam?examId=${examId}&print=true`, '_blank');
@@ -431,7 +502,8 @@ export default function AdminSettingsPage() {
       <main style={{ flex: 1, padding: '24px 12px', maxWidth: '850px', width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
         
         {/* Navigation Tabs */}
-        <div className="test-type-tabs" style={{ display: 'flex', gap: '4px', borderBottom: '1px solid var(--border-light)', paddingBottom: '8px' }}>
+        <div className="test-type-tabs" style={{ display: 'flex', gap: '4px', borderBottom: '1px solid var(--border-light)', paddingBottom: '8px', overflowX: 'auto' }}>
+          <button className={`btn btn-sm ${activeTab === 'security' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setActiveTab('security')}>🛡️ Exam Security</button>
           <button className={`btn btn-sm ${activeTab === 'password' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setActiveTab('password')}>🔒 Change Password</button>
           <button className={`btn btn-sm ${activeTab === 'backup' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setActiveTab('backup')}>💾 JSON Backup & Restore</button>
           <button className={`btn btn-sm ${activeTab === 'utils' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setActiveTab('utils')}>🛠️ Database Utilities</button>
@@ -708,6 +780,156 @@ export default function AdminSettingsPage() {
                 )}
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Tab content 5: Exam Security & Screenshot Guard */}
+        {activeTab === 'security' && (
+          <div className="card" style={{ background: 'var(--surface)', padding: '24px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', borderBottom: '1px solid var(--border-light)', paddingBottom: '14px' }}>
+              <div>
+                <h3 style={{ fontSize: '15px', fontWeight: 800, margin: '0 0 4px', color: 'var(--accent)' }}>
+                  🛡️ Exam Security & Screenshot Guard
+                </h3>
+                <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>
+                  Configure real-time screen capture defense, watermark projection, and anti-cheating restrictions.
+                </p>
+              </div>
+              {securityStatusMsg && (
+                <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--success)' }}>
+                  {securityStatusMsg}
+                </div>
+              )}
+            </div>
+
+            {loadingSecurity ? (
+              <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                Loading security configurations...
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {/* 1. Master Toggle */}
+                <div style={{ 
+                  background: securityConfig.screenshotGuardEnabled ? 'rgba(16, 185, 129, 0.08)' : 'rgba(239, 68, 68, 0.08)', 
+                  border: `1px solid ${securityConfig.screenshotGuardEnabled ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`, 
+                  borderRadius: 'var(--radius)', 
+                  padding: '16px', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'space-between', 
+                  gap: '16px' 
+                }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '18px' }}>🛡️</span>
+                      <strong style={{ fontSize: '14px', color: 'var(--text)' }}>
+                        Screenshot & Capture Guard (Master Switch)
+                      </strong>
+                      <span style={{ 
+                        fontSize: '10px', 
+                        fontWeight: 800, 
+                        padding: '2px 8px', 
+                        borderRadius: '12px', 
+                        background: securityConfig.screenshotGuardEnabled ? 'var(--success)' : 'var(--danger)', 
+                        color: 'white' 
+                      }}>
+                        {securityConfig.screenshotGuardEnabled ? 'ACTIVE / ON' : 'DISABLED / OFF'}
+                      </span>
+                    </div>
+                    <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '6px 0 0', lineHeight: 1.5 }}>
+                      When enabled, intercepts PrintScreen, Snipping Tool, Mac Cmd+Shift+3/4/5, print shortcuts (Ctrl+P), DevTools, and protects live exam question papers.
+                    </p>
+                  </div>
+                  <button
+                    className={`btn ${securityConfig.screenshotGuardEnabled ? 'btn-danger' : 'btn-success'}`}
+                    onClick={() => handleToggleSecurity('screenshotGuardEnabled')}
+                    disabled={savingSecurity}
+                    style={{ minWidth: '120px', fontWeight: 700 }}
+                  >
+                    {securityConfig.screenshotGuardEnabled ? 'Turn OFF' : 'Turn ON'}
+                  </button>
+                </div>
+
+                {/* Sub Features Grid */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '12px', opacity: securityConfig.screenshotGuardEnabled ? 1 : 0.5, pointerEvents: securityConfig.screenshotGuardEnabled ? 'auto' : 'none' }}>
+                  {/* Anti-Snipping Blur */}
+                  <div style={{ background: 'var(--bg-soft)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', padding: '14px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '12px' }}>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                        <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text)' }}>
+                          🌫️ Anti-Snipping Blur
+                        </span>
+                        <span style={{ fontSize: '10px', fontWeight: 700, color: securityConfig.blurOnFocusLoss ? 'var(--success)' : 'var(--text-muted)' }}>
+                          {securityConfig.blurOnFocusLoss ? 'ENABLED' : 'DISABLED'}
+                        </span>
+                      </div>
+                      <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0, lineHeight: 1.4 }}>
+                        Instantly blurs exam questions whenever the student switches windows or opens an external snipping tool.
+                      </p>
+                    </div>
+                    <button
+                      className={`btn btn-sm ${securityConfig.blurOnFocusLoss ? 'btn-secondary' : 'btn-primary'}`}
+                      onClick={() => handleToggleSecurity('blurOnFocusLoss')}
+                      disabled={savingSecurity || !securityConfig.screenshotGuardEnabled}
+                    >
+                      {securityConfig.blurOnFocusLoss ? 'Disable Blur' : 'Enable Blur'}
+                    </button>
+                  </div>
+
+                  {/* Forensic Watermark */}
+                  <div style={{ background: 'var(--bg-soft)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', padding: '14px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '12px' }}>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                        <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text)' }}>
+                          💧 Forensic Watermark
+                        </span>
+                        <span style={{ fontSize: '10px', fontWeight: 700, color: securityConfig.forensicWatermark ? 'var(--success)' : 'var(--text-muted)' }}>
+                          {securityConfig.forensicWatermark ? 'ENABLED' : 'DISABLED'}
+                        </span>
+                      </div>
+                      <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0, lineHeight: 1.4 }}>
+                        Projects subtle dynamic watermark tiles (Student Name • Class • Exam Title) across the question screen to deter phone camera photos.
+                      </p>
+                    </div>
+                    <button
+                      className={`btn btn-sm ${securityConfig.forensicWatermark ? 'btn-secondary' : 'btn-primary'}`}
+                      onClick={() => handleToggleSecurity('forensicWatermark')}
+                      disabled={savingSecurity || !securityConfig.screenshotGuardEnabled}
+                    >
+                      {securityConfig.forensicWatermark ? 'Disable Watermark' : 'Enable Watermark'}
+                    </button>
+                  </div>
+
+                  {/* Clipboard Protection */}
+                  <div style={{ background: 'var(--bg-soft)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', padding: '14px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '12px' }}>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                        <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text)' }}>
+                          📋 Clipboard Scrambler
+                        </span>
+                        <span style={{ fontSize: '10px', fontWeight: 700, color: securityConfig.clearClipboardOnPrint ? 'var(--success)' : 'var(--text-muted)' }}>
+                          {securityConfig.clearClipboardOnPrint ? 'ENABLED' : 'DISABLED'}
+                        </span>
+                      </div>
+                      <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0, lineHeight: 1.4 }}>
+                        Automatically clears the OS clipboard buffer if PrintScreen or copy shortcuts are triggered during the session.
+                      </p>
+                    </div>
+                    <button
+                      className={`btn btn-sm ${securityConfig.clearClipboardOnPrint ? 'btn-secondary' : 'btn-primary'}`}
+                      onClick={() => handleToggleSecurity('clearClipboardOnPrint')}
+                      disabled={savingSecurity || !securityConfig.screenshotGuardEnabled}
+                    >
+                      {securityConfig.clearClipboardOnPrint ? 'Disable Scrambler' : 'Enable Scrambler'}
+                    </button>
+                  </div>
+                </div>
+
+                <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', padding: '12px 16px', fontSize: '12px', color: 'var(--text-muted)' }}>
+                  💡 <strong>Tip:</strong> Turning off the Master Switch above instantly disables screenshot intercept across all active exams without requiring server restart.
+                </div>
+              </div>
+            )}
           </div>
         )}
 
