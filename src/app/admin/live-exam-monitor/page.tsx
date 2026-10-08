@@ -29,9 +29,12 @@ interface Session {
     awayTimeTotal?: number;
   };
   proctoringSnapshots?: Array<{
-    timestamp: number;
+    id?: string;
+    timestamp: number | string;
     reason: string;
-    imageData: string;
+    imageData?: string;
+    imageBase64?: string;
+    type?: string;
   }>;
   proctoringSnapshotsExpiresAt?: string;
   status: string;
@@ -40,6 +43,8 @@ interface Session {
   isLate?: boolean;
   lastActive: any;
 }
+
+const getSnapshotImage = (snap: any): string => snap?.imageBase64 || snap?.imageData || '';
 
 const RTC_CONFIG = {
   iceServers: [
@@ -78,7 +83,7 @@ export default function AdminLiveMonitorPage() {
     show: boolean;
     studentName: string;
     examName: string;
-    snapshots: Array<{ timestamp: number; reason: string; imageData: string }>;
+    snapshots: Array<{ timestamp: number | string; reason: string; imageData?: string; imageBase64?: string }>;
     selectedImage: string | null;
   }>({
     show: false,
@@ -219,7 +224,7 @@ export default function AdminLiveMonitorPage() {
       studentName: session.studentName || session.studentCode,
       examName: session.examName || session.examId,
       snapshots: snaps,
-      selectedImage: snaps[0]?.imageData || null
+      selectedImage: getSnapshotImage(snaps[0]) || null
     });
   };
 
@@ -682,12 +687,13 @@ export default function AdminLiveMonitorPage() {
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: '10px' }}>
                   {snapshotsModal.snapshots.map((snap, idx) => {
-                    const isSelected = snapshotsModal.selectedImage === snap.imageData;
+                    const snapImg = getSnapshotImage(snap);
+                    const isSelected = snapshotsModal.selectedImage === snapImg;
                     const dateStr = snap.timestamp ? new Date(snap.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : `#${idx + 1}`;
                     return (
                       <div 
                         key={idx} 
-                        onClick={() => setSnapshotsModal(prev => ({ ...prev, selectedImage: snap.imageData }))}
+                        onClick={() => setSnapshotsModal(prev => ({ ...prev, selectedImage: snapImg }))}
                         style={{
                           border: isSelected ? '2px solid var(--accent)' : '1px solid var(--border-light)',
                           borderRadius: '6px',
@@ -698,7 +704,7 @@ export default function AdminLiveMonitorPage() {
                         }}
                       >
                         <div style={{ aspectRatio: '4/3', background: '#000', overflow: 'hidden' }}>
-                          <img src={snap.imageData} alt={`Snapshot ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          <img src={snapImg} alt={`Snapshot ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         </div>
                         <div style={{ padding: '4px 6px', fontSize: '9.5px', background: 'var(--surface)' }}>
                           <div style={{ fontWeight: 700, color: 'var(--text)' }}>⏱️ {dateStr}</div>

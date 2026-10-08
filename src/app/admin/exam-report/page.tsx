@@ -36,11 +36,12 @@ interface Attempt {
   proctoringViolationTriggered?: boolean;
   abandoned?: boolean;
   micAvailable?: boolean;
-  violations?: any;
   proctoringSnapshots?: Array<{
-    timestamp: number;
+    id?: string;
+    timestamp: number | string;
     reason: string;
-    imageData: string;
+    imageData?: string;
+    imageBase64?: string;
   }>;
   proctoringSnapshotsExpiresAt?: string | null;
   proctoringSnapshotsPurged?: boolean;
@@ -132,7 +133,7 @@ function ExamReportContent() {
   const [votersModalOpen, setVotersModalOpen] = useState(false);
   const [votersList, setVotersList] = useState<string[]>([]);
   const [votersTitle, setVotersTitle] = useState('');
-  const [previewSnapshot, setPreviewSnapshot] = useState<{ src: string; reason: string; timestamp?: number } | null>(null);
+  const [previewSnapshot, setPreviewSnapshot] = useState<{ src: string; reason: string; timestamp?: number | string } | null>(null);
 
   // Re-scoring modal states
   const [editAnswerOpen, setEditAnswerOpen] = useState(false);
@@ -2127,11 +2128,12 @@ function ExamReportContent() {
                     ) : (
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(95px, 1fr))', gap: '8px' }}>
                         {snapshots.map((s, idx) => {
+                          const snapImg = s.imageBase64 || s.imageData || '';
                           const dateStr = s.timestamp ? new Date(s.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : `#${idx + 1}`;
                           return (
                             <div 
                               key={idx}
-                              onClick={() => setPreviewSnapshot({ src: s.imageData, reason: s.reason, timestamp: s.timestamp })}
+                              onClick={() => setPreviewSnapshot({ src: snapImg, reason: s.reason, timestamp: s.timestamp })}
                               style={{
                                 border: '1px solid var(--border-light)',
                                 borderRadius: '4px',
@@ -2142,7 +2144,7 @@ function ExamReportContent() {
                               title="Click to zoom preview"
                             >
                               <div style={{ aspectRatio: '4/3', background: '#000', overflow: 'hidden' }}>
-                                <img src={s.imageData} alt={`Snapshot ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                <img src={snapImg} alt={`Snapshot ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                               </div>
                               <div style={{ padding: '3px 5px', fontSize: '9px', background: 'var(--surface)' }}>
                                 <div style={{ fontWeight: 700 }}>⏱️ {dateStr}</div>

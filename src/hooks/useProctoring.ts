@@ -7,6 +7,7 @@ export interface ProctoringSnapshot {
   type: 'random_check' | 'movement' | 'gaze' | 'multiple_faces' | 'no_face' | 'initial_check';
   reason: string;
   imageBase64: string; // JPEG data URL
+  imageData?: string; // Compatibility alias for UI consumers
 }
 
 function captureCameraSnapshot(videoEl: HTMLVideoElement | null, maxDim: number = 320, quality: number = 0.6): string | null {
@@ -122,7 +123,8 @@ export function useProctoring({
       timestamp: new Date(now).toISOString(),
       type,
       reason,
-      imageBase64: base64
+      imageBase64: base64,
+      imageData: base64
     };
 
     onSnapshotCaptured?.(snapshot);
