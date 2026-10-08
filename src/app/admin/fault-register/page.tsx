@@ -336,20 +336,9 @@ export default function AdminFaultRegisterPage() {
                 Date-Wise Matrix
               </span>
             </div>
-            <p style={{ margin: '3px 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>
-              1-Click discipline tracking for students & parents with auto-detection for missed 60m exam reviews, exam absences & communication gaps.
-            </p>
           </div>
 
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-            <button
-              type="button"
-              className="btn btn-secondary btn-sm"
-              onClick={() => router.push('/admin/disputes')}
-              style={{ fontSize: '12px', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '6px' }}
-            >
-              ⚖️ Exam Disputes Hub
-            </button>
             <button
               type="button"
               className="btn btn-secondary btn-sm"
