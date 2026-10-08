@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as admin from 'firebase-admin';
 import { adminDb } from '@/lib/firebase/admin';
-import { verifyRole } from '@/lib/auth';
+import { verifyRole, verifyAnyRole } from '@/lib/auth';
 import { ExamRepository } from '@/repositories/exam.repository';
 import { ExamService } from '@/services/exam.service';
-import { deriveTopicCodeFromQuestionCode } from '@/lib/questionTypes';
+import { deriveTopicCodeFromQuestionCode, evaluateQuestionAnswer } from '@/lib/questionTypes';
 import { generateAndDispatchExamNotices } from '@/lib/examNotices';
 import { invalidateCache } from '@/lib/firebase/cache';
 import { ExamReviewService } from '@/services/examReview.service';
@@ -15,10 +15,11 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   try {
-    const student = await verifyRole(req, 'student');
-    if (!student) {
-      return NextResponse.json({ message: 'Unauthorized. Student role required.' }, { status: 403 });
+    const caller = await verifyAnyRole(req, ['student', 'admin']);
+    if (!caller) {
+      return NextResponse.json({ message: 'Unauthorized. Student or Admin role required.' }, { status: 403 });
     }
+    const student = caller;
 
     const { searchParams } = new URL(req.url);
     const examId = searchParams.get('id') || searchParams.get('examId');
@@ -163,10 +164,22 @@ export async function GET(req: NextRequest) {
       questions: secureQuestions
     };
 
-    const studentCode = student.userData?.studentCode || '';
+    if (caller.role === 'admin') {
+      return NextResponse.json({
+        exam: secureExam,
+        assignment: {
+          openMode: 'immediate',
+          startAt: new Date(Date.now() - 60000).toISOString(),
+          endAt: new Date(Date.now() + 86400000).toISOString(),
+          lateEntryRestriction: false
+        }
+      });
+    }
+
+    const studentCode = caller.userData?.studentCode || '';
 
     // Validate if student is assigned to this objective exam
-    const studentBatchIds = student.userData?.batchIds || [];
+    const studentBatchIds = caller.userData?.batchIds || [];
     const assignmentQuery = await adminDb.collection('batchAssignments')
       .where('examId', '==', examId)
       .where('status', '==', 'active')
@@ -424,16 +437,20 @@ export async function GET(req: NextRequest) {
 // 2. POST - Server-side evaluation and exam submission
 export async function POST(req: NextRequest) {
   try {
-    const student = await verifyRole(req, 'student');
-    if (!student) {
-      return NextResponse.json({ message: 'Unauthorized. Student role required.' }, { status: 403 });
+    const caller = await verifyAnyRole(req, ['student', 'admin']);
+    if (!caller) {
+      return NextResponse.json({ message: 'Unauthorized. Student or Admin role required.' }, { status: 403 });
     }
 
     const body = await req.json();
     const { action, examId } = body;
-    const studentCode = student.userData?.studentCode || '';
+    const isCallerAdmin = caller.role === 'admin';
+    const studentCode = caller.userData?.studentCode || '';
 
     if (action === 'start') {
+      if (isCallerAdmin) {
+        return NextResponse.json({ success: true, message: 'Preview exam started.' });
+      }
       if (!examId || !studentCode) {
         return NextResponse.json({ message: 'Missing examId or studentCode' }, { status: 400 });
       }
@@ -446,6 +463,9 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === 'autosave') {
+      if (isCallerAdmin) {
+        return NextResponse.json({ success: true, message: 'Preview answers autosaved.' });
+      }
       if (!examId || !studentCode) {
         return NextResponse.json({ message: 'Missing examId or studentCode' }, { status: 400 });
       }
@@ -475,8 +495,43 @@ export async function POST(req: NextRequest) {
     // 2. Fetch all question documents
     const questions = await ExamRepository.getQuestionsForExam(questionCodes);
 
+    // If caller is admin in preview/simulator mode, evaluate in-memory without polluting student records
+    if (isCallerAdmin) {
+      let score = 0;
+      let totalMarks = 0;
+      const wrongAnswers: any[] = [];
+      const unattemptedQuestions: any[] = [];
+
+      questions.forEach((q: any, idx: number) => {
+        const uAns = userAnswers[idx]?.answer;
+        const qMarks = q.marks || 1;
+        totalMarks += qMarks;
+        if (!uAns || uAns === '') {
+          unattemptedQuestions.push({ questionId: q.id || q.questionCode, qIdx: idx, marks: qMarks });
+        } else if (evaluateQuestionAnswer(q.type || 'OSC', uAns, q.correctAnswer || q.answer, q.options)) {
+          score += qMarks;
+        } else {
+          wrongAnswers.push({ questionId: q.id || q.questionCode, qIdx: idx, marks: qMarks, userAnswer: uAns });
+        }
+      });
+
+      const percentage = totalMarks > 0 ? Math.round((score / totalMarks) * 100) : 0;
+      return NextResponse.json({
+        success: true,
+        preview: true,
+        score,
+        totalMarks,
+        percentage,
+        wrongAnswers,
+        unattemptedQuestions,
+        examSubject: examData.subject || null,
+        examChapter: examData.chapter || null,
+        status: 'completed'
+      });
+    }
+
     const canonicalExamId = examData.id || (examData as any).examId || examId;
-    const studentName = student.userData?.name || 'Student';
+    const studentName = caller.userData?.name || 'Student';
 
     // 3. Pre-fetch assignments matching canonicalExamId or submitted examId
     let assignmentsSnap: admin.firestore.QuerySnapshot | null = null;
@@ -493,7 +548,7 @@ export async function POST(req: NextRequest) {
     // 4. Orchestrate scoring writes via ExamService
     const txResult = await ExamService.submitExam({
       studentCode,
-      studentId: student.decodedToken.uid,
+      studentId: caller.decodedToken.uid,
       studentName,
       examId: canonicalExamId,
       examData,

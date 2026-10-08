@@ -23,6 +23,36 @@ export default function AdminFaultRegisterPage() {
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [lastSavedTime, setLastSavedTime] = useState<string | null>(null);
 
+  // Client crash reports telemetry tab
+  const [activeRegisterTab, setActiveRegisterTab] = useState<'discipline' | 'crashes'>('discipline');
+  const [clientCrashes, setClientCrashes] = useState<any[]>([]);
+  const [loadingCrashes, setLoadingCrashes] = useState<boolean>(false);
+
+  const fetchClientCrashes = useCallback(async () => {
+    if (!firebaseUser) return;
+    try {
+      setLoadingCrashes(true);
+      const token = await firebaseUser.getIdToken();
+      const res = await fetch('/api/system/client-error?limit=50', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setClientCrashes(data.faults || []);
+      }
+    } catch (e) {
+      console.error('Failed to load client crashes:', e);
+    } finally {
+      setLoadingCrashes(false);
+    }
+  }, [firebaseUser]);
+
+  useEffect(() => {
+    if (activeRegisterTab === 'crashes') {
+      fetchClientCrashes();
+    }
+  }, [activeRegisterTab, fetchClientCrashes]);
+
   // Auto-save debounce and queue refs
   const pendingSavesRef = React.useRef<Map<string, { faults: Record<string, boolean>; notes: Record<string, string> }>>(new Map());
   const debounceTimerRef = React.useRef<NodeJS.Timeout | null>(null);
@@ -434,7 +464,148 @@ export default function AdminFaultRegisterPage() {
           </div>
         </div>
 
-        {/* Filters and Batch Bar */}
+        {/* Tab Switcher: Student Conduct vs Client Crashes */}
+        <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid var(--border-light)', paddingBottom: '4px' }}>
+          <button
+            type="button"
+            onClick={() => setActiveRegisterTab('discipline')}
+            style={{
+              padding: '6px 14px',
+              borderRadius: '6px',
+              border: 'none',
+              background: activeRegisterTab === 'discipline' ? 'var(--accent)' : 'var(--surface-2)',
+              color: activeRegisterTab === 'discipline' ? '#fff' : 'var(--text-muted)',
+              fontWeight: 700,
+              fontSize: '12px',
+              cursor: 'pointer'
+            }}
+          >
+            📋 Student Conduct Matrix
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveRegisterTab('crashes')}
+            style={{
+              padding: '6px 14px',
+              borderRadius: '6px',
+              border: 'none',
+              background: activeRegisterTab === 'crashes' ? 'var(--danger)' : 'var(--surface-2)',
+              color: activeRegisterTab === 'crashes' ? '#fff' : 'var(--text-muted)',
+              fontWeight: 700,
+              fontSize: '12px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+          >
+            🚨 Client Crashes & Faults
+            {clientCrashes.length > 0 && (
+              <span style={{
+                background: 'rgba(255,255,255,0.25)',
+                color: '#fff',
+                fontSize: '10px',
+                padding: '1px 6px',
+                borderRadius: '10px'
+              }}>
+                {clientCrashes.length}
+              </span>
+            )}
+          </button>
+        </div>
+
+        {activeRegisterTab === 'crashes' ? (
+          /* Real-Time Client Crash Log */
+          <div className="card" style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', padding: '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: 'var(--text)' }}>
+                  🚨 Real-Time Client Crash Log (`systemFaults`)
+                </h3>
+                <p style={{ margin: '2px 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>
+                  Captured by ExamErrorBoundary from student phones & browsers.
+                </p>
+              </div>
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm"
+                onClick={fetchClientCrashes}
+                disabled={loadingCrashes}
+                style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '6px' }}
+              >
+                🔄 Refresh Logs
+              </button>
+            </div>
+
+            {loadingCrashes ? (
+              <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)' }}>
+                <div className="spinner" style={{ margin: '0 auto 10px' }}></div> Loading client crash logs...
+              </div>
+            ) : clientCrashes.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--success)' }}>
+                <div style={{ fontSize: '2rem', marginBottom: '8px' }}>✅</div>
+                <strong>Zero client crashes reported!</strong>
+                <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '4px 0 0' }}>
+                  No error boundary exceptions or runtime crashes have been reported from student devices.
+                </p>
+              </div>
+            ) : (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', textAlign: 'left' }}>
+                  <thead>
+                    <tr style={{ background: 'var(--surface-light)', borderBottom: '2px solid var(--border-light)' }}>
+                      <th style={{ padding: '8px 10px' }}>Time (IST)</th>
+                      <th style={{ padding: '8px 10px' }}>Student</th>
+                      <th style={{ padding: '8px 10px' }}>Exam ID</th>
+                      <th style={{ padding: '8px 10px' }}>Error & Message</th>
+                      <th style={{ padding: '8px 10px' }}>Device / URL</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {clientCrashes.map(crash => (
+                      <tr key={crash.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
+                        <td style={{ padding: '8px 10px', whiteSpace: 'nowrap', verticalAlign: 'top', color: 'var(--text-muted)' }}>
+                          {crash.timestamp ? formatDateDMY(crash.timestamp) + ' ' + new Date(crash.timestamp).toLocaleTimeString('en-IN') : 'N/A'}
+                        </td>
+                        <td style={{ padding: '8px 10px', verticalAlign: 'top' }}>
+                          <div style={{ fontWeight: 700, color: 'var(--text)' }}>
+                            {crash.context?.studentName || crash.context?.studentCode || 'Anonymous'}
+                          </div>
+                          {crash.context?.studentCode && (
+                            <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{crash.context.studentCode}</span>
+                          )}
+                        </td>
+                        <td style={{ padding: '8px 10px', verticalAlign: 'top', whiteSpace: 'nowrap' }}>
+                          <span className="badge" style={{ fontSize: '10px' }}>{crash.context?.examId || 'General'}</span>
+                        </td>
+                        <td style={{ padding: '8px 10px', verticalAlign: 'top', maxWidth: '380px' }}>
+                          <div style={{ fontWeight: 700, color: 'var(--danger)', wordBreak: 'break-word' }}>
+                            {crash.message}
+                          </div>
+                          {(crash.stack || crash.componentStack) && (
+                            <details style={{ marginTop: '4px', fontSize: '11px', color: 'var(--text-muted)' }}>
+                              <summary style={{ cursor: 'pointer', color: 'var(--accent)' }}>View Stack Trace</summary>
+                              <pre style={{ margin: '4px 0 0', padding: '6px', background: 'var(--bg)', borderRadius: '4px', fontSize: '10px', overflowX: 'auto', whiteSpace: 'pre-wrap', maxHeight: '160px' }}>
+                                {crash.stack}
+                                {crash.componentStack ? `\n\nComponent Stack:\n${crash.componentStack}` : ''}
+                              </pre>
+                            </details>
+                          )}
+                        </td>
+                        <td style={{ padding: '8px 10px', verticalAlign: 'top', fontSize: '11px', color: 'var(--text-muted)', maxWidth: '240px', wordBreak: 'break-word' }}>
+                          <div>{crash.url}</div>
+                          <div style={{ fontSize: '10px', opacity: 0.7, marginTop: '2px' }}>{crash.userAgent?.slice(0, 80)}...</div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        ) : (
+          <>
+            {/* Filters and Batch Bar */}
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap', background: 'var(--surface-light)', padding: '10px 14px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)' }}>📅 Date:</label>
@@ -636,6 +807,8 @@ export default function AdminFaultRegisterPage() {
             </div>
           )}
         </div>
+        </>
+        )}
 
       </div>
 

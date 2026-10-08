@@ -5,6 +5,8 @@ import React, { Component, ErrorInfo, ReactNode } from 'react';
 interface Props {
   children: ReactNode;
   fallbackTitle?: string;
+  examId?: string;
+  studentCode?: string;
   onReset?: () => void;
 }
 
@@ -39,6 +41,25 @@ export class ExamErrorBoundary extends Component<Props, State> {
     // Fire-and-forget report to server for administrative visibility
     try {
       if (typeof window !== 'undefined' && window.location) {
+        let examId = this.props.examId || null;
+        let studentCode = this.props.studentCode || null;
+        let studentName: string | null = null;
+
+        try {
+          if (!examId && window.location.search) {
+            const sp = new URLSearchParams(window.location.search);
+            examId = sp.get('id') || sp.get('examId') || null;
+          }
+          if (!studentCode && window.localStorage) {
+            const sessionStr = window.localStorage.getItem('yc_user_session');
+            if (sessionStr) {
+              const sess = JSON.parse(sessionStr);
+              studentCode = sess.studentCode || sess.code || null;
+              studentName = sess.name || sess.studentName || null;
+            }
+          }
+        } catch {}
+
         fetch('/api/system/client-error', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -46,6 +67,9 @@ export class ExamErrorBoundary extends Component<Props, State> {
             action: 'client_crash',
             type: this.props.fallbackTitle || 'exam_error_boundary',
             url: window.location.href,
+            examId,
+            studentCode,
+            studentName,
             message: `${error?.name || 'Error'}: ${error?.message || 'Unknown error'}`,
             stack: error?.stack || null,
             componentStack: errorInfo?.componentStack || null,

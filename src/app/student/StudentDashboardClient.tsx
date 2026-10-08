@@ -422,17 +422,6 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
     );
   };
 
-  if (error) {
-    return (
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: 'var(--bg)', padding: '20px' }}>
-        <div className="alert-box alert-box-danger" style={{ display: 'block', maxWidth: '400px', textAlign: 'center' }}>
-          {error?.message || 'Could not load student dashboard profile.'}
-        </div>
-        <button className="btn btn-primary" onClick={() => window.location.reload()} style={{ marginTop: '16px' }}>Retry</button>
-      </div>
-    );
-  }
-
   const activeData = data || initialData || localCache;
   const profile = activeData?.profile;
   const resultsSummary = activeData?.resultsSummary;
@@ -491,6 +480,17 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
       scheduledEntranceExams: scheduledEnt
     };
   }, [rawExams, nowMs]);
+
+  if (error) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: 'var(--bg)', padding: '20px' }}>
+        <div className="alert-box alert-box-danger" style={{ display: 'block', maxWidth: '400px', textAlign: 'center' }}>
+          {error?.message || 'Could not load student dashboard profile.'}
+        </div>
+        <button className="btn btn-primary" onClick={() => window.location.reload()} style={{ marginTop: '16px' }}>Retry</button>
+      </div>
+    );
+  }
   const greeting = getGreeting();
   const firstName = profile?.name ? profile.name.split(' ')[0] : '';
   const hasActionItems = Boolean(

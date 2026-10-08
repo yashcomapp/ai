@@ -196,6 +196,61 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
     return formatDateIST(dateStr) || 'Never';
   };
 
+  const deferredSearchTerm = useDeferredValue(searchTerm);
+
+  // Filter topics based on active tab and search query
+  const { grouped, sortedSubjects, topicsList } = useMemo(() => {
+    let list: TopicItem[] = [];
+    if (data) {
+      if (activeTab === 'needsAttention') {
+        list = data.needsAttention || [];
+      } else if (activeTab === 'continuePractice') {
+        list = data.continuePractice || [];
+      } else if (activeTab === 'revision') {
+        list = data.revision || [];
+      } else if (activeTab === 'mastered') {
+        list = data.mastered || [];
+      }
+    }
+
+    const query = deferredSearchTerm.toLowerCase().trim();
+    if (query) {
+      list = list.filter(t =>
+        (t.topicName || '').toLowerCase().includes(query) ||
+        (t.subjectName || '').toLowerCase().includes(query) ||
+        (t.chapterName || '').toLowerCase().includes(query)
+      );
+    }
+
+    // Group filtered topics by subject, then by chapter
+    const grp = new Map<string, Map<string, TopicItem[]>>();
+    list.forEach(topic => {
+      const sName = topic.subjectName || getCanonicalSubjectName(topic.subjectCode, topic.topicCode, topic.chapterName);
+      const cName = topic.chapterName || 'General';
+
+      if (!grp.has(sName)) {
+        grp.set(sName, new Map());
+      }
+      const chapters = grp.get(sName)!;
+      if (!chapters.has(cName)) {
+        chapters.set(cName, []);
+      }
+      chapters.get(cName)!.push(topic);
+    });
+
+    const getSubjMastery = (subjName: string) => {
+      const chapters = grp.get(subjName);
+      if (!chapters) return 0;
+      const allSubjTopics = Array.from(chapters.values()).flat();
+      if (allSubjTopics.length === 0) return 0;
+      return allSubjTopics.reduce((acc, t) => acc + t.mastery, 0) / allSubjTopics.length;
+    };
+
+    const sortedSubjs = Array.from(grp.keys()).sort((a, b) => getSubjMastery(a) - getSubjMastery(b));
+
+    return { grouped: grp, sortedSubjects: sortedSubjs, topicsList: list };
+  }, [data, activeTab, deferredSearchTerm]);
+
   if (user && (user as any).autonomous) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '80vh', padding: '20px' }}>
@@ -279,61 +334,6 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
       </div>
     );
   }
-
-  const deferredSearchTerm = useDeferredValue(searchTerm);
-
-  // Filter topics based on active tab and search query
-  const { grouped, sortedSubjects, topicsList } = useMemo(() => {
-    let list: TopicItem[] = [];
-    if (data) {
-      if (activeTab === 'needsAttention') {
-        list = data.needsAttention || [];
-      } else if (activeTab === 'continuePractice') {
-        list = data.continuePractice || [];
-      } else if (activeTab === 'revision') {
-        list = data.revision || [];
-      } else if (activeTab === 'mastered') {
-        list = data.mastered || [];
-      }
-    }
-
-    const query = deferredSearchTerm.toLowerCase().trim();
-    if (query) {
-      list = list.filter(t =>
-        (t.topicName || '').toLowerCase().includes(query) ||
-        (t.subjectName || '').toLowerCase().includes(query) ||
-        (t.chapterName || '').toLowerCase().includes(query)
-      );
-    }
-
-    // Group filtered topics by subject, then by chapter
-    const grp = new Map<string, Map<string, TopicItem[]>>();
-    list.forEach(topic => {
-      const sName = topic.subjectName || getCanonicalSubjectName(topic.subjectCode, topic.topicCode, topic.chapterName);
-      const cName = topic.chapterName || 'General';
-
-      if (!grp.has(sName)) {
-        grp.set(sName, new Map());
-      }
-      const chapters = grp.get(sName)!;
-      if (!chapters.has(cName)) {
-        chapters.set(cName, []);
-      }
-      chapters.get(cName)!.push(topic);
-    });
-
-    const getSubjMastery = (subjName: string) => {
-      const chapters = grp.get(subjName);
-      if (!chapters) return 0;
-      const allSubjTopics = Array.from(chapters.values()).flat();
-      if (allSubjTopics.length === 0) return 0;
-      return allSubjTopics.reduce((acc, t) => acc + t.mastery, 0) / allSubjTopics.length;
-    };
-
-    const sortedSubjs = Array.from(grp.keys()).sort((a, b) => getSubjMastery(a) - getSubjMastery(b));
-
-    return { grouped: grp, sortedSubjects: sortedSubjs, topicsList: list };
-  }, [data, activeTab, deferredSearchTerm]);
 
   return (
     <div className="page-wrapper">

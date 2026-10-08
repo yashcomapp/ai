@@ -81,6 +81,7 @@ function TakeExamContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const examId = searchParams.get('examId') || searchParams.get('id');
+  const isPreviewMode = searchParams.get('preview') === 'true' || user?.role === 'admin';
 
   const [exam, setExam] = useState<Exam | null>(null);
   const [assignment, setAssignment] = useState<any>(null);
@@ -672,6 +673,7 @@ function TakeExamContent() {
           examId,
           userAnswers,
           durationSpent,
+          preview: isPreviewMode,
           tabViolations: activeTabViolations,
           proctoringViolations,
           startedAt,
@@ -845,6 +847,43 @@ function TakeExamContent() {
 
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
+      {/* Admin Simulator Mode Banner (SSOT unification) */}
+      {isPreviewMode && (
+        <div style={{
+          background: 'linear-gradient(90deg, rgba(234, 179, 8, 0.15), rgba(59, 130, 246, 0.15))',
+          borderBottom: '1px solid rgba(234, 179, 8, 0.35)',
+          padding: '8px 16px',
+          textAlign: 'center',
+          fontSize: '12px',
+          fontWeight: 700,
+          color: '#fbbf24',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '10px'
+        }}>
+          <span>🛠️ Admin Simulator Mode</span>
+          <span>•</span>
+          <span>Running Unified Student Exam Engine</span>
+          <span>•</span>
+          <button 
+            type="button"
+            onClick={() => router.push('/admin/exams')}
+            style={{
+              background: 'transparent',
+              border: '1px solid rgba(251, 191, 36, 0.5)',
+              color: '#fbbf24',
+              borderRadius: '4px',
+              padding: '2px 8px',
+              fontSize: '11px',
+              cursor: 'pointer'
+            }}
+          >
+            ← Exit Simulator
+          </button>
+        </div>
+      )}
+
       {/* Floating Alert Banner for active proctoring violations */}
       {activeViolationWarning && (
         <div style={{
@@ -1030,6 +1069,24 @@ function TakeExamContent() {
                 style={{ marginTop: '15px', width: '100%' }}
               >
                 {isStartingExam ? 'Starting Exam...' : 'Start Exam / Proceed'}
+              </button>
+            )}
+
+            {isPreviewMode && (
+              <button 
+                type="button"
+                className="btn btn-secondary" 
+                onClick={() => setCameraModalOpen(false)}
+                style={{ 
+                  marginTop: '10px', 
+                  width: '100%', 
+                  border: '1px dashed var(--accent)', 
+                  color: 'var(--accent)', 
+                  fontWeight: 700,
+                  fontSize: '12px'
+                }}
+              >
+                ⚡ Admin Simulator: Bypass Hardware Diagnostic & Enter Exam
               </button>
             )}
               </>
@@ -1643,10 +1700,14 @@ function TakeExamContent() {
   );
 }
 
-export default function TakeExamPage() {
+function TakeExamPageInner() {
+  const searchParams = useSearchParams();
+  const examId = searchParams.get('id') || searchParams.get('examId') || undefined;
+
   return (
     <ExamErrorBoundary
       fallbackTitle="Objective Exam Workspace Recovery"
+      examId={examId}
       onReset={() => {
         try {
           if (typeof window !== 'undefined' && window.localStorage) {
@@ -1662,15 +1723,21 @@ export default function TakeExamPage() {
         } catch {}
       }}
     >
-      <React.Suspense fallback={
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: 'var(--bg)' }}>
-          <div className="loading" style={{ display: 'block' }}>
-            <div className="spinner"></div> Loading exam...
-          </div>
-        </div>
-      }>
-        <TakeExamContent />
-      </React.Suspense>
+      <TakeExamContent />
     </ExamErrorBoundary>
+  );
+}
+
+export default function TakeExamPage() {
+  return (
+    <React.Suspense fallback={
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: 'var(--bg)' }}>
+        <div className="loading" style={{ display: 'block' }}>
+          <div className="spinner"></div> Loading exam...
+        </div>
+      </div>
+    }>
+      <TakeExamPageInner />
+    </React.Suspense>
   );
 }
