@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as admin from 'firebase-admin';
 import { adminDb } from '@/lib/firebase/admin';
-import { verifyRole } from '@/lib/auth';
+import { verifyRole, verifyAnyRole } from '@/lib/auth';
 import { ExamService } from '@/services/exam.service';
 export const dynamic = 'force-dynamic';
 
@@ -104,17 +104,47 @@ async function getAttemptQuestions(attempt: any, exam: any): Promise<any[]> {
 
 export async function GET(req: NextRequest) {
   try {
-    const student = await verifyRole(req, 'student');
-    if (!student) {
-      return NextResponse.json({ message: 'Unauthorized. Student role required.' }, { status: 403 });
+    const caller = await verifyAnyRole(req, ['student', 'admin']);
+    if (!caller) {
+      return NextResponse.json({ message: 'Unauthorized. Student or Admin role required.' }, { status: 403 });
     }
     const { searchParams } = new URL(req.url);
     const examId = searchParams.get('examId') || '';
     const mode = searchParams.get('mode') || 'home';
+
+    if (!examId) {
+      return NextResponse.json({ message: 'Missing parameter: examId.' }, { status: 400 });
+    }
+
+    // Admin Simulator Mode: Bypass student assignment checks and serve full exam payload
+    if (caller.role === 'admin') {
+      const examSnap = await adminDb.collection('subjectiveExams').doc(examId).get();
+      if (!examSnap.exists) {
+        return NextResponse.json({ message: 'Exam not found.' }, { status: 404 });
+      }
+      const examData = examSnap.data()!;
+      const questions = await getAttemptQuestions(null, examData);
+      return NextResponse.json({
+        examData: {
+          id: examSnap.id,
+          ...examData,
+          name: cleanSubjectiveExamName(examData)
+        },
+        questions,
+        assignment: {
+          openMode: 'immediate',
+          startAt: new Date(Date.now() - 60000).toISOString(),
+          endAt: new Date(Date.now() + 86400000).toISOString(),
+          lateEntryRestriction: false
+        }
+      });
+    }
+
+    const student = caller;
     const studentCode = student.userData?.studentCode;
 
-    if (!examId || !studentCode) {
-      return NextResponse.json({ message: 'Missing parameters (examId, studentCode).' }, { status: 400 });
+    if (!studentCode) {
+      return NextResponse.json({ message: 'Missing parameter: studentCode.' }, { status: 400 });
     }
 
     // A. Peer Review Mode

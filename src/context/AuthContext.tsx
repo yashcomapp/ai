@@ -151,7 +151,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } else if (user.role === 'parent' && (isStudentRoute || isAdminRoute)) {
         router.replace('/parent');
       } else if (user.role === 'admin' && (isStudentRoute || isParentRoute)) {
-        router.replace('/admin');
+        // SSOT Simulator Mode: Allow admin preview on unified exam runner
+        const isAdminSimulatorAllowed = pathname.startsWith('/student/take-exam') || pathname.startsWith('/student/take-subjective-exam');
+        if (!isAdminSimulatorAllowed) {
+          router.replace('/admin');
+        }
       }
     }
   }, [user, loading, pathname, router]);

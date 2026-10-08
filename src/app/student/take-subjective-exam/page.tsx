@@ -617,8 +617,8 @@ function TakeSubjectiveExamContent() {
               ? (error || 'Autonomous mode is active on your account. Subjective Home Exam sessions are restricted for Autonomous Student profiles.')
               : (error || 'Could not load subjective exam.')}
           </p>
-          <button className="btn btn-primary" onClick={() => router.push('/student')} style={{ background: 'var(--accent)', color: 'var(--text-white)', border: 'none', padding: '10px 20px', borderRadius: 'var(--radius-md)', fontWeight: 'bold', cursor: 'pointer' }}>
-            🏠 Back to Dashboard
+          <button className="btn btn-primary" onClick={() => router.push(user?.role === 'admin' ? '/admin/exams' : '/student')} style={{ background: 'var(--accent)', color: 'var(--text-white)', border: 'none', padding: '10px 20px', borderRadius: 'var(--radius-md)', fontWeight: 'bold', cursor: 'pointer' }}>
+            {user?.role === 'admin' ? '← Back to Exam Management' : '🏠 Back to Dashboard'}
           </button>
         </div>
       </div>
@@ -643,7 +643,9 @@ function TakeSubjectiveExamContent() {
         </div>
         <div className="page-header-right">
           <span className="badge badge-info">{mode === 'peer-review' ? 'Peer Reviewer' : 'Student'}</span>
-          <button className="btn btn-secondary" onClick={() => router.push('/student')} style={{ marginLeft: '12px' }}>Dashboard</button>
+          <button className="btn btn-secondary" onClick={() => router.push(user?.role === 'admin' ? '/admin/exams' : '/student')} style={{ marginLeft: '12px' }}>
+            {user?.role === 'admin' ? '← Exit Simulator' : 'Dashboard'}
+          </button>
         </div>
       </header>
 

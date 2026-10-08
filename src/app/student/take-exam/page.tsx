@@ -824,10 +824,10 @@ function TakeExamContent() {
           </p>
           <button 
             className="btn btn-primary" 
-            onClick={() => router.push('/student')} 
+            onClick={() => router.push(user?.role === 'admin' ? '/admin/exams' : '/student')} 
             style={{ padding: '10px 24px', borderRadius: '8px', fontWeight: 700, marginTop: '8px' }}
           >
-            🏠 Return to Dashboard & Complete Actions
+            {user?.role === 'admin' ? '← Back to Exam Management' : '🏠 Return to Dashboard & Complete Actions'}
           </button>
         </div>
       </div>
@@ -840,7 +840,9 @@ function TakeExamContent() {
         <div className="alert-box alert-box-danger" style={{ display: 'block', maxWidth: '500px', textAlign: 'center' }}>
           This exam contains no questions or is not configured yet. Please contact your administrator.
         </div>
-        <button className="btn btn-primary" onClick={() => router.push('/student')} style={{ marginTop: '20px' }}>Go Back</button>
+        <button className="btn btn-primary" onClick={() => router.push(user?.role === 'admin' ? '/admin/exams' : '/student')} style={{ marginTop: '20px' }}>
+          {user?.role === 'admin' ? '← Back to Exam Management' : 'Go Back'}
+        </button>
       </div>
     );
   }
@@ -1690,8 +1692,8 @@ function TakeExamContent() {
               Your submission has been saved. It is currently waiting for your parent's review.
             </p>
 
-            <button className="btn btn-primary" onClick={() => router.push('/student')} style={{ width: '100%', padding: '12px', fontSize: '14px', fontWeight: 'bold', marginTop: '10px' }}>
-              Go to Student Dashboard
+            <button className="btn btn-primary" onClick={() => router.push(user?.role === 'admin' ? '/admin/exams' : '/student')} style={{ width: '100%', padding: '12px', fontSize: '14px', fontWeight: 'bold', marginTop: '10px' }}>
+              {user?.role === 'admin' ? '← Back to Exam Management' : 'Go to Student Dashboard'}
             </button>
           </div>
         </div>
