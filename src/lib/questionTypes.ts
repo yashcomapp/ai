@@ -1251,6 +1251,74 @@ export function validateQuestion(q: any, questionType: 'objective' | 'subjective
     }
   }
 
+  // Check for SVG figure label hallucinations and visual collision
+  if (textStr.includes('<svg')) {
+    const svgMatch = textStr.match(/<svg[\s\S]*?<\/svg>/i);
+    if (svgMatch) {
+      const svgStr = svgMatch[0];
+      const stemWithoutSvg = textStr.replace(/<svg[\s\S]*?<\/svg>/gi, '');
+
+      // 1. Extract named triangles/quadrilaterals from question stem
+      const figureRegex = /(?:\\triangle|\\Delta|triangle|quadrilateral|parallelogram|rectangle|rhombus|trapezium)\s*(?:\{([A-Z]{3,4})\}|([A-Z]{3,4}))/gi;
+      const stemPolygons: string[] = [];
+      let match: RegExpExecArray | null;
+      const COMMON_NON_SHAPES = new Set(['WHEN', 'THEN', 'WHAT', 'EACH', 'FIND', 'TRUE', 'SIDE', 'AREA']);
+      while ((match = figureRegex.exec(stemWithoutSvg)) !== null) {
+        const polyName = (match[1] || match[2] || '').toUpperCase();
+        if (polyName && !COMMON_NON_SHAPES.has(polyName)) {
+          stemPolygons.push(polyName);
+        }
+      }
+
+      // 2. Extract vertex letter labels from <text>...</text> in the SVG
+      const textRegex = /<text[^>]*>([A-Za-z0-9\s°\-+=]+)<\/text>/gi;
+      const svgLabels: string[] = [];
+      while ((match = textRegex.exec(svgStr)) !== null) {
+        const labelText = match[1].trim();
+        if (/^[A-Z]$/.test(labelText)) {
+          svgLabels.push(labelText);
+        }
+      }
+
+      // 3. Detect figure label hallucinations (stem names figures with one set of letters, but SVG has completely alien letters)
+      if (stemPolygons.length >= 1 && svgLabels.length >= 3) {
+        const stemLetters = new Set(stemPolygons.join('').split(''));
+        const alienLabels = Array.from(new Set(svgLabels.filter(l => !stemLetters.has(l))));
+        const missingStemLetters = Array.from(stemLetters).filter(l => !svgLabels.includes(l));
+
+        if (alienLabels.length >= 2 && missingStemLetters.length >= 2) {
+          errors.push(
+            `Figure label mismatch: Question stem specifies figure(s) with vertices (${Array.from(stemLetters).join(', ')}), but the embedded SVG diagram uses mismatched/hallucinated labels (${alienLabels.join(', ')}). All SVG vertex labels must strictly match the figures named in the question.`
+          );
+        }
+      }
+
+      // 4. Detect visual label collisions in SVG (<text> coordinates placed too close together)
+      const coordRegex = /<text[^>]*x=['"]([0-9.]+)['"][^>]*y=['"]([0-9.]+)['"][^>]*>([^<]+)<\/text>/gi;
+      const labelCoords: { text: string; x: number; y: number }[] = [];
+      while ((match = coordRegex.exec(svgStr)) !== null) {
+        const t = match[3].trim();
+        if (t.length <= 4) {
+          labelCoords.push({ text: t, x: parseFloat(match[1]), y: parseFloat(match[2]) });
+        }
+      }
+      for (let i = 0; i < labelCoords.length; i++) {
+        for (let j = i + 1; j < labelCoords.length; j++) {
+          const l1 = labelCoords[i];
+          const l2 = labelCoords[j];
+          const dx = Math.abs(l1.x - l2.x);
+          const dy = Math.abs(l1.y - l2.y);
+          if (dx < 16 && dy < 12) {
+            errors.push(
+              `Overlapping SVG labels: Labels '${l1.text}' and '${l2.text}' are placed too close (${Math.round(dx)}px apart) and will collide visually. Ensure adequate spacing between shapes and vertex labels.`
+            );
+            break;
+          }
+        }
+      }
+    }
+  }
+
   // Check for duplicate or near-identical options in MCQs
   if (Array.isArray(q.options) && q.options.length >= 2) {
     const rawOptions = q.options;

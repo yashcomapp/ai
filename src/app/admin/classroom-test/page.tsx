@@ -654,6 +654,7 @@ ${isMath ? `
 - For Mathematics, 100% of the questions MUST be taken directly from official textbook exercises, practice sets, problem sets, or solved examples.
 - Specify the exact textbook reference in "sourceSection" (e.g., "${isMH ? 'Practice Set 13.1: Q1' : 'Exercise 7.1: Q2'}").
 - MANDATORY VECTOR SVG FIGURES FOR GEOMETRY / DIAGRAM TOPICS: If a question references or requires a diagram (e.g. triangles, congruence, quadrilaterals, circles, transversals), embed a standalone <svg viewBox='0 0 320 150' width='100%' style='max-width:320px;height:auto;display:block;margin:10px auto;'>...</svg> vector diagram directly inside the "text" string using single quotes for all SVG attributes.
+- STRICT 100% FIGURE & STEM LABEL IDENTITY: Every vertex and angle label in the SVG MUST 100% IDENTICALLY MATCH the polygon names in the question text (e.g. if the stem specifies \triangle PQR and \triangle LMN, the SVG must use vertices P, Q, R and L, M, N - NEVER generic A, B, C). Maintain at least 40px gap between side-by-side shapes so vertex labels never collide.
 ` : ''}
 
 STRICT VERBATIM & KEYWORD HIGHLIGHTING RULES:
@@ -753,6 +754,7 @@ ${isMath ? `
 - For Mathematics, 100% of the questions MUST be taken directly from official textbook exercises, practice sets, problem sets, or solved examples.
 - Specify the exact textbook reference in "sourceSection" (e.g., "${isMH ? 'Practice Set 13.1: Q1' : 'Exercise 7.1: Q2'}").
 - MANDATORY VECTOR SVG FIGURES FOR GEOMETRY / DIAGRAM TOPICS: If a question references or requires a diagram (e.g. triangles, congruence, quadrilaterals, circles, transversals), embed a standalone <svg viewBox='0 0 320 150' width='100%' style='max-width:320px;height:auto;display:block;margin:10px auto;'>...</svg> vector diagram directly inside the "text" string using single quotes for all SVG attributes.
+- STRICT 100% FIGURE & STEM LABEL IDENTITY: Every vertex and angle label in the SVG MUST 100% IDENTICALLY MATCH the polygon names in the question text (e.g. if the stem specifies \triangle PQR and \triangle LMN, the SVG must use vertices P, Q, R and L, M, N - NEVER generic A, B, C). Maintain at least 40px gap between side-by-side shapes so vertex labels never collide.
 ` : ''}
 
 STRICT VERBATIM & KEYWORD HIGHLIGHTING RULES:

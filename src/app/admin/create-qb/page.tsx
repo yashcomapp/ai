@@ -833,21 +833,42 @@ Output ALL ${total} questions enclosed within a SINGLE Markdown JSON code block:
 ========================================
 MANDATORY VECTOR SVG FIGURE INSTRUCTIONS (GEOMETRY & DIAGRAM TOPICS):
 ========================================
-⚠️ CRITICAL MANDATE FOR GEOMETRY / TRIANGLES / CONGRUENCE / CIRCLES / QUADRILATERALS:
+⚠️ ZERO-TOLERANCE FIGURE-STEM LABEL IDENTITY & DIAGRAM INTEGRITY MANDATE:
 AT LEAST 70% TO 80% OF ALL QUESTIONS GENERATED FOR THIS TOPIC MUST CONTAIN AN EMBEDDED <svg> VECTOR DIAGRAM DIRECTLY IN THE "text" FIELD!
 Do NOT generate word-only definitions or text-only questions when the textbook standard (e.g. Congruence of Triangles, Tests SSS/SAS/ASA/AAS/Hypotenuse-Side, Corresponding parts c.p.c.t./c.s.c.t., Parallel lines & transversals, Circle chords & radii) uses diagrams to test visual reasoning.
 
-SVG STANDARDS & GUIDELINES:
-1. Embed the <svg ...>...</svg> directly inside the "text" JSON string.
-2. SVG Container Dimensions:
-   - Must use \`viewBox='0 0 320 150'\` with \`width='100%'\` and \`style='max-width:320px;height:auto;display:block;margin:10px auto;'\`.
-3. SVG Syntax & Escaping:
+CRITICAL RULES FOR FIGURES & LABELS (NEVER HALLUCINATE OR SWAP LABELS):
+1. 100% FIGURE & STEM LABEL IDENTITY (ABSOLUTE RULE):
+   - EVERY vertex, line, and angle label in the <svg> MUST 100% IDENTICALLY MATCH the exact names specified in your question stem!
+   - If the question stem states "In \\(\\triangle PQR\\) and \\(\\triangle LMN\\)", Triangle 1 in the SVG MUST have vertices P, Q, R, and Triangle 2 MUST have vertices L, M, N.
+   - ABSOLUTELY NEVER output generic letters (e.g., A, B, C) when the question text mentions other names (such as PQR, LMN, XYZ, DEF)!
+   - ABSOLUTELY NEVER copy labels from few-shot examples without updating them to match your question's exact polygon vertices!
+   - If the question mentions "quadrilateral ABCD", the SVG polygon must have vertices A, B, C, D in cyclic order.
+2. CORRESPONDENCE OF VERTICES:
+   - When \\(\\triangle PQR \\cong \\triangle LMN\\), arrange corresponding vertices in matching relative positions:
+     * Triangle 1 apex: P  <-->  Triangle 2 apex: L
+     * Triangle 1 bottom-left: Q  <-->  Triangle 2 bottom-left: M
+     * Triangle 1 bottom-right: R  <-->  Triangle 2 bottom-right: N
+3. ZERO LABEL COLLISION & STRICT SPATIAL CLEARANCE (MINIMUM 35px SPACING):
+   - When rendering two side-by-side triangles in viewBox='0 0 320 150':
+     * Triangle 1: x coordinates MUST span from 25 to 135 (width ~110px).
+     * Triangle 2: x coordinates MUST span from 185 to 295 (width ~110px).
+     * NOTICE THE 50px SEPARATION GAP between x=135 and x=185. This guarantees that bottom-right vertex of Triangle 1 and bottom-left vertex of Triangle 2 never collide!
+     * Vertex labels MUST be placed outside the polygon boundary:
+       - Top apex (e.g. x=80, y=30): place label at x='80' y='18' text-anchor='middle'
+       - Bottom-left (e.g. x=25, y=125): place label at x='12' y='138'
+       - Bottom-right (e.g. x=135, y=125): place label at x='142' y='138'
+       - Triangle 2 apex (e.g. x=240, y=30): place label at x='240' y='18' text-anchor='middle'
+       - Triangle 2 bottom-left (e.g. x=185, y=125): place label at x='172' y='138'
+       - Triangle 2 bottom-right (e.g. x=295, y=125): place label at x='302' y='138'
+     * ABSOLUTELY NEVER place two labels closer than 30px to each other (e.g., placing two labels at x=155 and x=165 is strictly forbidden as they merge into "CQ")!
+4. SVG Syntax & Escaping:
    - ALWAYS use single quotes (') for all SVG attributes (e.g., viewBox='0 0 320 150' stroke='#2563eb' fill='none'). This prevents JSON double-quote string termination bugs.
-   - Use high-contrast colors: Primary blue \`stroke='#2563eb'\`, Green \`stroke='#16a34a'\`, Red \`stroke='#dc2626'\`, Amber \`stroke='#f59e0b'\`, and \`fill='rgba(37,99,235,0.08)'\`.
-   - Vertex Labels: \`<text x='85' y='22' font-size='13' font-weight='bold' fill='currentColor'>A</text>\`
-   - Equal Sides Tick Marks: Draw small tick lines across sides (\`<line x1='55' y1='78' x2='65' y2='82' stroke='#dc2626' stroke-width='2.5'/>\`)
-   - Equal Angles: Draw arc paths (\`<path d='M 135 130 A 15 15 0 0 0 142 118' fill='none' stroke='#f59e0b' stroke-width='2'/>\`)
-   - Right Angles (90°): Draw small square corner (\`<path d='M 148 130 L 148 118 L 160 118' fill='none' stroke='#dc2626' stroke-width='1.5'/>\`)
+   - Use high-contrast colors: Primary blue stroke='#2563eb', Green stroke='#16a34a', Red stroke='#dc2626', Amber stroke='#f59e0b', and fill='rgba(37,99,235,0.08)'.
+   - Vertex Labels: <text x='80' y='18' font-size='13' font-weight='bold' text-anchor='middle' fill='currentColor'>A</text>
+   - Equal Sides Tick Marks: Draw small tick lines across sides (<line x1='50' y1='75' x2='60' y2='80' stroke='#dc2626' stroke-width='2.5'/>)
+   - Equal Angles: Draw arc paths (<path d='M 120 125 A 15 15 0 0 0 127 113' fill='none' stroke='#f59e0b' stroke-width='2'/>)
+   - Right Angles (90°): Draw small square corner (<path d='M 40 115 L 55 115 L 55 130' fill='none' stroke='#dc2626' stroke-width='1.5'/>)
 
 CONCRETE FEW-SHOT SVG EXAMPLES FOR GEOMETRY TOPICS:
 
@@ -856,10 +877,10 @@ Example 1: Single Choice MCQ (OSC) with Congruence Diagram:
   "contextId": "CTX-001",
   "type": "OSC",
   "vault": "practice",
-  "text": "In the given figure, identical marks indicate congruent parts of \\\\(\\\\triangle ABC\\\\) and \\\\(\\\\triangle PQR\\\\). By which test are the two triangles congruent?\\n<svg viewBox='0 0 320 150' width='100%' style='max-width:320px;height:auto;display:block;margin:10px auto;'><polygon points='30,130 90,30 150,130' fill='rgba(37,99,235,0.08)' stroke='#2563eb' stroke-width='2'/><polygon points='180,130 240,30 300,130' fill='rgba(37,99,235,0.08)' stroke='#2563eb' stroke-width='2'/><line x1='55' y1='78' x2='65' y2='82' stroke='#dc2626' stroke-width='2.5'/><line x1='205' y1='78' x2='215' y2='82' stroke='#dc2626' stroke-width='2.5'/><line x1='85' y1='127' x2='85' y2='133' stroke='#16a34a' stroke-width='2.5'/><line x1='95' y1='127' x2='95' y2='133' stroke='#16a34a' stroke-width='2.5'/><line x1='235' y1='127' x2='235' y2='133' stroke='#16a34a' stroke-width='2.5'/><line x1='245' y1='127' x2='245' y2='133' stroke='#16a34a' stroke-width='2.5'/><path d='M 135 130 A 15 15 0 0 0 142 118' fill='none' stroke='#f59e0b' stroke-width='2'/><path d='M 285 130 A 15 15 0 0 0 292 118' fill='none' stroke='#f59e0b' stroke-width='2'/><text x='85' y='22' font-size='13' font-weight='bold' fill='currentColor'>A</text><text x='15' y='138' font-size='13' font-weight='bold' fill='currentColor'>B</text><text x='155' y='138' font-size='13' font-weight='bold' fill='currentColor'>C</text><text x='235' y='22' font-size='13' font-weight='bold' fill='currentColor'>P</text><text x='165' y='138' font-size='13' font-weight='bold' fill='currentColor'>Q</text><text x='305' y='138' font-size='13' font-weight='bold' fill='currentColor'>R</text></svg>",
+  "text": "In the given figure, identical marks indicate congruent parts of \\\\(\\\\triangle ABC\\\\) and \\\\(\\\\triangle DEF\\\\). By which test are the two triangles congruent?\\n<svg viewBox='0 0 320 150' width='100%' style='max-width:320px;height:auto;display:block;margin:10px auto;'><polygon points='25,125 80,30 135,125' fill='rgba(37,99,235,0.08)' stroke='#2563eb' stroke-width='2'/><polygon points='185,125 240,30 295,125' fill='rgba(37,99,235,0.08)' stroke='#2563eb' stroke-width='2'/><line x1='50' y1='75' x2='60' y2='80' stroke='#dc2626' stroke-width='2.5'/><line x1='210' y1='75' x2='220' y2='80' stroke='#dc2626' stroke-width='2.5'/><line x1='75' y1='122' x2='75' y2='128' stroke='#16a34a' stroke-width='2.5'/><line x1='85' y1='122' x2='85' y2='128' stroke='#16a34a' stroke-width='2.5'/><line x1='235' y1='122' x2='235' y2='128' stroke='#16a34a' stroke-width='2.5'/><line x1='245' y1='122' x2='245' y2='128' stroke='#16a34a' stroke-width='2.5'/><path d='M 120 125 A 15 15 0 0 0 127 113' fill='none' stroke='#f59e0b' stroke-width='2'/><path d='M 280 125 A 15 15 0 0 0 287 113' fill='none' stroke='#f59e0b' stroke-width='2'/><text x='80' y='18' font-size='13' font-weight='bold' text-anchor='middle' fill='currentColor'>A</text><text x='12' y='138' font-size='13' font-weight='bold' fill='currentColor'>B</text><text x='142' y='138' font-size='13' font-weight='bold' fill='currentColor'>C</text><text x='240' y='18' font-size='13' font-weight='bold' text-anchor='middle' fill='currentColor'>D</text><text x='172' y='138' font-size='13' font-weight='bold' fill='currentColor'>E</text><text x='302' y='138' font-size='13' font-weight='bold' fill='currentColor'>F</text></svg>",
   "options": ["SAS (Side-Angle-Side) Test", "SSS (Side-Side-Side) Test", "ASA (Angle-Side-Angle) Test", "Hypotenuse-Side Test"],
   "correctAnswer": "SAS (Side-Angle-Side) Test",
-  "solution": "From the markings in the figure:\\n1. Side \\\\(AB \\\\cong PQ\\\\) (single tick)\\n2. Side \\\\(BC \\\\cong QR\\\\) (double tick)\\n3. Included angle \\\\(\\\\angle B \\\\cong \\\\angle Q\\\\) (arc)\\nTherefore, \\\\(\\\\triangle ABC \\\\cong \\\\triangle PQR\\\\) by SAS test.",
+  "solution": "From the markings in the figure:\\n1. Side \\\\(AB \\\\cong DE\\\\) (single tick)\\n2. Side \\\\(BC \\\\cong EF\\\\) (double tick)\\n3. Included angle \\\\(\\\\angle B \\\\cong \\\\angle E\\\\) (arc)\\nTherefore, \\\\(\\\\triangle ABC \\\\cong \\\\triangle DEF\\\\) by SAS test.",
   "difficulty": "medium",
   "bloomLevel": "Apply",
   "conceptTag": "SAS Congruence Test"
@@ -870,7 +891,7 @@ Example 2: Numerical / Measurement MCQ (ONE) with Corresponding Parts Figure:
   "contextId": "CTX-001",
   "type": "ONE",
   "vault": "practice",
-  "text": "In the given figure, \\\\(\\\\triangle LMN \\\\cong \\\\triangle XYZ\\\\). If \\\\(LM = 7\\\\text{ cm}\\\\), \\\\(MN = 9\\\\text{ cm}\\\\), and \\\\(LN = 12\\\\text{ cm}\\\\), find the length of side \\\\(XZ\\\\):\\n<svg viewBox='0 0 320 140' width='100%' style='max-width:320px;height:auto;display:block;margin:10px auto;'><polygon points='30,120 100,25 150,120' fill='none' stroke='#2563eb' stroke-width='2'/><polygon points='180,120 250,25 300,120' fill='none' stroke='#2563eb' stroke-width='2'/><text x='95' y='18' font-size='13' font-weight='bold' fill='currentColor'>L</text><text x='18' y='128' font-size='13' font-weight='bold' fill='currentColor'>M</text><text x='155' y='128' font-size='13' font-weight='bold' fill='currentColor'>N</text><text x='245' y='18' font-size='13' font-weight='bold' fill='currentColor'>X</text><text x='168' y='128' font-size='13' font-weight='bold' fill='currentColor'>Y</text><text x='305' y='128' font-size='13' font-weight='bold' fill='currentColor'>Z</text></svg>",
+  "text": "In the given figure, \\\\(\\\\triangle LMN \\\\cong \\\\triangle XYZ\\\\). If \\\\(LM = 7\\\\text{ cm}\\\\), \\\\(MN = 9\\\\text{ cm}\\\\), and \\\\(LN = 12\\\\text{ cm}\\\\), find the length of side \\\\(XZ\\\\):\\n<svg viewBox='0 0 320 140' width='100%' style='max-width:320px;height:auto;display:block;margin:10px auto;'><polygon points='25,120 85,25 135,120' fill='none' stroke='#2563eb' stroke-width='2'/><polygon points='185,120 245,25 295,120' fill='none' stroke='#2563eb' stroke-width='2'/><text x='85' y='18' font-size='13' font-weight='bold' text-anchor='middle' fill='currentColor'>L</text><text x='12' y='132' font-size='13' font-weight='bold' fill='currentColor'>M</text><text x='142' y='132' font-size='13' font-weight='bold' fill='currentColor'>N</text><text x='245' y='18' font-size='13' font-weight='bold' text-anchor='middle' fill='currentColor'>X</text><text x='172' y='132' font-size='13' font-weight='bold' fill='currentColor'>Y</text><text x='302' y='132' font-size='13' font-weight='bold' fill='currentColor'>Z</text></svg>",
   "options": ["7 cm", "9 cm", "12 cm", "19 cm"],
   "correctAnswer": "12 cm",
   "solution": "Since \\\\(\\\\triangle LMN \\\\cong \\\\triangle XYZ\\\\), corresponding sides (c.s.c.t.) are congruent. Side \\\\(XZ\\\\) corresponds to \\\\(LN\\\\), so \\\\(XZ = LN = 12\\\\text{ cm}\\\\).",
@@ -887,11 +908,15 @@ CRITICAL NEGATIVE CONSTRAINTS (ZERO-TOLERANCE RULES):
 ========================================
 1. ZERO UNATTACHED PHANTOM FIGURES: If a question references a diagram (e.g. "as shown in the figure", "in the given figure", "observe the diagram"), it MUST embed the complete <svg> vector diagram directly in the "text" field. Never generate text referring to a figure without providing the SVG figure.
 2. ZERO TEXT-ONLY EVASION ON GEOMETRY: For topics involving geometric shapes, congruence, similarity, angles, parallel lines, or circles, do NOT evade diagrams by writing abstract word definitions. You MUST embed vector SVG diagrams for at least 70% of the questions.
-3. ZERO DUMMY OR LAZY OPTIONS: Every distractor option must be a plausible, realistic scientific/mathematical choice. NEVER output "None of these", "All of the above", "Both A and B", "Option A", or placeholder text.
-4. STRICT MATH ESCAPING: Wrap all math expressions in \\( ... \\) with double-escaped backslashes. Wrap chemical formulas in \\ce{...}.
-5. RANDOMIZE CORRECT ANSWER KEYS: Distribute correct answers evenly across index 0, 1, 2, 3 (A, B, C, D). Do NOT always place the correct answer as Option A.
-6. ZERO OUT-OF-GRADE / ZERO INVENTED STOICHIOMETRY: Strictly DO NOT invent complex organic molar mass conversions, college-level stoichiometry, or artificial calculations for Class ${selectedClass}. Keep all questions strictly within the prescribed ${selectedBoard} Class ${selectedClass} curriculum.
-7. STRICT ZERO DUPLICATE OR NEAR-DUPLICATE OPTIONS (MUTUALLY EXCLUSIVE CHOICES):
+3. STRICT 100% FIGURE & STEM LABEL IDENTITY (ZERO HALLUCINATION):
+   - Every polygon vertex, point, segment, and angle label in the <svg> MUST IDENTICALLY MATCH the exact names specified in the question stem text.
+   - If the stem states "In \\(\\triangle PQR\\) and \\(\\triangle LMN\\)", the SVG MUST use vertices P, Q, R and L, M, N. NEVER output generic letters (e.g. A, B, C) when the question text mentions other names!
+   - Ensure a 50px gap between side-by-side shapes (e.g. Triangle 1 right at x=135, Triangle 2 left at x=185) so vertex labels NEVER collide or overlap.
+4. ZERO DUMMY OR LAZY OPTIONS: Every distractor option must be a plausible, realistic scientific/mathematical choice. NEVER output "None of these", "All of the above", "Both A and B", "Option A", or placeholder text.
+5. STRICT MATH ESCAPING: Wrap all math expressions in \\( ... \\) with double-escaped backslashes. Wrap chemical formulas in \\ce{...}.
+6. RANDOMIZE CORRECT ANSWER KEYS: Distribute correct answers evenly across index 0, 1, 2, 3 (A, B, C, D). Do NOT always place the correct answer as Option A.
+7. ZERO OUT-OF-GRADE / ZERO INVENTED STOICHIOMETRY: Strictly DO NOT invent complex organic molar mass conversions, college-level stoichiometry, or artificial calculations for Class ${selectedClass}. Keep all questions strictly within the prescribed ${selectedBoard} Class ${selectedClass} curriculum.
+8. STRICT ZERO DUPLICATE OR NEAR-DUPLICATE OPTIONS (MUTUALLY EXCLUSIVE CHOICES):
    - In EVERY multiple-choice question (OSC, OMC, ONE), all 4 options MUST be strictly unique, mutually exclusive, and distinct in concept, value, and wording.
    - NEVER repeat the same option twice under any circumstances (e.g., repeating Option A as Option C).
    - NEVER generate near-identical variations differing by only 1-2 filler words, minor phrasing, articles ("the", "a"), or trailing punctuation (e.g., "Increases in volume" vs "Increases with volume" or "Photosynthesis" vs "Photosynthesis.").
