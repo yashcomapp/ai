@@ -252,12 +252,13 @@ function TakeExamContent() {
     if ((activeQuestionForHeuristic as any).relaxProctoring === true || (activeQuestionForHeuristic as any).isNumerical === true) {
       return true;
     }
-    const text = activeQuestionForHeuristic.text || '';
-    const textLower = text.toLowerCase();
+    const rawText = activeQuestionForHeuristic.text ?? (activeQuestionForHeuristic as any).questionText ?? '';
+    const text = typeof rawText === 'string' ? rawText : (rawText && typeof rawText === 'object' ? JSON.stringify(rawText) : String(rawText || ''));
+    const textLower = text ? text.toLowerCase() : '';
     
     // Detect KaTeX rendering blocks \(...\), \[...\], $...$, or LaTeX macros (\frac, \ce, \sqrt, \vec, \sum, etc.)
     const optionsText = Array.isArray(activeQuestionForHeuristic.options)
-      ? activeQuestionForHeuristic.options.map((o: any) => typeof o === 'object' ? (o.text || '') : String(o)).join(' ')
+      ? activeQuestionForHeuristic.options.map((o: any) => typeof o === 'object' ? (o?.text || o?.value || '') : String(o || '')).join(' ')
       : '';
     const fullContent = text + ' ' + optionsText;
 
@@ -481,7 +482,13 @@ function TakeExamContent() {
               
               setTimeRemaining(resumedTime);
               setTabViolations(parsed.tabViolations || 0);
-              setProctoringViolations(parsed.proctoringViolations || { noFace: 0, multipleFaces: 0, lookingAway: 0, headMovement: 0 });
+              const pv = parsed.proctoringViolations;
+              setProctoringViolations({
+                noFace: Number(pv?.noFace) || 0,
+                multipleFaces: Number(pv?.multipleFaces) || 0,
+                lookingAway: Number(pv?.lookingAway) || 0,
+                headMovement: Number(pv?.headMovement) || 0
+              });
               setLoading(false);
               return;
             }
@@ -938,7 +945,7 @@ function TakeExamContent() {
                       <span>•</span>
                       <span><strong>{exam.duration || 30}</strong> Mins</span>
                       <span>•</span>
-                      <span><strong>{exam.totalMarks || (exam.questions?.length ? exam.questions.reduce((sum: number, q: any) => sum + (q.marks || 4), 0) : 0)}</strong> Total Marks</span>
+                      <span><strong>{exam.totalMarks || (Array.isArray(exam.questions) ? exam.questions.reduce((sum: number, q: any) => sum + (q?.marks || 4), 0) : 0)}</strong> Total Marks</span>
                       {exam.subject && (
                         <>
                           <span>•</span>
@@ -974,7 +981,12 @@ function TakeExamContent() {
                   ref={(el) => {
                     if (el && el.srcObject !== cameraStream) {
                       el.srcObject = cameraStream;
-                      el.play().catch(() => {});
+                      try {
+                        const playPromise = el.play();
+                        if (playPromise !== undefined) {
+                          playPromise.catch(() => {});
+                        }
+                      } catch {}
                     }
                   }}
                   autoPlay
@@ -1094,12 +1106,12 @@ function TakeExamContent() {
             {/* No Face */}
             <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '6px', padding: '4px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '45px' }}>
               <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>NoFace</span>
-              <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'white' }}>{proctoringViolations.noFace}</span>
+              <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'white' }}>{proctoringViolations?.noFace ?? 0}</span>
             </div>
             {/* Multiple */}
             <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '6px', padding: '4px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '45px' }}>
               <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>Multi</span>
-              <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'white' }}>{proctoringViolations.multipleFaces}</span>
+              <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'white' }}>{proctoringViolations?.multipleFaces ?? 0}</span>
             </div>
             {/* Timer */}
             <div style={{ background: timeRemaining <= 120 ? 'rgba(239, 68, 68, 0.15)' : 'rgba(255,255,255,0.03)', border: `1px solid ${timeRemaining <= 120 ? 'var(--danger)' : 'rgba(255,255,255,0.05)'}`, borderRadius: '6px', padding: '4px 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '60px' }}>
@@ -1123,8 +1135,8 @@ function TakeExamContent() {
 
           {/* Question Navigator */}
           <div className="question-nav" style={{ display: 'flex', gap: '6px', overflowX: 'auto', padding: '8px', background: 'var(--surface-2)', borderRadius: 'var(--radius-sm)', marginBottom: '12px' }}>
-            {exam.questions.map((_, idx) => {
-              const answered = userAnswers[idx]?.answer !== '';
+            {(exam.questions || []).map((_, idx) => {
+              const answered = (userAnswers[idx]?.answer || '') !== '';
               const isCurrent = idx === currentQIndex;
               return (
                 <div 
@@ -1142,7 +1154,7 @@ function TakeExamContent() {
           {/* Question Card */}
           <div ref={questionContainerRef} key={currentQuestion?.id || safeQIndex} className="card" style={{ background: 'var(--surface)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-lg)', padding: '16px', marginBottom: '12px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-light)', paddingBottom: '8px', marginBottom: '12px', color: 'var(--text-muted)', fontSize: '12px' }}>
-              <span>Question {safeQIndex + 1} of {exam.questions.length}</span>
+              <span>Question {safeQIndex + 1} of {exam.questions?.length || 0}</span>
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                 <span className="badge">{currentQuestion?.marks || 1} Marks</span>
               </div>
@@ -1168,7 +1180,7 @@ function TakeExamContent() {
               ← Previous
             </button>
             
-            {currentQIndex === exam.questions.length - 1 ? (
+            {currentQIndex === (exam.questions?.length || 1) - 1 ? (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
                 <button 
                   className="btn btn-danger" 
@@ -1195,7 +1207,7 @@ function TakeExamContent() {
             ) : (
               <button 
                 className="btn btn-primary" 
-                onClick={() => setCurrentQIndex(prev => Math.min(exam.questions.length - 1, prev + 1))}
+                onClick={() => setCurrentQIndex(prev => Math.min((exam.questions?.length || 1) - 1, prev + 1))}
               >
                 Next →
               </button>

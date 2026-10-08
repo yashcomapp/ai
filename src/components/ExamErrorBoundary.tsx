@@ -39,14 +39,14 @@ export class ExamErrorBoundary extends Component<Props, State> {
     // Fire-and-forget report to server for administrative visibility
     try {
       if (typeof window !== 'undefined' && window.location) {
-        fetch('/api/admin/fault-register', {
+        fetch('/api/system/client-error', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             action: 'client_crash',
-            type: 'exam_error_boundary',
+            type: this.props.fallbackTitle || 'exam_error_boundary',
             url: window.location.href,
-            message: error?.message || 'Unknown error',
+            message: `${error?.name || 'Error'}: ${error?.message || 'Unknown error'}`,
             stack: error?.stack || null,
             componentStack: errorInfo?.componentStack || null,
             userAgent: navigator.userAgent,
@@ -170,31 +170,34 @@ export class ExamErrorBoundary extends Component<Props, State> {
               A transient script or layout error was detected. You can safely reload the page to resume your exam right where you left off.
             </p>
 
-            {/* Error Detail (Foldable) */}
-            <details style={{
+            {/* Error Detail (Open by default with complete diagnostics) */}
+            <details open style={{
               textAlign: 'left',
-              background: 'rgba(0, 0, 0, 0.25)',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
+              background: 'rgba(239, 68, 68, 0.08)',
+              border: '1.5px solid rgba(239, 68, 68, 0.35)',
               borderRadius: '8px',
-              padding: '8px 12px',
+              padding: '10px 14px',
               fontSize: '11px',
               color: '#cbd5e1'
             }}>
-              <summary style={{ cursor: 'pointer', fontWeight: 600, color: '#94a3b8' }}>
-                Technical Error Details
+              <summary style={{ cursor: 'pointer', fontWeight: 700, color: '#f87171', marginBottom: '8px' }}>
+                ⚠️ Technical Error Details ({this.state.error?.name || 'Error'})
               </summary>
               <pre style={{
-                margin: '8px 0 0',
+                margin: '4px 0',
                 padding: '8px',
-                background: 'rgba(0, 0, 0, 0.4)',
+                background: 'rgba(0, 0, 0, 0.5)',
                 borderRadius: '4px',
                 overflowX: 'auto',
                 whiteSpace: 'pre-wrap',
                 wordBreak: 'break-word',
                 color: '#f87171',
-                fontSize: '11px'
+                fontSize: '11px',
+                maxHeight: '180px',
+                overflowY: 'auto'
               }}>
-                {errorMessage}
+                {this.state.error?.stack || errorMessage}
+                {this.state.errorInfo?.componentStack ? `\n\nComponent Stack:\n${this.state.errorInfo.componentStack}` : ''}
               </pre>
             </details>
 
