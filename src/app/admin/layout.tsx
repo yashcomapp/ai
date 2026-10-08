@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { useRouter, usePathname } from 'next/navigation';
-import { Bell, MessageSquare, Settings, LogOut, ArrowLeft } from 'lucide-react';
+import { Bell, MessageSquare, Settings, LogOut } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import TopBarTimeTracker from '@/components/TopBarTimeTracker';
 
@@ -250,26 +250,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           font-weight: 500;
         }
 
-        /* Edge Sliver */
-        .nav-dashboard-sliver {
-          position: fixed;
-          top: 0;
-          right: 0;
-          width: 6px;
-          height: 100vh;
-          border: none;
-          background: var(--accent);
-          opacity: .25;
-          cursor: pointer;
-          z-index: 9999;
-          padding: 0;
-          transition: opacity .15s ease, width .15s ease;
-        }
-        .nav-dashboard-sliver:hover {
-          opacity: .8;
-          width: 10px;
-        }
-
         /* Flyout Dropdown Menu */
         .dropdown-menu-flyout {
           position: fixed;
@@ -372,23 +352,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               >
                 {getAdminPageTitle(pathname)}
               </span>
-              <button 
-                className="btn btn-secondary btn-sm" 
-                onClick={() => router.push('/admin')}
-                style={{ 
-                  fontSize: '11px', 
-                  padding: '3px 8px', 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: '4px',
-                  borderRadius: 'var(--radius-sm)',
-                  marginLeft: '4px'
-                }}
-                title="Back to Dashboard"
-              >
-                <ArrowLeft size={12} />
-                <span>Dashboard</span>
-              </button>
             </div>
           )}
         </div>
