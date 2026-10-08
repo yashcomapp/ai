@@ -1019,6 +1019,37 @@ export function areOptionsTooSimilar(rawA: any, rawB: any): { tooSimilar: boolea
     return { tooSimilar: false };
   }
 
+  // 3c. Mathematical fraction or division check (e.g. "\frac{3}{7}", "3/7", "\( \frac{7}{3} \)")
+  const parseFraction = (str: string): { num: number; den: number } | null => {
+    const cleanStr = str.replace(/\\\(|\\\)/g, '').trim();
+    // LaTeX \frac{a}{b}
+    const fracMatch = cleanStr.match(/\\frac\s*\{([+-]?\d+(?:\.\d+)?)\}\s*\{([+-]?\d+(?:\.\d+)?)\}/);
+    if (fracMatch) {
+      const num = parseFloat(fracMatch[1]);
+      const den = parseFloat(fracMatch[2]);
+      if (!isNaN(num) && !isNaN(den) && den !== 0) return { num, den };
+    }
+    // Simple a/b fraction
+    const slashMatch = cleanStr.match(/^\(?([+-]?\d+(?:\.\d+)?)\s*\/\s*([+-]?\d+(?:\.\d+)?)\)?$/);
+    if (slashMatch) {
+      const num = parseFloat(slashMatch[1]);
+      const den = parseFloat(slashMatch[2]);
+      if (!isNaN(num) && !isNaN(den) && den !== 0) return { num, den };
+    }
+    return null;
+  };
+
+  const fracA = parseFraction(cleanA);
+  const fracB = parseFraction(cleanB);
+  if (fracA && fracB) {
+    const valA = fracA.num / fracA.den;
+    const valB = fracB.num / fracB.den;
+    if (Math.abs(valA - valB) < 1e-6) {
+      return { tooSimilar: true, reason: `Mathematically identical fractions (${cleanA} vs ${cleanB})` };
+    }
+    return { tooSimilar: false };
+  }
+
   // Punctuation and whitespace stripped lowercase
   const stripPunct = (s: string) => s.toLowerCase().replace(/[.,;:!?'"()[\]{}\\/`~*^%$#@&+=_-]/g, ' ').replace(/\s+/g, ' ').trim();
   const punctA = stripPunct(cleanA);
