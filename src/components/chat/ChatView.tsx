@@ -205,7 +205,9 @@ export default function ChatView({ role = 'admin', hideHeader = false }: ChatVie
   }, [role, firebaseUser?.uid, user?.studentCode, user?.email]);
 
   const chatContainerRef = useRef<HTMLDivElement | null>(null);
-  const [viewportHeight, setViewportHeight] = useState('100dvh');
+  const [viewportHeight, setViewportHeight] = useState<string>(
+    hideHeader ? 'calc(100dvh - 57px)' : '100dvh'
+  );
 
   // Track screen size for responsive layout, visual viewport height (mobile keyboard adjustments), and chat zoom lock
   useEffect(() => {
