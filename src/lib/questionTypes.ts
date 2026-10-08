@@ -928,8 +928,16 @@ function restoreLatex(obj: any): any {
 }
 
 export function cleanOptionPrefix(str: string): string {
-  return String(str || '')
-    .replace(/^(?:Option\s+[A-D][:\.\-\)]\s*|\(?[A-D]\)?[\.:\-]\s*|\(?[1-4]\)?[\.:\-]\s*)/i, '')
+  if (!str) return '';
+  const s = String(str).trim();
+
+  // Guard against ratios (e.g. "1:4", "2:1", "4:5:6"), decimals ("1.5"), or ranges ("1-4")
+  if (/^\d+(?::\d+)+/.test(s) || /^\d+\.\d+/.test(s) || /^\d+-\d+/.test(s)) {
+    return s;
+  }
+
+  return s
+    .replace(/^(?:Option\s+[A-D0-9][:\.\-\)]\s*|\(?[A-D]\)[\.:\-]?\s*|\([1-4]\)\s*|[A-D][\.:\-]\s+|[1-4][\.\)]\s+)/i, '')
     .trim();
 }
 
@@ -998,6 +1006,17 @@ export function areOptionsTooSimilar(rawA: any, rawB: any): { tooSimilar: boolea
   const normB = cleanStringForMatch(cleanB);
   if (normA && normB && normA === normB) {
     return { tooSimilar: true, reason: 'Identical text after math and formatting normalization' };
+  }
+
+  // 3b. Ratio format check (e.g. "1:4", "2:1", "4:5:6" or math formatted "\(1:4\)")
+  const isRatioPattern = /^\\?\(?[0-9]+(?::[0-9]+)+\\?\)?$/;
+  const isRatioA = isRatioPattern.test(normA);
+  const isRatioB = isRatioPattern.test(normB);
+  if (isRatioA && isRatioB) {
+    if (normA === normB) {
+      return { tooSimilar: true, reason: 'Identical ratio options' };
+    }
+    return { tooSimilar: false };
   }
 
   // Punctuation and whitespace stripped lowercase

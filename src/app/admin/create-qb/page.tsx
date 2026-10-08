@@ -1393,7 +1393,7 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
     let finalCorrectAnswer = '';
     let finalCorrectAnswers: string[] = [];
 
-    if (finalType === 'OSC' || finalType === 'OTF' || finalType === 'single_mcq' || finalType === 'true_false') {
+    if (finalType === 'OSC' || finalType === 'OTF' || finalType === 'ONE' || finalType === 'single_mcq' || finalType === 'true_false' || finalType === 'numerical') {
       let rawAns = String(q.correctAnswer || (Array.isArray(q.correctAnswers) ? q.correctAnswers[0] : '') || '').trim();
       const letterMatch = rawAns.match(/^[A-D]$/i);
       const digitMatch = rawAns.match(/^[1-4]$/);
@@ -1401,7 +1401,7 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
       if (letterMatch && cleanOptions.length >= 2) {
         const lIdx = letterMatch[0].toUpperCase().charCodeAt(0) - 65;
         if (cleanOptions[lIdx]) finalCorrectAnswer = cleanOptions[lIdx];
-      } else if (digitMatch && cleanOptions.length >= 2) {
+      } else if (digitMatch && cleanOptions.length >= 2 && !cleanOptions.includes(rawAns)) {
         const dIdx = parseInt(digitMatch[0], 10) - 1;
         if (cleanOptions[dIdx]) finalCorrectAnswer = cleanOptions[dIdx];
       } else {
