@@ -6,6 +6,10 @@ import { verifyRole } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
+export async function GET(req: NextRequest) {
+  return POST(req);
+}
+
 export async function POST(req: NextRequest) {
   try {
     // 1. Verify Authorization: Admin role or valid CRON_SECRET

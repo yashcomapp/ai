@@ -204,6 +204,7 @@ export default function ChatView({ role = 'admin', hideHeader = false }: ChatVie
     return 0;
   }, [role, firebaseUser?.uid, user?.studentCode, user?.email]);
 
+  const chatContainerRef = useRef<HTMLDivElement | null>(null);
   const [viewportHeight, setViewportHeight] = useState('100dvh');
 
   // Track screen size for responsive layout, visual viewport height (mobile keyboard adjustments), and chat zoom lock
@@ -231,7 +232,17 @@ export default function ChatView({ role = 'admin', hideHeader = false }: ChatVie
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
       if (window.visualViewport) {
-        setViewportHeight(`${window.visualViewport.height}px`);
+        const vvHeight = window.visualViewport.height;
+        if (hideHeader) {
+          const top = chatContainerRef.current ? chatContainerRef.current.getBoundingClientRect().top : 57;
+          const offset = top > 0 ? top : 57;
+          const available = Math.max(200, Math.round(vvHeight - offset));
+          setViewportHeight(`${available}px`);
+        } else {
+          setViewportHeight(`${vvHeight}px`);
+        }
+      } else {
+        setViewportHeight(hideHeader ? 'calc(100dvh - 57px)' : '100dvh');
       }
       window.scrollTo(0, 0); // Prevents white spaces on keyboard dismiss
     };
@@ -258,7 +269,7 @@ export default function ChatView({ role = 'admin', hideHeader = false }: ChatVie
         window.visualViewport.removeEventListener('scroll', handleResize);
       }
     };
-  }, []);
+  }, [hideHeader]);
 
   // Load Rooms list (one-shot fallback/init on mount)
   async function loadRooms() {
@@ -1365,20 +1376,23 @@ export default function ChatView({ role = 'admin', hideHeader = false }: ChatVie
   };
 
   return (
-    <div style={{ 
-      background: 'var(--surface-2)', 
-      height: hideHeader ? '100%' : viewportHeight, 
-      display: 'flex', 
-      flexDirection: 'column', 
-      color: 'var(--text)', 
-      fontFamily: 'Inter, system-ui, -apple-system, sans-serif', 
-      overflow: 'hidden', 
-      position: hideHeader ? 'relative' : 'fixed', 
-      inset: hideHeader ? undefined : 0, 
-      width: '100%', 
-      maxWidth: '100vw', 
-      touchAction: 'pan-y' 
-    }}>
+    <div 
+      ref={chatContainerRef}
+      style={{ 
+        background: 'var(--surface-2)', 
+        height: viewportHeight, 
+        maxHeight: viewportHeight,
+        display: 'flex', 
+        flexDirection: 'column', 
+        color: 'var(--text)', 
+        fontFamily: 'Inter, system-ui, -apple-system, sans-serif', 
+        overflow: 'hidden', 
+        position: hideHeader ? 'relative' : 'fixed', 
+        inset: hideHeader ? undefined : 0, 
+        width: '100%', 
+        maxWidth: '100vw', 
+        touchAction: 'pan-y' 
+      }}>
       <style dangerouslySetInnerHTML={{ __html: `
         /* Prevent accidental Touch-to-Search selection on touch devices */
         body, html, div, span, button, svg, h1, h2, h3, h4, h5, p, label {

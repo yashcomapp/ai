@@ -27,7 +27,7 @@ function AdminStudentsUnifiedContent({ initialTab }: { initialTab?: TabType }) {
   };
 
   return (
-    <div style={{ background: 'var(--bg)', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ background: 'var(--bg)', flex: 1, display: 'flex', flexDirection: 'column' }}>
 
       {/* Main Container with Tab Bar */}
       <main style={{ flex: 1, padding: '20px 16px', maxWidth: '1200px', width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>

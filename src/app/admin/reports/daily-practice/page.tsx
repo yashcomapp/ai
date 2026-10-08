@@ -178,7 +178,7 @@ export default function DailyPracticeSummaryPage() {
   };
 
   return (
-    <div style={{ background: 'var(--bg)', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ background: 'var(--bg)', flex: 1, display: 'flex', flexDirection: 'column' }}>
       
       {/* Printable CSS Override Block */}
       <style jsx global>{`

@@ -116,7 +116,7 @@ export default function UsageReportPage() {
   }
 
   return (
-    <div style={{ background: 'var(--bg)', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ background: 'var(--bg)', flex: 1, display: 'flex', flexDirection: 'column' }}>
       {/* Reports Sub-Navigation Bar */}
       <div style={{ maxWidth: '900px', width: '100%', margin: '0 auto', padding: '12px 12px 0 12px' }}>
         <nav style={{ display: 'flex', gap: '15px', borderBottom: '1px solid var(--border-light)', paddingBottom: '8px', overflowX: 'auto' }}>

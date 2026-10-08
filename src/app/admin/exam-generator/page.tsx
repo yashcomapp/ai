@@ -1188,7 +1188,7 @@ Return ONLY valid JSON. No markdown wrappers or extra commentary.`;
     : availablePool.length;
 
   return (
-    <div style={{ background: 'var(--bg)', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ background: 'var(--bg)', flex: 1, display: 'flex', flexDirection: 'column' }}>
       {/* Main Form container */}
       <main style={{ flex: 1, padding: '12px', maxWidth: '1240px', width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '12px' }}>
         <div style={{ display: 'flex', justifyContent: 'flex-start' }}>

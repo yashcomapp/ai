@@ -1793,7 +1793,7 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
   }
 
   return (
-    <div style={{ background: 'var(--bg)', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ background: 'var(--bg)', flex: 1, display: 'flex', flexDirection: 'column' }}>
       {/* CDN Script Injections for KaTeX */}
 
 

@@ -155,7 +155,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   ];
 
   return (
-    <div className="page-wrapper">
+    <div className="page-wrapper" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       {/* Injecting Legacy styling exact layout */}
       <style>{`
         /* Floating Hamburger */
@@ -488,8 +488,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       {/* Main Administrative Pages Workspace */}
       <div style={{ 
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
         paddingBottom: pathname === '/admin/chat' ? '0' : '80px',
-        height: pathname === '/admin/chat' ? 'calc(100vh - 57px)' : undefined,
         overflow: pathname === '/admin/chat' ? 'hidden' : undefined
       }}>
         {children}

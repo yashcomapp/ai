@@ -128,7 +128,7 @@ export default function AdminDashboard() {
   const stats = data?.stats || { totalStudents: 0, totalBatches: 0, cumulativePractice: 0, activeExams: 0, todayAttendanceRate: null, overdueFeesCount: 0, unreadChatsCount: 0 };
 
   return (
-    <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
+    <div style={{ background: 'var(--bg)', flex: 1 }}>
       <style>{`
         @media (max-width: 580px) {
           .hide-mobile {

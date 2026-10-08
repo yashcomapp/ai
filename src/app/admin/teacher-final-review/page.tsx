@@ -337,7 +337,7 @@ function TeacherFinalReviewContent() {
   }
 
   return (
-    <div style={{ background: 'var(--bg)', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ background: 'var(--bg)', flex: 1, display: 'flex', flexDirection: 'column' }}>
 
 
       {/* Main content grid */}

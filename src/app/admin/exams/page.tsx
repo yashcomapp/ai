@@ -1545,7 +1545,7 @@ export default function AdminExamsPage() {
   }
 
   return (
-    <div style={{ background: 'var(--bg)', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ background: 'var(--bg)', flex: 1, display: 'flex', flexDirection: 'column' }}>
       {/* Tabs Container */}
       <main style={{ flex: 1, padding: '24px 12px', maxWidth: '1100px', width: '100%', margin: '0 auto' }}>
         {/* Actions Toolbar */}

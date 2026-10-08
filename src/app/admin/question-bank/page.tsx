@@ -841,7 +841,7 @@ ${JSON.stringify(missingList, null, 2)}`;
   };
 
   return (
-    <div style={{ background: 'var(--bg)', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ background: 'var(--bg)', flex: 1, display: 'flex', flexDirection: 'column' }}>
       {/* Main Content Area */}
       <main style={{ flex: 1, padding: '16px 12px', maxWidth: '1100px', width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '14px' }}>
         {/* Actions Toolbar */}

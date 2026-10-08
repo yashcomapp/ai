@@ -322,7 +322,7 @@ export default function AdminFaultRegisterPage() {
   }
 
   return (
-    <div style={{ background: 'var(--bg)', minHeight: '100vh', padding: '16px 12px' }}>
+    <div style={{ background: 'var(--bg)', flex: 1, padding: '16px 12px' }}>
       <div style={{ maxWidth: '1440px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '14px' }}>
 
         {/* Header Bar */}

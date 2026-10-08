@@ -53,7 +53,7 @@ export default function AdminReportsHubPage() {
   const router = useRouter();
 
   return (
-    <div style={{ background: 'var(--bg)', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ background: 'var(--bg)', flex: 1, display: 'flex', flexDirection: 'column' }}>
 
       {/* Main Container */}
       <main style={{ flex: 1, padding: '24px 16px', maxWidth: '1100px', width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '20px' }}>

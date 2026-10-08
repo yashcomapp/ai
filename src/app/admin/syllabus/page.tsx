@@ -1137,7 +1137,7 @@ Return ONLY a valid JSON object matching the schema below:
   };
 
   return (
-    <div style={{ background: 'var(--bg)', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ background: 'var(--bg)', flex: 1, display: 'flex', flexDirection: 'column' }}>
       <style>{`
         @keyframes skeleton-blink {
           0% { opacity: 0.6; }

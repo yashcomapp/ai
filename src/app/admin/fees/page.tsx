@@ -642,7 +642,7 @@ function AdminFeesContent() {
   };
 
   return (
-    <div style={{ background: 'var(--bg)', minHeight: '100vh', padding: '24px 12px' }}>
+    <div style={{ background: 'var(--bg)', flex: 1, padding: '24px 12px' }}>
       <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
 
         {/* Header Block */}

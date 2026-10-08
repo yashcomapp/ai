@@ -864,7 +864,7 @@ _Empowering Conceptual Excellence_`;
 
 
   return (
-    <div style={{ background: 'var(--bg)', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ background: 'var(--bg)', flex: 1, display: 'flex', flexDirection: 'column' }}>
       
       {/* Reports Sub-Navigation Bar */}
       <div style={{ maxWidth: '1400px', width: '100%', margin: '0 auto', padding: '12px 12px 0 12px' }}>
