@@ -155,6 +155,7 @@ function CreateQBContent() {
   const [aiPasteText, setAiPasteText] = useState('');
   const [generatedQuestions, setGeneratedQuestions] = useState<any[]>([]);
   const [previewFilter, setPreviewFilter] = useState<'all' | 'issues'>('all');
+  const [pinnedIssueIndices, setPinnedIssueIndices] = useState<number[] | null>(null);
   const [promptScope, setPromptScope] = useState<'all' | 'practice_only' | 'exam_only'>('all');
   useMathRender([generatedQuestions]);
 
@@ -889,7 +890,12 @@ CRITICAL NEGATIVE CONSTRAINTS (ZERO-TOLERANCE RULES):
 3. ZERO DUMMY OR LAZY OPTIONS: Every distractor option must be a plausible, realistic scientific/mathematical choice. NEVER output "None of these", "All of the above", "Both A and B", "Option A", or placeholder text.
 4. STRICT MATH ESCAPING: Wrap all math expressions in \\( ... \\) with double-escaped backslashes. Wrap chemical formulas in \\ce{...}.
 5. RANDOMIZE CORRECT ANSWER KEYS: Distribute correct answers evenly across index 0, 1, 2, 3 (A, B, C, D). Do NOT always place the correct answer as Option A.
-6. ZERO OUT-OF-GRADE / ZERO INVENTED STOICHIOMETRY: Strictly DO NOT invent complex organic molar mass conversions, college-level stoichiometry, or artificial calculations for Class ${selectedClass}. Keep all questions strictly within the prescribed ${selectedBoard} Class ${selectedClass} curriculum.`;
+6. ZERO OUT-OF-GRADE / ZERO INVENTED STOICHIOMETRY: Strictly DO NOT invent complex organic molar mass conversions, college-level stoichiometry, or artificial calculations for Class ${selectedClass}. Keep all questions strictly within the prescribed ${selectedBoard} Class ${selectedClass} curriculum.
+7. STRICT ZERO DUPLICATE OR NEAR-DUPLICATE OPTIONS (MUTUALLY EXCLUSIVE CHOICES):
+   - In EVERY multiple-choice question (OSC, OMC, ONE), all 4 options MUST be strictly unique, mutually exclusive, and distinct in concept, value, and wording.
+   - NEVER repeat the same option twice under any circumstances (e.g., repeating Option A as Option C).
+   - NEVER generate near-identical variations differing by only 1-2 filler words, minor phrasing, articles ("the", "a"), or trailing punctuation (e.g., "Increases in volume" vs "Increases with volume" or "Photosynthesis" vs "Photosynthesis.").
+   - For numerical questions (ONE), all 4 options MUST be distinctly different numerical values (e.g., [12, 18, 24, 30] - NEVER [12, 12.0, 14, 16] or duplicate numbers).`;
     };
 
     if (type === 'objective') {
@@ -902,10 +908,10 @@ CRITICAL NEGATIVE CONSTRAINTS (ZERO-TOLERANCE RULES):
 ========================================
 5 CANONICAL OBJECTIVE QUESTION FORMATS (Used Across All Levels):
 ========================================
-1. Single Choice MCQ (type: "OSC"): 4 options, exactly 1 correct answer.
+1. Single Choice MCQ (type: "OSC"): 4 mutually distinct, non-overlapping options (ZERO duplicate or near-identical options), exactly 1 correct answer.
    Example: { "contextId":"CTX-001", "type":"OSC", "vault":"practice", "text":"Question text...", "options":["Option A","Option B","Option C","Option D"], "correctAnswer":"Option B", "solution":"Step-by-step reasoning...", "difficulty":"easy", "bloomLevel":"Remember", "conceptTag":"..." }
 
-2. Multiple Choice MCQ (type: "OMC"): 4 options, 2 or more correct answers.
+2. Multiple Choice MCQ (type: "OMC"): 4 mutually distinct options (ZERO duplicate or near-identical options), 2 or more correct answers.
    Example: { "contextId":"CTX-001", "type":"OMC", "vault":"exam", "text":"Which of the following are properties of...?", "options":["Option A","Option B","Option C","Option D"], "correctAnswers":["Option A","Option C"], "solution":"Detailed explanation...", "difficulty":"hard", "bloomLevel":"Analyze", "conceptTag":"..." }
 
 3. True / False (type: "OTF"): Evaluates conceptual facts or rules.
@@ -915,17 +921,17 @@ CRITICAL NEGATIVE CONSTRAINTS (ZERO-TOLERANCE RULES):
    Example: { "contextId":"CTX-001", "type":"OAR", "vault":"practice", "text":"Assertion (A): ...\\nReason (R): ...", "correctAnswer":"A", "solution":"Explain why both are true and R explains A...", "difficulty":"medium", "bloomLevel":"Analyze", "conceptTag":"..." }
    * Canonical Answer Rules for OAR: "A" = Both true & R explains A | "B" = Both true & R does NOT explain A | "C" = A true & R false | "D" = A false & R true. Do NOT include options array for assertion_reason.
 
-5. Numerical Objective (type: "ONE"): Single Choice Numerical MCQ with 4 distinct numerical options and exactly 1 correct answer.
+5. Numerical Objective (type: "ONE"): Single Choice Numerical MCQ with 4 distinctly different numerical options (ZERO duplicate values) and exactly 1 correct answer.
    Example: { "contextId":"CTX-001", "type":"ONE", "vault":"practice", "text":"Calculate the value of... in standard units:", "options":["12.5","24.5","36.5","48.5"], "correctAnswer":"24.5", "solution":"Step 1: Formula ... Step 2: Calculation = 24.5", "difficulty":"medium", "bloomLevel":"Apply", "conceptTag":"..." }
    * Note: Numerical Objective (ONE) questions must ALWAYS have exactly 4 numerical options and 1 correct answer so students select a single choice option without typing.
 ` : `
 ========================================
 4 CANONICAL OBJECTIVE QUESTION FORMATS (THEORY & CONCEPTUAL ONLY):
 ========================================
-1. Single Choice MCQ (type: "OSC"): 4 options, exactly 1 correct answer.
+1. Single Choice MCQ (type: "OSC"): 4 mutually distinct, non-overlapping options (ZERO duplicate or near-identical options), exactly 1 correct answer.
    Example: { "contextId":"CTX-001", "type":"OSC", "vault":"practice", "text":"Question text...", "options":["Option A","Option B","Option C","Option D"], "correctAnswer":"Option B", "solution":"Step-by-step reasoning...", "difficulty":"easy", "bloomLevel":"Remember", "conceptTag":"..." }
 
-2. Multiple Choice MCQ (type: "OMC"): 4 options, 2 or more correct answers.
+2. Multiple Choice MCQ (type: "OMC"): 4 mutually distinct options (ZERO duplicate or near-identical options), 2 or more correct answers.
    Example: { "contextId":"CTX-001", "type":"OMC", "vault":"exam", "text":"Which of the following are properties of...?", "options":["Option A","Option B","Option C","Option D"], "correctAnswers":["Option A","Option C"], "solution":"Detailed explanation...", "difficulty":"hard", "bloomLevel":"Analyze", "conceptTag":"..." }
 
 3. True / False (type: "OTF"): Evaluates conceptual facts or rules.
@@ -1089,8 +1095,9 @@ ${buildVectorFigureInstruction()}
 CRITICAL RULES & LEVEL/SOURCE FIDELITY:
 ========================================
 1. STRICT BOARD & CLASS LEVEL ALIGNMENT: Align difficulty, vocabulary, and concepts with official ${selectedBoard} Class ${selectedClass} textbooks (NCERT / State Board).
-2. ZERO PLACEHOLDER & ZERO SYNTHETIC LOOPS POLICY:
+2. ZERO PLACEHOLDER, ZERO DUPLICATE OPTIONS & ZERO SYNTHETIC LOOPS POLICY:
    - NEVER generate dummy/placeholder options like "Option A", "None of these", or "All of the above". Every option MUST be an authentic, plausible scientific/mathematical choice.
+   - STRICT ZERO DUPLICATE OPTIONS: Every option in the "options" array MUST be unique, mutually distinct, and non-overlapping. Under no circumstances should any question contain duplicate, identical, or near-identical options differing by only 1-2 words or minor phrasing.
    - NEVER generate repetitive template clones differing only by 1-2 filler words. Every question must test a distinct sub-concept, scenario, or variation.
 3. RANDOMIZE CORRECT ANSWER KEY POSITIONS (ANTI-OPTION-A BIAS):
    - Distribute the correct answer position randomly and evenly across options A, B, C, and D (roughly 25% for each position). NEVER place the correct answer as Option A in majority of questions.
@@ -1704,6 +1711,8 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
         setGeneratedQuestions(combined);
         setAiPasteText('');
         const validation = validateQuestionsForSave(combined);
+        setPinnedIssueIndices(null);
+        setPreviewFilter('all');
         const pCount = combined.filter(q => q.vault === 'practice').length;
         const eCount = combined.filter(q => q.vault === 'exam').length;
         if (!validation.valid) {
@@ -1714,6 +1723,8 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
       } else {
         setGeneratedQuestions(transformed);
         const validation = validateQuestionsForSave(transformed);
+        setPinnedIssueIndices(null);
+        setPreviewFilter('all');
         const pCount = transformed.filter(q => q.vault === 'practice').length;
         const eCount = transformed.filter(q => q.vault === 'exam').length;
         if (!validation.valid) {
@@ -2496,6 +2507,9 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
           const validation = validateQuestionsForSave(generatedQuestions);
           const visibleQuestions = generatedQuestions.map((q, idx) => ({ q, idx })).filter(({ idx }) => {
             if (previewFilter === 'issues') {
+              if (pinnedIssueIndices && pinnedIssueIndices.length > 0) {
+                return pinnedIssueIndices.includes(idx) || validation.invalidIndices.has(idx);
+              }
               return validation.invalidIndices.has(idx);
             }
             return true;
@@ -2514,14 +2528,20 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
                     <button
                       type="button"
                       className={`pill-btn ${previewFilter === 'all' ? 'active' : ''}`}
-                      onClick={() => setPreviewFilter('all')}
+                      onClick={() => {
+                        setPreviewFilter('all');
+                        setPinnedIssueIndices(null);
+                      }}
                     >
                       All ({generatedQuestions.length})
                     </button>
                     <button
                       type="button"
                       className={`pill-btn ${previewFilter === 'issues' ? 'active' : ''}`}
-                      onClick={() => setPreviewFilter('issues')}
+                      onClick={() => {
+                        setPreviewFilter('issues');
+                        setPinnedIssueIndices(Array.from(validation.invalidIndices));
+                      }}
                       style={previewFilter !== 'issues' && validation.invalidIndices.size > 0 ? { color: 'var(--danger)' } : {}}
                     >
                       ⚠️ Issues Only ({validation.invalidIndices.size})
@@ -2577,7 +2597,10 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
                     {previewFilter !== 'issues' && (
                       <button
                         type="button"
-                        onClick={() => setPreviewFilter('issues')}
+                        onClick={() => {
+                          setPreviewFilter('issues');
+                          setPinnedIssueIndices(Array.from(validation.invalidIndices));
+                        }}
                         style={{ background: 'var(--danger)', color: 'var(--text-white)', border: 'none', borderRadius: '4px', padding: '3px 8px', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}
                       >
                         🔍 Show only problematic questions
@@ -2593,6 +2616,7 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
                         type="button"
                         onClick={() => {
                           setPreviewFilter('all');
+                          setPinnedIssueIndices(null);
                           setTimeout(() => {
                             const el = document.getElementById(`preview-q-${item.index}`);
                             if (el) {
@@ -2626,22 +2650,39 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
                 </div>
               )}
 
+              {/* ALL RESOLVED BANNER IN ISSUES MODE */}
+              {previewFilter === 'issues' && validation.valid && (
+                <div style={{ padding: '10px 16px', borderRadius: 'var(--radius-sm)', background: 'rgba(16, 185, 129, 0.12)', border: '1.5px solid var(--success)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--success)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span>🎉 All reported issues have been fully resolved! Ready to save to Question Bank.</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => { setPreviewFilter('all'); setPinnedIssueIndices(null); }}
+                    style={{ background: 'var(--success)', color: 'var(--text-white)', border: 'none', borderRadius: '4px', padding: '4px 10px', fontSize: '11px', fontWeight: 700, cursor: 'pointer' }}
+                  >
+                    👀 View All Questions ({generatedQuestions.length})
+                  </button>
+                </div>
+              )}
+
               {/* Questions preview grid container */}
               <div id="questionsListPreviewContainer" style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '480px', overflowY: 'auto', paddingRight: '8px' }}>
                 {visibleQuestions.map(({ q, idx }) => {
                   const hasErrors = !!validation.questionErrorsMap[idx];
                   const qErrors = validation.questionErrorsMap[idx] || [];
+                  const isFixedInIssueMode = !hasErrors && previewFilter === 'issues';
 
                   return (
                     <div 
                       key={idx} 
                       id={`preview-q-${idx}`}
                       style={{ 
-                        background: hasErrors ? 'rgba(239, 68, 68, 0.04)' : 'var(--bg-soft)', 
+                        background: hasErrors ? 'rgba(239, 68, 68, 0.04)' : isFixedInIssueMode ? 'rgba(16, 185, 129, 0.04)' : 'var(--bg-soft)', 
                         padding: '12px', 
                         borderRadius: 'var(--radius-sm)', 
-                        borderLeft: hasErrors ? '5px solid var(--danger)' : '4px solid var(--accent)',
-                        border: hasErrors ? '1.5px solid rgba(239, 68, 68, 0.4)' : '1px solid var(--border-light)',
+                        borderLeft: hasErrors ? '5px solid var(--danger)' : isFixedInIssueMode ? '5px solid var(--success)' : '4px solid var(--accent)',
+                        border: hasErrors ? '1.5px solid rgba(239, 68, 68, 0.4)' : isFixedInIssueMode ? '1.5px solid rgba(16, 185, 129, 0.4)' : '1px solid var(--border-light)',
                         display: 'flex', 
                         justifyContent: 'space-between', 
                         alignItems: 'start', 
@@ -2655,6 +2696,14 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
                           <div style={{ padding: '6px 10px', background: 'rgba(239, 68, 68, 0.15)', border: '1px solid var(--danger)', borderRadius: '4px', color: 'var(--danger)', fontSize: '11px', fontWeight: 600, marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                             <span>⚠️ Issue:</span>
                             <span>{qErrors.join(' | ')}</span>
+                          </div>
+                        )}
+
+                        {/* Inline Resolved Callout on Question Card */}
+                        {isFixedInIssueMode && (
+                          <div style={{ padding: '6px 10px', background: 'rgba(16, 185, 129, 0.15)', border: '1px solid var(--success)', borderRadius: '4px', color: 'var(--success)', fontSize: '11px', fontWeight: 600, marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span>✅ Issue Resolved:</span>
+                            <span>All options and fields validated successfully.</span>
                           </div>
                         )}
 

@@ -942,6 +942,199 @@ export function normalizeOptionText(str: string): string {
 }
 
 /**
+ * Fast Levenshtein distance for short to medium strings.
+ */
+function calcLevenshtein(a: string, b: string): number {
+  const m = a.length;
+  const n = b.length;
+  if (m === 0) return n;
+  if (n === 0) return m;
+  if (Math.abs(m - n) > 4) return Math.abs(m - n);
+
+  let prev = Array.from({ length: n + 1 }, (_, i) => i);
+  let curr = new Array(n + 1).fill(0);
+
+  for (let i = 1; i <= m; i++) {
+    curr[0] = i;
+    for (let j = 1; j <= n; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      curr[j] = Math.min(prev[j] + 1, curr[j - 1] + 1, prev[j - 1] + cost);
+    }
+    const temp = prev;
+    prev = curr;
+    curr = temp;
+  }
+  return prev[n];
+}
+
+/**
+ * Checks whether two options are duplicates or near-identical variants
+ * (differing by only minor typos, 1-2 letters, filler words, trailing punctuation, or trivial spacing).
+ * Safeguards legitimate opposite / antonym pairs in science (e.g., 'increase' vs 'decrease', 'concave' vs 'convex', 'cation' vs 'anion').
+ */
+export function areOptionsTooSimilar(rawA: any, rawB: any): { tooSimilar: boolean; reason?: string } {
+  if (rawA === undefined || rawA === null || rawB === undefined || rawB === null) {
+    return { tooSimilar: false };
+  }
+  const sA = (typeof rawA === 'object' ? (rawA.text || rawA.value || '') : String(rawA)).trim();
+  const sB = (typeof rawB === 'object' ? (rawB.text || rawB.value || '') : String(rawB)).trim();
+  if (!sA || !sB) return { tooSimilar: false };
+
+  // 1. Exact string match
+  if (sA === sB) {
+    return { tooSimilar: true, reason: 'Identical options' };
+  }
+
+  const cleanA = cleanOptionPrefix(sA).replace(/\\\\/g, '\\').replace(/\s+/g, ' ').trim();
+  const cleanB = cleanOptionPrefix(sB).replace(/\\\\/g, '\\').replace(/\s+/g, ' ').trim();
+
+  // 2. Exact match after cleaning option prefix ("A. ", "(B)", "Option A: ", etc.)
+  if (cleanA === cleanB) {
+    return { tooSimilar: true, reason: 'Identical text after prefix removal' };
+  }
+
+  // 3. Normalized string match (stripping LaTeX formatting, math delimiters, casing, extra whitespace)
+  const normA = cleanStringForMatch(cleanA);
+  const normB = cleanStringForMatch(cleanB);
+  if (normA && normB && normA === normB) {
+    return { tooSimilar: true, reason: 'Identical text after math and formatting normalization' };
+  }
+
+  // Punctuation and whitespace stripped lowercase
+  const stripPunct = (s: string) => s.toLowerCase().replace(/[.,;:!?'"()[\]{}\\/`~*^%$#@&+=_-]/g, ' ').replace(/\s+/g, ' ').trim();
+  const punctA = stripPunct(cleanA);
+  const punctB = stripPunct(cleanB);
+  if (punctA && punctB && punctA === punctB) {
+    return { tooSimilar: true, reason: 'Identical text differing only by punctuation or spacing' };
+  }
+
+  // 4. Numerical equivalence check
+  // Matches pure numbers or numbers with identical units (e.g. "12", "12.0", "12 cm", "12.0 cm", "0.5", "0.50")
+  const numMatchA = cleanA.match(/^([-+]?[0-9]*\.?[0-9]+)\s*([a-zA-Z/°µ%^0-9-]*)$/);
+  const numMatchB = cleanB.match(/^([-+]?[0-9]*\.?[0-9]+)\s*([a-zA-Z/°µ%^0-9-]*)$/);
+  if (numMatchA && numMatchB) {
+    const valA = parseFloat(numMatchA[1]);
+    const valB = parseFloat(numMatchB[1]);
+    const unitA = (numMatchA[2] || '').toLowerCase().trim();
+    const unitB = (numMatchB[2] || '').toLowerCase().trim();
+    if (!isNaN(valA) && !isNaN(valB) && unitA === unitB) {
+      if (Math.abs(valA - valB) < 1e-6) {
+        return { tooSimilar: true, reason: `Numerically identical values (${cleanA} vs ${cleanB})` };
+      }
+      // Both are numeric with distinct values -> clearly distinct options!
+      return { tooSimilar: false };
+    }
+  }
+
+  // 5. Short strings (<= 3 chars, e.g. 'A' vs 'B', 'n' vs 'N', '10' vs '20')
+  // For short strings, do not do fuzzy/Levenshtein matching
+  if (punctA.length <= 3 || punctB.length <= 3) {
+    return { tooSimilar: false };
+  }
+
+  // Known scientific antonym / opposite pairs that differ by small edit distance
+  // (e.g. "increase" vs "decrease", "concave" vs "convex", "cation" vs "anion")
+  const KNOWN_ANTONYMS: [string, string][] = [
+    ['increase', 'decrease'],
+    ['increases', 'decreases'],
+    ['increased', 'decreased'],
+    ['increasing', 'decreasing'],
+    ['concave', 'convex'],
+    ['cation', 'anion'],
+    ['cations', 'anions'],
+    ['inward', 'outward'],
+    ['internal', 'external'],
+    ['import', 'export'],
+    ['converging', 'diverging'],
+    ['convergent', 'divergent'],
+    ['endothermic', 'exothermic'],
+    ['aerobic', 'anaerobic'],
+    ['positive', 'negative'],
+    ['clockwise', 'anticlockwise'],
+    ['clockwise', 'counterclockwise'],
+    ['reversible', 'irreversible'],
+    ['homogeneous', 'heterogeneous'],
+    ['saturated', 'unsaturated'],
+    ['real', 'virtual'],
+    ['erect', 'inverted'],
+    ['dominant', 'recessive'],
+    ['soluble', 'insoluble'],
+    ['conductor', 'insulator'],
+    ['acidic', 'basic'],
+    ['anode', 'cathode']
+  ];
+
+  const isAntonymPair = KNOWN_ANTONYMS.some(([ant1, ant2]) => 
+    (punctA.includes(ant1) && punctB.includes(ant2)) ||
+    (punctA.includes(ant2) && punctB.includes(ant1))
+  );
+  if (isAntonymPair) {
+    return { tooSimilar: false };
+  }
+
+  // 6. Stop-word & minor filler word normalization
+  // e.g., "photosynthesis" vs "the photosynthesis", "it increases" vs "increases"
+  const STOP_WORDS = new Set(['a', 'an', 'the', 'it', 'is', 'its', 'of', 'to', 'in', 'on', 'at', 'by', 'for', 'with', 'that', 'this', 'are', 'be', 'as']);
+  const tokensA = punctA.split(' ').filter(w => !STOP_WORDS.has(w));
+  const tokensB = punctB.split(' ').filter(w => !STOP_WORDS.has(w));
+  const coreA = tokensA.join(' ');
+  const coreB = tokensB.join(' ');
+
+  if (coreA && coreB && coreA === coreB) {
+    return { tooSimilar: true, reason: `Options differ only by filler words ("${cleanA}" vs "${cleanB}")` };
+  }
+
+  // 7. Plural / inflection check on single-word or short phrases
+  // e.g. "chloroplast" vs "chloroplasts", "mitochondrion" vs "mitochondria", "chromosome" vs "chromosomes"
+  if (tokensA.length === 1 && tokensB.length === 1) {
+    const wA = tokensA[0];
+    const wB = tokensB[0];
+    if (wA.length >= 4 && wB.length >= 4) {
+      if (wA + 's' === wB || wB + 's' === wA || wA + 'es' === wB || wB + 'es' === wA) {
+        return { tooSimilar: true, reason: `Singular/plural duplicate ("${cleanA}" vs "${cleanB}")` };
+      }
+      if ((wA.endsWith('on') && wB.endsWith('a') && wA.slice(0, -2) === wB.slice(0, -1)) ||
+          (wB.endsWith('on') && wA.endsWith('a') && wB.slice(0, -2) === wA.slice(0, -1))) {
+        return { tooSimilar: true, reason: `Singular/plural duplicate ("${cleanA}" vs "${cleanB}")` };
+      }
+    }
+  }
+
+  // 8. Levenshtein edit distance check on normalized non-numeric strings (typo detection)
+  // For strings with length >= 5:
+  // - 1 edit difference (e.g. "photosynthesis" vs "photosynthesiss" or "photosyntheis")
+  // - 2 edits difference if length >= 10 and ratio <= 0.15
+  const maxLen = Math.max(punctA.length, punctB.length);
+  if (maxLen >= 5) {
+    const dist = calcLevenshtein(punctA, punctB);
+    if (dist === 1 && maxLen >= 5) {
+      return { tooSimilar: true, reason: `Near-identical options differing by only 1 letter/typo ("${cleanA}" vs "${cleanB}")` };
+    }
+    if (dist === 2 && maxLen >= 10) {
+      const ratio = dist / maxLen;
+      if (ratio <= 0.15) {
+        return { tooSimilar: true, reason: `Near-identical options differing by only 2 characters ("${cleanA}" vs "${cleanB}")` };
+      }
+    }
+  }
+
+  // 9. Token overlap for multi-word options (>= 3 words)
+  // If two options have >= 3 words and share >= 85% of tokens in common
+  if (tokensA.length >= 3 && tokensB.length >= 3) {
+    const setA = new Set(tokensA);
+    const setB = new Set(tokensB);
+    let intersection = 0;
+    setA.forEach(t => { if (setB.has(t)) intersection++; });
+    const dice = (2 * intersection) / (tokensA.length + tokensB.length);
+    if (dice >= 0.85) {
+      return { tooSimilar: true, reason: `Options share virtually identical wording ("${cleanA}" vs "${cleanB}")` };
+    }
+  }
+
+  return { tooSimilar: false };
+}
+
+/**
  * Robustly matches an option against a target answer string.
  * Respects exact matches and case-sensitivity for short scientific units/symbols (e.g. 'n' vs 'N', 'm' vs 'M', 'Pa').
  */
@@ -1008,25 +1201,24 @@ export function validateQuestion(q: any, questionType: 'objective' | 'subjective
     }
   }
 
-  // Check for duplicate options in MCQs (preserving case for short symbols/units like 'n' vs 'N')
+  // Check for duplicate or near-identical options in MCQs
   if (Array.isArray(q.options) && q.options.length >= 2) {
-    const cleanedList = q.options.map((opt: any) => cleanOptionPrefix(String(opt || '')).replace(/\\\\/g, '\\').replace(/\s+/g, ' ').trim()).filter(Boolean);
-    
-    // Check for exact duplicates
-    const exactDuplicates = cleanedList.some((item: string, idx: number) => cleanedList.indexOf(item) !== idx);
-    if (exactDuplicates) {
-      errors.push('Duplicate options detected: two or more options are identical.');
-    } else {
-      // Check for case-insensitive duplicate only for longer non-math text (> 3 chars)
-      const normList = cleanedList.map((item: string) => {
-        if (item.length <= 3 || /[\\_{}^$]/.test(item)) {
-          return item; // preserve case for units and symbols (e.g. 'n' vs 'N')
+    const rawOptions = q.options;
+    const duplicatePairs: string[] = [];
+
+    for (let i = 0; i < rawOptions.length; i++) {
+      for (let j = i + 1; j < rawOptions.length; j++) {
+        const check = areOptionsTooSimilar(rawOptions[i], rawOptions[j]);
+        if (check.tooSimilar) {
+          const letterI = String.fromCharCode(65 + i);
+          const letterJ = String.fromCharCode(65 + j);
+          duplicatePairs.push(`Option ${letterI} and Option ${letterJ} (${check.reason || 'duplicate'})`);
         }
-        return item.toLowerCase();
-      });
-      if (new Set(normList).size !== normList.length) {
-        errors.push('Duplicate options detected: two or more options are identical or near-identical.');
       }
+    }
+
+    if (duplicatePairs.length > 0) {
+      errors.push(`Duplicate or near-identical options detected: ${duplicatePairs.join('; ')}. All options must be mutually distinct choices.`);
     }
   }
 
