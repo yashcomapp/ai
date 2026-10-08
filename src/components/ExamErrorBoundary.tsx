@@ -1,6 +1,7 @@
 'use client';
 
 import React, { Component, ErrorInfo, ReactNode } from 'react';
+import { auth } from '@/lib/firebase/client';
 
 interface Props {
   children: ReactNode;
@@ -60,23 +61,33 @@ export class ExamErrorBoundary extends Component<Props, State> {
           }
         } catch {}
 
-        fetch('/api/system/client-error', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: 'client_crash',
-            type: this.props.fallbackTitle || 'exam_error_boundary',
-            url: window.location.href,
-            examId,
-            studentCode,
-            studentName,
-            message: `${error?.name || 'Error'}: ${error?.message || 'Unknown error'}`,
-            stack: error?.stack || null,
-            componentStack: errorInfo?.componentStack || null,
-            userAgent: navigator.userAgent,
-            timestamp: new Date().toISOString()
-          })
-        }).catch(() => null);
+        (async () => {
+          let token: string | null = null;
+          try {
+            if (auth.currentUser) {
+              token = await auth.currentUser.getIdToken();
+            }
+          } catch {}
+
+          const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+          if (token) headers['Authorization'] = `Bearer ${token}`;
+
+          fetch('/api/system/client-error', {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({
+              action: 'client_crash',
+              type: this.props.fallbackTitle || 'exam_error_boundary',
+              url: window.location.href,
+              examId,
+              message: `${error?.name || 'Error'}: ${error?.message || 'Unknown error'}`,
+              stack: error?.stack || null,
+              componentStack: errorInfo?.componentStack || null,
+              userAgent: navigator.userAgent,
+              timestamp: new Date().toISOString()
+            })
+          }).catch(() => null);
+        })();
       }
     } catch {}
   }

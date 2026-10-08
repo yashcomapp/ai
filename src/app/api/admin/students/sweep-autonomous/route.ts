@@ -4,9 +4,15 @@ import { ExamReviewService } from '@/services/examReview.service';
 
 export async function POST(req: NextRequest) {
   try {
-    const adminUser = await verifyRole(req, 'admin');
-    if (!adminUser) {
-      return NextResponse.json({ message: 'Unauthorized. Admin role required.' }, { status: 403 });
+    const authHeader = req.headers.get('authorization') || req.headers.get('Authorization');
+    const cronSecret = process.env.CRON_SECRET;
+    const isCronAuthorized = Boolean(cronSecret && authHeader === `Bearer ${cronSecret}`);
+
+    if (!isCronAuthorized) {
+      const adminUser = await verifyRole(req, 'admin');
+      if (!adminUser) {
+        return NextResponse.json({ message: 'Unauthorized. Admin role or valid Cron Secret required.' }, { status: 403 });
+      }
     }
 
     let studentCode: string | undefined = undefined;

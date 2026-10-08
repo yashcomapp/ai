@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase/admin';
-import { verifyRole } from '@/lib/auth';
+import { verifyRole, verifyToken } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -8,18 +8,19 @@ export const dynamic = 'force-dynamic';
 const ipRequestHistory = new Map<string, number[]>();
 const recentErrorDedupe = new Map<string, number>();
 
-const MAX_REQUESTS_PER_MINUTE = 10;
+const MAX_UNAUTH_PER_MINUTE = 3;
+const MAX_AUTH_PER_MINUTE = 15;
 const DEDUPE_WINDOW_MS = 60 * 1000;
 const RATE_LIMIT_WINDOW_MS = 60 * 1000;
 
-function isRateLimited(ip: string): boolean {
+function isRateLimited(key: string, maxLimit: number): boolean {
   const now = Date.now();
-  const timestamps = (ipRequestHistory.get(ip) || []).filter(t => now - t < RATE_LIMIT_WINDOW_MS);
-  if (timestamps.length >= MAX_REQUESTS_PER_MINUTE) {
+  const timestamps = (ipRequestHistory.get(key) || []).filter(t => now - t < RATE_LIMIT_WINDOW_MS);
+  if (timestamps.length >= maxLimit) {
     return true;
   }
   timestamps.push(now);
-  ipRequestHistory.set(ip, timestamps);
+  ipRequestHistory.set(key, timestamps);
   return false;
 }
 
@@ -44,7 +45,32 @@ export async function POST(req: NextRequest) {
   try {
     const ip = req.headers.get('x-forwarded-for')?.split(',')[0].trim() || 'unknown-ip';
 
-    if (isRateLimited(ip)) {
+    // Verify token to prevent identity spoofing
+    const decodedToken = await verifyToken(req);
+    let verifiedUid: string | null = null;
+    let verifiedStudentCode: string | null = null;
+    let verifiedStudentName: string | null = null;
+    let isVerifiedUser = false;
+
+    if (decodedToken) {
+      verifiedUid = decodedToken.uid;
+      try {
+        const userDoc = await adminDb.collection('users').doc(decodedToken.uid).get();
+        if (userDoc.exists) {
+          const uData = userDoc.data();
+          verifiedStudentCode = uData?.studentCode || null;
+          verifiedStudentName = uData?.name || uData?.studentName || null;
+          isVerifiedUser = true;
+        }
+      } catch (err: any) {
+        console.warn('Failed to resolve authenticated user for crash log:', err?.message);
+      }
+    }
+
+    const rateLimitKey = verifiedUid ? `user:${verifiedUid}` : `ip:${ip}`;
+    const maxLimit = isVerifiedUser ? MAX_AUTH_PER_MINUTE : MAX_UNAUTH_PER_MINUTE;
+
+    if (isRateLimited(rateLimitKey, maxLimit)) {
       return NextResponse.json({ success: false, error: 'Rate limit exceeded' }, { status: 429 });
     }
 
@@ -61,16 +87,14 @@ export async function POST(req: NextRequest) {
     const userAgent = typeof body.userAgent === 'string' ? body.userAgent.slice(0, 500) : null;
     const type = typeof body.type === 'string' ? body.type.slice(0, 100) : 'Exam Client Crash';
     const examId = typeof body.examId === 'string' ? body.examId.slice(0, 100) : null;
-    const studentCode = typeof body.studentCode === 'string' ? body.studentCode.slice(0, 50) : null;
-    const studentName = typeof body.studentName === 'string' ? body.studentName.slice(0, 100) : null;
 
-    // Deduplicate rapid repeat crashes (e.g. infinite re-render cycles or repeated reloads)
-    const errorSignature = `${ip}:${examId || 'general'}:${message}`;
+    // Deduplicate rapid repeat crashes (e.g. infinite re-render loops or reload loops)
+    const errorSignature = `${rateLimitKey}:${examId || 'general'}:${message}`;
     if (isDuplicate(errorSignature)) {
       return NextResponse.json({ success: true, deduped: true });
     }
 
-    console.warn(`[Client Crash Registered] ${type}: ${message.slice(0, 120)} | examId=${examId} student=${studentCode || 'unknown'}`);
+    console.warn(`[Client Crash Registered] ${type}: ${message.slice(0, 120)} | examId=${examId} student=${verifiedStudentCode || 'unverified'}`);
 
     await adminDb.collection('systemFaults').add({
       category: 'client_crash',
@@ -82,8 +106,10 @@ export async function POST(req: NextRequest) {
       userAgent,
       context: {
         examId,
-        studentCode,
-        studentName
+        uid: verifiedUid,
+        studentCode: verifiedStudentCode,
+        studentName: verifiedStudentName,
+        verified: isVerifiedUser
       },
       timestamp: new Date()
     });

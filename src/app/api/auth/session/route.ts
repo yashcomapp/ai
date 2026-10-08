@@ -5,7 +5,7 @@ import { notifyStudentLogin, notifyStudentLogout } from '@/lib/notifications';
 import { verifyToken, verifyAnyRole, invalidateUserCache } from '@/lib/auth';
 import { chunkArray } from '@/lib/firestoreUtils';
 
-async function isParentFullyAutonomous(userData: any, email?: string): Promise<boolean> {
+async function checkParentDeactivationStatus(userData: any, email?: string): Promise<{ shouldDeactivate: boolean; reason: 'student_autonomous' | 'all_students_inactive' | null }> {
   const parentEmail = email?.toLowerCase();
   let studentCodes: string[] = [];
   if (Array.isArray(userData?.studentCodes)) {
@@ -44,10 +44,32 @@ async function isParentFullyAutonomous(userData: any, email?: string): Promise<b
     }
   }
 
-  if (childrenDocs.length === 0) return false;
+  // Deduplicate childrenDocs by studentCode
+  const seenCodes = new Set<string>();
+  childrenDocs = childrenDocs.filter(c => {
+    if (!c.studentCode) return false;
+    if (seenCodes.has(c.studentCode)) return false;
+    seenCodes.add(c.studentCode);
+    return true;
+  });
 
-  const nonAutonomousCount = childrenDocs.filter(c => c.autonomous !== true).length;
-  return childrenDocs.length > 0 && nonAutonomousCount === 0;
+  if (childrenDocs.length === 0) {
+    return { shouldDeactivate: true, reason: 'all_students_inactive' };
+  }
+
+  // Check if ALL linked students are inactive
+  const activeChildren = childrenDocs.filter(c => c.status !== 'inactive');
+  if (activeChildren.length === 0) {
+    return { shouldDeactivate: true, reason: 'all_students_inactive' };
+  }
+
+  // Check if ALL active linked students are in Autonomous Mode
+  const nonAutonomousActiveCount = activeChildren.filter(c => c.autonomous !== true).length;
+  if (nonAutonomousActiveCount === 0) {
+    return { shouldDeactivate: true, reason: 'student_autonomous' };
+  }
+
+  return { shouldDeactivate: false, reason: null };
 }
 
 export async function POST(req: NextRequest) {
@@ -110,25 +132,39 @@ export async function POST(req: NextRequest) {
     const activeSessionToken = userData.activeSessionToken || null;
 
     if (role === 'parent' && userData.status !== 'inactive') {
-      const fullyAuto = await isParentFullyAutonomous(userData, email);
-      if (fullyAuto) {
+      const deactCheck = await checkParentDeactivationStatus(userData, email);
+      if (deactCheck.shouldDeactivate) {
         await userDocRef.update({
           status: 'inactive',
-          deactivationReason: 'student_autonomous',
+          deactivationReason: deactCheck.reason,
           updatedAt: new Date()
         }).catch(() => null);
         invalidateUserCache(uid);
-        return NextResponse.json({ 
-          message: 'Parent portal access is disabled as your student is registered in Autonomous Mode (parent exam reviews are not required).' 
-        }, { status: 403 });
+
+        if (deactCheck.reason === 'student_autonomous') {
+          return NextResponse.json({ 
+            message: 'Parent portal access is disabled as your student is registered in Autonomous Mode (parent exam reviews are not required).' 
+          }, { status: 403 });
+        } else {
+          return NextResponse.json({
+            message: 'Parent portal access is disabled as no active students are linked to this parent account.'
+          }, { status: 403 });
+        }
       }
     }
 
     if (userData.status === 'inactive' && role !== 'admin') {
-      if (role === 'parent' && userData.deactivationReason === 'student_autonomous') {
-        return NextResponse.json({ 
-          message: 'Parent portal access is disabled as your student is registered in Autonomous Mode (parent exam reviews are not required).' 
-        }, { status: 403 });
+      if (role === 'parent') {
+        if (userData.deactivationReason === 'student_autonomous') {
+          return NextResponse.json({ 
+            message: 'Parent portal access is disabled as your student is registered in Autonomous Mode (parent exam reviews are not required).' 
+          }, { status: 403 });
+        }
+        if (userData.deactivationReason === 'all_students_inactive') {
+          return NextResponse.json({ 
+            message: 'Parent portal access is disabled as no active students are linked to this parent account.' 
+          }, { status: 403 });
+        }
       }
       return NextResponse.json({ message: 'Your account has been disabled. Please contact admin.' }, { status: 403 });
     }

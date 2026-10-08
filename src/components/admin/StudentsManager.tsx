@@ -71,6 +71,7 @@ export default function StudentsManager() {
   const [resetTargetStudent, setResetTargetStudent] = useState<Student | null>(null);
   const [resetSelection, setResetSelection] = useState<'student' | 'parent' | 'both'>('student');
   const [togglingAutonomousId, setTogglingAutonomousId] = useState<string | null>(null);
+  const [sweepingAutonomous, setSweepingAutonomous] = useState(false);
 
   const handleToggleAutonomous = async (studentId: string, studentName: string, currentAutonomous: boolean) => {
     const nextAutonomous = !currentAutonomous;
@@ -99,6 +100,31 @@ export default function StudentsManager() {
       alert(err.message || 'Mode toggle failed.');
     } finally {
       setTogglingAutonomousId(null);
+    }
+  };
+
+  const handleSweepAutonomous = async () => {
+    if (!confirm('Run Autonomous Review Sweep across all autonomous students?\n\nThis will auto-approve any lingering pending exam reviews, attempts, and parentReviews for students registered in Autonomous Mode.')) {
+      return;
+    }
+    setSweepingAutonomous(true);
+    try {
+      const idToken = await firebaseUser!.getIdToken();
+      const res = await fetch('/api/admin/students/sweep-autonomous', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`
+        }
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Failed to sweep autonomous reviews.');
+      alert(`✅ Autonomous Sweep Complete:\n\n${data.message || 'Auto-approval completed successfully.'}`);
+      await fetchStudents();
+    } catch (err: any) {
+      alert(err.message || 'Error executing autonomous sweep.');
+    } finally {
+      setSweepingAutonomous(false);
     }
   };
 
@@ -311,7 +337,16 @@ export default function StudentsManager() {
         <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-muted)' }}>
           Total: {filtered.length} Students
         </div>
-        <div>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button 
+            className="btn btn-secondary" 
+            style={{ padding: '6px 14px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '5px' }} 
+            onClick={handleSweepAutonomous}
+            disabled={sweepingAutonomous}
+            title="Auto-approve any legacy pending parent reviews for all students in Autonomous Mode"
+          >
+            {sweepingAutonomous ? '⏳ Sweeping...' : '⚡ Sweep Autonomous'}
+          </button>
           <button className="btn btn-primary" style={{ padding: '6px 14px', fontSize: '12px' }} onClick={() => setPdfSelectorOpen(true)}>
             Export PDF
           </button>

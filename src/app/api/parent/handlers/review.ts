@@ -208,14 +208,18 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // Fetch student profile to see if they are autonomous
+    // Fetch student profile to see if they are autonomous and verify status
     const studentUserSnap = await adminDb.collection('users')
       .where('role', '==', 'student')
       .where('studentCode', '==', studentCode)
       .limit(1)
       .get();
     
-    const isAutonomous = !studentUserSnap.empty && studentUserSnap.docs[0].data()?.autonomous === true;
+    if (studentUserSnap.empty || studentUserSnap.docs[0].data()?.status === 'inactive') {
+      return NextResponse.json({ message: 'Access denied. Student is not active.' }, { status: 403 });
+    }
+
+    const isAutonomous = studentUserSnap.docs[0].data()?.autonomous === true;
 
     // Fetch parent reviews info
     const [objSnaps, pracSnaps, subjSnaps, evalSnaps] = await Promise.all([
@@ -658,9 +662,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'Access denied to this student review.' }, { status: 403 });
     }
 
-    const childName = studentQuerySnap && !studentQuerySnap.empty
-      ? (studentQuerySnap.docs[0].data()?.name || childStudentCode)
-      : childStudentCode;
+    if (!studentQuerySnap || studentQuerySnap.empty || studentQuerySnap.docs[0].data()?.status === 'inactive') {
+      return NextResponse.json({ message: 'Access denied. Student is not active.' }, { status: 403 });
+    }
+
+    const childName = studentQuerySnap.docs[0].data()?.name || childStudentCode;
 
     let success = false;
 

@@ -346,6 +346,7 @@ export default function AdminExamsPage() {
   const [isObjAssignedSectionExpanded, setIsObjAssignedSectionExpanded] = useState(false);
   const [isSubjAssignedSectionExpanded, setIsSubjAssignedSectionExpanded] = useState(false);
   const [pdfSelectorOpen, setPdfSelectorOpen] = useState(false);
+  const [reschedulingToday, setReschedulingToday] = useState(false);
 
   const toggleClassExpanded = (clsKey: string) => {
     setExpandedClasses(prev => {
@@ -1457,6 +1458,31 @@ export default function AdminExamsPage() {
     }
   };
 
+  const handleRescheduleToday = async () => {
+    if (!confirm('Reschedule all exams for today to 06:20 AM IST and reset active session attempts?\n\nThis will:\n• Set start time to 06:20 AM today (no late entry restriction)\n• Clear stuck active attempts for today\n• Refresh today assignments across both objective & subjective exams.')) {
+      return;
+    }
+    setReschedulingToday(true);
+    try {
+      const idToken = await firebaseUser!.getIdToken();
+      const res = await fetch('/api/admin/exams/reschedule-today', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`
+        }
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Rescheduling failed.');
+      alert(`✅ Reschedule Successful:\n\n• Assignments Updated: ${data.assignmentsUpdated ?? 0}\n• Attempts Reset: ${data.attemptsReset ?? 0}\n\n${data.message || ''}`);
+      await loadData();
+    } catch (err: any) {
+      alert(err.message || 'Error executing reschedule today.');
+    } finally {
+      setReschedulingToday(false);
+    }
+  };
+
   // Filters application
   const filteredObjectiveExams = exams.filter(exam => {
     if (objFilterName && !exam.name.toLowerCase().includes(objFilterName.toLowerCase())) return false;
@@ -1529,6 +1555,15 @@ export default function AdminExamsPage() {
           </div>
         </div>
         <div className="page-header-right" style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <button 
+            className="btn btn-secondary" 
+            style={{ padding: '6px 12px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }} 
+            onClick={handleRescheduleToday}
+            disabled={reschedulingToday}
+            title="Reschedule today's assigned exams to 06:20 AM IST and clear stuck attempts"
+          >
+            {reschedulingToday ? '⏳ Rescheduling...' : '🔄 Reschedule Today'}
+          </button>
           <button className="btn btn-primary" style={{ padding: '6px 12px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }} onClick={() => router.push('/admin/exam-generator')}>
             ⚡ Exam Generator
           </button>

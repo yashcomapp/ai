@@ -4,9 +4,7 @@ import { GET as getGenerate, POST as postGenerate } from '../handlers/generate';
 import { GET as getLottery, POST as postLottery } from '../handlers/lottery';
 import { GET as getObjective, POST as postObjective, PUT as putObjective } from '../handlers/objective';
 import { GET as getSubjective, POST as postSubjective, PUT as putSubjective } from '../handlers/subjective';
-import { GET as getMock } from '../handlers/mock';
 import { POST as postBroadcastResults } from '../handlers/broadcastResults';
-import { POST as postConsolidate } from '../handlers/consolidate';
 import { POST as postRescheduleToday } from '../handlers/rescheduleToday';
 
 export const dynamic = 'force-dynamic';
@@ -29,8 +27,6 @@ export async function GET(req: NextRequest, { params }: { params: { slug?: strin
         return await getObjective(req);
       case 'subjective':
         return await getSubjective(req);
-      case 'mock':
-        return await getMock(req);
       default:
         return NextResponse.json({ message: `Unknown exam GET route: ${subroute}` }, { status: 404 });
     }
@@ -58,8 +54,6 @@ export async function POST(req: NextRequest, { params }: { params: { slug?: stri
         return await postSubjective(req);
       case 'broadcast-results':
         return await postBroadcastResults(req);
-      case 'consolidate':
-        return await postConsolidate(req);
       case 'reschedule-today':
         return await postRescheduleToday(req);
       default:

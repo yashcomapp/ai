@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole } from '@/lib/auth';
+import { QuestionRepository } from '@/repositories/question.repository';
+import { invalidateCache } from '@/lib/firebase/cache';
 
 export const dynamic = 'force-dynamic';
 
@@ -90,12 +92,17 @@ export async function POST(req: NextRequest) {
         }
 
         if (qDoc.exists) {
+          const qData = qDoc.data() || {};
           await questionRef.update({
             isQuarantined: true,
             status: 'quarantined',
             flaggedDefective: true,
             quarantinedAt: new Date().toISOString()
           });
+          invalidateCache('qb_base_');
+          if (qData.topicCode) {
+            QuestionRepository.clearTopicCache(qData.topicCode);
+          }
         }
       }
 

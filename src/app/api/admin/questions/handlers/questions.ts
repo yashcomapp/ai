@@ -451,6 +451,7 @@ export async function POST(req: NextRequest) {
 
       await batch.commit();
       invalidateCache('qb_base_');
+      uniqueTopicCodes.forEach(tc => QuestionRepository.clearTopicCache(tc));
 
       // Zero-lag SSOT sync for all affected topics in syllabus & syllabusTopicIndex
       await syncTopicCountsToSyllabus(uniqueTopicCodes);
@@ -582,6 +583,7 @@ export async function POST(req: NextRequest) {
 
     await adminDb.collection('questions').doc(finalCode).set(questionDoc, { merge: true });
     invalidateCache('qb_base_');
+    QuestionRepository.clearTopicCache(topicCode);
 
     // Zero-lag SSOT sync for the topic in syllabus & syllabusTopicIndex
     await syncTopicCountsToSyllabus([topicCode]);
@@ -671,6 +673,7 @@ export async function DELETE(req: NextRequest) {
     });
     await batch.commit();
     invalidateCache('qb_base_');
+    affectedTopicCodes.forEach(tc => QuestionRepository.clearTopicCache(tc));
 
     if (affectedTopicCodes.length > 0) {
       await syncTopicCountsToSyllabus(affectedTopicCodes);
