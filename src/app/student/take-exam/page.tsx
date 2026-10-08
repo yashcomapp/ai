@@ -766,6 +766,25 @@ function TakeExamContent() {
     });
   };
 
+  const totalQCount = exam?.questions?.length || 1;
+  const safeQIndex = Math.max(0, Math.min(totalQCount - 1, currentQIndex));
+  const currentQuestion = exam?.questions?.[safeQIndex] || exam?.questions?.[0] || { id: 'fallback', text: '', options: [], marks: 1, type: 'mcq' };
+  const currentAnswerObj = userAnswers[safeQIndex];
+  const currentAnswer = currentAnswerObj?.answer || '';
+
+  const handleSelectOptionCurrent = (letter: string) => {
+    if (!currentQuestion) return;
+    if (isMultipleChoiceType(currentQuestion.type)) {
+      handleCheckboxOption(safeQIndex, letter);
+    } else {
+      handleSelectOption(safeQIndex, letter);
+    }
+  };
+
+  const handleTextInputCurrent = (val: string) => {
+    handleTextInput(safeQIndex, val);
+  };
+
   if (loading) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: 'var(--bg)' }}>
@@ -823,25 +842,6 @@ function TakeExamContent() {
       </div>
     );
   }
-
-  const totalQCount = exam?.questions?.length || 1;
-  const safeQIndex = Math.max(0, Math.min(totalQCount - 1, currentQIndex));
-  const currentQuestion = exam?.questions?.[safeQIndex] || exam?.questions?.[0] || { id: 'fallback', text: '', options: [], marks: 1, type: 'mcq' };
-  const currentAnswerObj = userAnswers[safeQIndex];
-  const currentAnswer = currentAnswerObj?.answer || '';
-
-  const handleSelectOptionCurrent = useCallback((letter: string) => {
-    if (!currentQuestion) return;
-    if (isMultipleChoiceType(currentQuestion.type)) {
-      handleCheckboxOption(safeQIndex, letter);
-    } else {
-      handleSelectOption(safeQIndex, letter);
-    }
-  }, [currentQuestion, safeQIndex]);
-
-  const handleTextInputCurrent = useCallback((val: string) => {
-    handleTextInput(safeQIndex, val);
-  }, [safeQIndex]);
 
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh' }}>
