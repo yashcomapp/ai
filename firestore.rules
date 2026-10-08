@@ -1,6 +1,7 @@
 rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
+// Cloud Firestore Security Rules v2 specification:
+// Root database wrapper scopes all documents within the Firestore database instance.
+service cloud.firestore { match /databases/{database}/documents {
 
     // ── Helpers ──────────────────────────────────────────────
     function isAuth()    { return request.auth != null; }
@@ -316,23 +317,6 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // ── questionCounters ──────────────────────────────────────
-    match /questionCounters/{docId} {
-      allow read:  if isAuth();
-      allow write: if isAdmin();
-    }
-
-    // ── counters ───────────────────────────────────────────────
-    match /counters/{docId} {
-      allow read:  if isAuth();
-      allow write: if isAdmin();
-    }
-
-    // ── templates ─────────────────────────────────────────────
-    match /templates/{docId} {
-      allow read:  if isAuth();
-      allow write: if isAdmin();
-    }
 
     // ── parentReviews ─────────────────────────────────────────
     match /parentReviews/{docId} {
