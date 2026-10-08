@@ -327,7 +327,7 @@ export function isSubjectiveType(type: any): boolean {
   return CANONICAL_SUBJECTIVE_TYPES.includes(toCanonicalQuestionType(type));
 }
 
-export function classifyAssertionReasonAnswer(value: any): string {
+function classifyAssertionReasonAnswer(value: any): string {
   if (!value) return '';
   let v = String(value).trim();
 

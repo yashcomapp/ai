@@ -15,6 +15,7 @@ build/
 !package.json
 !tsconfig.json
 !firestore.indexes.json
+!vercel.json
 *.tsbuildinfo
 tsconfig.tsbuildinfo
 

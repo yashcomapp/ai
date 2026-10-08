@@ -2,27 +2,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole, verifyToken } from '@/lib/auth';
 
+import { checkDistributedRateLimit } from '@/lib/rateLimit';
+
 export const dynamic = 'force-dynamic';
 
-// In-memory sliding rate limiter & deduplicator
-const ipRequestHistory = new Map<string, number[]>();
+// In-memory quick deduplicator for repeat loops in the same worker
 const recentErrorDedupe = new Map<string, number>();
 
 const MAX_UNAUTH_PER_MINUTE = 3;
 const MAX_AUTH_PER_MINUTE = 15;
 const DEDUPE_WINDOW_MS = 60 * 1000;
 const RATE_LIMIT_WINDOW_MS = 60 * 1000;
-
-function isRateLimited(key: string, maxLimit: number): boolean {
-  const now = Date.now();
-  const timestamps = (ipRequestHistory.get(key) || []).filter(t => now - t < RATE_LIMIT_WINDOW_MS);
-  if (timestamps.length >= maxLimit) {
-    return true;
-  }
-  timestamps.push(now);
-  ipRequestHistory.set(key, timestamps);
-  return false;
-}
 
 function isDuplicate(signature: string): boolean {
   const now = Date.now();
@@ -67,10 +57,16 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const rateLimitKey = verifiedUid ? `user:${verifiedUid}` : `ip:${ip}`;
+    const rateLimitKey = verifiedUid ? `crash_user_${verifiedUid}` : `crash_ip_${ip}`;
     const maxLimit = isVerifiedUser ? MAX_AUTH_PER_MINUTE : MAX_UNAUTH_PER_MINUTE;
 
-    if (isRateLimited(rateLimitKey, maxLimit)) {
+    const rateLimitResult = await checkDistributedRateLimit({
+      key: rateLimitKey,
+      limit: maxLimit,
+      windowMs: RATE_LIMIT_WINDOW_MS
+    });
+
+    if (!rateLimitResult.allowed) {
       return NextResponse.json({ success: false, error: 'Rate limit exceeded' }, { status: 429 });
     }
 
