@@ -138,7 +138,7 @@
 - **Rule**: NO maintenance script, migration, data harmonizer, bulk deletion, or bulk update may execute without first creating an atomic point-in-time snapshot of targeted collections via `createPreMutationSnapshot(...)`.
 - **Requirements**:
   - All snapshots must be saved to `backups/snapshots/` with timestamp, reason, collection document counts, and logged in `_systemBackups`.
-  - Every destructive or bulk database modification MUST be reversible via `restoreSnapshot(...)` / `npm run db:restore`.
+  - Every destructive or bulk database modification MUST be reversible via `restoreSnapshot(...)` / `node scripts/db-restore.js`.
 
 ### R. Strict Single Source of Truth (SSOT) Canonical Entity Invariants
 - **Rule**: Every core entity MUST have ONE AND ONLY ONE canonical identifier format across the entire codebase:

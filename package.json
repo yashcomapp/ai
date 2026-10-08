@@ -6,9 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "db:backup": "node scripts/db-backup.js",
-    "db:restore": "node scripts/db-restore.js"
+    "lint": "next lint"
   },
   "dependencies": {
     "@vercel/speed-insights": "^2.0.0",
