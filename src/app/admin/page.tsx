@@ -1,12 +1,9 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import Image from 'next/image';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
-import { Bell, MessageSquare, Settings, LogOut } from 'lucide-react';
 import StudentActivityTable from '@/components/StudentActivityTable';
-import TopBarTimeTracker from '@/components/TopBarTimeTracker';
 
 import useSWR from 'swr';
 import { fetchWithToken } from '@/lib/swrFetcher';
@@ -147,131 +144,6 @@ export default function AdminDashboard() {
           animation: skeleton-blink 1.5s infinite ease-in-out;
         }
       `}</style>
-      {/* Page Header */}
-      <header className="page-header glass" style={{ 
-        padding: '10px 16px', 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center', 
-        borderRadius: '0',
-        borderBottom: '1px solid var(--border)',
-        background: 'var(--surface-glass)',
-        backdropFilter: 'blur(16px)',
-        WebkitBackdropFilter: 'blur(16px)',
-        zIndex: 100
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-          <div 
-            onClick={() => router.push('/admin')} 
-            style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
-          >
-            <Image 
-              src="/logo.png" 
-              alt="YASHCOM Logo" 
-              width={24} 
-              height={24} 
-              style={{ borderRadius: '50%', objectFit: 'cover' }} 
-              priority
-            />
-            <span className="page-header-logo-text" style={{ fontWeight: 900, fontSize: '1.15rem', letterSpacing: '0.5px', color: 'var(--text)' }}>
-              YASHCOM
-            </span>
-          </div>
-        </div>
-
-        <div className="page-header-actions" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-          <TopBarTimeTracker />
-
-          {/* Notices */}
-          <button 
-            className="page-header-btn" 
-            onClick={() => router.push('/admin/notices')} 
-            title="Notices & Announcements"
-            style={{ 
-              background: 'rgba(255,255,255,0.05)', 
-              border: '1px solid var(--border)', 
-              borderRadius: '50%', 
-              width: '36px', 
-              height: '36px', 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              cursor: 'pointer',
-              color: 'var(--text)',
-              flexShrink: 0
-            }}
-          >
-            <Bell size={16} color="var(--warning)" />
-          </button>
-
-          {/* Live Chat */}
-          <button 
-            className="page-header-btn" 
-            onClick={() => router.push('/admin/chat')} 
-            title="Live Chat Workspace"
-            style={{ 
-              background: 'rgba(255,255,255,0.05)', 
-              border: '1px solid var(--border)', 
-              borderRadius: '50%', 
-              width: '36px', 
-              height: '36px', 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              cursor: 'pointer',
-              color: 'var(--text)',
-              flexShrink: 0
-            }}
-          >
-            <MessageSquare size={16} color="var(--info)" />
-          </button>
-
-          {/* Settings */}
-          <button 
-            className="page-header-btn" 
-            onClick={() => router.push('/admin/settings')} 
-            title="Admin Settings"
-            style={{ 
-              background: 'rgba(255,255,255,0.05)', 
-              border: '1px solid var(--border)', 
-              borderRadius: '50%', 
-              width: '36px', 
-              height: '36px', 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              cursor: 'pointer',
-              color: 'var(--text)',
-              flexShrink: 0
-            }}
-          >
-            <Settings size={16} color="var(--text-muted)" />
-          </button>
-
-          {/* Logout Button */}
-          <button 
-            className="page-header-btn"
-            onClick={logout} 
-            style={{ 
-              background: 'rgba(255,255,255,0.05)', 
-              border: '1px solid var(--border)', 
-              borderRadius: '50%', 
-              width: '36px', 
-              height: '36px', 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              color: 'var(--danger)', 
-              cursor: 'pointer',
-              flexShrink: 0
-            }}
-            title="Logout"
-          >
-            <LogOut size={16} />
-          </button>
-        </div>
-      </header>
-
       <div className="dashboard-container" style={{ maxWidth: '1300px', margin: '0 auto', padding: '10px 8px 30px 8px' }}>
 
         {loading ? (

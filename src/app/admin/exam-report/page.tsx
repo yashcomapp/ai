@@ -97,7 +97,7 @@ function formatAbsentLogin(lastLoginAt?: string | null) {
 }
 
 function ExamReportContent() {
-  const { firebaseUser, logout } = useAuth();
+  const { firebaseUser } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -1195,28 +1195,16 @@ function ExamReportContent() {
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
 
-      {/* Header */}
-      <header className="page-header glass" style={{ padding: '8px 12px', borderBottom: '1px solid var(--border-light)' }}>
-        <div className="page-header-left">
-          <span className="brand" style={{ fontSize: '18px', fontWeight: 800, cursor: 'pointer' }} onClick={() => router.push('/admin')}>YASHCOM</span>
-          <div>
-            <h1 style={{ fontSize: '16px', margin: 0, display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-              Exam Report: {exam.name || exam.subjectName || exam.id}
-              <span className="badge" style={{ fontSize: '11px', fontWeight: 600, padding: '2px 8px', background: 'var(--surface-3)', border: '1px solid var(--border-light)', borderRadius: '6px' }}>
-                {exam.id}
-              </span>
-            </h1>
-          </div>
-
-        </div>
-        <div className="page-header-right" style={{ display: 'flex', gap: '10px' }}>
-          
-          <button className="btn btn-secondary" title="Logout" onClick={logout}>🚪</button>
-        </div>
-      </header>
-
       {/* Main Workspace */}
       <main style={{ flex: 1, padding: '10px 12px', maxWidth: '1000px', width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', margin: '4px 0' }}>
+          <h1 style={{ fontSize: '18px', margin: 0, fontWeight: 800 }}>
+            Exam Report: {exam.name || exam.subjectName || exam.id}
+          </h1>
+          <span className="badge" style={{ fontSize: '11px', fontWeight: 600, padding: '2px 8px', background: 'var(--surface-3)', border: '1px solid var(--border-light)', borderRadius: '6px' }}>
+            {exam.id}
+          </span>
+        </div>
         
         {/* Legacy-style Toolbar with Back & Export PDF & Broadcast Notices */}
         <div className="report-toolbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px', flexWrap: 'wrap', gap: '6px' }}>

@@ -29,7 +29,7 @@ interface DayConfig {
 }
 
 export default function AdminClassroomTestPage() {
-  const { firebaseUser, logout } = useAuth();
+  const { firebaseUser } = useAuth();
   const router = useRouter();
 
   const [loading, setLoading] = useState(true);
@@ -1772,15 +1772,9 @@ OUTPUT FORMAT: Return ONLY a valid JSON array of objects with schema:
 
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      {/* Header */}
-      <header className="page-header glass" style={{ padding: '8px 12px', borderBottom: '1px solid var(--border-light)' }}>
-        <div className="page-header-left">
-          <span className="brand" style={{ fontSize: '18px', fontWeight: 800, cursor: 'pointer' }} onClick={() => router.push('/admin')}>YASHCOM</span>
-          <div>
-            <h1 style={{ fontSize: '16px', margin: 0 }}>Classroom Test & Weekly Suite Generator</h1>
-          </div>
-        </div>
-        <div className="page-header-right" style={{ display: 'flex', gap: '10px' }}>
+      {/* Main Workspace */}
+      <main style={{ flex: 1, padding: '24px 12px', maxWidth: '900px', width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
           <button 
             className="btn btn-secondary btn-sm"
             onClick={handleOpenManager}
@@ -1788,13 +1782,7 @@ OUTPUT FORMAT: Return ONLY a valid JSON array of objects with schema:
           >
             🗑️ Manage & Delete Scheduled Suites
           </button>
-          
-          <button className="btn btn-secondary" title="Logout" onClick={logout}>🚪</button>
         </div>
-      </header>
-
-      {/* Main Workspace */}
-      <main style={{ flex: 1, padding: '24px 12px', maxWidth: '900px', width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '20px' }}>
         
         {/* Form Container */}
         <div className="card" style={{ background: 'var(--surface)', padding: '20px 24px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', gap: '16px' }}>

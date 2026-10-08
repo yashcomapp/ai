@@ -602,26 +602,6 @@ export default function AdminNoticesPage() {
 
   return (
     <div style={{ padding: '16px 12px', maxWidth: '1200px', margin: '0 auto', color: 'var(--text)' }}>
-      {/* Back to Dashboard Button on Top */}
-      <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '12px' }}>
-        <button 
-          onClick={() => router.push('/admin')} 
-          style={{
-            background: 'none',
-            border: 'none',
-            color: 'var(--accent)',
-            cursor: 'pointer',
-            fontSize: '13px',
-            fontWeight: 600,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px',
-            padding: 0
-          }}
-        >
-          ← Back to Dashboard
-        </button>
-      </div>
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
         <div>

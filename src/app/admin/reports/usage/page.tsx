@@ -10,7 +10,7 @@ import dynamic from 'next/dynamic';
 const ExportPdfModal = dynamic(() => import('@/components/ExportPdfModal').then(m => ({ default: m.ExportPdfModal })), { ssr: false });
 // Client Firestore imports removed
 export default function UsageReportPage() {
-  const { firebaseUser, logout, user } = useAuth();
+  const { firebaseUser } = useAuth();
   const router = useRouter();
   const { getUsageReport } = useReports();
   const { students: swrStudents } = useAdminStudents();
@@ -117,25 +117,22 @@ export default function UsageReportPage() {
 
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      {/* Header */}
-      <div className="page-header glass" style={{ padding: '8px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderRadius: '0', borderBottom: '1px solid var(--border-light)' }}>
-        <div className="page-header-left" style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-          <span className="brand" style={{ fontWeight: 800, fontSize: '1.2rem', color: 'var(--accent)', cursor: 'pointer' }} onClick={() => router.push('/admin')}>YASHCOM</span>
-          <nav style={{ display: 'flex', gap: '15px' }}>
-            <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-muted)', cursor: 'pointer' }} onClick={() => router.push('/admin')}>Dashboard</span>
-            <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--accent)', borderBottom: '2px solid var(--accent)', paddingBottom: '4px' }}>System Usage Analytics</span>
-          </nav>
-        </div>
-        <div className="page-header-right" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span className="badge badge-info" id="usernameDisplay">{user?.name || 'Admin'}</span>
-          
-          <button className="btn btn-primary" style={{ padding: '6px 12px', fontSize: '12px' }} onClick={() => setPdfSelectorOpen(true)}>📄 Export PDF</button>
-          <button className="btn btn-secondary logout-btn" onClick={logout} title="Logout" style={{ fontSize: '0.8rem', padding: '6px 12px' }}>🚪</button>
-        </div>
+      {/* Reports Sub-Navigation Bar */}
+      <div style={{ maxWidth: '900px', width: '100%', margin: '0 auto', padding: '12px 12px 0 12px' }}>
+        <nav style={{ display: 'flex', gap: '15px', borderBottom: '1px solid var(--border-light)', paddingBottom: '8px', overflowX: 'auto' }}>
+          <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-muted)', cursor: 'pointer', whiteSpace: 'nowrap' }} onClick={() => router.push('/admin/reports/learning-quotient')}>Learning Quotient (LQ)</span>
+          <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-muted)', cursor: 'pointer', whiteSpace: 'nowrap' }} onClick={() => router.push('/admin/reports/daily-practice')}>Daily Practice Summary</span>
+          <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-muted)', cursor: 'pointer', whiteSpace: 'nowrap' }} onClick={() => router.push('/admin/reports/parent-pending')}>Parent Pending</span>
+          <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--accent)', borderBottom: '2px solid var(--accent)', paddingBottom: '4px', whiteSpace: 'nowrap' }}>System Usage Analytics</span>
+          <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-muted)', cursor: 'pointer', whiteSpace: 'nowrap' }} onClick={() => router.push('/admin/reports/login-register')}>Login Register</span>
+        </nav>
       </div>
 
       {/* Main Workspace */}
       <main style={{ flex: 1, padding: '24px 12px', maxWidth: '900px', width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '4px' }}>
+          <button className="btn btn-primary" style={{ padding: '6px 12px', fontSize: '12px' }} onClick={() => setPdfSelectorOpen(true)}>📄 Export PDF</button>
+        </div>
         
         <div id="usage-stats-section" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
           <div className="card" style={{ padding: '20px', background: 'var(--surface)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-lg)', textAlign: 'center' }}>

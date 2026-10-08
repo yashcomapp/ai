@@ -58,7 +58,7 @@ const RTC_CONFIG = {
 };
 
 export default function AdminLiveMonitorPage() {
-  const { firebaseUser, logout } = useAuth();
+  const { firebaseUser } = useAuth();
   const router = useRouter();
 
   const [loading, setLoading] = useState(true);
@@ -459,22 +459,10 @@ export default function AdminLiveMonitorPage() {
 
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      {/* Page Header */}
-      <header className="page-header glass" style={{ padding: '8px 12px', borderBottom: '1px solid var(--border-light)' }}>
-        <div className="page-header-left">
-          <span className="brand" style={{ fontSize: '18px', fontWeight: 800, cursor: 'pointer' }} onClick={() => router.push('/admin')}>YASHCOM</span>
-          <div>
-            <h1 style={{ fontSize: '16px', margin: 0 }}>Live Monitor</h1>
-          </div>
-        </div>
-        <div className="page-header-right" style={{ display: 'flex', gap: '10px' }}>
-          
-          <button className="btn btn-primary" style={{ padding: '6px 12px', fontSize: '12px' }} onClick={() => setPdfSelectorOpen(true)}>📄 Export PDF</button>
-          <button className="btn btn-secondary" title="Logout" onClick={logout}>🚪</button>
-        </div>
-      </header>
-
       <main style={{ flex: 1, padding: '24px 12px', maxWidth: '1000px', width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '15px' }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '2px' }}>
+          <button className="btn btn-primary" style={{ padding: '6px 12px', fontSize: '12px' }} onClick={() => setPdfSelectorOpen(true)}>📄 Export PDF</button>
+        </div>
         {/* Tabs Selection with Dynamic Active Badges */}
         <div className="tabs-container" style={{ display: 'flex', gap: '8px', borderBottom: '1.5px solid var(--border-light)', paddingBottom: '8px' }}>
           {(() => {

@@ -284,7 +284,7 @@ interface Assignment {
 }
 
 export default function AdminExamsPage() {
-  const { firebaseUser, logout } = useAuth();
+  const { firebaseUser } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const assignExamId = searchParams?.get('assign') || null;
@@ -1546,15 +1546,10 @@ export default function AdminExamsPage() {
 
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      {/* Page Header */}
-      <header className="page-header glass" style={{ padding: '8px 12px', borderBottom: '1px solid var(--border-light)' }}>
-        <div className="page-header-left">
-          <span className="brand" style={{ fontSize: '18px', fontWeight: 800, cursor: 'pointer' }} onClick={() => router.push('/admin')}>YASHCOM</span>
-          <div>
-            <h1 style={{ fontSize: '16px', margin: 0 }}>Manage Exams</h1>
-          </div>
-        </div>
-        <div className="page-header-right" style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+      {/* Tabs Container */}
+      <main style={{ flex: 1, padding: '24px 12px', maxWidth: '1100px', width: '100%', margin: '0 auto' }}>
+        {/* Actions Toolbar */}
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', justifyContent: 'flex-end', flexWrap: 'wrap', marginBottom: '16px' }}>
           <button 
             className="btn btn-secondary" 
             style={{ padding: '6px 12px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }} 
@@ -1568,12 +1563,7 @@ export default function AdminExamsPage() {
             ⚡ Exam Generator
           </button>
           <button className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: '12px' }} onClick={() => setPdfSelectorOpen(true)}>📄 Export PDF</button>
-          <button className="btn btn-secondary" title="Logout" onClick={logout}>🚪</button>
         </div>
-      </header>
-
-      {/* Tabs Container */}
-      <main style={{ flex: 1, padding: '24px 12px', maxWidth: '1100px', width: '100%', margin: '0 auto' }}>
         {error && (
           <div className="alert-box alert-box-danger" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', gap: '12px' }}>
             <span>{error}</span>

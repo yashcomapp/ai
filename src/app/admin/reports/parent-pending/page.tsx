@@ -44,7 +44,7 @@ interface SummaryStats {
 }
 
 export default function ParentPendingReportPage() {
-  const { firebaseUser, logout } = useAuth();
+  const { firebaseUser } = useAuth();
   const router = useRouter();
   const { getParentPendingReport } = useReports();
 
@@ -186,27 +186,13 @@ export default function ParentPendingReportPage() {
 
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      {/* Header */}
-      <header className="page-header glass" style={{ padding: '8px 12px', borderBottom: '1px solid var(--border-light)' }}>
-        <div className="page-header-left">
-          <span className="brand" style={{ fontSize: '18px', fontWeight: 800, cursor: 'pointer' }} onClick={() => router.push('/admin')}>YASHCOM</span>
-          <div>
-            <h1 style={{ fontSize: '16px', margin: 0 }}>Parent Reviews & Sincerity Audit</h1>
-          </div>
-        </div>
-        <div className="page-header-right" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-          <button className="btn btn-secondary" onClick={() => router.push('/admin')} style={{ padding: '6px 12px', fontSize: '12px' }}>
-            ← Back to Dashboard
-          </button>
+      {/* Main Content */}
+      <main style={{ flex: 1, padding: '16px 14px', maxWidth: '1100px', width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '4px' }}>
           <button className="btn btn-primary" style={{ padding: '6px 12px', fontSize: '12px' }} onClick={() => setPdfSelectorOpen(true)}>
             📄 Export PDF
           </button>
-          <button className="btn btn-secondary" title="Logout" onClick={logout}>🚪</button>
         </div>
-      </header>
-
-      {/* Main Content */}
-      <main style={{ flex: 1, padding: '16px 14px', maxWidth: '1100px', width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '14px' }}>
         
         {/* Large Backlog Warning Notice */}
         {summary.hasTruncatedBacklog && (

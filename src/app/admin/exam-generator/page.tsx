@@ -1189,22 +1189,11 @@ Return ONLY valid JSON. No markdown wrappers or extra commentary.`;
 
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      {/* Page Header */}
-      <header className="page-header glass" style={{ padding: '8px 12px', borderBottom: '1px solid var(--border-light)' }}>
-        <div className="page-header-left">
-          <span className="brand" style={{ fontSize: '18px', fontWeight: 800, cursor: 'pointer' }} onClick={() => router.push('/admin')}>YASHCOM</span>
-          <div>
-            <h1 style={{ fontSize: '16px', margin: 0 }}>Exam Generator</h1>
-          </div>
-        </div>
-        <div className="page-header-right" style={{ display: 'flex', gap: '10px' }}>
-          
-          <button className="btn btn-secondary" onClick={() => router.push('/admin/exams')}>← Back</button>
-        </div>
-      </header>
-
       {/* Main Form container */}
       <main style={{ flex: 1, padding: '12px', maxWidth: '1240px', width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+          <button className="btn btn-secondary" onClick={() => router.push('/admin/exams')}>← Back to Exams</button>
+        </div>
         {error && (
           <div className="alert-box alert-box-danger" style={{ display: 'block', margin: 0, padding: '8px 12px', fontSize: '12px' }}>
             {error}

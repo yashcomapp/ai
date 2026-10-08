@@ -2,7 +2,6 @@
 
 import React, { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useAuth } from '@/context/AuthContext';
 import StudentsManager from '@/components/admin/StudentsManager';
 import BatchesManager from '@/components/admin/BatchesManager';
 import RegistrationsManager from '@/components/admin/RegistrationsManager';
@@ -12,7 +11,6 @@ type TabType = 'students' | 'batches' | 'registrations';
 function AdminStudentsUnifiedContent({ initialTab }: { initialTab?: TabType }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { logout } = useAuth();
 
   const tabParam = searchParams.get('tab') as TabType | null;
   const [activeTab, setActiveTab] = useState<TabType>(initialTab || tabParam || 'students');
@@ -30,25 +28,6 @@ function AdminStudentsUnifiedContent({ initialTab }: { initialTab?: TabType }) {
 
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      {/* Universal Page Header */}
-      <header className="page-header glass" style={{ padding: '8px 16px', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div className="page-header-left" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <span className="brand" style={{ fontSize: '18px', fontWeight: 800, cursor: 'pointer', color: 'var(--accent)' }} onClick={() => router.push('/admin')}>
-            YASHCOM
-          </span>
-          <div>
-            <h1 style={{ fontSize: '16px', margin: 0, fontWeight: 800 }}>{activeTab === 'registrations' ? 'Student Registrations' : activeTab === 'batches' ? 'Batches' : 'Students & Batches'}</h1>
-          </div>
-        </div>
-        <div className="page-header-right" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <button className="btn btn-secondary" onClick={() => router.push('/admin')} style={{ padding: '6px 12px', fontSize: '12px' }}>
-            ← Back to Dashboard
-          </button>
-          <button className="btn btn-secondary" title="Logout" onClick={logout} style={{ padding: '6px 12px', fontSize: '12px' }}>
-            Logout
-          </button>
-        </div>
-      </header>
 
       {/* Main Container with Tab Bar */}
       <main style={{ flex: 1, padding: '20px 16px', maxWidth: '1200px', width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>

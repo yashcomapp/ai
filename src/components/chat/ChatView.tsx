@@ -70,9 +70,10 @@ interface UserProfile {
 
 interface ChatViewProps {
   role?: UserRole;
+  hideHeader?: boolean;
 }
 
-export default function ChatView({ role = 'admin' }: ChatViewProps) {
+export default function ChatView({ role = 'admin', hideHeader = false }: ChatViewProps) {
   const router = useRouter();
   const { firebaseUser, user, logout } = useAuth();
 
@@ -1364,7 +1365,20 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
   };
 
   return (
-    <div style={{ background: 'var(--surface-2)', height: viewportHeight, display: 'flex', flexDirection: 'column', color: 'var(--text)', fontFamily: 'Inter, system-ui, -apple-system, sans-serif', overflow: 'hidden', position: 'fixed', inset: 0, width: '100%', maxWidth: '100vw', touchAction: 'pan-y' }}>
+    <div style={{ 
+      background: 'var(--surface-2)', 
+      height: hideHeader ? '100%' : viewportHeight, 
+      display: 'flex', 
+      flexDirection: 'column', 
+      color: 'var(--text)', 
+      fontFamily: 'Inter, system-ui, -apple-system, sans-serif', 
+      overflow: 'hidden', 
+      position: hideHeader ? 'relative' : 'fixed', 
+      inset: hideHeader ? undefined : 0, 
+      width: '100%', 
+      maxWidth: '100vw', 
+      touchAction: 'pan-y' 
+    }}>
       <style dangerouslySetInnerHTML={{ __html: `
         /* Prevent accidental Touch-to-Search selection on touch devices */
         body, html, div, span, button, svg, h1, h2, h3, h4, h5, p, label {
@@ -1379,55 +1393,56 @@ export default function ChatView({ role = 'admin' }: ChatViewProps) {
       ` }} />
       
 
-
       {/* Top Header Bar */}
-      <div className="page-header glass" style={{ padding: '8px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderRadius: '0', borderBottom: '1px solid var(--border-light)', zIndex: 10, background: 'var(--surface-popover)' }}>
-        <div className="page-header-left" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <button 
-            onClick={() => router.push(role === 'admin' ? '/admin' : (role === 'parent' ? '/parent' : '/student'))}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: 'var(--text)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '6px',
-              borderRadius: '50%',
-              transition: 'background 0.2s'
-            }}
-            title="Back to Dashboard"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
-          </button>
-          <span className="brand" style={{ fontWeight: 800, fontSize: '1.1rem', color: 'var(--accent)', cursor: 'pointer' }} onClick={() => router.push(role === 'admin' ? '/admin' : (role === 'parent' ? '/parent' : '/student'))}>
-            YASHCOM
-          </span>
+      {!hideHeader && (
+        <div className="page-header glass" style={{ padding: '8px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderRadius: '0', borderBottom: '1px solid var(--border-light)', zIndex: 10, background: 'var(--surface-popover)' }}>
+          <div className="page-header-left" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <button 
+              onClick={() => router.push(role === 'admin' ? '/admin' : (role === 'parent' ? '/parent' : '/student'))}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--text)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '6px',
+                borderRadius: '50%',
+                transition: 'background 0.2s'
+              }}
+              title="Back to Dashboard"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+            </button>
+            <span className="brand" style={{ fontWeight: 800, fontSize: '1.1rem', color: 'var(--accent)', cursor: 'pointer' }} onClick={() => router.push(role === 'admin' ? '/admin' : (role === 'parent' ? '/parent' : '/student'))}>
+              YASHCOM
+            </span>
+          </div>
+          <div className="page-header-right" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <button 
+              className="page-header-btn" 
+              onClick={() => logout()} 
+              style={{ 
+                background: 'rgba(255,255,255,0.05)', 
+                border: '1px solid var(--border)', 
+                borderRadius: '50%', 
+                width: '36px', 
+                height: '36px', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                color: 'var(--danger)', 
+                cursor: 'pointer',
+                flexShrink: 0
+              }} 
+              title="Logout"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            </button>
+          </div>
         </div>
-        <div className="page-header-right" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <button 
-            className="page-header-btn" 
-            onClick={() => logout()} 
-            style={{ 
-              background: 'rgba(255,255,255,0.05)', 
-              border: '1px solid var(--border)', 
-              borderRadius: '50%', 
-              width: '36px', 
-              height: '36px', 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              color: 'var(--danger)', 
-              cursor: 'pointer',
-              flexShrink: 0
-            }} 
-            title="Logout"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-          </button>
-        </div>
-      </div>
+      )}
 
       {/* Main split window container */}
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>

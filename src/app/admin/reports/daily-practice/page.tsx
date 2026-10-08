@@ -23,7 +23,7 @@ interface StudentSummary {
 }
 
 export default function DailyPracticeSummaryPage() {
-  const { firebaseUser, logout, user } = useAuth();
+  const { firebaseUser, user } = useAuth();
   const router = useRouter();
 
   const [loading, setLoading] = useState(true);
@@ -231,25 +231,15 @@ export default function DailyPracticeSummaryPage() {
         }
       `}</style>
 
-      {/* Page Header (Hidden on Print) */}
-      <div className="page-header glass no-print" style={{ padding: '8px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-light)' }}>
-        <div className="page-header-left" style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-          <span className="brand" style={{ fontWeight: 800, fontSize: '1.2rem', color: 'var(--accent)', cursor: 'pointer' }} onClick={() => router.push('/admin')}>YASHCOM</span>
-          <nav style={{ display: 'flex', gap: '15px' }}>
-            <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-muted)', cursor: 'pointer' }} onClick={() => router.push('/admin/reports/learning-quotient')}>Learning Quotient (LQ)</span>
-            <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--accent)', borderBottom: '2px solid var(--accent)', paddingBottom: '4px' }}>Daily Practice Summary</span>
-            <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-muted)', cursor: 'pointer' }} onClick={() => router.push('/admin/reports/parent-pending')}>Parent Pending</span>
-            <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-muted)', cursor: 'pointer' }} onClick={() => router.push('/admin/reports/usage')}>System Usage</span>
-            <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-muted)', cursor: 'pointer' }} onClick={() => router.push('/admin/reports/login-register')}>Login Register</span>
-          </nav>
-        </div>
-        <div className="page-header-right" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span className="badge badge-info">{user?.name || 'Admin'}</span>
-          <button className="btn btn-secondary" onClick={() => router.push('/admin')} style={{ padding: '6px 12px', fontSize: '12px' }}>
-            ← Back to Dashboard
-          </button>
-          <button className="btn btn-secondary" title="Logout" onClick={logout}>🚪</button>
-        </div>
+      {/* Reports Sub-Navigation Bar (Hidden on Print) */}
+      <div className="no-print" style={{ maxWidth: '1400px', width: '100%', margin: '0 auto', padding: '12px 12px 0 12px' }}>
+        <nav style={{ display: 'flex', gap: '15px', borderBottom: '1px solid var(--border-light)', paddingBottom: '8px', overflowX: 'auto' }}>
+          <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-muted)', cursor: 'pointer', whiteSpace: 'nowrap' }} onClick={() => router.push('/admin/reports/learning-quotient')}>Learning Quotient (LQ)</span>
+          <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--accent)', borderBottom: '2px solid var(--accent)', paddingBottom: '4px', whiteSpace: 'nowrap' }}>Daily Practice Summary</span>
+          <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-muted)', cursor: 'pointer', whiteSpace: 'nowrap' }} onClick={() => router.push('/admin/reports/parent-pending')}>Parent Pending</span>
+          <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-muted)', cursor: 'pointer', whiteSpace: 'nowrap' }} onClick={() => router.push('/admin/reports/usage')}>System Usage</span>
+          <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-muted)', cursor: 'pointer', whiteSpace: 'nowrap' }} onClick={() => router.push('/admin/reports/login-register')}>Login Register</span>
+        </nav>
       </div>
 
       {/* Header Info Block (Only visible on Print) */}

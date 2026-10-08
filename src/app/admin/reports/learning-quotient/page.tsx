@@ -29,7 +29,7 @@ interface StudentLQ {
 }
 
 export default function LearningQuotientReportPage() {
-  const { firebaseUser, logout, user } = useAuth();
+  const { firebaseUser, user } = useAuth();
   const router = useRouter();
   const { 
     getQuotientReport, 
@@ -866,22 +866,15 @@ _Empowering Conceptual Excellence_`;
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       
-      {/* Page Header */}
-      <div className="page-header glass" style={{ padding: '8px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderRadius: '0', borderBottom: '1px solid var(--border-light)' }}>
-        <div className="page-header-left" style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-          <span className="brand" style={{ fontWeight: 800, fontSize: '1.2rem', color: 'var(--accent)', cursor: 'pointer' }} onClick={() => router.push('/admin')}>YASHCOM</span>
-          <nav style={{ display: 'flex', gap: '15px' }}>
-            <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--accent)', borderBottom: '2px solid var(--accent)', paddingBottom: '4px' }}>Learning Quotient (LQ)</span>
-            <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-muted)', cursor: 'pointer' }} onClick={() => router.push('/admin/reports/parent-pending')}>Parent Sincerity</span>
-          </nav>
-        </div>
-        <div className="page-header-right" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span className="badge badge-info" id="usernameDisplay">{user?.name || 'Admin'}</span>
-          <button className="btn btn-secondary" onClick={() => router.push('/admin')} style={{ padding: '6px 12px', fontSize: '12px' }}>
-            ← Back to Dashboard
-          </button>
-          <button className="btn btn-secondary" title="Logout" onClick={logout}>🚪</button>
-        </div>
+      {/* Reports Sub-Navigation Bar */}
+      <div style={{ maxWidth: '1400px', width: '100%', margin: '0 auto', padding: '12px 12px 0 12px' }}>
+        <nav style={{ display: 'flex', gap: '15px', borderBottom: '1px solid var(--border-light)', paddingBottom: '8px', overflowX: 'auto' }}>
+          <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--accent)', borderBottom: '2px solid var(--accent)', paddingBottom: '4px', whiteSpace: 'nowrap' }}>Learning Quotient (LQ)</span>
+          <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-muted)', cursor: 'pointer', whiteSpace: 'nowrap' }} onClick={() => router.push('/admin/reports/daily-practice')}>Daily Practice Summary</span>
+          <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-muted)', cursor: 'pointer', whiteSpace: 'nowrap' }} onClick={() => router.push('/admin/reports/parent-pending')}>Parent Sincerity</span>
+          <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-muted)', cursor: 'pointer', whiteSpace: 'nowrap' }} onClick={() => router.push('/admin/reports/usage')}>System Usage</span>
+          <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-muted)', cursor: 'pointer', whiteSpace: 'nowrap' }} onClick={() => router.push('/admin/reports/login-register')}>Login Register</span>
+        </nav>
       </div>
 
       <main style={{ flex: 1, padding: '24px 12px', maxWidth: '1400px', width: '100%', margin: '0 auto' }}>

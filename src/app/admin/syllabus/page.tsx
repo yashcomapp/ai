@@ -81,7 +81,7 @@ const getSubjectiveTestsCount = (tests: any[] | undefined) => {
 };
 
 export default function AdminSyllabusPage() {
-  const { firebaseUser, logout } = useAuth();
+  const { firebaseUser } = useAuth();
   const router = useRouter();
 
   const [loading, setLoading] = useState(true);
@@ -1148,27 +1148,14 @@ Return ONLY a valid JSON object matching the schema below:
           animation: skeleton-blink 1.5s infinite ease-in-out;
         }
       `}</style>
-      {/* Page Header */}
-      <header className="page-header glass" style={{ padding: '8px 12px', borderBottom: '1px solid var(--border-light)' }}>
-        <div className="page-header-left">
-          <span className="brand" style={{ fontSize: '18px', fontWeight: 800, cursor: 'pointer' }} onClick={() => router.push('/admin')}>YASHCOM</span>
-          <div>
-            <h1 style={{ fontSize: '16px', margin: 0 }}>Syllabus Manager</h1>
-          </div>
-        </div>
-        <div className="page-header-right" style={{ display: 'flex', gap: '8px' }}>
-          <button className="btn btn-secondary" onClick={() => router.push('/admin')} style={{ padding: '6px 12px', fontSize: '12px' }}>
-            ← Back to Dashboard
-          </button>
+      {/* Tabs list */}
+      <main style={{ flex: 1, padding: '24px 12px', maxWidth: '1000px', width: '100%', margin: '0 auto' }}>
+        {/* Actions Toolbar */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginBottom: '16px', flexWrap: 'wrap' }}>
           <button className="btn btn-primary" style={{ padding: '6px 12px', fontSize: '12px' }} onClick={() => setPdfSelectorOpen(true)}>📄 Export PDF</button>
           <button className="btn btn-secondary" onClick={triggerDeduplicationSweep}>🧹 Deduplicate</button>
           <button className="btn btn-secondary" onClick={triggerManualReindex}>🔄 Rebuild Index</button>
-          <button className="btn btn-secondary" title="Logout" onClick={logout}>🚪</button>
         </div>
-      </header>
-
-      {/* Tabs list */}
-      <main style={{ flex: 1, padding: '24px 12px', maxWidth: '1000px', width: '100%', margin: '0 auto' }}>
         {loading ? (
           <>
             {renderTabsSkeleton()}

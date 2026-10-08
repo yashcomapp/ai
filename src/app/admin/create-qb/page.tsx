@@ -1799,22 +1799,11 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
 
 
 
-      {/* Header */}
-      <header className="page-header glass" style={{ padding: '8px 12px', borderBottom: '1px solid var(--border-light)' }}>
-        <div className="page-header-left">
-          <span className="brand" style={{ fontSize: '18px', fontWeight: 800, cursor: 'pointer' }} onClick={() => router.push('/admin')}>YASHCOM</span>
-          <div>
-            <h1 style={{ fontSize: '16px', margin: 0 }}>Create Question Bank</h1>
-          </div>
-        </div>
-        <div className="page-header-right" style={{ display: 'flex', gap: '10px' }}>
-          
-          <button className="btn btn-secondary" onClick={() => router.push('/admin/question-bank')}>Manage QB</button>
-        </div>
-      </header>
-
       {/* Main Workspace */}
       <main style={{ flex: 1, padding: '12px 10px', maxWidth: '1080px', width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <button className="btn btn-secondary" onClick={() => router.push('/admin/question-bank')}>Manage QB</button>
+        </div>
         
         {/* Card 1: Syllabus Mapping Cascading Selects */}
         <div className="card" style={{ background: 'var(--surface)', padding: '12px 14px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)' }}>

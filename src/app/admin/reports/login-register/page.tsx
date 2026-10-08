@@ -41,7 +41,7 @@ interface LoginLogoutLog {
 }
 
 export default function LoginRegisterReportPage() {
-  const { firebaseUser, logout } = useAuth();
+  const { firebaseUser } = useAuth();
   const router = useRouter();
 
   const [loading, setLoading] = useState(true);
@@ -246,29 +246,11 @@ export default function LoginRegisterReportPage() {
 
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      {/* Header */}
-      <header className="page-header glass" style={{ padding: '8px 12px', borderBottom: '1px solid var(--border-light)' }}>
-        <div className="page-header-left">
-          <button 
-            className="btn btn-secondary" 
-            style={{ padding: '4px 10px', fontSize: '12px' }} 
-            onClick={() => router.push('/admin')}
-          >
-            ← Dashboard
-          </button>
-          <div>
-            <h1 style={{ fontSize: '16px', margin: 0 }}>Login Activity Register</h1>
-          </div>
-        </div>
-        <div className="page-header-right" style={{ display: 'flex', gap: '10px' }}>
-          
-          <button className="btn btn-primary" style={{ padding: '6px 12px', fontSize: '12px' }} onClick={() => setPdfSelectorOpen(true)}>📄 Export PDF</button>
-          <button className="btn btn-secondary" title="Logout" onClick={logout}>🚪</button>
-        </div>
-      </header>
-
       {/* Main Workspace */}
       <main style={{ flex: 1, padding: '24px 12px', maxWidth: '1000px', width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '4px' }}>
+          <button className="btn btn-primary" style={{ padding: '6px 12px', fontSize: '12px' }} onClick={() => setPdfSelectorOpen(true)}>📄 Export PDF</button>
+        </div>
         {error && (
           <div style={{ background: 'rgba(239, 68, 68, 0.12)', border: '1px solid var(--danger)', padding: '12px', borderRadius: '4px', color: 'var(--danger)', fontSize: '12px' }}>
             {error}

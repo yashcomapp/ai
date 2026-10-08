@@ -50,7 +50,7 @@ interface Question {
 }
 
 export default function AdminQuestionBankPage() {
-  const { firebaseUser, logout } = useAuth();
+  const { firebaseUser } = useAuth();
   const router = useRouter();
 
   const [loading, setLoading] = useState(true);
@@ -842,26 +842,16 @@ ${JSON.stringify(missingList, null, 2)}`;
 
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      {/* Page Header */}
-      <header className="page-header glass" style={{ padding: '8px 12px', borderBottom: '1px solid var(--border-light)' }}>
-        <div className="page-header-left">
-          <span className="brand" style={{ fontSize: '18px', fontWeight: 800, cursor: 'pointer' }} onClick={() => router.push('/admin')}>YASHCOM</span>
-          <div>
-            <h1 style={{ fontSize: '16px', margin: 0 }}>Question Bank Manager</h1>
-          </div>
-        </div>
-        <div className="page-header-right" style={{ display: 'flex', gap: '8px' }}>
+      {/* Main Content Area */}
+      <main style={{ flex: 1, padding: '16px 12px', maxWidth: '1100px', width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+        {/* Actions Toolbar */}
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'flex-end', marginBottom: '4px' }}>
           <button className="btn btn-secondary" onClick={() => triggerDuplicatesScan('filtered')}>🔍 Find Duplicates</button>
           <button className="btn btn-secondary" onClick={handleOpenAuditModal}>⚡ Explanations Audit</button>
           <button className="btn btn-secondary" onClick={handleOpenNumericalAuditModal}>🔢 Audit Numerical</button>
           <button className="btn btn-secondary" onClick={handleOpenDisputesModal} style={{ background: 'var(--danger-bg)', color: 'var(--danger)', borderColor: 'var(--danger-border)' }}>🚩 Reported Issues</button>
           <button className="btn btn-primary" onClick={handleOpenAddQuestion}>+ Add Question</button>
-          <button className="btn btn-secondary" title="Logout" onClick={logout}>🚪</button>
         </div>
-      </header>
-
-      {/* Main Content Area */}
-      <main style={{ flex: 1, padding: '16px 12px', maxWidth: '1100px', width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '14px' }}>
         
         {/* Cascade Filters card */}
         <div className="card" style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', padding: '12px 14px' }}>

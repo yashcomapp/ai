@@ -2,7 +2,6 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/context/AuthContext';
 
 interface ReportCard {
   title: string;
@@ -52,29 +51,9 @@ const REPORT_SECTIONS: ReportCard[] = [
 
 export default function AdminReportsHubPage() {
   const router = useRouter();
-  const { logout } = useAuth();
 
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      {/* Universal Page Header */}
-      <header className="page-header glass" style={{ padding: '8px 16px', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div className="page-header-left" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <span className="brand" style={{ fontSize: '18px', fontWeight: 800, cursor: 'pointer', color: 'var(--accent)' }} onClick={() => router.push('/admin')}>
-            YASHCOM
-          </span>
-          <div>
-            <h1 style={{ fontSize: '16px', margin: 0, fontWeight: 800, color: 'var(--text)' }}>Reports & Analytics Hub</h1>
-          </div>
-        </div>
-        <div className="page-header-right" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <button className="btn btn-secondary" onClick={() => router.push('/admin')} style={{ padding: '6px 12px', fontSize: '12px' }}>
-            ← Back to Dashboard
-          </button>
-          <button className="btn btn-secondary" title="Logout" onClick={logout} style={{ padding: '6px 12px', fontSize: '12px' }}>
-            Logout
-          </button>
-        </div>
-      </header>
 
       {/* Main Container */}
       <main style={{ flex: 1, padding: '24px 16px', maxWidth: '1100px', width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '20px' }}>

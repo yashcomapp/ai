@@ -1,8 +1,41 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import Image from 'next/image';
 import { useRouter, usePathname } from 'next/navigation';
+import { Bell, MessageSquare, Settings, LogOut, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import TopBarTimeTracker from '@/components/TopBarTimeTracker';
+
+const getAdminPageTitle = (pathname: string): string => {
+  if (pathname === '/admin') return 'Dashboard';
+  if (pathname.startsWith('/admin/exam-generator')) return 'Exam Generator';
+  if (pathname.startsWith('/admin/exam-report')) return 'Exam Report';
+  if (pathname.startsWith('/admin/classroom-test')) return 'Classroom Test & Suites';
+  if (pathname.startsWith('/admin/live-exam-monitor')) return 'Live Monitor';
+  if (pathname.startsWith('/admin/exams')) return 'Manage Exams';
+  if (pathname.startsWith('/admin/create-qb')) return 'Create Question Bank';
+  if (pathname.startsWith('/admin/question-bank')) return 'Question Bank';
+  if (pathname.startsWith('/admin/syllabus')) return 'Syllabus Manager';
+  if (pathname.startsWith('/admin/students')) return 'Students & Batches';
+  if (pathname.startsWith('/admin/batches')) return 'Batches';
+  if (pathname.startsWith('/admin/registrations')) return 'Student Registrations';
+  if (pathname.startsWith('/admin/attendance')) return 'Daily Attendance Sheet';
+  if (pathname.startsWith('/admin/fees')) return 'Fees Manager';
+  if (pathname.startsWith('/admin/notices')) return 'Notices & Announcements';
+  if (pathname.startsWith('/admin/chat')) return 'Live Chat Workspace';
+  if (pathname === '/admin/reports') return 'Reports & Analytics Hub';
+  if (pathname.startsWith('/admin/reports/learning-quotient')) return 'Learning Quotient (LQ)';
+  if (pathname.startsWith('/admin/reports/daily-practice')) return 'Daily Practice Summary';
+  if (pathname.startsWith('/admin/reports/parent-pending')) return 'Parent Reviews & Sincerity';
+  if (pathname.startsWith('/admin/reports/usage')) return 'System Usage Analytics';
+  if (pathname.startsWith('/admin/reports/login-register')) return 'Login Activity Register';
+  if (pathname.startsWith('/admin/integrity-score-manager')) return 'Integrity Score Manager';
+  if (pathname.startsWith('/admin/teacher-final-review')) return 'Teacher Final Review';
+  if (pathname.startsWith('/admin/settings')) return 'System Settings';
+  if (pathname.startsWith('/admin/fault-register')) return 'Fault Register';
+  return 'Admin';
+};
 
 interface SubmenuItem {
   icon: string;
@@ -45,7 +78,8 @@ const ADMIN_SUBMENUS: { [key: string]: SubmenuItem[] } = {
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const pathname = usePathname();
+  const pathname = usePathname() || '';
+  const { logout } = useAuth();
 
   const [panelOpen, setPanelOpen] = useState(false);
   const [activeSubmenu, setActiveSubmenu] = useState<string | null>(null);
@@ -266,10 +300,198 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           background: var(--bg-soft);
           color: var(--accent);
         }
+
+        @media (max-width: 580px) {
+          .hide-mobile {
+            display: none !important;
+          }
+        }
+        @media (max-width: 480px) {
+          .page-header {
+            padding: 8px 10px !important;
+          }
+          .page-header-logo-text {
+            font-size: 1rem !important;
+          }
+          .page-header-actions {
+            gap: 6px !important;
+          }
+          .page-header-btn {
+            width: 32px !important;
+            height: 32px !important;
+          }
+        }
       `}</style>
 
+      {/* Universal Top Header Bar for all Admin Pages */}
+      <header className="page-header glass" style={{ 
+        padding: '10px 16px', 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        borderRadius: '0',
+        borderBottom: '1px solid var(--border)',
+        background: 'var(--surface-glass)',
+        backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
+        position: 'sticky',
+        top: 0,
+        zIndex: 100
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0, minWidth: 0 }}>
+          <div 
+            onClick={() => router.push('/admin')} 
+            style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', flexShrink: 0 }}
+          >
+            <Image 
+              src="/logo.png" 
+              alt="YASHCOM Logo" 
+              width={24} 
+              height={24} 
+              style={{ borderRadius: '50%', objectFit: 'cover' }} 
+              priority
+            />
+            <span className="page-header-logo-text" style={{ fontWeight: 900, fontSize: '1.15rem', letterSpacing: '0.5px', color: 'var(--text)' }}>
+              YASHCOM
+            </span>
+          </div>
+
+          {pathname !== '/admin' && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+              <span style={{ color: 'var(--border-popover)', fontSize: '14px', flexShrink: 0 }}>/</span>
+              <span 
+                className="hide-mobile"
+                style={{ 
+                  fontWeight: 700, 
+                  fontSize: '0.95rem', 
+                  color: 'var(--text)', 
+                  whiteSpace: 'nowrap', 
+                  overflow: 'hidden', 
+                  textOverflow: 'ellipsis' 
+                }}
+              >
+                {getAdminPageTitle(pathname)}
+              </span>
+              <button 
+                className="btn btn-secondary btn-sm" 
+                onClick={() => router.push('/admin')}
+                style={{ 
+                  fontSize: '11px', 
+                  padding: '3px 8px', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '4px',
+                  borderRadius: 'var(--radius-sm)',
+                  marginLeft: '4px'
+                }}
+                title="Back to Dashboard"
+              >
+                <ArrowLeft size={12} />
+                <span>Dashboard</span>
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div className="page-header-actions" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+          <TopBarTimeTracker />
+
+          {/* Notices */}
+          <button 
+            className="page-header-btn" 
+            onClick={() => router.push('/admin/notices')} 
+            title="Notices & Announcements"
+            style={{ 
+              background: pathname === '/admin/notices' ? 'var(--warning-bg)' : 'rgba(255,255,255,0.05)', 
+              border: pathname === '/admin/notices' ? '1px solid var(--warning)' : '1px solid var(--border)', 
+              borderRadius: '50%', 
+              width: '36px', 
+              height: '36px', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              cursor: 'pointer',
+              color: 'var(--text)',
+              flexShrink: 0
+            }}
+          >
+            <Bell size={16} color="var(--warning)" />
+          </button>
+
+          {/* Live Chat */}
+          <button 
+            className="page-header-btn" 
+            onClick={() => router.push('/admin/chat')} 
+            title="Live Chat Workspace"
+            style={{ 
+              background: pathname === '/admin/chat' ? 'var(--info-bg)' : 'rgba(255,255,255,0.05)', 
+              border: pathname === '/admin/chat' ? '1px solid var(--info)' : '1px solid var(--border)', 
+              borderRadius: '50%', 
+              width: '36px', 
+              height: '36px', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              cursor: 'pointer',
+              color: 'var(--text)',
+              flexShrink: 0
+            }}
+          >
+            <MessageSquare size={16} color="var(--info)" />
+          </button>
+
+          {/* Settings */}
+          <button 
+            className="page-header-btn" 
+            onClick={() => router.push('/admin/settings')} 
+            title="Admin Settings"
+            style={{ 
+              background: pathname === '/admin/settings' ? 'var(--surface-3)' : 'rgba(255,255,255,0.05)', 
+              border: pathname === '/admin/settings' ? '1px solid var(--accent)' : '1px solid var(--border)', 
+              borderRadius: '50%', 
+              width: '36px', 
+              height: '36px', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              cursor: 'pointer',
+              color: 'var(--text)',
+              flexShrink: 0
+            }}
+          >
+            <Settings size={16} color="var(--text-muted)" />
+          </button>
+
+          {/* Logout Button */}
+          <button 
+            className="page-header-btn"
+            onClick={logout} 
+            style={{ 
+              background: 'rgba(255,255,255,0.05)', 
+              border: '1px solid var(--border)', 
+              borderRadius: '50%', 
+              width: '36px', 
+              height: '36px', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              color: 'var(--danger)', 
+              cursor: 'pointer',
+              flexShrink: 0
+            }} 
+            title="Logout"
+          >
+            <LogOut size={16} />
+          </button>
+        </div>
+      </header>
+
       {/* Main Administrative Pages Workspace */}
-      <div style={{ paddingBottom: pathname === '/admin/chat' ? '0' : '80px' }}>
+      <div style={{ 
+        paddingBottom: pathname === '/admin/chat' ? '0' : '80px',
+        height: pathname === '/admin/chat' ? 'calc(100vh - 57px)' : undefined,
+        overflow: pathname === '/admin/chat' ? 'hidden' : undefined
+      }}>
         {children}
       </div>
 
