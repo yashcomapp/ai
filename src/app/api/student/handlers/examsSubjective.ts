@@ -123,14 +123,24 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ message: 'Exam not found.' }, { status: 404 });
       }
       const examData = examSnap.data()!;
-      const questions = await getAttemptQuestions(null, examData);
+      const rawQuestions = await getAttemptQuestions(null, examData);
+      const questions = rawQuestions.map(q => {
+        const { solution, answerLines, steps, ...safeQuestion } = q;
+        return safeQuestion;
+      });
+      const durationSeconds = (Number(examData.totalTime) || (Number(examData.totalMarks) * 2) || 60) * 60;
       return NextResponse.json({
+        status: 'active',
+        mode: 'home',
         examData: {
           id: examSnap.id,
           ...examData,
           name: cleanSubjectiveExamName(examData)
         },
         questions,
+        attemptId: `sim_attempt_${examId}`,
+        remainingSeconds: durationSeconds,
+        startedAt: new Date().toISOString(),
         assignment: {
           openMode: 'immediate',
           startAt: new Date(Date.now() - 60000).toISOString(),
@@ -540,13 +550,24 @@ export async function GET(req: NextRequest) {
 // 2. POST - Submit subjective exam
 export async function POST(req: NextRequest) {
   try {
-    const student = await verifyRole(req, 'student');
-    if (!student) {
-      return NextResponse.json({ message: 'Unauthorized. Student role required.' }, { status: 403 });
+    const caller = await verifyAnyRole(req, ['student', 'admin']);
+    if (!caller) {
+      return NextResponse.json({ message: 'Unauthorized. Student or Admin role required.' }, { status: 403 });
     }
 
     const body = await req.json();
     const { action, attemptId } = body;
+    const isCallerAdmin = caller.role === 'admin';
+
+    // Admin Simulator Mode: short-circuit start and submit without database mutation
+    if (isCallerAdmin) {
+      if (action === 'start') {
+        return NextResponse.json({ success: true, preview: true, message: 'Preview subjective exam started.' });
+      }
+      return NextResponse.json({ success: true, preview: true, message: 'Preview subjective exam submitted successfully.' });
+    }
+
+    const student = caller;
     const studentCode = student.userData?.studentCode;
 
     if (action === 'start') {

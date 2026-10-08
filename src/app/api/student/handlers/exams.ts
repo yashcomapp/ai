@@ -587,11 +587,16 @@ export async function POST(req: NextRequest) {
 
 export async function PUT(req: NextRequest) {
   try {
-    const student = await verifyRole(req, 'student');
-    if (!student) {
-      return NextResponse.json({ message: 'Unauthorized. Student role required.' }, { status: 403 });
+    const caller = await verifyAnyRole(req, ['student', 'admin']);
+    if (!caller) {
+      return NextResponse.json({ message: 'Unauthorized. Student or Admin role required.' }, { status: 403 });
     }
 
+    if (caller.role === 'admin') {
+      return NextResponse.json({ success: true, preview: true, message: 'Admin simulator review accepted.' });
+    }
+
+    const student = caller;
     const body = await req.json();
     const { examId, wrongAnswerReasons, reviewedQuestionIds, challenges, timeSpentSeconds, examName } = body;
     const studentCode = student.userData?.studentCode || '';

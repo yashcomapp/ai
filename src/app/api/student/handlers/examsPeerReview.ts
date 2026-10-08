@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyRole } from '@/lib/auth';
+import { verifyRole, verifyAnyRole } from '@/lib/auth';
 import { ReviewService } from '@/services/review.service';
 import { ReportCacheManager } from '@/lib/reportCache';
 
@@ -7,10 +7,16 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
   try {
-    const student = await verifyRole(req, 'student');
-    if (!student) {
-      return NextResponse.json({ message: 'Unauthorized. Student role required.' }, { status: 403 });
+    const caller = await verifyAnyRole(req, ['student', 'admin']);
+    if (!caller) {
+      return NextResponse.json({ message: 'Unauthorized. Student or Admin role required.' }, { status: 403 });
     }
+
+    if (caller.role === 'admin') {
+      return NextResponse.json({ success: true, preview: true, message: 'Preview peer review submitted successfully.' });
+    }
+
+    const student = caller;
 
     const body = await req.json();
     const { attemptId, examId, revieweeCode, questionReviews, totalScore } = body;
