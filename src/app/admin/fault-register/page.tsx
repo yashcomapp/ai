@@ -27,6 +27,7 @@ export default function AdminFaultRegisterPage() {
   const [activeRegisterTab, setActiveRegisterTab] = useState<'discipline' | 'crashes'>('discipline');
   // View mode within discipline: 'quick' (Fast Pill Logger) vs 'matrix' (Full Table Matrix)
   const [disciplineViewMode, setDisciplineViewMode] = useState<'quick' | 'matrix'>('quick');
+  const [selectedCategoryGroup, setSelectedCategoryGroup] = useState<string>('academic');
   const [selectedFaultId, setSelectedFaultId] = useState<string>('no_homework');
   const [clientCrashes, setClientCrashes] = useState<any[]>([]);
   const [loadingCrashes, setLoadingCrashes] = useState<boolean>(false);
@@ -670,307 +671,323 @@ export default function AdminFaultRegisterPage() {
           </button>
         </div>
 
-        {/* -------------------- QUICK FAULT LOGGER (PILL VIEW) -------------------- */}
+        {/* -------------------- COMPACT TOP-DOWN CASCADING QUICK FAULT LOGGER -------------------- */}
         {disciplineViewMode === 'quick' ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-            {/* Step 1: Grouped Fault Categories */}
-            <div className="card" style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', padding: '16px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+          (() => {
+            const groupConfig: Record<string, { label: string; icon: string }> = {
+              academic: { label: 'Academic & Homework', icon: '📚' },
+              conduct: { label: 'Conduct & Classroom', icon: '🗣️' },
+              punctuality: { label: 'Attendance & Absence', icon: '⏰' },
+              review: { label: 'Exams & Reviews', icon: '⏱️' },
+              custom: { label: 'Custom & Other', icon: '📌' },
+            };
+
+            const groupedCats: Record<string, FaultCategory[]> = {};
+            categories.forEach(cat => {
+              const grp = cat.category || 'custom';
+              if (!groupedCats[grp]) groupedCats[grp] = [];
+              groupedCats[grp].push(cat);
+            });
+
+            const availableGroupKeys = Object.keys(groupedCats);
+            const activeGroupKey = (availableGroupKeys.includes(selectedCategoryGroup)
+              ? selectedCategoryGroup
+              : availableGroupKeys[0]) || 'academic';
+
+            const activeGroupFaults = groupedCats[activeGroupKey] || [];
+            const effectiveFaultId = (activeGroupFaults.some(f => f.id === selectedFaultId)
+              ? selectedFaultId
+              : activeGroupFaults[0]?.id) || '';
+
+            const activeCat = categories.find(c => c.id === effectiveFaultId) || categories[0];
+            const taggedStudents = activeCat ? filteredStudents.filter(s => !!s.faults[activeCat.id]) : [];
+
+            return (
+              <div className="card" style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+
+                {/* Level 1: Category Checkboxes (Single row, styled exactly like Create QB Subjects) */}
                 <div>
-                  <h4 style={{ margin: 0, fontSize: '13px', fontWeight: 800, color: 'var(--text)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                    1️⃣ Select Fault to Assign
-                  </h4>
-                  <p style={{ margin: '2px 0 0', fontSize: '11px', color: 'var(--text-muted)' }}>
-                    Pick a fault below, then tap students to immediately tag or untag them.
-                  </p>
-                </div>
-              </div>
-
-              {/* Group faults by category: Academic, Conduct, Punctuality/Absence, Review */}
-              {(() => {
-                const groupConfig: Record<string, { label: string; icon: string }> = {
-                  academic: { label: 'Academic & Homework', icon: '📚' },
-                  conduct: { label: 'Conduct & Classroom', icon: '🗣️' },
-                  punctuality: { label: 'Attendance & Absence', icon: '⏰' },
-                  review: { label: 'Exams & Reviews', icon: '⏱️' },
-                  custom: { label: 'Custom & Other', icon: '📌' },
-                };
-
-                const groupedCats: Record<string, FaultCategory[]> = {};
-                categories.forEach(cat => {
-                  const grp = cat.category || 'custom';
-                  if (!groupedCats[grp]) groupedCats[grp] = [];
-                  groupedCats[grp].push(cat);
-                });
-
-                // Set effective selected category if not set
-                const activeCatId = categories.some(c => c.id === selectedFaultId)
-                  ? selectedFaultId
-                  : (categories[0]?.id || '');
-
-                return (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    {Object.entries(groupedCats).map(([grpKey, grpCats]) => {
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      1. Select Fault Category
+                    </label>
+                    <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
+                      Choose category to reveal faults
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                    {availableGroupKeys.map(grpKey => {
                       const cfg = groupConfig[grpKey] || { label: grpKey, icon: '📌' };
-                      return (
-                        <div key={grpKey} style={{ background: 'var(--surface-light)', borderRadius: '8px', padding: '10px 12px', border: '1px solid var(--border-light)' }}>
-                          <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                            <span>{cfg.icon}</span>
-                            <span>{cfg.label}</span>
-                          </div>
-                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                            {grpCats.map(cat => {
-                              const isSelected = cat.id === activeCatId;
-                              // Count how many students currently have this fault
-                              const taggedCount = students.filter(s => !!s.faults[cat.id]).length;
+                      const isChecked = grpKey === activeGroupKey;
+                      const grpTotalTagged = (groupedCats[grpKey] || []).reduce((acc, cat) => {
+                        return acc + students.filter(s => !!s.faults[cat.id]).length;
+                      }, 0);
 
-                              return (
-                                <button
-                                  key={cat.id}
-                                  type="button"
-                                  onClick={() => setSelectedFaultId(cat.id)}
-                                  style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '7px',
-                                    padding: '7px 12px',
-                                    borderRadius: '20px',
-                                    border: isSelected ? '2px solid var(--accent)' : '1px solid var(--border-light)',
-                                    background: isSelected ? 'var(--accent-soft)' : 'var(--surface)',
-                                    color: isSelected ? 'var(--accent)' : 'var(--text)',
-                                    fontWeight: isSelected ? 800 : 600,
-                                    fontSize: '12px',
-                                    cursor: 'pointer',
-                                    boxShadow: isSelected ? '0 0 0 1px var(--accent-ring)' : 'none',
-                                    transition: 'all 0.15s ease'
-                                  }}
-                                >
-                                  <span>{cat.icon || '📌'}</span>
-                                  <span>{cat.name}</span>
-                                  <span
-                                    style={{
-                                      fontSize: '10px',
-                                      fontWeight: 800,
-                                      padding: '1px 6px',
-                                      borderRadius: '10px',
-                                      background: taggedCount > 0
-                                        ? (isSelected ? 'var(--accent)' : 'var(--danger-bg)')
-                                        : 'var(--surface-2)',
-                                      color: taggedCount > 0
-                                        ? (isSelected ? '#fff' : 'var(--danger)')
-                                        : 'var(--text-muted)',
-                                      border: taggedCount > 0 && !isSelected ? '1px solid rgba(239, 68, 68, 0.25)' : 'none'
-                                    }}
-                                  >
-                                    {taggedCount}
-                                  </span>
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
+                      return (
+                        <label
+                          key={grpKey}
+                          onClick={() => {
+                            setSelectedCategoryGroup(grpKey);
+                            const firstFault = groupedCats[grpKey]?.[0]?.id;
+                            if (firstFault) setSelectedFaultId(firstFault);
+                          }}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            padding: '4px 9px',
+                            background: isChecked ? 'var(--accent-soft)' : 'var(--surface-light)',
+                            border: isChecked ? '1.5px solid var(--accent)' : '1px solid var(--border-light)',
+                            borderRadius: 'var(--radius-sm)',
+                            cursor: 'pointer',
+                            fontSize: '11.5px',
+                            fontWeight: isChecked ? 700 : 500,
+                            color: isChecked ? 'var(--accent)' : 'var(--text)',
+                            whiteSpace: 'nowrap',
+                            transition: 'all 0.12s ease',
+                            userSelect: 'none'
+                          }}
+                        >
+                          <input
+                            type="radio"
+                            name="faultCategoryGroup"
+                            checked={isChecked}
+                            onChange={() => {}}
+                            style={{ margin: 0, accentColor: 'var(--accent)' }}
+                          />
+                          <span>{cfg.icon}</span>
+                          <span>{cfg.label}</span>
+                          {grpTotalTagged > 0 && (
+                            <span style={{
+                              fontSize: '9.5px',
+                              fontWeight: 800,
+                              padding: '0 5px',
+                              borderRadius: '8px',
+                              background: isChecked ? 'var(--accent)' : 'var(--danger-bg)',
+                              color: isChecked ? '#fff' : 'var(--danger)'
+                            }}>
+                              {grpTotalTagged}
+                            </span>
+                          )}
+                        </label>
                       );
                     })}
                   </div>
-                );
-              })()}
-            </div>
+                </div>
 
-            {/* Step 2: Interactive Student Pill Cloud */}
-            {(() => {
-              const activeCat = categories.find(c => c.id === selectedFaultId) || categories[0];
-              if (!activeCat) return null;
-              const taggedStudents = filteredStudents.filter(s => !!s.faults[activeCat.id]);
+                {/* Level 2: Fault Pills (Compact Horizontal Pills for the selected category) */}
+                <div style={{ background: 'var(--bg-soft)', borderRadius: 'var(--radius-sm)', padding: '8px 10px', border: '1px solid var(--border-light)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                    <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      2. Fault Type ({activeGroupFaults.length} available)
+                    </label>
+                    {activeCat && (
+                      <span style={{ fontSize: '10px', color: activeCat.target === 'parent' ? 'var(--warning)' : 'var(--text-muted)', fontWeight: 600 }}>
+                        Stakeholder: {activeCat.target.toUpperCase()}
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                    {activeGroupFaults.map(cat => {
+                      const isSelected = cat.id === effectiveFaultId;
+                      const taggedCount = students.filter(s => !!s.faults[cat.id]).length;
 
-              return (
-                <div className="card" style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', padding: '16px' }}>
-                  {/* Action Banner */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', paddingBottom: '12px', borderBottom: '1px solid var(--border-light)', marginBottom: '14px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <div style={{ fontSize: '24px', background: 'var(--accent-soft)', width: '42px', height: '42px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        {activeCat.icon || '📌'}
-                      </div>
-                      <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: 'var(--text)' }}>
-                            {activeCat.name}
-                          </h4>
-                          <span style={{ fontSize: '10px', color: activeCat.target === 'parent' ? 'var(--warning)' : 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700, background: 'var(--surface-2)', padding: '2px 6px', borderRadius: '4px' }}>
-                            Target: {activeCat.target}
+                      return (
+                        <button
+                          key={cat.id}
+                          type="button"
+                          onClick={() => setSelectedFaultId(cat.id)}
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            padding: '4px 10px',
+                            borderRadius: '16px',
+                            border: isSelected ? '2px solid var(--accent)' : '1px solid var(--border-light)',
+                            background: isSelected ? 'var(--accent-soft)' : 'var(--surface)',
+                            color: isSelected ? 'var(--accent)' : 'var(--text)',
+                            fontWeight: isSelected ? 800 : 500,
+                            fontSize: '11.5px',
+                            cursor: 'pointer',
+                            boxShadow: isSelected ? '0 0 0 1px var(--accent-ring)' : 'none',
+                            transition: 'all 0.12s ease'
+                          }}
+                        >
+                          <span>{cat.icon || '📌'}</span>
+                          <span>{cat.name}</span>
+                          <span
+                            style={{
+                              fontSize: '9.5px',
+                              fontWeight: 800,
+                              padding: '1px 5px',
+                              borderRadius: '8px',
+                              background: taggedCount > 0
+                                ? (isSelected ? 'var(--accent)' : 'var(--danger-bg)')
+                                : 'var(--surface-2)',
+                              color: taggedCount > 0
+                                ? (isSelected ? '#fff' : 'var(--danger)')
+                                : 'var(--text-muted)'
+                            }}
+                          >
+                            {taggedCount}
                           </span>
-                        </div>
-                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                          <strong>{taggedStudents.length}</strong> of {filteredStudents.length} students tagged for {formatDateDMY(date)}
-                        </div>
-                      </div>
-                    </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
 
-                    {/* Quick batch select / clear for this fault */}
-                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                {/* Level 3: Student Names Pills (Top to Down, Compact Cloud) */}
+                {activeCat && (
+                  <div>
+                    {/* Header bar with count and Clear All */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '14px' }}>{activeCat.icon || '📌'}</span>
+                        <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text)' }}>
+                          3. Tag Students for: <span style={{ color: 'var(--accent)' }}>{activeCat.name}</span>
+                        </span>
+                        <span style={{
+                          fontSize: '10px',
+                          fontWeight: 700,
+                          padding: '1px 7px',
+                          borderRadius: '10px',
+                          background: taggedStudents.length > 0 ? 'var(--danger-bg)' : 'var(--surface-2)',
+                          color: taggedStudents.length > 0 ? 'var(--danger)' : 'var(--text-muted)',
+                          border: taggedStudents.length > 0 ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid var(--border-light)'
+                        }}>
+                          {taggedStudents.length} / {filteredStudents.length} Tagged
+                        </span>
+                      </div>
+
                       {taggedStudents.length > 0 && (
                         <button
                           type="button"
-                          className="btn btn-secondary btn-sm"
                           onClick={() => {
                             if (!confirm(`Clear '${activeCat.name}' for all ${taggedStudents.length} tagged students?`)) return;
                             taggedStudents.forEach(s => {
                               handleToggleFault(s.studentCode, activeCat.id);
                             });
                           }}
-                          style={{ fontSize: '11px', padding: '4px 10px', color: 'var(--danger)' }}
+                          style={{
+                            background: 'transparent',
+                            border: '1px solid rgba(239, 68, 68, 0.3)',
+                            color: 'var(--danger)',
+                            fontSize: '10.5px',
+                            fontWeight: 700,
+                            padding: '2px 8px',
+                            borderRadius: '6px',
+                            cursor: 'pointer'
+                          }}
                         >
                           ✕ Clear All Tagged ({taggedStudents.length})
                         </button>
                       )}
                     </div>
-                  </div>
 
-                  {loading ? (
-                    <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)' }}>
-                      <div className="spinner" style={{ margin: '0 auto 10px' }}></div> Loading student roster...
-                    </div>
-                  ) : filteredStudents.length === 0 ? (
-                    <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)', fontSize: '13px' }}>
-                      No active students found matching the batch/search filter.
-                    </div>
-                  ) : (
-                    <div>
-                      {/* Active Tagged Section (if any) */}
-                      {taggedStudents.length > 0 && (
-                        <div style={{ marginBottom: '16px' }}>
-                          <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--danger)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <span>🚨 Tagged Students ({taggedStudents.length})</span>
-                            <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 500, textTransform: 'none' }}>— Click pill to untag</span>
-                          </div>
-                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                            {taggedStudents.map(s => {
-                              const isAuto = !!s.autoSuggested?.[activeCat.id];
-                              const note = s.notes?.[activeCat.id] || '';
-                              return (
-                                <div
-                                  key={s.studentCode}
-                                  style={{
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '6px',
-                                    background: 'rgba(239, 68, 68, 0.12)',
-                                    border: '1px solid rgba(239, 68, 68, 0.35)',
-                                    borderRadius: '24px',
-                                    padding: '5px 10px 5px 12px',
-                                    boxShadow: 'var(--shadow-xs)'
-                                  }}
-                                >
-                                  <button
-                                    type="button"
-                                    onClick={() => handleToggleFault(s.studentCode, activeCat.id)}
-                                    style={{
-                                      background: 'none',
-                                      border: 'none',
-                                      padding: 0,
-                                      cursor: 'pointer',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      gap: '6px',
-                                      color: 'var(--danger)',
-                                      fontWeight: 800,
-                                      fontSize: '12px'
-                                    }}
-                                    title="Click to remove fault"
-                                  >
-                                    <span>✓</span>
-                                    <span>{s.studentName}</span>
-                                    <span style={{ fontSize: '10px', fontWeight: 600, opacity: 0.8, color: 'var(--text-muted)' }}>
-                                      ({s.classNum ? `Cl ${s.classNum}` : s.batchName})
-                                    </span>
-                                  </button>
+                    {loading ? (
+                      <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--text-muted)', fontSize: '12px' }}>
+                        <div className="spinner" style={{ margin: '0 auto 8px', width: '16px', height: '16px' }}></div> Loading students...
+                      </div>
+                    ) : filteredStudents.length === 0 ? (
+                      <div style={{ textAlign: 'center', padding: '20px 0', color: 'var(--text-muted)', fontSize: '12px' }}>
+                        No active students found matching search/batch filter.
+                      </div>
+                    ) : (
+                      <div style={{
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        gap: '6px',
+                        padding: '8px',
+                        background: 'var(--surface-light)',
+                        borderRadius: 'var(--radius-sm)',
+                        border: '1px solid var(--border-light)',
+                        maxHeight: '380px',
+                        overflowY: 'auto'
+                      }}>
+                        {filteredStudents.map(s => {
+                          const isTagged = !!s.faults[activeCat.id];
+                          const isAuto = !!s.autoSuggested?.[activeCat.id];
+                          const note = s.notes?.[activeCat.id] || '';
 
-                                  {isAuto && (
-                                    <span style={{ fontSize: '9px', fontWeight: 800, background: 'var(--warning-soft)', color: 'var(--warning)', padding: '1px 5px', borderRadius: '8px' }} title={note}>
-                                      ⚡ Auto
-                                    </span>
-                                  )}
-
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      openNoteModal(s.studentCode, activeCat.id);
-                                    }}
-                                    style={{
-                                      border: 'none',
-                                      background: note ? 'var(--accent)' : 'rgba(0,0,0,0.06)',
-                                      color: note ? '#fff' : 'var(--text-muted)',
-                                      borderRadius: '12px',
-                                      padding: '2px 6px',
-                                      fontSize: '10px',
-                                      fontWeight: 700,
-                                      cursor: 'pointer'
-                                    }}
-                                    title={note || 'Add specific note'}
-                                  >
-                                    {note ? '📝' : '+📝'}
-                                  </button>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Untagged Students Cloud */}
-                      <div>
-                        <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <span>👥 Untagged Students ({filteredStudents.length - taggedStudents.length})</span>
-                          <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 500, textTransform: 'none' }}>— Click to tag with '{activeCat.name}'</span>
-                        </div>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                          {filteredStudents
-                            .filter(s => !s.faults[activeCat.id])
-                            .map(s => (
+                          return (
+                            <div
+                              key={s.studentCode}
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '5px',
+                                padding: '3px 8px',
+                                borderRadius: '16px',
+                                background: isTagged ? 'rgba(239, 68, 68, 0.15)' : 'var(--surface)',
+                                border: isTagged ? '1.5px solid var(--danger)' : '1px solid var(--border-light)',
+                                boxShadow: isTagged ? '0 1px 3px rgba(239, 68, 68, 0.15)' : 'none',
+                                transition: 'all 0.1s ease'
+                              }}
+                            >
                               <button
-                                key={s.studentCode}
                                 type="button"
                                 onClick={() => handleToggleFault(s.studentCode, activeCat.id)}
                                 style={{
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '6px',
-                                  background: 'var(--surface-light)',
-                                  border: '1px solid var(--border-light)',
-                                  borderRadius: '24px',
-                                  padding: '5px 12px',
-                                  fontSize: '12px',
-                                  fontWeight: 600,
-                                  color: 'var(--text)',
+                                  background: 'transparent',
+                                  border: 'none',
+                                  padding: 0,
                                   cursor: 'pointer',
-                                  transition: 'all 0.12s ease'
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '4px',
+                                  color: isTagged ? 'var(--danger)' : 'var(--text)',
+                                  fontWeight: isTagged ? 800 : 500,
+                                  fontSize: '11.5px',
+                                  whiteSpace: 'nowrap'
                                 }}
-                                onMouseEnter={(e) => {
-                                  e.currentTarget.style.borderColor = 'var(--accent)';
-                                  e.currentTarget.style.background = 'var(--accent-soft)';
-                                  e.currentTarget.style.color = 'var(--accent)';
-                                }}
-                                onMouseLeave={(e) => {
-                                  e.currentTarget.style.borderColor = 'var(--border-light)';
-                                  e.currentTarget.style.background = 'var(--surface-light)';
-                                  e.currentTarget.style.color = 'var(--text)';
-                                }}
+                                title={isTagged ? 'Click to untag' : 'Click to tag'}
                               >
-                                <span style={{ opacity: 0.5, fontSize: '13px' }}>+</span>
+                                <span>{isTagged ? '✓' : '+'}</span>
                                 <span>{s.studentName}</span>
-                                <span style={{ fontSize: '10px', opacity: 0.6, color: 'var(--text-muted)' }}>
+                                <span style={{ fontSize: '9.5px', opacity: 0.6, color: 'var(--text-muted)' }}>
                                   ({s.classNum ? `Cl ${s.classNum}` : s.batchName})
                                 </span>
                               </button>
-                            ))}
-                        </div>
+
+                              {isTagged && isAuto && (
+                                <span style={{ fontSize: '8px', fontWeight: 800, background: 'var(--warning-soft)', color: 'var(--warning)', padding: '0 4px', borderRadius: '4px' }} title={note}>
+                                  ⚡
+                                </span>
+                              )}
+
+                              {isTagged && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    openNoteModal(s.studentCode, activeCat.id);
+                                  }}
+                                  style={{
+                                    border: 'none',
+                                    background: note ? 'var(--accent)' : 'rgba(0,0,0,0.08)',
+                                    color: note ? '#fff' : 'var(--text-muted)',
+                                    borderRadius: '8px',
+                                    padding: '1px 4px',
+                                    fontSize: '9px',
+                                    fontWeight: 700,
+                                    cursor: 'pointer'
+                                  }}
+                                  title={note || 'Add specific note'}
+                                >
+                                  {note ? '📝' : '+📝'}
+                                </button>
+                              )}
+                            </div>
+                          );
+                        })}
                       </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })()}
-          </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })()
         ) : (
           /* -------------------- FULL CONDUCT MATRIX VIEW -------------------- */
           <div className="card" style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', padding: '0', overflow: 'hidden' }}>
