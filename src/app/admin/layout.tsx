@@ -60,6 +60,7 @@ const ADMIN_SUBMENUS: { [key: string]: SubmenuItem[] } = {
     { icon: '📢', en: 'Notices Manager', url: '/admin/notices' },
     { icon: '💬', en: 'Live Chat Workspace', url: '/admin/chat' },
     { icon: '📅', en: 'Attendance Sheet', url: '/admin/attendance' },
+    { icon: '📋', en: 'Fault Register', url: '/admin/fault-register' },
     { icon: '🪙', en: 'Fees Manager', url: '/admin/fees' },
     { icon: '👥', en: 'Students & Batches', url: '/admin/students' }
   ],
@@ -128,6 +129,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const handleChipClick = (e: React.MouseEvent, chipId: string) => {
     e.stopPropagation();
 
+    const matchedChip = chips.find(c => c.id === chipId);
+    if (matchedChip?.url) {
+      router.push(matchedChip.url);
+      setPanelOpen(false);
+      setActiveSubmenu(null);
+      return;
+    }
+
     if (activeSubmenu === chipId) {
       setActiveSubmenu(null);
       return;
@@ -146,10 +155,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     setActiveSubmenu(null);
   };
 
-  const chips = [
+  const chips: Array<{ id: string; icon: string; en: string; url?: string }> = [
     { id: 'exams', icon: '📚', en: 'Exams' },
     { id: 'qb', icon: '📒', en: 'QB' },
     { id: 'manage', icon: '👥', en: 'Manage' },
+    { id: 'faults', icon: '📋', en: 'Faults', url: '/admin/fault-register' },
     { id: 'reports', icon: '📈', en: 'Reports' },
     { id: 'settings', icon: '⚙️', en: 'Settings' }
   ];
