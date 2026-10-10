@@ -59,19 +59,32 @@ export async function GET(req: NextRequest) {
     // Fast targeted path for single student fee lookup
     if (studentCode) {
       const codeUpper = studentCode.trim().toUpperCase();
-      const feeDoc = await adminDb.collection('studentFees').doc(codeUpper).get();
-      const feeRecord = feeDoc.exists ? normalizeStudentFeeRecord({ id: feeDoc.id, ...feeDoc.data() }) : null;
+      const [feeDoc, txSnap] = await Promise.all([
+        adminDb.collection('studentFees').doc(codeUpper).get(),
+        adminDb.collection('feeTransactions').where('studentCode', '==', codeUpper).get()
+      ]);
+      const txs = txSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const feeRecord = feeDoc.exists ? normalizeStudentFeeRecord({ id: feeDoc.id, ...feeDoc.data() }, txs) : null;
       return NextResponse.json({ success: true, feeRecord });
     }
 
-    // 1. Fetch all student profiles and batches for admin roster
-    const [studentsSnap, batchesSnap] = await Promise.all([
+    // 1. Fetch all student profiles, batches, and live fee transactions for admin roster (SSOT)
+    const [studentsSnap, batchesSnap, txSnap] = await Promise.all([
       adminDb.collection('users').where('role', '==', 'student').get(),
-      adminDb.collection('batches').get()
+      adminDb.collection('batches').get(),
+      adminDb.collection('feeTransactions').get()
     ]);
     const batchMap = new Map<string, string>();
     batchesSnap.docs.forEach(doc => {
       batchMap.set(doc.id, doc.data().name || '');
+    });
+
+    const txByStudent = new Map<string, any[]>();
+    txSnap.docs.forEach(doc => {
+      const d = doc.data();
+      const code = (d.studentCode || '').trim().toUpperCase();
+      if (!txByStudent.has(code)) txByStudent.set(code, []);
+      txByStudent.get(code)!.push({ id: doc.id, ...d });
     });
 
     const students = studentsSnap.docs.map(doc => {
@@ -106,7 +119,11 @@ export async function GET(req: NextRequest) {
         const chunkSnaps = await adminDb.getAll(...chunkRefs);
         chunkSnaps.forEach(doc => {
           if (doc.exists) {
-            feesMap.set(doc.id.toUpperCase(), normalizeStudentFeeRecord({ id: doc.id, ...doc.data() }));
+            const codeUpper = doc.id.toUpperCase();
+            feesMap.set(codeUpper, normalizeStudentFeeRecord(
+              { id: doc.id, ...doc.data() },
+              txByStudent.get(codeUpper) || []
+            ));
           }
         });
       }

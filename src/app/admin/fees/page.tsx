@@ -906,29 +906,29 @@ function AdminFeesContent() {
 
                       return sortedStudents.map(s => (
                         <tr key={s.studentCode} style={{ borderBottom: '1px solid var(--border-light)' }}>
-                          <td style={{ padding: '14px 16px', fontSize: '13px' }}>
+                          <td style={{ padding: '8px 12px', fontSize: '12.5px' }}>
                             <div><strong>{s.name}</strong></div>
                           </td>
-                          <td style={{ padding: '14px 16px', fontSize: '13px', fontWeight: 600 }}>
+                          <td style={{ padding: '8px 12px', fontSize: '12.5px', fontWeight: 600 }}>
                             Class {s.classNum}
                           </td>
-                          <td style={{ padding: '14px 16px', fontSize: '13px', fontWeight: 700 }}>
+                          <td style={{ padding: '8px 12px', fontSize: '12.5px', fontWeight: 700 }}>
                             ₹{s.fee?.netPayableAmount !== undefined ? s.fee.netPayableAmount : '--'}
                           </td>
-                          <td style={{ padding: '14px 16px', fontSize: '13px', color: 'var(--text)', fontWeight: 600 }}>
+                          <td style={{ padding: '8px 12px', fontSize: '12.5px', color: 'var(--text)', fontWeight: 600 }}>
                             ₹{s.fee?.totalPaidAmount !== undefined ? s.fee.totalPaidAmount : '--'}
                           </td>
-                          <td style={{ padding: '14px 16px', fontSize: '13px', color: (s.fee?.outstandingAmount || 0) > 0 && s.fee?.hasOverdueInstallment ? 'var(--danger-muted)' : 'var(--text)', fontWeight: 700 }}>
+                          <td style={{ padding: '8px 12px', fontSize: '12.5px', color: (s.fee?.outstandingAmount || 0) > 0 && s.fee?.hasOverdueInstallment ? 'var(--danger-muted)' : 'var(--text)', fontWeight: 700 }}>
                             ₹{s.fee?.outstandingAmount !== undefined ? s.fee.outstandingAmount : '--'}
                           </td>
-                          <td style={{ padding: '14px 16px' }}>
+                          <td style={{ padding: '8px 12px' }}>
                             {!s.fee || s.fee.totalPackageAmount === undefined ? (
                               <span className="badge badge-secondary" style={{ fontSize: '10px' }}>UNCONFIGURED</span>
                             ) : s.fee.hasOverdueInstallment ? (
                               <span className="badge badge-danger" style={{ fontSize: '10px' }}>OVERDUE</span>
                             ) : s.fee.feeStatus === 'exempted' || s.fee.netPayableAmount === 0 ? (
                               <span className="badge badge-success" style={{ fontSize: '10px' }}>EXEMPTED</span>
-                            ) : s.fee.feeStatus === 'fully_paid' || ((s.fee.totalPaidAmount || 0) >= s.fee.netPayableAmount && s.fee.netPayableAmount > 0) ? (
+                            ) : s.fee.feeStatus === 'fully_paid' || ((s.fee?.totalPaidAmount || 0) >= s.fee.netPayableAmount && s.fee.netPayableAmount > 0) ? (
                               <span className="badge badge-success" style={{ fontSize: '10px' }}>PAID</span>
                             ) : s.fee.feeStatus === 'partially_paid' || (s.fee.totalPaidAmount || 0) > 0 ? (
                               <span className="badge badge-info" style={{ fontSize: '10px' }}>PARTIAL</span>
@@ -936,7 +936,7 @@ function AdminFeesContent() {
                               <span className="badge badge-warning" style={{ fontSize: '10px' }}>PENDING</span>
                             )}
                           </td>
-                          <td style={{ padding: '14px 16px', textAlign: 'right' }}>
+                          <td style={{ padding: '8px 12px', textAlign: 'right' }}>
                             <button
                               onClick={() => {
                                 setSelectedStudent(s);
@@ -945,7 +945,7 @@ function AdminFeesContent() {
                                 setCustomInstallments(s.fee?.installments || []);
                               }}
                               className="btn btn-secondary"
-                              style={{ padding: '4px 8px', fontSize: '11px', fontWeight: 'bold' }}
+                              style={{ padding: '3px 8px', fontSize: '11px', fontWeight: 'bold' }}
                             >
                               ⚙️ Configure Installments
                             </button>
@@ -962,34 +962,34 @@ function AdminFeesContent() {
 
         {/* WORKSPACE 2: Custom Sheet Editor */}
         {activeTab === 'students' && selectedStudent && (
-          <div className="card" style={{ padding: '24px', background: 'var(--surface)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-lg)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-light)', paddingBottom: '16px', marginBottom: '20px' }}>
+          <div className="card" style={{ padding: '16px 20px', background: 'var(--surface)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border-light)', paddingBottom: '10px', marginBottom: '14px', alignItems: 'center' }}>
               <div>
-                <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800, color: 'var(--accent)' }}>
+                <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: 'var(--accent)' }}>
                   ⚙️ Customize Fees: {selectedStudent.name}
                 </h3>
                 <p style={{ margin: '2px 0 0 0', fontSize: '11px', color: 'var(--text-muted)' }}>
-                  Customize the totals, discounts, and installment splits for: <strong>{selectedStudent.name}</strong>
+                  Customize totals, discounts, and installment splits for: <strong>{selectedStudent.name}</strong>
                 </p>
               </div>
               <div style={{ display: 'flex', gap: '8px' }}>
-                <button className="btn btn-secondary" onClick={() => {
+                <button className="btn btn-secondary" style={{ padding: '5px 10px', fontSize: '11px' }} onClick={() => {
                   loadTransactions(selectedStudent.studentCode);
                   setShowTxModal(true);
                 }}>
                   💸 Ledger Logs & Receipts
                 </button>
-                <button className="btn btn-secondary" onClick={() => setSelectedStudent(null)}>Cancel</button>
+                <button className="btn btn-secondary" style={{ padding: '5px 10px', fontSize: '11px' }} onClick={() => setSelectedStudent(null)}>Cancel</button>
               </div>
             </div>
 
             {/* Template Apply quickbar */}
-            <div style={{ background: 'var(--bg-soft)', padding: '12px 16px', borderRadius: 'var(--radius)', marginBottom: '24px', border: '1.5px dashed var(--border-light)' }}>
-              <span style={{ fontSize: '12px', fontWeight: 'bold', marginRight: '12px' }}>⚡ Apply Blanket Template:</span>
+            <div style={{ background: 'var(--bg-soft)', padding: '8px 12px', borderRadius: 'var(--radius)', marginBottom: '14px', border: '1px dashed var(--border-light)', display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span style={{ fontSize: '11px', fontWeight: 700 }}>⚡ Apply Blanket Template:</span>
               <select
                 onChange={(e) => { if (e.target.value) handleApplyTemplate(e.target.value); }}
                 defaultValue=""
-                style={{ padding: '6px 12px', borderRadius: '4px', border: '1px solid var(--border-light)', background: 'var(--surface)', color: 'var(--text)', fontSize: '12px' }}
+                style={{ padding: '5px 10px', borderRadius: '4px', border: '1px solid var(--border-light)', background: 'var(--surface)', color: 'var(--text)', fontSize: '11px' }}
               >
                 <option value="">-- Choose template --</option>
                 {templates.map(t => (
@@ -999,43 +999,43 @@ function AdminFeesContent() {
             </div>
 
             {/* Package Totals Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px', marginBottom: '24px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '11px', fontWeight: 600 }}>Total Package Rate (₹)</label>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '12px', marginBottom: '14px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '10.5px', fontWeight: 700, color: 'var(--text-muted)' }}>Total Package Rate (₹)</label>
                 <input
                   type="number"
                   value={customPackageTotal}
                   onChange={(e) => setCustomPackageTotal(Number(e.target.value))}
-                  style={{ padding: '8px 10px', borderRadius: '4px', border: '1px solid var(--border-light)', background: 'var(--bg-soft)', color: 'var(--text)' }}
+                  style={{ padding: '6px 10px', borderRadius: '4px', border: '1px solid var(--border-light)', background: 'var(--bg-soft)', color: 'var(--text)', fontSize: '13px', fontWeight: 600 }}
                 />
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '11px', fontWeight: 600 }}>Scholarship / Discount (₹)</label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '10.5px', fontWeight: 700, color: 'var(--text-muted)' }}>Scholarship / Discount (₹)</label>
                 <input
                   type="number"
                   value={customDiscount}
                   onChange={(e) => setCustomDiscount(Number(e.target.value))}
-                  style={{ padding: '8px 10px', borderRadius: '4px', border: '1px solid var(--border-light)', background: 'var(--bg-soft)', color: 'var(--text)' }}
+                  style={{ padding: '6px 10px', borderRadius: '4px', border: '1px solid var(--border-light)', background: 'var(--bg-soft)', color: 'var(--text)', fontSize: '13px', fontWeight: 600 }}
                 />
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '11px', fontWeight: 600 }}>Net Payable Dues (₹)</label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <label style={{ fontSize: '10.5px', fontWeight: 700, color: 'var(--text-muted)' }}>Net Payable Dues (₹)</label>
                 <input
                   type="number"
                   value={customPackageTotal - customDiscount}
                   disabled
-                  style={{ padding: '8px 10px', borderRadius: '4px', border: '1px solid var(--border-light)', background: 'var(--bg-soft)', color: 'var(--text-muted)', cursor: 'not-allowed', fontWeight: 'bold' }}
+                  style={{ padding: '6px 10px', borderRadius: '4px', border: '1px solid var(--border-light)', background: 'var(--bg-soft)', color: 'var(--accent)', cursor: 'not-allowed', fontWeight: 800, fontSize: '13px' }}
                 />
               </div>
             </div>
 
             {/* Installments listing */}
-            <div style={{ border: '1px solid var(--border-light)', borderRadius: 'var(--radius)', overflow: 'hidden', marginBottom: '24px' }}>
-              <div style={{ padding: '12px 16px', background: 'var(--bg-soft)', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h4 style={{ margin: 0, fontSize: '13px', fontWeight: 'bold' }}>📅 Custom Installment Matrix</h4>
-                <button className="btn btn-secondary" onClick={addInstallmentRow} style={{ padding: '4px 10px', fontSize: '11px' }}>
+            <div style={{ border: '1px solid var(--border-light)', borderRadius: 'var(--radius)', overflow: 'hidden', marginBottom: '14px' }}>
+              <div style={{ padding: '8px 12px', background: 'var(--bg-soft)', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h4 style={{ margin: 0, fontSize: '12px', fontWeight: 800 }}>📅 Custom Installment Matrix</h4>
+                <button className="btn btn-secondary" onClick={addInstallmentRow} style={{ padding: '3px 8px', fontSize: '11px' }}>
                   ➕ Add Installment
                 </button>
               </div>
@@ -1046,10 +1046,10 @@ function AdminFeesContent() {
                 const isMatch = sumOfSplits === netPayable;
                 return (
                   <div style={{
-                    padding: '8px 12px',
+                    padding: '6px 12px',
                     fontSize: '11px',
                     fontWeight: 600,
-                    background: isMatch ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                    background: isMatch ? 'rgba(16, 185, 129, 0.08)' : 'rgba(239, 68, 68, 0.08)',
                     color: isMatch ? 'var(--success)' : 'var(--danger)',
                     borderBottom: '1px solid var(--border-light)'
                   }}>
@@ -1063,25 +1063,25 @@ function AdminFeesContent() {
               })()}
 
               {customInstallments.length === 0 ? (
-                <div style={{ padding: '30px', textAlign: 'center', color: 'var(--text-faint)', fontSize: '12px' }}>
+                <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-faint)', fontSize: '12px' }}>
                   No installments configured. Click Add to create one.
                 </div>
               ) : (
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                   <thead>
-                    <tr style={{ borderBottom: '1px solid var(--border-light)', fontSize: '11px', color: 'var(--text-muted)', background: 'var(--bg-soft)' }}>
-                      <th style={{ padding: '10px 16px' }}>Installment #</th>
-                      <th style={{ padding: '10px 16px' }}>Amount (₹)</th>
-                      <th style={{ padding: '10px 16px' }}>Due Date</th>
-                      <th style={{ padding: '10px 16px' }}>Status Override</th>
-                      <th style={{ padding: '10px 16px', textAlign: 'right' }}>Actions</th>
+                    <tr style={{ borderBottom: '1px solid var(--border-light)', fontSize: '10.5px', color: 'var(--text-muted)', background: 'var(--bg-soft)', textTransform: 'uppercase' }}>
+                      <th style={{ padding: '8px 12px' }}>Installment #</th>
+                      <th style={{ padding: '8px 12px' }}>Amount (₹)</th>
+                      <th style={{ padding: '8px 12px' }}>Due Date</th>
+                      <th style={{ padding: '8px 12px' }}>Status Override</th>
+                      <th style={{ padding: '8px 12px', textAlign: 'right' }}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {customInstallments.map((inst, idx) => (
                       <tr key={idx} style={{ borderBottom: '1px solid var(--border-light)' }}>
-                        <td style={{ padding: '12px 16px', fontSize: '13px', fontWeight: 600 }}>Installment {idx + 1}</td>
-                        <td style={{ padding: '12px 16px' }}>
+                        <td style={{ padding: '6px 12px', fontSize: '12px', fontWeight: 600 }}>Installment {idx + 1}</td>
+                        <td style={{ padding: '6px 12px' }}>
                           <input
                             type="number"
                             value={inst.amount}
@@ -1089,36 +1089,36 @@ function AdminFeesContent() {
                               const val = Number(e.target.value);
                               setCustomInstallments(prev => prev.map((item, i) => i === idx ? { ...item, amount: val } : item));
                             }}
-                            style={{ padding: '6px 10px', width: '120px', borderRadius: '4px', border: '1px solid var(--border-light)', background: 'var(--bg-soft)', color: 'var(--text)' }}
+                            style={{ padding: '5px 8px', width: '110px', borderRadius: '4px', border: '1px solid var(--border-light)', background: 'var(--bg-soft)', color: 'var(--text)', fontSize: '12px' }}
                           />
                         </td>
-                        <td style={{ padding: '12px 16px' }}>
+                        <td style={{ padding: '6px 12px' }}>
                           <DateInputDMY
                             value={inst.dueDate || ''}
                             onChange={(val) => {
                               setCustomInstallments(prev => prev.map((item, i) => i === idx ? { ...item, dueDate: val } : item));
                             }}
-                            style={{ width: '130px' }}
+                            style={{ width: '125px' }}
                           />
                         </td>
-                        <td style={{ padding: '12px 16px' }}>
+                        <td style={{ padding: '6px 12px' }}>
                           <select
                             value={inst.status}
                             onChange={(e) => {
                               const val = e.target.value;
                               setCustomInstallments(prev => prev.map((item, i) => i === idx ? { ...item, status: val } : item));
                             }}
-                            style={{ padding: '6px 10px', borderRadius: '4px', border: '1px solid var(--border-light)', background: 'var(--bg-soft)', color: 'var(--text)' }}
+                            style={{ padding: '5px 8px', borderRadius: '4px', border: '1px solid var(--border-light)', background: 'var(--bg-soft)', color: 'var(--text)', fontSize: '12px' }}
                           >
                             <option value="pending">Pending</option>
                             <option value="paid">Paid</option>
                             <option value="overdue">Overdue</option>
                           </select>
                         </td>
-                        <td style={{ padding: '12px 16px', textAlign: 'right' }}>
+                        <td style={{ padding: '6px 12px', textAlign: 'right' }}>
                           <button
                             onClick={() => removeInstallmentRow(idx)}
-                            style={{ border: 'none', background: 'transparent', color: 'var(--danger)', cursor: 'pointer', fontSize: '1rem' }}
+                            style={{ border: 'none', background: 'transparent', color: 'var(--danger)', cursor: 'pointer', fontSize: '0.9rem' }}
                           >
                             🗑️
                           </button>
@@ -1131,8 +1131,8 @@ function AdminFeesContent() {
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-              <button className="btn btn-secondary" onClick={() => setSelectedStudent(null)}>Cancel</button>
-              <button className="btn btn-primary" onClick={handleSaveCustomFee} disabled={savingCustomFee}>
+              <button className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: '11px' }} onClick={() => setSelectedStudent(null)}>Cancel</button>
+              <button className="btn btn-primary" style={{ padding: '6px 14px', fontSize: '11px', fontWeight: 700 }} onClick={handleSaveCustomFee} disabled={savingCustomFee}>
                 {savingCustomFee ? 'Saving...' : '💾 Save Customized Package'}
               </button>
             </div>

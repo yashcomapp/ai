@@ -41,7 +41,7 @@ export interface StudentFeeRecord {
  */
 export function normalizeStudentFeeRecord(
   feeData: any,
-  transactions: any[] = []
+  transactions?: any[]
 ): StudentFeeRecord {
   if (!feeData) return feeData;
 
@@ -53,7 +53,9 @@ export function normalizeStudentFeeRecord(
   let totalTxPaidAmount = 0;
   let unallocatedPool = 0;
 
-  if (Array.isArray(transactions) && transactions.length > 0) {
+  const hasTransactions = Array.isArray(transactions);
+
+  if (hasTransactions && transactions.length > 0) {
     transactions.forEach(tx => {
       const amt = safeNumber(tx.amountPaid, 0);
       totalTxPaidAmount += amt;
@@ -64,6 +66,9 @@ export function normalizeStudentFeeRecord(
         unallocatedPool += amt;
       }
     });
+  } else if (!hasTransactions) {
+    // If transactions array was not passed, preserve stored totalPaidAmount
+    totalTxPaidAmount = safeNumber(feeData.totalPaidAmount, 0);
   }
 
   // If base fee record has a higher totalPaidAmount than transactions ledger sum, treat difference as unallocated

@@ -54,6 +54,9 @@ export default function FeesJournal({
   // Sub-view Tab State
   const [subView, setSubView] = useState<'batch' | 'date' | 'student'>('batch');
 
+  // Overview Collapsible State (Collapsed by default as per user request)
+  const [overviewCollapsed, setOverviewCollapsed] = useState<boolean>(true);
+
   // All Transactions State (for Date-wise Journal)
   const [allTransactions, setAllTransactions] = useState<Transaction[]>([]);
   const [loadingTransactions, setLoadingTransactions] = useState<boolean>(false);
@@ -671,80 +674,127 @@ export default function FeesJournal({
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
       
-      {/* 1. Macro KPI / Total So Far Summary Bar */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
-        
-        {/* Total Expected */}
-        <div className="card glass" style={{ padding: '16px 20px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', background: 'var(--surface)' }}>
-          <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-            💼 Total Expected Fees
-          </div>
-          <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--text)', marginTop: '4px' }}>
-            ₹{macroSummary.totalExpected.toLocaleString('en-IN')}
-          </div>
-          <div style={{ fontSize: '11px', color: 'var(--text-faint)', marginTop: '4px' }}>
-            Across {macroSummary.totalStudents} enrolled students
-          </div>
-        </div>
-
-        {/* Total Collected */}
-        <div className="card glass" style={{ padding: '16px 20px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', background: 'var(--surface)' }}>
-          <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--success)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-            💰 Total Collected So Far
-          </div>
-          <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--success)', marginTop: '4px' }}>
-            ₹{macroSummary.totalCollected.toLocaleString('en-IN')}
-          </div>
-          <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
-            {macroSummary.fullyPaidCount} fully paid • {macroSummary.partiallyPaidCount} partial
-          </div>
-        </div>
-
-        {/* Total Balance / Outstanding */}
-        <div className="card glass" style={{ padding: '16px 20px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', background: 'var(--surface)' }}>
-          <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--danger)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-            ⏳ Total Balance Outstanding
-          </div>
-          <div style={{ fontSize: '1.6rem', fontWeight: 800, color: 'var(--danger)', marginTop: '4px' }}>
-            ₹{macroSummary.totalOutstanding.toLocaleString('en-IN')}
-          </div>
-          <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
-            {macroSummary.overdueCount > 0 ? (
-              <span style={{ color: 'var(--danger)', fontWeight: 700 }}>⚠️ {macroSummary.overdueCount} students overdue</span>
-            ) : (
-              <span>{macroSummary.unpaidCount} unpaid students</span>
-            )}
-          </div>
-        </div>
-
-        {/* Collection % Progress */}
-        <div className="card glass" style={{ padding: '16px 20px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', background: 'var(--surface)' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-              📊 Collection Rate
-            </div>
-            <span className="badge badge-info" style={{ fontSize: '11px', fontWeight: 800 }}>
-              {macroSummary.collectionPercent}%
+      {/* 1. Macro KPI / Overview Bar (Collapsed by default as per user request) */}
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius)', overflow: 'hidden' }}>
+        <div 
+          onClick={() => setOverviewCollapsed(!overviewCollapsed)}
+          style={{ 
+            padding: '9px 14px', 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center', 
+            cursor: 'pointer',
+            userSelect: 'none',
+            background: 'var(--bg-soft)',
+            borderBottom: overviewCollapsed ? 'none' : '1px solid var(--border-light)'
+          }}
+          title={overviewCollapsed ? "Click to expand macro overview metrics" : "Click to collapse overview metrics"}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              📊 Financial Overview
             </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '11px', flexWrap: 'wrap' }}>
+              <span style={{ color: 'var(--text-muted)' }}>
+                Expected: <strong style={{ color: 'var(--text)' }}>₹{macroSummary.totalExpected.toLocaleString('en-IN')}</strong>
+              </span>
+              <span style={{ color: 'var(--border-light)' }}>•</span>
+              <span style={{ color: 'var(--text-muted)' }}>
+                Collected: <strong style={{ color: 'var(--success)' }}>₹{macroSummary.totalCollected.toLocaleString('en-IN')}</strong>
+              </span>
+              <span style={{ color: 'var(--border-light)' }}>•</span>
+              <span style={{ color: 'var(--text-muted)' }}>
+                Outstanding: <strong style={{ color: 'var(--danger)' }}>₹{macroSummary.totalOutstanding.toLocaleString('en-IN')}</strong>
+              </span>
+              <span style={{ color: 'var(--border-light)' }}>•</span>
+              <span className="badge badge-info" style={{ fontSize: '10px', padding: '1px 6px' }}>
+                {macroSummary.collectionPercent}% Rate
+              </span>
+            </div>
           </div>
-          <div style={{ width: '100%', height: '8px', background: 'var(--bg-soft)', borderRadius: '999px', overflow: 'hidden', marginTop: '12px' }}>
-            <div
-              style={{
-                width: `${macroSummary.collectionPercent}%`,
-                height: '100%',
-                background: macroSummary.collectionPercent >= 75 ? 'var(--success)' : macroSummary.collectionPercent >= 40 ? 'var(--accent)' : 'var(--warning)',
-                borderRadius: '999px',
-                transition: 'width 0.4s ease'
-              }}
-            />
-          </div>
-          <div style={{ fontSize: '11px', color: 'var(--text-faint)', marginTop: '8px' }}>
-            Target: 100% of academic year dues
-          </div>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            style={{ padding: '3px 8px', fontSize: '11px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}
+          >
+            <span>{overviewCollapsed ? '▶ Show Cards' : '▲ Collapse'}</span>
+          </button>
         </div>
 
+        {!overviewCollapsed && (
+          <div style={{ padding: '12px 14px', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: '10px', background: 'var(--surface)' }}>
+            {/* Total Expected */}
+            <div className="card glass" style={{ padding: '10px 14px', borderRadius: 'var(--radius)', border: '1px solid var(--border-light)', background: 'var(--bg-soft)' }}>
+              <div style={{ fontSize: '10.5px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                💼 Total Expected Fees
+              </div>
+              <div style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--text)', marginTop: '2px' }}>
+                ₹{macroSummary.totalExpected.toLocaleString('en-IN')}
+              </div>
+              <div style={{ fontSize: '10.5px', color: 'var(--text-faint)', marginTop: '2px' }}>
+                Across {macroSummary.totalStudents} enrolled students
+              </div>
+            </div>
+
+            {/* Total Collected */}
+            <div className="card glass" style={{ padding: '10px 14px', borderRadius: 'var(--radius)', border: '1px solid var(--border-light)', background: 'var(--bg-soft)' }}>
+              <div style={{ fontSize: '10.5px', fontWeight: 700, color: 'var(--success)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                💰 Total Collected So Far
+              </div>
+              <div style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--success)', marginTop: '2px' }}>
+                ₹{macroSummary.totalCollected.toLocaleString('en-IN')}
+              </div>
+              <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                {macroSummary.fullyPaidCount} fully paid • {macroSummary.partiallyPaidCount} partial
+              </div>
+            </div>
+
+            {/* Total Balance / Outstanding */}
+            <div className="card glass" style={{ padding: '10px 14px', borderRadius: 'var(--radius)', border: '1px solid var(--border-light)', background: 'var(--bg-soft)' }}>
+              <div style={{ fontSize: '10.5px', fontWeight: 700, color: 'var(--danger)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                ⏳ Balance Outstanding
+              </div>
+              <div style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--danger)', marginTop: '2px' }}>
+                ₹{macroSummary.totalOutstanding.toLocaleString('en-IN')}
+              </div>
+              <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                {macroSummary.overdueCount > 0 ? (
+                  <span style={{ color: 'var(--danger)', fontWeight: 700 }}>⚠️ {macroSummary.overdueCount} students overdue</span>
+                ) : (
+                  <span>{macroSummary.unpaidCount} unpaid students</span>
+                )}
+              </div>
+            </div>
+
+            {/* Collection % Progress */}
+            <div className="card glass" style={{ padding: '10px 14px', borderRadius: 'var(--radius)', border: '1px solid var(--border-light)', background: 'var(--bg-soft)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ fontSize: '10.5px', fontWeight: 700, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  📊 Collection Rate
+                </div>
+                <span className="badge badge-info" style={{ fontSize: '10px', fontWeight: 800 }}>
+                  {macroSummary.collectionPercent}%
+                </span>
+              </div>
+              <div style={{ width: '100%', height: '6px', background: 'var(--bg-soft)', borderRadius: '999px', overflow: 'hidden', marginTop: '6px' }}>
+                <div
+                  style={{
+                    width: `${macroSummary.collectionPercent}%`,
+                    height: '100%',
+                    background: macroSummary.collectionPercent >= 75 ? 'var(--success)' : macroSummary.collectionPercent >= 40 ? 'var(--accent)' : 'var(--warning)',
+                    borderRadius: '999px',
+                    transition: 'width 0.4s ease'
+                  }}
+                />
+              </div>
+              <div style={{ fontSize: '10px', color: 'var(--text-faint)', marginTop: '4px' }}>
+                Target: 100% of academic year dues
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 2. Sub-views Switcher */}
@@ -885,28 +935,28 @@ export default function FeesJournal({
                       if (batchSortField === f) setBatchSortDir(d => d === 'asc' ? 'desc' : 'asc');
                       else { setBatchSortField(f); setBatchSortDir('asc'); }
                     })}
-                    <th style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', textAlign: 'right' }}>Actions</th>
+                    <th style={{ padding: '8px 12px', fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', textAlign: 'right' }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {sortedBatches.map(b => (
                     <tr key={b.classNum} style={{ borderBottom: '1px solid var(--border-light)' }}>
-                      <td style={{ padding: '14px 16px', fontSize: '13px', fontWeight: 800 }}>
+                      <td style={{ padding: '8px 12px', fontSize: '12px', fontWeight: 800 }}>
                         Class {b.classNum}
                       </td>
-                      <td style={{ padding: '14px 16px', fontSize: '13px', color: 'var(--text-muted)' }}>
+                      <td style={{ padding: '8px 12px', fontSize: '12px', color: 'var(--text-muted)' }}>
                         {b.totalStudents} student{b.totalStudents > 1 ? 's' : ''}
                       </td>
-                      <td style={{ padding: '14px 16px', fontSize: '13px', fontWeight: 700, textAlign: 'right' }}>
+                      <td style={{ padding: '8px 12px', fontSize: '12px', fontWeight: 700, textAlign: 'right' }}>
                         ₹{b.expected.toLocaleString('en-IN')}
                       </td>
-                      <td style={{ padding: '14px 16px', fontSize: '13px', color: 'var(--success)', fontWeight: 700, textAlign: 'right' }}>
+                      <td style={{ padding: '8px 12px', fontSize: '12px', color: 'var(--success)', fontWeight: 700, textAlign: 'right' }}>
                         ₹{b.paid.toLocaleString('en-IN')}
                       </td>
-                      <td style={{ padding: '14px 16px', fontSize: '13px', color: 'var(--danger)', fontWeight: 700, textAlign: 'right' }}>
+                      <td style={{ padding: '8px 12px', fontSize: '12px', color: 'var(--danger)', fontWeight: 700, textAlign: 'right' }}>
                         ₹{b.outstanding.toLocaleString('en-IN')}
                       </td>
-                      <td style={{ padding: '14px 16px', minWidth: '150px' }}>
+                      <td style={{ padding: '8px 12px', minWidth: '130px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                           <div style={{ flex: 1, height: '6px', background: 'var(--bg-soft)', borderRadius: '999px', overflow: 'hidden' }}>
                             <div
@@ -923,7 +973,7 @@ export default function FeesJournal({
                           </span>
                         </div>
                       </td>
-                      <td style={{ padding: '14px 16px' }}>
+                      <td style={{ padding: '8px 12px' }}>
                         {b.overdue > 0 ? (
                           <span className="badge badge-danger" style={{ fontSize: '10px' }}>
                             {b.overdue} OVERDUE
@@ -934,14 +984,14 @@ export default function FeesJournal({
                           </span>
                         )}
                       </td>
-                      <td style={{ padding: '14px 16px', textAlign: 'right' }}>
+                      <td style={{ padding: '8px 12px', textAlign: 'right' }}>
                         <button
                           onClick={() => {
                             setStudentClassFilter(b.classNum);
                             setSubView('student');
                           }}
                           className="btn btn-secondary"
-                          style={{ padding: '4px 10px', fontSize: '11px', fontWeight: 600 }}
+                          style={{ padding: '3px 8px', fontSize: '11px', fontWeight: 600 }}
                         >
                           View Students →
                         </button>
@@ -951,20 +1001,20 @@ export default function FeesJournal({
                 </tbody>
                 <tfoot>
                   <tr style={{ background: 'var(--bg-soft)', fontWeight: 800, borderTop: '2px solid var(--border-light)' }}>
-                    <td style={{ padding: '14px 16px', fontSize: '13px' }}>TOTAL ALL BATCHES</td>
-                    <td style={{ padding: '14px 16px', fontSize: '13px' }}>{macroSummary.totalStudents} Students</td>
-                    <td style={{ padding: '14px 16px', fontSize: '13px', textAlign: 'right' }}>₹{macroSummary.totalExpected.toLocaleString('en-IN')}</td>
-                    <td style={{ padding: '14px 16px', fontSize: '13px', color: 'var(--success)', textAlign: 'right' }}>₹{macroSummary.totalCollected.toLocaleString('en-IN')}</td>
-                    <td style={{ padding: '14px 16px', fontSize: '13px', color: 'var(--danger)', textAlign: 'right' }}>₹{macroSummary.totalOutstanding.toLocaleString('en-IN')}</td>
-                    <td style={{ padding: '14px 16px', fontSize: '13px' }}>{macroSummary.collectionPercent}% Overall</td>
-                    <td style={{ padding: '14px 16px' }}>
+                    <td style={{ padding: '8px 12px', fontSize: '12px' }}>TOTAL ALL BATCHES</td>
+                    <td style={{ padding: '8px 12px', fontSize: '12px' }}>{macroSummary.totalStudents} Students</td>
+                    <td style={{ padding: '8px 12px', fontSize: '12px', textAlign: 'right' }}>₹{macroSummary.totalExpected.toLocaleString('en-IN')}</td>
+                    <td style={{ padding: '8px 12px', fontSize: '12px', color: 'var(--success)', textAlign: 'right' }}>₹{macroSummary.totalCollected.toLocaleString('en-IN')}</td>
+                    <td style={{ padding: '8px 12px', fontSize: '12px', color: 'var(--danger)', textAlign: 'right' }}>₹{macroSummary.totalOutstanding.toLocaleString('en-IN')}</td>
+                    <td style={{ padding: '8px 12px', fontSize: '12px' }}>{macroSummary.collectionPercent}% Overall</td>
+                    <td style={{ padding: '8px 12px' }}>
                       {macroSummary.overdueCount > 0 ? (
                         <span className="badge badge-danger" style={{ fontSize: '10px' }}>{macroSummary.overdueCount} OVERDUE</span>
                       ) : (
                         <span className="badge badge-success" style={{ fontSize: '10px' }}>0 OVERDUE</span>
                       )}
                     </td>
-                    <td style={{ padding: '14px 16px' }}></td>
+                    <td style={{ padding: '8px 12px' }}></td>
                   </tr>
                 </tfoot>
               </table>
@@ -1106,7 +1156,7 @@ export default function FeesJournal({
                       if (dateSortField === f) setDateSortDir(d => d === 'asc' ? 'desc' : 'asc');
                       else { setDateSortField(f); setDateSortDir('asc'); }
                     })}
-                    <th style={{ padding: '12px 14px', fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Component</th>
+                    <th style={{ padding: '8px 12px', fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Component</th>
                     {renderSortHeader('Amount Paid', 'amountPaid', dateSortField, dateSortDir, (f) => {
                       if (dateSortField === f) setDateSortDir(d => d === 'asc' ? 'desc' : 'asc');
                       else { setDateSortField(f); setDateSortDir('desc'); }
@@ -1115,13 +1165,13 @@ export default function FeesJournal({
                       if (dateSortField === f) setDateSortDir(d => d === 'asc' ? 'desc' : 'asc');
                       else { setDateSortField(f); setDateSortDir('asc'); }
                     })}
-                    <th style={{ padding: '12px 14px', fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Ref / Remarks</th>
-                    <th style={{ padding: '12px 14px', fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Timeliness</th>
+                    <th style={{ padding: '8px 12px', fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Ref / Remarks</th>
+                    <th style={{ padding: '8px 12px', fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Timeliness</th>
                     {renderSortHeader('Recorded By', 'recordedBy', dateSortField, dateSortDir, (f) => {
                       if (dateSortField === f) setDateSortDir(d => d === 'asc' ? 'desc' : 'asc');
                       else { setDateSortField(f); setDateSortDir('asc'); }
                     })}
-                    <th style={{ padding: '12px 14px', fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', textAlign: 'right' }}>Actions</th>
+                    <th style={{ padding: '8px 12px', fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', textAlign: 'right' }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1152,7 +1202,7 @@ export default function FeesJournal({
 
                     return (
                       <tr key={tx.transactionId} style={{ borderBottom: '1px solid var(--border-light)' }}>
-                        <td style={{ padding: '12px 14px', fontSize: '12px', whiteSpace: 'nowrap' }}>
+                        <td style={{ padding: '8px 12px', fontSize: '12px', whiteSpace: 'nowrap' }}>
                           <div style={{ fontWeight: 600 }}>{formatDateStr(tx.timestamp)}</div>
                           {timeStr && (
                             <div style={{ fontSize: '10px', color: 'var(--text-faint)' }}>
@@ -1160,11 +1210,11 @@ export default function FeesJournal({
                             </div>
                           )}
                         </td>
-                        <td style={{ padding: '12px 14px', fontSize: '13px', fontWeight: 700 }}>
+                        <td style={{ padding: '8px 12px', fontSize: '12px', fontWeight: 700 }}>
                           {onSelectStudent && student ? (
                             <button
                               onClick={() => onSelectStudent(student)}
-                              style={{ border: 'none', background: 'transparent', padding: 0, color: 'var(--accent)', fontWeight: 700, cursor: 'pointer', textAlign: 'left', fontSize: '13px' }}
+                              style={{ border: 'none', background: 'transparent', padding: 0, color: 'var(--accent)', fontWeight: 700, cursor: 'pointer', textAlign: 'left', fontSize: '12px' }}
                               title="Click to view student fee profile"
                             >
                               {studentName}
@@ -1173,30 +1223,30 @@ export default function FeesJournal({
                             <span>{studentName}</span>
                           )}
                         </td>
-                        <td style={{ padding: '12px 14px', fontSize: '12px', fontWeight: 600 }}>
+                        <td style={{ padding: '8px 12px', fontSize: '12px', fontWeight: 600 }}>
                           Class {classNum}
                         </td>
-                        <td style={{ padding: '12px 14px', fontSize: '12px', color: 'var(--text-muted)' }}>
+                        <td style={{ padding: '8px 12px', fontSize: '12px', color: 'var(--text-muted)' }}>
                           <span className="badge badge-secondary" style={{ fontSize: '10px' }}>
                             {instStr}
                           </span>
                         </td>
-                        <td style={{ padding: '12px 14px', fontSize: '13px', color: 'var(--success)', fontWeight: 800, textAlign: 'right', whiteSpace: 'nowrap' }}>
+                        <td style={{ padding: '8px 12px', fontSize: '12px', color: 'var(--success)', fontWeight: 800, textAlign: 'right', whiteSpace: 'nowrap' }}>
                           ₹{Number(tx.amountPaid || 0).toLocaleString('en-IN')}
                         </td>
-                        <td style={{ padding: '12px 14px', fontSize: '12px' }}>
+                        <td style={{ padding: '8px 12px', fontSize: '12px' }}>
                           <span className="badge badge-info" style={{ fontSize: '10px' }}>
                             {tx.paymentMethod}
                           </span>
                         </td>
-                        <td style={{ padding: '12px 14px', fontSize: '12px', color: 'var(--text)' }}>
+                        <td style={{ padding: '8px 12px', fontSize: '12px', color: 'var(--text)' }}>
                           {tx.referenceNumber ? (
                             <span style={{ fontWeight: 600 }}>{tx.referenceNumber}</span>
                           ) : (
                             <span style={{ color: 'var(--text-faint)' }}>--</span>
                           )}
                         </td>
-                        <td style={{ padding: '12px 14px', fontSize: '11px' }}>
+                        <td style={{ padding: '8px 12px', fontSize: '11px' }}>
                           {lateStr.startsWith('Late') ? (
                             <span style={{ color: 'var(--danger)', fontWeight: 700 }}>⚠️ {lateStr}</span>
                           ) : lateStr === 'On Time' ? (
@@ -1205,15 +1255,15 @@ export default function FeesJournal({
                             <span style={{ color: 'var(--text-faint)' }}>--</span>
                           )}
                         </td>
-                        <td style={{ padding: '12px 14px', fontSize: '11px', color: 'var(--text-faint)' }}>
+                        <td style={{ padding: '8px 12px', fontSize: '11px', color: 'var(--text-faint)' }}>
                           {tx.recordedBy}
                         </td>
-                        <td style={{ padding: '12px 14px', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                        <td style={{ padding: '8px 12px', textAlign: 'right', whiteSpace: 'nowrap' }}>
                           <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
                             <button
                               onClick={() => handleOpenEditModal(tx)}
                               className="btn btn-secondary"
-                              style={{ padding: '4px 8px', fontSize: '11px', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                              style={{ padding: '3px 7px', fontSize: '11px', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '3px' }}
                               title="Edit transaction details"
                             >
                               ✏️ Edit
@@ -1222,7 +1272,7 @@ export default function FeesJournal({
                               onClick={() => handleDeleteTransaction(tx)}
                               disabled={deletingTxId === tx.transactionId}
                               className="btn btn-danger"
-                              style={{ padding: '4px 8px', fontSize: '11px', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                              style={{ padding: '3px 7px', fontSize: '11px', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '3px' }}
                               title="Delete transaction and recalculate balance"
                             >
                               {deletingTxId === tx.transactionId ? '⏳' : '🗑️ Delete'}
@@ -1375,7 +1425,7 @@ export default function FeesJournal({
                       else { setStudentSortField(f); setStudentSortDir('asc'); }
                     })}
                     {onSelectStudent && (
-                      <th style={{ padding: '12px 14px', fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', textAlign: 'right' }}>Actions</th>
+                      <th style={{ padding: '8px 12px', fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', textAlign: 'right' }}>Actions</th>
                     )}
                   </tr>
                 </thead>
@@ -1385,28 +1435,28 @@ export default function FeesJournal({
 
                     return (
                       <tr key={s.studentCode} style={{ borderBottom: '1px solid var(--border-light)' }}>
-                        <td style={{ padding: '12px 14px', fontSize: '13px', fontWeight: 700 }}>
+                        <td style={{ padding: '8px 12px', fontSize: '12px', fontWeight: 700 }}>
                           <div>{s.name}</div>
                         </td>
-                        <td style={{ padding: '12px 14px', fontSize: '12px', fontWeight: 600 }}>
+                        <td style={{ padding: '8px 12px', fontSize: '12px', fontWeight: 600 }}>
                           Class {s.classNum}
                         </td>
-                        <td style={{ padding: '12px 14px', fontSize: '13px', fontWeight: 600, textAlign: 'right' }}>
+                        <td style={{ padding: '8px 12px', fontSize: '12px', fontWeight: 600, textAlign: 'right' }}>
                           ₹{s.fee?.totalPackageAmount !== undefined ? s.fee.totalPackageAmount.toLocaleString('en-IN') : '--'}
                         </td>
-                        <td style={{ padding: '12px 14px', fontSize: '13px', color: 'var(--text-muted)', textAlign: 'right' }}>
+                        <td style={{ padding: '8px 12px', fontSize: '12px', color: 'var(--text-muted)', textAlign: 'right' }}>
                           ₹{s.fee?.discountAmount !== undefined ? s.fee.discountAmount.toLocaleString('en-IN') : '0'}
                         </td>
-                        <td style={{ padding: '12px 14px', fontSize: '13px', fontWeight: 700, textAlign: 'right' }}>
+                        <td style={{ padding: '8px 12px', fontSize: '12px', fontWeight: 700, textAlign: 'right' }}>
                           ₹{s.fee?.netPayableAmount !== undefined ? s.fee.netPayableAmount.toLocaleString('en-IN') : '--'}
                         </td>
-                        <td style={{ padding: '12px 14px', fontSize: '13px', color: 'var(--text)', fontWeight: 600, textAlign: 'right' }}>
+                        <td style={{ padding: '8px 12px', fontSize: '12px', color: 'var(--text)', fontWeight: 600, textAlign: 'right' }}>
                           ₹{s.fee?.totalPaidAmount !== undefined ? s.fee.totalPaidAmount.toLocaleString('en-IN') : '--'}
                         </td>
-                        <td style={{ padding: '12px 14px', fontSize: '13px', color: (s.fee?.outstandingAmount || 0) > 0 && s.fee?.hasOverdueInstallment ? 'var(--danger-muted)' : 'var(--text)', fontWeight: 700, textAlign: 'right' }}>
+                        <td style={{ padding: '8px 12px', fontSize: '12px', color: (s.fee?.outstandingAmount || 0) > 0 && s.fee?.hasOverdueInstallment ? 'var(--danger-muted)' : 'var(--text)', fontWeight: 700, textAlign: 'right' }}>
                           ₹{s.fee?.outstandingAmount !== undefined ? s.fee.outstandingAmount.toLocaleString('en-IN') : '--'}
                         </td>
-                        <td style={{ padding: '12px 14px' }}>
+                        <td style={{ padding: '8px 12px' }}>
                           {!s.fee || s.fee.totalPackageAmount === undefined ? (
                             <span className="badge badge-secondary" style={{ fontSize: '10px' }}>UNCONFIGURED</span>
                           ) : s.fee.hasOverdueInstallment ? (
@@ -1421,15 +1471,15 @@ export default function FeesJournal({
                             <span className="badge badge-warning" style={{ fontSize: '10px' }}>PENDING</span>
                           )}
                         </td>
-                        <td style={{ padding: '12px 14px', fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
+                        <td style={{ padding: '8px 12px', fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
                           {lastPayment ? formatDateStr(lastPayment) : '--'}
                         </td>
                         {onSelectStudent && (
-                          <td style={{ padding: '12px 14px', textAlign: 'right' }}>
+                          <td style={{ padding: '8px 12px', textAlign: 'right' }}>
                             <button
                               onClick={() => onSelectStudent(s)}
                               className="btn btn-secondary"
-                              style={{ padding: '4px 8px', fontSize: '11px', fontWeight: 600 }}
+                              style={{ padding: '3px 8px', fontSize: '11px', fontWeight: 600 }}
                               title="Configure fees or view ledger"
                             >
                               ⚙️ Manage
@@ -1442,14 +1492,14 @@ export default function FeesJournal({
                 </tbody>
                 <tfoot>
                   <tr style={{ background: 'var(--bg-soft)', fontWeight: 800, borderTop: '2px solid var(--border-light)' }}>
-                    <td style={{ padding: '14px 14px', fontSize: '13px' }}>FILTERED TOTALS</td>
-                    <td style={{ padding: '14px 14px', fontSize: '13px' }}>{filteredStudents.length} Students</td>
-                    <td style={{ padding: '14px 14px', fontSize: '13px', textAlign: 'right' }}>₹{filteredStudentTotals.pkg.toLocaleString('en-IN')}</td>
-                    <td style={{ padding: '14px 14px', fontSize: '13px', textAlign: 'right' }}>₹{filteredStudentTotals.disc.toLocaleString('en-IN')}</td>
-                    <td style={{ padding: '14px 14px', fontSize: '13px', textAlign: 'right' }}>₹{filteredStudentTotals.net.toLocaleString('en-IN')}</td>
-                    <td style={{ padding: '14px 14px', fontSize: '13px', color: 'var(--success)', textAlign: 'right' }}>₹{filteredStudentTotals.paid.toLocaleString('en-IN')}</td>
-                    <td style={{ padding: '14px 14px', fontSize: '13px', color: 'var(--danger)', textAlign: 'right' }}>₹{filteredStudentTotals.out.toLocaleString('en-IN')}</td>
-                    <td colSpan={onSelectStudent ? 3 : 2} style={{ padding: '14px 14px' }}></td>
+                    <td style={{ padding: '8px 12px', fontSize: '12px' }}>FILTERED TOTALS</td>
+                    <td style={{ padding: '8px 12px', fontSize: '12px' }}>{filteredStudents.length} Students</td>
+                    <td style={{ padding: '8px 12px', fontSize: '12px', textAlign: 'right' }}>₹{filteredStudentTotals.pkg.toLocaleString('en-IN')}</td>
+                    <td style={{ padding: '8px 12px', fontSize: '12px', textAlign: 'right' }}>₹{filteredStudentTotals.disc.toLocaleString('en-IN')}</td>
+                    <td style={{ padding: '8px 12px', fontSize: '12px', textAlign: 'right' }}>₹{filteredStudentTotals.net.toLocaleString('en-IN')}</td>
+                    <td style={{ padding: '8px 12px', fontSize: '12px', color: 'var(--success)', textAlign: 'right' }}>₹{filteredStudentTotals.paid.toLocaleString('en-IN')}</td>
+                    <td style={{ padding: '8px 12px', fontSize: '12px', color: 'var(--danger)', textAlign: 'right' }}>₹{filteredStudentTotals.out.toLocaleString('en-IN')}</td>
+                    <td colSpan={onSelectStudent ? 3 : 2} style={{ padding: '8px 12px' }}></td>
                   </tr>
                 </tfoot>
               </table>
