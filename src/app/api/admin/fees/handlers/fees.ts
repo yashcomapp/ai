@@ -165,6 +165,46 @@ export async function POST(req: NextRequest) {
         paidAt: inst.paidAt || null
       }));
 
+      // Auto-post ledger transactions for any installment marked as 'paid' to uphold SSOT
+      const existingTxsSnap = await adminDb.collection('feeTransactions')
+        .where('studentCode', '==', cleanCode)
+        .get();
+      const existingTxByInst = new Map<string, number>();
+      existingTxsSnap.docs.forEach(doc => {
+        const d = doc.data();
+        const instId = d.installmentId || '';
+        existingTxByInst.set(instId, (existingTxByInst.get(instId) || 0) + (Number(d.amountPaid) || 0));
+      });
+
+      const txBatch = adminDb.batch();
+      let newTxsCount = 0;
+
+      for (const inst of formattedInstallments) {
+        if (inst.status === 'paid' && inst.amount > 0) {
+          const currentPaidInTxs = existingTxByInst.get(inst.installmentId) || 0;
+          const deficit = inst.amount - currentPaidInTxs;
+          if (deficit > 0) {
+            const newTxRef = adminDb.collection('feeTransactions').doc();
+            txBatch.set(newTxRef, {
+              transactionId: newTxRef.id,
+              studentCode: cleanCode,
+              installmentId: inst.installmentId,
+              amountPaid: deficit,
+              paymentMethod: 'Cash',
+              referenceNumber: 'ADMIN-SYNC',
+              receiptUrl: '',
+              recordedBy: admin.decodedToken?.email || 'admin',
+              timestamp: inst.paidAt || (inst.dueDate ? new Date(inst.dueDate).toISOString() : new Date().toISOString())
+            });
+            newTxsCount++;
+          }
+        }
+      }
+
+      if (newTxsCount > 0) {
+        await txBatch.commit();
+      }
+
       const record = {
         studentCode: cleanCode,
         studentName: feeData.studentName || '',
@@ -180,7 +220,7 @@ export async function POST(req: NextRequest) {
       // Set options with merge false to overwrite custom overrides
       await feeRef.set(record);
       
-      // Perform recalculation based on actual payment transactions
+      // Perform recalculation based on actual payment transactions (SSOT)
       await recalculateStudentFeeStats(cleanCode);
 
       return NextResponse.json({ success: true, message: 'Student fee configuration saved.' });

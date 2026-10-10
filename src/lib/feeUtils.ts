@@ -118,11 +118,8 @@ export function normalizeStudentFeeRecord(
     let status: 'pending' | 'overdue' | 'paid' = 'pending';
     let paidAt = inst.paidAt || null;
 
-    // Check if fully paid (either overall, covered by allocated amount, or explicit override)
+    // Check if fully paid (either overall or covered by allocated amount)
     if (isFullyPaidOverall || (paidForInst >= targetAmount && targetAmount > 0)) {
-      status = 'paid';
-      paidAt = paidAt || new Date().toISOString();
-    } else if (inst.statusOverride === 'paid' || inst.status === 'paid') {
       status = 'paid';
       paidAt = paidAt || new Date().toISOString();
     } else if (inst.statusOverride === 'overdue') {
@@ -163,10 +160,8 @@ export function normalizeStudentFeeRecord(
     };
   });
 
-  const totalPaidAmount = Math.max(
-    totalTxPaidAmount,
-    safeNumber(feeData.totalPaidAmount, 0)
-  );
+  // SSOT: Total paid amount is strictly derived from transactions ledger
+  const totalPaidAmount = totalTxPaidAmount;
   const outstandingAmount = Math.max(0, netPayableAmount - totalPaidAmount);
 
   let feeStatus: 'unpaid' | 'partially_paid' | 'fully_paid' | 'exempted' = 'unpaid';
