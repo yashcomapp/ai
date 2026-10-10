@@ -2,6 +2,7 @@
 
 import { useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { playNotificationSound } from '@/lib/audioUtils';
 
 export function usePushNotifications() {
   const { firebaseUser, user } = useAuth();
@@ -95,6 +96,7 @@ export function usePushNotifications() {
       // Register foreground message listener and store cleanup handle
       const unsub = onMessage(messaging, (payload) => {
         console.log('Foreground message received:', payload);
+        playNotificationSound();
         const data = payload.data || {};
         const title = data.title || payload.notification?.title || 'YASHCOM';
         const options = {

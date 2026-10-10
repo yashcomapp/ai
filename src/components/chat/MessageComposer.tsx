@@ -6,6 +6,8 @@ import { Message } from './MessageItem';
 interface MessageComposerProps {
   isMobile: boolean;
   isMessageSelectMode: boolean;
+  isAllMessagesSelected?: boolean;
+  onToggleSelectAllMessages?: () => void;
   selectedCount: number;
   onCancelSelect: () => void;
   onBulkDelete: () => void;
@@ -28,6 +30,8 @@ interface MessageComposerProps {
 export default function MessageComposer({
   isMobile,
   isMessageSelectMode,
+  isAllMessagesSelected,
+  onToggleSelectAllMessages,
   selectedCount,
   onCancelSelect,
   onBulkDelete,
@@ -48,15 +52,24 @@ export default function MessageComposer({
 }: MessageComposerProps) {
   if (isMessageSelectMode) {
     return (
-      <div style={{ padding: '14px 20px', background: 'rgba(239, 68, 68, 0.08)', borderTop: '1px solid rgba(239, 68, 68, 0.2)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', zIndex: 5 }}>
+      <div style={{ padding: '10px 16px', background: 'rgba(239, 68, 68, 0.08)', borderTop: '1px solid rgba(239, 68, 68, 0.2)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', zIndex: 5, flexWrap: 'wrap' }}>
         <span style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--danger)' }}>
-          🗑️ {selectedCount} messages selected for deletion
+          🗑️ {selectedCount} messages selected
         </span>
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div style={{ display: 'flex', gap: '6px' }}>
+          {onToggleSelectAllMessages && (
+            <button
+              type="button"
+              onClick={onToggleSelectAllMessages}
+              style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', color: 'var(--text)', borderRadius: '6px', padding: '6px 12px', fontSize: '11.5px', fontWeight: 'bold', cursor: 'pointer' }}
+            >
+              {isAllMessagesSelected ? 'Deselect All' : 'Select All'}
+            </button>
+          )}
           <button
             type="button"
             onClick={onCancelSelect}
-            style={{ background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-muted)', borderRadius: '8px', padding: '8px 16px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}
+            style={{ background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-muted)', borderRadius: '6px', padding: '6px 12px', fontSize: '11.5px', fontWeight: 'bold', cursor: 'pointer' }}
           >
             Cancel
           </button>
@@ -64,7 +77,7 @@ export default function MessageComposer({
             type="button"
             onClick={onBulkDelete}
             disabled={selectedCount === 0}
-            style={{ background: 'var(--danger)', border: 'none', color: 'var(--text-white)', borderRadius: '8px', padding: '8px 16px', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer', opacity: selectedCount === 0 ? 0.5 : 1 }}
+            style={{ background: 'var(--danger)', border: 'none', color: 'var(--text-white)', borderRadius: '6px', padding: '6px 14px', fontSize: '11.5px', fontWeight: 'bold', cursor: 'pointer', opacity: selectedCount === 0 ? 0.5 : 1 }}
           >
             Delete Selected
           </button>

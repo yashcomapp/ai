@@ -11,6 +11,7 @@ import { getDateKeyIST, formatDateIST, parseDateInput } from '@/lib/dateUtils';
 import MessageItem from '@/components/chat/MessageItem';
 import MessageComposer from '@/components/chat/MessageComposer';
 import ChatHeader from '@/components/chat/ChatHeader';
+import { playNotificationSound } from '@/lib/audioUtils';
 import dynamic from 'next/dynamic';
 const NewDmModal = dynamic(() => import('@/components/chat/NewDmModal'), { ssr: false });
 const NewGroupModal = dynamic(() => import('@/components/chat/NewGroupModal'), { ssr: false });
@@ -86,7 +87,10 @@ export default function ChatView({ role = 'admin', hideHeader = false }: ChatVie
   const [mentionStartIndex, setMentionStartIndex] = useState(-1);
   const [inputText, setInputText] = useState('');
   const [sidebarSearchQuery, setSidebarSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState<'group' | 'dm'>('group');
+  const [filterTab, setFilterTab] = useState<'all' | 'unread' | 'group' | 'dm'>('all');
+  const lastKnownTimestampsRef = useRef<Record<string, string>>({});
+  const isInitialRoomsMountRef = useRef(true);
+  const isInitialMessagesMountRef = useRef(true);
   const [loadingRooms, setLoadingRooms] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const [useApiPolling, setUseApiPolling] = useState(false);
@@ -307,6 +311,56 @@ export default function ChatView({ role = 'admin', hideHeader = false }: ChatVie
           id: doc.id,
           ...doc.data()
         })) as unknown as ChatRoom[];
+
+        // Check for incoming new message to trigger audio intimation & notification
+        if (!isInitialRoomsMountRef.current) {
+          let hasNewIncomingMessage = false;
+          let incomingRoomName = '';
+          let incomingText = '';
+
+          rms.forEach(r => {
+            const lastTs = r.lastMessage?.timestamp;
+            const prevTs = lastKnownTimestampsRef.current[r.roomId];
+            if (lastTs && prevTs && lastTs !== prevTs) {
+              const sender = r.lastMessage?.senderName || '';
+              const myName = role === 'admin' ? 'Admin' : (user?.name || '');
+              const isMine = sender.toLowerCase().includes('admin') && role === 'admin'
+                ? true
+                : (myName && sender.toLowerCase().includes(myName.toLowerCase()));
+
+              if (!isMine) {
+                hasNewIncomingMessage = true;
+                incomingRoomName = r.name || 'Chat Message';
+                incomingText = r.lastMessage?.text || '';
+              }
+            }
+          });
+
+          if (hasNewIncomingMessage) {
+            playNotificationSound();
+            if (typeof document !== 'undefined' && document.hidden && typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+              try {
+                new Notification(incomingRoomName, {
+                  body: incomingText,
+                  icon: '/icons/icon-192.png'
+                });
+              } catch (e) {}
+            }
+          }
+        } else {
+          // Initialize timestamps on initial load
+          setTimeout(() => {
+            isInitialRoomsMountRef.current = false;
+          }, 1200);
+        }
+
+        // Store last known timestamps
+        rms.forEach(r => {
+          if (r.lastMessage?.timestamp) {
+            lastKnownTimestampsRef.current[r.roomId] = r.lastMessage.timestamp;
+          }
+        });
+
         setRooms(rms);
         setLoadingRooms(false);
         setUseRoomsApiPolling(false);
@@ -320,7 +374,14 @@ export default function ChatView({ role = 'admin', hideHeader = false }: ChatVie
     }
 
     return () => unsubscribe();
-  }, [firebaseUser]);
+  }, [firebaseUser, role, user]);
+
+  // Request browser notification permission on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission().catch(() => {});
+    }
+  }, []);
 
   // Auto-activate chat room from URL search parameter (e.g. ?room=ROOM_ID or ?roomId=ROOM_ID from notification click)
   useEffect(() => {
@@ -329,10 +390,6 @@ export default function ChatView({ role = 'admin', hideHeader = false }: ChatVie
     const targetRoomId = params.get('room') || params.get('roomId');
     if (targetRoomId && targetRoomId !== activeRoomId) {
       setActiveRoomId(targetRoomId);
-      const matched = rooms.find(r => r.roomId === targetRoomId || (r as any).id === targetRoomId);
-      if (matched) {
-        setActiveTab(matched.type === 'dm' ? 'dm' : 'group');
-      }
     }
   }, [rooms, activeRoomId]);
 
@@ -342,10 +399,6 @@ export default function ChatView({ role = 'admin', hideHeader = false }: ChatVie
       if (e.data?.type === 'SELECT_CHAT_ROOM' && e.data?.roomId) {
         const targetRoomId = e.data.roomId;
         setActiveRoomId(targetRoomId);
-        const matched = rooms.find(r => r.roomId === targetRoomId || (r as any).id === targetRoomId);
-        if (matched) {
-          setActiveTab(matched.type === 'dm' ? 'dm' : 'group');
-        }
       }
     };
     window.addEventListener('message', handleNotificationMessage);
@@ -451,6 +504,23 @@ export default function ChatView({ role = 'admin', hideHeader = false }: ChatVie
           messageId: doc.id,
           ...doc.data()
         })) as unknown as Message[];
+
+        if (!isInitialMessagesMountRef.current && msgs.length > 0) {
+          const latestMsg = msgs[0];
+          const isMine = role === 'admin'
+            ? (latestMsg.senderRole === 'admin' || latestMsg.senderId === 'admin' || latestMsg.senderId === firebaseUser?.uid)
+            : (latestMsg.senderId === myUserKey);
+
+          const isNew = !messages.some(m => m.messageId === latestMsg.messageId);
+          if (isNew && !isMine) {
+            playNotificationSound();
+          }
+        } else {
+          setTimeout(() => {
+            isInitialMessagesMountRef.current = false;
+          }, 1000);
+        }
+
         setMessages(msgs.reverse());
         setUseApiPolling(false);
       }, (error) => {
@@ -1169,8 +1239,15 @@ export default function ChatView({ role = 'admin', hideHeader = false }: ChatVie
     }
   };
 
-  // Load Students for DM Drawer (excluding inactive accounts)
+  // Load Students for DM Drawer (admin only; for student, directly opens teacher DM)
   const openDmDrawer = async () => {
+    if (role === 'student') {
+      const sCode = (user?.studentCode || myUserKey).toUpperCase();
+      const teacherRoomId = `room_${sCode}_teacher`;
+      setActiveRoomId(teacherRoomId);
+      handleStartDM('admin', 'Teacher');
+      return;
+    }
     setShowDmModal(true);
     try {
       const token = await firebaseUser!.getIdToken();
@@ -1268,7 +1345,7 @@ export default function ChatView({ role = 'admin', hideHeader = false }: ChatVie
     return map;
   }, [batchesList]);
 
-  const getRoomDisplayName = (room: ChatRoom | undefined): string => {
+  const getRoomDisplayName = useCallback((room: ChatRoom | undefined): string => {
     if (!room) return '';
     if (room.type === 'group') {
       let batchId = '';
@@ -1280,20 +1357,53 @@ export default function ChatView({ role = 'admin', hideHeader = false }: ChatVie
       if (batchId && batchesMap.has(batchId)) {
         return batchesMap.get(batchId)!;
       }
+      return room.name || 'Class Group';
+    }
+    if (room.type === 'dm') {
+      if (role === 'student' || role === 'parent') {
+        return 'Yash Sir (Teacher)';
+      }
+      return room.name || 'Direct Message';
     }
     return room.name || '';
+  }, [batchesMap, role]);
+
+  const formatMessageTime = (isoString?: string) => {
+    if (!isoString) return '';
+    try {
+      const msgDate = new Date(isoString);
+      const now = new Date();
+      if (msgDate.toDateString() === now.toDateString()) {
+        return msgDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      }
+      const yesterday = new Date();
+      yesterday.setDate(now.getDate() - 1);
+      if (msgDate.toDateString() === yesterday.toDateString()) {
+        return 'Yesterday';
+      }
+      return msgDate.toLocaleDateString([], { day: 'numeric', month: 'short' });
+    } catch {
+      return '';
+    }
   };
 
-  // Filter conversations in sidebar: ONLY existent communications for DMs and sorted by latest message on top
+  // Filter conversations in sidebar: WhatsApp-style single unified list
   const filteredRooms = useMemo(() => {
     return rooms
       .filter(room => {
-        if (room.type !== activeTab) return false;
-        // For DMs: Only include existent communications (unless it's the currently focused room just opened)
-        if (room.type === 'dm' && room.roomId !== activeRoomId) {
-          if (!room.lastMessage || !room.lastMessage.text) return false;
-          const text = String(room.lastMessage.text).trim();
-          if (!text || text.includes('Private direct message channel established')) return false;
+        // Tab filters:
+        if (filterTab === 'group' && room.type !== 'group') return false;
+        if (filterTab === 'dm' && room.type !== 'dm') return false;
+        if (filterTab === 'unread' && getRoomUnreadCount(room) === 0) return false;
+
+        // For DMs:
+        if (room.type === 'dm') {
+          const isStudentTeacherRoom = role === 'student' && room.roomId.includes(myUserKey.toUpperCase());
+          if (!isStudentTeacherRoom && room.roomId !== activeRoomId) {
+            if (!room.lastMessage || !room.lastMessage.text) return false;
+            const text = String(room.lastMessage.text).trim();
+            if (!text || text.includes('Private direct message channel established')) return false;
+          }
         }
         const displayName = getRoomDisplayName(room);
         return displayName.toLowerCase().includes(sidebarSearchQuery.toLowerCase());
@@ -1303,9 +1413,13 @@ export default function ChatView({ role = 'admin', hideHeader = false }: ChatVie
         const timeB = b.lastMessage?.timestamp ? new Date(b.lastMessage.timestamp).getTime() : 0;
         return timeB - timeA;
       });
-  }, [rooms, activeTab, sidebarSearchQuery, activeRoomId, batchesMap]);
+  }, [rooms, filterTab, sidebarSearchQuery, activeRoomId, getRoomDisplayName, getRoomUnreadCount, role, myUserKey]);
 
   // Aggregate unread badge counts
+  const totalUnread = useMemo(() => {
+    return rooms.reduce((acc, r) => acc + getRoomUnreadCount(r), 0);
+  }, [rooms, getRoomUnreadCount]);
+
   const totalGroupUnread = useMemo(() => {
     return rooms.filter(r => r.type === 'group').reduce((acc, r) => acc + getRoomUnreadCount(r), 0);
   }, [rooms, getRoomUnreadCount]);
@@ -1315,6 +1429,43 @@ export default function ChatView({ role = 'admin', hideHeader = false }: ChatVie
       .filter(r => r.type === 'dm' && r.lastMessage && r.lastMessage.text && !r.lastMessage.text.includes('Private direct message channel established'))
       .reduce((acc, r) => acc + getRoomUnreadCount(r), 0);
   }, [rooms, getRoomUnreadCount]);
+
+  // Conversation bulk selection toggles
+  const isAllConversationsSelected = useMemo(() => {
+    if (filteredRooms.length === 0) return false;
+    return filteredRooms.every(r => selectedRoomIds[r.roomId]);
+  }, [filteredRooms, selectedRoomIds]);
+
+  const handleToggleSelectAllConversations = () => {
+    if (isAllConversationsSelected) {
+      setSelectedRoomIds({});
+    } else {
+      const next: Record<string, boolean> = {};
+      filteredRooms.forEach(r => {
+        next[r.roomId] = true;
+      });
+      setSelectedRoomIds(next);
+    }
+  };
+
+  // Message bulk selection toggles
+  const isAllMessagesSelected = useMemo(() => {
+    const selectable = messages.filter(m => !m.isDeleted);
+    if (selectable.length === 0) return false;
+    return selectable.every(m => selectedMessageIds[m.messageId]);
+  }, [messages, selectedMessageIds]);
+
+  const handleToggleSelectAllMessages = () => {
+    if (isAllMessagesSelected) {
+      setSelectedMessageIds({});
+    } else {
+      const next: Record<string, boolean> = {};
+      messages.filter(m => !m.isDeleted).forEach(m => {
+        next[m.messageId] = true;
+      });
+      setSelectedMessageIds(next);
+    }
+  };
 
   const activeRoom = rooms.find(r => r.roomId === activeRoomId);
   const activeDisplayName = getRoomDisplayName(activeRoom);
@@ -1479,7 +1630,7 @@ export default function ChatView({ role = 'admin', hideHeader = false }: ChatVie
               onClick={openDmDrawer} 
               style={{ flex: 1, fontSize: '11.5px', padding: '6px 10px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', borderRadius: '6px', cursor: 'pointer', border: 'none', background: 'var(--accent)', color: 'var(--text-on-accent)', fontWeight: 600 }}
             >
-              💬 Start DM
+              {role === 'student' ? '💬 Message Teacher' : '💬 Start DM'}
             </button>
             {role === 'admin' && (
               <button 
@@ -1521,58 +1672,99 @@ export default function ChatView({ role = 'admin', hideHeader = false }: ChatVie
             </div>
           </div>
 
-          {/* Filter Pills Tab Selector */}
-          <div style={{ padding: '6px 12px', display: 'flex', gap: '6px', background: 'var(--surface-popover)' }}>
+          {/* Filter Pills Selector (WhatsApp style) */}
+          <div style={{ padding: '6px 12px', display: 'flex', gap: '6px', overflowX: 'auto', background: 'var(--surface-popover)', scrollbarWidth: 'none' }}>
             <button
-              onClick={() => setActiveTab('group')}
+              onClick={() => setFilterTab('all')}
               style={{
-                flex: 1,
-                padding: '5px 8px',
-                borderRadius: '6px',
+                padding: '4px 11px',
+                borderRadius: '16px',
                 border: 'none',
-                background: activeTab === 'group' ? 'var(--accent)' : 'var(--surface-2)',
-                color: activeTab === 'group' ? 'var(--text-on-accent)' : 'var(--text-muted)',
+                background: filterTab === 'all' ? 'var(--accent)' : 'var(--surface-2)',
+                color: filterTab === 'all' ? 'var(--text-on-accent)' : 'var(--text-muted)',
                 fontSize: '12px',
                 fontWeight: 600,
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                gap: '5px',
+                gap: '4px',
+                whiteSpace: 'nowrap',
                 transition: 'all 0.2s'
               }}
             >
-              <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 2.02 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
-              <span>Class Groups</span>
+              All
+            </button>
+            <button
+              onClick={() => setFilterTab('unread')}
+              style={{
+                padding: '4px 11px',
+                borderRadius: '16px',
+                border: 'none',
+                background: filterTab === 'unread' ? 'var(--accent)' : 'var(--surface-2)',
+                color: filterTab === 'unread' ? 'var(--text-on-accent)' : 'var(--text-muted)',
+                fontSize: '12px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                whiteSpace: 'nowrap',
+                transition: 'all 0.2s'
+              }}
+            >
+              Unread
+              {totalUnread > 0 && (
+                <span style={{ background: '#22c55e', color: '#ffffff', fontSize: '9px', fontWeight: 800, padding: '1px 5px', borderRadius: '8px', lineHeight: '13px' }}>
+                  {totalUnread}
+                </span>
+              )}
+            </button>
+            <button
+              onClick={() => setFilterTab('group')}
+              style={{
+                padding: '4px 11px',
+                borderRadius: '16px',
+                border: 'none',
+                background: filterTab === 'group' ? 'var(--accent)' : 'var(--surface-2)',
+                color: filterTab === 'group' ? 'var(--text-on-accent)' : 'var(--text-muted)',
+                fontSize: '12px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                whiteSpace: 'nowrap',
+                transition: 'all 0.2s'
+              }}
+            >
+              Groups
               {totalGroupUnread > 0 && (
-                <span style={{ background: 'var(--danger)', color: 'var(--text-white)', fontSize: '9.5px', fontWeight: 800, padding: '1px 5px', borderRadius: '8px', lineHeight: '13px' }}>
+                <span style={{ background: '#22c55e', color: '#ffffff', fontSize: '9px', fontWeight: 800, padding: '1px 5px', borderRadius: '8px', lineHeight: '13px' }}>
                   {totalGroupUnread}
                 </span>
               )}
             </button>
             <button
-              onClick={() => setActiveTab('dm')}
+              onClick={() => setFilterTab('dm')}
               style={{
-                flex: 1,
-                padding: '5px 8px',
-                borderRadius: '6px',
+                padding: '4px 11px',
+                borderRadius: '16px',
                 border: 'none',
-                background: activeTab === 'dm' ? 'var(--accent)' : 'var(--surface-2)',
-                color: activeTab === 'dm' ? 'var(--text-on-accent)' : 'var(--text-muted)',
+                background: filterTab === 'dm' ? 'var(--accent)' : 'var(--surface-2)',
+                color: filterTab === 'dm' ? 'var(--text-on-accent)' : 'var(--text-muted)',
                 fontSize: '12px',
                 fontWeight: 600,
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
-                gap: '5px',
+                gap: '4px',
+                whiteSpace: 'nowrap',
                 transition: 'all 0.2s'
               }}
             >
-              <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
-              <span>Direct Messages</span>
+              DMs
               {totalDmUnread > 0 && (
-                <span style={{ background: 'var(--danger)', color: 'var(--text-white)', fontSize: '9.5px', fontWeight: 800, padding: '1px 5px', borderRadius: '8px', lineHeight: '13px' }}>
+                <span style={{ background: '#22c55e', color: '#ffffff', fontSize: '9px', fontWeight: 800, padding: '1px 5px', borderRadius: '8px', lineHeight: '13px' }}>
                   {totalDmUnread}
                 </span>
               )}
@@ -1610,11 +1802,17 @@ export default function ChatView({ role = 'admin', hideHeader = false }: ChatVie
           {/* Bulk Delete Conversations bar */}
           {isConversationSelectMode && (
             <div style={{ padding: '8px 12px', background: 'rgba(239, 68, 68, 0.08)', borderBottom: '1px solid rgba(239, 68, 68, 0.2)', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
                 <span style={{ fontSize: '11.5px', fontWeight: 'bold', color: 'var(--danger)' }}>
                   {Object.values(selectedRoomIds).filter(Boolean).length} selected
                 </span>
                 <div style={{ display: 'flex', gap: '6px' }}>
+                  <button 
+                    onClick={handleToggleSelectAllConversations}
+                    style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', color: 'var(--text)', padding: '3px 8px', fontSize: '10.5px', fontWeight: 600, borderRadius: '4px', cursor: 'pointer' }}
+                  >
+                    {isAllConversationsSelected ? 'Deselect All' : 'Select All'}
+                  </button>
                   <button 
                     onClick={() => {
                       setIsConversationSelectMode(false);
@@ -1638,7 +1836,7 @@ export default function ChatView({ role = 'admin', hideHeader = false }: ChatVie
 
           {/* Section labels */}
           <div style={{ padding: '8px 12px 3px 12px', fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.8px', textTransform: 'uppercase' }}>
-            {activeTab === 'group' ? 'Class Groups' : 'Recent Conversations'}
+            {filterTab === 'all' ? 'All Chats' : filterTab === 'unread' ? 'Unread Chats' : filterTab === 'group' ? 'Class Groups' : 'Direct Messages'}
           </div>
 
           {/* Conversations listing */}
@@ -1728,27 +1926,34 @@ export default function ChatView({ role = 'admin', hideHeader = false }: ChatVie
                     {/* Text summary info */}
                     <div style={{ minWidth: 0, flex: 1 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                        <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          {displayName}
-                        </span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
+                          <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {displayName}
+                          </span>
+                          {filterTab === 'all' && room.type === 'group' && (
+                            <span style={{ fontSize: '9px', padding: '1px 4px', borderRadius: '4px', background: 'rgba(99, 102, 241, 0.15)', color: 'var(--accent)', fontWeight: 600, flexShrink: 0 }}>
+                              Group
+                            </span>
+                          )}
+                        </div>
                         {room.lastMessage && (
-                          <span style={{ fontSize: '10px', color: unread > 0 ? 'var(--accent)' : 'var(--text-faint)', fontWeight: unread > 0 ? '600' : 'normal' }}>
-                            {new Date(room.lastMessage.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          <span style={{ fontSize: '10px', color: unread > 0 ? 'var(--accent)' : 'var(--text-faint)', fontWeight: unread > 0 ? '600' : 'normal', flexShrink: 0, marginLeft: '6px' }}>
+                            {formatMessageTime(room.lastMessage.timestamp)}
                           </span>
                         )}
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '2px' }}>
-                        <span style={{ fontSize: '11.5px', color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          {room.type === 'group' 
-                            ? getGroupSubtext(displayName)
-                            : (room.lastMessage ? `${room.lastMessage.senderName}: ${room.lastMessage.text}` : 'Direct Conversation')}
+                        <span style={{ fontSize: '11.5px', color: unread > 0 ? 'var(--text)' : 'var(--text-muted)', fontWeight: unread > 0 ? 500 : 400, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {room.lastMessage 
+                            ? (room.lastMessage.senderName ? `${room.lastMessage.senderName}: ${room.lastMessage.text}` : room.lastMessage.text)
+                            : (room.type === 'group' ? getGroupSubtext(displayName) : 'Direct Conversation')}
                         </span>
                         {unread > 0 && (
                           <span 
                             style={{ 
                               fontSize: '10px', 
-                              background: 'var(--danger)', 
-                              color: 'var(--text-white)', 
+                              background: '#22c55e', 
+                              color: '#ffffff', 
                               minWidth: '18px', 
                               height: '18px', 
                               display: 'flex', 
@@ -1757,7 +1962,7 @@ export default function ChatView({ role = 'admin', hideHeader = false }: ChatVie
                               borderRadius: '9px', 
                               padding: '0 5px', 
                               fontWeight: 800,
-                              boxShadow: '0 2px 6px rgba(239, 68, 68, 0.45)',
+                              boxShadow: '0 2px 6px rgba(34, 197, 94, 0.45)',
                               flexShrink: 0,
                               marginLeft: '4px'
                             }}
@@ -1798,6 +2003,8 @@ export default function ChatView({ role = 'admin', hideHeader = false }: ChatVie
                 getGroupBadgeColor={getGroupBadgeColor}
                 getGroupInitials={getGroupInitials}
                 isMessageSelectMode={isMessageSelectMode}
+                isAllMessagesSelected={isAllMessagesSelected}
+                onToggleSelectAllMessages={handleToggleSelectAllMessages}
                 onCancelSelect={() => {
                   setIsMessageSelectMode(false);
                   setSelectedMessageIds({});
@@ -2037,6 +2244,8 @@ export default function ChatView({ role = 'admin', hideHeader = false }: ChatVie
               <MessageComposer
                 isMobile={isMobile}
                 isMessageSelectMode={isMessageSelectMode}
+                isAllMessagesSelected={isAllMessagesSelected}
+                onToggleSelectAllMessages={handleToggleSelectAllMessages}
                 selectedCount={Object.values(selectedMessageIds).filter(Boolean).length}
                 onCancelSelect={() => {
                   setIsMessageSelectMode(false);

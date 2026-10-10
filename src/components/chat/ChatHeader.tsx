@@ -22,6 +22,8 @@ interface ChatHeaderProps {
   getGroupBadgeColor: (name: string) => string;
   getGroupInitials: (name: string) => string;
   isMessageSelectMode: boolean;
+  isAllMessagesSelected?: boolean;
+  onToggleSelectAllMessages?: () => void;
   onCancelSelect: () => void;
   handleDeleteConversation: () => void;
   muteStudents: boolean;
@@ -39,6 +41,8 @@ export default function ChatHeader({
   getGroupBadgeColor,
   getGroupInitials,
   isMessageSelectMode,
+  isAllMessagesSelected,
+  onToggleSelectAllMessages,
   onCancelSelect,
   handleDeleteConversation,
   muteStudents,
@@ -93,21 +97,40 @@ export default function ChatHeader({
                 {activeDisplayName}
               </h3>
               {isMessageSelectMode && (
-                <button
-                  onClick={onCancelSelect}
-                  style={{
-                    background: 'rgba(239, 68, 68, 0.15)',
-                    border: '1px solid rgba(239, 68, 68, 0.3)',
-                    borderRadius: '4px',
-                    color: 'var(--danger)',
-                    padding: '2px 5px',
-                    fontSize: '9.5px',
-                    fontWeight: 'bold',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Cancel Select
-                </button>
+                <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                  {onToggleSelectAllMessages && (
+                    <button
+                      onClick={onToggleSelectAllMessages}
+                      style={{
+                        background: 'var(--surface-2)',
+                        border: '1px solid var(--border)',
+                        borderRadius: '4px',
+                        color: 'var(--text)',
+                        padding: '2px 6px',
+                        fontSize: '9.5px',
+                        fontWeight: 'bold',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {isAllMessagesSelected ? 'Deselect All' : 'Select All'}
+                    </button>
+                  )}
+                  <button
+                    onClick={onCancelSelect}
+                    style={{
+                      background: 'rgba(239, 68, 68, 0.15)',
+                      border: '1px solid rgba(239, 68, 68, 0.3)',
+                      borderRadius: '4px',
+                      color: 'var(--danger)',
+                      padding: '2px 5px',
+                      fontSize: '9.5px',
+                      fontWeight: 'bold',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Cancel Select
+                  </button>
+                </div>
               )}
             </div>
           </div>

@@ -200,15 +200,14 @@ export async function GET(req: NextRequest) {
       }
 
       const sCode = student.userData?.studentCode || '';
+      const sCodeUpper = sCode.trim().toUpperCase();
+      const dmRoomId = sCode ? `room_${sCodeUpper}_teacher` : '';
       const sName = student.userData?.name || 'Student';
       const sBatches = student.userData?.batchIds || (student.userData?.batchId ? [student.userData?.batchId] : []);
       const pEmail = student.userData?.parentEmail || '';
 
       if (sCode) {
-        const sCodeUpper = sCode.trim().toUpperCase();
-
         // 1. Gather group and DM room document references
-        const dmRoomId = `room_${sCodeUpper}_teacher`;
         const groupRoomIds = sBatches.map((bId: string) => `room_batch_${bId}`);
         const roomIds = [dmRoomId, ...groupRoomIds];
         
@@ -324,7 +323,11 @@ export async function GET(req: NextRequest) {
         .get();
       
       let rooms = roomsQuery.docs.map(doc => ({ id: doc.id, ...doc.data() })) as any[];
-      rooms = rooms.filter(room => isExistentCommunication(room));
+      rooms = rooms.filter(room => {
+        // The student's direct channel to the teacher must ALWAYS remain visible so the student can message anytime
+        if (room.id === dmRoomId || room.roomId === dmRoomId) return true;
+        return isExistentCommunication(room);
+      });
       rooms.forEach(room => {
         sanitizeAndHealRoomName(room, batchNamesMap);
       });
@@ -715,21 +718,43 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, message: 'Group mute settings updated.' });
     }
 
-    // Initialize DM Room (for admin to start chat with student/parent)
+    // Initialize DM Room (for admin, student or parent)
     if (action === 'createDM') {
-      const admin = await verifyRole(req, 'admin');
-      if (!admin) {
-        return NextResponse.json({ message: 'Unauthorized. Admin required to initialize DMs.' }, { status: 403 });
+      const authResult = await verifyAnyRole(req, ['admin', 'student', 'parent']);
+      if (!authResult) {
+        return NextResponse.json({ message: 'Unauthorized.' }, { status: 403 });
       }
 
-      const { targetUserCode, targetUserName } = body; // e.g. studentCode or PR-email
-      if (!targetUserCode || !targetUserName) {
-        return NextResponse.json({ error: 'Missing targetUserCode or targetUserName.' }, { status: 400 });
-      }
+      const { role, userData } = authResult;
+      const { targetUserCode, targetUserName } = body;
 
-      const adminUid = admin.decodedToken?.uid || 'admin';
-      const cleanCode = targetUserCode.trim();
-      const dmRoomId = `room_${cleanCode}_${adminUid}`;
+      let dmRoomId = '';
+      let participants: string[] = [];
+      let roomName = '';
+
+      if (role === 'admin') {
+        if (!targetUserCode) {
+          return NextResponse.json({ error: 'Missing targetUserCode.' }, { status: 400 });
+        }
+        const cleanCode = targetUserCode.trim();
+        dmRoomId = `room_${cleanCode}_teacher`;
+        participants = [cleanCode, 'admin'];
+        roomName = `${targetUserName || cleanCode} (Direct Message)`;
+      } else if (role === 'student') {
+        const sCode = (userData?.studentCode || '').trim().toUpperCase();
+        if (!sCode) {
+          return NextResponse.json({ error: 'Missing studentCode.' }, { status: 400 });
+        }
+        dmRoomId = `room_${sCode}_teacher`;
+        participants = [sCode, 'admin'];
+        roomName = `${userData?.name || 'Student'} (Student)`;
+      } else if (role === 'parent') {
+        const pEmail = (userData?.email || '').trim().toLowerCase();
+        const pKey = `PR-${pEmail}`;
+        dmRoomId = `room_${pKey}_teacher`;
+        participants = [pKey, 'admin'];
+        roomName = `${userData?.name || 'Parent'} (Parent)`;
+      }
 
       const roomRef = adminDb.collection('chatRooms').doc(dmRoomId);
       const roomSnap = await roomRef.get();
@@ -741,11 +766,11 @@ export async function POST(req: NextRequest) {
       const newDm = {
         roomId: dmRoomId,
         type: 'dm',
-        name: `${targetUserName} (Direct Message)`,
-        participants: [adminUid, cleanCode],
+        name: roomName,
+        participants,
         unreadCounts: {
-          [adminUid]: 0,
-          [cleanCode]: 0
+          [participants[0]]: 0,
+          [participants[1]]: 0
         },
         createdAt: new Date().toISOString()
       };
