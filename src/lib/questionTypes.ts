@@ -111,6 +111,20 @@ export function preprocessMathText(text: any): string {
     return placeholder;
   });
 
+  // Wrap complete chained chemical & algebraic formulas (e.g. C_nH_{2n+2}, C_nH_{2n-2}, C_2H_6, etc.) with \(...\)
+  const chainedFormulaRegex = /(?<!\\)(?<!\()([A-Z][a-zA-Z0-9]*(?:[\^_](?:\{[^{}]*\}|[a-zA-Z0-9+\-]+))+[a-zA-Z0-9]*)/g;
+  str = str.replace(chainedFormulaRegex, (match) => {
+    if (/§§(MATHBLOCK|HTMLBLOCK)\d+§§/.test(match)) return match;
+    return `\\(${match}\\)`;
+  });
+
+  // Extract newly created math blocks to prevent subsequent regex from altering them
+  str = str.replace(mathRegex, (match) => {
+    const placeholder = `§§MATHBLOCK${mathBlocks.length}§§`;
+    mathBlocks.push(match);
+    return placeholder;
+  });
+
   // NEW DYNAMIC WRAPPING: If there are raw math constructs left (containing \, ^, or _) without delimiters, wrap them
   const latexRegex = /(?<!\\)(?<!\()([a-zA-Z0-9\.\+\-\*\/\=,]*?\\[a-zA-Z]+(?:\{[^\}]*\}|\^[a-zA-Z0-9\+\-]+|_[a-zA-Z0-9\+\-]+)*|[a-zA-Z0-9\.\+\-\*\/]+[\^_][a-zA-Z0-9\.\+\-\*\/\{\}]*)/g;
   str = str.replace(latexRegex, (match) => {

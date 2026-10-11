@@ -181,9 +181,29 @@ body {
 }
 
 /* KaTeX High-Contrast Invariant */
-.katex, .katex-display, .katex-html,
-.katex .mord, .katex .mbin, .katex .mrel, .katex .mopen, .katex .mclose, .katex .mpunct {
-    color: var(--text) !important;
+.katex, .katex-display, .katex-html {
+    color: var(--text);
+}
+
+.katex .mord:not([style*="transparent"]):not([style*="color: transparent"]),
+.katex .mbin,
+.katex .mrel,
+.katex .mopen,
+.katex .mclose,
+.katex .mpunct {
+    color: var(--text);
+}
+
+/* Ensure mhchem and KaTeX phantom / strut elements (which use letter 'X' for vertical alignment) remain strictly invisible */
+.katex [style*="color:transparent"],
+.katex [style*="color: transparent"],
+.katex [style*="transparent"],
+.katex .mphantom,
+.katex .rlap .inner [style*="transparent"],
+.katex .rlap .inner .mord {
+    color: transparent !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
 }
 
 /* ---------- 4. TYPOGRAPHY (SINGLE SOURCE OF TRUTH) ---------- */
