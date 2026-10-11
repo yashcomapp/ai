@@ -3093,8 +3093,9 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
                                       </div>
 
                                       {/* Live Math Render Preview (Only shown when opt contains math formatting to avoid duplicates) */}
-                                      {/\\\(|\\\)|\\\[|\\\]|\$\$|\$|\\ce/g.test(opt) && (
-                                        <div className="math-container" style={{ fontSize: '11px', color: 'var(--text-muted)', paddingLeft: '50px', borderTop: '1px dashed var(--border-light)', paddingTop: '3px', marginTop: '2px' }}>
+                                      {/\\\(|\\\)|\\\[|\\\]|\$\$|\$|\\ce/.test(opt) && (
+                                        <div className="math-container" style={{ fontSize: '13.5px', color: 'var(--text-normal)', paddingLeft: '50px', borderTop: '1px dashed var(--border-light)', paddingTop: '4px', marginTop: '3px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                          <span style={{ fontSize: '10px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Preview:</span>
                                           <RichMathText content={opt} inline />
                                         </div>
                                       )}

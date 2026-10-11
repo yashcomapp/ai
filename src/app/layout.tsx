@@ -46,8 +46,11 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="YASHCOM-LOS" />
-        {/* KaTeX stylesheet preloaded for crisp math, formulas, and chemistry rendering */}
+        {/* KaTeX stylesheet and scripts preloaded for crisp math, formulas, and chemistry rendering */}
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css" />
+        <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js" defer></script>
+        <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/mhchem.min.js" defer></script>
+        <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js" defer></script>
       </head>
       <body>
         <Script id="register-sw" strategy="lazyOnload">

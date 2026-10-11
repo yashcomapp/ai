@@ -101,6 +101,9 @@ export function preprocessMathText(text: any): string {
   // Identify parentheses enclosing math constructs (like \, ^, _, \frac, etc.) and convert them to inline math delimiters \( ... \)
   str = str.replace(/(?<!\\)\(([^)]*?[\\^_][^)]*?)\)/g, '\\($1\\)');
 
+  // Safely wrap any raw chemical formulas \ce{...} not yet enclosed in math delimiters
+  str = str.replace(/(?<!\\)(?<!\()(\\ce\{(?:[^{}]|\{[^{}]*\})*\})/g, '\\($1\\)');
+
   // Extract newly created math blocks to prevent dynamic wrapping from altering them
   str = str.replace(mathRegex, (match) => {
     const placeholder = `§§MATHBLOCK${mathBlocks.length}§§`;
@@ -1052,15 +1055,60 @@ export function areOptionsTooSimilar(rawA: any, rawB: any): { tooSimilar: boolea
     return { tooSimilar: false };
   }
 
-  // Punctuation and whitespace stripped lowercase
-  const stripPunct = (s: string) => s.toLowerCase().replace(/[.,;:!?'"()[\]{}\\/`~*^%$#@&+=_-]/g, ' ').replace(/\s+/g, ' ').trim();
+  // 4. EXEMPTION: Chemical / algebraic formulas differing by mathematical operators (+, -, =)
+  // e.g. C_nH_{2n+2} vs C_nH_{2n-2} vs C_nH_{2n}
+  const signsA = cleanA.match(/[+\-=]/g)?.join('') || '';
+  const signsB = cleanB.match(/[+\-=]/g)?.join('') || '';
+  if (signsA !== signsB && (signsA.length > 0 || signsB.length > 0)) {
+    return { tooSimilar: false };
+  }
+
+  // 5. EXEMPTION: Chemical formulas, organic compound subscripts, temperatures, or options differing by digits/numbers
+  const digitsA = cleanA.match(/\d+/g)?.join('') || '';
+  const digitsB = cleanB.match(/\d+/g)?.join('') || '';
+  if (digitsA !== digitsB && (digitsA.length > 0 || digitsB.length > 0)) {
+    // Distinct numbers/subscripts (e.g. C2H4 vs C2H6, 61°C vs 78°C) are valid distinct choices, NOT typos
+    return { tooSimilar: false };
+  }
+
+  // 6. EXEMPTION: IUPAC Organic Chemistry homologous series suffixes (-ane, -ene, -yne, -ol, -al, -one, -oic)
+  // e.g. Propane vs Propene vs Propyne, Methane vs Methanol, Ethanal vs Ethanol
+  const organicSuffixes = ['ane', 'ene', 'yne', 'anol', 'anal', 'anone', 'anoic', 'ol', 'al', 'one', 'oic'];
+  const hasOrganicSuffixA = organicSuffixes.some(s => cleanA.endsWith(s));
+  const hasOrganicSuffixB = organicSuffixes.some(s => cleanB.endsWith(s));
+  if (hasOrganicSuffixA && hasOrganicSuffixB) {
+    // Check if the root stem is identical but suffixes are distinct valid IUPAC classes
+    for (const sA of organicSuffixes) {
+      if (cleanA.endsWith(sA)) {
+        const stemA = cleanA.slice(0, -sA.length);
+        for (const sB of organicSuffixes) {
+          if (cleanB.endsWith(sB) && sA !== sB) {
+            const stemB = cleanB.slice(0, -sB.length);
+            if (stemA === stemB || stemA.replace(/[aeiou]$/, '') === stemB.replace(/[aeiou]$/, '')) {
+              // Valid distinct homologous series compounds (e.g. Propene vs Propane vs Propyne)
+              return { tooSimilar: false };
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // 7. Punctuation and whitespace stripped lowercase (preserving mathematical operators and signs)
+  const stripPunct = (s: string) => s.toLowerCase()
+    .replace(/\+/g, ' plus ')
+    .replace(/-/g, ' minus ')
+    .replace(/=/g, ' equals ')
+    .replace(/[.,;:!?'"()[\]{}\\/`~*^%$#@&_]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
   const punctA = stripPunct(cleanA);
   const punctB = stripPunct(cleanB);
   if (punctA && punctB && punctA === punctB) {
     return { tooSimilar: true, reason: 'Identical text differing only by punctuation or spacing' };
   }
 
-  // 4. Numerical equivalence check
+  // 8. Numerical equivalence check
   // Matches pure numbers or numbers with identical units (e.g. "12", "12.0", "12 cm", "12.0 cm", "0.5", "0.50")
   const numMatchA = cleanA.match(/^([-+]?[0-9]*\.?[0-9]+)\s*([a-zA-Z/°µ%^0-9-]*)$/);
   const numMatchB = cleanB.match(/^([-+]?[0-9]*\.?[0-9]+)\s*([a-zA-Z/°µ%^0-9-]*)$/);
@@ -1078,7 +1126,7 @@ export function areOptionsTooSimilar(rawA: any, rawB: any): { tooSimilar: boolea
     }
   }
 
-  // 5. Short strings (<= 3 chars, e.g. 'A' vs 'B', 'n' vs 'N', '10' vs '20')
+  // 9. Short strings (<= 3 chars, e.g. 'A' vs 'B', 'n' vs 'N', '10' vs '20')
   // For short strings, do not do fuzzy/Levenshtein matching
   if (punctA.length <= 3 || punctB.length <= 3) {
     return { tooSimilar: false };
@@ -1124,7 +1172,7 @@ export function areOptionsTooSimilar(rawA: any, rawB: any): { tooSimilar: boolea
     return { tooSimilar: false };
   }
 
-  // 6. Stop-word & minor filler word normalization
+  // 10. Stop-word & minor filler word normalization
   // e.g., "photosynthesis" vs "the photosynthesis", "it increases" vs "increases"
   const STOP_WORDS = new Set(['a', 'an', 'the', 'it', 'is', 'its', 'of', 'to', 'in', 'on', 'at', 'by', 'for', 'with', 'that', 'this', 'are', 'be', 'as']);
   const tokensA = punctA.split(' ').filter(w => !STOP_WORDS.has(w));
@@ -1136,7 +1184,7 @@ export function areOptionsTooSimilar(rawA: any, rawB: any): { tooSimilar: boolea
     return { tooSimilar: true, reason: `Options differ only by filler words ("${cleanA}" vs "${cleanB}")` };
   }
 
-  // 7. Plural / inflection check on single-word or short phrases
+  // 11. Plural / inflection check on single-word or short phrases
   // e.g. "chloroplast" vs "chloroplasts", "mitochondrion" vs "mitochondria", "chromosome" vs "chromosomes"
   if (tokensA.length === 1 && tokensB.length === 1) {
     const wA = tokensA[0];
@@ -1152,49 +1200,10 @@ export function areOptionsTooSimilar(rawA: any, rawB: any): { tooSimilar: boolea
     }
   }
 
-  // 8. Levenshtein edit distance check on normalized non-numeric strings (typo detection)
+  // 12. Levenshtein edit distance check on normalized non-numeric strings (typo detection)
   // For strings with length >= 5:
   // - 1 edit difference (e.g. "photosynthesis" vs "photosynthesiss" or "photosyntheis")
   // - 2 edits difference if length >= 10 and ratio <= 0.15
-  // EXEMPTION: Chemical formulas, organic compound subscripts, temperatures, or options differing by digits/numbers
-  const digitsA = cleanA.match(/\d+/g)?.join('') || '';
-  const digitsB = cleanB.match(/\d+/g)?.join('') || '';
-  if (digitsA !== digitsB && (digitsA.length > 0 || digitsB.length > 0)) {
-    // Distinct numbers/subscripts (e.g. C2H4 vs C2H6, 61°C vs 78°C) are valid distinct choices, NOT typos
-    return { tooSimilar: false };
-  }
-
-  // EXEMPTION: Chemical / algebraic formulas differing by mathematical operators (+, -, =)
-  // e.g. C_nH_{2n+2} vs C_nH_{2n-2} vs C_nH_{2n}
-  const signsA = cleanA.match(/[+\-=]/g)?.join('') || '';
-  const signsB = cleanB.match(/[+\-=]/g)?.join('') || '';
-  if (signsA !== signsB && (signsA.length > 0 || signsB.length > 0)) {
-    return { tooSimilar: false };
-  }
-
-  // EXEMPTION: IUPAC Organic Chemistry homologous series suffixes (-ane, -ene, -yne, -ol, -al, -one, -oic)
-  // e.g. Propane vs Propene vs Propyne, Methane vs Methanol, Ethanal vs Ethanol
-  const organicSuffixes = ['ane', 'ene', 'yne', 'anol', 'anal', 'anone', 'anoic', 'ol', 'al', 'one', 'oic'];
-  const hasOrganicSuffixA = organicSuffixes.some(s => cleanA.endsWith(s));
-  const hasOrganicSuffixB = organicSuffixes.some(s => cleanB.endsWith(s));
-  if (hasOrganicSuffixA && hasOrganicSuffixB) {
-    // Check if the root stem is identical but suffixes are distinct valid IUPAC classes
-    for (const sA of organicSuffixes) {
-      if (cleanA.endsWith(sA)) {
-        const stemA = cleanA.slice(0, -sA.length);
-        for (const sB of organicSuffixes) {
-          if (cleanB.endsWith(sB) && sA !== sB) {
-            const stemB = cleanB.slice(0, -sB.length);
-            if (stemA === stemB || stemA.replace(/[aeiou]$/, '') === stemB.replace(/[aeiou]$/, '')) {
-              // Valid distinct homologous series compounds (e.g. Propene vs Propane vs Propyne)
-              return { tooSimilar: false };
-            }
-          }
-        }
-      }
-    }
-  }
-
   const maxLen = Math.max(punctA.length, punctB.length);
   if (maxLen >= 5) {
     const dist = calcLevenshtein(punctA, punctB);
