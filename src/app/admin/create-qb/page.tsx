@@ -133,8 +133,9 @@ function CreateQBContent() {
 
 
 
-  // Image Upload State
+  // Image Upload State & Custom Textbook Guidance
   const [uploadedImageBase64, setUploadedImageBase64] = useState<string | null>(null);
+  const [extraPromptGuidance, setExtraPromptGuidance] = useState<string>('');
 
   // Question Type and Generation settings
   const [questionType, setQuestionType] = useState<'objective' | 'subjective'>('objective');
@@ -691,6 +692,7 @@ function CreateQBContent() {
     setTopicWeightageMap({});
     setTopicCustomCounts({});
     setTopicWeightageMode('custom_counts');
+    setExtraPromptGuidance('');
     clearImage();
   };
 
@@ -762,17 +764,33 @@ function CreateQBContent() {
     }).join('\n\n');
   };
 
+  const buildCustomGuidanceInstruction = () => {
+    if (!extraPromptGuidance.trim()) return '';
+    return `
+========================================
+EXACT TEXTBOOK REFERENCES & CUSTOM CURRICULUM GUIDANCE:
+========================================
+The educator has provided specific textbook page references and syllabus alignment instructions below:
+"${extraPromptGuidance.trim()}"
+
+CRITICAL MANDATE:
+- Strictly align all questions, terminology, notations, definitions, and scope with these textbook references.
+- Adhere strictly to the specified page numbers, in-text activities, exercises, or topic boundaries mentioned above.
+- Do NOT generate questions outside this prescribed textbook scope.
+`;
+  };
+
   const buildImageInstruction = () => {
     if (!uploadedImageBase64) return '';
     return `
 ========================================
-IMAGE-BASED QUESTION EXTRACTION
+ATTACHED TEXTBOOK SCREENSHOT / REFERENCE MATERIAL:
 ========================================
-An image has been provided (textbook page / diagram / question paper).
-In addition to the topic-based questions:
-- Extract and adapt any questions visible in the image.
-- For diagram-based questions, describe the diagram in the "text" field.
-- Tag image-extracted questions with "source": "image_extracted".
+A reference textbook screenshot/image has been attached to this prompt.
+- Carefully inspect all text, diagrams, formulas, tables, activities, and questions in the attached screenshot.
+- Adapt and generate questions directly grounded on the material visible in the screenshot.
+- Ensure 100% textbook fidelity to the attached textbook page.
+- Tag any questions directly derived from this image with "source": "image_extracted".
 `;
   };
 
@@ -1113,6 +1131,7 @@ ${ctx}
 MANDATORY CONTEXT ID RULE
 ========================================
 Use contextId CTX-001, CTX-002, etc. matching the context block. Do NOT repeat contextId.
+${buildCustomGuidanceInstruction()}
 ${buildImageInstruction()}
 ${buildVectorFigureInstruction()}
 
@@ -1256,6 +1275,7 @@ CRITICAL BOARD FIDELITY & ZERO-INVENTION RULES:
    - Use \\( ... \\) for inline math expressions with double-escaped backslashes (\\\\frac, \\\\times).
    - Wrap chemical formulas in \\ce{...} or standard notation.
 
+${buildCustomGuidanceInstruction()}
 ${buildImageInstruction()}
 ${buildVectorFigureInstruction()}
 
@@ -1308,11 +1328,12 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
     setAiPrompt(text);
 
     if (text) {
+      const imageNote = uploadedImageBase64 ? ' (📸 Don\'t forget to attach your screenshot in Gemini alongside this prompt!)' : '';
       const copyMsg = scopeToUse === 'practice_only'
-        ? '⚡ Practice Vault prompt (Batch 1) copied to clipboard! Paste into Gemini, then paste Gemini\'s response below.'
+        ? `⚡ Practice Vault prompt (Batch 1) copied to clipboard! Paste into Gemini, then paste Gemini's response below.${imageNote}`
         : (scopeToUse === 'exam_only'
-          ? '⚡ Exam Vault prompt (Batch 2) copied to clipboard! Paste into Gemini, then click "Append to Current" below.'
-          : '⚡ Prompt generated and copied to clipboard successfully!');
+          ? `⚡ Exam Vault prompt (Batch 2) copied to clipboard! Paste into Gemini, then click "Append to Current" below.${imageNote}`
+          : `⚡ Prompt generated and copied to clipboard successfully!${imageNote}`);
 
       try {
         navigator.clipboard.writeText(text)
@@ -2336,13 +2357,6 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
                   );
                 })()}
 
-                {/* Optional Image Upload */}
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                  <input type="file" id="questionImageInput" accept="image/*" onChange={handleImageSelected} style={{ fontSize: '11px', maxWidth: '180px' }} />
-                  {uploadedImageBase64 && (
-                    <button className="btn btn-secondary btn-sm" onClick={clearImage} style={{ padding: '2px 6px', fontSize: '10px' }}>✕ Clear</button>
-                  )}
-                </div>
               </div>
 
               {/* Right Action Buttons */}
@@ -2351,17 +2365,137 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
                   Clear All
                 </button>
                 <button className="btn btn-primary btn-sm" onClick={() => handleGeneratePrompt()} style={{ padding: '6px 14px', fontSize: '11.5px', fontWeight: 700 }}>
-                  🔧 Generate &amp; Copy AI Prompt
+                  🔧 Generate & Copy AI Prompt
                 </button>
               </div>
 
             </div>
 
-            {uploadedImageBase64 && (
-              <div style={{ marginTop: '8px', borderTop: '1px dashed var(--border-light)', paddingTop: '8px' }}>
-                <img src={uploadedImageBase64} alt="Source preview" style={{ maxHeight: '80px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)' }} />
+            {/* Custom Textbook Guidance & Screenshot Attachment Section */}
+            <div style={{
+              marginTop: '12px',
+              padding: '10px 12px',
+              background: 'var(--bg-soft)',
+              borderRadius: 'var(--radius-md)',
+              border: '1px solid var(--border-light)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '8px'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
+                <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: '6px', margin: 0 }}>
+                  <span>📖</span>
+                  <span>Textbook References &amp; Custom Guidance <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>(Optional — exact textbook page numbers, activities, subtopics, exclusions)</span></span>
+                </label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <label
+                    htmlFor="questionImageInput"
+                    className="btn btn-secondary btn-sm"
+                    style={{
+                      padding: '3px 9px',
+                      fontSize: '11px',
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      margin: 0
+                    }}
+                    title="Upload or attach a screenshot of the textbook page"
+                  >
+                    <span>📸</span>
+                    <span>{uploadedImageBase64 ? 'Change Screenshot' : 'Attach Textbook Screenshot'}</span>
+                  </label>
+                  <input
+                    type="file"
+                    id="questionImageInput"
+                    accept="image/*"
+                    onChange={handleImageSelected}
+                    style={{ display: 'none' }}
+                  />
+                  {uploadedImageBase64 && (
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-sm"
+                      onClick={clearImage}
+                      style={{ padding: '3px 8px', fontSize: '11px', color: 'var(--danger)' }}
+                      title="Remove attached screenshot"
+                    >
+                      ✕ Remove
+                    </button>
+                  )}
+                </div>
               </div>
-            )}
+
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+                <div style={{ flex: 1 }}>
+                  <textarea
+                    placeholder="e.g. Balbharti Class 10 textbook pages 112–115, Section 9.1. Ground questions strictly in Activity 9.2 (electron dot structures of methane, ethane, ethene, ethyne). Exclude IUPAC naming beyond 4 carbons. (💡 Tip: You can also paste screenshots directly here with Ctrl+V!)"
+                    value={extraPromptGuidance}
+                    onChange={(e) => setExtraPromptGuidance(e.target.value)}
+                    onPaste={(e) => {
+                      const items = e.clipboardData?.items;
+                      if (items) {
+                        for (let i = 0; i < items.length; i++) {
+                          if (items[i].type.indexOf('image') !== -1) {
+                            const file = items[i].getAsFile();
+                            if (file) {
+                              e.preventDefault();
+                              const reader = new FileReader();
+                              reader.onload = (event) => {
+                                setUploadedImageBase64(event.target?.result as string);
+                                triggerAlert('Screenshot Attached', '📸 Screenshot attached successfully from clipboard! Click "Generate & Copy AI Prompt" to compile into prompt.', undefined, false, 2000);
+                              };
+                              reader.readAsDataURL(file);
+                              return;
+                            }
+                          }
+                        }
+                      }
+                    }}
+                    rows={2}
+                    style={{
+                      width: '100%',
+                      background: 'var(--surface)',
+                      border: '1px solid var(--border-light)',
+                      borderRadius: 'var(--radius-sm)',
+                      padding: '6px 8px',
+                      fontSize: '11px',
+                      color: 'var(--text)',
+                      resize: 'vertical'
+                    }}
+                  />
+                </div>
+
+                {uploadedImageBase64 && (
+                  <div style={{
+                    position: 'relative',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    padding: '4px',
+                    background: 'var(--surface)',
+                    borderRadius: 'var(--radius-sm)',
+                    border: '1px solid var(--accent)',
+                    flexShrink: 0
+                  }}>
+                    <img
+                      src={uploadedImageBase64}
+                      alt="Textbook preview"
+                      style={{ maxHeight: '60px', maxWidth: '110px', objectFit: 'contain', borderRadius: '4px' }}
+                    />
+                    <span style={{ fontSize: '9px', fontWeight: 700, color: 'var(--accent)', marginTop: '2px' }}>
+                      📸 Attached
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {uploadedImageBase64 && (
+                <div style={{ fontSize: '10.5px', color: 'var(--accent)', fontWeight: 600 }}>
+                  💡 Textbook screenshot attached! When you paste the generated prompt into Gemini, attach or paste this screenshot into Gemini alongside the prompt.
+                </div>
+              )}
+            </div>
 
             {/* Subjective verbatim notice */}
             {questionType === 'subjective' && (
@@ -2521,7 +2655,7 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
                 onClick={() => handleParseJSON(false)} 
                 style={{ padding: '9px 22px', fontWeight: 800, fontSize: '12.5px' }}
               >
-                {generatedQuestions.length > 0 ? '🔄 Replace Preview' : '⚙️ Parse &amp; Preview Questions'}
+                {generatedQuestions.length > 0 ? '🔄 Replace Preview' : '⚙️ Parse & Preview Questions'}
               </button>
             </div>
           </div>
