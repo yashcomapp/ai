@@ -21,6 +21,7 @@ import {
   KATEX_AUTO_RENDER_OPTIONS,
   DEFAULT_ASSERTION_REASON_OPTIONS
 } from '@/lib/questionTypes';
+import { loadKatexAssets } from '@/hooks/useMathRender';
 
 /* =========================================================================
    1. Universal Rich Math & SVG Diagram Renderer (Flicker-Free SSOT)
@@ -64,16 +65,30 @@ export const RichMathText: React.FC<RichMathTextProps> = React.memo(({
       lastHtmlRef.current = formattedHtml;
       el.innerHTML = formattedHtml;
 
+      const triggerRender = () => {
+        const win = typeof window !== 'undefined' ? (window as any) : null;
+        if (win && typeof win.renderMathInElement === 'function') {
+          try {
+            win.renderMathInElement(el, KATEX_AUTO_RENDER_OPTIONS);
+            el.dataset.rendered = 'true';
+          } catch (err) {
+            console.warn('RichMathText renderMathInElement failed:', err);
+          }
+        }
+      };
+
       const win = typeof window !== 'undefined' ? (window as any) : null;
       if (win && typeof win.renderMathInElement === 'function') {
-        try {
-          win.renderMathInElement(el, KATEX_AUTO_RENDER_OPTIONS);
-          el.dataset.rendered = 'true';
-        } catch (err) {
-          console.warn('RichMathText renderMathInElement failed:', err);
-        }
+        triggerRender();
       } else {
         el.dataset.rendered = 'false';
+        loadKatexAssets().then(() => {
+          if (containerRef.current === el) {
+            triggerRender();
+          }
+        }).catch(err => {
+          console.warn('RichMathText failed to load KaTeX assets:', err);
+        });
       }
     } catch (err) {
       console.warn('RichMathText innerHTML assignment failed:', err);

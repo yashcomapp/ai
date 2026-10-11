@@ -5,7 +5,7 @@ import { KATEX_AUTO_RENDER_OPTIONS, preprocessMathText } from '@/lib/questionTyp
 
 let katexLoadPromise: Promise<void> | null = null;
 
-function loadKatexAssets(): Promise<void> {
+export function loadKatexAssets(): Promise<void> {
   if (katexLoadPromise) return katexLoadPromise;
 
   katexLoadPromise = new Promise<void>((resolve, reject) => {
