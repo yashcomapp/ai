@@ -1800,9 +1800,11 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
       const qErrors = validateQuestion(q, questionType);
       if (qErrors.length > 0) {
         questionErrorsMap[idx] = qErrors;
-        qErrors.forEach(err => {
-          errorItems.push({ index: idx, qNum, error: `Q${qNum}: ${err}`, question: q });
-        });
+        if (!q.ignoreValidation) {
+          qErrors.forEach(err => {
+            errorItems.push({ index: idx, qNum, error: `Q${qNum}: ${err}`, question: q });
+          });
+        }
       }
     });
 
@@ -1813,6 +1815,26 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
       questionErrorsMap,
       invalidIndices: new Set(errorItems.map(e => e.index))
     };
+  };
+
+  const handleToggleIgnoreValidation = (idx: number) => {
+    setGeneratedQuestions(prev => {
+      const next = [...prev];
+      next[idx] = { ...next[idx], ignoreValidation: !next[idx].ignoreValidation };
+      return next;
+    });
+  };
+
+  const handleIgnoreAllValidationWarnings = () => {
+    setGeneratedQuestions(prev => {
+      return prev.map(q => {
+        const errors = validateQuestion(q, questionType);
+        if (errors.length > 0) {
+          return { ...q, ignoreValidation: true };
+        }
+        return q;
+      });
+    });
   };
 
   // Execute sequential bulk save
@@ -2663,18 +2685,28 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
                     <div style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--danger)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <span>⚠️ {validation.errors.length} validation issue{validation.errors.length > 1 ? 's' : ''} require attention before saving:</span>
                     </div>
-                    {previewFilter !== 'issues' && (
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                       <button
                         type="button"
-                        onClick={() => {
-                          setPreviewFilter('issues');
-                          setPinnedIssueIndices(Array.from(validation.invalidIndices));
-                        }}
-                        style={{ background: 'var(--danger)', color: 'var(--text-white)', border: 'none', borderRadius: '4px', padding: '3px 8px', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}
+                        onClick={handleIgnoreAllValidationWarnings}
+                        style={{ background: 'var(--surface)', color: 'var(--text-secondary)', border: '1px solid var(--border-light)', borderRadius: '4px', padding: '3px 8px', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}
+                        title="Accept all flagged differences (e.g. acceptable formulas/subscripts) across all questions"
                       >
-                        🔍 Show only problematic questions
+                        👁️ Ignore All Warnings
                       </button>
-                    )}
+                      {previewFilter !== 'issues' && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPreviewFilter('issues');
+                            setPinnedIssueIndices(Array.from(validation.invalidIndices));
+                          }}
+                          style={{ background: 'var(--danger)', color: 'var(--text-white)', border: 'none', borderRadius: '4px', padding: '3px 8px', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}
+                        >
+                          🔍 Show only problematic questions
+                        </button>
+                      )}
+                    </div>
                   </div>
                   
                   {/* Clickable Quick Jump Pills */}
@@ -2761,10 +2793,18 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
                     >
                       <div style={{ flex: 1 }}>
                         {/* Inline Error Callout on Question Card */}
-                        {hasErrors && (
+                        {hasErrors && !q.ignoreValidation && (
                           <div style={{ padding: '6px 10px', background: 'rgba(239, 68, 68, 0.15)', border: '1px solid var(--danger)', borderRadius: '4px', color: 'var(--danger)', fontSize: '11px', fontWeight: 600, marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                             <span>⚠️ Issue:</span>
                             <span>{qErrors.join(' | ')}</span>
+                          </div>
+                        )}
+
+                        {/* Inline Ignored Warning Callout on Question Card */}
+                        {hasErrors && q.ignoreValidation && (
+                          <div style={{ padding: '5px 9px', background: 'rgba(100, 116, 139, 0.12)', border: '1px solid var(--border-light)', borderRadius: '4px', color: 'var(--text-muted)', fontSize: '10.5px', fontWeight: 600, marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <span>👁️ Ignored ({qErrors.length}):</span>
+                            <span style={{ textDecoration: 'line-through', opacity: 0.8 }}>{qErrors.join(' | ')}</span>
                           </div>
                         )}
 
@@ -3186,9 +3226,31 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
                         )}
                       </div>
 
-                      <button className="btn btn-danger btn-sm" onClick={() => handleDeletePreviewQuestion(idx)} style={{ padding: '4px 8px', fontSize: '10px' }}>
-                        🗑️ Delete
-                      </button>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'flex-end', flexShrink: 0 }}>
+                        <button className="btn btn-danger btn-sm" onClick={() => handleDeletePreviewQuestion(idx)} style={{ padding: '4px 8px', fontSize: '10px' }}>
+                          🗑️ Delete
+                        </button>
+                        {hasErrors && (
+                          <button
+                            type="button"
+                            onClick={() => handleToggleIgnoreValidation(idx)}
+                            style={{
+                              padding: '3px 8px',
+                              fontSize: '9.5px',
+                              fontWeight: 700,
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              whiteSpace: 'nowrap',
+                              border: q.ignoreValidation ? '1px solid var(--border-light)' : '1px solid var(--warning)',
+                              background: q.ignoreValidation ? 'var(--surface)' : 'rgba(245, 158, 11, 0.15)',
+                              color: q.ignoreValidation ? 'var(--text-muted)' : 'var(--warning)'
+                            }}
+                            title={q.ignoreValidation ? "Un-ignore: Restore issue warning" : "Ignore this error (e.g. acceptable subscript or formula difference)"}
+                          >
+                            {q.ignoreValidation ? '↩️ Un-ignore' : '👁️ Ignore Error'}
+                          </button>
+                        )}
+                      </div>
                     </div>
                   );
                 })}

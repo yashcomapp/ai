@@ -1154,6 +1154,14 @@ export function areOptionsTooSimilar(rawA: any, rawB: any): { tooSimilar: boolea
   // For strings with length >= 5:
   // - 1 edit difference (e.g. "photosynthesis" vs "photosynthesiss" or "photosyntheis")
   // - 2 edits difference if length >= 10 and ratio <= 0.15
+  // EXEMPTION: Chemical formulas, organic compound subscripts, temperatures, or options differing by digits/numbers
+  const digitsA = cleanA.match(/\d+/g)?.join('') || '';
+  const digitsB = cleanB.match(/\d+/g)?.join('') || '';
+  if (digitsA !== digitsB && (digitsA.length > 0 || digitsB.length > 0)) {
+    // Distinct numbers/subscripts (e.g. C2H4 vs C2H6, 61°C vs 78°C) are valid distinct choices, NOT typos
+    return { tooSimilar: false };
+  }
+
   const maxLen = Math.max(punctA.length, punctB.length);
   if (maxLen >= 5) {
     const dist = calcLevenshtein(punctA, punctB);
