@@ -783,13 +783,15 @@ CRITICAL MANDATE:
   const buildImageInstruction = () => {
     return `
 ========================================
-OPTIONAL ATTACHED SCREENSHOTS / DIAGRAM IMAGES (CONDITIONAL INSTRUCTION):
+OPTIONAL ATTACHED SCREENSHOTS / DIAGRAMS AS ADDED REFERENCE (IMPORTANT BUT NON-EXCLUSIVE):
 ========================================
 Please check if the user has attached or pasted any textbook screenshots, diagrams, or page images alongside this prompt in the chat:
 1. IF SCREENSHOTS / IMAGES ARE ATTACHED IN THE CHAT:
-   - Carefully examine them as the primary source of truth for authentic textbook definitions, diagrams, electron dot structures, chemical formulas, subtopics, and exercises.
-   - Ground the questions directly on the concepts, illustrations, and activities visible in those attached screenshots.
-   - Tag any questions directly adapted from the attached images with "source": "image_extracted".
+   - Treat them as an IMPORTANT ADDED REFERENCE (NOT EXCLUSIVE):
+     * The attached image provides authentic textbook context, exact diagrams, electron dot structures, tables, and specific activity nuances that may not be fully captured in generic syllabus lists.
+     * Incorporate and align questions with the terminology, diagrams, formulas, and examples shown in the screenshot.
+     * Do NOT restrict questions exclusively to only what is visible on that single page or snippet — you MUST still generate the full question quota across the entire designated topic(s), using the attached screenshot to anchor and enhance textbook fidelity.
+     * Tag any questions directly drawn from or referencing the attached screenshot with "source": "image_extracted".
 2. IF NO SCREENSHOTS OR IMAGES ARE ATTACHED:
    - Simply ignore this image directive and generate all questions with 100% fidelity to the standard curriculum syllabus, chapter topics, and textbook guidelines specified in this prompt.
 `;
@@ -2412,7 +2414,7 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
 
               <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '5px' }}>
                 <span>💡</span>
-                <span>The generated prompt automatically instructs the AI: <em>&quot;If screenshots are attached in this chat, ground questions on them; if no screenshots are attached, proceed using the standard textbook syllabus.&quot;</em></span>
+                <span>The prompt instructs AI: <em>&quot;If screenshots are attached, use them as an important added reference (non-exclusive) for textbook diagrams &amp; nuances while fulfilling the full topic quota; if not, proceed using the syllabus.&quot;</em></span>
               </div>
             </div>
 
