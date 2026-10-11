@@ -1332,10 +1332,10 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
 
     if (text) {
       const copyMsg = scopeToUse === 'practice_only'
-        ? `⚡ Practice Vault prompt (Batch 1) copied to clipboard! (Paste into Gemini — attach screenshots in Gemini chat if needed)`
+        ? `⚡ Practice Vault prompt (Batch 1) copied to clipboard!`
         : (scopeToUse === 'exam_only'
-          ? `⚡ Exam Vault prompt (Batch 2) copied to clipboard! (Paste into Gemini — attach screenshots in Gemini chat if needed)`
-          : `⚡ Prompt copied to clipboard! (Paste into Gemini — attach screenshots in Gemini chat if needed)`);
+          ? `⚡ Exam Vault prompt (Batch 2) copied to clipboard!`
+          : `⚡ Prompt copied to clipboard!`);
 
       try {
         navigator.clipboard.writeText(text)
@@ -2382,21 +2382,15 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
               border: '1px solid var(--border-light)',
               display: 'flex',
               flexDirection: 'column',
-              gap: '8px'
+              gap: '6px'
             }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
-                <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: '6px', margin: 0 }}>
-                  <span>📖</span>
-                  <span>Textbook References &amp; Custom Guidance <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>(Optional — exact textbook page numbers, activities, subtopics, exclusions)</span></span>
-                </label>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: 'var(--accent)', fontWeight: 600 }}>
-                  <span>📸</span>
-                  <span>Tip: You can copy &amp; paste screenshots directly into Gemini alongside this prompt!</span>
-                </div>
-              </div>
+              <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: '6px', margin: 0 }}>
+                <span>📖</span>
+                <span>Textbook References &amp; Custom Guidance <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>(Optional — exact textbook page numbers, activities, subtopics, exclusions)</span></span>
+              </label>
 
               <textarea
-                placeholder="e.g. Maharashtra State Board Class 10 Science and Technology Part 1 chapter 9 Carbon compounds Page 110 and 111 (Mention exact textbook page numbers, activities, or guidelines here. When pasting the prompt into Gemini, you can also paste textbook screenshots directly into the chat!)"
+                placeholder="e.g. Maharashtra State Board, Class 10, Science and Technology Part 1, Chapter 9 Carbon compounds, Page 110 and 111"
                 value={extraPromptGuidance}
                 onChange={(e) => setExtraPromptGuidance(e.target.value)}
                 rows={2}
@@ -2411,11 +2405,6 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
                   resize: 'vertical'
                 }}
               />
-
-              <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                <span>💡</span>
-                <span>The prompt instructs AI: <em>&quot;If screenshots are attached, use them as an important added reference (non-exclusive) for textbook diagrams &amp; nuances while fulfilling the full topic quota; if not, proceed using the syllabus.&quot;</em></span>
-              </div>
             </div>
 
             {/* Subjective verbatim notice */}
