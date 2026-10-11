@@ -1002,8 +1002,10 @@ export function areOptionsTooSimilar(rawA: any, rawB: any): { tooSimilar: boolea
   }
 
   // 3. Normalized string match (stripping LaTeX formatting, math delimiters, casing, extra whitespace)
-  const normA = cleanStringForMatch(cleanA);
-  const normB = cleanStringForMatch(cleanB);
+  // Preserve essential math signs (+, -, =) so that opposite formulas like C_nH_{2n+2} vs C_nH_{2n-2} remain distinct
+  const normMathSigns = (s: string) => cleanStringForMatch(s.replace(/\+/g, '_plus_').replace(/-/g, '_minus_').replace(/=/g, '_equals_'));
+  const normA = normMathSigns(cleanA);
+  const normB = normMathSigns(cleanB);
   if (normA && normB && normA === normB) {
     return { tooSimilar: true, reason: 'Identical text after math and formatting normalization' };
   }
@@ -1159,6 +1161,14 @@ export function areOptionsTooSimilar(rawA: any, rawB: any): { tooSimilar: boolea
   const digitsB = cleanB.match(/\d+/g)?.join('') || '';
   if (digitsA !== digitsB && (digitsA.length > 0 || digitsB.length > 0)) {
     // Distinct numbers/subscripts (e.g. C2H4 vs C2H6, 61°C vs 78°C) are valid distinct choices, NOT typos
+    return { tooSimilar: false };
+  }
+
+  // EXEMPTION: Chemical / algebraic formulas differing by mathematical operators (+, -, =)
+  // e.g. C_nH_{2n+2} vs C_nH_{2n-2} vs C_nH_{2n}
+  const signsA = cleanA.match(/[+\-=]/g)?.join('') || '';
+  const signsB = cleanB.match(/[+\-=]/g)?.join('') || '';
+  if (signsA !== signsB && (signsA.length > 0 || signsB.length > 0)) {
     return { tooSimilar: false };
   }
 
