@@ -1162,6 +1162,29 @@ export function areOptionsTooSimilar(rawA: any, rawB: any): { tooSimilar: boolea
     return { tooSimilar: false };
   }
 
+  // EXEMPTION: IUPAC Organic Chemistry homologous series suffixes (-ane, -ene, -yne, -ol, -al, -one, -oic)
+  // e.g. Propane vs Propene vs Propyne, Methane vs Methanol, Ethanal vs Ethanol
+  const organicSuffixes = ['ane', 'ene', 'yne', 'anol', 'anal', 'anone', 'anoic', 'ol', 'al', 'one', 'oic'];
+  const hasOrganicSuffixA = organicSuffixes.some(s => cleanA.endsWith(s));
+  const hasOrganicSuffixB = organicSuffixes.some(s => cleanB.endsWith(s));
+  if (hasOrganicSuffixA && hasOrganicSuffixB) {
+    // Check if the root stem is identical but suffixes are distinct valid IUPAC classes
+    for (const sA of organicSuffixes) {
+      if (cleanA.endsWith(sA)) {
+        const stemA = cleanA.slice(0, -sA.length);
+        for (const sB of organicSuffixes) {
+          if (cleanB.endsWith(sB) && sA !== sB) {
+            const stemB = cleanB.slice(0, -sB.length);
+            if (stemA === stemB || stemA.replace(/[aeiou]$/, '') === stemB.replace(/[aeiou]$/, '')) {
+              // Valid distinct homologous series compounds (e.g. Propene vs Propane vs Propyne)
+              return { tooSimilar: false };
+            }
+          }
+        }
+      }
+    }
+  }
+
   const maxLen = Math.max(punctA.length, punctB.length);
   if (maxLen >= 5) {
     const dist = calcLevenshtein(punctA, punctB);

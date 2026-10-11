@@ -1618,7 +1618,8 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
           textbookPracticeSet: q.textbookPracticeSet || '',
           marks: Number(q.marks) || 0,
           vault: q.vault || vault,
-          conceptTag: q.conceptTag || q.topicName || q.topic || ''
+          conceptTag: q.conceptTag || q.topicName || q.topic || '',
+          ignoreValidation: !!q.ignoreValidation
         };
       });
 

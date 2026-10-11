@@ -440,9 +440,11 @@ export async function POST(req: NextRequest) {
         };
 
         const isObjective = normalizedQType === 'numerical' || (!normalizedQType.startsWith('subjective') && normalizedQType !== 'numerical_short' && normalizedQType !== 'numerical_long');
-        const validationErrors = validateQuestion(questionDoc, isObjective ? 'objective' : 'subjective');
-        if (validationErrors.length > 0) {
-          return NextResponse.json({ message: `Question #${idx + 1} validation failed: ${validationErrors.join(', ')}` }, { status: 400 });
+        if (!item.ignoreValidation) {
+          const validationErrors = validateQuestion(questionDoc, isObjective ? 'objective' : 'subjective');
+          if (validationErrors.length > 0) {
+            return NextResponse.json({ message: `Question #${idx + 1} validation failed: ${validationErrors.join(', ')}` }, { status: 400 });
+          }
         }
 
         const docRef = adminDb.collection('questions').doc(finalCode);
@@ -569,9 +571,11 @@ export async function POST(req: NextRequest) {
 
     // Run SSOT validation check on backend as final guard
     const isObjective = normalizedQType === 'numerical' || (!normalizedQType.startsWith('subjective') && normalizedQType !== 'numerical_short' && normalizedQType !== 'numerical_long');
-    const validationErrors = validateQuestion(questionDoc, isObjective ? 'objective' : 'subjective');
-    if (validationErrors.length > 0) {
-      return NextResponse.json({ message: `Question validation failed: ${validationErrors.join(', ')}` }, { status: 400 });
+    if (!body.ignoreValidation) {
+      const validationErrors = validateQuestion(questionDoc, isObjective ? 'objective' : 'subjective');
+      if (validationErrors.length > 0) {
+        return NextResponse.json({ message: `Question validation failed: ${validationErrors.join(', ')}` }, { status: 400 });
+      }
     }
 
 
