@@ -781,16 +781,17 @@ CRITICAL MANDATE:
   };
 
   const buildImageInstruction = () => {
-    if (!uploadedImageBase64) return '';
     return `
 ========================================
-ATTACHED TEXTBOOK SCREENSHOT / REFERENCE MATERIAL:
+OPTIONAL ATTACHED SCREENSHOTS / DIAGRAM IMAGES (CONDITIONAL INSTRUCTION):
 ========================================
-A reference textbook screenshot/image has been attached to this prompt.
-- Carefully inspect all text, diagrams, formulas, tables, activities, and questions in the attached screenshot.
-- Adapt and generate questions directly grounded on the material visible in the screenshot.
-- Ensure 100% textbook fidelity to the attached textbook page.
-- Tag any questions directly derived from this image with "source": "image_extracted".
+Please check if the user has attached or pasted any textbook screenshots, diagrams, or page images alongside this prompt in the chat:
+1. IF SCREENSHOTS / IMAGES ARE ATTACHED IN THE CHAT:
+   - Carefully examine them as the primary source of truth for authentic textbook definitions, diagrams, electron dot structures, chemical formulas, subtopics, and exercises.
+   - Ground the questions directly on the concepts, illustrations, and activities visible in those attached screenshots.
+   - Tag any questions directly adapted from the attached images with "source": "image_extracted".
+2. IF NO SCREENSHOTS OR IMAGES ARE ATTACHED:
+   - Simply ignore this image directive and generate all questions with 100% fidelity to the standard curriculum syllabus, chapter topics, and textbook guidelines specified in this prompt.
 `;
   };
 
@@ -846,7 +847,7 @@ Output ALL ${total} questions enclosed within a SINGLE Markdown JSON code block:
     });
 
     const buildVectorFigureInstruction = () => {
-      if (!isGeometryTopic && !uploadedImageBase64) return '';
+      if (!isGeometryTopic) return '';
       return `
 ========================================
 MANDATORY VECTOR SVG FIGURE INSTRUCTIONS (GEOMETRY & DIAGRAM TOPICS):
@@ -1328,12 +1329,11 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
     setAiPrompt(text);
 
     if (text) {
-      const imageNote = uploadedImageBase64 ? ' (📸 Don\'t forget to attach your screenshot in Gemini alongside this prompt!)' : '';
       const copyMsg = scopeToUse === 'practice_only'
-        ? `⚡ Practice Vault prompt (Batch 1) copied to clipboard! Paste into Gemini, then paste Gemini's response below.${imageNote}`
+        ? `⚡ Practice Vault prompt (Batch 1) copied to clipboard! (Paste into Gemini — attach screenshots in Gemini chat if needed)`
         : (scopeToUse === 'exam_only'
-          ? `⚡ Exam Vault prompt (Batch 2) copied to clipboard! Paste into Gemini, then click "Append to Current" below.${imageNote}`
-          : `⚡ Prompt generated and copied to clipboard successfully!${imageNote}`);
+          ? `⚡ Exam Vault prompt (Batch 2) copied to clipboard! (Paste into Gemini — attach screenshots in Gemini chat if needed)`
+          : `⚡ Prompt copied to clipboard! (Paste into Gemini — attach screenshots in Gemini chat if needed)`);
 
       try {
         navigator.clipboard.writeText(text)
@@ -2371,10 +2371,10 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
 
             </div>
 
-            {/* Custom Textbook Guidance & Screenshot Attachment Section */}
+            {/* Custom Textbook Guidance Section */}
             <div style={{
               marginTop: '12px',
-              padding: '10px 12px',
+              padding: '10px 14px',
               background: 'var(--bg-soft)',
               borderRadius: 'var(--radius-md)',
               border: '1px solid var(--border-light)',
@@ -2387,114 +2387,33 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
                   <span>📖</span>
                   <span>Textbook References &amp; Custom Guidance <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>(Optional — exact textbook page numbers, activities, subtopics, exclusions)</span></span>
                 </label>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <label
-                    htmlFor="questionImageInput"
-                    className="btn btn-secondary btn-sm"
-                    style={{
-                      padding: '3px 9px',
-                      fontSize: '11px',
-                      cursor: 'pointer',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      margin: 0
-                    }}
-                    title="Upload or attach a screenshot of the textbook page"
-                  >
-                    <span>📸</span>
-                    <span>{uploadedImageBase64 ? 'Change Screenshot' : 'Attach Textbook Screenshot'}</span>
-                  </label>
-                  <input
-                    type="file"
-                    id="questionImageInput"
-                    accept="image/*"
-                    onChange={handleImageSelected}
-                    style={{ display: 'none' }}
-                  />
-                  {uploadedImageBase64 && (
-                    <button
-                      type="button"
-                      className="btn btn-secondary btn-sm"
-                      onClick={clearImage}
-                      style={{ padding: '3px 8px', fontSize: '11px', color: 'var(--danger)' }}
-                      title="Remove attached screenshot"
-                    >
-                      ✕ Remove
-                    </button>
-                  )}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: 'var(--accent)', fontWeight: 600 }}>
+                  <span>📸</span>
+                  <span>Tip: You can copy &amp; paste screenshots directly into Gemini alongside this prompt!</span>
                 </div>
               </div>
 
-              <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
-                <div style={{ flex: 1 }}>
-                  <textarea
-                    placeholder="e.g. Balbharti Class 10 textbook pages 112–115, Section 9.1. Ground questions strictly in Activity 9.2 (electron dot structures of methane, ethane, ethene, ethyne). Exclude IUPAC naming beyond 4 carbons. (💡 Tip: You can also paste screenshots directly here with Ctrl+V!)"
-                    value={extraPromptGuidance}
-                    onChange={(e) => setExtraPromptGuidance(e.target.value)}
-                    onPaste={(e) => {
-                      const items = e.clipboardData?.items;
-                      if (items) {
-                        for (let i = 0; i < items.length; i++) {
-                          if (items[i].type.indexOf('image') !== -1) {
-                            const file = items[i].getAsFile();
-                            if (file) {
-                              e.preventDefault();
-                              const reader = new FileReader();
-                              reader.onload = (event) => {
-                                setUploadedImageBase64(event.target?.result as string);
-                                triggerAlert('Screenshot Attached', '📸 Screenshot attached successfully from clipboard! Click "Generate & Copy AI Prompt" to compile into prompt.', undefined, false, 2000);
-                              };
-                              reader.readAsDataURL(file);
-                              return;
-                            }
-                          }
-                        }
-                      }
-                    }}
-                    rows={2}
-                    style={{
-                      width: '100%',
-                      background: 'var(--surface)',
-                      border: '1px solid var(--border-light)',
-                      borderRadius: 'var(--radius-sm)',
-                      padding: '6px 8px',
-                      fontSize: '11px',
-                      color: 'var(--text)',
-                      resize: 'vertical'
-                    }}
-                  />
-                </div>
+              <textarea
+                placeholder="e.g. Maharashtra State Board Class 10 Science and Technology Part 1 chapter 9 Carbon compounds Page 110 and 111 (Mention exact textbook page numbers, activities, or guidelines here. When pasting the prompt into Gemini, you can also paste textbook screenshots directly into the chat!)"
+                value={extraPromptGuidance}
+                onChange={(e) => setExtraPromptGuidance(e.target.value)}
+                rows={2}
+                style={{
+                  width: '100%',
+                  background: 'var(--surface)',
+                  border: '1px solid var(--border-light)',
+                  borderRadius: 'var(--radius-sm)',
+                  padding: '7px 10px',
+                  fontSize: '11.5px',
+                  color: 'var(--text)',
+                  resize: 'vertical'
+                }}
+              />
 
-                {uploadedImageBase64 && (
-                  <div style={{
-                    position: 'relative',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    padding: '4px',
-                    background: 'var(--surface)',
-                    borderRadius: 'var(--radius-sm)',
-                    border: '1px solid var(--accent)',
-                    flexShrink: 0
-                  }}>
-                    <img
-                      src={uploadedImageBase64}
-                      alt="Textbook preview"
-                      style={{ maxHeight: '60px', maxWidth: '110px', objectFit: 'contain', borderRadius: '4px' }}
-                    />
-                    <span style={{ fontSize: '9px', fontWeight: 700, color: 'var(--accent)', marginTop: '2px' }}>
-                      📸 Attached
-                    </span>
-                  </div>
-                )}
+              <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                <span>💡</span>
+                <span>The generated prompt automatically instructs the AI: <em>&quot;If screenshots are attached in this chat, ground questions on them; if no screenshots are attached, proceed using the standard textbook syllabus.&quot;</em></span>
               </div>
-
-              {uploadedImageBase64 && (
-                <div style={{ fontSize: '10.5px', color: 'var(--accent)', fontWeight: 600 }}>
-                  💡 Textbook screenshot attached! When you paste the generated prompt into Gemini, attach or paste this screenshot into Gemini alongside the prompt.
-                </div>
-              )}
             </div>
 
             {/* Subjective verbatim notice */}
