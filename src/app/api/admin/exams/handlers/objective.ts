@@ -203,9 +203,17 @@ export async function GET(req: NextRequest) {
       const isExpired = isPastDay || (snapshotsExpiresAt ? nowMs >= new Date(snapshotsExpiresAt).getTime() : false);
       const validSnapshots = isExpired ? [] : (Array.isArray(rawSnapshots) ? rawSnapshots : []);
 
+      // Clean up heavy proctoring screenshots from legacy violations object to prevent multi-megabyte payloads
+      let sanitizedViolations = data.violations;
+      if (sanitizedViolations && typeof sanitizedViolations === 'object') {
+        const { screenshots, proctoringSnapshots: vSnaps, ...restViolations } = sanitizedViolations;
+        sanitizedViolations = restViolations;
+      }
+
       return {
         id: doc.id,
         ...data,
+        violations: sanitizedViolations,
         questionDetails: qDetails,
         totalMarks: data.totalMarks || examData.totalMarks || 0,
         status: isApproved ? 'approved' : (data.status || 'pending'),
@@ -324,8 +332,10 @@ export async function GET(req: NextRequest) {
       }
     });
 
-    if (isCompleted && attempts.length > 0) {
-      await ReportCacheManager.setReport(cacheKey, resultReport, 300);
+    if (attempts.length > 0) {
+      // Completed exams cache for 5 minutes; in-progress exams cache for 30 seconds for blazing-fast navigation
+      const ttl = isCompleted ? 300 : 30;
+      await ReportCacheManager.setReport(cacheKey, resultReport, ttl, isCompleted);
     }
 
     return NextResponse.json(resultReport);

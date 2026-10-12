@@ -1167,10 +1167,14 @@ function ExamReportContent() {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: 'var(--bg)' }}>
-        <div className="loading" style={{ display: 'block' }}>
-          <div className="spinner"></div> Generating performance scorecard...
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: 'var(--bg)', gap: '12px', padding: '20px' }}>
+        <div className="loading" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div className="spinner"></div> 
+          <span>Generating performance scorecard...</span>
         </div>
+        <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0 }}>
+          Retrieving questions, attempts, and proctoring metrics
+        </p>
       </div>
     );
   }
