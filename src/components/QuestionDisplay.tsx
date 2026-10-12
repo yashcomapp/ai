@@ -18,6 +18,7 @@ import {
   getRawOptionText,
   isOptionCorrect,
   isOptionSelectedByUser,
+  parseAnswerList,
   KATEX_AUTO_RENDER_OPTIONS,
   DEFAULT_ASSERTION_REASON_OPTIONS
 } from '@/lib/questionTypes';
@@ -989,9 +990,8 @@ export const QuestionDisplay: React.FC<QuestionDisplayProps> = React.memo(({
             const optKey = getRawOptionKey(opt);
             const optText = getRawOptionText(opt);
             const vote = (optionVotes && (optionVotes[optKey] || optionVotes[optText] || optionVotes[String(oi)] || optionVotes[letter])) || { count: 0, students: [] };
-            const isCorrectOpt = Array.isArray(qCorrectAnswer)
-              ? qCorrectAnswer.includes(optKey) || qCorrectAnswer.includes(letter)
-              : qCorrectAnswer === optKey || qCorrectAnswer === letter;
+            const correctAnsRef = (qCorrectAnswers && qCorrectAnswers.length > 0) ? qCorrectAnswers : qCorrectAnswer;
+            const isCorrectOpt = isOptionCorrect(correctAnsRef, optKey, oi, optText, resolvedOptions);
 
             return (
               <div
@@ -1034,17 +1034,36 @@ export const QuestionDisplay: React.FC<QuestionDisplayProps> = React.memo(({
             );
           })
         ) : (
-          qCorrectAnswer && (
+          (qCorrectAnswers?.length > 0 || qCorrectAnswer) && (
             <div style={{ padding: '8px 12px', border: '1.5px solid var(--success, #16a34a)', borderRadius: '8px', background: 'rgba(22, 163, 74, 0.08)', fontSize: '12px', fontWeight: 600 }}>
-              ✅ Correct Answer: <RichMathText content={Array.isArray(qCorrectAnswer) ? qCorrectAnswer.join(', ') : String(qCorrectAnswer)} inline onDiagramClick={handleDiagramClick} />
+              ✅ Correct Answer: <RichMathText content={qCorrectAnswers?.length > 0 ? qCorrectAnswers.join(', ') : (Array.isArray(qCorrectAnswer) ? qCorrectAnswer.join(', ') : String(qCorrectAnswer))} inline onDiagramClick={handleDiagramClick} />
             </div>
           )
         )}
 
         {/* Correct answer subtitle when options list is rendered */}
-        {resolvedOptions && resolvedOptions.length > 0 && qCorrectAnswer && (
+        {resolvedOptions && resolvedOptions.length > 0 && (qCorrectAnswers?.length > 0 || qCorrectAnswer) && (
           <div style={{ fontSize: '12px', color: 'var(--success, #16a34a)', fontWeight: 700, marginTop: '4px' }}>
-            ℹ️ Correct Answer: Option {Array.isArray(qCorrectAnswer) ? qCorrectAnswer.join(', ') : String(qCorrectAnswer)}
+            ℹ️ Correct Answer: {(() => {
+              const correctList = (qCorrectAnswers && qCorrectAnswers.length > 0)
+                ? qCorrectAnswers
+                : (Array.isArray(qCorrectAnswer) ? qCorrectAnswer : parseAnswerList(qCorrectAnswer));
+              if (correctList.length > 1) {
+                const matched = resolvedOptions
+                  .map((opt: any, oi: number) => {
+                    const letter = String.fromCharCode(65 + oi);
+                    const optKey = getRawOptionKey(opt);
+                    const optText = getRawOptionText(opt);
+                    if (isOptionCorrect(correctList, optKey, oi, optText, resolvedOptions)) {
+                      return `(${letter}) ${stripOptionLabel(optText)}`;
+                    }
+                    return null;
+                  })
+                  .filter(Boolean);
+                return matched.length > 0 ? matched.join(', ') : correctList.join(', ');
+              }
+              return `Option ${Array.isArray(qCorrectAnswer) ? qCorrectAnswer.join(', ') : String(qCorrectAnswer)}`;
+            })()}
           </div>
         )}
       </div>
@@ -1061,7 +1080,8 @@ export const QuestionDisplay: React.FC<QuestionDisplayProps> = React.memo(({
           const letter = String.fromCharCode(65 + oi);
           const optKey = getRawOptionKey(opt);
           const optText = getRawOptionText(opt);
-          const isCorrectOpt = isOptionCorrect(qCorrectAnswer, optKey, oi, optText, resolvedOptions);
+          const correctAnsRef = (qCorrectAnswers && qCorrectAnswers.length > 0) ? qCorrectAnswers : qCorrectAnswer;
+          const isCorrectOpt = isOptionCorrect(correctAnsRef, optKey, oi, optText, resolvedOptions);
 
           return (
             <div
@@ -1085,9 +1105,9 @@ export const QuestionDisplay: React.FC<QuestionDisplayProps> = React.memo(({
           );
         })}
 
-        {!resolvedOptions && qCorrectAnswer && (
+        {!resolvedOptions && (qCorrectAnswers?.length > 0 || qCorrectAnswer) && (
           <div style={{ fontSize: '11.5px', marginTop: '4px', color: 'var(--success, #16a34a)', fontWeight: 600 }}>
-            <strong>Correct Answer:</strong> <RichMathText content={Array.isArray(qCorrectAnswer) ? qCorrectAnswer.join(', ') : String(qCorrectAnswer)} inline onDiagramClick={handleDiagramClick} />
+            <strong>Correct Answer:</strong> <RichMathText content={qCorrectAnswers?.length > 0 ? qCorrectAnswers.join(', ') : (Array.isArray(qCorrectAnswer) ? qCorrectAnswer.join(', ') : String(qCorrectAnswer))} inline onDiagramClick={handleDiagramClick} />
           </div>
         )}
       </div>

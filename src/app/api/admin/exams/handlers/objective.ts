@@ -3,7 +3,7 @@ import * as admin from 'firebase-admin';
 import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole } from '@/lib/auth';
 import { ChunkedBatch } from '@/lib/firebase/batch';
-import { evaluateQuestionAnswer } from '@/lib/questionTypes';
+import { evaluateQuestionAnswer, isMultipleChoiceType, parseAnswerList } from '@/lib/questionTypes';
 import { getCachedSyllabus } from '@/lib/firebase/cache';
 import { ReportCacheManager } from '@/lib/reportCache';
 import { isDemoUser } from '@/lib/studentDb';
@@ -381,12 +381,25 @@ export async function POST(req: NextRequest) {
         }
       }
       const questionData = questionSnap.data()!;
+      const qType = questionData.type || 'single_mcq';
+      const isMulti = isMultipleChoiceType(qType);
+      
+      let newAnswersList: string[] = [];
+      if (Array.isArray(newCorrectAnswer)) {
+        newAnswersList = newCorrectAnswer.map(s => String(s).trim()).filter(Boolean);
+      } else if (isMulti) {
+        newAnswersList = parseAnswerList(newCorrectAnswer);
+      } else {
+        newAnswersList = [String(newCorrectAnswer).trim()];
+      }
+
+      const primaryAnswer = isMulti ? newAnswersList.join(', ') : (newAnswersList[0] || String(newCorrectAnswer));
+
       await questionRef.update({ 
-        correctAnswer: newCorrectAnswer,
-        correctAnswers: [newCorrectAnswer]
+        correctAnswer: primaryAnswer,
+        correctAnswers: newAnswersList
       });
 
-      const qType = questionData.type || 'single_mcq';
       const qOptions = questionData.options || [];
 
       // 2. Fetch all reviews for this exam to re-score
@@ -410,13 +423,22 @@ export async function POST(req: NextRequest) {
         
         let nowCorrect = false;
         if (wasAttempted) {
-          nowCorrect = evaluateQuestionAnswer(qType, qd.userAnswer, newCorrectAnswer, qOptions);
+          nowCorrect = evaluateQuestionAnswer(qType, qd.userAnswer, isMulti ? newAnswersList : primaryAnswer, qOptions);
         }
 
-        if (wasCorrect === nowCorrect && String(qd.correctAnswer) === String(newCorrectAnswer)) continue;
+        const isAnswerUnchanged = isMulti
+          ? (Array.isArray(qd.correctAnswers) && JSON.stringify(qd.correctAnswers.sort()) === JSON.stringify(newAnswersList.sort()))
+          : String(qd.correctAnswer) === String(primaryAnswer);
+
+        if (wasCorrect === nowCorrect && isAnswerUnchanged) continue;
 
         const updatedDetails = [...details];
-        updatedDetails[idx] = { ...qd, correctAnswer: newCorrectAnswer, isCorrect: nowCorrect };
+        updatedDetails[idx] = { 
+          ...qd, 
+          correctAnswer: isMulti ? newAnswersList : primaryAnswer,
+          ...(isMulti ? { correctAnswers: newAnswersList } : {}),
+          isCorrect: nowCorrect 
+        };
         
         const marks = qd.marks || 1;
         let newScore = r.score || 0;
@@ -446,6 +468,7 @@ export async function POST(req: NextRequest) {
       }
 
       await batch.commit();
+      await ReportCacheManager.invalidatePattern(finalExamId || examId);
       return NextResponse.json({ message: 'Answer updated and all attempts re-scored successfully.', updatedCount });
     }
 

@@ -5,7 +5,7 @@ import React, { useEffect, useState, useMemo, Suspense } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useMathRender } from '@/hooks/useMathRender';
-import { preprocessMathText, formatRichText, parseAnswerList, isOptionSelectedByUser, isOptionCorrect, getQuestionCorrectAnswer, getRawOptionKey, getRawOptionText, isBlank, resolveOptionDisplayText, extractAssertionAndReason, isAssertionReasonType } from '@/lib/questionTypes';
+import { preprocessMathText, formatRichText, parseAnswerList, isOptionSelectedByUser, isOptionCorrect, getQuestionCorrectAnswer, getRawOptionKey, getRawOptionText, isBlank, resolveOptionDisplayText, extractAssertionAndReason, isAssertionReasonType, isMultipleChoiceType, cleanStringForMatch, isOptionMatch } from '@/lib/questionTypes';
 import QuestionDisplay, { RichMathText } from '@/components/QuestionDisplay';
 import { playNotificationSound } from '@/lib/audioUtils';
 import { getDateKeyIST, formatDateDMY, formatTimeIST, calculateEndDatetime } from '@/lib/dateUtils';
@@ -139,6 +139,7 @@ function ExamReportContent() {
   const [editAnswerOpen, setEditAnswerOpen] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<any>(null);
   const [selectedCorrectOption, setSelectedCorrectOption] = useState('');
+  const [selectedCorrectOptions, setSelectedCorrectOptions] = useState<string[]>([]);
   const [savingAnswer, setSavingAnswer] = useState(false);
 
   // PDF Section selector states
@@ -424,8 +425,18 @@ function ExamReportContent() {
     const qKey = typeof qItem === 'string' ? qItem : (qItem?.questionCode || qItem?.id || `q_${idx}`);
     const bq = questionsMap[qKey] || (typeof qItem === 'object' ? qItem : null);
     if (!perQuestionStats[qKey]) {
+      const qType = bq?.type || 'OSC';
+      const isMulti = isMultipleChoiceType(qType);
+      const correctAnswersList = (Array.isArray(bq?.correctAnswers) && bq.correctAnswers.length > 0)
+        ? bq.correctAnswers
+        : (isMulti ? parseAnswerList(bq?.correctAnswer) : []);
+      const primaryAnswer = (isMulti && correctAnswersList.length > 0)
+        ? correctAnswersList
+        : (bq?.correctAnswer || bq?.correctAnswers?.[0] || '');
+
       perQuestionStats[qKey] = {
         idx,
+        type: qType,
         questionText: bq?.text || bq?.questionText || `Question ${idx + 1}`,
         correct: 0,
         incorrect: 0,
@@ -433,7 +444,8 @@ function ExamReportContent() {
         totalTime: 0,
         timedCount: 0,
         options: bq?.options || null,
-        correctAnswer: bq?.correctAnswer || bq?.correctAnswers?.[0] || '',
+        correctAnswer: primaryAnswer,
+        correctAnswers: correctAnswersList.length > 0 ? correctAnswersList : (primaryAnswer ? (Array.isArray(primaryAnswer) ? primaryAnswer : [primaryAnswer]) : []),
         explanation: bq?.solution || bq?.explanation || '',
         questionCode: qKey,
         optionVotes: {},
@@ -448,10 +460,22 @@ function ExamReportContent() {
     if (Array.isArray(r.questionDetails) && r.questionDetails.length) {
       r.questionDetails.forEach((qd, idx) => {
         const key = qd.questionCode || examQuestionList[idx] || `q_${idx}`;
+        const bq = questionsMap[key] || null;
+        const qType = qd.type || bq?.type || 'OSC';
+        const isMulti = isMultipleChoiceType(qType);
+        const correctAnswersList = (Array.isArray(bq?.correctAnswers) && bq.correctAnswers.length > 0)
+          ? bq.correctAnswers
+          : ((Array.isArray(qd.correctAnswers) && qd.correctAnswers.length > 0)
+              ? qd.correctAnswers
+              : (isMulti ? parseAnswerList(bq?.correctAnswer || qd.correctAnswer) : []));
+        const primaryAnswer = (isMulti && correctAnswersList.length > 0)
+          ? correctAnswersList
+          : (bq?.correctAnswer || qd.correctAnswer || (correctAnswersList.length > 0 ? correctAnswersList[0] : ''));
+
         if (!perQuestionStats[key]) {
-          const bq = questionsMap[key] || null;
           perQuestionStats[key] = {
             idx,
+            type: qType,
             questionText: qd.questionText || bq?.text || `Question ${idx + 1}`,
             correct: 0,
             incorrect: 0,
@@ -459,12 +483,22 @@ function ExamReportContent() {
             totalTime: 0,
             timedCount: 0,
             options: bq?.options || null,
-            correctAnswer: bq?.correctAnswer || qd.correctAnswer || '',
+            correctAnswer: primaryAnswer,
+            correctAnswers: correctAnswersList.length > 0 ? correctAnswersList : (primaryAnswer ? (Array.isArray(primaryAnswer) ? primaryAnswer : [primaryAnswer]) : []),
             explanation: bq?.solution || '',
             questionCode: key,
             optionVotes: {},
             students: []
           };
+        } else {
+          // Enrich existing pre-populated stat if type or correctAnswers was missing
+          if (!perQuestionStats[key].type || perQuestionStats[key].type === 'OSC') {
+            perQuestionStats[key].type = qType;
+          }
+          if ((!perQuestionStats[key].correctAnswers || perQuestionStats[key].correctAnswers.length <= 1) && correctAnswersList.length > 1) {
+            perQuestionStats[key].correctAnswers = correctAnswersList;
+            if (isMulti) perQuestionStats[key].correctAnswer = correctAnswersList;
+          }
         }
         const stat = perQuestionStats[key];
         const isActuallyAttempted = qd.isAttempted !== undefined
@@ -489,15 +523,10 @@ function ExamReportContent() {
 
         // Option votes tracking
         if (isActuallyAttempted && stat.options) {
-          let selected: string[] = [];
-          try {
-            const parsed = JSON.parse(qd.userAnswer);
-            selected = Array.isArray(parsed) ? parsed : [qd.userAnswer];
-          } catch {
-            selected = [qd.userAnswer];
-          }
+          const selected = parseAnswerList(qd.userAnswer);
           selected.forEach(ans => {
             const answerStr = String(ans).trim();
+            if (!answerStr) return;
             let targetOptionKey = answerStr;
             
             if (Array.isArray(stat.options)) {
@@ -518,6 +547,17 @@ function ExamReportContent() {
                 const digitIndex = parseInt(answerStr, 10);
                 if (digitIndex >= 0 && digitIndex < stat.options.length) {
                   foundIndex = digitIndex;
+                }
+              }
+
+              if (foundIndex === -1) {
+                const cleanAns = cleanStringForMatch(answerStr);
+                if (cleanAns) {
+                  foundIndex = stat.options.findIndex((opt: any) => {
+                    const optText = getRawOptionText(opt);
+                    const optKey = getRawOptionKey(opt);
+                    return cleanStringForMatch(optText) === cleanAns || cleanStringForMatch(optKey) === cleanAns;
+                  });
                 }
               }
               
@@ -541,7 +581,18 @@ function ExamReportContent() {
 
   // Re-scoring save handler
   const handleSaveRescoredAnswer = async () => {
-    if (!editingQuestion || !selectedCorrectOption) return;
+    if (!editingQuestion) return;
+    const isMulti = isMultipleChoiceType(editingQuestion.type);
+    const answerToSave = isMulti ? selectedCorrectOptions : selectedCorrectOption;
+    if (isMulti && selectedCorrectOptions.length === 0) {
+      alert('Please select at least one correct option.');
+      return;
+    }
+    if (!isMulti && !selectedCorrectOption) {
+      alert('Please select or enter the correct answer.');
+      return;
+    }
+
     setSavingAnswer(true);
     try {
       const idToken = await firebaseUser!.getIdToken();
@@ -555,7 +606,7 @@ function ExamReportContent() {
           examId,
           action: 'rescore',
           questionId: editingQuestion.questionCode,
-          newCorrectAnswer: selectedCorrectOption
+          newCorrectAnswer: answerToSave
         })
       });
 
@@ -1716,6 +1767,7 @@ function ExamReportContent() {
                       type={s.type}
                       options={s.options}
                       correctAnswer={s.correctAnswer}
+                      correctAnswers={s.correctAnswers}
                       explanation={s.explanation}
                       mode="report"
                       headerRight={
@@ -1724,7 +1776,11 @@ function ExamReportContent() {
                           style={{ padding: '2px 8px', fontSize: '10.5px', flexShrink: 0 }}
                           onClick={() => {
                             setEditingQuestion(s);
-                            setSelectedCorrectOption(s.correctAnswer);
+                            const curList = Array.isArray(s.correctAnswers) && s.correctAnswers.length > 0
+                              ? s.correctAnswers
+                              : (Array.isArray(s.correctAnswer) ? s.correctAnswer : parseAnswerList(s.correctAnswer));
+                            setSelectedCorrectOptions(curList);
+                            setSelectedCorrectOption(Array.isArray(s.correctAnswer) ? (s.correctAnswer[0] || '') : (s.correctAnswer || curList[0] || ''));
                             setEditAnswerOpen(true);
                           }}
                         >
@@ -1905,12 +1961,28 @@ function ExamReportContent() {
               
               {editingQuestion.options && editingQuestion.options.length > 0 ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {isMultipleChoiceType(editingQuestion.type) && (
+                    <div style={{ fontSize: '11px', color: 'var(--accent)', fontWeight: 700, marginBottom: '2px' }}>
+                      ☑️ Multi-Choice Question (OMC): Select all options that are correct.
+                    </div>
+                  )}
                   {editingQuestion.options.map((opt: any, oi: number) => {
                     const optKey = getRawOptionKey(opt);
                     const optText = getRawOptionText(opt);
-                    const isSelected = String(selectedCorrectOption).trim().toLowerCase() === String(optKey).trim().toLowerCase() ||
-                                       String(selectedCorrectOption).trim().toLowerCase() === String(optText).trim().toLowerCase() ||
-                                       String(selectedCorrectOption).trim().toLowerCase() === String.fromCharCode(65 + oi).toLowerCase();
+                    const letter = String.fromCharCode(65 + oi);
+                    const isMulti = isMultipleChoiceType(editingQuestion.type);
+                    
+                    const isSelected = isMulti
+                      ? selectedCorrectOptions.some(ans => 
+                          isOptionMatch(opt, ans) || 
+                          String(ans).trim().toLowerCase() === String(optKey).trim().toLowerCase() ||
+                          String(ans).trim().toLowerCase() === String(optText).trim().toLowerCase() ||
+                          String(ans).trim().toLowerCase() === letter.toLowerCase()
+                        )
+                      : String(selectedCorrectOption).trim().toLowerCase() === String(optKey).trim().toLowerCase() ||
+                        String(selectedCorrectOption).trim().toLowerCase() === String(optText).trim().toLowerCase() ||
+                        String(selectedCorrectOption).trim().toLowerCase() === letter.toLowerCase();
+
                     return (
                       <label 
                         key={oi} 
@@ -1927,13 +1999,36 @@ function ExamReportContent() {
                         }}
                       >
                         <input 
-                          type="radio" 
-                          name="editCorrectRadio" 
+                          type={isMulti ? "checkbox" : "radio"} 
+                          name="editCorrectChoice" 
                           value={optKey} 
                           checked={isSelected} 
-                          onChange={() => setSelectedCorrectOption(optKey)} 
+                          onChange={() => {
+                            if (isMulti) {
+                              setSelectedCorrectOptions(prev => {
+                                const exists = prev.some(ans => 
+                                  isOptionMatch(opt, ans) || 
+                                  String(ans).trim().toLowerCase() === String(optKey).trim().toLowerCase() ||
+                                  String(ans).trim().toLowerCase() === String(optText).trim().toLowerCase() ||
+                                  String(ans).trim().toLowerCase() === letter.toLowerCase()
+                                );
+                                if (exists) {
+                                  return prev.filter(ans => 
+                                    !isOptionMatch(opt, ans) &&
+                                    String(ans).trim().toLowerCase() !== String(optKey).trim().toLowerCase() &&
+                                    String(ans).trim().toLowerCase() !== String(optText).trim().toLowerCase() &&
+                                    String(ans).trim().toLowerCase() !== letter.toLowerCase()
+                                  );
+                                } else {
+                                  return [...prev, optText || optKey];
+                                }
+                              });
+                            } else {
+                              setSelectedCorrectOption(optKey);
+                            }
+                          }} 
                         />
-                        <span style={{ fontWeight: 700, color: 'var(--accent)' }}>{String.fromCharCode(65 + oi)}.</span>
+                        <span style={{ fontWeight: 700, color: 'var(--accent)' }}>{letter}.</span>
                         <RichMathText content={optText} inline />
                       </label>
                     );
