@@ -43,19 +43,16 @@ export function preprocessMathText(text: any): string {
            .replace(/\t\s*riangle\b/g, '\\triangle ')
            .replace(/\n\s*eq\b/g, '\\neq ');
 
+  // Normalize double backslashes before LaTeX commands, math delimiters, and braces (e.g. \\frac -> \frac, \\( -> \()
+  str = str.replace(/\\\\([a-zA-Z\(\)\[\]{}])/g, '\\$1');
+
   // Normalize loose FormFeed and raw rac fractions from raw AI content
   str = str.replace(/\x0Crac/g, '\\frac')
            .replace(/(^|[^a-zA-Z\\])rac\{/g, '$1\\frac{');
 
-  // Normalize loose degree Celsius superscripts missing a valid base (like .^\circ or /^\circ or ^\circ)
-  str = str.replace(/(\{\})?\^\s*\\?circ/g, (match, p1) => {
-    if (p1 === '{}') return match;
-    return '{}^\\circ';
-  });
-  str = str.replace(/(\{\})?\^{\s*\\?circ\s*}/g, (match, p1) => {
-    if (p1 === '{}') return match;
-    return '{}^{\\circ}';
-  });
+  // Normalize loose degree superscripts missing a valid base (e.g. at string start, after whitespace, or non-alphanumeric punctuation)
+  str = str.replace(/(^|[\s,;:(!/])\^\s*\\?circ\b/g, '$1{}^\\circ');
+  str = str.replace(/(^|[\s,;:(!/])\^{\s*\\?circ\s*}/g, '$1{}^{\\circ}');
 
   // Normalize display math $$...$$ to \[...\]
   str = str.replace(/(?<!\\)\$\$([\s\S]+?)\$\$/g, '\\[$1\\]');
@@ -1069,6 +1066,32 @@ export function areOptionsTooSimilar(rawA: any, rawB: any): { tooSimilar: boolea
     return { tooSimilar: false };
   }
 
+  // 3d. Algebraic / formula fraction check (e.g. \frac{360^\circ}{e} vs \frac{e}{360^\circ} or \frac{180^\circ}{e})
+  const extractAlgebraicFraction = (str: string): { num: string; den: string } | null => {
+    const cleanStr = str.replace(/\\\(|\\\)/g, '').trim();
+    const fracMatch = cleanStr.match(/\\frac\s*\{([^{}]+)\}\s*\{([^{}]+)\}/);
+    if (fracMatch) {
+      return {
+        num: cleanStringForMatch(fracMatch[1]),
+        den: cleanStringForMatch(fracMatch[2])
+      };
+    }
+    return null;
+  };
+
+  const algFracA = extractAlgebraicFraction(cleanA);
+  const algFracB = extractAlgebraicFraction(cleanB);
+  if (algFracA && algFracB) {
+    // If reciprocals (numerator <-> denominator inverted, e.g. 360/e vs e/360), they are distinct valid choices!
+    if (algFracA.num === algFracB.den && algFracA.den === algFracB.num && algFracA.num !== algFracA.den) {
+      return { tooSimilar: false };
+    }
+    // If numerators differ or denominators differ (e.g. 360/e vs 180/e), they are distinct choices!
+    if (algFracA.num !== algFracB.num || algFracA.den !== algFracB.den) {
+      return { tooSimilar: false };
+    }
+  }
+
   // 4. EXEMPTION: Chemical / algebraic formulas differing by mathematical operators (+, -, =)
   // e.g. C_nH_{2n+2} vs C_nH_{2n-2} vs C_nH_{2n}
   const signsA = cleanA.match(/[+\-=]/g)?.join('') || '';
@@ -1232,9 +1255,17 @@ export function areOptionsTooSimilar(rawA: any, rawB: any): { tooSimilar: boolea
     }
   }
 
-  // 9. Token overlap for multi-word options (>= 3 words)
+  // 13. Token overlap for multi-word prose options (>= 3 words)
   // If two options have >= 3 words and share >= 85% of tokens in common
   if (tokensA.length >= 3 && tokensB.length >= 3) {
+    // If the options are mathematical expressions or contain fractions, equations, powers, or LaTeX commands,
+    // word/token order is mathematically decisive (e.g. \frac{a}{b} vs \frac{b}{a}, a - b vs b - a, n = 360/e vs n = e/360).
+    const isMathFormula = (s: string) => /\\frac|\\sqrt|[=+\-*/^_]|\\[a-zA-Z]+|\d+\s*[\/:]\s*\d+/.test(s);
+    if (isMathFormula(cleanA) || isMathFormula(cleanB)) {
+      // For mathematical formulas, do not rely on bag-of-words token overlap.
+      // Strict equality and fraction equivalence were already checked in steps 1, 2, and 3.
+      return { tooSimilar: false };
+    }
     const setA = new Set(tokensA);
     const setB = new Set(tokensB);
     let intersection = 0;
