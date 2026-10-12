@@ -130,6 +130,7 @@ function ExamReportContent() {
   const [attemptCardIndex, setAttemptCardIndex] = useState<number>(0);
   const [questionModalOpen, setQuestionModalOpen] = useState(false);
   const [activeQuestionStat, setActiveQuestionStat] = useState<any>(null);
+  const [activeQuestionFilter, setActiveQuestionFilter] = useState<'all' | 'correct' | 'incorrect' | 'unanswered'>('all');
   const [votersModalOpen, setVotersModalOpen] = useState(false);
   const [votersList, setVotersList] = useState<string[]>([]);
   const [votersTitle, setVotersTitle] = useState('');
@@ -1800,9 +1801,9 @@ function ExamReportContent() {
                       </div>
 
                       <div style={{ fontSize: '11px', margin: '0 0 10px 0', color: 'var(--text-muted)' }}>
-                        ✅ <span style={{ textDecoration: 'underline', cursor: 'pointer', fontWeight: 600 }} onClick={() => { setActiveQuestionStat(s); setQuestionModalOpen(true); }}>{s.correct} correct</span> &nbsp;•&nbsp;
-                        ❌ <span style={{ textDecoration: 'underline', cursor: 'pointer', fontWeight: 600 }} onClick={() => { setActiveQuestionStat(s); setQuestionModalOpen(true); }}>{s.incorrect} incorrect</span> &nbsp;•&nbsp;
-                        ➖ <span style={{ textDecoration: 'underline', cursor: 'pointer', fontWeight: 600 }} onClick={() => { setActiveQuestionStat(s); setQuestionModalOpen(true); }}>{s.unanswered} unanswered</span>
+                        <span style={{ textDecoration: 'underline', cursor: 'pointer', fontWeight: 600, color: 'var(--success, #16a34a)' }} onClick={() => { setActiveQuestionStat(s); setActiveQuestionFilter('correct'); setQuestionModalOpen(true); }}>✅ {s.correct} correct</span> &nbsp;•&nbsp;
+                        <span style={{ textDecoration: 'underline', cursor: 'pointer', fontWeight: 600, color: 'var(--danger, #dc2626)' }} onClick={() => { setActiveQuestionStat(s); setActiveQuestionFilter('incorrect'); setQuestionModalOpen(true); }}>❌ {s.incorrect} incorrect</span> &nbsp;•&nbsp;
+                        <span style={{ textDecoration: 'underline', cursor: 'pointer', fontWeight: 600 }} onClick={() => { setActiveQuestionStat(s); setActiveQuestionFilter('unanswered'); setQuestionModalOpen(true); }}>➖ {s.unanswered} unanswered</span>
                       </div>
                     </QuestionDisplay>
                   </div>
@@ -1911,35 +1912,136 @@ function ExamReportContent() {
       {/* Modal 3: Question correctness details list */}
       {questionModalOpen && activeQuestionStat && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 20000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div className="card" style={{ background: 'var(--surface)', padding: '24px', borderRadius: 'var(--radius-lg)', maxWidth: '460px', width: '90%', maxHeight: '80vh', display: 'flex', flexDirection: 'column', border: '1px solid var(--border-light)' }}>
-            <h3 style={{ borderBottom: '1px solid var(--border-light)', paddingBottom: '8px', marginBottom: '15px' }}>🔍 Question Correctness Breakdown</h3>
-            
-            <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {activeQuestionStat.students.map((st: any, i: number) => {
-                const label = st.status === 'correct' ? '✅ Correct' : (st.status === 'incorrect' ? '❌ Incorrect' : '➖ Unanswered');
-                const isCorrect = st.status === 'correct';
-                const isWrong = st.status === 'incorrect';
-                return (
-                  <div 
-                    key={i} 
-                    style={{ 
-                      padding: '8px 12px', 
-                      background: isCorrect ? 'var(--success-bg, rgba(46,204,113,0.1))' : (isWrong ? 'var(--danger-bg, rgba(231,76,60,0.1))' : 'var(--bg-soft)'), 
-                      borderRadius: '6px', 
-                      fontSize: '12px',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center'
-                    }}
-                  >
-                    <span>{st.name}</span>
-                    <span style={{ fontWeight: 700, color: isCorrect ? 'var(--success)' : (isWrong ? 'var(--danger)' : 'inherit') }}>{label} ({formatSeconds(st.timeSpentSeconds)})</span>
-                  </div>
-                );
-              })}
+          <div className="card" style={{ background: 'var(--surface)', padding: '20px 24px', borderRadius: 'var(--radius-lg)', maxWidth: '480px', width: '90%', maxHeight: '82vh', display: 'flex', flexDirection: 'column', border: '1px solid var(--border-light)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-light)', paddingBottom: '12px', marginBottom: '12px' }}>
+              <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 800 }}>
+                {activeQuestionFilter === 'correct' ? `✅ Correct Students (${activeQuestionStat.correct})` :
+                 activeQuestionFilter === 'incorrect' ? `❌ Incorrect Students (${activeQuestionStat.incorrect})` :
+                 activeQuestionFilter === 'unanswered' ? `➖ Unanswered Students (${activeQuestionStat.unanswered})` :
+                 `🔍 Question Q${(activeQuestionStat.idx ?? 0) + 1} Breakdown`}
+              </h3>
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700 }}>
+                Q{(activeQuestionStat.idx ?? 0) + 1}
+              </span>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
+            {/* Filter Switcher Tabs */}
+            <div style={{ display: 'flex', gap: '4px', marginBottom: '12px', background: 'var(--bg-soft, #f1f5f9)', padding: '3px', borderRadius: '6px' }}>
+              <button
+                type="button"
+                onClick={() => setActiveQuestionFilter('correct')}
+                style={{
+                  flex: 1,
+                  padding: '5px 4px',
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  borderRadius: '4px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  background: activeQuestionFilter === 'correct' ? 'var(--success, #16a34a)' : 'transparent',
+                  color: activeQuestionFilter === 'correct' ? '#ffffff' : 'var(--text-muted)'
+                }}
+              >
+                ✅ Correct ({activeQuestionStat.correct})
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveQuestionFilter('incorrect')}
+                style={{
+                  flex: 1,
+                  padding: '5px 4px',
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  borderRadius: '4px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  background: activeQuestionFilter === 'incorrect' ? 'var(--danger, #dc2626)' : 'transparent',
+                  color: activeQuestionFilter === 'incorrect' ? '#ffffff' : 'var(--text-muted)'
+                }}
+              >
+                ❌ Incorrect ({activeQuestionStat.incorrect})
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveQuestionFilter('unanswered')}
+                style={{
+                  flex: 1,
+                  padding: '5px 4px',
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  borderRadius: '4px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  background: activeQuestionFilter === 'unanswered' ? 'var(--accent, #2563eb)' : 'transparent',
+                  color: activeQuestionFilter === 'unanswered' ? '#ffffff' : 'var(--text-muted)'
+                }}
+              >
+                ➖ None ({activeQuestionStat.unanswered})
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveQuestionFilter('all')}
+                style={{
+                  padding: '5px 8px',
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  borderRadius: '4px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  background: activeQuestionFilter === 'all' ? 'var(--accent, #2563eb)' : 'transparent',
+                  color: activeQuestionFilter === 'all' ? '#ffffff' : 'var(--text-muted)'
+                }}
+              >
+                All ({activeQuestionStat.students.length})
+              </button>
+            </div>
+            
+            {/* Filtered Students List */}
+            <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {(() => {
+                const filtered = activeQuestionStat.students.filter((st: any) => {
+                  if (activeQuestionFilter === 'correct') return st.status === 'correct';
+                  if (activeQuestionFilter === 'incorrect') return st.status === 'incorrect';
+                  if (activeQuestionFilter === 'unanswered') return st.status === 'unanswered';
+                  return true;
+                });
+
+                if (filtered.length === 0) {
+                  return (
+                    <div style={{ padding: '24px 12px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '12px' }}>
+                      No students found for this status.
+                    </div>
+                  );
+                }
+
+                return filtered.map((st: any, i: number) => {
+                  const label = st.status === 'correct' ? '✅ Correct' : (st.status === 'incorrect' ? '❌ Incorrect' : '➖ Unanswered');
+                  const isCorrect = st.status === 'correct';
+                  const isWrong = st.status === 'incorrect';
+                  return (
+                    <div 
+                      key={i} 
+                      style={{ 
+                        padding: '8px 12px', 
+                        background: isCorrect ? 'var(--success-bg, rgba(46,204,113,0.1))' : (isWrong ? 'var(--danger-bg, rgba(231,76,60,0.1))' : 'var(--bg-soft)'), 
+                        borderRadius: '6px', 
+                        fontSize: '12px',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center'
+                      }}
+                    >
+                      <span style={{ fontWeight: 600 }}>{st.name}</span>
+                      <span style={{ fontWeight: 700, color: isCorrect ? 'var(--success, #16a34a)' : (isWrong ? 'var(--danger, #dc2626)' : 'inherit') }}>
+                        {label} {st.timeSpentSeconds ? `(${formatSeconds(st.timeSpentSeconds)})` : ''}
+                      </span>
+                    </div>
+                  );
+                });
+              })()}
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '16px', borderTop: '1px solid var(--border-light)', paddingTop: '10px' }}>
               <button className="btn btn-secondary" onClick={() => { setQuestionModalOpen(false); setActiveQuestionStat(null); }}>Close</button>
             </div>
           </div>
