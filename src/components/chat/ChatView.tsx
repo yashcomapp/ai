@@ -144,6 +144,7 @@ export default function ChatView({ role = 'admin', hideHeader = false }: ChatVie
   const messageRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const longPressTimeoutRef = useRef<any>(null);
   const seenMessageIdsRef = useRef<Set<string>>(new Set());
+  const latestMessageCreatedAtRef = useRef<string | null>(null);
 
   const handleLongPressStart = (messageId: string) => {
     if (longPressTimeoutRef.current) clearTimeout(longPressTimeoutRef.current);
@@ -570,6 +571,24 @@ export default function ChatView({ role = 'admin', hideHeader = false }: ChatVie
     setVisibleHistoryWeeks(0);
   }, [activeRoomId]);
 
+  // Keep latest message createdAt ref synchronized with message list for accurate delta polling
+  useEffect(() => {
+    if (messages.length > 0) {
+      const last = messages[messages.length - 1];
+      const rawDate = (last as any)?.createdAt;
+      if (rawDate) {
+        try {
+          const d = rawDate.toDate ? rawDate.toDate() : new Date(rawDate);
+          if (!isNaN(d.getTime())) {
+            latestMessageCreatedAtRef.current = d.toISOString();
+          }
+        } catch (_) {}
+      }
+    } else {
+      latestMessageCreatedAtRef.current = null;
+    }
+  }, [messages]);
+
   // Fallback API Polling when direct client-side firestore is denied/unavailable
   useEffect(() => {
     if (!activeRoomId || !useApiPolling || !firebaseUser) return;
@@ -578,8 +597,8 @@ export default function ChatView({ role = 'admin', hideHeader = false }: ChatVie
       if (typeof document !== 'undefined' && document.hidden) return;
       try {
         const token = await firebaseUser.getIdToken();
-        const latestCreatedAt = messages.length > 0 ? (messages[messages.length - 1] as any)?.createdAt : null;
-        const sinceParam = latestCreatedAt ? `&since=${encodeURIComponent(new Date(latestCreatedAt).toISOString())}` : '';
+        const cursor = latestMessageCreatedAtRef.current;
+        const sinceParam = cursor ? `&since=${encodeURIComponent(cursor)}` : '';
         const res = await fetch(`/api/chat/messages?roomId=${activeRoomId}${sinceParam}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -591,7 +610,7 @@ export default function ChatView({ role = 'admin', hideHeader = false }: ChatVie
               ...m
             }));
             setMessages(prev => {
-              if (!sinceParam) return mapped;
+              if (!cursor) return mapped;
               const existingIds = new Set(prev.map(p => p.messageId));
               const fresh = mapped.filter((m: any) => !existingIds.has(m.messageId));
               return fresh.length > 0 ? [...prev, ...fresh] : prev;
