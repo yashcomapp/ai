@@ -8,8 +8,7 @@ import dynamic from 'next/dynamic';
 const ScorecardModal = dynamic(() => import('@/components/ScorecardModal'), { ssr: false });
 import { useMathRender } from '@/hooks/useMathRender';
 import { useScorecard } from '@/hooks/useScorecard';
-import { preprocessMathText, formatRichText, parseAnswerList, isOptionSelectedByUser, isBlank, getReasonForQuestion, getRawOptionKey, getRawOptionText, formatUserAnswerSummary } from '@/lib/questionTypes';
-import QuestionDisplay from '@/components/QuestionDisplay';
+import QuestionDisplay, { RichMathText } from '@/components/QuestionDisplay';
 import { highlightModelAnswerKeywords } from '@/lib/pdfExport';
 import { formatDateIST, getDateKeyIST, formatDateTimeIST } from '@/lib/dateUtils';
 
@@ -1294,7 +1293,9 @@ export default function ParentReviewPanel() {
                             <div style={{ borderTop: '1px dashed var(--border)', background: 'var(--surface-2)', padding: '14px' }}>
                               <div style={{ background: 'var(--success-bg)', border: '1.5px solid var(--success)', padding: '12px', borderRadius: '8px', marginBottom: '14px' }}>
                                 <strong style={{ fontSize: '12px', color: 'var(--success)', display: 'flex', alignItems: 'center', gap: '6px' }}>📖 Model Answer Key (Keyword Highlighted):</strong>
-                                <div className="math-container" dangerouslySetInnerHTML={{ __html: highlightedSolution }} style={{ fontSize: '12.5px', marginTop: '8px', color: 'var(--text)', whiteSpace: 'pre-line', lineHeight: 1.6 }} />
+                                <div style={{ fontSize: '12.5px', marginTop: '8px', color: 'var(--text)', whiteSpace: 'pre-line', lineHeight: 1.6 }}>
+                                  <RichMathText content={highlightedSolution} />
+                                </div>
                               </div>
 
                               <strong style={{ fontSize: '12px', fontWeight: 800, display: 'block', marginBottom: '10px', color: 'var(--text)' }}>✏️ Award Marks:</strong>

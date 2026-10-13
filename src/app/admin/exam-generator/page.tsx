@@ -1900,13 +1900,9 @@ Return ONLY valid JSON. No markdown wrappers or extra commentary.`;
                           <strong style={{ display: 'block', fontSize: '11px', textTransform: 'uppercase', color: 'var(--accent)', marginBottom: '4px', letterSpacing: '0.4px' }}>
                             💡 Model Answer & Solution Explanation:
                           </strong>
-                          <div 
-                            className="math-container"
-                            dangerouslySetInnerHTML={{ 
-                              __html: highlightModelAnswerKeywords(q.solution, q.keywords) 
-                            }} 
-                            style={{ wordBreak: 'break-word' }}
-                          />
+                          <div style={{ wordBreak: 'break-word' }}>
+                            <RichMathText content={highlightModelAnswerKeywords(q.solution, q.keywords)} />
+                          </div>
                         </div>
                       )}
                     </div>

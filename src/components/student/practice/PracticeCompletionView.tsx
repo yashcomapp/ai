@@ -11,6 +11,7 @@ import {
   parseAnswerList,
   isOptionMatch
 } from '@/lib/questionTypes';
+import QuestionDisplay from '@/components/QuestionDisplay';
 
 interface PracticeCompletionViewProps {
   finalResult: {
@@ -210,57 +211,16 @@ export function PracticeCompletionView({
                         {qItem.isCorrect ? '✓ Correct' : '✕ Incorrect'}
                       </span>
                     </div>
-                    {isAssertionReasonType(qItem.type) ? (() => {
-                      const { assertion, reason } = extractAssertionAndReason(qItem);
-                      return (
-                        <div style={{ margin: '6px 0 10px', display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '13px' }}>
-                          <p style={{ margin: 0 }}><strong>Assertion (A):</strong> <span className="math-container" dangerouslySetInnerHTML={{ __html: preprocessMathText(assertion) }} /></p>
-                          <p style={{ margin: 0 }}><strong>Reason (R):</strong> <span className="math-container" dangerouslySetInnerHTML={{ __html: preprocessMathText(reason) }} /></p>
-                        </div>
-                      );
-                    })() : (
-                      <div className="math-container" style={{ fontSize: '13px', lineHeight: '1.5', marginBottom: '8px', fontWeight: 500 }} dangerouslySetInnerHTML={{ __html: preprocessMathText(qItem.text || qItem.assertion || '') }} />
-                    )}
-                    
-                    {qItem.options && Array.isArray(qItem.options) && qItem.options.length > 0 && (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '8px' }}>
-                        {qItem.options.map((opt: any, optIdx: number) => {
-                          const optText = typeof opt === 'string' ? opt : (opt.text || opt.value || '');
-                          const optKey = typeof opt === 'string' ? String.fromCharCode(65 + optIdx) : (opt.key || String.fromCharCode(65 + optIdx));
-                          const isSelected = parsedUserAns.some((a: string) => isOptionMatch(optText, a) || isOptionMatch(optKey, a));
-                          const isRight = parsedCorrectAns.some((a: string) => isOptionMatch(optText, a) || isOptionMatch(optKey, a));
 
-                          let optBg = 'transparent';
-                          let optBorder = 'var(--border-light)';
-                          let optColor = 'inherit';
-                          if (isRight) {
-                            optBg = 'var(--success-bg)';
-                            optBorder = 'var(--success)';
-                            optColor = 'var(--success)';
-                          } else if (isSelected && !isRight) {
-                            optBg = 'var(--danger-soft)';
-                            optBorder = 'var(--danger)';
-                            optColor = 'var(--danger)';
-                          }
-
-                          return (
-                            <div key={optIdx} style={{ padding: '6px 10px', fontSize: '12px', borderRadius: '4px', background: optBg, border: `1px solid ${optBorder}`, color: optColor, display: 'flex', gap: '6px' }}>
-                              <span style={{ fontWeight: 700 }}>({optKey})</span>
-                              <span className="math-container" dangerouslySetInnerHTML={{ __html: preprocessMathText(optText) }} />
-                              {isSelected && <span style={{ marginLeft: 'auto', fontWeight: 700, fontSize: '11px' }}>[Your Answer]</span>}
-                              {isRight && <span style={{ marginLeft: isSelected ? '4px' : 'auto', fontWeight: 700, fontSize: '11px' }}>[Correct]</span>}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-
-                    {qItem.solution && (
-                      <div style={{ marginTop: '8px', padding: '8px 10px', background: 'var(--bg-soft)', borderRadius: '4px', fontSize: '12px', borderLeft: '3px solid var(--accent)' }}>
-                        <strong style={{ color: 'var(--accent)' }}>Explanation:</strong>{' '}
-                        <span className="math-container" dangerouslySetInnerHTML={{ __html: preprocessMathText(qItem.solution) }} />
-                      </div>
-                    )}
+                    <QuestionDisplay
+                      question={qItem}
+                      userAnswer={qItem.userAnswer}
+                      correctAnswer={qItem.correctAnswer}
+                      correctAnswers={qItem.correctAnswers}
+                      solution={qItem.solution}
+                      isCorrect={qItem.isCorrect}
+                      mode="review"
+                    />
                   </div>
                 );
               })}

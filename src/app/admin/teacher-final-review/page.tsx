@@ -9,6 +9,7 @@ import Script from 'next/script';
 import { useMathRender } from '@/hooks/useMathRender';
 import { useAdminStudents } from '@/hooks/useAdminReferenceData';
 import { preprocessMathText, formatRichText } from '@/lib/questionTypes';
+import QuestionDisplay, { RichMathText } from '@/components/QuestionDisplay';
 
 interface AttemptRow {
   id: string;
@@ -639,7 +640,11 @@ function TeacherFinalReviewContent() {
                         </div>
 
                         <div style={{ padding: '16px' }}>
-                          <div className="math-container" style={{ fontSize: '14px', color: 'var(--text)', margin: '0 0 16px 0', lineHeight: 1.6, whiteSpace: 'pre-line', fontWeight: 600 }} dangerouslySetInnerHTML={{ __html: preprocessMathText(q.text) }} />
+                          <QuestionDisplay
+                            question={q}
+                            mode="stem-only"
+                            style={{ fontSize: '14px', color: 'var(--text)', margin: '0 0 16px 0', lineHeight: 1.6, fontWeight: 600 }}
+                          />
 
                           {/* Per-Question Parent Graded Score Badge */}
                           {(parentVal || activeAttempt?.parentScore !== undefined) && (
@@ -664,7 +669,9 @@ function TeacherFinalReviewContent() {
                           {/* Reference solutions */}
                           <div style={{ background: 'rgba(22, 163, 74, 0.05)', borderLeft: '4px solid var(--success)', padding: '12px 14px', borderRadius: '4px', fontSize: '12.5px', marginBottom: '16px', color: 'var(--text)' }}>
                             <strong style={{ color: 'var(--success)', fontSize: '12px' }}>📖 Model Answer & Key:</strong>
-                            <div className="math-container" dangerouslySetInnerHTML={{ __html: answerHtml }} style={{ marginTop: '6px', whiteSpace: 'pre-line', lineHeight: 1.6 }} />
+                            <div style={{ marginTop: '6px', whiteSpace: 'pre-line', lineHeight: 1.6 }}>
+                              <RichMathText content={answerHtml} />
+                            </div>
                           </div>
 
                           {/* Reference Evaluations grid */}

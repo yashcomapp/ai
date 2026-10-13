@@ -3,6 +3,7 @@
 import React from 'react';
 import { preprocessMathText } from '@/lib/questionTypes';
 import { highlightModelAnswerKeywords } from '@/lib/pdfExport';
+import { RichMathText } from '@/components/QuestionDisplay';
 
 interface InPlaceAiGeneratorProps {
   title: string;
@@ -170,11 +171,9 @@ export default function InPlaceAiGenerator({
                     style={{ fontSize: '11px' }}
                   />
                   {/* Live Math & Diagram Render Preview */}
-                  <div 
-                    className="math-container" 
-                    style={{ fontSize: '11px', color: 'var(--text)', marginTop: '4px', padding: '6px 10px', background: 'var(--surface)', border: '1px dashed var(--border-light)', borderRadius: '4px', minHeight: '18px', whiteSpace: 'pre-line' }}
-                    dangerouslySetInnerHTML={{ __html: preprocessMathText(q.text || '') }}
-                  />
+                  <div style={{ fontSize: '11px', color: 'var(--text)', marginTop: '4px', padding: '6px 10px', background: 'var(--surface)', border: '1px dashed var(--border-light)', borderRadius: '4px', minHeight: '18px', whiteSpace: 'pre-line' }}>
+                    <RichMathText content={q.text || ''} />
+                  </div>
                 </div>
 
                 {/* Editable Model Answer */}
@@ -261,13 +260,9 @@ export default function InPlaceAiGenerator({
                 )}
 
                 {/* Live Standard KaTeX Highlight Preview */}
-                <div className="math-container" style={{ background: 'var(--surface)', padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border-light)', fontSize: '11px', lineHeight: 1.5, whiteSpace: 'pre-line' }}>
+                <div style={{ background: 'var(--surface)', padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border-light)', fontSize: '11px', lineHeight: 1.5, whiteSpace: 'pre-line' }}>
                   <strong style={{ color: 'var(--success)', fontSize: '10px', display: 'block', marginBottom: '2px' }}>💡 Live KaTeX Model Answer Highlight Preview:</strong>
-                  <div 
-                    dangerouslySetInnerHTML={{ 
-                      __html: preprocessMathText(highlightModelAnswerKeywords(q.solution, q.keywords)) 
-                    }} 
-                  />
+                  <RichMathText content={highlightModelAnswerKeywords(q.solution, q.keywords)} />
                 </div>
               </div>
             ))}

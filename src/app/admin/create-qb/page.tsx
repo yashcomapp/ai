@@ -2918,11 +2918,7 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
                                 <strong style={{ display: 'block', fontSize: '10px', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '4px' }}>
                                   💡 Live Model Answer Highlight Preview:
                                 </strong>
-                                <div 
-                                  dangerouslySetInnerHTML={{ 
-                                    __html: highlightModelAnswerKeywords(q.solution, q.keywords) 
-                                  }} 
-                                />
+                                <RichMathText content={highlightModelAnswerKeywords(q.solution, q.keywords)} />
                               </div>
                             )}
                           </div>

@@ -15,6 +15,7 @@ import { preprocessMathText, formatRichText } from '@/lib/questionTypes';
 import { formatDuration, parseDateToMs } from '@/lib/dateUtils';
 import { InterruptionLockoutModal } from '@/components/InterruptionLockoutModal';
 import { ExamErrorBoundary } from '@/components/ExamErrorBoundary';
+import QuestionDisplay, { RichMathText } from '@/components/QuestionDisplay';
 
 const RTC_CONFIG = {
   iceServers: [
@@ -65,11 +66,9 @@ interface ExamData {
 
 const ModelAnswerBox = React.memo(function ModelAnswerBox({ html }: { html: string }) {
   return (
-    <div 
-      className="math-container" 
-      dangerouslySetInnerHTML={{ __html: html }} 
-      style={{ fontSize: '13px', marginTop: '6px', color: 'var(--text)', whiteSpace: 'pre-line' }} 
-    />
+    <div style={{ fontSize: '13px', marginTop: '6px', color: 'var(--text)', whiteSpace: 'pre-line' }}>
+      <RichMathText content={html} />
+    </div>
   );
 });
 
@@ -911,7 +910,11 @@ function TakeSubjectiveExamContent() {
                 </div>
 
                 <div style={{ padding: '20px' }}>
-                  <div className="math-container" style={{ fontSize: '15px', color: 'var(--text)', lineHeight: 1.6, whiteSpace: 'pre-line' }} dangerouslySetInnerHTML={{ __html: preprocessMathText(q.text) }} />
+                  <QuestionDisplay
+                    question={q}
+                    mode="stem-only"
+                    style={{ fontSize: '15px', color: 'var(--text)', lineHeight: 1.6 }}
+                  />
                 </div>
 
                 {/* Peer Review Model Answer & Grading Fields */}
