@@ -1279,18 +1279,16 @@ function AdminFeesContent() {
                   }}
                   style={{ padding: '6px 12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)', background: 'var(--bg-soft)', color: 'var(--text)', fontWeight: 600 }}
                 >
-                  <option value="8">Class 8</option>
-                  <option value="9">Class 9</option>
-                  <option value="10">Class 10</option>
-                  <option value="11">Class 11</option>
-                  <option value="12">Class 12</option>
+                  {(uniqueClasses.length > 0 ? uniqueClasses : ['8', '9', '10', '11', '12']).map(cls => (
+                    <option key={cls} value={cls}>Class {cls}</option>
+                  ))}
                 </select>
               </div>
             </div>
 
             {/* Student List */}
             {(() => {
-              const filteredStudents = students.filter(s => s.classNum === bulkClass);
+              const filteredStudents = students.filter(s => String(s.classNum).trim() === String(bulkClass).trim());
 
               // Resolve template for this class to populate selectable installment amount/dates
               const classTemplate = templates.find(t => t.classNum === bulkClass);

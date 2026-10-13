@@ -71,7 +71,7 @@ export async function GET(req: NextRequest) {
 
     // 1. Fetch all student profiles and batches (cached) for admin roster (SSOT)
     const [studentsSnap, batchesSnap] = await Promise.all([
-      adminDb.collection('users').where('role', '==', 'student').select('name', 'studentCode', 'email', 'batchId', 'batchIds', 'status').get(),
+      adminDb.collection('users').where('role', '==', 'student').select('name', 'studentCode', 'email', 'batchId', 'batchIds', 'status', 'class', 'className', 'classNum', 'parentEmail', 'parentName', 'parentPhone', 'parentMobile').get(),
       getCachedBatches()
     ]);
     const batchMap = new Map<string, string>();
