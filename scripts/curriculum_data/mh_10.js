@@ -271,7 +271,7 @@ const mh10Subjects = [
         number: '9',
         name: 'Carbon Compounds',
         topics: [
-          createTopic('MH', '10', 'SCIT1', '9', '1', 'Bonds in Carbon Compounds & Tetravalency / Catenation Ability', ['Covalent single, double, and triple bonds', 'Catenation power: open chains, branched chains, closed ring structures', 'Isomerism: Structural isomers of butane (n-butane and isobutane)']),
+          createTopic('MH', '10', 'SCIT1', '9', '1', 'Bonds in Carbon Compounds & Tetravalency / Catenation Ability', ['Covalent single, double, and triple bonds', 'Carbon a Versatile element', 'Catenation power: open chains, branched chains, closed ring structures', 'Isomerism: Structural isomers of butane (n-butane and isobutane)']),
           createTopic('MH', '10', 'SCIT1', '9', '2', 'Hydrocarbons: Saturated (Alkanes) vs Unsaturated (Alkenes & Alkynes)', ['Alkanes (C_n H_2n+2), Alkenes (C_n H_2n), Alkynes (C_n H_2n-2)', 'Straight chain, branched chain and cyclic hydrocarbons (Cyclohexane, Benzene C6H6)']),
           createTopic('MH', '10', 'SCIT1', '9', '3', 'Functional Groups & Homologous Series', ['Halide (-X), Alcohol (-OH), Aldehyde (-CHO), Ketone (-CO-), Carboxylic Acid (-COOH), Ether (-O-), Ester (-COO-), Amine (-NH2)', 'Homologous series characteristics (same general formula, gradation in melting/boiling points)']),
           createTopic('MH', '10', 'SCIT1', '9', '4', 'IUPAC Nomenclature of Carbon Compounds', ['Parent alkane identification, numbering carbon chain from functional group side, prefix and suffix rules']),
