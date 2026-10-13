@@ -595,15 +595,19 @@ export default function ChatView({ role = 'admin', hideHeader = false }: ChatVie
 
     const interval = setInterval(async () => {
       if (typeof document !== 'undefined' && document.hidden) return;
+      const targetRoomId = activeRoomId;
       try {
         const token = await firebaseUser.getIdToken();
         const cursor = latestMessageCreatedAtRef.current;
         const sinceParam = cursor ? `&since=${encodeURIComponent(cursor)}` : '';
-        const res = await fetch(`/api/chat/messages?roomId=${activeRoomId}${sinceParam}`, {
+        const res = await fetch(`/api/chat/messages?roomId=${targetRoomId}${sinceParam}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (res.ok) {
           const data = await res.json();
+          // Verify room did not change while request was in flight
+          if (activeRoomId !== targetRoomId) return;
+
           if (data.success && data.messages && data.messages.length > 0) {
             const mapped = data.messages.map((m: any) => ({
               messageId: m.messageId || m.id,
