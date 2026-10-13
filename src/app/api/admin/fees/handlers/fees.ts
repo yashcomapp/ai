@@ -7,6 +7,7 @@ import { toNonNegativeNumber } from '@/lib/validationUtils';
 import { normalizeStudentFeeRecord } from '@/lib/feeUtils';
 import { ChunkedBatch } from '@/lib/firebase/batch';
 import { getCachedBatches } from '@/lib/firebase/cache';
+import { chunkArray } from '@/lib/firestoreUtils';
 
 
 // Function to synchronize student fees aggregate values (same logic as transactions sync)
@@ -107,9 +108,11 @@ export async function GET(req: NextRequest) {
     const studentCodeRefs = activeStudentCodes.map(code => adminDb.collection('studentFees').doc(code));
 
     if (studentCodeRefs.length > 0) {
-      for (let i = 0; i < studentCodeRefs.length; i += 100) {
-        const chunkRefs = studentCodeRefs.slice(i, i + 100);
-        const chunkSnaps = await adminDb.getAll(...chunkRefs);
+      const chunks = chunkArray(studentCodeRefs, 100);
+      const chunkResults = await Promise.all(
+        chunks.map(chunk => adminDb.getAll(...chunk))
+      );
+      chunkResults.forEach(chunkSnaps => {
         chunkSnaps.forEach(doc => {
           if (doc.exists) {
             const codeUpper = doc.id.toUpperCase();
@@ -118,7 +121,7 @@ export async function GET(req: NextRequest) {
             ));
           }
         });
-      }
+      });
     }
 
     // Combine student list with their fee statuses

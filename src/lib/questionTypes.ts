@@ -27,21 +27,21 @@ const MAX_MATH_CACHE_SIZE = 3000;
 /**
  * Strips web research / AI search citation tags:
  * - "[cite: 1]", "[cite: 1, 2]", "[cite: 2]", "[cite: 1-3]"
- * - Numeric footnote citations like "[1]", "[2]", "[1, 2]", "[1-3]"
  * - Full-width / Chinese bracket citation tags like "【source】", "【1】", "【cite: 1】"
- * and cleans up any spacing/punctuation artifacts left behind.
+ * - Numeric superscript-style footnote tags directly following words/periods (e.g. "theory.[1]", "atom[2]")
+ * Preserves mathematical intervals like "[1, 2]", array notation "a[1]", and range notation "[0-5]".
  */
 export function stripCitations(text: any): string {
   if (text == null) return '';
   const s = String(text);
-  if (!s.includes('cite') && !s.includes('【') && !/\[\d+(?:[,\s-]+\d+)*\]/.test(s)) {
+  if (!s.includes('cite') && !s.includes('【') && !/[a-zA-Z.?!]\s*\[\d+\]/.test(s)) {
     return s;
   }
   return s
     .replace(/\[cite:\s*[^\]]+\]/gi, '')
     .replace(/\[cite\b[^\]]*\]/gi, '')
     .replace(/【(?:source|cite\b[^】]*|\d+(?:[,\s-]+\d+)*)[^】]*】/gi, '')
-    .replace(/\[\d+(?:[,\s-]+\d+)*\]/g, '')
+    .replace(/([a-zA-Z.?!])\s*\[\d+(?:[,\s-]+\d+)*\]/g, '$1')
     .replace(/\s+([?,.!;:])/g, '$1')
     .replace(/[ \t]{2,}/g, ' ')
     .trim();

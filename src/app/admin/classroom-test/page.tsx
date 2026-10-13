@@ -13,7 +13,7 @@ import InPlaceAiGenerator from '@/components/admin/classroom-test/InPlaceAiGener
 import dynamic from 'next/dynamic';
 const ScheduledSuitesManagerModal = dynamic(() => import('@/components/admin/classroom-test/ScheduledSuitesManagerModal'), { ssr: false });
 const SaturdayAssignModal = dynamic(() => import('@/components/admin/classroom-test/SaturdayAssignModal'), { ssr: false });
-const BulkSaveProgressModal = dynamic(() => import('@/components/admin/classroom-test/BulkSaveProgressModal'), { ssr: false });
+const BulkSaveProgressModal = dynamic(() => import('@/components/admin/create-qb/BulkSaveProgressModal'), { ssr: false });
 
 interface Batch {
   id: string;
