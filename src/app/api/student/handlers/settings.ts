@@ -3,7 +3,6 @@ import * as admin from 'firebase-admin';
 import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole } from '@/lib/auth';
 import { getRequiredConfidence } from '@/lib/studentDb';
-export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   try {

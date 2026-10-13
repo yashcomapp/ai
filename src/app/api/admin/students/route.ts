@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { adminDb, adminAuth } from '@/lib/firebase/admin';
 import { verifyRole, invalidateUserCache } from '@/lib/auth';
 import { ChunkedBatch } from '@/lib/firebase/batch';
-import { getFromCache, setInCache, invalidateCache } from '@/lib/firebase/cache';
+import { getFromCache, setInCache, invalidateCache, getCachedBatches } from '@/lib/firebase/cache';
 import { isDemoUser } from '@/lib/studentDb';
 import { ExamReviewService } from '@/services/examReview.service';
 
@@ -49,20 +49,19 @@ export async function GET(request: Request) {
       adminDb.collection('users')
         .where('role', '==', 'student')
         .get(),
-      adminDb.collection('batches')
-        .get()
+      getCachedBatches()
     ]);
       
-    const students = snapshot.docs
-      .map(doc => ({
+    const students = (snapshot.docs as any[])
+      .map((doc: any) => ({
         id: doc.id,
         ...doc.data()
       }))
-      .filter(s => !isDemoUser(s));
+      .filter((s: any) => !isDemoUser(s));
     
-    const batches = batchesSnapshot.docs.map(doc => ({
+    const batches = (batchesSnapshot.docs as any[]).map((doc: any) => ({
       id: doc.id,
-      name: doc.data().name || doc.id
+      name: (typeof doc.data === 'function' ? doc.data().name : doc.name) || doc.id
     }));
 
     const responseData = { students, batches };

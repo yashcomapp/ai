@@ -6,8 +6,8 @@ import { isDemoUser } from '@/lib/studentDb';
 import { toNonNegativeNumber } from '@/lib/validationUtils';
 import { normalizeStudentFeeRecord } from '@/lib/feeUtils';
 import { ChunkedBatch } from '@/lib/firebase/batch';
+import { getCachedBatches } from '@/lib/firebase/cache';
 
-export const dynamic = 'force-dynamic';
 
 // Function to synchronize student fees aggregate values (same logic as transactions sync)
 async function recalculateStudentFeeStats(studentCode: string) {
@@ -68,15 +68,16 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ success: true, feeRecord });
     }
 
-    // 1. Fetch all student profiles, batches, and live fee transactions for admin roster (SSOT)
+    // 1. Fetch all student profiles, batches (cached), and live fee transactions for admin roster (SSOT)
     const [studentsSnap, batchesSnap, txSnap] = await Promise.all([
-      adminDb.collection('users').where('role', '==', 'student').get(),
-      adminDb.collection('batches').get(),
+      adminDb.collection('users').where('role', '==', 'student').select('name', 'studentCode', 'email', 'batchId', 'batchIds', 'status').get(),
+      getCachedBatches(),
       adminDb.collection('feeTransactions').get()
     ]);
     const batchMap = new Map<string, string>();
     batchesSnap.docs.forEach(doc => {
-      batchMap.set(doc.id, doc.data().name || '');
+      const data = typeof doc.data === 'function' ? doc.data() : (doc as any);
+      batchMap.set(doc.id, data?.name || '');
     });
 
     const txByStudent = new Map<string, any[]>();

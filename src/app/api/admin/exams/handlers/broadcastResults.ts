@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyRole } from '@/lib/auth';
 import { generateAndDispatchExamNotices } from '@/lib/examNotices';
 
-export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
   try {

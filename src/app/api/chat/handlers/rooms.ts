@@ -3,8 +3,8 @@ import * as admin from 'firebase-admin';
 import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole, verifyAnyRole } from '@/lib/auth';
 import { isDemoUser } from '@/lib/studentDb';
+import { getCachedBatches } from '@/lib/firebase/cache';
 
-export const dynamic = 'force-dynamic';
 
 function isExistentCommunication(room: any): boolean {
   if (!room) return false;
@@ -21,10 +21,10 @@ function isExistentCommunication(room: any): boolean {
 
 async function getBatchNamesMap(): Promise<Map<string, string>> {
   try {
-    const batchesSnap = await adminDb.collection('batches').get();
+    const batchesSnap = await getCachedBatches();
     const map = new Map<string, string>();
     batchesSnap.docs.forEach(doc => {
-      const data = doc.data();
+      const data = typeof doc.data === 'function' ? doc.data() : (doc as any);
       if (data?.name) {
         map.set(doc.id, data.name.trim());
       }
@@ -89,9 +89,12 @@ export async function GET(req: NextRequest) {
         if (data.parentEmail) inactiveEmails.add(data.parentEmail.toLowerCase().trim());
       });
 
-      // 1. Fetch all active batches and ensure class group rooms exist in chatRooms
-      const batchesSnap = await adminDb.collection('batches').get();
-      const activeBatches = batchesSnap.docs.filter(d => d.data().status !== 'inactive');
+      // 1. Fetch all active batches (cached) and ensure class group rooms exist in chatRooms
+      const batchesSnap = await getCachedBatches();
+      const activeBatches = batchesSnap.docs.filter(d => {
+        const data = typeof d.data === 'function' ? d.data() : (d as any);
+        return data?.status !== 'inactive';
+      });
       
       const batchRoomRefs = activeBatches.map(b => adminDb.collection('chatRooms').doc(`room_batch_${b.id}`));
       const batchRoomSnaps = batchRoomRefs.length > 0 ? await adminDb.getAll(...batchRoomRefs).catch(() => []) : [];
@@ -100,7 +103,7 @@ export async function GET(req: NextRequest) {
       const batchCreationPromises: Promise<any>[] = [];
       activeBatches.forEach(bDoc => {
         const bId = bDoc.id;
-        const bData = bDoc.data();
+        const bData = typeof bDoc.data === 'function' ? bDoc.data() : (bDoc as any);
         const gRoomId = `room_batch_${bId}`;
         const existingSnap = batchRoomMap.get(gRoomId);
         const properName = bData.name?.trim() || 'Class Group';

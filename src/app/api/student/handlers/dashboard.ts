@@ -3,7 +3,6 @@ import { verifyRole } from '@/lib/auth';
 import { getDashboardData } from '@/lib/studentDb';
 import { getFromCache, setInCache } from '@/lib/firebase/cache';
 
-export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   try {

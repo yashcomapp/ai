@@ -3,7 +3,6 @@ import * as admin from 'firebase-admin';
 import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole, verifyAnyRole } from '@/lib/auth';
 import { ExamService } from '@/services/exam.service';
-export const dynamic = 'force-dynamic';
 
 function cleanSubjectiveExamName(examData: any) {
   if (!examData) return '';

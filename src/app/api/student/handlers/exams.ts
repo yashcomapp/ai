@@ -9,7 +9,6 @@ import { generateAndDispatchExamNotices } from '@/lib/examNotices';
 import { invalidateCache } from '@/lib/firebase/cache';
 import { ExamReviewService } from '@/services/examReview.service';
 import { parseDateInput } from '@/lib/dateUtils';
-export const dynamic = 'force-dynamic';
 
 
 

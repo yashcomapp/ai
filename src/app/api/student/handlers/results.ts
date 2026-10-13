@@ -5,7 +5,6 @@ import { verifyRole, verifyAnyRole } from '@/lib/auth';
 import { IntegrityService } from '@/services/integrity.service';
 import { deriveTopicCodeFromQuestionCode, parseTopicCode } from '@/lib/questionTypes';
 import { getStudentResultsData } from '@/lib/resultsDb';
-export const dynamic = 'force-dynamic';
 
 function determineExamType(data: any): string {
   if (data.examType === 'practice') return 'practice';

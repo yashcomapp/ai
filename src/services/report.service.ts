@@ -7,6 +7,7 @@ import { StudentRepository } from '@/repositories/student.repository';
 import { QuotientService } from '@/services/quotient.service';
 import { QuotientResult } from '@/types/quotient.types';
 import { chunkArray } from '@/lib/firestoreUtils';
+import { getCachedBatches } from '@/lib/firebase/cache';
 
 export class ReportService {
 
@@ -887,8 +888,7 @@ export class ReportService {
       adminDb.collection('users')
         .where('role', '==', 'student')
         .get(),
-      adminDb.collection('batches')
-        .get(),
+      getCachedBatches(),
       adminDb.collection('parentSincerityLogs')
         .orderBy('createdAt', 'desc')
         .limit(SINCERITY_QUERY_LIMIT)

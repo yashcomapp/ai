@@ -73,3 +73,39 @@ export async function getCachedSyllabusList(): Promise<any[]> {
   setInCache(cacheKey, list, 600000); // 10 mins
   return list;
 }
+
+/**
+ * Retrieves the full batches collection with a 10-minute in-memory cache.
+ * Returns a duck-typed snapshot structure for backward compatibility.
+ */
+export async function getCachedBatches() {
+  const cacheKey = 'batches-all';
+  const cached = getFromCache<any[]>(cacheKey);
+  let batchesData: any[];
+
+  if (cached) {
+    batchesData = cached;
+  } else {
+    const snap = await adminDb.collection('batches').get();
+    batchesData = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    setInCache(cacheKey, batchesData, 600000); // 10 mins
+  }
+
+  return {
+    docs: batchesData.map(item => ({
+      id: item.id,
+      data: () => item
+    }))
+  };
+}
+
+export async function getCachedBatchesList(): Promise<any[]> {
+  const cacheKey = 'batches-list';
+  const cached = getFromCache<any[]>(cacheKey);
+  if (cached) return cached;
+
+  const snap = await adminDb.collection('batches').get();
+  const list = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  setInCache(cacheKey, list, 600000); // 10 mins
+  return list;
+}

@@ -10,7 +10,6 @@ import {
   getCanonicalClass, 
   getCanonicalSubjectCode 
 } from '@/lib/syllabusUtils';
-export const dynamic = 'force-dynamic';
 
 
 const INITIAL_METADATA_TTL = 300000; // 5 minutes

@@ -6,7 +6,6 @@ import { ReportCacheManager } from '@/lib/reportCache';
 import { chunkArray } from '@/lib/firestoreUtils';
 import { MasteryService } from '@/services/mastery.service';
 import { ExamService } from '@/services/exam.service';
-export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   try {

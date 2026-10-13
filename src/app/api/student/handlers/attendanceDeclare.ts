@@ -4,7 +4,6 @@ import { verifyAnyRole } from '@/lib/auth';
 import { getDateKeyIST } from '@/lib/dateUtils';
 import { invalidateCache } from '@/lib/firebase/cache';
 
-export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   try {

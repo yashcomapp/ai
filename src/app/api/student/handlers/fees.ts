@@ -4,7 +4,6 @@ import { verifyRole } from '@/lib/auth';
 import { getFromCache, setInCache } from '@/lib/firebase/cache';
 import { normalizeStudentFeeRecord } from '@/lib/feeUtils';
 
-export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   try {

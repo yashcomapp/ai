@@ -3,7 +3,6 @@ import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole } from '@/lib/auth';
 import { invalidateCache } from '@/lib/firebase/cache';
 
-export const dynamic = 'force-dynamic';
 
 const PRACTICE_OBJECTIVE_TYPES = [
   'single_mcq', 

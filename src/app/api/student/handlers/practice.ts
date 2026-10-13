@@ -9,7 +9,6 @@ import { getRequiredConfidence } from '@/lib/studentDb';
 import { filterDistinctCandidates, areQuestionsTooSimilar } from '@/lib/questionSimilarity';
 import { getSrsMicroSetSize, selectSrsQuestions } from '@/lib/srsRotation';
 
-export const dynamic = 'force-dynamic';
 
 async function getQuestionsByTopic(topicCode: string) {
   return QuestionRepository.getQuestionsByTopic(topicCode);

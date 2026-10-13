@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole } from '@/lib/auth';
 
-export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   try {
@@ -11,17 +10,24 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ message: 'Unauthorized. Admin role required.' }, { status: 403 });
     }
 
+    const { searchParams } = new URL(req.url);
+    const limitParam = parseInt(searchParams.get('limit') || '200', 10);
+    const queryLimit = Math.min(Math.max(1, isNaN(limitParam) ? 200 : limitParam), 500);
+
     const leavesSnap = await adminDb.collection('leaveApplications')
       .orderBy('createdAt', 'desc')
-      .limit(200)
+      .limit(queryLimit + 1)
       .get();
 
-    const leaves = leavesSnap.docs.map(doc => ({
+    const hasMore = leavesSnap.docs.length > queryLimit;
+    const docs = hasMore ? leavesSnap.docs.slice(0, queryLimit) : leavesSnap.docs;
+
+    const leaves = docs.map(doc => ({
       id: doc.id,
       ...doc.data()
     }));
 
-    return NextResponse.json({ success: true, leaves });
+    return NextResponse.json({ success: true, leaves, hasMore, totalFetched: leaves.length });
   } catch (error: any) {
     console.error('API GET leave requests error:', error);
     return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });

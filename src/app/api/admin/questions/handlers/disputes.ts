@@ -4,7 +4,6 @@ import { verifyRole } from '@/lib/auth';
 import { QuestionRepository } from '@/repositories/question.repository';
 import { invalidateCache } from '@/lib/firebase/cache';
 
-export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   try {
@@ -13,16 +12,23 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ message: 'Unauthorized. Admin role required.' }, { status: 403 });
     }
 
+    const { searchParams } = new URL(req.url);
+    const limitParam = parseInt(searchParams.get('limit') || '200', 10);
+    const queryLimit = Math.min(Math.max(1, isNaN(limitParam) ? 200 : limitParam), 500);
+
     const disputesSnap = await adminDb.collection('disputes')
       .orderBy('createdAt', 'desc')
-      .limit(200)
+      .limit(queryLimit + 1)
       .get()
       .catch(async () => {
         // Fallback without orderBy in case index is building
-        return await adminDb.collection('disputes').limit(200).get();
+        return await adminDb.collection('disputes').limit(queryLimit + 1).get();
       });
 
-    const disputes = disputesSnap.docs.map(doc => {
+    const hasMore = disputesSnap.docs.length > queryLimit;
+    const docs = hasMore ? disputesSnap.docs.slice(0, queryLimit) : disputesSnap.docs;
+
+    const disputes = docs.map(doc => {
       const data = doc.data();
       const createdAtIso = data.createdAt?.toDate
         ? data.createdAt.toDate().toISOString()
@@ -44,7 +50,7 @@ export async function GET(req: NextRequest) {
       };
     });
 
-    return NextResponse.json({ disputes });
+    return NextResponse.json({ disputes, hasMore, totalFetched: disputes.length });
   } catch (error: any) {
     console.error('API load disputes error:', error);
     return NextResponse.json({ message: error.message || 'Internal Server Error' }, { status: 500 });

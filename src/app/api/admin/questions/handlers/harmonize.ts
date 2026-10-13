@@ -6,7 +6,6 @@ import { ChunkedBatch } from '@/lib/firebase/batch';
 import { preprocessMathText, QUESTION_TYPE_MAP } from '@/lib/questionTypes';
 import { invalidateCache } from '@/lib/firebase/cache';
 
-export const dynamic = 'force-dynamic';
 
 import { 
   getCanonicalBoardCode, 

@@ -9,7 +9,6 @@ import {
   getCanonicalClass, 
   getCanonicalSubjectCode 
 } from '@/lib/syllabusUtils';
-export const dynamic = 'force-dynamic';
 
 const matchTopicCode = (examTopicCodes: any, cleanCode: string, number: string, chapNum: string) => {
   if (!Array.isArray(examTopicCodes)) return false;

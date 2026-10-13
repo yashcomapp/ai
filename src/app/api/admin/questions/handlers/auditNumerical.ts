@@ -5,7 +5,6 @@ import { verifyRole } from '@/lib/auth';
 import { ChunkedBatch } from '@/lib/firebase/batch';
 import { invalidateCache } from '@/lib/firebase/cache';
 
-export const dynamic = 'force-dynamic';
 
 function isCandidateNumericalQuestion(q: any): boolean {
   if (!q) return false;

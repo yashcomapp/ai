@@ -3,7 +3,6 @@ import { adminDb } from '@/lib/firebase/admin';
 import { verifyAnyRole } from '@/lib/auth';
 import { getFromCache, setInCache } from '@/lib/firebase/cache';
 
-export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   try {

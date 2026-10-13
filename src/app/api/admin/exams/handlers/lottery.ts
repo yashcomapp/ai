@@ -5,7 +5,6 @@ import { ChunkedBatch } from '@/lib/firebase/batch';
 import { shuffleArray } from '@/lib/questionTypes';
 import { ReportCacheManager } from '@/lib/reportCache';
 
-export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   try {

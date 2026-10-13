@@ -5,7 +5,6 @@ import { verifyRole, verifyAnyRole } from '@/lib/auth';
 import { sendPushNotification } from '@/lib/notifications';
 import { chunkArray } from '@/lib/firestoreUtils';
 
-export const dynamic = 'force-dynamic';
 
 function getUserKey(authResult: { decodedToken: any; userData: any; role: string }): string {
   const { decodedToken, userData, role } = authResult;
@@ -123,14 +122,23 @@ export async function GET(req: NextRequest) {
     }
 
     const metaOnly = searchParams.get('metaOnly') === 'true' || searchParams.get('participantsOnly') === 'true';
+    const since = searchParams.get('since');
 
     let messages: any[] = [];
     if (!metaOnly) {
-      const messagesSnap = await roomRef
+      let query: FirebaseFirestore.Query = roomRef
         .collection('messages')
         .orderBy('createdAt', 'desc')
-        .limit(100)
-        .get();
+        .limit(100);
+
+      if (since) {
+        const sinceDate = new Date(since);
+        if (!isNaN(sinceDate.getTime())) {
+          query = query.where('createdAt', '>', sinceDate);
+        }
+      }
+
+      const messagesSnap = await query.get();
 
       messages = messagesSnap.docs.map(doc => ({
         id: doc.id,

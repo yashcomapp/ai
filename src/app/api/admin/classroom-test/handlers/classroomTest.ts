@@ -5,6 +5,7 @@ import { NextRequest } from 'next/server';
 import { ChunkedBatch } from '@/lib/firebase/batch';
 import { shuffleArray, isQuestionQuarantined } from '@/lib/questionTypes';
 import { getDateKeyIST } from '@/lib/dateUtils';
+import { getCachedBatches } from '@/lib/firebase/cache';
 
 export async function GET(request: NextRequest) {
   try {
@@ -12,11 +13,14 @@ export async function GET(request: NextRequest) {
     if (!admin) return NextResponse.json({ message: 'Unauthorized. Admin role required.' }, { status: 403 });
 
     const [bSnap, configSnap] = await Promise.all([
-      adminDb.collection('batches').get(),
+      getCachedBatches(),
       adminDb.collection('config').doc('syllabusSubjects').get()
     ]);
 
-    const batches = bSnap.docs.map(doc => ({ id: doc.id, name: doc.data().name || doc.id }));
+    const batches = bSnap.docs.map(doc => {
+      const data = typeof doc.data === 'function' ? doc.data() : (doc as any);
+      return { id: doc.id, name: data?.name || doc.id };
+    });
     const syllabusSubjects = configSnap.exists ? (configSnap.data()?.subjects || {}) : {};
 
     return NextResponse.json({ success: true, batches, syllabusSubjects });

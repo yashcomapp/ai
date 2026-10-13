@@ -4,7 +4,6 @@ import * as admin from 'firebase-admin';
 import { verifyRole } from '@/lib/auth';
 import { notifyNotice } from '@/lib/notifications';
 
-export const dynamic = 'force-dynamic';
 
 // 1. GET - Load notices history for admin
 export async function GET(req: NextRequest) {

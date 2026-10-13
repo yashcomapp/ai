@@ -17,7 +17,6 @@ import {
 } from '@/lib/syllabusUtils';
 import { syncTopicCountsToSyllabus } from '@/lib/syllabusSync';
 
-export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   try {

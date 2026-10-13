@@ -5,7 +5,6 @@ import { getDateKeyIST as getISTDateString } from '@/lib/dateUtils';
 import { toPositiveNumber } from '@/lib/validationUtils';
 import { normalizeStudentFeeRecord } from '@/lib/feeUtils';
 
-export const dynamic = 'force-dynamic';
 
 // Function to synchronize aggregate balances and status in studentFees doc based on ledger transactions
 async function syncStudentFees(studentCode: string) {
@@ -55,6 +54,10 @@ export async function GET(req: NextRequest) {
     const studentCode = searchParams.get('studentCode');
 
     let snap;
+    const limitParam = parseInt(searchParams.get('limit') || '300', 10);
+    const queryLimit = Math.min(Math.max(1, isNaN(limitParam) ? 300 : limitParam), 1000);
+
+    let hasMore = false;
     if (studentCode) {
       const sCodeUpper = studentCode.trim().toUpperCase();
       snap = await adminDb.collection('feeTransactions')
@@ -69,11 +72,21 @@ export async function GET(req: NextRequest) {
       }
     } else {
       snap = await adminDb.collection('feeTransactions')
-        .get();
+        .orderBy('timestamp', 'desc')
+        .limit(queryLimit + 1)
+        .get()
+        .catch(async () => {
+          return await adminDb.collection('feeTransactions').limit(queryLimit + 1).get();
+        });
+
+      if (snap.docs.length > queryLimit) {
+        hasMore = true;
+        snap = { docs: snap.docs.slice(0, queryLimit) } as any;
+      }
     }
 
-    const transactions = snap.docs
-      .map(doc => {
+    const transactions = (snap.docs as any[])
+      .map((doc: any) => {
         const d = doc.data();
         return {
           id: doc.id,
@@ -83,7 +96,7 @@ export async function GET(req: NextRequest) {
       })
       .sort((a: any, b: any) => new Date(b.timestamp || 0).getTime() - new Date(a.timestamp || 0).getTime());
 
-    return NextResponse.json({ success: true, transactions });
+    return NextResponse.json({ success: true, transactions, hasMore });
   } catch (error: any) {
     console.error('API GET fee transactions error:', error);
     return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });

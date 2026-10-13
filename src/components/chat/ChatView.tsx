@@ -441,6 +441,8 @@ export default function ChatView({ role = 'admin', hideHeader = false }: ChatVie
 
   // Real-time Messages Listener
   useEffect(() => {
+    seenMessageIdsRef.current.clear();
+
     if (!activeRoomId) {
       setMessages([]);
       return;
@@ -576,19 +578,26 @@ export default function ChatView({ role = 'admin', hideHeader = false }: ChatVie
       if (typeof document !== 'undefined' && document.hidden) return;
       try {
         const token = await firebaseUser.getIdToken();
-        const res = await fetch(`/api/chat/messages?roomId=${activeRoomId}`, {
+        const latestCreatedAt = messages.length > 0 ? (messages[messages.length - 1] as any)?.createdAt : null;
+        const sinceParam = latestCreatedAt ? `&since=${encodeURIComponent(new Date(latestCreatedAt).toISOString())}` : '';
+        const res = await fetch(`/api/chat/messages?roomId=${activeRoomId}${sinceParam}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (res.ok) {
           const data = await res.json();
-          if (data.success && data.messages) {
+          if (data.success && data.messages && data.messages.length > 0) {
             const mapped = data.messages.map((m: any) => ({
               messageId: m.messageId || m.id,
               ...m
             }));
-            setMessages(mapped);
+            setMessages(prev => {
+              if (!sinceParam) return mapped;
+              const existingIds = new Set(prev.map(p => p.messageId));
+              const fresh = mapped.filter((m: any) => !existingIds.has(m.messageId));
+              return fresh.length > 0 ? [...prev, ...fresh] : prev;
+            });
             if (data.participantNames) {
-              setParticipantNames(data.participantNames);
+              setParticipantNames(prev => ({ ...prev, ...data.participantNames }));
             }
           }
         }

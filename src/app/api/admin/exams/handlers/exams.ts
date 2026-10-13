@@ -11,7 +11,6 @@ import { evaluateSessionSincerity } from '@/lib/practiceTimeUtils';
 import { getCanonicalSubjectName, parseTopicCode } from '@/lib/questionTypes';
 import { getObjectiveExamTopics, getSubjectiveExamTopics, getExamDateKey, isExamForStudent } from '@/services/quotient.service';
 import { ExamService } from '@/services/exam.service';
-export const dynamic = 'force-dynamic';
 
 const parseIST = (dateStr: string) => {
   if (!dateStr) return new Date();

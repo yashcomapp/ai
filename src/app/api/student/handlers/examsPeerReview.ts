@@ -3,7 +3,6 @@ import { verifyRole, verifyAnyRole } from '@/lib/auth';
 import { ReviewService } from '@/services/review.service';
 import { ReportCacheManager } from '@/lib/reportCache';
 
-export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
   try {

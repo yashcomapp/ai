@@ -247,9 +247,25 @@ export class ExamReviewService {
       }
 
       if (hasBatchOps) {
-        await batch.commit().catch(bErr => {
-          console.warn('Batch commit failed for review sync, falling back:', bErr);
-        });
+        try {
+          await batch.commit();
+        } catch (bErr) {
+          console.warn('Batch commit failed for review sync, falling back to individual updates:', bErr);
+          // Fallback: update documents individually so a single failure doesn't drop the rest
+          for (const snap of rSnaps) {
+            if (snap && snap.exists) {
+              const currentRevStatus = snap.data()?.status;
+              if (currentRevStatus === 'student_review' || isAutonomous || wrongAnswerReasons) {
+                await snap.ref.update(updatePayload).catch(() => null);
+              }
+            }
+          }
+          for (const snap of aSnaps) {
+            if (snap && snap.exists) {
+              await snap.ref.update(updatePayload).catch(() => null);
+            }
+          }
+        }
       }
     } catch (revErr) {
       console.warn('Could not sync status to reviews doc:', revErr);

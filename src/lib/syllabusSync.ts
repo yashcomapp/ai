@@ -25,7 +25,7 @@ export async function syncTopicCountsToSyllabus(topicCodes: string[]) {
     }
   });
 
-  for (const targetKey of Array.from(sylTargets)) {
+  await Promise.all(Array.from(sylTargets).map(async (targetKey) => {
     try {
       const [bCode, cls, sCode] = targetKey.split('_');
 
@@ -44,7 +44,7 @@ export async function syncTopicCountsToSyllabus(topicCodes: string[]) {
         }
       }
 
-      if (!sylDocSnap.exists) continue;
+      if (!sylDocSnap.exists) return;
       const sylData = sylDocSnap.data()!;
       const boardCode = sylData.boardCode || (sylData.board === 'CBSE' ? 'CBSE' : 'MH');
       const classNum = String(sylData.class);
@@ -177,5 +177,5 @@ export async function syncTopicCountsToSyllabus(topicCodes: string[]) {
     } catch (err) {
       console.error(`Error syncing syllabus counts for target ${targetKey}:`, err);
     }
-  }
+  }));
 }

@@ -4,13 +4,12 @@ import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole } from '@/lib/auth';
 import { ChunkedBatch } from '@/lib/firebase/batch';
 import { evaluateQuestionAnswer, isMultipleChoiceType, parseAnswerList } from '@/lib/questionTypes';
-import { getCachedSyllabus } from '@/lib/firebase/cache';
+import { getCachedSyllabus, getFromCache, setInCache } from '@/lib/firebase/cache';
 import { ReportCacheManager } from '@/lib/reportCache';
 import { isDemoUser } from '@/lib/studentDb';
 import { getDateKeyIST, getMidnightIST } from '@/lib/dateUtils';
 import { MasteryService } from '@/services/mastery.service';
 import { ExamService } from '@/services/exam.service';
-export const dynamic = 'force-dynamic';
 
 async function resolveObjectiveExam(inputExamId: string) {
   let snap = await adminDb.collection('exams').doc(inputExamId).get();
@@ -35,11 +34,30 @@ async function resolveObjectiveExam(inputExamId: string) {
   const clean = (s: string) => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
   const targetClean = clean(decoded);
 
-  const allExamsSnap = await adminDb.collection('exams').get();
-  let bestCandidate: { snap: admin.firestore.QueryDocumentSnapshot<admin.firestore.DocumentData>; examId: string } | null = null;
+  // Short-circuit: if input is empty or invalid, return not found immediately
+  if (!targetClean) {
+    return { snap, examId: inputExamId };
+  }
+
+  // Attempt direct query by examId field before scanning collection
+  const directFieldQuery = await adminDb.collection('exams').where('examId', '==', inputExamId).limit(1).get().catch(() => null);
+  if (directFieldQuery && !directFieldQuery.empty) {
+    return { snap: directFieldQuery.docs[0], examId: directFieldQuery.docs[0].id };
+  }
+
+  // Use cached exams list (5-minute TTL) to avoid expensive full DB scan on every non-exact request
+  const CACHE_KEY = 'all_exams_summary_for_fuzzy';
+  let cachedDocs = getFromCache<any[]>(CACHE_KEY);
+  if (!cachedDocs) {
+    const allExamsSnap = await adminDb.collection('exams').select('title', 'name', 'examId', 'id').get();
+    cachedDocs = allExamsSnap.docs;
+    setInCache(CACHE_KEY, cachedDocs, 300000); // 5 min TTL
+  }
+
+  let bestCandidate: { snap: any; examId: string } | null = null;
   let highestScore = 0;
 
-  for (const doc of allExamsSnap.docs) {
+  for (const doc of cachedDocs) {
     const data = doc.data();
     let score = 0;
 
@@ -71,7 +89,9 @@ async function resolveObjectiveExam(inputExamId: string) {
   }
 
   if (bestCandidate && highestScore >= 500) {
-    return bestCandidate;
+    // If the doc was only a projected summary, fetch full document for caller
+    const fullSnap = await adminDb.collection('exams').doc(bestCandidate.examId).get();
+    return { snap: fullSnap.exists ? fullSnap : bestCandidate.snap, examId: bestCandidate.examId };
   }
 
   return { snap, examId: inputExamId };

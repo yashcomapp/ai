@@ -1,59 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole } from '@/lib/auth';
-
-export const dynamic = 'force-dynamic';
-
-async function fetchTargetedParents(studentCodes: string[], parentEmails: string[] = []): Promise<FirebaseFirestore.DocumentSnapshot[]> {
-  const cleanCodes = Array.from(new Set(studentCodes.map(c => (c || '').trim()).filter(Boolean)));
-  const cleanEmails = Array.from(new Set(parentEmails.map(e => (e || '').trim().toLowerCase()).filter(Boolean)));
-
-  const codeChunks: string[][] = [];
-  for (let i = 0; i < cleanCodes.length; i += 30) {
-    codeChunks.push(cleanCodes.slice(i, i + 30));
-  }
-
-  const emailChunks: string[][] = [];
-  for (let i = 0; i < cleanEmails.length; i += 30) {
-    emailChunks.push(cleanEmails.slice(i, i + 30));
-  }
-
-  const queries: Promise<any>[] = [];
-
-  codeChunks.forEach(chunk => {
-    queries.push(
-      adminDb.collection('users')
-        .where('role', '==', 'parent')
-        .where('studentCodes', 'array-contains-any', chunk)
-        .get()
-        .catch(() => null),
-      adminDb.collection('users')
-        .where('role', '==', 'parent')
-        .where('studentCode', 'in', chunk)
-        .get()
-        .catch(() => null)
-    );
-  });
-
-  emailChunks.forEach(chunk => {
-    queries.push(
-      adminDb.collection('users')
-        .where('role', '==', 'parent')
-        .where('email', 'in', chunk)
-        .get()
-        .catch(() => null)
-    );
-  });
-
-  const snaps = await Promise.all(queries);
-  const parentMap = new Map<string, FirebaseFirestore.DocumentSnapshot>();
-  snaps.forEach(snap => {
-    if (!snap) return;
-    snap.docs.forEach((d: any) => parentMap.set(d.id, d));
-  });
-
-  return Array.from(parentMap.values());
-}
+import { getCachedBatches } from '@/lib/firebase/cache';
+import { resolveParentDocsForStudents } from '@/lib/notifications';
 
 export async function GET(req: NextRequest) {
   try {
@@ -77,9 +26,9 @@ export async function GET(req: NextRequest) {
     const targetType = noticeData.targetType || 'all';
     const targetValues = noticeData.targetValues || [];
 
-    // 2. Fetch batches, seen logs, and targeted student & parent profiles
+    // 2. Fetch batches (cached), seen logs, and targeted student & parent profiles
     const [batchesSnap, seenLogsSnap] = await Promise.all([
-      adminDb.collection('batches').get(),
+      getCachedBatches(),
       adminDb.collection('noticeSeenLogs').where('noticeId', '==', noticeId).get()
     ]);
 
@@ -122,7 +71,7 @@ export async function GET(req: NextRequest) {
         if (data?.parentEmail) parentEmails.push(data.parentEmail);
       });
 
-      parentDocs = await fetchTargetedParents(studentCodes, parentEmails);
+      parentDocs = await resolveParentDocsForStudents(studentCodes, parentEmails);
     } else if (targetType === 'student' && targetValues.length > 0) {
       const codeChunks: string[][] = [];
       for (let i = 0; i < targetValues.length; i += 30) {
@@ -154,7 +103,7 @@ export async function GET(req: NextRequest) {
         if (data?.parentEmail) parentEmails.push(data.parentEmail);
       });
 
-      parentDocs = await fetchTargetedParents(studentCodes, parentEmails);
+      parentDocs = await resolveParentDocsForStudents(studentCodes, parentEmails);
     } else if (targetType === 'parent' && targetValues.length > 0) {
       const emailChunks: string[][] = [];
       for (let i = 0; i < targetValues.length; i += 30) {

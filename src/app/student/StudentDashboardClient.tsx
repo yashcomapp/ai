@@ -277,7 +277,7 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
     const delay = nextBoundaryMs ? Math.min(Math.max(500, nextBoundaryMs - currentNow + 100), 30000) : 30000;
     const timeout = setTimeout(() => setNowMs(Date.now()), delay);
     return () => clearTimeout(timeout);
-  }, [data, initialData, localCache, nowMs]);
+  }, [data, initialData, localCache]);
 
   const [dismissedOverdue, setDismissedOverdue] = useState(false);
 

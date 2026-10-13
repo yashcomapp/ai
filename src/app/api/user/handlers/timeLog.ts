@@ -4,7 +4,6 @@ import * as admin from 'firebase-admin';
 import { getDateKeyIST } from '@/lib/dateUtils';
 import { verifyAnyRole } from '@/lib/auth';
 
-export const dynamic = 'force-dynamic';
 
 const dateKeyOf = (d: Date) => getDateKeyIST(d);
 

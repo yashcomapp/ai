@@ -5,7 +5,6 @@ import { getDateKeyIST as getISTDateString } from '@/lib/dateUtils';
 import { calculateAttendanceSummary } from '@/lib/attendanceUtils';
 import { getFromCache, setInCache, invalidateCache } from '@/lib/firebase/cache';
 
-export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   try {

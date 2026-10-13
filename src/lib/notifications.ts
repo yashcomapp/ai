@@ -24,8 +24,15 @@ function isDuplicateNotification(dedupKey: string, cooldownMs = 60000): boolean 
 /**
  * Resolves all parent UIDs associated with given studentCodes and/or parentEmails
  */
-async function resolveParentUidsForStudents(studentCodes: string[], parentEmails: string[] = []): Promise<string[]> {
-  const parentUids = new Set<string>();
+export async function resolveParentUidsForStudents(studentCodes: string[], parentEmails: string[] = []): Promise<string[]> {
+  const docs = await resolveParentDocsForStudents(studentCodes, parentEmails);
+  return docs.map(d => d.id);
+}
+
+/**
+ * Resolves all parent DocumentSnapshots associated with given studentCodes and/or parentEmails
+ */
+export async function resolveParentDocsForStudents(studentCodes: string[], parentEmails: string[] = []): Promise<FirebaseFirestore.DocumentSnapshot[]> {
   const cleanCodes = Array.from(new Set(studentCodes.map(c => (c || '').trim()).filter(Boolean)));
   const cleanEmails = Array.from(new Set(parentEmails.map(e => (e || '').trim().toLowerCase()).filter(Boolean)));
 
@@ -67,17 +74,18 @@ async function resolveParentUidsForStudents(studentCodes: string[], parentEmails
   });
 
   const snaps = await Promise.all(queries);
+  const parentMap = new Map<string, FirebaseFirestore.DocumentSnapshot>();
   snaps.forEach(snap => {
     if (!snap) return;
     snap.docs.forEach((d: any) => {
       const data = d.data() || {};
       if (data.status !== 'inactive') {
-        parentUids.add(d.id);
+        parentMap.set(d.id, d);
       }
     });
   });
 
-  return Array.from(parentUids);
+  return Array.from(parentMap.values());
 }
 
 /**

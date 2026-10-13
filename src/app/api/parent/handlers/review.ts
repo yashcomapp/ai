@@ -10,7 +10,6 @@ import { MasteryService } from '@/services/mastery.service';
 import { ExamService } from '@/services/exam.service';
 import { getFromCache, setInCache, invalidateCache } from '@/lib/firebase/cache';
 
-export const dynamic = 'force-dynamic';
 
 function safeDateToISO(val: any): string | null {
   if (!val) return null;
