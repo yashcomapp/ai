@@ -200,7 +200,8 @@ body {
 .katex [style*="transparent"],
 .katex .mphantom,
 .katex .rlap .inner [style*="transparent"],
-.katex .rlap .inner .mord {
+.katex .rlap .inner [style*="color:transparent"],
+.katex .rlap .inner [style*="color: transparent"] {
     color: transparent !important;
     opacity: 0 !important;
     visibility: hidden !important;
