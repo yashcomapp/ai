@@ -1846,37 +1846,10 @@ Return ONLY valid JSON. No markdown wrappers or extra commentary.`;
                     </div>
                   </div>
 
-                  {/* Question Stem Display via SSOT QuestionDisplay / RichMathText */}
-                  <div style={{ fontSize: '12.5px', fontWeight: 'bold', lineHeight: '1.45', color: 'var(--text)', width: '100%', wordBreak: 'break-word', margin: '2px 0 4px 0' }}>
-                    <QuestionDisplay question={q} mode="stem-only" />
+                  {/* Question Stem & Options Display via SSOT QuestionDisplay */}
+                  <div style={{ fontSize: '12.5px', lineHeight: '1.45', color: 'var(--text)', width: '100%', wordBreak: 'break-word', margin: '2px 0 4px 0' }}>
+                    <QuestionDisplay question={q} mode="bank" />
                   </div>
-                  
-                  {/* Render Options if MCQ */}
-                  {q.options && q.options.length > 0 && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '11.5px', color: 'var(--text)', width: '100%', marginBottom: '4px' }}>
-                       {q.options.map((opt, oi) => {
-                         const label = String.fromCharCode(65 + oi);
-                         const isCorrect = q.correctAnswers 
-                           ? (q.correctAnswers.includes(label) || q.correctAnswers.includes(opt)) 
-                           : (q.correctAnswer === label || q.correctAnswer === opt);
-                         return (
-                           <div key={oi} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '4px 8px', background: isCorrect ? 'var(--success-bg)' : 'var(--review-option-bg)', borderRadius: 'var(--radius-sm)', border: isCorrect ? '1.5px solid var(--success)' : '1px solid var(--review-option-border)', color: isCorrect ? 'var(--success)' : 'var(--text)', fontWeight: isCorrect ? 600 : 400 }}>
-                             <span style={{ fontWeight: 700, flexShrink: 0 }}>{isCorrect ? '✅ ' : ''}{label}.</span> 
-                             <span style={{ flex: 1, wordBreak: 'break-word' }}>
-                               <RichMathText content={opt} inline />
-                             </span>
-                           </div>
-                         );
-                       })}
-                    </div>
-                  )}
-
-                  {/* Correct Answers Banner */}
-                  {(q.correctAnswer || (q.correctAnswers && q.correctAnswers.length > 0)) && (
-                    <div style={{ fontSize: '11.5px', color: 'var(--success)', fontWeight: 700, padding: '4px 8px', background: 'rgba(16, 185, 129, 0.08)', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(16, 185, 129, 0.2)', width: '100%' }}>
-                      ✓ Correct Answer: <RichMathText content={q.correctAnswers && q.correctAnswers.length > 0 ? q.correctAnswers.join(', ') : q.correctAnswer} inline style={{ fontWeight: 600 }} />
-                    </div>
-                  )}
 
                   {/* Proctoring Settings */}
                   <div style={{ marginTop: '2px', display: 'flex', alignItems: 'center', gap: '8px' }}>
