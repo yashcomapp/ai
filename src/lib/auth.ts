@@ -1,5 +1,6 @@
 import { adminAuth, adminDb } from '@/lib/firebase/admin';
 import { UserRole } from '@/types/user.types';
+import { isStudentBlockedByCurfew } from '@/lib/curfew';
 
 export interface VerifiedUser {
   decodedToken: any;
@@ -78,20 +79,11 @@ export async function verifyAnyRole(
 
   const userRole = (userData.role || '').toLowerCase() as UserRole;
   if (roles.includes(userRole)) {
-    // Curfew check for student role
+    // Curfew check for student role (SSOT)
     if (userRole === 'student') {
-      const email = (decodedToken.email || userData.email || '').toLowerCase();
-      const curfewBypassEmail = (process.env.CURFEW_BYPASS_EMAIL || process.env.NEXT_PUBLIC_CURFEW_BYPASS_EMAIL || '').toLowerCase();
-      if (email !== curfewBypassEmail && !userData.curfewBypass) {
-        const nowUtc = Date.now();
-        const istOffset = 5.5 * 60 * 60 * 1000;
-        const istDate = new Date(nowUtc + istOffset);
-        const hours = istDate.getUTCHours();
-        const minutes = istDate.getUTCMinutes();
-        const isCurfew = hours > 22 || (hours === 22 && minutes >= 30) || hours < 5;
-        if (isCurfew) {
-          return null;
-        }
+      const email = decodedToken.email || userData.email || '';
+      if (isStudentBlockedByCurfew(email, userData)) {
+        return null;
       }
     }
     return { decodedToken, userData, role: userRole };

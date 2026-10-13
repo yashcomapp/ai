@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { db } from '@/lib/firebase/firestore';
 import { doc, onSnapshot } from 'firebase/firestore';
+import { isCurfewBypassed } from '@/lib/curfew';
 
 export default function ParentLayout({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
@@ -11,8 +12,7 @@ export default function ParentLayout({ children }: { children: React.ReactNode }
 
   useEffect(() => {
     const unsub = onSnapshot(doc(db, 'config', 'systemAccess'), (snapshot) => {
-      const email = (user?.email || '').toLowerCase();
-      const isBypassed = email === 'p@c.com' || email === 's@c.com' || email === 'a@c.com' || !!user?.maintenanceBypass || !!user?.curfewBypass;
+      const isBypassed = isCurfewBypassed(user?.email, user);
 
       if (snapshot.exists()) {
         const data = snapshot.data();

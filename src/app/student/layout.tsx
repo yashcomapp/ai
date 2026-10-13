@@ -9,6 +9,7 @@ import { doc, onSnapshot } from 'firebase/firestore';
 
 import { LogOut, Bell, Settings } from 'lucide-react';
 import Image from 'next/image';
+import { isStudentBlockedByCurfew, isCurfewBypassed } from '@/lib/curfew';
 
 export default function StudentLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() || '';
@@ -19,8 +20,7 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
 
   useEffect(() => {
     const unsub = onSnapshot(doc(db, 'config', 'systemAccess'), (snapshot) => {
-      const email = (user?.email || '').toLowerCase();
-      const isBypassed = email === 's@c.com' || email === 'p@c.com' || email === 'a@c.com' || !!user?.maintenanceBypass || !!user?.curfewBypass;
+      const isBypassed = isCurfewBypassed(user?.email, user);
 
       if (snapshot.exists()) {
         const data = snapshot.data();
@@ -53,18 +53,8 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
     };
 
     const checkCurfew = () => {
-      const email = (user?.email || '').toLowerCase();
-      const curfewBypassEmail = (process.env.NEXT_PUBLIC_CURFEW_BYPASS_EMAIL || '').toLowerCase();
-      if (email === 's@c.com' || email === 'p@c.com' || email === 'a@c.com' || email === curfewBypassEmail || user?.curfewBypass || user?.maintenanceBypass) {
-        setCurfewActive(false);
-        return;
-      }
       const actualTime = getOfficialTime();
-      const istDate = new Date(actualTime + 5.5 * 60 * 60 * 1000);
-      const hours = istDate.getUTCHours();
-      const minutes = istDate.getUTCMinutes();
-      const isCurfew = hours > 22 || (hours === 22 && minutes >= 30) || hours < 5;
-      setCurfewActive(isCurfew);
+      setCurfewActive(isStudentBlockedByCurfew(user?.email, user, actualTime));
     };
 
     checkCurfew();

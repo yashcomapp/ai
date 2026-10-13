@@ -757,8 +757,8 @@ export async function notifyNotice(
     const uids = new Set<string>();
 
     if (targetType === 'all') {
-      // Notify all parents and students
-      const snaps = await adminDb.collection('users').get();
+      // Notify all parents and students (doc IDs only)
+      const snaps = await adminDb.collection('users').select().get();
       snaps.docs.forEach(doc => uids.add(doc.id));
     } else if (targetType === 'batch' && targetValues.length > 0) {
       // Notify all students in this batch and their parents

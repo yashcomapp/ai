@@ -4,6 +4,7 @@ import * as admin from 'firebase-admin';
 import { notifyStudentLogin, notifyStudentLogout } from '@/lib/notifications';
 import { verifyToken, verifyAnyRole, invalidateUserCache } from '@/lib/auth';
 import { chunkArray } from '@/lib/firestoreUtils';
+import { isStudentBlockedByCurfew, CURFEW_RESTRICTION_MESSAGE } from '@/lib/curfew';
 
 async function checkParentDeactivationStatus(userData: any, email?: string): Promise<{ shouldDeactivate: boolean; reason: 'student_autonomous' | 'all_students_inactive' | null }> {
   const parentEmail = email?.toLowerCase();
@@ -177,19 +178,9 @@ export async function POST(req: NextRequest) {
       }
 
       if (role === 'student') {
-        const userEmail = (email || userData.email || '').toLowerCase();
-        const curfewBypassEmail = (process.env.CURFEW_BYPASS_EMAIL || process.env.NEXT_PUBLIC_CURFEW_BYPASS_EMAIL || '').toLowerCase();
-        const isBypassed = userEmail === 's@c.com' || userEmail === 'p@c.com' || userEmail === 'a@c.com' || userEmail === curfewBypassEmail || !!userData.curfewBypass || !!userData.maintenanceBypass;
-        if (!isBypassed) {
-          const nowUtc = Date.now();
-          const istOffset = 5.5 * 60 * 60 * 1000;
-          const istDate = new Date(nowUtc + istOffset);
-          const hours = istDate.getUTCHours();
-          const minutes = istDate.getUTCMinutes();
-          const isCurfew = hours > 22 || (hours === 22 && minutes >= 30) || hours < 5;
-          if (isCurfew) {
-            return NextResponse.json({ message: 'Rest is crucial for conceptual mastery! Yashcom Foundation restricts student logins between 10:30 PM and 5:00 AM to promote healthy sleep. Sleep well!' }, { status: 403 });
-          }
+        const userEmail = email || userData.email || '';
+        if (isStudentBlockedByCurfew(userEmail, userData)) {
+          return NextResponse.json({ message: CURFEW_RESTRICTION_MESSAGE }, { status: 403 });
         }
       }
 
