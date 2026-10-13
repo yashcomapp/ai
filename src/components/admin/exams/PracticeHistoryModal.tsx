@@ -2,11 +2,6 @@
 
 import React from 'react';
 
-export interface PracticeHistoryStudent {
-  studentCode: string;
-  name: string;
-}
-
 export interface PracticeHistoryModalProps {
   selectedPracStudent: any;
   setSelectedPracStudent: (student: any) => void;

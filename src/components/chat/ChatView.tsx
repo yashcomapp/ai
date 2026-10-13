@@ -143,6 +143,7 @@ export default function ChatView({ role = 'admin', hideHeader = false }: ChatVie
   // Message scroll/jump refs
   const messageRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const longPressTimeoutRef = useRef<any>(null);
+  const seenMessageIdsRef = useRef<Set<string>>(new Set());
 
   const handleLongPressStart = (messageId: string) => {
     if (longPressTimeoutRef.current) clearTimeout(longPressTimeoutRef.current);
@@ -511,7 +512,7 @@ export default function ChatView({ role = 'admin', hideHeader = false }: ChatVie
             ? (latestMsg.senderRole === 'admin' || latestMsg.senderId === 'admin' || latestMsg.senderId === firebaseUser?.uid)
             : (latestMsg.senderId === myUserKey);
 
-          const isNew = !messages.some(m => m.messageId === latestMsg.messageId);
+          const isNew = !seenMessageIdsRef.current.has(latestMsg.messageId);
           if (isNew && !isMine) {
             playNotificationSound();
           }
@@ -520,6 +521,9 @@ export default function ChatView({ role = 'admin', hideHeader = false }: ChatVie
             isInitialMessagesMountRef.current = false;
           }, 1000);
         }
+
+        // Keep seen message IDs cache up to date
+        msgs.forEach(m => seenMessageIdsRef.current.add(m.messageId));
 
         setMessages(msgs.reverse());
         setUseApiPolling(false);
@@ -534,15 +538,18 @@ export default function ChatView({ role = 'admin', hideHeader = false }: ChatVie
       fetchFallbackMessages();
     }
 
-    // Populate active room mutes
+    return () => unsubscribe();
+  }, [activeRoomId, firebaseUser, role, myUserKey]);
+
+  // Synchronize active room mute states independently without tearing down message listener
+  useEffect(() => {
+    if (!activeRoomId) return;
     const activeRoom = rooms.find(r => r.roomId === activeRoomId);
     if (activeRoom) {
       setMuteStudents(!!activeRoom.isMutedForStudents);
       setMuteParents(!!activeRoom.isMutedForParents);
     }
-
-    return () => unsubscribe();
-  }, [activeRoomId, firebaseUser, rooms]);
+  }, [activeRoomId, rooms]);
 
   // Load starred messages when room changes
   useEffect(() => {

@@ -29,11 +29,3 @@ export interface TopicRecommendation {
   confidence: number;
   category: 'needsAttention' | 'continuePractice' | 'revision';
 }
-
-export interface PracticeSession {
-  topicCode: string;
-  questions: any[];
-  masteryAtStart: number;
-  idealTimeSeconds: number;
-  category: string;
-}

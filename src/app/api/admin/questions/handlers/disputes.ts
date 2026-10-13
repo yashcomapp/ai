@@ -15,10 +15,11 @@ export async function GET(req: NextRequest) {
 
     const disputesSnap = await adminDb.collection('disputes')
       .orderBy('createdAt', 'desc')
+      .limit(200)
       .get()
       .catch(async () => {
         // Fallback without orderBy in case index is building
-        return await adminDb.collection('disputes').get();
+        return await adminDb.collection('disputes').limit(200).get();
       });
 
     const disputes = disputesSnap.docs.map(doc => {

@@ -13,6 +13,7 @@ export async function GET(req: NextRequest) {
 
     const leavesSnap = await adminDb.collection('leaveApplications')
       .orderBy('createdAt', 'desc')
+      .limit(200)
       .get();
 
     const leaves = leavesSnap.docs.map(doc => ({

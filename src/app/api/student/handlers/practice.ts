@@ -675,25 +675,6 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    if (action === 'instantUnlockRecovery') {
-      const targetStudent = body.targetStudentCode || studentCode;
-      const targetTopic = topicCode || body.topicCode;
-      if (!targetTopic) {
-        return NextResponse.json({ message: 'Missing topicCode.' }, { status: 400 });
-      }
-      const masteryDocId = `${targetStudent}_${targetTopic}`;
-      await adminDb.collection('studentTopicMastery').doc(masteryDocId).set({
-        recoveryImmediateUnlocked: true,
-        recoveryApproved: true,
-        recoveryUnlockedAt: new Date(),
-        recoveryUnlockedBy: student.decodedToken?.email || studentName
-      }, { merge: true });
-      return NextResponse.json({ 
-        success: true,
-        message: 'Recovery Diagnostic instantly unlocked successfully.'
-      });
-    }
-
     if (action === 'confirmTextbook') {
       if (!topicCode) {
         return NextResponse.json({ message: 'Missing topicCode.' }, { status: 400 });

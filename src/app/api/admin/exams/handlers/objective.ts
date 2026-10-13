@@ -96,6 +96,47 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ message: 'Exam not found.' }, { status: 404 });
     }
 
+    // On-demand proctoring snapshots fetch for a specific student attempt (keeps main report fast & lightweight)
+    const snapshotsAttemptId = searchParams.get('snapshotsAttemptId');
+    const snapshotsStudentCode = searchParams.get('snapshotsStudentCode');
+    if (snapshotsAttemptId || (snapshotsStudentCode && examId)) {
+      let attemptDoc: any = null;
+      if (snapshotsAttemptId) {
+        const doc = await adminDb.collection('examAttempts').doc(snapshotsAttemptId).get();
+        if (doc.exists) attemptDoc = doc;
+      }
+      if (!attemptDoc && snapshotsStudentCode) {
+        const directDoc = await adminDb.collection('examAttempts').doc(`${resolvedExamId}_${snapshotsStudentCode}`).get();
+        if (directDoc.exists) {
+          attemptDoc = directDoc;
+        } else {
+          const q = await adminDb.collection('examAttempts')
+            .where('examId', '==', resolvedExamId)
+            .where('studentCode', '==', snapshotsStudentCode)
+            .limit(1)
+            .get();
+          if (!q.empty) attemptDoc = q.docs[0];
+        }
+      }
+      if (attemptDoc && attemptDoc.exists) {
+        const attData = attemptDoc.data() || {};
+        const completedAt = attData.completedAt?.toDate ? attData.completedAt.toDate() : (attData.completedAt ? new Date(attData.completedAt) : null);
+        const startedAt = attData.startedAt?.toDate ? attData.startedAt.toDate() : (attData.startedAt ? new Date(attData.startedAt) : null);
+        const snapshotsExpiresAt = attData.proctoringSnapshotsExpiresAt || (completedAt ? getMidnightIST(completedAt).toISOString() : (startedAt ? getMidnightIST(startedAt).toISOString() : null));
+        const todayKeyIST = getDateKeyIST(new Date());
+        const attemptDateKey = completedAt ? getDateKeyIST(completedAt) : (startedAt ? getDateKeyIST(startedAt) : null);
+        const isPastDay = attemptDateKey ? attemptDateKey < todayKeyIST : false;
+        const isExpired = isPastDay || (snapshotsExpiresAt ? Date.now() >= new Date(snapshotsExpiresAt).getTime() : false);
+        const rawSnapshots = isExpired ? [] : (attData.proctoringSnapshots || []);
+        return NextResponse.json({
+          snapshots: rawSnapshots,
+          isPurged: isExpired,
+          snapshotsExpiresAt
+        });
+      }
+      return NextResponse.json({ snapshots: [], isPurged: true, snapshotsExpiresAt: null });
+    }
+
     const cacheKey = `exam-report-objective-${resolvedExamId}`;
     const cached = await ReportCacheManager.getReport(cacheKey);
     if (cached) {
@@ -103,9 +144,10 @@ export async function GET(req: NextRequest) {
     }
 
     // Load reviews, attempts, assignments, students, batches, syllabus, and parent evaluations in parallel
+    // NOTE: Projected select on examAttempts prevents multi-megabyte base64 webcam dumps across network
     const [reviewsSnap, attemptsSnap, assignmentsSnap, studentsSnap, batchesSnap, syllabusList, evalSnaps] = await Promise.all([
       adminDb.collection('reviews').where('examId', '==', resolvedExamId).get(),
-      adminDb.collection('examAttempts').where('examId', '==', resolvedExamId).get(),
+      adminDb.collection('examAttempts').where('examId', '==', resolvedExamId).select('studentCode', 'startedAt', 'completedAt', 'proctoringSnapshotsExpiresAt').get(),
       adminDb.collection('batchAssignments').where('examId', '==', resolvedExamId).get(),
       adminDb.collection('users').where('role', '==', 'student').select('studentCode', 'name', 'batchId', 'batchIds', 'autonomous', 'status', 'lastLoginAt', 'lastActiveAt').get(),
       adminDb.collection('batches').select('name').get(),
@@ -195,13 +237,11 @@ export async function GET(req: NextRequest) {
       }));
 
       // Automatic same-day 12 AM IST auto-purge check for proctoring snapshots
-      const rawSnapshots = rawAttempt.proctoringSnapshots || data.proctoringSnapshots || [];
       const snapshotsExpiresAt = rawAttempt.proctoringSnapshotsExpiresAt || data.proctoringSnapshotsExpiresAt || (completedAt ? getMidnightIST(completedAt).toISOString() : (startedAt ? getMidnightIST(startedAt).toISOString() : null));
       const todayKeyIST = getDateKeyIST(new Date());
       const attemptDateKey = completedAt ? getDateKeyIST(completedAt) : (startedAt ? getDateKeyIST(startedAt) : null);
       const isPastDay = attemptDateKey ? attemptDateKey < todayKeyIST : false;
       const isExpired = isPastDay || (snapshotsExpiresAt ? nowMs >= new Date(snapshotsExpiresAt).getTime() : false);
-      const validSnapshots = isExpired ? [] : (Array.isArray(rawSnapshots) ? rawSnapshots : []);
 
       // Clean up heavy proctoring screenshots from legacy violations object to prevent multi-megabyte payloads
       let sanitizedViolations = data.violations;
@@ -217,7 +257,7 @@ export async function GET(req: NextRequest) {
         questionDetails: qDetails,
         totalMarks: data.totalMarks || examData.totalMarks || 0,
         status: isApproved ? 'approved' : (data.status || 'pending'),
-        proctoringSnapshots: validSnapshots,
+        proctoringSnapshots: [], // Omit heavy base64 images from report overview; fetched on demand when student modal opens
         proctoringSnapshotsExpiresAt: snapshotsExpiresAt,
         proctoringSnapshotsPurged: isExpired,
         startedAt: startedAt ? (startedAt.toISOString ? startedAt.toISOString() : new Date(startedAt).toISOString()) : null,
@@ -542,14 +582,6 @@ export async function POST(req: NextRequest) {
       }
 
       return NextResponse.json({ message: 'Attempt reset/deleted successfully.' });
-    }
-
-    if (action === 'update') {
-      await Promise.all([
-        adminDb.collection('reviews').doc(attemptId).update(updates),
-        adminDb.collection('examAttempts').doc(attemptId).update(updates)
-      ]);
-      return NextResponse.json({ message: 'Attempt updated successfully.' });
     }
 
     if (action === 'resetAllAttempts') {

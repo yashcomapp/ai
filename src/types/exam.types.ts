@@ -14,10 +14,6 @@ export interface Exam {
   questionCodes: string[];
 }
 
-export interface SecureExam extends Omit<Exam, 'questionCodes'> {
-  questions: Omit<QuestionItem, 'correctAnswer' | 'correctAnswers' | 'solution'>[];
-}
-
 export interface Assignment {
   id: string;
   examId: string;

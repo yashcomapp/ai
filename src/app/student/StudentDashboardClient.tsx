@@ -213,15 +213,6 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
     }
   }, []);
 
-  // Live Clock Ticker: updates every 1 second to dynamically unlock scheduled exams precisely when startAt arrives
-  const [nowMs, setNowMs] = useState<number>(Date.now());
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setNowMs(Date.now());
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
-
   const { data, error, isLoading, mutate } = useSWR<DashboardData>(
     firebaseUser ? '/api/student/dashboard' : null,
     fetcher,
@@ -234,6 +225,59 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
       fallbackData: initialData || localCache
     }
   );
+
+  // Live Clock Ticker: dynamically updates when scheduled exams reach startAt or late limits
+  const [nowMs, setNowMs] = useState<number>(Date.now());
+  useEffect(() => {
+    const raw = (data || initialData || localCache)?.exams;
+    if (!raw) return;
+
+    const allExams = [
+      ...(raw.scheduledObjectiveExams || []),
+      ...(raw.scheduledSubjectiveExams || []),
+      ...(raw.scheduledEntranceExams || []),
+      ...(raw.pendingObjectiveExams || []),
+      ...(raw.pendingSubjectiveExams || [])
+    ];
+
+    const currentNow = Date.now();
+    let nextBoundaryMs: number | null = null;
+    let hasNearActiveCountdown = false;
+
+    for (const exam of allExams) {
+      const startMs = exam.startAt ? new Date(exam.startAt).getTime() : 0;
+      if (startMs > currentNow) {
+        if (!nextBoundaryMs || startMs < nextBoundaryMs) {
+          nextBoundaryMs = startMs;
+        }
+        if (startMs - currentNow <= 60000) {
+          hasNearActiveCountdown = true;
+        }
+      }
+      if (exam.lateEntryRestriction === true && startMs > 0) {
+        const lateLimitMs = startMs + (5 * 60 * 1000);
+        if (lateLimitMs > currentNow) {
+          if (!nextBoundaryMs || lateLimitMs < nextBoundaryMs) {
+            nextBoundaryMs = lateLimitMs;
+          }
+          if (lateLimitMs - currentNow <= 60000) {
+            hasNearActiveCountdown = true;
+          }
+        }
+      }
+    }
+
+    // If an exam is within 60s of starting or late lock closing, tick every second for precision
+    if (hasNearActiveCountdown) {
+      const timer = setInterval(() => setNowMs(Date.now()), 1000);
+      return () => clearInterval(timer);
+    }
+
+    // Otherwise, sleep until the exact next boundary, or check every 30s as a gentle fallback
+    const delay = nextBoundaryMs ? Math.min(Math.max(500, nextBoundaryMs - currentNow + 100), 30000) : 30000;
+    const timeout = setTimeout(() => setNowMs(Date.now()), delay);
+    return () => clearTimeout(timeout);
+  }, [data, initialData, localCache, nowMs]);
 
   const [dismissedOverdue, setDismissedOverdue] = useState(false);
 

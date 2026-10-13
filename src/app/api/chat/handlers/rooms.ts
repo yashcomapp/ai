@@ -547,65 +547,6 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { action, roomId } = body;
 
-    if (action === 'resetUnread') {
-      if (!roomId) {
-        return NextResponse.json({ error: 'Missing roomId.' }, { status: 400 });
-      }
-      
-      const authResult = await verifyAnyRole(req, ['admin', 'student', 'parent']);
-      if (!authResult) {
-        return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
-      }
-
-      const { userData, role } = authResult;
-      let userKey = '';
-      if (role === 'admin') {
-        userKey = 'admin';
-      } else if (role === 'student') {
-        userKey = userData?.studentCode || '';
-      } else if (role === 'parent') {
-        userKey = `PR-${userData?.email?.toLowerCase().trim()}`;
-      }
-
-      if (!userKey) {
-        return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
-      }
-
-      // Reset specific unread counter map element
-      const roomRef = adminDb.collection('chatRooms').doc(roomId);
-      const roomSnap = await roomRef.get();
-
-      if (roomSnap.exists) {
-        const roomData = roomSnap.data()!;
-        if (role !== 'admin') {
-          const isParticipant = Array.isArray(roomData.participants) && roomData.participants.some((p: string) => 
-            String(p).trim().toLowerCase() === String(userKey).trim().toLowerCase()
-          );
-
-          if (!isParticipant) {
-            return NextResponse.json({ error: 'Forbidden. You are not a participant of this chat room.' }, { status: 403 });
-          }
-        }
-
-        const unreadCounts = { ...(roomData.unreadCounts || {}) };
-        let hasChanges = false;
-        if (role === 'admin') {
-          if (unreadCounts['admin'] !== 0) { unreadCounts['admin'] = 0; hasChanges = true; }
-          if (authResult.decodedToken?.uid && unreadCounts[authResult.decodedToken.uid] !== 0) {
-            unreadCounts[authResult.decodedToken.uid] = 0;
-            hasChanges = true;
-          }
-        } else {
-          if (unreadCounts[userKey] !== 0) { unreadCounts[userKey] = 0; hasChanges = true; }
-        }
-        if (hasChanges) {
-          await roomRef.update({ unreadCounts });
-        }
-      }
-
-      return NextResponse.json({ success: true, message: 'Unread count reset successfully.' });
-    }
-
     // Admin Group creation
     if (action === 'createGroup') {
       const admin = await verifyRole(req, 'admin');

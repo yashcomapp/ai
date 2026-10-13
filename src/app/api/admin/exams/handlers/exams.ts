@@ -759,15 +759,25 @@ export async function GET(req: NextRequest) {
       allChunks.push(allExamIds.slice(i, i + 30));
     }
 
-    const [objAssignSnap, subjAssignSnap, reviewSnaps, attemptSnaps] = await Promise.all([
-      adminDb.collection('batchAssignments').get().catch(err => {
-        console.error('Error fetching batchAssignments:', err);
-        return { docs: [] } as any;
-      }),
-      adminDb.collection('subjectiveAssignments').get().catch(err => {
-        console.error('Error fetching subjectiveAssignments:', err);
-        return { docs: [] } as any;
-      }),
+    const [objAssignSnaps, subjAssignSnaps, reviewSnaps, attemptSnaps] = await Promise.all([
+      allChunks.length > 0 ? Promise.all(allChunks.map(chunk =>
+        adminDb.collection('batchAssignments')
+          .where('examId', 'in', chunk)
+          .get()
+          .catch(err => {
+            console.error('Error fetching batchAssignments chunk:', err);
+            return { docs: [] } as any;
+          })
+      )) : Promise.resolve([]),
+      allChunks.length > 0 ? Promise.all(allChunks.map(chunk =>
+        adminDb.collection('subjectiveAssignments')
+          .where('examId', 'in', chunk)
+          .get()
+          .catch(err => {
+            console.error('Error fetching subjectiveAssignments chunk:', err);
+            return { docs: [] } as any;
+          })
+      )) : Promise.resolve([]),
       Promise.all(allChunks.map(chunk => 
         adminDb.collection('reviews')
           .where('examId', 'in', chunk)
@@ -783,6 +793,9 @@ export async function GET(req: NextRequest) {
           .catch(() => null)
       ))
     ]);
+
+    const objAssignDocs = (objAssignSnaps as any[]).flatMap(s => s?.docs || []);
+    const subjAssignDocs = (subjAssignSnaps as any[]).flatMap(s => s?.docs || []);
 
     const attemptCounts: { [key: string]: number } = {};
     const examAttemptsMap: { [key: string]: Set<string> } = {};
@@ -811,7 +824,7 @@ export async function GET(req: NextRequest) {
     }
 
     const objAssignments: any[] = [];
-    objAssignSnap.docs.forEach((doc: any) => {
+    objAssignDocs.forEach((doc: any) => {
       const data = doc.data();
       if (data.status && data.status !== 'active' && data.status !== 'draft') return;
       objAssignments.push({
@@ -833,7 +846,7 @@ export async function GET(req: NextRequest) {
     });
 
     const subjAssignments: any[] = [];
-    subjAssignSnap.docs.forEach((doc: any) => {
+    subjAssignDocs.forEach((doc: any) => {
       const data = doc.data();
       if (data.status && data.status !== 'active' && data.status !== 'draft') return;
       subjAssignments.push({

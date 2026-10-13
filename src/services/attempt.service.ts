@@ -286,6 +286,14 @@ export class AttemptService {
         }
       }
 
+      // Sanitize violations to keep base64 images exclusively in proctoringSnapshots on examAttempts
+      let sanitizedViolations = violations;
+      const rawSnapshots = violations?.screenshots || violations?.proctoringSnapshots || [];
+      if (sanitizedViolations && typeof sanitizedViolations === 'object') {
+        const { screenshots, proctoringSnapshots: vSnaps, ...restViolations } = sanitizedViolations;
+        sanitizedViolations = restViolations;
+      }
+
       // Write 1. Create Exam Attempt using AttemptRepository in tx
       const attemptData = {
         examId: examId,
@@ -312,8 +320,8 @@ export class AttemptService {
         status: 'completed',
         proctoringViolationTriggered: !!proctoringViolationTriggered,
         micAvailable: micBypassed !== undefined ? !micBypassed : true,
-        violations: violations || null,
-        proctoringSnapshots: violations?.screenshots || violations?.proctoringSnapshots || [],
+        violations: sanitizedViolations || null,
+        proctoringSnapshots: rawSnapshots,
         proctoringSnapshotsExpiresAt: getMidnightIST(new Date()).toISOString(),
         completedAt: admin.firestore.FieldValue.serverTimestamp(),
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -353,7 +361,7 @@ export class AttemptService {
         status: (wrongAnswers.length === 0 && unattempted.length === 0) ? (isAutonomous ? 'approved' : 'pending') : 'student_review',
         proctoringViolationTriggered: !!proctoringViolationTriggered,
         micAvailable: micBypassed !== undefined ? !micBypassed : true,
-        violations: violations || null,
+        violations: sanitizedViolations || null,
         abandoned: abandoned ? true : admin.firestore.FieldValue.delete()
       };
       tx.set(reviewRef, reviewData, { merge: true });

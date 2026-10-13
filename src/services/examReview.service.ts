@@ -220,22 +220,36 @@ export class ExamReviewService {
       }
 
       const reviewRefs = candidateDocIds.map(id => adminDb.collection('reviews').doc(id));
-      const rSnaps = await adminDb.getAll(...reviewRefs).catch(() => []);
+      const attemptRefs = candidateDocIds.map(id => adminDb.collection('examAttempts').doc(id));
+      const [rSnaps, aSnaps] = await Promise.all([
+        adminDb.getAll(...reviewRefs).catch(() => []),
+        adminDb.getAll(...attemptRefs).catch(() => [])
+      ]);
+
+      const batch = adminDb.batch();
+      let hasBatchOps = false;
+
       for (const snap of rSnaps) {
         if (snap && snap.exists) {
           const currentRevStatus = snap.data()?.status;
           if (currentRevStatus === 'student_review' || isAutonomous || wrongAnswerReasons) {
-            await snap.ref.update(updatePayload).catch(() => null);
+            batch.update(snap.ref, updatePayload);
+            hasBatchOps = true;
           }
         }
       }
 
-      const attemptRefs = candidateDocIds.map(id => adminDb.collection('examAttempts').doc(id));
-      const aSnaps = await adminDb.getAll(...attemptRefs).catch(() => []);
       for (const snap of aSnaps) {
         if (snap && snap.exists) {
-          await snap.ref.update(updatePayload).catch(() => null);
+          batch.update(snap.ref, updatePayload);
+          hasBatchOps = true;
         }
+      }
+
+      if (hasBatchOps) {
+        await batch.commit().catch(bErr => {
+          console.warn('Batch commit failed for review sync, falling back:', bErr);
+        });
       }
     } catch (revErr) {
       console.warn('Could not sync status to reviews doc:', revErr);

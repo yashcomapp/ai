@@ -135,6 +135,7 @@ function ExamReportContent() {
   const [votersList, setVotersList] = useState<string[]>([]);
   const [votersTitle, setVotersTitle] = useState('');
   const [previewSnapshot, setPreviewSnapshot] = useState<{ src: string; reason: string; timestamp?: number | string } | null>(null);
+  const [loadingSnapshots, setLoadingSnapshots] = useState(false);
 
   // Re-scoring modal states
   const [editAnswerOpen, setEditAnswerOpen] = useState(false);
@@ -228,6 +229,37 @@ function ExamReportContent() {
 
   // Dynamically load KaTeX and auto-render math equations on state changes
   useMathRender([loading, attempts, questionSortMode, studentModalOpen, editAnswerOpen, questionFilterTab, reassignModalOpen]);
+
+  // On-demand fetch proctoring snapshots when a student modal is opened
+  useEffect(() => {
+    if (!studentModalOpen || !selectedAttempt) return;
+    const isPastDay = selectedAttempt.completedAt ? (getDateKeyIST(selectedAttempt.completedAt) < getDateKeyIST(new Date())) : (selectedAttempt.startedAt ? (getDateKeyIST(selectedAttempt.startedAt) < getDateKeyIST(new Date())) : false);
+    const isExpired = selectedAttempt.proctoringSnapshotsExpiresAt ? (new Date() >= new Date(selectedAttempt.proctoringSnapshotsExpiresAt)) : false;
+    if (selectedAttempt.proctoringSnapshotsPurged || isPastDay || isExpired) return;
+
+    if (selectedAttempt.proctoringSnapshots && selectedAttempt.proctoringSnapshots.length > 0) return;
+
+    let cancelled = false;
+    setLoadingSnapshots(true);
+    fetch(`/api/admin/exams/objective?examId=${encodeURIComponent(examId)}&snapshotsStudentCode=${encodeURIComponent(selectedAttempt.studentCode || '')}&snapshotsAttemptId=${encodeURIComponent(selectedAttempt.id || '')}`)
+      .then(res => res.json())
+      .then(data => {
+        if (cancelled) return;
+        if (data?.snapshots) {
+          setSelectedAttempt(prev => prev && prev.id === selectedAttempt.id ? {
+            ...prev,
+            proctoringSnapshots: data.snapshots,
+            proctoringSnapshotsPurged: data.isPurged || data.snapshots.length === 0
+          } : prev);
+        }
+      })
+      .catch(err => console.error('Failed to fetch on-demand proctoring snapshots:', err))
+      .finally(() => {
+        if (!cancelled) setLoadingSnapshots(false);
+      });
+
+    return () => { cancelled = true; };
+  }, [studentModalOpen, selectedAttempt?.id, examId]);
 
   const { totalQuestionsCount, correctCount, incorrectCount, unansweredCount } = useMemo(() => {
     if (!selectedAttempt) return { totalQuestionsCount: 0, correctCount: 0, incorrectCount: 0, unansweredCount: 0 };
@@ -2303,7 +2335,7 @@ function ExamReportContent() {
                 const isExpired = selectedAttempt.proctoringSnapshotsExpiresAt ? (new Date() >= new Date(selectedAttempt.proctoringSnapshotsExpiresAt)) : false;
                 const isPurged = selectedAttempt.proctoringSnapshotsPurged || isPastDay || isExpired || (snapshots.length === 0 && selectedAttempt.completedAt && isPastDay);
                 
-                if (snapshots.length === 0 && !isPurged) return null;
+                if (snapshots.length === 0 && !isPurged && !loadingSnapshots) return null;
 
                 return (
                   <div style={{
@@ -2313,16 +2345,21 @@ function ExamReportContent() {
                     padding: '8px 12px',
                     marginBottom: '10px'
                   }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: snapshots.length > 0 ? '8px' : '0' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: (snapshots.length > 0 || loadingSnapshots) ? '8px' : '0' }}>
                       <span style={{ fontSize: '11.5px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        📸 Proctoring Snapshots ({snapshots.length}/5)
+                        📸 Proctoring Snapshots {loadingSnapshots ? '(Loading...)' : `(${snapshots.length}/5)`}
                       </span>
                       <span style={{ fontSize: '10px', color: 'var(--accent)', background: 'rgba(59, 130, 246, 0.08)', padding: '2px 6px', borderRadius: '4px', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
                         🔒 Confidential • Auto-purged at 12:00 AM
                       </span>
                     </div>
 
-                    {isPurged && snapshots.length === 0 ? (
+                    {loadingSnapshots ? (
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic', padding: '6px 0', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ width: '12px', height: '12px', border: '2px solid var(--accent)', borderRightColor: 'transparent', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.75s linear infinite' }} />
+                        Loading camera captures...
+                      </div>
+                    ) : isPurged && snapshots.length === 0 ? (
                       <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic', padding: '4px 0' }}>
                         🔒 Proctoring camera captures have been permanently auto-purged per same-day 12:00 AM retention limit.
                       </div>
