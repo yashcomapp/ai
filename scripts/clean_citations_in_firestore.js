@@ -31,6 +31,8 @@ function stripCitations(text) {
   return text
     .replace(/\[cite:\s*[^\]]+\]/gi, '')
     .replace(/\[cite\b[^\]]*\]/gi, '')
+    .replace(/【(?:source|cite\b[^】]*|\d+(?:[,\s-]+\d+)*)[^】]*】/gi, '')
+    .replace(/\[\d+(?:[,\s-]+\d+)*\]/g, '')
     .replace(/\s+([?,.!;:])/g, '$1')
     .replace(/[ \t]{2,}/g, ' ')
     .trim();
@@ -46,13 +48,15 @@ async function cleanAllCitations() {
 
   const toUpdate = [];
 
+  const citationRegex = /\[cite[:\s\d]|【(?:source|cite\b|\d+)|\[\d+(?:[,\s-]+\d+)*\]/i;
+
   snap.docs.forEach(doc => {
     const d = doc.data();
     let hasCitation = false;
     const updates = {};
 
     // text
-    if (d.text && /\[cite[:\s\d]/i.test(d.text)) {
+    if (d.text && citationRegex.test(d.text)) {
       const cleaned = stripCitations(d.text);
       if (cleaned !== d.text) {
         hasCitation = true;
@@ -61,7 +65,7 @@ async function cleanAllCitations() {
     }
 
     // solution
-    if (d.solution && /\[cite[:\s\d]/i.test(d.solution)) {
+    if (d.solution && citationRegex.test(d.solution)) {
       const cleaned = stripCitations(d.solution);
       if (cleaned !== d.solution) {
         hasCitation = true;
@@ -70,7 +74,7 @@ async function cleanAllCitations() {
     }
 
     // explanation
-    if (d.explanation && /\[cite[:\s\d]/i.test(d.explanation)) {
+    if (d.explanation && citationRegex.test(d.explanation)) {
       const cleaned = stripCitations(d.explanation);
       if (cleaned !== d.explanation) {
         hasCitation = true;
@@ -79,7 +83,7 @@ async function cleanAllCitations() {
     }
 
     // assertion
-    if (d.assertion && /\[cite[:\s\d]/i.test(d.assertion)) {
+    if (d.assertion && citationRegex.test(d.assertion)) {
       const cleaned = stripCitations(d.assertion);
       if (cleaned !== d.assertion) {
         hasCitation = true;
@@ -88,7 +92,7 @@ async function cleanAllCitations() {
     }
 
     // reason
-    if (d.reason && /\[cite[:\s\d]/i.test(d.reason)) {
+    if (d.reason && citationRegex.test(d.reason)) {
       const cleaned = stripCitations(d.reason);
       if (cleaned !== d.reason) {
         hasCitation = true;
@@ -97,7 +101,7 @@ async function cleanAllCitations() {
     }
 
     // correctAnswer
-    if (d.correctAnswer && /\[cite[:\s\d]/i.test(d.correctAnswer)) {
+    if (d.correctAnswer && citationRegex.test(d.correctAnswer)) {
       const cleaned = stripCitations(d.correctAnswer);
       if (cleaned !== d.correctAnswer) {
         hasCitation = true;
@@ -106,7 +110,7 @@ async function cleanAllCitations() {
     }
 
     // options
-    if (Array.isArray(d.options) && d.options.some(opt => /\[cite[:\s\d]/i.test(String(opt)))) {
+    if (Array.isArray(d.options) && d.options.some(opt => citationRegex.test(String(opt)))) {
       const cleanedOptions = d.options.map(opt => stripCitations(opt));
       if (JSON.stringify(cleanedOptions) !== JSON.stringify(d.options)) {
         hasCitation = true;

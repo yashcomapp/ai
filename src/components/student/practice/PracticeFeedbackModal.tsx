@@ -2,7 +2,6 @@
 
 import React from 'react';
 import {
-  preprocessMathText,
   stripOptionLabel,
   isMultipleChoiceType,
   normalizeOptionAnswer,

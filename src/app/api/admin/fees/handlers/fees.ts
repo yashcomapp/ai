@@ -68,24 +68,15 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ success: true, feeRecord });
     }
 
-    // 1. Fetch all student profiles, batches (cached), and live fee transactions for admin roster (SSOT)
-    const [studentsSnap, batchesSnap, txSnap] = await Promise.all([
+    // 1. Fetch all student profiles and batches (cached) for admin roster (SSOT)
+    const [studentsSnap, batchesSnap] = await Promise.all([
       adminDb.collection('users').where('role', '==', 'student').select('name', 'studentCode', 'email', 'batchId', 'batchIds', 'status').get(),
-      getCachedBatches(),
-      adminDb.collection('feeTransactions').get()
+      getCachedBatches()
     ]);
     const batchMap = new Map<string, string>();
     batchesSnap.docs.forEach(doc => {
       const data = typeof doc.data === 'function' ? doc.data() : (doc as any);
       batchMap.set(doc.id, data?.name || '');
-    });
-
-    const txByStudent = new Map<string, any[]>();
-    txSnap.docs.forEach(doc => {
-      const d = doc.data();
-      const code = (d.studentCode || '').trim().toUpperCase();
-      if (!txByStudent.has(code)) txByStudent.set(code, []);
-      txByStudent.get(code)!.push({ id: doc.id, ...d });
     });
 
     const students = studentsSnap.docs.map(doc => {
@@ -108,11 +99,12 @@ export async function GET(req: NextRequest) {
     }).filter(s => s.status === 'active' && !isDemoUser(s));
 
     // 2. Fetch existing student fees records only for active roster students
-    const feesMap = new Map<string, any>();
-    const studentCodeRefs = students
+    const activeStudentCodes = students
       .map(s => s.studentCode.trim().toUpperCase())
-      .filter(Boolean)
-      .map(code => adminDb.collection('studentFees').doc(code));
+      .filter(Boolean);
+
+    const feesMap = new Map<string, any>();
+    const studentCodeRefs = activeStudentCodes.map(code => adminDb.collection('studentFees').doc(code));
 
     if (studentCodeRefs.length > 0) {
       for (let i = 0; i < studentCodeRefs.length; i += 100) {
@@ -122,8 +114,7 @@ export async function GET(req: NextRequest) {
           if (doc.exists) {
             const codeUpper = doc.id.toUpperCase();
             feesMap.set(codeUpper, normalizeStudentFeeRecord(
-              { id: doc.id, ...doc.data() },
-              txByStudent.get(codeUpper) || []
+              { id: doc.id, ...doc.data() }
             ));
           }
         });

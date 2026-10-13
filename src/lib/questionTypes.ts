@@ -25,18 +25,23 @@ const RICH_TEXT_CACHE = new Map<string, string>();
 const MAX_MATH_CACHE_SIZE = 3000;
 
 /**
- * Strips web research / AI search citation tags (e.g. "[cite: 1]", "[cite: 1, 2]", "[cite: 2]", "[cite: 1-3]")
+ * Strips web research / AI search citation tags:
+ * - "[cite: 1]", "[cite: 1, 2]", "[cite: 2]", "[cite: 1-3]"
+ * - Numeric footnote citations like "[1]", "[2]", "[1, 2]", "[1-3]"
+ * - Full-width / Chinese bracket citation tags like "【source】", "【1】", "【cite: 1】"
  * and cleans up any spacing/punctuation artifacts left behind.
  */
 export function stripCitations(text: any): string {
   if (text == null) return '';
   const s = String(text);
-  if (!s.includes('[cite') && !s.includes('[cite:') && !s.includes('cite:')) {
+  if (!s.includes('cite') && !s.includes('【') && !/\[\d+(?:[,\s-]+\d+)*\]/.test(s)) {
     return s;
   }
   return s
     .replace(/\[cite:\s*[^\]]+\]/gi, '')
     .replace(/\[cite\b[^\]]*\]/gi, '')
+    .replace(/【(?:source|cite\b[^】]*|\d+(?:[,\s-]+\d+)*)[^】]*】/gi, '')
+    .replace(/\[\d+(?:[,\s-]+\d+)*\]/g, '')
     .replace(/\s+([?,.!;:])/g, '$1')
     .replace(/[ \t]{2,}/g, ' ')
     .trim();
@@ -1555,7 +1560,8 @@ export function parseAnswerList(ansInput: any): string[] {
 
 export function cleanStringForMatch(s: any): string {
   if (s === undefined || s === null) return '';
-  return String(s)
+  const stripped = stripCitations(s);
+  return String(stripped)
     .replace(/\\ce\{([^}]+)\}/g, '$1')
     .replace(/\\(?:text|mathrm|mathbf|mathit|mathsf|mathtt)\{([^}]+)\}/g, '$1')
     .replace(/\\\(|\\\)|\\\[|\\\]|\$+/g, '')       // Strip math delimiter wrappers

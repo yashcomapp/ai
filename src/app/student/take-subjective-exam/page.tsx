@@ -11,7 +11,7 @@ import { calculateHeadPose, checkLookingAway } from '@/utils/headPose';
 import { useProctoring } from '@/hooks/useProctoring';
 import { useLiveExam } from '@/hooks/useLiveExam';
 import { useAudioLevel } from '@/hooks/useAudioLevel';
-import { preprocessMathText, formatRichText } from '@/lib/questionTypes';
+import { formatRichText } from '@/lib/questionTypes';
 import { formatDuration, parseDateToMs } from '@/lib/dateUtils';
 import { InterruptionLockoutModal } from '@/components/InterruptionLockoutModal';
 import { ExamErrorBoundary } from '@/components/ExamErrorBoundary';

@@ -1487,7 +1487,7 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
       if (cleanOptions.length >= 2) {
         cleanOptions = shuffleArray(cleanOptions);
       }
-    } else if (finalType === 'assertion_reason') {
+    } else if (finalType === 'assertion_reason' || finalType === 'OAR') {
       const normLetter = String(q.correctAnswer || '').trim().toUpperCase();
       finalCorrectAnswer = ['A', 'B', 'C', 'D'].includes(normLetter) ? normLetter : (normLetter.match(/[A-D]/i)?.[0]?.toUpperCase() || 'A');
       cleanOptions = [];

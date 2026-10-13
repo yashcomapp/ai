@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import { preprocessMathText } from '@/lib/questionTypes';
 import { highlightModelAnswerKeywords } from '@/lib/pdfExport';
 import { RichMathText } from '@/components/QuestionDisplay';
 

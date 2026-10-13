@@ -8,7 +8,7 @@ const ExportPdfModal = dynamic(() => import('@/components/ExportPdfModal').then(
 import Script from 'next/script';
 import { useMathRender } from '@/hooks/useMathRender';
 import { useAdminStudents } from '@/hooks/useAdminReferenceData';
-import { preprocessMathText, formatRichText } from '@/lib/questionTypes';
+import { formatRichText } from '@/lib/questionTypes';
 import QuestionDisplay, { RichMathText } from '@/components/QuestionDisplay';
 
 interface AttemptRow {

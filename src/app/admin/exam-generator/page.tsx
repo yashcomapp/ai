@@ -5,7 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import Script from 'next/script';
 import { useMathRender } from '@/hooks/useMathRender';
-import { preprocessMathText, smartJsonParse, robustParseAIJson, cleanStringForMatch, toCanonicalQuestionType, isNumericalType, CanonicalQuestionType } from '@/lib/questionTypes';
+import { smartJsonParse, robustParseAIJson, cleanStringForMatch, toCanonicalQuestionType, isNumericalType, CanonicalQuestionType } from '@/lib/questionTypes';
 import { highlightModelAnswerKeywords } from '@/lib/pdfExport';
 import { SyllabusSelector } from '@/components/SyllabusSelector';
 import { useSyllabusSelector } from '@/hooks/useSyllabusSelector';
