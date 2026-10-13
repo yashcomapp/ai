@@ -69,6 +69,21 @@ export function normalizeStudentFeeRecord(
   } else if (!hasTransactions) {
     // If transactions array was not passed, preserve stored totalPaidAmount
     totalTxPaidAmount = safeNumber(feeData.totalPaidAmount, 0);
+    // Preserve already-synced per-installment allocations from the stored installments (SSOT)
+    if (Array.isArray(feeData.installments)) {
+      let knownAllocated = 0;
+      feeData.installments.forEach((inst: any, idx: number) => {
+        const instId = inst.installmentId || `inst_${idx + 1}`;
+        const paidForInst = safeNumber(inst.paidAmount, inst.status === 'paid' ? safeNumber(inst.amount, 0) : 0);
+        if (paidForInst > 0) {
+          specificPayments[instId] = paidForInst;
+          knownAllocated += paidForInst;
+        }
+      });
+      if (totalTxPaidAmount > knownAllocated) {
+        unallocatedPool = totalTxPaidAmount - knownAllocated;
+      }
+    }
   }
 
   // If base fee record has a higher totalPaidAmount than transactions ledger sum, treat difference as unallocated
