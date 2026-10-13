@@ -9,6 +9,7 @@ import { preprocessMathText, smartJsonParse, robustParseAIJson, cleanStringForMa
 import { highlightModelAnswerKeywords } from '@/lib/pdfExport';
 import { SyllabusSelector } from '@/components/SyllabusSelector';
 import { useSyllabusSelector } from '@/hooks/useSyllabusSelector';
+import { QuestionDisplay, RichMathText } from '@/components/QuestionDisplay';
 import { distributeCountsByWeight as distributeCountsByWeightLib, buildObjectiveSchema, isSameTopic } from '@/lib/syllabusUtils';
 import { areQuestionsTooSimilar } from '@/lib/questionSimilarity';
 
@@ -256,6 +257,12 @@ export default function AdminExamGeneratorPage() {
   const [generatedQuestions, setGeneratedQuestions] = useState<Question[]>([]);
   const [shortfalls, setShortfalls] = useState<any[]>([]);
   const [fetchingPool, setFetchingPool] = useState(false);
+
+  // Replace Question Modal States
+  const [replaceTargetIdx, setReplaceTargetIdx] = useState<number | null>(null);
+  const [replaceFilterType, setReplaceFilterType] = useState<string>('all');
+  const [replaceFilterDiff, setReplaceFilterDiff] = useState<string>('all');
+  const [replaceSearchQuery, setReplaceSearchQuery] = useState<string>('');
 
   const dynamicTiming = useMemo(() => calculateDynamicExamDuration(generatedQuestions), [generatedQuestions]);
 
@@ -1819,17 +1826,30 @@ Return ONLY valid JSON. No markdown wrappers or extra commentary.`;
                         {q.marks || 4} Marks
                       </span>
                     </div>
-                    <button className="btn btn-secondary btn-sm" style={{ color: 'var(--danger)', borderColor: 'rgba(239, 68, 68, 0.3)', padding: '2px 8px', fontSize: '10.5px' }} onClick={() => handleRemoveQuestion(idx)}>
-                      🗑️ Remove
-                    </button>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <button 
+                        type="button"
+                        className="btn btn-secondary btn-sm" 
+                        style={{ color: 'var(--accent)', borderColor: 'rgba(56, 189, 248, 0.4)', padding: '2px 8px', fontSize: '10.5px' }} 
+                        onClick={() => {
+                          setReplaceTargetIdx(idx);
+                          setReplaceFilterType('all');
+                          setReplaceFilterDiff('all');
+                          setReplaceSearchQuery('');
+                        }}
+                      >
+                        🔄 Replace
+                      </button>
+                      <button className="btn btn-secondary btn-sm" style={{ color: 'var(--danger)', borderColor: 'rgba(239, 68, 68, 0.3)', padding: '2px 8px', fontSize: '10.5px' }} onClick={() => handleRemoveQuestion(idx)}>
+                        🗑️ Remove
+                      </button>
+                    </div>
                   </div>
 
-                  {/* Question Text */}
-                  <div 
-                    className="math-container" 
-                    style={{ fontSize: '12.5px', fontWeight: 'bold', lineHeight: '1.35', color: 'var(--text)', width: '100%', wordBreak: 'break-word', margin: '2px 0 4px 0' }} 
-                    dangerouslySetInnerHTML={{ __html: preprocessMathText(q.text) }} 
-                  />
+                  {/* Question Stem Display via SSOT QuestionDisplay / RichMathText */}
+                  <div style={{ fontSize: '12.5px', fontWeight: 'bold', lineHeight: '1.45', color: 'var(--text)', width: '100%', wordBreak: 'break-word', margin: '2px 0 4px 0' }}>
+                    <QuestionDisplay question={q} mode="stem-only" />
+                  </div>
                   
                   {/* Render Options if MCQ */}
                   {q.options && q.options.length > 0 && (
@@ -1842,7 +1862,9 @@ Return ONLY valid JSON. No markdown wrappers or extra commentary.`;
                          return (
                            <div key={oi} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '4px 8px', background: isCorrect ? 'var(--success-bg)' : 'var(--review-option-bg)', borderRadius: 'var(--radius-sm)', border: isCorrect ? '1.5px solid var(--success)' : '1px solid var(--review-option-border)', color: isCorrect ? 'var(--success)' : 'var(--text)', fontWeight: isCorrect ? 600 : 400 }}>
                              <span style={{ fontWeight: 700, flexShrink: 0 }}>{isCorrect ? '✅ ' : ''}{label}.</span> 
-                             <span className="math-container" style={{ flex: 1, wordBreak: 'break-word' }} dangerouslySetInnerHTML={{ __html: preprocessMathText(opt) }} />
+                             <span style={{ flex: 1, wordBreak: 'break-word' }}>
+                               <RichMathText content={opt} inline />
+                             </span>
                            </div>
                          );
                        })}
@@ -1852,7 +1874,7 @@ Return ONLY valid JSON. No markdown wrappers or extra commentary.`;
                   {/* Correct Answers Banner */}
                   {(q.correctAnswer || (q.correctAnswers && q.correctAnswers.length > 0)) && (
                     <div style={{ fontSize: '11.5px', color: 'var(--success)', fontWeight: 700, padding: '4px 8px', background: 'rgba(16, 185, 129, 0.08)', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(16, 185, 129, 0.2)', width: '100%' }}>
-                      ✓ Correct Answer: <span className="math-container" style={{ fontWeight: 600 }} dangerouslySetInnerHTML={{ __html: preprocessMathText(q.correctAnswers && q.correctAnswers.length > 0 ? q.correctAnswers.join(', ') : q.correctAnswer) }} />
+                      ✓ Correct Answer: <RichMathText content={q.correctAnswers && q.correctAnswers.length > 0 ? q.correctAnswers.join(', ') : q.correctAnswer} inline style={{ fontWeight: 600 }} />
                     </div>
                   )}
 
@@ -2021,6 +2043,208 @@ Return ONLY valid JSON. No markdown wrappers or extra commentary.`;
           </div>
         </div>
       )}
+
+      {/* Replace Question Modal */}
+      {replaceTargetIdx !== null && generatedQuestions[replaceTargetIdx] && (() => {
+        const targetQ = generatedQuestions[replaceTargetIdx];
+        const selectedCodes = new Set(
+          generatedQuestions.map((g, i) => i !== replaceTargetIdx ? (g.questionCode || g.id) : null).filter(Boolean)
+        );
+
+        // Filter candidates from availablePool:
+        // 1. Exclude questions already in generatedQuestions
+        // 2. Exclude the target question itself
+        // 3. Exclude questions too similar to other currently selected questions
+        let candidates = availablePool.filter(c => {
+          const cCode = c.questionCode || c.id;
+          const tCode = targetQ.questionCode || targetQ.id;
+          if (cCode && tCode && cCode === tCode) return false;
+          if (cCode && selectedCodes.has(cCode)) return false;
+          // Check type filter
+          if (replaceFilterType !== 'all' && c.type !== replaceFilterType) return false;
+          // Check difficulty filter
+          if (replaceFilterDiff !== 'all' && c.difficulty !== replaceFilterDiff) return false;
+          // Check search query
+          if (replaceSearchQuery.trim()) {
+            const query = replaceSearchQuery.toLowerCase().trim();
+            const textMatch = (c.text || '').toLowerCase().includes(query);
+            const codeMatch = (c.questionCode || '').toLowerCase().includes(query);
+            if (!textMatch && !codeMatch) return false;
+          }
+          return true;
+        });
+
+        // Deduplicate against remaining generated questions
+        const remainingGenerated = generatedQuestions.filter((_, i) => i !== replaceTargetIdx);
+        candidates = candidates.filter(cand => !remainingGenerated.some(other => areQuestionsTooSimilar(cand, other)));
+
+        const availableTypes = Array.from(new Set(availablePool.map(c => c.type).filter(Boolean)));
+        const availableDiffs = Array.from(new Set(availablePool.map(c => c.difficulty).filter(Boolean)));
+
+        return (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.65)', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)', zIndex: 30000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
+            <div style={{ background: 'var(--surface-popover)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-popover)', maxWidth: '900px', width: '100%', maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: 'var(--shadow-xl)' }}>
+              
+              {/* Header */}
+              <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <h3 style={{ fontSize: '15px', fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span>🔄 Replace Question Q{replaceTargetIdx + 1}</span>
+                    <span style={{ fontSize: '11px', background: 'var(--accent-soft, rgba(56, 189, 248, 0.15))', color: 'var(--accent)', padding: '2px 8px', borderRadius: '12px' }}>
+                      {targetQ.questionCode || 'Current'}
+                    </span>
+                  </h3>
+                  <p style={{ margin: '3px 0 0', fontSize: '11px', color: 'var(--text-muted)' }}>
+                    Select an alternative question from the Question Bank pool to replace this question.
+                  </p>
+                </div>
+                <button 
+                  onClick={() => setReplaceTargetIdx(null)}
+                  style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '1.2rem', color: 'var(--text-muted)' }}
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Filter Controls Bar */}
+              <div style={{ padding: '12px 20px', borderBottom: '1px solid var(--border-light)', background: 'var(--bg-soft)', display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center' }}>
+                {/* Search */}
+                <input
+                  type="text"
+                  placeholder="🔍 Search questions in pool..."
+                  value={replaceSearchQuery}
+                  onChange={(e) => setReplaceSearchQuery(e.target.value)}
+                  style={{ flex: '1 1 200px', minWidth: '180px', padding: '6px 12px', fontSize: '12px', borderRadius: '6px', border: '1px solid var(--border-light)', background: 'var(--surface)', color: 'var(--text)' }}
+                />
+
+                {/* Filter by Type */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>Type:</span>
+                  <select
+                    value={replaceFilterType}
+                    onChange={(e) => setReplaceFilterType(e.target.value)}
+                    style={{ padding: '5px 8px', fontSize: '11.5px', borderRadius: '6px', border: '1px solid var(--border-light)', background: 'var(--surface)', color: 'var(--text)' }}
+                  >
+                    <option value="all">All Types ({availablePool.length})</option>
+                    {availableTypes.map(t => (
+                      <option key={t} value={t}>{t}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Filter by Difficulty */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>Diff:</span>
+                  <select
+                    value={replaceFilterDiff}
+                    onChange={(e) => setReplaceFilterDiff(e.target.value)}
+                    style={{ padding: '5px 8px', fontSize: '11.5px', borderRadius: '6px', border: '1px solid var(--border-light)', background: 'var(--surface)', color: 'var(--text)' }}
+                  >
+                    <option value="all">All Difficulties</option>
+                    {availableDiffs.map(d => (
+                      <option key={d} value={d}>{d}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Quick Match Same Type Shortcut */}
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-sm"
+                  style={{ fontSize: '11px', padding: '4px 10px', borderColor: replaceFilterType === targetQ.type ? 'var(--accent)' : 'var(--border-light)' }}
+                  onClick={() => setReplaceFilterType(prev => prev === targetQ.type ? 'all' : targetQ.type)}
+                >
+                  {replaceFilterType === targetQ.type ? '✓ Same Type Filter On' : `Filter Same Type (${targetQ.type})`}
+                </button>
+              </div>
+
+              {/* Questions List */}
+              <div style={{ padding: '16px 20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '12px', flex: 1 }}>
+                {candidates.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-muted)', fontSize: '13px' }}>
+                    <div style={{ fontSize: '28px', marginBottom: '8px' }}>🔍</div>
+                    <p style={{ margin: 0, fontWeight: 600 }}>No matching replacement questions found.</p>
+                    <p style={{ margin: '4px 0 0', fontSize: '11.5px' }}>
+                      Try clearing search filters or changing the type/difficulty selector.
+                    </p>
+                  </div>
+                ) : (
+                  candidates.map((cand, ci) => (
+                    <div
+                      key={cand.questionCode || cand.id || ci}
+                      style={{
+                        background: 'var(--surface)',
+                        borderRadius: 'var(--radius-sm)',
+                        border: '1px solid var(--border-light)',
+                        padding: '12px 14px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '8px',
+                        transition: 'border-color 0.15s, box-shadow 0.15s'
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px', borderBottom: '1px solid var(--border-light)', paddingBottom: '6px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                          <span style={{ fontSize: '10.5px', fontWeight: 700, padding: '1px 6px', borderRadius: '4px', background: 'var(--bg-soft)', border: '1px solid var(--border-light)', color: 'var(--text)' }}>
+                            {cand.questionCode || 'CODE_PENDING'}
+                          </span>
+                          <span style={{ fontSize: '9.5px', textTransform: 'uppercase', padding: '1px 6px', borderRadius: '4px', background: 'var(--info-bg)', color: 'var(--info)', fontWeight: 700, border: '1px solid rgba(56, 189, 248, 0.3)' }}>
+                            {cand.type}
+                          </span>
+                          <span style={{ fontSize: '9.5px', textTransform: 'capitalize', padding: '1px 6px', borderRadius: '4px', background: 'var(--success-bg)', color: 'var(--success)', fontWeight: 700, border: '1px solid rgba(52, 211, 153, 0.3)' }}>
+                            {cand.difficulty}
+                          </span>
+                          {cand.topic && (
+                            <span style={{ fontSize: '10px', color: 'var(--text-muted)', maxWidth: '240px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              📍 {cand.topic}
+                            </span>
+                          )}
+                        </div>
+
+                        <button
+                          type="button"
+                          className="btn btn-primary btn-sm"
+                          style={{ padding: '4px 14px', fontSize: '11px', fontWeight: 700 }}
+                          onClick={() => {
+                            setGeneratedQuestions(prev => {
+                              const next = [...prev];
+                              next[replaceTargetIdx] = cand;
+                              return next;
+                            });
+                            setReplaceTargetIdx(null);
+                          }}
+                        >
+                          ✓ Select & Replace
+                        </button>
+                      </div>
+
+                      {/* Question Stem Display via QuestionDisplay */}
+                      <div style={{ fontSize: '12px', lineHeight: '1.4', color: 'var(--text)' }}>
+                        <QuestionDisplay question={cand} mode="bank" />
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Modal Footer */}
+              <div style={{ padding: '12px 20px', borderTop: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-soft)' }}>
+                <span style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>
+                  Showing <strong>{candidates.length}</strong> available replacement questions
+                </span>
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-sm"
+                  onClick={() => setReplaceTargetIdx(null)}
+                >
+                  Close
+                </button>
+              </div>
+
+            </div>
+          </div>
+        );
+      })()}
 
     </div>
   );
