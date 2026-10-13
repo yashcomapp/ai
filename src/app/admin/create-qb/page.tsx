@@ -5,7 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Script from 'next/script';
 import { useMathRender } from '@/hooks/useMathRender';
-import { preprocessMathText, toCanonicalQuestionType, robustParseAIJson, validateQuestion, normalizeOptionText, cleanOptionPrefix, cleanStringForMatch, isOptionMatch, shuffleArray, normalizeBloomLevel, BLOOM_TAXONOMY_MAP } from '@/lib/questionTypes';
+import { preprocessMathText, toCanonicalQuestionType, isMultipleChoiceType, robustParseAIJson, validateQuestion, normalizeOptionText, cleanOptionPrefix, cleanStringForMatch, isOptionMatch, shuffleArray, normalizeBloomLevel, BLOOM_TAXONOMY_MAP } from '@/lib/questionTypes';
 import QuestionDisplay, { QuestionStemDisplay, QuestionExplanationDisplay, RichMathText } from '@/components/QuestionDisplay';
 import { highlightModelAnswerKeywords } from '@/lib/pdfExport';
 import { SyllabusSelector } from '@/components/SyllabusSelector';
@@ -1428,8 +1428,8 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
 
     let rawType = q.type || 'OSC';
     if (rawType === 'numerical5') rawType = 'numerical';
-    const isMultiple = rawType === 'multiple_mcq' || (rawType === 'single_mcq' && Array.isArray(q.correctAnswers) && q.correctAnswers.length > 1);
-    const finalType = isMultiple ? 'multiple_mcq' : rawType;
+    const isMultiple = rawType === 'multiple_mcq' || rawType === 'OMC' || ((rawType === 'single_mcq' || rawType === 'OSC') && Array.isArray(q.correctAnswers) && q.correctAnswers.length > 1);
+    const finalType = isMultiple ? 'OMC' : rawType;
 
     // 1. Clean options array: strip "A. ", "Option A: ", "(A) ", etc.
     let cleanOptions: string[] = [];
@@ -2960,7 +2960,8 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
                                             setGeneratedQuestions(prev => {
                                               const next = [...prev];
                                               const currentQ = { ...next[idx] };
-                                              if (currentQ.type === 'multiple_mcq') {
+                                              const isMulti = currentQ.type === 'OMC' || currentQ.type === 'multiple_mcq' || isMultipleChoiceType(currentQ.type);
+                                              if (isMulti) {
                                                 const cAnswers = Array.isArray(currentQ.correctAnswers) ? [...currentQ.correctAnswers] : [];
                                                 const exists = cAnswers.some((ans: string) => isOptionMatch(ans, opt));
                                                 if (exists) {
@@ -2980,7 +2981,7 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
                                           style={{
                                             width: '22px',
                                             height: '22px',
-                                            borderRadius: q.type === 'multiple_mcq' ? '4px' : '50%',
+                                            borderRadius: (q.type === 'OMC' || q.type === 'multiple_mcq' || isMultipleChoiceType(q.type)) ? '4px' : '50%',
                                             border: isCorrect ? '2px solid var(--success)' : '2px solid var(--text-muted)',
                                             background: isCorrect ? 'var(--success)' : 'transparent',
                                             display: 'flex',
@@ -2993,7 +2994,7 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
                                             flexShrink: 0,
                                             padding: 0
                                           }}
-                                          title={q.type === 'multiple_mcq' ? 'Toggle correct option' : 'Set as correct option'}
+                                          title={(q.type === 'OMC' || q.type === 'multiple_mcq' || isMultipleChoiceType(q.type)) ? 'Toggle correct option' : 'Set as correct option'}
                                         >
                                           {isCorrect && '✓'}
                                         </button>

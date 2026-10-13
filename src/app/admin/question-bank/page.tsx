@@ -18,6 +18,8 @@ import {
   getQuestionCorrectAnswer,
   formatUserAnswerSummary,
   isAssertionReasonType,
+  isMultipleChoiceType,
+  toCanonicalQuestionType,
   stripOptionLabel,
   DEFAULT_ASSERTION_REASON_OPTIONS
 } from '@/lib/questionTypes';
@@ -1396,7 +1398,7 @@ ${JSON.stringify(missingList, null, 2)}`;
               </div>
 
               {/* Options lists if MCQ */}
-              {(editorModal.qtype === 'single_mcq' || editorModal.qtype === 'multiple_mcq') && (
+              {(isMultipleChoiceType(editorModal.qtype) || editorModal.qtype === 'single_mcq' || editorModal.qtype === 'multiple_mcq' || editorModal.qtype === 'OSC' || editorModal.qtype === 'OMC') && (
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                     <label style={{ fontSize: '11px', color: 'var(--text-muted)', margin: 0 }}>Options List</label>
@@ -1422,7 +1424,7 @@ ${JSON.stringify(missingList, null, 2)}`;
               )}
 
               {/* Assertion & Reason details */}
-              {editorModal.qtype === 'assertion_reason' && (
+              {(editorModal.qtype === 'assertion_reason' || editorModal.qtype === 'OAR') && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   <div>
                     <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '5px' }}>Assertion</label>
@@ -1444,7 +1446,7 @@ ${JSON.stringify(missingList, null, 2)}`;
               )}
 
               {/* Correct answers */}
-              {editorModal.qtype !== 'multiple_mcq' ? (
+              {!isMultipleChoiceType(editorModal.qtype) && editorModal.qtype !== 'multiple_mcq' && editorModal.qtype !== 'OMC' ? (
                 <div>
                   <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '5px' }}>Correct Answer (Option text value verbatim, or A/B/C/D letter)</label>
                   <input 
