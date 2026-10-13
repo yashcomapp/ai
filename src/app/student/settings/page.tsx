@@ -345,6 +345,26 @@ export default function StudentSettingsPage() {
 
           </div>
 
+          {/* Fees & Ledger Account Card */}
+          <div className="card" style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', overflow: 'hidden' }}>
+            <div style={{ padding: '12px 16px', background: 'var(--bg-soft)', borderBottom: '1px solid var(--border-light)', fontWeight: 600, fontSize: '13px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span>🪙 Fees & Ledger Account</span>
+              <button 
+                type="button" 
+                className="btn btn-secondary btn-sm"
+                onClick={() => router.push('/student/fees')}
+                style={{ fontSize: '11px', padding: '3px 10px', fontWeight: 700 }}
+              >
+                Open Fee Register →
+              </button>
+            </div>
+            <div style={{ padding: '20px', fontSize: '12px', lineHeight: '1.5', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <p style={{ margin: 0, color: 'var(--text-muted)' }}>
+                View your complete academic fee package, installment due dates, overdue notifications, and historical payment receipts.
+              </p>
+            </div>
+          </div>
+
           {/* Proctoring Hardware Diagnostic Card */}
           <div className="card" style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', overflow: 'hidden' }}>
             <div style={{ padding: '12px 16px', background: 'var(--bg-soft)', borderBottom: '1px solid var(--border-light)', fontWeight: 600, fontSize: '13px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

@@ -7,7 +7,7 @@ import TopBarTimeTracker from '@/components/TopBarTimeTracker';
 import { db } from '@/lib/firebase/firestore';
 import { doc, onSnapshot } from 'firebase/firestore';
 
-import { LogOut, Bell, Settings } from 'lucide-react';
+import { LogOut, Bell, Settings, CreditCard } from 'lucide-react';
 import Image from 'next/image';
 import { isStudentBlockedByCurfew, isCurfewBypassed } from '@/lib/curfew';
 
@@ -191,6 +191,28 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
             }}
           >
             <Bell size={16} />
+          </button>
+
+          {/* Fees & Invoices Button */}
+          <button 
+            className="page-header-btn" 
+            onClick={() => router.push('/student/fees')} 
+            title="Fees & Dues"
+            style={{ 
+              background: pathname === '/student/fees' ? 'var(--accent-soft)' : 'rgba(255,255,255,0.08)', 
+              border: '1px solid rgba(255,255,255,0.15)', 
+              borderRadius: '50%', 
+              width: '36px', 
+              height: '36px', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              cursor: 'pointer',
+              color: pathname === '/student/fees' ? 'var(--accent)' : 'var(--text)',
+              flexShrink: 0
+            }}
+          >
+            <CreditCard size={16} />
           </button>
 
           {/* Settings Button */}

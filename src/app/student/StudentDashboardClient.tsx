@@ -30,7 +30,8 @@ import {
   CheckSquare,
   Edit3,
   Clock,
-  RotateCcw
+  RotateCcw,
+  CreditCard
 } from 'lucide-react';
 import { getScoreColor } from '@/lib/dashboardMetrics';
 import StudentSelfReflectionModal from '@/components/StudentSelfReflectionModal';
@@ -823,7 +824,7 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
               <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 800, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <Rocket size={18} color="var(--accent)" /> Quick Navigation
               </h3>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '6px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(70px, 1fr))', gap: '6px' }}>
                 {/* Hotspot 1: Learn OS */}
                 <div 
                   onClick={() => router.push('/student/learning')}
@@ -901,7 +902,32 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
                   <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text)' }}>Exam Register</span>
                 </div>
 
-                {/* Hotspot 4: Live Chat */}
+                {/* Hotspot 4: Fees & Ledger */}
+                <div 
+                  onClick={() => router.push('/student/fees')}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '8px 4px',
+                    background: 'var(--surface-2)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius-sm)',
+                    cursor: 'pointer',
+                    textAlign: 'center',
+                    gap: '4px',
+                    transition: 'all 0.2s ease',
+                    boxShadow: 'var(--shadow-sm)'
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--primary)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'translateY(0)'; }}
+                >
+                  <CreditCard size={24} color="var(--primary)" />
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text)' }}>Fees & Dues</span>
+                </div>
+
+                {/* Hotspot 5: Live Chat */}
                 <div 
                   onClick={() => router.push('/student/chat')}
                   style={{
