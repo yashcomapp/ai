@@ -59,6 +59,9 @@ export default function AdminAttendancePage() {
 
   // Leaves management
   const [leaves, setLeaves] = useState<Leave[]>([]);
+  const [hasMoreLeaves, setHasMoreLeaves] = useState(false);
+  const [leavesLimit, setLeavesLimit] = useState(200);
+  const [loadingMoreLeaves, setLoadingMoreLeaves] = useState(false);
   const [declarations, setDeclarations] = useState<any[]>([]);
   const [showLeaveModal, setShowLeaveModal] = useState(false);
   const [newLeaveStudentCode, setNewLeaveStudentCode] = useState('');
@@ -80,16 +83,17 @@ export default function AdminAttendancePage() {
   }, [swrBatches]);
 
   // Fetch leaves list
-  async function loadLeaves() {
+  async function loadLeaves(limit = leavesLimit) {
     if (!firebaseUser) return;
     try {
       const token = await firebaseUser.getIdToken();
-      const res = await fetch('/api/admin/attendance/leaves', {
+      const res = await fetch(`/api/admin/attendance/leaves?limit=${limit}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (!res.ok) throw new Error('Failed to load leave records');
       const resData = await res.json();
       setLeaves(resData.leaves || []);
+      setHasMoreLeaves(!!resData.hasMore);
 
       // Load multi-day declarations
       const resDecl = await fetch('/api/student/attendance/declare', {
@@ -635,7 +639,14 @@ export default function AdminAttendancePage() {
 
               {/* List of active approved leaves */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <h4 style={{ margin: 0, fontSize: '12px', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Approved Leave Register</h4>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <h4 style={{ margin: 0, fontSize: '12px', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Approved Leave Register</h4>
+                  {hasMoreLeaves && (
+                    <span style={{ fontSize: '11px', color: 'var(--warning)', background: 'var(--warning-soft, rgba(234, 179, 8, 0.15))', padding: '2px 6px', borderRadius: '4px', fontWeight: 600 }}>
+                      Showing latest {leaves.length} records (more available)
+                    </span>
+                  )}
+                </div>
                 {leaves.length === 0 ? (
                   <div style={{ color: 'var(--text-faint)', fontSize: '12px', textAlign: 'center', padding: '20px 0' }}>No active approved leaves.</div>
                 ) : (
@@ -658,6 +669,25 @@ export default function AdminAttendancePage() {
                         </button>
                       </div>
                     ))}
+                    {hasMoreLeaves && (
+                      <div style={{ textAlign: 'center', marginTop: '6px' }}>
+                        <button
+                          type="button"
+                          className="btn btn-secondary btn-sm"
+                          disabled={loadingMoreLeaves}
+                          onClick={async () => {
+                            setLoadingMoreLeaves(true);
+                            const nextLimit = leavesLimit + 200;
+                            setLeavesLimit(nextLimit);
+                            await loadLeaves(nextLimit);
+                            setLoadingMoreLeaves(false);
+                          }}
+                          style={{ width: '100%', fontSize: '11px' }}
+                        >
+                          {loadingMoreLeaves ? 'Loading...' : `Load More Leaves (Next 200)`}
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

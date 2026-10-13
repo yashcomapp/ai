@@ -112,7 +112,10 @@ export default function AdminQuestionBankPage() {
   // Question Disputes states
   const [showDisputesModal, setShowDisputesModal] = useState(false);
   const [disputesList, setDisputesList] = useState<any[]>([]);
+  const [hasMoreDisputes, setHasMoreDisputes] = useState(false);
+  const [disputesLimit, setDisputesLimit] = useState(200);
   const [loadingDisputes, setLoadingDisputes] = useState(false);
+  const [loadingMoreDisputes, setLoadingMoreDisputes] = useState(false);
   const [selectedDisputeScreenshot, setSelectedDisputeScreenshot] = useState<string | null>(null);
 
   useMathRender([questions, currentPage, lastCodesHistory, filterBoard, filterClass, filterSubject, filterChapter, filterTopic, filterType, duplicateGroups, showDuplicatesModal, showAuditModal, showNumericalAuditModal, showDisputesModal]);
@@ -631,17 +634,18 @@ export default function AdminQuestionBankPage() {
     }
   };
 
-  const handleOpenDisputesModal = async () => {
+  const handleOpenDisputesModal = async (limit = disputesLimit) => {
     setShowDisputesModal(true);
     setLoadingDisputes(true);
     try {
       const idToken = await firebaseUser!.getIdToken();
-      const res = await fetch('/api/admin/questions/disputes', {
+      const res = await fetch(`/api/admin/questions/disputes?limit=${limit}`, {
         headers: { 'Authorization': `Bearer ${idToken}` }
       });
       if (res.ok) {
         const data = await res.json();
         setDisputesList(data.disputes || []);
+        setHasMoreDisputes(!!data.hasMore);
       }
     } catch (err) {
       console.error('Failed to load disputes:', err);
@@ -851,7 +855,7 @@ ${JSON.stringify(missingList, null, 2)}`;
           <button className="btn btn-secondary" onClick={() => triggerDuplicatesScan('filtered')}>🔍 Find Duplicates</button>
           <button className="btn btn-secondary" onClick={handleOpenAuditModal}>⚡ Explanations Audit</button>
           <button className="btn btn-secondary" onClick={handleOpenNumericalAuditModal}>🔢 Audit Numerical</button>
-          <button className="btn btn-secondary" onClick={handleOpenDisputesModal} style={{ background: 'var(--danger-bg)', color: 'var(--danger)', borderColor: 'var(--danger-border)' }}>🚩 Reported Issues</button>
+          <button className="btn btn-secondary" onClick={() => handleOpenDisputesModal()} style={{ background: 'var(--danger-bg)', color: 'var(--danger)', borderColor: 'var(--danger-border)' }}>🚩 Reported Issues</button>
           <button className="btn btn-primary" onClick={handleOpenAddQuestion}>+ Add Question</button>
         </div>
         
@@ -1692,9 +1696,14 @@ ${JSON.stringify(missingList, null, 2)}`;
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 30000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div className="card" style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', maxWidth: '950px', width: '95%', maxHeight: '88vh', display: 'flex', flexDirection: 'column', border: '1px solid var(--border-light)', overflow: 'hidden' }}>
             <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-soft)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                 <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: 'var(--danger)' }}>🚩 Student Reported Questions &amp; Proof Queue</h3>
                 <span className="badge badge-danger" style={{ fontSize: '11px' }}>{disputesList.filter(d => d.status === 'pending').length} Pending</span>
+                {hasMoreDisputes && (
+                  <span style={{ fontSize: '11px', color: 'var(--warning)', background: 'var(--warning-soft, rgba(234, 179, 8, 0.15))', padding: '2px 8px', borderRadius: '4px', fontWeight: 600 }}>
+                    Showing latest {disputesList.length} records (more available)
+                  </span>
+                )}
               </div>
               <button className="btn btn-secondary btn-sm" onClick={() => setShowDisputesModal(false)}>✕</button>
             </div>
@@ -1792,7 +1801,24 @@ ${JSON.stringify(missingList, null, 2)}`;
               )}
             </div>
 
-            <div style={{ padding: '14px 20px', borderTop: '1px solid var(--border-light)', display: 'flex', justifyContent: 'flex-end', background: 'var(--bg-soft)' }}>
+            <div style={{ padding: '14px 20px', borderTop: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-soft)' }}>
+              <div>
+                {hasMoreDisputes && (
+                  <button
+                    className="btn btn-secondary btn-sm"
+                    disabled={loadingMoreDisputes}
+                    onClick={async () => {
+                      setLoadingMoreDisputes(true);
+                      const nextLimit = disputesLimit + 200;
+                      setDisputesLimit(nextLimit);
+                      await handleOpenDisputesModal(nextLimit);
+                      setLoadingMoreDisputes(false);
+                    }}
+                  >
+                    {loadingMoreDisputes ? 'Loading...' : `Load More Disputes (Next 200)`}
+                  </button>
+                )}
+              </div>
               <button className="btn btn-secondary" onClick={() => setShowDisputesModal(false)}>Close</button>
             </div>
           </div>

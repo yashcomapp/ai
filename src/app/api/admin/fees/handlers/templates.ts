@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole } from '@/lib/auth';
 import { toNonNegativeNumber } from '@/lib/validationUtils';
+import { getFromCache, setInCache, invalidateCache } from '@/lib/firebase/cache';
 
+const FEE_TEMPLATES_CACHE_KEY = 'fee_templates_all';
+const FEE_TEMPLATES_CACHE_TTL = 300000; // 5 minutes
 
 export async function GET(req: NextRequest) {
   try {
@@ -11,12 +14,18 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ message: 'Unauthorized. Admin role required.' }, { status: 403 });
     }
 
+    const cached = getFromCache<any[]>(FEE_TEMPLATES_CACHE_KEY);
+    if (cached) {
+      return NextResponse.json({ success: true, templates: cached });
+    }
+
     const templatesSnap = await adminDb.collection('feeTemplates').get();
     const templates = templatesSnap.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
     }));
 
+    setInCache(FEE_TEMPLATES_CACHE_KEY, templates, FEE_TEMPLATES_CACHE_TTL);
     return NextResponse.json({ success: true, templates });
   } catch (error: any) {
     console.error('API GET fee templates error:', error);
@@ -59,6 +68,7 @@ export async function POST(req: NextRequest) {
       };
 
       await docRef.set(payload, { merge: true });
+      invalidateCache(FEE_TEMPLATES_CACHE_KEY);
       return NextResponse.json({ success: true, template: payload });
     }
 
@@ -67,6 +77,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Missing templateId.' }, { status: 400 });
       }
       await adminDb.collection('feeTemplates').doc(templateId).delete();
+      invalidateCache(FEE_TEMPLATES_CACHE_KEY);
       return NextResponse.json({ success: true, message: 'Template deleted successfully.' });
     }
 

@@ -98,14 +98,3 @@ export async function getCachedBatches() {
     }))
   };
 }
-
-export async function getCachedBatchesList(): Promise<any[]> {
-  const cacheKey = 'batches-list';
-  const cached = getFromCache<any[]>(cacheKey);
-  if (cached) return cached;
-
-  const snap = await adminDb.collection('batches').get();
-  const list = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-  setInCache(cacheKey, list, 600000); // 10 mins
-  return list;
-}
