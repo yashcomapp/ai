@@ -5,7 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Script from 'next/script';
 import { useMathRender } from '@/hooks/useMathRender';
-import { preprocessMathText, toCanonicalQuestionType, isMultipleChoiceType, robustParseAIJson, validateQuestion, normalizeOptionText, cleanOptionPrefix, cleanStringForMatch, isOptionMatch, shuffleArray, normalizeBloomLevel, BLOOM_TAXONOMY_MAP } from '@/lib/questionTypes';
+import { preprocessMathText, toCanonicalQuestionType, isMultipleChoiceType, robustParseAIJson, validateQuestion, normalizeOptionText, cleanOptionPrefix, cleanStringForMatch, isOptionMatch, shuffleArray, normalizeBloomLevel, BLOOM_TAXONOMY_MAP, stripCitations } from '@/lib/questionTypes';
 import QuestionDisplay, { QuestionStemDisplay, QuestionExplanationDisplay, RichMathText } from '@/components/QuestionDisplay';
 import { highlightModelAnswerKeywords } from '@/lib/pdfExport';
 import { SyllabusSelector } from '@/components/SyllabusSelector';
@@ -1165,7 +1165,8 @@ CRITICAL RULES & LEVEL/SOURCE FIDELITY:
    - "difficulty": "easy" | "medium" | "hard"
    - "examCategory": "${isFoundation ? 'foundation' : 'standard'}"
    - "conceptTag": "concise subtopic or concept name"
-10. Strict KaTeX Math Formatting: Use \\( ... \\) for inline math and \\[ ... \\] for display math. Double-escape all backslashes (\\\\frac, \\\\pi, \\\\theta). Wrap chemical formulas in \\ce{...}.
+10. ZERO WEB CITATIONS & CLEAN TEXT: Strictly NEVER include web research citations, search footnotes, or citation tags (such as [cite: 1], [cite: 1, 2], [cite: ...]) in "text", "options", "solution", or any other field. All content must be clean, direct textbook prose.
+11. Strict KaTeX Math Formatting: Use \\( ... \\) for inline math and \\[ ... \\] for display math. Double-escape all backslashes (\\\\frac, \\\\pi, \\\\theta). Wrap chemical formulas in \\ce{...}.
 
 ========================================
 CRITICAL JSON & MARKDOWN ESCAPING RULES:
@@ -1503,13 +1504,13 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
       topic: finalTopicName,
       topicNumber: String(resolvedTopicNumber),
       type: finalType,
-      text: q.text || '',
+      text: stripCitations(q.text || ''),
       options: cleanOptions,
-      correctAnswer: finalCorrectAnswer,
-      correctAnswers: finalCorrectAnswers,
-      assertion: q.assertion || '',
-      reason: q.reason || '',
-      solution: q.solution || '',
+      correctAnswer: stripCitations(finalCorrectAnswer),
+      correctAnswers: finalCorrectAnswers.map(ans => stripCitations(ans)),
+      assertion: stripCitations(q.assertion || ''),
+      reason: stripCitations(q.reason || ''),
+      solution: stripCitations(q.solution || ''),
       difficulty: q.difficulty || 'medium',
       bloomLevel: normalizeBloomLevel(q.bloomLevel, q.difficulty, finalType),
       requiresFigure: !!q.requiresFigure || (q.text || '').toLowerCase().includes('figure') || (q.text || '').toLowerCase().includes('diagram') || (q.text || '').toLowerCase().includes('fig.'),
@@ -1527,7 +1528,8 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
     const fallback = selectedTopics[0] || {};
     const marks = Number(q.marks) || (['subjective_define', 'subjective_laws'].includes(q.type) ? 1 : (q.type === 'subjective_long' || q.type === 'numerical_long' ? 4 : 2));
     const defaultType = marks === 1 ? 'subjective_define' : (marks === 4 ? 'subjective_long' : 'subjective_short');
-    const solText = q.solution || (Array.isArray(q.answerLines) ? q.answerLines.map((l: any) => l.text || l).join('\n') : '');
+    const rawSol = q.solution || (Array.isArray(q.answerLines) ? q.answerLines.map((l: any) => l.text || l).join('\n') : '');
+    const solText = stripCitations(rawSol);
     
     let answerLines = q.answerLines || [];
     if (!answerLines.length && solText) {
@@ -1552,7 +1554,7 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
       topic: finalTopicName,
       topicNumber: String(resolvedTopicNumber),
       type: q.type || defaultType,
-      text: q.text || '',
+      text: stripCitations(q.text || ''),
       marks: marks,
       difficulty: q.difficulty || 'medium',
       bloomLevel: normalizeBloomLevel(q.bloomLevel, q.difficulty, q.type || defaultType),

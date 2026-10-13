@@ -663,7 +663,8 @@ STRICT VERBATIM & KEYWORD HIGHLIGHTING RULES:
 3. Embed key phrases inside HTML <mark>keyword</mark> tags directly within the model answer text string (e.g. "The <mark>latent heat of fusion</mark> is...").
 4. Separate each logical answer point on a new numbered line (1., 2., 3...).
 5. Add "pyqInfo" with authentic board year (e.g., "${samplePyq}").
-6. Add "sourceSection" indicating exact location (e.g., "${sampleSource}").
+6. ZERO WEB CITATIONS: Strictly DO NOT include citation markers, footnotes, or web references (e.g. [cite: 1], [cite: ...]) in "text", "options", or "solution". All text must be clean textbook prose.
+7. Add "sourceSection" indicating exact location (e.g., "${sampleSource}").
 
 CRITICAL JSON ESCAPING & MATH FORMATTING RULES:
 1. Return ONLY the raw valid JSON array/object. DO NOT wrap it in any explanations, introduction, or extra text.

@@ -4,7 +4,7 @@ import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole } from '@/lib/auth';
 import { QuestionRepository } from '@/repositories/question.repository';
 import { ChunkedBatch } from '@/lib/firebase/batch';
-import { validateQuestion, normalizeBloomLevel, OBJECTIVE_QUESTION_TYPES, SUBJECTIVE_QUESTION_TYPES, QUESTION_TYPE_MAP, cleanStringForMatch, toCanonicalQuestionType, isObjectiveType, isSubjectiveType } from '@/lib/questionTypes';
+import { validateQuestion, normalizeBloomLevel, OBJECTIVE_QUESTION_TYPES, SUBJECTIVE_QUESTION_TYPES, QUESTION_TYPE_MAP, cleanStringForMatch, toCanonicalQuestionType, isObjectiveType, isSubjectiveType, stripCitations } from '@/lib/questionTypes';
 import { getFromCache, setInCache, invalidateCache } from '@/lib/firebase/cache';
 import { 
   getCanonicalBoardCode, 
@@ -402,13 +402,13 @@ export async function POST(req: NextRequest) {
         const questionDoc: any = {
           questionCode: finalCode,
           type: p.typeCode,
-          text: item.text,
-          options: item.options || [],
-          correctAnswer: item.correctAnswer || '',
-          correctAnswers: item.correctAnswers || [],
-          assertion: item.assertion || '',
-          reason: item.reason || '',
-          solution: item.solution || '',
+          text: stripCitations(item.text),
+          options: Array.isArray(item.options) ? item.options.map((opt: any) => stripCitations(opt)) : [],
+          correctAnswer: stripCitations(item.correctAnswer || ''),
+          correctAnswers: Array.isArray(item.correctAnswers) ? item.correctAnswers.map((ans: any) => stripCitations(ans)) : [],
+          assertion: stripCitations(item.assertion || ''),
+          reason: stripCitations(item.reason || ''),
+          solution: stripCitations(item.solution || ''),
           difficulty: item.difficulty || 'medium',
           bloomLevel: normalizeBloomLevel(item.bloomLevel, item.difficulty, normalizedQType),
           board: finalBoard,
@@ -535,13 +535,13 @@ export async function POST(req: NextRequest) {
     const questionDoc: any = {
       questionCode: finalCode,
       type: typeCode,
-      text,
-      options: options || [],
-      correctAnswer: correctAnswer || '',
-      correctAnswers: correctAnswers || [],
-      assertion: assertion || '',
-      reason: reason || '',
-      solution: solution || '',
+      text: stripCitations(text),
+      options: Array.isArray(options) ? options.map((opt: any) => stripCitations(opt)) : [],
+      correctAnswer: stripCitations(correctAnswer || ''),
+      correctAnswers: Array.isArray(correctAnswers) ? correctAnswers.map((ans: any) => stripCitations(ans)) : [],
+      assertion: stripCitations(assertion || ''),
+      reason: stripCitations(reason || ''),
+      solution: stripCitations(solution || ''),
       difficulty: difficulty || 'medium',
       bloomLevel: normalizeBloomLevel(bloomLevel, difficulty, normalizedQType),
       board: finalBoard,

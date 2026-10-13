@@ -988,6 +988,7 @@ CRITICAL PEDAGOGICAL & CONTENT RULES:
 ${isMath ? '6. MATHEMATICS: 80% textbook verbatim exercises / practice sets, 20% pattern variants. Specify "textbookPracticeSet" key.' : '6. ZERO INVENTED NUMERICALS / ZERO FAKE STOICHIOMETRY: For non-mathematical or qualitative topics (biology, general science concepts), strictly DO NOT generate fake arithmetic or advanced stoichiometry (e.g. molar mass calculations of organic sugars like lactose/lactic acid, college mole conversions). Focus on authentic textbook-level concepts, mechanisms, and reasoning.'}
 7. ZERO OUT-OF-GRADE HALLUCINATIONS: Absolutely forbid college or higher secondary (Class 11/12/NEET/JEE) level stoichiometry or formulas for Class ${selectedClass}. Keep all questions strictly within the prescribed ${selectedBoard} Class ${selectedClass} textbook standard.
 8. STRICT ZERO DUPLICATE OPTIONS: Under no circumstances should any question contain duplicate, identical, or near-identical options differing by only 1-2 words or minor phrasing. All options must be mutually exclusive choices.
+9. ZERO WEB CITATIONS: Strictly DO NOT include citation tags or web footnotes (e.g. [cite: 1], [cite: ...]) in "text", "options", or "solution". All content must be clean textbook text.
 
 ========================================
 OUTPUT SCHEMA SPECIFICATION:

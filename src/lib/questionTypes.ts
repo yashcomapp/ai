@@ -24,6 +24,24 @@ const MATH_PREPROCESS_CACHE = new Map<string, string>();
 const RICH_TEXT_CACHE = new Map<string, string>();
 const MAX_MATH_CACHE_SIZE = 3000;
 
+/**
+ * Strips web research / AI search citation tags (e.g. "[cite: 1]", "[cite: 1, 2]", "[cite: 2]", "[cite: 1-3]")
+ * and cleans up any spacing/punctuation artifacts left behind.
+ */
+export function stripCitations(text: any): string {
+  if (text == null) return '';
+  const s = String(text);
+  if (!s.includes('[cite') && !s.includes('[cite:') && !s.includes('cite:')) {
+    return s;
+  }
+  return s
+    .replace(/\[cite:\s*[^\]]+\]/gi, '')
+    .replace(/\[cite\b[^\]]*\]/gi, '')
+    .replace(/\s+([?,.!;:])/g, '$1')
+    .replace(/[ \t]{2,}/g, ' ')
+    .trim();
+}
+
 export function preprocessMathText(text: any): string {
   if (text == null) return '';
   const key = String(text);
@@ -31,7 +49,7 @@ export function preprocessMathText(text: any): string {
     return MATH_PREPROCESS_CACHE.get(key)!;
   }
 
-  let str = key;
+  let str = stripCitations(key);
 
   // Heal corruptions caused by swallowed backslashes in JSON (e.g. \t -> tab + imes => \times, \t -> tab + ext => \text, \x0C -> FF + rac => \frac)
   str = str.replace(/\t\s*imes\b/g, '\\times ')
@@ -943,7 +961,7 @@ function restoreLatex(obj: any): any {
 
 export function cleanOptionPrefix(str: string): string {
   if (!str) return '';
-  const s = String(str).trim();
+  const s = stripCitations(String(str)).trim();
 
   // Guard against ratios (e.g. "1:4", "2:1", "4:5:6"), decimals ("1.5"), or ranges ("1-4")
   if (/^\d+(?::\d+)+/.test(s) || /^\d+\.\d+/.test(s) || /^\d+-\d+/.test(s)) {
@@ -1313,6 +1331,7 @@ export function validateQuestion(q: any, questionType: 'objective' | 'subjective
 
   // 1. Check for synthetic placeholder patterns in question text or solution
   const forbiddenPatterns = [
+    /\[cite[:\s\d]/i,
     /Option\s+[A-D]\s*\(/i,
     /High-rigor competitive problem/i,
     /\[OLYMPIAD\s*\/\s*FOUNDATION\s*HOTS\]/i,
