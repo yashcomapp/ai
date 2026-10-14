@@ -85,6 +85,7 @@ export default function AdminLiveMonitorPage() {
   const [sortField, setSortField] = useState<'studentName' | 'status' | 'violations' | 'lastActive'>('lastActive');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [pdfSelectorOpen, setPdfSelectorOpen] = useState(false);
+  const [showAllTodaySessions, setShowAllTodaySessions] = useState(false);
 
   // Heartbeat staleness ticker
   const [tickerTime, setTickerTime] = useState(Date.now());
@@ -211,12 +212,13 @@ export default function AdminLiveMonitorPage() {
     }
   };
 
-  // Filter list by tab and remove abandoned sessions
+  // Filter list by tab and remove abandoned sessions (unless showAllTodaySessions is enabled)
   const getFilteredList = (type: 'exam' | 'practice') => {
     const list = Object.values(sessions)
       .filter(s => {
-        if (type === 'practice') return s.examType === 'practice' && !isAbandoned(s.lastActive);
-        return s.examType !== 'practice' && !isAbandoned(s.lastActive);
+        if (!showAllTodaySessions && isAbandoned(s.lastActive)) return false;
+        if (type === 'practice') return s.examType === 'practice';
+        return s.examType !== 'practice';
       });
 
     return list.sort((a, b) => {
@@ -859,11 +861,21 @@ export default function AdminLiveMonitorPage() {
         {/* Info card */}
         <div id="live-info-section" className="card" style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', padding: '15px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
           <div style={{ fontSize: '13px' }}>
-            <strong>{list.length}</strong> students currently active
+            <strong>{list.length}</strong> students currently listed
           </div>
-          <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-            Sessions drop off automatically 5 minutes after disconnection.
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+            <label style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', userSelect: 'none', color: showAllTodaySessions ? 'var(--accent)' : 'var(--text-muted)', fontWeight: showAllTodaySessions ? 700 : 500 }}>
+              <input 
+                type="checkbox" 
+                checked={showAllTodaySessions} 
+                onChange={(e) => setShowAllTodaySessions(e.target.checked)} 
+              />
+              Show Ended / Stale Sessions Today (for Rescue)
+            </label>
+            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+              Live sessions drop off automatically 5m after disconnection.
+            </span>
+          </div>
         </div>
 
         {/* Sessions table */}
