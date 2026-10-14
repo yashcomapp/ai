@@ -489,7 +489,7 @@ export async function POST(req: NextRequest) {
         // Cap to latest 15 snapshots and limit each item size to 65KB to strictly protect Firestore 1 MiB limit
         const cappedScreenshots = rawScreenshots
           .slice(-15)
-          .filter((s): s is string => typeof s === 'string' && s.length <= 65536);
+          .filter((s: unknown): s is string => typeof s === 'string' && s.length <= 65536);
 
         if (cappedScreenshots.length > 0) {
           const attemptRef = adminDb.collection('examAttempts').doc(`${examId}_${studentCode}`);
