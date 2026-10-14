@@ -1,26 +1,35 @@
 import DOMPurify from 'dompurify';
 
+let hookConfigured = false;
+
+function ensurePurifyHooks() {
+  if (hookConfigured || typeof window === 'undefined') return;
+  DOMPurify.addHook('afterSanitizeAttributes', (node) => {
+    if (node.tagName === 'A' && node.hasAttribute('target')) {
+      node.setAttribute('rel', 'noopener noreferrer');
+    }
+  });
+  hookConfigured = true;
+}
+
 /**
  * Sanitizes rich HTML for safe rendering (notices, descriptions, math labels).
- * Strips script tags, onerror/onload attributes, and javascript: URIs.
+ * Strips script tags, style attributes, and enforces rel="noopener noreferrer".
  */
 export function sanitizeHtml(dirty: string): string {
   if (!dirty) return '';
   if (typeof window === 'undefined') {
-    // Basic server fallback escaping script/iframe/event handlers
-    return dirty
-      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-      .replace(/\bon\w+\s*=\s*["'][^"']*["']/gi, '')
-      .replace(/\bon\w+\s*=\s*[^>\s]+/gi, '')
-      .replace(/javascript:/gi, '');
+    // Return empty on server to prevent unsanitized HTML in SSR hydration mismatch
+    return '';
   }
+  ensurePurifyHooks();
   return DOMPurify.sanitize(dirty, {
     ALLOWED_TAGS: [
       'b', 'i', 'em', 'strong', 'a', 'p', 'div', 'span', 'br', 'ul', 'ol', 'li',
       'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'table', 'thead', 'tbody', 'tr', 'th', 'td',
       'blockquote', 'code', 'pre', 'hr', 'sub', 'sup'
     ],
-    ALLOWED_ATTR: ['href', 'title', 'target', 'class', 'style', 'rel'],
+    ALLOWED_ATTR: ['href', 'title', 'target', 'class', 'rel'],
     ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i
   });
 }

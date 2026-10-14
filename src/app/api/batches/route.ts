@@ -13,10 +13,12 @@ export async function GET() {
     }
 
     const snapshot = await adminDb.collection('batches').orderBy('name', 'asc').limit(100).get();
-    // Return strictly minimal fields (id, name) needed by public registration
+    // Return minimal metadata fields needed by registration
     const batches = snapshot.docs.map(doc => ({
       id: doc.id,
-      name: doc.data().name || ''
+      name: doc.data().name || '',
+      subject: doc.data().subject || '',
+      description: doc.data().description || ''
     }));
     setInCache(cacheKey, batches, 300000); // 5 mins
 

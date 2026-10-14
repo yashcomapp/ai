@@ -321,8 +321,10 @@ export class AttemptService {
         proctoringViolationTriggered: !!proctoringViolationTriggered,
         micAvailable: micBypassed !== undefined ? !micBypassed : true,
         violations: sanitizedViolations || null,
-        proctoringSnapshots: rawSnapshots,
-        proctoringSnapshotsExpiresAt: getMidnightIST(new Date()).toISOString(),
+        ...(rawSnapshots.length > 0 ? {
+          proctoringSnapshots: rawSnapshots,
+          proctoringSnapshotsExpiresAt: getMidnightIST(new Date()).toISOString()
+        } : {}),
         completedAt: admin.firestore.FieldValue.serverTimestamp(),
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
         abandoned: abandoned ? true : admin.firestore.FieldValue.delete()
