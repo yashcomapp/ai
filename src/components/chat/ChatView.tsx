@@ -173,6 +173,8 @@ export default function ChatView({ role = 'admin', hideHeader = false }: ChatVie
   // Scrolling behavior comparison refs
   const prevMessagesLengthRef = useRef(0);
   const prevActiveRoomIdRef = useRef('');
+  const currentActiveRoomIdRef = useRef(activeRoomId);
+  currentActiveRoomIdRef.current = activeRoomId;
 
   const myUserKey = useMemo(() => {
     if (role === 'admin') return 'admin';
@@ -605,8 +607,8 @@ export default function ChatView({ role = 'admin', hideHeader = false }: ChatVie
         });
         if (res.ok) {
           const data = await res.json();
-          // Verify room did not change while request was in flight
-          if (activeRoomId !== targetRoomId) return;
+          // Verify room did not change while request was in flight using live ref
+          if (currentActiveRoomIdRef.current !== targetRoomId) return;
 
           if (data.success && data.messages && data.messages.length > 0) {
             const mapped = data.messages.map((m: any) => ({

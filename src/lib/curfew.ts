@@ -4,7 +4,7 @@
  * Curfew Period: 10:30 PM (22:30) to 5:00 AM (05:00) IST.
  */
 
-import { parseDateInput } from './dateUtils';
+import { parseDateInput, getISTTimeComponents } from './dateUtils';
 
 export const CURFEW_RESTRICTION_MESSAGE =
   'Rest is crucial for conceptual mastery! Yashcom Foundation restricts student logins between 10:30 PM and 5:00 AM to promote healthy sleep. Sleep well!';
@@ -18,18 +18,20 @@ export function isCurfewBypassed(
 ): boolean {
   const cleanEmail = (email || '').toLowerCase().trim();
   const envBypassEmail = (
-    process.env.CURFEW_BYPASS_EMAIL ||
     process.env.NEXT_PUBLIC_CURFEW_BYPASS_EMAIL ||
+    (typeof process !== 'undefined' && process.env ? process.env.CURFEW_BYPASS_EMAIL : '') ||
     ''
   ).toLowerCase().trim();
 
-  // Test / System accounts
-  if (
-    cleanEmail === 's@c.com' ||
-    cleanEmail === 'p@c.com' ||
-    cleanEmail === 'a@c.com'
-  ) {
-    return true;
+  // Test / System accounts - excluded in production client bundles
+  if (process.env.NODE_ENV !== 'production') {
+    if (
+      cleanEmail === 's@c.com' ||
+      cleanEmail === 'p@c.com' ||
+      cleanEmail === 'a@c.com'
+    ) {
+      return true;
+    }
   }
 
   // Environment-configured bypass email
@@ -52,12 +54,7 @@ export function isCurrentlyCurfewHours(currentTimeInput?: any): boolean {
   const dateObj = currentTimeInput ? parseDateInput(currentTimeInput) : new Date();
   if (!dateObj) return false;
 
-  const nowUtc = dateObj.getTime();
-  const istOffset = 5.5 * 60 * 60 * 1000;
-  const istDate = new Date(nowUtc + istOffset);
-  const hours = istDate.getUTCHours();
-  const minutes = istDate.getUTCMinutes();
-
+  const { hours, minutes } = getISTTimeComponents(dateObj);
   return hours > 22 || (hours === 22 && minutes >= 30) || hours < 5;
 }
 

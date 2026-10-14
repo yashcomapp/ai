@@ -269,7 +269,7 @@ export async function POST(request: Request) {
         // Delete any questions not mapped to an active syllabus
         const [questionsSnap, syllabusSnap] = await Promise.all([
           adminDb.collection('questions').get(),
-          getCachedSyllabus()
+          adminDb.collection('syllabus').get()
         ]);
 
         const activeSubjectCodes = new Set(syllabusSnap.docs.map(doc => doc.data().subjectCode).filter(Boolean));

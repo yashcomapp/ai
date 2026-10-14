@@ -82,6 +82,16 @@ export function formatTimeIST(
 }
 
 /**
+ * Extracts hour (0-23) and minute (0-59) in IST timezone
+ */
+export function getISTTimeComponents(dateInput?: any): { hours: number; minutes: number } {
+  const d = parseDateInput(dateInput) || new Date();
+  const timeStr = d.toLocaleTimeString('en-GB', { timeZone: IST_TIMEZONE, hour12: false });
+  const [h, m] = timeStr.split(':').map(Number);
+  return { hours: Number(h) || 0, minutes: Number(m) || 0 };
+}
+
+/**
  * Formats a Date/Timestamp into date string in IST
  * Example: "20/07/2026"
  */

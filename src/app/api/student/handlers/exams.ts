@@ -484,31 +484,46 @@ export async function POST(req: NextRequest) {
       if (!examId || !studentCode) {
         return NextResponse.json({ message: 'Missing examId or studentCode' }, { status: 400 });
       }
-      const { screenshots } = body;
-      if (Array.isArray(screenshots) && screenshots.length > 0) {
-        const attemptRef = adminDb.collection('examAttempts').doc(`${examId}_${studentCode}`);
-        const reviewRef = adminDb.collection('reviews').doc(`${examId}_${studentCode}`);
-        
-        await Promise.all([
-          attemptRef.set({
-            violations: {
-              screenshots,
-              proctoringSnapshots: screenshots
-            }
-          }, { merge: true }),
-          reviewRef.set({
-            violations: {
-              screenshots,
-              proctoringSnapshots: screenshots
-            }
-          }, { merge: true })
-        ]).catch(err => console.warn('Failed to merge proctoring snapshots:', err));
+      const rawScreenshots = Array.isArray(body.screenshots) ? body.screenshots : [];
+      if (rawScreenshots.length > 0) {
+        // Cap to latest 15 snapshots and limit each item size to 65KB to strictly protect Firestore 1 MiB limit
+        const cappedScreenshots = rawScreenshots
+          .slice(-15)
+          .filter((s): s is string => typeof s === 'string' && s.length <= 65536);
+
+        if (cappedScreenshots.length > 0) {
+          const attemptRef = adminDb.collection('examAttempts').doc(`${examId}_${studentCode}`);
+          const reviewRef = adminDb.collection('reviews').doc(`${examId}_${studentCode}`);
+          
+          try {
+            await Promise.all([
+              attemptRef.set({
+                violations: {
+                  screenshots: cappedScreenshots,
+                  proctoringSnapshots: cappedScreenshots
+                }
+              }, { merge: true }),
+              reviewRef.set({
+                violations: {
+                  screenshots: cappedScreenshots,
+                  proctoringSnapshots: cappedScreenshots
+                }
+              }, { merge: true })
+            ]);
+          } catch (err: any) {
+            console.error('Failed to merge proctoring snapshots:', err);
+            return NextResponse.json({ error: 'Failed to store proctoring snapshots' }, { status: 500 });
+          }
+        }
       }
       return NextResponse.json({ success: true, message: 'Snapshots uploaded successfully.' });
     }
 
     if (action === 'rescue_submit') {
-      const targetStudentCode = isCallerAdmin ? (body.studentCode || studentCode) : studentCode;
+      if (!isCallerAdmin) {
+        return NextResponse.json({ message: 'Forbidden: Rescue submit is strictly restricted to administrators.' }, { status: 403 });
+      }
+      const targetStudentCode = body.studentCode || studentCode;
       if (!examId || !targetStudentCode) {
         return NextResponse.json({ message: 'Missing examId or studentCode for rescue submit.' }, { status: 400 });
       }
