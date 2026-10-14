@@ -85,7 +85,6 @@ export default function AdminLiveMonitorPage() {
   const [sortField, setSortField] = useState<'studentName' | 'status' | 'violations' | 'lastActive'>('lastActive');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [pdfSelectorOpen, setPdfSelectorOpen] = useState(false);
-  const [showAllTodaySessions, setShowAllTodaySessions] = useState(false);
 
   // Heartbeat staleness ticker
   const [tickerTime, setTickerTime] = useState(Date.now());
@@ -212,13 +211,12 @@ export default function AdminLiveMonitorPage() {
     }
   };
 
-  // Filter list by tab and remove abandoned sessions (unless showAllTodaySessions is enabled)
+  // Filter list by tab and remove abandoned sessions
   const getFilteredList = (type: 'exam' | 'practice') => {
     const list = Object.values(sessions)
       .filter(s => {
-        if (!showAllTodaySessions && isAbandoned(s.lastActive)) return false;
-        if (type === 'practice') return s.examType === 'practice';
-        return s.examType !== 'practice';
+        if (type === 'practice') return s.examType === 'practice' && !isAbandoned(s.lastActive);
+        return s.examType !== 'practice' && !isAbandoned(s.lastActive);
       });
 
     return list.sort((a, b) => {
@@ -274,76 +272,6 @@ export default function AdminLiveMonitorPage() {
 
   const handleCloseSnapshotsModal = () => {
     setSnapshotsModal(prev => ({ ...prev, show: false, selectedMedia: null }));
-  };
-
-  // Rescue Submission Modal State
-  const [rescueModal, setRescueModal] = useState<{
-    show: boolean;
-    session: Session | null;
-    backupToken: string;
-    isSubmitting: boolean;
-    error: string;
-    success: string;
-  }>({
-    show: false,
-    session: null,
-    backupToken: '',
-    isSubmitting: false,
-    error: '',
-    success: ''
-  });
-
-  const handleOpenRescueModal = (session: Session) => {
-    setRescueModal({
-      show: true,
-      session,
-      backupToken: '',
-      isSubmitting: false,
-      error: '',
-      success: ''
-    });
-  };
-
-  const handleExecuteRescue = async (useToken: boolean) => {
-    if (!rescueModal.session || !firebaseUser) return;
-    setRescueModal(prev => ({ ...prev, isSubmitting: true, error: '', success: '' }));
-    try {
-      const idToken = await firebaseUser.getIdToken();
-      const payload: any = {
-        action: 'rescue_submit',
-        examId: rescueModal.session.examId,
-        studentCode: rescueModal.session.studentCode
-      };
-      if (useToken && rescueModal.backupToken.trim()) {
-        payload.backupPayload = rescueModal.backupToken.trim();
-      }
-
-      const res = await fetch('/api/student/exams', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${idToken}`
-        },
-        body: JSON.stringify(payload)
-      });
-
-      const resData = await res.json();
-      if (!res.ok) {
-        throw new Error(resData.message || 'Rescue submit failed.');
-      }
-
-      setRescueModal(prev => ({
-        ...prev,
-        isSubmitting: false,
-        success: `✅ Rescued and graded successfully! Score: ${resData.score}/${resData.totalMarks} (${resData.percentage}%)`
-      }));
-    } catch (err: any) {
-      setRescueModal(prev => ({
-        ...prev,
-        isSubmitting: false,
-        error: err.message || 'Failed to rescue attempt.'
-      }));
-    }
   };
 
   // Helper to persist manual captures in Firestore session doc
@@ -861,21 +789,11 @@ export default function AdminLiveMonitorPage() {
         {/* Info card */}
         <div id="live-info-section" className="card" style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', padding: '15px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
           <div style={{ fontSize: '13px' }}>
-            <strong>{list.length}</strong> students currently listed
+            <strong>{list.length}</strong> students currently active
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
-            <label style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', userSelect: 'none', color: showAllTodaySessions ? 'var(--accent)' : 'var(--text-muted)', fontWeight: showAllTodaySessions ? 700 : 500 }}>
-              <input 
-                type="checkbox" 
-                checked={showAllTodaySessions} 
-                onChange={(e) => setShowAllTodaySessions(e.target.checked)} 
-              />
-              Show Ended / Stale Sessions Today (for Rescue)
-            </label>
-            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-              Live sessions drop off automatically 5m after disconnection.
-            </span>
-          </div>
+          <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+            Sessions drop off automatically 5 minutes after disconnection.
+          </span>
         </div>
 
         {/* Sessions table */}
@@ -977,16 +895,6 @@ export default function AdminLiveMonitorPage() {
                             >
                               📷 {s.cameraAvailable ? 'Live Feed' : 'No Camera'}
                             </button>
-                            {s.status !== 'completed' && (
-                              <button 
-                                className="btn btn-secondary btn-sm" 
-                                style={{ fontSize: '11px', padding: '4px 8px', color: '#f59e0b', borderColor: 'rgba(245, 158, 11, 0.4)', fontWeight: 700 }}
-                                onClick={() => handleOpenRescueModal(s)}
-                                title="Rescue submission: grade from autosaved answers or emergency backup code"
-                              >
-                                ⚡ Rescue
-                              </button>
-                            )}
                           </div>
                         </td>
                       </tr>
@@ -1371,82 +1279,6 @@ export default function AdminLiveMonitorPage() {
                   </span>
                 )}
               </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Rescue Attempt Modal (Admin Emergency Finalize) */}
-      {rescueModal.show && rescueModal.session && (
-        <div className="modal show" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 11000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-          <div className="modal-content" style={{ background: 'var(--surface-popover, #1e293b)', border: '1px solid var(--border-popover, #334155)', borderRadius: '12px', maxWidth: '520px', width: '100%', padding: '24px', color: 'var(--text)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-light)', paddingBottom: '10px', marginBottom: '16px' }}>
-              <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 800 }}>⚡ Rescue Student Submission</h3>
-              <button className="btn btn-secondary" style={{ padding: '2px 8px', fontSize: '12px' }} onClick={() => setRescueModal(prev => ({ ...prev, show: false }))}>✕</button>
-            </div>
-
-            <div style={{ background: 'var(--bg-soft)', padding: '12px', borderRadius: '8px', marginBottom: '16px', fontSize: '12.5px', lineHeight: 1.6 }}>
-              <div><strong>Student:</strong> {rescueModal.session.studentName} ({rescueModal.session.studentCode})</div>
-              <div><strong>Exam:</strong> {rescueModal.session.examName}</div>
-              <div><strong>Current Status:</strong> {rescueModal.session.status}</div>
-              <div><strong>Answered:</strong> {rescueModal.session.answeredCount ?? 'N/A'} questions</div>
-            </div>
-
-            {rescueModal.error && (
-              <div style={{ background: 'rgba(239, 68, 68, 0.12)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#ef4444', padding: '10px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, marginBottom: '14px' }}>
-                ⚠️ {rescueModal.error}
-              </div>
-            )}
-
-            {rescueModal.success && (
-              <div style={{ background: 'rgba(16, 185, 129, 0.12)', border: '1px solid rgba(16, 185, 129, 0.3)', color: '#10b981', padding: '10px 14px', borderRadius: '8px', fontSize: '13px', fontWeight: 700, marginBottom: '14px' }}>
-                {rescueModal.success}
-              </div>
-            )}
-
-            {!rescueModal.success && (
-              <>
-                <div style={{ marginBottom: '16px' }}>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, marginBottom: '6px' }}>
-                    Option 1: Finalize directly from latest Firestore autosave
-                  </label>
-                  <button 
-                    className="btn btn-primary btn-sm" 
-                    onClick={() => handleExecuteRescue(false)}
-                    disabled={rescueModal.isSubmitting}
-                    style={{ width: '100%', fontWeight: 700, padding: '8px' }}
-                  >
-                    {rescueModal.isSubmitting ? 'Evaluating & Finalizing...' : '⚡ Grade from Firestore Autosave'}
-                  </button>
-                </div>
-
-                <div style={{ borderTop: '1px solid var(--border-light)', paddingTop: '14px', marginBottom: '16px' }}>
-                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, marginBottom: '6px' }}>
-                    Option 2: Grade from Student Emergency Backup Code
-                  </label>
-                  <textarea
-                    rows={3}
-                    placeholder="Paste student emergency backup token or JSON here..."
-                    value={rescueModal.backupToken}
-                    onChange={(e) => setRescueModal(prev => ({ ...prev, backupToken: e.target.value }))}
-                    style={{ width: '100%', padding: '8px', borderRadius: '6px', fontSize: '11px', fontFamily: 'monospace', background: 'var(--bg)', border: '1px solid var(--border-light)', color: 'var(--text)', marginBottom: '8px' }}
-                  />
-                  <button 
-                    className="btn btn-secondary btn-sm" 
-                    onClick={() => handleExecuteRescue(true)}
-                    disabled={rescueModal.isSubmitting || !rescueModal.backupToken.trim()}
-                    style={{ width: '100%', fontWeight: 700, padding: '8px' }}
-                  >
-                    {rescueModal.isSubmitting ? 'Processing Token...' : '📋 Grade from Emergency Token'}
-                  </button>
-                </div>
-              </>
-            )}
-
-            <div style={{ display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid var(--border-light)', paddingTop: '12px' }}>
-              <button className="btn btn-secondary btn-sm" onClick={() => setRescueModal(prev => ({ ...prev, show: false }))}>
-                Close
-              </button>
             </div>
           </div>
         </div>
