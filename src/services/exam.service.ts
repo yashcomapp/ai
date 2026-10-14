@@ -249,7 +249,7 @@ export class ExamService {
       return {
         blocked: true,
         examTitle: pastExamTitle,
-        message: `You missed your scheduled exam '${pastExamTitle}'. You are blocked from taking new exams until your parent reviews and acknowledges this absence in the Parent Portal.`
+        message: `You missed your scheduled exam '${pastExamTitle}'. You are blocked from taking new exams until your parent reviews and acknowledges this absence in the Parent Portal.\n\n(तुम्ही तुमची नियोजित परीक्षा '${pastExamTitle}' वेळेत दिली नाही. जोपर्यंत तुमचे पालक पालक पोर्टल (Parent Portal) मध्ये जाऊन या गैरहजेरीचे कारण नोंदवत नाहीत, तोपर्यंत नवीन परीक्षा सुरू करता येणार नाही.)`
       };
     }
 

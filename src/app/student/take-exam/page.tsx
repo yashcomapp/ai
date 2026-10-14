@@ -890,7 +890,7 @@ function TakeExamContent() {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: 'var(--bg)', padding: '20px' }}>
         <div style={{
-          maxWidth: '520px',
+          maxWidth: '540px',
           width: '100%',
           textAlign: 'center',
           padding: '32px 24px',
@@ -904,18 +904,62 @@ function TakeExamContent() {
           gap: '14px'
         }}>
           <div style={{ fontSize: '3.5rem' }}>{isBlockedNotice ? '🔒' : '⚠️'}</div>
-          <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text)', margin: 0 }}>
-            {isBlockedNotice ? 'Action Required to Unlock Exam' : 'Exam Unavailable'}
-          </h3>
-          <p style={{ fontSize: '14px', color: 'var(--text-muted)', lineHeight: '1.6', margin: 0 }}>
-            {error || 'Exam configurations failed to load.'}
-          </p>
+          <div>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text)', margin: 0 }}>
+              {isBlockedNotice ? 'Action Required to Unlock Exam' : 'Exam Unavailable'}
+            </h3>
+            {isBlockedNotice && (
+              <div style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--primary)', marginTop: '4px' }}>
+                परीक्षेचा लॉक काढण्यासाठी आवश्यक कृती
+              </div>
+            )}
+          </div>
+          
+          <div style={{ fontSize: '14px', color: 'var(--text-muted)', lineHeight: '1.6', margin: 0, textAlign: 'center', width: '100%' }}>
+            {error ? (
+              error.split('\n\n').map((paragraph, idx) => (
+                <p key={idx} style={{ margin: '0 0 10px 0', whiteSpace: 'pre-line' }}>
+                  {paragraph}
+                </p>
+              ))
+            ) : (
+              <p style={{ margin: '0 0 10px 0' }}>Exam configurations failed to load.</p>
+            )}
+
+            {isBlockedNotice && (
+              <div style={{
+                background: 'rgba(59, 130, 246, 0.08)',
+                border: '1px solid rgba(59, 130, 246, 0.25)',
+                borderRadius: '8px',
+                padding: '12px 14px',
+                color: 'var(--text)',
+                fontSize: '13px',
+                lineHeight: '1.6',
+                textAlign: 'left',
+                marginTop: '12px'
+              }}>
+                <div style={{ fontWeight: 700, marginBottom: '4px', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span>📌</span>
+                  <span>परीक्षेचा लॉक कसा काढायचा (Action Steps to Unlock):</span>
+                </div>
+                <div>
+                  १. पालकांनी त्यांच्या मोबाईलवरून <strong>पालक पोर्टल (Parent Portal)</strong> मध्ये लॉगिन करावे.<br/>
+                  २. डॅशबोर्डवरील <strong>गैरहजर परीक्षा पुनरावलोकन (Absent Exam Review)</strong> पर्यायावर क्लिक करावे.<br/>
+                  ३. मागील परीक्षा न देण्याचे कारण नोंदवून सबमिट करावे. पालकांनी नोंद पूर्ण करताच परीक्षा लगेच सुरू होईल.
+                </div>
+              </div>
+            )}
+          </div>
+
           <button 
             className="btn btn-primary" 
             onClick={() => router.push(user?.role === 'admin' ? '/admin/exams' : '/student')} 
-            style={{ padding: '10px 24px', borderRadius: '8px', fontWeight: 700, marginTop: '8px' }}
+            style={{ padding: '12px 24px', borderRadius: '8px', fontWeight: 700, marginTop: '8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}
           >
-            {user?.role === 'admin' ? '← Back to Exam Management' : '🏠 Return to Dashboard & Complete Actions'}
+            <span>{user?.role === 'admin' ? '← Back to Exam Management' : '🏠 Return to Dashboard & Complete Actions'}</span>
+            {user?.role !== 'admin' && (
+              <span style={{ fontSize: '12px', fontWeight: 500, opacity: 0.9 }}>डॅशबोर्डवर परत जा आणि कृती पूर्ण करा</span>
+            )}
           </button>
         </div>
       </div>

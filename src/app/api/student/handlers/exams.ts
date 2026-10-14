@@ -281,7 +281,7 @@ export async function GET(req: NextRequest) {
     if (absenceCheck.blocked) {
       return NextResponse.json({
         status: 'blocked_by_absence',
-        message: absenceCheck.message || `You missed your scheduled exam '${absenceCheck.examTitle}'. You are blocked from taking new exams until your parent reviews and acknowledges this absence in the Parent Portal.`
+        message: absenceCheck.message || `You missed your scheduled exam '${absenceCheck.examTitle}'. You are blocked from taking new exams until your parent reviews and acknowledges this absence in the Parent Portal.\n\n(तुम्ही तुमची नियोजित परीक्षा '${absenceCheck.examTitle}' वेळेत दिली नाही. जोपर्यंत तुमचे पालक पालक पोर्टल (Parent Portal) मध्ये जाऊन या गैरहजेरीचे कारण नोंदवत नाहीत, तोपर्यंत नवीन परीक्षा सुरू करता येणार नाही.)`
       }, { status: 403 });
     }
 
