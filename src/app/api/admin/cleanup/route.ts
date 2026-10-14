@@ -5,6 +5,7 @@ import { verifyRole } from '@/lib/auth';
 import { ChunkedBatch } from '@/lib/firebase/batch';
 import { invalidateCache } from '@/lib/firebase/cache';
 import { getDateKeyIST, getMidnightIST } from '@/lib/dateUtils';
+import { runCompleteAutomatedPurge } from '@/lib/purgeUtils';
 
 export const dynamic = 'force-dynamic';
 
@@ -585,67 +586,11 @@ export async function POST(req: NextRequest) {
     }
 
     if (action === 'purgeExpiredSnapshots') {
-      const now = new Date();
-      const todayKeyIST = getDateKeyIST(now);
-      let purgedAttemptsCount = 0;
-      let purgedSessionsCount = 0;
-
-      // 1. Purge from examAttempts
-      const attemptsSnap = await adminDb.collection('examAttempts').get();
-      const attemptBatch = new ChunkedBatch(adminDb);
-      attemptsSnap.docs.forEach(doc => {
-        const d = doc.data();
-        const hasSnapshots = Array.isArray(d.proctoringSnapshots) && d.proctoringSnapshots.length > 0;
-        if (!hasSnapshots) return;
-
-        const rawCompleted = d.completedAt || d.createdAt || d.startedAt;
-        const completedDate = rawCompleted?.toDate ? rawCompleted.toDate() : (rawCompleted ? new Date(rawCompleted) : null);
-        const attemptDateKey = completedDate ? getDateKeyIST(completedDate) : null;
-        const expiresAt = d.proctoringSnapshotsExpiresAt ? new Date(d.proctoringSnapshotsExpiresAt) : null;
-
-        const isPastDay = attemptDateKey ? attemptDateKey < todayKeyIST : false;
-        const isExpired = isPastDay || (expiresAt ? expiresAt.getTime() <= now.getTime() : false) || (completedDate ? completedDate.getTime() < getMidnightIST(completedDate).getTime() && now.getTime() >= getMidnightIST(completedDate).getTime() : false);
-
-        if (isExpired) {
-          attemptBatch.update(doc.ref, {
-            proctoringSnapshots: [],
-            proctoringSnapshotsPurgedAt: admin.firestore.FieldValue.serverTimestamp()
-          });
-          purgedAttemptsCount++;
-        }
-      });
-      await attemptBatch.commit();
-
-      // 2. Purge from liveExamSessions older than current date / 12 AM
-      const liveSnap = await adminDb.collection('liveExamSessions').get();
-      const liveBatch = new ChunkedBatch(adminDb);
-      liveSnap.docs.forEach(doc => {
-        const d = doc.data();
-        const hasSnapshots = Array.isArray(d.proctoringSnapshots) && d.proctoringSnapshots.length > 0;
-        if (!hasSnapshots) return;
-
-        const rawLastActive = d.lastActive || d.updatedAt || d.createdAt;
-        const lastActiveDate = rawLastActive?.toDate ? rawLastActive.toDate() : (rawLastActive ? new Date(rawLastActive) : null);
-        const sessionDateKey = lastActiveDate ? getDateKeyIST(lastActiveDate) : null;
-        const expiresAt = d.proctoringSnapshotsExpiresAt ? new Date(d.proctoringSnapshotsExpiresAt) : null;
-
-        const isPastDay = sessionDateKey ? sessionDateKey < todayKeyIST : false;
-        const isExpired = isPastDay || (expiresAt ? expiresAt.getTime() <= now.getTime() : false);
-
-        if (isExpired) {
-          liveBatch.update(doc.ref, {
-            proctoringSnapshots: []
-          });
-          purgedSessionsCount++;
-        }
-      });
-      await liveBatch.commit();
-
+      const stats = await runCompleteAutomatedPurge();
       return NextResponse.json({
         success: true,
-        message: `Purged expired proctoring snapshots at 12:00 AM retention limit (Attempts: ${purgedAttemptsCount}, Live Sessions: ${purgedSessionsCount}).`,
-        purgedAttemptsCount,
-        purgedSessionsCount
+        message: `Purged expired proctoring snapshots and parent verification photos (Attempts: ${stats.purgedAttemptsCount}, Live Sessions: ${stats.purgedLiveSessionsCount}, Parent Logs: ${stats.purgedParentLogsCount}).`,
+        ...stats
       });
     }
 

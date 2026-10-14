@@ -8,6 +8,7 @@ import { QuotientService } from '@/services/quotient.service';
 import { QuotientResult } from '@/types/quotient.types';
 import { chunkArray } from '@/lib/firestoreUtils';
 import { getCachedBatches } from '@/lib/firebase/cache';
+import { ChunkedBatch } from '@/lib/firebase/batch';
 
 export class ReportService {
 
@@ -925,12 +926,22 @@ export class ReportService {
     const oneDayAgo = nowMs - 24 * 60 * 60 * 1000;
     const records: any[] = [];
     const existingReviewKeys = new Set<string>();
-    const purgeBatch = adminDb.batch();
+    const purgeBatch = new ChunkedBatch(adminDb);
     let purgeCount = 0;
 
     sinceritySnap.docs.forEach((doc: any) => {
       const data = doc.data();
       const rawType = data.type || '';
+
+      const recordTime = data.timestamp || (data.createdAt?.toDate?.()?.toISOString?.()) || null;
+      const recordTimestampMs = recordTime ? new Date(recordTime).getTime() : 0;
+      const isExpired = Boolean(data.expiresAt && data.expiresAt < nowMs) || (recordTimestampMs > 0 && recordTimestampMs < oneDayAgo);
+
+      if (isExpired) {
+        purgeBatch.delete(doc.ref);
+        purgeCount++;
+        return;
+      }
 
       if (
         rawType === 'practice' || 
@@ -940,16 +951,6 @@ export class ReportService {
         data.examName === 'Exam Paper Review' ||
         data.name === 'Exam Paper Review'
       ) {
-        return;
-      }
-
-      const recordTime = data.timestamp || (data.createdAt?.toDate?.()?.toISOString?.()) || null;
-      const recordTimestampMs = recordTime ? new Date(recordTime).getTime() : 0;
-      const isExpired = Boolean(data.expiresAt && data.expiresAt < nowMs) || (recordTimestampMs > 0 && recordTimestampMs < oneDayAgo);
-
-      if (isExpired) {
-        purgeBatch.delete(doc.ref);
-        purgeCount++;
         return;
       }
 
@@ -1083,7 +1084,7 @@ export class ReportService {
     });
 
     if (purgeCount > 0) {
-      purgeBatch.commit().catch(err => console.warn('Purge batch commit warning:', err));
+      await purgeBatch.commit().catch(err => console.warn('Purge batch commit warning:', err));
     }
 
     records.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());

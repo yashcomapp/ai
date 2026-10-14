@@ -3,6 +3,7 @@ import { adminDb } from '@/lib/firebase/admin';
 import { getDateKeyIST } from '@/lib/dateUtils';
 import { ChunkedBatch } from '@/lib/firebase/batch';
 import { verifyRole } from '@/lib/auth';
+import { runCompleteAutomatedPurge } from '@/lib/purgeUtils';
 
 
 export async function GET(req: NextRequest) {
@@ -251,11 +252,21 @@ export async function POST(req: NextRequest) {
 
     await batch.commit();
 
+    // 6. Automatically purge expired proctoring snapshots (>12 AM) and parent verification photos (>24h)
+    let purgeStats = null;
+    try {
+      purgeStats = await runCompleteAutomatedPurge();
+      console.log(`[Reschedule] Automated snapshot and parent review purge complete:`, purgeStats);
+    } catch (purgeErr) {
+      console.error('[Reschedule] Automated purge error:', purgeErr);
+    }
+
     return NextResponse.json({
       success: true,
       message: 'All exams for today successfully rescheduled to 06:20 AM with no late entry restrictions, and attempts reset.',
       assignmentsUpdated,
       attemptsReset,
+      purgeStats,
       details
     });
 
