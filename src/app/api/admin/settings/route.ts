@@ -4,6 +4,7 @@ import * as firebaseAdmin from 'firebase-admin';
 import { verifyRole } from '@/lib/auth';
 import { ChunkedBatch } from '@/lib/firebase/batch';
 import { getFromCache, setInCache, invalidateCache, getCachedBatches, getCachedSyllabus } from '@/lib/firebase/cache';
+import { runCompleteAutomatedPurge } from '@/lib/purgeUtils';
 
 export async function GET(request: Request) {
   try {
@@ -289,6 +290,15 @@ export async function POST(request: Request) {
         invalidateCache('syllabus');
         invalidateCache('questions');
         return NextResponse.json({ success: true, count });
+      }
+
+      if (utilityType === 'purgeSnapshots') {
+        const stats = await runCompleteAutomatedPurge();
+        return NextResponse.json({
+          success: true,
+          message: `Purged ${stats.purgedAttemptsCount} exam attempts snapshots, ${stats.purgedLiveSessionsCount} live sessions, and ${stats.purgedParentLogsCount} parent review logs.`,
+          stats
+        });
       }
     }
 

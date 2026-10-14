@@ -10,6 +10,7 @@ import { isDemoUser } from '@/lib/studentDb';
 import { getDateKeyIST, getMidnightIST } from '@/lib/dateUtils';
 import { MasteryService } from '@/services/mastery.service';
 import { ExamService } from '@/services/exam.service';
+import { triggerDailyPurgeIfNeeded } from '@/lib/purgeUtils';
 
 async function resolveObjectiveExam(inputExamId: string) {
   let snap = await adminDb.collection('exams').doc(inputExamId).get();
@@ -104,6 +105,9 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ message: 'Unauthorized. Admin role required.' }, { status: 403 });
     }
 
+    // Opportunistically run zero-cost daily purge on first daily admin request
+    triggerDailyPurgeIfNeeded().catch(() => null);
+
     const { searchParams } = new URL(req.url);
     const examId = searchParams.get('examId') || '';
 
@@ -148,6 +152,15 @@ export async function GET(req: NextRequest) {
         const isPastDay = attemptDateKey ? attemptDateKey < todayKeyIST : false;
         const isExpired = isPastDay || (snapshotsExpiresAt ? Date.now() >= new Date(snapshotsExpiresAt).getTime() : false);
         const rawSnapshots = isExpired ? [] : (attData.proctoringSnapshots || []);
+
+        // Self-healing: if document is expired and still holds base64 screenshots, clear it inline
+        if (isExpired && Array.isArray(attData.proctoringSnapshots) && attData.proctoringSnapshots.length > 0) {
+          attemptDoc.ref.update({
+            proctoringSnapshots: [],
+            proctoringSnapshotsPurgedAt: admin.firestore.FieldValue.serverTimestamp()
+          }).catch(() => null);
+        }
+
         return NextResponse.json({
           snapshots: rawSnapshots,
           isPurged: isExpired,

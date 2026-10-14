@@ -296,11 +296,12 @@ export default function AdminSettingsPage() {
   };
 
   // Utility resets
-  const handleRunUtility = async (utilityType: 'resetFlags' | 'systemReset' | 'purgeOrphans') => {
+  const handleRunUtility = async (utilityType: 'resetFlags' | 'systemReset' | 'purgeOrphans' | 'purgeSnapshots') => {
     const confirmMessages = {
       resetFlags: 'Reset all question usage count logs & flags in the Question Bank?',
       systemReset: '⚠️ DANGER: Purge all exam attempts, proctor reviews, and integrity scorecard records to begin a fresh academic session?',
-      purgeOrphans: 'Purge orphaned questions not associated with any active subject syllabus?'
+      purgeOrphans: 'Purge orphaned questions not associated with any active subject syllabus?',
+      purgeSnapshots: 'Purge all student exam webcam captures past midnight (12:00 AM IST) and parent verification photos older than 24 hours?'
     };
 
     if (!confirm(confirmMessages[utilityType])) return;
@@ -320,7 +321,8 @@ export default function AdminSettingsPage() {
         })
       });
       if (!res.ok) throw new Error('Utility request failed.');
-      alert('✅ Database utility completed successfully.');
+      const data = await res.json();
+      alert(data.message || '✅ Database utility completed successfully.');
     } catch (err: any) {
       alert(`❌ Utility execution failed: ${err.message}`);
     } finally {
@@ -559,6 +561,15 @@ export default function AdminSettingsPage() {
                 <p style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.4 }}>Searches and deletes question bank entries not assigned to active chapter syllabi.</p>
               </div>
               <button className="btn btn-secondary btn-sm" onClick={() => handleRunUtility('purgeOrphans')} disabled={processing}>Execute Purge</button>
+            </div>
+
+            {/* Purge Snapshots & Logs */}
+            <div className="card" style={{ background: 'var(--surface)', padding: '20px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '10px' }}>
+              <div>
+                <h4 style={{ fontSize: '13px', fontWeight: 800, margin: '0 0 4px', color: 'var(--accent)' }}>📷 Purge expired snapshots & logs</h4>
+                <p style={{ fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.4 }}>Purges student webcam captures past midnight (12:00 AM IST) and parent verification photos older than 24h.</p>
+              </div>
+              <button className="btn btn-secondary btn-sm" onClick={() => handleRunUtility('purgeSnapshots')} disabled={processing}>Execute Purge</button>
             </div>
 
             {/* DANGER: Session System Reset */}

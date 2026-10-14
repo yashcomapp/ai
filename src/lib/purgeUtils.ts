@@ -108,3 +108,61 @@ export async function runCompleteAutomatedPurge(): Promise<PurgeResult> {
   const { purgedParentLogsCount } = await purgeExpiredParentSincerityLogs();
   return { purgedAttemptsCount, purgedLiveSessionsCount, purgedParentLogsCount };
 }
+
+let lastInProcessPurgeCheck = 0;
+
+/**
+ * Self-healing, zero-cost opportunistic daily purge runner.
+ * Automatically triggers once per day on the first daily API request without requiring paid cron services.
+ */
+export async function triggerDailyPurgeIfNeeded(): Promise<boolean> {
+  const now = Date.now();
+  // Throttle in-memory check to at most once every 10 minutes to avoid redundant Firestore reads
+  if (now - lastInProcessPurgeCheck < 10 * 60 * 1000) {
+    return false;
+  }
+  lastInProcessPurgeCheck = now;
+
+  try {
+    const todayKey = getDateKeyIST(new Date());
+    const ref = adminDb.collection('_systemMetadata').doc('dailyPurge');
+    const doc = await ref.get().catch(() => null);
+    const data = doc?.data();
+
+    if (data?.lastPurgedDateKeyIST === todayKey && data?.status === 'completed') {
+      return false; // Already purged today
+    }
+
+    // Mark as started to prevent parallel invocations
+    await ref.set({
+      lastPurgedDateKeyIST: todayKey,
+      lastRunAt: admin.firestore.FieldValue.serverTimestamp(),
+      status: 'running'
+    }, { merge: true });
+
+    // Run purge asynchronously in the background
+    runCompleteAutomatedPurge()
+      .then(stats => {
+        ref.set({
+          status: 'completed',
+          lastCompletedAt: admin.firestore.FieldValue.serverTimestamp(),
+          lastStats: stats
+        }, { merge: true });
+        console.log(`[OpportunisticPurge] Daily purge succeeded for ${todayKey}:`, stats);
+      })
+      .catch(err => {
+        console.error('[OpportunisticPurge] Daily purge failed:', err);
+        ref.set({
+          status: 'failed',
+          lastFailedAt: admin.firestore.FieldValue.serverTimestamp(),
+          error: err.message
+        }, { merge: true });
+      });
+
+    return true;
+  } catch (err) {
+    console.warn('[OpportunisticPurge] Failed to evaluate daily purge trigger:', err);
+    return false;
+  }
+}
+
