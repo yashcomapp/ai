@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "scrollbar": "node scripts/inject_scrollbar.js"
+    "scrollbar": "node scripts/inject_scrollbar.js",
+    "patch-app": "node scripts/patch_app_asar.js"
   },
   "dependencies": {
     "firebase": "^10.12.0",
