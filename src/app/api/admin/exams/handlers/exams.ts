@@ -11,7 +11,6 @@ import { evaluateSessionSincerity } from '@/lib/practiceTimeUtils';
 import { getCanonicalSubjectName, parseTopicCode } from '@/lib/questionTypes';
 import { getObjectiveExamTopics, getSubjectiveExamTopics, getExamDateKey, isExamForStudent } from '@/services/quotient.service';
 import { ExamService } from '@/services/exam.service';
-import { triggerDailyPurgeIfNeeded } from '@/lib/purgeUtils';
 
 const parseIST = (dateStr: string) => {
   if (!dateStr) return new Date();
@@ -54,9 +53,6 @@ export async function GET(req: NextRequest) {
     if (!adminUser) {
       return NextResponse.json({ message: 'Unauthorized. Admin role required.' }, { status: 403 });
     }
-
-    // Opportunistically run zero-cost daily purge on first daily admin request
-    triggerDailyPurgeIfNeeded().catch(() => null);
 
     const action = req.nextUrl.searchParams.get('action');
     const studentCodeParam = req.nextUrl.searchParams.get('studentCode');

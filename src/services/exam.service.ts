@@ -8,6 +8,26 @@ import { MasteryService } from './mastery.service';
 import { invalidateCache } from '@/lib/firebase/cache';
 import { ReportCacheManager } from '@/lib/reportCache';
 
+/**
+ * Canonical SSOT helper to determine whether an attempt document represents a completed/submitted exam attempt.
+ */
+export function isAttemptCompleted(data: any): boolean {
+  if (!data || typeof data !== 'object') return false;
+
+  // 1. Explicit submission/completion timestamps
+  if (data.completedAt || data.submittedAt) return true;
+
+  const status = data.status;
+  // 2. Canonical completed status (Objective & Subjective)
+  if (status === 'completed' || status === 'submitted') return true;
+
+  // 3. Subjective post-submission review states
+  const finishedSubStatuses = ['peer_review_pending', 'peer_reviewed', 'parent_reviewed', 'approved'];
+  if (finishedSubStatuses.includes(status)) return true;
+
+  return false;
+}
+
 export class ExamService {
   /**
    * Helper to fetch active assignments targeted specifically to a student (by batch or direct assignment),
@@ -182,8 +202,8 @@ export class ExamService {
       const subAttemptSnap = snapMap.get(`subjectiveAttempts/${pastExam.examId}_${studentCode}`);
       const reasonSnap = snapMap.get(`examAbsenceReasons/${studentCode}_${pastExam.examId}`);
 
-      const directAttempted = (attemptSnap?.exists && (attemptSnap.data()?.status === 'completed' || !!attemptSnap.data()?.completedAt)) ||
-                              (subAttemptSnap?.exists && (subAttemptSnap.data()?.status === 'completed' || subAttemptSnap.data()?.status === 'submitted' || !!subAttemptSnap.data()?.completedAt || !!subAttemptSnap.data()?.submittedAt)) ||
+      const directAttempted = (attemptSnap?.exists && isAttemptCompleted(attemptSnap.data())) ||
+                              (subAttemptSnap?.exists && isAttemptCompleted(subAttemptSnap.data())) ||
                               (evalMap && evalMap.has(pastExam.examId));
 
       if (directAttempted) {
@@ -216,15 +236,13 @@ export class ExamService {
       ]);
 
       qAttemptsSnap.docs.forEach(d => {
-        const dData = d.data();
-        if (dData?.status === 'completed' || !!dData?.completedAt) attemptedExamIds.add(dData.examId);
+        if (isAttemptCompleted(d.data())) attemptedExamIds.add(d.data().examId);
       });
       qReviewsSnap.docs.forEach(d => {
         if (d.data()?.status !== 'precheck') attemptedExamIds.add(d.data().examId);
       });
       qSubSnap.docs.forEach(d => {
-        const dData = d.data();
-        if (dData?.status === 'completed' || dData?.status === 'submitted' || !!dData?.completedAt || !!dData?.submittedAt) attemptedExamIds.add(dData.examId);
+        if (isAttemptCompleted(d.data())) attemptedExamIds.add(d.data().examId);
       });
       qEvalSnap.docs.forEach(d => {
         const dt = d.data();
@@ -342,8 +360,7 @@ export class ExamService {
       });
       const hasSubjAttempt = subjSnaps?.docs.some(d => {
         const dData = d.data();
-        const isCompleted = dData.status !== 'in-progress' && dData.status !== 'precheck';
-        return isCompleted && (dData.examId === pe.examId || d.id === `${pe.examId}_${studentCode}` || d.id.includes(pe.examId));
+        return isAttemptCompleted(dData) && (dData.examId === pe.examId || d.id === `${pe.examId}_${studentCode}` || d.id.includes(pe.examId));
       });
       const hasEvaluation = evalSnaps?.docs.some(d => {
         const dData = d.data();
@@ -390,15 +407,13 @@ export class ExamService {
         adminDb.collection('evaluations').where('studentCode', '==', studentCode).where('examId', 'in', chunk).get()
       ]);
       qAttSnap.docs.forEach(d => {
-        const dData = d.data();
-        if (dData?.status === 'completed' || !!dData?.completedAt) attemptedExamIds.add(dData.examId);
+        if (isAttemptCompleted(d.data())) attemptedExamIds.add(d.data().examId);
       });
       qRevSnap.docs.forEach(d => {
         if (d.data()?.status !== 'precheck') attemptedExamIds.add(d.data().examId);
       });
       qSubSnap.docs.forEach(d => {
-        const dData = d.data();
-        if (dData?.status === 'completed' || dData?.status === 'submitted' || !!dData?.completedAt || !!dData?.submittedAt) attemptedExamIds.add(dData.examId);
+        if (isAttemptCompleted(d.data())) attemptedExamIds.add(d.data().examId);
       });
       qEvalSnap.docs.forEach(d => {
         const dt = d.data();
@@ -410,8 +425,8 @@ export class ExamService {
     unverifiedPastExams.forEach(pastExam => {
       const directAtt = docMap.get(`examAttempts/${pastExam.examId}_${studentCode}`);
       const directSub = docMap.get(`subjectiveAttempts/${pastExam.examId}_${studentCode}`);
-      const isAttCompleted = directAtt && (directAtt.status === 'completed' || !!directAtt.completedAt);
-      const isSubCompleted = directSub && (directSub.status === 'completed' || directSub.status === 'submitted' || !!directSub.completedAt || !!directSub.submittedAt);
+      const isAttCompleted = directAtt && isAttemptCompleted(directAtt);
+      const isSubCompleted = directSub && isAttemptCompleted(directSub);
       const attempted = isAttCompleted ||
                         isSubCompleted ||
                         attemptedExamIds.has(pastExam.examId);
