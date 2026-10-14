@@ -182,8 +182,8 @@ export class ExamService {
       const subAttemptSnap = snapMap.get(`subjectiveAttempts/${pastExam.examId}_${studentCode}`);
       const reasonSnap = snapMap.get(`examAbsenceReasons/${studentCode}_${pastExam.examId}`);
 
-      const directAttempted = (attemptSnap?.exists && attemptSnap.data()?.status !== 'precheck') ||
-                              (subAttemptSnap?.exists && subAttemptSnap.data()?.status !== 'precheck') ||
+      const directAttempted = (attemptSnap?.exists && (attemptSnap.data()?.status === 'completed' || !!attemptSnap.data()?.completedAt)) ||
+                              (subAttemptSnap?.exists && (subAttemptSnap.data()?.status === 'completed' || subAttemptSnap.data()?.status === 'submitted' || !!subAttemptSnap.data()?.completedAt || !!subAttemptSnap.data()?.submittedAt)) ||
                               (evalMap && evalMap.has(pastExam.examId));
 
       if (directAttempted) {
@@ -216,13 +216,15 @@ export class ExamService {
       ]);
 
       qAttemptsSnap.docs.forEach(d => {
-        if (d.data()?.status !== 'precheck') attemptedExamIds.add(d.data().examId);
+        const dData = d.data();
+        if (dData?.status === 'completed' || !!dData?.completedAt) attemptedExamIds.add(dData.examId);
       });
       qReviewsSnap.docs.forEach(d => {
         if (d.data()?.status !== 'precheck') attemptedExamIds.add(d.data().examId);
       });
       qSubSnap.docs.forEach(d => {
-        if (d.data()?.status !== 'precheck') attemptedExamIds.add(d.data().examId);
+        const dData = d.data();
+        if (dData?.status === 'completed' || dData?.status === 'submitted' || !!dData?.completedAt || !!dData?.submittedAt) attemptedExamIds.add(dData.examId);
       });
       qEvalSnap.docs.forEach(d => {
         const dt = d.data();
@@ -340,7 +342,8 @@ export class ExamService {
       });
       const hasSubjAttempt = subjSnaps?.docs.some(d => {
         const dData = d.data();
-        return dData.examId === pe.examId || d.id === `${pe.examId}_${studentCode}` || d.id.includes(pe.examId);
+        const isCompleted = dData.status !== 'in-progress' && dData.status !== 'precheck';
+        return isCompleted && (dData.examId === pe.examId || d.id === `${pe.examId}_${studentCode}` || d.id.includes(pe.examId));
       });
       const hasEvaluation = evalSnaps?.docs.some(d => {
         const dData = d.data();
@@ -387,13 +390,15 @@ export class ExamService {
         adminDb.collection('evaluations').where('studentCode', '==', studentCode).where('examId', 'in', chunk).get()
       ]);
       qAttSnap.docs.forEach(d => {
-        if (d.data()?.status !== 'precheck') attemptedExamIds.add(d.data().examId);
+        const dData = d.data();
+        if (dData?.status === 'completed' || !!dData?.completedAt) attemptedExamIds.add(dData.examId);
       });
       qRevSnap.docs.forEach(d => {
         if (d.data()?.status !== 'precheck') attemptedExamIds.add(d.data().examId);
       });
       qSubSnap.docs.forEach(d => {
-        if (d.data()?.status !== 'precheck') attemptedExamIds.add(d.data().examId);
+        const dData = d.data();
+        if (dData?.status === 'completed' || dData?.status === 'submitted' || !!dData?.completedAt || !!dData?.submittedAt) attemptedExamIds.add(dData.examId);
       });
       qEvalSnap.docs.forEach(d => {
         const dt = d.data();
@@ -405,8 +410,10 @@ export class ExamService {
     unverifiedPastExams.forEach(pastExam => {
       const directAtt = docMap.get(`examAttempts/${pastExam.examId}_${studentCode}`);
       const directSub = docMap.get(`subjectiveAttempts/${pastExam.examId}_${studentCode}`);
-      const attempted = (directAtt && directAtt.status !== 'precheck') ||
-                        (directSub && directSub.status !== 'precheck') ||
+      const isAttCompleted = directAtt && (directAtt.status === 'completed' || !!directAtt.completedAt);
+      const isSubCompleted = directSub && (directSub.status === 'completed' || directSub.status === 'submitted' || !!directSub.completedAt || !!directSub.submittedAt);
+      const attempted = isAttCompleted ||
+                        isSubCompleted ||
                         attemptedExamIds.has(pastExam.examId);
 
       if (!attempted) {
