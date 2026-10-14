@@ -153,6 +153,7 @@ export async function GET(req: NextRequest) {
         if (isExpired && Array.isArray(attData.proctoringSnapshots) && attData.proctoringSnapshots.length > 0) {
           await attemptDoc.ref.update({
             proctoringSnapshots: [],
+            proctoringSnapshotsExpiresAt: admin.firestore.FieldValue.delete(),
             proctoringSnapshotsPurgedAt: admin.firestore.FieldValue.serverTimestamp()
           }).catch(() => null);
         }

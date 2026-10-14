@@ -323,7 +323,8 @@ export class AttemptService {
         violations: sanitizedViolations || null,
         ...(rawSnapshots.length > 0 ? {
           proctoringSnapshots: rawSnapshots,
-          proctoringSnapshotsExpiresAt: getMidnightIST(new Date()).toISOString()
+          proctoringSnapshotsExpiresAt: getMidnightIST(new Date()).toISOString(),
+          proctoringSnapshotsPurgedAt: admin.firestore.FieldValue.delete()
         } : {}),
         completedAt: admin.firestore.FieldValue.serverTimestamp(),
         createdAt: admin.firestore.FieldValue.serverTimestamp(),

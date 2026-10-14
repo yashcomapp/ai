@@ -4,6 +4,7 @@ import { getLiveSessionRef, createLiveSession, updateLiveSession } from '@/lib/p
 import { ProctoringSnapshot } from './useProctoring';
 import { getMidnightIST } from '@/lib/dateUtils';
 import { ref, onValue, set, push, off, remove } from 'firebase/database';
+import { deleteField } from 'firebase/firestore';
 
 interface UseLiveExamProps {
   examId: string;
@@ -84,7 +85,8 @@ export function useLiveExam({
     if (liveSessionDocRef.current) {
       updateLiveSession(liveSessionDocRef.current, {
         proctoringSnapshots: updated,
-        proctoringSnapshotsExpiresAt: getMidnightIST(new Date()).toISOString()
+        proctoringSnapshotsExpiresAt: getMidnightIST(new Date()).toISOString(),
+        proctoringSnapshotsPurgedAt: deleteField()
       }).catch(err => console.warn('[useLiveExam] Failed to sync snapshot:', err));
     }
   }, []);

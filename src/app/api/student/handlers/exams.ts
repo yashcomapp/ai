@@ -8,7 +8,7 @@ import { deriveTopicCodeFromQuestionCode, evaluateQuestionAnswer } from '@/lib/q
 import { generateAndDispatchExamNotices } from '@/lib/examNotices';
 import { invalidateCache } from '@/lib/firebase/cache';
 import { ExamReviewService } from '@/services/examReview.service';
-import { parseDateInput } from '@/lib/dateUtils';
+import { parseDateInput, getMidnightIST } from '@/lib/dateUtils';
 
 
 
@@ -499,10 +499,13 @@ export async function POST(req: NextRequest) {
         const reviewRef = adminDb.collection('reviews').doc(`${examId}_${studentCode}`);
         
         try {
+          const midnightIST = getMidnightIST(new Date()).toISOString();
           // Store proctoringSnapshots ONCE per doc to avoid duplicating byte size
           await Promise.all([
             attemptRef.set({
               proctoringSnapshots: cappedScreenshots,
+              proctoringSnapshotsExpiresAt: midnightIST,
+              proctoringSnapshotsPurgedAt: admin.firestore.FieldValue.delete(),
               violations: {
                 hasSnapshots: true,
                 snapshotCount: cappedScreenshots.length
@@ -510,6 +513,8 @@ export async function POST(req: NextRequest) {
             }, { merge: true }),
             reviewRef.set({
               proctoringSnapshots: cappedScreenshots,
+              proctoringSnapshotsExpiresAt: midnightIST,
+              proctoringSnapshotsPurgedAt: admin.firestore.FieldValue.delete(),
               violations: {
                 hasSnapshots: true,
                 snapshotCount: cappedScreenshots.length
