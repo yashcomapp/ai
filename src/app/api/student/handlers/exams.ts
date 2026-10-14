@@ -486,34 +486,39 @@ export async function POST(req: NextRequest) {
       }
       const rawScreenshots = Array.isArray(body.screenshots) ? body.screenshots : [];
       if (rawScreenshots.length > 0) {
-        // Cap to latest 15 snapshots and limit each item size to 65KB to strictly protect Firestore 1 MiB limit
+        // Cap to latest 7 snapshots and limit each item size to 50KB to strictly protect Firestore 1 MiB limit
         const cappedScreenshots = rawScreenshots
-          .slice(-15)
-          .filter((s: unknown): s is string => typeof s === 'string' && s.length <= 65536);
+          .slice(-7)
+          .filter((s: unknown): s is string => typeof s === 'string' && s.length <= 51200);
 
-        if (cappedScreenshots.length > 0) {
-          const attemptRef = adminDb.collection('examAttempts').doc(`${examId}_${studentCode}`);
-          const reviewRef = adminDb.collection('reviews').doc(`${examId}_${studentCode}`);
-          
-          try {
-            await Promise.all([
-              attemptRef.set({
-                violations: {
-                  screenshots: cappedScreenshots,
-                  proctoringSnapshots: cappedScreenshots
-                }
-              }, { merge: true }),
-              reviewRef.set({
-                violations: {
-                  screenshots: cappedScreenshots,
-                  proctoringSnapshots: cappedScreenshots
-                }
-              }, { merge: true })
-            ]);
-          } catch (err: any) {
-            console.error('Failed to merge proctoring snapshots:', err);
-            return NextResponse.json({ error: 'Failed to store proctoring snapshots' }, { status: 500 });
-          }
+        if (cappedScreenshots.length === 0) {
+          return NextResponse.json({ error: 'All submitted snapshots exceeded the permissible size limit (50 KB per snapshot).' }, { status: 400 });
+        }
+
+        const attemptRef = adminDb.collection('examAttempts').doc(`${examId}_${studentCode}`);
+        const reviewRef = adminDb.collection('reviews').doc(`${examId}_${studentCode}`);
+        
+        try {
+          // Store proctoringSnapshots ONCE per doc to avoid duplicating byte size
+          await Promise.all([
+            attemptRef.set({
+              proctoringSnapshots: cappedScreenshots,
+              violations: {
+                hasSnapshots: true,
+                snapshotCount: cappedScreenshots.length
+              }
+            }, { merge: true }),
+            reviewRef.set({
+              proctoringSnapshots: cappedScreenshots,
+              violations: {
+                hasSnapshots: true,
+                snapshotCount: cappedScreenshots.length
+              }
+            }, { merge: true })
+          ]);
+        } catch (err: any) {
+          console.error('Failed to merge proctoring snapshots:', err);
+          return NextResponse.json({ error: 'Failed to store proctoring snapshots' }, { status: 500 });
         }
       }
       return NextResponse.json({ success: true, message: 'Snapshots uploaded successfully.' });

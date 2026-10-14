@@ -465,14 +465,15 @@ const DiagramZoomModal: React.FC<DiagramZoomModalProps> = ({
           }}
         >
           {media.type === 'svg' ? (
-            <div
+            <img
+              src={media.content.startsWith('data:') ? media.content : `data:image/svg+xml;utf8,${encodeURIComponent(media.content)}`}
+              alt={media.title || 'Enlarged figure'}
               style={{
-                width: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
+                maxWidth: '85vw',
+                maxHeight: '70vh',
+                objectFit: 'contain'
               }}
-              dangerouslySetInnerHTML={{ __html: media.content }}
+              draggable={false}
             />
           ) : (
             <img

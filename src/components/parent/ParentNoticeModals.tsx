@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { formatDateTimeIST } from '@/lib/dateUtils';
+import { sanitizeNoticeHtml } from '@/lib/sanitize';
 import { ParentNotice } from './types';
 
 interface ParentNoticeModalsProps {
@@ -333,7 +334,7 @@ export const ParentNoticeModals = React.memo(function ParentNoticeModals({
                 )}
                 <div 
                   style={{ lineHeight: '1.25', margin: '4px 0' }}
-                  dangerouslySetInnerHTML={{ __html: (activeOverlayNotice.body || '').replace(/(<\/div>|<\/p>|<\/li>)\s*\r?\n/gi, '$1').replace(/\r?\n\s*(<div[^>]*>|<p[^>]*>|<ul[^>]*>|<ol[^>]*>|<li[^>]*>)/gi, '$1').replace(/\r?\n/g, '<br/>') }}
+                  dangerouslySetInnerHTML={{ __html: sanitizeNoticeHtml(activeOverlayNotice.body || '') }}
                 />
 
                 {/* Interactive Absence Reason Form for Parent with Firm Hindi Advisory */}

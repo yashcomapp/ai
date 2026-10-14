@@ -1,8 +1,5 @@
-import bundleAnalyzer from '@next/bundle-analyzer';
+// Conditionally load bundle analyzer only when ANALYZE === 'true' to allow clean --production installs
 
-const withBundleAnalyzer = bundleAnalyzer({
-  enabled: process.env.ANALYZE === 'true',
-});
 
 const nextConfig = {
   reactStrictMode: true,
@@ -102,4 +99,14 @@ const nextConfig = {
   },
 };
 
-export default withBundleAnalyzer(nextConfig);
+let finalConfig = nextConfig;
+if (process.env.ANALYZE === 'true') {
+  try {
+    const bundleAnalyzer = (await import('@next/bundle-analyzer')).default;
+    finalConfig = bundleAnalyzer({ enabled: true })(nextConfig);
+  } catch (err) {
+    console.warn('Unable to load @next/bundle-analyzer:', err.message);
+  }
+}
+
+export default finalConfig;

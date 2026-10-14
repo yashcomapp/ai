@@ -8,6 +8,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { playNotificationSound } from '@/lib/audioUtils';
 import { formatDateDMY } from '@/lib/dateUtils';
+import { sanitizeNoticeHtml } from '@/lib/sanitize';
 
 interface Batch {
   id: string;
@@ -104,13 +105,7 @@ export default function AdminNoticesPage() {
   };
 
   const renderNoticeHTML = (rawText: string) => {
-    if (!rawText) return '';
-    let html = rawText;
-    // Prevent double spacing around block tags
-    html = html.replace(/(<\/div>|<\/p>|<\/li>)\s*\r?\n/gi, '$1');
-    html = html.replace(/\r?\n\s*(<div[^>]*>|<p[^>]*>|<ul[^>]*>|<ol[^>]*>|<li[^>]*>)/gi, '$1');
-    html = html.replace(/\r?\n/g, '<br/>');
-    return html;
+    return sanitizeNoticeHtml(rawText);
   };
 
   // Maintenance / System Access States

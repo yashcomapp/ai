@@ -54,12 +54,18 @@ export async function resolveParentDocsForStudents(studentCodes: string[], paren
         .where('role', '==', 'parent')
         .where('studentCodes', 'array-contains-any', chunk)
         .get()
-        .catch(() => null),
+        .catch(err => {
+          console.error('Error in resolveParentDocsForStudents (studentCodes chunk):', err);
+          return null;
+        }),
       adminDb.collection('users')
         .where('role', '==', 'parent')
         .where('studentCode', 'in', chunk)
         .get()
-        .catch(() => null)
+        .catch(err => {
+          console.error('Error in resolveParentDocsForStudents (studentCode chunk):', err);
+          return null;
+        })
     );
   });
 
@@ -69,7 +75,10 @@ export async function resolveParentDocsForStudents(studentCodes: string[], paren
         .where('role', '==', 'parent')
         .where('email', 'in', chunk)
         .get()
-        .catch(() => null)
+        .catch(err => {
+          console.error('Error in resolveParentDocsForStudents (email chunk):', err);
+          return null;
+        })
     );
   });
 
@@ -842,13 +851,21 @@ export async function notifyNotice(
             .where('role', '==', 'parent')
             .where('email', 'in', chunk.map(v => v.toLowerCase()))
             .get()
-            .catch(() => null)
+            .catch(err => {
+              console.error('Error fetching parent users for notice notification:', err);
+              return null;
+            })
         )
       );
 
       snaps.forEach(snap => {
         if (!snap) return;
-        snap.docs.forEach(doc => uids.add(doc.id));
+        snap.docs.forEach(doc => {
+          const data = doc.data();
+          if (data && data.status !== 'inactive') {
+            uids.add(doc.id);
+          }
+        });
       });
     }
 

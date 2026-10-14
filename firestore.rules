@@ -63,9 +63,10 @@ service cloud.firestore { match /databases/{database}/documents {
     }
 
     // ── registrations ─────────────────────────────────────────
+    // Public registrations are processed through server-side /api/register (Admin SDK with rate limiting & encryption).
+    // Client SDK direct access is restricted to Administrators.
     match /registrations/{docId} {
-      allow create: if true;   // public registration form
-      allow read, update, delete: if isAdmin();
+      allow read, write: if isAdmin();
     }
 
     // ── batches ───────────────────────────────────────────────

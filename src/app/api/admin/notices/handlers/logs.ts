@@ -123,7 +123,12 @@ export async function GET(req: NextRequest) {
       const pMap = new Map<string, FirebaseFirestore.DocumentSnapshot>();
       pSnaps.forEach(s => {
         if (!s) return;
-        s.docs.forEach(d => pMap.set(d.id, d));
+        s.docs.forEach(d => {
+          const pd = d.data();
+          if (pd && pd.status !== 'inactive') {
+            pMap.set(d.id, d);
+          }
+        });
       });
       parentDocs = Array.from(pMap.values());
 
@@ -148,14 +153,22 @@ export async function GET(req: NextRequest) {
             .where('role', '==', 'student')
             .where('studentCode', 'in', chunk)
             .get()
-            .catch(() => null)
+            .catch(err => {
+              console.error('Error in logs.ts fetching students for parent docs:', err);
+              return null;
+            })
         )
       );
 
       const studMap = new Map<string, FirebaseFirestore.DocumentSnapshot>();
       studSnaps.forEach(s => {
         if (!s) return;
-        s.docs.forEach(d => studMap.set(d.id, d));
+        s.docs.forEach(d => {
+          const sd = d.data();
+          if (sd && sd.status !== 'inactive') {
+            studMap.set(d.id, d);
+          }
+        });
       });
       studentDocs = Array.from(studMap.values());
     } else {
@@ -164,8 +177,8 @@ export async function GET(req: NextRequest) {
         adminDb.collection('users').where('role', '==', 'student').get(),
         adminDb.collection('users').where('role', '==', 'parent').get()
       ]);
-      studentDocs = allStudentsSnap.docs;
-      parentDocs = allParentsSnap.docs;
+      studentDocs = allStudentsSnap.docs.filter(d => d.data()?.status !== 'inactive');
+      parentDocs = allParentsSnap.docs.filter(d => d.data()?.status !== 'inactive');
     }
 
     // Map batches for name resolution

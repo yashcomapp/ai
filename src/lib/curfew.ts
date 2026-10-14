@@ -17,11 +17,7 @@ export function isCurfewBypassed(
   userData?: { curfewBypass?: boolean; maintenanceBypass?: boolean } | null
 ): boolean {
   const cleanEmail = (email || '').toLowerCase().trim();
-  const envBypassEmail = (
-    process.env.NEXT_PUBLIC_CURFEW_BYPASS_EMAIL ||
-    (typeof process !== 'undefined' && process.env ? process.env.CURFEW_BYPASS_EMAIL : '') ||
-    ''
-  ).toLowerCase().trim();
+  const envBypassEmail = (process.env.NEXT_PUBLIC_CURFEW_BYPASS_EMAIL || '').toLowerCase().trim();
 
   // Test / System accounts - excluded in production client bundles
   if (process.env.NODE_ENV !== 'production') {
