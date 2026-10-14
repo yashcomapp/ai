@@ -252,6 +252,11 @@ a:hover {
 }
 
 /* ---------- 6. SCROLLBAR ---------- */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.28) transparent;
+}
+
 ::-webkit-scrollbar {
     width: 8px;
     height: 8px;
@@ -262,12 +267,12 @@ a:hover {
 }
 
 ::-webkit-scrollbar-thumb {
-    background: var(--border);
+    background: rgba(255, 255, 255, 0.26);
     border-radius: 8px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: var(--text-faint);
+    background: rgba(255, 255, 255, 0.48);
 }
 
 /* ---------- 7. FOCUS ---------- */
