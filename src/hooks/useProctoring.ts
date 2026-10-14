@@ -10,7 +10,7 @@ export interface ProctoringSnapshot {
   imageData?: string; // Compatibility alias for UI consumers
 }
 
-function captureCameraSnapshot(videoEl: HTMLVideoElement | null, maxDim: number = 320, quality: number = 0.6): string | null {
+function captureCameraSnapshot(videoEl: HTMLVideoElement | null, maxDim: number = 240, quality: number = 0.35): string | null {
   if (!videoEl || !videoEl.videoWidth || !videoEl.videoHeight) return null;
   try {
     const canvas = document.createElement('canvas');

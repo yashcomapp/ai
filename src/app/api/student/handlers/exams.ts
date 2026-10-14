@@ -470,11 +470,130 @@ export async function POST(req: NextRequest) {
       }
       const { userAnswers } = body;
       const attemptRef = adminDb.collection('examAttempts').doc(`${examId}_${studentCode}`);
-      await attemptRef.update({
+      await attemptRef.set({
         userAnswers: userAnswers || [],
         lastAutosavedAt: admin.firestore.FieldValue.serverTimestamp()
-      });
+      }, { merge: true });
       return NextResponse.json({ success: true, message: 'Exam answers autosaved.' });
+    }
+
+    if (action === 'upload_snapshots') {
+      if (isCallerAdmin) {
+        return NextResponse.json({ success: true, message: 'Preview snapshots accepted.' });
+      }
+      if (!examId || !studentCode) {
+        return NextResponse.json({ message: 'Missing examId or studentCode' }, { status: 400 });
+      }
+      const { screenshots } = body;
+      if (Array.isArray(screenshots) && screenshots.length > 0) {
+        const attemptRef = adminDb.collection('examAttempts').doc(`${examId}_${studentCode}`);
+        const reviewRef = adminDb.collection('reviews').doc(`${examId}_${studentCode}`);
+        
+        await Promise.all([
+          attemptRef.set({
+            violations: {
+              screenshots,
+              proctoringSnapshots: screenshots
+            }
+          }, { merge: true }),
+          reviewRef.set({
+            violations: {
+              screenshots,
+              proctoringSnapshots: screenshots
+            }
+          }, { merge: true })
+        ]).catch(err => console.warn('Failed to merge proctoring snapshots:', err));
+      }
+      return NextResponse.json({ success: true, message: 'Snapshots uploaded successfully.' });
+    }
+
+    if (action === 'rescue_submit') {
+      const targetStudentCode = isCallerAdmin ? (body.studentCode || studentCode) : studentCode;
+      if (!examId || !targetStudentCode) {
+        return NextResponse.json({ message: 'Missing examId or studentCode for rescue submit.' }, { status: 400 });
+      }
+
+      const attemptRef = adminDb.collection('examAttempts').doc(`${examId}_${targetStudentCode}`);
+      const attemptSnap = await attemptRef.get();
+      const attemptData = attemptSnap.exists ? attemptSnap.data() || {} : {};
+
+      let answersToSubmit = attemptData.userAnswers || [];
+      if (body.backupPayload) {
+        try {
+          let parsedPayload = body.backupPayload;
+          if (typeof parsedPayload === 'string') {
+            try {
+              // Try base64 decode first
+              const decodedStr = Buffer.from(parsedPayload, 'base64').toString('utf-8');
+              parsedPayload = JSON.parse(decodedStr);
+            } catch {
+              // Direct JSON parse
+              parsedPayload = JSON.parse(parsedPayload);
+            }
+          }
+          if (Array.isArray(parsedPayload.userAnswers) && parsedPayload.userAnswers.length > 0) {
+            answersToSubmit = parsedPayload.userAnswers;
+          }
+        } catch (e) {
+          console.warn('Failed to parse rescue backupPayload:', e);
+        }
+      }
+
+      if (!Array.isArray(answersToSubmit) || answersToSubmit.length === 0) {
+        return NextResponse.json({ message: 'No recorded answers found in autosave or backup payload to grade.' }, { status: 400 });
+      }
+
+      const examData = await ExamRepository.getById(examId);
+      if (!examData) {
+        return NextResponse.json({ message: 'Exam not found' }, { status: 404 });
+      }
+
+      const questionCodes = examData.questionCodes || [];
+      const questions = await ExamRepository.getQuestionsForExam(questionCodes);
+
+      // Student metadata
+      let studentName = 'Student';
+      let studentUid = caller.decodedToken.uid;
+      const studentUserSnap = await adminDb.collection('users').where('studentCode', '==', targetStudentCode).where('role', '==', 'student').limit(1).get();
+      if (!studentUserSnap.empty) {
+        const udata = studentUserSnap.docs[0].data();
+        studentName = udata.name || studentName;
+        studentUid = studentUserSnap.docs[0].id;
+      }
+
+      let assignmentsSnap: admin.firestore.QuerySnapshot | null = null;
+      try {
+        assignmentsSnap = await adminDb.collection('batchAssignments')
+          .where('examId', 'in', Array.from(new Set([examData.id || examId, examId])))
+          .get();
+      } catch (err: any) {
+        console.warn('Pre-fetching assignments failed:', err.message);
+      }
+
+      const txResult = await ExamService.submitExam({
+        studentCode: targetStudentCode,
+        studentId: studentUid,
+        studentName,
+        examId: examData.id || examId,
+        examData,
+        questions,
+        userAnswers: answersToSubmit,
+        durationSpent: attemptData.durationSpent || (examData.duration || 30) * 60,
+        tabViolations: attemptData.tabViolations || 0,
+        proctoringViolations: attemptData.proctoringViolations || { noFace: 0, multipleFaces: 0, lookingAway: 0, headMovement: 0 },
+        startedAt: attemptData.startedAt ? (attemptData.startedAt.toDate ? attemptData.startedAt.toDate().toISOString() : new Date(attemptData.startedAt).toISOString()) : new Date().toISOString(),
+        assignmentsSnap,
+        abandoned: false
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: 'Exam successfully rescued and graded.',
+        status: txResult.status,
+        score: txResult.score,
+        totalMarks: txResult.totalMarks,
+        percentage: txResult.percentage
+      });
     }
 
     const { userAnswers, durationSpent, tabViolations, proctoringViolations, startedAt, proctoringViolationTriggered, micBypassed, disputedQuestionIds } = body;

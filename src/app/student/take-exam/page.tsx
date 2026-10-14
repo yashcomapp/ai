@@ -112,6 +112,10 @@ function TakeExamContent() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitCooldown, setSubmitCooldown] = useState(0);
   const [submitErrorMessage, setSubmitErrorMessage] = useState('');
+  const [submissionRescueOpen, setSubmissionRescueOpen] = useState(false);
+  const [tokenCopied, setTokenCopied] = useState(false);
+  const questionTimeSpentRef = useRef<number[]>([]);
+  const lastSavedAnswersHashRef = useRef<string>('');
 
   // Submit cooldown timer
   useEffect(() => {
@@ -173,20 +177,14 @@ function TakeExamContent() {
     initialSeconds: exam ? (exam.duration * 60) : 0,
     isPaused: loading || examSubmitted || !exam || cameraModalOpen,
     onTimeUp: () => {
-      alert('Time up! Submitting your exam automatically.');
+      // Non-blocking auto-submit on time expiry
       submitExamAction();
     },
     onTick: () => {
-      setUserAnswers(answers => {
-        const updated = [...answers];
-        if (updated[currentQIndex]) {
-          updated[currentQIndex] = {
-            ...updated[currentQIndex],
-            timeSpentSeconds: updated[currentQIndex].timeSpentSeconds + 1
-          };
-        }
-        return updated;
-      });
+      // Light-weight ref ticker to prevent 1,800 unnecessary React re-renders and preserve debounce timer
+      if (questionTimeSpentRef.current && questionTimeSpentRef.current[currentQIndex] !== undefined) {
+        questionTimeSpentRef.current[currentQIndex] += 1;
+      }
     }
   });
 
@@ -431,6 +429,7 @@ function TakeExamContent() {
         
         // Initialize userAnswers array
         const initialAnswers = data.exam.questions.map(() => ({ answer: '', timeSpentSeconds: 0 }));
+        questionTimeSpentRef.current = new Array(data.exam.questions.length).fill(0);
         
         let initialTimeRemaining = (data.exam?.duration || 30) * 60;
         if (data.assignment && data.assignment.openMode === 'scheduled' && data.assignment.endAt) {
@@ -438,15 +437,18 @@ function TakeExamContent() {
           if (endAtMs > 0) {
             const secondsUntilEnd = Math.floor((endAtMs - Date.now()) / 1000);
             if (secondsUntilEnd <= 0) {
-              throw new Error('The scheduled time for this exam has already ended.');
-            }
-            if (!isNaN(secondsUntilEnd) && secondsUntilEnd > 0) {
+              if (!isResuming) {
+                throw new Error('The scheduled time for this exam has already ended.');
+              }
+              // Active resuming student whose window just expired: lock inputs immediately and submit
+              initialTimeRemaining = 0;
+            } else if (!isNaN(secondsUntilEnd) && secondsUntilEnd > 0) {
               initialTimeRemaining = Math.min(initialTimeRemaining, secondsUntilEnd);
             }
           }
         }
-        if (isNaN(initialTimeRemaining) || initialTimeRemaining <= 0) {
-          initialTimeRemaining = (data.exam?.duration || 30) * 60;
+        if (isNaN(initialTimeRemaining) || initialTimeRemaining < 0) {
+          initialTimeRemaining = 0;
         }
 
         // Check autosave
@@ -464,10 +466,11 @@ function TakeExamContent() {
                 safeAnswers = initialAnswers.map((defaultAns: any, i: number) => parsed.userAnswers[i] || defaultAns);
               }
 
+              questionTimeSpentRef.current = safeAnswers.map((a: any) => Number(a?.timeSpentSeconds) || 0);
               setUserAnswers(safeAnswers);
               setCurrentQIndex(safeIndex);
               
-              let resumedTime = parsed.timeRemaining || ((data.exam?.duration || 30) * 60);
+              let resumedTime = parsed.timeRemaining ?? ((data.exam?.duration || 30) * 60);
               if (data.assignment && data.assignment.openMode === 'scheduled' && data.assignment.endAt) {
                 const endAtMs = parseDateToMs(data.assignment.endAt);
                 if (endAtMs > 0) {
@@ -477,8 +480,8 @@ function TakeExamContent() {
                   }
                 }
               }
-              if (isNaN(resumedTime) || resumedTime <= 0) {
-                resumedTime = (data.exam?.duration || 30) * 60;
+              if (isNaN(resumedTime) || resumedTime < 0) {
+                resumedTime = 0;
               }
               
               setTimeRemaining(resumedTime);
@@ -563,9 +566,13 @@ function TakeExamContent() {
   useEffect(() => {
     if (!exam || examSubmitted || cameraModalOpen) return;
     try {
+      const compiled = userAnswers.map((ua, idx) => ({
+        ...ua,
+        timeSpentSeconds: questionTimeSpentRef.current[idx] ?? ua.timeSpentSeconds ?? 0
+      }));
       const state = {
         examId,
-        userAnswers,
+        userAnswers: compiled,
         currentQIndex,
         timeRemaining,
         tabViolations,
@@ -576,14 +583,23 @@ function TakeExamContent() {
     } catch {}
   }, [userAnswers, currentQIndex, timeRemaining, tabViolations, proctoringViolations, exam, examSubmitted, cameraModalOpen, examId]);
 
-  // 4b. Throttled Server Autosave (Every 90s debounced, only when answers change)
+  const answersHash = useMemo(() => {
+    return userAnswers.map(a => a.answer || '').join('||');
+  }, [userAnswers]);
+
+  // 4b. Throttled Server Autosave (Every 60s debounced, ONLY when actual selected answers change)
   useEffect(() => {
-    if (!exam || examSubmitted || cameraModalOpen || !firebaseUser) return;
+    if (!exam || examSubmitted || cameraModalOpen || !firebaseUser || !examId) return;
     if (!userAnswers || userAnswers.length === 0) return;
+    if (answersHash === lastSavedAnswersHashRef.current) return;
 
     const timer = setTimeout(async () => {
       try {
         const idToken = await firebaseUser.getIdToken();
+        const compiled = userAnswers.map((ua, idx) => ({
+          ...ua,
+          timeSpentSeconds: questionTimeSpentRef.current[idx] ?? ua.timeSpentSeconds ?? 0
+        }));
         await fetch('/api/student/exams', {
           method: 'POST',
           headers: {
@@ -593,16 +609,17 @@ function TakeExamContent() {
           body: JSON.stringify({
             action: 'autosave',
             examId,
-            userAnswers
+            userAnswers: compiled
           })
         });
+        lastSavedAnswersHashRef.current = answersHash;
       } catch (e) {
         console.warn("DB Autosave failed (cached locally):", e);
       }
-    }, 90000);
+    }, 60000);
 
     return () => clearTimeout(timer);
-  }, [userAnswers, exam, examSubmitted, cameraModalOpen, examId, firebaseUser]);
+  }, [answersHash, exam, examSubmitted, cameraModalOpen, examId, firebaseUser, userAnswers]);
 
   // 5. LateX rendering trigger on current question
 
@@ -644,7 +661,7 @@ function TakeExamContent() {
 
 
   const submitExamAction = async (finalTabViolations?: number, proctoringViolationTriggered?: boolean) => {
-    if (isSubmitting || submitCooldown > 0) return;
+    if (isSubmitting) return;
     setIsSubmitting(true);
     setSubmitErrorMessage('');
     stopAllProctoring();
@@ -652,6 +669,10 @@ function TakeExamContent() {
     
     const activeTabViolations = finalTabViolations ?? tabViolations;
     const durationSpent = exam ? (exam.duration * 60) - timeRemaining : 0;
+    const compiledAnswers = userAnswers.map((ua, idx) => ({
+      ...ua,
+      timeSpentSeconds: questionTimeSpentRef.current[idx] ?? ua.timeSpentSeconds ?? 0
+    }));
 
     try {
       const idToken = await firebaseUser!.getIdToken();
@@ -663,6 +684,7 @@ function TakeExamContent() {
         (startedAt - startMs > 2 * 60 * 1000)
       );
 
+      // Fast Lane Submission: pure text payload (< 3 KB) executes in ~50ms
       const res = await fetch('/api/student/exams', {
         method: 'POST',
         headers: {
@@ -671,7 +693,7 @@ function TakeExamContent() {
         },
         body: JSON.stringify({
           examId,
-          userAnswers,
+          userAnswers: compiledAnswers,
           durationSpent,
           preview: isPreviewMode,
           tabViolations: activeTabViolations,
@@ -685,9 +707,7 @@ function TakeExamContent() {
             noFaceCount: proctoringViolations.noFace || 0,
             multipleFacesCount: proctoringViolations.multipleFaces || 0,
             lookingAwayCount: proctoringViolations.lookingAway || 0,
-            headMovementCount: proctoringViolations.headMovement || 0,
-            screenshots: proctoringSnapshots,
-            proctoringSnapshots: proctoringSnapshots
+            headMovementCount: proctoringViolations.headMovement || 0
           }
         })
       });
@@ -699,7 +719,26 @@ function TakeExamContent() {
 
       setExamSubmitted(true);
       setBlockingMessage('');
+      setSubmissionRescueOpen(false);
       localStorage.removeItem(getSaveKey());
+
+      // Async Background Lane: upload compressed proctoring snapshots without blocking student feedback
+      if (proctoringSnapshots && proctoringSnapshots.length > 0 && !isPreviewMode) {
+        firebaseUser!.getIdToken().then(freshToken => {
+          fetch('/api/student/exams', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${freshToken}`
+            },
+            body: JSON.stringify({
+              action: 'upload_snapshots',
+              examId,
+              screenshots: proctoringSnapshots
+            })
+          }).catch(err => console.warn('Background snapshot sync failed:', err));
+        }).catch(() => {});
+      }
       
       if (resData.status === 'student_review') {
         setWrongAnswers(resData.wrongAnswers || []);
@@ -722,11 +761,57 @@ function TakeExamContent() {
       }
     } catch (err: any) {
       console.error('Submit exam error:', err);
-      setSubmitCooldown(20);
-      setSubmitErrorMessage(`⚠️ ${err.message || 'Connection lost'}. All answers are securely saved on your device. Please wait a moment before retrying.`);
+      setSubmitCooldown(0); // Allow immediate retry on failure
+      setSubmissionRescueOpen(true);
+      setSubmitErrorMessage(`⚠️ ${err.message || 'Connection lost'}. All answers are securely saved on your device.`);
       setBlockingMessage('');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleCopyEmergencyToken = () => {
+    try {
+      const payload = {
+        examId,
+        studentCode: user?.studentCode,
+        studentName: user?.name,
+        timestamp: Date.now(),
+        userAnswers: userAnswers.map((ua, idx) => ({
+          ...ua,
+          timeSpentSeconds: questionTimeSpentRef.current[idx] ?? ua.timeSpentSeconds ?? 0
+        }))
+      };
+      const token = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+      navigator.clipboard.writeText(token);
+      setTokenCopied(true);
+      setTimeout(() => setTokenCopied(false), 4000);
+    } catch (e) {
+      console.error('Failed to copy token:', e);
+    }
+  };
+
+  const handleDownloadBackup = () => {
+    try {
+      const payload = {
+        examId,
+        studentCode: user?.studentCode,
+        studentName: user?.name,
+        timestamp: new Date().toISOString(),
+        userAnswers: userAnswers.map((ua, idx) => ({
+          ...ua,
+          timeSpentSeconds: questionTimeSpentRef.current[idx] ?? ua.timeSpentSeconds ?? 0
+        }))
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `backup_${examId}_${user?.studentCode || 'student'}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error('Failed to download backup:', e);
     }
   };
 
@@ -775,7 +860,8 @@ function TakeExamContent() {
   const currentAnswer = currentAnswerObj?.answer || '';
 
   const handleSelectOptionCurrent = (letter: string) => {
-    if (!currentQuestion) return;
+    // Strictly disable input if exam time expired or already submitting/submitted
+    if (!currentQuestion || timeRemaining <= 0 || isSubmitting || examSubmitted) return;
     if (isMultipleChoiceType(currentQuestion.type)) {
       handleCheckboxOption(safeQIndex, letter);
     } else {
@@ -784,6 +870,8 @@ function TakeExamContent() {
   };
 
   const handleTextInputCurrent = (val: string) => {
+    // Strictly disable input if exam time expired or already submitting/submitted
+    if (!currentQuestion || timeRemaining <= 0 || isSubmitting || examSubmitted) return;
     handleTextInput(safeQIndex, val);
   };
 
@@ -1271,6 +1359,114 @@ function TakeExamContent() {
                 Next →
               </button>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* 1. Time Expired Non-Blocking Overlay (Locks questions, submits automatically) */}
+      {timeRemaining <= 0 && !examSubmitted && !loading && !cameraModalOpen && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(15, 23, 42, 0.88)',
+          backdropFilter: 'blur(5px)',
+          WebkitBackdropFilter: 'blur(5px)',
+          zIndex: 29000,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: '#ffffff',
+          padding: '24px',
+          textAlign: 'center'
+        }}>
+          <div style={{ fontSize: '48px', marginBottom: '14px' }}>⏰</div>
+          <h2 style={{ fontSize: '22px', fontWeight: 800, margin: '0 0 8px 0' }}>Exam Duration Has Ended</h2>
+          <p style={{ fontSize: '14px', color: '#94a3b8', maxWidth: '420px', margin: '0 0 20px 0', lineHeight: 1.5 }}>
+            Time is up. Questions are strictly locked. Your answers are being submitted to the server.
+          </p>
+
+          {isSubmitting ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '14px', fontWeight: 600 }}>
+              <div className="spinner" style={{ width: '22px', height: '22px' }}></div>
+              <span>Finalizing and submitting your answers...</span>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'center' }}>
+              <button 
+                className="btn btn-primary" 
+                onClick={() => submitExamAction()}
+                style={{ fontWeight: 700, padding: '10px 24px', fontSize: '15px' }}
+              >
+                Submit Answers Now
+              </button>
+              {submissionRescueOpen && (
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                  <button 
+                    className="btn btn-secondary btn-sm" 
+                    onClick={handleCopyEmergencyToken}
+                    style={{ fontSize: '12px', padding: '6px 14px' }}
+                  >
+                    {tokenCopied ? '✅ Backup Code Copied!' : '📋 Copy Emergency Code'}
+                  </button>
+                  <button 
+                    className="btn btn-secondary btn-sm" 
+                    onClick={handleDownloadBackup}
+                    style={{ fontSize: '12px', padding: '6px 14px' }}
+                  >
+                    💾 Download Backup
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 2. Submission Rescue Modal (Prominent fallback if network drops) */}
+      {submissionRescueOpen && !examSubmitted && timeRemaining > 0 && (
+        <div className="modal show" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(4px)', zIndex: 28000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div className="modal-content" style={{ background: 'var(--surface-popover, #1e293b)', border: '1px solid var(--border-popover, #334155)', borderRadius: '12px', maxWidth: '500px', width: '100%', padding: '24px', color: 'var(--text)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
+              <span style={{ fontSize: '26px' }}>⚠️</span>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 800 }}>Submission Network Hiccup</h3>
+                <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Don't panic! Your answers are 100% saved on this device.</span>
+              </div>
+            </div>
+
+            <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.25)', borderRadius: '8px', padding: '10px 14px', color: '#ef4444', fontSize: '12.5px', fontWeight: 600, marginBottom: '16px' }}>
+              {submitErrorMessage || 'Failed to connect to the examination server.'}
+            </div>
+
+            <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginBottom: '20px', lineHeight: 1.5 }}>
+              Your network may have momentarily disconnected. You can retry immediately, or copy/download your answers token to verify with your teacher.
+            </p>
+
+            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+              <button 
+                className="btn btn-secondary btn-sm" 
+                onClick={handleCopyEmergencyToken}
+                style={{ fontWeight: 600 }}
+              >
+                {tokenCopied ? '✅ Copied to Clipboard!' : '📋 Copy Emergency Token'}
+              </button>
+              <button 
+                className="btn btn-secondary btn-sm" 
+                onClick={handleDownloadBackup}
+                style={{ fontWeight: 600 }}
+              >
+                💾 Save Answers File
+              </button>
+              <button 
+                className="btn btn-primary btn-sm" 
+                onClick={() => submitExamAction()}
+                disabled={isSubmitting}
+                style={{ fontWeight: 700 }}
+              >
+                {isSubmitting ? 'Submitting...' : '🔄 Retry Submission'}
+              </button>
+            </div>
           </div>
         </div>
       )}
