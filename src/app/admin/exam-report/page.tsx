@@ -319,25 +319,36 @@ function ExamReportContent() {
 
     let cancelled = false;
     setLoadingSnapshots(true);
-    fetch(`/api/admin/exams/objective?examId=${encodeURIComponent(examId)}&snapshotsStudentCode=${encodeURIComponent(selectedAttempt.studentCode || '')}&snapshotsAttemptId=${encodeURIComponent(selectedAttempt.id || '')}`)
-      .then(res => res.json())
-      .then(data => {
+    (async () => {
+      try {
+        const idToken = firebaseUser ? await firebaseUser.getIdToken() : '';
+        const res = await fetch(`/api/admin/exams/objective?examId=${encodeURIComponent(examId)}&snapshotsStudentCode=${encodeURIComponent(selectedAttempt.studentCode || '')}&snapshotsAttemptId=${encodeURIComponent(selectedAttempt.id || '')}`, {
+          headers: idToken ? {
+            'Authorization': `Bearer ${idToken}`
+          } : {}
+        });
+        if (!res.ok) {
+          console.error(`Failed to fetch on-demand proctoring snapshots (HTTP ${res.status})`);
+          return;
+        }
+        const data = await res.json();
         if (cancelled) return;
-        if (data?.snapshots) {
+        if (data?.snapshots !== undefined) {
           setSelectedAttempt(prev => prev && prev.id === selectedAttempt.id ? {
             ...prev,
             proctoringSnapshots: data.snapshots,
-            proctoringSnapshotsPurged: data.isPurged || data.snapshots.length === 0
+            proctoringSnapshotsPurged: Boolean(data.isPurged)
           } : prev);
         }
-      })
-      .catch(err => console.error('Failed to fetch on-demand proctoring snapshots:', err))
-      .finally(() => {
+      } catch (err) {
+        if (!cancelled) console.error('Failed to fetch on-demand proctoring snapshots:', err);
+      } finally {
         if (!cancelled) setLoadingSnapshots(false);
-      });
+      }
+    })();
 
     return () => { cancelled = true; };
-  }, [studentModalOpen, selectedAttempt?.id, examId]);
+  }, [studentModalOpen, selectedAttempt?.id, examId, firebaseUser]);
 
   const { totalQuestionsCount, correctCount, incorrectCount, unansweredCount } = useMemo(() => {
     if (!selectedAttempt) return { totalQuestionsCount: 0, correctCount: 0, incorrectCount: 0, unansweredCount: 0 };
@@ -2507,8 +2518,6 @@ function ExamReportContent() {
                 const isExpired = selectedAttempt.proctoringSnapshotsExpiresAt ? (new Date() >= new Date(selectedAttempt.proctoringSnapshotsExpiresAt)) : false;
                 const isPurged = selectedAttempt.proctoringSnapshotsPurged || isPastDay || isExpired || (snapshots.length === 0 && selectedAttempt.completedAt && isPastDay);
                 
-                if (snapshots.length === 0 && !isPurged && !loadingSnapshots) return null;
-
                 return (
                   <div style={{
                     background: 'var(--surface)',
@@ -2534,6 +2543,10 @@ function ExamReportContent() {
                     ) : isPurged && snapshots.length === 0 ? (
                       <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic', padding: '4px 0' }}>
                         🔒 Proctoring camera captures have been permanently auto-purged per same-day 12:00 AM retention limit.
+                      </div>
+                    ) : snapshots.length === 0 ? (
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontStyle: 'italic', padding: '4px 0' }}>
+                        📷 No proctoring camera captures recorded for this attempt.
                       </div>
                     ) : (
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(95px, 1fr))', gap: '8px' }}>
