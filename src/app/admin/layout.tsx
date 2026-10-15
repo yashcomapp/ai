@@ -6,6 +6,8 @@ import { useRouter, usePathname } from 'next/navigation';
 import { Bell, MessageSquare, Settings, LogOut } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import TopBarTimeTracker from '@/components/TopBarTimeTracker';
+import TopBarChatButton from '@/components/chat/TopBarChatButton';
+import { useUnreadChatCount } from '@/hooks/useUnreadChatCount';
 
 const getAdminPageTitle = (pathname: string): string => {
   if (pathname === '/admin') return 'Dashboard';
@@ -81,6 +83,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const router = useRouter();
   const pathname = usePathname() || '';
   const { logout } = useAuth();
+  const unreadChatCount = useUnreadChatCount('admin', pathname);
 
   const [panelOpen, setPanelOpen] = useState(false);
   const [activeSubmenu, setActiveSubmenu] = useState<string | null>(null);
@@ -311,6 +314,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             height: 32px !important;
           }
         }
+        @keyframes chatBadgePulse {
+          0%, 100% {
+            transform: scale(1);
+            box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+          }
+          50% {
+            transform: scale(1.08);
+            box-shadow: 0 0 8px 2px rgba(239, 68, 68, 0.35);
+          }
+        }
       `}</style>
 
       {/* Universal Top Header Bar for all Admin Pages */}
@@ -391,27 +404,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <Bell size={16} color="var(--warning)" />
           </button>
 
-          {/* Live Chat */}
-          <button 
-            className="page-header-btn" 
-            onClick={() => router.push('/admin/chat')} 
-            title="Live Chat Workspace"
-            style={{ 
-              background: pathname === '/admin/chat' ? 'var(--info-bg)' : 'rgba(255,255,255,0.05)', 
-              border: pathname === '/admin/chat' ? '1px solid var(--info)' : '1px solid var(--border)', 
-              borderRadius: '50%', 
-              width: '36px', 
-              height: '36px', 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              cursor: 'pointer',
-              color: 'var(--text)',
-              flexShrink: 0
-            }}
-          >
-            <MessageSquare size={16} color="var(--info)" />
-          </button>
+          {/* Live Chat with Unread Badge Counter */}
+          <TopBarChatButton role="admin" chatUrl="/admin/chat" />
 
           {/* Settings */}
           <button 
@@ -489,15 +483,35 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       >
         {chips.map(c => {
           const isCurrentActive = activeSubmenu === c.id;
+          const hasChatUnread = c.id === 'manage' && unreadChatCount > 0;
           return (
             <button 
               key={c.id}
               data-chip-id={c.id}
               className={`nav-item ${isCurrentActive ? 'active' : ''}`}
               onClick={(e) => handleChipClick(e, c.id)}
+              style={{ position: 'relative' }}
             >
               <span className="nav-icon">{c.icon}</span>
               <span className="nav-label">{c.en}</span>
+              {hasChatUnread && (
+                <span 
+                  style={{
+                    position: 'absolute',
+                    top: '4px',
+                    right: '6px',
+                    background: '#ef4444',
+                    color: '#fff',
+                    fontSize: '9px',
+                    fontWeight: 800,
+                    padding: '1px 5px',
+                    borderRadius: '8px',
+                    lineHeight: 1
+                  }}
+                >
+                  {unreadChatCount > 99 ? '99+' : unreadChatCount}
+                </span>
+              )}
             </button>
           );
         })}
@@ -514,9 +528,28 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               key={idx}
               className="dropdown-item-flyout"
               onClick={() => handleSubmenuItemClick(item)}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
             >
-              <span>{item.icon}</span>
-              <span>{item.en}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span>{item.icon}</span>
+                <span>{item.en}</span>
+              </div>
+              {item.url === '/admin/chat' && unreadChatCount > 0 && (
+                <span 
+                  style={{
+                    background: '#ef4444',
+                    color: '#ffffff',
+                    fontSize: '10px',
+                    fontWeight: 800,
+                    padding: '2px 6px',
+                    borderRadius: '8px',
+                    lineHeight: 1,
+                    marginLeft: '8px'
+                  }}
+                >
+                  {unreadChatCount > 99 ? '99+' : unreadChatCount}
+                </span>
+              )}
             </div>
           ))}
         </div>

@@ -7,9 +7,10 @@ import TopBarTimeTracker from '@/components/TopBarTimeTracker';
 import { db } from '@/lib/firebase/firestore';
 import { doc, onSnapshot } from 'firebase/firestore';
 
-import { LogOut, Bell, Settings, CreditCard } from 'lucide-react';
+import { LogOut, Bell, Settings, CreditCard, MessageSquare } from 'lucide-react';
 import Image from 'next/image';
 import { isStudentBlockedByCurfew, isCurfewBypassed } from '@/lib/curfew';
+import TopBarChatButton from '@/components/chat/TopBarChatButton';
 
 export default function StudentLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() || '';
@@ -192,6 +193,9 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
           >
             <Bell size={16} />
           </button>
+
+          {/* Live Chat Button with Unread Counter */}
+          <TopBarChatButton role="student" chatUrl="/student/chat" />
 
           {/* Fees & Invoices Button */}
           <button 
