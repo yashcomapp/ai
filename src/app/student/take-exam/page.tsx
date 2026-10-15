@@ -702,6 +702,7 @@ function TakeExamContent() {
           isLate: isLateStart,
           proctoringViolationTriggered: !!proctoringViolationTriggered,
           micBypassed: !!micBypassed,
+          proctoringSnapshots: (proctoringSnapshots || []).slice(-5),
           violations: {
             tabOutCount: activeTabViolations,
             noFaceCount: proctoringViolations.noFace || 0,

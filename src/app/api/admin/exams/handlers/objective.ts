@@ -138,6 +138,27 @@ export async function GET(req: NextRequest) {
           if (!q.empty) attemptDoc = q.docs[0];
         }
       }
+      // Dual-lookup fallback to reviews collection if attempt was not found in examAttempts
+      if (!attemptDoc) {
+        if (snapshotsAttemptId) {
+          const rDoc = await adminDb.collection('reviews').doc(snapshotsAttemptId).get();
+          if (rDoc.exists) attemptDoc = rDoc;
+        }
+        if (!attemptDoc && snapshotsStudentCode) {
+          const directRDoc = await adminDb.collection('reviews').doc(`${resolvedExamId}_${snapshotsStudentCode}`).get();
+          if (directRDoc.exists) {
+            attemptDoc = directRDoc;
+          } else {
+            const rq = await adminDb.collection('reviews')
+              .where('examId', '==', resolvedExamId)
+              .where('studentCode', '==', snapshotsStudentCode)
+              .limit(1)
+              .get();
+            if (!rq.empty) attemptDoc = rq.docs[0];
+          }
+        }
+      }
+
       if (attemptDoc && attemptDoc.exists) {
         const attData = attemptDoc.data() || {};
         const completedAt = attData.completedAt?.toDate ? attData.completedAt.toDate() : (attData.completedAt ? new Date(attData.completedAt) : null);
@@ -147,7 +168,20 @@ export async function GET(req: NextRequest) {
         const attemptDateKey = completedAt ? getDateKeyIST(completedAt) : (startedAt ? getDateKeyIST(startedAt) : null);
         const isPastDay = attemptDateKey ? attemptDateKey < todayKeyIST : false;
         const isExpired = isPastDay || (snapshotsExpiresAt ? Date.now() >= new Date(snapshotsExpiresAt).getTime() : false);
-        const rawSnapshots = isExpired ? [] : (attData.proctoringSnapshots || []);
+        let rawSnapshots = isExpired ? [] : (attData.proctoringSnapshots || []);
+
+        // Fallback to reviews document if examAttempts had empty snapshots
+        if (!isExpired && (!rawSnapshots || rawSnapshots.length === 0) && snapshotsStudentCode) {
+          try {
+            const rDoc = await adminDb.collection('reviews').doc(`${resolvedExamId}_${snapshotsStudentCode}`).get();
+            if (rDoc.exists) {
+              const rData = rDoc.data() || {};
+              if (Array.isArray(rData.proctoringSnapshots) && rData.proctoringSnapshots.length > 0) {
+                rawSnapshots = rData.proctoringSnapshots;
+              }
+            }
+          } catch {}
+        }
 
         // Self-healing: if document is expired and still holds base64 screenshots, clear it inline
         if (isExpired && Array.isArray(attData.proctoringSnapshots) && attData.proctoringSnapshots.length > 0) {
@@ -164,7 +198,7 @@ export async function GET(req: NextRequest) {
           snapshotsExpiresAt
         });
       }
-      return NextResponse.json({ snapshots: [], isPurged: true, snapshotsExpiresAt: null });
+      return NextResponse.json({ snapshots: [], isPurged: false, snapshotsExpiresAt: null });
     }
 
     const cacheKey = `exam-report-objective-${resolvedExamId}`;

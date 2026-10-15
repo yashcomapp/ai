@@ -135,7 +135,7 @@ export function useProctoring({
     if (!enabled) return;
     const initialTimer = setTimeout(() => {
       takeSnapshot('initial_check', 'Initial proctoring identity check');
-    }, 10000);
+    }, 2000);
 
     const intervalTimer = setInterval(() => {
       if (snapshotsCountRef.current < 5) {

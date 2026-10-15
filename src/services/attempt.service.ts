@@ -33,6 +33,7 @@ export class AttemptService {
     abandoned?: boolean;
     disputedQuestionIds?: string[];
     isLate?: boolean;
+    proctoringSnapshots?: any[];
   }): Promise<{
     alreadySubmitted: boolean;
     score: number;
@@ -62,7 +63,8 @@ export class AttemptService {
       violations,
       abandoned,
       disputedQuestionIds = [],
-      isLate: passedIsLate
+      isLate: passedIsLate,
+      proctoringSnapshots: incomingSnapshots
     } = params;
 
     const disputedSet = new Set((disputedQuestionIds || []).map(id => String(id).trim().toLowerCase()));
@@ -286,9 +288,43 @@ export class AttemptService {
         }
       }
 
-      // Sanitize violations to keep base64 images exclusively in proctoringSnapshots on examAttempts
+      // Normalize and sanitize proctoring snapshots (max 5, <= 80KB each, supporting both object and string base64)
       let sanitizedViolations = violations;
-      const rawSnapshots = violations?.screenshots || violations?.proctoringSnapshots || [];
+      const candidateSnaps = (Array.isArray(incomingSnapshots) && incomingSnapshots.length > 0)
+        ? incomingSnapshots
+        : (violations?.screenshots || violations?.proctoringSnapshots || []);
+
+      const rawSnapshots = (Array.isArray(candidateSnaps) ? candidateSnaps : [])
+        .slice(-5)
+        .map((s: any, idx: number) => {
+          if (!s) return null;
+          if (typeof s === 'string') {
+            if (s.length > 80000) return null;
+            return {
+              id: `snap_${Date.now()}_${idx}`,
+              timestamp: new Date().toISOString(),
+              type: 'audit',
+              reason: 'Proctoring snapshot',
+              imageBase64: s,
+              imageData: s
+            };
+          }
+          if (typeof s === 'object') {
+            const img = s.imageBase64 || s.imageData;
+            if (typeof img !== 'string' || img.length > 80000) return null;
+            return {
+              id: s.id || `snap_${Date.now()}_${idx}`,
+              timestamp: s.timestamp || new Date().toISOString(),
+              type: s.type || 'audit',
+              reason: s.reason || 'Proctoring snapshot',
+              imageBase64: img,
+              imageData: img
+            };
+          }
+          return null;
+        })
+        .filter(Boolean);
+
       if (sanitizedViolations && typeof sanitizedViolations === 'object') {
         const { screenshots, proctoringSnapshots: vSnaps, ...restViolations } = sanitizedViolations;
         sanitizedViolations = restViolations;
@@ -365,6 +401,11 @@ export class AttemptService {
         proctoringViolationTriggered: !!proctoringViolationTriggered,
         micAvailable: micBypassed !== undefined ? !micBypassed : true,
         violations: sanitizedViolations || null,
+        ...(rawSnapshots.length > 0 ? {
+          proctoringSnapshots: rawSnapshots,
+          proctoringSnapshotsExpiresAt: getMidnightIST(new Date()).toISOString(),
+          proctoringSnapshotsPurgedAt: admin.firestore.FieldValue.delete()
+        } : {}),
         abandoned: abandoned ? true : admin.firestore.FieldValue.delete()
       };
       tx.set(reviewRef, reviewData, { merge: true });

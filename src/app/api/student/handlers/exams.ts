@@ -491,13 +491,40 @@ export async function POST(req: NextRequest) {
       }
       const rawScreenshots = Array.isArray(body.screenshots) ? body.screenshots : [];
       if (rawScreenshots.length > 0) {
-        // Cap to latest 7 snapshots and limit each item size to 50KB to strictly protect Firestore 1 MiB limit
+        // Cap to latest 5 snapshots and normalize both string base64 and object formats
         const cappedScreenshots = rawScreenshots
-          .slice(-7)
-          .filter((s: unknown): s is string => typeof s === 'string' && s.length <= 51200);
+          .slice(-5)
+          .map((s: any) => {
+            if (!s) return null;
+            if (typeof s === 'string') {
+              if (s.length > 80000) return null;
+              return {
+                id: `snap_${Date.now()}`,
+                timestamp: new Date().toISOString(),
+                type: 'audit',
+                reason: 'Proctoring snapshot',
+                imageBase64: s,
+                imageData: s
+              };
+            }
+            if (typeof s === 'object') {
+              const img = s.imageBase64 || s.imageData;
+              if (typeof img !== 'string' || img.length > 80000) return null;
+              return {
+                id: s.id || `snap_${Date.now()}`,
+                timestamp: s.timestamp || new Date().toISOString(),
+                type: s.type || 'audit',
+                reason: s.reason || 'Proctoring snapshot',
+                imageBase64: img,
+                imageData: img
+              };
+            }
+            return null;
+          })
+          .filter(Boolean);
 
         if (cappedScreenshots.length === 0) {
-          return NextResponse.json({ error: 'All submitted snapshots exceeded the permissible size limit (50 KB per snapshot).' }, { status: 400 });
+          return NextResponse.json({ error: 'All submitted snapshots exceeded the permissible size limit.' }, { status: 400 });
         }
 
         const attemptRef = adminDb.collection('examAttempts').doc(`${examId}_${studentCode}`);
@@ -626,7 +653,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    const { userAnswers, durationSpent, tabViolations, proctoringViolations, startedAt, proctoringViolationTriggered, micBypassed, disputedQuestionIds } = body;
+    const { userAnswers, durationSpent, tabViolations, proctoringViolations, startedAt, proctoringViolationTriggered, micBypassed, disputedQuestionIds, proctoringSnapshots } = body;
 
     if (!examId || !userAnswers) {
       return NextResponse.json({ message: 'Missing exam ID or user answers.' }, { status: 400 });
@@ -710,6 +737,7 @@ export async function POST(req: NextRequest) {
       proctoringViolationTriggered: !!proctoringViolationTriggered,
       micBypassed: micBypassed !== undefined ? !!micBypassed : undefined,
       violations: body.violations || null,
+      proctoringSnapshots: Array.isArray(proctoringSnapshots) ? proctoringSnapshots : (Array.isArray(body.screenshots) ? body.screenshots : []),
       disputedQuestionIds: Array.isArray(disputedQuestionIds) ? disputedQuestionIds : [],
       isLate: Boolean(body.isLate)
     });

@@ -480,6 +480,7 @@ export class ExamService {
     abandoned?: boolean;
     disputedQuestionIds?: string[];
     isLate?: boolean;
+    proctoringSnapshots?: any[];
   }) {
     return AttemptService.submitAttempt(params);
   }
