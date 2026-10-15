@@ -1599,8 +1599,8 @@ function ExamReportContent() {
           <div style="margin-top: 16px; padding: 12px 16px; background: rgba(251, 191, 36, 0.08); border: 1px solid rgba(251, 191, 36, 0.3); border-radius: 8px; display: flex; align-items: flex-start; gap: 12px;">
             <span style="font-size: 22px; line-height: 1;">💡</span>
             <div style="font-size: 12px; color: #fde68a; line-height: 1.6; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans Devanagari', 'Mangal', sans-serif;">
-              <strong style="color: #fbbf24; font-size: 13px;">⚠️ महत्वपूर्ण नियम (Important Marking Rule):</strong><br/>
-              परीक्षा में <strong>'तोले मारना' (अंदाजे से तुक्के लगाना) बिल्कुल अच्छी बात नहीं है!</strong> नेगेटिव मार्किंग (-25% यानी प्रति गलत उत्तर -1 अंक) के कारण तुक्के लगाने से आपके सारे सही मार्क्स कट जाते हैं। <strong>उदाहरण:</strong> यदि 4 प्रश्न सही (+16 अंक) और 20 प्रश्न गलत (-20 अंक) हो गए, तो कुल स्कोर घटकर सीधे <strong>0 (शून्य)</strong> हो जाता है! जिस प्रश्न का उत्तर पक्का नहीं पता हो, उसमें तोले मारने के बजाय उसे छोड़ देना (Unattempted) ही सबसे समझदारी भरा निर्णय है।
+              <strong style="color: #fbbf24; font-size: 13px;">⚠️ महत्वपूर्ण नियम (Important Insight):</strong><br/>
+              परीक्षा में <strong>'टोले मारना' (अंदाजे से तुक्के लगाना) बिल्कुल अच्छी बात नहीं है!</strong> नेगेटिव मार्किंग (-25%) आपके सही उत्तरों के अंक भी काट लेती है। यदि किसी प्रश्न का उत्तर नहीं आता, तो टोले मारने के बजाय उसे छोड़ना (Unattempted रखना) और बाद में उसका सही समाधान समझकर सीखना कहीं अधिक बेहतर है। परीक्षा केवल अंक लाने के लिए नहीं, बल्कि अपनी कमियों को पहचानकर असली समझ (True Learning) विकसित करने के लिए है।
             </div>
           </div>
 
