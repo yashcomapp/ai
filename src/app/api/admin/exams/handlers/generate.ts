@@ -718,18 +718,22 @@ export async function POST(req: NextRequest) {
         await adminDb.collection('exams').doc(examId).set(examData);
       }
 
-      // Mark all selected candidate questions as used
+      // Mark all selected candidate questions as used (update only existing documents to prevent creating ghost stubs)
       const batch = new ChunkedBatch(adminDb);
       const validCodes = (Array.isArray(questionCodes) ? questionCodes : []).filter(Boolean);
       
-      // Update by direct doc ID
-      for (const qcode of validCodes) {
-        const questionRef = adminDb.collection('questions').doc(qcode);
-        batch.set(questionRef, { usedInClassroomTest: true }, { merge: true });
-      }
-
-      // Also query and mark questions where questionCode == qcode in case doc.id is an auto-ID
       if (validCodes.length > 0) {
+        const directRefs = validCodes.map((code: string) => adminDb.collection('questions').doc(code));
+        const directSnaps = directRefs.length > 0 ? await adminDb.getAll(...directRefs).catch(() => []) : [];
+        const updatedDocIds = new Set<string>();
+
+        directSnaps.forEach((snap: any) => {
+          if (snap && snap.exists && snap.data()?.text) {
+            batch.update(snap.ref, { usedInClassroomTest: true });
+            updatedDocIds.add(snap.id);
+          }
+        });
+
         const chunks = [];
         for (let i = 0; i < validCodes.length; i += 30) {
           chunks.push(validCodes.slice(i, i + 30));
@@ -741,7 +745,10 @@ export async function POST(req: NextRequest) {
                 .where('questionCode', 'in', chunk)
                 .get();
               matchedSnap.docs.forEach(doc => {
-                batch.set(doc.ref, { usedInClassroomTest: true }, { merge: true });
+                if (doc.data()?.text && !updatedDocIds.has(doc.id)) {
+                  batch.update(doc.ref, { usedInClassroomTest: true });
+                  updatedDocIds.add(doc.id);
+                }
               });
             } catch (mErr) {
               console.warn('Matching questionCode lookup warning:', mErr);

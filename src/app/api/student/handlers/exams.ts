@@ -67,13 +67,16 @@ export async function GET(req: NextRequest) {
     questionSnaps.forEach((snap: any) => {
       if (snap && snap.exists) {
         const data = snap.data();
-        const docId = snap.id;
-        const qCode = data.questionCode || docId;
-        const fullQ = { id: docId, ...data };
-        questionMap.set(docId, fullQ);
-        questionMap.set(qCode, fullQ);
-        if (qCode.includes('-MGP1-')) questionMap.set(qCode.replace('-MGP1-', '-GANI-'), fullQ);
-        if (qCode.includes('-CURI-')) questionMap.set(qCode.replace('-CURI-', '-SCIE-'), fullQ);
+        // ONLY accept documents that contain actual question text (avoid ghost/empty stubs)
+        if (data && (data.text || data.questionText)) {
+          const docId = snap.id;
+          const qCode = data.questionCode || docId;
+          const fullQ = { id: docId, ...data };
+          questionMap.set(docId, fullQ);
+          questionMap.set(qCode, fullQ);
+          if (qCode.includes('-MGP1-')) questionMap.set(qCode.replace('-MGP1-', '-GANI-'), fullQ);
+          if (qCode.includes('-CURI-')) questionMap.set(qCode.replace('-CURI-', '-SCIE-'), fullQ);
+        }
       }
     });
 
@@ -105,12 +108,14 @@ export async function GET(req: NextRequest) {
           .get();
         qSnap.docs.forEach(doc => {
           const data = doc.data();
-          const qCode = data.questionCode || doc.id;
-          const fullQ = { id: doc.id, ...data };
-          questionMap.set(doc.id, fullQ);
-          questionMap.set(qCode, fullQ);
-          if (qCode.includes('-MGP1-')) questionMap.set(qCode.replace('-MGP1-', '-GANI-'), fullQ);
-          if (qCode.includes('-CURI-')) questionMap.set(qCode.replace('-CURI-', '-SCIE-'), fullQ);
+          if (data && (data.text || data.questionText)) {
+            const qCode = data.questionCode || doc.id;
+            const fullQ = { id: doc.id, ...data };
+            questionMap.set(doc.id, fullQ);
+            questionMap.set(qCode, fullQ);
+            if (qCode.includes('-MGP1-')) questionMap.set(qCode.replace('-MGP1-', '-GANI-'), fullQ);
+            if (qCode.includes('-CURI-')) questionMap.set(qCode.replace('-CURI-', '-SCIE-'), fullQ);
+          }
         });
       }
     }
@@ -121,7 +126,7 @@ export async function GET(req: NextRequest) {
     questionCodes.forEach(code => {
       const q = questionMap.get(code) || 
                 questionMap.get(code.replace('-GANI-', '-MGP1-').replace('-SCIE-', '-CURI-'));
-      if (q && !addedIds.has(q.id || q.questionCode)) {
+      if (q && (q.text || q.questionText) && !addedIds.has(q.id || q.questionCode)) {
         rawQuestions.push(q);
         addedIds.add(q.id || q.questionCode);
       }
