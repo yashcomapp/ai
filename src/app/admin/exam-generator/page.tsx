@@ -533,6 +533,92 @@ export default function AdminExamGeneratorPage() {
     }
   };
 
+  const [isRefreshingCounts, setIsRefreshingCounts] = useState(false);
+
+  const handleRefreshSyllabusCounts = async () => {
+    if (selectedSubjects.size === 0) return;
+    setIsRefreshingCounts(true);
+    try {
+      await triggerLoadChapters(selectedSubjects);
+    } finally {
+      setIsRefreshingCounts(false);
+    }
+  };
+
+  // Auto-refresh question counts when returning to the Exam Generator tab from Create Question Bank
+  useEffect(() => {
+    const handleFocus = () => {
+      if (selectedSubjects.size > 0 && selectedBoard && selectedClass) {
+        triggerLoadChapters(selectedSubjects);
+      }
+    };
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [selectedSubjects, selectedBoard, selectedClass]);
+
+  const handleOpenCreateQBForTopic = (topic: any) => {
+    const board = boardCodes[selectedBoard] || selectedBoard;
+    const classNum = selectedClass;
+    const subject = topic.subject || Array.from(selectedSubjects)[0] || '';
+    const chapter = String(topic.chapterNumber || '').replace(/^Ch\.?\s*/i, '');
+    const topicNum = String(topic.topicNumber || '').trim();
+    const qType = questionType || 'objective';
+
+    const params = new URLSearchParams();
+    if (board) params.set('board', board);
+    if (classNum) params.set('classNum', classNum);
+    if (subject) params.set('subject', subject);
+    if (chapter) params.set('chapter', chapter);
+    if (topicNum) params.set('topic', topicNum);
+    if (qType) params.set('questionType', qType);
+
+    const url = `/admin/create-qb?${params.toString()}`;
+    window.open(url, '_blank');
+  };
+
+  const handleOpenCreateQBForChapter = (chapter: any) => {
+    const board = boardCodes[selectedBoard] || selectedBoard;
+    const classNum = selectedClass;
+    const subject = chapter.subject || Array.from(selectedSubjects)[0] || '';
+    const chapterNum = String(chapter.chapterNumber || '').replace(/^Ch\.?\s*/i, '');
+    const qType = questionType || 'objective';
+
+    const params = new URLSearchParams();
+    if (board) params.set('board', board);
+    if (classNum) params.set('classNum', classNum);
+    if (subject) params.set('subject', subject);
+    if (chapterNum) params.set('chapter', chapterNum);
+    if (qType) params.set('questionType', qType);
+
+    const url = `/admin/create-qb?${params.toString()}`;
+    window.open(url, '_blank');
+  };
+
+  const handleOpenCreateQBForSelectedTopics = () => {
+    const zeroTopics = selectedTopics.filter(t => (questionType === 'objective' ? (t.objectiveCount ?? 0) : (t.subjectiveCount ?? 0)) === 0);
+    const targetTopics = zeroTopics.length > 0 ? zeroTopics : selectedTopics;
+    if (targetTopics.length === 0) return;
+
+    const firstTopic = targetTopics[0];
+    const board = boardCodes[selectedBoard] || selectedBoard;
+    const classNum = selectedClass;
+    const subject = firstTopic.subject || Array.from(selectedSubjects)[0] || '';
+    const chapter = String(firstTopic.chapterNumber || '').replace(/^Ch\.?\s*/i, '');
+    const topicNums = targetTopics.map(t => String(t.topicNumber || '').trim()).filter(Boolean).join(',');
+    const qType = questionType || 'objective';
+
+    const params = new URLSearchParams();
+    if (board) params.set('board', board);
+    if (classNum) params.set('classNum', classNum);
+    if (subject) params.set('subject', subject);
+    if (chapter) params.set('chapter', chapter);
+    if (topicNums) params.set('topic', topicNums);
+    if (qType) params.set('questionType', qType);
+
+    const url = `/admin/create-qb?${params.toString()}`;
+    window.open(url, '_blank');
+  };
+
   // Helper: check if a question matches a selected topic or subtopic
   const isQuestionMatchingTopic = (q: Question, t: any): boolean => {
     if (!q || !t) return false;
@@ -1315,7 +1401,68 @@ Return ONLY valid JSON. No markdown wrappers or extra commentary.`;
             onToggleTopic={handleToggleTopic}
             onSelectAllTopics={() => handleSelectAllTopics(filteredTopics)}
             onDeselectAllTopics={() => handleDeselectAllTopics(filteredTopics)}
+            onCreateQBTopic={handleOpenCreateQBForTopic}
+            onCreateQBChapter={handleOpenCreateQBForChapter}
           />
+
+          {/* Zero-Question Shortfall Quick-Action Helper Banner */}
+          {selectedTopics.some(t => (questionType === 'objective' ? (t.objectiveCount ?? 0) : (t.subjectiveCount ?? 0)) === 0) && (
+            <div style={{
+              background: 'rgba(239, 68, 68, 0.08)',
+              border: '1px solid rgba(239, 68, 68, 0.25)',
+              borderRadius: 'var(--radius-sm)',
+              padding: '8px 12px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '8px',
+              marginTop: '2px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '15px' }}>⚠️</span>
+                <span style={{ fontSize: '11.5px', fontWeight: 600, color: '#f87171' }}>
+                  <strong>No questions in Question Bank:</strong>{' '}
+                  {selectedTopics.filter(t => (questionType === 'objective' ? (t.objectiveCount ?? 0) : (t.subjectiveCount ?? 0)) === 0).map(t => t.topicNumber || t.topic).join(', ')} currently has 0 {questionType} questions.
+                </span>
+              </div>
+              <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                <button
+                  type="button"
+                  className="btn btn-sm"
+                  onClick={handleOpenCreateQBForSelectedTopics}
+                  style={{
+                    background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                    color: '#ffffff',
+                    border: 'none',
+                    padding: '4px 10px',
+                    borderRadius: '6px',
+                    fontWeight: 700,
+                    fontSize: '11px',
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '5px',
+                    boxShadow: '0 2px 6px rgba(239, 68, 68, 0.3)'
+                  }}
+                  title="Open Create Question Bank in a new tab with board, class, subject, chapter, and topic pre-selected"
+                >
+                  <span>⚡ Generate in Create QB (AI)</span>
+                  <span>↗</span>
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-sm"
+                  onClick={handleRefreshSyllabusCounts}
+                  disabled={isRefreshingCounts}
+                  style={{ fontSize: '11px', padding: '4px 8px' }}
+                  title="Refresh question counts after saving in Create Question Bank"
+                >
+                  {isRefreshingCounts ? '🔄 Refreshing...' : '🔄 Refresh Counts'}
+                </button>
+              </div>
+            </div>
+          )}
 
           {currentTemplate && (
             <div style={{ background: 'var(--bg-soft)', padding: '8px 12px', borderRadius: 'var(--radius-sm)', fontSize: '11px', borderLeft: '3px solid var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>

@@ -348,10 +348,22 @@ function CreateQBContent() {
   useEffect(() => {
     if (currentAllTopics.length === 0 || !paramTopic) return;
 
-    const topicsList = String(paramTopic).split(',');
-    const matchedTopics = currentAllTopics.filter(t => topicsList.includes(String(t.topicNumber)));
+    const topicsList = String(paramTopic).split(',').map(s => s.trim()).filter(Boolean);
+    const matchedTopics = currentAllTopics.filter(t => {
+      const tNum = String(t.topicNumber || '').trim();
+      const tName = String(t.topic || '').trim();
+      return topicsList.some(target => target === tNum || tName.startsWith(target) || tName.includes(target));
+    });
     if (matchedTopics.length > 0) {
       setSelectedTopics(matchedTopics);
+      const newCounts = { ...topicCustomCounts };
+      matchedTopics.forEach(t => {
+        const k = topicKey(t);
+        if (!newCounts[k]) {
+          newCounts[k] = t.targetQuestions || (defaultPerTopicCount ? Number(defaultPerTopicCount) : (questionType === 'subjective' ? 10 : 80));
+        }
+      });
+      setTopicCustomCounts(newCounts);
     }
   }, [currentAllTopics, paramTopic]);
 
@@ -1885,7 +1897,23 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
 
       {/* Main Workspace */}
       <main style={{ flex: 1, padding: '12px 10px', maxWidth: '1080px', width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+          {paramTopic ? (
+            <div style={{
+              background: 'rgba(59, 130, 246, 0.1)',
+              border: '1px solid rgba(59, 130, 246, 0.3)',
+              borderRadius: 'var(--radius-sm)',
+              padding: '6px 12px',
+              fontSize: '12px',
+              color: 'var(--accent)',
+              fontWeight: 600,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}>
+              <span>⚡ <strong>Pre-loaded from Exam Generator:</strong> Topic {paramTopic} selected. Configure quota and compile AI prompt.</span>
+            </div>
+          ) : <div />}
           <button className="btn btn-secondary" onClick={() => router.push('/admin/question-bank')}>Manage QB</button>
         </div>
         

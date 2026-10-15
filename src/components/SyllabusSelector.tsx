@@ -33,6 +33,9 @@ interface SyllabusSelectorProps<T extends { topic: string; subject?: string }> {
   
   topicPlaceholder?: string;
   singleTopicSelect?: boolean;
+  
+  onCreateQBTopic?: (topic: T) => void;
+  onCreateQBChapter?: (chapter: Chapter) => void;
 }
 
 export function SyllabusSelector<T extends { topic: string; subject?: string }>({
@@ -50,7 +53,9 @@ export function SyllabusSelector<T extends { topic: string; subject?: string }>(
   onSelectAllTopics,
   onDeselectAllTopics,
   topicPlaceholder = 'Select at least one chapter first.',
-  singleTopicSelect = false
+  singleTopicSelect = false,
+  onCreateQBTopic,
+  onCreateQBChapter
 }: SyllabusSelectorProps<T>) {
   
   const isSubjectChecked = (s: string) => {
@@ -187,6 +192,34 @@ export function SyllabusSelector<T extends { topic: string; subject?: string }>(
                       <span style={{ opacity: 0.4 }}>|</span>
                       <span style={{ color: 'var(--accent)' }}>S: {ch.subjectiveCount ?? ch.chapter?.subjectiveCount ?? 0}</span>
                     </span>
+                    {onCreateQBChapter && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          onCreateQBChapter(ch);
+                        }}
+                        style={{
+                          marginLeft: '3px',
+                          fontSize: '9px',
+                          fontWeight: 800,
+                          padding: '1px 5px',
+                          borderRadius: '4px',
+                          background: ((ch.objectiveCount ?? ch.chapter?.objectiveCount ?? 0) === 0) ? 'rgba(239, 68, 68, 0.15)' : 'rgba(59, 130, 246, 0.12)',
+                          color: ((ch.objectiveCount ?? ch.chapter?.objectiveCount ?? 0) === 0) ? '#f87171' : 'var(--accent)',
+                          border: ((ch.objectiveCount ?? ch.chapter?.objectiveCount ?? 0) === 0) ? '1px solid rgba(239, 68, 68, 0.35)' : '1px solid rgba(59, 130, 246, 0.25)',
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '2px'
+                        }}
+                        title={`Open Create Question Bank (AI) for Chapter ${ch.chapterNumber}`}
+                      >
+                        <span>✨</span>
+                        <span>+QB</span>
+                      </button>
+                    )}
                   </label>
                 );
               })}
@@ -288,6 +321,36 @@ export function SyllabusSelector<T extends { topic: string; subject?: string }>(
                         <span style={{ opacity: 0.4 }}>|</span>
                         <span style={{ color: 'var(--purple)' }}>S: {(top as any).subjectiveCount ?? 0}</span>
                       </span>
+
+                      {onCreateQBTopic && !hasSubtopics && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            onCreateQBTopic(top);
+                          }}
+                          style={{
+                            marginLeft: '4px',
+                            fontSize: '9.5px',
+                            fontWeight: 800,
+                            padding: '1px 6px',
+                            borderRadius: '4px',
+                            background: (((top as any).objectiveCount ?? 0) === 0) ? 'rgba(239, 68, 68, 0.18)' : 'rgba(59, 130, 246, 0.12)',
+                            color: (((top as any).objectiveCount ?? 0) === 0) ? '#f87171' : 'var(--accent)',
+                            border: (((top as any).objectiveCount ?? 0) === 0) ? '1px solid rgba(239, 68, 68, 0.45)' : '1px solid rgba(59, 130, 246, 0.3)',
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '3px',
+                            lineHeight: 1.4
+                          }}
+                          title={`Generate Questions for ${top.topic} directly in Create Question Bank (AI)`}
+                        >
+                          <span>✨</span>
+                          <span>+QB (AI)</span>
+                        </button>
+                      )}
                     </label>
                   );
                 })
