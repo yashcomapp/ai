@@ -77,16 +77,16 @@ export async function purgeExpiredParentSincerityLogs(): Promise<{ purgedParentL
   const oneDayAgo = nowMs - 24 * 60 * 60 * 1000;
   let purgedParentLogsCount = 0;
 
-  // Lightweight projection to avoid downloading image thumbnails
+  // Query only unpurged logs using lightweight projection to avoid downloading image thumbnails
   const logsSnap = await adminDb.collection('parentSincerityLogs')
-    .select('timestamp', 'createdAt', 'expiresAt', 'photoPurged')
+    .where('photoPurged', '==', false)
+    .select('timestamp', 'createdAt', 'expiresAt')
     .get();
 
   const batch = new ChunkedBatch(adminDb);
 
   logsSnap.docs.forEach(doc => {
     const data = doc.data();
-    if (data.photoPurged) return; // Already stripped
 
     const recordTime = data.timestamp || (data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : data.createdAt) || null;
     const recordTimestampMs = recordTime ? new Date(recordTime).getTime() : 0;
