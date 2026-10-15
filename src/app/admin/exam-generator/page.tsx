@@ -164,6 +164,7 @@ interface Question {
   subtopic?: string;
   subtopicName?: string;
   conceptTag?: string;
+  chapter?: string;
   chapterNumber?: string;
   board?: string;
   boardCode?: string;
@@ -535,6 +536,19 @@ export default function AdminExamGeneratorPage() {
   // Helper: check if a question matches a selected topic or subtopic
   const isQuestionMatchingTopic = (q: Question, t: any): boolean => {
     if (!q || !t) return false;
+
+    // Strict Chapter Guardrail: Question and Topic MUST belong to the same chapter!
+    const qChNum = String(q.chapterNumber || q.chapter || '').replace(/^Ch\.?\s*/i, '').trim();
+    const tChNum = String(t.chapterNumber || t.chapter || '').replace(/^Ch\.?\s*/i, '').trim();
+    if (qChNum && tChNum && qChNum !== tChNum) {
+      return false;
+    }
+    const qCodeParts = String(q.questionCode || '').split('-');
+    const qCodeCh = qCodeParts.length >= 4 ? qCodeParts[3].trim() : '';
+    if (qCodeCh && tChNum && qCodeCh !== tChNum) {
+      return false;
+    }
+
     const qTopNum = String(q.topicNumber || '').trim();
     const qTopCode = String(q.topicCode || '').trim();
     const qTopicName = String(q.topic || q.topicName || '').trim().toLowerCase();
@@ -552,25 +566,24 @@ export default function AdminExamGeneratorPage() {
     const normTTopCode = normalizeCode(tTopCode);
     const normQCode = normalizeCode(qCode);
 
-    if (tTopNum && (qTopNum === tTopNum || qTopNum.endsWith(`.${tTopNum}`) || tTopNum.endsWith(`.${qTopNum}`))) return true;
+    // Exact topic code match
     if (tTopCode && (normQTopCode === normTTopCode || normQTopCode.endsWith(`-${normTTopCode}`) || normQCode.includes(`-${normTTopCode}-`))) return true;
 
+    // Exact topic number match or parent/child hierarchy (e.g. 4.3 matches 4.3.1, or 4.3.1 matches 4.3)
+    if (tTopNum && (qTopNum === tTopNum || qTopNum.startsWith(`${tTopNum}.`) || tTopNum.startsWith(`${qTopNum}.`))) return true;
+
+    // Question code contains -topicNumber-
+    if (tTopNum && (normQCode.includes(`-${tTopNum}-`) || normQCode.includes(`-${tTopNum}.`))) return true;
+
+    // Name / Title match within the same chapter
     const targetNames = [tTopicName, tTopicTitle].filter(Boolean);
     const questionNames = [qTopicName, qSubtopicName, qConceptTag].filter(Boolean);
 
     for (const tName of targetNames) {
       const tClean = cleanStringForMatch(tName);
       for (const qName of questionNames) {
-        if (qName === tName || qName.includes(tName) || tName.includes(qName)) return true;
+        if (qName === tName) return true;
         if (tClean && cleanStringForMatch(qName) === tClean) return true;
-      }
-    }
-
-    if (tTopNum) {
-      if (qCode.includes(`-${tTopNum}-`) || qCode.includes(`-${tTopNum}.`)) return true;
-      if (tTopNum.includes('.')) {
-        const parts = tTopNum.split('.');
-        if (parts.length >= 2 && qCode.includes(`-${parts[parts.length - 1]}-`)) return true;
       }
     }
 
@@ -706,13 +719,14 @@ export default function AdminExamGeneratorPage() {
     setFetchingPool(true);
     try {
       const allSubjects = Array.from(selectedSubjects).join(',');
+      const selectedChapterNumbers = Array.from(new Set(selectedTopics.map(t => String(t.chapterNumber || '').replace(/^Ch\.?\s*/i, '')).filter(Boolean))).join(',');
       const topicNumbers = Array.from(new Set(
         selectedTopics.flatMap(t => [t.topicNumber, t.topicName, t.topicCode, t.topic].filter(Boolean))
       )).join(',');
       const examCategory = currentTemplate?.examCategory || 'standard';
 
       const idToken = await firebaseUser.getIdToken();
-      const res = await fetch(`/api/admin/exams/generate?action=fetchPool&board=${selectedBoard}&classNum=${selectedClass}&subject=${encodeURIComponent(allSubjects)}&topicNumbers=${encodeURIComponent(topicNumbers)}&questionType=${questionType}&examCategory=${examCategory}`, {
+      const res = await fetch(`/api/admin/exams/generate?action=fetchPool&board=${selectedBoard}&classNum=${selectedClass}&subject=${encodeURIComponent(allSubjects)}&chapterNumbers=${encodeURIComponent(selectedChapterNumbers)}&topicNumbers=${encodeURIComponent(topicNumbers)}&questionType=${questionType}&examCategory=${examCategory}`, {
         headers: {
           'Authorization': `Bearer ${idToken}`
         }

@@ -44,6 +44,7 @@ export async function GET(req: NextRequest) {
       const board = searchParams.get('board') || '';
       const classNum = searchParams.get('classNum') || '';
       const subject = searchParams.get('subject') || '';
+      const chapterNumbers = searchParams.get('chapterNumbers') ? searchParams.get('chapterNumbers')!.split(',').map(c => c.trim().replace(/^Ch\.?\s*/i, '')).filter(Boolean) : [];
       const topicNumbers = searchParams.get('topicNumbers') ? searchParams.get('topicNumbers')!.split(',') : [];
       const questionType = searchParams.get('questionType') || 'objective';
       const examCategory = searchParams.get('examCategory') || 'standard';
@@ -54,7 +55,7 @@ export async function GET(req: NextRequest) {
 
       const cleanClass = String(classNum).replace(/\D/g, '');
       const classVariations = Array.from(new Set([cleanClass, Number(cleanClass), classNum].filter(v => v !== undefined && v !== '')));
-      const poolCacheKey = `${board}_${cleanClass}_${subject}_${topicNumbers.slice().sort().join('|')}_${questionType}_${examCategory}`;
+      const poolCacheKey = `${board}_${cleanClass}_${subject}_${chapterNumbers.slice().sort().join('|')}_${topicNumbers.slice().sort().join('|')}_${questionType}_${examCategory}`;
       const cachedPool = POOL_CACHE.get(poolCacheKey);
       if (cachedPool && (Date.now() - cachedPool.timestamp < POOL_CACHE_TTL)) {
         return NextResponse.json(cachedPool.data);
@@ -135,6 +136,15 @@ export async function GET(req: NextRequest) {
                                 examCategory === 'mock' || 
                                 (examCategory === 'foundation' ? (q.examCategory === 'foundation' || q.difficulty === 'hard' || (q.examCategory || 'standard') === 'standard') : (q.examCategory || 'standard') === examCategory);
 
+          // Chapter boundary check if chapterNumbers are provided
+          if (chapterNumbers.length > 0) {
+            const qCh = String(q.chapterNumber || q.chapter || '').replace(/^Ch\.?\s*/i, '').trim();
+            const qCodeParts = String(q.questionCode || '').split('-');
+            const qCodeCh = qCodeParts.length >= 4 ? qCodeParts[3].trim() : '';
+            const chMatch = chapterNumbers.some(c => c === qCh || c === qCodeCh);
+            if (!chMatch) return false;
+          }
+
           const searchTopics = topicNumbers.map(t => String(t).trim()).filter(Boolean);
           if (searchTopics.length === 0) return typeMatch && unusedMatch && categoryMatch;
 
@@ -159,18 +169,13 @@ export async function GET(req: NextRequest) {
             if (normQTopCode.includes(`-${normTNum}-`) || normQSubCode.includes(`-${normTNum}-`)) return true;
             if (normQCode.includes(`-${normTNum}-`) || normQCode.includes(`-${normTNum}.`)) return true;
 
-            // Stripped subpart matches (e.g. searching 2.1 in 1.1 or vice versa)
-            if (tNum.includes('.')) {
-              const subPart = tNum.split('.').slice(1).join('.');
-              if (subPart && (qTopNum === subPart || qSubNum === subPart || normQCode.includes(`-${subPart}-`))) return true;
-            }
+            // Parent/child prefix matching only (e.g. 4.3 matches 4.3.1, or 4.3.1 matches 4.3)
+            if (qTopNum.startsWith(`${tNum}.`) || tNum.startsWith(`${qTopNum}.`)) return true;
 
             // Name / Title / ConceptTag match
-            if (qTopicName && (qTopicName === tLower || qTopicName.includes(tLower) || tLower.includes(qTopicName))) return true;
-            if (qSubtopicName && (qSubtopicName === tLower || qSubtopicName.includes(tLower) || tLower.includes(qSubtopicName))) return true;
-            if (qConceptTag && (qConceptTag === tLower || qConceptTag.includes(tLower) || tLower.includes(qConceptTag))) return true;
-            if (cleanStringForMatch(qTopicName) && cleanStringForMatch(qTopicName) === cleanStringForMatch(tLower)) return true;
-            if (cleanStringForMatch(qConceptTag) && cleanStringForMatch(qConceptTag) === cleanStringForMatch(tLower)) return true;
+            if (qTopicName && (qTopicName === tLower || cleanStringForMatch(qTopicName) === cleanStringForMatch(tLower))) return true;
+            if (qSubtopicName && (qSubtopicName === tLower || cleanStringForMatch(qSubtopicName) === cleanStringForMatch(tLower))) return true;
+            if (qConceptTag && (qConceptTag === tLower || cleanStringForMatch(qConceptTag) === cleanStringForMatch(tLower))) return true;
 
             return false;
           });
