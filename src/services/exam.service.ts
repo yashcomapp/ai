@@ -754,14 +754,37 @@ export class ExamService {
 
         const releaseBatch = new ChunkedBatch(adminDb);
 
-        // Fully release unused questions
-        for (const code of codesToRelease) {
-          releaseBatch.set(adminDb.collection('questions').doc(code), {
-            usedInClassroomTest: false,
-            timesUsed: 0
-          }, { merge: true });
+        // Fetch docs first to ensure we only update existing, valid question documents and NEVER create ghost stubs
+        const allTargetCodes = Array.from(new Set([...codesToRelease, ...codesToDecrement]));
+        for (let i = 0; i < allTargetCodes.length; i += 100) {
+          const chunk = allTargetCodes.slice(i, i + 100);
+          const refs = chunk.map(c => adminDb.collection('questions').doc(c));
+          try {
+            const snaps = await adminDb.getAll(...refs);
+            snaps.forEach(snap => {
+              if (snap.exists) {
+                const data = snap.data();
+                if (data && (data.text || data.questionText)) {
+                  const code = snap.id;
+                  if (codesToRelease.includes(code)) {
+                    releaseBatch.update(snap.ref, {
+                      usedInClassroomTest: false,
+                      timesUsed: 0
+                    });
+                  } else if (codesToDecrement.includes(code)) {
+                    releaseBatch.update(snap.ref, {
+                      timesUsed: admin.firestore.FieldValue.increment(-1)
+                    });
+                  }
+                }
+              }
+            });
+          } catch (e) {
+            console.warn('Error fetching question docs during release:', e);
+          }
         }
 
+        // Also check by questionCode in chunks for backward compatibility, updating only existing valid docs
         for (let i = 0; i < codesToRelease.length; i += 30) {
           const chunk = codesToRelease.slice(i, i + 30);
           try {
@@ -769,21 +792,17 @@ export class ExamService {
               .where('questionCode', 'in', chunk)
               .get();
             matchedSnap.docs.forEach(qDoc => {
-              releaseBatch.set(qDoc.ref, {
-                usedInClassroomTest: false,
-                timesUsed: 0
-              }, { merge: true });
+              const data = qDoc.data();
+              if (data && (data.text || data.questionText)) {
+                releaseBatch.update(qDoc.ref, {
+                  usedInClassroomTest: false,
+                  timesUsed: 0
+                });
+              }
             });
           } catch (mErr) {
             console.warn('Matched question release lookup warning:', mErr);
           }
-        }
-
-        // Decrement timesUsed for questions that remain in other surviving exams
-        for (const code of codesToDecrement) {
-          releaseBatch.set(adminDb.collection('questions').doc(code), {
-            timesUsed: admin.firestore.FieldValue.increment(-1)
-          }, { merge: true });
         }
 
         await releaseBatch.commit();

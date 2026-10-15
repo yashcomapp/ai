@@ -446,6 +446,10 @@ export async function POST(req: NextRequest) {
           }
         }
 
+        if (item.id && item.id !== finalCode) {
+          batch.delete(adminDb.collection('questions').doc(item.id));
+        }
+
         const docRef = adminDb.collection('questions').doc(finalCode);
         batch.set(docRef, questionDoc, { merge: true });
       }
@@ -475,11 +479,11 @@ export async function POST(req: NextRequest) {
     const chapterPart = extractChapterFromTopic(topicPart, chapterNumber);
     const topicCode = getCanonicalTopicCode(boardCode, cleanClass, subjectCode, chapterPart, topicPart);
 
+    const counterId = `${topicCode}-${typeCode}`;
     let finalCode = id || '';
 
-    // If adding a new question, compile sequential ID via transaction
-    if (!finalCode) {
-      const counterId = `${topicCode}-${typeCode}`;
+    // If adding a new question, or if existing question's code doesn't match canonical counterId prefix
+    if (!finalCode || !finalCode.startsWith(`${counterId}-`)) {
       const counterRef = adminDb.collection('questionCounters').doc(counterId);
 
       const nextSeq = await adminDb.runTransaction(async (tx) => {
@@ -582,6 +586,10 @@ export async function POST(req: NextRequest) {
       questionDoc.createdAt = admin.firestore.FieldValue.serverTimestamp();
       questionDoc.createdBy = (adminUser.decodedToken?.email || adminUser.userData?.email) || 'admin@yashcom.com';
       questionDoc.timesUsed = 0;
+    }
+
+    if (id && id !== finalCode) {
+      await adminDb.collection('questions').doc(id).delete();
     }
 
     await adminDb.collection('questions').doc(finalCode).set(questionDoc, { merge: true });
