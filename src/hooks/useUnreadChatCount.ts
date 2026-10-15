@@ -33,28 +33,28 @@ export function useUnreadChatCount(role: 'admin' | 'student' | 'parent' = 'admin
           const uCounts = data.unreadCounts || {};
 
           if (role === 'admin') {
-            const count = Number(
-              uCounts['admin'] || (firebaseUser?.uid ? uCounts[firebaseUser.uid] : 0) || 0
-            );
-            total += count;
+            const adminCount = Number(uCounts['admin'] || 0);
+            const uidCount = firebaseUser?.uid ? Number(uCounts[firebaseUser.uid] || 0) : 0;
+            total += Math.max(adminCount, uidCount);
           } else if (role === 'student') {
             const sCode = user?.studentCode || '';
-            const count = Number(
-              (sCode ? (uCounts[sCode] || uCounts[sCode.toUpperCase()] || uCounts[sCode.toLowerCase()]) : 0) ||
-              (firebaseUser?.uid ? uCounts[firebaseUser.uid] : 0) ||
-              0
-            );
-            total += count;
+            const sCount = sCode ? Math.max(
+              Number(uCounts[sCode] || 0),
+              Number(uCounts[sCode.toUpperCase()] || 0),
+              Number(uCounts[sCode.toLowerCase()] || 0)
+            ) : 0;
+            const uidCount = firebaseUser?.uid ? Number(uCounts[firebaseUser.uid] || 0) : 0;
+            total += Math.max(sCount, uidCount);
           } else if (role === 'parent') {
             const pKey = user?.email ? `PR-${user.email.toLowerCase().trim()}` : '';
             const sCode = user?.studentCode || '';
-            const count = Number(
-              (pKey ? uCounts[pKey] : 0) ||
-              (sCode ? (uCounts[`PR-${sCode}`] || uCounts[`PR-${sCode.toUpperCase()}`]) : 0) ||
-              (firebaseUser?.uid ? uCounts[firebaseUser.uid] : 0) ||
-              0
-            );
-            total += count;
+            const pCount = pKey ? Number(uCounts[pKey] || 0) : 0;
+            const sCount = sCode ? Math.max(
+              Number(uCounts[`PR-${sCode}`] || 0),
+              Number(uCounts[`PR-${sCode.toUpperCase()}`] || 0)
+            ) : 0;
+            const uidCount = firebaseUser?.uid ? Number(uCounts[firebaseUser.uid] || 0) : 0;
+            total += Math.max(pCount, sCount, uidCount);
           }
         });
 

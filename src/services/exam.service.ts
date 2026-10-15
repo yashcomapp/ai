@@ -21,8 +21,8 @@ export function isAttemptCompleted(data: any): boolean {
   // 2. Canonical completed status (Objective & Subjective)
   if (status === 'completed' || status === 'submitted') return true;
 
-  // 3. Subjective post-submission review states
-  const finishedSubStatuses = ['peer_review_pending', 'peer_reviewed', 'parent_reviewed', 'approved'];
+  // 3. Subjective post-submission review states & terminal/ended states
+  const finishedSubStatuses = ['peer_review_pending', 'peer_reviewed', 'parent_reviewed', 'approved', 'blocked', 'abandoned'];
   if (finishedSubStatuses.includes(status)) return true;
 
   return false;

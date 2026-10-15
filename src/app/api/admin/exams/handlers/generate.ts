@@ -4,6 +4,7 @@ import { adminDb } from '@/lib/firebase/admin';
 import { OBJECTIVE_QUESTION_TYPES, SUBJECTIVE_QUESTION_TYPES, toCanonicalQuestionType, CANONICAL_OBJECTIVE_TYPES, CANONICAL_SUBJECTIVE_TYPES, cleanStringForMatch, isQuestionQuarantined } from '@/lib/questionTypes';
 import { verifyRole } from '@/lib/auth';
 import { ChunkedBatch } from '@/lib/firebase/batch';
+import { ExamRepository } from '@/repositories/exam.repository';
 import { 
   getCanonicalBoardCode, 
   getCanonicalBoardName, 
@@ -537,38 +538,38 @@ export async function POST(req: NextRequest) {
       } = body;
 
       const validQuestionCodes = (Array.isArray(questionCodes) ? questionCodes : []).filter(Boolean);
-      const questionChunks: string[][] = [];
-      for (let i = 0; i < validQuestionCodes.length; i += 30) {
-        questionChunks.push(validQuestionCodes.slice(i, i + 30));
+      if (validQuestionCodes.length === 0) {
+        return NextResponse.json({ message: 'Cannot save exam: No questions provided.' }, { status: 400 });
       }
 
-      const questionSnaps = await Promise.all(
-        questionChunks.map(chunk =>
-          adminDb.collection('questions')
-            .where(admin.firestore.FieldPath.documentId(), 'in', chunk)
-            .get()
-        )
-      );
+      // Hardened SSOT verification: ensure 100% of questions actually exist in the database
+      const questionDocs = await ExamRepository.getQuestionsForExam(validQuestionCodes);
+      const existingCodeMap = new Map<string, any>();
+      questionDocs.forEach((q: any) => {
+        if (q.id) existingCodeMap.set(q.id, q);
+        if (q.questionCode) existingCodeMap.set(q.questionCode, q);
+      });
+
+      const missingCodes = validQuestionCodes.filter(c => !existingCodeMap.has(c));
+      if (missingCodes.length > 0) {
+        return NextResponse.json({ 
+          message: `Cannot save exam: ${missingCodes.length} question(s) do not exist in the Question Bank (${missingCodes.slice(0, 5).join(', ')}${missingCodes.length > 5 ? '...' : ''}). Please refresh or regenerate the question set.` 
+        }, { status: 400 });
+      }
 
       const boardCode = getCanonicalBoardCode(board);
       const cleanClass = getCanonicalClass(classNum);
       const subjectCode = getCanonicalSubjectCode(boardCode, cleanClass, subjectName);
 
-
       // Check if all selected questions are subjective
       let isAllSubjective = false;
       if (validQuestionCodes.length > 0) {
-        const questionDocs: any[] = [];
-        questionSnaps.forEach(snap => {
-          snap.docs.forEach(doc => questionDocs.push(doc.data()));
-        });
-
         const subjectiveTypes = [
           'numerical_short', 'numerical_long', 'subjective_short', 
           'subjective_long', 'subjective_reason', 'subjective_notes', 'subjective_define',
           'subjective_laws'
         ];
-        const hasObjective = questionDocs.some(q => !subjectiveTypes.includes(q.type));
+        const hasObjective = questionDocs.some((q: any) => !subjectiveTypes.includes(q.type));
         isAllSubjective = questionDocs.length > 0 && !hasObjective && examType !== 'obj' && examType !== 'objective';
       }
 
