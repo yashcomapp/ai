@@ -1880,13 +1880,13 @@ function ExamReportContent() {
                 <thead>
                   <tr style={{ background: 'var(--bg-soft)', borderBottom: '1px solid var(--border-light)', color: 'var(--text-muted)', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
                     <th onClick={() => handleSortStudent('name')} style={{ padding: '6px 8px', cursor: 'pointer', whiteSpace: 'nowrap' }}>Student Name ⇅</th>
-                    <th onClick={() => handleSortStudent('score')} style={{ padding: '6px 8px', cursor: 'pointer', whiteSpace: 'nowrap' }}>Score ⇅</th>
-                    <th style={{ padding: '6px 8px', whiteSpace: 'nowrap' }}>Breakdown</th>
-                    <th onClick={() => handleSortStudent('accuracy')} style={{ padding: '6px 8px', cursor: 'pointer', whiteSpace: 'nowrap' }}>Accuracy ⇅</th>
-                    <th onClick={() => handleSortStudent('pace')} style={{ padding: '6px 8px', cursor: 'pointer', whiteSpace: 'nowrap' }}>Avg Pace ⇅</th>
-                    <th onClick={() => handleSortStudent('time')} style={{ padding: '6px 8px', cursor: 'pointer', whiteSpace: 'nowrap' }}>Time Taken ⇅</th>
-                    <th onClick={() => handleSortStudent('status')} style={{ padding: '6px 8px', cursor: 'pointer', whiteSpace: 'nowrap' }}>Status ⇅</th>
-                    <th style={{ padding: '6px 8px', textAlign: 'right', whiteSpace: 'nowrap' }}>Actions</th>
+                    <th onClick={() => handleSortStudent('score')} style={{ padding: '6px 8px', cursor: 'pointer', whiteSpace: 'nowrap', width: '120px' }}>Score ⇅</th>
+                    <th style={{ padding: '6px 8px', whiteSpace: 'nowrap', width: '140px' }}>Breakdown</th>
+                    <th onClick={() => handleSortStudent('accuracy')} style={{ padding: '6px 8px', cursor: 'pointer', whiteSpace: 'nowrap', width: '75px' }}>Accuracy ⇅</th>
+                    <th onClick={() => handleSortStudent('pace')} style={{ padding: '6px 8px', cursor: 'pointer', whiteSpace: 'nowrap', width: '70px' }}>Avg Pace ⇅</th>
+                    <th onClick={() => handleSortStudent('time')} style={{ padding: '6px 8px', cursor: 'pointer', whiteSpace: 'nowrap', width: '75px' }}>Time Taken ⇅</th>
+                    <th onClick={() => handleSortStudent('status')} style={{ padding: '6px 8px', cursor: 'pointer', whiteSpace: 'nowrap', width: '75px' }}>Status ⇅</th>
+                    <th style={{ padding: '6px 8px', textAlign: 'right', whiteSpace: 'nowrap', width: '55px' }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1896,13 +1896,13 @@ function ExamReportContent() {
                       style={{ borderBottom: '1px solid var(--border-light)', background: 'var(--danger-bg, rgba(234, 108, 117, 0.10))' }}
                     >
                       <td colSpan={8} style={{ padding: '8px 12px', color: 'var(--danger)' }}>
-                        <div style={{ textAlign: 'center', fontWeight: 800, fontSize: '12px', marginBottom: '4px', color: 'var(--danger)', letterSpacing: '0.2px' }}>
+                        <div style={{ textAlign: 'center', fontWeight: 800, fontSize: '12px', marginBottom: '6px', color: 'var(--danger)', letterSpacing: '0.2px' }}>
                           🔴 Absent Students ({notStartedStudents.length})
                         </div>
                         <div style={{ 
-                          display: 'grid', 
-                          gridTemplateColumns: 'repeat(3, 1fr)', 
-                          gap: '4px 10px',
+                          display: 'flex', 
+                          flexWrap: 'wrap', 
+                          gap: '4px 8px',
                           fontSize: '11.5px',
                           fontWeight: 600,
                           color: 'var(--danger)'
@@ -1910,7 +1910,7 @@ function ExamReportContent() {
                           {[...notStartedStudents]
                             .sort((a, b) => a.name.localeCompare(b.name))
                             .map(a => (
-                              <div key={a.code} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px', background: 'rgba(234, 108, 117, 0.08)', padding: '2px 6px', borderRadius: '4px' }}>
+                              <div key={a.code} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px', background: 'rgba(234, 108, 117, 0.08)', padding: '2px 6px', borderRadius: '4px', flex: '1 1 200px', maxWidth: '100%' }}>
                                 <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--danger)', fontWeight: 600, fontSize: '11.5px' }} title={`${a.name} - ${formatAbsentLogin(a.lastLoginAt)}`}>
                                   • {a.name}{' '}
                                   <span style={{ fontSize: '10px', fontWeight: 500, color: 'var(--danger-muted)', opacity: 0.9, marginLeft: '4px' }}>
