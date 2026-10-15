@@ -1437,69 +1437,74 @@ function ExamReportContent() {
       const totalAssigned = assignedCodes.size || (attempts.length + notStartedStudents.length);
       const todayFormatted = formatDateDMY(new Date());
 
-      // Create offscreen container
+      // Create offscreen container with Ultra-HD layout and explicit subpixel font antialiasing
       const container = document.createElement('div');
       container.style.position = 'fixed';
-      container.style.left = '-9999px';
+      container.style.left = '0';
       container.style.top = '0';
-      container.style.width = '840px';
+      container.style.width = '1080px';
       container.style.backgroundColor = '#0b1120';
       container.style.color = '#f8fafc';
-      container.style.fontFamily = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
-      container.style.padding = '24px 28px';
+      container.style.fontFamily = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
+      (container.style as any).webkitFontSmoothing = 'antialiased';
+      (container.style as any).mozOsxFontSmoothing = 'grayscale';
+      (container.style as any).textRendering = 'optimizeLegibility';
+      container.style.padding = '28px 32px';
       container.style.boxSizing = 'border-box';
       container.style.zIndex = '-9999';
+      container.style.pointerEvents = 'none';
+      container.style.opacity = '1';
 
-      // Build roster rows
+      // Build roster rows with crisp, legible typography
       const rowsHtml = sortedRoster.map((a, idx) => {
         const stats = getAttemptStats(a);
         const rank = idx + 1;
         const rankBadge = rank === 1 ? '🥇 1' : rank === 2 ? '🥈 2' : rank === 3 ? '🥉 3' : `${rank}`;
         const isGamble = stats.isHighGamble;
         const rowBg = idx % 2 === 0 ? 'rgba(255, 255, 255, 0.02)' : 'rgba(255, 255, 255, 0.05)';
-        const blunderStyle = isGamble ? 'background-color: rgba(239, 68, 68, 0.12); border-left: 3px solid #ef4444;' : `background-color: ${rowBg};`;
+        const blunderStyle = isGamble ? 'background-color: rgba(239, 68, 68, 0.15); border-left: 4px solid #ef4444;' : `background-color: ${rowBg};`;
 
         let remarkHtml = '';
         if (isGamble) {
-          remarkHtml = `<span style="display:inline-block; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 800; background: rgba(239, 68, 68, 0.25); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4);">🚨 ${stats.errorRatio >= 2 ? stats.errorRatio.toFixed(1) + 'x Errors' : 'Blind Guessing'} (-${stats.penaltyLost}m)</span>`;
+          remarkHtml = `<span style="display:inline-block; padding: 3px 8px; border-radius: 4px; font-size: 11.5px; font-weight: 800; background: rgba(239, 68, 68, 0.28); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.45); white-space: nowrap;">🚨 ${stats.errorRatio >= 2 ? stats.errorRatio.toFixed(1) + 'x Errors' : 'Blind Guessing'} (-${stats.penaltyLost}m)</span>`;
         } else if (stats.accuracy >= 90) {
-          remarkHtml = `<span style="display:inline-block; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; background: rgba(16, 185, 129, 0.2); color: #34d399;">🌟 Outstanding</span>`;
+          remarkHtml = `<span style="display:inline-block; padding: 3px 8px; border-radius: 4px; font-size: 11.5px; font-weight: 700; background: rgba(16, 185, 129, 0.22); color: #34d399; white-space: nowrap;">🌟 Outstanding</span>`;
         } else if (stats.accuracy >= 75) {
-          remarkHtml = `<span style="display:inline-block; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; background: rgba(56, 189, 248, 0.2); color: #38bdf8;">✅ Strong</span>`;
+          remarkHtml = `<span style="display:inline-block; padding: 3px 8px; border-radius: 4px; font-size: 11.5px; font-weight: 700; background: rgba(56, 189, 248, 0.22); color: #38bdf8; white-space: nowrap;">✅ Strong</span>`;
         } else if (stats.accuracy >= 50) {
-          remarkHtml = `<span style="display:inline-block; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600; background: rgba(245, 158, 11, 0.15); color: #fbbf24;">🟡 Moderate</span>`;
+          remarkHtml = `<span style="display:inline-block; padding: 3px 8px; border-radius: 4px; font-size: 11.5px; font-weight: 700; background: rgba(245, 158, 11, 0.18); color: #fbbf24; white-space: nowrap;">🟡 Moderate</span>`;
         } else {
-          remarkHtml = `<span style="display:inline-block; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; background: rgba(239, 68, 68, 0.15); color: #f87171;">⚠️ Penalty Trap</span>`;
+          remarkHtml = `<span style="display:inline-block; padding: 3px 8px; border-radius: 4px; font-size: 11.5px; font-weight: 700; background: rgba(239, 68, 68, 0.18); color: #f87171; white-space: nowrap;">⚠️ Penalty Trap</span>`;
         }
 
         const scoreColorHex = a.percentage >= 75 ? '#34d399' : a.percentage >= 50 ? '#fbbf24' : '#f87171';
-        const paceColorHex = stats.avgPaceSec > 0 && stats.avgPaceSec < 20 && stats.wrongCount > 5 ? '#f59e0b' : '#94a3b8';
+        const paceColorHex = stats.avgPaceSec > 0 && stats.avgPaceSec < 20 && stats.wrongCount > 5 ? '#f59e0b' : '#cbd5e1';
 
         return `
-          <tr style="border-bottom: 1px solid #1e293b; height: 32px; ${blunderStyle}">
-            <td style="padding: 6px 8px; text-align: center; font-weight: 700; font-size: 11.5px; color: #94a3b8;">${rankBadge}</td>
-            <td style="padding: 6px 10px; font-weight: 600; font-size: 12px; color: #f1f5f9; white-space: nowrap;">
+          <tr style="border-bottom: 1px solid #1e293b; height: 38px; ${blunderStyle}">
+            <td style="padding: 8px 10px; text-align: center; font-weight: 700; font-size: 13px; color: #94a3b8;">${rankBadge}</td>
+            <td style="padding: 8px 12px; font-weight: 700; font-size: 14px; color: #ffffff; white-space: nowrap;">
               ${a.studentName}
-              ${a.isLate ? '<span style="margin-left: 4px; font-size: 9px; padding: 1px 4px; background: rgba(239,68,68,0.25); color: #f87171; border-radius: 3px; font-weight: 700;">LATE</span>' : ''}
+              ${a.isLate ? '<span style="margin-left: 6px; font-size: 10px; padding: 2px 6px; background: rgba(239,68,68,0.25); color: #f87171; border-radius: 4px; font-weight: 800;">LATE</span>' : ''}
             </td>
-            <td style="padding: 6px 8px; text-align: right; font-weight: 800; font-size: 12px; color: ${scoreColorHex}; white-space: nowrap;">
+            <td style="padding: 8px 12px; text-align: right; font-weight: 800; font-size: 14px; color: ${scoreColorHex}; white-space: nowrap;">
               ${a.score || 0} / ${a.totalMarks} (${a.percentage}%)
             </td>
-            <td style="padding: 6px 8px; text-align: center; font-size: 11px; white-space: nowrap;">
-              <span style="color: #34d399; font-weight: 700;">${stats.correctCount}✅</span>
-              <span style="color: #f87171; font-weight: 700; margin-left: 3px;">${stats.wrongCount}❌</span>
-              <span style="color: #64748b; font-weight: 500; margin-left: 3px;">${stats.unattemptedCount}⚪</span>
+            <td style="padding: 8px 12px; text-align: center; font-size: 13px; white-space: nowrap;">
+              <span style="color: #34d399; font-weight: 800;">${stats.correctCount}✅</span>
+              <span style="color: #f87171; font-weight: 800; margin-left: 6px;">${stats.wrongCount}❌</span>
+              <span style="color: #94a3b8; font-weight: 600; margin-left: 6px;">${stats.unattemptedCount}⚪</span>
             </td>
-            <td style="padding: 6px 8px; text-align: center; font-size: 11.5px; font-weight: 700; color: ${scoreColorHex}; white-space: nowrap;">
+            <td style="padding: 8px 10px; text-align: center; font-size: 13.5px; font-weight: 800; color: ${scoreColorHex}; white-space: nowrap;">
               ${stats.accuracy.toFixed(1)}%
             </td>
-            <td style="padding: 6px 8px; text-align: center; font-size: 11px; color: ${paceColorHex}; font-weight: 600; white-space: nowrap;">
+            <td style="padding: 8px 10px; text-align: center; font-size: 13px; color: ${paceColorHex}; font-weight: 700; white-space: nowrap;">
               ${stats.avgPaceSec ? `${stats.avgPaceSec}s` : '-'}
             </td>
-            <td style="padding: 6px 8px; text-align: center; font-size: 11px; color: #94a3b8; white-space: nowrap;">
+            <td style="padding: 8px 10px; text-align: center; font-size: 12.5px; color: #94a3b8; font-weight: 600; white-space: nowrap;">
               ${formatSeconds(getReviewTimeTaken(a))}
             </td>
-            <td style="padding: 6px 8px; text-align: center; white-space: nowrap;">
+            <td style="padding: 8px 12px; text-align: center; white-space: nowrap;">
               ${remarkHtml}
             </td>
           </tr>
@@ -1508,78 +1513,78 @@ function ExamReportContent() {
 
       // Absent students section
       const absentHtml = notStartedStudents.length > 0 ? `
-        <div style="margin-top: 14px; padding: 10px 14px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px;">
-          <div style="font-size: 11px; font-weight: 800; color: #f87171; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">
+        <div style="margin-top: 16px; padding: 12px 16px; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.35); border-radius: 8px;">
+          <div style="font-size: 12px; font-weight: 800; color: #f87171; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 5px;">
             🔴 Absent Students (${notStartedStudents.length})
           </div>
-          <div style="font-size: 11px; color: #fca5a5; font-weight: 500; line-height: 1.4;">
+          <div style="font-size: 12px; color: #fca5a5; font-weight: 600; line-height: 1.5;">
             ${notStartedStudents.map(s => s.name).join(' • ')}
           </div>
         </div>
       ` : '';
 
       container.innerHTML = `
-        <div style="background: linear-gradient(145deg, #0f172a 0%, #1e293b 100%); border: 1px solid #334155; border-radius: 12px; padding: 20px 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+        <div style="background: linear-gradient(145deg, #0f172a 0%, #1e293b 100%); border: 1px solid #334155; border-radius: 12px; padding: 24px 28px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
           
           <!-- Header -->
-          <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid #334155; padding-bottom: 14px; margin-bottom: 14px;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid #334155; padding-bottom: 16px; margin-bottom: 16px;">
             <div>
-              <div style="color: #fbbf24; font-size: 12px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;">
-                LAKSHYA OVERSEAS STUDIES
+              <div style="color: #fbbf24; font-size: 15px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase;">
+                YASHCOM FOUNDATION, SHEGAON
               </div>
-              <div style="color: #ffffff; font-size: 20px; font-weight: 800; margin: 2px 0 4px; letter-spacing: -0.3px;">
+              <div style="color: #ffffff; font-size: 22px; font-weight: 800; margin: 3px 0 5px; letter-spacing: -0.3px;">
                 🏆 Exam Performance Summary
               </div>
-              <div style="color: #38bdf8; font-size: 14px; font-weight: 700;">
+              <div style="color: #38bdf8; font-size: 15px; font-weight: 700;">
                 ${exam.name || exam.subjectName || exam.id}
               </div>
             </div>
             <div style="text-align: right;">
-              <div style="background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.3); color: #38bdf8; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 6px; display: inline-block;">
+              <div style="background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.35); color: #38bdf8; font-size: 12px; font-weight: 800; padding: 4px 12px; border-radius: 6px; display: inline-block;">
                 📅 ${todayFormatted}
               </div>
-              <div style="color: #94a3b8; font-size: 10.5px; font-weight: 500; margin-top: 4px;">
-                Total Marks: <strong style="color:#f1f5f9;">${exam.totalMarks || 96}</strong> | Penalty: <strong style="color:#f87171;">-25% (-1 mark)</strong>
+              <div style="color: #94a3b8; font-size: 11.5px; font-weight: 600; margin-top: 5px;">
+                Total Marks: <strong style="color:#ffffff;">${exam.totalMarks || 96}</strong> | Penalty: <strong style="color:#f87171;">-25% (-1 mark)</strong>
               </div>
             </div>
           </div>
 
           <!-- KPI Summary Cards -->
-          <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 16px;">
-            <div style="background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 8px 10px; text-align: center;">
-              <div style="font-size: 18px; font-weight: 800; color: #f1f5f9;">${totalAssigned}</div>
-              <div style="font-size: 10px; font-weight: 600; color: #94a3b8; text-transform: uppercase;">Assigned</div>
+          <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 18px;">
+            <div style="background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 10px 12px; text-align: center;">
+              <div style="font-size: 22px; font-weight: 800; color: #ffffff;">${totalAssigned}</div>
+              <div style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px;">Assigned</div>
             </div>
-            <div style="background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 8px 10px; text-align: center;">
-              <div style="font-size: 18px; font-weight: 800; color: #34d399;">${sortedRoster.length}</div>
-              <div style="font-size: 10px; font-weight: 600; color: #94a3b8; text-transform: uppercase;">Submitted</div>
+            <div style="background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 10px 12px; text-align: center;">
+              <div style="font-size: 22px; font-weight: 800; color: #34d399;">${sortedRoster.length}</div>
+              <div style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px;">Submitted</div>
             </div>
-            <div style="background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 8px 10px; text-align: center;">
-              <div style="font-size: 18px; font-weight: 800; color: ${notStartedStudents.length > 0 ? '#f87171' : '#94a3b8'};">${notStartedStudents.length}</div>
-              <div style="font-size: 10px; font-weight: 600; color: #94a3b8; text-transform: uppercase;">Absent</div>
+            <div style="background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 10px 12px; text-align: center;">
+              <div style="font-size: 22px; font-weight: 800; color: ${notStartedStudents.length > 0 ? '#f87171' : '#94a3b8'};">${notStartedStudents.length}</div>
+              <div style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px;">Absent</div>
             </div>
-            <div style="background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 8px 10px; text-align: center;">
-              <div style="font-size: 18px; font-weight: 800; color: #fbbf24;">${maxScore}/${exam.totalMarks || 96}</div>
-              <div style="font-size: 10px; font-weight: 600; color: #94a3b8; text-transform: uppercase;">Highest (${maxPct}%)</div>
+            <div style="background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 10px 12px; text-align: center;">
+              <div style="font-size: 22px; font-weight: 800; color: #fbbf24;">${maxScore}/${exam.totalMarks || 96}</div>
+              <div style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px;">Highest (${maxPct}%)</div>
             </div>
-            <div style="background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 8px 10px; text-align: center;">
-              <div style="font-size: 18px; font-weight: 800; color: #38bdf8;">${avgPct}%</div>
-              <div style="font-size: 10px; font-weight: 600; color: #94a3b8; text-transform: uppercase;">Batch Average</div>
+            <div style="background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 10px 12px; text-align: center;">
+              <div style="font-size: 22px; font-weight: 800; color: #38bdf8;">${avgPct}%</div>
+              <div style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px;">Batch Average</div>
             </div>
           </div>
 
           <!-- Table -->
           <table style="width: 100%; border-collapse: collapse; border: 1px solid #334155; border-radius: 8px; overflow: hidden;">
             <thead>
-              <tr style="background: #1e293b; color: #94a3b8; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #334155;">
-                <th style="padding: 7px 8px; text-align: center; width: 45px;">Rank</th>
-                <th style="padding: 7px 10px; text-align: left;">Student Name</th>
-                <th style="padding: 7px 8px; text-align: right; width: 110px;">Score</th>
-                <th style="padding: 7px 8px; text-align: center; width: 115px;">Breakdown</th>
-                <th style="padding: 7px 8px; text-align: center; width: 75px;">Accuracy</th>
-                <th style="padding: 7px 8px; text-align: center; width: 60px;">Pace</th>
-                <th style="padding: 7px 8px; text-align: center; width: 65px;">Time</th>
-                <th style="padding: 7px 8px; text-align: center; width: 140px;">Insight</th>
+              <tr style="background: #1e293b; color: #cbd5e1; font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; border-bottom: 2px solid #334155; height: 36px;">
+                <th style="padding: 8px 10px; text-align: center; width: 50px;">Rank</th>
+                <th style="padding: 8px 12px; text-align: left;">Student Name</th>
+                <th style="padding: 8px 12px; text-align: right; width: 140px;">Score</th>
+                <th style="padding: 8px 12px; text-align: center; width: 140px;">Breakdown</th>
+                <th style="padding: 8px 10px; text-align: center; width: 90px;">Accuracy</th>
+                <th style="padding: 8px 10px; text-align: center; width: 75px;">Pace</th>
+                <th style="padding: 8px 10px; text-align: center; width: 80px;">Time</th>
+                <th style="padding: 8px 12px; text-align: center; width: 170px;">Insight</th>
               </tr>
             </thead>
             <tbody>
@@ -1591,17 +1596,17 @@ function ExamReportContent() {
           ${absentHtml}
 
           <!-- Educational Insight Banner -->
-          <div style="margin-top: 14px; padding: 10px 14px; background: rgba(251, 191, 36, 0.08); border: 1px solid rgba(251, 191, 36, 0.25); border-radius: 8px; display: flex; align-items: flex-start; gap: 8px;">
-            <span style="font-size: 16px;">💡</span>
-            <div style="font-size: 10.5px; color: #fde68a; line-height: 1.45;">
+          <div style="margin-top: 16px; padding: 12px 16px; background: rgba(251, 191, 36, 0.08); border: 1px solid rgba(251, 191, 36, 0.3); border-radius: 8px; display: flex; align-items: flex-start; gap: 10px;">
+            <span style="font-size: 18px;">💡</span>
+            <div style="font-size: 11.5px; color: #fde68a; line-height: 1.5;">
               <strong>Important Marking Rule:</strong> Negative marking (-1 mark per error) heavily penalizes blind guessing. For example, 4 correct answers (+16 marks) combined with 20 wrong answers (-20 marks) reduces the total score to 0. Always analyze questions carefully or leave uncertain questions unattempted!
             </div>
           </div>
 
           <!-- Footer -->
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 14px; font-size: 9.5px; color: #64748b; border-top: 1px solid #1e293b; padding-top: 10px;">
-            <span>Lakshya Overseas Studies • Academic Evaluation Portal</span>
-            <span>Verified Snapshot • Confidential Batch Report</span>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; font-size: 11px; color: #94a3b8; border-top: 1px solid #1e293b; padding-top: 12px;">
+            <span><strong>YASHCOM FOUNDATION, SHEGAON</strong> • Academic Evaluation Portal</span>
+            <span>Verified Official Snapshot • Confidential Batch Report</span>
           </div>
 
         </div>
@@ -1609,18 +1614,19 @@ function ExamReportContent() {
 
       document.body.appendChild(container);
 
-      // Wait 250ms for fonts/layout to settle
-      await new Promise(r => setTimeout(r, 250));
+      // Wait 300ms for browser layout & fonts to fully render
+      await new Promise(r => setTimeout(r, 300));
 
       const canvas = await html2canvas(container, {
-        scale: 2,
+        scale: 3, // 1080px * 3 = 3240px wide Ultra HD!
         useCORS: true,
-        backgroundColor: '#0b1120'
+        backgroundColor: '#0b1120',
+        logging: false
       });
 
       document.body.removeChild(container);
 
-      // 1. Copy to clipboard
+      // 1. Copy lossless PNG to clipboard
       let copiedToClipboard = false;
       if (navigator.clipboard && typeof ClipboardItem !== 'undefined') {
         try {
@@ -1646,10 +1652,10 @@ function ExamReportContent() {
         }
       }
 
-      // 2. Trigger automatic JPEG download
+      // 2. Trigger automatic Lossless PNG download
       const cleanExamName = (exam.name || exam.id).replace(/[^a-zA-Z0-9_-]/g, '_');
-      const fileName = `Exam_Summary_${cleanExamName}.jpg`;
-      const imageUri = canvas.toDataURL('image/jpeg', 0.95);
+      const fileName = `Exam_Summary_${cleanExamName}.png`;
+      const imageUri = canvas.toDataURL('image/png');
       const downloadLink = document.createElement('a');
       downloadLink.download = fileName;
       downloadLink.href = imageUri;
@@ -1657,9 +1663,9 @@ function ExamReportContent() {
 
       playNotificationSound();
       if (copiedToClipboard) {
-        alert(`✅ WhatsApp Card Exported!\n\n1. Image downloaded: ${fileName}\n2. Copied to Clipboard! You can directly press Ctrl + V in WhatsApp Web.`);
+        alert(`✅ Ultra HD WhatsApp Card Exported!\n\n1. Lossless Ultra-HD Image downloaded: ${fileName}\n2. Copied to Clipboard! You can directly press Ctrl + V in WhatsApp Web.`);
       } else {
-        alert(`✅ WhatsApp Card downloaded successfully as ${fileName}!`);
+        alert(`✅ Ultra HD WhatsApp Card downloaded successfully as ${fileName}!`);
       }
     } catch (err: any) {
       alert(`❌ Failed to export WhatsApp image: ${err.message || err}`);
@@ -1798,9 +1804,9 @@ function ExamReportContent() {
                 cursor: exportingImage ? 'wait' : 'pointer',
                 boxShadow: '0 2px 8px rgba(16, 185, 129, 0.3)'
               }}
-              title="Generate a high-resolution JPEG summary card optimized for WhatsApp class group"
+              title="Generate a lossless, razor-sharp Ultra HD card optimized for WhatsApp class group"
             >
-              {exportingImage ? '⏳ Generating Card...' : '📸 Export WhatsApp Image'}
+              {exportingImage ? '⏳ Generating Ultra HD...' : '📸 Export WhatsApp Image (Ultra HD)'}
             </button>
           </div>
         </div>
