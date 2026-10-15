@@ -149,6 +149,7 @@ function ExamReportContent() {
   const [exportStats, setExportStats] = useState(true);
   const [exportRoster, setExportRoster] = useState(true);
   const [exportCards, setExportCards] = useState(true);
+  const [exportingImage, setExportingImage] = useState(false);
 
   // Individual Reassignment states
   const [reassignModalOpen, setReassignModalOpen] = useState(false);
@@ -875,6 +876,59 @@ function ExamReportContent() {
     }
   };
 
+  // Comprehensive attempt statistics (Accuracy, Pace, Breakdown, Guessing Detection)
+  const getAttemptStats = (a: Attempt) => {
+    const qDetails = a.questionDetails || [];
+    let correctCount = 0;
+    let wrongCount = 0;
+    let unattemptedCount = 0;
+
+    if (qDetails.length > 0) {
+      qDetails.forEach((qd: any) => {
+        const isActuallyAttempted = qd.isAttempted !== undefined
+          ? Boolean(qd.isAttempted)
+          : Boolean(qd.isCorrect || (!isBlank(qd.userAnswer) && qd.userAnswer !== ''));
+        if (!isActuallyAttempted) {
+          unattemptedCount++;
+        } else if (qd.isCorrect) {
+          correctCount++;
+        } else {
+          wrongCount++;
+        }
+      });
+    } else {
+      wrongCount = (a.wrongAnswers || []).length;
+      unattemptedCount = (a.unattemptedQuestions || []).length;
+      const estTotal = a.totalMarks ? Math.round(a.totalMarks / 4) : 0;
+      correctCount = Math.max(0, estTotal - wrongCount - unattemptedCount);
+    }
+
+    const attemptedCount = correctCount + wrongCount;
+    const totalCount = correctCount + wrongCount + unattemptedCount || (a.totalMarks ? Math.round(a.totalMarks / 4) : 0);
+    const accuracy = attemptedCount > 0 ? (correctCount / attemptedCount) * 100 : 0;
+    const totalTimeSeconds = getReviewTimeTaken(a);
+    const avgPaceSec = attemptedCount > 0 ? Math.round(totalTimeSeconds / attemptedCount) : (totalCount > 0 ? Math.round(totalTimeSeconds / totalCount) : 0);
+    const penaltyLost = wrongCount * 1;
+    const earnedMarks = correctCount * 4;
+    const errorRatio = correctCount > 0 ? (wrongCount / correctCount) : (wrongCount > 0 ? wrongCount : 0);
+    const isHighGamble = (wrongCount >= 8 && wrongCount >= correctCount * 2) || (attemptedCount >= 10 && accuracy < 40);
+
+    return {
+      correctCount,
+      wrongCount,
+      unattemptedCount,
+      attemptedCount,
+      totalCount,
+      accuracy,
+      totalTimeSeconds,
+      avgPaceSec,
+      penaltyLost,
+      earnedMarks,
+      errorRatio,
+      isHighGamble
+    };
+  };
+
   // Sorting attempts roster
   const getSortVal = (a: Attempt, col: string) => {
     if (col === 'name') return a.studentName.toLowerCase();
@@ -882,6 +936,8 @@ function ExamReportContent() {
     if (col === 'time') return getReviewTimeTaken(a);
     if (col === 'status') return a.status;
     if (col === 'date') return a.startedAt ? new Date(a.startedAt).getTime() : (a.completedAt ? new Date(a.completedAt).getTime() : 0);
+    if (col === 'accuracy') return getAttemptStats(a).accuracy;
+    if (col === 'pace') return getAttemptStats(a).avgPaceSec;
     return a.percentage;
   };
 
@@ -906,7 +962,7 @@ function ExamReportContent() {
       setStudentSortDir(prev => prev === 'asc' ? 'desc' : 'asc');
     } else {
       setStudentSortCol(col);
-      setStudentSortDir(col === 'score' || col === 'time' ? 'desc' : 'asc');
+      setStudentSortDir(col === 'score' || col === 'time' || col === 'accuracy' || col === 'pace' ? 'desc' : 'asc');
     }
   };
 
@@ -1338,6 +1394,280 @@ function ExamReportContent() {
     }, 500);
   };
 
+  // Dynamically load html2canvas if not already loaded
+  const loadHtml2Canvas = async () => {
+    if (typeof window === 'undefined') return null;
+    const w = window as any;
+    if (w.html2canvas) return w.html2canvas;
+    return new Promise<any>((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+      s.onload = () => resolve((window as any).html2canvas);
+      s.onerror = () => reject(new Error('Failed to load image generation library.'));
+      document.head.appendChild(s);
+    });
+  };
+
+  // High-Resolution WhatsApp Result Card Exporter
+  const handleExportWhatsAppImage = async () => {
+    if (typeof window === 'undefined' || !exam) return;
+    if (attempts.length === 0) {
+      alert('No student submissions to export yet.');
+      return;
+    }
+
+    setExportingImage(true);
+
+    try {
+      const html2canvas = await loadHtml2Canvas();
+      if (!html2canvas) throw new Error('Could not initialize image generator.');
+
+      // Sort attempts: score/percentage desc, then time taken asc
+      const sortedRoster = [...attempts].sort((a, b) => {
+        if (b.percentage !== a.percentage) return b.percentage - a.percentage;
+        if ((b.score || 0) !== (a.score || 0)) return (b.score || 0) - (a.score || 0);
+        return getReviewTimeTaken(a) - getReviewTimeTaken(b);
+      });
+
+      const maxScore = sortedRoster.length > 0 ? (sortedRoster[0].score || 0) : 0;
+      const maxPct = sortedRoster.length > 0 ? sortedRoster[0].percentage : 0;
+      const avgPct = sortedRoster.length > 0
+        ? Math.round(sortedRoster.reduce((sum, a) => sum + (a.percentage || 0), 0) / sortedRoster.length)
+        : 0;
+      const totalAssigned = assignedCodes.size || (attempts.length + notStartedStudents.length);
+      const todayFormatted = formatDateDMY(new Date());
+
+      // Create offscreen container
+      const container = document.createElement('div');
+      container.style.position = 'fixed';
+      container.style.left = '-9999px';
+      container.style.top = '0';
+      container.style.width = '840px';
+      container.style.backgroundColor = '#0b1120';
+      container.style.color = '#f8fafc';
+      container.style.fontFamily = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
+      container.style.padding = '24px 28px';
+      container.style.boxSizing = 'border-box';
+      container.style.zIndex = '-9999';
+
+      // Build roster rows
+      const rowsHtml = sortedRoster.map((a, idx) => {
+        const stats = getAttemptStats(a);
+        const rank = idx + 1;
+        const rankBadge = rank === 1 ? '🥇 1' : rank === 2 ? '🥈 2' : rank === 3 ? '🥉 3' : `${rank}`;
+        const isGamble = stats.isHighGamble;
+        const rowBg = idx % 2 === 0 ? 'rgba(255, 255, 255, 0.02)' : 'rgba(255, 255, 255, 0.05)';
+        const blunderStyle = isGamble ? 'background-color: rgba(239, 68, 68, 0.12); border-left: 3px solid #ef4444;' : `background-color: ${rowBg};`;
+
+        let remarkHtml = '';
+        if (isGamble) {
+          remarkHtml = `<span style="display:inline-block; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 800; background: rgba(239, 68, 68, 0.25); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4);">🚨 ${stats.errorRatio >= 2 ? stats.errorRatio.toFixed(1) + 'x Errors' : 'Blind Guessing'} (-${stats.penaltyLost}m)</span>`;
+        } else if (stats.accuracy >= 90) {
+          remarkHtml = `<span style="display:inline-block; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; background: rgba(16, 185, 129, 0.2); color: #34d399;">🌟 Outstanding</span>`;
+        } else if (stats.accuracy >= 75) {
+          remarkHtml = `<span style="display:inline-block; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; background: rgba(56, 189, 248, 0.2); color: #38bdf8;">✅ Strong</span>`;
+        } else if (stats.accuracy >= 50) {
+          remarkHtml = `<span style="display:inline-block; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600; background: rgba(245, 158, 11, 0.15); color: #fbbf24;">🟡 Moderate</span>`;
+        } else {
+          remarkHtml = `<span style="display:inline-block; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; background: rgba(239, 68, 68, 0.15); color: #f87171;">⚠️ Penalty Trap</span>`;
+        }
+
+        const scoreColorHex = a.percentage >= 75 ? '#34d399' : a.percentage >= 50 ? '#fbbf24' : '#f87171';
+        const paceColorHex = stats.avgPaceSec > 0 && stats.avgPaceSec < 20 && stats.wrongCount > 5 ? '#f59e0b' : '#94a3b8';
+
+        return `
+          <tr style="border-bottom: 1px solid #1e293b; height: 32px; ${blunderStyle}">
+            <td style="padding: 6px 8px; text-align: center; font-weight: 700; font-size: 11.5px; color: #94a3b8;">${rankBadge}</td>
+            <td style="padding: 6px 10px; font-weight: 600; font-size: 12px; color: #f1f5f9; white-space: nowrap;">
+              ${a.studentName}
+              ${a.isLate ? '<span style="margin-left: 4px; font-size: 9px; padding: 1px 4px; background: rgba(239,68,68,0.25); color: #f87171; border-radius: 3px; font-weight: 700;">LATE</span>' : ''}
+            </td>
+            <td style="padding: 6px 8px; text-align: right; font-weight: 800; font-size: 12px; color: ${scoreColorHex}; white-space: nowrap;">
+              ${a.score || 0} / ${a.totalMarks} (${a.percentage}%)
+            </td>
+            <td style="padding: 6px 8px; text-align: center; font-size: 11px; white-space: nowrap;">
+              <span style="color: #34d399; font-weight: 700;">${stats.correctCount}✅</span>
+              <span style="color: #f87171; font-weight: 700; margin-left: 3px;">${stats.wrongCount}❌</span>
+              <span style="color: #64748b; font-weight: 500; margin-left: 3px;">${stats.unattemptedCount}⚪</span>
+            </td>
+            <td style="padding: 6px 8px; text-align: center; font-size: 11.5px; font-weight: 700; color: ${scoreColorHex}; white-space: nowrap;">
+              ${stats.accuracy.toFixed(1)}%
+            </td>
+            <td style="padding: 6px 8px; text-align: center; font-size: 11px; color: ${paceColorHex}; font-weight: 600; white-space: nowrap;">
+              ${stats.avgPaceSec ? `${stats.avgPaceSec}s` : '-'}
+            </td>
+            <td style="padding: 6px 8px; text-align: center; font-size: 11px; color: #94a3b8; white-space: nowrap;">
+              ${formatSeconds(getReviewTimeTaken(a))}
+            </td>
+            <td style="padding: 6px 8px; text-align: center; white-space: nowrap;">
+              ${remarkHtml}
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      // Absent students section
+      const absentHtml = notStartedStudents.length > 0 ? `
+        <div style="margin-top: 14px; padding: 10px 14px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px;">
+          <div style="font-size: 11px; font-weight: 800; color: #f87171; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">
+            🔴 Absent Students (${notStartedStudents.length})
+          </div>
+          <div style="font-size: 11px; color: #fca5a5; font-weight: 500; line-height: 1.4;">
+            ${notStartedStudents.map(s => s.name).join(' • ')}
+          </div>
+        </div>
+      ` : '';
+
+      container.innerHTML = `
+        <div style="background: linear-gradient(145deg, #0f172a 0%, #1e293b 100%); border: 1px solid #334155; border-radius: 12px; padding: 20px 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+          
+          <!-- Header -->
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid #334155; padding-bottom: 14px; margin-bottom: 14px;">
+            <div>
+              <div style="color: #fbbf24; font-size: 12px; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;">
+                LAKSHYA OVERSEAS STUDIES
+              </div>
+              <div style="color: #ffffff; font-size: 20px; font-weight: 800; margin: 2px 0 4px; letter-spacing: -0.3px;">
+                🏆 Exam Performance Summary
+              </div>
+              <div style="color: #38bdf8; font-size: 14px; font-weight: 700;">
+                ${exam.name || exam.subjectName || exam.id}
+              </div>
+            </div>
+            <div style="text-align: right;">
+              <div style="background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.3); color: #38bdf8; font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 6px; display: inline-block;">
+                📅 ${todayFormatted}
+              </div>
+              <div style="color: #94a3b8; font-size: 10.5px; font-weight: 500; margin-top: 4px;">
+                Total Marks: <strong style="color:#f1f5f9;">${exam.totalMarks || 96}</strong> | Penalty: <strong style="color:#f87171;">-25% (-1 mark)</strong>
+              </div>
+            </div>
+          </div>
+
+          <!-- KPI Summary Cards -->
+          <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 16px;">
+            <div style="background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 8px 10px; text-align: center;">
+              <div style="font-size: 18px; font-weight: 800; color: #f1f5f9;">${totalAssigned}</div>
+              <div style="font-size: 10px; font-weight: 600; color: #94a3b8; text-transform: uppercase;">Assigned</div>
+            </div>
+            <div style="background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 8px 10px; text-align: center;">
+              <div style="font-size: 18px; font-weight: 800; color: #34d399;">${sortedRoster.length}</div>
+              <div style="font-size: 10px; font-weight: 600; color: #94a3b8; text-transform: uppercase;">Submitted</div>
+            </div>
+            <div style="background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 8px 10px; text-align: center;">
+              <div style="font-size: 18px; font-weight: 800; color: ${notStartedStudents.length > 0 ? '#f87171' : '#94a3b8'};">${notStartedStudents.length}</div>
+              <div style="font-size: 10px; font-weight: 600; color: #94a3b8; text-transform: uppercase;">Absent</div>
+            </div>
+            <div style="background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 8px 10px; text-align: center;">
+              <div style="font-size: 18px; font-weight: 800; color: #fbbf24;">${maxScore}/${exam.totalMarks || 96}</div>
+              <div style="font-size: 10px; font-weight: 600; color: #94a3b8; text-transform: uppercase;">Highest (${maxPct}%)</div>
+            </div>
+            <div style="background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 8px 10px; text-align: center;">
+              <div style="font-size: 18px; font-weight: 800; color: #38bdf8;">${avgPct}%</div>
+              <div style="font-size: 10px; font-weight: 600; color: #94a3b8; text-transform: uppercase;">Batch Average</div>
+            </div>
+          </div>
+
+          <!-- Table -->
+          <table style="width: 100%; border-collapse: collapse; border: 1px solid #334155; border-radius: 8px; overflow: hidden;">
+            <thead>
+              <tr style="background: #1e293b; color: #94a3b8; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #334155;">
+                <th style="padding: 7px 8px; text-align: center; width: 45px;">Rank</th>
+                <th style="padding: 7px 10px; text-align: left;">Student Name</th>
+                <th style="padding: 7px 8px; text-align: right; width: 110px;">Score</th>
+                <th style="padding: 7px 8px; text-align: center; width: 115px;">Breakdown</th>
+                <th style="padding: 7px 8px; text-align: center; width: 75px;">Accuracy</th>
+                <th style="padding: 7px 8px; text-align: center; width: 60px;">Pace</th>
+                <th style="padding: 7px 8px; text-align: center; width: 65px;">Time</th>
+                <th style="padding: 7px 8px; text-align: center; width: 140px;">Insight</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rowsHtml}
+            </tbody>
+          </table>
+
+          <!-- Absent Box -->
+          ${absentHtml}
+
+          <!-- Educational Insight Banner -->
+          <div style="margin-top: 14px; padding: 10px 14px; background: rgba(251, 191, 36, 0.08); border: 1px solid rgba(251, 191, 36, 0.25); border-radius: 8px; display: flex; align-items: flex-start; gap: 8px;">
+            <span style="font-size: 16px;">💡</span>
+            <div style="font-size: 10.5px; color: #fde68a; line-height: 1.45;">
+              <strong>Important Marking Rule:</strong> Negative marking (-1 mark per error) heavily penalizes blind guessing. For example, 4 correct answers (+16 marks) combined with 20 wrong answers (-20 marks) reduces the total score to 0. Always analyze questions carefully or leave uncertain questions unattempted!
+            </div>
+          </div>
+
+          <!-- Footer -->
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 14px; font-size: 9.5px; color: #64748b; border-top: 1px solid #1e293b; padding-top: 10px;">
+            <span>Lakshya Overseas Studies • Academic Evaluation Portal</span>
+            <span>Verified Snapshot • Confidential Batch Report</span>
+          </div>
+
+        </div>
+      `;
+
+      document.body.appendChild(container);
+
+      // Wait 250ms for fonts/layout to settle
+      await new Promise(r => setTimeout(r, 250));
+
+      const canvas = await html2canvas(container, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#0b1120'
+      });
+
+      document.body.removeChild(container);
+
+      // 1. Copy to clipboard
+      let copiedToClipboard = false;
+      if (navigator.clipboard && typeof ClipboardItem !== 'undefined') {
+        try {
+          await new Promise<void>((resolve) => {
+            canvas.toBlob(async (blob: Blob | null) => {
+              if (!blob) {
+                resolve();
+                return;
+              }
+              try {
+                await navigator.clipboard.write([
+                  new ClipboardItem({ 'image/png': blob })
+                ]);
+                copiedToClipboard = true;
+              } catch (clipErr) {
+                console.warn('Clipboard write failed:', clipErr);
+              }
+              resolve();
+            }, 'image/png');
+          });
+        } catch (err) {
+          console.warn('Clipboard error:', err);
+        }
+      }
+
+      // 2. Trigger automatic JPEG download
+      const cleanExamName = (exam.name || exam.id).replace(/[^a-zA-Z0-9_-]/g, '_');
+      const fileName = `Exam_Summary_${cleanExamName}.jpg`;
+      const imageUri = canvas.toDataURL('image/jpeg', 0.95);
+      const downloadLink = document.createElement('a');
+      downloadLink.download = fileName;
+      downloadLink.href = imageUri;
+      downloadLink.click();
+
+      playNotificationSound();
+      if (copiedToClipboard) {
+        alert(`✅ WhatsApp Card Exported!\n\n1. Image downloaded: ${fileName}\n2. Copied to Clipboard! You can directly press Ctrl + V in WhatsApp Web.`);
+      } else {
+        alert(`✅ WhatsApp Card downloaded successfully as ${fileName}!`);
+      }
+    } catch (err: any) {
+      alert(`❌ Failed to export WhatsApp image: ${err.message || err}`);
+    } finally {
+      setExportingImage(false);
+    }
+  };
+
   if (loading) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: 'var(--bg)', gap: '12px', padding: '20px' }}>
@@ -1450,6 +1780,28 @@ function ExamReportContent() {
             >
               📄 Export PDF
             </button>
+            <button 
+              className="btn" 
+              onClick={handleExportWhatsAppImage}
+              disabled={exportingImage}
+              style={{ 
+                display: 'inline-flex', 
+                alignItems: 'center', 
+                gap: '6px', 
+                fontSize: '12px', 
+                fontWeight: 700, 
+                padding: '5px 14px',
+                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: 'var(--radius-sm, 6px)',
+                cursor: exportingImage ? 'wait' : 'pointer',
+                boxShadow: '0 2px 8px rgba(16, 185, 129, 0.3)'
+              }}
+              title="Generate a high-resolution JPEG summary card optimized for WhatsApp class group"
+            >
+              {exportingImage ? '⏳ Generating Card...' : '📸 Export WhatsApp Image'}
+            </button>
           </div>
         </div>
 
@@ -1520,13 +1872,15 @@ function ExamReportContent() {
             <div style={{ overflowX: 'auto', marginTop: '6px' }}>
               <table className="reviews-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12.5px', textAlign: 'left' }}>
                 <thead>
-                  <tr style={{ background: 'var(--bg-soft)', borderBottom: '1px solid var(--border-light)', color: 'var(--text-muted)', fontSize: '11.5px' }}>
-                    <th onClick={() => handleSortStudent('name')} style={{ padding: '5px 8px', cursor: 'pointer', whiteSpace: 'nowrap' }}>Student Name ⇅</th>
-                    <th onClick={() => handleSortStudent('score')} style={{ padding: '5px 8px', cursor: 'pointer', whiteSpace: 'nowrap' }}>Score ⇅</th>
-                    <th onClick={() => handleSortStudent('time')} style={{ padding: '5px 8px', cursor: 'pointer', whiteSpace: 'nowrap' }}>Time Taken ⇅</th>
-                    <th onClick={() => handleSortStudent('status')} style={{ padding: '5px 8px', cursor: 'pointer', whiteSpace: 'nowrap' }}>Status ⇅</th>
-                    <th onClick={() => handleSortStudent('date')} style={{ padding: '5px 8px', cursor: 'pointer', whiteSpace: 'nowrap' }}>Start Date/Time ⇅</th>
-                    <th style={{ padding: '5px 8px', textAlign: 'right', whiteSpace: 'nowrap' }}>Actions</th>
+                  <tr style={{ background: 'var(--bg-soft)', borderBottom: '1px solid var(--border-light)', color: 'var(--text-muted)', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+                    <th onClick={() => handleSortStudent('name')} style={{ padding: '6px 8px', cursor: 'pointer', whiteSpace: 'nowrap' }}>Student Name ⇅</th>
+                    <th onClick={() => handleSortStudent('score')} style={{ padding: '6px 8px', cursor: 'pointer', whiteSpace: 'nowrap' }}>Score ⇅</th>
+                    <th style={{ padding: '6px 8px', whiteSpace: 'nowrap' }}>Breakdown</th>
+                    <th onClick={() => handleSortStudent('accuracy')} style={{ padding: '6px 8px', cursor: 'pointer', whiteSpace: 'nowrap' }}>Accuracy ⇅</th>
+                    <th onClick={() => handleSortStudent('pace')} style={{ padding: '6px 8px', cursor: 'pointer', whiteSpace: 'nowrap' }}>Avg Pace ⇅</th>
+                    <th onClick={() => handleSortStudent('time')} style={{ padding: '6px 8px', cursor: 'pointer', whiteSpace: 'nowrap' }}>Time Taken ⇅</th>
+                    <th onClick={() => handleSortStudent('status')} style={{ padding: '6px 8px', cursor: 'pointer', whiteSpace: 'nowrap' }}>Status ⇅</th>
+                    <th style={{ padding: '6px 8px', textAlign: 'right', whiteSpace: 'nowrap' }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1535,7 +1889,7 @@ function ExamReportContent() {
                     <tr 
                       style={{ borderBottom: '1px solid var(--border-light)', background: 'var(--danger-bg, rgba(234, 108, 117, 0.10))' }}
                     >
-                      <td colSpan={6} style={{ padding: '8px 12px', color: 'var(--danger)' }}>
+                      <td colSpan={8} style={{ padding: '8px 12px', color: 'var(--danger)' }}>
                         <div style={{ textAlign: 'center', fontWeight: 800, fontSize: '12px', marginBottom: '4px', color: 'var(--danger)', letterSpacing: '0.2px' }}>
                           🔴 Absent Students ({notStartedStudents.length})
                         </div>
@@ -1577,7 +1931,7 @@ function ExamReportContent() {
                   {/* Submitted Attempts */}
                   {filteredAttempts.length === 0 && ((activeFilter && activeFilter !== 'all') || notStartedStudents.length === 0) ? (
                     <tr>
-                      <td colSpan={6} style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)' }}>📭 No attempts matching the criteria.</td>
+                      <td colSpan={8} style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)' }}>📭 No attempts matching the criteria.</td>
                     </tr>
                   ) : (
                     filteredAttempts.map(a => {
@@ -1585,7 +1939,8 @@ function ExamReportContent() {
                       const isPending = a.status === 'pending';
                       const scoreVal = a.score || 0;
                       const statusDate = a.reviewedAt || a.completedAt;
-                      const startDate = a.startedAt || a.completedAt;
+                      const stats = getAttemptStats(a);
+
                       return (
                         <tr 
                           key={a.id} 
@@ -1598,7 +1953,7 @@ function ExamReportContent() {
                             setQuestionFilterTab(hasMistakes ? 'incorrect' : 'all');
                             setStudentModalOpen(true); 
                           }}
-                          style={{ borderBottom: '1px solid var(--border-light)', cursor: 'pointer' }}
+                          style={{ borderBottom: '1px solid var(--border-light)', cursor: 'pointer', height: '34px' }}
                         >
                           <td style={{ padding: '5px 8px', fontWeight: 600, whiteSpace: 'nowrap' }}>
                             {a.isLate && (
@@ -1609,7 +1964,7 @@ function ExamReportContent() {
                             {a.studentName}{students.find(s => s.studentCode === a.studentCode)?.autonomous ? ' ⭐' : ''}
                             {a.micAvailable === false && (
                               <span style={{ marginLeft: '6px', color: 'var(--warning)', background: 'var(--warning-bg, rgba(217, 119, 6, 0.1))', padding: '1px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 700 }} title="Microphone Bypassed / Offline">
-                                🎙️ Bypassed
+                                🎙️
                               </span>
                             )}
                             {vCount > 0 && (
@@ -1621,18 +1976,55 @@ function ExamReportContent() {
                           <td style={{ padding: '5px 8px', fontWeight: 700, color: scoreColor(a.percentage), whiteSpace: 'nowrap' }}>
                             {scoreVal} / {a.totalMarks} ({a.percentage}%)
                           </td>
-                          <td style={{ padding: '5px 8px', whiteSpace: 'nowrap' }}>{formatSeconds(getReviewTimeTaken(a))}</td>
-                          <td style={{ padding: '5px 8px', whiteSpace: 'nowrap' }}>
-                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                              <span style={{ fontSize: '10px', padding: '1px 6px', borderRadius: '8px', background: isPending ? 'var(--warning-bg)' : 'var(--success-bg)', color: isPending ? 'var(--warning)' : 'var(--success)', fontWeight: 700 }}>
-                                {a.status}
+                          <td style={{ padding: '5px 8px', whiteSpace: 'nowrap', fontSize: '11.5px' }}>
+                            <span style={{ color: '#10b981', fontWeight: 700 }}>{stats.correctCount}✅</span>
+                            {' '}
+                            <span style={{ color: stats.wrongCount >= 10 ? '#ef4444' : 'var(--danger)', fontWeight: stats.wrongCount >= 10 ? 800 : 600 }}>
+                              {stats.wrongCount}❌
+                            </span>
+                            {' '}
+                            <span style={{ color: 'var(--text-muted)', fontWeight: 500 }}>
+                              {stats.unattemptedCount}⚪
+                            </span>
+                            {stats.wrongCount > 0 && (
+                              <span style={{ fontSize: '10px', color: '#ef4444', marginLeft: '4px', opacity: 0.85 }} title={`Lost -${stats.penaltyLost} marks to negative penalty`}>
+                                (-{stats.penaltyLost}m)
                               </span>
-                              <span style={{ fontSize: '10.5px', color: 'var(--text-muted)', fontWeight: 500 }}>
-                                {formatDate(statusDate)}
-                              </span>
-                            </div>
+                            )}
                           </td>
-                          <td style={{ padding: '5px 8px', whiteSpace: 'nowrap' }}>{formatDate(startDate)}</td>
+                          <td style={{ padding: '5px 8px', whiteSpace: 'nowrap' }}>
+                            <span style={{ 
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              padding: '1px 6px',
+                              borderRadius: '4px',
+                              fontSize: '11px',
+                              fontWeight: 700,
+                              background: stats.accuracy >= 75 ? 'rgba(16, 185, 129, 0.12)' : stats.accuracy >= 50 ? 'rgba(245, 158, 11, 0.12)' : 'rgba(239, 68, 68, 0.15)',
+                              color: stats.accuracy >= 75 ? '#10b981' : stats.accuracy >= 50 ? '#f59e0b' : '#ef4444',
+                              border: stats.accuracy < 50 ? '1px solid rgba(239, 68, 68, 0.3)' : 'none'
+                            }}>
+                              {stats.accuracy.toFixed(1)}%
+                              {stats.isHighGamble && <span title={`${stats.errorRatio.toFixed(1)}x error blunder! High gambling detected`} style={{ fontSize: '10px' }}>⚠️</span>}
+                            </span>
+                          </td>
+                          <td style={{ padding: '5px 8px', whiteSpace: 'nowrap' }}>
+                            <span style={{ 
+                              fontWeight: 600, 
+                              fontSize: '11px',
+                              color: stats.avgPaceSec > 0 && stats.avgPaceSec < 20 && stats.wrongCount > 5 ? '#f59e0b' : 'inherit' 
+                            }}>
+                              {stats.avgPaceSec ? `${stats.avgPaceSec}s/Q` : '-'}
+                              {stats.avgPaceSec > 0 && stats.avgPaceSec < 20 && stats.wrongCount > 5 && ' ⚡'}
+                            </span>
+                          </td>
+                          <td style={{ padding: '5px 8px', whiteSpace: 'nowrap' }}>{formatSeconds(getReviewTimeTaken(a))}</td>
+                          <td style={{ padding: '5px 8px', whiteSpace: 'nowrap' }} title={statusDate ? `Submitted: ${formatDate(statusDate)}` : undefined}>
+                            <span style={{ fontSize: '10px', padding: '2px 7px', borderRadius: '6px', background: isPending ? 'var(--warning-bg)' : 'var(--success-bg)', color: isPending ? 'var(--warning)' : 'var(--success)', fontWeight: 700 }}>
+                              {a.status}
+                            </span>
+                          </td>
                           <td style={{ padding: '5px 8px', textAlign: 'right', whiteSpace: 'nowrap' }} onClick={(e) => e.stopPropagation()}>
                             <button 
                               type="button"
