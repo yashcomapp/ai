@@ -132,15 +132,19 @@ export async function POST(req: NextRequest) {
     const studentCode = userData.studentCode || '';
     const activeSessionToken = userData.activeSessionToken || null;
 
-    if (role === 'parent' && userData.status !== 'inactive') {
+    if (role === 'parent') {
       const deactCheck = await checkParentDeactivationStatus(userData, email);
       if (deactCheck.shouldDeactivate) {
-        await userDocRef.update({
-          status: 'inactive',
-          deactivationReason: deactCheck.reason,
-          updatedAt: new Date()
-        }).catch(() => null);
-        invalidateUserCache(uid);
+        if (userData.status !== 'inactive' || userData.deactivationReason !== deactCheck.reason) {
+          await userDocRef.update({
+            status: 'inactive',
+            deactivationReason: deactCheck.reason,
+            updatedAt: new Date()
+          }).catch(() => null);
+          invalidateUserCache(uid);
+          userData.status = 'inactive';
+          userData.deactivationReason = deactCheck.reason;
+        }
 
         if (deactCheck.reason === 'student_autonomous') {
           return NextResponse.json({ 
@@ -151,6 +155,16 @@ export async function POST(req: NextRequest) {
             message: 'Parent portal access is disabled as no active students are linked to this parent account.'
           }, { status: 403 });
         }
+      } else if (userData.status === 'inactive' && (userData.deactivationReason === 'all_students_inactive' || userData.deactivationReason === 'student_autonomous')) {
+        // Automatically self-heal and reactivate parent account when linked students are active & non-autonomous
+        await userDocRef.update({
+          status: 'active',
+          deactivationReason: admin.firestore.FieldValue.delete(),
+          updatedAt: new Date()
+        }).catch(() => null);
+        invalidateUserCache(uid);
+        userData.status = 'active';
+        delete userData.deactivationReason;
       }
     }
 

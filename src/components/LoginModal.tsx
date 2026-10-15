@@ -90,7 +90,14 @@ export default function LoginModal() {
     if (typeof code === 'string' && (code.toLowerCase().includes('curfew') || code.includes('10:30 PM') || code.includes('Rest is crucial'))) {
       return '🌙 Yashcom Sleep Curfew: Rest is crucial for conceptual mastery! 10:30 PM se morning 5:00 AM tak student login locked rahega taaki aap healthy sleep le sakein. Learning kal subah continue hogi. Sleep well! 💤';
     }
-    if (typeof code === 'string' && (code.includes('approval') || code.includes('cancelled'))) {
+    if (typeof code === 'string' && (
+      code.includes('approval') || 
+      code.includes('cancelled') ||
+      code.includes('Parent portal') ||
+      code.includes('Autonomous') ||
+      code.includes('disabled') ||
+      code.includes('active students')
+    )) {
       return code;
     }
 

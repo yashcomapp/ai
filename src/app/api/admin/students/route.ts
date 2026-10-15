@@ -185,16 +185,14 @@ export async function POST(request: Request) {
             invalidateUserCache(pDoc.id);
           }
         } else {
-          // Only reactivate if deactivated specifically due to autonomous student mode
-          if (pData.deactivationReason === 'student_autonomous' || !pData.status || pData.status === 'inactive') {
-            if (pData.deactivationReason === 'student_autonomous') {
-              await pDoc.ref.update({
-                status: 'active',
-                deactivationReason: null,
-                updatedAt: new Date()
-              });
-              invalidateUserCache(pDoc.id);
-            }
+          // Reactivate parent if student is regular (non-autonomous) and active
+          if (pData.status === 'inactive' || !pData.status) {
+            await pDoc.ref.update({
+              status: 'active',
+              deactivationReason: null,
+              updatedAt: new Date()
+            });
+            invalidateUserCache(pDoc.id);
           }
         }
       }
