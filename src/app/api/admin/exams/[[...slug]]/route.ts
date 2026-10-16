@@ -4,7 +4,6 @@ import { GET as getGenerate, POST as postGenerate } from '../handlers/generate';
 import { GET as getLottery, POST as postLottery } from '../handlers/lottery';
 import { GET as getObjective, POST as postObjective, PUT as putObjective } from '../handlers/objective';
 import { GET as getSubjective, POST as postSubjective, PUT as putSubjective } from '../handlers/subjective';
-import { POST as postBroadcastResults } from '../handlers/broadcastResults';
 import { GET as getRescheduleToday, POST as postRescheduleToday } from '../handlers/rescheduleToday';
 
 export const dynamic = 'force-dynamic';
@@ -54,8 +53,6 @@ export async function POST(req: NextRequest, { params }: { params: { slug?: stri
         return await postObjective(req);
       case 'subjective':
         return await postSubjective(req);
-      case 'broadcast-results':
-        return await postBroadcastResults(req);
       case 'reschedule-today':
         return await postRescheduleToday(req);
       default:

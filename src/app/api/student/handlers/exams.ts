@@ -5,7 +5,6 @@ import { verifyRole, verifyAnyRole } from '@/lib/auth';
 import { ExamRepository } from '@/repositories/exam.repository';
 import { ExamService } from '@/services/exam.service';
 import { deriveTopicCodeFromQuestionCode, evaluateQuestionAnswer } from '@/lib/questionTypes';
-import { generateAndDispatchExamNotices } from '@/lib/examNotices';
 import { invalidateCache } from '@/lib/firebase/cache';
 import { ExamReviewService } from '@/services/examReview.service';
 import { parseDateInput, getMidnightIST } from '@/lib/dateUtils';

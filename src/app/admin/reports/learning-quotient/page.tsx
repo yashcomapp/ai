@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useReports } from '@/hooks/useReports';
 import { exportStudentMonthlyReportPDF } from '@/lib/pdfExport';
 import { getScoreColor } from '@/lib/dashboardMetrics';
+import { exportStudentLqCardImage } from '@/lib/lqCardExport';
 
 interface StudentLQ {
   id: string;
@@ -463,6 +464,35 @@ _Empowering Conceptual Excellence_`;
     }
   };
 
+  const [exportingCardImage, setExportingCardImage] = useState(false);
+
+  const handleExportWhatsAppImage = async (onlyDownload: boolean = false) => {
+    if (!quotientDetails) return;
+    setExportingCardImage(true);
+    try {
+      const studentObj = students.find(s => s.studentCode === selectedCode);
+      await exportStudentLqCardImage({
+        student: {
+          name: selectedStudentInfo?.name || studentObj?.name || 'Student',
+          studentCode: selectedCode,
+          batchName: studentObj?.batchName || '',
+          parentMobile
+        },
+        quotientDetails,
+        duration,
+        commentsText,
+        parentMobile,
+        whatsAppMode,
+        triggerWhatsApp: !onlyDownload
+      });
+    } catch (err: any) {
+      console.error('Error exporting WhatsApp image card:', err);
+      alert(`❌ Failed to export WhatsApp image card: ${err.message || err}`);
+    } finally {
+      setExportingCardImage(false);
+    }
+  };
+
   const handleWhatsAppDirectText = () => {
     if (!quotientDetails) return;
     const cleanPhone = parentMobile.replace(/\D/g, '');
@@ -475,6 +505,7 @@ _Empowering Conceptual Excellence_`;
       commentsText
     );
 
+    dispatchWhatsApp(phoneStr, message);
   };
 
   const loadQueueStudentDetails = async (index: number, queue: any[]) => {
@@ -528,20 +559,47 @@ _Empowering Conceptual Excellence_`;
     loadQueueStudentDetails(0, queue);
   };
 
-  const handleSendNextParent = () => {
+  const handleSendNextParent = async (sendAsImage: boolean = true) => {
     if (broadcastIndex >= broadcastQueue.length || !broadcastActiveDetails) return;
 
     const student = broadcastQueue[broadcastIndex];
     const cleanPhone = student.parentMobile.replace(/\D/g, '');
     const phoneStr = cleanPhone.length === 10 ? '91' + cleanPhone : cleanPhone;
 
-    const message = buildWhatsAppMessage(
-      { name: student.studentName, studentCode: student.studentCode, email: student.email },
-      broadcastActiveDetails,
-      duration
-    );
-
-    dispatchWhatsApp(phoneStr, message);
+    if (sendAsImage) {
+      try {
+        await exportStudentLqCardImage({
+          student: {
+            name: student.studentName,
+            studentCode: student.studentCode,
+            batchName: students.find(s => s.studentCode === student.studentCode)?.batchName || '',
+            parentMobile: student.parentMobile
+          },
+          quotientDetails: broadcastActiveDetails,
+          duration,
+          commentsText: generateStudentComments(broadcastActiveDetails, student.studentName),
+          parentMobile: student.parentMobile,
+          whatsAppMode,
+          triggerWhatsApp: true
+        });
+      } catch (err: any) {
+        console.error('Error exporting card image for broadcast student:', err);
+        // Fallback to text message
+        const message = buildWhatsAppMessage(
+          { name: student.studentName, studentCode: student.studentCode, email: student.email },
+          broadcastActiveDetails,
+          duration
+        );
+        dispatchWhatsApp(phoneStr, message);
+      }
+    } else {
+      const message = buildWhatsAppMessage(
+        { name: student.studentName, studentCode: student.studentCode, email: student.email },
+        broadcastActiveDetails,
+        duration
+      );
+      dispatchWhatsApp(phoneStr, message);
+    }
 
     const updatedQueue = [...broadcastQueue];
     updatedQueue[broadcastIndex].status = 'sent';
@@ -1029,41 +1087,74 @@ _Empowering Conceptual Excellence_`;
                   <button
                     type="button"
                     className="btn btn-primary"
+                    disabled={exportingCardImage}
+                    onClick={() => handleExportWhatsAppImage(false)}
+                    style={{
+                      fontSize: '11px',
+                      fontWeight: 800,
+                      padding: '6px 14px',
+                      background: 'var(--color-green-whatsapp, #25D366)',
+                      color: '#ffffff',
+                      borderColor: 'var(--color-green-whatsapp-border, #128C7E)',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px'
+                    }}
+                    title="Generate lossless Ultra HD image card and send directly to parent in WhatsApp"
+                  >
+                    {exportingCardImage ? '⏳ Exporting...' : '🖼️ Export WhatsApp'}
+                  </button>
+
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    disabled={exportingCardImage}
+                    onClick={() => handleExportWhatsAppImage(true)}
+                    style={{ fontSize: '11px', fontWeight: 700, padding: '6px 10px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                    title="Download Ultra HD lossless PNG image file only"
+                  >
+                    📥 Download Card (PNG)
+                  </button>
+                  
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
                     disabled={sharingLoading}
                     onClick={handleDownloadReportPdf}
-                    style={{ fontSize: '11px', fontWeight: 700, padding: '6px 12px', background: 'var(--accent)' }}
+                    style={{ fontSize: '11px', fontWeight: 700, padding: '6px 12px' }}
                   >
                     📥 {sharingLoading ? 'Generating...' : 'Download PDF'}
                   </button>
                   
                   <button
                     type="button"
-                    className="btn btn-primary"
+                    className="btn btn-secondary"
                     disabled={sharingLoading}
                     onClick={handlePwaShare}
-                    style={{ fontSize: '11px', fontWeight: 700, padding: '6px 12px', background: 'var(--success)' }}
+                    style={{ fontSize: '11px', fontWeight: 700, padding: '6px 12px' }}
                   >
-                    🟢 {sharingLoading ? 'Sharing...' : 'PWA Share (PDF)'}
+                    🟢 {sharingLoading ? 'Sharing...' : 'Share PDF'}
                   </button>
                   
                   <button
                     type="button"
-                    className="btn btn-primary"
+                    className="btn btn-secondary"
                     disabled={!parentMobile}
                     onClick={handleWhatsAppDirectText}
-                    style={{ fontSize: '11px', fontWeight: 700, padding: '6px 12px', background: 'var(--color-green-whatsapp)', color: 'var(--text-white)', borderColor: 'var(--color-green-whatsapp)' }}
+                    style={{ fontSize: '11px', fontWeight: 700, padding: '6px 10px' }}
+                    title="Send standard text summary to WhatsApp"
                   >
-                    💬 WhatsApp Msg
+                    💬 Text Msg
                   </button>
                   
-                  <button type="button" className="btn btn-secondary" onClick={() => setShowDetailsModal(false)} style={{ width: '90px', fontSize: '11px', padding: '6px 10px' }}>
+                  <button type="button" className="btn btn-secondary" onClick={() => setShowDetailsModal(false)} style={{ width: '80px', fontSize: '11px', padding: '6px 10px' }}>
                     Close
                   </button>
                 </div>
 
                 {/* Helpful Tip about Mobile OS file sharing */}
-                <div style={{ marginTop: '10px', padding: '10px 12px', background: 'rgba(52, 152, 219, 0.08)', borderRadius: '6px', border: '1px solid rgba(52, 152, 219, 0.2)', fontSize: '10.5px', color: 'var(--text-muted)', lineHeight: '1.4' }}>
-                  💡 <strong>Tip on PWA Share (PDF):</strong> Due to mobile OS privacy sandboxing (Android/iOS), pre-selecting a contact is only supported for text links (like <strong>WhatsApp Msg</strong>), not binary file sharing. Clicking <strong>PWA Share</strong> automatically copies the student's name (<strong>{selectedStudentInfo?.name}</strong>) to your clipboard so you can instantly paste it into the WhatsApp search bar to find the parent.
+                <div style={{ marginTop: '10px', padding: '10px 12px', background: 'rgba(37, 211, 102, 0.08)', borderRadius: '6px', border: '1px solid rgba(37, 211, 102, 0.25)', fontSize: '10.5px', color: 'var(--text-muted)', lineHeight: '1.4' }}>
+                  💡 <strong>Tip on WhatsApp Card (Ultra HD):</strong> Clicking <strong>Send WhatsApp Card</strong> generates a crystal-clear, lossless Ultra-HD image card (3240px wide), automatically copies it to your clipboard, downloads the PNG file, and opens WhatsApp Web/Desktop. Simply press <strong>Ctrl + V</strong> in WhatsApp to send the image directly to the parent! On mobile devices, it directly opens the native WhatsApp share dialog with the image attached.
                 </div>
  
               </div>
@@ -1168,7 +1259,7 @@ _Empowering Conceptual Excellence_`;
                         whiteSpace: 'nowrap',
                         flexShrink: 0
                       }} 
-                      onClick={handleSendNextParent}
+                      onClick={() => handleSendNextParent(true)}
                       disabled={loadingBroadcastDetails || !broadcastActiveDetails}
                     >
                       📱 Open WhatsApp & Next

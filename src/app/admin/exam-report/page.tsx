@@ -112,7 +112,6 @@ function ExamReportContent() {
   const [batches, setBatches] = useState<Batch[]>([]);
   const [assignments, setAssignments] = useState<any[]>([]);
   const [questionsMap, setQuestionsMap] = useState<{ [key: string]: any }>({});
-  const [broadcastingNotices, setBroadcastingNotices] = useState(false);
 
   // Sorting / Filtering states
   const [studentSortCol, setStudentSortCol] = useState('score');
@@ -1731,36 +1730,6 @@ function ExamReportContent() {
             ← Back to Exams
           </button>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            <button 
-              className="btn btn-secondary" 
-              disabled={broadcastingNotices}
-              onClick={async () => {
-                if (!confirm(`Are you sure you want to broadcast personalized result & absence notices to all assigned students and parents for exam '${exam.name}'?`)) return;
-                setBroadcastingNotices(true);
-                try {
-                  const token = await firebaseUser!.getIdToken();
-                  const res = await fetch('/api/admin/exams/broadcast-results', {
-                    method: 'POST',
-                    headers: {
-                      'Content-Type': 'application/json',
-                      'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({ examId })
-                  });
-                  const resData = await res.json();
-                  if (!res.ok) throw new Error(resData.message || 'Failed to broadcast notices.');
-                  playNotificationSound();
-                  alert(`✅ ${resData.message || 'Exam result & absence notices dispatched successfully!'}`);
-                } catch (err: any) {
-                  alert(`❌ Error: ${err.message || 'Failed to dispatch notices'}`);
-                } finally {
-                  setBroadcastingNotices(false);
-                }
-              }}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 600, padding: '5px 12px', background: 'var(--purple-bg, rgba(139, 92, 246, 0.15))', color: 'var(--purple)', border: '1px solid var(--purple-border, rgba(139, 92, 246, 0.3))' }}
-            >
-              {broadcastingNotices ? '⏳ Broadcasting...' : '📢 Broadcast Results'}
-            </button>
             <span 
               role="button"
               tabIndex={0}
@@ -1805,9 +1774,9 @@ function ExamReportContent() {
                 cursor: exportingImage ? 'wait' : 'pointer',
                 boxShadow: '0 2px 8px rgba(16, 185, 129, 0.3)'
               }}
-              title="Generate a lossless, razor-sharp Ultra HD card optimized for WhatsApp class group"
+              title="Export lossless card optimized for WhatsApp"
             >
-              {exportingImage ? '⏳ Generating Ultra HD...' : '📸 Export WhatsApp Image (Ultra HD)'}
+              {exportingImage ? '⏳ Exporting...' : '📸 Export WhatsApp'}
             </button>
           </div>
         </div>
