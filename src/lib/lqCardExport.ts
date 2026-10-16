@@ -850,3 +850,613 @@ export async function exportBatchLqCardImage(params: BatchLqCardExportParams): P
   }
 }
 
+export interface BatchPracticeTracksExportParams {
+  batchName: string;
+  students: Array<{
+    name: string;
+    studentCode: string;
+    [key: string]: any;
+  }>;
+  practiceStats: {
+    [studentCode: string]: {
+      totalSessions: number;
+      questionsAttempted: number;
+      avgScore: number;
+      lastActive: string | null;
+    };
+  };
+  masteryStats: {
+    [studentCode: string]: {
+      avgMastery: number;
+      avgQuality?: number;
+      mastered: number;
+      practicing: number;
+      needsAttention: number;
+    };
+  };
+  formatDateDMY?: (date: any) => string;
+}
+
+/**
+ * Generates an Ultra HD lossless WhatsApp summary card for an entire batch's Practice Tracks
+ * with total assigned topics and status breakdown explanations for parents.
+ */
+export async function exportBatchPracticeTracksImage(params: BatchPracticeTracksExportParams): Promise<{
+  blob: Blob;
+  fileName: string;
+  copiedToClipboard: boolean;
+}> {
+  if (typeof window === 'undefined') {
+    throw new Error('Image export is only available in browser environments.');
+  }
+
+  const { batchName, students, practiceStats, masteryStats } = params;
+
+  if (students.length === 0) {
+    alert('No students to export in this batch.');
+    throw new Error('No students to export.');
+  }
+
+  const html2canvas = await loadHtml2Canvas();
+  if (!html2canvas) {
+    throw new Error('Could not initialize html2canvas library.');
+  }
+
+  // Sort descending by avgMastery, then by questionsAttempted
+  const sorted = [...students].sort((a, b) => {
+    const ma = masteryStats[a.studentCode]?.avgMastery || 0;
+    const mb = masteryStats[b.studentCode]?.avgMastery || 0;
+    if (mb !== ma) return mb - ma;
+    const qa = practiceStats[a.studentCode]?.questionsAttempted || 0;
+    const qb = practiceStats[b.studentCode]?.questionsAttempted || 0;
+    return qb - qa;
+  });
+
+  const totalStudents = sorted.length;
+  const totalSessions = sorted.reduce((sum, s) => sum + (practiceStats[s.studentCode]?.totalSessions || 0), 0);
+  const totalQuestions = sorted.reduce((sum, s) => sum + (practiceStats[s.studentCode]?.questionsAttempted || 0), 0);
+  const batchAvgMastery = Math.round(sorted.reduce((sum, s) => sum + (masteryStats[s.studentCode]?.avgMastery || 0), 0) / (totalStudents || 1));
+  const batchAvgQuality = Math.round(sorted.reduce((sum, s) => sum + (masteryStats[s.studentCode]?.avgQuality ?? 100), 0) / (totalStudents || 1));
+
+  const todayFormatted = formatDateDMY(new Date());
+
+  const container = document.createElement('div');
+  container.style.position = 'fixed';
+  container.style.left = '0';
+  container.style.top = '0';
+  container.style.width = '1080px';
+  container.style.backgroundColor = '#ffffff';
+  container.style.color = '#0f172a';
+  container.style.fontFamily = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', 'Noto Sans Devanagari', 'Mangal', sans-serif";
+  (container.style as any).webkitFontSmoothing = 'antialiased';
+  (container.style as any).mozOsxFontSmoothing = 'grayscale';
+  (container.style as any).textRendering = 'optimizeLegibility';
+  container.style.padding = '28px 32px';
+  container.style.boxSizing = 'border-box';
+  container.style.zIndex = '-9999';
+  container.style.pointerEvents = 'none';
+  container.style.opacity = '1';
+
+  const rowsHtml = sorted.map((s, idx) => {
+    const rank = idx + 1;
+    const rankBadge = rank === 1 ? '🥇 1' : rank === 2 ? '🥈 2' : rank === 3 ? '🥉 3' : `<span style="display:inline-block; min-width: 24px; padding: 2px 6px; border-radius: 4px; background: #e2e8f0; color: #1e293b; font-weight: 800; font-size: 12px;">${rank}</span>`;
+    const displayName = formatReportStudentName(s.name);
+    const rowBg = idx % 2 === 0 ? '#ffffff' : '#f8fafc';
+
+    const pStat = practiceStats[s.studentCode] || { totalSessions: 0, questionsAttempted: 0, avgScore: 0, lastActive: null };
+    const mStat = masteryStats[s.studentCode] || { avgMastery: 0, avgQuality: 100, mastered: 0, practicing: 0, needsAttention: 0 };
+    const quality = mStat.avgQuality ?? 100;
+    const totalAssigned = mStat.mastered + mStat.practicing + mStat.needsAttention;
+
+    let lastActiveText = 'Never';
+    if (pStat.lastActive) {
+      try {
+        lastActiveText = formatDateDMY(pStat.lastActive);
+      } catch {
+        lastActiveText = pStat.lastActive.split('T')[0] || 'Recent';
+      }
+    }
+
+    return `
+      <tr style="border-bottom: 1px solid #e2e8f0; height: 44px; background-color: ${rowBg};">
+        <td style="padding: 8px 10px; text-align: center; font-weight: 900; font-size: 13.5px; color: #0f172a;">${rankBadge}</td>
+        <td style="padding: 8px 14px; font-weight: 800; font-size: 14.5px; color: #0f172a; white-space: nowrap;">
+          ${displayName}
+        </td>
+        <td style="padding: 8px 10px; text-align: center; font-weight: 800; font-size: 13.5px; color: #0f172a;">
+          ${pStat.totalSessions}
+        </td>
+        <td style="padding: 8px 10px; text-align: center; font-weight: 800; font-size: 13.5px; color: #0f172a;">
+          ${pStat.questionsAttempted}
+        </td>
+        <td style="padding: 8px 10px; text-align: center; white-space: nowrap;">
+          ${pStat.totalSessions > 0 ? getScoreChip(pStat.avgScore) : `<span style="color:#94a3b8; font-weight:700;">—</span>`}
+        </td>
+        <td style="padding: 8px 10px; text-align: center; white-space: nowrap;">
+          ${getScoreChip(mStat.avgMastery, true)}
+        </td>
+        <td style="padding: 8px 10px; text-align: center; white-space: nowrap;">
+          ${getScoreChip(quality)}
+        </td>
+        <td style="padding: 8px 12px; text-align: center; white-space: nowrap;">
+          <div style="display: inline-flex; align-items: center; gap: 5px;">
+            <span style="display:inline-block; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 800; background: #dcfce7; color: #14532d; border: 1px solid #86efac;" title="Mastered (>=90%)">
+              🟢 ${mStat.mastered}
+            </span>
+            <span style="display:inline-block; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 800; background: #fef3c7; color: #92400e; border: 1px solid #fcd34d;" title="In Progress (50-89%)">
+              🟡 ${mStat.practicing}
+            </span>
+            <span style="display:inline-block; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 800; background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5;" title="Needs Attention / Unattempted">
+              🔴 ${mStat.needsAttention}
+            </span>
+          </div>
+          <div style="font-size: 10.5px; font-weight: 700; color: #64748b; margin-top: 2px;">
+            एकूण: <strong>${totalAssigned}</strong> घटक
+          </div>
+        </td>
+        <td style="padding: 8px 10px; text-align: center; font-size: 12px; font-weight: 700; color: #475569; white-space: nowrap;">
+          ${lastActiveText}
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+  container.innerHTML = `
+    <div style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 12px; padding: 24px 28px; box-shadow: 0 8px 30px rgba(0,0,0,0.06);">
+      
+      <!-- Header -->
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #e2e8f0; padding-bottom: 16px; margin-bottom: 16px;">
+        <div>
+          <div style="color: #92400e; font-size: 15px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase;">
+            YASHCOM FOUNDATION, SHEGAON
+          </div>
+          <div style="color: #0f172a; font-size: 24px; font-weight: 900; margin: 3px 0 5px; letter-spacing: -0.3px;">
+            🏋️ Daily Practice & Topic Mastery Dossier
+          </div>
+          <div style="color: #0369a1; font-size: 16px; font-weight: 800;">
+            ${batchName}
+          </div>
+        </div>
+        <div style="text-align: right;">
+          <div style="background: #f1f5f9; border: 1.5px solid #cbd5e1; color: #1e293b; font-size: 12.5px; font-weight: 800; padding: 5px 14px; border-radius: 6px; display: inline-block;">
+            📅 ${todayFormatted}
+          </div>
+          <div style="color: #475569; font-size: 12px; font-weight: 700; margin-top: 5px;">
+            Syllabus Coverage: <strong style="color:#0f172a;">Active Practice Tracks</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- KPI Summary Cards -->
+      <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 20px;">
+        <div style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 12px 14px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+          <div style="font-size: 26px; font-weight: 900; color: #0f172a; line-height: 1.1;">${totalStudents}</div>
+          <div style="font-size: 11.5px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.6px; margin-top: 4px;">Students</div>
+        </div>
+        <div style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 12px 14px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+          <div style="font-size: 26px; font-weight: 900; color: #0369a1; line-height: 1.1;">${totalSessions}</div>
+          <div style="font-size: 11.5px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.6px; margin-top: 4px;">Total Sessions</div>
+        </div>
+        <div style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 12px 14px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+          <div style="font-size: 26px; font-weight: 900; color: #047857; line-height: 1.1;">${totalQuestions}</div>
+          <div style="font-size: 11.5px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.6px; margin-top: 4px;">Questions Solved</div>
+        </div>
+        <div style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 12px 14px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+          <div style="font-size: 26px; font-weight: 900; color: ${getDeepScoreColor(batchAvgMastery)}; line-height: 1.1;">${batchAvgMastery}%</div>
+          <div style="font-size: 11.5px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.6px; margin-top: 4px;">Batch Mastery</div>
+        </div>
+        <div style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 12px 14px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+          <div style="font-size: 26px; font-weight: 900; color: ${getDeepScoreColor(batchAvgQuality)}; line-height: 1.1;">${batchAvgQuality}%</div>
+          <div style="font-size: 11.5px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.6px; margin-top: 4px;">Avg Accuracy</div>
+        </div>
+      </div>
+
+      <!-- Table with Executive Dark Navy Header for Maximum Legibility -->
+      <table style="width: 100%; border-collapse: collapse; border: 1.5px solid #cbd5e1; border-radius: 10px; overflow: hidden;">
+        <thead>
+          <tr style="background: #0f172a; color: #ffffff; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.6px; height: 42px;">
+            <th style="padding: 10px 10px; text-align: center; width: 55px;">Rank</th>
+            <th style="padding: 10px 14px; text-align: left;">Student Name</th>
+            <th style="padding: 10px 10px; text-align: center; width: 75px;">Sessions</th>
+            <th style="padding: 10px 10px; text-align: center; width: 85px;">Questions</th>
+            <th style="padding: 10px 10px; text-align: center; width: 85px;">Avg Score</th>
+            <th style="padding: 10px 10px; text-align: center; width: 95px;">Mastery</th>
+            <th style="padding: 10px 10px; text-align: center; width: 85px;">Quality</th>
+            <th style="padding: 10px 12px; text-align: center; width: 195px;">Topic Status (Assigned)</th>
+            <th style="padding: 10px 10px; text-align: center; width: 95px;">Last Active</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rowsHtml}
+        </tbody>
+      </table>
+
+      <!-- Pedagogical Explanation & Parent Guidance Banner (Hindi / Marathi) - High Contrast Bullet List -->
+      <div style="margin-top: 20px; padding: 18px 22px; background: #f8fafc; border: 1.5px solid #cbd5e1; border-left: 5px solid #0284c7; border-radius: 10px;">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+          <span style="font-size: 22px; line-height: 1;">💡</span>
+          <strong style="color: #0f172a; font-size: 15px; font-weight: 900; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans Devanagari', 'Mangal', sans-serif;">
+            पालकांसाठी अत्यंत महत्त्वाचे स्पष्टीकरण व मार्गदर्शन (Topic Status & Parent Guidance):
+          </strong>
+        </div>
+        <ul style="margin: 0; padding-left: 20px; color: #1e293b; font-size: 13.5px; line-height: 1.8; font-weight: 600; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans Devanagari', 'Mangal', sans-serif;">
+          <li style="margin-bottom: 8px;">
+            <strong style="color: #0f172a;">📌 एकूण नेमून दिलेले अभ्यासक्रम घटक (Total Assigned Topics):</strong> विद्यार्थ्याला वर्गात शिकवून सरावासाठी उपलब्ध करून दिलेले सर्व घटक = 🟢 पूर्ण प्रभुत्व (Mastered) + 🟡 सराव सुरू (Practicing) + 🔴 विशेष लक्ष आवश्यक (Needs Attention / Unattempted).
+          </li>
+          <li style="margin-bottom: 8px;">
+            <strong style="color: #14532d;">🟢 Mastered (संकल्पना प्रभुत्व):</strong> ज्या घटकांमध्ये विद्यार्थ्याने <strong>≥ ९०% अचूकता</strong> आणि किमान आवश्यक प्रश्नांचा सराव यशस्वीरीत्या पूर्ण केला आहे. या घटकांची तयारी उत्कृष्ट आहे.
+          </li>
+          <li style="margin-bottom: 8px;">
+            <strong style="color: #92400e;">🟡 In Progress / Practicing (सराव सुरू):</strong> या घटकांचा सराव चालू असून अचूकता ५०% ते ८९% दरम्यान आहे. बोर्ड परीक्षेच्या दृष्टीने अजून २ ते ३ सराव सेट्स सोडवून ९०%+ अचूकता संपादन करणे आवश्यक आहे.
+          </li>
+          <li style="margin-bottom: 8px;">
+            <strong style="color: #991b1b;">🔴 Needs Attention / Unattempted (विशेष लक्ष द्या / सराव बाकी):</strong> ज्या घटकांमध्ये अचूकता ५०% पेक्षा कमी आहे किंवा अद्याप विद्यार्थ्याने सराव सुरूच केलेला नाही. हे घटक तत्काळ सोडवून घेणे अनिवार्य आहे.
+          </li>
+          <li>
+            <strong style="color: #0369a1;">📌 पालकांची भूमिका (Parent Action Plan):</strong> बोर्ड परीक्षेत ९०%+ गुण मिळवण्यासाठी विद्यार्थ्याने दररोज घरी न चुकता किमान २ ते ३ सराव सेट्स (१५-२० प्रश्न) सोडवणे आणि सर्व 🟡 व 🔴 घटकांना 🟢 (Mastered) मध्ये रूपांतरित करणे आवश्यक आहे.
+          </li>
+        </ul>
+      </div>
+
+      <!-- Footer -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; font-size: 11.5px; color: #475569; border-top: 1.5px solid #e2e8f0; padding-top: 12px;">
+        <span><strong style="color: #0f172a;">YASHCOM FOUNDATION, SHEGAON</strong> • Practice Track Evaluation Portal</span>
+        <span>Verified Batch Practice & Topic Mastery Summary • Confidential</span>
+      </div>
+
+    </div>
+  `;
+
+  document.body.appendChild(container);
+
+  try {
+    await new Promise(r => setTimeout(r, 300));
+
+    const canvas = await html2canvas(container, {
+      scale: 3,
+      useCORS: true,
+      backgroundColor: '#ffffff',
+      logging: false
+    });
+
+    document.body.removeChild(container);
+
+    const blob: Blob = await new Promise((resolve, reject) => {
+      canvas.toBlob((b: Blob | null) => {
+        if (b) resolve(b);
+        else reject(new Error('Failed to generate image blob from canvas.'));
+      }, 'image/png');
+    });
+
+    const cleanBatch = batchName.replace(/[^a-zA-Z0-9_-]/g, '_');
+    const fileName = `Practice_Tracks_${cleanBatch}.png`;
+    const imageUri = canvas.toDataURL('image/png');
+
+    let copiedToClipboard = false;
+    if (navigator.clipboard && typeof ClipboardItem !== 'undefined') {
+      try {
+        await navigator.clipboard.write([
+          new ClipboardItem({ 'image/png': blob })
+        ]);
+        copiedToClipboard = true;
+      } catch (clipErr) {
+        console.warn('Clipboard write failed:', clipErr);
+      }
+    }
+
+    const downloadLink = document.createElement('a');
+    downloadLink.download = fileName;
+    downloadLink.href = imageUri;
+    downloadLink.click();
+
+    playNotificationSound();
+
+    if (copiedToClipboard) {
+      alert(`✅ Ultra HD WhatsApp Practice Card Exported!\n\n1. Lossless Ultra-HD Image downloaded: ${fileName}\n2. Copied to Clipboard! You can directly press Ctrl + V in WhatsApp Web.`);
+    } else {
+      alert(`✅ Ultra HD WhatsApp Practice Card downloaded successfully as ${fileName}!`);
+    }
+
+    return { blob, fileName, copiedToClipboard };
+  } catch (err: any) {
+    if (container.parentNode) {
+      document.body.removeChild(container);
+    }
+    throw err;
+  }
+}
+
+export interface StudentPracticeCardExportParams {
+  student: {
+    name: string;
+    studentCode: string;
+    batchName?: string;
+  };
+  practiceStats?: {
+    totalSessions: number;
+    questionsAttempted: number;
+    avgScore: number;
+    lastActive: string | null;
+  };
+  masteryStats?: {
+    avgMastery: number;
+    avgQuality?: number;
+    mastered: number;
+    practicing: number;
+    needsAttention: number;
+  };
+  topicDetails?: {
+    mastered: any[];
+    practicing: any[];
+    needsAttention: any[];
+  };
+  formatDateDMY?: (date: any) => string;
+}
+
+/**
+ * Generates an Ultra HD lossless WhatsApp report card for an individual student's Practice & Topic Mastery
+ * with detailed topic breakdowns and parent guidance.
+ */
+export async function exportStudentPracticeCardImage(params: StudentPracticeCardExportParams): Promise<{
+  blob: Blob;
+  fileName: string;
+  copiedToClipboard: boolean;
+}> {
+  if (typeof window === 'undefined') {
+    throw new Error('Image export is only available in browser environments.');
+  }
+
+  const { student, practiceStats, masteryStats, topicDetails } = params;
+
+  const html2canvas = await loadHtml2Canvas();
+  if (!html2canvas) {
+    throw new Error('Could not initialize html2canvas library.');
+  }
+
+  const displayName = formatReportStudentName(student.name);
+  const batchName = student.batchName || 'Academic Batch';
+  const todayFormatted = formatDateDMY(new Date());
+
+  const pStat = practiceStats || { totalSessions: 0, questionsAttempted: 0, avgScore: 0, lastActive: null };
+  const mStat = masteryStats || {
+    avgMastery: 0,
+    avgQuality: 100,
+    mastered: topicDetails?.mastered.length || 0,
+    practicing: topicDetails?.practicing.length || 0,
+    needsAttention: topicDetails?.needsAttention.length || 0
+  };
+
+  const masteredCount = topicDetails?.mastered.length ?? mStat.mastered;
+  const practicingCount = topicDetails?.practicing.length ?? mStat.practicing;
+  const needsAttentionCount = topicDetails?.needsAttention.length ?? mStat.needsAttention;
+  const totalAssigned = masteredCount + practicingCount + needsAttentionCount;
+
+  const masteredPct = totalAssigned > 0 ? Math.round((masteredCount / totalAssigned) * 100) : 0;
+  const practicingPct = totalAssigned > 0 ? Math.round((practicingCount / totalAssigned) * 100) : 0;
+  const needsAttentionPct = totalAssigned > 0 ? Math.round((needsAttentionCount / totalAssigned) * 100) : 0;
+
+  // Build topic list if details exist
+  let topicRowsHtml = '';
+  if (topicDetails) {
+    const allTopics = [
+      ...topicDetails.mastered.map(t => ({ ...t, statusGroup: 'mastered' })),
+      ...topicDetails.practicing.map(t => ({ ...t, statusGroup: 'practicing' })),
+      ...topicDetails.needsAttention.map(t => ({ ...t, statusGroup: 'needsAttention' }))
+    ];
+
+    topicRowsHtml = allTopics.map((t, idx) => {
+      const rowBg = idx % 2 === 0 ? '#ffffff' : '#f8fafc';
+      let statusBadge = '';
+      if (t.statusGroup === 'mastered') {
+        statusBadge = `<span style="display:inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11.5px; font-weight: 800; background: #dcfce7; color: #14532d; border: 1px solid #86efac;">🟢 Mastered</span>`;
+      } else if (t.statusGroup === 'practicing') {
+        statusBadge = `<span style="display:inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11.5px; font-weight: 800; background: #fef3c7; color: #92400e; border: 1px solid #fcd34d;">🟡 In Progress</span>`;
+      } else {
+        statusBadge = `<span style="display:inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11.5px; font-weight: 800; background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5;">🔴 Needs Care</span>`;
+      }
+
+      const chapterStr = t.chapterName ? `${t.chapterName}` : (t.subjectName || '');
+      const guidance = t.expText || (t.statusGroup === 'mastered' ? 'Concept thoroughly mastered' : t.statusGroup === 'practicing' ? 'Needs 1-2 more practice sets for mastery' : 'High priority revision & practice needed');
+
+      return `
+        <tr style="border-bottom: 1px solid #e2e8f0; height: 38px; background-color: ${rowBg}; font-size: 12.5px;">
+          <td style="padding: 6px 10px; font-weight: 700; color: #475569;">${chapterStr}</td>
+          <td style="padding: 6px 12px; font-weight: 800; color: #0f172a;">${t.topicName || t.topicCode}</td>
+          <td style="padding: 6px 8px; text-align: center; white-space: nowrap;">
+            ${getScoreChip(t.mastery !== undefined ? t.mastery : 0)}
+          </td>
+          <td style="padding: 6px 8px; text-align: center; font-weight: 800; color: #0f172a;">
+            ${t.attempts || t.practiceCount || 0} Qs
+          </td>
+          <td style="padding: 6px 10px; text-align: center; white-space: nowrap;">
+            ${statusBadge}
+          </td>
+          <td style="padding: 6px 12px; font-size: 11.5px; font-weight: 600; color: #334155;">
+            ${guidance}
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  const container = document.createElement('div');
+  container.style.position = 'fixed';
+  container.style.left = '0';
+  container.style.top = '0';
+  container.style.width = '1080px';
+  container.style.backgroundColor = '#ffffff';
+  container.style.color = '#0f172a';
+  container.style.fontFamily = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', 'Noto Sans Devanagari', 'Mangal', sans-serif";
+  (container.style as any).webkitFontSmoothing = 'antialiased';
+  (container.style as any).mozOsxFontSmoothing = 'grayscale';
+  (container.style as any).textRendering = 'optimizeLegibility';
+  container.style.padding = '28px 32px';
+  container.style.boxSizing = 'border-box';
+  container.style.zIndex = '-9999';
+  container.style.pointerEvents = 'none';
+  container.style.opacity = '1';
+
+  container.innerHTML = `
+    <div style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 12px; padding: 24px 28px; box-shadow: 0 8px 30px rgba(0,0,0,0.06);">
+      
+      <!-- Header -->
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #e2e8f0; padding-bottom: 16px; margin-bottom: 16px;">
+        <div>
+          <div style="color: #92400e; font-size: 15px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase;">
+            YASHCOM FOUNDATION, SHEGAON
+          </div>
+          <div style="color: #0f172a; font-size: 24px; font-weight: 900; margin: 3px 0 5px; letter-spacing: -0.3px;">
+            🏋️ Student Topic Mastery & Practice Dossier
+          </div>
+          <div style="color: #0369a1; font-size: 17px; font-weight: 800;">
+            ${displayName} • <span style="color:#475569; font-weight:700;">${batchName}</span>
+          </div>
+        </div>
+        <div style="text-align: right;">
+          <div style="background: #f1f5f9; border: 1.5px solid #cbd5e1; color: #1e293b; font-size: 12.5px; font-weight: 800; padding: 5px 14px; border-radius: 6px; display: inline-block;">
+            📅 ${todayFormatted}
+          </div>
+          <div style="color: #475569; font-size: 12px; font-weight: 700; margin-top: 5px;">
+            Individual Curriculum Status
+          </div>
+        </div>
+      </div>
+
+      <!-- KPI Summary Cards -->
+      <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 20px;">
+        <div style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 12px 14px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+          <div style="font-size: 26px; font-weight: 900; color: #0f172a; line-height: 1.1;">${totalAssigned}</div>
+          <div style="font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px;">Assigned Topics</div>
+        </div>
+        <div style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 12px 14px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+          <div style="font-size: 26px; font-weight: 900; color: #14532d; line-height: 1.1;">${masteredCount}</div>
+          <div style="font-size: 11px; font-weight: 800; color: #14532d; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px;">🟢 Mastered (${masteredPct}%)</div>
+        </div>
+        <div style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 12px 14px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+          <div style="font-size: 26px; font-weight: 900; color: #92400e; line-height: 1.1;">${practicingCount}</div>
+          <div style="font-size: 11px; font-weight: 800; color: #92400e; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px;">🟡 Practicing (${practicingPct}%)</div>
+        </div>
+        <div style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 12px 14px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+          <div style="font-size: 26px; font-weight: 900; color: #991b1b; line-height: 1.1;">${needsAttentionCount}</div>
+          <div style="font-size: 11px; font-weight: 800; color: #991b1b; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px;">🔴 Needs Care (${needsAttentionPct}%)</div>
+        </div>
+        <div style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 12px 14px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+          <div style="font-size: 26px; font-weight: 900; color: ${getDeepScoreColor(mStat.avgMastery)}; line-height: 1.1;">${mStat.avgMastery}%</div>
+          <div style="font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px;">Avg Mastery</div>
+        </div>
+      </div>
+
+      ${topicRowsHtml ? `
+        <!-- Topics Breakdown Table -->
+        <table style="width: 100%; border-collapse: collapse; border: 1.5px solid #cbd5e1; border-radius: 10px; overflow: hidden; margin-bottom: 20px;">
+          <thead>
+            <tr style="background: #0f172a; color: #ffffff; font-size: 11.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.6px; height: 38px;">
+              <th style="padding: 8px 10px; text-align: left; width: 140px;">Subject / Chapter</th>
+              <th style="padding: 8px 12px; text-align: left;">Topic Name</th>
+              <th style="padding: 8px 8px; text-align: center; width: 85px;">Mastery</th>
+              <th style="padding: 8px 8px; text-align: center; width: 80px;">Attempts</th>
+              <th style="padding: 8px 10px; text-align: center; width: 110px;">Status</th>
+              <th style="padding: 8px 12px; text-align: left; width: 230px;">Teacher / Diagnostic Guidance</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${topicRowsHtml}
+          </tbody>
+        </table>
+      ` : ''}
+
+      <!-- Pedagogical Explanation & Parent Guidance Banner -->
+      <div style="padding: 18px 22px; background: #f8fafc; border: 1.5px solid #cbd5e1; border-left: 5px solid #0284c7; border-radius: 10px;">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+          <span style="font-size: 22px; line-height: 1;">💡</span>
+          <strong style="color: #0f172a; font-size: 15px; font-weight: 900; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans Devanagari', 'Mangal', sans-serif;">
+            पालकांसाठी घटक स्थिती स्पष्टीकरण व मार्गदर्शन (Topic Status Guide):
+          </strong>
+        </div>
+        <ul style="margin: 0; padding-left: 20px; color: #1e293b; font-size: 13.5px; line-height: 1.8; font-weight: 600; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans Devanagari', 'Mangal', sans-serif;">
+          <li style="margin-bottom: 8px;">
+            <strong style="color: #0f172a;">📌 एकूण नेमून दिलेले अभ्यासक्रम घटक (${totalAssigned} Topics):</strong> वर्गात शिकवून पूर्ण झालेले व सरावासाठी दिलेले एकूण घटक = 🟢 पूर्ण प्रभुत्व + 🟡 सराव सुरू + 🔴 लक्ष द्यावे.
+          </li>
+          <li style="margin-bottom: 8px;">
+            <strong style="color: #14532d;">🟢 Mastered (${masteredCount} घटक):</strong> विद्यार्थ्याने या संकल्पनांवर <strong>≥ ९०% अचूकता</strong> संपादन केली असून तयारी उत्कृष्ट आहे.
+          </li>
+          <li style="margin-bottom: 8px;">
+            <strong style="color: #92400e;">🟡 In Progress (${practicingCount} घटक):</strong> या घटकांचा सराव चालू असून अचूकता ५०% ते ८९% दरम्यान आहे. अजून २ सराव सेट्स सोडवून ९०%+ पातळी गाठणे आवश्यक आहे.
+          </li>
+          <li style="margin-bottom: 8px;">
+            <strong style="color: #991b1b;">🔴 Needs Attention / Unattempted (${needsAttentionCount} घटक):</strong> या घटकांत अचूकता ५०% पेक्षा कमी आहे किंवा अद्याप सराव सुरू केलेला नाही. हे घटक प्राधान्याने सोडवून घेणे अनिवार्य आहे.
+          </li>
+          <li>
+            <strong style="color: #0369a1;">📌 पालकांसाठी कृती कार्यक्रम:</strong> दररोज घरी किमान २ ते ३ सराव सेट्स सोडवून सर्व 🟡 व 🔴 घटक 🟢 मध्ये आणल्यास बोर्ड परीक्षेत निश्चितच ९०%+ गुण मिळतील.
+          </li>
+        </ul>
+      </div>
+
+      <!-- Footer -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; font-size: 11.5px; color: #475569; border-top: 1.5px solid #e2e8f0; padding-top: 12px;">
+        <span><strong style="color: #0f172a;">YASHCOM FOUNDATION, SHEGAON</strong> • Student Diagnostic Dossier</span>
+        <span>Verified Student Topic Mastery Summary • Confidential</span>
+      </div>
+
+    </div>
+  `;
+
+  document.body.appendChild(container);
+
+  try {
+    await new Promise(r => setTimeout(r, 300));
+
+    const canvas = await html2canvas(container, {
+      scale: 3,
+      useCORS: true,
+      backgroundColor: '#ffffff',
+      logging: false
+    });
+
+    document.body.removeChild(container);
+
+    const blob: Blob = await new Promise((resolve, reject) => {
+      canvas.toBlob((b: Blob | null) => {
+        if (b) resolve(b);
+        else reject(new Error('Failed to generate image blob from canvas.'));
+      }, 'image/png');
+    });
+
+    const cleanName = displayName.replace(/[^a-zA-Z0-9_-]/g, '_');
+    const fileName = `Practice_Mastery_${cleanName}.png`;
+    const imageUri = canvas.toDataURL('image/png');
+
+    let copiedToClipboard = false;
+    if (navigator.clipboard && typeof ClipboardItem !== 'undefined') {
+      try {
+        await navigator.clipboard.write([
+          new ClipboardItem({ 'image/png': blob })
+        ]);
+        copiedToClipboard = true;
+      } catch (clipErr) {
+        console.warn('Clipboard write failed:', clipErr);
+      }
+    }
+
+    const downloadLink = document.createElement('a');
+    downloadLink.download = fileName;
+    downloadLink.href = imageUri;
+    downloadLink.click();
+
+    playNotificationSound();
+
+    if (copiedToClipboard) {
+      alert(`✅ Ultra HD WhatsApp Practice Card Exported!\n\n1. Lossless Ultra-HD Image downloaded: ${fileName}\n2. Copied to Clipboard! You can directly press Ctrl + V in WhatsApp Web.`);
+    } else {
+      alert(`✅ Ultra HD WhatsApp Practice Card downloaded successfully as ${fileName}!`);
+    }
+
+    return { blob, fileName, copiedToClipboard };
+  } catch (err: any) {
+    if (container.parentNode) {
+      document.body.removeChild(container);
+    }
+    throw err;
+  }
+}
+

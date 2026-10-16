@@ -1,6 +1,7 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
+import { formatReportStudentName, exportStudentPracticeCardImage } from '@/lib/lqCardExport';
 
 export interface TopicStatusBreakdownState {
   show: boolean;
@@ -24,7 +25,11 @@ export default function TopicStatusBreakdownModal({
   topicStatusModal,
   setTopicStatusModal,
 }: TopicStatusBreakdownModalProps) {
+  const [isExporting, setIsExporting] = useState(false);
+
   if (!topicStatusModal.show) return null;
+
+  const displayName = formatReportStudentName(topicStatusModal.student?.name || '');
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.45)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', zIndex: 20000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
@@ -36,18 +41,57 @@ export default function TopicStatusBreakdownModal({
             <h3 style={{ fontSize: '16px', fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
               {topicStatusModal.activeTab === 'mastered' ? '🟢 Mastered Topics' : 
                topicStatusModal.activeTab === 'practicing' ? '🟡 In Progress Topics' :
-               topicStatusModal.activeTab === 'needsAttention' ? '🔴 Needs Attention Topics' : '🎯 All Topic Mastery'}: {topicStatusModal.student?.name}
+               topicStatusModal.activeTab === 'needsAttention' ? '🔴 Needs Attention Topics' : '🎯 All Topic Mastery'}: {displayName}
             </h3>
             <span style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>
               Real-time Diagnostic Status
             </span>
           </div>
-          <button 
-            onClick={() => setTopicStatusModal(prev => ({ ...prev, show: false }))} 
-            style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '1.3rem', color: 'var(--text-muted)' }}
-          >
-            ✕
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <button
+              onClick={async () => {
+                if (!topicStatusModal.student || !topicStatusModal.data) return;
+                setIsExporting(true);
+                try {
+                  await exportStudentPracticeCardImage({
+                    student: {
+                      name: topicStatusModal.student.name,
+                      studentCode: topicStatusModal.student.studentCode,
+                      batchName: topicStatusModal.student.batchName || topicStatusModal.student.className
+                    },
+                    topicDetails: topicStatusModal.data
+                  });
+                } catch (err: any) {
+                  console.error('Export failed:', err);
+                } finally {
+                  setIsExporting(false);
+                }
+              }}
+              disabled={isExporting || !topicStatusModal.data}
+              className="btn btn-secondary btn-sm"
+              style={{
+                padding: '5px 12px',
+                fontSize: '11.5px',
+                fontWeight: 700,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
+                cursor: 'pointer',
+                borderRadius: '6px'
+              }}
+              title="Export WhatsApp Card with all topics and explanations"
+            >
+              {isExporting ? '⏳ Exporting...' : '📸 Export WhatsApp'}
+            </button>
+            <button 
+              onClick={() => setTopicStatusModal(prev => ({ ...prev, show: false }))} 
+              style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '1.3rem', color: 'var(--text-muted)' }}
+            >
+              ✕
+            </button>
+          </div>
         </div>
 
         {/* Filter Tabs & Search Bar */}

@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { formatReportStudentName } from '@/lib/lqCardExport';
 
 export interface PracticeHistoryModalProps {
   selectedPracStudent: any;
@@ -40,7 +41,7 @@ export default function PracticeHistoryModal({
       <div style={{ background: 'var(--surface-popover)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-popover)', maxWidth: '750px', width: '100%', maxHeight: '85vh', overflowY: 'auto', padding: '24px', display: 'flex', flexDirection: 'column', gap: '15px', boxShadow: 'var(--shadow-lg)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-light)', paddingBottom: '12px' }}>
           <h3 style={{ fontSize: '15px', fontWeight: 800, margin: 0 }}>
-            📚 Practice History: {selectedPracStudent.name}
+            📚 Practice History: {formatReportStudentName(selectedPracStudent.name)}
           </h3>
           <button onClick={() => setSelectedPracStudent(null)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '1.2rem', color: 'var(--text-muted)' }}>✕</button>
         </div>

@@ -1,7 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Batch, Student } from './types';
+import { formatReportStudentName, exportBatchPracticeTracksImage } from '@/lib/lqCardExport';
 
 interface PracticeTabProps {
   batches: Batch[];
@@ -38,7 +39,7 @@ interface PracticeTabProps {
   handleRowClick: (student: Student) => void;
   openTopicStatusModal: (
     student: Student,
-    filterType: 'mastered' | 'practicing' | 'needsAttention',
+    filterType: 'mastered' | 'practicing' | 'needsAttention' | 'all',
     e: React.MouseEvent
   ) => void;
   formatDateDMY: (dateStr: string) => string;
@@ -61,6 +62,8 @@ export default function PracticeTab({
   openTopicStatusModal,
   formatDateDMY
 }: PracticeTabProps) {
+  const [exportingBatchId, setExportingBatchId] = useState<string | null>(null);
+
   const renderSortIndicator = (field: string) => {
     if (pracSortField !== field) return <span style={{ color: 'var(--text-faint)', marginLeft: '4px' }}>⇅</span>;
     return pracSortDir === 'asc' ? <span style={{ color: 'var(--accent)', marginLeft: '4px' }}>↑</span> : <span style={{ color: 'var(--accent)', marginLeft: '4px' }}>↓</span>;
@@ -105,10 +108,46 @@ export default function PracticeTab({
       ) : filteredPracticeBatches.map(({ batch, batchStudents, sortedStudents }) => {
         return (
           <div key={batch.id} className="card" style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', overflow: 'hidden', marginBottom: '16px' }}>
-            <div style={{ background: 'var(--bg-soft)', padding: '8px 14px', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ background: 'var(--bg-soft)', padding: '10px 14px', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h4 style={{ fontSize: '13px', fontWeight: 'bold', margin: 0, color: 'var(--text)' }}>
                 📦 {batch.name} — <span style={{ color: 'var(--accent)' }}>{batchStudents.length} students</span>
               </h4>
+              <button
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  setExportingBatchId(batch.id);
+                  try {
+                    await exportBatchPracticeTracksImage({
+                      batchName: batch.name,
+                      students: sortedStudents,
+                      practiceStats,
+                      masteryStats,
+                      formatDateDMY
+                    });
+                  } catch (err: any) {
+                    console.error('Batch practice export failed:', err);
+                  } finally {
+                    setExportingBatchId(null);
+                  }
+                }}
+                disabled={exportingBatchId === batch.id || sortedStudents.length === 0}
+                className="btn btn-secondary btn-sm"
+                style={{
+                  padding: '4px 12px',
+                  fontSize: '11.5px',
+                  fontWeight: 700,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  background: 'var(--surface)',
+                  border: '1px solid var(--border)',
+                  cursor: 'pointer',
+                  borderRadius: '6px'
+                }}
+                title="Export WhatsApp Card with total assigned topics and status breakdown explanations"
+              >
+                {exportingBatchId === batch.id ? '⏳ Exporting...' : '📸 Export WhatsApp'}
+              </button>
             </div>
 
             <div style={{ overflowX: 'auto' }}>
@@ -139,18 +178,22 @@ export default function PracticeTab({
                     <th onClick={() => handlePracSort('active')} style={{ padding: '6px 10px', cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}>
                       LAST SEEN {renderSortIndicator('active')}
                     </th>
+                    <th style={{ padding: '6px 10px', textAlign: 'center', whiteSpace: 'nowrap' }}>
+                      ACTION
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {sortedStudents.length === 0 ? (
                     <tr>
-                      <td colSpan={8} style={{ padding: '16px', textAlign: 'center', color: 'var(--text-muted)' }}>No students found in this batch.</td>
+                      <td colSpan={9} style={{ padding: '16px', textAlign: 'center', color: 'var(--text-muted)' }}>No students found in this batch.</td>
                     </tr>
                   ) : (
                     sortedStudents.map(student => {
                       const stats = practiceStats[student.studentCode] || { totalSessions: 0, questionsAttempted: 0, avgScore: 0, lastActive: null };
                       const mastery = masteryStats[student.studentCode] || { avgMastery: 0, avgQuality: 100, mastered: 0, practicing: 0, needsAttention: 0 };
                       const quality = mastery.avgQuality ?? 100;
+                      const formattedName = formatReportStudentName(student.name);
                       return (
                         <tr 
                           key={student.studentCode} 
@@ -158,7 +201,7 @@ export default function PracticeTab({
                           className="hover-row"
                           style={{ borderBottom: '1px solid var(--border-light)', cursor: 'pointer', transition: 'background 0.2s' }}
                         >
-                          <td style={{ padding: '6px 10px', fontWeight: 'bold' }}>{student.name}</td>
+                          <td style={{ padding: '6px 10px', fontWeight: 'bold' }}>{formattedName}</td>
                           <td style={{ padding: '6px 10px', textAlign: 'center' }}>{stats.totalSessions}</td>
                           <td style={{ padding: '6px 10px', textAlign: 'center' }}>{stats.questionsAttempted}</td>
                           <td style={{ padding: '6px 10px', fontWeight: 'bold', color: stats.totalSessions > 0 ? 'var(--accent)' : 'inherit' }}>
@@ -213,6 +256,27 @@ export default function PracticeTab({
                           </td>
                           <td style={{ padding: '6px 10px', color: 'var(--text-muted)' }}>
                             {stats.lastActive ? formatDateDMY(stats.lastActive) : 'Never'}
+                          </td>
+                          <td style={{ padding: '6px 10px', textAlign: 'center', whiteSpace: 'nowrap' }} onClick={(e) => e.stopPropagation()}>
+                            <button
+                              onClick={(e) => openTopicStatusModal(student, 'all', e)}
+                              className="btn btn-secondary btn-sm"
+                              style={{
+                                padding: '3px 8px',
+                                fontSize: '11px',
+                                fontWeight: 700,
+                                borderRadius: '5px',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                cursor: 'pointer',
+                                background: 'var(--surface)',
+                                border: '1px solid var(--border-light)'
+                              }}
+                              title="Open topic breakdown and export individual WhatsApp report card"
+                            >
+                              📸 WhatsApp
+                            </button>
                           </td>
                         </tr>
                       );
