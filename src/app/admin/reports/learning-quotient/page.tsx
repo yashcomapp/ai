@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useReports } from '@/hooks/useReports';
 import { exportStudentMonthlyReportPDF } from '@/lib/pdfExport';
 import { getScoreColor } from '@/lib/dashboardMetrics';
-import { exportStudentLqCardImage } from '@/lib/lqCardExport';
+import { exportStudentLqCardImage, exportBatchLqCardImage } from '@/lib/lqCardExport';
 
 interface StudentLQ {
   id: string;
@@ -493,6 +493,32 @@ _Empowering Conceptual Excellence_`;
     }
   };
 
+  const [exportingBatchLq, setExportingBatchLq] = useState(false);
+
+  const handleExportBatchWhatsApp = async () => {
+    if (filteredStudents.length === 0) {
+      alert('No students to export in the selected batch.');
+      return;
+    }
+    setExportingBatchLq(true);
+    try {
+      const activeBatchName = selectedBatchId === 'all'
+        ? 'All Batches'
+        : (batches.find(b => b.id === selectedBatchId)?.name || 'Batch Report');
+
+      await exportBatchLqCardImage({
+        batchName: activeBatchName,
+        duration,
+        students: filteredStudents
+      });
+    } catch (err: any) {
+      console.error('Error exporting batch LQ card:', err);
+      alert(`❌ Failed to export WhatsApp batch report: ${err.message || err}`);
+    } finally {
+      setExportingBatchLq(false);
+    }
+  };
+
   const handleWhatsAppDirectText = () => {
     if (!quotientDetails) return;
     const cleanPhone = parentMobile.replace(/\D/g, '');
@@ -748,11 +774,33 @@ _Empowering Conceptual Excellence_`;
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <button 
+              className="btn" 
+              onClick={handleExportBatchWhatsApp}
+              disabled={exportingBatchLq || filteredStudents.length === 0}
+              style={{ 
+                display: 'inline-flex', 
+                alignItems: 'center', 
+                gap: '6px', 
+                fontSize: '12px', 
+                fontWeight: 700, 
+                padding: '6px 14px',
+                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: 'var(--radius-sm, 6px)',
+                cursor: exportingBatchLq ? 'wait' : 'pointer',
+                boxShadow: '0 2px 8px rgba(16, 185, 129, 0.3)'
+              }}
+              title="Generate a lossless, razor-sharp Full HD card with pedagogical insights for WhatsApp class group"
+            >
+              {exportingBatchLq ? '⏳ Exporting...' : '📸 Export WhatsApp'}
+            </button>
             <button
               className="btn btn-secondary"
               onClick={handleStartBroadcast}
-              style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, padding: '8px 16px', background: 'rgba(37, 211, 102, 0.1)', color: 'var(--color-green-whatsapp)', border: '1px solid rgba(37, 211, 102, 0.3)' }}
+              style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, padding: '6px 14px', background: 'rgba(37, 211, 102, 0.1)', color: 'var(--color-green-whatsapp)', border: '1px solid rgba(37, 211, 102, 0.3)' }}
             >
               📱 WhatsApp Broadcast to Parents
             </button>

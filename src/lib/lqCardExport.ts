@@ -440,3 +440,322 @@ ${commentsText || 'नियमित अभ्यास, समय प्रब
     throw err;
   }
 }
+
+export interface BatchStudentLqItem {
+  id: string;
+  name: string;
+  studentCode?: string;
+  overallQuotient: number | null;
+  examScore: number;
+  practiceScore: number;
+  qualityScore: number;
+  healthScore: number;
+  integrityScore?: number;
+  batchName?: string;
+}
+
+export interface BatchLqCardExportParams {
+  batchName: string;
+  duration?: string | number;
+  students: BatchStudentLqItem[];
+}
+
+function getBatchStudentLqInsight(s: BatchStudentLqItem): { text: string; bg: string; color: string; border: string } {
+  const lq = s.overallQuotient ?? 0;
+  const exam = s.examScore ?? 0;
+  const efforts = s.practiceScore ?? 0;
+  const quality = s.qualityScore ?? 0;
+  const mastery = s.healthScore ?? 0;
+
+  if (lq >= 85) {
+    return {
+      text: '🌟 Outstanding',
+      bg: 'rgba(16, 185, 129, 0.22)',
+      color: '#34d399',
+      border: 'rgba(16, 185, 129, 0.45)'
+    };
+  }
+  if (efforts >= 70 && mastery >= 70) {
+    return {
+      text: '⚡ Diligent & Consistent',
+      bg: 'rgba(56, 189, 248, 0.22)',
+      color: '#38bdf8',
+      border: 'rgba(56, 189, 248, 0.45)'
+    };
+  }
+  if (exam >= 75 && efforts < 20) {
+    return {
+      text: '⚠️ Strong Exam, Low Practice',
+      bg: 'rgba(245, 158, 11, 0.18)',
+      color: '#fbbf24',
+      border: 'rgba(245, 158, 11, 0.45)'
+    };
+  }
+  if (efforts >= 50 && quality < 50) {
+    return {
+      text: '🎯 Practicing, Needs Accuracy',
+      bg: 'rgba(139, 92, 246, 0.2)',
+      color: '#c084fc',
+      border: 'rgba(139, 92, 246, 0.45)'
+    };
+  }
+  if (lq >= 60) {
+    return {
+      text: '🟡 Steady Progress',
+      bg: 'rgba(245, 158, 11, 0.18)',
+      color: '#fbbf24',
+      border: 'rgba(245, 158, 11, 0.45)'
+    };
+  }
+  return {
+    text: '🚨 Needs Daily Practice',
+    bg: 'rgba(239, 68, 68, 0.18)',
+    color: '#f87171',
+    border: 'rgba(239, 68, 68, 0.45)'
+  };
+}
+
+/**
+ * Generates an Ultra HD lossless WhatsApp summary card for an entire batch of students
+ * in the Learning Quotient report with pedagogical insights, copies to clipboard, and downloads.
+ */
+export async function exportBatchLqCardImage(params: BatchLqCardExportParams): Promise<{
+  blob: Blob;
+  fileName: string;
+  copiedToClipboard: boolean;
+}> {
+  if (typeof window === 'undefined') {
+    throw new Error('Image export is only available in browser environments.');
+  }
+
+  const { batchName, duration = 'monthly', students } = params;
+
+  if (students.length === 0) {
+    alert('No students to export in this batch.');
+    throw new Error('No students to export.');
+  }
+
+  const html2canvas = await loadHtml2Canvas();
+  if (!html2canvas) {
+    throw new Error('Could not initialize html2canvas library.');
+  }
+
+  // Sort descending by overallQuotient
+  const sorted = [...students].sort((a, b) => (b.overallQuotient ?? 0) - (a.overallQuotient ?? 0));
+  const totalStudents = sorted.length;
+  const batchAvgLQ = Math.round(sorted.reduce((sum, s) => sum + (s.overallQuotient ?? 0), 0) / (totalStudents || 1));
+  const topLQ = sorted.length > 0 ? (sorted[0].overallQuotient ?? 0) : 0;
+  const avgExam = Math.round(sorted.reduce((sum, s) => sum + (s.examScore ?? 0), 0) / (totalStudents || 1));
+  const avgEfforts = Math.round(sorted.reduce((sum, s) => sum + (s.practiceScore ?? 0), 0) / (totalStudents || 1));
+  const avgQuality = Math.round(sorted.reduce((sum, s) => sum + (s.qualityScore ?? 0), 0) / (totalStudents || 1));
+
+  const todayFormatted = formatDateDMY(new Date());
+  const durationLabel = typeof duration === 'number'
+    ? `Past ${duration} Days`
+    : duration === 'weekly'
+      ? 'Weekly Evaluation'
+      : 'Monthly Evaluation';
+
+  // Create offscreen container styled with crisp typography and dark slate background
+  const container = document.createElement('div');
+  container.style.position = 'fixed';
+  container.style.left = '0';
+  container.style.top = '0';
+  container.style.width = '1080px';
+  container.style.backgroundColor = '#0b1120';
+  container.style.color = '#f8fafc';
+  container.style.fontFamily = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans Devanagari', 'Mangal', 'Helvetica Neue', Arial, sans-serif";
+  (container.style as any).webkitFontSmoothing = 'antialiased';
+  (container.style as any).mozOsxFontSmoothing = 'grayscale';
+  (container.style as any).textRendering = 'optimizeLegibility';
+  container.style.padding = '28px 32px';
+  container.style.boxSizing = 'border-box';
+  container.style.zIndex = '-9999';
+  container.style.pointerEvents = 'none';
+  container.style.opacity = '1';
+
+  // Build table rows
+  const rowsHtml = sorted.map((s, idx) => {
+    const rank = idx + 1;
+    const rankBadge = rank === 1 ? '🥇 1' : rank === 2 ? '🥈 2' : rank === 3 ? '🥉 3' : `${rank}`;
+    const lq = s.overallQuotient ?? 0;
+    const lqColor = getScoreColor(lq);
+    const rowBg = idx % 2 === 0 ? 'rgba(255, 255, 255, 0.02)' : 'rgba(255, 255, 255, 0.05)';
+    const insight = getBatchStudentLqInsight(s);
+
+    return `
+      <tr style="border-bottom: 1px solid #1e293b; height: 38px; background-color: ${rowBg};">
+        <td style="padding: 8px 10px; text-align: center; font-weight: 700; font-size: 13px; color: #94a3b8;">${rankBadge}</td>
+        <td style="padding: 8px 12px; font-weight: 700; font-size: 14px; color: #ffffff; white-space: nowrap;">
+          ${s.name}
+        </td>
+        <td style="padding: 8px 12px; text-align: center; font-weight: 900; font-size: 15px; color: ${lqColor}; white-space: nowrap;">
+          ${lq}%
+        </td>
+        <td style="padding: 8px 10px; text-align: center; font-size: 13px; font-weight: 700; color: ${getScoreColor(s.examScore)}; white-space: nowrap;">
+          ${s.examScore}%
+        </td>
+        <td style="padding: 8px 10px; text-align: center; font-size: 13px; font-weight: 700; color: ${getScoreColor(s.healthScore)}; white-space: nowrap;">
+          ${s.healthScore}%
+        </td>
+        <td style="padding: 8px 10px; text-align: center; font-size: 13px; font-weight: 700; color: ${getScoreColor(s.practiceScore)}; white-space: nowrap;">
+          ${s.practiceScore}%
+        </td>
+        <td style="padding: 8px 10px; text-align: center; font-size: 13px; font-weight: 700; color: ${getScoreColor(s.qualityScore)}; white-space: nowrap;">
+          ${s.qualityScore}%
+        </td>
+        <td style="padding: 8px 12px; text-align: center; white-space: nowrap;">
+          <span style="display:inline-block; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; background: ${insight.bg}; color: ${insight.color}; border: 1px solid ${insight.border}; white-space: nowrap;">
+            ${insight.text}
+          </span>
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+  container.innerHTML = `
+    <div style="background: linear-gradient(145deg, #0f172a 0%, #1e293b 100%); border: 1px solid #334155; border-radius: 12px; padding: 24px 28px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+      
+      <!-- Header -->
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid #334155; padding-bottom: 16px; margin-bottom: 16px;">
+        <div>
+          <div style="color: #fbbf24; font-size: 15px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase;">
+            YASHCOM FOUNDATION, SHEGAON
+          </div>
+          <div style="color: #ffffff; font-size: 22px; font-weight: 800; margin: 3px 0 5px; letter-spacing: -0.3px;">
+            🏆 Learning Quotient (LQ) Academic Report
+          </div>
+          <div style="color: #38bdf8; font-size: 15px; font-weight: 700;">
+            ${batchName}
+          </div>
+        </div>
+        <div style="text-align: right;">
+          <div style="background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.35); color: #38bdf8; font-size: 12px; font-weight: 800; padding: 4px 12px; border-radius: 6px; display: inline-block;">
+            📅 ${todayFormatted}
+          </div>
+          <div style="color: #94a3b8; font-size: 11.5px; font-weight: 600; margin-top: 5px;">
+            Evaluation Scope: <strong style="color:#ffffff;">${durationLabel}</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- KPI Summary Cards -->
+      <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 18px;">
+        <div style="background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 10px 12px; text-align: center;">
+          <div style="font-size: 22px; font-weight: 800; color: #ffffff;">${totalStudents}</div>
+          <div style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px;">Students</div>
+        </div>
+        <div style="background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 10px 12px; text-align: center;">
+          <div style="font-size: 22px; font-weight: 800; color: ${getScoreColor(batchAvgLQ)};">${batchAvgLQ}%</div>
+          <div style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px;">Batch Avg LQ</div>
+        </div>
+        <div style="background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 10px 12px; text-align: center;">
+          <div style="font-size: 22px; font-weight: 800; color: #fbbf24;">${topLQ}%</div>
+          <div style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px;">Highest LQ</div>
+        </div>
+        <div style="background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 10px 12px; text-align: center;">
+          <div style="font-size: 22px; font-weight: 800; color: #38bdf8;">${avgExam}%</div>
+          <div style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px;">Exam Avg</div>
+        </div>
+        <div style="background: #1e293b; border: 1px solid #334155; border-radius: 8px; padding: 10px 12px; text-align: center;">
+          <div style="font-size: 22px; font-weight: 800; color: #34d399;">${avgEfforts}%</div>
+          <div style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px;">Practice Avg</div>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <table style="width: 100%; border-collapse: collapse; border: 1px solid #334155; border-radius: 8px; overflow: hidden;">
+        <thead>
+          <tr style="background: #1e293b; color: #cbd5e1; font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; border-bottom: 2px solid #334155; height: 36px;">
+            <th style="padding: 8px 10px; text-align: center; width: 50px;">Rank</th>
+            <th style="padding: 8px 12px; text-align: left;">Student Name</th>
+            <th style="padding: 8px 12px; text-align: center; width: 95px;">LQ Score</th>
+            <th style="padding: 8px 10px; text-align: center; width: 90px;">Exam Avg</th>
+            <th style="padding: 8px 10px; text-align: center; width: 90px;">Mastery</th>
+            <th style="padding: 8px 10px; text-align: center; width: 90px;">Efforts</th>
+            <th style="padding: 8px 10px; text-align: center; width: 90px;">Quality</th>
+            <th style="padding: 8px 12px; text-align: center; width: 190px;">Insight</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rowsHtml}
+        </tbody>
+      </table>
+
+      <!-- Educational Guidance Banner (Hindi / Marathi) -->
+      <div style="margin-top: 16px; padding: 12px 16px; background: rgba(251, 191, 36, 0.08); border: 1px solid rgba(251, 191, 36, 0.3); border-radius: 8px; display: flex; align-items: flex-start; gap: 12px;">
+        <span style="font-size: 22px; line-height: 1;">💡</span>
+        <div style="font-size: 12px; color: #fde68a; line-height: 1.6; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans Devanagari', 'Mangal', sans-serif;">
+          <strong style="color: #fbbf24; font-size: 13px;">⚠️ शैक्षणिक विश्लेषण एवं मार्गदर्शन (Academic Guidance & Insights):</strong><br/>
+          लर्निंग कोशंट (LQ) हा केवळ परीक्षेच्या गुणांचा नव्हे, तर नियमित सराव प्रयत्न (25%), सराव अचूकता (15%), संकल्पना प्रभुत्व (30%) आणि परीक्षा कामगिरी (30%) यांचा वैज्ञानिक निर्देशांक आहे. परीक्षेतील गुणांइतकेच दररोज स्वतःहून सराव करणे आवश्यक आहे. सातत्यपूर्ण प्रयत्नांतूनच संकल्पनांची खरी समज आणि प्रभुत्व प्राप्त होते.
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; font-size: 11px; color: #94a3b8; border-top: 1px solid #1e293b; padding-top: 12px;">
+        <span><strong>YASHCOM FOUNDATION, SHEGAON</strong> • Academic Evaluation Portal</span>
+        <span>Verified Batch Academic Performance Summary • Confidential</span>
+      </div>
+
+    </div>
+  `;
+
+  document.body.appendChild(container);
+
+  try {
+    await new Promise(r => setTimeout(r, 300));
+
+    const canvas = await html2canvas(container, {
+      scale: 3,
+      useCORS: true,
+      backgroundColor: '#0b1120',
+      logging: false
+    });
+
+    document.body.removeChild(container);
+
+    const blob: Blob = await new Promise((resolve, reject) => {
+      canvas.toBlob((b: Blob | null) => {
+        if (b) resolve(b);
+        else reject(new Error('Failed to generate image blob from canvas.'));
+      }, 'image/png');
+    });
+
+    const cleanBatch = batchName.replace(/[^a-zA-Z0-9_-]/g, '_');
+    const fileName = `LQ_Batch_Summary_${cleanBatch}.png`;
+    const imageUri = canvas.toDataURL('image/png');
+
+    let copiedToClipboard = false;
+    if (navigator.clipboard && typeof ClipboardItem !== 'undefined') {
+      try {
+        await navigator.clipboard.write([
+          new ClipboardItem({ 'image/png': blob })
+        ]);
+        copiedToClipboard = true;
+      } catch (clipErr) {
+        console.warn('Clipboard write failed:', clipErr);
+      }
+    }
+
+    const downloadLink = document.createElement('a');
+    downloadLink.download = fileName;
+    downloadLink.href = imageUri;
+    downloadLink.click();
+
+    playNotificationSound();
+
+    if (copiedToClipboard) {
+      alert(`✅ Ultra HD WhatsApp Batch Card Exported!\n\n1. Lossless Ultra-HD Image downloaded: ${fileName}\n2. Copied to Clipboard! You can directly press Ctrl + V in WhatsApp Web.`);
+    } else {
+      alert(`✅ Ultra HD WhatsApp Batch Card downloaded successfully as ${fileName}!`);
+    }
+
+    return { blob, fileName, copiedToClipboard };
+  } catch (err: any) {
+    if (container.parentNode) {
+      document.body.removeChild(container);
+    }
+    throw err;
+  }
+}
+
