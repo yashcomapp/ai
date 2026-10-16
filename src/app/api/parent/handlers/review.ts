@@ -226,14 +226,14 @@ export async function GET(req: NextRequest) {
       adminDb.collection('reviews')
         .where('studentCode', '==', studentCode)
         .get(),
-      // Practice Reviews (skipped for autonomous children)
-      isAutonomous 
-        ? Promise.resolve({ docs: [] })
-        : adminDb.collection('parentReviews').where('studentCode', '==', studentCode).get(),
-      // Subjective Reviews (skipped for autonomous children)
-      isAutonomous 
-        ? Promise.resolve({ docs: [] })
-        : adminDb.collection('subjectiveAttempts').where('studentCode', '==', studentCode).get(),
+      // Practice Reviews (always fetch so history is visible to Admins and in student dossier)
+      adminDb.collection('parentReviews')
+        .where('studentCode', '==', studentCode)
+        .get(),
+      // Subjective Reviews (always fetch so history is visible to Admins and in student dossier)
+      adminDb.collection('subjectiveAttempts')
+        .where('studentCode', '==', studentCode)
+        .get(),
       // Existing Parent Evaluations (source of truth for approvals)
       adminDb.collection('evaluations')
         .where('studentCode', '==', studentCode)
@@ -446,8 +446,8 @@ export async function GET(req: NextRequest) {
     // 2. Map Practice reviews
     const mappedPracticeReviews = pracSnaps.docs.map(doc => {
       const data = doc.data();
-      const status = data.parentStatus || (evalMap.has(doc.id) ? 'approved' : 'pending');
-      const resolvedActor = data.reviewedByActor || evalMap.get(doc.id)?.reviewedByActor || (status === 'approved' ? 'parent' : null);
+      const status = isAutonomous ? 'approved' : (data.parentStatus || (evalMap.has(doc.id) ? 'approved' : 'pending'));
+      const resolvedActor = data.reviewedByActor || evalMap.get(doc.id)?.reviewedByActor || (status === 'approved' ? (isAutonomous ? 'autonomous' : 'parent') : null);
       
       let sData = syllabusMap.get(data.topicCode || '');
       if (!sData && data.topicCode) {
