@@ -9,6 +9,7 @@ import { preprocessMathText, formatRichText, parseAnswerList, isOptionSelectedBy
 import QuestionDisplay, { RichMathText } from '@/components/QuestionDisplay';
 import { playNotificationSound } from '@/lib/audioUtils';
 import { getDateKeyIST, formatDateDMY, formatTimeIST, calculateEndDatetime } from '@/lib/dateUtils';
+import { formatReportStudentName, getScoreChip, getDeepScoreColor } from '@/lib/lqCardExport';
 
 interface Attempt {
   id: string;
@@ -1454,53 +1455,54 @@ function ExamReportContent() {
       container.style.pointerEvents = 'none';
       container.style.opacity = '1';
 
-      // Build roster rows with crisp, legible typography on white background
+      // Build roster rows with crisp, high-contrast typography and first+last name formatting
       const rowsHtml = sortedRoster.map((a, idx) => {
         const stats = getAttemptStats(a);
         const rank = idx + 1;
-        const rankBadge = rank === 1 ? '🥇 1' : rank === 2 ? '🥈 2' : rank === 3 ? '🥉 3' : `${rank}`;
+        const rankBadge = rank === 1 ? '🥇 1' : rank === 2 ? '🥈 2' : rank === 3 ? '🥉 3' : `<span style="display:inline-block; min-width: 24px; padding: 2px 6px; border-radius: 4px; background: #e2e8f0; color: #1e293b; font-weight: 800; font-size: 12px;">${rank}</span>`;
+        const displayName = formatReportStudentName(a.studentName);
         const isGamble = stats.isHighGamble;
         const rowBg = idx % 2 === 0 ? '#ffffff' : '#f8fafc';
         const blunderStyle = isGamble ? 'background-color: #fef2f2; border-left: 4px solid #ef4444;' : `background-color: ${rowBg};`;
 
         let remarkHtml = '';
         if (isGamble) {
-          remarkHtml = `<span style="display:inline-block; padding: 3px 8px; border-radius: 4px; font-size: 11.5px; font-weight: 800; background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; white-space: nowrap;">🚨 ${stats.errorRatio >= 2 ? stats.errorRatio.toFixed(1) + 'x Errors' : 'Blind Guessing'} (-${stats.penaltyLost}m)</span>`;
+          remarkHtml = `<span style="display:inline-block; padding: 4px 10px; border-radius: 6px; font-size: 11.5px; font-weight: 800; background: #fee2e2; color: #991b1b; border: 1.5px solid #fca5a5; white-space: nowrap;">🚨 ${stats.errorRatio >= 2 ? stats.errorRatio.toFixed(1) + 'x Errors' : 'Blind Guessing'} (-${stats.penaltyLost}m)</span>`;
         } else if (stats.accuracy >= 90) {
-          remarkHtml = `<span style="display:inline-block; padding: 3px 8px; border-radius: 4px; font-size: 11.5px; font-weight: 700; background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; white-space: nowrap;">🌟 Outstanding</span>`;
+          remarkHtml = `<span style="display:inline-block; padding: 4px 10px; border-radius: 6px; font-size: 11.5px; font-weight: 800; background: #dcfce7; color: #14532d; border: 1.5px solid #86efac; white-space: nowrap;">🌟 Outstanding</span>`;
         } else if (stats.accuracy >= 75) {
-          remarkHtml = `<span style="display:inline-block; padding: 3px 8px; border-radius: 4px; font-size: 11.5px; font-weight: 700; background: #f0f9ff; color: #0284c7; border: 1px solid #bae6fd; white-space: nowrap;">✅ Strong</span>`;
+          remarkHtml = `<span style="display:inline-block; padding: 4px 10px; border-radius: 6px; font-size: 11.5px; font-weight: 800; background: #e0f2fe; color: #0369a1; border: 1.5px solid #7dd3fc; white-space: nowrap;">✅ Strong</span>`;
         } else if (stats.accuracy >= 50) {
-          remarkHtml = `<span style="display:inline-block; padding: 3px 8px; border-radius: 4px; font-size: 11.5px; font-weight: 700; background: #fefce8; color: #d97706; border: 1px solid #fde047; white-space: nowrap;">🟡 Moderate</span>`;
+          remarkHtml = `<span style="display:inline-block; padding: 4px 10px; border-radius: 6px; font-size: 11.5px; font-weight: 800; background: #fef9c3; color: #854d0e; border: 1.5px solid #fde047; white-space: nowrap;">🟡 Moderate</span>`;
         } else {
-          remarkHtml = `<span style="display:inline-block; padding: 3px 8px; border-radius: 4px; font-size: 11.5px; font-weight: 700; background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; white-space: nowrap;">⚠️ Penalty Trap</span>`;
+          remarkHtml = `<span style="display:inline-block; padding: 4px 10px; border-radius: 6px; font-size: 11.5px; font-weight: 800; background: #fee2e2; color: #991b1b; border: 1.5px solid #fca5a5; white-space: nowrap;">⚠️ Penalty Trap</span>`;
         }
 
-        const scoreColorHex = a.percentage >= 75 ? '#059669' : a.percentage >= 50 ? '#d97706' : '#dc2626';
-        const paceColorHex = stats.avgPaceSec > 0 && stats.avgPaceSec < 20 && stats.wrongCount > 5 ? '#d97706' : '#475569';
+        const paceColorHex = stats.avgPaceSec > 0 && stats.avgPaceSec < 20 && stats.wrongCount > 5 ? '#b45309' : '#1e293b';
 
         return `
-          <tr style="border-bottom: 1px solid #e2e8f0; height: 38px; ${blunderStyle}">
-            <td style="padding: 8px 10px; text-align: center; font-weight: 700; font-size: 13px; color: #64748b;">${rankBadge}</td>
-            <td style="padding: 8px 12px; font-weight: 700; font-size: 14px; color: #0f172a; white-space: nowrap;">
-              ${a.studentName}
-              ${a.isLate ? '<span style="margin-left: 6px; font-size: 10px; padding: 2px 6px; background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; border-radius: 4px; font-weight: 800;">LATE</span>' : ''}
+          <tr style="border-bottom: 1px solid #e2e8f0; height: 42px; ${blunderStyle}">
+            <td style="padding: 8px 10px; text-align: center; font-weight: 900; font-size: 13.5px; color: #0f172a;">${rankBadge}</td>
+            <td style="padding: 8px 14px; font-weight: 800; font-size: 14.5px; color: #0f172a; white-space: nowrap;">
+              ${displayName}
+              ${a.isLate ? '<span style="margin-left: 6px; font-size: 10px; padding: 2px 6px; background: #fee2e2; color: #991b1b; border: 1.5px solid #fca5a5; border-radius: 4px; font-weight: 900;">LATE</span>' : ''}
             </td>
-            <td style="padding: 8px 12px; text-align: right; font-weight: 800; font-size: 14px; color: ${scoreColorHex}; white-space: nowrap;">
-              ${a.score || 0} / ${a.totalMarks} (${a.percentage}%)
+            <td style="padding: 8px 12px; text-align: center; white-space: nowrap;">
+              <strong style="font-size: 14.5px; color: #0f172a; font-weight: 900;">${a.score || 0}</strong> <span style="font-size: 12px; color: #64748b; font-weight: 700;">/ ${a.totalMarks}</span>
+              <span style="margin-left: 6px;">${getScoreChip(a.percentage)}</span>
             </td>
             <td style="padding: 8px 12px; text-align: center; font-size: 13px; white-space: nowrap;">
-              <span style="color: #059669; font-weight: 800;">${stats.correctCount}✅</span>
-              <span style="color: #dc2626; font-weight: 800; margin-left: 6px;">${stats.wrongCount}❌</span>
-              <span style="color: #64748b; font-weight: 600; margin-left: 6px;">${stats.unattemptedCount}⚪</span>
+              <span style="color: #14532d; font-weight: 800;">${stats.correctCount}✅</span>
+              <span style="color: #991b1b; font-weight: 800; margin-left: 6px;">${stats.wrongCount}❌</span>
+              <span style="color: #475569; font-weight: 700; margin-left: 6px;">${stats.unattemptedCount}⚪</span>
             </td>
-            <td style="padding: 8px 10px; text-align: center; font-size: 13.5px; font-weight: 800; color: ${scoreColorHex}; white-space: nowrap;">
-              ${stats.accuracy.toFixed(1)}%
+            <td style="padding: 8px 10px; text-align: center; white-space: nowrap;">
+              ${getScoreChip(stats.accuracy)}
             </td>
-            <td style="padding: 8px 10px; text-align: center; font-size: 13px; color: ${paceColorHex}; font-weight: 700; white-space: nowrap;">
+            <td style="padding: 8px 10px; text-align: center; font-size: 13px; color: ${paceColorHex}; font-weight: 800; white-space: nowrap;">
               ${stats.avgPaceSec ? `${stats.avgPaceSec}s` : '-'}
             </td>
-            <td style="padding: 8px 10px; text-align: center; font-size: 12.5px; color: #64748b; font-weight: 600; white-space: nowrap;">
+            <td style="padding: 8px 10px; text-align: center; font-size: 12.5px; color: #475569; font-weight: 700; white-space: nowrap;">
               ${formatSeconds(getReviewTimeTaken(a))}
             </td>
             <td style="padding: 8px 12px; text-align: center; white-space: nowrap;">
@@ -1510,80 +1512,80 @@ function ExamReportContent() {
         `;
       }).join('');
 
-      // Absent students section
+      // Absent students section with first+last name formatting
       const absentHtml = notStartedStudents.length > 0 ? `
-        <div style="margin-top: 16px; padding: 12px 16px; background: #fef2f2; border: 1.5px solid #fecaca; border-radius: 8px;">
-          <div style="font-size: 12px; font-weight: 800; color: #dc2626; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 5px;">
+        <div style="margin-top: 18px; padding: 12px 18px; background: #fef2f2; border: 1.5px solid #fca5a5; border-radius: 8px;">
+          <div style="font-size: 12.5px; font-weight: 900; color: #991b1b; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 5px;">
             🔴 Absent Students (${notStartedStudents.length})
           </div>
-          <div style="font-size: 12.5px; color: #991b1b; font-weight: 600; line-height: 1.5;">
-            ${notStartedStudents.map(s => s.name).join(' • ')}
+          <div style="font-size: 13px; color: #7f1d1d; font-weight: 700; line-height: 1.6;">
+            ${notStartedStudents.map(s => formatReportStudentName(s.name)).join(' • ')}
           </div>
         </div>
       ` : '';
 
       container.innerHTML = `
-        <div style="background: #ffffff; border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 24px 28px; box-shadow: 0 8px 30px rgba(0,0,0,0.06);">
+        <div style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 12px; padding: 24px 28px; box-shadow: 0 8px 30px rgba(0,0,0,0.06);">
           
           <!-- Header -->
           <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #e2e8f0; padding-bottom: 16px; margin-bottom: 16px;">
             <div>
-              <div style="color: #b45309; font-size: 15px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase;">
+              <div style="color: #92400e; font-size: 15px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase;">
                 YASHCOM FOUNDATION, SHEGAON
               </div>
-              <div style="color: #0f172a; font-size: 22px; font-weight: 900; margin: 3px 0 5px; letter-spacing: -0.3px;">
+              <div style="color: #0f172a; font-size: 24px; font-weight: 900; margin: 3px 0 5px; letter-spacing: -0.3px;">
                 🏆 Exam Performance Summary
               </div>
-              <div style="color: #0284c7; font-size: 15px; font-weight: 700;">
+              <div style="color: #0369a1; font-size: 16px; font-weight: 800;">
                 ${exam.name || exam.subjectName || exam.id}
               </div>
             </div>
             <div style="text-align: right;">
-              <div style="background: #f0f9ff; border: 1px solid #bae6fd; color: #0369a1; font-size: 12px; font-weight: 800; padding: 4px 12px; border-radius: 6px; display: inline-block;">
+              <div style="background: #f1f5f9; border: 1.5px solid #cbd5e1; color: #1e293b; font-size: 12.5px; font-weight: 800; padding: 5px 14px; border-radius: 6px; display: inline-block;">
                 📅 ${todayFormatted}
               </div>
-              <div style="color: #64748b; font-size: 11.5px; font-weight: 600; margin-top: 5px;">
-                Total Marks: <strong style="color:#0f172a;">${exam.totalMarks || 96}</strong> | Penalty: <strong style="color:#dc2626;">-25% (-1 mark)</strong>
+              <div style="color: #475569; font-size: 12px; font-weight: 700; margin-top: 6px;">
+                Total Marks: <strong style="color:#0f172a;">${exam.totalMarks || 96}</strong> | Penalty: <strong style="color:#991b1b;">-25% (-1 mark)</strong>
               </div>
             </div>
           </div>
 
           <!-- KPI Summary Cards -->
-          <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 18px;">
-            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; text-align: center;">
-              <div style="font-size: 22px; font-weight: 800; color: #0f172a;">${totalAssigned}</div>
-              <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px;">Assigned</div>
+          <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 20px;">
+            <div style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 12px 14px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+              <div style="font-size: 26px; font-weight: 900; color: #0f172a; line-height: 1.1;">${totalAssigned}</div>
+              <div style="font-size: 11.5px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.6px; margin-top: 4px;">Assigned</div>
             </div>
-            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; text-align: center;">
-              <div style="font-size: 22px; font-weight: 800; color: #059669;">${sortedRoster.length}</div>
-              <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px;">Submitted</div>
+            <div style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 12px 14px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+              <div style="font-size: 26px; font-weight: 900; color: #047857; line-height: 1.1;">${sortedRoster.length}</div>
+              <div style="font-size: 11.5px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.6px; margin-top: 4px;">Submitted</div>
             </div>
-            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; text-align: center;">
-              <div style="font-size: 22px; font-weight: 800; color: ${notStartedStudents.length > 0 ? '#dc2626' : '#64748b'};">${notStartedStudents.length}</div>
-              <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px;">Absent</div>
+            <div style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 12px 14px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+              <div style="font-size: 26px; font-weight: 900; color: ${notStartedStudents.length > 0 ? '#991b1b' : '#475569'}; line-height: 1.1;">${notStartedStudents.length}</div>
+              <div style="font-size: 11.5px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.6px; margin-top: 4px;">Absent</div>
             </div>
-            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; text-align: center;">
-              <div style="font-size: 22px; font-weight: 800; color: #d97706;">${maxScore}/${exam.totalMarks || 96}</div>
-              <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px;">Highest (${maxPct}%)</div>
+            <div style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 12px 14px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+              <div style="font-size: 26px; font-weight: 900; color: #047857; line-height: 1.1;">${maxScore}/${exam.totalMarks || 96}</div>
+              <div style="font-size: 11.5px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.6px; margin-top: 4px;">Highest (${maxPct}%)</div>
             </div>
-            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; text-align: center;">
-              <div style="font-size: 22px; font-weight: 800; color: #0284c7;">${avgPct}%</div>
-              <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px;">Batch Average</div>
+            <div style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 12px 14px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+              <div style="font-size: 26px; font-weight: 900; color: ${getDeepScoreColor(avgPct)}; line-height: 1.1;">${avgPct}%</div>
+              <div style="font-size: 11.5px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.6px; margin-top: 4px;">Batch Average</div>
             </div>
           </div>
 
-          <!-- Table -->
-          <table style="width: 100%; border-collapse: collapse; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+          <!-- Table with Executive Dark Navy Header for Maximum Legibility -->
+          <table style="width: 100%; border-collapse: collapse; border: 1.5px solid #cbd5e1; border-radius: 10px; overflow: hidden;">
             <thead>
-              <tr style="background: #f8fafc; color: #475569; font-size: 11.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.6px; border-bottom: 2px solid #cbd5e1; height: 36px;">
-                <th style="padding: 8px 10px; text-align: center; width: 50px;">Rank</th>
-                <th style="padding: 8px 12px; text-align: left;">Student Name</th>
-                <th style="padding: 8px 12px; text-align: right; width: 140px;">Score</th>
-                <th style="padding: 8px 12px; text-align: center; width: 140px;">Breakdown</th>
-                <th style="padding: 8px 10px; text-align: center; width: 90px;">Accuracy</th>
-                <th style="padding: 8px 10px; text-align: center; width: 75px;">Pace</th>
-                <th style="padding: 8px 10px; text-align: center; width: 80px;">Time</th>
-                <th style="padding: 8px 12px; text-align: center; width: 170px;">Insight</th>
+              <tr style="background: #0f172a; color: #ffffff; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.6px; height: 42px;">
+                <th style="padding: 10px 10px; text-align: center; width: 55px;">Rank</th>
+                <th style="padding: 10px 14px; text-align: left;">Student Name</th>
+                <th style="padding: 10px 12px; text-align: center; width: 145px;">Score</th>
+                <th style="padding: 10px 12px; text-align: center; width: 140px;">Breakdown</th>
+                <th style="padding: 10px 10px; text-align: center; width: 95px;">Accuracy</th>
+                <th style="padding: 10px 10px; text-align: center; width: 75px;">Pace</th>
+                <th style="padding: 10px 10px; text-align: center; width: 80px;">Time</th>
+                <th style="padding: 10px 12px; text-align: center; width: 190px;">Insight</th>
               </tr>
             </thead>
             <tbody>
@@ -1594,33 +1596,33 @@ function ExamReportContent() {
           <!-- Absent Box -->
           ${absentHtml}
 
-          <!-- Educational Insight Banner (Hindi / Marathi) - Bullet List -->
-          <div style="margin-top: 16px; padding: 14px 18px; background: #fffbeb; border: 1.5px solid #fde68a; border-radius: 10px;">
-            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+          <!-- Educational Insight Banner (Hindi / Marathi) - High Contrast Bullet List -->
+          <div style="margin-top: 20px; padding: 16px 20px; background: #f8fafc; border: 1.5px solid #cbd5e1; border-left: 5px solid #0284c7; border-radius: 10px;">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
               <span style="font-size: 20px; line-height: 1;">💡</span>
-              <strong style="color: #b45309; font-size: 13.5px; font-weight: 800; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans Devanagari', 'Mangal', sans-serif;">
+              <strong style="color: #0f172a; font-size: 14.5px; font-weight: 900; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans Devanagari', 'Mangal', sans-serif;">
                 परीक्षा विश्लेषण एवं महत्त्वाचे नियम (Important Exam Insights):
               </strong>
             </div>
-            <ul style="margin: 0; padding-left: 20px; color: #78350f; font-size: 12px; line-height: 1.65; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans Devanagari', 'Mangal', sans-serif;">
-              <li style="margin-bottom: 4px;">
-                <strong>📌 टोले मारणे (अंदाजे तुक्के लावणे) पूर्णपणे टाळा:</strong> प्रत्येक चुकीच्या उत्तराला <strong>-25% (१ गुण)</strong> नेगेटिव्ह मार्किंग आहे. टोले मारल्यास बरोबर उत्तरांचे कष्टाचे गुणही वजा होतात.
+            <ul style="margin: 0; padding-left: 20px; color: #1e293b; font-size: 13px; line-height: 1.75; font-weight: 600; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans Devanagari', 'Mangal', sans-serif;">
+              <li style="margin-bottom: 6px;">
+                <strong style="color: #0f172a;">📌 टोले मारणे (अंदाजे तुक्के लावणे) पूर्णपणे टाळा:</strong> प्रत्येक चुकीच्या उत्तराला <strong>-25% (१ गुण)</strong> नेगेटिव्ह मार्किंग आहे. टोले मारल्यास बरोबर उत्तरांचे कष्टाचे गुणही वजा होतात.
               </li>
-              <li style="margin-bottom: 4px;">
-                <strong>📌 प्रश्न न आल्यास सोडून देणे (Unattempted) अधिक हिताचे:</strong> अंदाज लावून टोले मारण्यापेक्षा प्रश्न अनुत्तरित सोडल्यास कोणतेही गुण वजा होत नाहीत (Zero Penalty).
+              <li style="margin-bottom: 6px;">
+                <strong style="color: #0f172a;">📌 प्रश्न न आल्यास सोडून देणे (Unattempted) अधिक हिताचे:</strong> अंदाज लावून टोले मारण्यापेक्षा प्रश्न अनुत्तरित सोडल्यास कोणतेही गुण वजा होत नाहीत (Zero Penalty).
               </li>
-              <li style="margin-bottom: 4px;">
-                <strong>📌 त्रुटींचे वेळेवर पुनरावलोकन (Review & Learn):</strong> परीक्षा केवळ गुणांसाठी नसून स्वतःच्या संकल्पनांमधील त्रुटी समजून घेण्यासाठी आहे.
+              <li style="margin-bottom: 6px;">
+                <strong style="color: #0f172a;">📌 त्रुटींचे वेळेवर पुनरावलोकन (Review & Learn):</strong> परीक्षा केवळ गुणांसाठी नसून स्वतःच्या संकल्पनांमधील त्रुटी समजून घेण्यासाठी आहे.
               </li>
               <li>
-                <strong>📌 खरी समज आणि सातत्य (True Conceptual Learning):</strong> परीक्षेनंतर चुकलेल्या प्रश्नांचे योग्य स्पष्टीकरण समजून घेणे म्हणजेच खरी शैक्षणिक प्रगती.
+                <strong style="color: #0f172a;">📌 खरी समज आणि सातत्य (True Conceptual Learning):</strong> परीक्षेनंतर चुकलेल्या प्रश्नांचे योग्य स्पष्टीकरण समजून घेणे म्हणजेच खरी शैक्षणिक प्रगती.
               </li>
             </ul>
           </div>
 
           <!-- Footer -->
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; font-size: 11px; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 12px;">
-            <span><strong>YASHCOM FOUNDATION, SHEGAON</strong> • Academic Evaluation Portal</span>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; font-size: 11.5px; color: #475569; border-top: 1.5px solid #e2e8f0; padding-top: 12px;">
+            <span><strong style="color: #0f172a;">YASHCOM FOUNDATION, SHEGAON</strong> • Academic Evaluation Portal</span>
             <span>Verified Official Snapshot • Confidential Batch Report</span>
           </div>
 

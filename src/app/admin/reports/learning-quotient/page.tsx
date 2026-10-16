@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useReports } from '@/hooks/useReports';
 import { exportStudentMonthlyReportPDF } from '@/lib/pdfExport';
 import { getScoreColor } from '@/lib/dashboardMetrics';
-import { exportStudentLqCardImage, exportBatchLqCardImage } from '@/lib/lqCardExport';
+import { exportStudentLqCardImage, exportBatchLqCardImage, formatReportStudentName } from '@/lib/lqCardExport';
 
 interface StudentLQ {
   id: string;
@@ -839,7 +839,7 @@ _Empowering Conceptual Excellence_`;
                           onClick={() => handleOpenDetailsModal(s)}
                           title="Click to view LQ breakdown details"
                         >
-                          {s.name}
+                          {formatReportStudentName(s.name)}
                         </div>
                       </td>
                       <td style={{ padding: '12px 8px', textAlign: 'center' }}>
@@ -1013,7 +1013,7 @@ _Empowering Conceptual Excellence_`;
                   </div>
  
                   <div>
-                    <h4 style={{ fontSize: '15px', fontWeight: 800, margin: '0 0 6px 0', color: 'var(--text)' }}>{selectedStudentInfo?.name}</h4>
+                    <h4 style={{ fontSize: '15px', fontWeight: 800, margin: '0 0 6px 0', color: 'var(--text)' }}>{formatReportStudentName(selectedStudentInfo?.name || '')}</h4>
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                       <span 
                         style={{
