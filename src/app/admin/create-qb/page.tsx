@@ -7,7 +7,7 @@ import Script from 'next/script';
 import { useMathRender } from '@/hooks/useMathRender';
 import { preprocessMathText, toCanonicalQuestionType, isMultipleChoiceType, robustParseAIJson, validateQuestion, normalizeOptionText, cleanOptionPrefix, cleanStringForMatch, isOptionMatch, shuffleArray, normalizeBloomLevel, BLOOM_TAXONOMY_MAP, stripCitations } from '@/lib/questionTypes';
 import QuestionDisplay, { QuestionStemDisplay, QuestionExplanationDisplay, RichMathText } from '@/components/QuestionDisplay';
-import { highlightModelAnswerKeywords } from '@/lib/pdfExport';
+import { highlightModelAnswerKeywords } from '@/lib/questionTypes';
 import { SyllabusSelector } from '@/components/SyllabusSelector';
 import { useSyllabusSelector } from '@/hooks/useSyllabusSelector';
 import { 

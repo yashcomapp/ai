@@ -4,7 +4,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
-const ExportPdfModal = dynamic(() => import('@/components/ExportPdfModal').then(m => ({ default: m.ExportPdfModal })), { ssr: false });
+
 import { collection, query, where, onSnapshot, doc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { ref, push, set, onValue, off, remove, serverTimestamp } from 'firebase/database';
 import { db } from '@/lib/firebase/firestore';
@@ -84,7 +84,6 @@ export default function AdminLiveMonitorPage() {
   // Sorting and PDF export states
   const [sortField, setSortField] = useState<'studentName' | 'status' | 'violations' | 'lastActive'>('lastActive');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
-  const [pdfSelectorOpen, setPdfSelectorOpen] = useState(false);
 
   // Heartbeat staleness ticker
   const [tickerTime, setTickerTime] = useState(Date.now());
@@ -723,9 +722,6 @@ export default function AdminLiveMonitorPage() {
   return (
     <div style={{ background: 'var(--bg)', flex: 1, display: 'flex', flexDirection: 'column' }}>
       <main style={{ flex: 1, padding: '24px 12px', maxWidth: '1000px', width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '15px' }}>
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '2px' }}>
-          <button className="btn btn-primary" style={{ padding: '6px 12px', fontSize: '12px' }} onClick={() => setPdfSelectorOpen(true)}>📄 Export PDF</button>
-        </div>
         {/* Tabs Selection with Dynamic Active Badges */}
         <div className="tabs-container" style={{ display: 'flex', gap: '8px', borderBottom: '1.5px solid var(--border-light)', paddingBottom: '8px' }}>
           {(() => {
@@ -1283,16 +1279,6 @@ export default function AdminLiveMonitorPage() {
           </div>
         </div>
       )}
-      <ExportPdfModal
-        isOpen={pdfSelectorOpen}
-        onClose={() => setPdfSelectorOpen(false)}
-        title={`Live Proctor Monitor Audit Logs — ${activeTab === 'exam' ? 'Exams' : 'Practice'}`}
-        filename={`Live_Proctoring_${activeTab}_Logs.pdf`}
-        sections={[
-          { id: 'info', name: 'Active Overview Stats', elementId: 'live-info-section' },
-          { id: 'sessions', name: 'Live Proctoring Sessions Table', elementId: 'live-sessions-section' }
-        ]}
-      />
     </div>
   );
 }

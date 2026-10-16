@@ -1793,3 +1793,77 @@ export function normalizeBloomLevel(val: any, difficulty?: string, type?: string
 export function formatUserAnswerSummary(options: any[], userAns: any): string {
   return resolveOptionDisplayText(options, userAns);
 }
+
+export function highlightModelAnswerKeywords(text: string, customKeywords?: string[]): string {
+  if (!text) return '';
+
+  // If the text contains HTML mark tags, convert them directly to our styled highlight spans
+  if (/<mark[^>]*>.*?<\/mark>/gi.test(text)) {
+    return text.replace(/<mark[^>]*>(.*?)<\/mark>/gi, (match, content) => {
+      return `<span style="background-color: #fef08a; color: #713f12; font-weight: 700; border-radius: 2px; padding: 0 2px;">${content}</span>`;
+    });
+  }
+
+  // Strip pre-existing <mark> or <span> HTML tags from text
+  const rawText = text
+    .replace(/<\/?mark[^>]*>/gi, '')
+    .replace(/<span[^>]*style="[^"]*background[^"]*"[^>]*>(.*?)<\/span>/gi, '$1');
+
+  // Clean raw database whitespace anomalies (tabs, multiple spaces) while preserving newlines
+  const cleanText = rawText
+    .replace(/[ \t]{2,}/g, ' ')
+    .replace(/\r\n/g, '\n')
+    .trim();
+
+  const phraseSet = new Set<string>();
+  const hasCustom = Array.isArray(customKeywords) && customKeywords.some(k => k && typeof k === 'string' && k.trim().length > 1);
+
+  if (hasCustom) {
+    // When custom keywords exist, ONLY highlight those exact teacher/AI defined key phrases
+    customKeywords!.forEach(k => {
+      if (k && typeof k === 'string' && k.trim().length > 1) {
+        phraseSet.add(k.trim().toLowerCase());
+      }
+    });
+  } else {
+    // Default fallback: ONLY highlight distinct multi-word scientific key phrases (avoiding single common words like "force", "law", "sun")
+    const standardKeyPhrases = [
+      "directed towards the center",
+      "directed toward center",
+      "directed towards center",
+      "directed toward the center",
+      "centripetal force",
+      "centrifugal force",
+      "earth attracts the moon",
+      "earth attracts moon",
+      "motion of the moon",
+      "motion of moon",
+      "moving along a circle",
+      "gravitational force",
+      "law of gravitation",
+      "inversely proportional to",
+      "directly proportional to",
+      "conservation of energy",
+      "conservation of momentum",
+      "center of mass",
+      "center of gravity",
+      "magnetic field",
+      "electric field",
+      "potential difference",
+      "total internal reflection",
+      "chemical equation",
+      "balanced equation"
+    ];
+    standardKeyPhrases.forEach(p => phraseSet.add(p));
+  }
+
+  const sortedPhrases = Array.from(phraseSet).sort((a, b) => b.length - a.length);
+  if (sortedPhrases.length === 0) return cleanText;
+
+  const escaped = sortedPhrases.map(p => p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  const pattern = new RegExp(`\\b(${escaped.join('|')})\\b`, 'gi');
+
+  return cleanText.replace(pattern, (match) => {
+    return `<span style="background-color: #fef08a; color: #713f12; font-weight: 700; border-radius: 2px; padding: 0 2px;">${match}</span>`;
+  });
+}

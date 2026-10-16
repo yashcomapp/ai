@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation';
 import { useReports } from '@/hooks/useReports';
 import { formatDateTimeIST } from '@/lib/dateUtils';
 import dynamic from 'next/dynamic';
-const ExportPdfModal = dynamic(() => import('@/components/ExportPdfModal').then(m => ({ default: m.ExportPdfModal })), { ssr: false });
 
 interface SincerityRecord {
   id: string;
@@ -65,7 +64,6 @@ export default function ParentPendingReportPage() {
   const [selectedBatchFilter, setSelectedBatchFilter] = useState<string>('all');
   const [actorFilter, setActorFilter] = useState<'all' | 'parent' | 'student' | 'photo'>('all');
   const [sessionTypeFilter, setSessionTypeFilter] = useState<string>('all');
-  const [pdfSelectorOpen, setPdfSelectorOpen] = useState(false);
   // Privacy blur state for verification proof thumbnails (default: true)
   const [blurCaptures, setBlurCaptures] = useState(true);
 
@@ -189,10 +187,7 @@ export default function ParentPendingReportPage() {
       {/* Main Content */}
       <main style={{ flex: 1, padding: '16px 14px', maxWidth: '1100px', width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '14px' }}>
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '4px' }}>
-          <button className="btn btn-primary" style={{ padding: '6px 12px', fontSize: '12px' }} onClick={() => setPdfSelectorOpen(true)}>
-            📄 Export PDF
-          </button>
-        </div>
+          </div>
         
         {/* Large Backlog Warning Notice */}
         {summary.hasTruncatedBacklog && (
@@ -678,14 +673,6 @@ export default function ParentPendingReportPage() {
       )}
 
       {/* PDF Export Modal */}
-      <ExportPdfModal 
-        isOpen={pdfSelectorOpen}
-        onClose={() => setPdfSelectorOpen(false)}
-        title="Parent Sincerity Audit Report"
-        filename="Parent_Sincerity_Audit_Report.pdf"
-        sections={exportSections}
-      />
-
-    </div>
+      </div>
   );
 }

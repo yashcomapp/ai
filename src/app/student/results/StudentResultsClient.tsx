@@ -7,7 +7,7 @@ import { fetchWithToken } from '@/lib/swrFetcher';
 import { t } from '@/lib/i18n';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
-const ExportPdfModal = dynamic(() => import('@/components/ExportPdfModal').then(m => ({ default: m.ExportPdfModal })), { ssr: false });
+
 const ScorecardModal = dynamic(() => import('@/components/ScorecardModal'), { ssr: false });
 import { useMathRender } from '@/hooks/useMathRender';
 import { useScorecard } from '@/hooks/useScorecard';
@@ -183,7 +183,6 @@ export default function StudentResults({ initialData }: { initialData?: { result
   // Sorting and PDF export states
   const [sortField, setSortField] = useState<'submittedAt' | 'durationSpent' | 'percentage'>('submittedAt');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
-  const [pdfSelectorOpen, setPdfSelectorOpen] = useState(false);
   useMathRender([activeTab, resultsList, selectedId, scorecard]);
 
   // Lock body scroll when modal is open

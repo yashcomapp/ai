@@ -5,8 +5,7 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useMathRender } from '@/hooks/useMathRender';
-import { preprocessMathText, robustParseAIJson, validateQuestion } from '@/lib/questionTypes';
-import { highlightModelAnswerKeywords } from '@/lib/pdfExport';
+import { preprocessMathText, robustParseAIJson, validateQuestion, highlightModelAnswerKeywords } from '@/lib/questionTypes';
 import { toISTDateTimeLocalInput, getDateKeyIST } from '@/lib/dateUtils';
 import { fetchCachedSyllabusSubject } from '@/hooks/useAdminReferenceData';
 import InPlaceAiGenerator from '@/components/admin/classroom-test/InPlaceAiGenerator';
@@ -2188,10 +2187,10 @@ OUTPUT FORMAT: Return ONLY a valid JSON array of objects with schema:
                   </div>
                 </div>
 
-                {/* Master PDF Download Button */}
+                {/* Master Printable Suite Button */}
                 <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                   <button className="btn btn-primary" onClick={handleExportMasterPDF} style={{ padding: '10px 16px', fontWeight: 700 }}>
-                    📄 Download Master Printable PDF Suite (Mon–Sat Bundle)
+                    🖨️ Print Master Weekly Suite (Mon–Sat Bundle)
                   </button>
                   <button className="btn btn-success" onClick={handlePrintPlanner} style={{ padding: '10px 16px', fontWeight: 700 }}>
                     🖨️ Print Weekly Topic Planner

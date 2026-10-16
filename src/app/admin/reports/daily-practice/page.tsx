@@ -315,7 +315,7 @@ export default function DailyPracticeSummaryPage() {
               onClick={handlePrint}
               style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', fontWeight: 700 }}
             >
-              🖨️ Print Daily Summary PDF
+              🖨️ Print Daily Summary
             </button>
           </div>
         </div>

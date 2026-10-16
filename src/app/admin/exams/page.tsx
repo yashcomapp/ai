@@ -5,7 +5,6 @@ import { useAuth } from '@/context/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
 const ScorecardModal = dynamic(() => import('@/components/ScorecardModal'), { ssr: false });
-const ExportPdfModal = dynamic(() => import('@/components/ExportPdfModal').then(m => ({ default: m.ExportPdfModal })), { ssr: false });
 const AssignExamModal = dynamic(() => import('@/components/admin/exams/AssignExamModal'), { ssr: false });
 const EditAssignmentModal = dynamic(() => import('@/components/admin/exams/EditAssignmentModal'), { ssr: false });
 const PeerReviewModal = dynamic(() => import('@/components/admin/exams/PeerReviewModal'), { ssr: false });
@@ -14,7 +13,6 @@ const PracticeHistoryModal = dynamic(() => import('@/components/admin/exams/Prac
 const TopicStatusBreakdownModal = dynamic(() => import('@/components/admin/exams/TopicStatusBreakdownModal'), { ssr: false });
 import { useMathRender } from '@/hooks/useMathRender';
 import { useScorecard } from '@/hooks/useScorecard';
-import { exportUniversalExamPDF } from '@/lib/pdfExport';
 import { toISTDateTimeLocalInput, formatDateDMY, parseDateInput, getDateKeyIST, formatDateTimeIST } from '@/lib/dateUtils';
 import ObjectiveTab from '@/components/admin/exams/ObjectiveTab';
 import SubjectiveTab from '@/components/admin/exams/SubjectiveTab';
@@ -314,6 +312,8 @@ export default function AdminExamsPage() {
     [studentCode: string]: {
       avgMastery: number;
       avgQuality?: number;
+      efforts?: number;
+      totalAssigned?: number;
       mastered: number;
       practicing: number;
       needsAttention: number;
@@ -345,7 +345,6 @@ export default function AdminExamsPage() {
   const [expandedChapters, setExpandedChapters] = useState<Set<string>>(new Set());
   const [isObjAssignedSectionExpanded, setIsObjAssignedSectionExpanded] = useState(false);
   const [isSubjAssignedSectionExpanded, setIsSubjAssignedSectionExpanded] = useState(false);
-  const [pdfSelectorOpen, setPdfSelectorOpen] = useState(false);
   const [reschedulingToday, setReschedulingToday] = useState(false);
 
   const toggleClassExpanded = (clsKey: string) => {
@@ -762,6 +761,9 @@ export default function AdminExamsPage() {
         } else if (pracSortField === 'avgQuality') {
           valA = (masteryA as any).avgQuality ?? 100;
           valB = (masteryB as any).avgQuality ?? 100;
+        } else if (pracSortField === 'efforts') {
+          valA = (masteryA as any).efforts ?? 0;
+          valB = (masteryB as any).efforts ?? 0;
         } else if (pracSortField === 'masteryStats') {
           valA = masteryA.mastered;
           valB = masteryB.mastered;
@@ -1246,26 +1248,6 @@ export default function AdminExamsPage() {
       alert('✅ Exam assigned successfully!');
       setAssignModal(prev => ({ ...prev, show: false }));
 
-      if (type === 'subjective') {
-        const exam = subjectiveExams.find(e => e.id === examId);
-        if (exam && exam.questionIds && exam.questionIds.length > 0) {
-          try {
-            const qRes = await fetch(`/api/admin/questions?ids=${exam.questionIds.join(',')}`, {
-              headers: { 'Authorization': `Bearer ${idToken}` }
-            });
-            if (qRes.ok) {
-              const qData = await qRes.json();
-              if (qData.questions && qData.questions.length > 0) {
-                const { exportSubjectiveExamDirectPdf } = await import('@/lib/pdfExport');
-                await exportSubjectiveExamDirectPdf(exam, qData.questions);
-              }
-            }
-          } catch (pdfErr) {
-            console.error('Failed to auto-generate exam PDF:', pdfErr);
-          }
-        }
-      }
-
       await loadData();
     } catch (err: any) {
       alert(err.message || 'Error occurred assigning exam.');
@@ -1562,7 +1544,6 @@ export default function AdminExamsPage() {
           <button className="btn btn-primary" style={{ padding: '6px 12px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }} onClick={() => router.push('/admin/exam-generator')}>
             ⚡ Exam Generator
           </button>
-          <button className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: '12px' }} onClick={() => setPdfSelectorOpen(true)}>📄 Export PDF</button>
         </div>
         {error && (
           <div className="alert-box alert-box-danger" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', gap: '12px' }}>
@@ -1637,7 +1618,6 @@ export default function AdminExamsPage() {
             handleOpenAssign={handleOpenAssign}
             handleDeleteExam={handleDeleteExam}
             toggleAssignmentStatus={toggleAssignmentStatus}
-            exportUniversalExamPDF={exportUniversalExamPDF}
             handleOpenEdit={handleOpenEdit}
             router={router}
           />
@@ -1681,7 +1661,6 @@ export default function AdminExamsPage() {
             handleOpenAssign={handleOpenAssign}
             handleDeleteExam={handleDeleteExam}
             toggleAssignmentStatus={toggleAssignmentStatus}
-            exportUniversalExamPDF={exportUniversalExamPDF}
             handleOpenEdit={handleOpenEdit}
             triggerPeerReviewLottery={triggerPeerReviewLottery}
             openPeerReviewStatus={openPeerReviewStatus}
@@ -1775,27 +1754,6 @@ export default function AdminExamsPage() {
           setSelectedScorecardId(null);
           setScorecardData(null);
         }}
-      />
-      <ExportPdfModal
-        isOpen={pdfSelectorOpen}
-        onClose={() => setPdfSelectorOpen(false)}
-        title={`YASHCOM Exams ${activeTab === 'objective' ? 'Objective' : activeTab === 'subjective' ? 'Subjective' : 'Practice'} Report`}
-        filename={`Exams_${activeTab}_Report.pdf`}
-        sections={
-          activeTab === 'objective'
-            ? [
-                { id: 'templates', name: 'Objective Exam Templates List', elementId: 'objective-templates-section' },
-                { id: 'assignments', name: 'Assigned Objective Sessions', elementId: 'objective-assignments-section' }
-              ]
-            : activeTab === 'subjective'
-            ? [
-                { id: 'templates', name: 'Subjective Exam Templates List', elementId: 'subjective-templates-section' },
-                { id: 'assignments', name: 'Assigned Subjective Sessions', elementId: 'subjective-assignments-section' }
-              ]
-            : [
-                { id: 'practice', name: 'Student Practice Metrics Logs', elementId: 'practice-tracks-section' }
-              ]
-        }
       />
     </div>
   );

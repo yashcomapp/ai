@@ -34,6 +34,8 @@ interface PracticeTabProps {
       mastered: number;
       practicing: number;
       needsAttention: number;
+      efforts?: number;
+      totalAssigned?: number;
     };
   };
   handleRowClick: (student: Student) => void;
@@ -106,6 +108,15 @@ export default function PracticeTab({
           <div style={{ color: 'var(--text-muted)', fontSize: '13px', fontWeight: 600 }}>Loading practice tracks and topic mastery...</div>
         </div>
       ) : filteredPracticeBatches.map(({ batch, batchStudents, sortedStudents }) => {
+        // Find the batch-level conducted/assigned topic count across all batch students
+        const batchMaxTopics = Math.max(
+          ...batchStudents.map(s => {
+            const m = masteryStats[s.studentCode];
+            return m ? (m.totalAssigned || (m.mastered + m.practicing + m.needsAttention)) : 0;
+          }),
+          0
+        );
+
         return (
           <div key={batch.id} className="card" style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', overflow: 'hidden', marginBottom: '16px' }}>
             <div style={{ background: 'var(--bg-soft)', padding: '10px 14px', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -169,6 +180,9 @@ export default function PracticeTab({
                     <th onClick={() => handlePracSort('avgMastery')} style={{ padding: '6px 10px', cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}>
                       AVG MASTERY {renderSortIndicator('avgMastery')}
                     </th>
+                    <th onClick={() => handlePracSort('efforts')} style={{ padding: '6px 10px', cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}>
+                      EFFORTS {renderSortIndicator('efforts')}
+                    </th>
                     <th onClick={() => handlePracSort('avgQuality')} style={{ padding: '6px 10px', cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}>
                       QUALITY {renderSortIndicator('avgQuality')}
                     </th>
@@ -186,12 +200,17 @@ export default function PracticeTab({
                 <tbody>
                   {sortedStudents.length === 0 ? (
                     <tr>
-                      <td colSpan={9} style={{ padding: '16px', textAlign: 'center', color: 'var(--text-muted)' }}>No students found in this batch.</td>
+                      <td colSpan={10} style={{ padding: '16px', textAlign: 'center', color: 'var(--text-muted)' }}>No students found in this batch.</td>
                     </tr>
                   ) : (
                     sortedStudents.map(student => {
                       const stats = practiceStats[student.studentCode] || { totalSessions: 0, questionsAttempted: 0, avgScore: 0, lastActive: null };
                       const mastery = masteryStats[student.studentCode] || { avgMastery: 0, avgQuality: 100, mastered: 0, practicing: 0, needsAttention: 0 };
+                      const rawAssigned = (mastery.mastered + mastery.practicing + mastery.needsAttention);
+                      const targetTotal = mastery.totalAssigned || Math.max(rawAssigned, batchMaxTopics);
+                      const missingTopics = Math.max(0, targetTotal - rawAssigned);
+                      const adjustedNeedsAttention = mastery.needsAttention + missingTopics;
+                      const efforts = mastery.efforts ?? (targetTotal > 0 ? Math.min(100, Math.round((stats.totalSessions / targetTotal) * 100)) : 0);
                       const quality = mastery.avgQuality ?? 100;
                       const formattedName = formatReportStudentName(student.name);
                       return (
@@ -215,6 +234,18 @@ export default function PracticeTab({
                                   width: `${mastery.avgMastery}%`,
                                   height: '100%',
                                   background: mastery.avgMastery >= 90 ? 'var(--success)' : mastery.avgMastery >= 50 ? 'var(--warning)' : 'var(--danger)'
+                                }} />
+                              </div>
+                            </div>
+                          </td>
+                          <td style={{ padding: '6px 10px', fontWeight: 'bold' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <span style={{ width: '28px' }}>{efforts}%</span>
+                              <div style={{ width: '40px', height: '6px', background: 'var(--bg-soft)', borderRadius: '3px', overflow: 'hidden' }}>
+                                <div style={{
+                                  width: `${efforts}%`,
+                                  height: '100%',
+                                  background: efforts >= 80 ? 'var(--success)' : efforts >= 50 ? 'var(--warning)' : 'var(--danger)'
                                 }} />
                               </div>
                             </div>
@@ -249,9 +280,9 @@ export default function PracticeTab({
                             <span 
                               onClick={(e) => openTopicStatusModal(student, 'needsAttention', e)} 
                               style={{ color: 'var(--danger)', fontWeight: 700, marginLeft: '6px', cursor: 'pointer', padding: '2px 6px', borderRadius: '6px', background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.25)', transition: 'all 0.15s' }} 
-                              title="Click to view Needs Care / Focus Topics (<50%)"
+                              title="Click to view Needs Care / Focus Topics (<50% or unattempted)"
                             >
-                              🔴 {mastery.needsAttention}
+                              🔴 {adjustedNeedsAttention}
                             </span>
                           </td>
                           <td style={{ padding: '6px 10px', color: 'var(--text-muted)' }}>

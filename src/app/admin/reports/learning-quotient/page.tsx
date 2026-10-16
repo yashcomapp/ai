@@ -4,7 +4,6 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useReports } from '@/hooks/useReports';
-import { exportStudentMonthlyReportPDF } from '@/lib/pdfExport';
 import { getScoreColor } from '@/lib/dashboardMetrics';
 import { exportStudentLqCardImage, exportBatchLqCardImage, formatReportStudentName } from '@/lib/lqCardExport';
 
@@ -359,90 +358,6 @@ _Empowering Conceptual Excellence_`;
       console.error('Error fetching student LQ details:', err);
     } finally {
       setLoadingDetails(false);
-    }
-  };
-
-  const [sharingLoading, setSharingLoading] = useState(false);
-
-  const handleDownloadReportPdf = async () => {
-    if (!quotientDetails) return;
-    setSharingLoading(true);
-    try {
-      const exporter = await exportStudentMonthlyReportPDF({
-        student: {
-          name: selectedStudentInfo?.name || '',
-          studentCode: selectedCode,
-          batchName: students.find(s => s.studentCode === selectedCode)?.batchName || '',
-          parentMobile,
-          parentEmail: students.find(s => s.studentCode === selectedCode)?.parentEmail || '',
-          email: selectedStudentInfo?.email || ''
-        },
-        quotientDetails,
-        comments: commentsText
-      });
-      if (exporter) {
-        await exporter.save();
-      }
-    } catch (e: any) {
-      console.error('Error generating PDF:', e);
-      alert(`Error exporting PDF: ${e.message}`);
-    } finally {
-      setSharingLoading(false);
-    }
-  };
-
-  const handlePwaShare = async () => {
-    if (!quotientDetails) return;
-    setSharingLoading(true);
-    try {
-      const exporter = await exportStudentMonthlyReportPDF({
-        student: {
-          name: selectedStudentInfo?.name || '',
-          studentCode: selectedCode,
-          batchName: students.find(s => s.studentCode === selectedCode)?.batchName || '',
-          parentMobile,
-          parentEmail: students.find(s => s.studentCode === selectedCode)?.parentEmail || '',
-          email: selectedStudentInfo?.email || ''
-        },
-        quotientDetails,
-        comments: commentsText
-      });
-      if (!exporter) return;
-
-      const blob = await exporter.getBlob();
-      const file = new File([blob], `${(selectedStudentInfo?.name || 'Student').replace(/\s+/g, '_')}_Monthly_Report.pdf`, {
-        type: 'application/pdf'
-      });
-
-      // Copy student's name to clipboard to easily paste in the WhatsApp search bar
-      try {
-        if (selectedStudentInfo?.name) {
-          await navigator.clipboard.writeText(selectedStudentInfo.name).catch(() => {});
-        }
-      } catch (_) {}
-
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({
-          files: [file],
-          title: `Monthly Review Report - ${selectedStudentInfo?.name}`,
-          text: `Dear Parent, please find the attached Monthly Review Report for ${selectedStudentInfo?.name}.`
-        });
-      } else {
-        alert('File sharing is not supported on this browser/environment. Downloading report instead.');
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${(selectedStudentInfo?.name || 'Student').replace(/\s+/g, '_')}_Monthly_Report.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      }
-    } catch (e: any) {
-      console.error('Error sharing report:', e);
-      alert(`Failed to share PDF: ${e.message}`);
-    } finally {
-      setSharingLoading(false);
     }
   };
 
@@ -1162,26 +1077,6 @@ _Empowering Conceptual Excellence_`;
                     title="Download Ultra HD lossless PNG image file only"
                   >
                     📥 Download Card (PNG)
-                  </button>
-                  
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    disabled={sharingLoading}
-                    onClick={handleDownloadReportPdf}
-                    style={{ fontSize: '11px', fontWeight: 700, padding: '6px 12px' }}
-                  >
-                    📥 {sharingLoading ? 'Generating...' : 'Download PDF'}
-                  </button>
-                  
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    disabled={sharingLoading}
-                    onClick={handlePwaShare}
-                    style={{ fontSize: '11px', fontWeight: 700, padding: '6px 12px' }}
-                  >
-                    🟢 {sharingLoading ? 'Sharing...' : 'Share PDF'}
                   </button>
                   
                   <button

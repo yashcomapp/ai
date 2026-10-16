@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { highlightModelAnswerKeywords } from '@/lib/pdfExport';
+import { highlightModelAnswerKeywords } from '@/lib/questionTypes';
 import { RichMathText } from '@/components/QuestionDisplay';
 
 interface InPlaceAiGeneratorProps {

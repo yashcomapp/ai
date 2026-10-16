@@ -7,7 +7,6 @@ import { useReports } from '@/hooks/useReports';
 import { useAdminStudents } from '@/hooks/useAdminReferenceData';
 import { formatDateDMY } from '@/lib/dateUtils';
 import dynamic from 'next/dynamic';
-const ExportPdfModal = dynamic(() => import('@/components/ExportPdfModal').then(m => ({ default: m.ExportPdfModal })), { ssr: false });
 // Client Firestore imports removed
 export default function UsageReportPage() {
   const { firebaseUser } = useAuth();
@@ -31,7 +30,6 @@ export default function UsageReportPage() {
   // Sorting and PDF export states
   const [sortField, setSortField] = useState<'submission' | 'studentName' | 'date'>('date');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
-  const [pdfSelectorOpen, setPdfSelectorOpen] = useState(false);
 
   useEffect(() => {
     if (swrStudents && swrStudents.length > 0) {
@@ -131,8 +129,7 @@ export default function UsageReportPage() {
       {/* Main Workspace */}
       <main style={{ flex: 1, padding: '24px 12px', maxWidth: '900px', width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '4px' }}>
-          <button className="btn btn-primary" style={{ padding: '6px 12px', fontSize: '12px' }} onClick={() => setPdfSelectorOpen(true)}>📄 Export PDF</button>
-        </div>
+          </div>
         
         <div id="usage-stats-section" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
           <div className="card" style={{ padding: '20px', background: 'var(--surface)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-lg)', textAlign: 'center' }}>
@@ -227,16 +224,6 @@ export default function UsageReportPage() {
           </div>
         </div>
       )}
-      <ExportPdfModal
-        isOpen={pdfSelectorOpen}
-        onClose={() => setPdfSelectorOpen(false)}
-        title="System Usage Analytics Report"
-        filename="Usage_Analytics_Report.pdf"
-        sections={[
-          { id: 'stats', name: 'Usage Counters Summary', elementId: 'usage-stats-section' },
-          ...(activeReviewsModal ? [{ id: 'reviews', name: `Reviewed Submissions Table (${activeReviewsModal.toUpperCase()})`, elementId: 'usage-reviews-section' }] : [])
-        ]}
-      />
-    </div>
+      </div>
   );
 }

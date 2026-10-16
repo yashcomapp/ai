@@ -3,9 +3,8 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
-import dynamic from 'next/dynamic';
 import { formatToDDMMYYYY, formatToYYYYMMDD, formatLastActiveIST as formatLastActive } from '@/lib/dateUtils';
-const ExportPdfModal = dynamic(() => import('@/components/ExportPdfModal').then(m => ({ default: m.ExportPdfModal })), { ssr: false });
+
 
 interface Student {
   id: string;
@@ -62,7 +61,6 @@ export default function StudentsManager() {
     curfewBypass: false
   });
   const [savingEdit, setSavingEdit] = useState(false);
-  const [pdfSelectorOpen, setPdfSelectorOpen] = useState(false);
   const [honestyAlerts, setHonestyAlerts] = useState<any[]>([]);
   const [loadingAlerts, setLoadingAlerts] = useState(false);
 
@@ -346,9 +344,6 @@ export default function StudentsManager() {
             title="Auto-approve any legacy pending parent reviews for all students in Autonomous Mode"
           >
             {sweepingAutonomous ? '⏳ Sweeping...' : '⚡ Sweep Autonomous'}
-          </button>
-          <button className="btn btn-primary" style={{ padding: '6px 14px', fontSize: '12px' }} onClick={() => setPdfSelectorOpen(true)}>
-            Export PDF
           </button>
         </div>
       </div>
@@ -791,16 +786,6 @@ export default function StudentsManager() {
           </div>
         </div>
       )}
-
-      <ExportPdfModal
-        isOpen={pdfSelectorOpen}
-        onClose={() => setPdfSelectorOpen(false)}
-        title="YASHCOM Student Accounts Registry"
-        filename="Students_Registry.pdf"
-        sections={[
-          { id: 'roster', name: 'Student Accounts Roster Table', elementId: 'students-roster-section' }
-        ]}
-      />
     </div>
   );
 }

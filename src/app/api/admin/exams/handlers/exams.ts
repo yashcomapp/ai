@@ -406,7 +406,7 @@ export async function GET(req: NextRequest) {
 
     if (action === 'practiceTracks') {
       const batchIdParam = req.nextUrl.searchParams.get('batchId');
-      const cacheKey = `practice-tracks-report-${batchIdParam || 'all'}`;
+      const cacheKey = `practice-tracks-report-v2-${batchIdParam || 'all'}`;
       const cached = await ReportCacheManager.getReport<any>(cacheKey);
       if (cached) {
         return NextResponse.json(cached);
@@ -579,25 +579,52 @@ export async function GET(req: NextRequest) {
         }
       });
 
-      const studentConductedTopicsMap: Record<string, string[]> = {};
+      // 1. Group topics by batch so all students belonging to the same batch have the EXACT same conducted/assigned topics count
+      const batchConductedTopicsMap = new Map<string, Set<string>>();
+      const globalConductedTopicsSet = new Set<string>();
+
       students.forEach((s: any) => {
         const code = s.studentCode;
-        const topicsSet = new Set<string>();
+        const bIds: string[] = s.batchIds && s.batchIds.length > 0
+          ? s.batchIds
+          : (s.batchId ? [s.batchId] : ['unassigned']);
 
+        const studentTopics = new Set<string>();
         if (studentTopicMasteryMap[code]) {
-          studentTopicMasteryMap[code].forEach((_, t) => topicsSet.add(t));
+          studentTopicMasteryMap[code].forEach((_, t) => {
+            studentTopics.add(t);
+            globalConductedTopicsSet.add(t);
+          });
         }
         if (studentTopicPracticeMap[code]) {
-          studentTopicPracticeMap[code].forEach((_, t) => topicsSet.add(t));
+          studentTopicPracticeMap[code].forEach((_, t) => {
+            studentTopics.add(t);
+            globalConductedTopicsSet.add(t);
+          });
         }
 
-        studentConductedTopicsMap[code] = Array.from(topicsSet);
+        bIds.forEach(bId => {
+          if (!batchConductedTopicsMap.has(bId)) {
+            batchConductedTopicsMap.set(bId, new Set<string>());
+          }
+          const bSet = batchConductedTopicsMap.get(bId)!;
+          studentTopics.forEach(t => bSet.add(t));
+        });
       });
 
-      const masteryStats: Record<string, { avgMastery: number, avgQuality: number, mastered: number, practicing: number, needsAttention: number }> = {};
+      const masteryStats: Record<string, { avgMastery: number, avgQuality: number, efforts: number, mastered: number, practicing: number, needsAttention: number, totalAssigned: number }> = {};
       students.forEach((s: any) => {
         const code = s.studentCode;
-        const conductedTopics = studentConductedTopicsMap[code] || [];
+        const bIds: string[] = s.batchIds && s.batchIds.length > 0
+          ? s.batchIds
+          : (s.batchId ? [s.batchId] : ['unassigned']);
+
+        const combinedBatchSet = new Set<string>();
+        bIds.forEach(bId => {
+          const bSet = batchConductedTopicsMap.get(bId);
+          if (bSet) bSet.forEach(t => combinedBatchSet.add(t));
+        });
+        const conductedTopics = combinedBatchSet.size > 0 ? Array.from(combinedBatchSet) : Array.from(globalConductedTopicsSet);
         const masteryMap = studentTopicMasteryMap[code] || new Map();
 
         let mCount = 0;
@@ -621,6 +648,7 @@ export async function GET(req: NextRequest) {
               naCount++;
             }
           } else {
+            // Topic assigned/conducted for this batch, but this student has not attempted/practiced it yet
             naCount++;
           }
         });
@@ -664,12 +692,20 @@ export async function GET(req: NextRequest) {
           ? Math.max(0, Math.min(100, Math.round(avgAccuracy * 0.40 + avgPacing * 0.30 + avgEfficiency * 0.30)))
           : 0;
 
+        // Efforts = (sessions / totalBatchAssignedTopics) * 100, capped at 100
+        const totalSessions = studentPractice?.totalSessions || 0;
+        const efforts = conductedTopics.length > 0
+          ? Math.min(100, Math.round((totalSessions / conductedTopics.length) * 100))
+          : 0;
+
         masteryStats[code] = {
           avgMastery: avg,
           avgQuality: avgQuality,
+          efforts: efforts,
           mastered: mCount,
           practicing: pCount,
-          needsAttention: naCount
+          needsAttention: naCount,
+          totalAssigned: conductedTopics.length
         };
       });
 

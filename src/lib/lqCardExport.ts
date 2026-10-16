@@ -869,6 +869,8 @@ export interface BatchPracticeTracksExportParams {
     [studentCode: string]: {
       avgMastery: number;
       avgQuality?: number;
+      efforts?: number;
+      totalAssigned?: number;
       mastered: number;
       practicing: number;
       needsAttention: number;
@@ -879,7 +881,7 @@ export interface BatchPracticeTracksExportParams {
 
 /**
  * Generates an Ultra HD lossless WhatsApp summary card for an entire batch's Practice Tracks
- * with total assigned topics and status breakdown explanations for parents.
+ * with uniform assigned topics count, efforts column, and status breakdown explanations for parents.
  */
 export async function exportBatchPracticeTracksImage(params: BatchPracticeTracksExportParams): Promise<{
   blob: Blob;
@@ -902,6 +904,12 @@ export async function exportBatchPracticeTracksImage(params: BatchPracticeTracks
     throw new Error('Could not initialize html2canvas library.');
   }
 
+  // Determine the uniform assigned topics count across the batch
+  const batchMaxTopics = Math.max(...students.map(s => {
+    const m = masteryStats[s.studentCode];
+    return m ? (m.totalAssigned || (m.mastered + m.practicing + m.needsAttention)) : 0;
+  }), 0);
+
   // Sort descending by avgMastery, then by questionsAttempted
   const sorted = [...students].sort((a, b) => {
     const ma = masteryStats[a.studentCode]?.avgMastery || 0;
@@ -917,6 +925,13 @@ export async function exportBatchPracticeTracksImage(params: BatchPracticeTracks
   const totalQuestions = sorted.reduce((sum, s) => sum + (practiceStats[s.studentCode]?.questionsAttempted || 0), 0);
   const batchAvgMastery = Math.round(sorted.reduce((sum, s) => sum + (masteryStats[s.studentCode]?.avgMastery || 0), 0) / (totalStudents || 1));
   const batchAvgQuality = Math.round(sorted.reduce((sum, s) => sum + (masteryStats[s.studentCode]?.avgQuality ?? 100), 0) / (totalStudents || 1));
+  const batchAvgEfforts = Math.round(sorted.reduce((sum, s) => {
+    const p = practiceStats[s.studentCode]?.totalSessions || 0;
+    const m = masteryStats[s.studentCode];
+    const t = batchMaxTopics > 0 ? batchMaxTopics : (m?.totalAssigned || 1);
+    const eff = m?.efforts ?? Math.min(100, Math.round((p / t) * 100));
+    return sum + eff;
+  }, 0) / (totalStudents || 1));
 
   const todayFormatted = formatDateDMY(new Date());
 
@@ -944,9 +959,14 @@ export async function exportBatchPracticeTracksImage(params: BatchPracticeTracks
     const rowBg = idx % 2 === 0 ? '#ffffff' : '#f8fafc';
 
     const pStat = practiceStats[s.studentCode] || { totalSessions: 0, questionsAttempted: 0, avgScore: 0, lastActive: null };
-    const mStat = masteryStats[s.studentCode] || { avgMastery: 0, avgQuality: 100, mastered: 0, practicing: 0, needsAttention: 0 };
+    const mStat = masteryStats[s.studentCode] || { avgMastery: 0, avgQuality: 100, efforts: 0, mastered: 0, practicing: 0, needsAttention: 0, totalAssigned: 0 };
+    
+    // Uniform batch topic harmonization
+    const rawAssigned = mStat.mastered + mStat.practicing + mStat.needsAttention;
+    const targetTotal = batchMaxTopics > 0 ? batchMaxTopics : (mStat.totalAssigned || rawAssigned);
+    const adjustedNeedsAttention = mStat.needsAttention + Math.max(0, targetTotal - rawAssigned);
     const quality = mStat.avgQuality ?? 100;
-    const totalAssigned = mStat.mastered + mStat.practicing + mStat.needsAttention;
+    const efforts = mStat.efforts ?? (targetTotal > 0 ? Math.min(100, Math.round((pStat.totalSessions / targetTotal) * 100)) : 0);
 
     let lastActiveText = 'Never';
     if (pStat.lastActive) {
@@ -963,19 +983,22 @@ export async function exportBatchPracticeTracksImage(params: BatchPracticeTracks
         <td style="padding: 8px 14px; font-weight: 800; font-size: 14.5px; color: #0f172a; white-space: nowrap;">
           ${displayName}
         </td>
-        <td style="padding: 8px 10px; text-align: center; font-weight: 800; font-size: 13.5px; color: #0f172a;">
+        <td style="padding: 8px 8px; text-align: center; font-weight: 800; font-size: 13.5px; color: #0f172a;">
           ${pStat.totalSessions}
         </td>
-        <td style="padding: 8px 10px; text-align: center; font-weight: 800; font-size: 13.5px; color: #0f172a;">
+        <td style="padding: 8px 8px; text-align: center; font-weight: 800; font-size: 13.5px; color: #0f172a;">
           ${pStat.questionsAttempted}
         </td>
-        <td style="padding: 8px 10px; text-align: center; white-space: nowrap;">
+        <td style="padding: 8px 8px; text-align: center; white-space: nowrap;">
           ${pStat.totalSessions > 0 ? getScoreChip(pStat.avgScore) : `<span style="color:#94a3b8; font-weight:700;">—</span>`}
         </td>
-        <td style="padding: 8px 10px; text-align: center; white-space: nowrap;">
+        <td style="padding: 8px 8px; text-align: center; white-space: nowrap;">
           ${getScoreChip(mStat.avgMastery, true)}
         </td>
-        <td style="padding: 8px 10px; text-align: center; white-space: nowrap;">
+        <td style="padding: 8px 8px; text-align: center; white-space: nowrap;">
+          ${getScoreChip(efforts)}
+        </td>
+        <td style="padding: 8px 8px; text-align: center; white-space: nowrap;">
           ${getScoreChip(quality)}
         </td>
         <td style="padding: 8px 12px; text-align: center; white-space: nowrap;">
@@ -987,11 +1010,11 @@ export async function exportBatchPracticeTracksImage(params: BatchPracticeTracks
               🟡 ${mStat.practicing}
             </span>
             <span style="display:inline-block; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 800; background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5;" title="Needs Attention / Unattempted">
-              🔴 ${mStat.needsAttention}
+              🔴 ${adjustedNeedsAttention}
             </span>
           </div>
           <div style="font-size: 10.5px; font-weight: 700; color: #64748b; margin-top: 2px;">
-            एकूण: <strong>${totalAssigned}</strong> घटक
+            एकूण: <strong>${targetTotal}</strong> घटक
           </div>
         </td>
         <td style="padding: 8px 10px; text-align: center; font-size: 12px; font-weight: 700; color: #475569; white-space: nowrap;">
@@ -1022,32 +1045,36 @@ export async function exportBatchPracticeTracksImage(params: BatchPracticeTracks
             📅 ${todayFormatted}
           </div>
           <div style="color: #475569; font-size: 12px; font-weight: 700; margin-top: 5px;">
-            Syllabus Coverage: <strong style="color:#0f172a;">Active Practice Tracks</strong>
+            Syllabus Coverage: <strong style="color:#0f172a;">${batchMaxTopics} Assigned Topics</strong>
           </div>
         </div>
       </div>
 
-      <!-- KPI Summary Cards -->
-      <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 20px;">
+      <!-- KPI Summary Cards (6-pillar view matching LQ standards) -->
+      <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-bottom: 20px;">
         <div style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 12px 14px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-          <div style="font-size: 26px; font-weight: 900; color: #0f172a; line-height: 1.1;">${totalStudents}</div>
-          <div style="font-size: 11.5px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.6px; margin-top: 4px;">Students</div>
+          <div style="font-size: 24px; font-weight: 900; color: #0f172a; line-height: 1.1;">${totalStudents}</div>
+          <div style="font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px;">Students</div>
         </div>
         <div style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 12px 14px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-          <div style="font-size: 26px; font-weight: 900; color: #0369a1; line-height: 1.1;">${totalSessions}</div>
-          <div style="font-size: 11.5px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.6px; margin-top: 4px;">Total Sessions</div>
+          <div style="font-size: 24px; font-weight: 900; color: #0369a1; line-height: 1.1;">${totalSessions}</div>
+          <div style="font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px;">Total Sessions</div>
         </div>
         <div style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 12px 14px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-          <div style="font-size: 26px; font-weight: 900; color: #047857; line-height: 1.1;">${totalQuestions}</div>
-          <div style="font-size: 11.5px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.6px; margin-top: 4px;">Questions Solved</div>
+          <div style="font-size: 24px; font-weight: 900; color: #047857; line-height: 1.1;">${totalQuestions}</div>
+          <div style="font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px;">Questions Solved</div>
         </div>
         <div style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 12px 14px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-          <div style="font-size: 26px; font-weight: 900; color: ${getDeepScoreColor(batchAvgMastery)}; line-height: 1.1;">${batchAvgMastery}%</div>
-          <div style="font-size: 11.5px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.6px; margin-top: 4px;">Batch Mastery</div>
+          <div style="font-size: 24px; font-weight: 900; color: ${getDeepScoreColor(batchAvgMastery)}; line-height: 1.1;">${batchAvgMastery}%</div>
+          <div style="font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px;">Batch Mastery</div>
         </div>
         <div style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 12px 14px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-          <div style="font-size: 26px; font-weight: 900; color: ${getDeepScoreColor(batchAvgQuality)}; line-height: 1.1;">${batchAvgQuality}%</div>
-          <div style="font-size: 11.5px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.6px; margin-top: 4px;">Avg Accuracy</div>
+          <div style="font-size: 24px; font-weight: 900; color: ${getDeepScoreColor(batchAvgEfforts)}; line-height: 1.1;">${batchAvgEfforts}%</div>
+          <div style="font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px;">Batch Efforts</div>
+        </div>
+        <div style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 12px 14px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+          <div style="font-size: 24px; font-weight: 900; color: ${getDeepScoreColor(batchAvgQuality)}; line-height: 1.1;">${batchAvgQuality}%</div>
+          <div style="font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px;">Avg Accuracy</div>
         </div>
       </div>
 
@@ -1055,13 +1082,14 @@ export async function exportBatchPracticeTracksImage(params: BatchPracticeTracks
       <table style="width: 100%; border-collapse: collapse; border: 1.5px solid #cbd5e1; border-radius: 10px; overflow: hidden;">
         <thead>
           <tr style="background: #0f172a; color: #ffffff; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.6px; height: 42px;">
-            <th style="padding: 10px 10px; text-align: center; width: 55px;">Rank</th>
+            <th style="padding: 10px 10px; text-align: center; width: 50px;">Rank</th>
             <th style="padding: 10px 14px; text-align: left;">Student Name</th>
-            <th style="padding: 10px 10px; text-align: center; width: 75px;">Sessions</th>
-            <th style="padding: 10px 10px; text-align: center; width: 85px;">Questions</th>
-            <th style="padding: 10px 10px; text-align: center; width: 85px;">Avg Score</th>
-            <th style="padding: 10px 10px; text-align: center; width: 95px;">Mastery</th>
-            <th style="padding: 10px 10px; text-align: center; width: 85px;">Quality</th>
+            <th style="padding: 10px 8px; text-align: center; width: 70px;">Sessions</th>
+            <th style="padding: 10px 8px; text-align: center; width: 80px;">Questions</th>
+            <th style="padding: 10px 8px; text-align: center; width: 80px;">Avg Score</th>
+            <th style="padding: 10px 8px; text-align: center; width: 90px;">Mastery</th>
+            <th style="padding: 10px 8px; text-align: center; width: 85px;">Efforts</th>
+            <th style="padding: 10px 8px; text-align: center; width: 85px;">Quality</th>
             <th style="padding: 10px 12px; text-align: center; width: 195px;">Topic Status (Assigned)</th>
             <th style="padding: 10px 10px; text-align: center; width: 95px;">Last Active</th>
           </tr>
@@ -1081,7 +1109,10 @@ export async function exportBatchPracticeTracksImage(params: BatchPracticeTracks
         </div>
         <ul style="margin: 0; padding-left: 20px; color: #1e293b; font-size: 13.5px; line-height: 1.8; font-weight: 600; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans Devanagari', 'Mangal', sans-serif;">
           <li style="margin-bottom: 8px;">
-            <strong style="color: #0f172a;">📌 एकूण नेमून दिलेले अभ्यासक्रम घटक (Total Assigned Topics):</strong> विद्यार्थ्याला वर्गात शिकवून सरावासाठी उपलब्ध करून दिलेले सर्व घटक = 🟢 पूर्ण प्रभुत्व (Mastered) + 🟡 सराव सुरू (Practicing) + 🔴 विशेष लक्ष आवश्यक (Needs Attention / Unattempted).
+            <strong style="color: #0f172a;">📌 एकूण नेमून दिलेले अभ्यासक्रम घटक (${batchMaxTopics} घटक):</strong> या बॅचसाठी शिकवून पूर्ण झालेले व सरावासाठी उपलब्ध असलेले एकूण घटक = 🟢 पूर्ण प्रभुत्व + 🟡 सराव सुरू + 🔴 विशेष लक्ष आवश्यक. बॅचमधील सर्व विद्यार्थ्यांना समान अभ्यासक्रम लागू आहे.
+          </li>
+          <li style="margin-bottom: 8px;">
+            <strong style="color: #0369a1;">📌 सराव प्रयत्न (Efforts %):</strong> एकूण नेमून दिलेल्या ${batchMaxTopics} घटकांच्या तुलनेत विद्यार्थ्याने पूर्ण केलेल्या सराव सेट्सचे प्रमाण. बोर्ड परीक्षेत ९०%+ प्रभुत्व मिळवण्यासाठी १००% सराव प्रयत्न अनिवार्य आहेत.
           </li>
           <li style="margin-bottom: 8px;">
             <strong style="color: #14532d;">🟢 Mastered (संकल्पना प्रभुत्व):</strong> ज्या घटकांमध्ये विद्यार्थ्याने <strong>≥ ९०% अचूकता</strong> आणि किमान आवश्यक प्रश्नांचा सराव यशस्वीरीत्या पूर्ण केला आहे. या घटकांची तयारी उत्कृष्ट आहे.
@@ -1093,7 +1124,7 @@ export async function exportBatchPracticeTracksImage(params: BatchPracticeTracks
             <strong style="color: #991b1b;">🔴 Needs Attention / Unattempted (विशेष लक्ष द्या / सराव बाकी):</strong> ज्या घटकांमध्ये अचूकता ५०% पेक्षा कमी आहे किंवा अद्याप विद्यार्थ्याने सराव सुरूच केलेला नाही. हे घटक तत्काळ सोडवून घेणे अनिवार्य आहे.
           </li>
           <li>
-            <strong style="color: #0369a1;">📌 पालकांची भूमिका (Parent Action Plan):</strong> बोर्ड परीक्षेत ९०%+ गुण मिळवण्यासाठी विद्यार्थ्याने दररोज घरी न चुकता किमान २ ते ३ सराव सेट्स (१५-२० प्रश्न) सोडवणे आणि सर्व 🟡 व 🔴 घटकांना 🟢 (Mastered) मध्ये रूपांतरित करणे आवश्यक आहे.
+            <strong style="color: #0f172a;">📌 पालकांची भूमिका (Parent Action Plan):</strong> बोर्ड परीक्षेत ९०%+ गुण मिळवण्यासाठी विद्यार्थ्याने दररोज घरी न चुकता किमान २ ते ३ सराव सेट्स (१५-२० प्रश्न) सोडवणे आणि सर्व 🟡 व 🔴 घटकांना 🟢 (Mastered) मध्ये रूपांतरित करणे आवश्यक आहे.
           </li>
         </ul>
       </div>

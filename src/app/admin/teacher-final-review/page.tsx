@@ -3,8 +3,7 @@
 import React, { useEffect, useState, Suspense } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
-import dynamic from 'next/dynamic';
-const ExportPdfModal = dynamic(() => import('@/components/ExportPdfModal').then(m => ({ default: m.ExportPdfModal })), { ssr: false });
+
 import Script from 'next/script';
 import { useMathRender } from '@/hooks/useMathRender';
 import { useAdminStudents } from '@/hooks/useAdminReferenceData';
@@ -66,7 +65,6 @@ function TeacherFinalReviewContent() {
   // Sorting and PDF export states
   const [sortField, setSortField] = useState<'student' | 'status' | 'finalScore' | 'examPercent' | 'weeklyAvgPercent' | 'truthPercent' | 'diffPercent'>('student');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
-  const [pdfSelectorOpen, setPdfSelectorOpen] = useState(false);
   useMathRender([activeQuestions, selectedAttemptId]);
 
   const { students: swrStudents } = useAdminStudents();
@@ -351,7 +349,6 @@ function TeacherFinalReviewContent() {
           >
             ← Back to Exams
           </button>
-          <button className="btn btn-primary" style={{ padding: '6px 12px', fontSize: '12px' }} onClick={() => setPdfSelectorOpen(true)}>📄 Export PDF</button>
         </div>
         {error && (
           <div className="alert-box alert-box-danger" style={{ display: 'block', marginBottom: '20px' }}>
@@ -787,15 +784,6 @@ function TeacherFinalReviewContent() {
           </div>
         </div>
       )}
-      <ExportPdfModal
-        isOpen={pdfSelectorOpen}
-        onClose={() => setPdfSelectorOpen(false)}
-        title={`Subjective Final Grading Review — ${examName}`}
-        filename="Subjective_Grading_Review.pdf"
-        sections={[
-          { id: 'roster', name: 'Subjective Submissions Grading Table', elementId: 'final-review-table-section' }
-        ]}
-      />
     </div>
   );
 }

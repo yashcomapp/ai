@@ -9,7 +9,7 @@ const ScorecardModal = dynamic(() => import('@/components/ScorecardModal'), { ss
 import { useMathRender } from '@/hooks/useMathRender';
 import { useScorecard } from '@/hooks/useScorecard';
 import QuestionDisplay, { RichMathText } from '@/components/QuestionDisplay';
-import { highlightModelAnswerKeywords } from '@/lib/pdfExport';
+import { highlightModelAnswerKeywords } from '@/lib/questionTypes';
 import { formatDateIST, getDateKeyIST, formatDateTimeIST } from '@/lib/dateUtils';
 
 interface ReviewItem {

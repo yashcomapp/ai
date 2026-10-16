@@ -5,7 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import dynamic from 'next/dynamic';
 import { formatDateDMY } from '@/lib/dateUtils';
 import DateInputDMY from '@/components/DateInputDMY';
-const ExportPdfModal = dynamic(() => import('@/components/ExportPdfModal').then(m => ({ default: m.ExportPdfModal })), { ssr: false });
+
 
 interface Registration {
   id: string;
@@ -43,7 +43,6 @@ export default function RegistrationsManager() {
   // Sorting and PDF export states
   const [sortField, setSortField] = useState<'tempId' | 'studentName' | 'createdAt' | 'batchName' | 'status'>('createdAt');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
-  const [pdfSelectorOpen, setPdfSelectorOpen] = useState(false);
 
   // Modals state
   const [selectedReg, setSelectedReg] = useState<Registration | null>(null);
@@ -276,11 +275,6 @@ export default function RegistrationsManager() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
         <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-muted)' }}>
           Total: {filtered.length} Registrations
-        </div>
-        <div>
-          <button className="btn btn-primary" style={{ padding: '6px 14px', fontSize: '12px' }} onClick={() => setPdfSelectorOpen(true)}>
-            Export PDF
-          </button>
         </div>
       </div>
 
@@ -603,15 +597,6 @@ export default function RegistrationsManager() {
           </div>
         </div>
       )}
-      <ExportPdfModal
-        isOpen={pdfSelectorOpen}
-        onClose={() => setPdfSelectorOpen(false)}
-        title="Pending Admissions Registration Audits"
-        filename="Registrations_Report.pdf"
-        sections={[
-          { id: 'roster', name: 'Pending Registrations Roster Table', elementId: 'registrations-roster-section' }
-        ]}
-      />
     </div>
   );
 }

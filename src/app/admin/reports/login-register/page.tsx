@@ -6,7 +6,6 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
-const ExportPdfModal = dynamic(() => import('@/components/ExportPdfModal').then(m => ({ default: m.ExportPdfModal })), { ssr: false });
 
 interface Member {
   id: string;
@@ -56,7 +55,6 @@ export default function LoginRegisterReportPage() {
   const [roleFilter, setRoleFilter] = useState<'all' | 'student' | 'parent'>('all');
   const [sortBy, setSortBy] = useState<'name' | 'lastActive' | 'status'>('lastActive');
   const [sortDesc, setSortDesc] = useState(true);
-  const [pdfSelectorOpen, setPdfSelectorOpen] = useState(false);
 
   const fetchReportData = async () => {
     if (!firebaseUser) return;
@@ -249,8 +247,7 @@ export default function LoginRegisterReportPage() {
       {/* Main Workspace */}
       <main style={{ flex: 1, padding: '24px 12px', maxWidth: '1000px', width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '4px' }}>
-          <button className="btn btn-primary" style={{ padding: '6px 12px', fontSize: '12px' }} onClick={() => setPdfSelectorOpen(true)}>📄 Export PDF</button>
-        </div>
+          </div>
         {error && (
           <div style={{ background: 'rgba(239, 68, 68, 0.12)', border: '1px solid var(--danger)', padding: '12px', borderRadius: '4px', color: 'var(--danger)', fontSize: '12px' }}>
             {error}
@@ -506,15 +503,6 @@ export default function LoginRegisterReportPage() {
         </div>
       </main>
 
-      <ExportPdfModal
-        isOpen={pdfSelectorOpen}
-        onClose={() => setPdfSelectorOpen(false)}
-        title="YASHCOM User Logins &amp; Presence Register"
-        filename="User_Login_Presence_Register.pdf"
-        sections={[
-          { id: 'register', name: 'User Presence &amp; Active Logins', elementId: 'login-register-roster-section' }
-        ]}
-      />
-    </div>
+      </div>
   );
 }

@@ -4,8 +4,6 @@ import React, { useEffect, useState, useMemo, useDeferredValue } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useReports } from '@/hooks/useReports';
-import dynamic from 'next/dynamic';
-const ExportPdfModal = dynamic(() => import('@/components/ExportPdfModal').then(m => ({ default: m.ExportPdfModal })), { ssr: false });
 // Client Firestore imports removed
 interface Student {
   id: string;
@@ -47,8 +45,6 @@ export default function AdminIntegrityScoreManagerPage() {
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
   const [histSortField, setHistSortField] = useState<'week' | 'year' | 'score' | 'totalSessions'>('week');
   const [histSortDir, setHistSortDir] = useState<'asc' | 'desc'>('desc');
-  const [pdfSelectorOpen, setPdfSelectorOpen] = useState(false);
-
   // Roster checks
   const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
   
@@ -291,10 +287,6 @@ export default function AdminIntegrityScoreManagerPage() {
     <div style={{ background: 'var(--bg)', flex: 1, display: 'flex', flexDirection: 'column' }}>
       {/* Main Container */}
       <main style={{ flex: 1, padding: '24px 12px', maxWidth: '1000px', width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '2px' }}>
-          <button className="btn btn-primary" style={{ padding: '6px 12px', fontSize: '12px' }} onClick={() => setPdfSelectorOpen(true)}>📄 Export PDF</button>
-        </div>
-        
         {/* Statistics summary */}
         <div id="integrity-stats-section" className="stats-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
           <div className="card card-stat" style={{ textAlign: 'center', padding: '16px', background: 'var(--surface)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius)' }}>
@@ -548,17 +540,6 @@ export default function AdminIntegrityScoreManagerPage() {
         </div>
 
       </main>
-      <ExportPdfModal
-        isOpen={pdfSelectorOpen}
-        onClose={() => setPdfSelectorOpen(false)}
-        title="Classroom Integrity Performance Audit Report"
-        filename="Integrity_Classroom_Audit.pdf"
-        sections={[
-          { id: 'stats', name: 'Integrity Statistics Summary', elementId: 'integrity-stats-section' },
-          { id: 'roster', name: 'Student Accounts Roster', elementId: 'integrity-roster-section' },
-          ...(selectedStudent ? [{ id: 'history', name: `Weekly Score Sheet: ${selectedStudent.name}`, elementId: 'integrity-history-section' }] : [])
-        ]}
-      />
     </div>
   );
 }

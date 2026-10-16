@@ -1253,23 +1253,11 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
                     </div>
                   </div>
                   <button 
-                    className="btn btn-success btn-sm"
-                    onClick={async () => {
-                      const customChip = {
-                        ...chip,
-                        name: `${chip.isTomorrow ? "Tomorrow's Study Sheet" : (chip.dayName ? `${chip.dayName} Study Sheet` : "Daily Study Sheet")} — ${chip.topics && chip.topics.length > 0 ? chip.topics.join(', ') : chip.chapterName}`,
-                        chapterName: chip.topics && chip.topics.length > 0 ? chip.topics.join(', ') : chip.chapterName
-                      };
-                      try {
-                        const { exportPasswordProtectedLearningPDF } = await import('@/lib/pdfExport');
-                        await exportPasswordProtectedLearningPDF(customChip, chip.questions);
-                      } catch (err: any) {
-                        alert('Failed to generate protected PDF: ' + err.message);
-                      }
-                    }}
+                    className="btn btn-primary btn-sm"
+                    onClick={() => router.push('/student/learning')}
                     style={{ padding: '4px 10px', fontSize: '10.5px', fontWeight: 700, whiteSpace: 'nowrap' }}
                   >
-                    🔒 Download PDF
+                    📖 Open Study Sheet
                   </button>
                 </div>
               ))}

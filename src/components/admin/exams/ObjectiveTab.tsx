@@ -37,7 +37,6 @@ interface ObjectiveTabProps {
   handleOpenAssign: (exam: Exam, type: 'objective' | 'subjective') => void;
   handleDeleteExam: (examId: string, examName: string, type: 'objective' | 'subjective') => void;
   toggleAssignmentStatus: (assignmentId: string, collection: string, newStatus: string) => void;
-  exportUniversalExamPDF: (exam: any, questions: any[]) => void;
   handleOpenEdit: (examId: string, examName: string, collection: string) => void;
   router: any;
 }
@@ -76,7 +75,6 @@ export default function ObjectiveTab({
   handleOpenAssign,
   handleDeleteExam,
   toggleAssignmentStatus,
-  exportUniversalExamPDF,
   handleOpenEdit,
   router
 }: ObjectiveTabProps) {
@@ -239,9 +237,6 @@ export default function ObjectiveTab({
                             )}
                             <button className="btn btn-secondary" style={{ padding: '2px 6px', fontSize: '10.5px', background: 'var(--accent-tint)', color: 'var(--accent)', fontWeight: 600 }} onClick={() => router.push(`/admin/mock-exam?examId=${encodeURIComponent(exam.id)}`)}>
                               🧪 Mock Test
-                            </button>
-                            <button className="btn btn-secondary" style={{ padding: '2px 6px', fontSize: '10.5px', background: 'var(--accent-tint)', color: 'var(--accent)', fontWeight: 600 }} onClick={() => exportUniversalExamPDF(exam, exam.questions || (exam as any).questionDetails || (exam as any).questionCodes || (exam as any).questionIds || [])}>
-                              📄 PDF
                             </button>
                             <button className="btn btn-primary" style={{ padding: '2px 6px', fontSize: '10.5px' }} onClick={() => handleOpenAssign(exam, 'objective')}>
                               📋 Assign Again
@@ -472,9 +467,6 @@ export default function ObjectiveTab({
                                                                     )}
                                                                     <button className="btn btn-secondary" style={{ padding: '3px 8px', fontSize: '11px', background: 'var(--accent-tint)', color: 'var(--accent)', fontWeight: 600 }} onClick={() => router.push(`/admin/mock-exam?examId=${encodeURIComponent(exam.id)}`)}>
                                                                       🧪 Mock Test
-                                                                    </button>
-                                                                    <button className="btn btn-secondary" style={{ padding: '3px 8px', fontSize: '11px', background: 'var(--accent-tint)', color: 'var(--accent)', fontWeight: 600 }} onClick={() => exportUniversalExamPDF(exam, exam.questions || (exam as any).questionDetails || (exam as any).questionCodes || (exam as any).questionIds || [])}>
-                                                                      📄 PDF
                                                                     </button>
                                                                     <button className="btn btn-primary" style={{ padding: '3px 8px', fontSize: '11px' }} onClick={() => handleOpenAssign(exam, 'objective')}>
                                                                       📋 Assign Again

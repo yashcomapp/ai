@@ -7,7 +7,7 @@ import { fetchWithToken, FetchError } from '@/lib/swrFetcher';
 import { useToggleSet } from '@/hooks/useToggleSet';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
-const ExportPdfModal = dynamic(() => import('@/components/ExportPdfModal').then(m => ({ default: m.ExportPdfModal })), { ssr: false });
+
 import { formatDateIST } from '@/lib/dateUtils';
 import { getCanonicalSubjectName } from '@/lib/questionTypes';
 

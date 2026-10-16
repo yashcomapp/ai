@@ -4,8 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { invalidateAdminReferenceData } from '@/hooks/useAdminReferenceData';
-import dynamic from 'next/dynamic';
-const ExportPdfModal = dynamic(() => import('@/components/ExportPdfModal').then(m => ({ default: m.ExportPdfModal })), { ssr: false });
+
 
 interface Subject {
   id: string;
@@ -119,7 +118,6 @@ export default function AdminSyllabusPage() {
   // Sorting and PDF export states
   const [sortField, setSortField] = useState<'subject' | 'board' | 'class'>('subject');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
-  const [pdfSelectorOpen, setPdfSelectorOpen] = useState(false);
 
   // Selected subject for tree view
   const [selectedSubjectId, setSelectedSubjectId] = useState('');
@@ -1152,7 +1150,6 @@ Return ONLY a valid JSON object matching the schema below:
       <main style={{ flex: 1, padding: '24px 12px', maxWidth: '1000px', width: '100%', margin: '0 auto' }}>
         {/* Actions Toolbar */}
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginBottom: '16px', flexWrap: 'wrap' }}>
-          <button className="btn btn-primary" style={{ padding: '6px 12px', fontSize: '12px' }} onClick={() => setPdfSelectorOpen(true)}>📄 Export PDF</button>
           <button className="btn btn-secondary" onClick={triggerDeduplicationSweep}>🧹 Deduplicate</button>
           <button className="btn btn-secondary" onClick={triggerManualReindex}>🔄 Rebuild Index</button>
         </div>
@@ -2200,15 +2197,6 @@ Return ONLY a valid JSON object matching the schema below:
           </div>
         </div>
       )}
-      <ExportPdfModal
-        isOpen={pdfSelectorOpen}
-        onClose={() => setPdfSelectorOpen(false)}
-        title="Classroom Syllabus Curriculum Matrix"
-        filename="Syllabus_Curriculum.pdf"
-        sections={[
-          { id: 'subjects', name: 'Syllabus Subjects Table', elementId: 'syllabus-subjects-section' }
-        ]}
-      />
     </div>
   );
 }
