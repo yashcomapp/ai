@@ -14,6 +14,7 @@ function isExistentCommunication(room: any): boolean {
     const text = String(room.lastMessage.text).trim();
     if (!text) return false;
     if (text.includes('Private direct message channel established')) return false;
+    if (text.includes('Attendance Alert') || room.lastMessage.senderName === 'System' || room.lastMessage.senderName === 'System Alert' || room.lastMessage.senderRole === 'system') return false;
     return true;
   }
   return true;

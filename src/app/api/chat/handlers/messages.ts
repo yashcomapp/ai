@@ -140,10 +140,18 @@ export async function GET(req: NextRequest) {
 
       const messagesSnap = await query.get();
 
-      messages = messagesSnap.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      })).reverse();
+      messages = messagesSnap.docs
+        .map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }))
+        .filter((m: any) => {
+          // Never display automated attendance alerts in chat
+          if (m.senderRole === 'system' || m.senderId === 'system') return false;
+          if (typeof m.text === 'string' && m.text.includes('Attendance Alert')) return false;
+          return true;
+        })
+        .reverse();
     }
 
     // Resolve participant names
