@@ -223,6 +223,15 @@ export class PracticeService {
     let existingMastery = 0;
     let isAlreadySubmitted = false;
 
+    // Fetch student profile to determine SRS activation (default off) and autonomous mode
+    const studentUserSnap = await adminDb.collection('users')
+      .where('studentCode', '==', studentCode)
+      .where('role', '==', 'student')
+      .limit(1)
+      .get();
+    const studentDocData = !studentUserSnap.empty ? studentUserSnap.docs[0].data() : {};
+    const isSrsEnabled = Boolean(studentDocData?.srsEnabled);
+
     await adminDb.runTransaction(async (tx) => {
       const subSnap = await tx.get(submissionRef);
       if (subSnap.exists) {
@@ -268,8 +277,14 @@ export class PracticeService {
         updatedData.recoveryCompletedAt = new Date();
       }
 
+      // Regular Topic Mastery System: Once a topic is mastered, it stays Mastered!
       const isMasteredTopic = Boolean(existing?.isRecoveryMastered || (existing && existing.mastery >= 90));
-      if (category === 'revision' || (isMasteredTopic && sessionAccuracy >= 80)) {
+      if (isMasteredTopic) {
+        updatedData.mastery = Math.max(updatedData.mastery, 90);
+      }
+
+      // SRS interval scheduling: ONLY active if student explicitly has srsEnabled === true
+      if (isSrsEnabled && (category === 'revision' || (isMasteredTopic && sessionAccuracy >= 80))) {
         const currentStage = Number(existing?.srsStage || 0);
         if (sessionAccuracy >= 80) {
           // Passed SRS review with flying colors -> advance to next spaced interval stage
@@ -283,7 +298,9 @@ export class PracticeService {
           // Concept retention degraded -> reset SRS stage to 0 to rebuild
           updatedData.srsStage = 0;
           updatedData.lastRevisedAt = new Date();
-          updatedData.mastery = Math.min(updatedData.mastery, 85);
+          if (!isMasteredTopic) {
+            updatedData.mastery = Math.min(updatedData.mastery, 85);
+          }
         } else {
           // 60-79%: Keep at current stage and set refreshed review interval
           const sched = calculateSrsSchedule(new Date(), currentStage);
@@ -482,12 +499,6 @@ export class PracticeService {
         });
 
         // Trigger push notification to Parent
-        const studentDocSnap = await adminDb.collection('users')
-          .where('studentCode', '==', studentCode)
-          .where('role', '==', 'student')
-          .limit(1)
-          .get();
-        const studentDocData = !studentDocSnap.empty ? studentDocSnap.docs[0].data() : {};
         const isAutonomous = studentDocData?.autonomous === true;
         const studentName = studentDocData?.name || studentDocData?.displayName || studentCode;
         

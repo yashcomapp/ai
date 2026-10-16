@@ -121,6 +121,7 @@ export interface UnifiedMetricsInput {
   integrityScore?: number;
   totalCoveredTopics?: number;
   totalSyllabusTopics?: number; // Deprecated alias, use totalCoveredTopics
+  srsEnabled?: boolean;
 }
 
 export interface UnifiedMetricsResult {
@@ -240,13 +241,14 @@ export function calculateUnifiedMetrics(input: UnifiedMetricsInput): UnifiedMetr
     const reqConf = Number(t.requiredConfidence || 10);
     const isFullConfidence = confidence >= reqConf;
     const hasPracticed = Number(t.confidence || 0) > 0 || Number(t.questionsAttempted || 0) > 0 || Number(t.totalAttempts || 0) > 0 || isRecovery;
+    const isSrsEnabled = Boolean(input.srsEnabled);
 
-    // Resolve SRS retention and review status
-    let retention = 0;
+    // Resolve SRS retention and review status (ONLY when SRS is explicitly enabled)
+    let retention = 100;
     let isDue = false;
     let isOverdue = false;
 
-    if (hasPracticed) {
+    if (isSrsEnabled && hasPracticed) {
       if (t.srsSchedule) {
         retention = typeof t.srsSchedule.estimatedRetention === 'number' ? t.srsSchedule.estimatedRetention : 100;
         isDue = Boolean(t.srsSchedule.isDueForRevision);
@@ -260,19 +262,22 @@ export function calculateUnifiedMetrics(input: UnifiedMetricsInput): UnifiedMetr
       }
     }
 
-    if (isDue) srsDueTopicsCount++;
-    if (isOverdue) srsOverdueTopicsCount++;
+    if (isSrsEnabled) {
+      if (isDue) srsDueTopicsCount++;
+      if (isOverdue) srsOverdueTopicsCount++;
+    }
     totalRetentionSum += retention;
 
-    // Pedagogical Retention Modulation:
-    // Retention Factor scales gently: 100% -> 1.0, 75% -> 0.925, 40% -> 0.82
-    const retentionFactor = 0.70 + 0.30 * (retention / 100);
-    const effectiveMastery = Math.round(mastery * retentionFactor);
+    // Pedagogical Retention Modulation: Only active when SRS is enabled.
+    // When SRS is off (default), nominal syllabus mastery = effective mastery without artificial decay.
+    const retentionFactor = isSrsEnabled ? (0.70 + 0.30 * (retention / 100)) : 1.0;
+    const effectiveMastery = isSrsEnabled ? Math.round(mastery * retentionFactor) : mastery;
 
     certifiedNominalSum += mastery;
     certifiedEffectiveSum += effectiveMastery;
     certifiedTopicsCount += 1;
 
+    // Regular Topic Mastery System: Once certified/recovered mastered, topic stays Mastered
     if (isRecovery || (mastery >= 90 && isFullConfidence)) {
       masteredTopicsCount += 1;
     } else if (mastery < 50) {
@@ -285,14 +290,14 @@ export function calculateUnifiedMetrics(input: UnifiedMetricsInput): UnifiedMetr
     ? Math.round(certifiedNominalSum / certifiedTopicsCount)
     : (topicMasteries.length > 0 ? Math.round(topicMasteries.reduce((s, t) => s + Number(t.mastery || 0), 0) / topicMasteries.length) : (averageMarks > 0 ? averageMarks : 0));
 
-  // True Retained LQ: Holistic mastery modulated by active retention
-  const lqScore = certifiedTopicsCount > 0
-    ? Math.round(certifiedEffectiveSum / certifiedTopicsCount)
+  // True Retained LQ: When SRS is enabled, modulated by retention; when SRS is off, equals overallMastery
+  const lqScore = Boolean(input.srsEnabled)
+    ? (certifiedTopicsCount > 0 ? Math.round(certifiedEffectiveSum / certifiedTopicsCount) : overallMastery)
     : overallMastery;
 
-  const averageRetention = topicMasteries.length > 0
-    ? Math.round(totalRetentionSum / topicMasteries.length)
-    : 0;
+  const averageRetention = Boolean(input.srsEnabled)
+    ? (topicMasteries.length > 0 ? Math.round(totalRetentionSum / topicMasteries.length) : 0)
+    : 100;
 
   // --- 3. Efforts Calculation ---
   // Denominator: number of topics on which exams/tests have actually been conducted/assigned

@@ -582,7 +582,8 @@ export async function getParentDashboardData(
     topicMasteries: masterySnapshot.docs.map(doc => doc.data()),
     practiceReviews: parentReviews,
     integrityScore,
-    totalCoveredTopics: totalCoveredTopics
+    totalCoveredTopics: totalCoveredTopics,
+    srsEnabled: Boolean(childUser?.srsEnabled)
   });
   
   const evalsMap = new Map();
@@ -820,7 +821,7 @@ export async function getParentDashboardData(
 
     if (isMastered) {
       masteredTopicCodes.add(m.topicCode);
-      if (srsSched.isDueForRevision) {
+      if (childUser?.srsEnabled && srsSched.isDueForRevision) {
         srsDueTopicsList.push({
           topicCode: m.topicCode,
           topicName: displayName,

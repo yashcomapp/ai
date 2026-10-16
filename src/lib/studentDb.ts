@@ -462,7 +462,8 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
       topicMasteries: topicMasteriesList,
       practiceReviews: practiceReviewsList,
       integrityScore,
-      totalCoveredTopics: totalCoveredTopicsCount
+      totalCoveredTopics: totalCoveredTopicsCount,
+      srsEnabled: Boolean(userData.srsEnabled)
     });
 
     const profile = {
@@ -923,7 +924,9 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
         subAssignmentsSnap: { docs: [...subAssignmentsSnapshot.docs, ...subStudentAssignmentsSnapshot.docs] }
       });
       needsAttentionTopicsList = learningData?.needsAttention || [];
-      srsDueTopicsList = (learningData?.revision || []).filter((t: any) => t.isSrsDue === true);
+      srsDueTopicsList = Boolean(userData.srsEnabled) 
+        ? (learningData?.revision || []).filter((t: any) => t.isSrsDue === true)
+        : [];
     } catch (e) {
       console.warn('Failed to load learning data for dashboard:', e);
     }
@@ -1441,6 +1444,8 @@ export async function getStudentLearningData(userData: any, preloadedData?: Prel
       srsSchedule
     };
 
+    const isSrsEnabled = Boolean(userData?.srsEnabled);
+
     // A topic is truly in Focus only if mastery is low (<50) or if the student has never attempted it (attempts === 0) and missed an assigned exam.
     // If a student already has >=50% mastery on a topic, historical absent exams do not override their progress.
     if (mastery < 50 || (attempts === 0 && isAbsentExam)) {
@@ -1449,16 +1454,20 @@ export async function getStudentLearningData(userData: any, preloadedData?: Prel
       continuePractice.push({ ...topicItem, state: 'continuePractice' });
     } else {
       if (isCertifiedMastered) {
-        if (srsSchedule.isDueForRevision) {
-          // Mastered topic is due for Spaced Repetition review -> route to Revise tab
+        if (isSrsEnabled && srsSchedule.isDueForRevision) {
+          // Mastered topic is due for Spaced Repetition review -> route to Revise tab (ONLY when SRS is enabled)
           revision.push({ ...topicItem, state: 'revision', isSrsDue: true });
         } else {
-          // Mastered topic is still fresh -> stay in Mastered tab
+          // Regular Mastery: Mastered topic stays in Mastered tab permanently!
           mastered.push({ ...topicItem, state: 'mastered', isSrsDue: false });
         }
       } else {
-        // High mastery but needs confidence validation -> route to Revise tab
-        revision.push({ ...topicItem, state: 'revision', isExamStrong: true });
+        if (isSrsEnabled) {
+          // High mastery but needs confidence validation -> route to Revise tab
+          revision.push({ ...topicItem, state: 'revision', isExamStrong: true });
+        } else {
+          continuePractice.push({ ...topicItem, state: 'continuePractice' });
+        }
       }
     }
   });
@@ -1476,7 +1485,11 @@ export async function getStudentLearningData(userData: any, preloadedData?: Prel
   needsAttention.sort(sortFn);
   continuePractice.sort(sortFn);
   revision.sort(sortFn);
-  mastered.sort((a: any, b: any) => (a.srsSchedule?.daysUntilDue || 0) - (b.srsSchedule?.daysUntilDue || 0));
+  if (Boolean(userData?.srsEnabled)) {
+    mastered.sort((a: any, b: any) => (a.srsSchedule?.daysUntilDue || 0) - (b.srsSchedule?.daysUntilDue || 0));
+  } else {
+    mastered.sort((a: any, b: any) => (b.mastery || 0) - (a.mastery || 0));
+  }
 
   const result = {
     studentCode,

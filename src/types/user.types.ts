@@ -15,6 +15,7 @@ export interface User {
   studentId?: string;
   studentCodes?: string[];
   studentName?: string;
+  srsEnabled?: boolean;
   createdAt: any;
 }
 

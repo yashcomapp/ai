@@ -21,6 +21,7 @@ interface Student {
   overallMastery?: number;
   autonomous?: boolean;
   curfewBypass?: boolean;
+  srsEnabled?: boolean;
   lastActiveAt?: any;
   currentPage?: string;
   currentPagePath?: string;
@@ -58,7 +59,8 @@ export default function StudentsManager() {
     parentEmail: '',
     batchIds: [] as string[],
     autonomous: false,
-    curfewBypass: false
+    curfewBypass: false,
+    srsEnabled: false
   });
   const [savingEdit, setSavingEdit] = useState(false);
   const [honestyAlerts, setHonestyAlerts] = useState<any[]>([]);
@@ -240,7 +242,8 @@ export default function StudentsManager() {
       parentEmail: student.parentEmail || '',
       batchIds: student.batchIds || [],
       autonomous: student.autonomous || false,
-      curfewBypass: student.curfewBypass || false
+      curfewBypass: student.curfewBypass || false,
+      srsEnabled: student.srsEnabled || false
     });
     setEditModalOpen(true);
   };
@@ -663,6 +666,20 @@ export default function StudentsManager() {
                 </label>
                 <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginLeft: '18px', lineHeight: 1.2 }}>
                   Allows login during curfew (10:30 PM - 5:00 AM).
+                </div>
+              </div>
+
+              <div className="form-group" style={{ margin: 0 }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 800, cursor: 'pointer' }}>
+                  <input 
+                    type="checkbox" 
+                    checked={editFormData.srsEnabled || false}
+                    onChange={(e) => setEditFormData(prev => ({ ...prev, srsEnabled: e.target.checked }))}
+                  />
+                  Enable Spaced Repetition (SRS)
+                </label>
+                <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginLeft: '18px', lineHeight: 1.2 }}>
+                  Off by default. When enabled, schedules Ebbinghaus recall intervals. When disabled, mastered topics remain permanently mastered without decay.
                 </div>
               </div>
             </div>
