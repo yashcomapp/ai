@@ -943,8 +943,7 @@ export class QuotientService {
     new PracticeEngagementCalculator(),
     new PracticeQualityCalculator(),
     new TopicHealthCalculator(),
-    new IntegrityScoreCalculator(),
-    new ClassObservationsCalculator()
+    new IntegrityScoreCalculator()
   ];
 
   /**
@@ -1205,22 +1204,27 @@ export class QuotientService {
     };
 
     const qualityResult = new PracticeQualityCalculator().calculate(studentData);
-    const obsResult = new ClassObservationsCalculator().calculate(studentData);
 
     const absentExamsCount = Math.max(0, conductedExams.length - unifiedMetrics.examCount);
     const attendanceRate = conductedExams.length > 0
       ? Math.round((unifiedMetrics.examCount / conductedExams.length) * 100)
       : 100;
 
-    const finalLQ = unifiedMetrics.lqScore;
+    // Academic Pillar Weights (Classroom observations completely removed per pedagogical SSOT):
+    // Exam Performance: 30%, Topic Mastery: 30%, Practice Efforts: 25%, Practice Quality: 15%
+    const hasConductedExams = conductedExams.length > 0;
+    const examWeight = hasConductedExams ? 0.30 : 0.00;
+    const healthWeight = hasConductedExams ? 0.30 : 0.45;
+    const practiceWeight = hasConductedExams ? 0.25 : 0.35;
+    const qualityWeight = hasConductedExams ? 0.15 : 0.20;
 
     const components: QuotientComponentResult[] = [
       {
         parameterId: 'exam',
-        parameterName: 'Exam',
+        parameterName: 'Exam Performance',
         score: unifiedMetrics.averageMarks,
-        weight: 0.25,
-        contribution: Math.round(unifiedMetrics.averageMarks * 0.25 * 10) / 10,
+        weight: examWeight,
+        contribution: Math.round(unifiedMetrics.averageMarks * examWeight * 10) / 10,
         details: {
           totalAssigned: conductedExams.length,
           completed: unifiedMetrics.examCount,
@@ -1232,10 +1236,10 @@ export class QuotientService {
       },
       {
         parameterId: 'practice',
-        parameterName: 'Practice',
+        parameterName: 'Practice Efforts',
         score: unifiedMetrics.effortsPercent,
-        weight: 0.20,
-        contribution: Math.round(unifiedMetrics.effortsPercent * 0.20 * 10) / 10,
+        weight: practiceWeight,
+        contribution: Math.round(unifiedMetrics.effortsPercent * practiceWeight * 10) / 10,
         details: {
           totalQuestionsAttempted: unifiedMetrics.totalQuestionsPracticed,
           averagePracticeScore: unifiedMetrics.practiceAvg,
@@ -1251,18 +1255,18 @@ export class QuotientService {
       },
       {
         parameterId: 'quality',
-        parameterName: 'Quality',
+        parameterName: 'Practice Quality',
         score: qualityResult.score,
-        weight: 0.10,
-        contribution: Math.round(qualityResult.score * 0.10 * 10) / 10,
+        weight: qualityWeight,
+        contribution: Math.round(qualityResult.score * qualityWeight * 10) / 10,
         details: qualityResult.details
       },
       {
         parameterId: 'topicHealth',
-        parameterName: 'Topic Health',
+        parameterName: 'Topic Mastery',
         score: unifiedMetrics.lqScore,
-        weight: 0.25,
-        contribution: Math.round(unifiedMetrics.lqScore * 0.25 * 10) / 10,
+        weight: healthWeight,
+        contribution: Math.round(unifiedMetrics.lqScore * healthWeight * 10) / 10,
         details: {
           totalTopics: totalCoveredTopicsCount,
           masteredCount: unifiedMetrics.masteredTopicsCount,
@@ -1278,7 +1282,7 @@ export class QuotientService {
       },
       {
         parameterId: 'integrity',
-        parameterName: 'Integrity',
+        parameterName: 'Proctoring Integrity',
         score: unifiedMetrics.integrityScore,
         weight: 0.00,
         contribution: 0,
@@ -1286,20 +1290,17 @@ export class QuotientService {
           score: unifiedMetrics.integrityScore,
           recordsCount: filteredIntegrity.length
         }
-      },
-      {
-        parameterId: 'observations',
-        parameterName: 'Class Observations',
-        score: obsResult.score,
-        weight: 0.20,
-        contribution: Math.round(obsResult.score * 0.20 * 10) / 10,
-        details: obsResult.details
       }
     ];
 
+    const totalWeight = components.reduce((sum, c) => sum + c.weight, 0);
+    const overallQuotient = totalWeight > 0
+      ? Math.max(0, Math.min(100, Math.round(components.reduce((sum, c) => sum + (c.score * c.weight), 0) / totalWeight)))
+      : 0;
+
     return {
       studentCode,
-      overallQuotient: finalLQ,
+      overallQuotient,
       components,
       calculatedAt: new Date()
     };

@@ -295,7 +295,7 @@ export class ReportService {
    * Single Student Learning Quotient Report.
    */
   static async getSingleLearningQuotientReport(studentCode: string, duration: string = 'monthly') {
-    const singleCacheKey = `single-lq-${studentCode}-${duration}`;
+    const singleCacheKey = `single-lq-v2-${studentCode}-${duration}`;
     const cachedSingle = await ReportCacheManager.getReport<any>(singleCacheKey);
     if (cachedSingle) return cachedSingle;
 
@@ -357,7 +357,7 @@ export class ReportService {
    * Bulk Learning Quotient Report across all students.
    */
   static async getBulkLearningQuotientReport(duration: string = 'monthly') {
-    const fullBulkCacheKey = `bulk-lq-full-report-${duration}`;
+    const fullBulkCacheKey = `bulk-lq-v2-full-report-${duration}`;
     const cachedFullBulk = await ReportCacheManager.getReport<any>(fullBulkCacheKey);
     if (cachedFullBulk) return cachedFullBulk;
 
@@ -377,7 +377,7 @@ export class ReportService {
       batchesMap[b.id] = b.name;
     });
     
-    const cacheKey = `bulk-learning-quotients-report-${duration}`;
+    const cacheKey = `bulk-learning-quotients-v2-report-${duration}`;
     let quotientsMap = await ReportCacheManager.getReport<Record<string, QuotientResult>>(cacheKey);
     if (!quotientsMap) {
       const studentCodes = students.map(s => s.studentCode).filter(Boolean) as string[];
@@ -478,7 +478,6 @@ export class ReportService {
             qualityScore: 0,
             healthScore: 0,
             integrityScore: 100,
-            obsScore: 50,
             parentName: pName,
             parentMobile: pMobile
           };
@@ -490,7 +489,6 @@ export class ReportService {
         const qualityComp = quotientData.components.find(c => c.parameterId === 'quality');
         const healthComp = quotientData.components.find(c => c.parameterId === 'topicHealth');
         const integrityComp = quotientData.components.find(c => c.parameterId === 'integrity');
-        const obsComp = quotientData.components.find(c => c.parameterId === 'observations');
 
         return {
           ...student,
@@ -501,8 +499,6 @@ export class ReportService {
           qualityScore: qualityComp?.score ?? 0,
           healthScore: healthComp?.score ?? 0,
           integrityScore: integrityComp?.score ?? 0,
-          obsScore: obsComp?.score ?? 50,
-          obsDetails: obsComp?.details?.parameters || [],
           parentName: pName,
           parentMobile: pMobile,
           quotientData
@@ -517,8 +513,6 @@ export class ReportService {
           practiceScore: 0,
           healthScore: 0,
           integrityScore: 100,
-          obsScore: 50,
-          obsDetails: [],
           parentName: pName,
           parentMobile: pMobile
         };

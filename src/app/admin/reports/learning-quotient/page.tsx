@@ -21,8 +21,6 @@ interface StudentLQ {
   qualityScore: number;
   healthScore: number;
   integrityScore: number;
-  obsScore: number;
-  obsDetails?: { id: string; name: string; average: number; logsCount?: number }[];
   parentName?: string;
   parentMobile?: string;
   quotientData?: any;
@@ -32,17 +30,12 @@ export default function LearningQuotientReportPage() {
   const { firebaseUser, user } = useAuth();
   const router = useRouter();
   const { 
-    getQuotientReport, 
-    saveQuotientParameter, 
-    deleteQuotientParameter, 
-    batchAwardObservations, 
-    logSingleObservation 
+    getQuotientReport
   } = useReports();
 
   const [loading, setLoading] = useState(true);
   const [students, setStudents] = useState<StudentLQ[]>([]);
   const [batches, setBatches] = useState<{ id: string; name: string }[]>([]);
-  const [parameters, setParameters] = useState<{ id: string; name: string; weight?: number }[]>([]);
   const [selectedBatchId, setSelectedBatchId] = useState<string>('all');
 
   // Sorting state
@@ -83,10 +76,6 @@ export default function LearningQuotientReportPage() {
     });
   }, [filteredStudents, sortField, sortDirection]);
 
-  // Modal toggles
-  const [showManageModal, setShowManageModal] = useState(false);
-  const [showSingleModal, setShowSingleModal] = useState(false);
-  
   // Selection and details state
   const [selectedCode, setSelectedCode] = useState('');
   const [quotientDetails, setQuotientDetails] = useState<any>(null);
@@ -104,29 +93,6 @@ export default function LearningQuotientReportPage() {
   const [studentMobile, setStudentMobile] = useState('');
   const [commentsText, setCommentsText] = useState('');
   const [isCommentsEdited, setIsCommentsEdited] = useState(false);
-  
-  // Single Student rating modal state
-  const [singleStudentCode, setSingleStudentCode] = useState('');
-  const [singleStudentName, setSingleStudentName] = useState('');
-  const [singleStudentScores, setSingleStudentScores] = useState<Record<string, number>>({});
-  const [singleObsMsg, setSingleObsMsg] = useState('');
-  const [singleLoading, setSingleLoading] = useState(false);
-
-  // Bulk Observations Tab state
-  const [manageTab, setManageTab] = useState<'bulk' | 'params'>('bulk');
-  const [bulkBatchId, setBulkBatchId] = useState('all');
-  const [bulkParamId, setBulkParamId] = useState('');
-  const [bulkScore, setBulkScore] = useState(80);
-  const [selectedStudentCodes, setSelectedStudentCodes] = useState<string[]>([]);
-  const [bulkMsg, setBulkMsg] = useState('');
-  const [bulkLoading, setBulkLoading] = useState(false);
-  const [bulkAssignments, setBulkAssignments] = useState<Record<string, 'A' | 'B' | 'C' | 'D' | 'E'>>({});
-  const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
-
-  // Manage Parameters Tab state
-  const [newParamName, setNewParamName] = useState('');
-  const [paramMsg, setParamMsg] = useState('');
-  const [paramLoading, setParamLoading] = useState(false);
 
   // WhatsApp Broadcast Queue Wizard state
   const [showBroadcastModal, setShowBroadcastModal] = useState(false);
@@ -156,7 +122,6 @@ export default function LearningQuotientReportPage() {
       if (resData && resData.success) {
         setStudents(resData.students || []);
         setBatches(resData.batches || []);
-        setParameters(resData.parameters || []);
       }
     } catch (e) {
       console.error('Error loading quotient roster:', e);
@@ -175,8 +140,8 @@ export default function LearningQuotientReportPage() {
     const name = studentInfo?.name || 'Student';
     const examComp = details.components.find((c: any) => c.parameterId === 'exam') || { score: 0, details: {} };
     const practiceComp = details.components.find((c: any) => c.parameterId === 'practice') || { score: 0, details: {} };
+    const qualityComp = details.components.find((c: any) => c.parameterId === 'quality') || { score: 0, details: {} };
     const healthComp = details.components.find((c: any) => c.parameterId === 'topicHealth') || { score: 0, details: {} };
-    const obsComp = details.components.find((c: any) => c.parameterId === 'observations') || { score: 0, details: {} };
 
     const totalAssigned = healthComp.details?.totalTopics ?? practiceComp.details?.totalAssignedTopics ?? 0;
     const masteredTopics = healthComp.details?.masteredCount ?? 0;
@@ -229,50 +194,35 @@ export default function LearningQuotientReportPage() {
       practiceText += ` (${healthComp.details.srsDueCount} topic(s) are currently due for spaced memory revision.)`;
     }
 
-    // Point 4: Classroom & Home Observations + Overall LQ
-    const obsParams = obsComp.details?.parameters || [];
-    const sincerity = obsParams.find((p: any) => p.id === 'sincerity')?.average ?? 50;
-    const participation = obsParams.find((p: any) => p.id === 'activeParticipation')?.average ?? 50;
-    const timelyWork = obsParams.find((p: any) => p.id === 'timelyWork')?.average ?? 50;
-    const parentScore = obsParams.find((p: any) => p.id === 'parentScore')?.average ?? 50;
-
-    const observationPoints: string[] = [];
-    if (sincerity < 50) observationPoints.push('Classroom focus and active attention need improvement.');
-    else if (sincerity >= 80) observationPoints.push('Maintains disciplined focus and sincere engagement during lectures.');
-
-    if (participation < 50) observationPoints.push('Needs encouragement for active class participation and doubt resolution.');
-    else if (participation >= 80) observationPoints.push('Actively participates in discussions and problem-solving.');
-
-    if (timelyWork < 50) observationPoints.push('Regular and timely submission of homework assignments is required.');
-    else if (timelyWork >= 80) observationPoints.push('Consistently submits assignments and homework on time.');
-
-    if (parentScore < 50) observationPoints.push('Requires closer parental monitoring and structured study routines at home.');
-    else if (parentScore >= 80) observationPoints.push('Maintains an excellent, disciplined daily study routine at home.');
-
-    const lq = details.overallQuotient ?? 0;
-    let obsText = '';
-    if (observationPoints.length > 0) {
-      const bullets = observationPoints.map(pt => `   • ${pt}`).join('\n');
-      obsText = `Classroom & Home Observations: ${name}\n${bullets}\n\n   👉 *Overall Learning Quotient (LQ): ${lq}/100*`;
+    // Point 4: Practice Quality & Accuracy Analysis
+    let qualityText = '';
+    const qScore = qualityComp.score ?? 0;
+    const accuracy = qualityComp.details?.accuracyScore ?? qScore;
+    const pacing = qualityComp.details?.pacingScore ?? 100;
+    if (qScore >= 80) {
+      qualityText = `Practice accuracy is high (${accuracy}%) with sincere pacing (${pacing}%), demonstrating solid conceptual absorption.`;
+    } else if (qScore >= 50) {
+      qualityText = `Practice accuracy is moderate (${accuracy}%). Avoiding rushing through questions and reviewing step-by-step solutions will elevate problem-solving precision.`;
     } else {
-      obsText = `Classroom & Home Observations: ${name}\n   • Disciplined and satisfactory conduct.\n\n   👉 *Overall Learning Quotient (LQ): ${lq}/100*`;
+      qualityText = `Practice quality indicates need for greater deliberation (${accuracy}% accuracy). Students should thoroughly read question options and avoid guessing.`;
     }
 
-    // Point 5: Concluding Parent Guidance
+    // Point 5: Overall LQ & Parent Guidance
+    const lq = details.overallQuotient ?? 0;
     let adviceText = '';
     if (lq >= 85) {
-      adviceText = `Parents are requested to appreciate the student's commendable effort and encourage continued momentum in daily self-practice.`;
+      adviceText = `Parents are requested to appreciate ${name}'s commendable effort and encourage continued momentum in daily self-practice workouts.`;
     } else if (lq >= 60) {
-      adviceText = `Parents are requested to monitor daily self-study hours and practice on unmastered topics to facilitate movement into the Top Tier.`;
+      adviceText = `Parents are requested to monitor daily self-study hours and ensure regular practice on unmastered topics to facilitate movement into the Top Tier.`;
     } else {
-      adviceText = `Parents are strongly urged to prioritize daily study schedules and ensure completion of assigned practice sets.`;
+      adviceText = `Parents are strongly urged to establish a daily study timetable and ensure completion of assigned practice sets on unmastered topics.`;
     }
 
     const points = [
       `1. Examination Performance: ${examText}`,
       `2. Study & Reading Habits: ${readingText}`,
       `3. Practice & Concept Mastery: ${practiceText}`,
-      `4. Behavioral & Classroom Observations:\n${obsText}`,
+      `4. Practice Quality & Precision: ${qualityText}\n\n   👉 *Overall Learning Quotient (LQ): ${lq}/100*`,
       `5. Educator's Guidance for Parents: ${adviceText}`
     ];
 
@@ -296,19 +246,14 @@ export default function LearningQuotientReportPage() {
     const studentName = student.name || 'Student';
     const examComp = details.components?.find((c: any) => c.parameterId === 'exam') || { score: 0, details: {} };
     const practiceComp = details.components?.find((c: any) => c.parameterId === 'practice') || { score: 0, details: {} };
+    const qualityComp = details.components?.find((c: any) => c.parameterId === 'quality') || { score: 0, details: {} };
     const healthComp = details.components?.find((c: any) => c.parameterId === 'topicHealth') || { score: 0, details: {} };
-    const obsComp = details.components?.find((c: any) => c.parameterId === 'observations') || { score: 0, details: {} };
 
     const totalAssigned = healthComp.details?.totalTopics ?? practiceComp.details?.totalAssignedTopics ?? 0;
     const masteredTopics = healthComp.details?.masteredCount ?? 0;
     const unmasteredTopics = Math.max(0, totalAssigned - masteredTopics);
     const practicedTopics = practiceComp.details?.topicsAttemptedCount ?? 0;
     const totalQuestions = practiceComp.details?.totalQuestionsAttempted ?? 0;
-
-    const activePart = obsComp.details?.parameters?.find((p: any) => p.id === 'activeParticipation')?.average ?? 50;
-    const sincerity = obsComp.details?.parameters?.find((p: any) => p.id === 'sincerity')?.average ?? 50;
-    const timelyWork = obsComp.details?.parameters?.find((p: any) => p.id === 'timelyWork')?.average ?? 50;
-    const parentScore = obsComp.details?.parameters?.find((p: any) => p.id === 'parentScore')?.average ?? 50;
 
     const lq = details.overallQuotient ?? 0;
     const tierName = lq >= 85 ? 'Excellent Tier 🌟' : lq >= 60 ? 'Standard Tier 👍' : 'Needs Attention ⚠️';
@@ -318,11 +263,10 @@ export default function LearningQuotientReportPage() {
     const absentCount = examComp.details?.absent ?? 0;
 
     const practiceScore = practiceComp.score !== null ? `${practiceComp.score}%` : '0%';
+    const qualityScore = qualityComp.score !== null ? `${qualityComp.score}%` : '0%';
     const healthScore = healthComp.score !== null ? `${healthComp.score}%` : '0%';
     const averageRetention = healthComp.details?.averageRetention ?? 0;
     const srsDueCount = healthComp.details?.srsDueCount ?? 0;
-
-    const obsScore = obsComp.score !== null ? `${obsComp.score}%` : 'N/A';
 
     const comments = customComments || generateStudentComments(
       { name: studentName, studentCode: student.studentCode, email: student.email },
@@ -344,19 +288,17 @@ Academic & Learning Quotient (LQ) summary for *${studentName}* (*${reportPeriod}
    └ Attendance Rate: ${attendanceRate}%, Missed Tests: ${absentCount}
 
 🏋️ *2. Practice Efforts & Consistency:* *${practiceScore}*
-   └ Total Assigned Topics: *${totalAssigned}*
+   └ Total Topics Assigned: *${totalAssigned}*
    └ Mastered Topics (🟢): *${masteredTopics}*
-   └ Revision / Practice Pending (🟡🔴): *${unmasteredTopics}*
+   └ Need Continued Practice (🟡🔴): *${unmasteredTopics}*
    └ Practice Volume: *${totalQuestions}* questions solved across *${practicedTopics}* topics
 
-🩺 *3. Concept Health & Retention:* *${healthScore}*
-   └ Memory Retention Index: ${averageRetention}% (${srsDueCount > 0 ? `${srsDueCount} topic(s) due for revision` : averageRetention > 0 ? 'Retention is stable' : 'Practice pending'})
+🎯 *3. Practice Quality & Accuracy:* *${qualityScore}*
+   └ Solution Accuracy: ${qualityComp.details?.accuracyScore ?? qualityComp.score}%
+   └ Pacing Sincerity: ${qualityComp.details?.pacingScore ?? 100}%
 
-👥 *4. Classroom & Home Observations:* *${obsScore}*
-   └ Parent Study Score: ${parentScore}%
-   └ Classroom Focus & Sincerity: ${sincerity}%
-   └ Assignment Timeliness: ${timelyWork}%
-   └ Active Participation: ${activePart}%
+🩺 *4. Concept Health & Retention:* *${healthScore}*
+   └ Memory Retention Index: ${averageRetention}% (${srsDueCount > 0 ? `${srsDueCount} topic(s) due for revision` : averageRetention > 0 ? 'Retention is stable' : 'Practice pending'})
 
 📝 *EDUCATOR'S DIAGNOSTIC FEEDBACK & GUIDANCE:*
 ${comments}
@@ -533,205 +475,6 @@ _Empowering Conceptual Excellence_`;
       commentsText
     );
 
-    dispatchWhatsApp(phoneStr, message);
-  };
-
-  // Open single observation rating sliders (instant, zero-flicker, 0ms latency)
-  const handleOpenSingleModal = (student: StudentLQ) => {
-    setSingleStudentCode(student.studentCode || '');
-    setSingleStudentName(student.name);
-    setSingleObsMsg('');
-    setSingleLoading(false);
-
-    // Synchronously compute initial scores from the selected student's own observation details
-    const initialScores: Record<string, number> = {};
-    parameters.forEach(p => {
-      const detail = student.obsDetails?.find(param => param.id === p.id);
-      initialScores[p.id] = detail ? detail.average : (student.obsScore ?? 50);
-    });
-
-    setSingleStudentScores(initialScores);
-    setShowSingleModal(true);
-  };
-
-  // Submit single student observation update (fast atomic save + optimistic UI update)
-  const handleSubmitSingleObservation = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!firebaseUser || !singleStudentCode) return;
-
-    setSingleLoading(true);
-    setSingleObsMsg('');
-    try {
-      const idToken = await firebaseUser.getIdToken();
-      const res = await logSingleObservation(idToken, singleStudentCode, singleStudentScores);
-      if (res && res.success) {
-        setSingleObsMsg('✅ Saved!');
-
-        // Optimistically calculate new observation average and overall LQ score
-        let weightedSum = 0;
-        let totalWeight = 0;
-        const updatedObsDetails = parameters.map(p => {
-          const avg = singleStudentScores[p.id] !== undefined ? Number(singleStudentScores[p.id]) : 50;
-          let paramWeight = 0.20;
-          if (p.weight !== undefined && p.weight !== null && Number(p.weight) > 0) {
-            paramWeight = Number(p.weight);
-          } else if (p.id === 'parentScore') {
-            paramWeight = 0.40;
-          } else {
-            paramWeight = 0.20;
-          }
-          weightedSum += avg * paramWeight;
-          totalWeight += paramWeight;
-          return {
-            id: p.id,
-            name: p.name,
-            average: avg,
-            weight: paramWeight
-          };
-        });
-
-        const updatedObsScore = totalWeight > 0 ? Math.round(weightedSum / totalWeight) : 50;
-
-        setStudents(prev => prev.map(s => {
-          if (s.studentCode === singleStudentCode) {
-            return {
-              ...s,
-              obsScore: updatedObsScore,
-              obsDetails: updatedObsDetails
-            };
-          }
-          return s;
-        }));
-
-        // Close modal quickly for smooth UX
-        setTimeout(() => setShowSingleModal(false), 300);
-      } else {
-        setSingleObsMsg('❌ Failed to log observations.');
-      }
-    } catch (err: any) {
-      setSingleObsMsg(`❌ Error: ${err.message || 'Saving failed'}`);
-    } finally {
-      setSingleLoading(false);
-    }
-  };
-
-  // Submit bulk parameters observations checklist log
-  const handleSubmitBulkAward = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!firebaseUser || !bulkParamId) {
-      setBulkMsg('⚠️ Please select a parameter.');
-      return;
-    }
-
-    const batchStudents = bulkBatchId === 'all'
-      ? students
-      : students.filter(s => s.batchIds?.includes(bulkBatchId));
-    
-    const allAssigned = batchStudents.length > 0 && batchStudents.every(s => s.studentCode && bulkAssignments[s.studentCode]);
-    if (!allAssigned) {
-      setBulkMsg('⚠️ Please place all students into columns before saving.');
-      return;
-    }
-
-    setBulkLoading(true);
-    setBulkMsg('');
-    try {
-      const idToken = await firebaseUser.getIdToken();
-      
-      // Group students by category
-      const colA: string[] = [];
-      const colB: string[] = [];
-      const colC: string[] = [];
-      const colD: string[] = [];
-      const colE: string[] = [];
-
-      batchStudents.forEach(s => {
-        const code = s.studentCode;
-        if (!code) return;
-        const cat = bulkAssignments[code];
-        if (cat === 'A') colA.push(code);
-        else if (cat === 'B') colB.push(code);
-        else if (cat === 'C') colC.push(code);
-        else if (cat === 'D') colD.push(code);
-        else if (cat === 'E') colE.push(code);
-      });
-
-      const promises = [];
-      if (colA.length > 0) promises.push(batchAwardObservations(idToken, { studentCodes: colA, parameterId: bulkParamId, score: 80 }));
-      if (colB.length > 0) promises.push(batchAwardObservations(idToken, { studentCodes: colB, parameterId: bulkParamId, score: 60 }));
-      if (colC.length > 0) promises.push(batchAwardObservations(idToken, { studentCodes: colC, parameterId: bulkParamId, score: 40 }));
-      if (colD.length > 0) promises.push(batchAwardObservations(idToken, { studentCodes: colD, parameterId: bulkParamId, score: 20 }));
-      if (colE.length > 0) promises.push(batchAwardObservations(idToken, { studentCodes: colE, parameterId: bulkParamId, score: 0 }));
-
-      const results = await Promise.all(promises);
-      const failed = results.some(r => !r || !r.success);
-
-      if (!failed) {
-        setBulkMsg('✅ Observations bulk logged successfully!');
-        setBulkAssignments({});
-        setSelectedStudents([]);
-        loadRoster();
-      } else {
-        setBulkMsg('❌ Failed to save some bulk observations.');
-      }
-    } catch (err: any) {
-      setBulkMsg(`❌ Error: ${err.message || 'Operation failed'}`);
-    } finally {
-      setBulkLoading(false);
-    }
-  };
-
-  // Add Dynamic parameter CRUD action
-  const handleAddParameter = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!firebaseUser || !newParamName.trim()) return;
-
-    setParamLoading(true);
-    setParamMsg('');
-    try {
-      const idToken = await firebaseUser.getIdToken();
-      const res = await saveQuotientParameter(idToken, newParamName);
-      if (res && res.success) {
-        setParamMsg('✅ Parameter added successfully!');
-        setNewParamName('');
-        const refreshData = await getQuotientReport(idToken);
-        if (refreshData && refreshData.success) {
-          setParameters(refreshData.parameters || []);
-        }
-      } else {
-        setParamMsg('❌ Failed to add parameter.');
-      }
-    } catch (err: any) {
-      setParamMsg(`❌ Error: ${err.message || 'Save failed'}`);
-    } finally {
-      setParamLoading(false);
-    }
-  };
-
-  // Delete Dynamic parameter CRUD action
-  const handleDeleteParameter = async (parameterId: string) => {
-    if (!firebaseUser) return;
-    if (!confirm('Are you sure you want to delete this observation parameter? Historical logs for this parameter will default to baseline.')) return;
-
-    setParamLoading(true);
-    setParamMsg('');
-    try {
-      const idToken = await firebaseUser.getIdToken();
-      const res = await deleteQuotientParameter(idToken, parameterId);
-      if (res && res.success) {
-        setParamMsg('✅ Parameter deleted successfully!');
-        const refreshData = await getQuotientReport(idToken);
-        if (refreshData && refreshData.success) {
-          setParameters(refreshData.parameters || []);
-        }
-      } else {
-        setParamMsg('❌ Failed to delete parameter.');
-      }
-    } catch (err: any) {
-      setParamMsg(`❌ Error: ${err.message || 'Delete failed'}`);
-    } finally {
-      setParamLoading(false);
-    }
   };
 
   const loadQueueStudentDetails = async (index: number, queue: any[]) => {
@@ -955,21 +698,6 @@ _Empowering Conceptual Excellence_`;
             >
               📱 WhatsApp Broadcast to Parents
             </button>
-            <button 
-              className="btn btn-primary"
-              onClick={() => {
-                setShowManageModal(true);
-                setManageTab('bulk');
-                setBulkMsg('');
-                setSelectedStudentCodes([]);
-                if (parameters.length > 0) {
-                  setBulkParamId(parameters[0].id);
-                }
-              }}
-              style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, padding: '8px 16px' }}
-            >
-              ⚙️ Bulk Award & Parameters
-            </button>
           </div>
         </div>
 
@@ -983,7 +711,6 @@ _Empowering Conceptual Excellence_`;
                 {renderSortHeader('Efforts %', 'practiceScore')}
                 {renderSortHeader('Quality', 'qualityScore')}
                 {renderSortHeader('Mastery', 'healthScore')}
-                {renderSortHeader('Obs', 'obsScore')}
                 {renderSortHeader('LQ Score', 'overallQuotient')}
                 <th style={{ padding: '12px 8px', textAlign: 'center', whiteSpace: 'nowrap' }}>Actions</th>
               </tr>
@@ -991,7 +718,7 @@ _Empowering Conceptual Excellence_`;
             <tbody>
               {sortedStudents.length === 0 ? (
                 <tr>
-                  <td colSpan={8} style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)', fontSize: '12px' }}>
+                  <td colSpan={7} style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)', fontSize: '12px' }}>
                     No students mapped to this batch.
                   </td>
                 </tr>
@@ -1022,9 +749,6 @@ _Empowering Conceptual Excellence_`;
                         <span style={{ fontWeight: 700, color: getScoreColor(s.healthScore) }}>{s.healthScore}</span>
                       </td>
                       <td style={{ padding: '12px 8px', textAlign: 'center' }}>
-                        <span style={{ fontWeight: 700, color: getScoreColor(s.obsScore) }}>{s.obsScore}</span>
-                      </td>
-                      <td style={{ padding: '12px 8px', textAlign: 'center' }}>
                         {hasScore ? (
                           <span 
                             style={{
@@ -1046,10 +770,11 @@ _Empowering Conceptual Excellence_`;
                       <td style={{ padding: '12px 8px', textAlign: 'center' }}>
                         <button
                           className="btn btn-secondary"
-                          onClick={() => handleOpenSingleModal(s)}
-                          style={{ padding: '4px 8px', fontSize: '11px', fontWeight: 700 }}
+                          onClick={() => handleOpenDetailsModal(s)}
+                          style={{ padding: '5px 12px', fontSize: '11px', fontWeight: 700, borderRadius: 'var(--radius-sm)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                          title="View detailed academic performance breakdown"
                         >
-                          📝 Log Obs
+                          📊 Dossier
                         </button>
                       </td>
                     </tr>
@@ -1061,472 +786,7 @@ _Empowering Conceptual Excellence_`;
         </div>
       </main>
 
-      {/* Single Student Rating Modal */}
-      {showSingleModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '16px' }}>
-          <div className="card glass" style={{ background: 'var(--surface)', maxWidth: '500px', width: '100%', padding: '24px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', gap: '15px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-light)', paddingBottom: '10px' }}>
-              <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 800 }}>✍️ Log Classroom Observations</h3>
-              <button onClick={() => setShowSingleModal(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '1.2rem' }}>✕</button>
-            </div>
-            
-            <div>
-              <strong style={{ fontSize: '13px', color: 'var(--text)' }}>{singleStudentName}</strong>
-              <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Code: <code>{singleStudentCode}</code></div>
-            </div>
 
-            {singleLoading && Object.keys(singleStudentScores).length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '30px 0' }}>
-                <div className="spinner" style={{ margin: '0 auto 10px auto' }}></div>
-                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Retrieving parameters...</span>
-              </div>
-            ) : (
-              <form onSubmit={handleSubmitSingleObservation} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                <div style={{ maxHeight: '300px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '12px', paddingRight: '5px' }}>
-                  {parameters.length === 0 ? (
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', textAlign: 'center', padding: '20px 0' }}>
-                      No active observation parameters. Add parameters in settings first.
-                    </div>
-                  ) : (
-                    parameters.map(p => {
-                      const weightPct = p.id === 'parentScore' || p.weight === 0.4 ? '40%' : `${Math.round((p.weight || 0.2) * 100)}%`;
-                      return (
-                        <div key={p.id}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '11px', fontWeight: 700, marginBottom: '4px' }}>
-                            <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                              <span>{p.name}</span>
-                              <span style={{ fontSize: '9.5px', fontWeight: 700, padding: '1px 6px', borderRadius: '4px', background: p.id === 'parentScore' ? 'rgba(234, 179, 8, 0.15)' : 'var(--bg-soft)', color: p.id === 'parentScore' ? 'var(--warning, #eab308)' : 'var(--text-muted)', border: '1px solid var(--border-light)' }}>
-                                {weightPct} weight
-                              </span>
-                            </span>
-                            <span style={{ color: 'var(--accent)', fontWeight: 800 }}>{singleStudentScores[p.id] ?? 50} / 100</span>
-                          </div>
-                          <input 
-                            type="range" 
-                            min="0" 
-                            max="100" 
-                            value={singleStudentScores[p.id] ?? 50}
-                            onChange={(e) => {
-                              setSingleStudentScores(prev => ({
-                                ...prev,
-                                [p.id]: Number(e.target.value)
-                              }));
-                            }}
-                            style={{ width: '100%', accentColor: 'var(--accent)' }}
-                          />
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-
-                {singleObsMsg && (
-                  <div style={{ fontSize: '11px', fontWeight: 700, color: singleObsMsg.includes('✅') ? 'var(--success)' : 'var(--danger)' }}>
-                    {singleObsMsg}
-                  </div>
-                )}
-
-                <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-                  <button type="button" className="btn btn-secondary" onClick={() => setShowSingleModal(false)} style={{ flex: 1 }}>
-                    Cancel
-                  </button>
-                  <button type="submit" className="btn btn-primary" disabled={singleLoading || parameters.length === 0} style={{ flex: 1 }}>
-                    {singleLoading ? 'Saving...' : '💾 Save Observations'}
-                  </button>
-                </div>
-              </form>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Manage Parameters & Bulk Award Modal */}
-      {showManageModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '16px' }}>
-          <div className="card glass" style={{ background: 'var(--surface)', maxWidth: manageTab === 'bulk' ? '900px' : '650px', width: '100%', padding: '24px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', gap: '15px', maxHeight: '90vh', transition: 'max-width 0.2s' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-light)', paddingBottom: '10px' }}>
-              <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 800 }}>⚙️ Bulk Award & Parameters Manager</h3>
-              <button onClick={() => setShowManageModal(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '1.2rem' }}>✕</button>
-            </div>
-
-            {/* Tab navigation */}
-            <div style={{ display: 'flex', borderBottom: '1px solid var(--border-light)', gap: '15px' }}>
-              <span 
-                onClick={() => setManageTab('bulk')}
-                style={{ fontSize: '13px', fontWeight: 700, paddingBottom: '8px', cursor: 'pointer', color: manageTab === 'bulk' ? 'var(--accent)' : 'var(--text-muted)', borderBottom: manageTab === 'bulk' ? '2px solid var(--accent)' : 'none' }}
-              >
-                👥 Bulk Observation Award
-              </span>
-              <span 
-                onClick={() => setManageTab('params')}
-                style={{ fontSize: '13px', fontWeight: 700, paddingBottom: '8px', cursor: 'pointer', color: manageTab === 'params' ? 'var(--accent)' : 'var(--text-muted)', borderBottom: manageTab === 'params' ? '2px solid var(--accent)' : 'none' }}
-              >
-                🛠️ Manage Parameters (CRUD)
-              </span>
-            </div>
-
-            {/* Tab 1 Content: Bulk Award */}
-            {manageTab === 'bulk' && (() => {
-              const batchStudents = bulkBatchId === 'all'
-                ? students
-                : students.filter(s => s.batchIds?.includes(bulkBatchId));
-              
-              const unassignedStudents = batchStudents.filter(s => s.studentCode && !bulkAssignments[s.studentCode]);
-              const allAssigned = batchStudents.length > 0 && batchStudents.every(s => s.studentCode && bulkAssignments[s.studentCode]);
-
-              const handleDragStart = (e: React.DragEvent, studentCode: string) => {
-                e.dataTransfer.setData('text/plain', studentCode);
-              };
-
-              return (
-                <form onSubmit={handleSubmitBulkAward} style={{ display: 'flex', flexDirection: 'column', gap: '12px', overflow: 'hidden', flex: 1 }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-                    <div>
-                      <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, marginBottom: '4px', color: 'var(--text-muted)' }}>1. Select Batch:</label>
-                      <select
-                        value={bulkBatchId}
-                        onChange={(e) => {
-                          setBulkBatchId(e.target.value);
-                          setBulkAssignments({});
-                          setSelectedStudents([]);
-                        }}
-                        style={{ width: '100%', padding: '6px 10px', borderRadius: '4px', border: '1px solid var(--border-light)', background: 'var(--bg-soft)', color: 'var(--text)', fontSize: '12px' }}
-                      >
-                        <option value="all">🌐 All Batches</option>
-                        {batches.map(b => (
-                          <option key={b.id} value={b.id}>{b.name}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, marginBottom: '4px', color: 'var(--text-muted)' }}>2. Select Parameter:</label>
-                      <select
-                        value={bulkParamId}
-                        onChange={(e) => setBulkParamId(e.target.value)}
-                        style={{ width: '100%', padding: '6px 10px', borderRadius: '4px', border: '1px solid var(--border-light)', background: 'var(--bg-soft)', color: 'var(--text)', fontSize: '12px' }}
-                      >
-                        <option value="">-- Choose Parameter --</option>
-                        {parameters.map(p => (
-                          <option key={p.id} value={p.id}>{p.name}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-
-                  {/* Unassigned Students Pills */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', display: 'flex', justifyContent: 'space-between' }}>
-                      <span>3. Unassigned Students:</span>
-                      <span style={{ color: 'var(--accent)' }}>{unassignedStudents.length} remaining</span>
-                    </label>
-                    <div 
-                      onDragOver={(e) => e.preventDefault()}
-                      onDrop={(e) => {
-                        e.preventDefault();
-                        const studentCode = e.dataTransfer.getData('text/plain');
-                        if (studentCode) {
-                          const codesToMove = selectedStudents.includes(studentCode)
-                            ? selectedStudents
-                            : [studentCode];
-                          setBulkAssignments(prev => {
-                            const next = { ...prev };
-                            codesToMove.forEach(code => {
-                              delete next[code];
-                            });
-                            return next;
-                          });
-                          setSelectedStudents([]);
-                        }
-                      }}
-                      style={{
-                        border: '1px dashed var(--border-light)',
-                        borderRadius: '4px',
-                        padding: '10px',
-                        background: 'var(--bg-soft)',
-                        minHeight: '60px',
-                        display: 'flex',
-                        flexWrap: 'wrap',
-                        gap: '6px',
-                        alignItems: 'center',
-                        maxHeight: '100px',
-                        overflowY: 'auto'
-                      }}
-                    >
-                      {unassignedStudents.length === 0 ? (
-                        <span style={{ fontSize: '11px', color: 'var(--text-muted)', width: '100%', textAlign: 'center' }}>
-                          🎉 All students placed! Drag to move or submit below.
-                        </span>
-                      ) : (
-                        unassignedStudents.map(s => {
-                          const isSelected = selectedStudents.includes(s.studentCode || '');
-                          return (
-                            <div
-                              key={s.studentCode}
-                              draggable
-                              onDragStart={(e) => handleDragStart(e, s.studentCode!)}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                const code = s.studentCode;
-                                if (!code) return;
-                                if (e.ctrlKey || e.metaKey) {
-                                  setSelectedStudents(prev => {
-                                    if (prev.includes(code)) return prev.filter(c => c !== code);
-                                    return [...prev, code];
-                                  });
-                                } else {
-                                  setSelectedStudents(prev => {
-                                    if (prev.length === 1 && prev[0] === code) return [];
-                                    return [code];
-                                  });
-                                }
-                              }}
-                              style={{
-                                fontSize: '11px',
-                                padding: '5px 10px',
-                                background: isSelected ? 'var(--accent)' : 'var(--surface)',
-                                color: isSelected ? 'var(--text-white)' : 'var(--text)',
-                                borderRadius: '12px',
-                                border: isSelected ? '1px solid var(--accent)' : '1px solid var(--border-light)',
-                                cursor: 'grab',
-                                userSelect: 'none',
-                                transition: 'all 0.2s',
-                                boxShadow: isSelected ? '0 0 8px var(--accent)' : 'none'
-                              }}
-                            >
-                              {s.name}
-                            </div>
-                          );
-                        })
-                      )}
-                    </div>
-                    <span style={{ fontSize: '9px', color: 'var(--text-muted)', fontStyle: 'italic' }}>
-                      💡 Drag & drop students into columns, or click student names (hold Ctrl/Cmd for multi-select) and click a column below.
-                    </span>
-                  </div>
-
-                  {/* Category Placement Columns */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px', marginTop: '10px', flex: 1, minHeight: '220px', overflowY: 'auto' }}>
-                    {[
-                      { key: 'A', name: 'A (Excellent)', score: 80, color: 'var(--success)' },
-                      { key: 'B', name: 'B', score: 60, color: 'var(--info)' },
-                      { key: 'C', name: 'C', score: 40, color: 'var(--warning)' },
-                      { key: 'D', name: 'D', score: 20, color: 'var(--warning)' },
-                      { key: 'E', name: 'E', score: 0, color: 'var(--danger)' }
-                    ].map(col => {
-                      const colStudents = batchStudents.filter(s => s.studentCode && bulkAssignments[s.studentCode] === col.key);
-                      return (
-                        <div
-                          key={col.key}
-                          onDragOver={(e) => e.preventDefault()}
-                          onDrop={(e) => {
-                            e.preventDefault();
-                            const studentCode = e.dataTransfer.getData('text/plain');
-                            if (studentCode) {
-                              const codesToMove = selectedStudents.includes(studentCode)
-                                ? selectedStudents
-                                : [studentCode];
-                              setBulkAssignments(prev => {
-                                const next = { ...prev };
-                                codesToMove.forEach(code => {
-                                  next[code] = col.key as any;
-                                });
-                                return next;
-                              });
-                              setSelectedStudents([]);
-                            }
-                          }}
-                          onClick={() => {
-                            if (selectedStudents.length > 0) {
-                              setBulkAssignments(prev => {
-                                const next = { ...prev };
-                                selectedStudents.forEach(code => {
-                                  next[code] = col.key as any;
-                                });
-                                return next;
-                              });
-                              setSelectedStudents([]);
-                            }
-                          }}
-                          style={{
-                            background: 'var(--bg-soft)',
-                            borderRadius: 'var(--radius-md)',
-                            border: selectedStudents.length > 0 ? '1px dashed var(--accent)' : `1px solid var(--border-light)`,
-                            padding: '10px 6px',
-                            minHeight: '200px',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: '8px',
-                            cursor: selectedStudents.length > 0 ? 'pointer' : 'default',
-                            transition: 'border 0.2s, background 0.2s',
-                            position: 'relative'
-                          }}
-                        >
-                          <div style={{
-                            fontSize: '10px',
-                            fontWeight: 800,
-                            textAlign: 'center',
-                            paddingBottom: '6px',
-                            borderBottom: `2px solid ${col.color}`,
-                            color: col.color,
-                            lineHeight: '1.2'
-                          }}>
-                            <div>{col.name}</div>
-                            <div style={{ fontSize: '11px', marginTop: '2px' }}>{col.score}%</div>
-                          </div>
-                          
-                          <div style={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: '4px',
-                            flex: 1,
-                            overflowY: 'auto',
-                            padding: '4px 2px'
-                          }}>
-                            {colStudents.map(s => {
-                              const isSelected = selectedStudents.includes(s.studentCode || '');
-                              return (
-                                <div
-                                  key={s.studentCode}
-                                  draggable
-                                  onDragStart={(e) => handleDragStart(e, s.studentCode!)}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    const code = s.studentCode;
-                                    if (!code) return;
-                                    if (e.ctrlKey || e.metaKey) {
-                                      setSelectedStudents(prev => {
-                                        if (prev.includes(code)) return prev.filter(c => c !== code);
-                                        return [...prev, code];
-                                      });
-                                    } else {
-                                      setSelectedStudents(prev => {
-                                        if (prev.length === 1 && prev[0] === code) return [];
-                                        return [code];
-                                      });
-                                    }
-                                  }}
-                                  style={{
-                                    fontSize: '10px',
-                                    padding: '4px 6px',
-                                    background: isSelected ? 'var(--accent)' : 'var(--surface)',
-                                    color: isSelected ? 'var(--text-white)' : 'var(--text)',
-                                    borderRadius: '6px',
-                                    border: isSelected ? '1px solid var(--accent)' : '1px solid var(--border-light)',
-                                    cursor: 'grab',
-                                    textAlign: 'center',
-                                    userSelect: 'none',
-                                    wordBreak: 'break-word',
-                                    boxShadow: 'var(--shadow-sm)'
-                                  }}
-                                >
-                                  {s.name}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {bulkMsg && (
-                    <div style={{ fontSize: '11px', fontWeight: 700, color: bulkMsg.includes('✅') ? 'var(--success)' : 'var(--danger)' }}>
-                      {bulkMsg}
-                    </div>
-                  )}
-
-                  <div style={{ display: 'flex', gap: '10px', marginTop: '5px', alignItems: 'center' }}>
-                    <button type="button" className="btn btn-secondary" onClick={() => setShowManageModal(false)} style={{ flex: 1 }}>
-                      Cancel
-                    </button>
-                    <button 
-                      type="submit" 
-                      className="btn btn-primary" 
-                      disabled={bulkLoading || !allAssigned || !bulkParamId} 
-                      style={{ flex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
-                    >
-                      {bulkLoading ? 'Saving...' : `💾 Save Observations (${Object.keys(bulkAssignments).length}/${batchStudents.length} Placed)`}
-                    </button>
-                  </div>
-                </form>
-              );
-            })()}
-
-            {/* Tab 2 Content: Manage Parameters (CRUD) */}
-            {manageTab === 'params' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', overflow: 'hidden', flex: 1 }}>
-                
-                <form onSubmit={handleAddParameter} style={{ display: 'flex', gap: '10px', alignItems: 'end' }}>
-                  <div style={{ flex: 1 }}>
-                    <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, marginBottom: '4px', color: 'var(--text-muted)' }}>
-                      ➕ Add Custom Parameter:
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Team Collaboration, Politeness"
-                      value={newParamName}
-                      onChange={(e) => setNewParamName(e.target.value)}
-                      style={{ width: '100%', padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border-light)', background: 'var(--bg-soft)', color: 'var(--text)', fontSize: '12px' }}
-                    />
-                  </div>
-                  <button type="submit" className="btn btn-primary" disabled={paramLoading || !newParamName.trim()} style={{ height: '38px', fontSize: '12px', fontWeight: 700 }}>
-                    Add
-                  </button>
-                </form>
-
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: '150px', overflow: 'hidden' }}>
-                  <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '6px' }}>
-                    📋 Active Observation Parameters:
-                  </label>
-
-                  <div style={{ flex: 1, overflowY: 'auto', border: '1px solid var(--border-light)', borderRadius: '4px', padding: '10px', background: 'var(--bg-soft)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    {parameters.map(p => {
-                      const isDefault = ['activeParticipation', 'sincerity', 'timelyWork', 'parentScore'].includes(p.id);
-                      const weightPct = p.id === 'parentScore' || p.weight === 0.4 ? '40%' : `${Math.round((p.weight || 0.2) * 100)}%`;
-                      return (
-                        <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--surface)', padding: '8px 12px', borderRadius: '4px', border: '1px solid var(--border-light)' }}>
-                          <div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <strong style={{ fontSize: '12px', color: 'var(--text)' }}>{p.name}</strong>
-                              <span style={{ fontSize: '9.5px', fontWeight: 700, padding: '1px 6px', borderRadius: '4px', background: p.id === 'parentScore' ? 'rgba(234, 179, 8, 0.15)' : 'var(--bg-soft)', color: p.id === 'parentScore' ? 'var(--warning, #eab308)' : 'var(--text-muted)', border: '1px solid var(--border-light)' }}>
-                                {weightPct} weight
-                              </span>
-                            </div>
-                            <div style={{ fontSize: '9px', color: 'var(--text-muted)', marginTop: '2px' }}>slug: <code>{p.id}</code> {isDefault && <span style={{ color: 'var(--accent)', fontWeight: 700 }}> [System Default]</span>}</div>
-                          </div>
-                          {!isDefault && (
-                            <button
-                              type="button"
-                              className="btn btn-secondary"
-                              onClick={() => handleDeleteParameter(p.id)}
-                              disabled={paramLoading}
-                              style={{ padding: '4px 8px', fontSize: '10px', color: 'var(--danger)', border: '1px solid rgba(239, 68, 68, 0.25)', background: 'rgba(239, 68, 68, 0.1)' }}
-                            >
-                              🗑️ Delete
-                            </button>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {paramMsg && (
-                  <div style={{ fontSize: '11px', fontWeight: 700, color: paramMsg.includes('✅') ? 'var(--success)' : 'var(--danger)' }}>
-                    {paramMsg}
-                  </div>
-                )}
-
-                <div style={{ display: 'flex', justifyContent: 'end' }}>
-                  <button type="button" className="btn btn-secondary" onClick={() => setShowManageModal(false)} style={{ width: '120px' }}>
-                    Close
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
       {/* Search Student Modal */}
       {showSearchModal && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '16px' }}>
@@ -1750,10 +1010,10 @@ _Empowering Conceptual Excellence_`;
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9.5px', color: 'var(--text-muted)' }}>
                         <span>
                           {comp.parameterId === 'exam' && `Attendance: ${comp.details.attendanceRate}%, Absent: ${comp.details.absent}`}
-                          {comp.parameterId === 'practice' && `Attempted: ${comp.details.totalQuestionsAttempted} Qs, Topics: ${comp.details.topicsAttemptedCount}, Engagement: ${comp.details.engagementScore}%, Quality: ${comp.details.qualityScore}%`}
+                          {comp.parameterId === 'practice' && `Attempted: ${comp.details.totalQuestionsAttempted} Qs, Topics: ${comp.details.topicsAttemptedCount}, Engagement: ${comp.details.engagementScore}%`}
+                          {comp.parameterId === 'quality' && `Accuracy: ${comp.score}%, Total Qs: ${comp.details.totalQuestionsAttempted ?? 0}`}
                           {comp.parameterId === 'topicHealth' && `Mastered: ${comp.details.masteryRatio}%, Retention: ${comp.details.averageRetention ?? 0}%, Attention: ${comp.details.attentionRatio}%`}
                           {comp.parameterId === 'integrity' && `Avg Infractions: ${comp.details.averageWeeklyViolations} / week`}
-                          {comp.parameterId === 'observations' && `Logs: ${comp.details.observationCount} observations`}
                         </span>
                         <span style={{ fontWeight: 700, color: 'var(--text)' }}>
                           +{comp.contribution} LQ Points
@@ -1765,18 +1025,6 @@ _Empowering Conceptual Excellence_`;
  
                 {/* Action Buttons Footer */}
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'end', marginTop: '5px', borderTop: '1px solid var(--border-light)', paddingTop: '12px' }}>
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    onClick={() => {
-                      setShowDetailsModal(false);
-                      const sObj = students.find(s => s.studentCode === selectedCode);
-                      if (sObj) handleOpenSingleModal(sObj);
-                    }}
-                    style={{ fontSize: '11px', fontWeight: 700, padding: '6px 10px' }}
-                  >
-                    📝 Log Obs
-                  </button>
                   
                   <button
                     type="button"

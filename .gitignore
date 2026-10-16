@@ -27,7 +27,7 @@ Users/
 src/scripts/
 scratch/
 backups/
-reports/
+/reports/
 public/reports/
 
 # debug/inspect helper scripts at root

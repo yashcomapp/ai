@@ -1010,9 +1010,9 @@ export async function exportStudentMonthlyReportPDF(params: {
   // Map components for easier access
   const examComp = quotientDetails.components.find(c => c.parameterId === 'exam') || { score: 0, details: {} };
   const practiceComp = quotientDetails.components.find(c => c.parameterId === 'practice') || { score: 0, details: {} };
+  const qualityComp = quotientDetails.components.find(c => c.parameterId === 'quality') || { score: 0, details: {} };
   const healthComp = quotientDetails.components.find(c => c.parameterId === 'topicHealth') || { score: 0, details: {} };
   const integrityComp = quotientDetails.components.find(c => c.parameterId === 'integrity') || { score: 0, details: {} };
-  const obsComp = quotientDetails.components.find(c => c.parameterId === 'observations') || { score: 0, details: {} };
 
   const getTierName = (score: number) => {
     if (score >= 85) return 'EXCELLENT TIER 🌟';
@@ -1047,14 +1047,6 @@ export async function exportStudentMonthlyReportPDF(params: {
     }
   `;
   printContainer.appendChild(styleOverride);
-
-  // Classroom Observations breakdown list
-  const obsParams = obsComp.details?.parameters || [
-    { id: 'activeParticipation', name: 'Active Participation', average: 50 },
-    { id: 'sincerity', name: 'Sincerity & Behavior', average: 50 },
-    { id: 'timelyWork', name: 'Timely Work', average: 50 },
-    { id: 'parentScore', name: 'Parent Score (Strict)', average: 50 }
-  ];
 
   const htmlContent = `
     <!-- Header -->
@@ -1134,10 +1126,10 @@ export async function exportStudentMonthlyReportPDF(params: {
 
       </div>
 
-      <!-- Right Column: 5 Pillars Score Breakdown -->
+      <!-- Right Column: Performance Pillars Score Breakdown -->
       <div style="display: flex; flex-direction: column; gap: 10px;">
         <h4 style="margin: 0 0 4px 0; font-size: 11px; font-weight: 800; color: #1e293b; text-transform: uppercase; letter-spacing: 0.5px; border-left: 3px solid #4f46e5; padding-left: 6px;">
-          Performance Pillars Breakdown
+          Academic Pillars Breakdown
         </h4>
 
         <!-- Pillar 1: Exam Performance -->
@@ -1155,40 +1147,55 @@ export async function exportStudentMonthlyReportPDF(params: {
           </div>
         </div>
 
-        <!-- Pillar 2: Practice Engagement -->
+        <!-- Pillar 2: Practice Engagement & Efforts -->
         <div style="border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px 10px; background: #ffffff;">
           <div style="display: flex; justify-content: space-between; font-size: 10.5px; font-weight: 700; margin-bottom: 4px;">
-            <span>🏋️ 2. Practice Engagement</span>
+            <span>🏋️ 2. Practice Efforts & Consistency</span>
             <span style="color: ${getScoreColor(practiceComp.score)}">${practiceComp.score} / 100</span>
           </div>
           <div style="width: 100%; height: 6px; background: #f1f5f9; border-radius: 3px; overflow: hidden; margin-bottom: 4px;">
             <div style="width: ${practiceComp.score}%; height: 100%; background: ${getScoreColor(practiceComp.score)}; border-radius: 3px;"></div>
           </div>
           <div style="display: flex; justify-content: space-between; font-size: 8.5px; color: #64748b; font-weight: 600;">
-            <span>Attempted: ${practiceComp.details?.totalQuestionsAttempted ?? 0} Qs (Topics: ${practiceComp.details?.topicsAttemptedCount ?? 0})</span>
-            <span>Efficiency: ${practiceComp.score}% (Avg: ${practiceComp.details?.averageQuestionsPerTopic ?? 0} Qs/topic)</span>
+            <span>Attempted: ${practiceComp.details?.totalQuestionsAttempted ?? 0} Qs (${practiceComp.details?.topicsAttemptedCount ?? 0} Topics)</span>
+            <span>Efforts: ${practiceComp.score}%</span>
           </div>
         </div>
 
-        <!-- Pillar 3: Topic Health & SRS Retention -->
+        <!-- Pillar 3: Practice Quality & Accuracy -->
         <div style="border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px 10px; background: #ffffff;">
           <div style="display: flex; justify-content: space-between; font-size: 10.5px; font-weight: 700; margin-bottom: 4px;">
-            <span>🩺 3. Topic Health & SRS Retention</span>
+            <span>🎯 3. Practice Quality & Accuracy</span>
+            <span style="color: ${getScoreColor(qualityComp.score)}">${qualityComp.score} / 100</span>
+          </div>
+          <div style="width: 100%; height: 6px; background: #f1f5f9; border-radius: 3px; overflow: hidden; margin-bottom: 4px;">
+            <div style="width: ${qualityComp.score}%; height: 100%; background: ${getScoreColor(qualityComp.score)}; border-radius: 3px;"></div>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 8.5px; color: #64748b; font-weight: 600;">
+            <span>Accuracy: ${qualityComp.details?.accuracyScore ?? 0}%</span>
+            <span>Pacing Sincerity: ${qualityComp.details?.pacingScore ?? 100}%</span>
+          </div>
+        </div>
+
+        <!-- Pillar 4: Topic Mastery & SRS Retention -->
+        <div style="border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px 10px; background: #ffffff;">
+          <div style="display: flex; justify-content: space-between; font-size: 10.5px; font-weight: 700; margin-bottom: 4px;">
+            <span>🩺 4. Topic Mastery & SRS Retention</span>
             <span style="color: ${getScoreColor(healthComp.score)}">${healthComp.score} / 100</span>
           </div>
           <div style="width: 100%; height: 6px; background: #f1f5f9; border-radius: 3px; overflow: hidden; margin-bottom: 4px;">
             <div style="width: ${healthComp.score}%; height: 100%; background: ${getScoreColor(healthComp.score)}; border-radius: 3px;"></div>
           </div>
           <div style="display: flex; justify-content: space-between; font-size: 8.5px; color: #64748b; font-weight: 600;">
-            <span>Mastered Ratio: ${healthComp.details?.masteryRatio ?? 0}% (Attn: ${healthComp.details?.attentionCount ?? 0})</span>
-            <span>🧠 Retention: ${healthComp.details?.averageRetention ?? 0}% (Due: ${healthComp.details?.srsDueCount ?? 0})</span>
+            <span>Mastered Topics: ${healthComp.details?.masteredCount ?? 0}</span>
+            <span>🧠 Memory Retention: ${healthComp.details?.averageRetention ?? 0}%</span>
           </div>
         </div>
 
-        <!-- Pillar 4: Proctoring Integrity -->
+        <!-- Pillar 5: Proctoring Integrity -->
         <div style="border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px 10px; background: #ffffff;">
           <div style="display: flex; justify-content: space-between; font-size: 10.5px; font-weight: 700; margin-bottom: 4px;">
-            <span>🛡️ 4. Proctoring Integrity</span>
+            <span>🛡️ 5. Proctoring Integrity Index</span>
             <span style="color: ${getScoreColor(integrityComp.score)}">${integrityComp.score} / 100</span>
           </div>
           <div style="width: 100%; height: 6px; background: #f1f5f9; border-radius: 3px; overflow: hidden; margin-bottom: 4px;">
@@ -1196,21 +1203,7 @@ export async function exportStudentMonthlyReportPDF(params: {
           </div>
           <div style="display: flex; justify-content: space-between; font-size: 8.5px; color: #64748b; font-weight: 600;">
             <span>Integrity Index: ${integrityComp.score}%</span>
-            <span>Avg Weekly Violations: ${integrityComp.details?.averageWeeklyViolations ?? 0}</span>
-          </div>
-        </div>
-
-        <!-- Pillar 5: Classroom Observations -->
-        <div style="border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px 10px; background: #ffffff;">
-          <div style="display: flex; justify-content: space-between; font-size: 10.5px; font-weight: 700; margin-bottom: 4px;">
-            <span>👥 5. Classroom Observations</span>
-            <span style="color: ${getScoreColor(obsComp.score)}">${obsComp.score} / 100</span>
-          </div>
-          <div style="width: 100%; height: 6px; background: #f1f5f9; border-radius: 3px; overflow: hidden; margin-bottom: 4px;">
-            <div style="width: ${obsComp.score}%; height: 100%; background: ${getScoreColor(obsComp.score)}; border-radius: 3px;"></div>
-          </div>
-          <div style="display: flex; flex-wrap: wrap; justify-content: space-between; font-size: 8px; color: #64748b; font-weight: 600; gap: 4px;">
-            ${obsParams.map((p: any) => `<span>${p.name}: <strong>${p.average}%</strong></span>`).join(' | ')}
+            <span>Proctor Compliance Verified</span>
           </div>
         </div>
 

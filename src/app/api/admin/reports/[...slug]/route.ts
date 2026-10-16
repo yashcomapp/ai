@@ -52,7 +52,7 @@ async function handleLearningQuotientGet(req: NextRequest) {
   const duration = searchParams.get('duration') || 'monthly';
 
   if (studentCode) {
-    const cacheKey = `admin_report_lq_single_${studentCode}_${duration}`;
+    const cacheKey = `admin_report_lq_v2_single_${studentCode}_${duration}`;
     const cached = getFromCache<any>(cacheKey);
     if (cached) {
       return NextResponse.json(cached, { headers: NO_CACHE_HEADERS });
@@ -63,7 +63,7 @@ async function handleLearningQuotientGet(req: NextRequest) {
     return NextResponse.json(report, { headers: NO_CACHE_HEADERS });
   }
 
-  const bulkCacheKey = `admin_report_lq_bulk_${duration}`;
+  const bulkCacheKey = `admin_report_lq_v2_bulk_${duration}`;
   const cachedBulk = getFromCache<any>(bulkCacheKey);
   if (cachedBulk) {
     return NextResponse.json(cachedBulk, { headers: NO_CACHE_HEADERS });

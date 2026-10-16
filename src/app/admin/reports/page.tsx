@@ -14,7 +14,7 @@ interface ReportCard {
 const REPORT_SECTIONS: ReportCard[] = [
   {
     title: 'Learning Quotient (LQ) Reports',
-    description: 'Comprehensive 5-pillar student quotients, continuous observations, multi-component metrics and WhatsApp card dispatch.',
+    description: 'Comprehensive 4-pillar academic learning quotients, continuous practice metrics, and parent report card dispatch.',
     path: '/admin/reports/learning-quotient',
     icon: '📊',
     badge: 'Core Analytics'
