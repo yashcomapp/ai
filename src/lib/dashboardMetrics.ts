@@ -41,16 +41,27 @@ export interface ExtractConductedTopicCodesInput {
   objectiveReviews?: Array<{ topicCode?: string; resolvedTopicCode?: string; [key: string]: any }>;
 }
 
+export function isCanonicalTopicCode(code?: string): boolean {
+  if (!code || typeof code !== 'string') return false;
+  const trimmed = code.trim();
+  return /^(CBSE|MH)-\d+-[A-Za-z0-9]+-\d+-[\d\.]+$/.test(trimmed);
+}
+
 /**
  * Single Source of Truth (SSOT) to aggregate all unique topics on which exams/tests
  * have actually been conducted, assigned, practiced, or mastered so far.
+ * Strictly filters to canonical topic codes (${boardCode}-${class}-${subjectCode}-${chapterNumber}-${topicNumber})
+ * to prevent double-counting of short subtopic fragments (e.g., '7.1.1').
  */
 export function extractConductedTopicCodes(input: ExtractConductedTopicCodesInput): Set<string> {
   const conducted = new Set<string>();
 
   const addCode = (code?: string) => {
-    if (code && typeof code === 'string' && code.trim()) {
-      conducted.add(code.trim());
+    if (code && typeof code === 'string') {
+      const trimmed = code.trim();
+      if (isCanonicalTopicCode(trimmed)) {
+        conducted.add(trimmed);
+      }
     }
   };
 
@@ -60,11 +71,15 @@ export function extractConductedTopicCodes(input: ExtractConductedTopicCodesInpu
     addCode(item.resolvedTopicCode);
     if (Array.isArray(item.topicCodes)) item.topicCodes.forEach(addCode);
     if (Array.isArray(item.topics)) item.topics.forEach(addCode);
-    if (Array.isArray(item.questionCodes) && item.questionCodes.length > 0) {
-      addCode(deriveTopicCodeFromQuestionCode(item.questionCodes[0]));
+    if (Array.isArray(item.questionCodes)) {
+      item.questionCodes.forEach((qc: string) => {
+        addCode(deriveTopicCodeFromQuestionCode(qc));
+      });
     }
-    if (Array.isArray(item.questionIds) && item.questionIds.length > 0) {
-      addCode(deriveTopicCodeFromQuestionCode(item.questionIds[0]));
+    if (Array.isArray(item.questionIds)) {
+      item.questionIds.forEach((qid: string) => {
+        addCode(deriveTopicCodeFromQuestionCode(qid));
+      });
     }
   };
 

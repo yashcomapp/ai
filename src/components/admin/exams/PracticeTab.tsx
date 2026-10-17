@@ -24,6 +24,7 @@ interface PracticeTabProps {
       totalSessions: number;
       questionsAttempted: number;
       avgScore: number;
+      examAvg?: number;
       lastActive: string | null;
     };
   };
@@ -175,7 +176,7 @@ export default function PracticeTab({
                       QUESTIONS {renderSortIndicator('questions')}
                     </th>
                     <th onClick={() => handlePracSort('score')} style={{ padding: '6px 10px', cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}>
-                      AVG SCORE {renderSortIndicator('score')}
+                      PRACTICE AVG {renderSortIndicator('score')}
                     </th>
                     <th onClick={() => handlePracSort('avgMastery')} style={{ padding: '6px 10px', cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}>
                       AVG MASTERY {renderSortIndicator('avgMastery')}
@@ -223,8 +224,15 @@ export default function PracticeTab({
                           <td style={{ padding: '6px 10px', fontWeight: 'bold' }}>{formattedName}</td>
                           <td style={{ padding: '6px 10px', textAlign: 'center' }}>{stats.totalSessions}</td>
                           <td style={{ padding: '6px 10px', textAlign: 'center' }}>{stats.questionsAttempted}</td>
-                          <td style={{ padding: '6px 10px', fontWeight: 'bold', color: stats.totalSessions > 0 ? 'var(--accent)' : 'inherit' }}>
-                            {stats.totalSessions > 0 ? `${stats.avgScore}%` : '—'}
+                          <td style={{ padding: '6px 10px' }}>
+                            <div style={{ fontWeight: 'bold', color: stats.totalSessions > 0 ? 'var(--accent)' : 'inherit' }}>
+                              {stats.totalSessions > 0 ? `${stats.avgScore}%` : '—'}
+                            </div>
+                            {typeof stats.examAvg === 'number' && (
+                              <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', fontWeight: 600 }}>
+                                Exam: {stats.examAvg}%
+                              </div>
+                            )}
                           </td>
                           <td style={{ padding: '6px 10px', fontWeight: 'bold' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>

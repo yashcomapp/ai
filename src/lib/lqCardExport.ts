@@ -862,6 +862,7 @@ export interface BatchPracticeTracksExportParams {
       totalSessions: number;
       questionsAttempted: number;
       avgScore: number;
+      examAvg?: number;
       lastActive: string | null;
     };
   };

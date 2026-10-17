@@ -319,14 +319,13 @@ export class PracticeQualityCalculator implements ParameterCalculator {
     }
 
     const totalAssignedTopics = Math.max(1, assignedTopics.length > 0 ? assignedTopics.length : topicPracticeMap.size);
-    const breadthFactor = Math.min(1.0, Math.max(0.60, 0.40 + 0.60 * (topicPracticeMap.size / totalAssignedTopics)));
 
-    // Quality Score = 40% Verified Accuracy + 30% Pacing Sincerity + 30% Mastery Efficiency, modulated by Breadth
+    // Quality Score = 40% Verified Accuracy + 30% Pacing Sincerity + 30% Mastery Efficiency (pure session quality)
     const rawQuality = averageAccuracyScore * 0.40 * authenticityFactor + 
                        averagePacingScore * 0.30 + 
                        averageEfficiencyScore * 0.30;
 
-    const qualityScore = Math.max(0, Math.min(100, Math.round(rawQuality * breadthFactor)));
+    const qualityScore = Math.max(0, Math.min(100, Math.round(rawQuality)));
 
     const averageQuestionsPerTopic = topicPracticeMap.size > 0
       ? Math.round((totalQuestionsAttempted / topicPracticeMap.size) * 10) / 10

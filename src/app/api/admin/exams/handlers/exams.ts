@@ -9,7 +9,7 @@ import { ReportCacheManager } from '@/lib/reportCache';
 import { getRequiredConfidence, isDemoUser } from '@/lib/studentDb';
 import { evaluateSessionSincerity } from '@/lib/practiceTimeUtils';
 import { getCanonicalSubjectName, parseTopicCode } from '@/lib/questionTypes';
-import { getObjectiveExamTopics, getSubjectiveExamTopics, getExamDateKey, isExamForStudent } from '@/services/quotient.service';
+import { getObjectiveExamTopics, getSubjectiveExamTopics, getExamDateKey, isExamForStudent, QuotientService } from '@/services/quotient.service';
 import { ExamService } from '@/services/exam.service';
 
 const parseIST = (dateStr: string) => {
@@ -412,9 +412,6 @@ export async function GET(req: NextRequest) {
         return NextResponse.json(cached);
       }
 
-      const since = new Date();
-      since.setDate(since.getDate() - 90);
-
       let studentsPromise: Promise<any>;
       if (batchIdParam) {
         studentsPromise = Promise.all([
@@ -449,263 +446,79 @@ export async function GET(req: NextRequest) {
       }).filter((s: any) => !!s.studentCode && s.status !== 'inactive' && !isDemoUser(s));
 
       const studentCodes = students.map((s: any) => s.studentCode);
-      let parentReviewsDocs: any[] = [];
-      let masteryDocs: any[] = [];
-
-      if (batchIdParam && studentCodes.length > 0) {
-        const chunks: string[][] = [];
-        for (let i = 0; i < studentCodes.length; i += 30) {
-          chunks.push(studentCodes.slice(i, i + 30));
-        }
-        const [reviewsSnaps, masterySnaps] = await Promise.all([
-          Promise.all(chunks.map(chunk =>
-            adminDb.collection('parentReviews')
-              .where('studentCode', 'in', chunk)
-              .where('startedAt', '>=', since)
-              .select('studentCode', 'topicCode', 'totalQuestions', 'questionsCount', 'percentage', 'scorePercent', 'score', 'totalMarks', 'sincerityPacingScore', 'durationSpent', 'startedAt', 'createdAt')
-              .get()
-              .catch(() => null)
-          )),
-          Promise.all(chunks.map(chunk =>
-            adminDb.collection('studentTopicMastery')
-              .where('studentCode', 'in', chunk)
-              .select('studentCode', 'topicCode', 'mastery', 'confidence', 'topicClassification', 'targetQuestions', 'isRecoveryMastered')
-              .get()
-              .catch(() => null)
-          ))
-        ]);
-        parentReviewsDocs = reviewsSnaps.filter(Boolean).flatMap(s => s!.docs);
-        masteryDocs = masterySnaps.filter(Boolean).flatMap(s => s!.docs);
-      } else {
-        const [parentReviewsSnap, masterySnap] = await Promise.all([
-          adminDb.collection('parentReviews').where('startedAt', '>=', since).select('studentCode', 'topicCode', 'totalQuestions', 'questionsCount', 'percentage', 'scorePercent', 'score', 'totalMarks', 'sincerityPacingScore', 'durationSpent', 'startedAt', 'createdAt').get(),
-          adminDb.collection('studentTopicMastery').select('studentCode', 'topicCode', 'mastery', 'confidence', 'topicClassification', 'targetQuestions', 'isRecoveryMastered').get()
-        ]);
-        parentReviewsDocs = parentReviewsSnap.docs;
-        masteryDocs = masterySnap.docs;
+      if (studentCodes.length === 0) {
+        return NextResponse.json({ practiceStats: {}, masteryStats: {} });
       }
 
-      const practiceStats: Record<string, { totalSessions: number, questionsAttempted: number, avgScore: number, lastActive: string | null }> = {};
-      const studentPacingMap: Record<string, number[]> = {};
+      // Calculate unified metrics via Single Source of Truth (QuotientService & calculateUnifiedMetrics)
+      const quotientsMap = await QuotientService.calculateBulkQuotients(studentCodes, 'all');
 
-      parentReviewsDocs.forEach(doc => {
+      // Fetch latest activity timestamp for practiceStats.lastActive
+      const chunks: string[][] = [];
+      for (let i = 0; i < studentCodes.length; i += 30) {
+        chunks.push(studentCodes.slice(i, i + 30));
+      }
+      const reviewsSnaps = await Promise.all(
+        chunks.map(chunk =>
+          adminDb.collection('parentReviews')
+            .where('studentCode', 'in', chunk)
+            .select('studentCode', 'startedAt', 'createdAt')
+            .get()
+            .catch(() => null)
+        )
+      );
+
+      const lastActiveMap: Record<string, string | null> = {};
+      reviewsSnaps.filter(Boolean).flatMap(s => s!.docs).forEach(doc => {
         const data = doc.data();
         const code = data.studentCode;
         if (!code) return;
-
-        if (!practiceStats[code]) {
-          practiceStats[code] = {
-            totalSessions: 0,
-            questionsAttempted: 0,
-            avgScore: 0,
-            lastActive: null
-          };
-        }
-
-        const stats = practiceStats[code];
-        stats.totalSessions += 1;
-        const qCount = Number(data.totalQuestions || data.questionsCount || (Array.isArray(data.questions) ? data.questions.length : (data.questionDetails?.length || 0)));
-        stats.questionsAttempted += qCount;
-        const percent = data.percentage !== undefined && data.percentage !== null
-          ? Number(data.percentage)
-          : (data.scorePercent !== undefined && data.scorePercent !== null
-            ? Number(data.scorePercent)
-            : (data.totalMarks > 0 ? Math.round(((data.score || 0) / data.totalMarks) * 100) : 0));
-        stats.avgScore += percent;
-
-        let pacing = data.sincerityPacingScore;
-        if (typeof pacing !== 'number') {
-          const sincerity = evaluateSessionSincerity({
-            questions: data.questions || data.questionDetails || [],
-            durationSpent: Number(data.durationSpent || (qCount ? qCount * 35 : 180)),
-            scorePercent: Number(data.scorePercent || percent || 100)
-          });
-          pacing = sincerity.sincerityPacingScore;
-        }
-        if (!studentPacingMap[code]) studentPacingMap[code] = [];
-        studentPacingMap[code].push(pacing);
-
         const itemDate = data.startedAt?.toDate ? data.startedAt.toDate() : data.createdAt?.toDate ? data.createdAt.toDate() : data.startedAt ? new Date(data.startedAt) : null;
         if (itemDate) {
-          if (!stats.lastActive || itemDate > new Date(stats.lastActive)) {
-            stats.lastActive = itemDate.toISOString();
+          if (!lastActiveMap[code] || itemDate > new Date(lastActiveMap[code]!)) {
+            lastActiveMap[code] = itemDate.toISOString();
           }
         }
       });
 
-      Object.keys(practiceStats).forEach(code => {
-        const stats = practiceStats[code];
-        if (stats.totalSessions > 0) {
-          stats.avgScore = Math.round(stats.avgScore / stats.totalSessions);
-        }
-      });
-
-      const todayDateStr = getDateKeyIST();
-      const studentTopicPracticeMap: Record<string, Map<string, number>> = {};
-      parentReviewsDocs.forEach(doc => {
-        const data = doc.data();
-        const code = data.studentCode;
-        const tCode = data.topicCode;
-        if (!code || !tCode) return;
-
-        if (!studentTopicPracticeMap[code]) {
-          studentTopicPracticeMap[code] = new Map<string, number>();
-        }
-        const map = studentTopicPracticeMap[code];
-        map.set(tCode, (map.get(tCode) || 0) + (data.totalQuestions || 0));
-      });
-
-      const studentTopicMasteryMap: Record<string, Map<string, { mastery: number, confidence: number, reqConf?: number, isRecoveryMastered?: boolean }>> = {};
-      masteryDocs.forEach(doc => {
-        const data = doc.data();
-        const code = data.studentCode;
-        if (!code) return;
-
-        const val = Number(data.mastery || 0);
-        const conf = Number(data.confidence || 0);
-        const tCode = data.topicCode;
-        const reqConf = getRequiredConfidence(data.topicClassification, data.targetQuestions);
-
-        if (tCode) {
-          if (!studentTopicMasteryMap[code]) {
-            studentTopicMasteryMap[code] = new Map();
-          }
-          studentTopicMasteryMap[code].set(tCode, {
-            mastery: val,
-            confidence: conf,
-            reqConf,
-            isRecoveryMastered: Boolean(data.isRecoveryMastered)
-          });
-        }
-      });
-
-      // 1. Group topics by batch so all students belonging to the same batch have the EXACT same conducted/assigned topics count
-      const batchConductedTopicsMap = new Map<string, Set<string>>();
-      const globalConductedTopicsSet = new Set<string>();
-
-      students.forEach((s: any) => {
-        const code = s.studentCode;
-        const bIds: string[] = s.batchIds && s.batchIds.length > 0
-          ? s.batchIds
-          : (s.batchId ? [s.batchId] : ['unassigned']);
-
-        const studentTopics = new Set<string>();
-        if (studentTopicMasteryMap[code]) {
-          studentTopicMasteryMap[code].forEach((_, t) => {
-            studentTopics.add(t);
-            globalConductedTopicsSet.add(t);
-          });
-        }
-        if (studentTopicPracticeMap[code]) {
-          studentTopicPracticeMap[code].forEach((_, t) => {
-            studentTopics.add(t);
-            globalConductedTopicsSet.add(t);
-          });
-        }
-
-        bIds.forEach(bId => {
-          if (!batchConductedTopicsMap.has(bId)) {
-            batchConductedTopicsMap.set(bId, new Set<string>());
-          }
-          const bSet = batchConductedTopicsMap.get(bId)!;
-          studentTopics.forEach(t => bSet.add(t));
-        });
-      });
-
+      const practiceStats: Record<string, { totalSessions: number, questionsAttempted: number, avgScore: number, examAvg: number, lastActive: string | null }> = {};
       const masteryStats: Record<string, { avgMastery: number, avgQuality: number, efforts: number, mastered: number, practicing: number, needsAttention: number, totalAssigned: number }> = {};
+
       students.forEach((s: any) => {
         const code = s.studentCode;
-        const bIds: string[] = s.batchIds && s.batchIds.length > 0
-          ? s.batchIds
-          : (s.batchId ? [s.batchId] : ['unassigned']);
+        const qData = quotientsMap[code];
+        if (!qData) {
+          practiceStats[code] = { totalSessions: 0, questionsAttempted: 0, avgScore: 0, examAvg: 0, lastActive: null };
+          masteryStats[code] = { avgMastery: 0, avgQuality: 100, efforts: 0, mastered: 0, practicing: 0, needsAttention: 0, totalAssigned: 0 };
+          return;
+        }
 
-        const combinedBatchSet = new Set<string>();
-        bIds.forEach(bId => {
-          const bSet = batchConductedTopicsMap.get(bId);
-          if (bSet) bSet.forEach(t => combinedBatchSet.add(t));
-        });
-        const conductedTopics = combinedBatchSet.size > 0 ? Array.from(combinedBatchSet) : Array.from(globalConductedTopicsSet);
-        const masteryMap = studentTopicMasteryMap[code] || new Map();
+        const examComp = qData.components.find(c => c.parameterId === 'exam');
+        const practiceComp = qData.components.find(c => c.parameterId === 'practice');
+        const qualityComp = qData.components.find(c => c.parameterId === 'quality');
+        const healthComp = qData.components.find(c => c.parameterId === 'topicHealth');
 
-        let mCount = 0;
-        let pCount = 0;
-        let naCount = 0;
-        let totalMasterySum = 0;
+        const totalAssigned = healthComp?.details?.totalTopics ?? practiceComp?.details?.totalAssignedTopics ?? 0;
+        const mastered = healthComp?.details?.masteredCount ?? 0;
+        const needsAttention = healthComp?.details?.attentionCount ?? 0;
+        const practicing = Math.max(0, totalAssigned - mastered - needsAttention);
 
-        conductedTopics.forEach(tCode => {
-          const record = masteryMap.get(tCode);
-          if (record) {
-            const val = record.mastery;
-            const conf = record.confidence;
-            const reqConf = record.reqConf || 10;
-            totalMasterySum += val;
-
-            if ((val >= 90 && conf >= reqConf) || record.isRecoveryMastered) {
-              mCount++;
-            } else if (val >= 50) {
-              pCount++;
-            } else {
-              naCount++;
-            }
-          } else {
-            // Topic assigned/conducted for this batch, but this student has not attempted/practiced it yet
-            naCount++;
-          }
-        });
-
-        const avg = conductedTopics.length > 0
-          ? Math.round(totalMasterySum / conductedTopics.length)
-          : 0;
-
-        const topicPractice = studentTopicPracticeMap[code] || new Map<string, number>();
-        let totalEfficiencyScore = 0;
-        let topicsCount = 0;
-        topicPractice.forEach((q, topicCode) => {
-          const record = masteryMap.get(topicCode) || { mastery: 0, confidence: 0, reqConf: 10 };
-          const mastery = record.mastery;
-          const confidence = record.confidence;
-          const requiredConf = record.reqConf || 10;
-          
-          let topicEfficiency = 0;
-          if (mastery >= 90 && confidence >= requiredConf) {
-            const excess = Math.max(0, q - 15);
-            topicEfficiency = Math.max(40, 100 - excess * 1.5);
-          } else {
-            const excess = Math.max(0, q - 15);
-            topicEfficiency = Math.max(0, mastery - excess * 1.5);
-          }
-          totalEfficiencyScore += topicEfficiency;
-          topicsCount++;
-        });
-
-        const avgEfficiency = topicsCount > 0 ? Math.round(totalEfficiencyScore / topicsCount) : 100;
-
-        const studentPractice = practiceStats[code];
-        const hasPractice = studentPractice && studentPractice.totalSessions > 0;
-        const avgAccuracy = hasPractice ? studentPractice.avgScore : 0;
-        const pacingList = studentPacingMap[code] || [];
-        const avgPacing = (hasPractice && pacingList.length > 0)
-          ? Math.round(pacingList.reduce((sum, v) => sum + v, 0) / pacingList.length)
-          : 100;
-
-        const avgQuality = hasPractice
-          ? Math.max(0, Math.min(100, Math.round(avgAccuracy * 0.40 + avgPacing * 0.30 + avgEfficiency * 0.30)))
-          : 0;
-
-        // Efforts = (sessions / totalBatchAssignedTopics) * 100, capped at 100
-        const totalSessions = studentPractice?.totalSessions || 0;
-        const efforts = conductedTopics.length > 0
-          ? Math.min(100, Math.round((totalSessions / conductedTopics.length) * 100))
-          : 0;
+        practiceStats[code] = {
+          totalSessions: practiceComp?.details?.practicesCompletedCount ?? 0,
+          questionsAttempted: practiceComp?.details?.totalQuestionsAttempted ?? 0,
+          avgScore: practiceComp?.details?.averagePracticeScore ?? 0,
+          examAvg: examComp?.score ?? 0,
+          lastActive: lastActiveMap[code] || null
+        };
 
         masteryStats[code] = {
-          avgMastery: avg,
-          avgQuality: avgQuality,
-          efforts: efforts,
-          mastered: mCount,
-          practicing: pCount,
-          needsAttention: naCount,
-          totalAssigned: conductedTopics.length
+          avgMastery: healthComp?.score ?? 0,
+          avgQuality: qualityComp?.score ?? 100,
+          efforts: practiceComp?.score ?? 0,
+          mastered,
+          practicing,
+          needsAttention,
+          totalAssigned
         };
       });
 

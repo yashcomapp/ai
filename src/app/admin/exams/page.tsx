@@ -305,6 +305,7 @@ export default function AdminExamsPage() {
       totalSessions: number;
       questionsAttempted: number;
       avgScore: number;
+      examAvg?: number;
       lastActive: string | null;
     }
   }>({});
