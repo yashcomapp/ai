@@ -1078,7 +1078,8 @@ export class QuotientService {
     studentClass?: string,
     rawEvaluations: any[] = [],
     prebuiltObjIndex?: ExamIndex,
-    prebuiltSubjIndex?: ExamIndex
+    prebuiltSubjIndex?: ExamIndex,
+    srsEnabled?: boolean
   ): QuotientResult {
     const todayDateStr = getDateKeyIST();
     const startDate = duration ? this.getStartDateForDuration(duration) : null;
@@ -1185,7 +1186,8 @@ export class QuotientService {
       topicMasteries: filteredPractice,
       practiceReviews: filteredReviews,
       integrityScore: resolvedIntegrityScore,
-      totalCoveredTopics: totalCoveredTopicsCount
+      totalCoveredTopics: totalCoveredTopicsCount,
+      srsEnabled: Boolean(srsEnabled)
     });
 
     const studentData: StudentData = {
@@ -1318,10 +1320,12 @@ export class QuotientService {
 
     let bIds: string[] = [];
     let studentClass = '';
+    let srsEnabled = false;
     if (!studentUserQuery.empty) {
       const userData = studentUserQuery.docs[0].data();
       bIds = userData.batchIds || (userData.batchId ? [userData.batchId] : []);
       studentClass = userData.class || userData.className || '';
+      srsEnabled = Boolean(userData.srsEnabled);
     }
 
     const cleanClass = String(studentClass).replace(/\D/g, '');
@@ -1453,7 +1457,10 @@ export class QuotientService {
       examsMap,
       subjectiveExamsList,
       studentClass,
-      rawEvaluations
+      rawEvaluations,
+      undefined,
+      undefined,
+      srsEnabled
     );
   }
 
@@ -1487,6 +1494,7 @@ export class QuotientService {
 
     const studentBatchesMap = new Map<string, string[]>();
     const studentClassMap = new Map<string, string>();
+    const studentSrsMap = new Map<string, boolean>();
     const allBatchIds = new Set<string>();
     const allClasses = new Set<string>();
 
@@ -1497,6 +1505,8 @@ export class QuotientService {
           const bIds = (data.batchIds || (data.batchId ? [data.batchId] : [])).filter(Boolean);
           studentBatchesMap.set(data.studentCode, bIds);
           bIds.forEach((b: string) => allBatchIds.add(b));
+
+          studentSrsMap.set(data.studentCode, Boolean(data.srsEnabled));
 
           const rawClass = data.class || data.className || '';
           studentClassMap.set(data.studentCode, rawClass);
@@ -1713,7 +1723,8 @@ export class QuotientService {
         studentClass,
         sEvaluations,
         prebuiltObjIndex,
-        prebuiltSubjIndex
+        prebuiltSubjIndex,
+        studentSrsMap.get(code)
       );
     });
 
