@@ -5,7 +5,7 @@ import { MasteryService } from './mastery.service';
 import { IntegrityService } from './integrity.service';
 import { AttemptRepository } from '@/repositories/attempt.repository';
 import { ProctoringViolations, QuestionDetail, ExamAttempt } from '@/types/attempt.types';
-import { deriveTopicCodeFromQuestionCode, isMultipleChoiceType, parseAnswerList, resolveOptionDisplayText } from '@/lib/questionTypes';
+import { deriveTopicCodeFromQuestionCode, isMultipleChoiceType, parseAnswerList, resolveOptionDisplayText, getOptionText } from '@/lib/questionTypes';
 import { invalidateCache } from '@/lib/firebase/cache';
 import { getMidnightIST } from '@/lib/dateUtils';
 
@@ -77,10 +77,6 @@ export class AttemptService {
     const questionDetails: QuestionDetail[] = [];
     const questionEvaluations: any[] = [];
 
-    const getOptionTextHelper = (q: any, code: any) => {
-      return resolveOptionDisplayText(q?.options || [], code);
-    };
-
     // 1. Evaluate answers using EvaluationService
     for (let i = 0; i < questions.length; i++) {
       const q = questions[i];
@@ -104,8 +100,8 @@ export class AttemptService {
       const timeSpentSeconds = submitted?.timeSpentSeconds || 0;
       const qMarks = q.marks || Number(examData.positiveMarks) || 4;
 
-      const userAnsText = isAttempted ? getOptionTextHelper(q, ans) : '';
-      const correctAnsText = getOptionTextHelper(q, correctAnswer ?? '');
+      const userAnsText = isAttempted ? getOptionText(q, ans) : '';
+      const correctAnsText = getOptionText(q, correctAnswer ?? '');
 
       questionDetails.push({
         questionCode: q.questionCode || '',

@@ -405,7 +405,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </button>
 
           {/* Live Chat with Unread Badge Counter */}
-          <TopBarChatButton role="admin" chatUrl="/admin/chat" />
+          <TopBarChatButton role="admin" chatUrl="/admin/chat" count={unreadChatCount} />
 
           {/* Settings */}
           <button 

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase/admin';
 import { deriveTopicCodeFromQuestionCode } from '@/lib/questionTypes';
 import { verifyAnyRole } from '@/lib/auth';
-import { getDateKeyIST } from '@/lib/dateUtils';
+import { getDateKeyIST, formatDateIST as formatDate } from '@/lib/dateUtils';
 
 
 export async function GET(req: NextRequest) {
@@ -608,5 +608,3 @@ function shortenName(name: string): string {
   }
   return name;
 }
-
-const formatDate = (dateObj: any): string => dateObj ? getDateKeyIST(dateObj) : '';

@@ -20,7 +20,7 @@ import {
   DEFAULT_ASSERTION_REASON_OPTIONS
 } from '@/lib/questionTypes';
 import QuestionDisplay, { RichMathText } from '@/components/QuestionDisplay';
-import { formatDateTimeIST, parseDateInput, formatDurationMS as formatDuration } from '@/lib/dateUtils';
+import { formatDateTimeIST, parseDateInput, formatDurationMS as formatDuration, formatDateTimeOrFallback as formatDate } from '@/lib/dateUtils';
 
 interface QuestionDetailsItem {
   id: string;
@@ -199,11 +199,6 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
 
   // Dynamically load KaTeX and auto-render math expressions when scorecard changes or card changes
   useMathRender([scorecard, questionFilterTab, cardIndex, viewMode, challengeTargetQ]);
-
-  const formatDate = (dateStr: string | null) => {
-    return formatDateTimeIST(dateStr) || '-';
-  };
-
 
   if (!scorecard && !loading) return null;
 

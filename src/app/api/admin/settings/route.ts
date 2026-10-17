@@ -30,7 +30,7 @@ export async function GET(request: Request) {
       const [logsSnap, batchesSnap, usersSnap] = await Promise.all([
         adminDb.collection('session_logs').orderBy('timestamp', 'desc').limit(500).get(),
         getCachedBatches(),
-        adminDb.collection('users').select('name', 'displayName', 'email').get()
+        adminDb.collection('users').select('name', 'displayName', 'email', 'role', 'batchIds').limit(200).get()
       ]);
 
       const batches = batchesSnap.docs.map(doc => ({

@@ -1794,6 +1794,24 @@ export function formatUserAnswerSummary(options: any[], userAns: any): string {
   return resolveOptionDisplayText(options, userAns);
 }
 
+/**
+ * Resolves the display text of an option or answer for a question.
+ * Automatically falls back to DEFAULT_ASSERTION_REASON_OPTIONS if type is assertion_reason and options are empty.
+ */
+export function getOptionText(
+  questionOrOptions: { options?: any[]; type?: string } | any[] | null | undefined,
+  ansInput: any
+): string {
+  if (!questionOrOptions) return parseAnswerList(ansInput).join(', ');
+  if (Array.isArray(questionOrOptions)) {
+    return resolveOptionDisplayText(questionOrOptions, ansInput);
+  }
+  const opts = (questionOrOptions.options && questionOrOptions.options.length > 0)
+    ? questionOrOptions.options
+    : (isAssertionReasonType(questionOrOptions.type) ? DEFAULT_ASSERTION_REASON_OPTIONS : []);
+  return resolveOptionDisplayText(opts, ansInput);
+}
+
 export function highlightModelAnswerKeywords(text: string, customKeywords?: string[]): string {
   if (!text) return '';
 

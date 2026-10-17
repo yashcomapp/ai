@@ -94,6 +94,7 @@ export async function GET(req: NextRequest) {
 
     const snap = await adminDb.collection('questions')
       .select('type', 'solution', 'explanation', 'solutionText', 'explanationText', 'questionCode', 'text', 'correctAnswer', 'options', 'subjectCode', 'chapter')
+      .limit(500)
       .get();
     
     let totalObjective = 0;
@@ -170,6 +171,7 @@ export async function POST(req: NextRequest) {
     if (action === 'importAI' && importedSolutions && typeof importedSolutions === 'object') {
       const snap = await adminDb.collection('questions')
         .select('questionCode')
+        .limit(500)
         .get();
       let importedCount = 0;
       const batchSize = 400;
@@ -213,6 +215,7 @@ export async function POST(req: NextRequest) {
     // Default internal auto-generator
     const snap = await adminDb.collection('questions')
       .select('type', 'solution', 'explanation', 'solutionText', 'explanationText', 'topicCode', 'correctAnswer', 'text', 'options')
+      .limit(500)
       .get();
     let processedCount = 0;
     let updatedCount = 0;

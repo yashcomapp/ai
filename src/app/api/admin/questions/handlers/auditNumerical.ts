@@ -54,6 +54,7 @@ export async function GET(req: NextRequest) {
 
     const snap = await adminDb.collection('questions')
       .select('type', 'questionCode', 'correctAnswer', 'text', 'options')
+      .limit(500)
       .get();
     const candidates: any[] = [];
 
@@ -93,6 +94,7 @@ export async function POST(req: NextRequest) {
 
     const snap = await adminDb.collection('questions')
       .select('type', 'questionCode', 'correctAnswer', 'text', 'options')
+      .limit(500)
       .get();
     const batch = new ChunkedBatch(adminDb);
     let updatedCount = 0;

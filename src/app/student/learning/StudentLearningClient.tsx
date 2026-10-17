@@ -8,7 +8,7 @@ import { useToggleSet } from '@/hooks/useToggleSet';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 
-import { formatDateIST } from '@/lib/dateUtils';
+import { formatDateOrFallback } from '@/lib/dateUtils';
 import { getCanonicalSubjectName } from '@/lib/questionTypes';
 
 interface TopicItem {
@@ -186,11 +186,6 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
 
   const toggleChapter = (subjectName: string, chapterName: string) => {
     toggleChapterSet(`${subjectName}||${chapterName}`);
-  };
-
-  const formatDate = (dateStr: string | null) => {
-    if (!dateStr) return 'Never';
-    return formatDateIST(dateStr) || 'Never';
   };
 
   const deferredSearchTerm = useDeferredValue(searchTerm);
@@ -761,7 +756,7 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                                                  )}
                                                </td>
                                               <td style={{ padding: '6px 8px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '11px' }}>
-                                                {formatDate(topic.lastAttempt)}
+                                                {formatDateOrFallback(topic.lastAttempt, 'Never')}
                                               </td>
                                               <td style={{ padding: '6px 8px', textAlign: 'right' }} onClick={(e) => e.stopPropagation()}>
                                                 <button 

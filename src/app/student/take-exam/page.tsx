@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import { useAuth } from '@/context/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Script from 'next/script';
-import { stripOptionLabel, preprocessMathText, parseAnswerList, isOptionSelectedByUser, isOptionCorrect, getQuestionCorrectAnswer, getRawOptionKey, getRawOptionText, extractAssertionAndReason, isMultipleChoiceType, isSingleChoiceType, isTrueFalseType, isAssertionReasonType, isNumericalType, isFillBlanksType, isObjectiveType, resolveOptionDisplayText, DEFAULT_ASSERTION_REASON_OPTIONS } from '@/lib/questionTypes';
+import { stripOptionLabel, preprocessMathText, parseAnswerList, isOptionSelectedByUser, isOptionCorrect, getQuestionCorrectAnswer, getRawOptionKey, getRawOptionText, extractAssertionAndReason, isMultipleChoiceType, isSingleChoiceType, isTrueFalseType, isAssertionReasonType, isNumericalType, isFillBlanksType, isObjectiveType, resolveOptionDisplayText, DEFAULT_ASSERTION_REASON_OPTIONS, getOptionText as getOptionTextCanonical } from '@/lib/questionTypes';
 import QuestionDisplay, { RichMathText } from '@/components/QuestionDisplay';
 import { useMathRender } from '@/hooks/useMathRender';
 import { db } from '@/lib/firebase/firestore';
@@ -376,10 +376,7 @@ function TakeExamContent() {
   const getOptionText = (questionText: string, ansInput: any) => {
     if (!exam || !exam.questions) return parseAnswerList(ansInput).join(', ');
     const q = exam.questions.find((x: any) => x.text === questionText || x.questionCode === questionText);
-    const opts = (q?.options && q.options.length > 0)
-      ? q.options
-      : (isAssertionReasonType(q?.type) ? DEFAULT_ASSERTION_REASON_OPTIONS : []);
-    return resolveOptionDisplayText(opts, ansInput);
+    return getOptionTextCanonical(q, ansInput);
   };
 
   // 1. Fetch exam configuration

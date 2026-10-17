@@ -19,6 +19,8 @@ import {
   ParentSnapshotModals,
   ParentNoticeModals
 } from '@/components/parent';
+import { markNoticeAsSeen } from '@/lib/noticeUtils';
+import { getGreeting } from '@/lib/dateUtils';
 
 export default function ParentDashboardClient({ initialData: serverInitialData }: { initialData?: ParentDashboardData }) {
   const { user, firebaseUser, loading: authLoading, logout } = useAuth();
@@ -66,14 +68,6 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
   useEffect(() => {
     setMounted(true);
   }, []);
-
-  const getGreeting = () => {
-    if (!mounted) return 'Good Morning';
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Good Morning';
-    if (hour < 17) return 'Good Afternoon';
-    return 'Good Evening';
-  };
 
   const [notificationHistory, setNotificationHistory] = useState<any[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
@@ -174,27 +168,8 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
   }, []);
 
   const handleMarkNoticeAsSeen = async (id: string) => {
-    if (seenNoticeIds.includes(id)) return;
-    try {
-      const updated = [...seenNoticeIds, id];
-      setSeenNoticeIds(updated);
-      localStorage.setItem('yc_seenNotices', JSON.stringify(updated));
-
-      // Post to database seen logs
-      if (firebaseUser) {
-        const idToken = await firebaseUser.getIdToken();
-        fetch('/api/notices/seen', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${idToken}`
-          },
-          body: JSON.stringify({ noticeId: id })
-        }).catch(err => console.warn('Failed to report notice seen status:', err));
-      }
-    } catch (e) {
-      console.warn('Failed to save seen notices:', e);
-    }
+    const updated = await markNoticeAsSeen(id, seenNoticeIds, firebaseUser);
+    setSeenNoticeIds(updated);
   };
 
   const visibleNotices = notices.filter(n => !seenNoticeIds.includes(n.id));
@@ -458,7 +433,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
           isLoading={isGlobalLoading}
           userName={user?.name}
           userDisplayName={user?.displayName}
-          greeting={getGreeting()}
+          greeting={getGreeting(mounted)}
           childrenList={children}
           selectedChildCode={selectedChildCode}
           onSelectChild={setSelectedChildCode}

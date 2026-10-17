@@ -10,7 +10,7 @@ import { useMathRender } from '@/hooks/useMathRender';
 import { useScorecard } from '@/hooks/useScorecard';
 import QuestionDisplay, { RichMathText } from '@/components/QuestionDisplay';
 import { highlightModelAnswerKeywords } from '@/lib/questionTypes';
-import { formatDateIST, getDateKeyIST, formatDateTimeIST, formatDurationMS as formatDuration } from '@/lib/dateUtils';
+import { formatDateIST, getDateKeyIST, formatDateTimeIST, formatDurationMS as formatDuration, formatDateOrFallback as formatDate } from '@/lib/dateUtils';
 
 interface ReviewItem {
   id: string;
@@ -563,10 +563,7 @@ export default function ParentReviewPanel() {
     );
   };
 
-  const formatDate = (dateStr: string | null) => {
-    if (!dateStr) return '-';
-    return formatDateIST(dateStr) || '-';
-  };
+
 
 
 
@@ -649,13 +646,6 @@ export default function ParentReviewPanel() {
       </div>
     );
   }
-
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Good Morning';
-    if (hour < 17) return 'Good Afternoon';
-    return 'Good Evening';
-  };
 
   const getParentFirstName = () => {
     const fullName = user?.name || user?.displayName || '';

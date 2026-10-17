@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { formatDateDMY as formatDateStr, getDateKeyIST } from '@/lib/dateUtils';
 import DateInputDMY from '@/components/DateInputDMY';
 import FeesJournal from '@/components/admin/FeesJournal';
+import { renderSortHeader, getStatusWeight, getLateDaysString as getLateRemarks, deleteFeeTransaction } from '@/lib/feesUtils';
 
 interface FeeTemplate {
   templateId: string;
@@ -77,24 +78,6 @@ function AdminFeesContent() {
   const [bulkPayments, setBulkPayments] = useState<Record<string, { checked: boolean; amount: number; method: string; ref: string; component: string }>>({});
   const [savingBulk, setSavingBulk] = useState(false);
 
-  // Helper to compute late days remark
-  const getLateRemarks = (dueDateStr?: string, paymentDateStr?: string) => {
-    if (!dueDateStr || !paymentDateStr) return '';
-    try {
-      const due = new Date(dueDateStr);
-      const pay = new Date(paymentDateStr);
-      if (isNaN(due.getTime()) || isNaN(pay.getTime())) return '';
-      
-      const dueUtc = Date.UTC(due.getFullYear(), due.getMonth(), due.getDate());
-      const payUtc = Date.UTC(pay.getFullYear(), pay.getMonth(), pay.getDate());
-      
-      const diffDays = Math.floor((payUtc - dueUtc) / (1000 * 60 * 60 * 24));
-      if (diffDays > 0) {
-        return `Late by ${diffDays} day${diffDays > 1 ? 's' : ''}`;
-      }
-    } catch (e) {}
-    return '';
-  };
 
   // Sorting States
   const [studentSortField, setStudentSortField] = useState<'name' | 'classNum' | 'netDues' | 'paid' | 'outstanding' | 'status'>('name');
@@ -133,33 +116,6 @@ function AdminFeesContent() {
     }
   };
 
-  const renderSortHeader = (label: string, field: string, currentField: string, currentDir: 'asc' | 'desc', onSort: (f: any) => void, alignRight = false) => {
-    const isActive = currentField === field;
-    return (
-      <th
-        onClick={() => onSort(field)}
-        style={{
-          padding: '12px 16px',
-          fontSize: '11px',
-          fontWeight: 800,
-          color: isActive ? 'var(--accent)' : 'var(--text-muted)',
-          textTransform: 'uppercase',
-          cursor: 'pointer',
-          userSelect: 'none',
-          textAlign: alignRight ? 'right' : 'left',
-          transition: 'color 0.15s ease'
-        }}
-        title={`Click to sort by ${label}`}
-      >
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', justifyContent: alignRight ? 'flex-end' : 'flex-start' }}>
-          <span>{label}</span>
-          <span style={{ fontSize: '10px', opacity: isActive ? 1 : 0.4 }}>
-            {isActive ? (currentDir === 'asc' ? '▲' : '▼') : '↕'}
-          </span>
-        </div>
-      </th>
-    );
-  };
 
   // Helper to construct bulk transaction dropdowns
   const getComponentOptions = (s: StudentFeeRecord) => {
@@ -548,19 +504,8 @@ function AdminFeesContent() {
     if (!confirm('Are you sure you want to delete this payment log? Balance will be adjusted.')) return;
     try {
       const token = await firebaseUser!.getIdToken();
-      const res = await fetch('/api/admin/fees/transactions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          action: 'delete',
-          transactionId: txId
-        })
-      });
-
-      if (!res.ok) throw new Error('Failed to delete transaction log');
+      const res = await deleteFeeTransaction(token, txId, selectedStudent?.studentCode);
+      if (!res.success) throw new Error(res.error || 'Failed to delete transaction log');
       loadTransactions(selectedStudent!.studentCode);
       loadStudents();
     } catch (e: any) {
@@ -889,13 +834,6 @@ function AdminFeesContent() {
                           valA = Number(a.fee?.outstandingAmount ?? -1);
                           valB = Number(b.fee?.outstandingAmount ?? -1);
                         } else if (studentSortField === 'status') {
-                          const getStatusWeight = (s: StudentFeeRecord) => {
-                            if (!s.fee || s.fee.totalPackageAmount === undefined) return 0;
-                            if (s.fee.hasOverdueInstallment) return 4;
-                            if (s.fee.feeStatus === 'partially_paid') return 3;
-                            if (s.fee.feeStatus === 'fully_paid' || s.fee.feeStatus === 'exempted' || s.fee.netPayableAmount === 0) return 2;
-                            return 1;
-                          };
                           valA = getStatusWeight(a);
                           valB = getStatusWeight(b);
                         }
@@ -1440,13 +1378,6 @@ function AdminFeesContent() {
                               valA = (a.name || '').toLowerCase();
                               valB = (b.name || '').toLowerCase();
                             } else if (bulkSortField === 'status') {
-                              const getStatusWeight = (s: StudentFeeRecord) => {
-                                if (!s.fee) return 1;
-                                if (s.fee.hasOverdueInstallment) return 4;
-                                if (s.fee.feeStatus === 'partially_paid') return 3;
-                                if (s.fee.feeStatus === 'fully_paid') return 2;
-                                return 0;
-                              };
                               valA = getStatusWeight(a);
                               valB = getStatusWeight(b);
                             }

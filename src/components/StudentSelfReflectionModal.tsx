@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useMathRender } from '@/hooks/useMathRender';
-import { preprocessMathText, parseAnswerList, resolveOptionDisplayText } from '@/lib/questionTypes';
+import { preprocessMathText, parseAnswerList, resolveOptionDisplayText, getOptionText } from '@/lib/questionTypes';
 import QuestionDisplay from '@/components/QuestionDisplay';
 
 interface StudentSelfReflectionModalProps {
@@ -138,10 +138,6 @@ export default function StudentSelfReflectionModal({
     } finally {
       setSubmitting(false);
     }
-  };
-
-  const getOptionText = (qItem: any, ansVal: any) => {
-    return resolveOptionDisplayText(qItem.options || [], ansVal);
   };
 
   return (

@@ -11,14 +11,14 @@ import { playNotificationSound } from '@/lib/audioUtils';
  * Dynamically computes unread count per role (admin, student, parent) and triggers audio intimation
  * when new messages arrive while user is on other screens.
  */
-export function useUnreadChatCount(role: 'admin' | 'student' | 'parent' = 'admin', currentPath?: string) {
+export function useUnreadChatCount(role: 'admin' | 'student' | 'parent' | null = 'admin', currentPath?: string) {
   const { firebaseUser, user } = useAuth();
   const [unreadCount, setUnreadCount] = useState<number>(0);
   const previousUnreadRef = useRef<number>(0);
   const isInitialMountRef = useRef<boolean>(true);
 
   useEffect(() => {
-    if (!firebaseUser) {
+    if (!firebaseUser || !role) {
       setUnreadCount(0);
       return;
     }

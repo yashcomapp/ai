@@ -13,7 +13,7 @@ import { useMathRender } from '@/hooks/useMathRender';
 import { useScorecard } from '@/hooks/useScorecard';
 import { useToggleSet } from '@/hooks/useToggleSet';
 import { stripOptionLabel, preprocessMathText, parseAnswerList, isOptionSelectedByUser, isBlank, getReasonForQuestion, getRawOptionKey, getRawOptionText, formatUserAnswerSummary } from '@/lib/questionTypes';
-import { formatDateTimeIST, formatDurationMS as formatDuration } from '@/lib/dateUtils';
+import { formatDateTimeIST, formatDurationMS as formatDuration, formatDateTimeOrFallback as formatDate } from '@/lib/dateUtils';
 
 interface ResultSummaryItem {
   id: string;
@@ -230,12 +230,6 @@ export default function StudentResults({ initialData }: { initialData?: { result
       setSelectedId(null);
     }
   };
-
-  const formatDate = (dateStr: string | null) => {
-    if (!dateStr) return '-';
-    return formatDateTimeIST(dateStr) || '-';
-  };
-
 
   const getScoreClass = (pct: number) => {
     if (pct < 40) return 'score-low';

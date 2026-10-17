@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { formatDateDMY as formatDateStr, getDateKeyIST } from '@/lib/dateUtils';
 import DateInputDMY from '@/components/DateInputDMY';
+import { renderSortHeader, getStatusWeight, deleteFeeTransaction, getLateRemarks as computeLateRemarks } from '@/lib/feesUtils';
 
 export interface StudentFeeRecord {
   uid: string;
@@ -185,21 +186,9 @@ export default function FeesJournal({
     try {
       const token = await getIdToken();
       if (!token) throw new Error('Not authenticated');
-      const res = await fetch('/api/admin/fees/transactions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          action: 'delete',
-          transactionId: tx.transactionId,
-          studentCode: tx.studentCode
-        })
-      });
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        alert(data.error || 'Failed to delete transaction');
+      const res = await deleteFeeTransaction(token, tx.transactionId, tx.studentCode);
+      if (!res.success) {
+        alert(res.error || 'Failed to delete transaction');
         return;
       }
       fetchAllTransactions();
@@ -247,23 +236,9 @@ export default function FeesJournal({
     const inst = student.fee.installments.find(i => (i.installmentId || `inst_${i.installmentNo}`) === installmentId);
     if (!inst || !inst.dueDate) return '';
 
-    try {
-      const due = new Date(inst.dueDate);
-      const pay = new Date(paymentDateStr);
-      if (isNaN(due.getTime()) || isNaN(pay.getTime())) return '';
-
-      const dueUtc = Date.UTC(due.getFullYear(), due.getMonth(), due.getDate());
-      const payUtc = Date.UTC(pay.getFullYear(), pay.getMonth(), pay.getDate());
-
-      const diffDays = Math.floor((payUtc - dueUtc) / (1000 * 60 * 60 * 24));
-      if (diffDays > 0) {
-        return `Late by ${diffDays} day${diffDays > 1 ? 's' : ''}`;
-      } else {
-        return 'On Time';
-      }
-    } catch {
-      return '';
-    }
+    const res = computeLateRemarks(inst.dueDate, paymentDateStr);
+    if (!res) return '';
+    return res.isLate ? `Late by ${res.daysLate} day${res.daysLate > 1 ? 's' : ''}` : 'On Time';
   };
 
   // Macro Summary Calculations (Total So Far)
@@ -519,13 +494,6 @@ export default function FeesJournal({
         valA = Number(a.fee?.outstandingAmount ?? -1);
         valB = Number(b.fee?.outstandingAmount ?? -1);
       } else if (studentSortField === 'status') {
-        const getStatusWeight = (s: StudentFeeRecord) => {
-          if (!s.fee || s.fee.totalPackageAmount === undefined) return 0;
-          if (s.fee.hasOverdueInstallment) return 4;
-          if (s.fee.feeStatus === 'partially_paid') return 3;
-          if (s.fee.feeStatus === 'fully_paid' || s.fee.feeStatus === 'exempted' || s.fee.netPayableAmount === 0) return 2;
-          return 1;
-        };
         valA = getStatusWeight(a);
         valB = getStatusWeight(b);
       } else if (studentSortField === 'lastPayment') {
@@ -563,42 +531,6 @@ export default function FeesJournal({
     return Array.from(set).sort((a, b) => (Number(a) || 0) - (Number(b) || 0));
   }, [students]);
 
-  // Helper Sort Header Renderer
-  const renderSortHeader = (
-    label: string,
-    field: string,
-    currentField: string,
-    currentDir: 'asc' | 'desc',
-    onSort: (f: any) => void,
-    alignRight = false
-  ) => {
-    const isActive = currentField === field;
-    return (
-      <th
-        onClick={() => onSort(field)}
-        style={{
-          padding: '12px 14px',
-          fontSize: '11px',
-          fontWeight: 800,
-          color: isActive ? 'var(--accent)' : 'var(--text-muted)',
-          textTransform: 'uppercase',
-          cursor: 'pointer',
-          userSelect: 'none',
-          textAlign: alignRight ? 'right' : 'left',
-          transition: 'color 0.15s ease',
-          whiteSpace: 'nowrap'
-        }}
-        title={`Click to sort by ${label}`}
-      >
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', justifyContent: alignRight ? 'flex-end' : 'flex-start' }}>
-          <span>{label}</span>
-          <span style={{ fontSize: '10px', opacity: isActive ? 1 : 0.35 }}>
-            {isActive ? (currentDir === 'asc' ? '▲' : '▼') : '↕'}
-          </span>
-        </div>
-      </th>
-    );
-  };
 
   // CSV Exporters
   const exportJournalCSV = () => {

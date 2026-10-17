@@ -5,10 +5,10 @@ import React, { useEffect, useState, useMemo, Suspense } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useMathRender } from '@/hooks/useMathRender';
-import { preprocessMathText, formatRichText, parseAnswerList, isOptionSelectedByUser, isOptionCorrect, getQuestionCorrectAnswer, getRawOptionKey, getRawOptionText, isBlank, resolveOptionDisplayText, extractAssertionAndReason, isAssertionReasonType, isMultipleChoiceType, cleanStringForMatch, isOptionMatch } from '@/lib/questionTypes';
+import { preprocessMathText, formatRichText, parseAnswerList, isOptionSelectedByUser, isOptionCorrect, getQuestionCorrectAnswer, getRawOptionKey, getRawOptionText, isBlank, resolveOptionDisplayText, extractAssertionAndReason, isAssertionReasonType, isMultipleChoiceType, cleanStringForMatch, isOptionMatch, getOptionText as getOptionTextCanonical } from '@/lib/questionTypes';
 import QuestionDisplay, { RichMathText } from '@/components/QuestionDisplay';
 import { playNotificationSound } from '@/lib/audioUtils';
-import { getDateKeyIST, formatDateDMY, formatTimeIST, calculateEndDatetime, toLocalISOString, getMorningTestTimes } from '@/lib/dateUtils';
+import { getDateKeyIST, formatDateDMY, formatTimeIST, calculateEndDatetime, toLocalISOString, getMorningTestTimes, getEveningTestTimes, formatDateTimeShort as formatDate } from '@/lib/dateUtils';
 import { formatReportStudentName, getScoreChip, getDeepScoreColor } from '@/lib/lqCardExport';
 
 interface Attempt {
@@ -239,27 +239,7 @@ function ExamReportContent() {
 
 
 
-  const getEveningTestTimes = (durationMinutes: number) => {
-    const target = new Date();
-    if (target.getHours() >= 21) {
-      target.setDate(target.getDate() + 1);
-    }
-    const y = target.getFullYear();
-    const m = String(target.getMonth() + 1).padStart(2, '0');
-    const d = String(target.getDate()).padStart(2, '0');
-    const startStr = `${y}-${m}-${d}T21:00`;
 
-    const endDate = new Date(target);
-    endDate.setHours(21, durationMinutes || 30, 0, 0);
-    const ey = endDate.getFullYear();
-    const em = String(endDate.getMonth() + 1).padStart(2, '0');
-    const ed = String(endDate.getDate()).padStart(2, '0');
-    const eh = String(endDate.getHours()).padStart(2, '0');
-    const emin = String(endDate.getMinutes()).padStart(2, '0');
-    const endStr = `${ey}-${em}-${ed}T${eh}:${emin}`;
-
-    return { startStr, endStr };
-  };
 
   const openReassignModal = () => {
     const dur = Number(exam?.duration || exam?.durationMinutes) || 30;
@@ -457,7 +437,7 @@ function ExamReportContent() {
 
   const getOptionText = (questionCode: string, ansInput: any) => {
     const q = questionsMap[questionCode];
-    return resolveOptionDisplayText(q?.options || [], ansInput);
+    return getOptionTextCanonical(q, ansInput);
   };
 
   const isDemo = (s: any) => {
@@ -953,13 +933,6 @@ function ExamReportContent() {
     const mins = Math.floor(sec / 60);
     const remaining = sec % 60;
     return mins > 0 ? `${mins}m ${remaining}s` : `${remaining}s`;
-  };
-
-  const formatDate = (val: any) => {
-    if (!val) return '—';
-    const d = new Date(val);
-    if (isNaN(d.getTime())) return '—';
-    return d.toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
   };
 
   const scoreColor = (pct: number) => {

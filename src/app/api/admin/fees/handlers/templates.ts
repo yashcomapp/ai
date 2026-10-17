@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ success: true, templates: cached });
     }
 
-    const templatesSnap = await adminDb.collection('feeTemplates').get();
+    const templatesSnap = await adminDb.collection('feeTemplates').limit(100).get();
     const templates = templatesSnap.docs.map(doc => ({
       id: doc.id,
       ...doc.data()

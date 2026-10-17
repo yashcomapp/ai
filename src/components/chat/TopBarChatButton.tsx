@@ -9,16 +9,19 @@ interface TopBarChatButtonProps {
   role?: 'admin' | 'student' | 'parent';
   chatUrl?: string;
   style?: React.CSSProperties;
+  count?: number;
 }
 
 export default function TopBarChatButton({
   role = 'admin',
   chatUrl = '/admin/chat',
-  style = {}
+  style = {},
+  count
 }: TopBarChatButtonProps) {
   const router = useRouter();
   const pathname = usePathname();
-  const unreadCount = useUnreadChatCount(role, pathname);
+  const hookCount = useUnreadChatCount(count !== undefined ? null : role, pathname);
+  const unreadCount = count !== undefined ? count : hookCount;
   const isActive = pathname === chatUrl || pathname.startsWith(chatUrl);
 
   return (

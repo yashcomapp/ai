@@ -13,7 +13,7 @@ const PracticeHistoryModal = dynamic(() => import('@/components/admin/exams/Prac
 const TopicStatusBreakdownModal = dynamic(() => import('@/components/admin/exams/TopicStatusBreakdownModal'), { ssr: false });
 import { useMathRender } from '@/hooks/useMathRender';
 import { useScorecard } from '@/hooks/useScorecard';
-import { toISTDateTimeLocalInput, formatDateDMY, parseDateInput, getDateKeyIST, formatDateTimeIST, getMorningTestTimes } from '@/lib/dateUtils';
+import { toISTDateTimeLocalInput, formatDateDMY, parseDateInput, getDateKeyIST, formatDateTimeIST, getMorningTestTimes, getEveningTestTimes } from '@/lib/dateUtils';
 import ObjectiveTab from '@/components/admin/exams/ObjectiveTab';
 import SubjectiveTab from '@/components/admin/exams/SubjectiveTab';
 import PracticeTab from '@/components/admin/exams/PracticeTab';
@@ -1048,28 +1048,6 @@ export default function AdminExamsPage() {
   };
 
 
-  const getEveningTestTimes = (durationMinutes: number) => {
-    const target = new Date();
-    // If it is already past 9:00 PM (21:00) today, schedule for tomorrow 21:00
-    if (target.getHours() >= 21) {
-      target.setDate(target.getDate() + 1);
-    }
-    const y = target.getFullYear();
-    const m = String(target.getMonth() + 1).padStart(2, '0');
-    const d = String(target.getDate()).padStart(2, '0');
-    const startStr = `${y}-${m}-${d}T21:00`;
-
-    const endDate = new Date(target);
-    endDate.setHours(21, durationMinutes || 30, 0, 0);
-    const ey = endDate.getFullYear();
-    const em = String(endDate.getMonth() + 1).padStart(2, '0');
-    const ed = String(endDate.getDate()).padStart(2, '0');
-    const eh = String(endDate.getHours()).padStart(2, '0');
-    const emin = String(endDate.getMinutes()).padStart(2, '0');
-    const endStr = `${ey}-${em}-${ed}T${eh}:${emin}`;
-
-    return { startStr, endStr };
-  };
 
   // Create Assignment Action
   const handleOpenAssign = (exam: Exam, type: 'objective' | 'subjective') => {

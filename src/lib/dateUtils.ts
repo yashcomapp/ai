@@ -396,4 +396,75 @@ export function getMorningTestTimes(durationMinutes: number): { startStr: string
   return { startStr, endStr };
 }
 
+/**
+ * Calculates 9:00 PM (21:00) start and end datetime-local strings based on duration.
+ * If current time is already >= 21:00 today, advances to tomorrow 21:00.
+ */
+export function getEveningTestTimes(durationMinutes: number): { startStr: string; endStr: string } {
+  const target = new Date();
+  if (target.getHours() >= 21) {
+    target.setDate(target.getDate() + 1);
+  }
+  const y = target.getFullYear();
+  const m = String(target.getMonth() + 1).padStart(2, '0');
+  const d = String(target.getDate()).padStart(2, '0');
+  const startStr = `${y}-${m}-${d}T21:00`;
+
+  const endDate = new Date(target);
+  endDate.setHours(21, durationMinutes || 30, 0, 0);
+  const ey = endDate.getFullYear();
+  const em = String(endDate.getMonth() + 1).padStart(2, '0');
+  const ed = String(endDate.getDate()).padStart(2, '0');
+  const eh = String(endDate.getHours()).padStart(2, '0');
+  const emin = String(endDate.getMinutes()).padStart(2, '0');
+  const endStr = `${ey}-${em}-${ed}T${eh}:${emin}`;
+
+  return { startStr, endStr };
+}
+
+/**
+ * Returns a time-of-day greeting (e.g. 'Good Morning', 'Good Afternoon', 'Good Evening').
+ * Accepts an optional isMounted boolean for SSR hydration safety (defaults to true).
+ */
+export function getGreeting(isMounted: boolean = true): string {
+  if (!isMounted) return 'Good Morning';
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Good Morning';
+  if (hour < 17) return 'Good Afternoon';
+  return 'Good Evening';
+}
+
+/**
+ * Formats a date/timestamp into IST with fallback if empty/invalid.
+ */
+export function formatDateOrFallback(dateInput: any, fallback: string = '-'): string {
+  if (!dateInput) return fallback;
+  return formatDateIST(dateInput) || fallback;
+}
+
+/**
+ * Formats a date/timestamp into full datetime IST with fallback if empty/invalid.
+ */
+export function formatDateTimeOrFallback(dateInput: any, fallback: string = '-'): string {
+  if (!dateInput) return fallback;
+  return formatDateTimeIST(dateInput) || fallback;
+}
+
+/**
+ * Formats a date/timestamp into short date and time (e.g. "17 Oct, 09:30 PM") in IST.
+ */
+export function formatDateTimeShort(dateInput?: any, fallback: string = '—'): string {
+  const d = parseDateInput(dateInput);
+  if (!d) return fallback;
+  return d.toLocaleString('en-IN', {
+    timeZone: IST_TIMEZONE,
+    day: '2-digit',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+
+
 
