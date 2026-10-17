@@ -375,7 +375,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
     subjectiveReviews: ReviewItem[];
     entranceReviews: ReviewItem[];
   }>(
-    firebaseUser && selectedChildCode ? `/api/parent/reviews?studentCode=${selectedChildCode}` : null,
+    firebaseUser && selectedChildCode ? `/api/parent/review?studentCode=${selectedChildCode}` : null,
     reviewsFetcher,
     {
       fallbackData: localReviewsCache || undefined,

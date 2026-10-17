@@ -8,7 +8,7 @@ import { useMathRender } from '@/hooks/useMathRender';
 import { preprocessMathText, formatRichText, parseAnswerList, isOptionSelectedByUser, isOptionCorrect, getQuestionCorrectAnswer, getRawOptionKey, getRawOptionText, isBlank, resolveOptionDisplayText, extractAssertionAndReason, isAssertionReasonType, isMultipleChoiceType, cleanStringForMatch, isOptionMatch } from '@/lib/questionTypes';
 import QuestionDisplay, { RichMathText } from '@/components/QuestionDisplay';
 import { playNotificationSound } from '@/lib/audioUtils';
-import { getDateKeyIST, formatDateDMY, formatTimeIST, calculateEndDatetime } from '@/lib/dateUtils';
+import { getDateKeyIST, formatDateDMY, formatTimeIST, calculateEndDatetime, toLocalISOString, getMorningTestTimes } from '@/lib/dateUtils';
 import { formatReportStudentName, getScoreChip, getDeepScoreColor } from '@/lib/lqCardExport';
 
 interface Attempt {
@@ -237,31 +237,7 @@ function ExamReportContent() {
     }
   };
 
-  const toLocalISOString = (date: Date) => {
-    const tzoffset = date.getTimezoneOffset() * 60000;
-    const localISOTime = (new Date(date.getTime() - tzoffset)).toISOString().slice(0, 16);
-    return localISOTime;
-  };
 
-  const getMorningTestTimes = (durationMinutes: number) => {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const y = tomorrow.getFullYear();
-    const m = String(tomorrow.getMonth() + 1).padStart(2, '0');
-    const d = String(tomorrow.getDate()).padStart(2, '0');
-    const startStr = `${y}-${m}-${d}T06:00`;
-
-    const endDate = new Date(tomorrow);
-    endDate.setHours(6, durationMinutes || 30, 0, 0);
-    const ey = endDate.getFullYear();
-    const em = String(endDate.getMonth() + 1).padStart(2, '0');
-    const ed = String(endDate.getDate()).padStart(2, '0');
-    const eh = String(endDate.getHours()).padStart(2, '0');
-    const emin = String(endDate.getMinutes()).padStart(2, '0');
-    const endStr = `${ey}-${em}-${ed}T${eh}:${emin}`;
-
-    return { startStr, endStr };
-  };
 
   const getEveningTestTimes = (durationMinutes: number) => {
     const target = new Date();
@@ -1543,7 +1519,7 @@ function ExamReportContent() {
                         >
                           <td style={{ padding: '5px 8px', fontWeight: 600, whiteSpace: 'nowrap' }}>
                             {a.isLate && (
-                              <span style={{ marginRight: '6px', color: '#ef4444', background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '1px 5px', borderRadius: '4px', fontSize: '10px', fontWeight: 800 }}>
+                              <span style={{ marginRight: '6px', color: 'var(--danger)', background: 'var(--danger-bg, rgba(239, 68, 68, 0.15))', border: '1px solid var(--danger-border, rgba(239, 68, 68, 0.3))', padding: '1px 5px', borderRadius: '4px', fontSize: '10px', fontWeight: 800 }}>
                                 ⏰ LATE
                               </span>
                             )}
@@ -1794,7 +1770,7 @@ function ExamReportContent() {
                         >
                           <td style={{ padding: '5px 8px', fontWeight: 600 }}>
                             {a.isLate && (
-                              <span style={{ marginRight: '6px', color: '#ef4444', background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '1px 5px', borderRadius: '4px', fontSize: '10px', fontWeight: 800 }}>
+                              <span style={{ marginRight: '6px', color: 'var(--danger)', background: 'var(--danger-bg, rgba(239, 68, 68, 0.15))', border: '1px solid var(--danger-border, rgba(239, 68, 68, 0.3))', padding: '1px 5px', borderRadius: '4px', fontSize: '10px', fontWeight: 800 }}>
                                 ⏰ LATE
                               </span>
                             )}
@@ -1976,7 +1952,7 @@ function ExamReportContent() {
             </div>
 
             {rescueModal.error && (
-              <div style={{ background: 'rgba(239, 68, 68, 0.12)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#ef4444', padding: '10px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, marginBottom: '14px' }}>
+              <div style={{ background: 'var(--danger-bg, rgba(239, 68, 68, 0.12))', border: '1px solid var(--danger-border, rgba(239, 68, 68, 0.3))', color: 'var(--danger)', padding: '10px 14px', borderRadius: '8px', fontSize: '12px', fontWeight: 600, marginBottom: '14px' }}>
                 ⚠️ {rescueModal.error}
               </div>
             )}
@@ -2322,7 +2298,7 @@ function ExamReportContent() {
             <div className="modal-header" style={{ padding: '8px 12px', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h4 style={{ margin: 0, fontSize: '13px', fontWeight: 'bold', color: 'var(--text)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 {selectedAttempt.isLate && (
-                  <span style={{ color: '#ef4444', background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '1px 5px', borderRadius: '4px', fontSize: '10px', fontWeight: 800 }}>
+                  <span style={{ color: 'var(--danger)', background: 'var(--danger-bg, rgba(239, 68, 68, 0.15))', border: '1px solid var(--danger-border, rgba(239, 68, 68, 0.3))', padding: '1px 5px', borderRadius: '4px', fontSize: '10px', fontWeight: 800 }}>
                     ⏰ LATE
                   </span>
                 )}

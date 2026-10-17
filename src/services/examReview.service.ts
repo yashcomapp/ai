@@ -251,20 +251,22 @@ export class ExamReviewService {
           await batch.commit();
         } catch (bErr) {
           console.warn('Batch commit failed for review sync, falling back to individual updates:', bErr);
-          // Fallback: update documents individually so a single failure doesn't drop the rest
+          // Fallback: update documents in parallel so a single failure doesn't drop the rest
+          const fallbackPromises: Promise<any>[] = [];
           for (const snap of rSnaps) {
             if (snap && snap.exists) {
               const currentRevStatus = snap.data()?.status;
               if (currentRevStatus === 'student_review' || isAutonomous || wrongAnswerReasons) {
-                await snap.ref.update(updatePayload).catch(() => null);
+                fallbackPromises.push(snap.ref.update(updatePayload));
               }
             }
           }
           for (const snap of aSnaps) {
             if (snap && snap.exists) {
-              await snap.ref.update(updatePayload).catch(() => null);
+              fallbackPromises.push(snap.ref.update(updatePayload));
             }
           }
+          await Promise.allSettled(fallbackPromises);
         }
       }
     } catch (revErr) {
@@ -304,6 +306,7 @@ export class ExamReviewService {
       const autoStudentsSnap = await adminDb.collection('users')
         .where('role', '==', 'student')
         .where('autonomous', '==', true)
+        .select('studentCode')
         .get();
       studentCodes = Array.from(new Set(
         autoStudentsSnap.docs

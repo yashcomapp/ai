@@ -4,7 +4,7 @@ import React, { useEffect, useState, useMemo, useDeferredValue } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useReports } from '@/hooks/useReports';
-import { formatDateTimeIST } from '@/lib/dateUtils';
+import { formatDateTimeIST, formatDurationMS as formatDuration } from '@/lib/dateUtils';
 import dynamic from 'next/dynamic';
 
 interface SincerityRecord {
@@ -149,15 +149,6 @@ export default function ParentPendingReportPage() {
     });
   }, [records, selectedBatchFilter, actorFilter, sessionTypeFilter, deferredSearch]);
 
-  const formatDateIST = (dateStr: string) => dateStr ? formatDateTimeIST(dateStr) : '—';
-
-  const formatDuration = (seconds?: number) => {
-    if (!seconds || seconds <= 0) return null;
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    if (m === 0) return `${s}s`;
-    return `${m}m ${s > 0 ? `${s}s` : ''}`.trim();
-  };
 
   const getHoursUntilExpiry = (expiresAt?: number | null) => {
     if (!expiresAt) return null;
@@ -579,7 +570,7 @@ export default function ParentPendingReportPage() {
 
                         {/* Timestamp */}
                         <td style={{ padding: '12px 16px', textAlign: 'right', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-                          {formatDateIST(r.timestamp)}
+                          {formatDateTimeIST(r.timestamp) || '—'}
                         </td>
                       </tr>
                     );
@@ -624,7 +615,7 @@ export default function ParentPendingReportPage() {
                     />
                   </div>
                   <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '4px' }}>
-                    {previewPhoto.startedAt ? formatDateIST(previewPhoto.startedAt) : 'Session Start'}
+                    {previewPhoto.startedAt ? formatDateTimeIST(previewPhoto.startedAt) : 'Session Start'}
                   </div>
                 </div>
 
@@ -641,7 +632,7 @@ export default function ParentPendingReportPage() {
                     />
                   </div>
                   <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '4px' }}>
-                    {previewPhoto.completedAt ? formatDateIST(previewPhoto.completedAt) : formatDateIST(previewPhoto.timestamp)}
+                    {previewPhoto.completedAt ? formatDateTimeIST(previewPhoto.completedAt) : (formatDateTimeIST(previewPhoto.timestamp) || '—')}
                   </div>
                 </div>
               </div>
@@ -660,7 +651,7 @@ export default function ParentPendingReportPage() {
               {previewPhoto.durationSeconds && previewPhoto.durationSeconds > 0 ? (
                 <div>⏱️ <strong>Review Duration:</strong> <span style={{ color: 'var(--text)', fontWeight: 700 }}>{formatDuration(previewPhoto.durationSeconds)}</span></div>
               ) : null}
-              <div>📅 <strong>Submitted IST:</strong> {formatDateIST(previewPhoto.timestamp)}</div>
+              <div>📅 <strong>Submitted IST:</strong> {formatDateTimeIST(previewPhoto.timestamp) || '—'}</div>
               <div>🔒 <strong>Privacy Protection:</strong> Snapshots in the main audit table are blurred to preserve student and parent privacy.</div>
               <div>🛡️ <strong>Auto-Purge Policy:</strong> Snapshots are temporarily stored for parent audit and automatically purged after 24 hours.</div>
             </div>

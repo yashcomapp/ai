@@ -50,11 +50,40 @@ function ExamRegisterContent() {
   // If student role is logged in, default to their own student code if param not provided
   const targetCode = studentCodeParam || (user?.role === 'student' ? user?.studentCode : '');
 
-  const { data, error, isLoading } = useSWR<RegisterData>(
+  const { data, error, isLoading, mutate } = useSWR<RegisterData>(
     user && targetCode ? `/api/student/exam-register?studentCode=${targetCode}` : null,
     fetcher,
     { revalidateOnFocus: false, dedupingInterval: 60000 }
   );
+
+  const handleUpdateAbsenceReason = async (record: ExamRecord) => {
+    const current = record.absenceReason || '';
+    const newReason = prompt(`Enter absence reason for "${record.name || record.chapterName}":`, current);
+    if (newReason === null) return;
+    try {
+      const token = await firebaseUser?.getIdToken();
+      const res = await fetch('/api/student/exam-register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          studentCode: targetCode,
+          examId: record.examId,
+          reason: newReason.trim()
+        })
+      });
+      if (res.ok) {
+        mutate();
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        alert(errData.message || 'Failed to update absence reason');
+      }
+    } catch (e: any) {
+      alert(e.message || 'Error updating absence reason');
+    }
+  };
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -259,13 +288,29 @@ function ExamRegisterContent() {
                             </td>
                             <td style={{ padding: '6px 10px', textAlign: 'left' }}>
                               {isAbsent ? (
-                                record.absenceReason ? (
-                                  <span style={{ fontSize: '11px', color: 'var(--text)', fontWeight: 600, background: 'var(--bg-soft)', padding: '2px 6px', borderRadius: '6px', border: '1px solid var(--border-light)' }}>
-                                    {record.absenceReason}
-                                  </span>
-                                ) : (
-                                  <span style={{ color: 'var(--danger)', fontSize: '11px', fontWeight: 600 }}>Absent</span>
-                                )
+                                <span 
+                                  onClick={() => handleUpdateAbsenceReason(record)}
+                                  title="Click to declare or update reason for absence"
+                                  style={{
+                                    fontSize: '11px', 
+                                    color: record.absenceReason ? 'var(--text)' : 'var(--danger)', 
+                                    fontWeight: 600, 
+                                    background: 'var(--bg-soft)', 
+                                    padding: '2px 8px', 
+                                    borderRadius: '6px', 
+                                    border: `1px solid ${record.absenceReason ? 'var(--border-light)' : 'rgba(239, 68, 68, 0.3)'}`,
+                                    cursor: 'pointer',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '4px'
+                                  }}
+                                >
+                                  {record.absenceReason ? (
+                                    <><span>💬</span> {record.absenceReason}</>
+                                  ) : (
+                                    <><span>⚠️</span> Absent (Add reason)</>
+                                  )}
+                                </span>
                               ) : (
                                 <span style={{ color: 'var(--text-muted)', fontSize: '11px' }}>—</span>
                               )}

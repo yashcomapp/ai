@@ -3,7 +3,7 @@ import { IntegrityService } from '@/services/integrity.service';
 import { deriveTopicCodeFromQuestionCode, parseTopicCode } from '@/lib/questionTypes';
 import { getFromCache, setInCache } from '@/lib/firebase/cache';
 
-function determineExamType(data: any): string {
+export function determineExamType(data: any): string {
   if (data.examType === 'practice') return 'practice';
   if (data.examType === 'subjective') return 'subjective';
   const qDetails = data.questionDetails || [];

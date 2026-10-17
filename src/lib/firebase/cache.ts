@@ -62,16 +62,15 @@ export async function getCachedSyllabus() {
 
 /**
  * Retrieves the raw syllabus subjects list with in-memory caching.
+ * Reuses getCachedSyllabus to eliminate duplicate Firestore reads on cold start.
  */
 export async function getCachedSyllabusList(): Promise<any[]> {
-  const cacheKey = 'syllabus-subjects-list';
+  const cacheKey = 'syllabus-all';
   const cached = getFromCache<any[]>(cacheKey);
   if (cached) return cached;
 
-  const snap = await adminDb.collection('syllabus').get();
-  const list = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-  setInCache(cacheKey, list, 600000); // 10 mins
-  return list;
+  const snap = await getCachedSyllabus();
+  return snap.docs.map(doc => doc.data());
 }
 
 /**
@@ -93,6 +92,30 @@ export async function getCachedBatches() {
 
   return {
     docs: batchesData.map(item => ({
+      id: item.id,
+      data: () => item
+    }))
+  };
+}
+
+/**
+ * Retrieves the templates collection with a 5-minute in-memory cache.
+ */
+export async function getCachedTemplates() {
+  const cacheKey = 'templates-all';
+  const cached = getFromCache<any[]>(cacheKey);
+  let templatesData: any[];
+
+  if (cached) {
+    templatesData = cached;
+  } else {
+    const snap = await adminDb.collection('templates').get();
+    templatesData = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    setInCache(cacheKey, templatesData, 300000); // 5 mins
+  }
+
+  return {
+    docs: templatesData.map(item => ({
       id: item.id,
       data: () => item
     }))

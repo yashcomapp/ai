@@ -224,28 +224,7 @@
         }
       ]
     },
-    {
-      "collectionGroup": "integrityScores",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "studentCode",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "year",
-          "order": "DESCENDING"
-        },
-        {
-          "fieldPath": "weekNumber",
-          "order": "DESCENDING"
-        },
-        {
-          "fieldPath": "__name__",
-          "order": "DESCENDING"
-        }
-      ]
-    },
+
     {
       "collectionGroup": "questions",
       "queryScope": "COLLECTION",

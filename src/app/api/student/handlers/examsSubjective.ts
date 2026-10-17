@@ -3,27 +3,7 @@ import * as admin from 'firebase-admin';
 import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole, verifyAnyRole } from '@/lib/auth';
 import { ExamService } from '@/services/exam.service';
-
-function cleanSubjectiveExamName(examData: any) {
-  if (!examData) return '';
-  const name = examData.name || '';
-  if (!name.includes('—')) return name;
-
-  const parts = name.split('—');
-  const prefix = parts[0].trim(); // e.g. "Monday Home Practice"
-  const suffix = parts[1].trim(); // e.g. "Gravitation, Periodic Classification of Elements, ..."
-
-  if (suffix.includes(',') && examData.chapterName && examData.chapterNumber) {
-    const allChapters = String(examData.chapterName).split(',').map((c: string) => c.trim());
-    const chNums = String(examData.chapterNumber).split(',').map((c: string) => parseInt(c.trim())).filter(num => !isNaN(num));
-    
-    const activeChapters = chNums.map(num => allChapters[num - 1]).filter(Boolean);
-    if (activeChapters.length > 0) {
-      return `${prefix} — ${activeChapters.join(', ')}`;
-    }
-  }
-  return name;
-}
+import { cleanSubjectiveExamName } from '@/lib/studentDb';
 
 async function getAttemptQuestions(attempt: any, exam: any): Promise<any[]> {
   if (attempt && Array.isArray(attempt.questionSnapshot) && attempt.questionSnapshot.length > 0) {

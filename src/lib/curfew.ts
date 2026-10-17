@@ -46,7 +46,7 @@ export function isCurfewBypassed(
 /**
  * Evaluates whether the current IST time falls within the sleep curfew period (10:30 PM - 5:00 AM IST).
  */
-export function isCurrentlyCurfewHours(currentTimeInput?: any): boolean {
+function isCurrentlyCurfewHours(currentTimeInput?: any): boolean {
   const dateObj = currentTimeInput ? parseDateInput(currentTimeInput) : new Date();
   if (!dateObj) return false;
 

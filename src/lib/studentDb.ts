@@ -117,7 +117,7 @@ function resolveFullTopicCodesToNames(syllabusList: any, fullTopicCodes: string[
   return resolvedNames;
 }
 
-function cleanSubjectiveExamName(examData: any) {
+export function cleanSubjectiveExamName(examData: any) {
   if (!examData) return '';
   const name = examData.name || '';
   if (!name.includes('—')) return name;

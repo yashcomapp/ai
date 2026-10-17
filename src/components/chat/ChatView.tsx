@@ -5,7 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { UserRole } from '@/types/user.types';
 import { useRouter } from 'next/navigation';
 import { db } from '@/lib/firebase/firestore';
-import { collection, query, orderBy, limit, onSnapshot, doc, deleteDoc } from 'firebase/firestore';
+import { collection, query, orderBy, limit, where, onSnapshot, doc, deleteDoc } from 'firebase/firestore';
 import { renderMarkdown } from '@/lib/markdown';
 import { getDateKeyIST, formatDateIST, parseDateInput } from '@/lib/dateUtils';
 import MessageItem from '@/components/chat/MessageItem';
@@ -307,7 +307,20 @@ export default function ChatView({ role = 'admin', hideHeader = false }: ChatVie
 
     let unsubscribe = () => {};
     try {
-      const q = query(collection(db, 'chatRooms'));
+      let q;
+      if (role === 'admin') {
+        q = query(collection(db, 'chatRooms'), orderBy('lastMessage.timestamp', 'desc'), limit(100));
+      } else if (role === 'student') {
+        const sCode = user?.studentCode;
+        if (!sCode) return;
+        q = query(collection(db, 'chatRooms'), where('participants', 'array-contains', sCode));
+      } else if (role === 'parent') {
+        const pKey = user?.email ? `PR-${user.email.toLowerCase().trim()}` : '';
+        if (!pKey) return;
+        q = query(collection(db, 'chatRooms'), where('participants', 'array-contains', pKey));
+      } else {
+        return;
+      }
 
       unsubscribe = onSnapshot(q, (snapshot) => {
         const rms = snapshot.docs.map(doc => ({

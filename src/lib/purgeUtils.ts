@@ -14,7 +14,7 @@ export interface PurgeResult {
  * Deletes proctoringSnapshotsExpiresAt on purge so already-purged documents are never scanned again.
  * Snapshots are auto-purged at 12:00 AM IST on the same day.
  */
-export async function purgeExpiredProctoringSnapshots(): Promise<{ purgedAttemptsCount: number; purgedLiveSessionsCount: number }> {
+async function purgeExpiredProctoringSnapshots(): Promise<{ purgedAttemptsCount: number; purgedLiveSessionsCount: number }> {
   const nowIso = new Date().toISOString();
   let purgedAttemptsCount = 0;
   let purgedLiveSessionsCount = 0;
@@ -72,7 +72,7 @@ export async function purgeExpiredProctoringSnapshots(): Promise<{ purgedAttempt
  * Purges expired parent review verification camera photos older than 24 hours from parentSincerityLogs.
  * Retains audit log documents (duration, studentCode, parent reviewer) and only clears base64 photos.
  */
-export async function purgeExpiredParentSincerityLogs(): Promise<{ purgedParentLogsCount: number }> {
+async function purgeExpiredParentSincerityLogs(): Promise<{ purgedParentLogsCount: number }> {
   const nowMs = Date.now();
   const oneDayAgo = nowMs - 24 * 60 * 60 * 1000;
   let purgedParentLogsCount = 0;

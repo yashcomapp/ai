@@ -11,6 +11,7 @@ import {
   getCanonicalClass, 
   getCanonicalSubjectCode 
 } from '@/lib/syllabusUtils';
+import { getCachedSyllabus, getCachedTemplates } from '@/lib/firebase/cache';
 
 
 const INITIAL_METADATA_TTL = 300000; // 5 minutes
@@ -22,7 +23,7 @@ const SYLLABUS_DOC_CACHE = new Map<string, { data: any; timestamp: number }>();
 const POOL_CACHE_TTL = 60000; // 60 seconds cache for candidate question pools
 const POOL_CACHE = new Map<string, { data: any; timestamp: number }>();
 
-export function clearGenerateCaches() {
+function clearGenerateCaches() {
   INITIAL_METADATA_CACHE = null;
   SYLLABUS_DOC_CACHE.clear();
   POOL_CACHE.clear();
@@ -450,8 +451,8 @@ export async function GET(req: NextRequest) {
       boardCodesSnap,
       subjectCodesSnap
     ] = await Promise.all([
-      adminDb.collection('templates').get(),
-      adminDb.collection('syllabus').get(),
+      getCachedTemplates(),
+      getCachedSyllabus(),
       adminDb.collection('config').doc('boardCodes').get(),
       adminDb.collection('config').doc('subjectCodes').get()
     ]);

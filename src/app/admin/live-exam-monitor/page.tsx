@@ -831,7 +831,7 @@ export default function AdminLiveMonitorPage() {
                       <tr key={s.id} style={{ borderBottom: '1px solid var(--border-light)', background: stale ? 'rgba(245, 158, 11, 0.04)' : 'transparent' }}>
                         <td style={{ padding: '12px 16px', fontWeight: 600 }}>
                           {s.isLate && (
-                            <span style={{ marginRight: '6px', color: '#ef4444', background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '1px 5px', borderRadius: '4px', fontSize: '10px', fontWeight: 800 }}>
+                            <span style={{ marginRight: '6px', color: 'var(--danger)', background: 'var(--danger-bg, rgba(239, 68, 68, 0.15))', border: '1px solid var(--danger-border, rgba(239, 68, 68, 0.3))', padding: '1px 5px', borderRadius: '4px', fontSize: '10px', fontWeight: 800 }}>
                               ⏰ LATE
                             </span>
                           )}

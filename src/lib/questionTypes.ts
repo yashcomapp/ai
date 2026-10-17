@@ -1015,7 +1015,7 @@ function calcLevenshtein(a: string, b: string): number {
  * (differing by only minor typos, 1-2 letters, filler words, trailing punctuation, or trivial spacing).
  * Safeguards legitimate opposite / antonym pairs in science (e.g., 'increase' vs 'decrease', 'concave' vs 'convex', 'cation' vs 'anion').
  */
-export function areOptionsTooSimilar(rawA: any, rawB: any): { tooSimilar: boolean; reason?: string } {
+function areOptionsTooSimilar(rawA: any, rawB: any): { tooSimilar: boolean; reason?: string } {
   if (rawA === undefined || rawA === null || rawB === undefined || rawB === null) {
     return { tooSimilar: false };
   }

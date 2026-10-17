@@ -199,11 +199,16 @@ export function formatDateDMY(dateInput?: any): string {
 /**
  * Formats duration in seconds into MM:SS (e.g. 05:32) or HH:MM:SS (e.g. 01:05:32)
  */
-export function formatDuration(seconds: number, options?: { padMinutes?: boolean }): string {
-  if (isNaN(seconds) || seconds <= 0) return '00:00';
+export function formatDuration(seconds: number, options?: { padMinutes?: boolean; style?: 'digital' | 'text' }): string {
+  if (isNaN(seconds) || seconds <= 0) return options?.style === 'text' ? '0m 0s' : '00:00';
   const hrs = Math.floor(seconds / 3600);
   const mins = Math.floor((seconds % 3600) / 60);
   const secs = Math.floor(seconds % 60);
+
+  if (options?.style === 'text') {
+    if (hrs > 0) return `${hrs}h ${mins}m ${secs}s`;
+    return `${mins}m ${secs}s`;
+  }
 
   const padMins = options?.padMinutes !== false;
   const minsStr = padMins ? String(mins).padStart(2, '0') : String(mins);
@@ -213,6 +218,13 @@ export function formatDuration(seconds: number, options?: { padMinutes?: boolean
     return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${secsStr}`;
   }
   return `${minsStr}:${secsStr}`;
+}
+
+/**
+ * Formats duration in seconds into human-readable minutes and seconds (e.g. "5m 20s")
+ */
+export function formatDurationMS(seconds?: number | null): string {
+  return formatDuration(Number(seconds) || 0, { style: 'text' });
 }
 
 /**
@@ -337,4 +349,51 @@ export function toLocalISOString(date: Date = new Date()): string {
   const min = String(date.getMinutes()).padStart(2, '0');
   return `${y}-${m}-${d}T${h}:${min}`;
 }
+
+/**
+ * Derives a birthdate password in DDMMYY format to satisfy Firebase 6-character minimum.
+ */
+export function getBirthdatePassword(dobStr?: string): string {
+  if (!dobStr) return '010100';
+  const parts = dobStr.split('-');
+  if (parts.length === 3) {
+    const year = parts[0];
+    const month = parts[1];
+    const day = parts[2];
+    const yy = year.substring(year.length - 2);
+    return `${day.padStart(2, '0')}${month.padStart(2, '0')}${yy}`;
+  }
+  const d = new Date(dobStr);
+  if (!isNaN(d.getTime())) {
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const yy = String(d.getFullYear()).slice(-2);
+    return `${day}${month}${yy}`;
+  }
+  return '010100';
+}
+
+/**
+ * Calculates tomorrow 6:00 AM start and end datetime-local strings based on duration.
+ */
+export function getMorningTestTimes(durationMinutes: number): { startStr: string; endStr: string } {
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const y = tomorrow.getFullYear();
+  const m = String(tomorrow.getMonth() + 1).padStart(2, '0');
+  const d = String(tomorrow.getDate()).padStart(2, '0');
+  const startStr = `${y}-${m}-${d}T06:00`;
+
+  const endDate = new Date(tomorrow);
+  endDate.setHours(6, durationMinutes || 30, 0, 0);
+  const ey = endDate.getFullYear();
+  const em = String(endDate.getMonth() + 1).padStart(2, '0');
+  const ed = String(endDate.getDate()).padStart(2, '0');
+  const eh = String(endDate.getHours()).padStart(2, '0');
+  const emin = String(endDate.getMinutes()).padStart(2, '0');
+  const endStr = `${ey}-${em}-${ed}T${eh}:${emin}`;
+
+  return { startStr, endStr };
+}
+
 

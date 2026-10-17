@@ -13,7 +13,7 @@ const PracticeHistoryModal = dynamic(() => import('@/components/admin/exams/Prac
 const TopicStatusBreakdownModal = dynamic(() => import('@/components/admin/exams/TopicStatusBreakdownModal'), { ssr: false });
 import { useMathRender } from '@/hooks/useMathRender';
 import { useScorecard } from '@/hooks/useScorecard';
-import { toISTDateTimeLocalInput, formatDateDMY, parseDateInput, getDateKeyIST, formatDateTimeIST } from '@/lib/dateUtils';
+import { toISTDateTimeLocalInput, formatDateDMY, parseDateInput, getDateKeyIST, formatDateTimeIST, getMorningTestTimes } from '@/lib/dateUtils';
 import ObjectiveTab from '@/components/admin/exams/ObjectiveTab';
 import SubjectiveTab from '@/components/admin/exams/SubjectiveTab';
 import PracticeTab from '@/components/admin/exams/PracticeTab';
@@ -1047,25 +1047,6 @@ export default function AdminExamsPage() {
     return formatDateTimeIST(maxDate);
   };
 
-  const getMorningTestTimes = (durationMinutes: number) => {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const y = tomorrow.getFullYear();
-    const m = String(tomorrow.getMonth() + 1).padStart(2, '0');
-    const d = String(tomorrow.getDate()).padStart(2, '0');
-    const startStr = `${y}-${m}-${d}T06:00`;
-
-    const endDate = new Date(tomorrow);
-    endDate.setHours(6, durationMinutes || 30, 0, 0);
-    const ey = endDate.getFullYear();
-    const em = String(endDate.getMonth() + 1).padStart(2, '0');
-    const ed = String(endDate.getDate()).padStart(2, '0');
-    const eh = String(endDate.getHours()).padStart(2, '0');
-    const emin = String(endDate.getMinutes()).padStart(2, '0');
-    const endStr = `${ey}-${em}-${ed}T${eh}:${emin}`;
-
-    return { startStr, endStr };
-  };
 
   const getEveningTestTimes = (durationMinutes: number) => {
     const target = new Date();

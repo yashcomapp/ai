@@ -3,6 +3,7 @@ import * as admin from 'firebase-admin';
 import { adminDb, adminAuth } from '@/lib/firebase/admin';
 import { verifyRole, invalidateUserCache } from '@/lib/auth';
 import { decrypt } from '@/lib/encryption';
+import { getBirthdatePassword } from '@/lib/dateUtils';
 export async function GET(req: NextRequest) {
   try {
     const adminUser = await verifyRole(req, 'admin');
@@ -71,25 +72,6 @@ export async function POST(req: NextRequest) {
       }
 
       // Compute birthdate DDMMYY format password to satisfy Firebase 6-character minimum
-      const getBirthdatePassword = (dobStr: string): string => {
-        if (!dobStr) return '010100';
-        const parts = dobStr.split('-');
-        if (parts.length === 3) {
-          const year = parts[0];
-          const month = parts[1];
-          const day = parts[2];
-          const yy = year.substring(year.length - 2);
-          return `${day.padStart(2, '0')}${month.padStart(2, '0')}${yy}`;
-        }
-        const d = new Date(dobStr);
-        if (!isNaN(d.getTime())) {
-          const day = String(d.getDate()).padStart(2, '0');
-          const month = String(d.getMonth() + 1).padStart(2, '0');
-          const yy = String(d.getFullYear()).slice(-2);
-          return `${day}${month}${yy}`;
-        }
-        return '010100';
-      };
       const rawPassword = getBirthdatePassword(regData.dob);
 
       // Step 2a: Create Student Auth user

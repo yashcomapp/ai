@@ -131,10 +131,9 @@ export async function getParentDashboardData(
   }
 
   // Aggregations for the child
-  const dateKeyOf = (d: Date) => getDateKeyIST(d);
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-  const thirtyDaysAgoStr = dateKeyOf(thirtyDaysAgo);
+  const thirtyDaysAgoStr = getDateKeyIST(thirtyDaysAgo);
 
   const timeLogSnapshot = await adminDb.collection('userTimeLog')
     .where('uid', '==', childUid)
@@ -153,7 +152,7 @@ export async function getParentDashboardData(
   let weekReviewSeconds = 0;
   let weekGeneralSeconds = 0;
 
-  const todayStr = dateKeyOf(new Date());
+  const todayStr = getDateKeyIST(new Date());
 
   timeLogSnapshot.docs.forEach(doc => {
     const d = doc.data();
@@ -174,7 +173,7 @@ export async function getParentDashboardData(
 
   for (let i = 0; i < 7; i++) {
     const dateObj = new Date(); dateObj.setDate(dateObj.getDate() - i);
-    const k = dateKeyOf(dateObj);
+    const k = getDateKeyIST(dateObj);
     const match = timeLogSnapshot.docs.find(doc => doc.data().date === k);
     if (match) {
       const data = match.data();
@@ -194,7 +193,7 @@ export async function getParentDashboardData(
   let streakDays = 0;
   const d = new Date();
   while (streakDays < 100) {
-    const key = dateKeyOf(d);
+    const key = getDateKeyIST(d);
     const matchDoc = timeLogSnapshot.docs.find(doc => doc.data().date === key);
     if (!matchDoc || !(matchDoc.data().seconds > 0)) break;
     streakDays++;

@@ -20,7 +20,7 @@ import {
   DEFAULT_ASSERTION_REASON_OPTIONS
 } from '@/lib/questionTypes';
 import QuestionDisplay, { RichMathText } from '@/components/QuestionDisplay';
-import { formatDateTimeIST, parseDateInput } from '@/lib/dateUtils';
+import { formatDateTimeIST, parseDateInput, formatDurationMS as formatDuration } from '@/lib/dateUtils';
 
 interface QuestionDetailsItem {
   id: string;
@@ -204,11 +204,6 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
     return formatDateTimeIST(dateStr) || '-';
   };
 
-  const formatDuration = (seconds: number) => {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m}m ${s}s`;
-  };
 
   if (!scorecard && !loading) return null;
 

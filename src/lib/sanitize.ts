@@ -16,7 +16,7 @@ function ensurePurifyHooks() {
  * Sanitizes rich HTML for safe rendering (notices, descriptions, math labels).
  * Strips script tags, style attributes, and enforces rel="noopener noreferrer".
  */
-export function sanitizeHtml(dirty: string): string {
+function sanitizeHtml(dirty: string): string {
   if (!dirty) return '';
   if (typeof window === 'undefined') {
     // Return empty on server to prevent unsanitized HTML in SSR hydration mismatch

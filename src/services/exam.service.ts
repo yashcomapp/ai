@@ -11,7 +11,7 @@ import { ReportCacheManager } from '@/lib/reportCache';
 /**
  * Canonical SSOT helper to determine whether an attempt document represents a completed/submitted exam attempt.
  */
-export function isAttemptCompleted(data: any): boolean {
+function isAttemptCompleted(data: any): boolean {
   if (!data || typeof data !== 'object') return false;
 
   // 1. Explicit submission/completion timestamps

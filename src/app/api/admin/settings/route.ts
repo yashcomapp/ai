@@ -15,7 +15,7 @@ export async function GET(request: Request) {
     const action = searchParams.get('action') || '';
 
     if (action === 'loadExams') {
-      const snap = await adminDb.collection('subjectiveExams').get();
+      const snap = await adminDb.collection('subjectiveExams').select('name', 'class', 'subjectCode', 'subjects', 'createdAt').get();
       const exams = snap.docs.map(doc => ({
         examId: doc.id,
         name: doc.data().name || doc.id,
@@ -30,7 +30,7 @@ export async function GET(request: Request) {
       const [logsSnap, batchesSnap, usersSnap] = await Promise.all([
         adminDb.collection('session_logs').orderBy('timestamp', 'desc').limit(500).get(),
         getCachedBatches(),
-        adminDb.collection('users').get()
+        adminDb.collection('users').select('name', 'displayName', 'email').get()
       ]);
 
       const batches = batchesSnap.docs.map(doc => ({

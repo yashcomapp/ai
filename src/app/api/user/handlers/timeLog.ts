@@ -5,7 +5,6 @@ import { getDateKeyIST } from '@/lib/dateUtils';
 import { verifyAnyRole } from '@/lib/auth';
 
 
-const dateKeyOf = (d: Date) => getDateKeyIST(d);
 
 // 1. GET - Load time log stats (today, this week, last week, trend)
 export async function GET(req: NextRequest) {
@@ -67,7 +66,7 @@ export async function GET(req: NextRequest) {
 
     const fourteenDaysAgo = new Date();
     fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
-    const fourteenDaysAgoKey = dateKeyOf(fourteenDaysAgo);
+    const fourteenDaysAgoKey = getDateKeyIST(fourteenDaysAgo);
 
     const timeLogSnapshot = await adminDb.collection('userTimeLog')
       .where('uid', '==', targetUid)
@@ -83,21 +82,21 @@ export async function GET(req: NextRequest) {
     });
 
     const today = new Date();
-    const todayKey = dateKeyOf(today);
+    const todayKey = getDateKeyIST(today);
     const todaySeconds = timeLog[todayKey] || 0;
 
     let thisWeekSeconds = 0;
     for (let i = 0; i < 7; i++) {
       const d = new Date(today);
       d.setDate(d.getDate() - i);
-      thisWeekSeconds += timeLog[dateKeyOf(d)] || 0;
+      thisWeekSeconds += timeLog[getDateKeyIST(d)] || 0;
     }
 
     let lastWeekSeconds = 0;
     for (let j = 7; j < 14; j++) {
       const d2 = new Date(today);
       d2.setDate(d2.getDate() - j);
-      lastWeekSeconds += timeLog[dateKeyOf(d2)] || 0;
+      lastWeekSeconds += timeLog[getDateKeyIST(d2)] || 0;
     }
 
     let pctChange = 0;
@@ -110,7 +109,7 @@ export async function GET(req: NextRequest) {
 
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayKey = dateKeyOf(yesterday);
+    const yesterdayKey = getDateKeyIST(yesterday);
     const yesterdaySeconds = timeLog[yesterdayKey] || 0;
 
     let todayPct = 0;
@@ -155,7 +154,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, skipped: true });
     }
 
-    const key = dateKey || dateKeyOf(new Date());
+    const key = dateKey || getDateKeyIST(new Date());
 
     if (numSeconds > 0) {
       const docId = `${uid}_${key}`;

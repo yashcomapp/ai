@@ -1,13 +1,3 @@
 {
-  "regions": ["bom1"],
-  "crons": [
-    {
-      "path": "/api/admin/exams/reschedule-today",
-      "schedule": "15 0 * * *"
-    },
-    {
-      "path": "/api/admin/students/sweep-autonomous",
-      "schedule": "0 18 * * *"
-    }
-  ]
+  "regions": ["bom1"]
 }

@@ -41,7 +41,7 @@ export interface ExtractConductedTopicCodesInput {
   objectiveReviews?: Array<{ topicCode?: string; resolvedTopicCode?: string; [key: string]: any }>;
 }
 
-export function isCanonicalTopicCode(code?: string): boolean {
+function isCanonicalTopicCode(code?: string): boolean {
   if (!code || typeof code !== 'string') return false;
   const trimmed = code.trim();
   return /^(CBSE|MH)-\d+-[A-Za-z0-9]+-\d+-[\d\.]+$/.test(trimmed);

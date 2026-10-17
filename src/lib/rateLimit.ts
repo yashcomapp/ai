@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import { adminDb } from '@/lib/firebase/admin';
 
 export interface RateLimitOptions {
@@ -11,15 +12,27 @@ export interface RateLimitResult {
   remaining: number;
 }
 
+// In-memory hot cache to avoid Firestore transaction hits when blocked
+const localMemoryLimits = new Map<string, { blockedUntil: number }>();
+
 /**
  * Distributed Firestore-backed rate limiter for serverless environments (Vercel / Cloud Functions).
  * Safely falls back to allowed if Firestore has temporary connectivity issues.
  */
 export async function checkDistributedRateLimit({ key, limit, windowMs }: RateLimitOptions): Promise<RateLimitResult> {
+  const now = Date.now();
+  const cachedBlocked = localMemoryLimits.get(key);
+  if (cachedBlocked && cachedBlocked.blockedUntil > now) {
+    return { allowed: false, remaining: 0 };
+  }
+
   try {
-    const sanitizedKey = key.replace(/[^a-zA-Z0-9_\-]/g, '_').slice(0, 100);
+    const rawClean = key.replace(/[^a-zA-Z0-9_\-]/g, '_');
+    const sanitizedKey = rawClean.length <= 64 
+      ? rawClean 
+      : `${rawClean.slice(0, 32)}_${crypto.createHash('sha256').update(key).digest('hex').slice(0, 24)}`;
+
     const docRef = adminDb.collection('_rateLimits').doc(sanitizedKey);
-    const now = Date.now();
 
     return await adminDb.runTransaction(async (transaction) => {
       const snap = await transaction.get(docRef);
@@ -33,6 +46,7 @@ export async function checkDistributedRateLimit({ key, limit, windowMs }: RateLi
       const validTimestamps = timestamps.filter((t: number) => typeof t === 'number' && now - t < windowMs);
 
       if (validTimestamps.length >= limit) {
+        localMemoryLimits.set(key, { blockedUntil: now + Math.min(windowMs, 60000) });
         return { allowed: false, remaining: 0 };
       }
 

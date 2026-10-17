@@ -52,7 +52,9 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ message: 'Unauthorized. Admin role required.' }, { status: 403 });
     }
 
-    const snap = await adminDb.collection('questions').get();
+    const snap = await adminDb.collection('questions')
+      .select('type', 'questionCode', 'correctAnswer', 'text', 'options')
+      .get();
     const candidates: any[] = [];
 
     snap.docs.forEach(doc => {
@@ -89,7 +91,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'Unauthorized. Admin role required.' }, { status: 403 });
     }
 
-    const snap = await adminDb.collection('questions').get();
+    const snap = await adminDb.collection('questions')
+      .select('type', 'questionCode', 'correctAnswer', 'text', 'options')
+      .get();
     const batch = new ChunkedBatch(adminDb);
     let updatedCount = 0;
 

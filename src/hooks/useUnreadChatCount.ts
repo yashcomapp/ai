@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { db } from '@/lib/firebase/firestore';
-import { collection, onSnapshot, query } from 'firebase/firestore';
+import { collection, onSnapshot, query, where, orderBy, limit } from 'firebase/firestore';
 import { playNotificationSound } from '@/lib/audioUtils';
 
 /**
@@ -25,7 +25,21 @@ export function useUnreadChatCount(role: 'admin' | 'student' | 'parent' = 'admin
 
     let unsubscribe = () => {};
     try {
-      const q = query(collection(db, 'chatRooms'));
+      let q;
+      if (role === 'admin') {
+        q = query(collection(db, 'chatRooms'), orderBy('lastMessage.timestamp', 'desc'), limit(100));
+      } else if (role === 'student') {
+        const sCode = user?.studentCode;
+        if (!sCode) return;
+        q = query(collection(db, 'chatRooms'), where('participants', 'array-contains', sCode));
+      } else if (role === 'parent') {
+        const pKey = user?.email ? `PR-${user.email.toLowerCase().trim()}` : '';
+        if (!pKey) return;
+        q = query(collection(db, 'chatRooms'), where('participants', 'array-contains', pKey));
+      } else {
+        return;
+      }
+
       unsubscribe = onSnapshot(q, (snapshot) => {
         let total = 0;
         snapshot.docs.forEach((doc) => {

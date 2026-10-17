@@ -4,36 +4,7 @@ import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole, verifyAnyRole } from '@/lib/auth';
 import { IntegrityService } from '@/services/integrity.service';
 import { deriveTopicCodeFromQuestionCode, parseTopicCode } from '@/lib/questionTypes';
-import { getStudentResultsData } from '@/lib/resultsDb';
-
-function determineExamType(data: any): string {
-  if (data.examType === 'practice') return 'practice';
-  if (data.examType === 'subjective') return 'subjective';
-  const qDetails = data.questionDetails || [];
-  const hasSubjective = qDetails.some((qd: any) => {
-    const code = qd.questionCode || '';
-    const qType = qd.type || '';
-    
-    // Unified subjective code detection: typeCode starts with 'S'
-    const parts = code.split('-');
-    const typeCode = parts.length >= 2 ? parts[parts.length - 2] : '';
-    const isSubjectiveCode = typeCode.startsWith('S');
-    
-    return qType.startsWith('subjective') || 
-           (qType.includes('reason') && qType !== 'assertion_reason') || 
-           qType.includes('notes') || 
-           qType.includes('differentiate') ||
-           isSubjectiveCode ||
-           code.includes('-SA-') || 
-           code.includes('-LA-') || 
-           code.includes('-SR-') || 
-           code.includes('-SN-') || 
-           code.includes('-DF-') || 
-           code.includes('-LP-');
-  });
-  if (hasSubjective) return 'subjective';
-  return data.examType || 'objective';
-}
+import { getStudentResultsData, determineExamType } from '@/lib/resultsDb';
 
 export async function GET(req: NextRequest) {
   try {

@@ -10,7 +10,7 @@ import { useMathRender } from '@/hooks/useMathRender';
 import { useScorecard } from '@/hooks/useScorecard';
 import QuestionDisplay, { RichMathText } from '@/components/QuestionDisplay';
 import { highlightModelAnswerKeywords } from '@/lib/questionTypes';
-import { formatDateIST, getDateKeyIST, formatDateTimeIST } from '@/lib/dateUtils';
+import { formatDateIST, getDateKeyIST, formatDateTimeIST, formatDurationMS as formatDuration } from '@/lib/dateUtils';
 
 interface ReviewItem {
   id: string;
@@ -568,11 +568,7 @@ export default function ParentReviewPanel() {
     return formatDateIST(dateStr) || '-';
   };
 
-  const formatDuration = (seconds: number) => {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m}m ${s}s`;
-  };
+
 
   const getScoreClass = (pct: number) => {
     if (pct < 40) return 'score-low';

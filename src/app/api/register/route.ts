@@ -4,6 +4,7 @@ import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole } from '@/lib/auth';
 import { encrypt } from '@/lib/encryption';
 import { checkDistributedRateLimit } from '@/lib/rateLimit';
+import { getBirthdatePassword } from '@/lib/dateUtils';
 const NAME_RE = /^[a-zA-Z\s.]+$/;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MOBILE_RE = /^[6789]\d{9}$/;
@@ -15,8 +16,7 @@ export async function POST(req: NextRequest) {
     if (rawIp.includes(',')) {
       rawIp = rawIp.split(',')[0].trim();
     }
-    const userAgent = req.headers.get('user-agent') || 'unknown-ua';
-    const rateLimitKey = `register:${rawIp}:${userAgent}`;
+    const rateLimitKey = `register:${rawIp}`;
 
     const { allowed } = await checkDistributedRateLimit({
       key: rateLimitKey,
@@ -54,25 +54,6 @@ export async function POST(req: NextRequest) {
     }
 
     // Derive password from student's date of birth in DDMMYY format to satisfy Firebase 6-character minimum
-    const getBirthdatePassword = (dobStr: string): string => {
-      if (!dobStr) return '010100';
-      const parts = dobStr.split('-');
-      if (parts.length === 3) {
-        const year = parts[0];
-        const month = parts[1];
-        const day = parts[2];
-        const yy = year.substring(year.length - 2);
-        return `${day.padStart(2, '0')}${month.padStart(2, '0')}${yy}`;
-      }
-      const d = new Date(dobStr);
-      if (!isNaN(d.getTime())) {
-        const day = String(d.getDate()).padStart(2, '0');
-        const month = String(d.getMonth() + 1).padStart(2, '0');
-        const yy = String(d.getFullYear()).slice(-2);
-        return `${day}${month}${yy}`;
-      }
-      return '010100';
-    };
     const dobPassword = getBirthdatePassword(dob);
 
     // Get batch information to formulate tempId
