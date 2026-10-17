@@ -4,6 +4,7 @@ import { adminDb } from '@/lib/firebase/admin';
 import * as admin from 'firebase-admin';
 import { parseTopicCode, deriveTopicCodeFromQuestionCode } from '@/lib/questionTypes';
 import { invalidateCache } from '@/lib/firebase/cache';
+import { getRequiredConfidence } from '@/lib/dashboardMetrics';
 
 export class MasteryService {
   /**
@@ -139,6 +140,10 @@ export class MasteryService {
       questionHistory = questionHistory.slice(-100);
     }
     data.questionHistory = questionHistory;
+
+    if (!data.requiredConfidence) {
+      data.requiredConfidence = getRequiredConfidence(data.topicClassification, data.targetQuestions);
+    }
 
     data.lastExamCode = examId;
     data.updatedAt = new Date();
