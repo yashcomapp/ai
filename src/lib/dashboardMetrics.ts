@@ -152,7 +152,11 @@ export interface UnifiedMetricsResult {
   lqScore: number;              // True Retained Learning Quotient (0-100%)
   averageRetention: number;     // Average Memory Retention Index (0-100%)
   masteredTopicsCount: number;
+  practicingTopicsCount?: number;
   needsAttentionTopicsCount: number;
+  unattemptedTopicsCount?: number;
+  uniqueTopicsPracticed?: number;
+  coveragePercent?: number;
   srsDueTopicsCount: number;
   srsOverdueTopicsCount: number;
 
@@ -240,6 +244,7 @@ export function calculateUnifiedMetrics(input: UnifiedMetricsInput): UnifiedMetr
 
   // --- 2. Topic Mastery / LQ Score (With SRS Retention Modulation) ---
   let masteredTopicsCount = 0;
+  let practicingTopicsCount = 0;
   let needsAttentionTopicsCount = 0;
   let srsDueTopicsCount = 0;
   let srsOverdueTopicsCount = 0;
@@ -288,26 +293,46 @@ export function calculateUnifiedMetrics(input: UnifiedMetricsInput): UnifiedMetr
     const retentionFactor = isSrsEnabled ? (0.70 + 0.30 * (retention / 100)) : 1.0;
     const effectiveMastery = isSrsEnabled ? Math.round(mastery * retentionFactor) : mastery;
 
-    certifiedNominalSum += mastery;
-    certifiedEffectiveSum += effectiveMastery;
-    certifiedTopicsCount += 1;
-
-    // Regular Topic Mastery System: Once certified/recovered mastered, topic stays Mastered
+    // Regular Topic Mastery System:
+    // 🟢 Mastered: contributes full earned accuracy (e.g. 90-100%)
+    // 🟡 In Progress: contributes earned accuracy scaled by confidence progress (confidence / reqConf)
+    // 🔴 Needs Attention / Unattempted: 0 credit
+    let topicMasteryProgress = 0;
     if (isRecovery || (mastery >= 90 && isFullConfidence)) {
       masteredTopicsCount += 1;
-    } else if (mastery < 50) {
+      topicMasteryProgress = mastery;
+    } else if (mastery >= 50) {
+      practicingTopicsCount += 1;
+      const confRatio = Math.min(1.0, Math.max(0.05, confidence / reqConf));
+      topicMasteryProgress = mastery * confRatio;
+    } else {
       needsAttentionTopicsCount += 1;
+      topicMasteryProgress = 0;
     }
+
+    const effectiveProgress = isSrsEnabled ? Math.round(topicMasteryProgress * retentionFactor) : topicMasteryProgress;
+
+    certifiedNominalSum += topicMasteryProgress;
+    certifiedEffectiveSum += effectiveProgress;
+    certifiedTopicsCount += 1;
   });
 
-  // Nominal Mastery: Pure syllabus accuracy without decay
-  const overallMastery = certifiedTopicsCount > 0
-    ? Math.round(certifiedNominalSum / certifiedTopicsCount)
-    : (topicMasteries.length > 0 ? Math.round(topicMasteries.reduce((s, t) => s + Number(t.mastery || 0), 0) / topicMasteries.length) : (averageMarks > 0 ? averageMarks : 0));
+  const coveredCount = totalCoveredTopics ?? totalSyllabusTopics ?? (topicMasteries.length > 0 ? topicMasteries.length : 1);
+  const safeTotalTopics = Math.max(1, coveredCount);
+
+  // Unattempted topics in the conducted/assigned curriculum default to Needs Attention
+  const unattemptedTopicsCount = Math.max(0, safeTotalTopics - (masteredTopicsCount + practicingTopicsCount + needsAttentionTopicsCount));
+  needsAttentionTopicsCount += unattemptedTopicsCount;
+
+  // Nominal Curriculum Mastery: Across the entire assigned syllabus
+  // (Unattempted topics contribute 0% mastery to the curriculum total)
+  const overallMastery = safeTotalTopics > 0
+    ? Math.min(100, Math.round(certifiedNominalSum / safeTotalTopics))
+    : (certifiedTopicsCount > 0 ? Math.round(certifiedNominalSum / certifiedTopicsCount) : (averageMarks > 0 ? averageMarks : 0));
 
   // True Retained LQ: When SRS is enabled, modulated by retention; when SRS is off, equals overallMastery
   const lqScore = Boolean(input.srsEnabled)
-    ? (certifiedTopicsCount > 0 ? Math.round(certifiedEffectiveSum / certifiedTopicsCount) : overallMastery)
+    ? (safeTotalTopics > 0 ? Math.min(100, Math.round(certifiedEffectiveSum / safeTotalTopics)) : overallMastery)
     : overallMastery;
 
   const averageRetention = Boolean(input.srsEnabled)
@@ -315,12 +340,27 @@ export function calculateUnifiedMetrics(input: UnifiedMetricsInput): UnifiedMetr
     : 100;
 
   // --- 3. Efforts Calculation ---
-  // Denominator: number of topics on which exams/tests have actually been conducted/assigned
+  // Collect unique topics practiced via self-practice (practiceReviews)
+  const practicedTopicCodes = new Set<string>();
+  practiceReviews.forEach(p => {
+    if (p.topicCode && typeof p.topicCode === 'string') {
+      practicedTopicCodes.add(p.topicCode.trim());
+    }
+  });
+  const uniqueTopicsPracticed = practicedTopicCodes.size;
+
   const practicesCompletedCount = practiceReviews.length;
-  const coveredCount = totalCoveredTopics ?? totalSyllabusTopics ?? (topicMasteries.length > 0 ? topicMasteries.length : 1);
-  const safeTotalTopics = Math.max(1, coveredCount);
-  const effortsPercent = practicesCompletedCount > 0
+  const coveragePercent = safeTotalTopics > 0
+    ? Math.min(100, Math.round((uniqueTopicsPracticed / safeTotalTopics) * 100))
+    : 0;
+
+  const volumePercent = safeTotalTopics > 0
     ? Math.min(100, Math.round((practicesCompletedCount / safeTotalTopics) * 100))
+    : 0;
+
+  // True Practice Effort: 60% Topic Breadth (Coverage) + 40% Session Volume (Depth)
+  const effortsPercent = safeTotalTopics > 0 && practicesCompletedCount > 0
+    ? Math.min(100, Math.round(0.60 * coveragePercent + 0.40 * volumePercent))
     : 0;
 
   return {
@@ -333,7 +373,11 @@ export function calculateUnifiedMetrics(input: UnifiedMetricsInput): UnifiedMetr
     lqScore,
     averageRetention,
     masteredTopicsCount,
+    practicingTopicsCount,
     needsAttentionTopicsCount,
+    unattemptedTopicsCount,
+    uniqueTopicsPracticed,
+    coveragePercent,
     srsDueTopicsCount,
     srsOverdueTopicsCount,
     effortsPercent,

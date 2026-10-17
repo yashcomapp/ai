@@ -362,7 +362,9 @@ export class TopicHealthCalculator implements ParameterCalculator {
         details: {
           totalTopics: data.unifiedMetrics.totalTopicsCount,
           masteredCount: data.unifiedMetrics.masteredTopicsCount,
+          practicingCount: data.unifiedMetrics.practicingTopicsCount ?? 0,
           attentionCount: data.unifiedMetrics.needsAttentionTopicsCount,
+          unattemptedCount: data.unifiedMetrics.unattemptedTopicsCount ?? 0,
           srsDueCount: data.unifiedMetrics.srsDueTopicsCount,
           srsOverdueCount: data.unifiedMetrics.srsOverdueTopicsCount,
           averageRetention: data.unifiedMetrics.averageRetention,
@@ -1271,7 +1273,9 @@ export class QuotientService {
         details: {
           totalTopics: totalCoveredTopicsCount,
           masteredCount: unifiedMetrics.masteredTopicsCount,
+          practicingCount: unifiedMetrics.practicingTopicsCount ?? 0,
           attentionCount: unifiedMetrics.needsAttentionTopicsCount,
+          unattemptedCount: unifiedMetrics.unattemptedTopicsCount ?? 0,
           srsDueCount: unifiedMetrics.srsDueTopicsCount,
           srsOverdueCount: unifiedMetrics.srsOverdueTopicsCount,
           averageRetention: unifiedMetrics.averageRetention,

@@ -501,7 +501,7 @@ export async function GET(req: NextRequest) {
         const totalAssigned = healthComp?.details?.totalTopics ?? practiceComp?.details?.totalAssignedTopics ?? 0;
         const mastered = healthComp?.details?.masteredCount ?? 0;
         const needsAttention = healthComp?.details?.attentionCount ?? 0;
-        const practicing = Math.max(0, totalAssigned - mastered - needsAttention);
+        const practicing = healthComp?.details?.practicingCount ?? Math.max(0, totalAssigned - mastered - needsAttention);
 
         practiceStats[code] = {
           totalSessions: practiceComp?.details?.practicesCompletedCount ?? 0,
