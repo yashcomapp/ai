@@ -122,7 +122,6 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
       const firstSub = [
         ...data.needsAttention,
         ...data.continuePractice,
-        ...data.revision,
         ...data.mastered
       ].map(t => t.subjectName).filter(Boolean)[0];
       if (firstSub) {
@@ -131,7 +130,7 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
     }
   }, [data]);
 
-  const [activeTab, setActiveTab] = useState<'needsAttention' | 'continuePractice' | 'revision' | 'mastered'>('needsAttention');
+  const [activeTab, setActiveTab] = useState<'needsAttention' | 'continuePractice' | 'mastered'>('needsAttention');
   const [searchTerm, setSearchTerm] = useState('');
   const [alertMsg, setAlertMsg] = useState<{ text: string; isError: boolean } | null>(null);
 
@@ -170,9 +169,7 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
 
   const getActionText = (state: string) => {
     if (state === 'mastered') return 'Review';
-    if (state === 'revision') return 'Revise';
-    if (state === 'continuePractice' || state === 'needsAttention') return 'Practice';
-    return 'Learn';
+    return 'Practice';
   };
 
   const getMasteryClass = (mastery: number) => {
@@ -206,8 +203,6 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
         list = data.needsAttention || [];
       } else if (activeTab === 'continuePractice') {
         list = data.continuePractice || [];
-      } else if (activeTab === 'revision') {
-        list = data.revision || [];
       } else if (activeTab === 'mastered') {
         list = data.mastered || [];
       }
@@ -289,7 +284,6 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
       const allTopics = [
         ...cachedData.needsAttention,
         ...cachedData.continuePractice,
-        ...cachedData.revision,
         ...cachedData.mastered
       ];
       const subjects = new Set(allTopics.map(t => t.subjectName).filter(Boolean));
@@ -502,9 +496,6 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
               <button className={`tab-btn ${activeTab === 'continuePractice' ? 'active' : ''}`} onClick={() => setActiveTab('continuePractice')}>
                 🔄 Practice <span className="tab-count">{data ? data.continuePractice.length : 0}</span>
               </button>
-              <button className={`tab-btn ${activeTab === 'revision' ? 'active' : ''}`} onClick={() => setActiveTab('revision')}>
-                📚 Revise <span className="tab-count">{data ? data.revision.length : 0}</span>
-              </button>
               <button className={`tab-btn ${activeTab === 'mastered' ? 'active' : ''}`} onClick={() => setActiveTab('mastered')}>
                 🏆 Mastered <span className="tab-count">{data ? data.mastered.length : 0}</span>
               </button>
@@ -651,7 +642,13 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                                                expText = `${practiceCount}/${maxPractices} practices done (${mastery}% accuracy). ${Math.max(0, maxPractices - practiceCount)} practice(s) left — focus on weak areas.`;
                                              }
                                            } else if (state === 'continuePractice') {
-                                             if (isLimitReached) {
+                                             const reqConf = topic.requiredConfidence || (topic.topicClassification === 'minor' || topic.topicClassification === 'micro' ? 6 : (topic.topicClassification === 'major' || topic.topicClassification === 'calculative' || topic.topicClassification === 'hots' ? 15 : 10));
+                                             if (mastery >= 90 && attempts < reqConf) {
+                                               const needed = Math.max(1, reqConf - attempts);
+                                               expIcon = '📖';
+                                               expColor = 'var(--accent)';
+                                               expText = `High accuracy (${mastery}%), but needs ${needed} more verified question(s) to reach full confidence for Mastered.`;
+                                             } else if (isLimitReached) {
                                                expIcon = '⚡';
                                                expColor = 'var(--accent)';
                                                expText = `${maxPractices}/${maxPractices} practices done (${mastery}% accuracy). Take the Recovery Quiz (Fresh + Missed Qs) to achieve Mastered!`;
@@ -660,24 +657,7 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                                                expColor = 'var(--warning)';
                                                expText = `${practiceCount}/${maxPractices} practices done (${mastery}% accuracy). Complete 1 practice set (6 Qs) to aim for 90%+ Mastered.`;
                                              }
-                                           } else if (state === 'revision') {
-                                            if (topic.isSrsDue) {
-                                              const srs = topic.srsSchedule;
-                                              expIcon = '🧠';
-                                              expColor = 'var(--info)';
-                                              if (srs?.daysOverdue && srs.daysOverdue > 0) {
-                                                expText = `Spaced Repetition Overdue (${srs.daysOverdue}d ago) • Est. Retention: ${srs.estimatedRetention}% • ${srs.stageLabel}`;
-                                              } else {
-                                                expText = `Memory Refresher Due Today • Est. Retention: ${srs?.estimatedRetention || 75}% • ${srs?.stageLabel || 'Interval Workout'}`;
-                                              }
-                                            } else {
-                                              const reqConf = topic.requiredConfidence || (topic.topicClassification === 'minor' || topic.topicClassification === 'micro' ? 6 : (topic.topicClassification === 'major' || topic.topicClassification === 'calculative' || topic.topicClassification === 'hots' ? 15 : 10));
-                                              const needed = Math.max(1, reqConf - attempts);
-                                              expIcon = '📖';
-                                              expColor = 'var(--accent)';
-                                              expText = `High accuracy (${mastery}%), but needs ${needed} more verified question(s) to reach full confidence for Mastered.`;
-                                            }
-                                          } else {
+                                           } else {
                                             if (isRecovery) {
                                               expIcon = '⚡';
                                               expColor = 'var(--accent)';
@@ -695,7 +675,7 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                                           }
 
                                           const isRecoveryAction = isLimitReached && state !== 'mastered';
-                                          const isSrsAction = state === 'revision' && topic.isSrsDue;
+                                          const isSrsAction = Boolean(topic.isSrsDue);
                                           const targetUrl = isRecoveryAction
                                             ? `/student/topic?topicCode=${encodeURIComponent(topic.topicCode)}&category=${topic.state}&mode=recovery`
                                             : `/student/topic?topicCode=${encodeURIComponent(topic.topicCode)}&category=${topic.state}`;

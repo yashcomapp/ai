@@ -626,9 +626,15 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
                   <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 700 }}>
                     LQ Score
                   </div>
-                  <div style={{ fontSize: '9.5px', color: 'var(--text-secondary)', fontWeight: 600 }}>
-                    🧠 {(profile as any)?.averageRetention ?? 0}% Retention
-                  </div>
+                  {Boolean((profile as any)?.srsEnabled) ? (
+                    <div style={{ fontSize: '9.5px', color: 'var(--text-secondary)', fontWeight: 600 }}>
+                      🧠 {(profile as any)?.averageRetention ?? 0}% Retention
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: '9.5px', color: 'var(--text-secondary)', fontWeight: 600 }}>
+                      Mastery Index
+                    </div>
+                  )}
                 </div>
 
                 {/* Stat 3: Efforts % */}
@@ -736,7 +742,7 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
               )}
 
               {/* 3.5. Spaced Repetition Due (Mastered Topics Ready for Micro-Refresher) */}
-              {activeSrsDue.length > 0 && (
+              {Boolean((profile as any)?.srsEnabled) && activeSrsDue.length > 0 && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                   {activeSrsDue.slice(0, 3).map((t: any) => (
                     <div key={t.topicCode} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 10px', background: 'var(--surface-2)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', borderLeft: '3.5px solid var(--info)', gap: '8px' }}>
@@ -803,7 +809,7 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
                         style={{ padding: '3px 8px', fontSize: '10.5px', fontWeight: 700 }}
                         onClick={() => router.push(`/student/topic?topicCode=${encodeURIComponent(t.topicCode)}&category=needsAttention`)}
                       >
-                        Revise
+                        Practice
                       </button>
                     </div>
                   ))}

@@ -232,6 +232,13 @@ export class PracticeService {
     const studentDocData = !studentUserSnap.empty ? studentUserSnap.docs[0].data() : {};
     const isSrsEnabled = Boolean(studentDocData?.srsEnabled);
 
+    // Fetch topic index metadata for classification and confidence thresholds
+    const topicIndexSnap = await adminDb.collection('syllabusTopicIndex').doc(topicCode).get();
+    const topicIndexData = topicIndexSnap.exists ? topicIndexSnap.data() : null;
+    const fallbackClassification = topicIndexData?.topicClassification || 'minor';
+    const fallbackTargetQuestions = topicIndexData?.targetQuestions || (fallbackClassification === 'minor' ? 24 : fallbackClassification === 'major' ? 60 : 36);
+    const fallbackRequiredConfidence = topicIndexData?.requiredConfidence || getRequiredConfidence(fallbackClassification, fallbackTargetQuestions);
+
     await adminDb.runTransaction(async (tx) => {
       const subSnap = await tx.get(submissionRef);
       if (subSnap.exists) {
@@ -268,9 +275,20 @@ export class PracticeService {
       const recordToUpdate = existing || defaultRecord;
       const updatedData = MasteryService.calculateTopicMasteryUpdate(recordToUpdate, evaluations, practiceExamCode);
 
+      // Ensure classification and required confidence are populated
+      if (!updatedData.topicClassification) {
+        updatedData.topicClassification = (recordToUpdate as any).topicClassification || fallbackClassification;
+      }
+      if (!updatedData.targetQuestions) {
+        updatedData.targetQuestions = (recordToUpdate as any).targetQuestions || fallbackTargetQuestions;
+      }
+      if (!updatedData.requiredConfidence) {
+        updatedData.requiredConfidence = (recordToUpdate as any).requiredConfidence || fallbackRequiredConfidence;
+      }
+
       const sessionAccuracy = evaluations.length > 0 ? (correctCount / evaluations.length) * 100 : 0;
       if (isRecoveryMode && (sessionAccuracy >= 80 || updatedData.mastery >= 90)) {
-        const reqConfidence = getRequiredConfidence((recordToUpdate as any).topicClassification, (recordToUpdate as any).targetQuestions);
+        const reqConfidence = updatedData.requiredConfidence || getRequiredConfidence(updatedData.topicClassification, updatedData.targetQuestions);
         updatedData.isRecoveryMastered = true;
         updatedData.mastery = Math.max(updatedData.mastery, 90);
         updatedData.confidence = Math.max(updatedData.confidence, reqConfidence);

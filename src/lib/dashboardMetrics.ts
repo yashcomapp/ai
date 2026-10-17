@@ -103,6 +103,27 @@ export function extractConductedTopicCodes(input: ExtractConductedTopicCodesInpu
 }
 
 /**
+ * Single Source of Truth (SSOT) Topic Confidence Requirement:
+ * - Minor / Micro: 6 questions (max 2 sets)
+ * - Medium / Conceptual: 10 questions (max 3 sets)
+ * - Major / HOTS: 15 questions (max 3 sets)
+ */
+export function getRequiredConfidence(topicClassification?: string, targetQuestions?: number): number {
+  const cls = String(topicClassification || '').toLowerCase().trim();
+  if (cls === 'minor' || cls === 'micro') return 6;
+  if (cls === 'medium' || cls === 'moderate' || cls === 'conceptual') return 10;
+  if (cls === 'major' || cls === 'calculative' || cls === 'hots') return 15;
+  
+  if (targetQuestions !== undefined) {
+    if (targetQuestions <= 35) return 6;
+    if (targetQuestions <= 50) return 10;
+    return 15;
+  }
+  // Baseline default for granular subtopics is 6 questions
+  return 6;
+}
+
+/**
  * ATTENTION - QUERY INTEGRITY CONTRACT:
  * When querying collections passed into `calculateUnifiedMetrics`, DO NOT strip fields with partial `.select()`:
  * - `topicMasteries`: requires `mastery`, `confidence`, `requiredConfidence`, `isRecoveryMastered`,
@@ -258,7 +279,10 @@ export function calculateUnifiedMetrics(input: UnifiedMetricsInput): UnifiedMetr
     const mastery = Number(t.mastery || 0);
     const confidence = Number(t.confidence || 0);
     const isRecovery = !!t.isRecoveryMastered;
-    const reqConf = Number(t.requiredConfidence || 10);
+    const reqConf = Number(
+      t.requiredConfidence ||
+      getRequiredConfidence(t.topicClassification, t.targetQuestions)
+    );
     const isFullConfidence = confidence >= reqConf;
     const hasPracticed = Number(t.confidence || 0) > 0 || Number(t.questionsAttempted || 0) > 0 || Number(t.totalAttempts || 0) > 0 || isRecovery;
     const isSrsEnabled = Boolean(input.srsEnabled);

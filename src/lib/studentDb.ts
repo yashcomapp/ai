@@ -1,7 +1,7 @@
 import { adminDb } from '@/lib/firebase/admin';
 import { getCachedSyllabus, getFromCache, setInCache } from '@/lib/firebase/cache';
 import { getDateKeyIST } from '@/lib/dateUtils';
-import { calculateUnifiedMetrics, extractConductedTopicCodes } from '@/lib/dashboardMetrics';
+import { calculateUnifiedMetrics, extractConductedTopicCodes, getRequiredConfidence } from '@/lib/dashboardMetrics';
 import { deriveTopicCodeFromQuestionCode, getCanonicalSubjectName, parseTopicCode } from '@/lib/questionTypes';
 import { calculateSrsSchedule, SrsSchedule } from '@/lib/srsRotation';
 
@@ -995,20 +995,7 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
       throw error;
     }
   }
-
-export function getRequiredConfidence(topicClassification?: string, targetQuestions?: number): number {
-  const cls = String(topicClassification || '').toLowerCase().trim();
-  if (cls === 'minor' || cls === 'micro') return 6;
-  if (cls === 'medium' || cls === 'moderate' || cls === 'conceptual') return 10;
-  if (cls === 'major' || cls === 'calculative' || cls === 'hots') return 15;
-  
-  if (targetQuestions !== undefined) {
-    if (targetQuestions <= 20) return 6;
-    if (targetQuestions <= 40) return 10;
-    return 15;
-  }
-  return 10;
-}
+export { getRequiredConfidence };
 
 function getTopicState(mastery: number, confidence: number, requiredConfidence = 10): string {
   if (mastery < 25) return 'Started';
@@ -1446,29 +1433,16 @@ export async function getStudentLearningData(userData: any, preloadedData?: Prel
 
     const isSrsEnabled = Boolean(userData?.srsEnabled);
 
-    // A topic is truly in Focus only if mastery is low (<50) or if the student has never attempted it (attempts === 0) and missed an assigned exam.
-    // If a student already has >=50% mastery on a topic, historical absent exams do not override their progress.
+    // Clean, direct 3-state canonical categorization matching Admin 100%:
+    // 🔴 Focus / Needs Attention: mastery < 50 or unattempted absent exam
+    // 🟡 Practicing / In Progress: mastery 50-89% or >= 90% without full confidence
+    // 🟢 Mastered: mastery >= 90% with full confidence, or recovery passed
     if (mastery < 50 || (attempts === 0 && isAbsentExam)) {
       needsAttention.push({ ...topicItem, state: 'needsAttention' });
-    } else if (mastery < 90) {
+    } else if (!isCertifiedMastered) {
       continuePractice.push({ ...topicItem, state: 'continuePractice' });
     } else {
-      if (isCertifiedMastered) {
-        if (isSrsEnabled && srsSchedule.isDueForRevision) {
-          // Mastered topic is due for Spaced Repetition review -> route to Revise tab (ONLY when SRS is enabled)
-          revision.push({ ...topicItem, state: 'revision', isSrsDue: true });
-        } else {
-          // Regular Mastery: Mastered topic stays in Mastered tab permanently!
-          mastered.push({ ...topicItem, state: 'mastered', isSrsDue: false });
-        }
-      } else {
-        if (isSrsEnabled) {
-          // High mastery but needs confidence validation -> route to Revise tab
-          revision.push({ ...topicItem, state: 'revision', isExamStrong: true });
-        } else {
-          continuePractice.push({ ...topicItem, state: 'continuePractice' });
-        }
-      }
+      mastered.push({ ...topicItem, state: 'mastered', isSrsDue: false });
     }
   });
 
