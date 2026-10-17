@@ -272,6 +272,7 @@ export default function BatchesManager() {
   const filteredRoster = useMemo(() => {
     if (!selectedBatch) return [];
     const activeRoster = students.filter(s => s.batchIds?.includes(selectedBatch.id));
+    activeRoster.sort((a, b) => (a.name || '').trim().localeCompare((b.name || '').trim(), undefined, { sensitivity: 'base', numeric: true }));
     const q = deferredRosterSearch.toLowerCase().trim();
     if (!q) return activeRoster;
     return activeRoster.filter(s => {

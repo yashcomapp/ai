@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { formatDateDMY as formatDateStr, getDateKeyIST as getISTDateString } from '@/lib/dateUtils';
@@ -125,13 +125,24 @@ export default function AdminAttendancePage() {
       });
       if (!res.ok) throw new Error('Failed to load roster status');
       const resData = await res.json();
-      setRoster(resData.roster || []);
+      const rawRoster: StudentRecord[] = resData.roster || [];
+      rawRoster.sort((a, b) =>
+        (a.name || '').trim().localeCompare((b.name || '').trim(), undefined, { sensitivity: 'base', numeric: true })
+      );
+      setRoster(rawRoster);
     } catch (e: any) {
       setError(e.message);
     } finally {
       setRosterLoading(false);
     }
   }
+
+  // Guaranteed alphabetical A-to-Z order by student name
+  const sortedRoster = useMemo(() => {
+    return [...roster].sort((a, b) =>
+      (a.name || '').trim().localeCompare((b.name || '').trim(), undefined, { sensitivity: 'base', numeric: true })
+    );
+  }, [roster]);
 
   useEffect(() => {
     fetchRoster();
@@ -358,7 +369,7 @@ export default function AdminAttendancePage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {roster.map(student => (
+                      {sortedRoster.map(student => (
                         <tr key={student.studentCode} style={{ borderBottom: '1px solid var(--border-light)' }}>
                           <td style={{ padding: '8px 12px', fontSize: '13px' }}>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>

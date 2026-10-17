@@ -25,11 +25,15 @@ export async function GET(req: NextRequest) {
     const dateStr = date.replace(/-/g, '');
     const attendanceDocId = `${dateStr}_${batchId}`;
 
-    const [batchDoc, studentsSnap, leavesSnap, declsSnap, attendanceDoc] = await Promise.all([
+    const [batchDoc, studentsSnap1, studentsSnap2, leavesSnap, declsSnap, attendanceDoc] = await Promise.all([
       adminDb.collection('batches').doc(batchId).get(),
       adminDb.collection('users')
         .where('role', '==', 'student')
         .where('batchIds', 'array-contains', batchId)
+        .get(),
+      adminDb.collection('users')
+        .where('role', '==', 'student')
+        .where('batchId', '==', batchId)
         .get(),
       adminDb.collection('leaveApplications')
         .where('endDate', '>=', date)
@@ -45,20 +49,28 @@ export async function GET(req: NextRequest) {
     }
     const batchName = batchDoc.data()?.name || 'Unknown Batch';
 
-    const students = studentsSnap.docs
-      .map(doc => {
-        const d = doc.data();
-        return {
+    const studentMap = new Map<string, any>();
+    [...studentsSnap1.docs, ...studentsSnap2.docs].forEach(doc => {
+      const d = doc.data();
+      const code = d.studentCode || doc.id;
+      if (!studentMap.has(code)) {
+        studentMap.set(code, {
           studentCode: d.studentCode || '',
-          name: d.name || 'Student',
+          name: (d.name || 'Student').trim(),
           email: d.email || '',
           parentEmail: d.parentEmail || '',
           batchId: d.batchId || '',
           batchIds: d.batchIds || [],
           status: d.status || 'active'
-        };
-      })
+        });
+      }
+    });
+
+    const students = Array.from(studentMap.values())
       .filter(s => s.status === 'active' && !isDemoUser(s));
+
+    // Sort students alphabetically by name (case-insensitive)
+    students.sort((a, b) => (a.name || '').trim().localeCompare((b.name || '').trim(), undefined, { sensitivity: 'base', numeric: true }));
 
     const activeLeaves = new Map<string, any>();
     leavesSnap.docs.forEach(doc => {
@@ -142,6 +154,9 @@ export async function GET(req: NextRequest) {
         selfMarkedAt
       };
     });
+
+    // Explicitly sort roster alphabetically A-Z by student name
+    roster.sort((a, b) => (a.name || '').trim().localeCompare((b.name || '').trim(), undefined, { sensitivity: 'base', numeric: true }));
 
     return NextResponse.json({
       success: true,
