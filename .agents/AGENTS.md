@@ -42,7 +42,7 @@
 
 ### F. Topic Mastery & Diagnostic Breakdown (`src/lib/studentDb.ts`)
 - **Rule**: Topic mastery categorization and explanation logic must remain completely synchronized across Student, Parent, and Admin views:
-  - 🟢 **Mastered**: Mastery $\ge 90\%$ AND Confidence $\ge \text{requiredConfidence}$ (Minor/Micro: 6, Medium/Conceptual: 10, Major/HOTS: 15 questions; computed via `getRequiredConfidence`) OR `isRecoveryMastered === true` (passing Guided Recovery Diagnostic).
+  - 🟢 **Mastered**: Mastery $\ge 90\%$ AND Confidence $\ge \text{requiredConfidence}$ (Minor/Micro: 12, Medium/Conceptual: 18, Major/HOTS: 24 questions; computed via `getRequiredConfidence`) OR `isRecoveryMastered === true` (passing Guided Recovery Diagnostic).
   - 🟡 **In Progress / Practicing**: Mastery between $50\%$ and $89\%$ (or $\ge 90\%$ with confidence $< \text{requiredConfidence}$).
   - 🔴 **Needs Attention**: Mastery $< 50\%$ or missed scheduled exam unattempted.
   - Status dot badges (`🟢`, `🟡`, `🔴`) clicked by an admin MUST open a breakdown modal showing the exact same diagnostic guidance and explanation string displayed on the student's dashboard.
@@ -159,9 +159,9 @@
 
 ### T. Topic Practice Quotas & Dynamic UI Presentation
 - **Rule**: Practice set limits MUST dynamically reflect the topic's true scope:
-  - **Minor / Micro Topics**: Max 2 Practice Sets ($2 \times 6 = 12$ Qs max, target: 6 Qs).
-  - **Medium / Conceptual Topics**: Max 3 Practice Sets ($3 \times 6 = 18$ Qs max, target: 10 Qs).
-  - **Major / HOTS Topics**: Max 3 Practice Sets ($3 \times 6 = 18$ Qs max, target: 15 Qs).
+  - **Minor / Micro Topics**: Max 2 Practice Sets ($2 \times 6 = 12$ Qs max, target: 12 Qs).
+  - **Medium / Conceptual Topics**: Max 3 Practice Sets ($3 \times 6 = 18$ Qs max, target: 18 Qs).
+  - **Major / HOTS Topics**: Max 4 Practice Sets ($4 \times 6 = 24$ Qs max, target: 24 Qs).
 - **UI Copy Standard**: NEVER display hardcoded `/5 practices` or `5/5 practices done` in any UI component, diagnostic badge, or explanation banner. Always render dynamic targets `${practiceCount}/${maxPractices} practices`.
 
 

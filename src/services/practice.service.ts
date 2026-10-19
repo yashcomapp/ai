@@ -236,7 +236,7 @@ export class PracticeService {
     const topicIndexSnap = await adminDb.collection('syllabusTopicIndex').doc(topicCode).get();
     const topicIndexData = topicIndexSnap.exists ? topicIndexSnap.data() : null;
     const fallbackClassification = topicIndexData?.topicClassification || 'minor';
-    const fallbackTargetQuestions = topicIndexData?.targetQuestions || (fallbackClassification === 'minor' ? 24 : fallbackClassification === 'major' ? 60 : 36);
+    const fallbackTargetQuestions = topicIndexData?.targetQuestions || (fallbackClassification === 'minor' ? 12 : fallbackClassification === 'major' ? 24 : 18);
     const fallbackRequiredConfidence = topicIndexData?.requiredConfidence || getRequiredConfidence(fallbackClassification, fallbackTargetQuestions);
 
     await adminDb.runTransaction(async (tx) => {

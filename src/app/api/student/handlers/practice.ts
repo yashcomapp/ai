@@ -96,9 +96,10 @@ export async function GET(req: NextRequest) {
     const practiceQuestionsAttempted = masterySnap.exists ? (masterySnap.data()!.practiceQuestionsAttempted || 0) : 0;
 
     const rawScope = String(topicClassification || '').toLowerCase().trim();
-    const isMinorTopic = rawScope === 'minor' || rawScope === 'micro' || (targetQuestions !== undefined && targetQuestions <= 20);
-    const maxSessionsAllowed = isMinorTopic ? 2 : 3;
-    const maxQuestionsAllowed = isMinorTopic ? 12 : 18;
+    const isMinorTopic = rawScope === 'minor' || rawScope === 'micro' || (targetQuestions !== undefined && targetQuestions <= 30);
+    const isMajorTopic = rawScope === 'major' || rawScope === 'calculative' || rawScope === 'hots' || (targetQuestions !== undefined && targetQuestions > 50);
+    const maxSessionsAllowed = isMinorTopic ? 2 : (isMajorTopic ? 4 : 3);
+    const maxQuestionsAllowed = isMinorTopic ? 12 : (isMajorTopic ? 24 : 18);
 
     const isRevisionMode = category === 'revision';
     const isPracticeLimitReached = !isRevisionMode && (completedPractices >= maxSessionsAllowed || (practiceQuestionsAttempted >= maxQuestionsAllowed && mastery < 80));
@@ -615,7 +616,7 @@ export async function GET(req: NextRequest) {
       topicName,
       topicScope: resolvedScope,
       topicClassification: resolvedScope,
-      targetQuestions: targetQuestions || (isMinorTopic ? 12 : (resolvedScope === 'medium' ? 22 : 34)),
+      targetQuestions: targetQuestions || (isMinorTopic ? 12 : (resolvedScope === 'medium' ? 18 : 24)),
       requiredConfidence: reqConfidence,
       maxSessionsAllowed,
       currentSetNumber: dailySessions + 1,
