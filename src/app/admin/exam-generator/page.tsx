@@ -9,7 +9,7 @@ import { smartJsonParse, robustParseAIJson, cleanStringForMatch, toCanonicalQues
 import { SyllabusSelector } from '@/components/SyllabusSelector';
 import { useSyllabusSelector } from '@/hooks/useSyllabusSelector';
 import { QuestionDisplay, RichMathText } from '@/components/QuestionDisplay';
-import { distributeCountsByWeight as distributeCountsByWeightLib, buildObjectiveSchema, isSameTopic } from '@/lib/syllabusUtils';
+import { distributeCountsByWeight, buildObjectiveSchema, isSameTopic } from '@/lib/syllabusUtils';
 import { areQuestionsTooSimilar } from '@/lib/questionSimilarity';
 
 function isQuestionNumerical(q: Question | any): boolean {
@@ -757,23 +757,6 @@ export default function AdminExamGeneratorPage() {
 
   const getTopicKey = (t: any) => t?.topicCode || t?.topicNumber || t?.topic || '';
 
-  // Distribute counts based on equal/custom weightages
-  const distributeCountsByWeight = (count: number) => {
-    const cleanWeights: Record<string, number> = {};
-    selectedTopics.forEach(t => {
-      const key = getTopicKey(t);
-      const raw = topicWeights[key];
-      cleanWeights[key] = typeof raw === 'number' ? raw : (parseInt(String(raw), 10) || 0);
-    });
-    return distributeCountsByWeightLib(
-      count,
-      selectedTopics,
-      cleanWeights,
-      topicWeightMode,
-      getTopicKey
-    );
-  };
-
   // Fetch Pool Candidate Questions
   const handleFetchPool = async () => {
     if (!currentTemplate) {
@@ -842,7 +825,7 @@ export default function AdminExamGeneratorPage() {
       const shortfallReqs: any[] = [];
 
       // Calculate total topic question targets based on topic weightages
-      const topicQuestionTargets = distributeCountsByWeight(effectiveTotalQs);
+      const topicQuestionTargets = distributeCountsByWeight(effectiveTotalQs, selectedTopics, topicWeights, topicWeightMode, getTopicKey);
 
       if (!normalizedTypeCounts) {
         // Flexible Pool Mode: Fill up each topic's target quota from available questions in that topic
@@ -925,7 +908,7 @@ export default function AdminExamGeneratorPage() {
         selectedTopics.forEach(t => { topicPickedCounts[getTopicKey(t)] = 0; });
 
         needed.forEach(req => {
-          const topicCounts = distributeCountsByWeight(req.count);
+          const topicCounts = distributeCountsByWeight(req.count, selectedTopics, topicWeights, topicWeightMode, getTopicKey);
 
           selectedTopics.forEach(t => {
             const tKey = getTopicKey(t);

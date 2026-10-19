@@ -3,27 +3,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { formatDateDMY as formatDateStr, getDateKeyIST } from '@/lib/dateUtils';
 import DateInputDMY from '@/components/DateInputDMY';
-import { renderSortHeader, getStatusWeight, deleteFeeTransaction, getLateRemarks as computeLateRemarks } from '@/lib/feesUtils';
-
-export interface StudentFeeRecord {
-  uid: string;
-  name: string;
-  studentCode: string;
-  email: string;
-  batchId: string;
-  batchName?: string;
-  classNum: string;
-  fee: {
-    totalPackageAmount: number;
-    discountAmount: number;
-    netPayableAmount: number;
-    totalPaidAmount: number;
-    outstandingAmount: number;
-    feeStatus: string;
-    hasOverdueInstallment: boolean;
-    installments?: { installmentId: string; installmentNo: number; amount: number; dueDate: string; status: string; paidAt: string | null }[];
-  } | null;
-}
+import { renderSortHeader, getStatusWeight, deleteFeeTransaction, getLateRemarks as computeLateRemarks, confirmAndDeleteTransaction, StudentFeeRecord } from '@/lib/feesUtils';
+export type { StudentFeeRecord };
 
 export interface Transaction {
   transactionId: string;
@@ -179,27 +160,22 @@ export default function FeesJournal({
   const handleDeleteTransaction = async (tx: Transaction) => {
     const student = studentMap.get(tx.studentCode?.toUpperCase());
     const name = student?.name || tx.studentCode;
-    const confirmMsg = `Are you sure you want to delete this transaction?\n\nStudent: ${name}\nAmount: ₹${Number(tx.amountPaid || 0).toLocaleString('en-IN')}\nPayment Mode: ${tx.paymentMethod}\nDate: ${formatDateStr(tx.timestamp)}\n\nThis will permanently remove the transaction and update the student's fee balance.`;
-    if (!window.confirm(confirmMsg)) return;
-
-    setDeletingTxId(tx.transactionId);
-    try {
-      const token = await getIdToken();
-      if (!token) throw new Error('Not authenticated');
-      const res = await deleteFeeTransaction(token, tx.transactionId, tx.studentCode);
-      if (!res.success) {
-        alert(res.error || 'Failed to delete transaction');
-        return;
+    await confirmAndDeleteTransaction({
+      transactionId: tx.transactionId,
+      studentCode: tx.studentCode,
+      studentName: name,
+      amount: Number(tx.amountPaid || 0),
+      paymentMethod: tx.paymentMethod,
+      dateStr: formatDateStr(tx.timestamp),
+      getToken: getIdToken,
+      onSetDeleting: (deleting) => setDeletingTxId(deleting ? tx.transactionId : null),
+      onSuccess: () => {
+        fetchAllTransactions();
+        if (onRefreshStudents) {
+          onRefreshStudents();
+        }
       }
-      fetchAllTransactions();
-      if (onRefreshStudents) {
-        onRefreshStudents();
-      }
-    } catch (err: any) {
-      alert(err.message || 'Failed to delete transaction');
-    } finally {
-      setDeletingTxId(null);
-    }
+    });
   };
 
   // Map studentCode -> Student Profile

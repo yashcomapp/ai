@@ -5,7 +5,7 @@ import React, { useEffect, useState, useMemo, Suspense } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useMathRender } from '@/hooks/useMathRender';
-import { preprocessMathText, formatRichText, parseAnswerList, isOptionSelectedByUser, isOptionCorrect, getQuestionCorrectAnswer, getRawOptionKey, getRawOptionText, isBlank, resolveOptionDisplayText, extractAssertionAndReason, isAssertionReasonType, isMultipleChoiceType, cleanStringForMatch, isOptionMatch, getOptionText as getOptionTextCanonical } from '@/lib/questionTypes';
+import { preprocessMathText, formatRichText, parseAnswerList, isOptionSelectedByUser, isOptionCorrect, getQuestionCorrectAnswer, getRawOptionKey, getRawOptionText, isBlank, resolveOptionDisplayText, extractAssertionAndReason, isAssertionReasonType, isMultipleChoiceType, cleanStringForMatch, isOptionMatch, getOptionText } from '@/lib/questionTypes';
 import QuestionDisplay, { RichMathText } from '@/components/QuestionDisplay';
 import { playNotificationSound } from '@/lib/audioUtils';
 import { getDateKeyIST, formatDateDMY, formatTimeIST, calculateEndDatetime, toLocalISOString, getMorningTestTimes, getEveningTestTimes, formatDateTimeShort as formatDate } from '@/lib/dateUtils';
@@ -431,13 +431,6 @@ function ExamReportContent() {
       return attempt.wrongAnswerReasons[globalIdx] || null;
     }
     return null;
-  };
-
-
-
-  const getOptionText = (questionCode: string, ansInput: any) => {
-    const q = questionsMap[questionCode];
-    return getOptionTextCanonical(q, ansInput);
   };
 
   const isDemo = (s: any) => {
@@ -2613,13 +2606,13 @@ function ExamReportContent() {
                                   options: bq?.options,
                                   correctAnswer: bq?.correctAnswer || bq?.answer || bq?.correct_answer || qd.correctAnswer,
                                   correctAnswers: bq?.correctAnswers || qd.correctAnswers,
-                                  userAnswer: isUnattempted ? '' : (getOptionText(qd.questionCode, qd.userAnswer) || qd.userAnswer),
+                                  userAnswer: isUnattempted ? '' : (getOptionText(qd.questionCode, qd.userAnswer, questionsMap) || qd.userAnswer),
                                   solution: explanation,
                                   isCorrect: isCorrect
                                 }}
                                 isCorrect={isCorrect}
-                                userAnswer={isUnattempted ? '' : (getOptionText(qd.questionCode, qd.userAnswer) || qd.userAnswer)}
-                                correctAnswer={getOptionText(qd.questionCode, Array.isArray(qd.correctAnswer) ? qd.correctAnswer.join(', ') : qd.correctAnswer) || bq?.correctAnswer || qd.correctAnswer}
+                                userAnswer={isUnattempted ? '' : (getOptionText(qd.questionCode, qd.userAnswer, questionsMap) || qd.userAnswer)}
+                                correctAnswer={getOptionText(qd.questionCode, Array.isArray(qd.correctAnswer) ? qd.correctAnswer.join(', ') : qd.correctAnswer, questionsMap) || bq?.correctAnswer || qd.correctAnswer}
                                 explanation={explanation}
                               />
 
@@ -2715,13 +2708,13 @@ function ExamReportContent() {
                                     options: bq?.options,
                                     correctAnswer: bq?.correctAnswer || bq?.answer || bq?.correct_answer || qd.correctAnswer,
                                     correctAnswers: bq?.correctAnswers || qd.correctAnswers,
-                                    userAnswer: isUnattempted ? '' : (getOptionText(qd.questionCode, qd.userAnswer) || qd.userAnswer),
+                                    userAnswer: isUnattempted ? '' : (getOptionText(qd.questionCode, qd.userAnswer, questionsMap) || qd.userAnswer),
                                     solution: explanation,
                                     isCorrect: isCorrect
                                   }}
                                   isCorrect={isCorrect}
-                                  userAnswer={isUnattempted ? '' : (getOptionText(qd.questionCode, qd.userAnswer) || qd.userAnswer)}
-                                  correctAnswer={getOptionText(qd.questionCode, Array.isArray(qd.correctAnswer) ? qd.correctAnswer.join(', ') : qd.correctAnswer) || bq?.correctAnswer || qd.correctAnswer}
+                                  userAnswer={isUnattempted ? '' : (getOptionText(qd.questionCode, qd.userAnswer, questionsMap) || qd.userAnswer)}
+                                  correctAnswer={getOptionText(qd.questionCode, Array.isArray(qd.correctAnswer) ? qd.correctAnswer.join(', ') : qd.correctAnswer, questionsMap) || bq?.correctAnswer || qd.correctAnswer}
                                   explanation={explanation}
                                 />
                               </div>

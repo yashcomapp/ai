@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import { useAuth } from '@/context/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Script from 'next/script';
-import { stripOptionLabel, preprocessMathText, parseAnswerList, isOptionSelectedByUser, isOptionCorrect, getQuestionCorrectAnswer, getRawOptionKey, getRawOptionText, extractAssertionAndReason, isMultipleChoiceType, isSingleChoiceType, isTrueFalseType, isAssertionReasonType, isNumericalType, isFillBlanksType, isObjectiveType, resolveOptionDisplayText, DEFAULT_ASSERTION_REASON_OPTIONS, getOptionText as getOptionTextCanonical } from '@/lib/questionTypes';
+import { stripOptionLabel, preprocessMathText, parseAnswerList, isOptionSelectedByUser, isOptionCorrect, getQuestionCorrectAnswer, getRawOptionKey, getRawOptionText, extractAssertionAndReason, isMultipleChoiceType, isSingleChoiceType, isTrueFalseType, isAssertionReasonType, isNumericalType, isFillBlanksType, isObjectiveType, resolveOptionDisplayText, DEFAULT_ASSERTION_REASON_OPTIONS, getOptionText } from '@/lib/questionTypes';
 import QuestionDisplay, { RichMathText } from '@/components/QuestionDisplay';
 import { useMathRender } from '@/hooks/useMathRender';
 import { db } from '@/lib/firebase/firestore';
@@ -370,14 +370,6 @@ function TakeExamContent() {
 
   // Auto-autosave keys
   const getSaveKey = () => `exam_state_${examId}_${user?.uid || 'guest'}`;
-
-
-
-  const getOptionText = (questionText: string, ansInput: any) => {
-    if (!exam || !exam.questions) return parseAnswerList(ansInput).join(', ');
-    const q = exam.questions.find((x: any) => x.text === questionText || x.questionCode === questionText);
-    return getOptionTextCanonical(q, ansInput);
-  };
 
   // 1. Fetch exam configuration
   useEffect(() => {
@@ -1714,8 +1706,8 @@ function TakeExamContent() {
                             isCorrect: false
                           }}
                           isCorrect={false}
-                          userAnswer={isUnanswered ? '' : (getOptionText(qItem.questionText, qItem.userAnswer || '') || qItem.userAnswer)}
-                          correctAnswer={getOptionText(qItem.questionText, qItem.correctAnswer) || qItem.correctAnswer}
+                          userAnswer={isUnanswered ? '' : (getOptionText(matchingQ || qItem.questionText, qItem.userAnswer || '', exam?.questions) || qItem.userAnswer)}
+                          correctAnswer={getOptionText(matchingQ || qItem.questionText, qItem.correctAnswer, exam?.questions) || qItem.correctAnswer}
                           explanation={explanation}
                         />
 

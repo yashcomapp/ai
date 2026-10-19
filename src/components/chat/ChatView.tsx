@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { useChat } from '@/context/ChatContext';
 import { UserRole } from '@/types/user.types';
 import { useRouter } from 'next/navigation';
 import { db } from '@/lib/firebase/firestore';
@@ -77,6 +78,7 @@ interface ChatViewProps {
 export default function ChatView({ role = 'admin', hideHeader = false }: ChatViewProps) {
   const router = useRouter();
   const { firebaseUser, user, logout } = useAuth();
+  const chatContext = useChat();
 
   const [rooms, setRooms] = useState<ChatRoom[]>([]);
   const [activeRoomId, setActiveRoomId] = useState('');
@@ -298,9 +300,18 @@ export default function ChatView({ role = 'admin', hideHeader = false }: ChatVie
     }
   }
 
-  // Live sidebar rooms list subscription
+  // Sync rooms from shared ChatContext when available
+  useEffect(() => {
+    if (chatContext?.rooms) {
+      setRooms(chatContext.rooms as ChatRoom[]);
+      setLoadingRooms(chatContext.loading);
+    }
+  }, [chatContext?.rooms, chatContext?.loading]);
+
+  // Live sidebar rooms list subscription (fallback only if chatContext is not provided)
   useEffect(() => {
     if (!firebaseUser) return;
+    if (chatContext) return; // Prevent duplicate listener when shared via ChatContext
 
     // Trigger REST fetch once to initialize/reconcile rooms on server
     loadRooms();

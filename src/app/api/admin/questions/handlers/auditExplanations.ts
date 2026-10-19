@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
+import * as admin from 'firebase-admin';
 import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole } from '@/lib/auth';
 import { invalidateCache } from '@/lib/firebase/cache';
+import { fetchPageByDocId, fetchAllByDocIdRange } from '@/lib/firebase/docIdPagination';
 
 
 const PRACTICE_OBJECTIVE_TYPES = [
@@ -92,10 +94,27 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ message: 'Unauthorized. Admin role required.' }, { status: 403 });
     }
 
-    const snap = await adminDb.collection('questions')
-      .select('type', 'solution', 'explanation', 'solutionText', 'explanationText', 'questionCode', 'text', 'correctAnswer', 'options', 'subjectCode', 'chapter')
-      .limit(500)
-      .get();
+    const { searchParams } = new URL(req.url);
+    const cursor = searchParams.get('cursor');
+    const limitParam = searchParams.get('limit');
+    const isPaginated = cursor !== null || limitParam !== null;
+    const limit = limitParam ? Math.min(Math.max(parseInt(limitParam, 10) || 500, 1), 1000) : 500;
+
+    const selectFields = ['type', 'solution', 'explanation', 'solutionText', 'explanationText', 'questionCode', 'text', 'correctAnswer', 'options', 'subjectCode', 'chapter'];
+    let docs: any[] = [];
+    let hasMore = false;
+    let nextCursor: string | null = null;
+
+    if (isPaginated) {
+      const page = await fetchPageByDocId('questions', { selectFields, cursor, limit });
+      docs = page.docs;
+      hasMore = page.hasMore;
+      nextCursor = page.nextCursor;
+    } else {
+      docs = await fetchAllByDocIdRange('questions', { selectFields, chunkSize: 500 });
+      hasMore = false;
+      nextCursor = null;
+    }
     
     let totalObjective = 0;
     let withSolution = 0;
@@ -103,7 +122,7 @@ export async function GET(req: NextRequest) {
     const sampleMissing: any[] = [];
     const allMissingQuestions: any[] = [];
 
-    snap.docs.forEach(doc => {
+    docs.forEach(doc => {
       const q = doc.data();
       const qType = q.type || 'single_mcq';
 
@@ -148,7 +167,9 @@ export async function GET(req: NextRequest) {
       missingSolution,
       coveragePercent: totalObjective > 0 ? Math.round((withSolution / totalObjective) * 100) : 100,
       sampleMissing,
-      allMissingQuestions
+      allMissingQuestions,
+      hasMore,
+      nextCursor
     });
   } catch (error: any) {
     console.error('API Audit Questions GET error:', error);
@@ -169,16 +190,13 @@ export async function POST(req: NextRequest) {
 
     // Handle Importing External AI Solutions Map
     if (action === 'importAI' && importedSolutions && typeof importedSolutions === 'object') {
-      const snap = await adminDb.collection('questions')
-        .select('questionCode')
-        .limit(500)
-        .get();
+      const docs = await fetchAllByDocIdRange('questions', { selectFields: ['questionCode'], chunkSize: 500 });
       let importedCount = 0;
       const batchSize = 400;
       let currentBatch = adminDb.batch();
       let batchOps = 0;
 
-      snap.docs.forEach(doc => {
+      for (const doc of docs) {
         const q = doc.data();
         const qCode = q.questionCode || doc.id;
 
@@ -193,12 +211,12 @@ export async function POST(req: NextRequest) {
           batchOps++;
 
           if (batchOps >= batchSize) {
-            currentBatch.commit();
+            await currentBatch.commit();
             currentBatch = adminDb.batch();
             batchOps = 0;
           }
         }
-      });
+      }
 
       if (batchOps > 0) {
         await currentBatch.commit();
@@ -208,15 +226,34 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({
         success: true,
         updatedCount: importedCount,
+        hasMore: false,
+        nextCursor: null,
         message: `Successfully imported and saved ${importedCount} AI solutions into Question Bank!`
       });
     }
 
     // Default internal auto-generator
-    const snap = await adminDb.collection('questions')
-      .select('type', 'solution', 'explanation', 'solutionText', 'explanationText', 'topicCode', 'correctAnswer', 'text', 'options')
-      .limit(500)
-      .get();
+    const cursor = body?.cursor;
+    const limitParam = body?.limit;
+    const isPaginated = cursor !== undefined || limitParam !== undefined;
+    const limit = limitParam ? Math.min(Math.max(parseInt(limitParam, 10) || 500, 1), 1000) : 500;
+
+    const selectFields = ['type', 'solution', 'explanation', 'solutionText', 'explanationText', 'topicCode', 'correctAnswer', 'text', 'options'];
+    let docs: admin.firestore.QueryDocumentSnapshot[] = [];
+    let hasMore = false;
+    let nextCursor: string | null = null;
+
+    if (isPaginated) {
+      const page = await fetchPageByDocId('questions', { selectFields, cursor, limit });
+      docs = page.docs;
+      hasMore = page.hasMore;
+      nextCursor = page.nextCursor;
+    } else {
+      docs = await fetchAllByDocIdRange('questions', { selectFields, chunkSize: 500 });
+      hasMore = false;
+      nextCursor = null;
+    }
+
     let processedCount = 0;
     let updatedCount = 0;
 
@@ -224,7 +261,7 @@ export async function POST(req: NextRequest) {
     let currentBatch = adminDb.batch();
     let batchOperationCount = 0;
 
-    for (const doc of snap.docs) {
+    for (const doc of docs) {
       const q = doc.data();
       const qType = q.type || 'single_mcq';
 
@@ -271,6 +308,8 @@ export async function POST(req: NextRequest) {
       success: true,
       processedCount,
       updatedCount,
+      hasMore,
+      nextCursor,
       message: `Audit complete. Updated ${updatedCount} objective questions with step-by-step explanations.`
     });
   } catch (error: any) {

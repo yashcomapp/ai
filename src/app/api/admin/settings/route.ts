@@ -5,6 +5,7 @@ import { verifyRole } from '@/lib/auth';
 import { ChunkedBatch } from '@/lib/firebase/batch';
 import { getFromCache, setInCache, invalidateCache, getCachedBatches, getCachedSyllabus } from '@/lib/firebase/cache';
 import { runCompleteAutomatedPurge } from '@/lib/purgeUtils';
+import { fetchAllByDocIdRange } from '@/lib/firebase/docIdPagination';
 
 export async function GET(request: Request) {
   try {
@@ -27,10 +28,10 @@ export async function GET(request: Request) {
     }
 
     if (action === 'loadLogs') {
-      const [logsSnap, batchesSnap, usersSnap] = await Promise.all([
+      const [logsSnap, batchesSnap, userDocs] = await Promise.all([
         adminDb.collection('session_logs').orderBy('timestamp', 'desc').limit(500).get(),
         getCachedBatches(),
-        adminDb.collection('users').select('name', 'displayName', 'email', 'role', 'batchIds').limit(200).get()
+        fetchAllByDocIdRange('users', { selectFields: ['name', 'displayName', 'email', 'role', 'batchIds'], chunkSize: 500 })
       ]);
 
       const batches = batchesSnap.docs.map(doc => ({
@@ -39,7 +40,7 @@ export async function GET(request: Request) {
         class: doc.data().class || ''
       }));
 
-      const users = usersSnap.docs.map(doc => ({
+      const users = userDocs.map(doc => ({
         id: doc.id,
         name: doc.data().name || doc.data().displayName || doc.data().email || doc.id,
         email: doc.data().email || '',
@@ -53,10 +54,10 @@ export async function GET(request: Request) {
         timestamp: doc.data().timestamp?.toDate ? doc.data().timestamp.toDate() : doc.data().timestamp || null
       }));
 
-      if (logsSnap.empty && usersSnap.docs.length > 0) {
+      if (logsSnap.empty && userDocs.length > 0) {
         // Backfill 6 sample logs
         const batchIds = batchesSnap.docs.map(d => d.id);
-        const students = usersSnap.docs
+        const students = userDocs
           .map(d => ({ id: d.id, ...(d.data() as any) }))
           .filter((u: any) => u.role === 'student');
 

@@ -1,5 +1,26 @@
 import React from 'react';
 
+export interface StudentFeeRecord {
+  uid: string;
+  name: string;
+  studentCode: string;
+  email: string;
+  batchId: string;
+  batchName?: string;
+  classNum: string;
+  fee: {
+    totalPackageAmount: number;
+    discountAmount: number;
+    netPayableAmount: number;
+    totalPaidAmount: number;
+    outstandingAmount: number;
+    feeStatus?: string;
+    status?: string;
+    hasOverdueInstallment?: boolean;
+    installments?: any[];
+  } | null;
+}
+
 /**
  * Returns numeric weight for student fee ledger statuses for consistent sorting:
  * overdue (4) -> partially_paid (3) -> fully_paid/exempted (2) -> pending (1) -> unconfigured (0)
@@ -110,3 +131,74 @@ export async function deleteFeeTransaction(
     return { success: false, error: err.message || 'Failed to delete transaction' };
   }
 }
+
+export interface ConfirmAndDeleteOptions {
+  transactionId: string;
+  studentCode?: string;
+  studentName?: string;
+  amount?: number;
+  paymentMethod?: string;
+  dateStr?: string;
+  getToken: () => Promise<string | null | undefined>;
+  onSuccess?: () => void | Promise<void>;
+  onError?: (errMessage: string) => void;
+  onSetDeleting?: (isDeleting: boolean) => void;
+}
+
+/**
+ * Shared confirmation and deletion lifecycle for fee transactions.
+ */
+export async function confirmAndDeleteTransaction(options: ConfirmAndDeleteOptions): Promise<boolean> {
+  const {
+    transactionId,
+    studentCode,
+    studentName,
+    amount,
+    paymentMethod,
+    dateStr,
+    getToken,
+    onSuccess,
+    onError,
+    onSetDeleting
+  } = options;
+
+  let confirmMsg = 'Are you sure you want to delete this payment log? Balance will be adjusted.';
+  if (studentName || amount !== undefined) {
+    const name = studentName || studentCode || 'Student';
+    const amtStr = amount !== undefined ? `₹${Number(amount).toLocaleString('en-IN')}` : '';
+    const details = [
+      `Student: ${name}`,
+      amtStr ? `Amount: ${amtStr}` : '',
+      paymentMethod ? `Payment Mode: ${paymentMethod}` : '',
+      dateStr ? `Date: ${dateStr}` : ''
+    ].filter(Boolean).join('\n');
+    confirmMsg = `Are you sure you want to delete this transaction?\n\n${details}\n\nThis will permanently remove the transaction and update the student's fee balance.`;
+  }
+
+  if (typeof window !== 'undefined' && !window.confirm(confirmMsg)) {
+    return false;
+  }
+
+  if (onSetDeleting) onSetDeleting(true);
+  try {
+    const token = await getToken();
+    if (!token) throw new Error('Not authenticated');
+    const res = await deleteFeeTransaction(token, transactionId, studentCode);
+    if (!res.success) {
+      const msg = res.error || 'Failed to delete transaction';
+      if (onError) onError(msg);
+      else if (typeof window !== 'undefined') window.alert(msg);
+      return false;
+    }
+    if (onSuccess) await onSuccess();
+    return true;
+  } catch (err: any) {
+    const msg = err.message || 'Failed to delete transaction';
+    if (onError) onError(msg);
+    else if (typeof window !== 'undefined') window.alert(msg);
+    return false;
+  } finally {
+    if (onSetDeleting) onSetDeleting(false);
+  }
+}
+

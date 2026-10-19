@@ -26,18 +26,20 @@ export function isSameTopic(a: any, b: any): boolean {
 export function distributeCountsByWeight(
   totalQs: number,
   selectedTopics: any[],
-  topicWeights: Record<string, number>,
-  topicWeightMode: 'equal' | 'custom',
-  getTopicKey: (topic: any) => string
+  topicWeights: Record<string, number | string> = {},
+  topicWeightMode: 'equal' | 'custom' | 'percentage' = 'equal',
+  getTopicKey: (topic: any) => string = (t: any) => t?.topicCode || t?.topicNumber || t?.topic || ''
 ): Record<string, number> {
   const n = selectedTopics.length;
   if (n === 0 || totalQs <= 0) return {};
+  const isCustom = topicWeightMode === 'custom' || topicWeightMode === 'percentage';
   const eq = Math.floor(100 / n);
   const weights = selectedTopics.map(t => {
-    if (topicWeightMode === 'equal') return eq;
+    if (!isCustom) return eq;
     const key = getTopicKey(t);
-    const w = topicWeights[key];
-    return w !== undefined ? w : eq;
+    const raw = topicWeights[key];
+    const num = typeof raw === 'number' ? raw : (parseInt(String(raw), 10) || 0);
+    return raw !== undefined ? num : eq;
   });
   const totalW = weights.reduce((a, b) => a + b, 0) || 1;
   const raw = weights.map(w => (w / totalW) * totalQs);

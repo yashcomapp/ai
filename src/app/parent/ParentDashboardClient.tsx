@@ -19,7 +19,7 @@ import {
   ParentSnapshotModals,
   ParentNoticeModals
 } from '@/components/parent';
-import { markNoticeAsSeen } from '@/lib/noticeUtils';
+import { useSeenNotices } from '@/lib/noticeUtils';
 import { getGreeting } from '@/lib/dateUtils';
 
 export default function ParentDashboardClient({ initialData: serverInitialData }: { initialData?: ParentDashboardData }) {
@@ -96,7 +96,6 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
 
   // Modals & Notices extra state
   const [notices, setNotices] = useState<ParentNotice[]>([]);
-  const [seenNoticeIds, setSeenNoticeIds] = useState<string[]>([]);
   const [showSeenNotices, setShowSeenNotices] = useState(false);
   const [isNoticesModalOpen, setIsNoticesModalOpen] = useState(false);
   const [activeOverlayNotice, setActiveOverlayNotice] = useState<ParentNotice | null>(null);
@@ -156,23 +155,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
     }
   };
 
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem('yc_seenNotices');
-      if (stored) {
-        setSeenNoticeIds(JSON.parse(stored));
-      }
-    } catch (e) {
-      console.warn('Failed to load seen notices:', e);
-    }
-  }, []);
-
-  const handleMarkNoticeAsSeen = async (id: string) => {
-    const updated = await markNoticeAsSeen(id, seenNoticeIds, firebaseUser);
-    setSeenNoticeIds(updated);
-  };
-
-  const visibleNotices = notices.filter(n => !seenNoticeIds.includes(n.id));
+  const { seenNoticeIds, setSeenNoticeIds, handleMarkNoticeAsSeen, visibleNotices } = useSeenNotices(notices, firebaseUser);
 
   const fetcher = async (url: string) => {
     return fetchWithToken(url, firebaseUser);

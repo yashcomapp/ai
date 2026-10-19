@@ -1799,16 +1799,26 @@ export function formatUserAnswerSummary(options: any[], userAns: any): string {
  * Automatically falls back to DEFAULT_ASSERTION_REASON_OPTIONS if type is assertion_reason and options are empty.
  */
 export function getOptionText(
-  questionOrOptions: { options?: any[]; type?: string } | any[] | null | undefined,
-  ansInput: any
+  questionOrOptionsOrCode: any,
+  ansInput: any,
+  context?: any[] | Record<string, any>
 ): string {
-  if (!questionOrOptions) return parseAnswerList(ansInput).join(', ');
-  if (Array.isArray(questionOrOptions)) {
-    return resolveOptionDisplayText(questionOrOptions, ansInput);
+  if (ansInput === undefined || ansInput === null || ansInput === '') return '';
+  let resolved = questionOrOptionsOrCode;
+  if (typeof resolved === 'string' && context) {
+    if (Array.isArray(context)) {
+      resolved = context.find((x: any) => x && (x.questionCode === questionOrOptionsOrCode || x.id === questionOrOptionsOrCode || x.text === questionOrOptionsOrCode || x.questionText === questionOrOptionsOrCode));
+    } else {
+      resolved = context[questionOrOptionsOrCode];
+    }
   }
-  const opts = (questionOrOptions.options && questionOrOptions.options.length > 0)
-    ? questionOrOptions.options
-    : (isAssertionReasonType(questionOrOptions.type) ? DEFAULT_ASSERTION_REASON_OPTIONS : []);
+  if (!resolved) return parseAnswerList(ansInput).join(', ');
+  if (Array.isArray(resolved)) {
+    return resolveOptionDisplayText(resolved, ansInput);
+  }
+  const opts = (resolved.options && resolved.options.length > 0)
+    ? resolved.options
+    : (isAssertionReasonType(resolved.type) ? DEFAULT_ASSERTION_REASON_OPTIONS : []);
   return resolveOptionDisplayText(opts, ansInput);
 }
 

@@ -5,6 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { db } from '@/lib/firebase/firestore';
 import { collection, onSnapshot, query, where, orderBy, limit } from 'firebase/firestore';
 import { playNotificationSound } from '@/lib/audioUtils';
+import { useChat } from '@/context/ChatContext';
 
 /**
  * Real-time hook for tracking total unread chat messages across all group and direct message rooms.
@@ -12,10 +13,15 @@ import { playNotificationSound } from '@/lib/audioUtils';
  * when new messages arrive while user is on other screens.
  */
 export function useUnreadChatCount(role: 'admin' | 'student' | 'parent' | null = 'admin', currentPath?: string) {
+  const chatContext = useChat();
   const { firebaseUser, user } = useAuth();
   const [unreadCount, setUnreadCount] = useState<number>(0);
   const previousUnreadRef = useRef<number>(0);
   const isInitialMountRef = useRef<boolean>(true);
+
+  if (chatContext) {
+    return chatContext.unreadCount;
+  }
 
   useEffect(() => {
     if (!firebaseUser || !role) {

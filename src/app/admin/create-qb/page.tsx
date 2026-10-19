@@ -11,7 +11,6 @@ import { highlightModelAnswerKeywords } from '@/lib/questionTypes';
 import { SyllabusSelector } from '@/components/SyllabusSelector';
 import { useSyllabusSelector } from '@/hooks/useSyllabusSelector';
 import { 
-  distributeCountsByWeight as distributeCountsByWeightLib, 
   buildObjectiveSchema,
 
   getCanonicalBoardCode,
@@ -738,24 +737,6 @@ function CreateQBContent() {
       const w = typeof raw === 'number' ? raw : (parseInt(String(raw), 10) || 0);
       return sum + (raw !== undefined && raw !== '' ? w : Math.floor(100 / (selectedTopics.length || 1)));
     }, 0);
-  };
-
-  // Distribute questions count by weight
-  const distributeCountsByWeight = (totalQs: number) => {
-    const cleanWeightMap: Record<string, number> = {};
-    const promptTopics = getPromptTargetTopics();
-    promptTopics.forEach(t => {
-      const k = topicKey(t);
-      const raw = topicWeightageMap[k];
-      cleanWeightMap[k] = typeof raw === 'number' ? raw : (parseInt(String(raw), 10) || 0);
-    });
-    return distributeCountsByWeightLib(
-      totalQs,
-      promptTopics,
-      cleanWeightMap,
-      topicWeightageMode === 'percentage' ? 'custom' : 'equal',
-      topicKey
-    );
   };
 
   const buildTopicsContextBlock = (countsMap: Record<string, number> | null) => {

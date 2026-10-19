@@ -10,6 +10,7 @@ import TimeTracker from '@/components/TimeTracker';
 import PushNotificationManager from '@/components/PushNotificationManager';
 import ToastContainer from '@/components/ToastContainer';
 import SWRProvider from '@/components/SWRProvider';
+import { ChatProvider } from '@/context/ChatContext';
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -69,12 +70,14 @@ export default function RootLayout({
         <ThemeProvider>
           <AuthProvider>
             <SWRProvider>
-              <TimeTracker />
-              <PushNotificationManager />
-              <ToastContainer />
-              <div className="app-shell">
-                {children}
-              </div>
+              <ChatProvider>
+                <TimeTracker />
+                <PushNotificationManager />
+                <ToastContainer />
+                <div className="app-shell">
+                  {children}
+                </div>
+              </ChatProvider>
             </SWRProvider>
           </AuthProvider>
         </ThemeProvider>

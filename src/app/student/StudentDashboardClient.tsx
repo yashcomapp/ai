@@ -35,7 +35,7 @@ import {
 } from 'lucide-react';
 import { getScoreColor } from '@/lib/dashboardMetrics';
 import StudentSelfReflectionModal from '@/components/StudentSelfReflectionModal';
-import { markNoticeAsSeen } from '@/lib/noticeUtils';
+import { useSeenNotices } from '@/lib/noticeUtils';
 import { getGreeting } from '@/lib/dateUtils';
 
 interface ExamItem {
@@ -99,7 +99,6 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
   const [examTab, setExamTab] = useState<'objective' | 'subjective' | 'mock'>('objective');
   const [timeFilter, setTimeFilter] = useState<'overall' | 'month' | 'week'>('overall');
   const [notices, setNotices] = useState<{ id: string; title: string; body: string; createdAt: string | null; isOverlay?: boolean; type?: string; noticeDate?: string | null }[]>([]);
-  const [seenNoticeIds, setSeenNoticeIds] = useState<string[]>([]);
   const [showSeenNotices, setShowSeenNotices] = useState(false);
   const [isAnnouncementsExpanded, setIsAnnouncementsExpanded] = useState(false);
   const [activeOverlayNotice, setActiveOverlayNotice] = useState<any | null>(null);
@@ -154,29 +153,13 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
     }
   };
 
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem('yc_seenNotices');
-      if (stored) {
-        setSeenNoticeIds(JSON.parse(stored));
-      }
-    } catch (e) {
-      console.warn('Failed to load seen notices:', e);
-    }
-  }, []);
+  const { seenNoticeIds, setSeenNoticeIds, handleMarkNoticeAsSeen, visibleNotices } = useSeenNotices(notices, firebaseUser);
 
   useEffect(() => {
     if ((user as any)?.autonomous && examTab !== 'objective') {
       setExamTab('objective');
     }
   }, [user, examTab]);
-
-  const handleMarkNoticeAsSeen = async (id: string) => {
-    const updated = await markNoticeAsSeen(id, seenNoticeIds, firebaseUser);
-    setSeenNoticeIds(updated);
-  };
-
-  const visibleNotices = notices.filter(n => !seenNoticeIds.includes(n.id));
 
 
 
