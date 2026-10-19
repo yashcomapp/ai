@@ -35,8 +35,8 @@ export const ParentQuickActions = React.memo(function ParentQuickActions({
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
         <Rocket size={18} color="var(--primary)" />
-        <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 800, color: 'var(--text)', lineHeight: 1.2 }}>
-          Quick Actions
+        <h3 style={{ margin: 0, fontSize: '13.5px', fontWeight: 800, color: 'var(--text)', lineHeight: 1.2 }}>
+          Quick Actions / त्वरित कार्य
         </h3>
       </div>
       {/* Bento Grid: 4 Action Modules in 1 Single Line */}
@@ -60,7 +60,7 @@ export const ParentQuickActions = React.memo(function ParentQuickActions({
             alignItems: 'center',
             justifyContent: 'center',
             textAlign: 'center',
-            gap: '4px',
+            gap: '3px',
             transition: 'all 0.2s ease',
             boxShadow: 'var(--shadow-sm)'
           }}
@@ -73,11 +73,14 @@ export const ParentQuickActions = React.memo(function ParentQuickActions({
             e.currentTarget.style.transform = 'translateY(0)';
           }}
         >
-          <Calendar size={24} color="var(--success)" />
-          <div style={{ fontSize: '10.5px', fontWeight: 800, color: 'var(--text)', lineHeight: 1.2, whiteSpace: 'nowrap' }}>
+          <Calendar size={22} color="var(--success)" />
+          <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--text)', lineHeight: 1.15, whiteSpace: 'nowrap' }}>
             Attendance
           </div>
-          <div style={{ fontSize: '9.5px', color: 'var(--success)', fontWeight: 700, whiteSpace: 'nowrap' }}>
+          <div style={{ fontSize: '9px', color: 'var(--text-muted)', lineHeight: 1 }}>
+            उपस्थिति
+          </div>
+          <div style={{ fontSize: '9.5px', color: 'var(--success)', fontWeight: 800, whiteSpace: 'nowrap', marginTop: '1px' }}>
             {attendanceRate}
           </div>
         </div>
@@ -96,7 +99,7 @@ export const ParentQuickActions = React.memo(function ParentQuickActions({
             alignItems: 'center',
             justifyContent: 'center',
             textAlign: 'center',
-            gap: '4px',
+            gap: '3px',
             transition: 'all 0.2s ease',
             boxShadow: 'var(--shadow-sm)'
           }}
@@ -109,12 +112,15 @@ export const ParentQuickActions = React.memo(function ParentQuickActions({
             e.currentTarget.style.transform = 'translateY(0)';
           }}
         >
-          <ClipboardList size={24} color="var(--primary)" />
-          <div style={{ fontSize: '10.5px', fontWeight: 800, color: 'var(--text)', lineHeight: 1.2, whiteSpace: 'nowrap' }}>
+          <ClipboardList size={22} color="var(--primary)" />
+          <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--text)', lineHeight: 1.15, whiteSpace: 'nowrap' }}>
             Exam Register
           </div>
-          <div style={{ fontSize: '9.5px', color: absentCount > 0 ? 'var(--danger)' : 'var(--primary)', fontWeight: 700, whiteSpace: 'nowrap' }}>
-            {absentCount > 0 ? `${absentCount} Absent` : 'Active'}
+          <div style={{ fontSize: '9px', color: 'var(--text-muted)', lineHeight: 1 }}>
+            परीक्षा रजिस्टर
+          </div>
+          <div style={{ fontSize: '9.5px', color: absentCount > 0 ? 'var(--danger)' : 'var(--primary)', fontWeight: 800, whiteSpace: 'nowrap', marginTop: '1px' }}>
+            {absentCount > 0 ? `${absentCount} Absent` : 'Active / सक्रिय'}
           </div>
         </div>
 
@@ -132,7 +138,7 @@ export const ParentQuickActions = React.memo(function ParentQuickActions({
             alignItems: 'center',
             justifyContent: 'center',
             textAlign: 'center',
-            gap: '4px',
+            gap: '3px',
             transition: 'all 0.2s ease',
             boxShadow: 'var(--shadow-sm)'
           }}
@@ -145,12 +151,15 @@ export const ParentQuickActions = React.memo(function ParentQuickActions({
             e.currentTarget.style.transform = 'translateY(0)';
           }}
         >
-          <Receipt size={24} color="var(--warning)" />
-          <div style={{ fontSize: '10.5px', fontWeight: 800, color: 'var(--text)', lineHeight: 1.2, whiteSpace: 'nowrap' }}>
-            Fees & Dues
+          <Receipt size={22} color="var(--warning)" />
+          <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--text)', lineHeight: 1.15, whiteSpace: 'nowrap' }}>
+            Fees &amp; Dues
           </div>
-          <div style={{ fontSize: '9.5px', color: 'var(--warning)', fontWeight: 700, whiteSpace: 'nowrap' }}>
-            Receipts
+          <div style={{ fontSize: '9px', color: 'var(--text-muted)', lineHeight: 1 }}>
+            फीस विवरण
+          </div>
+          <div style={{ fontSize: '9.5px', color: 'var(--warning)', fontWeight: 800, whiteSpace: 'nowrap', marginTop: '1px' }}>
+            Receipts / रसीद
           </div>
         </div>
 
@@ -168,7 +177,7 @@ export const ParentQuickActions = React.memo(function ParentQuickActions({
             alignItems: 'center',
             justifyContent: 'center',
             textAlign: 'center',
-            gap: '4px',
+            gap: '3px',
             transition: 'all 0.2s ease',
             boxShadow: 'var(--shadow-sm)'
           }}
@@ -181,12 +190,15 @@ export const ParentQuickActions = React.memo(function ParentQuickActions({
             e.currentTarget.style.transform = 'translateY(0)';
           }}
         >
-          <MessageSquare size={24} color="var(--info)" />
-          <div style={{ fontSize: '10.5px', fontWeight: 800, color: 'var(--text)', lineHeight: 1.2, whiteSpace: 'nowrap' }}>
+          <MessageSquare size={22} color="var(--info)" />
+          <div style={{ fontSize: '10px', fontWeight: 800, color: 'var(--text)', lineHeight: 1.15, whiteSpace: 'nowrap' }}>
             Chat Desk
           </div>
-          <div style={{ fontSize: '9.5px', color: 'var(--info)', fontWeight: 700, whiteSpace: 'nowrap' }}>
-            Messages
+          <div style={{ fontSize: '9px', color: 'var(--text-muted)', lineHeight: 1 }}>
+            शिक्षक संवाद
+          </div>
+          <div style={{ fontSize: '9.5px', color: 'var(--info)', fontWeight: 800, whiteSpace: 'nowrap', marginTop: '1px' }}>
+            Messages / चैट
           </div>
         </div>
       </div>

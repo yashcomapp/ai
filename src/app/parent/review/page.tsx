@@ -904,19 +904,19 @@ export default function ParentReviewPanel() {
         ) : (
           <div className="review-tabs">
             <button className={`tab-btn ${activeTab === 'objective' ? 'active' : ''}`} onClick={() => setActiveTab('objective')}>
-              Obj <span className="tab-count">{objectiveReviews.filter(r => r.status === 'pending').length}</span>
+              Obj / वस्तुनिष्ठ <span className="tab-count">{objectiveReviews.filter(r => r.status === 'pending').length}</span>
             </button>
             {!isAutonomousChild && (
               <button className={`tab-btn ${activeTab === 'subjective' ? 'active' : ''}`} onClick={() => setActiveTab('subjective')}>
-                Subj <span className="tab-count">{subjectiveReviews.filter(r => r.status === 'pending').length}</span>
+                Subj / विषयनिष्ठ <span className="tab-count">{subjectiveReviews.filter(r => r.status === 'pending').length}</span>
               </button>
             )}
             <button className={`tab-btn ${activeTab === 'mock' ? 'active' : ''}`} onClick={() => setActiveTab('mock')}>
-              Mock <span className="tab-count">{entranceReviews.filter(r => r.status === 'pending').length}</span>
+              Mock / मॉक टेस्ट <span className="tab-count">{entranceReviews.filter(r => r.status === 'pending').length}</span>
             </button>
             {!isAutonomousChild && (
               <button className={`tab-btn ${activeTab === 'practice' ? 'active' : ''}`} onClick={() => setActiveTab('practice')}>
-                Prac <span className="tab-count">{practiceReviews.filter(r => r.status === 'pending').length}</span>
+                Prac / दैनिक अभ्यास <span className="tab-count">{practiceReviews.filter(r => r.status === 'pending').length}</span>
               </button>
             )}
           </div>
@@ -929,26 +929,26 @@ export default function ParentReviewPanel() {
           <div className="card" style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', overflow: 'hidden' }}>
             <div style={{ background: 'var(--bg-soft)', padding: '14px 20px', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
-                <h3 style={{ fontSize: '13.5px', fontWeight: 800, color: 'var(--text)', margin: 0 }}>📚 Day-Wise Practice Register</h3>
+                <h3 style={{ fontSize: '13.5px', fontWeight: 800, color: 'var(--text)', margin: 0 }}>📚 Day-Wise Practice Register / दैनिक अभ्यास रजिस्टर</h3>
                 <p style={{ margin: '3px 0 0 0', fontSize: '11px', color: 'var(--text-muted)' }}>
-                  Practice sets are consolidated daily. Today's practice digest opens for parent review after 10:30 PM.
+                  Practice sets are consolidated daily. Today's practice digest opens for parent review after 10:30 PM. / अभ्यास सेट दैनिक समेकित होते हैं। आज का अभ्यास रात 10:30 बजे के बाद पालक समीक्षा के लिए खुलेगा।
                 </p>
               </div>
             </div>
 
             <div style={{ overflowX: 'auto' }}>
               {getDayWisePracticeGroups().length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-faint)' }}>📭 No practice sessions recorded.</div>
+                <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-faint)' }}>📭 No practice sessions recorded / कोई अभ्यास सत्र दर्ज नहीं है।</div>
               ) : (
                 <table style={{ width: '100%', fontSize: '12.5px', borderCollapse: 'collapse', textAlign: 'left' }}>
                   <thead>
                     <tr style={{ background: 'var(--bg-soft)', borderBottom: '1px solid var(--border-light)', color: 'var(--text-muted)' }}>
-                      <th style={{ padding: '12px 16px' }}>Date</th>
-                      <th style={{ padding: '12px 16px', textAlign: 'center' }}>Sets Done</th>
-                      <th style={{ padding: '12px 16px', textAlign: 'center' }}>Questions Practiced</th>
-                      <th style={{ padding: '12px 16px', textAlign: 'center' }}>Time Spent</th>
-                      <th style={{ padding: '12px 16px', textAlign: 'center' }}>Accuracy</th>
-                      <th style={{ padding: '12px 16px', textAlign: 'right' }}>Status / Action</th>
+                      <th style={{ padding: '12px 16px' }}>Date / तारीख</th>
+                      <th style={{ padding: '12px 16px', textAlign: 'center' }}>Sets Done / सेट</th>
+                      <th style={{ padding: '12px 16px', textAlign: 'center' }}>Questions / प्रश्न</th>
+                      <th style={{ padding: '12px 16px', textAlign: 'center' }}>Time / समय</th>
+                      <th style={{ padding: '12px 16px', textAlign: 'center' }}>Accuracy / सटीकता</th>
+                      <th style={{ padding: '12px 16px', textAlign: 'right' }}>Status / स्थिति</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -973,7 +973,7 @@ export default function ParentReviewPanel() {
                           </td>
                           <td style={{ padding: '12px 16px', textAlign: 'right' }}>
                             {group.isApproved ? (
-                              <span className="badge badge-success" style={{ fontSize: '10.5px' }}>✓ Approved</span>
+                              <span className="badge badge-success" style={{ fontSize: '10.5px' }}>✓ Approved / स्वीकृत</span>
                             ) : isAvailable ? (
                               <button
                                 className="btn btn-primary"
@@ -981,11 +981,11 @@ export default function ParentReviewPanel() {
                                 disabled={approving}
                                 style={{ padding: '4px 12px', fontSize: '11px', fontWeight: 700, borderRadius: '16px' }}
                               >
-                                Approve Day
+                                Approve Day / स्वीकृत करें
                               </button>
                             ) : (
                               <span style={{ fontSize: '10.5px', color: 'var(--warning)', fontWeight: 600 }}>
-                                ⏳ Available at 10:30 PM
+                                ⏳ Available at 10:30 PM / रात 10:30 बजे उपलब्ध
                               </span>
                             )}
                           </td>
@@ -1002,11 +1002,11 @@ export default function ParentReviewPanel() {
             {/* 1. Pending Reviews Accordion */}
             <div className="card" style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', overflow: 'hidden' }}>
               <div style={{ background: 'var(--bg-soft)', padding: '12px 20px', borderBottom: '1px solid var(--border-light)' }}>
-                <h3 style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--text)' }}>⏳ Pending Review Submissions</h3>
+                <h3 style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--text)' }}>⏳ Pending Review Submissions / लंबित समीक्षाएं</h3>
               </div>
               <div className="results-list">
                 {pendingReviews.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text-faint)' }}>📭 No pending submissions for review.</div>
+                  <div style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text-faint)' }}>📭 No pending submissions for review / कोई लंबित समीक्षा नहीं है।</div>
                 ) : (
                   pendingReviews.map(item => (
                     <div 
@@ -1019,7 +1019,7 @@ export default function ParentReviewPanel() {
                           <span style={{ fontWeight: 'bold', fontSize: '13px' }}>{item.name}</span>
                           {item.proctoringViolationTriggered && (
                             <span className="badge" style={{ background: 'var(--danger)', color: 'var(--text-white)', fontSize: '10px', fontWeight: 800, padding: '3px 8px', borderRadius: '4px' }}>
-                              🚨 Doubtful
+                              🚨 Doubtful / संदिग्ध
                             </span>
                           )}
                         </div>
@@ -1030,7 +1030,7 @@ export default function ParentReviewPanel() {
                       <div style={{ textTransform: 'uppercase' }}>
                         {item.type === 'absent_exam' ? (
                           <span className="badge badge-warning" style={{ background: 'var(--warning-bg)', color: 'var(--warning)', border: '1px solid rgba(245, 158, 11, 0.3)', fontWeight: 800, fontSize: '11px', padding: '4px 8px', borderRadius: '4px' }}>
-                            ⚠️ Absent / गैरहजर
+                            ⚠️ Absent / अनुपस्थित
                           </span>
                         ) : (
                           <div style={{ textAlign: 'right' }}>
@@ -1048,11 +1048,11 @@ export default function ParentReviewPanel() {
             {/* 2. Approved Reviews Accordion */}
             <div className="card" style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', overflow: 'hidden' }}>
               <div style={{ background: 'var(--bg-soft)', padding: '12px 20px', borderBottom: '1px solid var(--border-light)' }}>
-                <h3 style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--text)' }}>✅ Approved Submissions</h3>
+                <h3 style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--text)' }}>✅ Approved Submissions / स्वीकृत समीक्षाएं</h3>
               </div>
               <div className="results-list">
                 {approvedReviews.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text-faint)' }}>📭 No approved reviews yet.</div>
+                  <div style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text-faint)' }}>📭 No approved reviews yet / अभी कोई स्वीकृत समीक्षा नहीं है।</div>
                 ) : (
                   approvedReviews.map(item => (
                     <div 
@@ -1065,7 +1065,7 @@ export default function ParentReviewPanel() {
                           <span style={{ fontWeight: 'bold', fontSize: '13px' }}>{item.name}</span>
                           {item.proctoringViolationTriggered && (
                             <span className="badge" style={{ background: 'var(--danger)', color: 'var(--text-white)', fontSize: '10px', fontWeight: 800, padding: '3px 8px', borderRadius: '4px' }}>
-                              🚨 Doubtful
+                              🚨 Doubtful / संदिग्ध
                             </span>
                           )}
                         </div>
@@ -1073,7 +1073,7 @@ export default function ParentReviewPanel() {
                           {formatDate(item.date)} • Subject: {item.subject}
                         </div>
                       </div>
-                      <span className="badge badge-success" style={{ fontSize: '10px' }}>Approved</span>
+                      <span className="badge badge-success" style={{ fontSize: '10px' }}>Approved / स्वीकृत</span>
                     </div>
                   ))
                 )}
@@ -1218,18 +1218,18 @@ export default function ParentReviewPanel() {
           <div className="modal-content" style={{ background: 'var(--surface-popover)', border: '1px solid var(--border-popover)', borderRadius: 'var(--radius-lg)', maxWidth: '800px', width: '100%', height: 'fit-content', maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
             <div className="modal-header" style={{ padding: '16px 24px', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 'bold' }}>
-                📝 Subjective Exam Evaluation
+                📝 Subjective Exam Evaluation / विषयनिष्ठ परीक्षा मूल्यांकन
               </h4>
               <button className="close-modal" onClick={() => setSelectedReview(null)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '1.2rem' }}>✕</button>
             </div>
             <div className="modal-body" style={{ padding: '24px', overflowY: 'auto', flex: 1 }}>
               <div style={{ background: 'var(--bg-soft)', padding: '16px', borderRadius: 'var(--radius)', fontSize: '13px', marginBottom: '20px', color: 'var(--text)' }}>
-                <p style={{ margin: '4px 0' }}><strong>Student:</strong> {children.find(c => c.code === selectedChild)?.name || 'Student'}</p>
-                <p style={{ margin: '4px 0' }}><strong>Exam:</strong> {selectedReview.name}</p>
-                <p style={{ margin: '4px 0' }}><strong>Subject:</strong> {selectedReview.subject}</p>
-                <p style={{ margin: '4px 0' }}><strong>Date:</strong> {formatDate(selectedReview.date)}</p>
-                <p style={{ margin: '4px 0' }}><strong>Submission Type:</strong> Subjective Home Test</p>
-                <p style={{ margin: '4px 0' }}><strong>Tab Switches:</strong> {selectedReview.tabViolations || 0} times</p>
+                <p style={{ margin: '4px 0' }}><strong>Student / विद्यार्थी:</strong> {children.find(c => c.code === selectedChild)?.name || 'Student'}</p>
+                <p style={{ margin: '4px 0' }}><strong>Exam / परीक्षा:</strong> {selectedReview.name}</p>
+                <p style={{ margin: '4px 0' }}><strong>Subject / विषय:</strong> {selectedReview.subject}</p>
+                <p style={{ margin: '4px 0' }}><strong>Date / तारीख:</strong> {formatDate(selectedReview.date)}</p>
+                <p style={{ margin: '4px 0' }}><strong>Submission Type / प्रकार:</strong> Subjective Home Test / विषयनिष्ठ परीक्षा</p>
+                <p style={{ margin: '4px 0' }}><strong>Tab Switches / टैब बदलाव:</strong> {selectedReview.tabViolations || 0} times</p>
               </div>
 
               {/* Detailed Subjective Grading Form */}
@@ -1241,12 +1241,13 @@ export default function ParentReviewPanel() {
                     </div>
                   ) : questions.length === 0 ? (
                     <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)' }}>
-                      No questions found for this exam.
+                      No questions found for this exam / इस परीक्षा के लिए कोई प्रश्न नहीं मिला।
                     </div>
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                      <div className="info-box blue" style={{ fontSize: '11px', background: 'var(--info-bg)', borderLeft: '4px solid var(--accent)', padding: '10px 14px', borderRadius: '4px', color: 'var(--text)', border: '1px solid var(--border)', marginBottom: '10px' }}>
-                        💡 <strong>Parent Evaluation Mode:</strong> Please check your child's physical paper/notebook against the Model Answer Key (with highlighted keywords) shown below and award marks for each question.
+                      <div className="info-box blue" style={{ fontSize: '11.5px', background: 'var(--info-bg)', borderLeft: '4px solid var(--accent)', padding: '10px 14px', borderRadius: '4px', color: 'var(--text)', border: '1px solid var(--border)', marginBottom: '10px', lineHeight: 1.5 }}>
+                        <div>💡 <strong>Parent Evaluation Mode:</strong> Please check your child&apos;s physical paper/notebook against the Model Answer Key (with highlighted keywords) shown below and award marks for each question.</div>
+                        <div style={{ marginTop: '4px', color: 'var(--text-muted)' }}>💡 <strong>पालक मूल्यांकन मोड:</strong> कृपया नीचे दी गई आदर्श उत्तर कुंजी (Model Answer Key) देखकर अपने बच्चे की उत्तरपुस्तिका/पेपर जांचें और प्रत्येक प्रश्न के अंक दें।</div>
                       </div>
 
                       {questions.map((q, idx) => {
@@ -1263,8 +1264,8 @@ export default function ParentReviewPanel() {
                         return (
                           <div key={q.id} className="card" style={{ background: 'var(--surface)', borderRadius: 'var(--radius-md)', border: '1.5px solid var(--border)', overflow: 'hidden', boxShadow: 'var(--shadow-sm)', marginBottom: '16px' }}>
                             <div style={{ padding: '10px 14px', background: 'var(--surface-2)', borderBottom: '1.5px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                              <span style={{ fontWeight: 800, color: 'var(--accent)', fontSize: '13px' }}>Question {idx + 1}</span>
-                              <span style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--text-muted)', background: 'var(--surface)', padding: '2px 8px', borderRadius: '12px', border: '1px solid var(--border)' }}>{q.marks} Marks</span>
+                              <span style={{ fontWeight: 800, color: 'var(--accent)', fontSize: '13px' }}>Question {idx + 1} / प्रश्न {idx + 1}</span>
+                              <span style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--text-muted)', background: 'var(--surface)', padding: '2px 8px', borderRadius: '12px', border: '1px solid var(--border)' }}>{q.marks} Marks / अंक</span>
                             </div>
 
                             <div style={{ padding: '16px' }}>
@@ -1278,13 +1279,13 @@ export default function ParentReviewPanel() {
 
                             <div style={{ borderTop: '1px dashed var(--border)', background: 'var(--surface-2)', padding: '14px' }}>
                               <div style={{ background: 'var(--success-bg)', border: '1.5px solid var(--success)', padding: '12px', borderRadius: '8px', marginBottom: '14px' }}>
-                                <strong style={{ fontSize: '12px', color: 'var(--success)', display: 'flex', alignItems: 'center', gap: '6px' }}>📖 Model Answer Key (Keyword Highlighted):</strong>
+                                <strong style={{ fontSize: '12px', color: 'var(--success)', display: 'flex', alignItems: 'center', gap: '6px' }}>📖 Model Answer Key (Keyword Highlighted) / आदर्श उत्तर कुंजी:</strong>
                                 <div style={{ fontSize: '12.5px', marginTop: '8px', color: 'var(--text)', whiteSpace: 'pre-line', lineHeight: 1.6 }}>
                                   <RichMathText content={highlightedSolution} />
                                 </div>
                               </div>
 
-                              <strong style={{ fontSize: '12px', fontWeight: 800, display: 'block', marginBottom: '10px', color: 'var(--text)' }}>✏️ Award Marks:</strong>
+                              <strong style={{ fontSize: '12px', fontWeight: 800, display: 'block', marginBottom: '10px', color: 'var(--text)' }}>✏️ Award Marks / अंक दें:</strong>
                               
                               {q.steps && q.steps.length > 0 ? (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -1538,18 +1539,22 @@ export default function ParentReviewPanel() {
       {/* Actor Selection & Camera Verification Modal */}
       {actorModal.show && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 11000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
-          <div style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', maxWidth: '440px', width: '100%', padding: '24px', border: '1px solid var(--border-light)', boxShadow: '0 20px 40px rgba(0,0,0,0.3)', textAlign: 'center' }}>
+          <div style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', maxWidth: '460px', width: '100%', padding: '24px', border: '1px solid var(--border-light)', boxShadow: '0 20px 40px rgba(0,0,0,0.3)', textAlign: 'center' }}>
             <div style={{ fontSize: '32px', marginBottom: '8px' }}>📝</div>
-            <h3 style={{ fontSize: '16px', fontWeight: 800, margin: '0 0 6px 0' }}>Who is completing this review?</h3>
-            <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '0 0 20px 0' }}>
-              Select who went through the mistakes and solutions to record parent sincerity verification.
+            <h3 style={{ fontSize: '16px', fontWeight: 800, margin: '0 0 6px 0' }}>
+              Who is completing this review?<br />
+              <span style={{ fontSize: '13px', color: 'var(--accent)' }}>यह समीक्षा कौन कर रहा है?</span>
+            </h3>
+            <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '0 0 20px 0', lineHeight: 1.45 }}>
+              Select who went through the mistakes and solutions to record parent sincerity verification.<br />
+              पालक सत्यनिष्ठा सत्यापन के लिए चुनें कि गलतियों और उत्तरों की जांच किसने की।
             </p>
 
             {capturingSnapshot ? (
               <div style={{ padding: '30px 20px', background: 'var(--bg-soft)', borderRadius: 'var(--radius)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
                 <div className="spinner"></div>
                 <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--accent)' }}>
-                  Processing verification...
+                  Processing verification... / सत्यापन प्रक्रिया जारी है...
                 </div>
               </div>
             ) : (
@@ -1572,8 +1577,8 @@ export default function ParentReviewPanel() {
                   }}
                 >
                   <div>
-                    <div style={{ fontWeight: 700, fontSize: '13px' }}>👨‍👩‍👧 Parent & Student Together</div>
-                    <div style={{ fontSize: '11px', opacity: 0.85 }}>Parent sat & reviewed mistakes together</div>
+                    <div style={{ fontWeight: 700, fontSize: '13px' }}>👨‍👩‍👧 Parent &amp; Student Together / पालक व विद्यार्थी एकत्र</div>
+                    <div style={{ fontSize: '11px', opacity: 0.9 }}>Parent sat &amp; reviewed mistakes together / पालकों ने साथ बैठकर गलतियां जांचीं</div>
                   </div>
                   <span style={{ fontSize: '18px' }}>➔</span>
                 </button>
@@ -1596,8 +1601,8 @@ export default function ParentReviewPanel() {
                   }}
                 >
                   <div>
-                    <div style={{ fontWeight: 600, fontSize: '13px' }}>👨‍🎓 Student Solo</div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Student completed review independently</div>
+                    <div style={{ fontWeight: 600, fontSize: '13px' }}>👨‍🎓 Student Solo / केवल विद्यार्थी</div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Student completed review independently / विद्यार्थी ने स्वयं समीक्षा पूरी की</div>
                   </div>
                   <span style={{ fontSize: '16px', color: 'var(--text-muted)' }}>➔</span>
                 </button>
@@ -1608,7 +1613,7 @@ export default function ParentReviewPanel() {
                   onClick={() => setActorModal(prev => ({ ...prev, show: false }))}
                   style={{ marginTop: '8px', padding: '8px 16px', fontSize: '12px' }}
                 >
-                  Cancel
+                  Cancel / रद्द करें
                 </button>
               </div>
             )}

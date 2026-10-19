@@ -58,18 +58,18 @@ export const ParentNoticeModals = React.memo(function ParentNoticeModals({
         <div className="modal show" style={{ position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.45)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
           <div className="modal-content" style={{ background: 'var(--surface-popover)', border: '1px solid var(--border-popover)', borderRadius: 'var(--radius-lg)', maxWidth: '600px', width: '100%', maxHeight: '80vh', display: 'flex', flexDirection: 'column', padding: '0', overflow: 'hidden' }}>
             <div className="modal-header" style={{ padding: '16px 24px', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 'bold' }}>🔔 Push Notification History</h4>
+              <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 'bold' }}>🔔 Push Notification History / नोटिफिकेशन इतिहास</h4>
               <button className="close-modal" onClick={onCloseNotificationHistory} style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '1.2rem', color: 'var(--text-muted)' }}>✕</button>
             </div>
             
             <div className="modal-body" style={{ padding: '24px', overflowY: 'auto', flex: 1 }}>
               {loadingHistory ? (
                 <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)' }}>
-                  <div className="spinner" style={{ margin: '0 auto 10px' }}></div> Loading history...
+                  <div className="spinner" style={{ margin: '0 auto 10px' }}></div> Loading history... / लोड हो रहा है...
                 </div>
               ) : notificationHistory.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text-muted)', fontSize: '13px' }}>
-                  No notification history found.
+                  No notification history found. / कोई सूचना इतिहास नहीं मिला।
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -87,7 +87,7 @@ export const ParentNoticeModals = React.memo(function ParentNoticeModals({
             </div>
             
             <div className="modal-footer" style={{ padding: '12px 24px', borderTop: '1px solid var(--border-light)', display: 'flex', justifyContent: 'flex-end' }}>
-              <button className="btn btn-secondary" onClick={onCloseNotificationHistory}>Close</button>
+              <button className="btn btn-secondary" onClick={onCloseNotificationHistory}>Close / बंद करें</button>
             </div>
           </div>
         </div>
@@ -98,14 +98,14 @@ export const ParentNoticeModals = React.memo(function ParentNoticeModals({
         <div className="modal show" style={{ position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.45)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
           <div className="modal-content" style={{ background: 'var(--surface-popover)', border: '1px solid var(--border-popover)', borderRadius: 'var(--radius-lg)', maxWidth: '600px', width: '100%', maxHeight: '80vh', display: 'flex', flexDirection: 'column', padding: '0', overflow: 'hidden' }}>
             <div className="modal-header" style={{ padding: '16px 24px', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 'bold' }}>📢 Announcements</h4>
+              <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 'bold' }}>📢 Announcements / सूचनाएं</h4>
               <button className="close-modal" onClick={onCloseNoticesModal} style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '1.2rem', color: 'var(--text-muted)' }}>✕</button>
             </div>
             
             <div className="modal-body" style={{ padding: '24px', overflowY: 'auto', flex: 1 }}>
               {visibleNotices.length === 0 && !showSeenNotices ? (
                 <div style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text-muted)' }}>
-                  <span style={{ fontSize: '13px' }}>All caught up! ✅ No new announcements.</span>
+                  <span style={{ fontSize: '13px' }}>All caught up! ✅ No new announcements / कोई नई सूचना नहीं है।</span>
                   <div style={{ marginTop: '16px' }}>
                     <button
                       onClick={onToggleShowSeenNotices}
@@ -119,7 +119,7 @@ export const ParentNoticeModals = React.memo(function ParentNoticeModals({
                         fontWeight: 600
                       }}
                     >
-                      Show read announcements
+                      Show read announcements / पढ़ी गई सूचनाएं देखें
                     </button>
                   </div>
                 </div>
@@ -222,9 +222,9 @@ export const ParentNoticeModals = React.memo(function ParentNoticeModals({
                   fontWeight: 600
                 }}
               >
-                {showSeenNotices ? 'Show unread only' : 'Show read announcements'}
+                {showSeenNotices ? 'Show unread only / केवल अपठित दिखाएं' : 'Show read announcements / पढ़ी गई सूचनाएं दिखाएं'}
               </button>
-              <button className="btn btn-secondary" onClick={onCloseNoticesModal}>Close</button>
+              <button className="btn btn-secondary" onClick={onCloseNoticesModal}>Close / बंद करें</button>
             </div>
           </div>
         </div>
@@ -235,18 +235,18 @@ export const ParentNoticeModals = React.memo(function ParentNoticeModals({
         const type = activeOverlayNotice.type || 'general';
         const typeConfig = 
           type === 'schedule' 
-            ? { title: '📅 CLASS SCHEDULE UPDATE', color: 'var(--accent)', bg: 'var(--accent-soft)', text: 'var(--accent)', icon: '📅' }
+            ? { title: '📅 CLASS SCHEDULE UPDATE / क्लास शेड्यूल अपडेट', color: 'var(--accent)', bg: 'var(--accent-soft)', text: 'var(--accent)', icon: '📅' }
             : type === 'fees'
-            ? { title: '💳 FEES REMINDER', color: 'var(--warning)', bg: 'var(--warning-bg)', text: 'var(--warning)', icon: '💳' }
+            ? { title: '💳 FEES REMINDER / फीस रिमाइंडर', color: 'var(--warning)', bg: 'var(--warning-bg)', text: 'var(--warning)', icon: '💳' }
             : type === 'exam_absent'
-            ? { title: '🚨 EXAM ABSENCE ALERT', color: 'var(--danger)', bg: 'var(--danger-bg)', text: 'var(--danger-muted)', icon: '🚨' }
+            ? { title: '🚨 EXAM ABSENCE ALERT / परीक्षा अनुपस्थिति अलर्ट', color: 'var(--danger)', bg: 'var(--danger-bg)', text: 'var(--danger-muted)', icon: '🚨' }
             : type === 'exam_excellent'
-            ? { title: '🌟 EXCELLENT EXAM RESULT', color: 'var(--success)', bg: 'var(--success-bg)', text: 'var(--success)', icon: '🌟' }
+            ? { title: '🌟 EXCELLENT EXAM RESULT / शानदार परीक्षा परिणाम', color: 'var(--success)', bg: 'var(--success-bg)', text: 'var(--success)', icon: '🌟' }
             : type === 'exam_good'
-            ? { title: '👏 EXAM RESULT ANNOUNCEMENT', color: 'var(--accent)', bg: 'var(--accent-soft)', text: 'var(--accent)', icon: '👏' }
+            ? { title: '👏 EXAM RESULT ANNOUNCEMENT / परीक्षा परिणाम घोषणा', color: 'var(--accent)', bg: 'var(--accent-soft)', text: 'var(--accent)', icon: '👏' }
             : type === 'exam_needs_improvement'
-            ? { title: '⚠️ EXAM RESULT - ATTENTION', color: 'var(--warning)', bg: 'var(--warning-bg)', text: 'var(--warning)', icon: '⚠️' }
-            : { title: '📢 IMPORTANT ANNOUNCEMENT', color: 'var(--danger)', bg: 'var(--danger-bg)', text: 'var(--danger-muted)', icon: '📢' };
+            ? { title: '⚠️ EXAM RESULT - ATTENTION / परीक्षा परिणाम - ध्यान दें', color: 'var(--warning)', bg: 'var(--warning-bg)', text: 'var(--warning)', icon: '⚠️' }
+            : { title: '📢 IMPORTANT ANNOUNCEMENT / महत्वपूर्ण सूचना', color: 'var(--danger)', bg: 'var(--danger-bg)', text: 'var(--danger-muted)', icon: '📢' };
         
         const isAbsentNotice = type === 'exam_absent';
 
@@ -414,7 +414,7 @@ export const ParentNoticeModals = React.memo(function ParentNoticeModals({
                   className="btn btn-primary" 
                   onClick={() => {
                     if (isAbsentNotice && !absenceReason) {
-                      alert('Please select a reason for absence before submitting.');
+                      alert('Please select a reason for absence before submitting. / कृपया आगे बढ़ने से पहले अनुपस्थिति का कारण चुनें।');
                       return;
                     }
                     onDismissOverlayNotice(activeOverlayNotice.id, absenceReason, absenceRemarks);
@@ -431,7 +431,7 @@ export const ParentNoticeModals = React.memo(function ParentNoticeModals({
                     cursor: 'pointer'
                   }}
                 >
-                  {isAbsentNotice ? 'कारण सबमिट करें और आगे बढ़ें' : 'I Understand & Dismiss'}
+                  {isAbsentNotice ? 'कारण सबमिट करें और आगे बढ़ें / Submit Reason & Proceed' : 'I Understand & Dismiss / समझ गया एवं बंद करें'}
                 </button>
               </div>
             </div>

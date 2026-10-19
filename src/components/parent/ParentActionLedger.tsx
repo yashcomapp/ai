@@ -49,17 +49,17 @@ export const ParentActionLedger = React.memo(function ParentActionLedger({
           <CheckCircle2 size={18} color="var(--success)" style={{ flexShrink: 0 }} />
         )}
         <div>
-          <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 800, color: hasPending ? 'var(--warning)' : 'var(--success)', lineHeight: 1.2 }}>
+          <h3 style={{ margin: 0, fontSize: '13.5px', fontWeight: 800, color: hasPending ? 'var(--warning)' : 'var(--success)', lineHeight: 1.25 }}>
             {hasPending 
-              ? `${pendingReviews.length} thing(s) need your attention` 
-              : 'All Clear!'}
+              ? `${pendingReviews.length} item(s) need attention / आपके ध्यान की आवश्यकता है` 
+              : 'All Clear! / सब ठीक है!'}
           </h3>
-          <p style={{ margin: '1px 0 0 0', fontSize: '11px', color: 'var(--text-muted)' }}>
+          <p style={{ margin: '2px 0 0 0', fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.3 }}>
             {hasPending 
               ? (firstPending?.type === 'absent_exam'
-                  ? `Exam absence pending acknowledgment • ${firstPending?.name}`
-                  : `Submission pending for review • ${firstPending?.subject || 'Mathematics'} • Submitted today`)
-              : 'All exam paper reviews are completed and up to date.'}
+                  ? `Exam absence pending acknowledgment • ${firstPending?.name} • अनुपस्थिति की पुष्टि बाकी`
+                  : `Submission pending for review • ${firstPending?.subject || 'Mathematics'} • पालक जांच/समीक्षा बाकी`)
+              : 'All exam paper reviews are completed / सभी टेस्ट एवं परीक्षाओं की समीक्षा पूरी है।'}
           </p>
         </div>
       </div>
@@ -70,9 +70,9 @@ export const ParentActionLedger = React.memo(function ParentActionLedger({
             className="btn btn-primary"
             onClick={handleActionClick}
             style={{
-              padding: '5px 12px',
+              padding: '6px 14px',
               borderRadius: '16px',
-              fontSize: '11px',
+              fontSize: '11.5px',
               fontWeight: 800,
               cursor: 'pointer',
               display: 'flex',
@@ -80,16 +80,16 @@ export const ParentActionLedger = React.memo(function ParentActionLedger({
               gap: '4px'
             }}
           >
-            <span>{firstPending?.type === 'absent_exam' ? 'Acknowledge Now' : 'Review Now'}</span>
+            <span>{firstPending?.type === 'absent_exam' ? 'Acknowledge Now / अभी पुष्टि करें' : 'Review Now / अभी चेक करें'}</span>
             <ChevronRight size={12} />
           </button>
         ) : (
           <button
             className="btn btn-secondary"
             onClick={() => router.push(`/parent/review?child=${selectedChildCode}`)}
-            style={{ padding: '4px 10px', fontSize: '11px', borderRadius: '16px', fontWeight: 700 }}
+            style={{ padding: '5px 12px', fontSize: '11px', borderRadius: '16px', fontWeight: 700 }}
           >
-            View History <ChevronRight size={12} style={{ display: 'inline', verticalAlign: 'middle' }} />
+            View History / इतिहास देखें <ChevronRight size={12} style={{ display: 'inline', verticalAlign: 'middle' }} />
           </button>
         )}
       </div>

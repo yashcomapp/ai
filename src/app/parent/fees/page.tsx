@@ -124,16 +124,16 @@ function ParentFeesContent() {
             {/* Summary Row */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '8px' }}>
               <div className="card" style={{ background: 'var(--surface)', padding: '10px 8px', borderRadius: 'var(--radius)', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'center', textAlign: 'center' }}>
-                <span style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800 }}>Net Payable Rate</span>
+                <span style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800 }}>Net Payable Rate • कुल देय शुल्क</span>
                 <span style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--text)' }}>₹{fee.netPayableAmount}</span>
                 <span style={{ fontSize: '10px', color: 'var(--text-faint)' }}>Package: ₹{fee.totalPackageAmount} | Disc: ₹{fee.discountAmount}</span>
               </div>
               <div className="card" style={{ background: 'var(--surface)', padding: '10px 8px', borderRadius: 'var(--radius)', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'center', textAlign: 'center' }}>
-                <span style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800 }}>Total Paid</span>
+                <span style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800 }}>Total Paid • कुल जमा राशि</span>
                 <span style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--success)' }}>₹{fee.totalPaidAmount}</span>
               </div>
               <div className="card" style={{ background: 'var(--surface)', padding: '10px 8px', borderRadius: 'var(--radius)', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'center', textAlign: 'center' }}>
-                <span style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800 }}>Outstanding Balance</span>
+                <span style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800 }}>Outstanding Balance • बकाया राशि</span>
                 <span style={{ fontSize: '1.3rem', fontWeight: 800, color: fee.outstandingAmount > 0 ? 'var(--danger)' : 'var(--success)' }}>₹{fee.outstandingAmount}</span>
               </div>
             </div>
@@ -142,6 +142,9 @@ function ParentFeesContent() {
             {fee.hasOverdueInstallment && (
               <div className="alert-box alert-box-danger" style={{ display: 'block', margin: 0, fontWeight: 700 }}>
                 ⚠️ ATTENTION: Your child has overdue installments pending. Please clear these dues as soon as possible.
+                <div style={{ fontSize: '11px', fontWeight: 500, marginTop: '2px' }}>
+                  ध्यान दें: आपके पाल्य की फीस की किश्त बकाया है। कृपया इसे यथाशीघ्र जमा करें।
+                </div>
               </div>
             )}
 
@@ -149,31 +152,31 @@ function ParentFeesContent() {
             {/* Installments schedule list */}
             <div className="card" style={{ background: 'var(--surface)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
               <div style={{ padding: '8px 12px', borderBottom: '1px solid var(--border-light)' }}>
-                <h3 style={{ margin: 0, fontSize: '13px', fontWeight: 'bold' }}>📅 Installments Dues Timeline</h3>
+                <h3 style={{ margin: 0, fontSize: '13px', fontWeight: 'bold' }}>📅 Installments Dues Timeline • किश्त भुगतान समय-सारणी</h3>
               </div>
               <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                   <thead>
                     <tr style={{ background: 'var(--bg-soft)', borderBottom: '1px solid var(--border-light)', fontSize: '11px', color: 'var(--text-muted)' }}>
-                      <th style={{ padding: '6px 10px' }}>INSTALLMENT</th>
-                      <th style={{ padding: '6px 10px' }}>DUE AMOUNT</th>
-                      <th style={{ padding: '6px 10px' }}>DUE DATE</th>
-                      <th style={{ padding: '6px 10px' }}>STATUS</th>
+                      <th style={{ padding: '6px 10px' }}>INSTALLMENT • किश्त</th>
+                      <th style={{ padding: '6px 10px' }}>DUE AMOUNT • देय राशि</th>
+                      <th style={{ padding: '6px 10px' }}>DUE DATE • अंतिम तारीख</th>
+                      <th style={{ padding: '6px 10px' }}>STATUS • स्थिति</th>
                     </tr>
                   </thead>
                   <tbody>
                     {fee.installments?.map((inst: any, idx: number) => (
                       <tr key={idx} style={{ borderBottom: '1px solid var(--border-light)' }}>
-                        <td style={{ padding: '6px 10px', fontSize: '12.5px', fontWeight: 'bold' }}>Installment {inst.installmentNo}</td>
+                        <td style={{ padding: '6px 10px', fontSize: '12.5px', fontWeight: 'bold' }}>Installment {inst.installmentNo} (किश्त {inst.installmentNo})</td>
                         <td style={{ padding: '6px 10px', fontSize: '12.5px', fontWeight: 700 }}>₹{inst.amount}</td>
                         <td style={{ padding: '6px 10px', fontSize: '12.5px' }}>{formatDateStr(inst.dueDate)}</td>
                         <td style={{ padding: '6px 10px' }}>
                           {inst.status === 'paid' ? (
-                            <span className="badge badge-success" style={{ fontSize: '10px' }}>PAID</span>
+                            <span className="badge badge-success" style={{ fontSize: '10px' }}>PAID • जमा</span>
                           ) : inst.status === 'overdue' ? (
-                            <span className="badge badge-danger" style={{ fontSize: '10px' }}>OVERDUE</span>
+                            <span className="badge badge-danger" style={{ fontSize: '10px' }}>OVERDUE • बकाया</span>
                           ) : (
-                            <span className="badge badge-secondary" style={{ fontSize: '10px' }}>PENDING</span>
+                            <span className="badge badge-secondary" style={{ fontSize: '10px' }}>PENDING • आगामी</span>
                           )}
                         </td>
                       </tr>
@@ -186,21 +189,21 @@ function ParentFeesContent() {
             {/* Payment history list */}
             <div className="card" style={{ background: 'var(--surface)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
               <div style={{ padding: '8px 12px', borderBottom: '1px solid var(--border-light)' }}>
-                <h3 style={{ margin: 0, fontSize: '13px', fontWeight: 'bold' }}>🧾 Logged Receipts History</h3>
+                <h3 style={{ margin: 0, fontSize: '13px', fontWeight: 'bold' }}>🧾 Logged Receipts History • फीस भुगतान रसीदें</h3>
               </div>
               {transactions.length === 0 ? (
-                <div style={{ padding: '16px', textAlign: 'center', color: 'var(--text-faint)', fontSize: '12px' }}>No payments logged yet.</div>
+                <div style={{ padding: '16px', textAlign: 'center', color: 'var(--text-faint)', fontSize: '12px' }}>No payments logged yet. • अभी तक कोई रसीद दर्ज नहीं है।</div>
               ) : (
                 <div style={{ overflowX: 'auto' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                     <thead>
                       <tr style={{ background: 'var(--bg-soft)', borderBottom: '1px solid var(--border-light)', fontSize: '11px', color: 'var(--text-muted)' }}>
-                        <th style={{ padding: '6px 10px' }}>RECEIPT ID</th>
-                        <th style={{ padding: '6px 10px' }}>ALLOCATED DUES</th>
-                        <th style={{ padding: '6px 10px' }}>METHOD</th>
+                        <th style={{ padding: '6px 10px' }}>RECEIPT ID • रसीद क्र.</th>
+                        <th style={{ padding: '6px 10px' }}>ALLOCATED DUES • किश्त</th>
+                        <th style={{ padding: '6px 10px' }}>METHOD • माध्यम</th>
                         <th style={{ padding: '6px 10px' }}>REF / TR REF</th>
-                        <th style={{ padding: '6px 10px' }}>AMOUNT PAID</th>
-                        <th style={{ padding: '6px 10px' }}>DATE LOGGED</th>
+                        <th style={{ padding: '6px 10px' }}>AMOUNT PAID • जमा</th>
+                        <th style={{ padding: '6px 10px' }}>DATE LOGGED • तारीख</th>
                       </tr>
                     </thead>
                     <tbody>

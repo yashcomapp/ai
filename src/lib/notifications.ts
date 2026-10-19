@@ -437,7 +437,7 @@ export async function notifyNewExam(
     const typeLabel = isSubjective ? 'Subjective' : 'Objective';
 
     const title = 'YASHCOM';
-    const body = `📝 New Exam Assigned - ( ${typeLabel} )\nSubject (s) :- ${subjectStr}\nChapter (s) :- ${chapterStr}\nTopic (s) :- ${topicStr}\nSchedule :- ${scheduleStr}`;
+    const body = `📝 New Exam Assigned • नई परीक्षा निर्धारित (${typeLabel})\nविषय / Subject: ${subjectStr}\nपाठ / Chapter: ${chapterStr}\nटॉपिक / Topic: ${topicStr}\nसमय / Schedule: ${scheduleStr}`;
 
     // Multicast to students and parents
     const allRecipients = Array.from(new Set([...studentUids, ...parentUids]));
@@ -477,7 +477,7 @@ export async function notifyReviewPending(params: {
     const mins = Math.max(1, Math.round((params.durationSpentSec || 0) / 60));
 
     const title = 'YASHCOM';
-    const body = `Your child ${params.studentName} started ${startTime} and completed ${endTime} practice on "${params.topicName}" scoring ${params.scorePercent}%, Time taken = ${mins} minutes, Tab Switch = ${params.tabViolations || 0}, Gaze = ${params.gazeViolations || 0}.`;
+    const body = `📝 Practice Completed • अभ्यास पूरा:\n${params.studentName} scored ${params.scorePercent}% on "${params.topicName}" (${mins} min). Tab Switch: ${params.tabViolations || 0}, Gaze: ${params.gazeViolations || 0}.\nकृपया ऐप में समीक्षा करें (Please review in app).`;
 
     await sendPushNotification(parentUids, title, body, {
       type: 'practice_review_pending',
@@ -504,7 +504,7 @@ export async function notifyStudentLogin(studentCode: string, studentName: strin
     if (parentUids.length === 0) return;
 
     const title = 'YASHCOM';
-    const body = `🟢 Log In: ${studentName} logged into learning platform.`;
+    const body = `🟢 Log In • लॉगिन: ${studentName} ऐप में ऑनलाइन उपस्थित हैं (logged in).`;
 
     await sendPushNotification(parentUids, title, body, { type: 'student_login', studentCode });
   } catch (err) {
@@ -549,7 +549,7 @@ export async function notifyStudentLogout(studentCode: string, studentName: stri
     const practiceStr = formatMinutes(logData.practiceSeconds || 0);
 
     const title = 'YASHCOM';
-    const body = `🔴 Log Out: ${studentName} logged out. Today's summary: Total: ${totalStr} | Practice: ${practiceStr} | Exam: ${examStr} | Review: ${reviewStr}.`;
+    const body = `🔴 Log Out • लॉगआउट: ${studentName} ऐप से लॉगआउट हुए। आज का समय (Total): ${totalStr} (अभ्यास: ${practiceStr} | परीक्षा: ${examStr} | समीक्षा: ${reviewStr}).`;
 
     await sendPushNotification(parentUids, title, body, { type: 'student_logout', studentCode });
   } catch (err) {

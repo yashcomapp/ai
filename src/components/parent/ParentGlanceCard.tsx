@@ -60,21 +60,21 @@ export const ParentGlanceCard = React.memo(function ParentGlanceCard({
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', flexWrap: 'nowrap', gap: '6px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <TrendingUp size={18} color="var(--primary)" />
-          <h3 style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text)', margin: 0, lineHeight: 1.2, whiteSpace: 'nowrap' }}>
-            Child at a Glance
+          <h3 style={{ fontSize: '13.5px', fontWeight: 800, color: 'var(--text)', margin: 0, lineHeight: 1.2, whiteSpace: 'nowrap' }}>
+            Child at a Glance / संक्षेप में स्थिति
           </h3>
         </div>
         <span style={{
           background: 'var(--surface-2)',
           color: 'var(--text-muted)',
-          fontSize: '10.5px',
+          fontSize: '10px',
           fontWeight: 700,
           padding: '3px 8px',
           borderRadius: 'var(--radius-pill)',
           border: '1px solid var(--border)',
           whiteSpace: 'nowrap'
         }}>
-          This Month
+          This Month / इस महीने
         </span>
       </div>
 
@@ -89,8 +89,11 @@ export const ParentGlanceCard = React.memo(function ParentGlanceCard({
           <div style={{ fontSize: '1.55rem', fontWeight: 800, color: 'var(--primary)', lineHeight: 1 }}>
             {avgExamScore}%
           </div>
-          <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700 }}>
+          <div style={{ fontSize: '11px', color: 'var(--text)', fontWeight: 800 }}>
             Average Marks
+          </div>
+          <div style={{ fontSize: '9.5px', color: 'var(--text-muted)', fontWeight: 600 }}>
+            औसत अंक
           </div>
         </div>
 
@@ -99,10 +102,13 @@ export const ParentGlanceCard = React.memo(function ParentGlanceCard({
           <div style={{ fontSize: '1.55rem', fontWeight: 800, color: 'var(--success)', lineHeight: 1 }}>
             {lqScore}%
           </div>
-          <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700 }}>
+          <div style={{ fontSize: '11px', color: 'var(--text)', fontWeight: 800 }}>
             LQ Score
           </div>
-          <div style={{ fontSize: '9.5px', color: 'var(--text-secondary)', fontWeight: 600 }}>
+          <div style={{ fontSize: '9.5px', color: 'var(--text-muted)', fontWeight: 600 }}>
+            टॉपिक मास्टरी
+          </div>
+          <div style={{ fontSize: '9px', color: 'var(--text-secondary)', fontWeight: 600 }}>
             🔁 {retentionScore}% Retention
           </div>
         </div>
@@ -112,8 +118,11 @@ export const ParentGlanceCard = React.memo(function ParentGlanceCard({
           <div style={{ fontSize: '1.55rem', fontWeight: 800, color: 'var(--warning)', lineHeight: 1 }}>
             {effortsScore}%
           </div>
-          <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700 }}>
+          <div style={{ fontSize: '11px', color: 'var(--text)', fontWeight: 800 }}>
             Efforts %
+          </div>
+          <div style={{ fontSize: '9.5px', color: 'var(--text-muted)', fontWeight: 600 }}>
+            प्रयास दर
           </div>
         </div>
       </div>

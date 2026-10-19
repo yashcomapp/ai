@@ -365,7 +365,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
         <div style={{ maxWidth: '480px', width: '100%', textAlign: 'center', padding: '32px 24px', background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: `1px solid ${isAutonomousError ? 'var(--danger)' : 'var(--border-light)'}`, boxShadow: 'var(--shadow-glass)' }}>
           <div style={{ fontSize: '3rem', marginBottom: '12px' }}>🔒</div>
           <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--danger)', marginBottom: '8px' }}>
-            {isAutonomousError ? 'Login Denied / Access Restricted' : 'Notice'}
+            {isAutonomousError ? 'Login Denied / Access Restricted • प्रवेश प्रतिबंधित' : 'Notice • सूचना'}
           </h3>
           <p style={{ fontSize: '13.5px', color: 'var(--text)', lineHeight: '1.5', marginBottom: '20px' }}>
             {fatalError}
@@ -375,7 +375,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
             onClick={logout} 
             style={{ background: 'var(--danger)', color: 'var(--text-white)', border: 'none', padding: '10px 20px', borderRadius: 'var(--radius-md)', fontWeight: 'bold', cursor: 'pointer' }}
           >
-            Back to Login
+            Back to Login • वापस लॉगिन पर जाएं
           </button>
         </div>
       </div>

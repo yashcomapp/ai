@@ -32,24 +32,25 @@ export const ParentSrsCard = React.memo(function ParentSrsCard({
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px', flexWrap: 'wrap', gap: '6px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <span style={{ fontSize: '16px' }}>🔁</span>
-          <h3 style={{ margin: 0, fontSize: '13px', fontWeight: 800, color: 'var(--text)', lineHeight: 1.2 }}>
-            Memory Refresher Due ({srsDueCount} Topics)
+          <h3 style={{ margin: 0, fontSize: '13px', fontWeight: 800, color: 'var(--text)', lineHeight: 1.25 }}>
+            Practice Due ({srsDueCount} Topics) / अभ्यास बाकी ({srsDueCount} टॉपिक्स)
           </h3>
         </div>
         <span style={{
           background: 'var(--info-bg)',
           color: 'var(--info)',
-          fontSize: '10.5px',
+          fontSize: '10px',
           fontWeight: 700,
           padding: '2px 8px',
           borderRadius: 'var(--radius-pill)',
           border: '1px solid var(--border)'
         }}>
-          {retentionScore}% Retained Memory
+          {retentionScore}% Memory / स्मरण
         </span>
       </div>
       <p style={{ margin: '0 0 8px 0', fontSize: '11px', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
-        Topics follow Ebbinghaus memory intervals (4, 7, 14, 30, 60, 90 days). Encourage your child to complete their 5-min micro-workout on their dashboard to protect their high LQ score.
+        Regular practice keeps concepts fresh. Encourage your child to complete their practice sets to protect their high Mastery score.<br />
+        <span style={{ color: 'var(--text-muted)' }}>नियमित अभ्यास से विषय याद रहता है। अपने बच्चे को उच्च मास्टरी स्कोर बनाए रखने के लिए अभ्यास पूरा करने हेतु प्रेरित करें।</span>
       </p>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
         {srsDueTopics.slice(0, 3).map((t) => (
@@ -59,7 +60,7 @@ export const ParentSrsCard = React.memo(function ParentSrsCard({
               <span style={{ color: 'var(--text-muted)' }}>• {t.subjectName}</span>
             </div>
             <span style={{ color: 'var(--warning)', fontWeight: 700, fontSize: '10px' }}>
-              {t.stageLabel || 'Workout Due'}
+              {t.stageLabel ? `${t.stageLabel} / बाकी` : 'Practice Due / बाकी'}
             </span>
           </div>
         ))}

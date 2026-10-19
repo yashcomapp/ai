@@ -291,19 +291,21 @@ export default function AttendanceManager({ role }: AttendanceManagerProps) {
           
           {/* Section 1: Today's Daily Check-In */}
           <div>
-            <h3 style={{ margin: '0 0 10px 0', fontSize: '14px', fontWeight: 'bold', color: 'var(--text)' }}>Today's Daily Check-In for {displayName} ({formatDateStr(todayStr)})</h3>
+            <h3 style={{ margin: '0 0 10px 0', fontSize: '14px', fontWeight: 'bold', color: 'var(--text)' }}>Today's Daily Check-In • आज की उपस्थिति ({displayName} - {formatDateStr(todayStr)})</h3>
             
             {isCurrentlyOnLeaveToday ? (
               <div style={{ padding: '12px', background: 'var(--surface-2)', border: '1px solid var(--border)', color: 'var(--text-muted)', borderRadius: '6px', fontSize: '13px' }}>
-                🌴 <strong>{displayName} is on approved leave today.</strong> No daily check-in is required.
+                🌴 <strong>{displayName} is on approved leave today • {displayName} आज स्वीकृत छुट्टी पर हैं।</strong> No daily check-in is required.
               </div>
             ) : todayLog && todayLog.selfMarked ? (
               <div style={{ padding: '12px', background: 'var(--success-bg)', border: '1px solid var(--success)', color: 'var(--success)', borderRadius: '6px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <span style={{ color: 'var(--success)', fontSize: '16px', fontWeight: 'bold' }}>✓</span> {role === 'student' ? 'You' : 'Parent/Student'} voluntarily marked today's attendance as <strong>{todayLog.status.toUpperCase()}</strong>. This submission is now locked.
+                <span style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginLeft: '6px' }}>(आज की उपस्थिति दर्ज हो चुकी है।)</span>
               </div>
             ) : todayLog && todayLog.status !== 'not_marked' ? (
               <div style={{ padding: '12px', background: 'var(--accent-soft)', border: '1px solid var(--border)', color: 'var(--accent)', borderRadius: '6px', fontSize: '13px' }}>
                 Verified Attendance marked by Teacher today: <strong>{todayLog.status.toUpperCase()}</strong>.
+                <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '2px' }}>शिक्षक द्वारा सत्यापित उपस्थिति दर्ज की जा चुकी है।</div>
               </div>
             ) : (
               <div>
@@ -318,7 +320,7 @@ export default function AttendanceManager({ role }: AttendanceManagerProps) {
                       className={`btn ${voluntaryStatus === 'present' ? 'btn-primary' : 'btn-secondary'}`}
                       style={{ fontSize: '12px', padding: '6px 12px' }}
                     >
-                      Present
+                      Present • उपस्थित
                     </button>
                     <button 
                       type="button"
@@ -326,7 +328,7 @@ export default function AttendanceManager({ role }: AttendanceManagerProps) {
                       className={`btn ${voluntaryStatus === 'half_day' ? 'btn-primary' : 'btn-secondary'}`}
                       style={{ fontSize: '12px', padding: '6px 12px' }}
                     >
-                      Half Day
+                      Half Day • आधा दिन
                     </button>
                     <button 
                       type="button"
@@ -334,7 +336,7 @@ export default function AttendanceManager({ role }: AttendanceManagerProps) {
                       className={`btn ${voluntaryStatus === 'leave' ? 'btn-primary' : 'btn-secondary'}`}
                       style={{ fontSize: '12px', padding: '6px 12px' }}
                     >
-                      Absent
+                      Absent • अनुपस्थित
                     </button>
                   </div>
                   
@@ -342,7 +344,7 @@ export default function AttendanceManager({ role }: AttendanceManagerProps) {
                     type="text" 
                     value={voluntaryRemarks}
                     onChange={(e) => setVoluntaryRemarks(e.target.value)}
-                    placeholder="Optional remarks"
+                    placeholder="Optional remarks • टिप्पणी (वैकल्पिक)"
                     style={{ flex: 1, minWidth: '200px', padding: '6px 12px', fontSize: '12px', borderRadius: '4px', border: '1px solid var(--border-light)', background: 'var(--bg-soft)', color: 'var(--text)' }}
                   />
 
@@ -352,7 +354,7 @@ export default function AttendanceManager({ role }: AttendanceManagerProps) {
                     className="btn btn-primary"
                     style={{ fontSize: '12px', padding: '6px 16px', fontWeight: 'bold' }}
                   >
-                    {submittingVoluntary ? 'Submitting...' : (voluntaryStatus === 'leave' ? '🙋 Report Absence Today' : '🙋 Mark Present Today')}
+                    {submittingVoluntary ? 'Submitting...' : (voluntaryStatus === 'leave' ? '🙋 Report Absence Today • अनुपस्थिति दर्ज करें' : '🙋 Mark Present Today • उपस्थिति दर्ज करें')}
                   </button>
                 </div>
               </div>
@@ -368,7 +370,7 @@ export default function AttendanceManager({ role }: AttendanceManagerProps) {
                 padding: '16px',
                 background: 'var(--danger-bg)'
               }}>
-                <h3 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: 'bold', color: 'var(--danger)' }}>Leave Request</h3>
+                <h3 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: 'bold', color: 'var(--danger)' }}>Leave Request • छुट्टी का आवेदन</h3>
 
                 {declError && <div className="alert-box alert-box-danger" style={{ marginBottom: '12px', padding: '10px' }}>{declError}</div>}
                 {declSuccess && <div className="alert-box alert-box-success" style={{ marginBottom: '12px', padding: '10px' }}>{declSuccess}</div>}
@@ -389,7 +391,7 @@ export default function AttendanceManager({ role }: AttendanceManagerProps) {
                           setDeclEnd(tomorrowStr);
                         }}
                       />
-                      Apply leave for tomorrow ({formatDateStr(tomorrowStr)})
+                      Apply leave for tomorrow ({formatDateStr(tomorrowStr)}) • कल की छुट्टी
                     </label>
                     <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontWeight: 600 }}>
                       <input 
@@ -403,7 +405,7 @@ export default function AttendanceManager({ role }: AttendanceManagerProps) {
                           setDeclEnd(tomorrowStr);
                         }}
                       />
-                      Multiple Days
+                      Multiple Days • एक से अधिक दिन
                     </label>
                   </div>
 
@@ -411,13 +413,13 @@ export default function AttendanceManager({ role }: AttendanceManagerProps) {
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'center', padding: '6px 0' }}>
                       {/* Start Date */}
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <span style={{ fontSize: '12px', fontWeight: 600 }}>Start Date:</span>
+                        <span style={{ fontSize: '12px', fontWeight: 600 }}>Start Date • शुरू की तारीख:</span>
                         <DateInputDMY value={declStart} min={tomorrowStr} onChange={(val) => setDeclStart(val)} required style={{ width: '140px' }} inputStyle={{ padding: '6px 28px 6px 10px', background: 'var(--bg-soft)' }} />
                       </div>
 
                       {/* End Date */}
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <span style={{ fontSize: '12px', fontWeight: 600 }}>End Date:</span>
+                        <span style={{ fontSize: '12px', fontWeight: 600 }}>End Date • अंतिम तारीख:</span>
                         <DateInputDMY value={declEnd} min={tomorrowStr || declStart} onChange={(val) => setDeclEnd(val)} required style={{ width: '140px' }} inputStyle={{ padding: '6px 28px 6px 10px', background: 'var(--bg-soft)' }} />
                       </div>
                     </div>
@@ -428,7 +430,7 @@ export default function AttendanceManager({ role }: AttendanceManagerProps) {
                       type="text" 
                       value={declRemarks}
                       onChange={(e) => setDeclRemarks(e.target.value)}
-                      placeholder="Reason / Remarks (e.g. traveling, family function)"
+                      placeholder="Reason / Remarks (कारण: जैसे तबियत ठीक नहीं, पारिवारिक कार्य)"
                       style={{ flex: 1, padding: '6px 12px', fontSize: '12px', borderRadius: '4px', border: '1px solid var(--border-light)', background: 'var(--bg-soft)', color: 'var(--text)' }}
                     />
 
@@ -438,7 +440,7 @@ export default function AttendanceManager({ role }: AttendanceManagerProps) {
                       className="btn btn-primary"
                       style={{ fontSize: '12px', padding: '6px 16px', fontWeight: 'bold' }}
                     >
-                      {submittingDecl ? 'Submitting...' : 'Submit Leave Declaration'}
+                      {submittingDecl ? 'Submitting...' : 'Submit Leave Declaration • छुट्टी का आवेदन भेजें'}
                     </button>
                   </div>
                 </form>
@@ -449,13 +451,13 @@ export default function AttendanceManager({ role }: AttendanceManagerProps) {
           {/* Declarations List */}
           {declarations.length > 0 && (
             <div style={{ marginTop: '10px', borderTop: '1px solid var(--border-light)', paddingTop: '16px' }}>
-              <h4 style={{ margin: '0 0 10px 0', fontSize: '13px', fontWeight: 'bold', color: 'var(--text-muted)' }}>Submitted Leave Declarations</h4>
+              <h4 style={{ margin: '0 0 10px 0', fontSize: '13px', fontWeight: 'bold', color: 'var(--text-muted)' }}>Submitted Leave Declarations • जमा किए गए छुट्टी के आवेदन</h4>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {declarations.map((decl: any) => (
                   <div key={decl.declarationId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px', background: 'var(--bg-soft)', border: '1px solid var(--border-light)', borderRadius: '6px', fontSize: '12px' }}>
                     <div>
                       <span className="badge badge-warning" style={{ marginRight: '8px', fontSize: '10px' }}>
-                        Excused Leave
+                        Excused Leave • स्वीकृत छुट्टी
                       </span>
                       <strong>{formatDateStr(decl.startDate)}</strong> to <strong>{formatDateStr(decl.endDate)}</strong>
                       {decl.remarks && <span style={{ color: 'var(--text-muted)', marginLeft: '8px' }}>({decl.remarks})</span>}
@@ -488,38 +490,38 @@ export default function AttendanceManager({ role }: AttendanceManagerProps) {
             {/* Stats Overview: One Bento Card with 5 chips in a single line */}
             <div className="card glass" style={{ background: 'var(--surface)', padding: '18px 24px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.05em' }}>Attendance Statistics Overview</span>
-                <span style={{ fontSize: '11.5px', color: 'var(--text-muted)', fontWeight: 500 }}>Target: Keep aiming above 90%!</span>
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.05em' }}>Attendance Statistics Overview • उपस्थिति सांख्यिकी विवरण</span>
+                <span style={{ fontSize: '11.5px', color: 'var(--text-muted)', fontWeight: 500 }}>Target: Keep aiming above 90%! (लक्ष्य: ९०% से ऊपर)</span>
               </div>
               
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', justifyContent: 'space-between', alignItems: 'center' }}>
                 {/* Chip 1: Attendance Rate */}
                 <div style={{ flex: '1 1 150px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--accent-soft)', padding: '10px 16px', borderRadius: '30px', border: '1px solid var(--accent-ring)' }}>
-                  <span style={{ fontSize: '11.5px', fontWeight: 600, color: 'var(--text-muted)' }}>Rate</span>
+                  <span style={{ fontSize: '11.5px', fontWeight: 600, color: 'var(--text-muted)' }}>Rate • दर</span>
                   <span style={{ fontSize: '15px', fontWeight: 900, color: 'var(--accent)' }}>{stats.attendanceRate}%</span>
                 </div>
 
                 {/* Chip 2: Present Days */}
                 <div style={{ flex: '1 1 150px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(16, 185, 129, 0.08)', padding: '10px 16px', borderRadius: '30px', border: '1px solid rgba(16, 185, 129, 0.25)' }}>
-                  <span style={{ fontSize: '11.5px', fontWeight: 600, color: 'var(--text-muted)' }}>Present</span>
+                  <span style={{ fontSize: '11.5px', fontWeight: 600, color: 'var(--text-muted)' }}>Present • उपस्थित</span>
                   <span style={{ fontSize: '15px', fontWeight: 900, color: 'var(--success)' }}>{stats.presentDays} Days</span>
                 </div>
 
                 {/* Chip 3: Absent Days */}
                 <div style={{ flex: '1 1 150px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: stats.absentDays > 0 ? 'rgba(239, 68, 68, 0.08)' : 'var(--bg-soft)', padding: '10px 16px', borderRadius: '30px', border: stats.absentDays > 0 ? '1px solid rgba(239, 68, 68, 0.25)' : '1px solid var(--border-light)' }}>
-                  <span style={{ fontSize: '11.5px', fontWeight: 600, color: 'var(--text-muted)' }}>Absent</span>
+                  <span style={{ fontSize: '11.5px', fontWeight: 600, color: 'var(--text-muted)' }}>Absent • अनुपस्थित</span>
                   <span style={{ fontSize: '15px', fontWeight: 900, color: stats.absentDays > 0 ? 'var(--danger)' : 'var(--text-muted)' }}>{stats.absentDays} Days</span>
                 </div>
 
                 {/* Chip 4: Half Days */}
                 <div style={{ flex: '1 1 150px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--warning-bg)', padding: '10px 16px', borderRadius: '30px', border: '1px solid var(--warning-border)' }}>
-                  <span style={{ fontSize: '11.5px', fontWeight: 600, color: 'var(--text-muted)' }}>Half Days</span>
+                  <span style={{ fontSize: '11.5px', fontWeight: 600, color: 'var(--text-muted)' }}>Half Days • आधा दिन</span>
                   <span style={{ fontSize: '15px', fontWeight: 900, color: 'var(--warning)' }}>{stats.halfDays || 0} Days</span>
                 </div>
 
                 {/* Chip 5: Leaves */}
                 <div style={{ flex: '1 1 150px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(107, 114, 128, 0.08)', padding: '10px 16px', borderRadius: '30px', border: '1px solid rgba(107, 114, 128, 0.25)' }}>
-                  <span style={{ fontSize: '11.5px', fontWeight: 600, color: 'var(--text-muted)' }}>Leaves</span>
+                  <span style={{ fontSize: '11.5px', fontWeight: 600, color: 'var(--text-muted)' }}>Leaves • छुट्टियां</span>
                   <span style={{ fontSize: '15px', fontWeight: 900, color: 'var(--text-muted)' }}>{stats.leaveDays} Days</span>
                 </div>
               </div>
@@ -608,19 +610,19 @@ export default function AttendanceManager({ role }: AttendanceManagerProps) {
                     {/* Color Legend */}
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', justifyContent: 'center', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '16px', background: 'var(--bg-soft)', padding: '8px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)' }}>
                       <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--success)' }} /> Present
+                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--success)' }} /> Present • उपस्थित
                       </span>
                       <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--danger)' }} /> Absent
+                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--danger)' }} /> Absent • अनुपस्थित
                       </span>
                       <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--info)' }} /> Leave
+                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--info)' }} /> Leave • छुट्टी
                       </span>
                       <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--warning)' }} /> Half Day
+                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--warning)' }} /> Half Day • आधा दिन
                       </span>
                       <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--text-muted)' }} /> Not Marked
+                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--text-muted)' }} /> Not Marked • दर्ज नहीं
                       </span>
                     </div>
 

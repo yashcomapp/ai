@@ -535,7 +535,7 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
                     cursor: 'pointer'
                   }}
                 >
-                  ⚠️ Mistakes Only ({questionsNeedingReview.length})
+                  ⚠️ Mistakes Only • केवल गलतियां ({questionsNeedingReview.length})
                 </button>
                 <button 
                   type="button"
@@ -551,7 +551,7 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
                     cursor: 'pointer'
                   }}
                 >
-                  Incorrect ({incorrectCount})
+                  Incorrect • गलत ({incorrectCount})
                 </button>
                 <button 
                   type="button"
@@ -567,7 +567,7 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
                     cursor: 'pointer'
                   }}
                 >
-                  Correct ({correctCount})
+                  Correct • सही ({correctCount})
                 </button>
                 <button 
                   type="button"
@@ -583,7 +583,7 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
                     cursor: 'pointer'
                   }}
                 >
-                  All Questions ({scorecard.questions.length})
+                  All Questions • सभी प्रश्न ({scorecard.questions.length})
                 </button>
               </div>
 
@@ -658,7 +658,7 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
                         transition: 'all 0.15s ease'
                       }}
                     >
-                      🏁 Summary & Sign-off
+                      🏁 Summary & Sign-off • सारांश व पुष्टि
                     </button>
                   </div>
 
@@ -737,7 +737,7 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
                               }}
                             >
                               <span>{isBookmarked ? '⭐' : '☆'}</span>
-                              <span>{isBookmarked ? 'In Tricky Vault' : 'Bookmark'}</span>
+                              <span>{isBookmarked ? 'In Tricky Vault • कठिन संग्रह' : 'Bookmark • सहेजें'}</span>
                             </button>
 
                             {/* Status Badge */}
@@ -749,7 +749,7 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
                               background: isUnanswered ? 'var(--bg-soft, #f1f5f9)' : (q.isCorrect ? 'var(--success-bg, #f0fdf4)' : 'var(--danger-bg, #fef2f2)'),
                               color: isUnanswered ? 'var(--text-muted, #64748b)' : (q.isCorrect ? 'var(--success, #16a34a)' : 'var(--danger, #dc2626)') 
                             }}>
-                              {isUnanswered ? '⚪ Unattempted' : (q.isCorrect ? '🟢 Correct' : '🔴 Incorrect')}
+                              {isUnanswered ? '⚪ Unattempted • अनुत्तरित' : (q.isCorrect ? '🟢 Correct • सही' : '🔴 Incorrect • गलत')}
                             </span>
                           </div>
                         </div>
@@ -762,7 +762,7 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
                           userAnswer={isUnanswered ? '' : q.userAnswer}
                           correctAnswer={getQuestionCorrectAnswer(q)}
                           explanation={q.solution}
-                          explanationLabel="💡 Step-by-Step Solution & Concept:"
+                          explanationLabel="💡 Step-by-Step Solution & Concept • चरणबद्ध हल व स्पष्टीकरण:"
                         />
 
                         {/* Bottom Question Controls & Challenge Button */}
@@ -782,7 +782,7 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
                                 cursor: 'pointer'
                               }}
                             >
-                              {isUnderstood ? '✓ Discussed & Understood' : 'Mark as Understood'}
+                              {isUnderstood ? '✓ Discussed & Understood • समझ लिया' : 'Mark as Understood • समझ लिया'}
                             </button>
 
                             {isOfficialExam && user?.role === 'student' && (
@@ -805,7 +805,7 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
                                   cursor: 'pointer'
                                 }}
                               >
-                                {challenge ? '⚠️ Challenged' : '⚠️ Challenge Key / Error'}
+                                {challenge ? '⚠️ Challenged • चुनौती दी गई' : '⚠️ Challenge Key / Error • प्रश्न में त्रुटि'}
                               </button>
                             )}
                           </div>
@@ -819,7 +819,7 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
                               disabled={cardIndex === 0}
                               style={{ fontWeight: 700, padding: '5px 12px' }}
                             >
-                              ← Prev
+                              ← Prev • पीछे
                             </button>
                             <button
                               type="button"
@@ -827,7 +827,7 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
                               onClick={() => setCardIndex(prev => Math.min(filteredQuestions.length, prev + 1))}
                               style={{ fontWeight: 700, padding: '5px 14px' }}
                             >
-                              {cardIndex === filteredQuestions.length - 1 ? 'Go to Summary 🏁 →' : 'Next →'}
+                              {cardIndex === filteredQuestions.length - 1 ? 'Go to Summary 🏁 → • सारांश देखें' : 'Next → • आगे'}
                             </button>
                           </div>
                         </div>
@@ -851,7 +851,7 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
                       <div style={{ textAlign: 'center', borderBottom: '1px solid var(--border-light, #e2e8f0)', paddingBottom: '12px' }}>
                         <div style={{ fontSize: '32px', marginBottom: '4px' }}>🏁</div>
                         <h3 style={{ margin: '0 0 4px', fontSize: '18px', fontWeight: 800, color: 'var(--text, #0f172a)' }}>
-                          Review Complete!
+                          Review Complete! • समीक्षा पूर्ण!
                         </h3>
                         <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-muted, #64748b)' }}>
                           Score: <strong>{scorecard.score}/{scorecard.totalMarks} ({scorecard.percentage}%)</strong> • Time: <strong>{formatDuration(scorecard.durationSpent)}</strong> • Integrity: <strong>{scorecard.integrityScore}/100</strong>
@@ -861,19 +861,19 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
                       {/* 30-Second Partnership Section */}
                       <div style={{ background: 'var(--bg-soft, #f8fafc)', borderRadius: 'var(--radius, 10px)', padding: '14px 16px', border: '1px solid var(--border-light, #e2e8f0)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
                         <div style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text, #0f172a)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          🤝 30-Second Parent-Kid Partnership Touchpoint
+                          🤝 30-Second Parent-Kid Partnership Touchpoint • ३०-सेकंड पालक-पाल्य संवाद
                         </div>
 
                         {/* Pillar 1: Teach-Back Check */}
                         <div>
                           <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted, #64748b)', marginBottom: '6px' }}>
-                            🗣️ आज काय शिकला / आज क्या पढ़ा? (Child Explained Concept):
+                            🗣️ आज क्या पढ़ा / आज क्या सीखा? (Child Explained Concept):
                           </div>
                           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                             {[
-                              { key: 'confident', label: '🌟 Confident / स्पष्ट सांगितले' },
-                              { key: 'good', label: '👍 Good / ठीक-ठाक' },
-                              { key: 'needs_help', label: '⚠️ Needs Revision / रिव्हिजन हवे' }
+                              { key: 'confident', label: '🌟 Confident • स्पष्ट बताया' },
+                              { key: 'good', label: '👍 Good • ठीक-ठाक' },
+                              { key: 'needs_help', label: '⚠️ Needs Revision • रिविजन आवश्यक' }
                             ].map(item => {
                               const isSel = teachBackRating === item.key;
                               return (
@@ -903,7 +903,7 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
                         {/* Pillar 2 & 3: Routine Check (Notebooks & Bag) */}
                         <div>
                           <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted, #64748b)', marginBottom: '6px' }}>
-                            📋 Routine & Readiness Check:
+                            📋 Routine & Readiness Check • नियमित तैयारी जांच:
                           </div>
                           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                             <button
@@ -921,7 +921,7 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
                                 transition: 'all 0.15s ease'
                               }}
                             >
-                              📚 Notebooks Checked {notebooksChecked ? '✓' : ''}
+                              📚 Notebooks Checked • कॉपियां जांची गईं {notebooksChecked ? '✓' : ''}
                             </button>
 
                             <button
@@ -939,7 +939,7 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
                                 transition: 'all 0.15s ease'
                               }}
                             >
-                              🎒 Bag & Timetable Ready {bagReady ? '✓' : ''}
+                              🎒 Bag & Timetable Ready • बैग व टाइमटेबल तैयार {bagReady ? '✓' : ''}
                             </button>
                           </div>
                         </div>
@@ -947,13 +947,13 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
                         {/* Pillar 4: Optional Note */}
                         <div>
                           <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted, #64748b)', marginBottom: '4px' }}>
-                            💬 Note for Teacher (Optional):
+                            💬 Note for Teacher (Optional) • शिक्षक के लिए संदेश (वैकल्पिक):
                           </div>
                           <input
                             type="text"
                             value={parentNote}
                             onChange={(e) => setParentNote(e.target.value)}
-                            placeholder="e.g. Understood chapter 13 well; excited about geometry."
+                            placeholder="e.g. Understood chapter well • जैसे पाठ अच्छे से समझ आ गया"
                             style={{ width: '100%', padding: '8px 12px', fontSize: '12px', borderRadius: '6px', border: '1px solid var(--border-light, #cbd5e1)', background: '#ffffff' }}
                           />
                         </div>
@@ -967,7 +967,7 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
                           onClick={() => setCardIndex(filteredQuestions.length - 1)}
                           style={{ fontWeight: 700 }}
                         >
-                          ← Back to Questions
+                          ← Back to Questions • प्रश्नों पर लौटें
                         </button>
 
                         <div style={{ display: 'flex', gap: '10px' }}>

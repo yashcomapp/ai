@@ -317,16 +317,16 @@ export default function LoginModal() {
 
           <form onSubmit={handleLoginSubmit}>
             <div className="role-badges">
-              <span className="role-pill">👨‍💼 Admin</span>
-              <span className="role-pill">👨‍🎓 Student</span>
-              <span className="role-pill">👨‍👩‍👧 Parent</span>
+              <span className="role-pill">👨‍💼 Admin / व्यवस्थापक</span>
+              <span className="role-pill">👨‍🎓 Student / विद्यार्थी</span>
+              <span className="role-pill">👨‍👩‍👧 Parent / पालक</span>
             </div>
 
             <div className="form-group">
-              <label>Email / Username</label>
+              <label>Email / Username <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>(ईमेल / यूज़रनेम)</span></label>
               <input 
                 type="text" 
-                placeholder="Enter your registered email" 
+                placeholder="Enter your registered email / पंजीकृत ईमेल दर्ज करें" 
                 autoComplete="off"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -335,10 +335,10 @@ export default function LoginModal() {
             </div>
 
             <div className="form-group">
-              <label>Password</label>
+              <label>Password <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>(पासवर्ड)</span></label>
               <input 
                 type="password" 
-                placeholder="Enter password"
+                placeholder="Enter password / पासवर्ड दर्ज करें"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={isLoggingIn || redirecting}
@@ -350,13 +350,13 @@ export default function LoginModal() {
               className="btn-login-submit" 
               disabled={isLoggingIn || redirecting}
             >
-              {redirecting ? 'Redirecting to Dashboard...' : (isLoggingIn ? 'Logging in...' : 'Sign In →')}
+              {redirecting ? 'Redirecting to Dashboard... / डैशबोर्ड पर जा रहे हैं...' : (isLoggingIn ? 'Logging in... / लॉगिन हो रहा है...' : 'Sign In → / साइन इन करें →')}
             </button>
           </form>
 
           {(isLoggingIn || redirecting) && (
             <div className="loading" style={{ display: 'block', marginTop: '12px', textAlign: 'center', fontSize: '12px' }}>
-              <div className="spinner"></div> {redirecting ? 'Redirecting to dashboard... Please wait a moment.' : 'Logging in...'}
+              <div className="spinner"></div> {redirecting ? 'Redirecting to dashboard... Please wait a moment. / डैशबोर्ड पर जा रहे हैं... कृपया प्रतीक्षा करें।' : 'Logging in... / लॉगिन हो रहा है...'}
             </div>
           )}
 
@@ -369,19 +369,20 @@ export default function LoginModal() {
                 setShowForgotPanel(!showForgotPanel);
               }}
             >
-              Forgot password?
+              Forgot password? / पासवर्ड भूल गए?
             </a>
           </div>
 
           {showForgotPanel && (
             <div style={{ marginTop: '12px', padding: '10px 12px', background: 'var(--surface-2)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', fontSize: '11.5px', color: 'var(--text-secondary)', lineHeight: '1.45', textAlign: 'center' }}>
-              💡 <strong>Password Hint:</strong> Student &amp; parent passwords are the student's birthdate in 6-digit <strong>DDMMYY</strong> format (e.g., September 15th, 2011 &rarr; <strong>150911</strong>).
+              <div>💡 <strong>Password Hint:</strong> Student &amp; parent passwords are the student's birthdate in 6-digit <strong>DDMMYY</strong> format (e.g., September 15th, 2011 &rarr; <strong>150911</strong>).</div>
+              <div style={{ marginTop: '4px', fontSize: '11px', color: 'var(--text-muted)' }}>💡 <strong>पासवर्ड संकेत:</strong> विद्यार्थी व पालक का पासवर्ड जन्मतिथि 6-अंकों में <strong>DDMMYY</strong> प्रारूप है (जैसे 15 सितंबर 2011 &rarr; <strong>150911</strong>)।</div>
             </div>
           )}
 
           <div style={{ marginTop: '16px', borderTop: '1px solid var(--border-light)', paddingTop: '12px', fontSize: '12px', textAlign: 'center', color: 'var(--text-secondary)' }}>
-            <div>🆕 New user? <Link href="/register" style={{ color: 'var(--accent)', fontWeight: '700', textDecoration: 'none' }}>Register as a Student</Link></div>
-            <p style={{ margin: '4px 0 0', fontSize: '10.5px', color: 'var(--text-muted)' }}>Register once, then wait for admin approval</p>
+            <div>🆕 New user? / नए विद्यार्थी? <Link href="/register" style={{ color: 'var(--accent)', fontWeight: '700', textDecoration: 'none' }}>Register as a Student / नया रजिस्ट्रेशन करें</Link></div>
+            <p style={{ margin: '4px 0 0', fontSize: '10.5px', color: 'var(--text-muted)' }}>Register once, then wait for admin approval / एक बार रजिस्टर करें, फिर एडमिन अप्रूवल की प्रतीक्षा करें</p>
           </div>
         </div>
       </div>
@@ -389,28 +390,41 @@ export default function LoginModal() {
       {/* Concurrent Session Conflict Modal */}
       {showConflictModal && (
         <div className="modal show" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(15, 23, 42, 0.45)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', zIndex: 10000, position: 'fixed', inset: 0, padding: '16px' }}>
-          <div className="modal-content" style={{ maxWidth: '400px', width: '100%', margin: 'auto', background: 'var(--surface)', borderRadius: 'var(--radius-lg)', padding: '20px', border: '1px solid var(--border-light)', boxShadow: 'var(--shadow-lg)' }}>
+          <div className="modal-content" style={{ maxWidth: '440px', width: '100%', margin: 'auto', background: 'var(--surface)', borderRadius: 'var(--radius-lg)', padding: '20px', border: '1px solid var(--border-light)', boxShadow: 'var(--shadow-lg)' }}>
             <div className="modal-header">
-              <h4 style={{ margin: '0 0 10px', fontSize: '15px', fontWeight: 800, color: 'var(--text)' }}>⚠️ Already Logged In Elsewhere</h4>
+              <h4 style={{ margin: '0 0 10px', fontSize: '15px', fontWeight: 800, color: 'var(--text)', lineHeight: 1.3 }}>
+                ⚠️ Already Logged In Elsewhere<br />
+                <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--warning)' }}>अन्य डिवाइस पर पहले से लॉगिन है</span>
+              </h4>
             </div>
-            <div className="modal-body" style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.45' }}>
-              <p style={{ margin: 0 }}>This account is currently active on another device or browser session.</p>
-              <p style={{ marginTop: '6px', color: 'var(--text-secondary)' }}>If you continue, that session will be logged out automatically.</p>
+            <div className="modal-body" style={{ fontSize: '12.5px', color: 'var(--text-secondary)', lineHeight: '1.5' }}>
+              <p style={{ margin: 0, fontWeight: 600, color: 'var(--text)' }}>
+                This account is currently active on another device or browser session.
+              </p>
+              <p style={{ margin: '2px 0 8px', fontSize: '12px', color: 'var(--text-muted)' }}>
+                यह अकाउंट किसी अन्य मोबाइल, कंप्यूटर या ब्राउज़र पर पहले से खुला हुआ है।
+              </p>
+              <p style={{ margin: '8px 0 0', color: 'var(--text-secondary)' }}>
+                If you continue, that session will be logged out automatically.
+              </p>
+              <p style={{ margin: '2px 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>
+                यदि आप आगे बढ़ते हैं, तो वह पुराना सेशन अपने आप बंद (लॉगआउट) हो जाएगा।
+              </p>
             </div>
-            <div className="modal-footer" style={{ display: 'flex', gap: '8px', padding: '12px 0 0', borderTop: '1px solid var(--border-light)', marginTop: '14px', justifyContent: 'flex-end' }}>
+            <div className="modal-footer" style={{ display: 'flex', gap: '8px', padding: '12px 0 0', borderTop: '1px solid var(--border-light)', marginTop: '14px', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
               <button 
                 className="btn btn-secondary" 
                 onClick={() => handleConflictResolve(false)}
                 style={{ padding: '6px 14px', borderRadius: 'var(--radius-sm)', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
               >
-                Cancel
+                Cancel / रद्द करें
               </button>
               <button 
                 className="btn btn-primary" 
                 onClick={() => handleConflictResolve(true)}
                 style={{ background: 'var(--accent-grad)', color: 'var(--text-white)', border: 'none', padding: '6px 14px', borderRadius: 'var(--radius-sm)', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
               >
-                Log Out Other &amp; Continue
+                Log Out Other &amp; Continue / पुराना बंद कर आगे बढ़ें
               </button>
             </div>
           </div>
@@ -420,9 +434,9 @@ export default function LoginModal() {
       {/* Login Error Popup Modal */}
       {showErrorPopup && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.45)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 40000, padding: '16px' }}>
-          <div className="card" style={{ background: 'var(--surface)', border: '1px solid var(--border-light)', padding: '20px', borderRadius: 'var(--radius-lg)', maxWidth: '400px', width: '100%', display: 'flex', flexDirection: 'column', gap: '12px', boxShadow: 'var(--shadow-lg)' }}>
+          <div className="card" style={{ background: 'var(--surface)', border: '1px solid var(--border-light)', padding: '20px', borderRadius: 'var(--radius-lg)', maxWidth: '420px', width: '100%', display: 'flex', flexDirection: 'column', gap: '12px', boxShadow: 'var(--shadow-lg)' }}>
             <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 800, color: 'var(--danger)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              ⚠️ Login Error
+              ⚠️ Login Error / लॉगिन त्रुटि
             </h3>
             
             <p style={{ margin: 0, fontSize: '12.5px', color: 'var(--text)', lineHeight: '1.5', whiteSpace: 'pre-line' }}>
@@ -431,12 +445,13 @@ export default function LoginModal() {
 
             <div style={{ background: 'var(--surface-2)', padding: '8px 12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', gap: '4px' }}>
               <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                <strong>Failed Attempts:</strong> {failureCount} / 3
+                <strong>Failed Attempts / असफल प्रयास:</strong> {failureCount} / 3
               </div>
               
               {failureCount >= 3 && (
-                <div style={{ fontSize: '11px', color: 'var(--danger)', fontWeight: 700, borderTop: '1px solid var(--border-light)', paddingTop: '4px', marginTop: '2px' }}>
-                  💡 3 or more failed attempts! Please use the 'Forgot password?' option to reset your password.
+                <div style={{ fontSize: '11px', color: 'var(--danger)', fontWeight: 700, borderTop: '1px solid var(--border-light)', paddingTop: '4px', marginTop: '2px', lineHeight: '1.4' }}>
+                  <div>💡 3 or more failed attempts! Please use the 'Forgot password?' option to reset your password.</div>
+                  <div style={{ marginTop: '2px' }}>💡 3 या अधिक असफल प्रयास! कृपया पासवर्ड रीसेट करने के लिए 'Forgot password?' विकल्प का उपयोग करें।</div>
                 </div>
               )}
             </div>
@@ -453,7 +468,7 @@ export default function LoginModal() {
                 }}
                 style={{ background: 'var(--accent-grad)', color: 'var(--text-white)', border: 'none', padding: '6px 18px', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontWeight: 800, fontSize: '12.5px' }}
               >
-                OK
+                OK / ठीक है
               </button>
             </div>
           </div>
