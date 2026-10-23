@@ -125,19 +125,16 @@ export async function GET(req: NextRequest) {
     const [leavesSnap, declsSnap] = await Promise.all([
       adminDb.collection('leaveApplications')
         .where('studentCode', '==', sCodeUpper)
-        .where('status', '==', 'approved')
-        .where('endDate', '>=', todayStr)
         .get(),
       adminDb.collection('attendanceDeclarations')
         .where('studentCode', '==', sCodeUpper)
-        .where('endDate', '>=', todayStr)
         .get()
     ]);
 
     let isCurrentlyOnLeaveToday = false;
     leavesSnap.docs.forEach(doc => {
       const data = doc.data();
-      if (data.startDate <= todayStr && data.endDate >= todayStr) {
+      if (data.status === 'approved' && data.startDate <= todayStr && data.endDate >= todayStr) {
         isCurrentlyOnLeaveToday = true;
       }
     });

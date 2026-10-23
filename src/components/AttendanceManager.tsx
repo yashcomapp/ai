@@ -101,7 +101,7 @@ export default function AttendanceManager({ role }: AttendanceManagerProps) {
 
   // Voluntary check-in card states
   const [submittingVoluntary, setSubmittingVoluntary] = useState(false);
-  const [voluntaryStatus, setVoluntaryStatus] = useState<'present' | 'half_day' | 'leave'>('present');
+  const [voluntaryStatus, setVoluntaryStatus] = useState<'present' | 'half_day' | 'leave' | 'absent'>('present');
   const [voluntaryRemarks, setVoluntaryRemarks] = useState('');
   const [voluntaryError, setVoluntaryError] = useState('');
   const [voluntarySuccess, setVoluntarySuccess] = useState('');
@@ -312,13 +312,18 @@ export default function AttendanceManager({ role }: AttendanceManagerProps) {
                 {voluntaryError && <div className="alert-box alert-box-danger" style={{ marginBottom: '12px', padding: '10px' }}>{voluntaryError}</div>}
                 {voluntarySuccess && <div className="alert-box alert-box-success" style={{ marginBottom: '12px', padding: '10px' }}>{voluntarySuccess}</div>}
 
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', gap: '6px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%' }}>
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
+                    gap: '8px',
+                    width: '100%'
+                  }}>
                     <button 
                       type="button"
                       onClick={() => setVoluntaryStatus('present')}
                       className={`btn ${voluntaryStatus === 'present' ? 'btn-primary' : 'btn-secondary'}`}
-                      style={{ fontSize: '12px', padding: '6px 12px' }}
+                      style={{ fontSize: '12px', padding: '8px 10px', justifyContent: 'center', textAlign: 'center', whiteSpace: 'nowrap' }}
                     >
                       Present • उपस्थित
                     </button>
@@ -326,7 +331,7 @@ export default function AttendanceManager({ role }: AttendanceManagerProps) {
                       type="button"
                       onClick={() => setVoluntaryStatus('half_day')}
                       className={`btn ${voluntaryStatus === 'half_day' ? 'btn-primary' : 'btn-secondary'}`}
-                      style={{ fontSize: '12px', padding: '6px 12px' }}
+                      style={{ fontSize: '12px', padding: '8px 10px', justifyContent: 'center', textAlign: 'center', whiteSpace: 'nowrap' }}
                     >
                       Half Day • आधा दिन
                     </button>
@@ -334,119 +339,135 @@ export default function AttendanceManager({ role }: AttendanceManagerProps) {
                       type="button"
                       onClick={() => setVoluntaryStatus('leave')}
                       className={`btn ${voluntaryStatus === 'leave' ? 'btn-primary' : 'btn-secondary'}`}
-                      style={{ fontSize: '12px', padding: '6px 12px' }}
+                      style={{ fontSize: '12px', padding: '8px 10px', justifyContent: 'center', textAlign: 'center', whiteSpace: 'nowrap' }}
+                    >
+                      Leave • छुट्टी
+                    </button>
+                    <button 
+                      type="button"
+                      onClick={() => setVoluntaryStatus('absent')}
+                      className={`btn ${voluntaryStatus === 'absent' ? 'btn-primary' : 'btn-secondary'}`}
+                      style={{ fontSize: '12px', padding: '8px 10px', justifyContent: 'center', textAlign: 'center', whiteSpace: 'nowrap' }}
                     >
                       Absent • अनुपस्थित
                     </button>
                   </div>
                   
-                  <input 
-                    type="text" 
-                    value={voluntaryRemarks}
-                    onChange={(e) => setVoluntaryRemarks(e.target.value)}
-                    placeholder="Optional remarks • टिप्पणी (वैकल्पिक)"
-                    style={{ flex: 1, minWidth: '200px', padding: '6px 12px', fontSize: '12px', borderRadius: '4px', border: '1px solid var(--border-light)', background: 'var(--bg-soft)', color: 'var(--text)' }}
-                  />
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center', width: '100%' }}>
+                    <input 
+                      type="text" 
+                      value={voluntaryRemarks}
+                      onChange={(e) => setVoluntaryRemarks(e.target.value)}
+                      placeholder="Optional remarks • टिप्पणी (वैकल्पिक)"
+                      style={{ flex: '1 1 200px', minWidth: '0', width: '100%', padding: '8px 12px', fontSize: '12px', borderRadius: '4px', border: '1px solid var(--border-light)', background: 'var(--bg-soft)', color: 'var(--text)' }}
+                    />
 
-                  <button 
-                    onClick={handleMarkVoluntary}
-                    disabled={submittingVoluntary}
-                    className="btn btn-primary"
-                    style={{ fontSize: '12px', padding: '6px 16px', fontWeight: 'bold' }}
-                  >
-                    {submittingVoluntary ? 'Submitting...' : (voluntaryStatus === 'leave' ? '🙋 Report Absence Today • अनुपस्थिति दर्ज करें' : '🙋 Mark Present Today • उपस्थिति दर्ज करें')}
-                  </button>
+                    <button 
+                      onClick={handleMarkVoluntary}
+                      disabled={submittingVoluntary}
+                      className="btn btn-primary"
+                      style={{ flex: '1 1 auto', minWidth: '180px', fontSize: '12px', padding: '8px 16px', fontWeight: 'bold', justifyContent: 'center' }}
+                    >
+                      {submittingVoluntary ? 'Submitting...' : (
+                        voluntaryStatus === 'leave'
+                          ? '🌴 Apply Leave Today • आज की छुट्टी दर्ज करें'
+                          : voluntaryStatus === 'absent'
+                          ? '⚠️ Report Absence Today • अनुपस्थिति दर्ज करें'
+                          : voluntaryStatus === 'half_day'
+                          ? '🌓 Report Half Day Today • आधा दिन दर्ज करें'
+                          : '🙋 Mark Present Today • उपस्थिति दर्ज करें'
+                      )}
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
           </div>
 
-          {(role === 'parent' || (user as any)?.autonomous === true) && (
-            <>
-              {/* Section 2: Leave Request (Future Dates) with Red Border */}
-              <div style={{
-                border: '2px solid var(--danger-border, var(--danger))',
-                borderRadius: 'var(--radius-md)',
-                padding: '16px',
-                background: 'var(--danger-bg)'
-              }}>
-                <h3 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: 'bold', color: 'var(--danger)' }}>Leave Request • छुट्टी का आवेदन</h3>
+          {/* Section 2: Leave Request (Future Dates / Multi-Day) - accessible to both Students & Parents */}
+          <div style={{
+            border: '2px solid var(--danger-border, var(--danger))',
+            borderRadius: 'var(--radius-md)',
+            padding: '16px',
+            background: 'var(--danger-bg)',
+            width: '100%',
+            boxSizing: 'border-box'
+          }}>
+            <h3 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: 'bold', color: 'var(--danger)' }}>Leave Request (Advance / Multi-day) • छुट्टी का आवेदन</h3>
 
-                {declError && <div className="alert-box alert-box-danger" style={{ marginBottom: '12px', padding: '10px' }}>{declError}</div>}
-                {declSuccess && <div className="alert-box alert-box-success" style={{ marginBottom: '12px', padding: '10px' }}>{declSuccess}</div>}
+            {declError && <div className="alert-box alert-box-danger" style={{ marginBottom: '12px', padding: '10px' }}>{declError}</div>}
+            {declSuccess && <div className="alert-box alert-box-success" style={{ marginBottom: '12px', padding: '10px' }}>{declSuccess}</div>}
 
-                <form onSubmit={handleCreateDeclaration} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  
-                  {/* Select Leave Duration Option */}
-                  <div style={{ display: 'flex', gap: '20px', fontSize: '12px', marginBottom: '4px' }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontWeight: 600 }}>
-                      <input 
-                        type="radio" 
-                        name="leaveDuration" 
-                        value="single" 
-                        checked={leaveDurationType === 'single'}
-                        onChange={() => {
-                          setLeaveDurationType('single');
-                          setDeclStart(tomorrowStr);
-                          setDeclEnd(tomorrowStr);
-                        }}
-                      />
-                      Apply leave for tomorrow ({formatDateStr(tomorrowStr)}) • कल की छुट्टी
-                    </label>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontWeight: 600 }}>
-                      <input 
-                        type="radio" 
-                        name="leaveDuration" 
-                        value="multiple" 
-                        checked={leaveDurationType === 'multiple'}
-                        onChange={() => {
-                          setLeaveDurationType('multiple');
-                          setDeclStart(tomorrowStr);
-                          setDeclEnd(tomorrowStr);
-                        }}
-                      />
-                      Multiple Days • एक से अधिक दिन
-                    </label>
-                  </div>
-
-                  {leaveDurationType === 'multiple' && (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'center', padding: '6px 0' }}>
-                      {/* Start Date */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <span style={{ fontSize: '12px', fontWeight: 600 }}>Start Date • शुरू की तारीख:</span>
-                        <DateInputDMY value={declStart} min={tomorrowStr} onChange={(val) => setDeclStart(val)} required style={{ width: '140px' }} inputStyle={{ padding: '6px 28px 6px 10px', background: 'var(--bg-soft)' }} />
-                      </div>
-
-                      {/* End Date */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <span style={{ fontSize: '12px', fontWeight: 600 }}>End Date • अंतिम तारीख:</span>
-                        <DateInputDMY value={declEnd} min={tomorrowStr || declStart} onChange={(val) => setDeclEnd(val)} required style={{ width: '140px' }} inputStyle={{ padding: '6px 28px 6px 10px', background: 'var(--bg-soft)' }} />
-                      </div>
-                    </div>
-                  )}
-
-                  <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                    <input 
-                      type="text" 
-                      value={declRemarks}
-                      onChange={(e) => setDeclRemarks(e.target.value)}
-                      placeholder="Reason / Remarks (कारण: जैसे तबियत ठीक नहीं, पारिवारिक कार्य)"
-                      style={{ flex: 1, padding: '6px 12px', fontSize: '12px', borderRadius: '4px', border: '1px solid var(--border-light)', background: 'var(--bg-soft)', color: 'var(--text)' }}
-                    />
-
-                    <button 
-                      type="submit"
-                      disabled={submittingDecl}
-                      className="btn btn-primary"
-                      style={{ fontSize: '12px', padding: '6px 16px', fontWeight: 'bold' }}
-                    >
-                      {submittingDecl ? 'Submitting...' : 'Submit Leave Declaration • छुट्टी का आवेदन भेजें'}
-                    </button>
-                  </div>
-                </form>
+            <form onSubmit={handleCreateDeclaration} style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%' }}>
+              
+              {/* Select Leave Duration Option */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '12px', marginBottom: '4px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 600 }}>
+                  <input 
+                    type="radio" 
+                    name="leaveDuration" 
+                    value="single" 
+                    checked={leaveDurationType === 'single'}
+                    onChange={() => {
+                      setLeaveDurationType('single');
+                      setDeclStart(tomorrowStr);
+                      setDeclEnd(tomorrowStr);
+                    }}
+                  />
+                  <span>Apply leave for tomorrow ({formatDateStr(tomorrowStr)}) • कल की छुट्टी</span>
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 600 }}>
+                  <input 
+                    type="radio" 
+                    name="leaveDuration" 
+                    value="multiple" 
+                    checked={leaveDurationType === 'multiple'}
+                    onChange={() => {
+                      setLeaveDurationType('multiple');
+                      setDeclStart(tomorrowStr);
+                      setDeclEnd(tomorrowStr);
+                    }}
+                  />
+                  <span>Multiple Days • एक से अधिक दिन</span>
+                </label>
               </div>
-            </>
-          )}
+
+              {leaveDurationType === 'multiple' && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center', padding: '6px 0', width: '100%' }}>
+                  {/* Start Date */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: '1 1 180px', minWidth: '0' }}>
+                    <span style={{ fontSize: '12px', fontWeight: 600, whiteSpace: 'nowrap' }}>Start Date:</span>
+                    <DateInputDMY value={declStart} min={tomorrowStr} onChange={(val) => setDeclStart(val)} required style={{ flex: 1, minWidth: '120px' }} inputStyle={{ padding: '6px 28px 6px 10px', background: 'var(--bg-soft)' }} />
+                  </div>
+
+                  {/* End Date */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: '1 1 180px', minWidth: '0' }}>
+                    <span style={{ fontSize: '12px', fontWeight: 600, whiteSpace: 'nowrap' }}>End Date:</span>
+                    <DateInputDMY value={declEnd} min={tomorrowStr || declStart} onChange={(val) => setDeclEnd(val)} required style={{ flex: 1, minWidth: '120px' }} inputStyle={{ padding: '6px 28px 6px 10px', background: 'var(--bg-soft)' }} />
+                  </div>
+                </div>
+              )}
+
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center', width: '100%' }}>
+                <input 
+                  type="text" 
+                  value={declRemarks}
+                  onChange={(e) => setDeclRemarks(e.target.value)}
+                  placeholder="Reason / Remarks (कारण: जैसे तबियत ठीक नहीं, पारिवारिक कार्य)"
+                  style={{ flex: '1 1 200px', minWidth: '0', width: '100%', padding: '8px 12px', fontSize: '12px', borderRadius: '4px', border: '1px solid var(--border-light)', background: 'var(--bg-soft)', color: 'var(--text)' }}
+                />
+
+                <button 
+                  type="submit" 
+                  disabled={submittingDecl}
+                  className="btn btn-primary"
+                  style={{ flex: '1 1 auto', minWidth: '180px', fontSize: '12px', padding: '8px 16px', fontWeight: 'bold', justifyContent: 'center' }}
+                >
+                  {submittingDecl ? 'Submitting...' : 'Submit Leave Declaration • छुट्टी का आवेदन भेजें'}
+                </button>
+              </div>
+            </form>
+          </div>
 
           {/* Declarations List */}
           {declarations.length > 0 && (
