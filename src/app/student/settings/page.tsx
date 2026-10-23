@@ -473,6 +473,24 @@ export default function StudentSettingsPage() {
               </div>
             </div>
           </div>
+
+          {/* Account Session / Log Out card */}
+          <div className="card" style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--danger-border, var(--border-light))', overflow: 'hidden' }}>
+            <div style={{ padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--text)' }}>Account Session</div>
+                <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Sign out of your student account on this device</div>
+              </div>
+              <button
+                type="button"
+                onClick={logout}
+                className="btn btn-secondary"
+                style={{ color: 'var(--danger)', borderColor: 'var(--danger-border, var(--danger))', fontWeight: 700, fontSize: '13px', padding: '8px 18px', display: 'flex', alignItems: 'center', gap: '6px' }}
+              >
+                <span>🚪 Sign Out</span>
+              </button>
+            </div>
+          </div>
             </>
           )}
         </div>

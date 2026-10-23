@@ -1289,6 +1289,40 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
           </div>
         )}
 
+            {/* Student Dashboard Footer with Account Status & Log Out */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '14px 16px',
+              marginTop: '16px',
+              borderTop: '1px solid var(--border-light)',
+              borderRadius: 'var(--radius)',
+              background: 'var(--surface-2)',
+              gap: '12px',
+              flexWrap: 'wrap'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12.5px', color: 'var(--text-muted)' }}>
+                <span>Signed in as <strong style={{ color: 'var(--text)' }}>{profile?.name || user?.name || 'Student'}</strong></span>
+              </div>
+              <button
+                onClick={logout}
+                className="btn btn-secondary"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  color: 'var(--danger)',
+                  borderColor: 'var(--danger-border, rgba(239, 68, 68, 0.3))',
+                  padding: '6px 14px'
+                }}
+              >
+                <LogOut size={14} />
+                <span>Log Out</span>
+              </button>
+            </div>
 
           </>
         )}

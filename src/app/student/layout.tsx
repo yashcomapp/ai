@@ -120,20 +120,40 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
           .hide-mobile {
             display: none !important;
           }
+          .page-header-logo-text {
+            display: none !important;
+          }
         }
         @media (max-width: 480px) {
           .page-header {
             padding: 8px 10px !important;
           }
-          .page-header-logo-text {
-            font-size: 1rem !important;
-          }
           .page-header-actions {
-            gap: 6px !important;
+            gap: 4px !important;
           }
           .page-header-btn {
-            width: 32px !important;
-            height: 32px !important;
+            width: 30px !important;
+            height: 30px !important;
+          }
+          .page-header-btn svg {
+            width: 14px !important;
+            height: 14px !important;
+          }
+        }
+        @media (max-width: 360px) {
+          .page-header {
+            padding: 6px 6px !important;
+          }
+          .page-header-actions {
+            gap: 3px !important;
+          }
+          .page-header-btn {
+            width: 27px !important;
+            height: 27px !important;
+          }
+          .page-header-btn svg {
+            width: 13px !important;
+            height: 13px !important;
           }
         }
       `}</style>
