@@ -11,11 +11,13 @@ import { LogOut, Bell, Settings, CreditCard, MessageSquare } from 'lucide-react'
 import Image from 'next/image';
 import { isStudentBlockedByCurfew, isCurfewBypassed } from '@/lib/curfew';
 import TopBarChatButton from '@/components/chat/TopBarChatButton';
+import { useUnreadChatCount } from '@/hooks/useUnreadChatCount';
 
 export default function StudentLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() || '';
   const router = useRouter();
   const { user, logout } = useAuth();
+  const unreadChatCount = useUnreadChatCount('student', pathname);
   const [curfewActive, setCurfewActive] = useState(false);
   const [maintenance, setMaintenance] = useState<{ active: boolean; message: string } | null>(null);
 
@@ -215,7 +217,7 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
           </button>
 
           {/* Live Chat Button with Unread Counter */}
-          <TopBarChatButton role="student" chatUrl="/student/chat" />
+          <TopBarChatButton role="student" chatUrl="/student/chat" count={unreadChatCount} />
 
           {/* Fees & Invoices Button */}
           <button 

@@ -2,10 +2,11 @@
 
 import React, { useEffect, useState, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import useSWR from 'swr';
 import { fetchWithToken } from '@/lib/swrFetcher';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
+import { useUnreadChatCount } from '@/hooks/useUnreadChatCount';
 import {
   ParentDashboardData,
   ReviewItem,
@@ -25,6 +26,8 @@ import { getGreeting } from '@/lib/dateUtils';
 export default function ParentDashboardClient({ initialData: serverInitialData }: { initialData?: ParentDashboardData }) {
   const { user, firebaseUser, loading: authLoading, logout } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
+  const unreadChatCount = useUnreadChatCount('parent', pathname);
   const { initFCM } = usePushNotifications();
 
   const defaultChildCode = serverInitialData?.childInfo?.studentCode || serverInitialData?.children?.[0]?.studentCode || '';
@@ -406,6 +409,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
         pendingReviewsCount={pendingReviews.length}
         onOpenNotifications={fetchNotificationHistory}
         onLogout={logout}
+        count={unreadChatCount}
       />
 
       {/* Main Dashboard Container */}

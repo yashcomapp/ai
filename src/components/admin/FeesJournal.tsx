@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { formatDateDMY as formatDateStr, getDateKeyIST } from '@/lib/dateUtils';
 import DateInputDMY from '@/components/DateInputDMY';
-import { renderSortHeader, getStatusWeight, deleteFeeTransaction, getLateRemarks as computeLateRemarks, confirmAndDeleteTransaction, StudentFeeRecord } from '@/lib/feesUtils';
+import { renderSortHeader, getStatusWeight, deleteFeeTransaction, getLateRemarks as computeLateRemarks, confirmAndDeleteTransaction, handleDeleteTransaction, StudentFeeRecord } from '@/lib/feesUtils';
 export type { StudentFeeRecord };
 
 export interface Transaction {
@@ -157,26 +157,7 @@ export default function FeesJournal({
     }
   };
 
-  const handleDeleteTransaction = async (tx: Transaction) => {
-    const student = studentMap.get(tx.studentCode?.toUpperCase());
-    const name = student?.name || tx.studentCode;
-    await confirmAndDeleteTransaction({
-      transactionId: tx.transactionId,
-      studentCode: tx.studentCode,
-      studentName: name,
-      amount: Number(tx.amountPaid || 0),
-      paymentMethod: tx.paymentMethod,
-      dateStr: formatDateStr(tx.timestamp),
-      getToken: getIdToken,
-      onSetDeleting: (deleting) => setDeletingTxId(deleting ? tx.transactionId : null),
-      onSuccess: () => {
-        fetchAllTransactions();
-        if (onRefreshStudents) {
-          onRefreshStudents();
-        }
-      }
-    });
-  };
+
 
   // Map studentCode -> Student Profile
   const studentMap = useMemo(() => {
@@ -1177,7 +1158,21 @@ export default function FeesJournal({
                               ✏️ Edit
                             </button>
                             <button
-                              onClick={() => handleDeleteTransaction(tx)}
+                              onClick={() => {
+                                const student = studentMap.get(tx.studentCode?.toUpperCase());
+                                handleDeleteTransaction({
+                                  tx,
+                                  studentName: student?.name || tx.studentCode,
+                                  getToken: getIdToken,
+                                  onSetDeleting: (deleting) => setDeletingTxId(deleting ? tx.transactionId : null),
+                                  onSuccess: () => {
+                                    fetchAllTransactions();
+                                    if (onRefreshStudents) {
+                                      onRefreshStudents();
+                                    }
+                                  }
+                                });
+                              }}
                               disabled={deletingTxId === tx.transactionId}
                               className="btn btn-danger"
                               style={{ padding: '3px 7px', fontSize: '11px', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '3px' }}

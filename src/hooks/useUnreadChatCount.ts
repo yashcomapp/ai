@@ -19,13 +19,12 @@ export function useUnreadChatCount(role: 'admin' | 'student' | 'parent' | null =
   const previousUnreadRef = useRef<number>(0);
   const isInitialMountRef = useRef<boolean>(true);
 
-  if (chatContext) {
-    return chatContext.unreadCount;
-  }
-
   useEffect(() => {
-    if (!firebaseUser || !role) {
-      setUnreadCount(0);
+    // Skip fallback subscription if shared ChatContext is active, or if user is on /chat screen, or unauthenticated/null role
+    if (chatContext || !firebaseUser || !role || currentPath?.includes('/chat')) {
+      if (!firebaseUser || !role) {
+        setUnreadCount(0);
+      }
       return;
     }
 
@@ -104,5 +103,5 @@ export function useUnreadChatCount(role: 'admin' | 'student' | 'parent' | null =
     return () => unsubscribe();
   }, [firebaseUser, user?.studentCode, user?.email, role, currentPath]);
 
-  return unreadCount;
+  return chatContext ? chatContext.unreadCount : unreadCount;
 }

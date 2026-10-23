@@ -10,12 +10,14 @@ interface ParentHeaderProps {
   pendingReviewsCount: number;
   onOpenNotifications: () => void;
   onLogout: () => void;
+  count?: number;
 }
 
 export const ParentHeader = React.memo(function ParentHeader({
   pendingReviewsCount,
   onOpenNotifications,
-  onLogout
+  onLogout,
+  count
 }: ParentHeaderProps) {
   const router = useRouter();
 
@@ -92,7 +94,7 @@ export const ParentHeader = React.memo(function ParentHeader({
         </button>
 
         {/* Live Chat with Unread Badge Counter */}
-        <TopBarChatButton role="parent" chatUrl="/parent/chat" />
+        <TopBarChatButton role="parent" chatUrl="/parent/chat" count={count} />
 
         {/* User Profile / Logout */}
         <button 

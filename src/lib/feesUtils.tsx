@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatDateDMY } from '@/lib/dateUtils';
 
 export interface StudentFeeRecord {
   uid: string;
@@ -200,5 +201,51 @@ export async function confirmAndDeleteTransaction(options: ConfirmAndDeleteOptio
   } finally {
     if (onSetDeleting) onSetDeleting(false);
   }
+}
+
+/**
+ * Shared SSOT handler for deleting a fee transaction with confirmation dialog, token resolution, and balance updates.
+ * Used by both Fees Dashboard and Fees Journal.
+ */
+export async function handleDeleteTransaction({
+  tx,
+  transactionId,
+  studentCode,
+  studentName,
+  amount,
+  paymentMethod,
+  dateStr,
+  getToken,
+  onSuccess,
+  onError,
+  onSetDeleting
+}: {
+  tx?: any;
+  transactionId?: string;
+  studentCode?: string;
+  studentName?: string;
+  amount?: number;
+  paymentMethod?: string;
+  dateStr?: string;
+  getToken: () => Promise<string | null>;
+  onSuccess?: () => void | Promise<void>;
+  onError?: (err: string) => void;
+  onSetDeleting?: (deleting: boolean) => void;
+}): Promise<boolean> {
+  const targetId = tx?.transactionId || transactionId;
+  if (!targetId) return false;
+
+  return confirmAndDeleteTransaction({
+    transactionId: targetId,
+    studentCode: tx?.studentCode || studentCode,
+    studentName: studentName || tx?.studentCode || studentCode,
+    amount: tx?.amountPaid !== undefined ? Number(tx.amountPaid) : amount,
+    paymentMethod: tx?.paymentMethod || paymentMethod,
+    dateStr: tx?.timestamp ? formatDateDMY(tx.timestamp) : dateStr,
+    getToken,
+    onSuccess,
+    onError,
+    onSetDeleting
+  });
 }
 

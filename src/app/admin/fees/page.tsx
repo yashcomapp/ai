@@ -8,7 +8,7 @@ import DateInputDMY from '@/components/DateInputDMY';
 import FeesJournal from '@/components/admin/FeesJournal';
 import FeesTemplatesTab, { FeeTemplate } from '@/components/admin/fees/FeesTemplatesTab';
 import FeesMassEntryTab from '@/components/admin/fees/FeesMassEntryTab';
-import { renderSortHeader, getStatusWeight, getLateDaysString as getLateRemarks, deleteFeeTransaction, confirmAndDeleteTransaction, StudentFeeRecord } from '@/lib/feesUtils';
+import { renderSortHeader, getStatusWeight, getLateDaysString as getLateRemarks, deleteFeeTransaction, confirmAndDeleteTransaction, handleDeleteTransaction, StudentFeeRecord } from '@/lib/feesUtils';
 
 interface Transaction {
   transactionId: string;
@@ -471,20 +471,6 @@ function AdminFeesContent() {
     } finally {
       setSavingTx(false);
     }
-  };
-
-  // Delete transaction log
-  const handleDeleteTransaction = async (txId: string) => {
-    await confirmAndDeleteTransaction({
-      transactionId: txId,
-      studentCode: selectedStudent?.studentCode,
-      studentName: selectedStudent?.name,
-      getToken: async () => firebaseUser!.getIdToken(),
-      onSuccess: () => {
-        loadTransactions(selectedStudent!.studentCode);
-        loadStudents();
-      }
-    });
   };
 
   // Save Template Splits
@@ -1555,7 +1541,20 @@ function AdminFeesContent() {
                             ✏️
                           </button>
                           <button
-                            onClick={() => handleDeleteTransaction(tx.transactionId)}
+                            onClick={() => handleDeleteTransaction({
+                              tx,
+                              transactionId: tx.transactionId,
+                              studentCode: selectedStudent?.studentCode,
+                              studentName: selectedStudent?.name,
+                              amount: Number(tx.amountPaid || 0),
+                              paymentMethod: tx.paymentMethod,
+                              dateStr: formatDateStr(tx.timestamp),
+                              getToken: async () => firebaseUser!.getIdToken(),
+                              onSuccess: () => {
+                                loadTransactions(selectedStudent!.studentCode);
+                                loadStudents();
+                              }
+                            })}
                             style={{ border: 'none', background: 'transparent', color: 'var(--danger)', cursor: 'pointer', fontSize: '1.05rem' }}
                             title="Delete payment log"
                           >

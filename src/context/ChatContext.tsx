@@ -18,6 +18,11 @@ const ChatContext = createContext<ChatContextValue | undefined>(undefined);
 export function ChatProvider({ children }: { children: React.ReactNode }) {
   const { firebaseUser, user } = useAuth();
   const pathname = usePathname();
+  const pathnameRef = useRef<string | null>(pathname);
+  useEffect(() => {
+    pathnameRef.current = pathname;
+  }, [pathname]);
+
   const [unreadCount, setUnreadCount] = useState<number>(0);
   const [rooms, setRooms] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -107,7 +112,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
           // Trigger sound if unread count increased and user is not currently in chat
           if (!isInitialMountRef.current && total > previousUnreadRef.current) {
-            const isCurrentlyInChat = pathname?.includes('/chat');
+            const isCurrentlyInChat = pathnameRef.current?.includes('/chat');
             if (!isCurrentlyInChat) {
               try {
                 playNotificationSound();
@@ -135,7 +140,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     }
 
     return () => unsubscribe();
-  }, [firebaseUser, user?.studentCode, user?.email, role, pathname]);
+  }, [firebaseUser, user?.studentCode, user?.email, role]);
 
   const value = useMemo(
     () => ({
