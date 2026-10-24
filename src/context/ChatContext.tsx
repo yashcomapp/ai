@@ -30,7 +30,8 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const previousUnreadRef = useRef<number>(0);
   const isInitialMountRef = useRef<boolean>(true);
 
-  const role = user?.role as 'admin' | 'student' | 'parent' | undefined;
+  const role = (user?.role as 'admin' | 'student' | 'parent' | undefined) ||
+    (pathname?.startsWith('/admin') ? 'admin' : pathname?.startsWith('/student') ? 'student' : pathname?.startsWith('/parent') ? 'parent' : undefined);
 
   useEffect(() => {
     if (!firebaseUser || !role) {

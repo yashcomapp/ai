@@ -90,8 +90,6 @@ export default function ChatView({ role = 'admin', hideHeader = false }: ChatVie
   const [inputText, setInputText] = useState('');
   const [sidebarSearchQuery, setSidebarSearchQuery] = useState('');
   const [filterTab, setFilterTab] = useState<'all' | 'unread' | 'group' | 'dm'>('all');
-  const lastKnownTimestampsRef = useRef<Record<string, string>>({});
-  const isInitialRoomsMountRef = useRef(true);
   const isInitialMessagesMountRef = useRef(true);
   const [loadingRooms, setLoadingRooms] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
@@ -300,109 +298,16 @@ export default function ChatView({ role = 'admin', hideHeader = false }: ChatVie
     }
   }
 
-  // Sync rooms from shared ChatContext when available
+  // Feed rooms from shared ChatContext SSOT
   useEffect(() => {
-    if (chatContext?.rooms) {
+    if (chatContext?.rooms && chatContext.rooms.length > 0) {
       setRooms(chatContext.rooms as ChatRoom[]);
       setLoadingRooms(chatContext.loading);
+      setUseRoomsApiPolling(false);
+    } else if (!chatContext?.loading) {
+      loadRooms();
     }
   }, [chatContext?.rooms, chatContext?.loading]);
-
-  // Live sidebar rooms list subscription (fallback only if chatContext is not provided)
-  useEffect(() => {
-    if (!firebaseUser) return;
-    if (chatContext) return; // Prevent duplicate listener when shared via ChatContext
-
-    // Trigger REST fetch once to initialize/reconcile rooms on server
-    loadRooms();
-
-    let unsubscribe = () => {};
-    try {
-      let q;
-      if (role === 'admin') {
-        q = query(collection(db, 'chatRooms'), orderBy('lastMessage.timestamp', 'desc'), limit(100));
-      } else if (role === 'student') {
-        const sCode = user?.studentCode;
-        if (!sCode) return;
-        q = query(collection(db, 'chatRooms'), where('participants', 'array-contains', sCode));
-      } else if (role === 'parent') {
-        const pKey = user?.email ? `PR-${user.email.toLowerCase().trim()}` : '';
-        if (!pKey) return;
-        q = query(collection(db, 'chatRooms'), where('participants', 'array-contains', pKey));
-      } else {
-        return;
-      }
-
-      unsubscribe = onSnapshot(q, (snapshot) => {
-        const rms = snapshot.docs.map(doc => ({
-          roomId: doc.id,
-          id: doc.id,
-          ...doc.data()
-        })) as unknown as ChatRoom[];
-
-        // Check for incoming new message to trigger audio intimation & notification
-        if (!isInitialRoomsMountRef.current) {
-          let hasNewIncomingMessage = false;
-          let incomingRoomName = '';
-          let incomingText = '';
-
-          rms.forEach(r => {
-            const lastTs = r.lastMessage?.timestamp;
-            const prevTs = lastKnownTimestampsRef.current[r.roomId];
-            if (lastTs && prevTs && lastTs !== prevTs) {
-              const sender = r.lastMessage?.senderName || '';
-              const myName = role === 'admin' ? 'Admin' : (user?.name || '');
-              const isMine = sender.toLowerCase().includes('admin') && role === 'admin'
-                ? true
-                : (myName && sender.toLowerCase().includes(myName.toLowerCase()));
-
-              if (!isMine) {
-                hasNewIncomingMessage = true;
-                incomingRoomName = r.name || 'Chat Message';
-                incomingText = r.lastMessage?.text || '';
-              }
-            }
-          });
-
-          if (hasNewIncomingMessage) {
-            playNotificationSound();
-            if (typeof document !== 'undefined' && document.hidden && typeof Notification !== 'undefined' && Notification.permission === 'granted') {
-              try {
-                new Notification(incomingRoomName, {
-                  body: incomingText,
-                  icon: '/icons/icon-192.png'
-                });
-              } catch (e) {}
-            }
-          }
-        } else {
-          // Initialize timestamps on initial load
-          setTimeout(() => {
-            isInitialRoomsMountRef.current = false;
-          }, 1200);
-        }
-
-        // Store last known timestamps
-        rms.forEach(r => {
-          if (r.lastMessage?.timestamp) {
-            lastKnownTimestampsRef.current[r.roomId] = r.lastMessage.timestamp;
-          }
-        });
-
-        setRooms(rms);
-        setLoadingRooms(false);
-        setUseRoomsApiPolling(false);
-      }, (error) => {
-        console.warn("Firestore rooms subscription failed. Falling back to API polling:", error);
-        setUseRoomsApiPolling(true);
-      });
-    } catch (err) {
-      console.warn("Failed to subscribe to Firestore rooms. Falling back to API polling:", err);
-      setUseRoomsApiPolling(true);
-    }
-
-    return () => unsubscribe();
-  }, [firebaseUser, role, user]);
 
   // Request browser notification permission on mount
   useEffect(() => {

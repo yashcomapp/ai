@@ -8,19 +8,7 @@ import DateInputDMY from '@/components/DateInputDMY';
 import FeesJournal from '@/components/admin/FeesJournal';
 import FeesTemplatesTab, { FeeTemplate } from '@/components/admin/fees/FeesTemplatesTab';
 import FeesMassEntryTab from '@/components/admin/fees/FeesMassEntryTab';
-import { renderSortHeader, getStatusWeight, getLateDaysString as getLateRemarks, deleteFeeTransaction, confirmAndDeleteTransaction, handleDeleteTransaction, StudentFeeRecord } from '@/lib/feesUtils';
-
-interface Transaction {
-  transactionId: string;
-  studentCode: string;
-  installmentId: string;
-  amountPaid: number;
-  paymentMethod: string;
-  referenceNumber: string;
-  receiptUrl: string;
-  recordedBy: string;
-  timestamp: string;
-}
+import { renderSortHeader, getStatusWeight, getLateDaysString as getLateRemarks, StudentFeeRecord } from '@/lib/feesUtils';
 
 function AdminFeesContent() {
   const { firebaseUser } = useAuth();
@@ -223,18 +211,6 @@ function AdminFeesContent() {
   const [customInstallments, setCustomInstallments] = useState<{ installmentId?: string; amount: number; dueDate: string; status: string }[]>([]);
   const [savingCustomFee, setSavingCustomFee] = useState(false);
 
-  // Ledger Transactions Drawer
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [loadingTransactions, setLoadingTransactions] = useState(false);
-  const [showTxModal, setShowTxModal] = useState(false);
-  const [editingTx, setEditingTx] = useState<Transaction | null>(null);
-  const [txAmount, setTxAmount] = useState(0);
-  const [txMethod, setTxMethod] = useState('Cash');
-  const [txRef, setTxRef] = useState('');
-  const [txInstId, setTxInstId] = useState('inst_1');
-  const [txDate, setTxDate] = useState(() => getDateKeyIST());
-  const [savingTx, setSavingTx] = useState(false);
-
   // Mass Apply Template State
   const [massApplying, setMassApplying] = useState(false);
 
@@ -336,23 +312,6 @@ function AdminFeesContent() {
     return await firebaseUser.getIdToken();
   };
 
-  // Load transactions for student
-  async function loadTransactions(studentCode: string) {
-    setLoadingTransactions(true);
-    try {
-      const token = await firebaseUser!.getIdToken();
-      const res = await fetch(`/api/admin/fees/transactions?studentCode=${studentCode}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const data = await res.json();
-      setTransactions(data.transactions || []);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoadingTransactions(false);
-    }
-  }
-
   // Apply blanket template splits to custom form fields
   const handleApplyTemplate = (tmplId: string) => {
     const tmpl = templates.find(t => t.templateId === tmplId);
@@ -423,54 +382,6 @@ function AdminFeesContent() {
   // Remove custom installment row
   const removeInstallmentRow = (idx: number) => {
     setCustomInstallments(prev => prev.filter((_, i) => i !== idx));
-  };
-
-  // Save / Edit payment transaction ledger logs
-  const handleSaveTransaction = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedStudent || savingTx) return;
-    setSavingTx(true);
-    try {
-      const token = await firebaseUser!.getIdToken();
-      const payload = {
-        action: editingTx ? 'edit' : 'create',
-        transactionId: editingTx?.transactionId || undefined,
-        transactionData: {
-          studentCode: selectedStudent.studentCode,
-          installmentId: txInstId,
-          amountPaid: Number(txAmount),
-          paymentMethod: txMethod,
-          referenceNumber: txRef,
-          timestamp: new Date(txDate).toISOString()
-        }
-      };
-
-      const res = await fetch('/api/admin/fees/transactions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(payload)
-      });
-
-      if (!res.ok) {
-        const errData = await res.json();
-        throw new Error(errData.error || 'Failed to record transaction');
-      }
-
-      setTxAmount(0);
-      setTxRef('');
-      setTxDate(getDateKeyIST());
-      setEditingTx(null);
-      loadTransactions(selectedStudent.studentCode);
-      loadStudents();
-      alert('Transaction ledger logs updated successfully!');
-    } catch (err: any) {
-      alert(err.message);
-    } finally {
-      setSavingTx(false);
-    }
   };
 
   // Save Template Splits
@@ -908,10 +819,10 @@ function AdminFeesContent() {
               </div>
               <div style={{ display: 'flex', gap: '8px' }}>
                 <button className="btn btn-secondary" style={{ padding: '5px 10px', fontSize: '11px' }} onClick={() => {
-                  loadTransactions(selectedStudent.studentCode);
-                  setShowTxModal(true);
+                  setSelectedStudent(null);
+                  setActiveTab('journal');
                 }}>
-                  💸 Ledger Logs & Receipts
+                  💸 View in Fees Journal
                 </button>
                 <button className="btn btn-secondary" style={{ padding: '5px 10px', fontSize: '11px' }} onClick={() => setSelectedStudent(null)}>Cancel</button>
               </div>
@@ -1395,180 +1306,6 @@ function AdminFeesContent() {
               </div>
 
             </form>
-          </div>
-        </div>
-      )}
-
-      {/* Transaction Ledger Modal */}
-      {showTxModal && selectedStudent && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.5)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '16px' }}>
-          <div className="card" style={{ background: 'var(--surface-popover)', border: '1px solid var(--border-popover)', borderRadius: 'var(--radius-lg)', maxWidth: '900px', width: '100%', maxHeight: '90vh', display: 'flex', flexDirection: 'column', boxShadow: 'var(--shadow-lg)' }}>
-            
-            <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 'bold' }}>
-                💸 Ledger Logs & Receipts: {selectedStudent.name}
-              </h3>
-              <button style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '1.2rem', color: 'var(--text-muted)' }} onClick={() => setShowTxModal(false)}>×</button>
-            </div>
-
-            <div style={{ padding: '20px', overflowY: 'auto', display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '24px', flex: 1 }}>
-              
-              {/* Record transaction log form */}
-              <form onSubmit={handleSaveTransaction} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                <h4 style={{ margin: 0, fontSize: '12px', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
-                  {editingTx ? '✏️ Edit Logged Payment' : '➕ Record Payment Log'}
-                </h4>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '11px', fontWeight: 600 }}>Payment Area / Installment</label>
-                  <select
-                    value={txInstId}
-                    onChange={(e) => setTxInstId(e.target.value)}
-                    style={{ padding: '8px 10px', borderRadius: '4px', border: '1px solid var(--border-light)', background: 'var(--bg-soft)', color: 'var(--text)' }}
-                  >
-                    {customInstallments.map((inst, idx) => (
-                      <option key={idx} value={inst.installmentId || `inst_${idx + 1}`}>Installment {idx + 1} (₹{inst.amount})</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '11px', fontWeight: 600 }}>Amount Paid (₹)</label>
-                  <input
-                    type="number"
-                    required
-                    value={txAmount === 0 ? '' : (txAmount ?? '')}
-                    onChange={(e) => {
-                      const raw = e.target.value;
-                      setTxAmount(raw === '' ? '' as any : Number(raw));
-                    }}
-                    style={{ padding: '8px 10px', borderRadius: '4px', border: '1px solid var(--border-light)', background: 'var(--bg-soft)', color: 'var(--text)' }}
-                  />
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <label style={{ fontSize: '11px', fontWeight: 600 }}>Payment Date</label>
-                  <DateInputDMY
-                    required
-                    value={txDate}
-                    onChange={(val) => setTxDate(val)}
-                    style={{ width: '100%' }}
-                  />
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '11px', fontWeight: 600 }}>Method</label>
-                    <select
-                      value={txMethod}
-                      onChange={(e) => setTxMethod(e.target.value)}
-                      style={{ padding: '8px 10px', borderRadius: '4px', border: '1px solid var(--border-light)', background: 'var(--bg-soft)', color: 'var(--text)' }}
-                    >
-                      <option value="UPI">UPI / GPay</option>
-                      <option value="Cash">Cash</option>
-                      <option value="Cheque">Cheque</option>
-                      <option value="NetBanking">Net Banking</option>
-                    </select>
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <label style={{ fontSize: '11px', fontWeight: 600 }}>Ref ID / Receipt</label>
-                    <input
-                      type="text"
-                      value={txRef}
-                      onChange={(e) => setTxRef(e.target.value)}
-                      placeholder="e.g. UPI12938129"
-                      style={{ padding: '8px 10px', borderRadius: '4px', border: '1px solid var(--border-light)', background: 'var(--bg-soft)', color: 'var(--text)' }}
-                    />
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
-                  {editingTx && (
-                    <button type="button" className="btn btn-secondary" style={{ flex: 1 }} onClick={() => {
-                      setEditingTx(null);
-                      setTxAmount(0);
-                      setTxRef('');
-                    }}>Cancel Edit</button>
-                  )}
-                  <button type="submit" className="btn btn-primary" style={{ flex: 1 }} disabled={savingTx}>
-                    {savingTx ? 'Recording...' : editingTx ? 'Apply Changes' : 'Record Payment'}
-                  </button>
-                </div>
-              </form>
-
-              {/* Transactions List */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <h4 style={{ margin: 0, fontSize: '12px', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Payment Ledger Logs</h4>
-                {loadingTransactions ? (
-                  <div style={{ color: 'var(--text-faint)', fontSize: '12px', textAlign: 'center', padding: '20px' }}>Loading logs...</div>
-                ) : transactions.length === 0 ? (
-                  <div style={{ color: 'var(--text-faint)', fontSize: '12px', textAlign: 'center', padding: '20px' }}>No payment logs recorded.</div>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '380px', overflowY: 'auto' }}>
-                    {transactions.map(tx => (
-                      <div key={tx.transactionId} className="card" style={{ padding: '12px', background: 'var(--bg-soft)', border: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div>
-                          <div style={{ fontSize: '13px', fontWeight: 'bold' }}>₹{tx.amountPaid} via <span style={{ color: 'var(--accent)' }}>{tx.paymentMethod}</span></div>
-                          <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2.5px' }}>
-                            <strong>Log ID:</strong> {tx.transactionId}
-                          </div>
-                          <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                            <strong>Allocated to:</strong> {tx.installmentId?.startsWith('inst_') ? `Installment #${tx.installmentId.replace('inst_', '')}` : (tx.installmentId === 'registration' ? 'Installment #1' : (tx.installmentId || '--'))}
-                          </div>
-                          {tx.referenceNumber && (
-                            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                              <strong>Ref:</strong> {tx.referenceNumber}
-                            </div>
-                          )}
-                          <div style={{ fontSize: '10px', color: 'var(--text-faint)', marginTop: '2.5px' }}>
-                            {formatDateStr(tx.timestamp)} {new Date(tx.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} by {tx.recordedBy}
-                          </div>
-                        </div>
-
-                        <div style={{ display: 'flex', gap: '4px' }}>
-                          <button
-                            onClick={() => {
-                              setEditingTx(tx);
-                              setTxInstId(tx.installmentId || 'inst_1');
-                              setTxAmount(tx.amountPaid);
-                              setTxRef(tx.referenceNumber);
-                              setTxMethod(tx.paymentMethod);
-                              setTxDate(tx.timestamp ? getDateKeyIST(tx.timestamp) : getDateKeyIST());
-                            }}
-                            style={{ border: 'none', background: 'transparent', cursor: 'pointer', fontSize: '1.05rem' }}
-                            title="Edit payment log"
-                          >
-                            ✏️
-                          </button>
-                          <button
-                            onClick={() => handleDeleteTransaction({
-                              tx,
-                              transactionId: tx.transactionId,
-                              studentCode: selectedStudent?.studentCode,
-                              studentName: selectedStudent?.name,
-                              amount: Number(tx.amountPaid || 0),
-                              paymentMethod: tx.paymentMethod,
-                              dateStr: formatDateStr(tx.timestamp),
-                              getToken: async () => firebaseUser!.getIdToken(),
-                              onSuccess: () => {
-                                loadTransactions(selectedStudent!.studentCode);
-                                loadStudents();
-                              }
-                            })}
-                            style={{ border: 'none', background: 'transparent', color: 'var(--danger)', cursor: 'pointer', fontSize: '1.05rem' }}
-                            title="Delete payment log"
-                          >
-                            🗑️
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-            </div>
-
           </div>
         </div>
       )}
