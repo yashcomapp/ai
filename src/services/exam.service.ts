@@ -28,6 +28,98 @@ function isAttemptCompleted(data: any): boolean {
   return false;
 }
 
+export interface GetAssignmentsForBatchesOptions {
+  type?: 'all' | 'objective' | 'subjective';
+  status?: string | null;
+  studentCode?: string;
+  studentCodes?: string[];
+  collection?: 'batchAssignments' | 'subjectiveAssignments' | 'subjectiveExams';
+}
+
+/**
+ * SSOT for querying assignments targeted by batches and/or students.
+ * Automatically chunks queries by 10 to comply with Firestore array-contains-any limits and handles deduplication.
+ */
+export async function getAssignmentsForBatches(
+  batchIds: string[],
+  options: GetAssignmentsForBatchesOptions = {}
+): Promise<{
+  objectiveDocs: admin.firestore.QueryDocumentSnapshot[];
+  subjectiveDocs: admin.firestore.QueryDocumentSnapshot[];
+  allDocs: admin.firestore.QueryDocumentSnapshot[];
+}> {
+  const { type = 'all', status = 'active', studentCode, studentCodes, collection } = options;
+  const batchList = (batchIds || []).filter(Boolean);
+  const targetStudentList = (studentCodes || (studentCode ? [studentCode] : [])).filter(Boolean);
+
+  const batchChunks: string[][] = [];
+  for (let i = 0; i < batchList.length; i += 10) {
+    batchChunks.push(batchList.slice(i, i + 10));
+  }
+
+  const studentChunks: string[][] = [];
+  for (let i = 0; i < targetStudentList.length; i += 10) {
+    studentChunks.push(targetStudentList.slice(i, i + 10));
+  }
+
+  const queryCollection = async (collName: string) => {
+    const promises: Promise<admin.firestore.QuerySnapshot>[] = [];
+
+    // 1. By targetBatches (chunked by 10)
+    for (const chunk of batchChunks) {
+      let q: admin.firestore.Query = adminDb.collection(collName).where('targetBatches', 'array-contains-any', chunk);
+      if (status) q = q.where('status', '==', status);
+      promises.push(q.get().catch(() => ({ docs: [] } as any)));
+    }
+
+    // 2. By targetStudents
+    for (const chunk of studentChunks) {
+      if (chunk.length === 1) {
+        let q: admin.firestore.Query = adminDb.collection(collName).where('targetStudents', 'array-contains', chunk[0]);
+        if (status) q = q.where('status', '==', status);
+        promises.push(q.get().catch(() => ({ docs: [] } as any)));
+      } else {
+        let q: admin.firestore.Query = adminDb.collection(collName).where('targetStudents', 'array-contains-any', chunk);
+        if (status) q = q.where('status', '==', status);
+        promises.push(q.get().catch(() => ({ docs: [] } as any)));
+      }
+    }
+
+    const snaps = await Promise.all(promises);
+    const seen = new Set<string>();
+    const docs: admin.firestore.QueryDocumentSnapshot[] = [];
+    snaps.forEach(snap => {
+      snap.docs.forEach(d => {
+        if (!seen.has(d.id)) {
+          seen.add(d.id);
+          docs.push(d);
+        }
+      });
+    });
+    return docs;
+  };
+
+  if (collection) {
+    const docs = await queryCollection(collection);
+    return {
+      objectiveDocs: docs,
+      subjectiveDocs: docs,
+      allDocs: docs
+    };
+  }
+
+  const [objectiveDocs, subjectiveDocs] = await Promise.all([
+    type === 'subjective' ? Promise.resolve([]) : queryCollection('batchAssignments'),
+    type === 'objective' ? Promise.resolve([]) : queryCollection('subjectiveAssignments')
+  ]);
+
+  return {
+    objectiveDocs,
+    subjectiveDocs,
+    allDocs: [...objectiveDocs, ...subjectiveDocs]
+  };
+}
+
 export class ExamService {
   /**
    * Helper to fetch active assignments targeted specifically to a student (by batch or direct assignment),
@@ -36,75 +128,14 @@ export class ExamService {
     objAssignments: admin.firestore.QueryDocumentSnapshot[];
     subAssignments: admin.firestore.QueryDocumentSnapshot[];
   }> {
-    const batchList = (studentBatchIds || []).filter(Boolean);
-    const batchChunks: string[][] = [];
-    for (let i = 0; i < batchList.length; i += 30) {
-      batchChunks.push(batchList.slice(i, i + 30));
-    }
-
-    const objPromises: Promise<admin.firestore.QuerySnapshot>[] = [];
-    const subPromises: Promise<admin.firestore.QuerySnapshot>[] = [];
-
-    // 1. Batch-targeted assignments
-    batchChunks.forEach(chunk => {
-      objPromises.push(
-        adminDb.collection('batchAssignments')
-          .where('status', '==', 'active')
-          .where('targetBatches', 'array-contains-any', chunk)
-          .get()
-      );
-      subPromises.push(
-        adminDb.collection('subjectiveAssignments')
-          .where('status', '==', 'active')
-          .where('targetBatches', 'array-contains-any', chunk)
-          .get()
-      );
+    const res = await getAssignmentsForBatches(studentBatchIds, {
+      status: 'active',
+      studentCode
     });
-
-    // 2. Student-specific assignments
-    if (studentCode) {
-      objPromises.push(
-        adminDb.collection('batchAssignments')
-          .where('status', '==', 'active')
-          .where('targetStudents', 'array-contains', studentCode)
-          .get()
-      );
-      subPromises.push(
-        adminDb.collection('subjectiveAssignments')
-          .where('status', '==', 'active')
-          .where('targetStudents', 'array-contains', studentCode)
-          .get()
-      );
-    }
-
-    const [objSnaps, subSnaps] = await Promise.all([
-      Promise.all(objPromises),
-      Promise.all(subPromises)
-    ]);
-
-    const seenObjDocIds = new Set<string>();
-    const objDocs: admin.firestore.QueryDocumentSnapshot[] = [];
-    objSnaps.forEach(snap => {
-      snap.docs.forEach(d => {
-        if (!seenObjDocIds.has(d.id)) {
-          seenObjDocIds.add(d.id);
-          objDocs.push(d);
-        }
-      });
-    });
-
-    const seenSubDocIds = new Set<string>();
-    const subDocs: admin.firestore.QueryDocumentSnapshot[] = [];
-    subSnaps.forEach(snap => {
-      snap.docs.forEach(d => {
-        if (!seenSubDocIds.has(d.id)) {
-          seenSubDocIds.add(d.id);
-          subDocs.push(d);
-        }
-      });
-    });
-
-    return { objAssignments: objDocs, subAssignments: subDocs };
+    return {
+      objAssignments: res.objectiveDocs,
+      subAssignments: res.subjectiveDocs
+    };
   }
 
   /**

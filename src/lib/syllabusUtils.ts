@@ -300,3 +300,8 @@ export function buildSyllabusHierarchyFromDocs(docs: any[], includeChapters = fa
 }
 
 
+
+/**
+ * Cached SSOT helper to group syllabus documents by canonical class (or fetch for a single class).
+ * Uses getCachedSyllabus to guarantee zero Firestore read overhead.
+ */

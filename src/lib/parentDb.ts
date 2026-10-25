@@ -8,6 +8,7 @@ import { calculateSrsSchedule } from '@/lib/srsRotation';
 import { getRequiredConfidence } from '@/lib/studentDb';
 import { getFromCache, setInCache } from '@/lib/firebase/cache';
 import { deduplicateAssignments, resolveIntegrityScore, calculateTimeLogSummary, resolveParentStudentCodes } from '@/lib/dashboardDbUtils';
+import { getAssignmentsForBatches } from '@/services/exam.service';
 
 export async function getParentDashboardData(
   parentEmail: string,
@@ -125,10 +126,7 @@ export async function getParentDashboardData(
     reviewsSnapshot,
     parentReviewsSnapshot,
     subjectiveAttemptsSnapshot,
-    batchAssignmentsSnapshot,
-    studentAssignmentsSnapshot,
-    subAssignmentsSnapshot,
-    subStudentAssignmentsSnapshot,
+    assignmentsResult,
     classroomExamsSnap,
     homePracticeSnap,
     integritySnapshot,
@@ -145,33 +143,11 @@ export async function getParentDashboardData(
       .where('studentCode', '==', targetStudentCode)
       .get(),
 
-    // Batch Assignments (by batch list)
-    childBatchIds.length > 0
-      ? adminDb.collection('batchAssignments')
-          .where('targetBatches', 'array-contains-any', childBatchIds)
-          .where('status', '==', 'active')
-          .get()
-      : Promise.resolve({ docs: [] } as any),
-
-    // Batch Assignments (by student specific)
-    adminDb.collection('batchAssignments')
-      .where('targetStudents', 'array-contains', targetStudentCode)
-      .where('status', '==', 'active')
-      .get(),
-
-    // Subjective Assignments (by batch list)
-    childBatchIds.length > 0
-      ? adminDb.collection('subjectiveAssignments')
-          .where('targetBatches', 'array-contains-any', childBatchIds)
-          .where('status', '==', 'active')
-          .get()
-      : Promise.resolve({ docs: [] } as any),
-
-    // Subjective Assignments (by student specific)
-    adminDb.collection('subjectiveAssignments')
-      .where('targetStudents', 'array-contains', targetStudentCode)
-      .where('status', '==', 'active')
-      .get(),
+    // Batch & Subjective Assignments (via unified getAssignmentsForBatches)
+    getAssignmentsForBatches(childBatchIds, {
+      status: 'active',
+      studentCode: targetStudentCode
+    }),
 
     // Classroom Tests scoped by student's batchIds (entire history for correct absent stats)
     childBatchIds.length > 0
@@ -214,12 +190,7 @@ export async function getParentDashboardData(
   const now = new Date();
 
   // Deduplicate assignments by examId to prevent double counting
-  const allAssignmentsList = [
-    ...batchAssignmentsSnapshot.docs,
-    ...studentAssignmentsSnapshot.docs,
-    ...subAssignmentsSnapshot.docs,
-    ...subStudentAssignmentsSnapshot.docs
-  ];
+  const allAssignmentsList = assignmentsResult.allDocs;
   const uniqueAssignments = deduplicateAssignments(allAssignmentsList);
 
   const subjectiveExamsMap = new Map<string, any>();

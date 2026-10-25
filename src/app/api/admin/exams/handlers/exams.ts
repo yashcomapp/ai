@@ -10,7 +10,7 @@ import { getRequiredConfidence, isDemoUser } from '@/lib/studentDb';
 import { evaluateSessionSincerity } from '@/lib/practiceTimeUtils';
 import { getCanonicalSubjectName, parseTopicCode } from '@/lib/questionTypes';
 import { getObjectiveExamTopics, getSubjectiveExamTopics, getExamDateKey, isExamForStudent, QuotientService } from '@/services/quotient.service';
-import { ExamService } from '@/services/exam.service';
+import { ExamService, getAssignmentsForBatches } from '@/services/exam.service';
 
 const parseIST = (dateStr: string) => {
   if (!dateStr) return new Date();
@@ -71,19 +71,12 @@ export async function GET(req: NextRequest) {
       const cleanClass = String(studentClass).replace(/\D/g, '');
       const todayDateStr = getDateKeyIST();
 
-      // 2. Targeted batch assignment queries
-      const baQueries: Promise<FirebaseFirestore.QuerySnapshot>[] = [
-        adminDb.collection('batchAssignments').where('targetStudents', 'array-contains', studentCodeParam).get()
-      ];
-      if (bIds.length > 0) {
-        const chunks: string[][] = [];
-        for (let i = 0; i < bIds.length; i += 10) {
-          chunks.push(bIds.slice(i, i + 10));
-        }
-        chunks.forEach(chunk => {
-          baQueries.push(adminDb.collection('batchAssignments').where('targetBatches', 'array-contains-any', chunk).get());
-        });
-      }
+      // 2. Targeted batch assignment queries via unified getAssignmentsForBatches
+      const baPromise = getAssignmentsForBatches(bIds, {
+        type: 'objective',
+        status: null,
+        studentCode: studentCodeParam
+      });
 
       // 3. Class-scoped active/draft exams
       const objExamsQuery = cleanClass
@@ -94,10 +87,10 @@ export async function GET(req: NextRequest) {
         ? adminDb.collection('subjectiveExams').where('class', '==', cleanClass).where('status', 'in', ['active', 'draft']).get()
         : adminDb.collection('subjectiveExams').where('status', 'in', ['active', 'draft']).limit(200).get();
 
-      const [examsSnap, subjExamsSnap, ...baSnaps] = await Promise.all([
+      const [examsSnap, subjExamsSnap, baResult] = await Promise.all([
         objExamsQuery,
         subjExamsQuery,
-        ...baQueries
+        baPromise
       ]);
 
       const examsMap = new Map<string, any>();
@@ -111,20 +104,18 @@ export async function GET(req: NextRequest) {
       });
 
       const assignedExamIds = new Set<string>();
-      baSnaps.forEach(snap => {
-        snap.docs.forEach(doc => {
-          const bData = doc.data();
-          if (bData.examId) {
-            assignedExamIds.add(bData.examId);
-            if (examsMap.has(bData.examId)) {
-              const ex = examsMap.get(bData.examId);
-              const tBatches = new Set([...(ex.targetBatches || []), ...(bData.targetBatches || [])]);
-              const tStudents = new Set([...(ex.targetStudents || []), ...(bData.targetStudents || [])]);
-              ex.targetBatches = Array.from(tBatches);
-              ex.targetStudents = Array.from(tStudents);
-            }
+      baResult.objectiveDocs.forEach(doc => {
+        const bData = doc.data();
+        if (bData.examId) {
+          assignedExamIds.add(bData.examId);
+          if (examsMap.has(bData.examId)) {
+            const ex = examsMap.get(bData.examId);
+            const tBatches = new Set([...(ex.targetBatches || []), ...(bData.targetBatches || [])]);
+            const tStudents = new Set([...(ex.targetStudents || []), ...(bData.targetStudents || [])]);
+            ex.targetBatches = Array.from(tBatches);
+            ex.targetStudents = Array.from(tStudents);
           }
-        });
+        }
       });
 
       // Hydrate any missing assigned objective/subjective exams not in class query

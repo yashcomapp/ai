@@ -3,7 +3,7 @@ import { adminDb } from '@/lib/firebase/admin';
 import { deriveTopicCodeFromQuestionCode } from '@/lib/questionTypes';
 import { verifyAnyRole } from '@/lib/auth';
 import { getDateKeyIST, formatDateIST as formatDate } from '@/lib/dateUtils';
-import { fetchStudentRawAssignments } from '@/lib/studentDb';
+import { fetchStudentRawAssignments, getAssignmentsForBatches } from '@/lib/studentDb';
 
 
 export async function GET(req: NextRequest) {
@@ -115,18 +115,13 @@ export async function GET(req: NextRequest) {
             .get()
         : Promise.resolve({ docs: [] } as any),
 
-      batchIds.length > 0
-        ? adminDb.collection('subjectiveExams')
-            .where('status', '==', 'active')
-            .where('targetBatches', 'array-contains-any', batchIds)
-            .get()
-        : Promise.resolve({ docs: [] } as any),
-
-      // Direct Subjective exams for student directly
-      adminDb.collection('subjectiveExams')
-        .where('status', '==', 'active')
-        .where('targetStudents', 'array-contains', studentCode)
-        .get()
+      // Direct Subjective exams for student targets (via unified getAssignmentsForBatches)
+      getAssignmentsForBatches(batchIds, {
+        collection: 'subjectiveExams',
+        status: 'active',
+        studentCode
+      }).then(r => ({ docs: r.allDocs })),
+      Promise.resolve({ docs: [] } as any)
     ]);
 
     const {

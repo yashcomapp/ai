@@ -89,3 +89,38 @@ export async function fetchAllByDocIdRange(
 
   return options?.maxLimit ? allDocs.slice(0, options.maxLimit) : allDocs;
 }
+
+export function parsePaginationParams(reqUrl: string, defaultLimit = 500, maxLimit = 1000) {
+  const { searchParams } = new URL(reqUrl);
+  const cursor = searchParams.get('cursor');
+  const limitParam = searchParams.get('limit');
+  const isPaginated = cursor !== null || limitParam !== null;
+  const limit = limitParam ? Math.min(Math.max(parseInt(limitParam, 10) || defaultLimit, 1), maxLimit) : defaultLimit;
+
+  return { cursor, limit, isPaginated };
+}
+
+export async function fetchCollectionWithPagination(
+  collectionName: string,
+  reqUrl: string,
+  selectFields?: string[]
+) {
+  const { cursor, limit, isPaginated } = parsePaginationParams(reqUrl);
+  if (isPaginated) {
+    const page = await fetchPageByDocId(collectionName, { cursor, limit, selectFields });
+    return {
+      docs: page.docs,
+      hasMore: page.hasMore,
+      nextCursor: page.nextCursor,
+      isPaginated: true
+    };
+  } else {
+    const docs = await fetchAllByDocIdRange(collectionName, { selectFields, chunkSize: 500 });
+    return {
+      docs,
+      hasMore: false,
+      nextCursor: null,
+      isPaginated: false
+    };
+  }
+}

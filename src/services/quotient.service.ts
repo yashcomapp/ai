@@ -15,6 +15,7 @@ import { evaluateSessionSincerity } from '@/lib/practiceTimeUtils';
 import { isDemoUser, getRequiredConfidence } from '@/lib/studentDb';
 import { calculateSrsSchedule } from '@/lib/srsRotation';
 import { calculateUnifiedMetrics, extractConductedTopicCodes } from '@/lib/dashboardMetrics';
+import { getAssignmentsForBatches } from '@/services/exam.service';
 
 export const MASTERY_THRESHOLDS = {
   MASTERED_MASTERY: 90,
@@ -1243,19 +1244,12 @@ export class QuotientService {
 
     const cleanClass = String(studentClass).replace(/\D/g, '');
 
-    // 2. Targeted batch assignment queries (student direct + student batches)
-    const baQueries: Promise<FirebaseFirestore.QuerySnapshot>[] = [
-      adminDb.collection('batchAssignments').where('targetStudents', 'array-contains', studentCode).get()
-    ];
-    if (bIds.length > 0) {
-      const chunks: string[][] = [];
-      for (let i = 0; i < bIds.length; i += 10) {
-        chunks.push(bIds.slice(i, i + 10));
-      }
-      chunks.forEach(chunk => {
-        baQueries.push(adminDb.collection('batchAssignments').where('targetBatches', 'array-contains-any', chunk).get());
-      });
-    }
+    // 2. Targeted batch assignment queries via unified getAssignmentsForBatches
+    const baPromise = getAssignmentsForBatches(bIds, {
+      type: 'objective',
+      status: null,
+      studentCode
+    });
 
     // 3. Targeted class-scoped exams queries (fallback to recent if class unknown)
     const objExamsQuery = cleanClass 
@@ -1277,7 +1271,7 @@ export class QuotientService {
       examsSnap,
       subjectiveExamsSnap,
       evaluationsSnap,
-      ...baSnaps
+      baResult
     ] = await Promise.all([
       adminDb.collection('examAttempts').where('studentCode', '==', studentCode).get(),
       adminDb.collection('assignments').where('studentCode', '==', studentCode).get(),
@@ -1290,7 +1284,7 @@ export class QuotientService {
       objExamsQuery,
       subjExamsQuery,
       adminDb.collection('evaluations').where('studentCode', '==', studentCode).get(),
-      ...baQueries
+      baPromise
     ]);
 
     const examsMap = new Map();
@@ -1298,20 +1292,15 @@ export class QuotientService {
       examsMap.set(doc.id, { id: doc.id, ...doc.data() });
     });
 
-    const seenBaIds = new Set<string>();
-    baSnaps.forEach(snap => {
-      snap.docs.forEach(doc => {
-        if (seenBaIds.has(doc.id)) return;
-        seenBaIds.add(doc.id);
-        const bData = doc.data();
-        if (bData.examId && examsMap.has(bData.examId)) {
-          const ex = examsMap.get(bData.examId);
-          const tBatches = new Set([...(ex.targetBatches || []), ...(bData.targetBatches || [])]);
-          const tStudents = new Set([...(ex.targetStudents || []), ...(bData.targetStudents || [])]);
-          ex.targetBatches = Array.from(tBatches);
-          ex.targetStudents = Array.from(tStudents);
-        }
-      });
+    baResult.objectiveDocs.forEach(doc => {
+      const bData = doc.data();
+      if (bData.examId && examsMap.has(bData.examId)) {
+        const ex = examsMap.get(bData.examId);
+        const tBatches = new Set([...(ex.targetBatches || []), ...(bData.targetBatches || [])]);
+        const tStudents = new Set([...(ex.targetStudents || []), ...(bData.targetStudents || [])]);
+        ex.targetBatches = Array.from(tBatches);
+        ex.targetStudents = Array.from(tStudents);
+      }
     });
 
     // Hydrate any referenced objective exams not in class subset
@@ -1439,18 +1428,12 @@ export class QuotientService {
       activeStudentChunks.push(activeStudentCodes.slice(i, i + 30));
     }
 
-    // 3. Batch assignments query chunks (by targetStudents and targetBatches)
-    const baQueries: Promise<FirebaseFirestore.QuerySnapshot>[] = [];
-    // targetStudents array-contains-any (chunks of 10)
-    for (let i = 0; i < activeStudentCodes.length; i += 10) {
-      const chunk = activeStudentCodes.slice(i, i + 10);
-      baQueries.push(adminDb.collection('batchAssignments').where('targetStudents', 'array-contains-any', chunk).get().catch(() => null as any));
-    }
-    const batchIdList = Array.from(allBatchIds);
-    for (let i = 0; i < batchIdList.length; i += 10) {
-      const chunk = batchIdList.slice(i, i + 10);
-      baQueries.push(adminDb.collection('batchAssignments').where('targetBatches', 'array-contains-any', chunk).get().catch(() => null as any));
-    }
+    // 3. Batch assignments query chunks via unified getAssignmentsForBatches
+    const baPromise = getAssignmentsForBatches(Array.from(allBatchIds), {
+      type: 'objective',
+      status: null,
+      studentCodes: activeStudentCodes
+    });
 
     // 4. Exams and Subjective Exams scoped by class if available
     const classList = Array.from(allClasses);
@@ -1486,7 +1469,7 @@ export class QuotientService {
       evaluationsSnaps,
       examsSnap,
       subjectiveExamsSnap,
-      ...baSnaps
+      baResult
     ] = await Promise.all([
       Promise.all(activeStudentChunks.map(chunk => adminDb.collection('examAttempts').where('studentCode', 'in', chunk).get().catch(() => null as any))),
       Promise.all(activeStudentChunks.map(chunk => adminDb.collection('assignments').where('studentCode', 'in', chunk).get().catch(() => null as any))),
@@ -1499,7 +1482,7 @@ export class QuotientService {
       Promise.all(activeStudentChunks.map(chunk => adminDb.collection('evaluations').where('studentCode', 'in', chunk).get().catch(() => null as any))),
       objExamsPromise,
       subjExamsPromise,
-      ...baQueries
+      baPromise
     ]);
 
     const examsMap = new Map<string, any>();
@@ -1526,12 +1509,9 @@ export class QuotientService {
     const referencedExamIds = new Set<string>();
     rawAttempts.forEach((d: any) => { if (d.examId) referencedExamIds.add(d.examId); });
     rawAssignments.forEach((d: any) => { if (d.examId) referencedExamIds.add(d.examId); });
-    baSnaps.forEach(snap => {
-      if (!snap) return;
-      snap.docs.forEach((doc: any) => {
-        const bData = doc.data();
-        if (bData?.examId) referencedExamIds.add(bData.examId);
-      });
+    baResult.objectiveDocs.forEach((doc: any) => {
+      const bData = doc.data();
+      if (bData?.examId) referencedExamIds.add(bData.examId);
     });
 
     const missingExamIds = Array.from(referencedExamIds).filter(id => !examsMap.has(id));
@@ -1549,21 +1529,15 @@ export class QuotientService {
     }
 
     // Process batch assignments into examsMap
-    const seenBaIds = new Set<string>();
-    baSnaps.forEach(snap => {
-      if (!snap) return;
-      snap.docs.forEach((doc: any) => {
-        if (seenBaIds.has(doc.id)) return;
-        seenBaIds.add(doc.id);
-        const bData = doc.data();
-        if (bData.examId && examsMap.has(bData.examId)) {
-          const ex = examsMap.get(bData.examId);
-          const tBatches = new Set([...(ex.targetBatches || []), ...(bData.targetBatches || [])]);
-          const tStudents = new Set([...(ex.targetStudents || []), ...(bData.targetStudents || [])]);
-          ex.targetBatches = Array.from(tBatches);
-          ex.targetStudents = Array.from(tStudents);
-        }
-      });
+    baResult.objectiveDocs.forEach((doc: any) => {
+      const bData = doc.data();
+      if (bData.examId && examsMap.has(bData.examId)) {
+        const ex = examsMap.get(bData.examId);
+        const tBatches = new Set([...(ex.targetBatches || []), ...(bData.targetBatches || [])]);
+        const tStudents = new Set([...(ex.targetStudents || []), ...(bData.targetStudents || [])]);
+        ex.targetBatches = Array.from(tBatches);
+        ex.targetStudents = Array.from(tStudents);
+      }
     });
 
     // Hydrate any referenced subjective exams missing from class query

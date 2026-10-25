@@ -7,6 +7,7 @@ import { Batch } from '@/types/batch.types';
 import TargetPicker from './TargetPicker';
 import ScheduleTimingInputs from './ScheduleTimingInputs';
 import { AttemptDurationControls } from './AttemptDurationControls';
+import { ModalShell } from '@/components/common/ModalShell';
 
 export interface AssignModalState {
   show: boolean;
@@ -72,8 +73,25 @@ export function AssignExamModal({
   if (!assignModal.show) return null;
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.45)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', zIndex: 20000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ background: 'var(--surface-popover)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-popover)', maxWidth: '620px', width: '94%', maxHeight: '90vh', overflowY: 'auto', padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '12px', boxShadow: 'var(--shadow-lg)' }}>
+    <ModalShell
+      isOpen={assignModal.show}
+      onClose={() => setAssignModal(prev => ({ ...prev, show: false }))}
+      maxWidth="620px"
+      zIndex={20000}
+      cardStyle={{
+        background: 'var(--surface-popover)',
+        borderRadius: 'var(--radius-lg)',
+        border: '1px solid var(--border-popover)',
+        width: '94%',
+        maxHeight: '90vh',
+        overflowY: 'auto',
+        padding: '20px 24px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '12px',
+        boxShadow: 'var(--shadow-lg)'
+      }}
+    >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
           <div>
             <h3 style={{ fontSize: '15px', fontWeight: 800, margin: 0, color: 'var(--text)' }}>
@@ -338,8 +356,7 @@ export function AssignExamModal({
             {assigning ? '⏳ Assigning Exam...' : 'Assign Exam'}
           </button>
         </div>
-      </div>
-    </div>
+    </ModalShell>
   );
 }
 

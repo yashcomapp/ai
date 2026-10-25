@@ -13,9 +13,10 @@ export interface ModalShellProps {
   padding?: string;
   backdropBlur?: string;
   className?: string;
+  cardStyle?: React.CSSProperties;
 }
 
-export default function ModalShell({
+export function ModalShell({
   isOpen,
   onClose,
   children,
@@ -25,7 +26,8 @@ export default function ModalShell({
   align = 'center',
   padding = '16px',
   backdropBlur = '4px',
-  className = ''
+  className = '',
+  cardStyle,
 }: ModalShellProps) {
   if (!isOpen) return null;
 
@@ -42,7 +44,7 @@ export default function ModalShell({
         justifyContent: 'center',
         zIndex,
         padding,
-        overflowY: 'auto'
+        overflowY: 'auto',
       }}
       onClick={(e) => {
         if (e.target === e.currentTarget && onClose) {
@@ -60,7 +62,8 @@ export default function ModalShell({
           maxWidth: typeof maxWidth === 'number' ? `${maxWidth}px` : maxWidth,
           width,
           boxShadow: 'var(--shadow-lg)',
-          margin: align === 'flex-start' ? '0 auto' : undefined
+          margin: align === 'flex-start' ? '0 auto' : undefined,
+          ...cardStyle,
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -69,3 +72,5 @@ export default function ModalShell({
     </div>
   );
 }
+
+export default ModalShell;

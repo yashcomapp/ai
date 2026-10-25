@@ -1,4 +1,5 @@
 'use client';
+import { QuestionKeywordsInput } from '@/components/admin/questions/QuestionKeywordsInput';
 
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
@@ -2879,23 +2880,15 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
 
                             {/* Editable Keywords Field */}
                             <div style={{ marginTop: '6px', paddingTop: '8px', borderTop: '1px dashed var(--border-light)' }}>
-                              <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: 'var(--accent)', marginBottom: '4px' }}>
-                                🏷️ Essential Keywords / Key Phrases for Subject (Comma-Separated):
-                              </label>
-                              <input 
-                                type="text"
-                                className="form-input"
-                                placeholder="e.g. centripetal force, directed towards center, gravitational force"
-                                value={Array.isArray(q.keywords) ? q.keywords.join(', ') : (q.keywords || '')}
-                                onChange={(e) => {
-                                  const kwList = e.target.value.split(',').map(s => s.trim()).filter(Boolean);
+                              <QuestionKeywordsInput
+                                keywords={q.keywords}
+                                onChange={(kwList) => {
                                   setGeneratedQuestions(prev => {
                                     const next = [...prev];
                                     next[idx] = { ...next[idx], keywords: kwList };
                                     return next;
                                   });
                                 }}
-                                style={{ width: '100%', padding: '6px 10px', fontSize: '11px', borderRadius: '4px', background: 'var(--bg-soft)', color: 'var(--text)', border: '1px solid var(--border-light)' }}
                               />
                             </div>
 

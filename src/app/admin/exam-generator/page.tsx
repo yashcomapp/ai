@@ -1,4 +1,5 @@
 'use client';
+import { QuestionKeywordsInput } from '@/components/admin/questions/QuestionKeywordsInput';
 
 import React, { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '@/context/AuthContext';
@@ -1973,23 +1974,15 @@ Return ONLY valid JSON. No markdown wrappers or extra commentary.`;
                   {(q.type === 'subjective' || q.type === 'subjective_short' || q.type === 'subjective_long' || q.solution) && (
                     <div style={{ marginTop: '6px', padding: '12px 14px', background: 'var(--surface)', borderRadius: '6px', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '12px', width: '100%' }}>
                       <div>
-                        <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: 'var(--accent)', marginBottom: '4px' }}>
-                          🏷️ Essential Keywords / Key Phrases for Subject (Comma-Separated):
-                        </label>
-                        <input 
-                          type="text"
-                          className="form-input"
-                          placeholder="e.g. centripetal force, directed towards center, gravitational force"
-                          value={Array.isArray(q.keywords) ? q.keywords.join(', ') : (q.keywords || '')}
-                          onChange={(e) => {
-                            const kwList = e.target.value.split(',').map(s => s.trim()).filter(Boolean);
+                        <QuestionKeywordsInput
+                          keywords={q.keywords}
+                          onChange={(kwList) => {
                             setGeneratedQuestions(prev => {
                               const next = [...prev];
                               next[idx] = { ...next[idx], keywords: kwList };
                               return next;
                             });
                           }}
-                          style={{ width: '100%', padding: '6px 10px', fontSize: '12px', borderRadius: '4px', background: 'var(--bg-soft)', color: 'var(--text)', border: '1px solid var(--border-light)' }}
                         />
                       </div>
 

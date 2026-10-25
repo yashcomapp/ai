@@ -6,6 +6,7 @@ import { NextRequest } from 'next/server';
 import { shuffleArray, isQuestionQuarantined } from '@/lib/questionTypes';
 import { areQuestionsTooSimilar, filterDistinctCandidates } from '@/lib/questionSimilarity';
 import { getDateKeyIST } from '@/lib/dateUtils';
+import { getSyllabusByClass } from '@/lib/syllabusServerUtils';
 
 export async function GET(request: NextRequest) {
   try {
@@ -319,30 +320,9 @@ export async function POST(request: NextRequest) {
       allQuestions = dbSubjectiveQuestions;
     }
 
-    // Map normalized topic name -> { number: string, parentNumber: string }
-    const topicLookup: Record<string, { number: string; parentNumber: string }> = {};
+    // Map normalized topic name -> { number: string, parentNumber: string } via unified getSyllabusByClass
+    const { topicLookup } = await getSyllabusByClass(className);
     const cleanString = (s: string) => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '').trim();
-
-    syllabusSnap.docs.forEach(doc => {
-      const data = doc.data();
-      const chapters = data.chapters || [];
-      chapters.forEach((ch: any) => {
-        const chNum = String(ch.number || ch.chapterNumber || '');
-        const flatten = (items: any[], parentNum: string) => {
-          items.forEach((item: any, idx: number) => {
-            const name = String(typeof item === 'string' ? item : (item.name || item.topicName || ''));
-            const num = String(item.number || `${parentNum}.${idx + 1}`);
-            if (name) {
-              topicLookup[cleanString(name)] = { number: num, parentNumber: parentNum };
-            }
-            if (item && Array.isArray(item.subtopics)) {
-              flatten(item.subtopics, num);
-            }
-          });
-        };
-        flatten(ch.topics || [], chNum);
-      });
-    });
 
     const isMatchTopic = (q: any, top: string): boolean => {
       const qTopicName = String(q.topic || q.topicName || '').toLowerCase();

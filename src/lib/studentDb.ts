@@ -5,6 +5,9 @@ import { calculateUnifiedMetrics, extractConductedTopicCodes, getRequiredConfide
 import { deriveTopicCodeFromQuestionCode, getCanonicalSubjectName, parseTopicCode } from '@/lib/questionTypes';
 import { calculateSrsSchedule, SrsSchedule } from '@/lib/srsRotation';
 import { deduplicateAssignments, resolveIntegrityScore } from '@/lib/dashboardDbUtils';
+import { getAssignmentsForBatches } from '@/services/exam.service';
+
+export { getAssignmentsForBatches };
 
 /**
  * Checks if a user or student profile is a demo / placeholder account
@@ -49,7 +52,7 @@ export function isDemoUser(user: any): boolean {
   return false;
 }
 
-function resolveTopicNames(syllabusList: any, examData: any) {
+export function resolveTopicNames(syllabusList: any, examData: any) {
   const targetTopicCodes = examData.topicCodes || [];
   const targetChapterNum = examData.chapterNumber || '';
   const topicNames: string[] = [];
@@ -144,39 +147,18 @@ export function cleanSubjectiveExamName(examData: any) {
  * SSOT for querying active batch & student-specific objective and subjective assignments.
  */
 export async function fetchStudentRawAssignments(studentCode: string, batchIds: string[]) {
-  const [
-    batchAssignmentsSnapshot,
-    studentAssignmentsSnapshot,
-    subAssignmentsSnapshot,
-    subStudentAssignmentsSnapshot
-  ] = await Promise.all([
-    batchIds.length > 0
-      ? adminDb.collection('batchAssignments')
-          .where('targetBatches', 'array-contains-any', batchIds)
-          .where('status', '==', 'active')
-          .get()
-      : Promise.resolve({ docs: [] } as any),
-    adminDb.collection('batchAssignments')
-      .where('targetStudents', 'array-contains', studentCode)
-      .where('status', '==', 'active')
-      .get(),
-    batchIds.length > 0
-      ? adminDb.collection('subjectiveAssignments')
-          .where('targetBatches', 'array-contains-any', batchIds)
-          .where('status', '==', 'active')
-          .get()
-      : Promise.resolve({ docs: [] } as any),
-    adminDb.collection('subjectiveAssignments')
-      .where('targetStudents', 'array-contains', studentCode)
-      .where('status', '==', 'active')
-      .get()
-  ]);
+  const { objectiveDocs, subjectiveDocs } = await getAssignmentsForBatches(batchIds, {
+    status: 'active',
+    studentCode
+  });
 
   return {
-    batchAssignmentsSnapshot,
-    studentAssignmentsSnapshot,
-    subAssignmentsSnapshot,
-    subStudentAssignmentsSnapshot
+    batchAssignmentsSnapshot: { docs: objectiveDocs } as any,
+    studentAssignmentsSnapshot: { docs: [] } as any,
+    subAssignmentsSnapshot: { docs: subjectiveDocs } as any,
+    subStudentAssignmentsSnapshot: { docs: [] } as any,
+    objectiveDocs,
+    subjectiveDocs
   };
 }
 
@@ -1074,10 +1056,10 @@ export async function getStudentLearningData(userData: any, preloadedData?: Prel
       reviewsSnap || adminDb.collection('reviews').where('studentCode', '==', studentCode).get(),
       subAttemptsSnap || adminDb.collection('subjectiveAttempts').where('studentCode', '==', studentCode).get(),
       objAssignmentsSnap || (batchIds.length > 0
-        ? adminDb.collection('batchAssignments').where('targetBatches', 'array-contains-any', batchIds).get()
+        ? getAssignmentsForBatches(batchIds, { type: 'objective', status: null }).then(r => ({ docs: r.objectiveDocs }))
         : Promise.resolve({ docs: [] } as any)),
       subAssignmentsSnap || (batchIds.length > 0
-        ? adminDb.collection('subjectiveAssignments').where('targetBatches', 'array-contains-any', batchIds).get()
+        ? getAssignmentsForBatches(batchIds, { type: 'subjective', status: null }).then(r => ({ docs: r.subjectiveDocs }))
         : Promise.resolve({ docs: [] } as any)),
       evalsSnap || adminDb.collection('evaluations').where('studentCode', '==', studentCode).get()
     ]);

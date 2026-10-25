@@ -10,6 +10,7 @@ import { MasteryService } from '@/services/mastery.service';
 import { ExamService } from '@/services/exam.service';
 import { getFromCache, setInCache, invalidateCache } from '@/lib/firebase/cache';
 import { resolveParentStudentCodes } from '@/lib/dashboardDbUtils';
+import { fetchTopicIndexByCodes } from '@/lib/syllabusServerUtils';
 
 
 function safeDateToISO(val: any): string | null {
@@ -258,41 +259,8 @@ export async function GET(req: NextRequest) {
       }
     });
 
-    // Batch query syllabusTopicIndex for all resolved topic codes (with in-memory cache)
-    const syllabusMap = new Map<string, any>();
-    const uniqueTopicCodes = Array.from(allTopicCodes);
-    if (uniqueTopicCodes.length > 0) {
-      const missingCodes: string[] = [];
-      uniqueTopicCodes.forEach(code => {
-        const cached = getFromCache<any>(`topic_index_${code}`);
-        if (cached) {
-          syllabusMap.set(code, cached);
-        } else {
-          missingCodes.push(code);
-        }
-      });
-
-      if (missingCodes.length > 0) {
-        const chunks = chunkArray(missingCodes, 30);
-        const snaps = await Promise.all(
-          chunks.map(chunk =>
-            adminDb.collection('syllabusTopicIndex')
-              .where('topicCode', 'in', chunk)
-              .get()
-          )
-        );
-        snaps.forEach(syllabusSnap => {
-          syllabusSnap.docs.forEach(doc => {
-            const d = doc.data();
-            if (d.topicCode) {
-              syllabusMap.set(d.topicCode, d);
-              setInCache(`topic_index_${d.topicCode}`, d, 600000); // 10 minutes cache
-            }
-          });
-        });
-      }
-    }
-
+    // Batch query syllabusTopicIndex via unified fetchTopicIndexByCodes
+    const syllabusMap = await fetchTopicIndexByCodes(Array.from(allTopicCodes));
     // 1. Map Objective reviews
     const allObjectiveMapped = objSnaps.docs
       .map(doc => {

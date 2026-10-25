@@ -6,7 +6,7 @@ import { ChunkedBatch } from '@/lib/firebase/batch';
 import { evaluateQuestionAnswer, isMultipleChoiceType, parseAnswerList } from '@/lib/questionTypes';
 import { getCachedSyllabus, getFromCache, setInCache } from '@/lib/firebase/cache';
 import { ReportCacheManager } from '@/lib/reportCache';
-import { isDemoUser } from '@/lib/studentDb';
+import { isDemoUser, resolveTopicNames } from '@/lib/studentDb';
 import { getDateKeyIST, getMidnightIST } from '@/lib/dateUtils';
 import { MasteryService } from '@/services/mastery.service';
 import { ExamService } from '@/services/exam.service';
@@ -241,46 +241,7 @@ export async function GET(req: NextRequest) {
     });
 
     const examData = examSnap.data() || {};
-    const targetTopicCodes = examData.topicCodes || [];
-    const targetChapterNum = examData.chapterNumber || '';
-    const topicNames: string[] = [];
-
-    syllabusList.docs.forEach(doc => {
-      const sylData = doc.data();
-      const matchesBoard = String(sylData.board || '').toLowerCase() === String(examData.board || '').toLowerCase() || doc.id.startsWith(String(examData.boardCode || '').toLowerCase());
-      const matchesClass = String(sylData.class || '') === String(examData.class || '');
-      const matchesSubject = String(sylData.subjectCode || '').toLowerCase() === String(examData.subjectCode || '').toLowerCase();
-      
-      if (matchesBoard && matchesClass && matchesSubject && sylData.chapters) {
-        Object.values(sylData.chapters).forEach((ch: any) => {
-          if (String(ch.number) === String(targetChapterNum) && ch.topics) {
-            ch.topics.forEach((t: any) => {
-              if (targetTopicCodes.includes(String(t.number))) {
-                topicNames.push(t.name);
-              }
-            });
-          }
-        });
-      }
-    });
-
-    if (topicNames.length === 0) {
-      syllabusList.docs.forEach(doc => {
-        const sylData = doc.data();
-        const matchesSubject = String(sylData.subjectCode || '').toLowerCase() === String(examData.subjectCode || '').toLowerCase();
-        if (matchesSubject && sylData.chapters) {
-          Object.values(sylData.chapters).forEach((ch: any) => {
-            if (ch.topics) {
-              ch.topics.forEach((t: any) => {
-                if (targetTopicCodes.includes(String(t.number))) {
-                  topicNames.push(t.name);
-                }
-              });
-            }
-          });
-        }
-      });
-    }
+    const topicNames = resolveTopicNames(syllabusList, examData);
 
     const nowMs = Date.now();
     const attempts = reviewsSnap.docs.map(doc => {

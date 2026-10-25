@@ -314,16 +314,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             height: 32px !important;
           }
         }
-        @keyframes chatBadgePulse {
-          0%, 100% {
-            transform: scale(1);
-            box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
-          }
-          50% {
-            transform: scale(1.08);
-            box-shadow: 0 0 8px 2px rgba(239, 68, 68, 0.35);
-          }
-        }
+
       `}</style>
 
       {/* Universal Top Header Bar for all Admin Pages */}

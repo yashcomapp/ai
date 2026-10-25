@@ -3,7 +3,7 @@ import * as admin from 'firebase-admin';
 import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole } from '@/lib/auth';
 import { invalidateCache } from '@/lib/firebase/cache';
-import { fetchPageByDocId, fetchAllByDocIdRange } from '@/lib/firebase/docIdPagination';
+import { fetchPageByDocId, fetchAllByDocIdRange, fetchCollectionWithPagination } from '@/lib/firebase/docIdPagination';
 
 
 const PRACTICE_OBJECTIVE_TYPES = [
@@ -94,27 +94,8 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ message: 'Unauthorized. Admin role required.' }, { status: 403 });
     }
 
-    const { searchParams } = new URL(req.url);
-    const cursor = searchParams.get('cursor');
-    const limitParam = searchParams.get('limit');
-    const isPaginated = cursor !== null || limitParam !== null;
-    const limit = limitParam ? Math.min(Math.max(parseInt(limitParam, 10) || 500, 1), 1000) : 500;
-
     const selectFields = ['type', 'solution', 'explanation', 'solutionText', 'explanationText', 'questionCode', 'text', 'correctAnswer', 'options', 'subjectCode', 'chapter'];
-    let docs: any[] = [];
-    let hasMore = false;
-    let nextCursor: string | null = null;
-
-    if (isPaginated) {
-      const page = await fetchPageByDocId('questions', { selectFields, cursor, limit });
-      docs = page.docs;
-      hasMore = page.hasMore;
-      nextCursor = page.nextCursor;
-    } else {
-      docs = await fetchAllByDocIdRange('questions', { selectFields, chunkSize: 500 });
-      hasMore = false;
-      nextCursor = null;
-    }
+    const { docs, hasMore, nextCursor, isPaginated } = await fetchCollectionWithPagination('questions', req.url, selectFields);
     
     let totalObjective = 0;
     let withSolution = 0;
