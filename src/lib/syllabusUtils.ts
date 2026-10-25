@@ -217,3 +217,53 @@ export function getCanonicalQuestionCode(
   return `${topicCode}-${typeCode}-${seqStr}`;
 }
 
+export interface BoardCurriculumPromptMeta {
+  isCBSE: boolean;
+  isMH: boolean;
+  boardFullName: string;
+  officialTextbook: string;
+  pyqGuideline: string;
+  exclusionRule: string;
+  samplePyq: string;
+  sampleSource: string;
+}
+
+/**
+ * Returns curriculum metadata, board titles, and textbook prompt guidelines for question generation.
+ */
+export function getBoardCurriculumPromptMeta(selectedBoard: string, selectedClass: string | number): BoardCurriculumPromptMeta {
+  const isCBSE = /^cbse/i.test(selectedBoard);
+  const isMH = /^(mh|maharashtra)/i.test(selectedBoard);
+
+  const boardFullName = isCBSE 
+    ? 'Central Board of Secondary Education (CBSE / NCERT)' 
+    : (isMH ? 'Maharashtra State Board of Secondary and Higher Secondary Education (MSBSHSE / Balbharti)' : `${selectedBoard} Board`);
+
+  const officialTextbook = isCBSE
+    ? `Prescribed NCERT Textbook & NCERT Exemplar for CBSE Class ${selectedClass}`
+    : (isMH ? `Official Balbharti State Board Textbook & State Question Bank for Class ${selectedClass}` : `Official ${selectedBoard} Class ${selectedClass} Textbook`);
+
+  const pyqGuideline = isCBSE
+    ? `Strictly past CBSE Board Exams (e.g., "CBSE Board 2023", "CBSE All India 2020", "CBSE Compartment 2019", "CBSE Sample Paper 2024"). DO NOT include State Board or Maharashtra Board questions.`
+    : (isMH ? `Strictly past Maharashtra State Board Exams (e.g., "MSBSHSE March 2022", "MSBSHSE July 2020", "MSBSHSE March 2019", "State Board Question Bank"). DO NOT include CBSE or NCERT questions.` : `Past Board Examination Questions for ${selectedBoard}.`);
+
+  const exclusionRule = isCBSE
+    ? `STRICT EXCLUSION: Do NOT generate questions from Maharashtra State Board (Balbharti), ICSE, or other state boards.`
+    : (isMH ? `STRICT EXCLUSION: Do NOT generate questions from CBSE (NCERT), ICSE, or other national boards.` : '');
+
+  const samplePyq = isCBSE ? 'CBSE Board 2022' : (isMH ? 'MSBSHSE March 2020' : `${selectedBoard} Board 2021`);
+  const sampleSource = isCBSE ? 'NCERT Exercise Q3' : (isMH ? 'Balbharti Exercise Q2(a)' : 'Textbook Exercise Q1');
+
+  return {
+    isCBSE,
+    isMH,
+    boardFullName,
+    officialTextbook,
+    pyqGuideline,
+    exclusionRule,
+    samplePyq,
+    sampleSource
+  };
+}
+
+

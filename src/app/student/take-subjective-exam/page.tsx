@@ -19,6 +19,7 @@ import QuestionDisplay, { RichMathText } from '@/components/QuestionDisplay';
 import { RTC_CONFIG } from '@/lib/rtcConfig';
 import StepAnswerInput from '@/components/exams/StepAnswerInput';
 import { Question } from '@/types/question.types';
+import { useSubjectiveAnswers } from '@/hooks/useSubjectiveAnswers';
 
 
 // Extend window interface for CDN scripts
@@ -135,8 +136,14 @@ function TakeSubjectiveExamContent() {
   const [revieweeCode, setRevieweeCode] = useState('');
   const [revieweeName, setRevieweeName] = useState('Classmate');
   const [myAttempt, setMyAttempt] = useState<any>(null);
-  const [reviewAnswers, setReviewAnswers] = useState<{ [key: string]: number | string }>({});
-  const [reviewFeedback, setReviewFeedback] = useState<{ [key: string]: string }>({});
+  const {
+    reviewAnswers,
+    setReviewAnswers,
+    reviewFeedback,
+    setReviewFeedback,
+    validateAnswers,
+    compileReviews
+  } = useSubjectiveAnswers();
 
   const {
     tabViolations,
@@ -478,24 +485,11 @@ function TakeSubjectiveExamContent() {
   const handleSubmitPeerReview = async () => {
     if (!firebaseUser || !examData || submitting) return;
 
-    // Validate all evaluation fields are explicitly answered
-    for (let i = 0; i < questions.length; i++) {
-      const q = questions[i];
-      if (q.steps && q.steps.length > 0) {
-        for (let s = 0; s < q.steps.length; s++) {
-          const rawVal = reviewAnswers[`ps_${i}_${s}`];
-          if (rawVal === undefined || rawVal === null || rawVal === "") {
-            alert(`Please award marks for Question ${i + 1}, Step ${s + 1}.`);
-            return;
-          }
-        }
-      } else {
-        const rawVal = reviewAnswers[`ps_${i}_0`];
-        if (rawVal === undefined || rawVal === null || rawVal === "") {
-          alert(`Please award marks for Question ${i + 1}.`);
-          return;
-        }
-      }
+    // Validate all evaluation fields via SSOT hook
+    const validationError = validateAnswers(questions);
+    if (validationError) {
+      alert(validationError);
+      return;
     }
 
     if (!confirm('Submit peer review? This cannot be changed after submission.')) return;
@@ -504,36 +498,7 @@ function TakeSubjectiveExamContent() {
     setBlockingMessage('Submitting peer review...');
 
     try {
-      const questionReviews = [];
-      let totalScore = 0;
-
-      for (let i = 0; i < questions.length; i++) {
-        const q = questions[i];
-        let questionTotal = 0;
-        const stepMarks: Array<{ stepNo: number; awarded: number }> = [];
-
-        if (q.steps && q.steps.length > 0) {
-          for (let s = 0; s < q.steps.length; s++) {
-            const val = Number(reviewAnswers[`ps_${i}_${s}`]);
-            stepMarks.push({ stepNo: s + 1, awarded: val });
-            questionTotal += val;
-          }
-        } else {
-          const val = Number(reviewAnswers[`ps_${i}_0`]);
-          stepMarks.push({ stepNo: 1, awarded: val });
-          questionTotal = val;
-        }
-
-        const feedback = reviewFeedback[`pf_${i}`] || '';
-        questionReviews.push({
-          questionId: q.id,
-          maxMarks: q.marks,
-          marksAwarded: questionTotal,
-          stepMarks,
-          feedback
-        });
-        totalScore += questionTotal;
-      }
+      const { questionReviews, totalScore } = compileReviews(questions);
 
       const idToken = await firebaseUser.getIdToken();
       const res = await fetch('/api/student/exams/subjective/peer-review', {

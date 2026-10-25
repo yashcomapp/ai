@@ -10,6 +10,7 @@ import { useAdminStudents } from '@/hooks/useAdminReferenceData';
 import { formatRichText } from '@/lib/questionTypes';
 import QuestionDisplay, { RichMathText } from '@/components/QuestionDisplay';
 import StepAnswerInput from '@/components/exams/StepAnswerInput';
+import { useSubjectiveAnswers } from '@/hooks/useSubjectiveAnswers';
 import { Question } from '@/types/question.types';
 
 interface AttemptRow {
@@ -48,9 +49,15 @@ function TeacherFinalReviewContent() {
   const [activeQuestions, setActiveQuestions] = useState<Question[]>([]);
   const [activeEvaluations, setActiveEvaluations] = useState<any[]>([]);
 
-  // Review scores inputs state
-  const [reviewAnswers, setReviewAnswers] = useState<{ [key: string]: number | string }>({});
-  const [reviewFeedback, setReviewFeedback] = useState<{ [key: string]: string }>({});
+  // Review scores inputs state via SSOT hook
+  const {
+    reviewAnswers,
+    setReviewAnswers,
+    reviewFeedback,
+    setReviewFeedback,
+    validateAnswers,
+    compileReviews
+  } = useSubjectiveAnswers();
   const [submittingReview, setSubmittingReview] = useState(false);
   const [studentMap, setStudentMap] = useState<{[key: string]: string}>({});
 
@@ -203,60 +210,18 @@ function TeacherFinalReviewContent() {
   const submitFinalGrades = async () => {
     if (!firebaseUser || !activeAttempt || submittingReview) return;
 
-    // Validate all evaluation fields are explicitly answered
-    for (let i = 0; i < activeQuestions.length; i++) {
-      const q = activeQuestions[i];
-      if (q.steps && q.steps.length > 0) {
-        for (let s = 0; s < q.steps.length; s++) {
-          const rawVal = reviewAnswers[`ps_${i}_${s}`];
-          if (rawVal === undefined || rawVal === null || rawVal === "") {
-            alert(`Please award marks for Question ${i + 1}, Step ${s + 1}.`);
-            return;
-          }
-        }
-      } else {
-        const rawVal = reviewAnswers[`ps_${i}_0`];
-        if (rawVal === undefined || rawVal === null || rawVal === "") {
-          alert(`Please award marks for Question ${i + 1}.`);
-          return;
-        }
-      }
+    // Validate all evaluation fields via SSOT hook
+    const validationError = validateAnswers(activeQuestions);
+    if (validationError) {
+      alert(validationError);
+      return;
     }
 
     if (!confirm('Submit these as the final canonical grades for this attempt? This cannot be changed later.')) return;
 
     setSubmittingReview(true);
     try {
-      const questionReviews = [];
-      let totalScore = 0;
-
-      for (let i = 0; i < activeQuestions.length; i++) {
-        const q = activeQuestions[i];
-        let questionTotal = 0;
-        const stepMarks: Array<{ stepNo: number; awarded: number }> = [];
-
-        if (q.steps && q.steps.length > 0) {
-          for (let s = 0; s < q.steps.length; s++) {
-            const val = Number(reviewAnswers[`ps_${i}_${s}`]);
-            stepMarks.push({ stepNo: s + 1, awarded: val });
-            questionTotal += val;
-          }
-        } else {
-          const val = Number(reviewAnswers[`ps_${i}_0`]);
-          stepMarks.push({ stepNo: 1, awarded: val });
-          questionTotal = val;
-        }
-
-        const feedback = reviewFeedback[`pf_${i}`] || '';
-        questionReviews.push({
-          questionId: q.id,
-          maxMarks: q.marks,
-          marksAwarded: questionTotal,
-          stepMarks,
-          feedback
-        });
-        totalScore += questionTotal;
-      }
+      const { questionReviews, totalScore } = compileReviews(activeQuestions);
 
       const idToken = await firebaseUser.getIdToken();
       const res = await fetch('/api/admin/exams/subjective', {

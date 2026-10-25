@@ -8,6 +8,7 @@ import useSWR from 'swr';
 import { fetchWithToken } from '@/lib/swrFetcher';
 import TopBarTimeTracker from '@/components/TopBarTimeTracker';
 import NoticeOverlayModal from '@/components/notices/NoticeOverlayModal';
+import OverdueFeeModal from '@/components/fees/OverdueFeeModal';
 import { 
   TrendingUp, 
   AlertTriangle, 
@@ -1210,58 +1211,12 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
         )}
       </div>
       {/* Dismissible Overdue Fees Overlay */}
-      {feeRecord?.hasOverdueInstallment && !dismissedOverdue && (
-        <div style={{
-          position: 'fixed',
-          inset: 0,
-          background: 'rgba(0, 0, 0, 0.45)',
-          backdropFilter: 'blur(8px)',
-          WebkitBackdropFilter: 'blur(8px)',
-          zIndex: 99999,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '20px'
-        }}>
-          <div className="card" style={{
-            background: 'var(--surface-popover)',
-            border: '1px solid var(--border-popover)',
-            borderRadius: 'var(--radius-lg)',
-            padding: '28px',
-            maxWidth: '500px',
-            width: '100%',
-            textAlign: 'center',
-            boxShadow: 'var(--shadow-lg)'
-          }}>
-            <span style={{ fontSize: '3rem', display: 'block', marginBottom: '16px' }}>🪙</span>
-            <h2 style={{ fontSize: '1.45rem', fontWeight: 800, color: 'var(--danger)', margin: '0 0 10px 0' }}>
-              Fee Installment Overdue
-            </h2>
-            <p style={{ fontSize: '13px', color: 'var(--text)', lineHeight: '1.6', margin: '0 0 20px 0' }}>
-              Your account has an outstanding overdue balance of <strong>₹{feeRecord?.outstandingAmount}</strong>. Please check your dues schedule and complete payment.
-            </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <button 
-                className="btn btn-primary" 
-                onClick={() => {
-                  router.push('/student/fees');
-                  setDismissedOverdue(true);
-                }}
-                style={{ width: '100%' }}
-              >
-                View Fees & Invoices
-              </button>
-              <button 
-                className="btn btn-secondary" 
-                onClick={() => setDismissedOverdue(true)}
-                style={{ width: '100%' }}
-              >
-                Dismiss
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <OverdueFeeModal
+        isOpen={Boolean(feeRecord?.hasOverdueInstallment && !dismissedOverdue)}
+        onDismiss={() => setDismissedOverdue(true)}
+        outstandingAmount={feeRecord?.outstandingAmount || 0}
+        role="student"
+      />
 
       {/* Important Notices Fullscreen Overlay */}
       <NoticeOverlayModal

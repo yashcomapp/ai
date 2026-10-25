@@ -5,6 +5,7 @@ import DateTimeInputDMY from '@/components/DateTimeInputDMY';
 import { calculateEndDatetime, toLocalISOString } from '@/lib/dateUtils';
 import { Batch } from '@/types/batch.types';
 import TargetPicker from './TargetPicker';
+import ScheduleTimingInputs from './ScheduleTimingInputs';
 
 export interface EditModalState {
   show: boolean;
@@ -161,63 +162,12 @@ export function EditAssignmentModal({
             </label>
           </div>
 
-          {editModal.openMode === 'scheduled' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <div style={{ flex: 1 }}>
-                  <label style={{ display: 'block', fontSize: '10px', color: 'var(--text-muted)' }}>Start Datetime</label>
-                  <DateTimeInputDMY 
-                    value={editModal.startAtStr}
-                    disabled={editModal.isMorningTest || editModal.isEveningTest}
-                    onChange={(val) => {
-                      const is6or9 = /T(06|21):/.test(val) || val.includes('06:00') || val.includes('21:00');
-                      setEditModal(prev => {
-                        const dur = Number(prev.examDuration) || prev.normDuration || 30;
-                        return { 
-                          ...prev, 
-                          startAtStr: val, 
-                          endAtStr: calculateEndDatetime(val, dur),
-                          lateEntryRestriction: is6or9 ? true : prev.lateEntryRestriction
-                        };
-                      });
-                    }}
-                  />
-                </div>
-                <div style={{ flex: 1 }}>
-                  <label style={{ display: 'block', fontSize: '10px', color: 'var(--text-muted)' }}>End Datetime</label>
-                  <DateTimeInputDMY 
-                    value={editModal.endAtStr}
-                    disabled={editModal.isMorningTest || editModal.isEveningTest}
-                    onChange={(val) => setEditModal(prev => ({ ...prev, endAtStr: val }))}
-                  />
-                </div>
-              </div>
-              {/* Late Entry Restriction Options */}
-              <div style={{ marginTop: '2px' }}>
-                <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '3px' }}>Late Entry Restriction</label>
-                <div style={{ display: 'flex', gap: '15px' }}>
-                  <label style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
-                    <input 
-                      type="radio" 
-                      name="editLateEntryRestriction" 
-                      checked={editModal.lateEntryRestriction === true} 
-                      onChange={() => setEditModal(prev => ({ ...prev, lateEntryRestriction: true }))} 
-                      style={{ cursor: 'pointer' }}
-                    /> Enforce 5-minute limit
-                  </label>
-                  <label style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
-                    <input 
-                      type="radio" 
-                      name="editLateEntryRestriction" 
-                      checked={editModal.lateEntryRestriction === false} 
-                      onChange={() => setEditModal(prev => ({ ...prev, lateEntryRestriction: false }))} 
-                      style={{ cursor: 'pointer' }}
-                    /> Allow late entry
-                  </label>
-                </div>
-              </div>
-            </div>
-          )}
+          <ScheduleTimingInputs
+            state={editModal}
+            setState={setEditModal}
+            getDuration={(prev) => Number(prev.examDuration) || prev.normDuration || 30}
+            radioNamePrefix="edit"
+          />
         </div>
 
         <div style={{ display: 'flex', gap: '15px' }}>

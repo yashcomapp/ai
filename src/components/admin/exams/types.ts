@@ -19,3 +19,83 @@ export const isExamAssigned = (
   if (attemptCounts && (attemptCounts[exam.id] || 0) > 0) return true;
   return false;
 };
+
+export interface ExamTabCommonProps {
+  assignments: Assignment[];
+  attemptCounts: { [key: string]: number };
+  isTodayOrTomorrow: (exam: Exam, type: 'objective' | 'subjective') => boolean;
+  getExamSortTimestamp: (exam: Exam, type: 'objective' | 'subjective') => number;
+  getExamClass: (exam: any) => string;
+  getExamSubject: (exam: any) => string;
+  getExamChapter: (exam: any) => string;
+  getAssignedNames: (examId: string, directBatchId?: string | null) => string;
+  getLatestAssignmentDate: (examId: string, assignedAt?: string | null, exam?: Exam) => string;
+  getExamScheduleStatus: (exam: Exam, activeAssign?: Assignment, examType?: 'objective' | 'subjective') => ExamScheduleStatus;
+  isAssignedSectionExpanded?: boolean;
+  setIsAssignedSectionExpanded?: React.Dispatch<React.SetStateAction<boolean>>;
+  expandedClasses: Set<string>;
+  toggleClassExpanded: (clsKey: string) => void;
+  expandedSubjects: Set<string>;
+  toggleSubjectExpanded: (key: string) => void;
+  expandedChapters: Set<string>;
+  toggleChapterExpanded: (key: string) => void;
+  expandAllAssigned?: (type: 'objective' | 'subjective', list: Exam[]) => void;
+  collapseAllAssigned?: (type: 'objective' | 'subjective') => void;
+  assignedSortField: 'name' | 'date';
+  assignedSortDir: 'asc' | 'desc';
+  handleAssignedSort: (field: 'name' | 'date') => void;
+  sortAssignedExams: (examsList: Exam[]) => Exam[];
+  getGroupedClasses: (examsList: Exam[]) => string[];
+  handleOpenAssign: (exam: Exam, type: 'objective' | 'subjective') => void;
+  handleDeleteExam: (examId: string, examName: string, type: 'objective' | 'subjective') => void;
+  toggleAssignmentStatus: (assignmentId: string, collection: string, newStatus: string) => void;
+  handleOpenEdit: (examId: string, examName: string, collection: string) => void;
+  router: any;
+}
+
+export interface ObjectiveTabProps extends ExamTabCommonProps {
+  filteredObjectiveExams: Exam[];
+  objFilterName: string;
+  setObjFilterName: (val: string) => void;
+  objFilterTopic: string;
+  setObjFilterTopic: (val: string) => void;
+}
+
+export interface SubjectiveTabProps extends ExamTabCommonProps {
+  filteredSubjectiveExams: Exam[];
+  subjFilterName: string;
+  setSubjFilterName: (val: string) => void;
+  subjFilterTopic: string;
+  setSubjFilterTopic: (val: string) => void;
+  isSubjectiveAvailableForAssignment: (exam: Exam) => boolean;
+  isSubjectiveAlreadyAssigned: (exam: Exam) => boolean;
+  triggerPeerReviewLottery?: (examId: string, examName: string) => void;
+  openPeerReviewStatus?: (examId: string, examName: string) => void;
+  openTruthTestReport?: (examId: string, examName: string) => void;
+}
+
+export interface AssignedExamsSectionProps extends ExamTabCommonProps {
+  assignedExamsList: Exam[];
+  type: 'objective' | 'subjective';
+  triggerPeerReviewLottery?: (examId: string, examName: string) => void;
+  openPeerReviewStatus?: (examId: string, examName: string) => void;
+  openTruthTestReport?: (examId: string, examName: string) => void;
+}
+
+export function extractAssignedSectionProps(
+  props: ExamTabCommonProps,
+  assignedExamsList: Exam[],
+  type: 'objective' | 'subjective',
+  extra?: {
+    triggerPeerReviewLottery?: (examId: string, examName: string) => void;
+    openPeerReviewStatus?: (examId: string, examName: string) => void;
+    openTruthTestReport?: (examId: string, examName: string) => void;
+  }
+): AssignedExamsSectionProps {
+  return {
+    ...props,
+    assignedExamsList,
+    type,
+    ...extra
+  };
+}

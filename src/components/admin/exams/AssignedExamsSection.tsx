@@ -1,43 +1,9 @@
 'use client';
 
 import React from 'react';
-import { Exam, Assignment, ExamScheduleStatus } from './types';
+import { Exam, Assignment, ExamScheduleStatus, AssignedExamsSectionProps } from './types';
 
-export interface AssignedExamsSectionProps {
-  assignedExamsList: Exam[];
-  type: 'objective' | 'subjective';
-  assignments: Assignment[];
-  attemptCounts: { [key: string]: number };
-  isAssignedSectionExpanded?: boolean;
-  setIsAssignedSectionExpanded?: React.Dispatch<React.SetStateAction<boolean>>;
-  expandedClasses: Set<string>;
-  toggleClassExpanded: (clsKey: string) => void;
-  expandedSubjects: Set<string>;
-  toggleSubjectExpanded: (key: string) => void;
-  expandedChapters: Set<string>;
-  toggleChapterExpanded: (key: string) => void;
-  expandAllAssigned?: (type: 'objective' | 'subjective', list: Exam[]) => void;
-  collapseAllAssigned?: (type: 'objective' | 'subjective') => void;
-  assignedSortField: 'name' | 'date';
-  assignedSortDir: 'asc' | 'desc';
-  handleAssignedSort: (field: 'name' | 'date') => void;
-  sortAssignedExams: (examsList: Exam[]) => Exam[];
-  getGroupedClasses: (examsList: Exam[]) => string[];
-  getExamClass: (exam: any) => string;
-  getExamSubject: (exam: any) => string;
-  getExamChapter: (exam: any) => string;
-  getAssignedNames: (examId: string, directBatchId?: string | null) => string;
-  getLatestAssignmentDate: (examId: string, assignedAt?: string | null, exam?: Exam) => string;
-  getExamScheduleStatus: (exam: Exam, activeAssign?: Assignment, examType?: 'objective' | 'subjective') => ExamScheduleStatus;
-  toggleAssignmentStatus: (assignmentId: string, collection: string, newStatus: string) => void;
-  handleOpenAssign: (exam: Exam, type: 'objective' | 'subjective') => void;
-  handleOpenEdit: (examId: string, examName: string, collection: string) => void;
-  handleDeleteExam: (examId: string, examName: string, type: 'objective' | 'subjective') => void;
-  triggerPeerReviewLottery?: (examId: string, examName: string) => void;
-  openPeerReviewStatus?: (examId: string, examName: string) => void;
-  openTruthTestReport?: (examId: string, examName: string) => void;
-  router: any;
-}
+export type { AssignedExamsSectionProps };
 
 export function AssignedExamsSection({
   assignedExamsList,

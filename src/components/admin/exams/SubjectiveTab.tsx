@@ -1,95 +1,35 @@
 'use client';
 
 import React from 'react';
-import { Exam, Assignment, ExamScheduleStatus } from './types';
+import { SubjectiveTabProps, extractAssignedSectionProps } from './types';
 import { TodayTomorrowExamsTable } from './TodayTomorrowExamsTable';
 import { AssignedExamsSection } from './AssignedExamsSection';
 
-interface SubjectiveTabProps {
-  filteredSubjectiveExams: Exam[];
-  assignments: Assignment[];
-  attemptCounts: { [key: string]: number };
-  subjFilterName: string;
-  setSubjFilterName: (val: string) => void;
-  subjFilterTopic: string;
-  setSubjFilterTopic: (val: string) => void;
-  isSubjectiveAvailableForAssignment: (exam: Exam) => boolean;
-  isSubjectiveAlreadyAssigned: (exam: Exam) => boolean;
-  isTodayOrTomorrow: (exam: Exam, type: 'objective' | 'subjective') => boolean;
-  getExamSortTimestamp: (exam: Exam, type: 'objective' | 'subjective') => number;
-  getExamClass: (exam: any) => string;
-  getExamSubject: (exam: any) => string;
-  getExamChapter: (exam: any) => string;
-  getAssignedNames: (examId: string, directBatchId?: string | null) => string;
-  getLatestAssignmentDate: (examId: string, assignedAt?: string | null, exam?: Exam) => string;
-  getExamScheduleStatus: (exam: Exam, activeAssign?: Assignment, examType?: 'objective' | 'subjective') => ExamScheduleStatus;
-  isAssignedSectionExpanded?: boolean;
-  setIsAssignedSectionExpanded?: React.Dispatch<React.SetStateAction<boolean>>;
-  expandedClasses: Set<string>;
-  toggleClassExpanded: (clsKey: string) => void;
-  expandedSubjects: Set<string>;
-  toggleSubjectExpanded: (key: string) => void;
-  expandedChapters: Set<string>;
-  toggleChapterExpanded: (key: string) => void;
-  expandAllAssigned?: (type: 'objective' | 'subjective', list: Exam[]) => void;
-  collapseAllAssigned?: (type: 'objective' | 'subjective') => void;
-  assignedSortField: 'name' | 'date';
-  assignedSortDir: 'asc' | 'desc';
-  handleAssignedSort: (field: 'name' | 'date') => void;
-  sortAssignedExams: (examsList: Exam[]) => Exam[];
-  getGroupedClasses: (examsList: Exam[]) => string[];
-  handleOpenAssign: (exam: Exam, type: 'objective' | 'subjective') => void;
-  handleDeleteExam: (examId: string, examName: string, type: 'objective' | 'subjective') => void;
-  toggleAssignmentStatus: (assignmentId: string, collection: string, newStatus: string) => void;
-  handleOpenEdit: (examId: string, examName: string, collection: string) => void;
-  triggerPeerReviewLottery: (examId: string, examName: string) => void;
-  openPeerReviewStatus: (examId: string, examName: string) => void;
-  openTruthTestReport: (examId: string, examName: string) => void;
-  router: any;
-}
+export type { SubjectiveTabProps };
 
-export default function SubjectiveTab({
-  filteredSubjectiveExams,
-  assignments,
-  attemptCounts,
-  subjFilterName,
-  setSubjFilterName,
-  subjFilterTopic,
-  setSubjFilterTopic,
-  isSubjectiveAvailableForAssignment,
-  isSubjectiveAlreadyAssigned,
-  isTodayOrTomorrow,
-  getExamSortTimestamp,
-  getExamClass,
-  getExamSubject,
-  getExamChapter,
-  getAssignedNames,
-  getLatestAssignmentDate,
-  getExamScheduleStatus,
-  isAssignedSectionExpanded = false,
-  setIsAssignedSectionExpanded,
-  expandedClasses,
-  toggleClassExpanded,
-  expandedSubjects,
-  toggleSubjectExpanded,
-  expandedChapters,
-  toggleChapterExpanded,
-  expandAllAssigned,
-  collapseAllAssigned,
-  assignedSortField,
-  assignedSortDir,
-  handleAssignedSort,
-  sortAssignedExams,
-  getGroupedClasses,
-  handleOpenAssign,
-  handleDeleteExam,
-  toggleAssignmentStatus,
-  handleOpenEdit,
-  triggerPeerReviewLottery,
-  openPeerReviewStatus,
-  openTruthTestReport,
-  router
-}: SubjectiveTabProps) {
+export default function SubjectiveTab(props: SubjectiveTabProps) {
+  const {
+    filteredSubjectiveExams,
+    assignments,
+    attemptCounts,
+    subjFilterName,
+    setSubjFilterName,
+    subjFilterTopic,
+    setSubjFilterTopic,
+    isSubjectiveAvailableForAssignment,
+    isSubjectiveAlreadyAssigned,
+    getAssignedNames,
+    getLatestAssignmentDate,
+    toggleAssignmentStatus,
+    handleOpenAssign,
+    handleOpenEdit,
+    handleDeleteExam,
+    triggerPeerReviewLottery,
+    openPeerReviewStatus,
+    openTruthTestReport,
+    router
+  } = props;
+
   return (
     <div>
       <div className="filter-row" style={{ display: 'flex', gap: '10px', marginBottom: '16px', flexWrap: 'wrap' }}>
@@ -122,13 +62,13 @@ export default function SubjectiveTab({
         </h3>
         <div className="card" style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', overflow: 'hidden' }}>
           <div style={{ overflowX: 'auto' }}>
-            <table className="reviews-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
+            <table className="reviews-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12.5px' }}>
               <thead>
-                <tr style={{ background: 'var(--bg-soft)', borderBottom: '1px solid var(--border-light)', color: 'var(--text-muted)', fontSize: '12px' }}>
+                <tr style={{ background: 'var(--bg-soft)', borderBottom: '1px solid var(--border-light)', color: 'var(--text-muted)', fontSize: '11.5px' }}>
                   <th style={{ padding: '4px 8px' }}>Exam Name</th>
                   <th style={{ padding: '4px 8px' }}>Subject</th>
                   <th style={{ padding: '4px 8px' }}>Topics</th>
-                  <th style={{ padding: '4px 8px' }}>Mode</th>
+                  <th style={{ padding: '4px 8px' }}>Questions</th>
                   <th style={{ padding: '4px 8px' }}>Marks</th>
                   <th style={{ padding: '4px 8px', textAlign: 'right' }}>Actions</th>
                 </tr>
@@ -136,7 +76,7 @@ export default function SubjectiveTab({
               <tbody>
                 {filteredSubjectiveExams.filter(isSubjectiveAvailableForAssignment).length === 0 ? (
                   <tr>
-                    <td colSpan={6} style={{ padding: '16px', textAlign: 'center', color: 'var(--text-muted)' }}>No subjective exams available for assignment.</td>
+                    <td colSpan={6} style={{ padding: '12px', textAlign: 'center', color: 'var(--text-muted)' }}>No subjective exams available for assignment.</td>
                   </tr>
                 ) : (
                   filteredSubjectiveExams
@@ -146,19 +86,14 @@ export default function SubjectiveTab({
                         <td style={{ padding: '4px 8px', fontWeight: 600 }}>{exam.name}</td>
                         <td style={{ padding: '4px 8px' }}>{exam.subjectName || exam.subjects?.[0] || '—'}</td>
                         <td style={{ padding: '4px 8px' }}>{(exam.topicCodes || []).join(', ') || '—'}</td>
-                        <td style={{ padding: '4px 8px' }}>
-                          <span className="badge badge-info" style={{ fontSize: '10px' }}>🏠 Home</span>
-                        </td>
+                        <td style={{ padding: '4px 8px' }}>{exam.questionCount || exam.questions?.length || 0}</td>
                         <td style={{ padding: '4px 8px' }}>{exam.totalMarks || 0}</td>
                         <td style={{ padding: '4px 8px', textAlign: 'right' }}>
-                          <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
-                            <button className="btn btn-secondary" style={{ padding: '3px 8px', fontSize: '10.5px', background: 'var(--accent-tint)', color: 'var(--accent)', fontWeight: 600 }} onClick={() => router.push(`/admin/mock-exam?examId=${encodeURIComponent(exam.id)}&type=subjective`)}>
-                              🧪 Mock Test
-                            </button>
-                            <button className="btn btn-primary" style={{ padding: '3px 8px', fontSize: '10.5px' }} onClick={() => handleOpenAssign(exam, 'subjective')}>
+                          <div style={{ display: 'flex', gap: '4px', justifyContent: 'flex-end' }}>
+                            <button className="btn btn-primary" style={{ padding: '2px 6px', fontSize: '10.5px' }} onClick={() => handleOpenAssign(exam, 'subjective')}>
                               📋 Assign
                             </button>
-                            <button className="btn btn-secondary" style={{ padding: '3px 8px', fontSize: '10.5px', color: 'var(--danger)' }} onClick={() => handleDeleteExam(exam.id, exam.name, 'subjective')}>
+                            <button className="btn btn-secondary" style={{ padding: '2px 6px', fontSize: '10.5px', color: 'var(--danger)' }} onClick={() => handleDeleteExam(exam.id, exam.name, 'subjective')}>
                               🗑️ Delete
                             </button>
                           </div>
@@ -190,39 +125,12 @@ export default function SubjectiveTab({
 
       {/* Section 2: Already Assigned */}
       <AssignedExamsSection
-        assignedExamsList={filteredSubjectiveExams.filter(isSubjectiveAlreadyAssigned)}
-        type="subjective"
-        assignments={assignments}
-        attemptCounts={attemptCounts}
-        isAssignedSectionExpanded={isAssignedSectionExpanded}
-        setIsAssignedSectionExpanded={setIsAssignedSectionExpanded}
-        expandedClasses={expandedClasses}
-        toggleClassExpanded={toggleClassExpanded}
-        expandedSubjects={expandedSubjects}
-        toggleSubjectExpanded={toggleSubjectExpanded}
-        expandedChapters={expandedChapters}
-        toggleChapterExpanded={toggleChapterExpanded}
-        expandAllAssigned={expandAllAssigned}
-        collapseAllAssigned={collapseAllAssigned}
-        assignedSortField={assignedSortField}
-        assignedSortDir={assignedSortDir}
-        handleAssignedSort={handleAssignedSort}
-        sortAssignedExams={sortAssignedExams}
-        getGroupedClasses={getGroupedClasses}
-        getExamClass={getExamClass}
-        getExamSubject={getExamSubject}
-        getExamChapter={getExamChapter}
-        getAssignedNames={getAssignedNames}
-        getLatestAssignmentDate={getLatestAssignmentDate}
-        getExamScheduleStatus={getExamScheduleStatus}
-        toggleAssignmentStatus={toggleAssignmentStatus}
-        handleOpenAssign={handleOpenAssign}
-        handleOpenEdit={handleOpenEdit}
-        handleDeleteExam={handleDeleteExam}
-        triggerPeerReviewLottery={triggerPeerReviewLottery}
-        openPeerReviewStatus={openPeerReviewStatus}
-        openTruthTestReport={openTruthTestReport}
-        router={router}
+        {...extractAssignedSectionProps(
+          props,
+          filteredSubjectiveExams.filter(isSubjectiveAlreadyAssigned),
+          'subjective',
+          { triggerPeerReviewLottery, openPeerReviewStatus, openTruthTestReport }
+        )}
       />
     </div>
   );

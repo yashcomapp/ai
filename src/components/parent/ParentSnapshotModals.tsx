@@ -4,6 +4,7 @@ import React from 'react';
 import { useRouter } from 'next/navigation';
 import { formatDateIST, formatDurationHM } from '@/lib/dateUtils';
 import { ParentDashboardData, ActivityItem } from './types';
+import OverdueFeeModal from '@/components/fees/OverdueFeeModal';
 
 interface ParentSnapshotModalsProps {
   activeModal: string | null;
@@ -217,60 +218,13 @@ export const ParentSnapshotModals = React.memo(function ParentSnapshotModals({
       )}
 
       {/* Dismissible Overdue Fees Overlay */}
-      {hasOverdueInstallment && !dismissedOverdue && (
-        <div style={{
-          position: 'fixed',
-          inset: 0,
-          background: 'rgba(0, 0, 0, 0.45)',
-          backdropFilter: 'blur(8px)',
-          WebkitBackdropFilter: 'blur(8px)',
-          zIndex: 99999,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: '20px'
-        }}>
-          <div className="card" style={{
-            background: 'var(--surface-popover)',
-            border: '1px solid var(--border-popover)',
-            borderRadius: 'var(--radius-lg)',
-            padding: '28px',
-            maxWidth: '500px',
-            width: '100%',
-            textAlign: 'center',
-            boxShadow: 'var(--shadow-lg)'
-          }}>
-            <span style={{ fontSize: '3rem', display: 'block', marginBottom: '16px' }}>💳</span>
-            <h2 style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--danger)', margin: '0 0 10px 0' }}>
-              Fee Installment Overdue<br />
-              <span style={{ fontSize: '1rem', fontWeight: 700 }}>किश्त की अंतिम तारीख निकल चुकी है</span>
-            </h2>
-            <p style={{ fontSize: '13px', color: 'var(--text)', lineHeight: '1.6', margin: '0 0 20px 0' }}>
-              Your child&apos;s account has an outstanding overdue balance of <strong>₹{outstandingAmount || 0}</strong>. Please check the dues schedule and complete payment.<br />
-              <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>आपके बच्चे के खाते में <strong>₹{outstandingAmount || 0}</strong> की बकाया फीस देय है। कृपया फीस विवरण देखकर भुगतान पूरा करें।</span>
-            </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <button 
-                className="btn btn-primary" 
-                onClick={() => {
-                  router.push(`/parent/fees?studentCode=${selectedChildCode}`);
-                  onDismissOverdue();
-                }}
-                style={{ width: '100%' }}
-              >
-                View Fees &amp; Invoices / फीस और रसीद देखें
-              </button>
-              <button 
-                className="btn btn-secondary" 
-                onClick={onDismissOverdue}
-                style={{ width: '100%' }}
-              >
-                Dismiss / बंद करें
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <OverdueFeeModal
+        isOpen={Boolean(hasOverdueInstallment && !dismissedOverdue)}
+        onDismiss={onDismissOverdue}
+        outstandingAmount={outstandingAmount || 0}
+        role="parent"
+        studentCode={selectedChildCode}
+      />
     </>
   );
 });

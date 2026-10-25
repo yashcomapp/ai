@@ -1,5 +1,3 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
-
 /**
  * Utility functions for notice management and seen tracking.
  */
@@ -33,46 +31,4 @@ export async function markNoticeAsSeen(
   }
 
   return updated;
-}
-
-/**
- * Shared hook to manage notice seen status, localStorage persistence, backend reporting,
- * and filtering of visible notices across Student and Parent dashboards.
- */
-export function useSeenNotices<T extends { id: string }>(
-  notices: T[] = [],
-  firebaseUser?: { getIdToken: () => Promise<string> } | null
-) {
-  const [seenNoticeIds, setSeenNoticeIds] = useState<string[]>([]);
-
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem('yc_seenNotices');
-      if (stored) {
-        setSeenNoticeIds(JSON.parse(stored));
-      }
-    } catch (e) {
-      console.warn('Failed to load seen notices:', e);
-    }
-  }, []);
-
-  const handleMarkNoticeAsSeen = useCallback(
-    async (id: string) => {
-      const updated = await markNoticeAsSeen(id, seenNoticeIds, firebaseUser);
-      setSeenNoticeIds(updated);
-    },
-    [seenNoticeIds, firebaseUser]
-  );
-
-  const visibleNotices = useMemo(
-    () => notices.filter((n) => n && n.id && !seenNoticeIds.includes(n.id)),
-    [notices, seenNoticeIds]
-  );
-
-  return {
-    seenNoticeIds,
-    setSeenNoticeIds,
-    handleMarkNoticeAsSeen,
-    visibleNotices,
-  };
 }

@@ -151,6 +151,73 @@ export class MasteryService {
     return data;
   }
 
+  static buildInitialTopicMastery(studentCode: string, topicCode: string, existing?: any) {
+    if (existing) return { ...existing };
+    return {
+      studentCode,
+      topicCode,
+      mastery: 0,
+      confidence: 0,
+      questionsAttempted: 0,
+      questionsCorrect: 0,
+      questionsWrong: 0,
+      weightedPointsEarned: 0,
+      weightedPointsPossible: 0,
+      lastExamCode: '',
+      questionHistory: [] as any[],
+      createdAt: new Date()
+    };
+  }
+
+  static groupSubjectiveEvaluationsByTopic(
+    questions: any[],
+    questionReviews: any[],
+    studentClass?: string
+  ): { topicBuckets: { [topicCode: string]: any[] }; topicCodes: string[]; isClass10Target: boolean } {
+    const questionMap = new Map<string, any>();
+    if (Array.isArray(questions)) {
+      questions.forEach((q: any) => {
+        if (q) {
+          if (q.id) questionMap.set(String(q.id), q);
+          if (q.questionCode) questionMap.set(String(q.questionCode), q);
+        }
+      });
+    }
+
+    const topicBuckets: { [topicCode: string]: any[] } = {};
+    let isClass10Target = MasteryService.isClass10(studentClass);
+
+    if (Array.isArray(questionReviews)) {
+      questionReviews.forEach((qr: any) => {
+        const q = questionMap.get(String(qr.questionId)) || {};
+        const qCode = q.questionCode || qr.questionId;
+        const topicCode = q.topicCode || deriveTopicCodeFromQuestionCode(qCode);
+
+        if (topicCode) {
+          if (MasteryService.isClass10(studentClass, topicCode)) {
+            isClass10Target = true;
+            if (!topicBuckets[topicCode]) {
+              topicBuckets[topicCode] = [];
+            }
+            topicBuckets[topicCode].push({
+              id: qr.questionId,
+              questionCode: qCode,
+              topicCode: topicCode,
+              difficulty: q.difficulty || 'medium',
+              bloomLevel: q.bloomLevel || (q.type === 'subjective_long' ? 'Analyze' : 'Apply'),
+              marksAwarded: Number(qr.marksAwarded) || 0,
+              maxMarks: Number(qr.maxMarks) || q.marks || 2,
+              isCorrect: (Number(qr.marksAwarded) || 0) >= ((Number(qr.maxMarks) || 2) * 0.5)
+            });
+          }
+        }
+      });
+    }
+
+    const topicCodes = isClass10Target ? Object.keys(topicBuckets) : [];
+    return { topicBuckets, topicCodes, isClass10Target };
+  }
+
   /**
    * Processes and updates topic mastery for subjective exams, specifically for Class 10 students.
    */
@@ -184,53 +251,18 @@ export class MasteryService {
       }
     }
 
-    // 2. Map questions for rapid lookup
-    const questionMap = new Map<string, any>();
-    if (Array.isArray(questions)) {
-      questions.forEach((q: any) => {
-        if (q) {
-          if (q.id) questionMap.set(String(q.id), q);
-          if (q.questionCode) questionMap.set(String(q.questionCode), q);
-        }
-      });
+    // 2. Filter and group evaluations by topicCode for Class 10
+    const { topicBuckets, topicCodes, isClass10Target } = MasteryService.groupSubjectiveEvaluationsByTopic(
+      questions,
+      questionReviews,
+      resolvedClass
+    );
+
+    if (!isClass10Target || topicCodes.length === 0) {
+      return { updatedCount: 0, isClass10: isClass10Target };
     }
 
-    // 3. Filter and group evaluations by topicCode for Class 10
-    const topicBuckets: { [topicCode: string]: any[] } = {};
-    let studentOrTopicIsClass10 = MasteryService.isClass10(resolvedClass);
-
-    questionReviews.forEach(qr => {
-      const q = questionMap.get(String(qr.questionId)) || {};
-      const qCode = q.questionCode || qr.questionId;
-      let topicCode = q.topicCode || deriveTopicCodeFromQuestionCode(qCode);
-
-      if (topicCode) {
-        const isTopicClass10 = MasteryService.isClass10(resolvedClass, topicCode);
-        if (isTopicClass10) {
-          studentOrTopicIsClass10 = true;
-          if (!topicBuckets[topicCode]) {
-            topicBuckets[topicCode] = [];
-          }
-          topicBuckets[topicCode].push({
-            id: qr.questionId,
-            questionCode: qCode,
-            topicCode: topicCode,
-            difficulty: q.difficulty || 'medium',
-            bloomLevel: q.bloomLevel || (q.type === 'subjective_long' ? 'Analyze' : 'Apply'),
-            marksAwarded: Number(qr.marksAwarded) || 0,
-            maxMarks: Number(qr.maxMarks) || q.marks || 2,
-            isCorrect: (Number(qr.marksAwarded) || 0) >= ((Number(qr.maxMarks) || 2) * 0.5)
-          });
-        }
-      }
-    });
-
-    if (!studentOrTopicIsClass10 || Object.keys(topicBuckets).length === 0) {
-      return { updatedCount: 0, isClass10: studentOrTopicIsClass10 };
-    }
-
-    // 4. Update studentTopicMastery for each topic
-    const topicCodes = Object.keys(topicBuckets);
+    // 3. Update studentTopicMastery for each topic
     if (tx) {
       // Run inside existing Firestore Transaction
       const docRefs = topicCodes.map(tCode => ({
@@ -242,20 +274,7 @@ export class MasteryService {
       docRefs.forEach((m, idx) => {
         const snap = docSnaps[idx];
         const existing = snap.exists ? snap.data()! : null;
-        const initialData = existing ? { ...existing } : {
-          studentCode,
-          topicCode: m.tCode,
-          mastery: 0,
-          confidence: 0,
-          questionsAttempted: 0,
-          questionsCorrect: 0,
-          questionsWrong: 0,
-          weightedPointsEarned: 0,
-          weightedPointsPossible: 0,
-          lastExamCode: '',
-          questionHistory: [] as any[],
-          createdAt: new Date()
-        };
+        const initialData = MasteryService.buildInitialTopicMastery(studentCode, m.tCode, existing);
 
         const updatedData = MasteryService.calculateTopicMasteryUpdate(
           initialData,
@@ -275,20 +294,7 @@ export class MasteryService {
         const tCode = topicCodes[idx];
         const ref = docRefs[idx];
         const existing = snap.exists ? snap.data()! : null;
-        const initialData = existing ? { ...existing } : {
-          studentCode,
-          topicCode: tCode,
-          mastery: 0,
-          confidence: 0,
-          questionsAttempted: 0,
-          questionsCorrect: 0,
-          questionsWrong: 0,
-          weightedPointsEarned: 0,
-          weightedPointsPossible: 0,
-          lastExamCode: '',
-          questionHistory: [] as any[],
-          createdAt: new Date()
-        };
+        const initialData = MasteryService.buildInitialTopicMastery(studentCode, tCode, existing);
 
         const updatedData = MasteryService.calculateTopicMasteryUpdate(
           initialData,

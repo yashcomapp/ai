@@ -5,6 +5,7 @@ import DateTimeInputDMY from '@/components/DateTimeInputDMY';
 import { calculateEndDatetime, toLocalISOString } from '@/lib/dateUtils';
 import { Batch } from '@/types/batch.types';
 import TargetPicker from './TargetPicker';
+import ScheduleTimingInputs from './ScheduleTimingInputs';
 
 export interface AssignModalState {
   show: boolean;
@@ -277,63 +278,12 @@ export function AssignExamModal({
             </label>
           </div>
 
-          {assignModal.openMode === 'scheduled' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <div style={{ flex: 1 }}>
-                  <label style={{ display: 'block', fontSize: '10px', color: 'var(--text-muted)' }}>Start Datetime</label>
-                  <DateTimeInputDMY 
-                    value={assignModal.startAtStr}
-                    disabled={assignModal.isMorningTest || assignModal.isEveningTest}
-                    onChange={(val) => {
-                      const is6or9 = /T(06|21):/.test(val) || val.includes('06:00') || val.includes('21:00');
-                      setAssignModal(prev => {
-                        const dur = getModalDuration(prev);
-                        return { 
-                          ...prev, 
-                          startAtStr: val, 
-                          endAtStr: calculateEndDatetime(val, dur),
-                          lateEntryRestriction: is6or9 ? true : prev.lateEntryRestriction
-                        };
-                      });
-                    }}
-                  />
-                </div>
-                <div style={{ flex: 1 }}>
-                  <label style={{ display: 'block', fontSize: '10px', color: 'var(--text-muted)' }}>End Datetime</label>
-                  <DateTimeInputDMY 
-                    value={assignModal.endAtStr}
-                    disabled={assignModal.isMorningTest || assignModal.isEveningTest}
-                    onChange={(val) => setAssignModal(prev => ({ ...prev, endAtStr: val }))}
-                  />
-                </div>
-              </div>
-              {/* Late Entry Restriction Options */}
-              <div style={{ marginTop: '2px' }}>
-                <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '3px' }}>Late Entry Restriction</label>
-                <div style={{ display: 'flex', gap: '15px' }}>
-                  <label style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
-                    <input 
-                      type="radio" 
-                      name="lateEntryRestriction" 
-                      checked={assignModal.lateEntryRestriction === true} 
-                      onChange={() => setAssignModal(prev => ({ ...prev, lateEntryRestriction: true }))} 
-                      style={{ cursor: 'pointer' }}
-                    /> Enforce 5-minute limit
-                  </label>
-                  <label style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
-                    <input 
-                      type="radio" 
-                      name="lateEntryRestriction" 
-                      checked={assignModal.lateEntryRestriction === false} 
-                      onChange={() => setAssignModal(prev => ({ ...prev, lateEntryRestriction: false }))} 
-                      style={{ cursor: 'pointer' }}
-                    /> Allow late entry
-                  </label>
-                </div>
-              </div>
-            </div>
-          )}
+          <ScheduleTimingInputs
+            state={assignModal}
+            setState={setAssignModal}
+            getDuration={getModalDuration}
+            radioNamePrefix="assign"
+          />
         </div>
 
         <div style={{ display: 'flex', gap: '15px' }}>

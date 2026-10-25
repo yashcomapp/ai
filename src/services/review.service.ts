@@ -93,46 +93,12 @@ export class ReviewService {
         questionsList = examData.questions;
       }
 
-      const questionMap = new Map<string, any>();
-      questionsList.forEach(q => {
-        if (q) {
-          if (q.id) questionMap.set(String(q.id), q);
-          if (q.questionCode) questionMap.set(String(q.questionCode), q);
-        }
-      });
-
-      // Prepare Class 10 Topic Mastery reads if applicable
-      const topicBuckets: { [topicCode: string]: any[] } = {};
-      let isClass10Target = MasteryService.isClass10(revieweeClass);
-
-      if (Array.isArray(questionReviews)) {
-        questionReviews.forEach((qr: any) => {
-          const q = questionMap.get(String(qr.questionId)) || {};
-          const qCode = q.questionCode || qr.questionId;
-          const topicCode = q.topicCode || deriveTopicCodeFromQuestionCode(qCode);
-
-          if (topicCode) {
-            if (MasteryService.isClass10(revieweeClass, topicCode)) {
-              isClass10Target = true;
-              if (!topicBuckets[topicCode]) {
-                topicBuckets[topicCode] = [];
-              }
-              topicBuckets[topicCode].push({
-                id: qr.questionId,
-                questionCode: qCode,
-                topicCode: topicCode,
-                difficulty: q.difficulty || 'medium',
-                bloomLevel: q.bloomLevel || (q.type === 'subjective_long' ? 'Analyze' : 'Apply'),
-                marksAwarded: Number(qr.marksAwarded) || 0,
-                maxMarks: Number(qr.maxMarks) || q.marks || 2,
-                isCorrect: (Number(qr.marksAwarded) || 0) >= ((Number(qr.maxMarks) || 2) * 0.5)
-              });
-            }
-          }
-        });
-      }
-
-      const topicCodes = isClass10Target ? Object.keys(topicBuckets) : [];
+      // Prepare Class 10 Topic Mastery reads if applicable via SSOT
+      const { topicBuckets, topicCodes } = MasteryService.groupSubjectiveEvaluationsByTopic(
+        questionsList,
+        questionReviews,
+        revieweeClass
+      );
       const topicMasteryRefs = topicCodes.map(tCode => ({
         tCode,
         ref: adminDb.collection('studentTopicMastery').doc(`${revieweeCode}_${tCode}`)
@@ -187,20 +153,7 @@ export class ReviewService {
         topicMasteryRefs.forEach((m, idx) => {
           const snap = topicMasterySnaps[idx];
           const existing = snap.exists ? snap.data()! : null;
-          const initialData = existing ? { ...existing } : {
-            studentCode: revieweeCode,
-            topicCode: m.tCode,
-            mastery: 0,
-            confidence: 0,
-            questionsAttempted: 0,
-            questionsCorrect: 0,
-            questionsWrong: 0,
-            weightedPointsEarned: 0,
-            weightedPointsPossible: 0,
-            lastExamCode: '',
-            questionHistory: [] as any[],
-            createdAt: new Date()
-          };
+          const initialData = MasteryService.buildInitialTopicMastery(revieweeCode, m.tCode, existing);
 
           const updatedData = MasteryService.calculateTopicMasteryUpdate(
             initialData,

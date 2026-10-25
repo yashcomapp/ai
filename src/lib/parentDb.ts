@@ -7,6 +7,7 @@ import { calculateProctoringIntegrityScore } from '@/lib/proctoring';
 import { calculateSrsSchedule } from '@/lib/srsRotation';
 import { getRequiredConfidence } from '@/lib/studentDb';
 import { getFromCache, setInCache } from '@/lib/firebase/cache';
+import { deduplicateAssignments, resolveIntegrityScore, calculateTimeLogSummary } from '@/lib/dashboardDbUtils';
 
 export async function getParentDashboardData(
   parentEmail: string,
@@ -140,65 +141,19 @@ export async function getParentDashboardData(
     .where('date', '>=', thirtyDaysAgoStr)
     .get();
   
-  let todaySeconds = 0;
-  let todayExamSeconds = 0;
-  let todayPracticeSeconds = 0;
-  let todayReviewSeconds = 0;
-  let todayGeneralSeconds = 0;
-
-  let weekSeconds = 0;
-  let weekExamSeconds = 0;
-  let weekPracticeSeconds = 0;
-  let weekReviewSeconds = 0;
-  let weekGeneralSeconds = 0;
-
-  const todayStr = getDateKeyIST(new Date());
-
-  timeLogSnapshot.docs.forEach(doc => {
-    const d = doc.data();
-    const s = Number(d.seconds) || 0;
-    const ex = Number(d.examSeconds) || 0;
-    const pr = Number(d.practiceSeconds) || 0;
-    const rv = Number(d.reviewSeconds) || 0;
-    const gen = Math.max(0, s - (ex + pr + rv));
-
-    if (d.date === todayStr) {
-      todaySeconds = s;
-      todayExamSeconds = ex;
-      todayPracticeSeconds = pr;
-      todayReviewSeconds = rv;
-      todayGeneralSeconds = gen;
-    }
-  });
-
-  for (let i = 0; i < 7; i++) {
-    const dateObj = new Date(); dateObj.setDate(dateObj.getDate() - i);
-    const k = getDateKeyIST(dateObj);
-    const match = timeLogSnapshot.docs.find(doc => doc.data().date === k);
-    if (match) {
-      const data = match.data();
-      const s = Number(data.seconds) || 0;
-      const ex = Number(data.examSeconds) || 0;
-      const pr = Number(data.practiceSeconds) || 0;
-      const rv = Number(data.reviewSeconds) || 0;
-      const gen = Math.max(0, s - (ex + pr + rv));
-      weekSeconds += s;
-      weekExamSeconds += ex;
-      weekPracticeSeconds += pr;
-      weekReviewSeconds += rv;
-      weekGeneralSeconds += gen;
-    }
-  }
-
-  let streakDays = 0;
-  const d = new Date();
-  while (streakDays < 100) {
-    const key = getDateKeyIST(d);
-    const matchDoc = timeLogSnapshot.docs.find(doc => doc.data().date === key);
-    if (!matchDoc || !(matchDoc.data().seconds > 0)) break;
-    streakDays++;
-    d.setDate(d.getDate() - 1);
-  }
+  const {
+    todaySeconds,
+    todayExamSeconds,
+    todayPracticeSeconds,
+    todayReviewSeconds,
+    todayGeneralSeconds,
+    weekSeconds,
+    weekExamSeconds,
+    weekPracticeSeconds,
+    weekReviewSeconds,
+    weekGeneralSeconds,
+    streakDays
+  } = calculateTimeLogSummary(timeLogSnapshot.docs);
 
   // 2. Fetch statistics, targeted assignments, and weekly tests in parallel
   const childBatchIds: string[] = [...(childUser?.batchIds || [])];
@@ -304,30 +259,13 @@ export async function getParentDashboardData(
   const now = new Date();
 
   // Deduplicate assignments by examId to prevent double counting
-  const uniqueAssignments = new Map();
   const allAssignmentsList = [
     ...batchAssignmentsSnapshot.docs,
     ...studentAssignmentsSnapshot.docs,
     ...subAssignmentsSnapshot.docs,
     ...subStudentAssignmentsSnapshot.docs
   ];
-
-  allAssignmentsList.forEach(doc => {
-    const d = doc.data();
-    const examId = d.examId;
-    if (examId) {
-      if (d.examType === 'entrance') return; // Skip entrance exams from absent statistics
-      const currentEndAt = d.endAt?.toDate ? d.endAt.toDate() : new Date(d.endAt);
-      const existing = uniqueAssignments.get(examId);
-      if (!existing || currentEndAt > existing.endAt) {
-        uniqueAssignments.set(examId, {
-          examId,
-          endAt: currentEndAt,
-          examType: d.examType || (doc.ref.parent.id.includes('subjective') ? 'subjective' : 'objective')
-        });
-      }
-    }
-  });
+  const uniqueAssignments = deduplicateAssignments(allAssignmentsList);
 
   const subjectiveExamsMap = new Map<string, any>();
   const objectiveExamsMap = new Map<string, any>();
@@ -471,18 +409,7 @@ export async function getParentDashboardData(
   ].sort((a, b) => b.date.getTime() - a.date.getTime()).slice(0, 10);
 
   // 3. Integrity Score
-  let integrityScore = 100;
-  let integrityRecord = null;
-  if (!integritySnapshot.empty) {
-    const records = integritySnapshot.docs.map(doc => doc.data());
-    records.sort((a, b) => {
-      const ad = a.weekStart?.toDate ? a.weekStart.toDate() : new Date(a.weekStart || 0);
-      const bd = b.weekStart?.toDate ? b.weekStart.toDate() : new Date(b.weekStart || 0);
-      return bd.getTime() - ad.getTime();
-    });
-    integrityRecord = records[0];
-    integrityScore = integrityRecord.integrityScore ?? 100;
-  }
+  const { integrityScore, latestRecord: integrityRecord } = resolveIntegrityScore(integritySnapshot);
 
   // 4. Topics Needing Attention
   let needsAttentionCount = 0;

@@ -4,6 +4,7 @@ import { getDateKeyIST } from '@/lib/dateUtils';
 import { calculateUnifiedMetrics, extractConductedTopicCodes, getRequiredConfidence } from '@/lib/dashboardMetrics';
 import { deriveTopicCodeFromQuestionCode, getCanonicalSubjectName, parseTopicCode } from '@/lib/questionTypes';
 import { calculateSrsSchedule, SrsSchedule } from '@/lib/srsRotation';
+import { deduplicateAssignments, resolveIntegrityScore } from '@/lib/dashboardDbUtils';
 
 /**
  * Checks if a user or student profile is a demo / placeholder account
@@ -265,30 +266,13 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
     const reviews = reviewsSnapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) }));
     
     // Deduplicate assignments by examId to prevent double-counting of multiple assignments (e.g. batch + student-specific)
-    const uniqueAssignments = new Map();
     const allAssignmentsList = [
       ...batchAssignmentsSnapshot.docs,
       ...studentAssignmentsSnapshot.docs,
       ...subAssignmentsSnapshot.docs,
       ...subStudentAssignmentsSnapshot.docs
     ];
-
-    allAssignmentsList.forEach(doc => {
-      const d = doc.data();
-      const examId = d.examId;
-      if (examId) {
-        if (d.examType === 'entrance') return; // Skip entrance exams from absent statistics
-        const currentEndAt = d.endAt?.toDate ? d.endAt.toDate() : new Date(d.endAt);
-        const existing = uniqueAssignments.get(examId);
-        if (!existing || currentEndAt > existing.endAt) {
-          uniqueAssignments.set(examId, {
-            examId,
-            endAt: currentEndAt,
-            examType: d.examType
-          });
-        }
-      }
-    });
+    const uniqueAssignments = deduplicateAssignments(allAssignmentsList);
 
     const absentExamsList: any[] = [];
 
@@ -430,16 +414,7 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
     const practiceReviewsList = parentReviewsSnapshot.docs.map(doc => doc.data());
 
     // Resolve student integrity score
-    let integrityScore = 100;
-    if (integritySnapshot && !integritySnapshot.empty) {
-      const records = integritySnapshot.docs.map(doc => doc.data());
-      records.sort((a, b) => {
-        const ad = a.weekStart?.toDate ? a.weekStart.toDate() : new Date(a.weekStart || 0);
-        const bd = b.weekStart?.toDate ? b.weekStart.toDate() : new Date(b.weekStart || 0);
-        return bd.getTime() - ad.getTime();
-      });
-      integrityScore = records[0]?.integrityScore ?? 100;
-    }
+    const { integrityScore } = resolveIntegrityScore(integritySnapshot);
 
     // Calculate total unique topics on which tests/exams have been conducted/assigned via SSOT
     const conductedTopicCodes = extractConductedTopicCodes({

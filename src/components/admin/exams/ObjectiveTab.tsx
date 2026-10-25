@@ -1,85 +1,30 @@
 'use client';
 
 import React from 'react';
-import { Exam, Assignment, ExamScheduleStatus, isExamAssigned } from './types';
+import { isExamAssigned, ObjectiveTabProps, extractAssignedSectionProps } from './types';
 import { TodayTomorrowExamsTable } from './TodayTomorrowExamsTable';
 import { AssignedExamsSection } from './AssignedExamsSection';
 
-interface ObjectiveTabProps {
-  filteredObjectiveExams: Exam[];
-  assignments: Assignment[];
-  attemptCounts: { [key: string]: number };
-  objFilterName: string;
-  setObjFilterName: (val: string) => void;
-  objFilterTopic: string;
-  setObjFilterTopic: (val: string) => void;
-  isTodayOrTomorrow: (exam: Exam, type: 'objective' | 'subjective') => boolean;
-  getExamSortTimestamp: (exam: Exam, type: 'objective' | 'subjective') => number;
-  getExamClass: (exam: any) => string;
-  getExamSubject: (exam: any) => string;
-  getExamChapter: (exam: any) => string;
-  getAssignedNames: (examId: string, directBatchId?: string | null) => string;
-  getLatestAssignmentDate: (examId: string, assignedAt?: string | null, exam?: Exam) => string;
-  getExamScheduleStatus: (exam: Exam, activeAssign?: Assignment, examType?: 'objective' | 'subjective') => ExamScheduleStatus;
-  isAssignedSectionExpanded?: boolean;
-  setIsAssignedSectionExpanded?: React.Dispatch<React.SetStateAction<boolean>>;
-  expandedClasses: Set<string>;
-  toggleClassExpanded: (clsKey: string) => void;
-  expandedSubjects: Set<string>;
-  toggleSubjectExpanded: (key: string) => void;
-  expandedChapters: Set<string>;
-  toggleChapterExpanded: (key: string) => void;
-  expandAllAssigned?: (type: 'objective' | 'subjective', list: Exam[]) => void;
-  collapseAllAssigned?: (type: 'objective' | 'subjective') => void;
-  assignedSortField: 'name' | 'date';
-  assignedSortDir: 'asc' | 'desc';
-  handleAssignedSort: (field: 'name' | 'date') => void;
-  sortAssignedExams: (examsList: Exam[]) => Exam[];
-  getGroupedClasses: (examsList: Exam[]) => string[];
-  handleOpenAssign: (exam: Exam, type: 'objective' | 'subjective') => void;
-  handleDeleteExam: (examId: string, examName: string, type: 'objective' | 'subjective') => void;
-  toggleAssignmentStatus: (assignmentId: string, collection: string, newStatus: string) => void;
-  handleOpenEdit: (examId: string, examName: string, collection: string) => void;
-  router: any;
-}
+export type { ObjectiveTabProps };
 
-export default function ObjectiveTab({
-  filteredObjectiveExams,
-  assignments,
-  attemptCounts,
-  objFilterName,
-  setObjFilterName,
-  objFilterTopic,
-  setObjFilterTopic,
-  isTodayOrTomorrow,
-  getExamSortTimestamp,
-  getExamClass,
-  getExamSubject,
-  getExamChapter,
-  getAssignedNames,
-  getLatestAssignmentDate,
-  getExamScheduleStatus,
-  isAssignedSectionExpanded = false,
-  setIsAssignedSectionExpanded,
-  expandedClasses,
-  toggleClassExpanded,
-  expandedSubjects,
-  toggleSubjectExpanded,
-  expandedChapters,
-  toggleChapterExpanded,
-  expandAllAssigned,
-  collapseAllAssigned,
-  assignedSortField,
-  assignedSortDir,
-  handleAssignedSort,
-  sortAssignedExams,
-  getGroupedClasses,
-  handleOpenAssign,
-  handleDeleteExam,
-  toggleAssignmentStatus,
-  handleOpenEdit,
-  router
-}: ObjectiveTabProps) {
+export default function ObjectiveTab(props: ObjectiveTabProps) {
+  const {
+    filteredObjectiveExams,
+    assignments,
+    attemptCounts,
+    objFilterName,
+    setObjFilterName,
+    objFilterTopic,
+    setObjFilterTopic,
+    getAssignedNames,
+    getLatestAssignmentDate,
+    toggleAssignmentStatus,
+    handleOpenAssign,
+    handleOpenEdit,
+    handleDeleteExam,
+    router
+  } = props;
+
   return (
     <div>
       <div className="filter-row" style={{ display: 'flex', gap: '10px', marginBottom: '16px', flexWrap: 'wrap' }}>
@@ -178,36 +123,11 @@ export default function ObjectiveTab({
 
       {/* Section 2: Already Assigned */}
       <AssignedExamsSection
-        assignedExamsList={filteredObjectiveExams.filter(exam => isExamAssigned(exam, assignments, attemptCounts))}
-        type="objective"
-        assignments={assignments}
-        attemptCounts={attemptCounts}
-        isAssignedSectionExpanded={isAssignedSectionExpanded}
-        setIsAssignedSectionExpanded={setIsAssignedSectionExpanded}
-        expandedClasses={expandedClasses}
-        toggleClassExpanded={toggleClassExpanded}
-        expandedSubjects={expandedSubjects}
-        toggleSubjectExpanded={toggleSubjectExpanded}
-        expandedChapters={expandedChapters}
-        toggleChapterExpanded={toggleChapterExpanded}
-        expandAllAssigned={expandAllAssigned}
-        collapseAllAssigned={collapseAllAssigned}
-        assignedSortField={assignedSortField}
-        assignedSortDir={assignedSortDir}
-        handleAssignedSort={handleAssignedSort}
-        sortAssignedExams={sortAssignedExams}
-        getGroupedClasses={getGroupedClasses}
-        getExamClass={getExamClass}
-        getExamSubject={getExamSubject}
-        getExamChapter={getExamChapter}
-        getAssignedNames={getAssignedNames}
-        getLatestAssignmentDate={getLatestAssignmentDate}
-        getExamScheduleStatus={getExamScheduleStatus}
-        toggleAssignmentStatus={toggleAssignmentStatus}
-        handleOpenAssign={handleOpenAssign}
-        handleOpenEdit={handleOpenEdit}
-        handleDeleteExam={handleDeleteExam}
-        router={router}
+        {...extractAssignedSectionProps(
+          props,
+          filteredObjectiveExams.filter(exam => isExamAssigned(exam, assignments, attemptCounts)),
+          'objective'
+        )}
       />
     </div>
   );

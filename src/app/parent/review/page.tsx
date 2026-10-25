@@ -14,6 +14,7 @@ import { formatDateIST, getDateKeyIST, formatDateTimeIST, formatDurationMS as fo
 import { ReviewItem } from '@/types/review.types';
 import StepAnswerInput from '@/components/exams/StepAnswerInput';
 import { ParentPageShell } from '@/components/parent';
+import { useSubjectiveAnswers } from '@/hooks/useSubjectiveAnswers';
 
 export default function ParentReviewPanel() {
   const { firebaseUser, user, logout } = useAuth();
@@ -176,8 +177,15 @@ export default function ParentReviewPanel() {
   const [questions, setQuestions] = useState<any[]>([]);
   const [subjectiveAttempt, setSubjectiveAttempt] = useState<any>(null);
   const [loadingQuestions, setLoadingQuestions] = useState(false);
-  const [reviewAnswers, setReviewAnswers] = useState<{ [key: string]: number | string }>({});
-  const [reviewFeedback, setReviewFeedback] = useState<{ [key: string]: string }>({});
+  const {
+    reviewAnswers,
+    setReviewAnswers,
+    reviewFeedback,
+    setReviewFeedback,
+    validateAnswers,
+    compileReviews,
+    getQuestionTotalAwarded
+  } = useSubjectiveAnswers();
 
   // Fetch children list from parent profile
   useEffect(() => {
@@ -425,56 +433,13 @@ export default function ParentReviewPanel() {
     };
 
     if (selectedReview.type === 'subjective') {
-      // Validate all evaluation fields are explicitly answered
-      for (let i = 0; i < questions.length; i++) {
-        const q = questions[i];
-        if (q.steps && q.steps.length > 0) {
-          for (let s = 0; s < q.steps.length; s++) {
-            const rawVal = reviewAnswers[`ps_${i}_${s}`];
-            if (rawVal === undefined || rawVal === null || rawVal === "") {
-              alert(`Please award marks for Question ${i + 1}, Step ${s + 1}.`);
-              return;
-            }
-          }
-        } else {
-          const rawVal = reviewAnswers[`ps_${i}_0`];
-          if (rawVal === undefined || rawVal === null || rawVal === "") {
-            alert(`Please award marks for Question ${i + 1}.`);
-            return;
-          }
-        }
+      const validationError = validateAnswers(questions);
+      if (validationError) {
+        alert(validationError);
+        return;
       }
 
-      const questionReviews = [];
-      let totalScore = 0;
-
-      for (let i = 0; i < questions.length; i++) {
-        const q = questions[i];
-        let questionTotal = 0;
-        const stepMarks: Array<{ stepNo: number; awarded: number }> = [];
-
-        if (q.steps && q.steps.length > 0) {
-          for (let s = 0; s < q.steps.length; s++) {
-            const val = Number(reviewAnswers[`ps_${i}_${s}`]);
-            stepMarks.push({ stepNo: s + 1, awarded: val });
-            questionTotal += val;
-          }
-        } else {
-          const val = Number(reviewAnswers[`ps_${i}_0`]);
-          stepMarks.push({ stepNo: 1, awarded: val });
-          questionTotal = val;
-        }
-
-        const feedback = reviewFeedback[`pf_${i}`] || '';
-        questionReviews.push({
-          questionId: q.id,
-          maxMarks: q.marks,
-          marksAwarded: questionTotal,
-          stepMarks,
-          feedback
-        });
-        totalScore += questionTotal;
-      }
+      const { questionReviews, totalScore } = compileReviews(questions);
 
       bodyPayload = {
         ...bodyPayload,
@@ -1249,16 +1214,7 @@ export default function ParentReviewPanel() {
                         <span>Dynamically Summed Score:</span>
                         <span style={{ color: 'var(--accent)' }}>
                           {(() => {
-                            let total = 0;
-                            questions.forEach((q, idx) => {
-                              if (q.steps && q.steps.length > 0) {
-                                q.steps.forEach((step: any, si: number) => {
-                                  total += Number(reviewAnswers[`ps_${idx}_${si}`]) || 0;
-                                });
-                              } else {
-                                total += Number(reviewAnswers[`ps_${idx}_0`]) || 0;
-                              }
-                            });
+                            const total = questions.reduce((sum, q, idx) => sum + getQuestionTotalAwarded(q, idx), 0);
                             const maxTotal = questions.reduce((sum, q) => sum + (q.marks || 0), 0);
                             return `${total} / ${maxTotal}`;
                           })()} Marks
