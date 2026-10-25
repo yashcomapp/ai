@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Exam, Assignment, ExamScheduleStatus, isExamAssigned } from './types';
+import { TodayTomorrowExamsTable } from './TodayTomorrowExamsTable';
 
 interface ObjectiveTabProps {
   filteredObjectiveExams: Exam[];
@@ -159,118 +160,20 @@ export default function ObjectiveTab({
       </div>
 
       {/* Section 1b: Today's & Tomorrow's Exams */}
-      <div id="objective-today-tomorrow-section" style={{ marginBottom: '24px' }}>
-        <h3 style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text)', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-          📅 Today's & Tomorrow's Exams
-        </h3>
-        <div className="card" style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', overflow: 'hidden' }}>
-          <div style={{ overflowX: 'auto' }}>
-            <table className="reviews-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12.5px' }}>
-              <thead>
-                <tr style={{ background: 'var(--bg-soft)', borderBottom: '1px solid var(--border-light)', color: 'var(--text-muted)', fontSize: '11.5px' }}>
-                  <th style={{ padding: '4px 8px' }}>Exam Name</th>
-                  <th style={{ padding: '4px 8px' }}>Assigned To</th>
-                  <th style={{ padding: '4px 8px' }}>Assigned Date</th>
-                  <th style={{ padding: '4px 8px' }}>Status / Starts</th>
-                  <th style={{ padding: '4px 8px', textAlign: 'right' }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(() => {
-                  const todayTomorrowExams = filteredObjectiveExams.filter(exam => 
-                    isExamAssigned(exam, assignments, attemptCounts) &&
-                    isTodayOrTomorrow(exam, 'objective')
-                  );
-                  
-                  const sortedTodayTomorrowExams = [...todayTomorrowExams].sort((a, b) => {
-                    const timeA = getExamSortTimestamp(a, 'objective');
-                    const timeB = getExamSortTimestamp(b, 'objective');
-                    if (timeA !== timeB) return timeA - timeB;
-                    
-                    const classA = parseInt(getExamClass(a)) || 0;
-                    const classB = parseInt(getExamClass(b)) || 0;
-                    return classA - classB;
-                  });
-
-                  if (sortedTodayTomorrowExams.length === 0) {
-                    return (
-                      <tr>
-                        <td colSpan={5} style={{ padding: '12px', textAlign: 'center', color: 'var(--text-muted)' }}>No exams scheduled for today or tomorrow.</td>
-                      </tr>
-                    );
-                  }
-                  
-                  return sortedTodayTomorrowExams.map(exam => {
-                    const count = attemptCounts[exam.id] || 0;
-                    const activeAssign = assignments.find(a => a.examId === exam.id && a.collection === 'batchAssignments') || assignments.find(a => a.examId === exam.id);
-                    const rawStatus = activeAssign?.status || 'active';
-                    const scheduleStatus = getExamScheduleStatus(exam, activeAssign, 'objective');
-                    return (
-                      <tr key={exam.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
-                        <td style={{ padding: '4px 8px', fontWeight: 600 }}>
-                          {exam.name}
-                        </td>
-                        <td style={{ padding: '4px 8px', fontSize: '11px', color: 'var(--text-muted)' }}>{getAssignedNames(exam.id, exam.batchId)}</td>
-                        <td style={{ padding: '4px 8px', fontSize: '11px', color: 'var(--text-muted)' }}>{getLatestAssignmentDate(exam.id, exam.assignedAt, exam)}</td>
-                        <td style={{ padding: '4px 8px' }}>
-                          <div style={{ display: 'flex', gap: '6px', flexDirection: 'row', alignItems: 'center' }}>
-                            <span style={{ fontSize: '10px', padding: '1px 6px', borderRadius: '10px', background: scheduleStatus.badgeBg, color: scheduleStatus.badgeColor, fontWeight: 700, whiteSpace: 'nowrap' }}>
-                              {scheduleStatus.badgeText}
-                            </span>
-                            {count > 0 && (
-                              <span style={{ fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-                                ({count} starts)
-                              </span>
-                            )}
-                          </div>
-                        </td>
-                        <td style={{ padding: '4px 8px', textAlign: 'right' }}>
-                          <div style={{ display: 'flex', gap: '4px', justifyContent: 'flex-end', flexWrap: 'nowrap', whiteSpace: 'nowrap' }}>
-                            {activeAssign && activeAssign.openMode !== 'scheduled' && (
-                              <button 
-                                className={`btn ${rawStatus === 'active' ? 'btn-secondary' : 'btn-primary'}`} 
-                                style={{ padding: '2px 6px', fontSize: '10.5px', background: rawStatus === 'active' ? 'var(--danger)' : 'var(--success)', color: 'white', border: 'none' }} 
-                                onClick={() => toggleAssignmentStatus(activeAssign.id, activeAssign.collection || 'batchAssignments', rawStatus === 'active' ? 'disabled' : 'active')}
-                              >
-                                {rawStatus === 'active' ? '🛑 Stop' : '🟢 Start'}
-                              </button>
-                            )}
-                            <button className="btn btn-secondary" style={{ padding: '2px 6px', fontSize: '10.5px', background: 'var(--accent-tint)', color: 'var(--accent)', fontWeight: 600 }} onClick={() => router.push(`/admin/mock-exam?examId=${encodeURIComponent(exam.id)}`)}>
-                              🧪 Mock Test
-                            </button>
-                            <button className="btn btn-primary" style={{ padding: '2px 6px', fontSize: '10.5px' }} onClick={() => handleOpenAssign(exam, 'objective')}>
-                              📋 Assign Again
-                            </button>
-                            <button className="btn btn-secondary" style={{ padding: '2px 6px', fontSize: '10.5px' }} onClick={() => router.push(`/admin/exam-report?examId=${exam.id}`)}>
-                              📊 Report
-                            </button>
-                            <button 
-                              className="btn btn-secondary" 
-                              style={{ 
-                                padding: '2px 6px', 
-                                fontSize: '10.5px', 
-                                opacity: count > 0 ? 0.5 : 1, 
-                                cursor: count > 0 ? 'not-allowed' : 'pointer' 
-                              }} 
-                              disabled={count > 0}
-                              onClick={() => handleOpenEdit(exam.id, exam.name, activeAssign?.collection || 'batchAssignments')}
-                            >
-                              ✏️ Edit
-                            </button>
-                            <button className="btn btn-secondary" style={{ padding: '2px 6px', fontSize: '10.5px', color: 'var(--danger)' }} onClick={() => handleDeleteExam(exam.id, exam.name, 'objective')}>
-                              🗑️ Delete
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  });
-                })()}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
+      <TodayTomorrowExamsTable
+        exams={filteredObjectiveExams}
+        type="objective"
+        assignments={assignments}
+        attemptCounts={attemptCounts}
+        getAssignedNames={getAssignedNames}
+        getLatestAssignmentDate={getLatestAssignmentDate}
+        toggleAssignmentStatus={toggleAssignmentStatus}
+        handleOpenAssign={handleOpenAssign}
+        handleOpenEdit={handleOpenEdit}
+        handleDeleteExam={handleDeleteExam}
+        isAlreadyAssigned={(exam) => isExamAssigned(exam, assignments, attemptCounts)}
+        router={router}
+      />
 
       {/* Section 2: Already Assigned */}
       <div id="objective-assignments-section">

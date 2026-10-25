@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import useSWR from 'swr';
 import { fetchWithToken } from '@/lib/swrFetcher';
 import { formatDateDMY as formatDateStr } from '@/lib/dateUtils';
+import { StudentPageShell } from '@/components/student/StudentPageShell';
 
 export default function StudentFeesPage() {
   const { firebaseUser, logout } = useAuth();
@@ -25,39 +26,8 @@ export default function StudentFeesPage() {
   const transactions = data?.transactions || [];
 
   return (
-    <div style={{ background: 'var(--bg)', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      {/* Top Header Bar matching Review Page */}
-      <div className="page-header glass" style={{ padding: '8px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderRadius: '0', borderBottom: '1px solid var(--border-light)' }}>
-        <div className="page-header-left" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <button 
-            onClick={() => router.push('/student')}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: 'var(--text)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '6px',
-              borderRadius: '50%',
-              transition: 'background 0.2s'
-            }}
-            title="Back to Dashboard"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
-          </button>
-          <span className="brand" style={{ fontWeight: 800, fontSize: '1.1rem', color: 'var(--accent)', cursor: 'pointer' }} onClick={() => router.push('/student')}>YASHCOM</span>
-        </div>
-        <div className="page-header-right" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          
-          <button className="btn btn-secondary logout-btn" onClick={() => logout()} style={{ fontSize: '1rem', padding: '6px 10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Logout">🚪</button>
-        </div>
-      </div>
-
-      <div style={{ flex: 1, padding: '10px 8px' }}>
-        <div style={{ maxWidth: '900px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-
+    <StudentPageShell maxWidth="900px">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
         {error && <div className="alert-box alert-box-danger">Failed to load fees details.</div>}
 
         {isLoading ? (
@@ -170,9 +140,7 @@ export default function StudentFeesPage() {
             </div>
           </>
         )}
-
-        </div>
       </div>
-    </div>
+    </StudentPageShell>
   );
 }

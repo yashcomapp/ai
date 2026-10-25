@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Exam, Assignment, ExamScheduleStatus } from './types';
+import { TodayTomorrowExamsTable } from './TodayTomorrowExamsTable';
 
 interface SubjectiveTabProps {
   filteredSubjectiveExams: Exam[];
@@ -171,143 +172,20 @@ export default function SubjectiveTab({
       </div>
 
       {/* Section 1b: Today's & Tomorrow's Subjective Exams */}
-      <div id="subjective-today-tomorrow-section" style={{ marginBottom: '24px' }}>
-        <h3 style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text)', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-          📅 Today's & Tomorrow's Subjective Exams
-        </h3>
-        <div className="card" style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', overflow: 'hidden' }}>
-          <div style={{ overflowX: 'auto' }}>
-            <table className="reviews-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
-              <thead>
-                <tr style={{ background: 'var(--bg-soft)', borderBottom: '1px solid var(--border-light)', color: 'var(--text-muted)', fontSize: '12px' }}>
-                  <th style={{ padding: '4px 8px' }}>Exam Name</th>
-                  <th style={{ padding: '4px 8px' }}>Mode</th>
-                  <th style={{ padding: '4px 8px' }}>Peer Review</th>
-                  <th style={{ padding: '4px 8px' }}>Assigned To</th>
-                  <th style={{ padding: '4px 8px' }}>Status / Starts</th>
-                  <th style={{ padding: '4px 8px', textAlign: 'right' }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(() => {
-                  const todayTomorrowExams = filteredSubjectiveExams.filter(exam => 
-                    isSubjectiveAlreadyAssigned(exam) &&
-                    isTodayOrTomorrow(exam, 'subjective')
-                  );
-                  
-                  const sortedTodayTomorrowExams = [...todayTomorrowExams].sort((a, b) => {
-                    const timeA = getExamSortTimestamp(a, 'subjective');
-                    const timeB = getExamSortTimestamp(b, 'subjective');
-                    if (timeA !== timeB) return timeA - timeB;
-                    
-                    const classA = parseInt(getExamClass(a)) || 0;
-                    const classB = parseInt(getExamClass(b)) || 0;
-                    return classA - classB;
-                  });
-
-                  if (sortedTodayTomorrowExams.length === 0) {
-                    return (
-                      <tr>
-                        <td colSpan={6} style={{ padding: '16px', textAlign: 'center', color: 'var(--text-muted)' }}>No subjective exams scheduled for today or tomorrow.</td>
-                      </tr>
-                    );
-                  }
-                  
-                  return sortedTodayTomorrowExams.map(exam => {
-                    const activeAssign = assignments.find(a => a.examId === exam.id && a.collection === 'subjectiveAssignments') || assignments.find(a => a.examId === exam.id);
-                    const rawStatus = activeAssign?.status || 'active';
-                    const scheduleStatus = getExamScheduleStatus(exam, activeAssign, 'subjective');
-                    const mode = activeAssign?.examMode || exam.mode || 'home';
-                    const peerStatus = exam.peerReviewStatus || 'not_started';
-                    const count = attemptCounts[exam.id] || 0;
-                    return (
-                      <tr key={exam.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
-                        <td style={{ padding: '4px 8px', fontWeight: 600 }}>
-                          {exam.name}
-                        </td>
-                        <td style={{ padding: '4px 8px' }}>
-                          {mode === 'home' ? (
-                            <span className="badge badge-info" style={{ fontSize: '10px' }}>🏠 Home</span>
-                          ) : (
-                            <span className="badge badge-warning" style={{ fontSize: '10px' }}>🏫 Classroom</span>
-                          )}
-                        </td>
-                        <td style={{ padding: '4px 8px', textTransform: 'capitalize', fontSize: '12px' }}>
-                          {mode === 'classroom' ? (
-                            peerStatus === 'not_started' ? (
-                              <span style={{ color: 'var(--warning)' }}>⏳ Waiting</span>
-                            ) : peerStatus === 'assigned' ? (
-                              <span style={{ color: 'var(--accent)' }}>🔄 In Progress</span>
-                            ) : (
-                              <span style={{ color: 'var(--success)' }}>✅ Finished</span>
-                            )
-                          ) : '—'}
-                        </td>
-                        <td style={{ padding: '4px 8px', fontSize: '11px', color: 'var(--text-muted)' }}>{getAssignedNames(exam.id, exam.batchId)}</td>
-                        <td style={{ padding: '4px 8px' }}>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                            <div style={{ display: 'flex', gap: '6px', flexDirection: 'row', alignItems: 'center' }}>
-                              <span style={{ fontSize: '10px', padding: '2px 8px', borderRadius: '10px', background: scheduleStatus.badgeBg, color: scheduleStatus.badgeColor, fontWeight: 700, whiteSpace: 'nowrap' }}>
-                                {scheduleStatus.badgeText}
-                              </span>
-                              {count > 0 && (
-                                <span style={{ fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-                                  ({count} starts)
-                                </span>
-                              )}
-                            </div>
-                            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                              Assigned: {getLatestAssignmentDate(exam.id, exam.assignedAt, exam)}
-                            </div>
-                          </div>
-                        </td>
-                        <td style={{ padding: '4px 8px', textAlign: 'right' }}>
-                          <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end', flexWrap: 'nowrap', whiteSpace: 'nowrap' }}>
-                            {activeAssign && activeAssign.openMode !== 'scheduled' && (
-                              <button 
-                                className={`btn ${rawStatus === 'active' ? 'btn-secondary' : 'btn-primary'}`} 
-                                style={{ padding: '3px 8px', fontSize: '10.5px', background: rawStatus === 'active' ? 'var(--danger)' : 'var(--success)', color: 'white', border: 'none' }} 
-                                onClick={() => toggleAssignmentStatus(activeAssign.id, 'subjectiveAssignments', rawStatus === 'active' ? 'disabled' : 'active')}
-                              >
-                                {rawStatus === 'active' ? '🛑 Stop' : '🟢 Start'}
-                              </button>
-                            )}
-                            <button className="btn btn-secondary" style={{ padding: '3px 8px', fontSize: '10.5px', background: 'var(--accent-tint)', color: 'var(--accent)', fontWeight: 600 }} onClick={() => router.push(`/admin/mock-exam?examId=${encodeURIComponent(exam.id)}&type=subjective`)}>
-                              🧪 Mock Test
-                            </button>
-                            <button className="btn btn-primary" style={{ padding: '3px 8px', fontSize: '10.5px' }} onClick={() => handleOpenAssign(exam, 'subjective')}>
-                              📋 Assign Again
-                            </button>
-                            <button 
-                              className="btn btn-secondary" 
-                              style={{ 
-                                padding: '3px 8px', 
-                                fontSize: '10.5px', 
-                                opacity: count > 0 ? 0.5 : 1, 
-                                cursor: count > 0 ? 'not-allowed' : 'pointer' 
-                              }} 
-                              disabled={count > 0}
-                              onClick={() => handleOpenEdit(exam.id, exam.name, 'subjectiveAssignments')}
-                            >
-                              ✏️ Edit
-                            </button>
-                            <button className="btn btn-secondary" style={{ padding: '3px 8px', fontSize: '10.5px' }} onClick={() => router.push(`/admin/teacher-final-review?examId=${exam.id}`)}>
-                              Grade
-                            </button>
-                            <button className="btn btn-secondary" style={{ padding: '3px 8px', fontSize: '10.5px', color: 'var(--danger)' }} onClick={() => handleDeleteExam(exam.id, exam.name, 'subjective')}>
-                              🗑️ Delete
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  });
-                })()}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
+      <TodayTomorrowExamsTable
+        exams={filteredSubjectiveExams}
+        type="subjective"
+        assignments={assignments}
+        attemptCounts={attemptCounts}
+        getAssignedNames={getAssignedNames}
+        getLatestAssignmentDate={getLatestAssignmentDate}
+        toggleAssignmentStatus={toggleAssignmentStatus}
+        handleOpenAssign={handleOpenAssign}
+        handleOpenEdit={handleOpenEdit}
+        handleDeleteExam={handleDeleteExam}
+        isAlreadyAssigned={isSubjectiveAlreadyAssigned}
+        router={router}
+      />
 
       {/* Section 2: Already Assigned */}
       <div id="subjective-assignments-section">

@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation';
 import { EmailAuthProvider, reauthenticateWithCredential, updatePassword } from 'firebase/auth';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import dynamic from 'next/dynamic';
+import { StudentPageShell } from '@/components/student/StudentPageShell';
 const HardwareCheckMockTestModal = dynamic(() => import('@/components/HardwareCheckMockTestModal'), { ssr: false });
 
 interface ProfileData {
@@ -232,36 +233,7 @@ export default function StudentSettingsPage() {
 
 
   return (
-    <div className="page-wrapper" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: 'var(--bg)' }}>
-      {/* Top Header Bar matching Review Page */}
-      <div className="page-header glass" style={{ padding: '8px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderRadius: '0', borderBottom: '1px solid var(--border-light)' }}>
-        <div className="page-header-left" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <button 
-            onClick={() => router.push('/student')}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: 'var(--text)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '6px',
-              borderRadius: '50%',
-              transition: 'background 0.2s'
-            }}
-            title="Back to Dashboard"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
-          </button>
-          <span className="brand" style={{ fontWeight: 800, fontSize: '1.1rem', color: 'var(--accent)', cursor: 'pointer' }} onClick={() => router.push('/student')}>YASHCOM</span>
-        </div>
-        <div className="page-header-right" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          
-          <button className="btn btn-secondary logout-btn" onClick={() => logout()} style={{ fontSize: '1rem', padding: '6px 10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Logout">🚪</button>
-        </div>
-      </div>
-
+    <StudentPageShell maxWidth="800px">
       <style>{`
         @keyframes skeleton-blink {
           0% { opacity: 0.6; }
@@ -274,12 +246,11 @@ export default function StudentSettingsPage() {
       `}</style>
 
       {/* Main Container */}
-      <main style={{ flex: 1, padding: '24px 12px', maxWidth: '800px', width: '100%', margin: '0 auto' }}>
-        {error && (
-          <div className="alert-box alert-box-danger" style={{ display: 'block', marginBottom: '20px' }}>
-            {error}
-          </div>
-        )}
+      {error && (
+        <div className="alert-box alert-box-danger" style={{ display: 'block', marginBottom: '20px' }}>
+          {error}
+        </div>
+      )}
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           {loading ? (
@@ -494,8 +465,7 @@ export default function StudentSettingsPage() {
             </>
           )}
         </div>
-      </main>
       <HardwareCheckMockTestModal isOpen={isMockTestOpen} onClose={() => setIsMockTestOpen(false)} />
-    </div>
+    </StudentPageShell>
   );
 }
