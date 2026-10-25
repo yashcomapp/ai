@@ -17,6 +17,8 @@ import { InterruptionLockoutModal } from '@/components/InterruptionLockoutModal'
 import { ExamErrorBoundary } from '@/components/ExamErrorBoundary';
 import { parseDateToMs } from '@/lib/dateUtils';
 import { RTC_CONFIG } from '@/lib/rtcConfig';
+import { Question } from '@/types/question.types';
+import { Exam } from '@/types/exam.types';
 
 
 // Extend window interface for CDN scripts
@@ -26,40 +28,6 @@ declare global {
     Camera: any;
     renderMathInElement: any;
   }
-}
-
-interface Question {
-  id?: string;
-  type: string;
-  text: string;
-  options?: any[];
-  qNumber?: number;
-  marks?: number;
-  subject?: string;
-  chapter?: string;
-  topic?: string;
-  class?: string;
-  board?: string;
-  questionCode?: string;
-  solution?: string;
-  difficulty?: string;
-  bloomLevel?: string;
-  assertion?: string;
-  reason?: string;
-  correctAnswer?: any;
-  correctAnswers?: any;
-}
-
-interface Exam {
-  id: string;
-  name: string;
-  duration: number;
-  negativeMarks: number;
-  totalMarks: number;
-  subject?: string;
-  chapter?: string;
-  topicName?: string;
-  questions: Question[];
 }
 
 function TakeExamContent() {
@@ -160,7 +128,7 @@ function TakeExamContent() {
     formattedTime,
     addExtraTime
   } = useExamTimer({
-    initialSeconds: exam ? (exam.duration * 60) : 0,
+    initialSeconds: exam ? ((exam.duration || 0) * 60) : 0,
     isPaused: loading || examSubmitted || !exam || cameraModalOpen,
     onTimeUp: () => {
       // Non-blocking auto-submit on time expiry
@@ -643,7 +611,7 @@ function TakeExamContent() {
     setBlockingMessage('Submitting exam... Please do not close this window.');
     
     const activeTabViolations = finalTabViolations ?? tabViolations;
-    const durationSpent = exam ? (exam.duration * 60) - timeRemaining : 0;
+    const durationSpent = exam ? (((exam.duration || 0) * 60) - timeRemaining) : 0;
     const compiledAnswers = userAnswers.map((ua, idx) => ({
       ...ua,
       timeSpentSeconds: questionTimeSpentRef.current[idx] ?? ua.timeSpentSeconds ?? 0
@@ -1534,7 +1502,7 @@ function TakeExamContent() {
                 <div style={{ fontSize: '11px', lineHeight: '1.4' }}>
                   <strong style={{ color: 'var(--text-muted)' }}>Time Spent:</strong>{' '}
                   {(() => {
-                    const spent = exam ? (exam.duration * 60) - timeRemaining : 0;
+                    const spent = exam ? (((exam.duration || 0) * 60) - timeRemaining) : 0;
                     return (
                       <span style={{ fontWeight: 600 }}>{Math.floor(spent / 60)} min {spent % 60} sec</span>
                     );

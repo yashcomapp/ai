@@ -69,3 +69,19 @@ export interface ExamScheduleStatus {
   badgeColor: string;
   badgeText: string;
 }
+
+export interface Template {
+  id: string;
+  name: string;
+  type?: string;
+  totalQuestions: number;
+  duration?: number;
+  positiveMarks?: number;
+  negativeMarks?: number;
+  difficulty?: { easy: number; medium: number; hard: number };
+  bloom?: { r: number; u: number; ap: number; an: number; e: number; c: number };
+  typeCounts?: { [key: string]: number };
+  objectiveDistribution?: { [key: string]: number };
+  subjectiveDistribution?: { [key: string]: number };
+  [key: string]: any;
+}

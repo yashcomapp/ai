@@ -5,7 +5,6 @@ import { formatDateDMY as formatDateStr, getDateKeyIST } from '@/lib/dateUtils';
 import DateInputDMY from '@/components/DateInputDMY';
 import { renderSortHeader, getStatusWeight, deleteFeeTransaction, getLateRemarks as computeLateRemarks, confirmAndDeleteTransaction, handleDeleteTransaction, FeeRosterRow } from '@/lib/feesUtils';
 export type { FeeRosterRow };
-export type StudentFeeRecord = FeeRosterRow;
 
 export interface Transaction {
   transactionId: string;

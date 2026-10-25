@@ -12,6 +12,7 @@ import { getDateKeyIST, formatDateDMY, formatTimeIST, calculateEndDatetime, toLo
 import { formatReportStudentName, getScoreChip, getDeepScoreColor } from '@/lib/lqCardExport';
 import { Batch } from '@/types/batch.types';
 import { Student } from '@/types/user.types';
+import { Exam } from '@/types/exam.types';
 
 interface Attempt {
   id: string;
@@ -52,23 +53,6 @@ interface Attempt {
   lateMinutes?: number;
   lateRemark?: string;
 }
-
-interface Exam {
-  id: string;
-  name: string;
-  subject?: string;
-  subjectName?: string;
-  chapter?: string;
-  chapterNumber?: string;
-  topicCodes?: string[];
-  topicNames?: string[];
-  totalMarks?: number;
-  duration?: number;
-  durationMinutes?: number;
-  questions?: string[];
-  questionCodes?: string[];
-}
-
 
 function formatAbsentLogin(lastLoginAt?: string | null) {
   if (!lastLoginAt) return '(Never Logged In)';

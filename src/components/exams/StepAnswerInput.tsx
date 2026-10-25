@@ -12,7 +12,7 @@ export interface StepItem {
 export interface StepAnswerInputProps {
   questionIndex: number;
   steps?: StepItem[];
-  questionMarks: number;
+  questionMarks?: number;
   reviewAnswers: Record<string, any>;
   setReviewAnswers: React.Dispatch<React.SetStateAction<Record<string, any>>>;
   disabled?: boolean;
@@ -21,7 +21,7 @@ export interface StepAnswerInputProps {
 export default function StepAnswerInput({
   questionIndex,
   steps,
-  questionMarks,
+  questionMarks = 0,
   reviewAnswers,
   setReviewAnswers,
   disabled = false

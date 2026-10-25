@@ -20,11 +20,22 @@ export interface User {
 }
 
 export interface UserProfile {
+  uid?: string;
   studentCode?: string;
-  name: string;
-  role: string;
-  email: string;
+  name?: string;
+  displayName?: string;
+  role: UserRole | string;
+  email: string | null;
   parentEmail?: string;
+  parentName?: string;
+  parentPhone?: string;
+  activeSessionToken?: string;
+  hasPushRegistered?: boolean;
+  curfewBypass?: boolean;
+  maintenanceBypass?: boolean;
+  batchId?: string;
+  class?: string | number;
+  status?: string;
   [key: string]: any;
 }
 

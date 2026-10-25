@@ -4,7 +4,7 @@ import DateInputDMY from '@/components/DateInputDMY';
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { NAME_RE, EMAIL_RE, MOBILE_RE, PASSWORD_RE } from '@/lib/validation';
+import { validateName, validateEmail, validateMobile, validatePassword } from '@/lib/validation';
 import { Batch } from '@/types/batch.types';
 
 export default function RegisterPage() {
@@ -68,26 +68,25 @@ export default function RegisterPage() {
     let msg = '';
     switch (name) {
       case 'studentName':
-        msg = !NAME_RE.test(value.trim()) || value.trim().split(/\s+/).length < 2 
-          ? 'Enter first and last name (letters only).' : '';
+        msg = validateName(value).error || '';
         break;
       case 'dob':
         msg = validateDob(value);
         break;
       case 'studentEmail':
-        msg = !EMAIL_RE.test(value.trim()) ? 'Enter a valid email address.' : '';
+        msg = validateEmail(value).error || '';
         break;
       case 'studentMobile':
-        msg = !MOBILE_RE.test(value.trim()) ? 'Enter a valid 10-digit mobile number.' : '';
+        msg = validateMobile(value).error || '';
         break;
       case 'parentMobile':
-        msg = !MOBILE_RE.test(value.trim()) ? 'Enter a valid 10-digit mobile number.' : '';
+        msg = validateMobile(value).error || '';
         break;
       case 'parentEmail':
-        msg = !EMAIL_RE.test(value.trim()) ? 'Parent email is required for parent login.' : '';
+        msg = validateEmail(value).error || '';
         break;
       case 'password':
-        msg = !PASSWORD_RE.test(value) ? 'Min 8 characters with uppercase, lowercase, number, and a special character.' : '';
+        msg = validatePassword(value).error || '';
         break;
       case 'confirmPassword':
         msg = value !== formData.password ? 'Passwords do not match.' : '';
@@ -105,7 +104,7 @@ export default function RegisterPage() {
         msg = !value.trim() ? 'Address is required.' : '';
         break;
       case 'parentName':
-        msg = !NAME_RE.test(value.trim()) ? 'Enter a valid parent name (letters only).' : '';
+        msg = validateName(value).error || '';
         break;
       default:
         break;

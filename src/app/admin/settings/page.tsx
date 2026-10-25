@@ -6,14 +6,6 @@ import { useRouter } from 'next/navigation';
 import { auth } from '@/lib/firebase/client';
 import { updatePassword } from 'firebase/auth';
 
-interface Exam {
-  examId: string;
-  name: string;
-  class: string;
-  subjectCode: string;
-  createdAt: any;
-}
-
 export default function AdminSettingsPage() {
   const { firebaseUser } = useAuth();
   const router = useRouter();

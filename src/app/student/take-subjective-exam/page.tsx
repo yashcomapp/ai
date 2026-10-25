@@ -18,6 +18,7 @@ import { ExamErrorBoundary } from '@/components/ExamErrorBoundary';
 import QuestionDisplay, { RichMathText } from '@/components/QuestionDisplay';
 import { RTC_CONFIG } from '@/lib/rtcConfig';
 import StepAnswerInput from '@/components/exams/StepAnswerInput';
+import { Question } from '@/types/question.types';
 
 
 // Extend window interface for CDN scripts
@@ -27,18 +28,6 @@ declare global {
     Camera: any;
     renderMathInElement: any;
   }
-}
-
-interface Question {
-  id: string;
-  questionCode: string;
-  qNumber?: number;
-  type?: string;
-  text: string;
-  marks: number;
-  solution?: string;
-  answerLines?: Array<{ lineNo: number; text: string }>;
-  steps?: Array<{ description: string; marks: number }>;
 }
 
 interface ExamData {

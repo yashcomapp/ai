@@ -18,211 +18,21 @@ import ObjectiveTab from '@/components/admin/exams/ObjectiveTab';
 import SubjectiveTab from '@/components/admin/exams/SubjectiveTab';
 import PracticeTab from '@/components/admin/exams/PracticeTab';
 import { isExamAssigned, Exam, Assignment, Batch, Student } from '@/components/admin/exams/types';
+import {
+  getNormExamDuration,
+  getExamSubject,
+  getExamChapter,
+  getExamClass,
+  getExamSortTimestamp,
+  isTodayOrTomorrow,
+  getExamScheduleStatus,
+  getGroupedClasses
+} from '@/components/admin/exams/examAdminUtils';
+import type { ExamScheduleStatus } from '@/components/admin/exams/types';
 
-function getNormExamDuration(exam: Exam, type: 'objective' | 'subjective' = 'objective'): number {
-  if (typeof exam.duration === 'number' && exam.duration > 0) {
-    return exam.duration;
-  }
-  if (typeof exam.totalTime === 'number' && exam.totalTime > 0) {
-    return exam.totalTime;
-  }
-  if (typeof exam.examDuration === 'number' && exam.examDuration > 0) {
-    return exam.examDuration;
-  }
-
-  // Calculate from questions if available
-  const questions = Array.isArray(exam.questions) ? exam.questions : [];
-  const questionCodes = Array.isArray(exam.questionCodes) ? exam.questionCodes : [];
-
-  if (questions.length > 0) {
-    let textualCount = 0;
-    let numericalCount = 0;
-    questions.forEach((q: any) => {
-      const code = String(q?.questionCode || q?.code || q?.id || '');
-      const qType = String(q?.type || q?.questionType || '').toLowerCase();
-      const isNum = code.includes('-ONE-') || code.includes('-SSN-') || code.includes('-SLN-') ||
-                    qType.includes('numerical') || qType.includes('calculation') || qType === 'one';
-      if (isNum) {
-        numericalCount++;
-      } else {
-        textualCount++;
-      }
-    });
-    if (type === 'subjective') {
-      return Math.max(15, (textualCount * 3) + (numericalCount * 5));
-    }
-    return Math.max(1, (textualCount * 1) + (numericalCount * 2));
-  }
-
-  if (questionCodes.length > 0) {
-    let textualCount = 0;
-    let numericalCount = 0;
-    questionCodes.forEach((codeStr: string) => {
-      const code = String(codeStr || '');
-      const isNum = code.includes('-ONE-') || code.includes('-SSN-') || code.includes('-SLN-');
-      if (isNum) {
-        numericalCount++;
-      } else {
-        textualCount++;
-      }
-    });
-    if (type === 'subjective') {
-      return Math.max(15, (textualCount * 3) + (numericalCount * 5));
-    }
-    return Math.max(1, (textualCount * 1) + (numericalCount * 2));
-  }
-
-  if (typeof exam.questionCount === 'number' && exam.questionCount > 0) {
-    return type === 'subjective' ? Math.max(15, exam.questionCount * 5) : Math.max(1, exam.questionCount * 1);
-  }
-
-  return type === 'subjective' ? 60 : 30;
-}
-
-interface ExamScheduleStatus {
-  state: 'active' | 'closed' | 'upcoming' | 'disabled';
-  badgeBg: string;
-  badgeColor: string;
-  badgeText: string;
-}
-
-function getExamScheduleStatus(
-  exam: Exam,
-  activeAssign?: Assignment,
-  examType: 'objective' | 'subjective' = 'objective'
-): ExamScheduleStatus {
-  if (activeAssign?.status === 'disabled') {
-    return {
-      state: 'disabled',
-      badgeBg: 'rgba(239, 68, 68, 0.15)',
-      badgeColor: 'var(--danger)',
-      badgeText: '🛑 Stopped / Disabled'
-    };
-  }
-
-  const nowMs = Date.now();
-  const todayIST = getDateKeyIST(new Date());
-
-  if (activeAssign) {
-    const startDate = parseDateInput(activeAssign.startAt || activeAssign.createdAt);
-    const endDate = parseDateInput(activeAssign.endAt);
-
-    if (endDate) {
-      if (nowMs > endDate.getTime()) {
-        return {
-          state: 'closed',
-          badgeBg: 'rgba(107, 114, 128, 0.15)',
-          badgeColor: 'var(--text-muted)',
-          badgeText: '🏁 Closed / Over'
-        };
-      }
-      if (startDate && nowMs < startDate.getTime()) {
-        return {
-          state: 'upcoming',
-          badgeBg: 'rgba(245, 158, 11, 0.15)',
-          badgeColor: 'var(--warning, #f59e0b)',
-          badgeText: '⏳ Upcoming'
-        };
-      }
-      return {
-        state: 'active',
-        badgeBg: 'rgba(16, 185, 129, 0.15)',
-        badgeColor: 'var(--success)',
-        badgeText: '🟢 Active / Open'
-      };
-    }
-
-    if (startDate) {
-      const durationMin = activeAssign.examDuration || activeAssign.classroomDuration || getNormExamDuration(exam, examType);
-      const calculatedEndMs = startDate.getTime() + (durationMin * 60 * 1000);
-      const startKeyIST = getDateKeyIST(startDate);
-
-      if (nowMs < startDate.getTime()) {
-        return {
-          state: 'upcoming',
-          badgeBg: 'rgba(245, 158, 11, 0.15)',
-          badgeColor: 'var(--warning, #f59e0b)',
-          badgeText: '⏳ Upcoming'
-        };
-      }
-
-      // If scheduled time window has elapsed or the scheduled assignment date is in the past
-      if (nowMs > calculatedEndMs || startKeyIST < todayIST) {
-        return {
-          state: 'closed',
-          badgeBg: 'rgba(107, 114, 128, 0.15)',
-          badgeColor: 'var(--text-muted)',
-          badgeText: '🏁 Closed / Over'
-        };
-      }
-
-      return {
-        state: 'active',
-        badgeBg: 'rgba(16, 185, 129, 0.15)',
-        badgeColor: 'var(--success)',
-        badgeText: '🟢 Active / Open'
-      };
-    }
-  }
-
-  // Fallback when activeAssign is not present but exam has scheduledDate or assignedAt
-  if (exam.scheduledDate) {
-    if (exam.scheduledDate < todayIST) {
-      return {
-        state: 'closed',
-        badgeBg: 'rgba(107, 114, 128, 0.15)',
-        badgeColor: 'var(--text-muted)',
-        badgeText: '🏁 Closed / Over'
-      };
-    }
-    if (exam.scheduledDate > todayIST) {
-      return {
-        state: 'upcoming',
-        badgeBg: 'rgba(245, 158, 11, 0.15)',
-        badgeColor: 'var(--warning, #f59e0b)',
-        badgeText: '⏳ Upcoming'
-      };
-    }
-    return {
-      state: 'active',
-      badgeBg: 'rgba(16, 185, 129, 0.15)',
-      badgeColor: 'var(--success)',
-      badgeText: '🟢 Active / Open'
-    };
-  }
-
-  if (exam.assignedAt) {
-    const assignedDate = parseDateInput(exam.assignedAt);
-    if (assignedDate) {
-      const assignedDateKey = getDateKeyIST(assignedDate);
-      if (assignedDateKey < todayIST) {
-        return {
-          state: 'closed',
-          badgeBg: 'rgba(107, 114, 128, 0.15)',
-          badgeColor: 'var(--text-muted)',
-          badgeText: '🏁 Closed / Over'
-        };
-      }
-      if (assignedDateKey > todayIST) {
-        return {
-          state: 'upcoming',
-          badgeBg: 'rgba(245, 158, 11, 0.15)',
-          badgeColor: 'var(--warning, #f59e0b)',
-          badgeText: '⏳ Upcoming'
-        };
-      }
-    }
-  }
-
-  return {
-    state: 'active',
-    badgeBg: 'rgba(16, 185, 129, 0.15)',
-    badgeColor: 'var(--success)',
-    badgeText: '🟢 Active / Open'
-  };
-}
 
 export default function AdminExamsPage() {
+
   const { firebaseUser } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -356,23 +166,6 @@ export default function AdminExamsPage() {
     });
   };
 
-  const getExamSubject = (exam: any) => {
-    return exam.subjectName || exam.subjects?.[0] || exam.subject || 'General Subject';
-  };
-
-  const getExamChapter = (exam: any) => {
-    return exam.chapterDisplay || exam.chapter || exam.chapterName || (exam.chapterNumber ? `Chapter ${exam.chapterNumber}` : 'General / Mixed Chapters');
-  };
-
-  const getExamClass = (exam: any) => {
-    if (exam.class) return exam.class;
-    const parts = exam.name.split('-');
-    if (parts.length > 1 && !isNaN(Number(parts[1]))) {
-      return parts[1];
-    }
-    return 'General';
-  };
-
   const getLatestAssignmentDateMs = (examId: string, exam?: Exam) => {
     const list = assignments.filter(a => a.examId === examId);
     if (list.length === 0) {
@@ -412,59 +205,11 @@ export default function AdminExamsPage() {
     });
   };
 
-  const getGroupedClasses = (examsList: Exam[]) => {
-    const unique = Array.from(new Set(examsList.map(getExamClass)));
-    return unique.sort((a, b) => {
-      const na = Number(a);
-      const nb = Number(b);
-      if (isNaN(na) && isNaN(nb)) return a.localeCompare(b);
-      if (isNaN(na)) return 1;
-      if (isNaN(nb)) return -1;
-      return nb - na;
-    });
-  };
+  const getExamSortTimestampCurried = (exam: Exam, type: 'objective' | 'subjective') =>
+    getExamSortTimestamp(exam, type, assignments);
 
-  const getExamSortTimestamp = (exam: Exam, type: 'objective' | 'subjective') => {
-    const activeAssign = assignments.find(a => a.examId === exam.id && a.collection === (type === 'objective' ? 'batchAssignments' : 'subjectiveAssignments'));
-    let examDate: Date | null = null;
-    if (activeAssign) {
-      const dateVal = activeAssign.startAt || activeAssign.createdAt;
-      if (dateVal) {
-        const dateAny = dateVal as any;
-        examDate = dateAny.seconds ? new Date(dateAny.seconds * 1000) : new Date(dateVal);
-      }
-    } else {
-      const fallbackDate = exam.scheduledDate || exam.assignedAt || (exam as any).availableFrom;
-      if (fallbackDate) {
-        examDate = new Date(fallbackDate);
-      }
-    }
-    return examDate && !isNaN(examDate.getTime()) ? examDate.getTime() : 0;
-  };
-
-  const isTodayOrTomorrow = (exam: Exam, type: 'objective' | 'subjective') => {
-    const activeAssign = assignments.find(a => a.examId === exam.id && a.collection === (type === 'objective' ? 'batchAssignments' : 'subjectiveAssignments'));
-    let examDate: Date | null = null;
-    if (activeAssign) {
-      const dateVal = activeAssign.startAt || activeAssign.createdAt;
-      if (dateVal) {
-        const dateAny = dateVal as any;
-        examDate = dateAny.seconds ? new Date(dateAny.seconds * 1000) : new Date(dateVal);
-      }
-    } else {
-      const fallbackDate = exam.scheduledDate || exam.assignedAt || (exam as any).availableFrom;
-      if (fallbackDate) {
-        examDate = new Date(fallbackDate);
-      }
-    }
-    if (!examDate || isNaN(examDate.getTime())) return false;
-    const todayKeyIST = getDateKeyIST(new Date());
-    const tomorrowDate = new Date();
-    tomorrowDate.setDate(tomorrowDate.getDate() + 1);
-    const tomorrowKeyIST = getDateKeyIST(tomorrowDate);
-    const examDateKeyIST = getDateKeyIST(examDate);
-    return examDateKeyIST === todayKeyIST || examDateKeyIST === tomorrowKeyIST;
-  };
+  const isTodayOrTomorrowCurried = (exam: Exam, type: 'objective' | 'subjective') =>
+    isTodayOrTomorrow(exam, type, assignments);
 
   const getExamAssignedDateTime = (exam: Exam, type: 'objective' | 'subjective') => {
     const activeAssign = assignments.find(a => a.examId === exam.id && a.collection === (type === 'objective' ? 'batchAssignments' : 'subjectiveAssignments'));
@@ -1493,8 +1238,8 @@ export default function AdminExamsPage() {
             setObjFilterName={setObjFilterName}
             objFilterTopic={objFilterTopic}
             setObjFilterTopic={setObjFilterTopic}
-            isTodayOrTomorrow={isTodayOrTomorrow}
-            getExamSortTimestamp={getExamSortTimestamp}
+            isTodayOrTomorrow={isTodayOrTomorrowCurried}
+            getExamSortTimestamp={getExamSortTimestampCurried}
             getExamClass={getExamClass}
             getExamSubject={getExamSubject}
             getExamChapter={getExamChapter}
@@ -1536,8 +1281,8 @@ export default function AdminExamsPage() {
             setSubjFilterTopic={setSubjFilterTopic}
             isSubjectiveAvailableForAssignment={isSubjectiveAvailableForAssignment}
             isSubjectiveAlreadyAssigned={isSubjectiveAlreadyAssigned}
-            isTodayOrTomorrow={isTodayOrTomorrow}
-            getExamSortTimestamp={getExamSortTimestamp}
+            isTodayOrTomorrow={isTodayOrTomorrowCurried}
+            getExamSortTimestamp={getExamSortTimestampCurried}
             getExamClass={getExamClass}
             getExamSubject={getExamSubject}
             getExamChapter={getExamChapter}

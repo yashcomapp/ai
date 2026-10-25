@@ -13,6 +13,7 @@ import { highlightModelAnswerKeywords } from '@/lib/questionTypes';
 import { formatDateIST, getDateKeyIST, formatDateTimeIST, formatDurationMS as formatDuration, formatDateOrFallback as formatDate } from '@/lib/dateUtils';
 import { ReviewItem } from '@/types/review.types';
 import StepAnswerInput from '@/components/exams/StepAnswerInput';
+import { ParentPageShell } from '@/components/parent';
 
 export default function ParentReviewPanel() {
   const { firebaseUser, user, logout } = useAuth();
@@ -747,7 +748,7 @@ export default function ParentReviewPanel() {
   const approvedReviews = currentReviews.filter(r => r.status === 'approved');
 
   return (
-    <div className="page-wrapper" style={{ display: 'flex', flexDirection: 'column' }}>
+    <ParentPageShell maxWidth="1000px">
       <style dangerouslySetInnerHTML={{__html: `
         @keyframes skeleton-blink {
           0% { opacity: 0.6; }
@@ -823,36 +824,8 @@ export default function ParentReviewPanel() {
           }
         }
       `}} />
-      {/* Page Header */}
-      <div className="page-header glass" style={{ padding: '8px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderRadius: '0', borderBottom: '1px solid var(--border-light)' }}>
-        <div className="page-header-left" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <button 
-            onClick={() => router.push('/parent')}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: 'var(--text)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '6px',
-              borderRadius: '50%',
-              transition: 'background 0.2s'
-            }}
-            title="Back to Dashboard"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
-          </button>
-          <span className="brand" style={{ fontWeight: 800, fontSize: '1.1rem', color: 'var(--accent)', cursor: 'pointer' }} onClick={() => router.push('/parent')}>YASHCOM</span>
-        </div>
-        <div className="page-header-right" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          
-          <button className="btn btn-secondary logout-btn" onClick={logout} style={{ fontSize: '1rem', padding: '6px 10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Logout">🚪</button>
-        </div>
-      </div>
 
-      <div className="dashboard-container" style={{ maxWidth: '1000px', width: '100%', margin: '0 auto', padding: '16px 12px' }}>
+      <div className="dashboard-container" style={{ width: '100%', padding: '8px 0' }}>
         {/* Inherited Child Name Header */}
         {!loading && children.length > 0 && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
@@ -1528,6 +1501,6 @@ export default function ParentReviewPanel() {
           </div>
         </div>
       )}
-    </div>
+    </ParentPageShell>
   );
 }

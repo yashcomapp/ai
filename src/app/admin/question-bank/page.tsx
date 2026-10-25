@@ -25,31 +25,7 @@ import {
 } from '@/lib/questionTypes';
 import QuestionDisplay from '@/components/QuestionDisplay';
 import Image from 'next/image';
-interface Question {
-  id?: string;
-  questionCode: string;
-  qNumber?: number;
-  type: string;
-  text: string;
-  options?: string[];
-  correctAnswer?: string;
-  correctAnswers?: string[];
-  assertion?: string;
-  reason?: string;
-  solution?: string;
-  difficulty: string;
-  bloomLevel: string;
-  board: string;
-  class: string;
-  subject: string;
-  chapterNumber: string;
-  topicNumber: string;
-  timesUsed?: number;
-  usedInClassroomTest?: boolean;
-  requiresFigure?: boolean;
-  imageUrl?: string;
-  examCategory?: string;
-}
+import { Question } from '@/types/question.types';
 
 export default function AdminQuestionBankPage() {
   const { firebaseUser } = useAuth();
@@ -780,22 +756,22 @@ ${JSON.stringify(missingList, null, 2)}`;
   const handleOpenEditQuestion = (q: Question) => {
     setEditorModal({
       mode: 'edit',
-      id: q.questionCode,
-      board: q.board,
-      classNum: q.class,
-      subjectName: q.subject,
-      chapterNumber: q.chapterNumber,
-      topicNumber: q.topicNumber,
-      qtype: q.type,
-      text: q.text,
+      id: q.questionCode || '',
+      board: q.board || 'CBSE',
+      classNum: String(q.class ?? '10'),
+      subjectName: q.subject || '',
+      chapterNumber: String(q.chapterNumber ?? '1'),
+      topicNumber: String(q.topicNumber ?? '1.1'),
+      qtype: (q.type as any) || 'single_mcq',
+      text: q.text || '',
       options: q.options || [],
       correctAnswer: q.correctAnswer || '',
       correctAnswers: q.correctAnswers || [],
       assertion: q.assertion || '',
       reason: q.reason || '',
       solution: q.solution || '',
-      difficulty: q.difficulty,
-      bloomLevel: q.bloomLevel,
+      difficulty: q.difficulty || 'medium',
+      bloomLevel: q.bloomLevel || 'Remember',
       requiresFigure: !!q.requiresFigure,
       imageUrl: q.imageUrl || '',
       examCategory: q.examCategory || 'standard'
@@ -1069,8 +1045,8 @@ ${JSON.stringify(missingList, null, 2)}`;
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                           <input 
                             type="checkbox" 
-                            checked={selectedCodes.has(q.questionCode)} 
-                            onChange={() => handleToggleSelectQuestion(q.questionCode)} 
+                            checked={selectedCodes.has(q.questionCode || '')} 
+                            onChange={() => handleToggleSelectQuestion(q.questionCode || '')} 
                             style={{ cursor: 'pointer' }}
                           />
                           <span style={{ fontWeight: 700, color: 'var(--accent)', fontSize: '11px' }}>{q.questionCode}</span>
@@ -1086,7 +1062,7 @@ ${JSON.stringify(missingList, null, 2)}`;
 
                         <div style={{ display: 'flex', gap: '4px', alignItems: 'center', marginLeft: 'auto' }}>
                           <button className="btn btn-secondary" style={{ padding: '2px 8px', fontSize: '11px' }} onClick={() => handleOpenEditQuestion(q)}>✏️ Edit</button>
-                          <button className="btn btn-secondary" style={{ padding: '2px 8px', fontSize: '11px', color: 'var(--danger)', borderColor: 'rgba(220, 38, 38, 0.3)' }} onClick={() => handleDeleteQuestion(q.questionCode)}>🗑️ Delete</button>
+                          <button className="btn btn-secondary" style={{ padding: '2px 8px', fontSize: '11px', color: 'var(--danger)', borderColor: 'rgba(220, 38, 38, 0.3)' }} onClick={() => handleDeleteQuestion(q.questionCode || '')}>🗑️ Delete</button>
                         </div>
                       </div>
 

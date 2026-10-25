@@ -10,6 +10,7 @@ import { useAdminStudents } from '@/hooks/useAdminReferenceData';
 import { formatRichText } from '@/lib/questionTypes';
 import QuestionDisplay, { RichMathText } from '@/components/QuestionDisplay';
 import StepAnswerInput from '@/components/exams/StepAnswerInput';
+import { Question } from '@/types/question.types';
 
 interface AttemptRow {
   id: string;
@@ -24,16 +25,6 @@ interface AttemptRow {
   weeklyAvgPercent?: number | null;
   examPercent?: number | null;
   truthPercent?: number | null;
-}
-
-interface Question {
-  id: string;
-  questionCode: string;
-  text: string;
-  marks: number;
-  solution?: string;
-  answerLines?: Array<{ lineNo: number; text: string }>;
-  steps?: Array<{ description: string; marks: number }>;
 }
 
 function TeacherFinalReviewContent() {

@@ -5,7 +5,7 @@ import { verifyRole } from '@/lib/auth';
 import { encrypt } from '@/lib/encryption';
 import { checkDistributedRateLimit } from '@/lib/rateLimit';
 import { getBirthdatePassword } from '@/lib/dateUtils';
-import { NAME_RE, EMAIL_RE, MOBILE_RE, PASSWORD_RE } from '@/lib/validation';
+import { validateName, validateEmail, validateMobile, validatePassword } from '@/lib/validation';
 
 export async function POST(req: NextRequest) {
   try {
@@ -38,16 +38,39 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'All required fields must be completed.' }, { status: 400 });
     }
 
-    if (!NAME_RE.test(studentName.trim()) || studentName.trim().split(/\s+/).length < 2) {
-      return NextResponse.json({ message: 'Invalid student name. Provide first and last name.' }, { status: 400 });
+    const sNameVal = validateName(studentName);
+    if (!sNameVal.valid) {
+      return NextResponse.json({ message: sNameVal.error }, { status: 400 });
     }
 
-    if (!EMAIL_RE.test(studentEmail.trim())) {
-      return NextResponse.json({ message: 'Invalid student email format.' }, { status: 400 });
+    const sEmailVal = validateEmail(studentEmail);
+    if (!sEmailVal.valid) {
+      return NextResponse.json({ message: sEmailVal.error }, { status: 400 });
     }
 
-    if (!MOBILE_RE.test(studentMobile.trim()) || !MOBILE_RE.test(parentMobile.trim())) {
-      return NextResponse.json({ message: 'Mobile numbers must be valid 10-digit Indian numbers.' }, { status: 400 });
+    const sMobileVal = validateMobile(studentMobile);
+    if (!sMobileVal.valid) {
+      return NextResponse.json({ message: sMobileVal.error }, { status: 400 });
+    }
+
+    const pNameVal = validateName(parentName, false);
+    if (!pNameVal.valid) {
+      return NextResponse.json({ message: pNameVal.error }, { status: 400 });
+    }
+
+    const pMobileVal = validateMobile(parentMobile);
+    if (!pMobileVal.valid) {
+      return NextResponse.json({ message: pMobileVal.error }, { status: 400 });
+    }
+
+    const pEmailVal = validateEmail(parentEmail);
+    if (!pEmailVal.valid) {
+      return NextResponse.json({ message: pEmailVal.error }, { status: 400 });
+    }
+
+    const pwdVal = validatePassword(password);
+    if (!pwdVal.valid) {
+      return NextResponse.json({ message: pwdVal.error }, { status: 400 });
     }
 
     // Derive password from student's date of birth in DDMMYY format to satisfy Firebase 6-character minimum

@@ -20,7 +20,7 @@ import {
   ParentSnapshotModals,
   ParentNoticeModals
 } from '@/components/parent';
-import { useSeenNotices } from '@/lib/noticeUtils';
+import { useNotices } from '@/hooks/useNotices';
 import { getGreeting } from '@/lib/dateUtils';
 
 export default function ParentDashboardClient({ initialData: serverInitialData }: { initialData?: ParentDashboardData }) {
@@ -98,67 +98,30 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
   };
 
   // Modals & Notices extra state
-  const [notices, setNotices] = useState<ParentNotice[]>([]);
-  const [showSeenNotices, setShowSeenNotices] = useState(false);
   const [isNoticesModalOpen, setIsNoticesModalOpen] = useState(false);
-  const [activeOverlayNotice, setActiveOverlayNotice] = useState<ParentNotice | null>(null);
   const [absenceReason, setAbsenceReason] = useState('');
   const [absenceRemarks, setAbsenceRemarks] = useState('');
 
-  const handleDismissOverlayNotice = async (noticeId: string, reason?: string, remarks?: string) => {
-    const userId = firebaseUser?.uid || 'parent';
-    const dismissedStored = localStorage.getItem(`yc_dismissed_overlays_${userId}`);
-    let dismissedIds: string[] = [];
-    if (dismissedStored) {
-      try {
-        dismissedIds = JSON.parse(dismissedStored);
-      } catch (e) {}
-    }
-    if (!dismissedIds.includes(noticeId)) {
-      dismissedIds.push(noticeId);
-      localStorage.setItem(`yc_dismissed_overlays_${userId}`, JSON.stringify(dismissedIds));
-    }
-    
-    // Mark as seen locally
-    const alreadySeen = seenNoticeIds.includes(noticeId);
-    if (!alreadySeen) {
-      const updated = [...seenNoticeIds, noticeId];
-      setSeenNoticeIds(updated);
-      localStorage.setItem('yc_seenNotices', JSON.stringify(updated));
-      window.dispatchEvent(new Event('yc_seen_notices_changed'));
-    }
-    
-    // Call the seen API only if not already seen OR an absence reason/remarks was provided
-    if ((!alreadySeen || reason || remarks) && firebaseUser) {
-      try {
-        const token = await firebaseUser.getIdToken();
-        await fetch('/api/notices/seen', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({ noticeId, reason, remarks })
-        });
-      } catch (err) {
-        console.warn('Failed to report notice seen status:', err);
-      }
-    }
+  const {
+    notices: rawNotices,
+    seenNoticeIds,
+    visibleNotices: rawVisibleNotices,
+    showSeenNotices,
+    setShowSeenNotices,
+    activeOverlayNotice: rawActiveOverlayNotice,
+    handleDismissOverlayNotice: dismissOverlayHook,
+    handleMarkNoticeAsSeen
+  } = useNotices({ role: 'parent', firebaseUser });
 
-    // Reset absence form state
+  const notices = rawNotices as ParentNotice[];
+  const visibleNotices = rawVisibleNotices as ParentNotice[];
+  const activeOverlayNotice = rawActiveOverlayNotice as ParentNotice | null;
+
+  const handleDismissOverlayNotice = async (noticeId: string, reason?: string, remarks?: string) => {
+    await dismissOverlayHook(noticeId, reason || absenceReason, remarks || absenceRemarks);
     setAbsenceReason('');
     setAbsenceRemarks('');
-    
-    // Check if there are other unread overlay notices and display them sequentially
-    const nextOverlay = notices.find((n: any) => n.isOverlay && n.id !== noticeId && !dismissedIds.includes(n.id));
-    if (nextOverlay) {
-      setActiveOverlayNotice(nextOverlay);
-    } else {
-      setActiveOverlayNotice(null);
-    }
   };
-
-  const { seenNoticeIds, setSeenNoticeIds, handleMarkNoticeAsSeen, visibleNotices } = useSeenNotices(notices, firebaseUser);
 
   const fetcher = async (url: string) => {
     return fetchWithToken(url, firebaseUser);
@@ -229,81 +192,6 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
       }
     }
   }, [dashboardData, selectedChildCode]);
-
-  useEffect(() => {
-    if (!firebaseUser) return;
-
-    let isMounted = true;
-    const loadNotices = async () => {
-      try {
-        const token = await firebaseUser.getIdToken();
-        const res = await fetch('/api/notices', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        if (res.ok) {
-          const resData = await res.json();
-          if (isMounted) {
-            const filtered = resData.notices || [];
-            setNotices(filtered);
-
-            const userId = firebaseUser?.uid || 'parent';
-            const serverSeenIds = filtered.filter((n: any) => n.seen).map((n: any) => n.id);
-
-            // Synchronize seen status from server
-            const stored = localStorage.getItem('yc_seenNotices');
-            let seenIds: string[] = [];
-            if (stored) {
-              try {
-                seenIds = JSON.parse(stored);
-              } catch (e) {}
-            }
-            const mergedSeen = Array.from(new Set([...seenIds, ...serverSeenIds]));
-            const validSeenIds = mergedSeen.filter((id: string) => filtered.some((n: any) => n.id === id));
-            localStorage.setItem('yc_seenNotices', JSON.stringify(validSeenIds));
-            setSeenNoticeIds(validSeenIds);
-            window.dispatchEvent(new Event('yc_seen_notices_changed'));
-
-            // Check for overlay notices that are not dismissed yet
-            const dismissedStored = localStorage.getItem(`yc_dismissed_overlays_${userId}`);
-            let dismissedIds: string[] = [];
-            if (dismissedStored) {
-              try {
-                dismissedIds = JSON.parse(dismissedStored);
-              } catch (e) {}
-            }
-            const mergedDismissed = Array.from(new Set([...dismissedIds, ...serverSeenIds]));
-            localStorage.setItem(`yc_dismissed_overlays_${userId}`, JSON.stringify(mergedDismissed));
-
-            const activeOverlay = filtered.find((n: any) => n.isOverlay && !mergedDismissed.includes(n.id));
-            if (activeOverlay) {
-              setActiveOverlayNotice(activeOverlay);
-            }
-          }
-        }
-      } catch (err) {
-        console.warn('Failed to fetch parent notices via API:', err);
-      }
-    };
-
-    loadNotices();
-
-    const handleSeenChange = () => {
-      const stored = localStorage.getItem('yc_seenNotices');
-      if (stored) {
-        try {
-          setSeenNoticeIds(JSON.parse(stored));
-        } catch (e) {}
-      }
-    };
-    window.addEventListener('yc_seen_notices_changed', handleSeenChange);
-
-    return () => {
-      isMounted = false;
-      window.removeEventListener('yc_seen_notices_changed', handleSeenChange);
-    };
-  }, [firebaseUser]);
 
   const reviewsFetcher = async (url: string) => {
     if (!firebaseUser) return null;

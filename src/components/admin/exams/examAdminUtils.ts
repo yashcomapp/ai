@@ -8,14 +8,66 @@ export function parseDateInput(val: any): Date | null {
   return isNaN(d.getTime()) ? null : d;
 }
 
-export function getNormExamDuration(exam: any, examType: 'objective' | 'subjective'): number {
+export function getNormExamDuration(exam: any, type: 'objective' | 'subjective' = 'objective'): number {
+  if (typeof exam.duration === 'number' && exam.duration > 0) {
+    return exam.duration;
+  }
+  if (typeof exam.totalTime === 'number' && exam.totalTime > 0) {
+    return exam.totalTime;
+  }
+  if (typeof exam.examDuration === 'number' && exam.examDuration > 0) {
+    return exam.examDuration;
+  }
   if (exam.durationMinutes && !isNaN(Number(exam.durationMinutes))) {
     return Number(exam.durationMinutes);
   }
-  if (exam.duration && !isNaN(Number(exam.duration))) {
-    return Number(exam.duration);
+
+  const questions = Array.isArray(exam.questions) ? exam.questions : [];
+  const questionCodes = Array.isArray(exam.questionCodes) ? exam.questionCodes : [];
+
+  if (questions.length > 0) {
+    let textualCount = 0;
+    let numericalCount = 0;
+    questions.forEach((q: any) => {
+      const code = String(q?.questionCode || q?.code || q?.id || '');
+      const qType = String(q?.type || q?.questionType || '').toLowerCase();
+      const isNum = code.includes('-ONE-') || code.includes('-SSN-') || code.includes('-SLN-') ||
+                    qType.includes('numerical') || qType.includes('calculation') || qType === 'one';
+      if (isNum) {
+        numericalCount++;
+      } else {
+        textualCount++;
+      }
+    });
+    if (type === 'subjective') {
+      return Math.max(15, (textualCount * 3) + (numericalCount * 5));
+    }
+    return Math.max(1, (textualCount * 1) + (numericalCount * 2));
   }
-  return examType === 'subjective' ? 90 : 60;
+
+  if (questionCodes.length > 0) {
+    let textualCount = 0;
+    let numericalCount = 0;
+    questionCodes.forEach((codeStr: string) => {
+      const code = String(codeStr || '');
+      const isNum = code.includes('-ONE-') || code.includes('-SSN-') || code.includes('-SLN-');
+      if (isNum) {
+        numericalCount++;
+      } else {
+        textualCount++;
+      }
+    });
+    if (type === 'subjective') {
+      return Math.max(15, (textualCount * 3) + (numericalCount * 5));
+    }
+    return Math.max(1, (textualCount * 1) + (numericalCount * 2));
+  }
+
+  if (typeof exam.questionCount === 'number' && exam.questionCount > 0) {
+    return type === 'subjective' ? Math.max(15, exam.questionCount * 5) : Math.max(1, exam.questionCount * 1);
+  }
+
+  return type === 'subjective' ? 60 : 30;
 }
 
 export function getExamSubject(exam: any): string {

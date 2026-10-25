@@ -542,28 +542,9 @@ export class ExamService {
 
   /**
    * Delegates MCQ exam submission evaluation to AttemptService.
+   * @deprecated Call AttemptService.submitAttempt directly.
    */
-  static async submitExam(params: {
-    studentCode: string;
-    studentId: string;
-    studentName: string;
-    examId: string;
-    examData: any;
-    questions: any[];
-    userAnswers: any[];
-    durationSpent: number;
-    tabViolations: number;
-    proctoringViolations: ProctoringViolations;
-    startedAt: string | null;
-    assignmentsSnap: admin.firestore.QuerySnapshot | null;
-    proctoringViolationTriggered?: boolean;
-    micBypassed?: boolean;
-    violations?: any;
-    abandoned?: boolean;
-    disputedQuestionIds?: string[];
-    isLate?: boolean;
-    proctoringSnapshots?: any[];
-  }) {
+  static async submitExam(params: Parameters<typeof AttemptService.submitAttempt>[0]) {
     return AttemptService.submitAttempt(params);
   }
 

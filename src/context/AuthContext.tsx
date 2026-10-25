@@ -12,22 +12,9 @@ import {
   browserLocalPersistence
 } from 'firebase/auth';
 import { auth } from '@/lib/firebase/client';
-import { UserRole } from '@/types/user.types';
+import { UserRole, UserProfile } from '@/types/user.types';
 
-export type { UserRole };
-
-export interface UserProfile {
-  uid: string;
-  email: string | null;
-  role: UserRole;
-  name?: string;
-  displayName?: string;
-  studentCode?: string;
-  activeSessionToken?: string;
-  hasPushRegistered?: boolean;
-  curfewBypass?: boolean;
-  maintenanceBypass?: boolean;
-}
+export type { UserRole, UserProfile };
 
 interface AuthContextType {
   user: UserProfile | null;

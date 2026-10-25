@@ -4,6 +4,7 @@ import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole, verifyAnyRole } from '@/lib/auth';
 import { ExamRepository } from '@/repositories/exam.repository';
 import { ExamService } from '@/services/exam.service';
+import { AttemptService } from '@/services/attempt.service';
 import { deriveTopicCodeFromQuestionCode, evaluateQuestionAnswer } from '@/lib/questionTypes';
 import { invalidateCache } from '@/lib/firebase/cache';
 import { ExamReviewService } from '@/services/examReview.service';
@@ -271,7 +272,7 @@ export async function GET(req: NextRequest) {
               console.warn('Pre-fetching assignments failed:', err.message);
             }
 
-            await ExamService.submitExam({
+            await AttemptService.submitAttempt({
               studentCode,
               studentId: student.decodedToken.uid,
               studentName,
@@ -569,7 +570,7 @@ export async function POST(req: NextRequest) {
         console.warn('Pre-fetching assignments failed:', err.message);
       }
 
-      const txResult = await ExamService.submitExam({
+      const txResult = await AttemptService.submitAttempt({
         studentCode: targetStudentCode,
         studentId: studentUid,
         studentName,
@@ -662,8 +663,8 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 4. Orchestrate scoring writes via ExamService
-    const txResult = await ExamService.submitExam({
+    // 4. Orchestrate scoring writes via AttemptService
+    const txResult = await AttemptService.submitAttempt({
       studentCode,
       studentId: caller.decodedToken.uid,
       studentName,

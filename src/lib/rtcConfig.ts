@@ -17,20 +17,6 @@ export function getRTCConfiguration(): RTCConfiguration {
     if (turnUsername) turnEntry.username = turnUsername;
     if (turnCredential) turnEntry.credential = turnCredential;
     iceServers.push(turnEntry);
-  } else {
-    // Default fallback TURN servers
-    iceServers.push(
-      {
-        urls: 'turn:openrelay.metered.ca:80',
-        username: 'openrelayproject',
-        credential: 'openrelayproject'
-      },
-      {
-        urls: 'turn:openrelay.metered.ca:443',
-        username: 'openrelayproject',
-        credential: 'openrelayproject'
-      }
-    );
   }
 
   return { iceServers };

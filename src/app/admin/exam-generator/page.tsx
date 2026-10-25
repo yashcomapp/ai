@@ -11,6 +11,8 @@ import { useSyllabusSelector } from '@/hooks/useSyllabusSelector';
 import { QuestionDisplay, RichMathText } from '@/components/QuestionDisplay';
 import { distributeCountsByWeight, buildObjectiveSchema, isSameTopic } from '@/lib/syllabusUtils';
 import { areQuestionsTooSimilar } from '@/lib/questionSimilarity';
+import { Template } from '@/types/exam.types';
+import { Question } from '@/types/question.types';
 
 function isQuestionNumerical(q: Question | any): boolean {
   if (!q) return false;
@@ -43,21 +45,6 @@ function calculateDynamicExamDuration(questions: Question[]): {
   // 1 minute for purely objective textual questions, 2 minutes for numerical / calculation based
   const duration = Math.max(1, (textualCount * 1) + (numericalCount * 2));
   return { duration, textualCount, numericalCount };
-}
-
-interface Template {
-  id: string;
-  name: string;
-  totalQuestions: number;
-  duration: number;
-  positiveMarks: number;
-  negativeMarks: number;
-  difficulty?: { easy: number; medium: number; hard: number };
-  typeCounts?: { [key: string]: number };
-  objectiveDistribution?: { [key: string]: number };
-  subjectiveDistribution?: { [key: string]: number };
-  examCategory?: 'standard' | 'foundation' | 'mock';
-  isFixedDuration?: boolean;
 }
 
 const CANONICAL_EXAM_PRESETS: Template[] = [
@@ -138,38 +125,6 @@ interface SelectedTopic {
   chapterNumber: string;
   topic: string;
   topicNumber: string;
-}
-
-interface Question {
-  id?: string;
-  questionCode?: string;
-  type: string;
-  text: string;
-  options?: string[];
-  correctAnswer?: string;
-  correctAnswers?: string[];
-  assertion?: string;
-  reason?: string;
-  solution?: string;
-  difficulty: string;
-  bloomLevel: string;
-  topicOrigin?: string;
-  marks?: number;
-  keywords?: string[];
-  topicNumber?: string;
-  topicCode?: string;
-  topic?: string;
-  topicName?: string;
-  subtopic?: string;
-  subtopicName?: string;
-  conceptTag?: string;
-  chapter?: string;
-  chapterNumber?: string;
-  board?: string;
-  boardCode?: string;
-  class?: string | number;
-  subject?: string;
-  subjectCode?: string;
 }
 
 export default function AdminExamGeneratorPage() {
@@ -2264,7 +2219,7 @@ Return ONLY valid JSON. No markdown wrappers or extra commentary.`;
                   type="button"
                   className="btn btn-secondary btn-sm"
                   style={{ fontSize: '11px', padding: '4px 10px', borderColor: replaceFilterType === targetQ.type ? 'var(--accent)' : 'var(--border-light)' }}
-                  onClick={() => setReplaceFilterType(prev => prev === targetQ.type ? 'all' : targetQ.type)}
+                  onClick={() => setReplaceFilterType(prev => prev === targetQ.type ? 'all' : (targetQ.type || 'all'))}
                 >
                   {replaceFilterType === targetQ.type ? '✓ Same Type Filter On' : `Filter Same Type (${targetQ.type})`}
                 </button>

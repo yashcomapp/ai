@@ -7,3 +7,4 @@ export { ParentActionLedger } from './ParentActionLedger';
 export { ParentQuickActions } from './ParentQuickActions';
 export { ParentSnapshotModals } from './ParentSnapshotModals';
 export { ParentNoticeModals } from './ParentNoticeModals';
+export { ParentPageShell } from './ParentPageShell';

@@ -3,7 +3,6 @@ import { formatDateDMY } from '@/lib/dateUtils';
 import { FeeRosterRow } from '@/types/fee.types';
 
 export type { FeeRosterRow };
-export type StudentFeeRecord = FeeRosterRow;
 
 /**
  * Returns numeric weight for student fee ledger statuses for consistent sorting:

@@ -23,6 +23,7 @@ import {
 
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
+import { Template } from '@/types/exam.types';
 const BulkSaveProgressModal = dynamic(() => import('@/components/admin/create-qb/BulkSaveProgressModal'), { ssr: false });
 const ThemedConfirmModal = dynamic(() => import('@/components/admin/create-qb/ThemedConfirmModal'), { ssr: false });
 const ThemedAlertModal = dynamic(() => import('@/components/admin/create-qb/ThemedAlertModal'), { ssr: false });
@@ -32,18 +33,6 @@ interface SyllabusEntry {
   class: string;
   subject: string;
 }
-
-interface Template {
-  id: string;
-  name: string;
-  type: string; // 'exam' | 'qb'
-  totalQuestions: number;
-  difficulty: { easy: number; medium: number; hard: number };
-  bloom: { r: number; u: number; ap: number; an: number; e: number; c: number };
-  typeCounts?: { [key: string]: number };
-}
-
-
 
 interface SelectedSubjectData {
   selected: boolean;
