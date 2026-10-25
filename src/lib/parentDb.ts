@@ -7,7 +7,7 @@ import { calculateProctoringIntegrityScore } from '@/lib/proctoring';
 import { calculateSrsSchedule } from '@/lib/srsRotation';
 import { getRequiredConfidence } from '@/lib/studentDb';
 import { getFromCache, setInCache } from '@/lib/firebase/cache';
-import { deduplicateAssignments, resolveIntegrityScore, calculateTimeLogSummary } from '@/lib/dashboardDbUtils';
+import { deduplicateAssignments, resolveIntegrityScore, calculateTimeLogSummary, resolveParentStudentCodes } from '@/lib/dashboardDbUtils';
 
 export async function getParentDashboardData(
   parentEmail: string,
@@ -20,52 +20,7 @@ export async function getParentDashboardData(
   if (cached) return cached;
 
   // Resolve child list
-  let studentCodes: string[] = [];
-  if (Array.isArray(parentData?.studentCodes)) {
-    parentData.studentCodes.forEach((code: any) => {
-      if (typeof code === 'string' && code.startsWith('ST-')) {
-        studentCodes.push(code);
-      }
-    });
-  }
-  if (typeof parentData?.studentCode === 'string' && parentData.studentCode.startsWith('ST-')) {
-    studentCodes.push(parentData.studentCode);
-  }
-
-  // Query students matching parent email or parent phone in parallel to discover all children/siblings
-  const parentPhone = parentData?.phone || parentData?.parentPhone || parentData?.mobile;
-  if (parentEmail || parentPhone) {
-    const [emailSnap, phoneSnap] = await Promise.all([
-      parentEmail
-        ? adminDb.collection('users')
-            .where('role', '==', 'student')
-            .where('parentEmail', '==', parentEmail)
-            .get()
-            .catch(() => ({ docs: [] } as any))
-        : Promise.resolve({ docs: [] } as any),
-      parentPhone
-        ? adminDb.collection('users')
-            .where('role', '==', 'student')
-            .where('parentPhone', '==', parentPhone)
-            .get()
-            .catch(() => ({ docs: [] } as any))
-        : Promise.resolve({ docs: [] } as any)
-    ]);
-
-    emailSnap.docs.forEach((doc: any) => {
-      const data = doc.data();
-      if (typeof data.studentCode === 'string' && data.studentCode.startsWith('ST-') && !studentCodes.includes(data.studentCode)) {
-        studentCodes.push(data.studentCode);
-      }
-    });
-
-    phoneSnap.docs.forEach((doc: any) => {
-      const data = doc.data();
-      if (typeof data.studentCode === 'string' && data.studentCode.startsWith('ST-') && !studentCodes.includes(data.studentCode)) {
-        studentCodes.push(data.studentCode);
-      }
-    });
-  }
+  const studentCodes = await resolveParentStudentCodes(parentData);
 
   let childrenDocs: any[] = [];
   // Fetch children profiles to build child lists

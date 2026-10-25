@@ -1,3 +1,4 @@
+import { adminDb } from '@/lib/firebase/admin';
 import { getDateKeyIST } from '@/lib/dateUtils';
 import { deriveTopicCodeFromQuestionCode } from '@/lib/questionTypes';
 
@@ -154,3 +155,88 @@ export function extractTopicCodesFromExams(examsMap: Map<string, any>, allTopicC
     }
   });
 }
+
+/**
+ * SSOT for resolving all valid, active studentCodes linked to a parent account.
+ * Searches explicit studentCodes array, studentCode field, and queries user accounts
+ * by parentEmail and parentPhone with role === 'student'.
+ */
+export async function resolveParentStudentCodes(parentData: any): Promise<string[]> {
+  const studentCodes: string[] = [];
+  if (Array.isArray(parentData?.studentCodes)) {
+    parentData.studentCodes.forEach((code: any) => {
+      if (typeof code === 'string' && code.startsWith('ST-')) {
+        studentCodes.push(code);
+      }
+    });
+  }
+  if (typeof parentData?.studentCode === 'string' && parentData.studentCode.startsWith('ST-')) {
+    if (!studentCodes.includes(parentData.studentCode)) {
+      studentCodes.push(parentData.studentCode);
+    }
+  }
+
+  const parentEmail = parentData?.email?.toLowerCase();
+  const parentPhone = parentData?.phone || parentData?.parentPhone || parentData?.mobile;
+  if (parentEmail || parentPhone) {
+    try {
+      const [emailSnap, phoneSnap] = await Promise.all([
+        parentEmail
+          ? adminDb.collection('users')
+              .where('role', '==', 'student')
+              .where('parentEmail', '==', parentEmail)
+              .get()
+              .catch(() => ({ docs: [] } as any))
+          : Promise.resolve({ docs: [] } as any),
+        parentPhone
+          ? adminDb.collection('users')
+              .where('role', '==', 'student')
+              .where('parentPhone', '==', parentPhone)
+              .get()
+              .catch(() => ({ docs: [] } as any))
+          : Promise.resolve({ docs: [] } as any)
+      ]);
+
+      emailSnap.docs.forEach((doc: any) => {
+        const data = doc.data();
+        if (data.status !== 'inactive' && typeof data.studentCode === 'string' && data.studentCode.startsWith('ST-') && !studentCodes.includes(data.studentCode)) {
+          studentCodes.push(data.studentCode);
+        }
+      });
+      phoneSnap.docs.forEach((doc: any) => {
+        const data = doc.data();
+        if (data.status !== 'inactive' && typeof data.studentCode === 'string' && data.studentCode.startsWith('ST-') && !studentCodes.includes(data.studentCode)) {
+          studentCodes.push(data.studentCode);
+        }
+      });
+    } catch (err) {
+      console.warn('Error resolving parent student codes:', err);
+    }
+  }
+
+  const uniqueCodes = Array.from(new Set(studentCodes.filter(Boolean)));
+  if (uniqueCodes.length === 0) return [];
+
+  // Filter out any deactivated student accounts
+  const chunks: string[][] = [];
+  for (let i = 0; i < uniqueCodes.length; i += 30) {
+    chunks.push(uniqueCodes.slice(i, i + 30));
+  }
+  const activeCodes: string[] = [];
+  await Promise.all(chunks.map(async chunk => {
+    const snap = await adminDb.collection('users')
+      .where('role', '==', 'student')
+      .where('studentCode', 'in', chunk)
+      .get()
+      .catch(() => ({ docs: [] } as any));
+    snap.docs.forEach((d: any) => {
+      const sData = d.data();
+      if (sData.status !== 'inactive' && sData.studentCode) {
+        activeCodes.push(sData.studentCode);
+      }
+    });
+  }));
+
+  return Array.from(new Set(activeCodes));
+}
+

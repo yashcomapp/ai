@@ -5,6 +5,7 @@ import { verifyRole, verifyAnyRole } from '@/lib/auth';
 import { IntegrityService } from '@/services/integrity.service';
 import { deriveTopicCodeFromQuestionCode, parseTopicCode } from '@/lib/questionTypes';
 import { getStudentResultsData, determineExamType } from '@/lib/resultsDb';
+import { resolveParentStudentCodes } from '@/lib/dashboardDbUtils';
 
 export async function GET(req: NextRequest) {
   try {
@@ -25,46 +26,7 @@ export async function GET(req: NextRequest) {
     if (adminUser && paramStudentCode) {
       studentCode = paramStudentCode;
     } else if (parent) {
-      const parentData = parent.userData;
-      let studentCodes: string[] = [];
-      if (Array.isArray(parentData?.studentCodes)) {
-        studentCodes = parentData.studentCodes.filter(Boolean);
-      } else if (parentData?.studentCode) {
-        studentCodes = [parentData.studentCode];
-      }
-      
-      const parentEmail = parentData?.email?.toLowerCase();
-      const parentPhone = parentData?.phone || parentData?.parentPhone || parentData?.mobile;
-      if (parentEmail || parentPhone) {
-        const [emailSnap, phoneSnap] = await Promise.all([
-          parentEmail
-            ? adminDb.collection('users')
-                .where('role', '==', 'student')
-                .where('parentEmail', '==', parentEmail)
-                .get()
-                .catch(() => ({ docs: [] } as any))
-            : Promise.resolve({ docs: [] } as any),
-          parentPhone
-            ? adminDb.collection('users')
-                .where('role', '==', 'student')
-                .where('parentPhone', '==', parentPhone)
-                .get()
-                .catch(() => ({ docs: [] } as any))
-            : Promise.resolve({ docs: [] } as any)
-        ]);
-        emailSnap.docs.forEach((doc: any) => {
-          const data = doc.data();
-          if (data.studentCode && !studentCodes.includes(data.studentCode)) {
-            studentCodes.push(data.studentCode);
-          }
-        });
-        phoneSnap.docs.forEach((doc: any) => {
-          const data = doc.data();
-          if (data.studentCode && !studentCodes.includes(data.studentCode)) {
-            studentCodes.push(data.studentCode);
-          }
-        });
-      }
+      const studentCodes = await resolveParentStudentCodes(parent.userData);
       studentCode = paramStudentCode || '';
       if (!studentCodes.includes(studentCode)) {
         if (id) {

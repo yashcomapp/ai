@@ -9,6 +9,7 @@ import { getDateKeyIST } from '@/lib/dateUtils';
 import { MasteryService } from '@/services/mastery.service';
 import { ExamService } from '@/services/exam.service';
 import { getFromCache, setInCache, invalidateCache } from '@/lib/firebase/cache';
+import { resolveParentStudentCodes } from '@/lib/dashboardDbUtils';
 
 
 function safeDateToISO(val: any): string | null {
@@ -63,79 +64,7 @@ function safeDateToTimestamp(val: any): number {
   return 0;
 }
 
-async function resolveChildrenCodes(parentData: any): Promise<string[]> {
-  const childrenCodes: string[] = [];
-  if (Array.isArray(parentData?.studentCodes)) {
-    parentData.studentCodes.forEach((code: any) => {
-      if (typeof code === 'string' && code.startsWith('ST-')) {
-        childrenCodes.push(code);
-      }
-    });
-  }
-  if (typeof parentData?.studentCode === 'string' && parentData.studentCode.startsWith('ST-')) {
-    childrenCodes.push(parentData.studentCode);
-  }
-
-  const parentEmail = parentData?.email?.toLowerCase();
-  const parentPhone = parentData?.phone || parentData?.parentPhone || parentData?.mobile;
-  if (parentEmail || parentPhone) {
-    try {
-      const [emailSnap, phoneSnap] = await Promise.all([
-        parentEmail
-          ? adminDb.collection('users')
-              .where('role', '==', 'student')
-              .where('parentEmail', '==', parentEmail)
-              .get()
-              .catch(() => ({ docs: [] } as any))
-          : Promise.resolve({ docs: [] } as any),
-        parentPhone
-          ? adminDb.collection('users')
-              .where('role', '==', 'student')
-              .where('parentPhone', '==', parentPhone)
-              .get()
-              .catch(() => ({ docs: [] } as any))
-          : Promise.resolve({ docs: [] } as any)
-      ]);
-
-      emailSnap.docs.forEach((doc: any) => {
-        const data = doc.data();
-        if (data.status !== 'inactive' && typeof data.studentCode === 'string' && data.studentCode.startsWith('ST-') && !childrenCodes.includes(data.studentCode)) {
-          childrenCodes.push(data.studentCode);
-        }
-      });
-      phoneSnap.docs.forEach((doc: any) => {
-        const data = doc.data();
-        if (data.status !== 'inactive' && typeof data.studentCode === 'string' && data.studentCode.startsWith('ST-') && !childrenCodes.includes(data.studentCode)) {
-          childrenCodes.push(data.studentCode);
-        }
-      });
-    } catch (e) {
-      console.warn('Error fetching children by email/phone:', e);
-    }
-  }
-
-  const uniqueCodes = Array.from(new Set(childrenCodes.filter(Boolean)));
-  if (uniqueCodes.length === 0) return [];
-
-  // Filter out any deactivated student accounts
-  const chunks = chunkArray(uniqueCodes, 30);
-  const activeCodes: string[] = [];
-  await Promise.all(chunks.map(async chunk => {
-    const snap = await adminDb.collection('users')
-      .where('role', '==', 'student')
-      .where('studentCode', 'in', chunk)
-      .get()
-      .catch(() => ({ docs: [] } as any));
-    snap.docs.forEach((d: any) => {
-      const sData = d.data();
-      if (sData.status !== 'inactive' && sData.studentCode) {
-        activeCodes.push(sData.studentCode);
-      }
-    });
-  }));
-
-  return Array.from(new Set(activeCodes));
-}
+const resolveChildrenCodes = resolveParentStudentCodes;
 
 // 1. GET - Load reviews for child student
 export async function GET(req: NextRequest) {
