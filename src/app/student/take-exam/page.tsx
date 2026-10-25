@@ -16,22 +16,8 @@ import { useProctoring } from '@/hooks/useProctoring';
 import { InterruptionLockoutModal } from '@/components/InterruptionLockoutModal';
 import { ExamErrorBoundary } from '@/components/ExamErrorBoundary';
 import { parseDateToMs } from '@/lib/dateUtils';
+import { RTC_CONFIG } from '@/lib/rtcConfig';
 
-const RTC_CONFIG = {
-  iceServers: [
-    { urls: 'stun:stun.l.google.com:19302' },
-    {
-      urls: 'turn:openrelay.metered.ca:80',
-      username: 'openrelayproject',
-      credential: 'openrelayproject'
-    },
-    {
-      urls: 'turn:openrelay.metered.ca:443',
-      username: 'openrelayproject',
-      credential: 'openrelayproject'
-    }
-  ]
-};
 
 // Extend window interface for CDN scripts
 declare global {

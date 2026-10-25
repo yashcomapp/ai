@@ -2,29 +2,9 @@
 
 import React from 'react';
 import { renderMarkdown } from '@/lib/markdown';
+import { Message } from '@/types/chat.types';
 
-export interface Message {
-  messageId: string;
-  senderId: string;
-  senderName: string;
-  senderRole: string;
-  text: string;
-  type: string;
-  createdAt: string;
-  isDeleted?: boolean;
-  isEdited?: boolean;
-  readBy?: Record<string, string>;
-  isOptimistic?: boolean;
-  replyToId?: string;
-  replyToText?: string;
-  replyToSenderName?: string;
-  pollOptions?: { text: string; votesCount: number }[] | null;
-  pollVotes?: Record<string, number> | null;
-  reactions?: {
-    thumbsup?: string[];
-    pray?: string[];
-  };
-}
+export type { Message };
 
 interface MessageItemProps {
   msg: Message;

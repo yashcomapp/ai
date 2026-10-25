@@ -10,14 +10,11 @@ import { toISTDateTimeLocalInput, getDateKeyIST } from '@/lib/dateUtils';
 import { fetchCachedSyllabusSubject } from '@/hooks/useAdminReferenceData';
 import InPlaceAiGenerator from '@/components/admin/classroom-test/InPlaceAiGenerator';
 import dynamic from 'next/dynamic';
+import { Batch } from '@/types/batch.types';
 const ScheduledSuitesManagerModal = dynamic(() => import('@/components/admin/classroom-test/ScheduledSuitesManagerModal'), { ssr: false });
 const SaturdayAssignModal = dynamic(() => import('@/components/admin/classroom-test/SaturdayAssignModal'), { ssr: false });
 const BulkSaveProgressModal = dynamic(() => import('@/components/admin/create-qb/BulkSaveProgressModal'), { ssr: false });
 
-interface Batch {
-  id: string;
-  name: string;
-}
 
 interface DayConfig {
   dayName: string;

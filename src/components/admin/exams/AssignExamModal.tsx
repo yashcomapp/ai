@@ -3,19 +3,8 @@
 import React from 'react';
 import DateTimeInputDMY from '@/components/DateTimeInputDMY';
 import { calculateEndDatetime, toLocalISOString } from '@/lib/dateUtils';
-
-interface Batch {
-  id: string;
-  name: string;
-}
-
-interface Student {
-  studentCode: string;
-  name: string;
-  batchId?: string | null;
-  batchIds?: string[];
-  rollNumber?: string;
-}
+import { Batch } from '@/types/batch.types';
+import TargetPicker from './TargetPicker';
 
 export interface AssignModalState {
   show: boolean;
@@ -201,105 +190,16 @@ export function AssignExamModal({
         )}
 
         <div style={{ background: 'var(--surface-sunken)', padding: '10px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-light)' }}>
-          <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '6px' }}>Target Audience</label>
-          <div style={{ display: 'flex', gap: '15px', marginBottom: '8px' }}>
-            <label style={{ fontSize: '12px', cursor: 'pointer' }}>
-              <input 
-                type="radio" 
-                name="targetType" 
-                checked={assignModal.targetType === 'batch'} 
-                onChange={() => setAssignModal(prev => ({ ...prev, targetType: 'batch' }))} 
-              /> Batches Only
-            </label>
-            <label style={{ fontSize: '12px', cursor: 'pointer' }}>
-              <input 
-                type="radio" 
-                name="targetType" 
-                checked={assignModal.targetType === 'student'} 
-                onChange={() => setAssignModal(prev => ({ ...prev, targetType: 'student' }))} 
-              /> Students Only
-            </label>
-            <label style={{ fontSize: '12px', cursor: 'pointer' }}>
-              <input 
-                type="radio" 
-                name="targetType" 
-                checked={assignModal.targetType === 'mixed'} 
-                onChange={() => setAssignModal(prev => ({ ...prev, targetType: 'mixed' }))} 
-              /> Mixed Audience
-            </label>
-          </div>
-
-          {/* Batches selections */}
-          {(assignModal.targetType === 'batch' || assignModal.targetType === 'mixed') && (
-            <div>
-              <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px' }}>Select Target Batches:</label>
-              <div style={{ maxHeight: '110px', overflowY: 'auto', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', padding: '6px 8px', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '4px' }}>
-                {batches.map(b => (
-                  <label key={b.id} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', padding: '2px 0', cursor: 'pointer' }}>
-                    <input 
-                      type="checkbox" 
-                      checked={assignModal.selectedBatches.has(b.id)} 
-                      onChange={() => handleToggleBatchAssign(b.id)} 
-                    /> 📦 {b.name}
-                  </label>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Student selections grouped by batch */}
-          {(assignModal.targetType === 'student' || assignModal.targetType === 'mixed') && (
-            <div style={{ marginTop: '6px' }}>
-              <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '3px' }}>Select Target Students (Grouped by Batch):</label>
-              <div style={{ maxHeight: '150px', overflowY: 'auto', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', padding: '5px' }}>
-                {(() => {
-                  const { grouped, unassigned } = getStudentsGroupedByBatch();
-                  const elements: React.ReactNode[] = [];
-
-                  Object.entries(grouped).forEach(([bid, group]) => {
-                    if (group.list.length === 0) return;
-                    elements.push(
-                      <div key={`group-hdr-${bid}`} style={{ fontWeight: 'bold', fontSize: '11px', color: 'var(--accent)', marginTop: '6px', paddingBottom: '2px', borderBottom: '1px dashed var(--border-light)' }}>
-                        📦 {group.batchName}
-                      </div>
-                    );
-                    group.list.forEach(s => {
-                      elements.push(
-                        <label key={`${bid}-${s.studentCode}`} style={{ display: 'block', fontSize: '12px', padding: '2px 0', marginLeft: '12px' }}>
-                          <input 
-                            type="checkbox" 
-                            checked={assignModal.selectedStudents.has(s.studentCode)} 
-                            onChange={() => handleToggleStudentAssign(s.studentCode)} 
-                          /> 👤 {s.name}
-                        </label>
-                      );
-                    });
-                  });
-
-                  if (unassigned.length > 0) {
-                    elements.push(
-                      <div key="group-hdr-unassigned" style={{ fontWeight: 'bold', fontSize: '11px', color: 'var(--text-muted)', marginTop: '6px', paddingBottom: '2px', borderBottom: '1px dashed var(--border-light)' }}>
-                        👤 Unassigned / No Batch
-                      </div>
-                    );
-                    unassigned.forEach(s => {
-                      elements.push(
-                        <label key={`unassigned-${s.studentCode}`} style={{ display: 'block', fontSize: '12px', padding: '2px 0', marginLeft: '12px' }}>
-                          <input 
-                            type="checkbox" 
-                            checked={assignModal.selectedStudents.has(s.studentCode)} 
-                            onChange={() => handleToggleStudentAssign(s.studentCode)} 
-                          /> 👤 {s.name}
-                        </label>
-                      );
-                    });
-                  }
-
-                  return elements.length > 0 ? elements : <div style={{ fontSize: '11px', color: 'var(--text-muted)', padding: '8px 0' }}>No students found.</div>;
-                })()}
-              </div>
-            </div>
-          )}
+          <TargetPicker
+            targetType={assignModal.targetType}
+            onChangeTargetType={(type) => setAssignModal(prev => ({ ...prev, targetType: type }))}
+            batches={batches}
+            selectedBatches={assignModal.selectedBatches}
+            onToggleBatch={handleToggleBatchAssign}
+            selectedStudents={assignModal.selectedStudents}
+            onToggleStudent={handleToggleStudentAssign}
+            getStudentsGroupedByBatch={getStudentsGroupedByBatch}
+          />
         </div>
 
         <div>

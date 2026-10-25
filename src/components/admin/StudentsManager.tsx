@@ -4,36 +4,9 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { formatToDDMMYYYY, formatToYYYYMMDD, formatLastActiveIST as formatLastActive } from '@/lib/dateUtils';
-
-
-interface Student {
-  id: string;
-  name: string;
-  email: string;
-  studentCode?: string;
-  rollNumber?: string;
-  tempId?: string;
-  batchIds?: string[];
-  status?: string;
-  feeStatus?: string;
-  dob?: string;
-  parentEmail?: string;
-  overallMastery?: number;
-  autonomous?: boolean;
-  curfewBypass?: boolean;
-  srsEnabled?: boolean;
-  lastActiveAt?: any;
-  currentPage?: string;
-  currentPagePath?: string;
-  presenceState?: string;
-}
-
 import { useAdminStudents, invalidateAdminReferenceData } from '@/hooks/useAdminReferenceData';
-
-interface Batch {
-  id: string;
-  name: string;
-}
+import { Batch } from '@/types/batch.types';
+import { Student } from '@/types/user.types';
 
 export default function StudentsManager() {
   const { firebaseUser } = useAuth();

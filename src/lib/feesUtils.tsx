@@ -1,26 +1,9 @@
 import React from 'react';
 import { formatDateDMY } from '@/lib/dateUtils';
+import { FeeRosterRow } from '@/types/fee.types';
 
-export interface StudentFeeRecord {
-  uid: string;
-  name: string;
-  studentCode: string;
-  email: string;
-  batchId: string;
-  batchName?: string;
-  classNum: string;
-  fee: {
-    totalPackageAmount: number;
-    discountAmount: number;
-    netPayableAmount: number;
-    totalPaidAmount: number;
-    outstandingAmount: number;
-    feeStatus?: string;
-    status?: string;
-    hasOverdueInstallment?: boolean;
-    installments?: any[];
-  } | null;
-}
+export type { FeeRosterRow };
+export type StudentFeeRecord = FeeRosterRow;
 
 /**
  * Returns numeric weight for student fee ledger statuses for consistent sorting:

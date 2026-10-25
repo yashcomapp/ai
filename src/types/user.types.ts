@@ -19,6 +19,15 @@ export interface User {
   createdAt: any;
 }
 
+export interface UserProfile {
+  studentCode?: string;
+  name: string;
+  role: string;
+  email: string;
+  parentEmail?: string;
+  [key: string]: any;
+}
+
 export interface StudentProfile {
   masteredTopics: number;
   needsAttentionTopics: number;
@@ -84,4 +93,27 @@ export interface Registration {
   rejectedBy?: string;
   studentId?: string;
   parentId?: string;
+}
+
+export interface Student {
+  id: string;
+  name: string;
+  email?: string;
+  studentCode: string;
+  rollNumber?: string;
+  mobile?: string;
+  class?: string;
+  className?: string;
+  batchId?: string | null;
+  batchIds?: string[];
+  status?: 'active' | 'inactive' | string;
+  feeStatus?: string;
+  parentEmail?: string;
+  srsEnabled?: boolean;
+  autonomous?: boolean;
+  lastLoginAt?: string | null;
+  lastActiveAt?: any;
+  createdAt?: any;
+  updatedAt?: any;
+  [key: string]: any;
 }

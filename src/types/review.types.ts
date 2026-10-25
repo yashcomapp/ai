@@ -21,3 +21,25 @@ export interface PeerAssignment {
   completedAt?: any;
   marksAwarded?: number;
 }
+
+export interface ReviewItem {
+  id: string;
+  examId?: string;
+  practiceId?: string;
+  name: string;
+  examName?: string;
+  subject?: string;
+  type: 'objective' | 'practice' | 'subjective' | 'entrance' | 'absent_exam' | string;
+  date: string;
+  scorePercent?: number;
+  percentage?: number;
+  status: 'pending' | 'approved' | string;
+  wrongCount?: number;
+  unansweredCount?: number;
+  correctCount?: number;
+  durationSpent?: number;
+  topicsCovered?: string[];
+  submittedAt?: string;
+  reviewedByActor?: string;
+  [key: string]: any;
+}

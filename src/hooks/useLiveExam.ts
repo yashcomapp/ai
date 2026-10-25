@@ -5,6 +5,7 @@ import { ProctoringSnapshot } from './useProctoring';
 import { getMidnightIST } from '@/lib/dateUtils';
 import { ref, onValue, set, push, off, remove } from 'firebase/database';
 import { deleteField } from 'firebase/firestore';
+import { RTC_CONFIG } from '@/lib/rtcConfig';
 
 interface UseLiveExamProps {
   examId: string;
@@ -22,21 +23,6 @@ interface UseLiveExamProps {
   isLate?: boolean;
 }
 
-const RTC_CONFIG = {
-  iceServers: [
-    { urls: 'stun:stun.l.google.com:19302' },
-    {
-      urls: 'turn:openrelay.metered.ca:80',
-      username: 'openrelayproject',
-      credential: 'openrelayproject'
-    },
-    {
-      urls: 'turn:openrelay.metered.ca:443',
-      username: 'openrelayproject',
-      credential: 'openrelayproject'
-    }
-  ]
-};
 
 export function useLiveExam({
   examId,

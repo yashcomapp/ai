@@ -1,36 +1,8 @@
 import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { DetailedScorecard } from '@/types/scorecard.types';
 
-export interface DetailedScorecard {
-  id: string;
-  examCode: string;
-  examName: string;
-  examType: string;
-  score: number;
-  totalMarks: number;
-  percentage: number;
-  durationSpent: number;
-  submittedAt: string | null;
-  tabViolations: number;
-  proctoringViolations: {
-    noFace?: number;
-    multipleFaces?: number;
-    lookingAway?: number;
-  };
-  integrityScore: number;
-  status: string;
-  wrongAnswerReasons?: string[];
-  questions: any[];
-  subject?: string;
-  chapter?: string;
-  topicName?: string;
-  topicCode?: string;
-  practiceNumber?: number | null;
-  violations?: {
-    screenshots?: string[];
-  };
-  proctoringViolationTriggered?: boolean;
-}
+export type { DetailedScorecard };
 
 export function useScorecard() {
   const { firebaseUser } = useAuth();

@@ -8,7 +8,7 @@ import DateInputDMY from '@/components/DateInputDMY';
 import FeesJournal from '@/components/admin/FeesJournal';
 import FeesTemplatesTab, { FeeTemplate } from '@/components/admin/fees/FeesTemplatesTab';
 import FeesMassEntryTab from '@/components/admin/fees/FeesMassEntryTab';
-import { renderSortHeader, getStatusWeight, getLateDaysString as getLateRemarks, StudentFeeRecord } from '@/lib/feesUtils';
+import { renderSortHeader, getStatusWeight, getLateDaysString as getLateRemarks, FeeRosterRow } from '@/lib/feesUtils';
 
 function AdminFeesContent() {
   const { firebaseUser } = useAuth();
@@ -80,7 +80,7 @@ function AdminFeesContent() {
 
 
   // Helper to construct bulk transaction dropdowns
-  const getComponentOptions = (s: StudentFeeRecord) => {
+  const getComponentOptions = (s: FeeRosterRow) => {
     const options: { id: string; label: string }[] = [];
     if (s.fee?.installments && s.fee.installments.length > 0) {
       s.fee.installments.forEach(inst => {
@@ -156,7 +156,7 @@ function AdminFeesContent() {
   const [savingTmpl, setSavingTmpl] = useState(false);
 
   // Student Fees
-  const [students, setStudents] = useState<StudentFeeRecord[]>([]);
+  const [students, setStudents] = useState<FeeRosterRow[]>([]);
   const [loadingStudents, setLoadingStudents] = useState(true);
 
   // Unique classes dynamically from students list
@@ -205,7 +205,7 @@ function AdminFeesContent() {
     });
   }, [students, studentSearch, studentClassFilter, studentStatusFilter]);
 
-  const [selectedStudent, setSelectedStudent] = useState<StudentFeeRecord | null>(null);
+  const [selectedStudent, setSelectedStudent] = useState<FeeRosterRow | null>(null);
   const [customPackageTotal, setCustomPackageTotal] = useState(0);
   const [customDiscount, setCustomDiscount] = useState(0);
   const [customInstallments, setCustomInstallments] = useState<{ installmentId?: string; amount: number; dueDate: string; status: string }[]>([]);

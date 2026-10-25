@@ -2,32 +2,9 @@
 
 import React, { useEffect, useState, useMemo, useDeferredValue } from 'react';
 import { useAuth } from '@/context/AuthContext';
-
-interface Batch {
-  id: string;
-  name: string;
-  desc?: string;
-  board?: string;
-  class?: string;
-  subjects?: string;
-  rollPrefix?: string;
-  academicYear?: string;
-  zoomMeetingNumber?: string;
-  zoomMeetingPasscode?: string;
-  zoomMeetingActive?: boolean;
-}
-
 import { useAdminBatches, invalidateAdminReferenceData } from '@/hooks/useAdminReferenceData';
-
-interface Student {
-  id: string;
-  name: string;
-  email: string;
-  studentCode?: string;
-  rollNumber?: string;
-  feeStatus?: string;
-  batchIds: string[];
-}
+import { Batch } from '@/types/batch.types';
+import { Student } from '@/types/user.types';
 
 export default function BatchesManager() {
   const { firebaseUser } = useAuth();
@@ -72,7 +49,7 @@ export default function BatchesManager() {
         name: batch.name || '',
         desc: batch.desc || '',
         board: batch.board || '',
-        class: batch.class || '',
+        class: String(batch.class ?? ''),
         subjects: batch.subjects || '',
         rollPrefix: batch.rollPrefix || '',
         academicYear: batch.academicYear || '',
@@ -278,8 +255,8 @@ export default function BatchesManager() {
     return activeRoster.filter(s => {
       const code = s.rollNumber || s.studentCode || '';
       return (
-        s.name.toLowerCase().includes(q) ||
-        s.email.toLowerCase().includes(q) ||
+        (s.name || '').toLowerCase().includes(q) ||
+        (s.email || '').toLowerCase().includes(q) ||
         code.toLowerCase().includes(q)
       );
     });
@@ -353,7 +330,7 @@ export default function BatchesManager() {
           </div>
         ) : (
           filteredBatches.map(b => {
-            const members = students.filter(s => s.batchIds.includes(b.id));
+            const members = students.filter(s => s.batchIds?.includes(b.id));
             const paid = members.filter(s => s.feeStatus === 'paid').length;
             const pending = members.length - paid;
 

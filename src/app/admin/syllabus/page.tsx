@@ -6,52 +6,9 @@ import { useRouter } from 'next/navigation';
 import { invalidateAdminReferenceData } from '@/hooks/useAdminReferenceData';
 
 
-interface Subject {
-  id: string;
-  board: string;
-  class: string;
-  subject: string;
-  subjectCode: string;
-  chapters?: any[];
-}
+import { Chapter, Topic, Subtopic, SyllabusSubject } from '@/types/syllabus.types';
 
-interface Chapter {
-  number: string;
-  name: string;
-  chapterCode?: string;
-  topics?: Topic[];
-  objectiveCount?: number;
-  subjectiveCount?: number;
-  testsCount?: number;
-  tests?: any[];
-  chapterExercises?: any[];
-}
-
-interface Topic {
-  number: string;
-  name: string;
-  topicCode?: string;
-  subtopics?: Subtopic[];
-  objectiveCount?: number;
-  subjectiveCount?: number;
-  testsCount?: number;
-  tests?: any[];
-  textbookSets?: any[];
-  targetQuestions?: number;
-  topicClassification?: 'minor' | 'medium' | 'major' | string;
-}
-
-interface Subtopic {
-  number: string;
-  name: string;
-  subtopicCode?: string;
-  objectiveCount?: number;
-  subjectiveCount?: number;
-  testsCount?: number;
-  tests?: any[];
-  targetQuestions?: number;
-  topicClassification?: 'minor' | 'medium' | 'major' | string;
-}
+type Subject = SyllabusSubject;
 
 const getObjectiveTestsCount = (tests: any[] | undefined) => {
   if (!Array.isArray(tests)) return 0;
@@ -280,7 +237,7 @@ export default function AdminSyllabusPage() {
     } else if (sortField === 'board') {
       comparison = (a.board || '').localeCompare(b.board || '');
     } else {
-      comparison = (parseInt(a.class) || 0) - (parseInt(b.class) || 0);
+      comparison = (parseInt(String(a.class ?? '0')) || 0) - (parseInt(String(b.class ?? '0')) || 0);
     }
     return sortDir === 'asc' ? comparison : -comparison;
   });
@@ -356,7 +313,7 @@ export default function AdminSyllabusPage() {
     if (sourceChIdx !== targetChIdx || sourceTopIdx === targetTopIdx) return;
 
     const chapter = activeSubjectDoc.chapters?.[sourceChIdx];
-    if (!chapter) return;
+    if (!chapter || !chapter.topics) return;
 
     const topicA = chapter.topics[sourceTopIdx];
     const topicB = chapter.topics[targetTopIdx];
@@ -483,11 +440,11 @@ export default function AdminSyllabusPage() {
     setSubjectModal({
       show: true,
       mode: 'edit',
-      docId: sub.id,
-      board: sub.board,
-      classNum: sub.class,
-      subjectName: sub.subject,
-      subjectCode: sub.subjectCode
+      docId: sub.id || '',
+      board: sub.board || '',
+      classNum: String(sub.class || ''),
+      subjectName: sub.subject || '',
+      subjectCode: sub.subjectCode || ''
     });
   };
 
@@ -802,7 +759,9 @@ export default function AdminSyllabusPage() {
     if (!activeSubjectDoc) return;
     if (!confirm('Are you sure you want to delete this topic?')) return;
     const chapters = [...activeSubjectDoc.chapters!];
-    chapters[chIdx].topics = chapters[chIdx].topics.filter((_: any, i: number) => i !== topIdx);
+    const ch = chapters[chIdx];
+    if (!ch || !ch.topics) return;
+    ch.topics = ch.topics.filter((_: any, i: number) => i !== topIdx);
     await saveChaptersArray(chapters);
   };
 
@@ -902,7 +861,10 @@ export default function AdminSyllabusPage() {
     if (!activeSubjectDoc) return;
     if (!confirm('Are you sure you want to delete this subtopic?')) return;
     const chapters = [...activeSubjectDoc.chapters!];
-    chapters[chIdx].topics[topIdx].subtopics = chapters[chIdx].topics[topIdx].subtopics.filter((_: any, i: number) => i !== subIdx);
+    const ch = chapters[chIdx];
+    const top = ch?.topics?.[topIdx];
+    if (!top || !top.subtopics) return;
+    top.subtopics = top.subtopics.filter((_: any, i: number) => i !== subIdx);
     await saveChaptersArray(chapters);
   };
 

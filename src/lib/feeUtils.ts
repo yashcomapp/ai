@@ -1,37 +1,8 @@
 import { getDateKeyIST } from '@/lib/dateUtils';
 import { safeNumber } from '@/lib/validationUtils';
+import { FeeInstallment, StudentFeeRecord } from '@/types/fee.types';
 
-export interface FeeInstallment {
-  installmentId?: string;
-  installmentNo?: number;
-  label?: string;
-  amount: number;
-  paidAmount?: number;
-  remainingAmount?: number;
-  dueDate: string;
-  status: 'pending' | 'overdue' | 'paid';
-  statusOverride?: 'pending' | 'overdue' | 'paid';
-  paidAt?: string | null;
-  notes?: string;
-}
-
-export interface StudentFeeRecord {
-  id?: string;
-  studentCode: string;
-  totalPackageAmount: number;
-  discountAmount: number;
-  netPayableAmount: number;
-  totalPaidAmount: number;
-  outstandingAmount: number;
-  feeStatus: 'unpaid' | 'partially_paid' | 'fully_paid' | 'exempted';
-  hasOverdueInstallment: boolean;
-  nextInstallmentDueDate: string | null;
-  installments: FeeInstallment[];
-  academicYear?: string;
-  createdAt?: any;
-  updatedAt?: any;
-  [key: string]: any;
-}
+export type { FeeInstallment, StudentFeeRecord };
 
 /**
  * Single Source of Truth (SSOT) fee record normalization.

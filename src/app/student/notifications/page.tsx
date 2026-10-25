@@ -3,15 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
-
-interface Notice {
-  id: string;
-  title: string;
-  body: string;
-  createdAt: string | null;
-  type?: string;
-  noticeDate?: string | null;
-}
+import { Notice } from '@/types/notice.types';
 
 export default function StudentSeenNotificationsPage() {
   const { firebaseUser, logout } = useAuth();

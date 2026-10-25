@@ -5,47 +5,12 @@ import { getDateKeyIST as getISTDateString } from '@/lib/dateUtils';
 import { isDemoUser } from '@/lib/studentDb';
 import { toNonNegativeNumber } from '@/lib/validationUtils';
 import { normalizeStudentFeeRecord } from '@/lib/feeUtils';
+import { FeeService } from '@/services/fee.service';
 import { ChunkedBatch } from '@/lib/firebase/batch';
 import { getCachedBatches } from '@/lib/firebase/cache';
 import { chunkArray } from '@/lib/firestoreUtils';
 
 
-// Function to synchronize student fees aggregate values (same logic as transactions sync)
-async function recalculateStudentFeeStats(studentCode: string) {
-  const studentCodeUpper = studentCode.trim().toUpperCase();
-  const feeRef = adminDb.collection('studentFees').doc(studentCodeUpper);
-  const feeDoc = await feeRef.get();
-  
-  if (!feeDoc.exists) return;
-  const feeData = feeDoc.data()!;
-
-  const txSnap = await adminDb.collection('feeTransactions')
-    .where('studentCode', '==', studentCodeUpper)
-    .get();
-  const transactions = txSnap.docs.map(doc => doc.data());
-
-  const normalized = normalizeStudentFeeRecord(feeData, transactions);
-
-  await feeRef.update({
-    totalPaidAmount: normalized.totalPaidAmount,
-    outstandingAmount: normalized.outstandingAmount,
-    feeStatus: normalized.feeStatus,
-    hasOverdueInstallment: normalized.hasOverdueInstallment,
-    nextInstallmentDueDate: normalized.nextInstallmentDueDate,
-    installments: normalized.installments,
-    updatedAt: new Date().toISOString()
-  });
-
-  const studentQuery = await adminDb.collection('users')
-    .where('studentCode', '==', studentCodeUpper)
-    .where('role', '==', 'student')
-    .get();
-  if (!studentQuery.empty) {
-    await studentQuery.docs[0].ref.update({
-      feeStatus: normalized.feeStatus
-    });
-  }
-}
 
 export async function GET(req: NextRequest) {
   try {
@@ -233,7 +198,7 @@ export async function POST(req: NextRequest) {
       await feeRef.set(record);
       
       // Perform recalculation based on actual payment transactions (SSOT)
-      await recalculateStudentFeeStats(cleanCode);
+      await FeeService.recalculateAndSyncStudentFeeRecord(cleanCode);
 
       return NextResponse.json({ success: true, message: 'Student fee configuration saved.' });
     }

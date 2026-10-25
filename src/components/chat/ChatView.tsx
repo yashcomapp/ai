@@ -21,54 +21,10 @@ const ReadReceiptsModal = dynamic(() => import('@/components/chat/ReadReceiptsMo
 const PollCreationModal = dynamic(() => import('@/components/chat/PollCreationModal'), { ssr: false });
 const StarredMessagesModal = dynamic(() => import('@/components/chat/StarredMessagesModal'), { ssr: false });
 const ReactionsModal = dynamic(() => import('@/components/chat/ReactionsModal'), { ssr: false });
+import { ChatRoom, Message } from '@/types/chat.types';
+import { UserProfile } from '@/types/user.types';
 
-interface ChatRoom {
-  roomId: string;
-  type: 'group' | 'dm';
-  name: string;
-  participants: string[];
-  unreadCounts: Record<string, number>;
-  isMutedForStudents?: boolean;
-  isMutedForParents?: boolean;
-  lastMessage?: { text: string; senderName: string; timestamp: string };
-  pinnedMessage?: { messageId: string; text: string; senderName: string; timestamp: string } | null;
-}
-
-interface Message {
-  messageId: string;
-  senderId: string;
-  senderName: string;
-  senderRole: string;
-  text: string;
-  type: string;
-  createdAt: string;
-  isDeleted?: boolean;
-  isEdited?: boolean;
-  readBy?: Record<string, string>;
-  isOptimistic?: boolean;
-  replyToId?: string;
-  replyToText?: string;
-  replyToSenderName?: string;
-  pollOptions?: { text: string; votesCount: number }[] | null;
-  pollVotes?: Record<string, number> | null;
-  reactions?: {
-    thumbsup?: string[];
-    pray?: string[];
-  };
-}
-
-interface UserProfile {
-  studentCode: string;
-  name: string;
-  role: string;
-  email: string;
-  parentEmail?: string;
-  parentName?: string;
-  parentPhone?: string;
-  status?: string;
-  batchId?: string;
-  class?: string | number;
-}
+export type { ChatRoom, Message, UserProfile };
 
 interface ChatViewProps {
   role?: UserRole;
@@ -1303,8 +1259,8 @@ export default function ChatView({ role = 'admin', hideHeader = false }: ChatVie
 
   const filteredStudents = studentsList.filter(s =>
     (s as any).status !== 'inactive' &&
-    (s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-     s.studentCode.toLowerCase().includes(searchQuery.toLowerCase()))
+    ((s.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+     (s.studentCode || '').toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   const batchesMap = useMemo(() => {

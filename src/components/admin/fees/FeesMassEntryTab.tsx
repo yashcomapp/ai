@@ -2,7 +2,7 @@
 
 import React from 'react';
 import DateInputDMY from '@/components/DateInputDMY';
-import { renderSortHeader, getStatusWeight, StudentFeeRecord } from '@/lib/feesUtils';
+import { renderSortHeader, getStatusWeight, FeeRosterRow } from '@/lib/feesUtils';
 import { formatDateDMY as formatDateStr } from '@/lib/dateUtils';
 import { FeeTemplate } from './FeesTemplatesTab';
 
@@ -15,7 +15,7 @@ interface BulkPaymentItem {
 }
 
 interface FeesMassEntryTabProps {
-  students: StudentFeeRecord[];
+  students: FeeRosterRow[];
   templates: FeeTemplate[];
   uniqueClasses: string[];
   bulkClass: string;
@@ -75,7 +75,7 @@ export default function FeesMassEntryTab({
   }
 
   // Helper to resolve specific installment amount for a student (supporting custom fee matrix)
-  const getStudentInstallmentAmount = (s: StudentFeeRecord, installmentId: string, defaultAmount: number): number => {
+  const getStudentInstallmentAmount = (s: FeeRosterRow, installmentId: string, defaultAmount: number): number => {
     if (s.fee?.installments && s.fee.installments.length > 0) {
       const instNo = parseInt(installmentId.replace('inst_', ''), 10);
       const matched = s.fee.installments.find(i => 

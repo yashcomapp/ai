@@ -1,18 +1,8 @@
 import React from 'react';
 import { isSameTopic } from '@/lib/syllabusUtils';
+import { Topic, Chapter } from '@/types/syllabus.types';
 
-interface Topic {
-  topic: string;
-  subject?: string;
-  topicNumber?: string;
-  [key: string]: any;
-}
-
-interface Chapter {
-  chapterNumber: string | number;
-  chapterName: string;
-  [key: string]: any;
-}
+export type { Topic, Chapter };
 
 interface SyllabusSelectorProps<T extends { topic: string; subject?: string }> {
   availableSubjects: string[];

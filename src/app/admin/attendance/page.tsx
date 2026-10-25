@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { formatDateDMY as formatDateStr, getDateKeyIST as getISTDateString } from '@/lib/dateUtils';
 import { useAdminBatches } from '@/hooks/useAdminReferenceData';
 import DateInputDMY from '@/components/DateInputDMY';
+import { Batch } from '@/types/batch.types';
 
 interface StudentRecord {
   studentCode: string;
@@ -26,11 +27,6 @@ interface StudentRecord {
   selfMarkedAt?: string | null;
 }
 
-interface Batch {
-  id: string;
-  name: string;
-  classNum: string;
-}
 
 interface Leave {
   id: string;

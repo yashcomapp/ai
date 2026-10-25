@@ -3,8 +3,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { formatDateDMY as formatDateStr, getDateKeyIST } from '@/lib/dateUtils';
 import DateInputDMY from '@/components/DateInputDMY';
-import { renderSortHeader, getStatusWeight, deleteFeeTransaction, getLateRemarks as computeLateRemarks, confirmAndDeleteTransaction, handleDeleteTransaction, StudentFeeRecord } from '@/lib/feesUtils';
-export type { StudentFeeRecord };
+import { renderSortHeader, getStatusWeight, deleteFeeTransaction, getLateRemarks as computeLateRemarks, confirmAndDeleteTransaction, handleDeleteTransaction, FeeRosterRow } from '@/lib/feesUtils';
+export type { FeeRosterRow };
+export type StudentFeeRecord = FeeRosterRow;
 
 export interface Transaction {
   transactionId: string;
@@ -19,10 +20,10 @@ export interface Transaction {
 }
 
 interface FeesJournalProps {
-  students: StudentFeeRecord[];
+  students: FeeRosterRow[];
   loadingStudents: boolean;
   getIdToken: () => Promise<string | null>;
-  onSelectStudent?: (student: StudentFeeRecord) => void;
+  onSelectStudent?: (student: FeeRosterRow) => void;
   onRefreshStudents?: () => void;
 }
 
@@ -161,7 +162,7 @@ export default function FeesJournal({
 
   // Map studentCode -> Student Profile
   const studentMap = useMemo(() => {
-    const map = new Map<string, StudentFeeRecord>();
+    const map = new Map<string, FeeRosterRow>();
     students.forEach(s => {
       if (s.studentCode) {
         map.set(s.studentCode.toUpperCase(), s);

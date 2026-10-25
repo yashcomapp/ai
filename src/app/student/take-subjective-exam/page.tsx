@@ -16,22 +16,9 @@ import { formatDuration, parseDateToMs } from '@/lib/dateUtils';
 import { InterruptionLockoutModal } from '@/components/InterruptionLockoutModal';
 import { ExamErrorBoundary } from '@/components/ExamErrorBoundary';
 import QuestionDisplay, { RichMathText } from '@/components/QuestionDisplay';
+import { RTC_CONFIG } from '@/lib/rtcConfig';
+import StepAnswerInput from '@/components/exams/StepAnswerInput';
 
-const RTC_CONFIG = {
-  iceServers: [
-    { urls: 'stun:stun.l.google.com:19302' },
-    {
-      urls: 'turn:openrelay.metered.ca:80',
-      username: 'openrelayproject',
-      credential: 'openrelayproject'
-    },
-    {
-      urls: 'turn:openrelay.metered.ca:443',
-      username: 'openrelayproject',
-      credential: 'openrelayproject'
-    }
-  ]
-};
 
 // Extend window interface for CDN scripts
 declare global {
@@ -927,68 +914,13 @@ function TakeSubjectiveExamContent() {
 
                     <strong style={{ fontSize: '12px', display: 'block', marginBottom: '10px' }}>✏️ Award Marks:</strong>
                     
-                    {/* Render Steps inputs */}
-                    {q.steps && q.steps.length > 0 ? (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        {q.steps.map((step, si) => (
-                          <div key={si} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--surface)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', flexWrap: 'wrap', gap: '8px' }}>
-                            <span style={{ fontSize: '12px', color: 'var(--text)' }}>{step.description}</span>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Max: {step.marks}</span>
-                              <input 
-                                type="number" 
-                                min="0" 
-                                max={step.marks} 
-                                step="0.5" 
-                                value={reviewAnswers[`ps_${idx}_${si}`] ?? ""}
-                                onChange={(e) => {
-                                  const raw = e.target.value;
-                                  if (raw === "") {
-                                    setReviewAnswers(prev => {
-                                      const copy = { ...prev };
-                                      delete copy[`ps_${idx}_${si}`];
-                                      return copy;
-                                    });
-                                  } else {
-                                    const val = Math.min(step.marks, Math.max(0, parseFloat(raw) || 0));
-                                    setReviewAnswers(prev => ({ ...prev, [`ps_${idx}_${si}`]: val }));
-                                  }
-                                }}
-                                style={{ width: '70px', padding: '4px', border: '1.5px solid var(--border-light)', borderRadius: 'var(--radius-sm)', textAlign: 'center', background: 'var(--surface)', color: 'var(--text)' }}
-                              />
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--surface)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)' }}>
-                        <span style={{ fontSize: '12px', color: 'var(--text)' }}>Overall Question Score</span>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Max: {q.marks}</span>
-                          <input 
-                            type="number" 
-                            min="0" 
-                            max={q.marks} 
-                            step="0.5" 
-                            value={reviewAnswers[`ps_${idx}_0`] ?? ""}
-                            onChange={(e) => {
-                              const raw = e.target.value;
-                              if (raw === "") {
-                                setReviewAnswers(prev => {
-                                  const copy = { ...prev };
-                                  delete copy[`ps_${idx}_0`];
-                                  return copy;
-                                });
-                              } else {
-                                const val = Math.min(q.marks, Math.max(0, parseFloat(raw) || 0));
-                                setReviewAnswers(prev => ({ ...prev, [`ps_${idx}_0`]: val }));
-                              }
-                            }}
-                            style={{ width: '70px', padding: '4px', border: '1.5px solid var(--border-light)', borderRadius: 'var(--radius-sm)', textAlign: 'center', background: 'var(--surface)', color: 'var(--text)' }}
-                          />
-                        </div>
-                      </div>
-                    )}
+                    <StepAnswerInput
+                      questionIndex={idx}
+                      steps={q.steps}
+                      questionMarks={q.marks}
+                      reviewAnswers={reviewAnswers}
+                      setReviewAnswers={setReviewAnswers}
+                    />
 
                     {/* Feedback comments */}
                     <textarea 

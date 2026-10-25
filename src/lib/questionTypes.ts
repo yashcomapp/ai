@@ -270,20 +270,8 @@ export function normalizeOptionAnswer(value: any, options?: any[]): string {
   return valueStr.trim();
 }
 
-export type CanonicalQuestionType =
-  | 'OSC'
-  | 'OMC'
-  | 'OTF'
-  | 'OAR'
-  | 'OFB'
-  | 'ONE'
-  | 'SDF'
-  | 'SLP'
-  | 'SSA'
-  | 'SSR'
-  | 'SSN'
-  | 'SLA'
-  | 'SLN';
+import { CanonicalQuestionType } from '@/types/question.types';
+export type { CanonicalQuestionType };
 
 export const CANONICAL_OBJECTIVE_TYPES: CanonicalQuestionType[] = ['OSC', 'OMC', 'OTF', 'OAR', 'OFB', 'ONE'];
 export const CANONICAL_SUBJECTIVE_TYPES: CanonicalQuestionType[] = ['SDF', 'SLP', 'SSA', 'SSR', 'SSN', 'SLA', 'SLN'];

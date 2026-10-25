@@ -4,44 +4,9 @@ import { verifyRole } from '@/lib/auth';
 import { getDateKeyIST as getISTDateString } from '@/lib/dateUtils';
 import { toPositiveNumber } from '@/lib/validationUtils';
 import { normalizeStudentFeeRecord } from '@/lib/feeUtils';
+import { FeeService } from '@/services/fee.service';
 
 
-// Function to synchronize aggregate balances and status in studentFees doc based on ledger transactions
-async function syncStudentFees(studentCode: string) {
-  const studentCodeUpper = studentCode.trim().toUpperCase();
-  const feeRef = adminDb.collection('studentFees').doc(studentCodeUpper);
-  const feeDoc = await feeRef.get();
-  
-  if (!feeDoc.exists) return;
-  const feeData = feeDoc.data()!;
-
-  const txSnap = await adminDb.collection('feeTransactions')
-    .where('studentCode', '==', studentCodeUpper)
-    .get();
-  const transactions = txSnap.docs.map(doc => doc.data());
-
-  const normalized = normalizeStudentFeeRecord(feeData, transactions);
-
-  await feeRef.update({
-    totalPaidAmount: normalized.totalPaidAmount,
-    outstandingAmount: normalized.outstandingAmount,
-    feeStatus: normalized.feeStatus,
-    hasOverdueInstallment: normalized.hasOverdueInstallment,
-    nextInstallmentDueDate: normalized.nextInstallmentDueDate,
-    installments: normalized.installments,
-    updatedAt: new Date().toISOString()
-  });
-
-  const studentQuery = await adminDb.collection('users')
-    .where('studentCode', '==', studentCodeUpper)
-    .where('role', '==', 'student')
-    .get();
-  if (!studentQuery.empty) {
-    await studentQuery.docs[0].ref.update({
-      feeStatus: normalized.feeStatus
-    });
-  }
-}
 
 export async function GET(req: NextRequest) {
   try {
@@ -205,7 +170,7 @@ export async function POST(req: NextRequest) {
         await batch.commit();
         // Sync student fees in parallel for all unique student codes affected
         await Promise.all(
-          Array.from(affectedStudentCodes).map(code => syncStudentFees(code))
+          Array.from(affectedStudentCodes).map(code => FeeService.recalculateAndSyncStudentFeeRecord(code))
         );
       }
 
@@ -234,7 +199,7 @@ export async function POST(req: NextRequest) {
       };
 
       await newTxRef.set(newTx);
-      await syncStudentFees(cleanCode);
+      await FeeService.recalculateAndSyncStudentFeeRecord(cleanCode);
 
       return NextResponse.json({ success: true, transaction: newTx });
     }
@@ -278,7 +243,7 @@ export async function POST(req: NextRequest) {
       });
 
       if (cleanCode) {
-        await syncStudentFees(cleanCode);
+        await FeeService.recalculateAndSyncStudentFeeRecord(cleanCode);
       }
       return NextResponse.json({ success: true, message: 'Transaction updated successfully.' });
     }
@@ -304,7 +269,7 @@ export async function POST(req: NextRequest) {
       await txRef.delete();
 
       if (cleanCode) {
-        await syncStudentFees(cleanCode);
+        await FeeService.recalculateAndSyncStudentFeeRecord(cleanCode);
       }
       return NextResponse.json({ success: true, message: 'Transaction deleted successfully.' });
     }

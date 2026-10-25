@@ -4,15 +4,7 @@ import React, { useEffect, useState, useMemo, useDeferredValue } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useReports } from '@/hooks/useReports';
-// Client Firestore imports removed
-interface Student {
-  id: string;
-  name: string;
-  email: string;
-  studentCode?: string;
-  rollNumber?: string;
-  class?: string;
-}
+import { Student } from '@/types/user.types';
 
 interface ScoreRecord {
   id: string;

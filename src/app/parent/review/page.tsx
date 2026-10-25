@@ -11,45 +11,8 @@ import { useScorecard } from '@/hooks/useScorecard';
 import QuestionDisplay, { RichMathText } from '@/components/QuestionDisplay';
 import { highlightModelAnswerKeywords } from '@/lib/questionTypes';
 import { formatDateIST, getDateKeyIST, formatDateTimeIST, formatDurationMS as formatDuration, formatDateOrFallback as formatDate } from '@/lib/dateUtils';
-
-interface ReviewItem {
-  id: string;
-  examId?: string;
-  type: string;
-  name: string;
-  subject: string;
-  chapter: string;
-  date: string | null;
-  score?: number;
-  totalMarks?: number;
-  percentage?: number;
-  scorePercent?: number;
-  correctCount?: number;
-  totalQuestions?: number;
-  tabViolations?: number;
-  proctoringViolations?: any;
-  noFaceCount?: number;
-  multipleFacesCount?: number;
-  awayTimeTotal?: number;
-  timeSpentSeconds?: number;
-  mode?: string;
-  status: string;
-  masteryBefore?: number;
-  masteryAfter?: number;
-  wrongAnswers?: any[];
-  unattemptedQuestions?: any[];
-  wrongAnswerReasons?: any;
-  proctoringViolationTriggered?: boolean;
-  durationSpent?: number;
-  idealTimeSeconds?: number;
-  minRealisticTimeSeconds?: number;
-  sincerityPacingScore?: number;
-  isFastFluency?: boolean;
-  isSolvedTooFast?: boolean;
-  feedbackBadge?: string;
-  parentAdvisory?: string;
-  parentAdvisoryMr?: string;
-}
+import { ReviewItem } from '@/types/review.types';
+import StepAnswerInput from '@/components/exams/StepAnswerInput';
 
 export default function ParentReviewPanel() {
   const { firebaseUser, user, logout } = useAuth();
@@ -1287,69 +1250,14 @@ export default function ParentReviewPanel() {
 
                               <strong style={{ fontSize: '12px', fontWeight: 800, display: 'block', marginBottom: '10px', color: 'var(--text)' }}>✏️ Award Marks / अंक दें:</strong>
                               
-                              {q.steps && q.steps.length > 0 ? (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                  {q.steps.map((step: any, si: number) => (
-                                    <div key={si} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 'var(--radius-md)' }}>
-                                      <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text)' }}>{step.description}</span>
-                                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)' }}>Max: {step.marks}</span>
-                                        <input 
-                                          type="number" 
-                                          min="0" 
-                                          max={step.marks} 
-                                          step="0.5" 
-                                          disabled={selectedReview.status !== 'pending'}
-                                          value={reviewAnswers[`ps_${idx}_${si}`] ?? ""}
-                                          onChange={(e) => {
-                                            const raw = e.target.value;
-                                            if (raw === "") {
-                                              setReviewAnswers(prev => {
-                                                const copy = { ...prev };
-                                                delete copy[`ps_${idx}_${si}`];
-                                                return copy;
-                                              });
-                                            } else {
-                                              const val = Math.min(step.marks, Math.max(0, parseFloat(raw) || 0));
-                                              setReviewAnswers(prev => ({ ...prev, [`ps_${idx}_${si}`]: val }));
-                                            }
-                                          }}
-                                          style={{ width: '70px', padding: '6px', border: '2px solid var(--accent)', borderRadius: '6px', textAlign: 'center', background: 'var(--surface-2)', color: 'var(--text)', fontWeight: 800, fontSize: '14px', outline: 'none' }}
-                                        />
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              ) : (
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--surface)', border: '1.5px solid var(--border)', borderRadius: 'var(--radius-md)' }}>
-                                  <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text)' }}>Overall Question Score</span>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)' }}>Max: {q.marks}</span>
-                                    <input 
-                                      type="number" 
-                                      min="0" 
-                                      max={q.marks} 
-                                      step="0.5" 
-                                      disabled={selectedReview.status !== 'pending'}
-                                      value={reviewAnswers[`ps_${idx}_0`] ?? ""}
-                                      onChange={(e) => {
-                                        const raw = e.target.value;
-                                        if (raw === "") {
-                                          setReviewAnswers(prev => {
-                                            const copy = { ...prev };
-                                            delete copy[`ps_${idx}_0`];
-                                            return copy;
-                                          });
-                                        } else {
-                                          const val = Math.min(q.marks, Math.max(0, parseFloat(raw) || 0));
-                                          setReviewAnswers(prev => ({ ...prev, [`ps_${idx}_0`]: val }));
-                                        }
-                                      }}
-                                      style={{ width: '70px', padding: '6px', border: '2px solid var(--accent)', borderRadius: '6px', textAlign: 'center', background: 'var(--surface-2)', color: 'var(--text)', fontWeight: 800, fontSize: '14px', outline: 'none' }}
-                                    />
-                                  </div>
-                                </div>
-                              )}
+                              <StepAnswerInput
+                                questionIndex={idx}
+                                steps={q.steps}
+                                questionMarks={q.marks}
+                                reviewAnswers={reviewAnswers}
+                                setReviewAnswers={setReviewAnswers}
+                                disabled={selectedReview.status !== 'pending'}
+                              />
 
                               <textarea 
                                 placeholder="Add comments / feedback (optional)"

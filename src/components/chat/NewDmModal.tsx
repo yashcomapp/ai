@@ -1,19 +1,9 @@
 'use client';
 
 import React from 'react';
+import { UserProfile } from '@/types/user.types';
 
-export interface UserProfile {
-  studentCode: string;
-  name: string;
-  role: string;
-  email: string;
-  parentEmail?: string;
-  parentName?: string;
-  parentPhone?: string;
-  status?: string;
-  batchId?: string;
-  class?: string | number;
-}
+export type { UserProfile };
 
 export interface NewDmModalProps {
   showDmModal: boolean;
@@ -59,8 +49,8 @@ export function NewDmModal({
           ) : (
             filteredStudents.map(student => (
               <div
-                key={student.studentCode}
-                onClick={() => handleStartDM(student.studentCode, student.name)}
+                key={student.studentCode || student.uid}
+                onClick={() => student.studentCode && handleStartDM(student.studentCode, student.name || '')}
                 style={{
                   padding: '10px 14px',
                   borderRadius: '8px',

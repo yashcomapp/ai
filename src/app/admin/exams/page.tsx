@@ -17,33 +17,7 @@ import { toISTDateTimeLocalInput, formatDateDMY, parseDateInput, getDateKeyIST, 
 import ObjectiveTab from '@/components/admin/exams/ObjectiveTab';
 import SubjectiveTab from '@/components/admin/exams/SubjectiveTab';
 import PracticeTab from '@/components/admin/exams/PracticeTab';
-import { isExamAssigned } from '@/components/admin/exams/types';
-
-interface Exam {
-  id: string;
-  name: string;
-  subjects?: string[];
-  subjectName?: string;
-  chapterNumber?: string;
-  chapter?: string;
-  chapterDisplay?: string;
-  topicCodes?: string[];
-  topicDisplay?: string;
-  questionCount?: number;
-  questions?: any[];
-  questionCodes?: string[];
-  questionIds?: string[];
-  duration?: number;
-  totalTime?: number;
-  examDuration?: number;
-  totalMarks?: number;
-  mode?: string;
-  peerReviewStatus?: string;
-  batchId?: string | null;
-  assignedAt?: string | null;
-  type?: string;
-  scheduledDate?: string;
-}
+import { isExamAssigned, Exam, Assignment, Batch, Student } from '@/components/admin/exams/types';
 
 function getNormExamDuration(exam: Exam, type: 'objective' | 'subjective' = 'objective'): number {
   if (typeof exam.duration === 'number' && exam.duration > 0) {
@@ -246,39 +220,6 @@ function getExamScheduleStatus(
     badgeColor: 'var(--success)',
     badgeText: '🟢 Active / Open'
   };
-}
-
-interface Batch {
-  id: string;
-  name: string;
-}
-
-interface Student {
-  studentCode: string;
-  name: string;
-  rollNumber: string;
-  batchIds: string[];
-  batchId: string | null;
-}
-
-interface Assignment {
-  id: string;
-  examId: string;
-  collection: string;
-  targetType: string;
-  targetBatches: string[];
-  targetStudents: string[];
-  openMode: string;
-  startAt: string | null;
-  endAt: string | null;
-  attemptLimit: number;
-  examDuration?: number;
-  examMode?: string;
-  classroomDuration?: number;
-  classroomTimePerQ?: number;
-  lateEntryRestriction?: boolean;
-  status?: string;
-  createdAt: string | null;
 }
 
 export default function AdminExamsPage() {
@@ -1011,8 +952,8 @@ export default function AdminExamsPage() {
     const batchIds = new Set<string>();
     const studentCodes = new Set<string>();
     list.forEach(a => {
-      a.targetBatches.forEach(b => batchIds.add(b));
-      a.targetStudents.forEach(s => studentCodes.add(s));
+      (a.targetBatches || []).forEach(b => batchIds.add(b));
+      (a.targetStudents || []).forEach(s => studentCodes.add(s));
     });
 
     const parts = [];
@@ -1131,7 +1072,7 @@ export default function AdminExamsPage() {
       openMode: activeAssign.openMode as any,
       startAtStr: activeAssign.startAt ? toISTString(activeAssign.startAt) : '',
       endAtStr: activeAssign.endAt ? toISTString(activeAssign.endAt) : '',
-      attemptLimit: activeAssign.attemptLimit,
+      attemptLimit: activeAssign.attemptLimit ?? 1,
       normDuration,
       overrideDuration: isOverridden,
       examDuration: activeAssign.examDuration || normDuration,

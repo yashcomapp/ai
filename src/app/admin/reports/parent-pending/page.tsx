@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useReports } from '@/hooks/useReports';
 import { formatDateTimeIST, formatDurationMS as formatDuration } from '@/lib/dateUtils';
 import dynamic from 'next/dynamic';
+import { Batch } from '@/types/batch.types';
 
 interface SincerityRecord {
   id: string;
@@ -28,10 +29,6 @@ interface SincerityRecord {
   timestamp: string;
 }
 
-interface Batch {
-  id: string;
-  name: string;
-}
 
 interface SummaryStats {
   totalReviews: number;

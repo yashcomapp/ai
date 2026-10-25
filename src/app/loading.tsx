@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function Loading() {
+export default function RootLoading() {
   return (
     <div style={{
       display: 'flex',

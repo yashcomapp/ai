@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import useSWR from 'swr';
 import { fetchWithToken } from '@/lib/swrFetcher';
 import TopBarTimeTracker from '@/components/TopBarTimeTracker';
+import NoticeOverlayModal from '@/components/notices/NoticeOverlayModal';
 import { 
   TrendingUp, 
   AlertTriangle, 
@@ -1382,139 +1383,11 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
       )}
 
       {/* Important Notices Fullscreen Overlay */}
-      {activeOverlayNotice && (() => {
-        const type = activeOverlayNotice.type || 'general';
-        const typeConfig = 
-          type === 'schedule' 
-            ? { title: '📅 CLASS SCHEDULE UPDATE', color: 'var(--accent)', bg: 'var(--accent-soft)', text: 'var(--accent)', icon: '📅' }
-            : type === 'fees'
-            ? { title: '💰 FEES REMINDER', color: 'var(--warning)', bg: 'var(--warning-bg)', text: 'var(--warning)', icon: '💰' }
-            : type === 'exam_absent'
-            ? { title: '🚨 EXAM ABSENCE ALERT', color: 'var(--danger)', bg: 'var(--danger-bg)', text: 'var(--danger-muted)', icon: '🚨' }
-            : type === 'exam_excellent'
-            ? { title: '🏆 EXCELLENT EXAM RESULT', color: 'var(--success)', bg: 'var(--success-bg)', text: 'var(--success)', icon: '🏆' }
-            : type === 'exam_good'
-            ? { title: '🌟 EXAM RESULT ANNOUNCEMENT', color: 'var(--accent)', bg: 'var(--accent-soft)', text: 'var(--accent)', icon: '🌟' }
-            : type === 'exam_needs_improvement'
-            ? { title: '⚠️ EXAM RESULT - ATTENTION', color: 'var(--warning)', bg: 'var(--warning-bg)', text: 'var(--warning)', icon: '⚠️' }
-            : { title: '📢 IMPORTANT ANNOUNCEMENT', color: 'var(--danger)', bg: 'var(--danger-bg)', text: 'var(--danger-muted)', icon: '📢' };
-        
-        return (
-          <div style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0, 0, 0, 0.5)',
-            backdropFilter: 'blur(8px)',
-            WebkitBackdropFilter: 'blur(8px)',
-            zIndex: 999999,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '20px'
-          }}>
-            <div className="card" style={{
-              background: 'var(--surface-popover)',
-              border: `2px solid ${typeConfig.color}`,
-              borderRadius: 'var(--radius-lg)',
-              padding: '28px',
-              maxWidth: '520px',
-              width: '100%',
-              maxHeight: '95%',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '16px',
-              boxShadow: 'var(--shadow-lg)',
-              overflow: 'hidden'
-            }}>
-              <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', borderBottom: '1px solid var(--border-light)', paddingBottom: '16px' }}>
-                <span style={{ fontSize: '48px', margin: '4px 0 12px 0', display: 'block', lineHeight: 1 }}>
-                  {typeConfig.icon}
-                </span>
-                <span style={{
-                  fontSize: '11px',
-                  background: typeConfig.bg,
-                  color: typeConfig.text,
-                  padding: '4px 10px',
-                  borderRadius: '20px',
-                  fontWeight: 800,
-                  letterSpacing: '0.5px',
-                  display: 'inline-block',
-                  marginBottom: '12px'
-                }}>
-                  {typeConfig.title.replace(/^[^\s]+\s*/, '')}
-                </span>
-                <h2 style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--text)', margin: 0, lineHeight: '1.3' }}>
-                  {activeOverlayNotice.title}
-                </h2>
-              </div>
-              
-              <div style={{
-                flex: 1,
-                overflowY: 'auto',
-                fontSize: '17px',
-                lineHeight: '1.6',
-                color: 'var(--text)',
-                padding: '4px 8px 4px 0',
-                whiteSpace: 'pre-line',
-                wordBreak: 'break-word'
-              }}>
-                {type === 'schedule' && activeOverlayNotice.noticeDate && (
-                  <div style={{
-                    fontSize: '17px',
-                    fontWeight: 700,
-                    color: 'var(--accent)',
-                    background: 'var(--accent-soft)',
-                    padding: '8px 12px',
-                    borderRadius: '6px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginBottom: '14px',
-                    border: '1px solid var(--accent-ring)'
-                  }}>
-                    <span>{(() => {
-                      const d = new Date(activeOverlayNotice.noticeDate);
-                      if (isNaN(d.getTime())) return activeOverlayNotice.noticeDate;
-                      const day = String(d.getDate()).padStart(2, '0');
-                      const month = String(d.getMonth() + 1).padStart(2, '0');
-                      return `${day}/${month}/${d.getFullYear()}`;
-                    })()}</span>
-                  </div>
-                )}
-                <div 
-                  style={{ lineHeight: '1.25', margin: '4px 0' }}
-                  dangerouslySetInnerHTML={{
-                    __html: (activeOverlayNotice.body || '')
-                      .replace(/(<\/div>|<\/p>|<\/li>)\s*\r?\n/gi, '$1')
-                      .replace(/\r?\n\s*(<div[^>]*>|<p[^>]*>|<ul[^>]*>|<ol[^>]*>|<li[^>]*>)/gi, '$1')
-                      .replace(/\r?\n/g, '<br/>')
-                  }}
-                />
-              </div>
-
-              <div style={{ borderTop: '1px solid var(--border-light)', paddingTop: '16px', marginTop: '4px' }}>
-                <button 
-                  className="btn btn-primary" 
-                  onClick={() => handleDismissOverlayNotice(activeOverlayNotice.id)}
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    borderRadius: 'var(--radius-md)',
-                    fontWeight: 'bold',
-                    fontSize: '14px',
-                    background: typeConfig.color,
-                    color: 'var(--text-white)',
-                    border: 'none',
-                    cursor: 'pointer'
-                  }}
-                >
-                  I Understand & Dismiss
-                </button>
-              </div>
-            </div>
-          </div>
-        );
-      })()}
+      <NoticeOverlayModal
+        notice={activeOverlayNotice}
+        onDismiss={handleDismissOverlayNotice}
+        role="student"
+      />
 
       {activeReflectionExam && (
         <StudentSelfReflectionModal

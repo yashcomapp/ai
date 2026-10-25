@@ -108,6 +108,88 @@ export class ExamService {
   }
 
   /**
+   * SSOT: Checks whether the student has any pending reviews (objective self-reflection, pending parent review, or classmate peer reviews).
+   * Auto-heals reviews already approved via evaluations or autonomous status.
+   */
+  static async verifyPendingReviewsBlock(params: {
+    studentCode: string;
+    currentExamId: string;
+    isAutonomous?: boolean;
+  }): Promise<{ blocked: boolean; message?: string }> {
+    const { studentCode, currentExamId, isAutonomous } = params;
+
+    const [pendingObj, pendingSub, pendingPeer, evalSnaps] = await Promise.all([
+      adminDb.collection('reviews')
+        .where('studentCode', '==', studentCode)
+        .where('status', 'in', ['student_review', 'pending'])
+        .get(),
+      adminDb.collection('subjectiveAttempts')
+        .where('studentCode', '==', studentCode)
+        .where('status', '==', 'peer_review_pending')
+        .limit(1)
+        .get(),
+      adminDb.collection('peerAssignments')
+        .where('reviewerStudentCode', '==', studentCode)
+        .where('status', '==', 'pending')
+        .limit(1)
+        .get(),
+      adminDb.collection('evaluations')
+        .where('studentCode', '==', studentCode)
+        .get()
+    ]);
+
+    const evalMap = new Set<string>();
+    evalSnaps.docs.forEach(doc => {
+      const data = doc.data();
+      if (data.attemptId) evalMap.add(data.attemptId);
+      if (data.legacyId) evalMap.add(data.legacyId);
+      if (data.examId) evalMap.add(data.examId);
+      evalMap.add(doc.id);
+    });
+
+    let genuinelyPendingObj: admin.firestore.DocumentSnapshot | null = null;
+    for (const revDoc of pendingObj.docs) {
+      const data = revDoc.data();
+      // Skip if this review belongs to the exam currently being taken (reassigned)
+      if (data.examId === currentExamId || revDoc.id === `${currentExamId}_${studentCode}` || revDoc.id.includes(currentExamId)) {
+        continue;
+      }
+      const isApprovedByEval = evalMap.has(revDoc.id) || (data.examId && evalMap.has(data.examId));
+      if (isApprovedByEval || (isAutonomous && (data.status === 'pending' || data.status === 'student_review'))) {
+        // Auto-heal status in Firestore
+        revDoc.ref.update({ status: 'approved', updatedAt: new Date() }).catch(() => null);
+      } else {
+        genuinelyPendingObj = revDoc;
+        break;
+      }
+    }
+
+    const genuinelyPendingSubDocs = pendingSub.docs.filter(d => {
+      const dData = d.data();
+      return dData.examId !== currentExamId && d.id !== `${currentExamId}_${studentCode}` && !d.id.includes(currentExamId);
+    });
+
+    if (genuinelyPendingObj || genuinelyPendingSubDocs.length > 0 || !pendingPeer.empty) {
+      let pendingType = 'a pending review';
+      if (genuinelyPendingObj) {
+        const revDoc = genuinelyPendingObj.data()!;
+        pendingType = revDoc.status === 'student_review' 
+          ? 'an objective exam self-reflection' 
+          : 'a pending parent sign-off on your previous exam';
+      } else if (genuinelyPendingSubDocs.length > 0 || !pendingPeer.empty) {
+        pendingType = 'a classmate peer-grading assignment';
+      }
+
+      return {
+        blocked: true,
+        message: `You have ${pendingType} that needs attention. Please ensure all pending reviews are completed before starting your next exam.`
+      };
+    }
+
+    return { blocked: false };
+  }
+
+  /**
    * Checks whether the student has any unattempted and unacknowledged past scheduled exams.
    * Batches all lookups to prevent N+1 queries and targets assignments to student.
    */

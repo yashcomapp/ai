@@ -14,6 +14,7 @@ import { useScorecard } from '@/hooks/useScorecard';
 import { useToggleSet } from '@/hooks/useToggleSet';
 import { stripOptionLabel, preprocessMathText, parseAnswerList, isOptionSelectedByUser, isBlank, getReasonForQuestion, getRawOptionKey, getRawOptionText, formatUserAnswerSummary } from '@/lib/questionTypes';
 import { formatDateTimeIST, formatDurationMS as formatDuration, formatDateTimeOrFallback as formatDate } from '@/lib/dateUtils';
+import { QuestionDetailsItem, DetailedScorecard } from '@/types/scorecard.types';
 
 interface ResultSummaryItem {
   id: string;
@@ -34,48 +35,6 @@ interface ResultSummaryItem {
   practiceNumber?: number | null;
 }
 
-interface QuestionDetailsItem {
-  id: string;
-  questionCode: string;
-  qNumber?: number | null;
-  text: string;
-  type: string;
-  options: any[];
-  assertion?: string;
-  reason?: string;
-  solution?: string;
-  difficulty: string;
-  bloomLevel: string;
-  userAnswer: string;
-  isCorrect: boolean;
-  correctAnswer: string;
-  correctAnswers: string[];
-}
-
-interface DetailedScorecard {
-  id: string;
-  examCode: string;
-  examName: string;
-  examType: string;
-  score: number;
-  totalMarks: number;
-  percentage: number;
-  durationSpent: number;
-  submittedAt: string | null;
-  tabViolations: number;
-  proctoringViolations: {
-    noFace?: number;
-    multipleFaces?: number;
-    lookingAway?: number;
-  };
-  integrityScore: number;
-  status: string;
-  wrongAnswerReasons?: string[];
-  questions: QuestionDetailsItem[];
-  subject?: string;
-  chapter?: string;
-  topicName?: string;
-}
 
 export default function StudentResults({ initialData }: { initialData?: { results: ResultSummaryItem[] } }) {
   const { firebaseUser, logout } = useAuth();

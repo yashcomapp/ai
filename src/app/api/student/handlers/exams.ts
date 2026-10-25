@@ -203,82 +203,25 @@ export async function GET(req: NextRequest) {
     }
 
     // Strict block if there are pending reviews (either objective self-reflection, pending parent review, or classmate peer reviews)
-    const [pendingObj, pendingSub, pendingPeer, evalSnaps] = await Promise.all([
-      adminDb.collection('reviews')
-        .where('studentCode', '==', studentCode)
-        .where('status', 'in', ['student_review', 'pending'])
-        .get(),
-      adminDb.collection('subjectiveAttempts')
-        .where('studentCode', '==', studentCode)
-        .where('status', '==', 'peer_review_pending')
-        .limit(1)
-        .get(),
-      adminDb.collection('peerAssignments')
-        .where('reviewerStudentCode', '==', studentCode)
-        .where('status', '==', 'pending')
-        .limit(1)
-        .get(),
-      adminDb.collection('evaluations')
-        .where('studentCode', '==', studentCode)
-        .get()
-    ]);
-
-    const evalMap = new Set<string>();
-    evalSnaps.docs.forEach(doc => {
-      const data = doc.data();
-      if (data.attemptId) evalMap.add(data.attemptId);
-      if (data.legacyId) evalMap.add(data.legacyId);
-      if (data.examId) evalMap.add(data.examId);
-      evalMap.add(doc.id);
+    const pendingReviewsCheck = await ExamService.verifyPendingReviewsBlock({
+      studentCode,
+      currentExamId: examId,
+      isAutonomous: student.userData?.autonomous === true
     });
 
-    const isAutonomous = student.userData?.autonomous === true;
-
-    let genuinelyPendingObj: admin.firestore.DocumentSnapshot | null = null;
-    for (const revDoc of pendingObj.docs) {
-      const data = revDoc.data();
-      // Skip if this review belongs to the exam currently being taken (reassigned)
-      if (data.examId === examId || revDoc.id === `${examId}_${studentCode}` || revDoc.id.includes(examId)) {
-        continue;
-      }
-      const isApprovedByEval = evalMap.has(revDoc.id) || (data.examId && evalMap.has(data.examId));
-      if (isApprovedByEval || (isAutonomous && (data.status === 'pending' || data.status === 'student_review'))) {
-        // Auto-heal status in Firestore
-        revDoc.ref.update({ status: 'approved', updatedAt: new Date() }).catch(() => null);
-      } else {
-        genuinelyPendingObj = revDoc;
-        break;
-      }
-    }
-
-    const genuinelyPendingSubDocs = pendingSub.docs.filter(d => {
-      const dData = d.data();
-      return dData.examId !== examId && d.id !== `${examId}_${studentCode}` && !d.id.includes(examId);
-    });
-
-    if (genuinelyPendingObj || genuinelyPendingSubDocs.length > 0 || !pendingPeer.empty) {
-      let pendingType = 'a pending review';
-      if (genuinelyPendingObj) {
-        const revDoc = genuinelyPendingObj.data()!;
-        pendingType = revDoc.status === 'student_review' 
-          ? 'an objective exam self-reflection' 
-          : 'a pending parent sign-off on your previous exam';
-      } else if (genuinelyPendingSubDocs.length > 0 || !pendingPeer.empty) {
-        pendingType = 'a classmate peer-grading assignment';
-      }
-
+    if (pendingReviewsCheck.blocked) {
       return NextResponse.json({
         status: 'blocked_by_pending_review',
-        message: `You have ${pendingType} that needs attention. Please ensure all pending reviews are completed before starting your next exam.`
+        message: pendingReviewsCheck.message
       }, { status: 403 });
     }
 
     // Strict block if the student was absent for a past scheduled exam and parent has not reviewed/acknowledged
+    const isAutonomous = student.userData?.autonomous === true;
     const absenceCheck = await ExamService.verifyStudentPastExamAbsenceBlock({
       studentCode,
       studentBatchIds,
       currentExamId: examId,
-      evalMap,
       isAutonomous
     });
 

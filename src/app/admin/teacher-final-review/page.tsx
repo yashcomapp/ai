@@ -9,6 +9,7 @@ import { useMathRender } from '@/hooks/useMathRender';
 import { useAdminStudents } from '@/hooks/useAdminReferenceData';
 import { formatRichText } from '@/lib/questionTypes';
 import QuestionDisplay, { RichMathText } from '@/components/QuestionDisplay';
+import StepAnswerInput from '@/components/exams/StepAnswerInput';
 
 interface AttemptRow {
   id: string;
@@ -692,69 +693,14 @@ function TeacherFinalReviewContent() {
                           {/* Grading Score Inputs */}
                           <strong style={{ fontSize: '12.5px', display: 'block', marginBottom: '8px', color: 'var(--text)' }}>✏️ Award Canonical Marks:</strong>
 
-                          {q.steps && q.steps.length > 0 ? (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                              {q.steps.map((step, si) => (
-                                <div key={si} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', color: 'var(--text)' }}>
-                                  <span style={{ fontSize: '12px' }}>{step.description}</span>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Max: {step.marks}</span>
-                                    <input 
-                                      type="number" 
-                                      min="0" 
-                                      max={step.marks} 
-                                      step="0.5" 
-                                      disabled={!!activeAttempt?.isFinalReviewed}
-                                      value={reviewAnswers[`ps_${idx}_${si}`] ?? ""}
-                                      onChange={(e) => {
-                                        const raw = e.target.value;
-                                        if (raw === "") {
-                                          setReviewAnswers(prev => {
-                                            const copy = { ...prev };
-                                            delete copy[`ps_${idx}_${si}`];
-                                            return copy;
-                                          });
-                                        } else {
-                                          const val = Math.min(step.marks, Math.max(0, parseFloat(raw) || 0));
-                                          setReviewAnswers(prev => ({ ...prev, [`ps_${idx}_${si}`]: val }));
-                                        }
-                                      }}
-                                      style={{ width: '70px', padding: '6px', border: '2px solid var(--accent)', borderRadius: '6px', textAlign: 'center', background: 'var(--surface-2)', color: 'var(--text)', fontWeight: 800, fontSize: '14px', outline: 'none' }}
-                                    />
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--surface-2)', border: '1.5px solid var(--border)', borderRadius: 'var(--radius-sm)', color: 'var(--text)' }}>
-                              <span style={{ fontSize: '12px', fontWeight: 600 }}>Overall Score</span>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Max: {q.marks}</span>
-                                <input 
-                                  type="number" 
-                                  min="0" 
-                                  max={q.marks} 
-                                  step="0.5" 
-                                  disabled={!!activeAttempt?.isFinalReviewed}
-                                  value={reviewAnswers[`ps_${idx}_0`] ?? ""}
-                                  onChange={(e) => {
-                                    const raw = e.target.value;
-                                    if (raw === "") {
-                                      setReviewAnswers(prev => {
-                                        const copy = { ...prev };
-                                        delete copy[`ps_${idx}_0`];
-                                        return copy;
-                                      });
-                                    } else {
-                                      const val = Math.min(q.marks, Math.max(0, parseFloat(raw) || 0));
-                                      setReviewAnswers(prev => ({ ...prev, [`ps_${idx}_0`]: val }));
-                                    }
-                                  }}
-                                  style={{ width: '70px', padding: '6px', border: '2px solid var(--accent)', borderRadius: '6px', textAlign: 'center', background: 'var(--surface-2)', color: 'var(--text)', fontWeight: 800, fontSize: '14px', outline: 'none' }}
-                                />
-                              </div>
-                            </div>
-                          )}
+                          <StepAnswerInput
+                            questionIndex={idx}
+                            steps={q.steps}
+                            questionMarks={q.marks}
+                            reviewAnswers={reviewAnswers}
+                            setReviewAnswers={setReviewAnswers}
+                            disabled={!!activeAttempt?.isFinalReviewed}
+                          />
 
                           <textarea 
                             placeholder="Add evaluation comments..."

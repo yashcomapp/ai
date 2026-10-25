@@ -9,33 +9,14 @@ import { useRouter } from 'next/navigation';
 import { playNotificationSound } from '@/lib/audioUtils';
 import { formatDateDMY } from '@/lib/dateUtils';
 import { sanitizeNoticeHtml } from '@/lib/sanitize';
-
-interface Batch {
-  id: string;
-  name: string;
-}
-
-interface Student {
-  studentCode: string;
-  name: string;
-}
+import { Batch } from '@/types/batch.types';
+import { Student } from '@/types/user.types';
+import { Notice } from '@/types/notice.types';
 
 interface Parent {
   email: string;
   displayName: string;
   studentCodes: string[];
-}
-
-interface Notice {
-  id: string;
-  title: string;
-  body: string;
-  targetType: string;
-  targetValues: string[];
-  createdAt: string | null;
-  createdBy: string;
-  isOverlay?: boolean;
-  type?: string;
 }
 
 export default function AdminNoticesPage() {
@@ -987,7 +968,7 @@ export default function AdminNoticesPage() {
                     </div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
                       <span style={{ padding: '2px 6px', background: 'var(--accent-soft)', borderRadius: 'var(--radius-sm)', color: 'var(--accent)', fontWeight: 600, wordBreak: 'break-all', width: '100%' }}>
-                        Target: {notice.targetType.toUpperCase()} {notice.targetValues.length > 0 && `(${notice.targetValues.join(', ')})`}
+                        Target: {(notice.targetType || 'all').toUpperCase()} {(notice.targetValues || []).length > 0 && `(${(notice.targetValues || []).join(', ')})`}
                       </span>
                     </div>
                   </div>

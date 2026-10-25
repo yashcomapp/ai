@@ -10,6 +10,8 @@ import QuestionDisplay, { RichMathText } from '@/components/QuestionDisplay';
 import { playNotificationSound } from '@/lib/audioUtils';
 import { getDateKeyIST, formatDateDMY, formatTimeIST, calculateEndDatetime, toLocalISOString, getMorningTestTimes, getEveningTestTimes, formatDateTimeShort as formatDate } from '@/lib/dateUtils';
 import { formatReportStudentName, getScoreChip, getDeepScoreColor } from '@/lib/lqCardExport';
+import { Batch } from '@/types/batch.types';
+import { Student } from '@/types/user.types';
 
 interface Attempt {
   id: string;
@@ -67,21 +69,6 @@ interface Exam {
   questionCodes?: string[];
 }
 
-interface Student {
-  id: string;
-  studentCode: string;
-  name: string;
-  batchId: string | null;
-  batchIds: string[];
-  autonomous?: boolean;
-  lastLoginAt?: string | null;
-  lastActiveAt?: string | null;
-}
-
-interface Batch {
-  id: string;
-  name: string;
-}
 
 function formatAbsentLogin(lastLoginAt?: string | null) {
   if (!lastLoginAt) return '(Never Logged In)';

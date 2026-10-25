@@ -1,18 +1,9 @@
 'use client';
 
 import React from 'react';
+import { ChatRoom } from '@/types/chat.types';
 
-export interface ChatRoom {
-  roomId: string;
-  type: 'group' | 'dm';
-  name: string;
-  participants: string[];
-  unreadCounts: Record<string, number>;
-  isMutedForStudents?: boolean;
-  isMutedForParents?: boolean;
-  lastMessage?: { text: string; senderName: string; timestamp: string };
-  pinnedMessage?: { messageId: string; text: string; senderName: string; timestamp: string } | null;
-}
+export type { ChatRoom };
 
 interface ChatHeaderProps {
   isMobile: boolean;

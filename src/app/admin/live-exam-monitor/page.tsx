@@ -9,6 +9,7 @@ import { collection, query, where, onSnapshot, doc, updateDoc, arrayUnion } from
 import { ref, push, set, onValue, off, remove, serverTimestamp } from 'firebase/database';
 import { db } from '@/lib/firebase/firestore';
 import { rtdb } from '@/lib/firebase/rtdb';
+import { RTC_CONFIG } from '@/lib/rtcConfig';
 
 export interface ManualCapture {
   id: string;
@@ -57,21 +58,6 @@ interface Session {
 
 const getSnapshotImage = (snap: any): string => snap?.imageBase64 || snap?.imageData || '';
 
-const RTC_CONFIG = {
-  iceServers: [
-    { urls: 'stun:stun.l.google.com:19302' },
-    {
-      urls: 'turn:openrelay.metered.ca:80',
-      username: 'openrelayproject',
-      credential: 'openrelayproject'
-    },
-    {
-      urls: 'turn:openrelay.metered.ca:443',
-      username: 'openrelayproject',
-      credential: 'openrelayproject'
-    }
-  ]
-};
 
 export default function AdminLiveMonitorPage() {
   const { firebaseUser } = useAuth();

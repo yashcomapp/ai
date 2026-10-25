@@ -5,10 +5,7 @@ import { verifyRole } from '@/lib/auth';
 import { encrypt } from '@/lib/encryption';
 import { checkDistributedRateLimit } from '@/lib/rateLimit';
 import { getBirthdatePassword } from '@/lib/dateUtils';
-const NAME_RE = /^[a-zA-Z\s.]+$/;
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const MOBILE_RE = /^[6789]\d{9}$/;
-const PASSWORD_RE = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+import { NAME_RE, EMAIL_RE, MOBILE_RE, PASSWORD_RE } from '@/lib/validation';
 
 export async function POST(req: NextRequest) {
   try {

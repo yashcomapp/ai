@@ -4,18 +4,8 @@ import DateInputDMY from '@/components/DateInputDMY';
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-
-interface Batch {
-  id: string;
-  name: string;
-  subject: string;
-  description: string;
-}
-
-const NAME_RE     = /^[A-Za-z][A-Za-z\s'-]{1,}$/;
-const MOBILE_RE   = /^[6-9]\d{9}$/;
-const EMAIL_RE    = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const PASSWORD_RE = /^(?=.*[A-Z])(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/;
+import { NAME_RE, EMAIL_RE, MOBILE_RE, PASSWORD_RE } from '@/lib/validation';
+import { Batch } from '@/types/batch.types';
 
 export default function RegisterPage() {
   const [batches, setBatches] = useState<Batch[]>([]);
@@ -97,7 +87,7 @@ export default function RegisterPage() {
         msg = !EMAIL_RE.test(value.trim()) ? 'Parent email is required for parent login.' : '';
         break;
       case 'password':
-        msg = !PASSWORD_RE.test(value) ? 'Min 8 characters, 1 uppercase letter, 1 special character.' : '';
+        msg = !PASSWORD_RE.test(value) ? 'Min 8 characters with uppercase, lowercase, number, and a special character.' : '';
         break;
       case 'confirmPassword':
         msg = value !== formData.password ? 'Passwords do not match.' : '';

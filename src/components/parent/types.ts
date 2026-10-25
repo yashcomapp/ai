@@ -89,26 +89,9 @@ export interface ParentDashboardData {
   };
 }
 
-export interface ReviewItem {
-  id: string;
-  examId?: string;
-  practiceId?: string;
-  name: string;
-  examName?: string;
-  subject?: string;
-  type: 'objective' | 'practice' | 'subjective' | 'entrance' | 'absent_exam';
-  date: string;
-  scorePercent?: number;
-  percentage?: number;
-  status: 'pending' | 'approved';
-  wrongCount?: number;
-  unansweredCount?: number;
-  correctCount?: number;
-  durationSpent?: number;
-  topicsCovered?: string[];
-  submittedAt?: string;
-  reviewedByActor?: string;
-}
+import { ReviewItem } from '@/types/review.types';
+
+export type { ReviewItem };
 
 export interface ParentNotice {
   id: string;
