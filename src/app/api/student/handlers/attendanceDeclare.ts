@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase/admin';
 import { verifyAnyRole } from '@/lib/auth';
 import { getDateKeyIST } from '@/lib/dateUtils';
+import { resolveParentStudentCodes } from '@/lib/dashboardDbUtils';
 import { invalidateCache } from '@/lib/firebase/cache';
 
 
@@ -29,27 +30,7 @@ export async function GET(req: NextRequest) {
       const code = session.userData?.studentCode;
       if (code) studentCodes.push(code.toUpperCase());
     } else if (session.role === 'parent') {
-      const parentData = session.userData;
-      let parentCodes: string[] = [];
-      if (Array.isArray(parentData?.studentCodes)) {
-        parentCodes = parentData.studentCodes.filter(Boolean);
-      } else if (parentData?.studentCode) {
-        parentCodes = [parentData.studentCode];
-      }
-
-      const parentEmail = parentData?.email?.toLowerCase()?.trim();
-      if (parentEmail) {
-        const querySnap = await adminDb.collection('users')
-          .where('role', '==', 'student')
-          .where('parentEmail', '==', parentEmail)
-          .get();
-        querySnap.docs.forEach(doc => {
-          const data = doc.data();
-          if (data.studentCode && !parentCodes.includes(data.studentCode)) {
-            parentCodes.push(data.studentCode);
-          }
-        });
-      }
+      const parentCodes = await resolveParentStudentCodes(session.userData);
       studentCodes = parentCodes.map((c: string) => c.toUpperCase());
     }
 

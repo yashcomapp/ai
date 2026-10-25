@@ -5,29 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import dynamic from 'next/dynamic';
 import { formatDateDMY } from '@/lib/dateUtils';
 import DateInputDMY from '@/components/DateInputDMY';
-
-
-interface Registration {
-  id: string;
-  studentName: string;
-  studentEmail: string;
-  studentMobile: string;
-  dob: string;
-  gender: string;
-  bloodGroup: string;
-  address: string;
-  parentName: string;
-  parentEmail: string;
-  parentMobile: string;
-  parentRelation: string;
-  parentOccupation?: string;
-  batchId: string;
-  batchName: string;
-  tempId: string;
-  autonomous?: boolean;
-  status: 'pending' | 'approved' | 'rejected';
-  createdAt: string;
-}
+import { Registration } from '@/types/user.types';
 
 export default function RegistrationsManager() {
   const { firebaseUser } = useAuth();

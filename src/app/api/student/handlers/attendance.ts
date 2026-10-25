@@ -3,6 +3,7 @@ import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole } from '@/lib/auth';
 import { getDateKeyIST as getISTDateString } from '@/lib/dateUtils';
 import { calculateAttendanceSummary } from '@/lib/attendanceUtils';
+import { resolveParentStudentCodes } from '@/lib/dashboardDbUtils';
 import { getFromCache, setInCache, invalidateCache } from '@/lib/firebase/cache';
 
 
@@ -23,27 +24,7 @@ export async function GET(req: NextRequest) {
         const { searchParams } = new URL(req.url);
         const targetStudentCode = searchParams.get('studentCode')?.trim().toUpperCase();
         
-        const parentData = parentSession.userData;
-        let parentCodes: string[] = [];
-        if (Array.isArray(parentData?.studentCodes)) {
-          parentCodes = parentData.studentCodes.filter(Boolean);
-        } else if (parentData?.studentCode) {
-          parentCodes = [parentData.studentCode];
-        }
-
-        const parentEmail = parentData?.email?.toLowerCase()?.trim();
-        if (parentEmail) {
-          const querySnap = await adminDb.collection('users')
-            .where('role', '==', 'student')
-            .where('parentEmail', '==', parentEmail)
-            .get();
-          querySnap.docs.forEach(doc => {
-            const data = doc.data();
-            if (data.studentCode && !parentCodes.includes(data.studentCode)) {
-              parentCodes.push(data.studentCode);
-            }
-          });
-        }
+        const parentCodes = await resolveParentStudentCodes(parentSession.userData);
         const parentCodesUpper = parentCodes.map((c: string) => c.toUpperCase());
 
         if (targetStudentCode && parentCodesUpper.includes(targetStudentCode)) {
@@ -196,27 +177,7 @@ export async function POST(req: NextRequest) {
         const { searchParams } = new URL(req.url);
         const targetStudentCode = (body.studentCode || searchParams.get('studentCode'))?.trim().toUpperCase();
         
-        const parentData = parentSession.userData;
-        let parentCodes: string[] = [];
-        if (Array.isArray(parentData?.studentCodes)) {
-          parentCodes = parentData.studentCodes.filter(Boolean);
-        } else if (parentData?.studentCode) {
-          parentCodes = [parentData.studentCode];
-        }
-
-        const parentEmail = parentData?.email?.toLowerCase()?.trim();
-        if (parentEmail) {
-          const querySnap = await adminDb.collection('users')
-            .where('role', '==', 'student')
-            .where('parentEmail', '==', parentEmail)
-            .get();
-          querySnap.docs.forEach(doc => {
-            const data = doc.data();
-            if (data.studentCode && !parentCodes.includes(data.studentCode)) {
-              parentCodes.push(data.studentCode);
-            }
-          });
-        }
+        const parentCodes = await resolveParentStudentCodes(parentSession.userData);
         const parentCodesUpper = parentCodes.map((c: string) => c.toUpperCase());
 
         if (targetStudentCode && parentCodesUpper.includes(targetStudentCode)) {

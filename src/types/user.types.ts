@@ -79,7 +79,7 @@ export interface WeeklyIntegrity {
 }
 
 export interface Registration {
-  id?: string;
+  id: string;
   studentName: string;
   studentEmail: string;
   studentMobile: string;
@@ -95,6 +95,7 @@ export interface Registration {
   batchId: string;
   batchName: string;
   tempId: string;
+  autonomous?: boolean;
   status: 'pending' | 'approved' | 'rejected';
   password?: string;
   createdAt: any;

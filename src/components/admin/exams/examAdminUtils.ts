@@ -1,12 +1,7 @@
 import { Exam, Assignment, ExamScheduleStatus } from './types';
-import { getDateKeyIST } from '@/lib/dateUtils';
+import { getDateKeyIST, parseDateInput } from '@/lib/dateUtils';
 
-export function parseDateInput(val: any): Date | null {
-  if (!val) return null;
-  if (val.seconds) return new Date(val.seconds * 1000);
-  const d = new Date(val);
-  return isNaN(d.getTime()) ? null : d;
-}
+export { parseDateInput };
 
 export function getNormExamDuration(exam: any, type: 'objective' | 'subjective' = 'objective'): number {
   if (typeof exam.duration === 'number' && exam.duration > 0) {

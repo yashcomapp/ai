@@ -20,6 +20,7 @@ import { RTC_CONFIG } from '@/lib/rtcConfig';
 import StepAnswerInput from '@/components/exams/StepAnswerInput';
 import { Question } from '@/types/question.types';
 import { useSubjectiveAnswers } from '@/hooks/useSubjectiveAnswers';
+import ExamHardwareCheckModal from '@/components/exam/ExamHardwareCheckModal';
 
 
 // Extend window interface for CDN scripts
@@ -592,97 +593,18 @@ function TakeSubjectiveExamContent() {
       {!examSubmitted ? (
         <>
           {/* Camera modal permission for standard takers */}
-          {mode !== 'peer-review' && cameraModalOpen && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.65)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', zIndex: 20000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '40px 20px', overflowY: 'auto' }}>
-          <div className="card" style={{ maxWidth: '450px', width: '90%', padding: '30px', textAlign: 'center', background: 'var(--surface-popover)', border: '1px solid var(--border-popover)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-lg)', margin: '0 auto' }}>
-            {diagnosticRunning ? (
-              <div style={{ padding: '20px 0' }}>
-                <div className="spinner" style={{ border: '3px solid rgba(255, 255, 255, 0.1)', borderTop: '3px solid var(--accent)', borderRadius: '50%', width: '40px', height: '40px', margin: '0 auto 16px', animation: 'spin 1s linear infinite' }} />
-                <style dangerouslySetInnerHTML={{__html: `
-                  @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-                `}} />
-                <h3 style={{ fontSize: '15px', fontWeight: 700 }}>Initializing proctoring safeguards...</h3>
-                <p style={{ color: 'var(--text-muted)', fontSize: '12px', marginTop: '6px' }}>Releasing previous device locks to prevent conflicts.</p>
-              </div>
-            ) : (
-              <>
-                <h2 style={{ fontSize: '1.4rem', marginBottom: '10px' }}>Hardware Diagnostic Check</h2>
-                <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginBottom: '16px' }}>Please check that your webcam and microphone are working correctly before starting.</p>
-
-            <div style={{ 
-              background: 'var(--danger-bg)', 
-              border: '1px dashed var(--danger-border)', 
-              borderRadius: 'var(--radius-sm)', 
-              padding: '12px 16px', 
-              marginBottom: '16px', 
-              textAlign: 'left' 
-            }}>
-              <strong style={{ fontSize: '12px', color: 'var(--danger)', display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
-                ⚠️ Proctored Exam Rules & Violation Limits
-              </strong>
-              <ul style={{ margin: 0, paddingLeft: '16px', fontSize: '11px', color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', gap: '4px', lineHeight: '1.4' }}>
-                <li><strong>Tab Switching:</strong> Max 2 focus-loss warnings allowed. Exceeding this (3rd switch) will auto-submit your exam.</li>
-                <li><strong>Face & Gaze Tracking:</strong> Enabled for integrity logging (no auto-submission).</li>
-              </ul>
-            </div>
-            
-            <div style={{ width: '100%', height: '220px', background: 'var(--bg-card)', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', position: 'relative' }}>
-              {cameraStream ? (
-                <video 
-                  ref={(el) => {
-                    if (el && el.srcObject !== cameraStream) {
-                      el.srcObject = cameraStream;
-                      el.play().catch(() => {});
-                    }
-                  }}
-                  autoPlay
-                  playsInline
-                  muted
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                />
-              ) : (
-                <div style={{ color: 'var(--text-muted)', fontSize: '12px' }}>Webcam Feed Offline</div>
-              )}
-            </div>
-
-            {cameraStream && (
-              <div style={{ margin: '20px 0 10px', textAlign: 'left' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px' }}>
-                  <span>🎙️ Mic Input Activity</span>
-                  <strong>{audioLevel > 0 ? `${audioLevel}%` : 'Silent'}</strong>
-                </div>
-                <div style={{ height: '8px', background: 'var(--bg-soft)', borderRadius: '4px', overflow: 'hidden' }}>
-                  <div style={{ height: '100%', background: 'var(--success)', width: `${audioLevel}%`, transition: 'width 0.1s ease' }}></div>
-                </div>
-              </div>
-            )}
-
-            {cameraStatus && <p style={{ color: 'var(--text-muted)', fontSize: '12px', margin: '15px 0 0' }}>{cameraStatus}</p>}
-            
-            {!cameraStream ? (
-              <button 
-                className="btn btn-primary" 
-                onClick={handleRunCheck} 
-                style={{ marginTop: '20px', width: '100%' }}
-                disabled={permissionBlocked && micAttemptsRemaining === 0}
-              >
-                {permissionBlocked ? '❌ Hardware Blocked (Retry)' : 'Test Camera & Microphone'}
-              </button>
-            ) : (
-              <button 
-                className="btn btn-success" 
-                onClick={handleProceedToExam} 
-                disabled={isStartingExam}
-                style={{ marginTop: '20px', width: '100%' }}
-              >
-                {isStartingExam ? 'Starting Exam...' : 'Start Exam / Proceed'}
-              </button>
-            )}
-              </>
-            )}
-          </div>
-        </div>
-      )}
+          <ExamHardwareCheckModal
+            isOpen={mode !== 'peer-review' && cameraModalOpen}
+            diagnosticRunning={diagnosticRunning}
+            cameraStream={cameraStream}
+            audioLevel={audioLevel}
+            cameraStatus={cameraStatus}
+            permissionBlocked={permissionBlocked}
+            micAttemptsRemaining={micAttemptsRemaining}
+            isStartingExam={isStartingExam}
+            onRunCheck={handleRunCheck}
+            onProceed={handleProceedToExam}
+          />
 
       {/* Interruption Lockout & Resume Modal (Phone call / tab switch recovery SSOT) */}
       <InterruptionLockoutModal
