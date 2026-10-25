@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { formatDateDMY as formatDateStr, getDateKeyIST } from '@/lib/dateUtils';
 import DateInputDMY from '@/components/DateInputDMY';
+import ClassFilterSelect from '@/components/fees/ClassFilterSelect';
 import { renderSortHeader, getStatusWeight, deleteFeeTransaction, getLateRemarks as computeLateRemarks, confirmAndDeleteTransaction, handleDeleteTransaction, FeeRosterRow } from '@/lib/feesUtils';
 export type { FeeRosterRow };
 
@@ -1229,19 +1230,11 @@ export default function FeesJournal({
               </div>
 
               {/* Class Filter */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>Class</label>
-                <select
-                  value={studentClassFilter}
-                  onChange={(e) => setStudentClassFilter(e.target.value)}
-                  style={{ padding: '7px 10px', borderRadius: '4px', border: '1px solid var(--border-light)', background: 'var(--bg-soft)', color: 'var(--text)', fontSize: '12px' }}
-                >
-                  <option value="ALL">All Classes</option>
-                  {uniqueClasses.map(cls => (
-                    <option key={cls} value={cls}>Class {cls}</option>
-                  ))}
-                </select>
-              </div>
+              <ClassFilterSelect
+                value={studentClassFilter}
+                onChange={setStudentClassFilter}
+                classes={uniqueClasses}
+              />
 
               {/* Status Filter */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>

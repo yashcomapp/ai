@@ -6,6 +6,7 @@ import { calculateEndDatetime, toLocalISOString } from '@/lib/dateUtils';
 import { Batch } from '@/types/batch.types';
 import TargetPicker from './TargetPicker';
 import ScheduleTimingInputs from './ScheduleTimingInputs';
+import { AttemptDurationControls } from './AttemptDurationControls';
 
 export interface EditModalState {
   show: boolean;
@@ -170,94 +171,47 @@ export function EditAssignmentModal({
           />
         </div>
 
-        <div style={{ display: 'flex', gap: '15px' }}>
-          <div style={{ flex: 1 }}>
-            <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px' }}>Attempt Limit</label>
-            <select 
-              value={editModal.attemptLimit} 
-              onChange={(e) => setEditModal(prev => ({ ...prev, attemptLimit: Number(e.target.value) }))}
-              style={{ width: '100%', padding: '5px 6px', background: 'var(--surface)', color: 'var(--text)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)' }}
-            >
-              <option value={1}>1 Attempt</option>
-              <option value={2}>2 Attempts</option>
-              <option value={3}>3 Attempts</option>
-              <option value={-1}>Unlimited</option>
-            </select>
-          </div>
-          {editModal.collection === 'batchAssignments' && (
-            <div style={{ flex: 1 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>
-                  Duration (Minutes)
-                </label>
-                <label style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', color: editModal.overrideDuration ? 'var(--primary)' : 'var(--text-muted)' }}>
-                  <input 
-                    type="checkbox" 
-                    checked={editModal.overrideDuration} 
-                    onChange={(e) => {
-                      const checked = e.target.checked;
-                      setEditModal(prev => {
-                        const dur = checked ? (Number(prev.examDuration) || prev.normDuration || 30) : (prev.normDuration || 30);
-                        let updates: any = { overrideDuration: checked, examDuration: dur };
-                        if (prev.startAtStr && dur && dur > 0) {
-                          updates.endAtStr = calculateEndDatetime(prev.startAtStr, dur);
-                        }
-                        return { ...prev, ...updates };
-                      });
-                    }}
-                    style={{ cursor: 'pointer' }}
-                  />
-                  <span>Override</span>
-                </label>
-              </div>
-              <input 
-                type="number" 
-                value={editModal.examDuration === undefined || editModal.examDuration === null ? '' : editModal.examDuration} 
-                disabled={!editModal.overrideDuration}
-                onChange={(e) => {
-                  const raw = e.target.value;
-                  if (raw === '') {
-                    setEditModal(prev => ({ ...prev, examDuration: '' as any }));
-                    return;
-                  }
-                  const dur = Number(raw);
-                  setEditModal(prev => {
-                    let updates: any = { examDuration: isNaN(dur) ? '' : dur };
-                    if (prev.startAtStr && !isNaN(dur) && dur > 0) {
-                      updates.endAtStr = calculateEndDatetime(prev.startAtStr, dur);
-                    }
-                    return { ...prev, ...updates };
-                  });
-                }}
-                onBlur={() => {
-                  if (!editModal.examDuration || Number(editModal.examDuration) < 1) {
-                    const fallbackDur = editModal.normDuration || 30;
-                    setEditModal(prev => ({
-                      ...prev,
-                      examDuration: fallbackDur,
-                      endAtStr: prev.startAtStr ? calculateEndDatetime(prev.startAtStr, fallbackDur) : prev.endAtStr
-                    }));
-                  }
-                }}
-                style={{ 
-                  width: '100%', 
-                  padding: '5px 6px', 
-                  background: editModal.overrideDuration ? 'var(--surface)' : 'var(--surface-muted, rgba(255, 255, 255, 0.05))', 
-                  color: editModal.overrideDuration ? 'var(--text)' : 'var(--text-muted)', 
-                  border: '1px solid var(--border-light)', 
-                  borderRadius: 'var(--radius-sm)',
-                  cursor: editModal.overrideDuration ? 'text' : 'not-allowed',
-                  opacity: editModal.overrideDuration ? 1 : 0.8
-                }}
-              />
-              {!editModal.overrideDuration && (
-                <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                  Auto-calculated from questions ({editModal.normDuration} mins standard norm).
-                </div>
-              )}
+        <AttemptDurationControls
+          maxAttempts={editModal.attemptLimit}
+          onChangeMaxAttempts={(val) => setEditModal(prev => ({ ...prev, attemptLimit: val }))}
+          showDuration={editModal.collection === 'batchAssignments'}
+          overrideDuration={editModal.overrideDuration}
+          examDuration={editModal.examDuration}
+          onChangeOverrideDuration={(checked) => {
+            setEditModal(prev => {
+              const dur = checked ? (Number(prev.examDuration) || prev.normDuration || 30) : (prev.normDuration || 30);
+              let updates: any = { overrideDuration: checked, examDuration: dur };
+              if (prev.startAtStr && dur && dur > 0) {
+                updates.endAtStr = calculateEndDatetime(prev.startAtStr, dur);
+              }
+              return { ...prev, ...updates };
+            });
+          }}
+          onChangeExamDuration={(dur) => {
+            setEditModal(prev => {
+              let updates: any = { examDuration: dur };
+              if (prev.startAtStr && typeof dur === 'number' && dur > 0) {
+                updates.endAtStr = calculateEndDatetime(prev.startAtStr, dur);
+              }
+              return { ...prev, ...updates };
+            });
+          }}
+          onBlurExamDuration={() => {
+            if (!editModal.examDuration || Number(editModal.examDuration) < 1) {
+              const fallbackDur = editModal.normDuration || 30;
+              setEditModal(prev => ({
+                ...prev,
+                examDuration: fallbackDur,
+                endAtStr: prev.startAtStr ? calculateEndDatetime(prev.startAtStr, fallbackDur) : prev.endAtStr
+              }));
+            }
+          }}
+          durationHelperText={!editModal.overrideDuration && (
+            <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>
+              Auto-calculated from questions ({editModal.normDuration} mins standard norm).
             </div>
           )}
-        </div>
+        />
 
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '6px' }}>
           <button className="btn btn-secondary" onClick={() => setEditModal(prev => ({ ...prev, show: false }))}>Cancel</button>

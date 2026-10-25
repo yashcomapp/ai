@@ -6,6 +6,7 @@ import { calculateEndDatetime, toLocalISOString } from '@/lib/dateUtils';
 import { Batch } from '@/types/batch.types';
 import TargetPicker from './TargetPicker';
 import ScheduleTimingInputs from './ScheduleTimingInputs';
+import { AttemptDurationControls } from './AttemptDurationControls';
 
 export interface AssignModalState {
   show: boolean;
@@ -286,97 +287,50 @@ export function AssignExamModal({
           />
         </div>
 
-        <div style={{ display: 'flex', gap: '15px' }}>
-          <div style={{ flex: 1 }}>
-            <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px' }}>Attempt Limit</label>
-            <select 
-              value={assignModal.attemptLimit} 
-              onChange={(e) => setAssignModal(prev => ({ ...prev, attemptLimit: Number(e.target.value) }))}
-              style={{ width: '100%', padding: '5px 6px', background: 'var(--surface)', color: 'var(--text)', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)' }}
-            >
-              <option value={1}>1 Attempt</option>
-              <option value={2}>2 Attempts</option>
-              <option value={3}>3 Attempts</option>
-              <option value={-1}>Unlimited</option>
-            </select>
-          </div>
-          {assignModal.type === 'objective' && (
-            <div style={{ flex: 1 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>
-                  Duration (Minutes)
-                </label>
-                <label style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', color: assignModal.overrideDuration ? 'var(--primary)' : 'var(--text-muted)' }}>
-                  <input 
-                    type="checkbox" 
-                    checked={assignModal.overrideDuration} 
-                    onChange={(e) => {
-                      const checked = e.target.checked;
-                      setAssignModal(prev => {
-                        const dur = checked ? (Number(prev.examDuration) || prev.normDuration || 30) : (prev.normDuration || 30);
-                        let updates: any = { overrideDuration: checked, examDuration: dur };
-                        if (prev.startAtStr && dur && dur > 0) {
-                          updates.endAtStr = calculateEndDatetime(prev.startAtStr, dur);
-                        }
-                        return { ...prev, ...updates };
-                      });
-                    }}
-                    style={{ cursor: 'pointer' }}
-                  />
-                  <span>Override</span>
-                </label>
-              </div>
-              <input 
-                type="number" 
-                value={assignModal.examDuration === undefined || assignModal.examDuration === null ? '' : assignModal.examDuration} 
-                disabled={!assignModal.overrideDuration}
-                onChange={(e) => {
-                  const raw = e.target.value;
-                  if (raw === '') {
-                    setAssignModal(prev => ({ ...prev, examDuration: '' as any }));
-                    return;
-                  }
-                  const dur = Number(raw);
-                  setAssignModal(prev => {
-                    let updates: any = { examDuration: isNaN(dur) ? '' : dur };
-                    if (prev.startAtStr && !isNaN(dur) && dur > 0) {
-                      updates.endAtStr = calculateEndDatetime(prev.startAtStr, dur);
-                    }
-                    return { ...prev, ...updates };
-                  });
-                }}
-                onBlur={() => {
-                  setAssignModal(prev => {
-                    if (!prev.examDuration || Number(prev.examDuration) < 1) {
-                      const fallback = prev.normDuration || 30;
-                      return {
-                        ...prev,
-                        examDuration: fallback,
-                        endAtStr: prev.startAtStr ? calculateEndDatetime(prev.startAtStr, fallback) : prev.endAtStr
-                      };
-                    }
-                    return prev;
-                  });
-                }}
-                style={{ 
-                  width: '100%', 
-                  padding: '5px 6px', 
-                  background: assignModal.overrideDuration ? 'var(--surface)' : 'var(--surface-muted, rgba(255, 255, 255, 0.05))', 
-                  color: assignModal.overrideDuration ? 'var(--text)' : 'var(--text-muted)', 
-                  border: '1px solid var(--border-light)', 
-                  borderRadius: 'var(--radius-sm)',
-                  cursor: assignModal.overrideDuration ? 'text' : 'not-allowed',
-                  opacity: assignModal.overrideDuration ? 1 : 0.8
-                }}
-              />
-              {!assignModal.overrideDuration && (
-                <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                  Auto-calculated from questions ({assignModal.normDuration} mins standard norm).
-                </div>
-              )}
+        <AttemptDurationControls
+          maxAttempts={assignModal.attemptLimit}
+          onChangeMaxAttempts={(val) => setAssignModal(prev => ({ ...prev, attemptLimit: val }))}
+          showDuration={assignModal.type === 'objective'}
+          overrideDuration={assignModal.overrideDuration}
+          examDuration={assignModal.examDuration}
+          onChangeOverrideDuration={(checked) => {
+            setAssignModal(prev => {
+              const dur = checked ? (Number(prev.examDuration) || prev.normDuration || 30) : (prev.normDuration || 30);
+              let updates: any = { overrideDuration: checked, examDuration: dur };
+              if (prev.startAtStr && dur && dur > 0) {
+                updates.endAtStr = calculateEndDatetime(prev.startAtStr, dur);
+              }
+              return { ...prev, ...updates };
+            });
+          }}
+          onChangeExamDuration={(dur) => {
+            setAssignModal(prev => {
+              let updates: any = { examDuration: dur };
+              if (prev.startAtStr && typeof dur === 'number' && dur > 0) {
+                updates.endAtStr = calculateEndDatetime(prev.startAtStr, dur);
+              }
+              return { ...prev, ...updates };
+            });
+          }}
+          onBlurExamDuration={() => {
+            setAssignModal(prev => {
+              if (!prev.examDuration || Number(prev.examDuration) < 1) {
+                const fallback = prev.normDuration || 30;
+                return {
+                  ...prev,
+                  examDuration: fallback,
+                  endAtStr: prev.startAtStr ? calculateEndDatetime(prev.startAtStr, fallback) : prev.endAtStr
+                };
+              }
+              return prev;
+            });
+          }}
+          durationHelperText={!assignModal.overrideDuration && (
+            <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>
+              Auto-calculated from questions ({assignModal.normDuration} mins standard norm).
             </div>
           )}
-        </div>
+        />
 
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '6px' }}>
           <button className="btn btn-secondary" onClick={() => setAssignModal(prev => ({ ...prev, show: false }))} disabled={assigning}>Cancel</button>

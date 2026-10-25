@@ -253,45 +253,7 @@ export async function GET(req: NextRequest) {
 
       if (parent) {
         // Strict parent authorization check on the retrieved document
-        const parentData = parent.userData;
-        let studentCodes: string[] = [];
-        if (Array.isArray(parentData?.studentCodes)) {
-          studentCodes = parentData.studentCodes.filter(Boolean);
-        } else if (parentData?.studentCode) {
-          studentCodes = [parentData.studentCode];
-        }
-        const parentEmail = parentData?.email?.toLowerCase();
-        const parentPhone = parentData?.phone || parentData?.parentPhone || parentData?.mobile;
-        if (parentEmail || parentPhone) {
-          const [emailSnap, phoneSnap] = await Promise.all([
-            parentEmail
-              ? adminDb.collection('users')
-                  .where('role', '==', 'student')
-                  .where('parentEmail', '==', parentEmail)
-                  .get()
-                  .catch(() => ({ docs: [] } as any))
-              : Promise.resolve({ docs: [] } as any),
-            parentPhone
-              ? adminDb.collection('users')
-                  .where('role', '==', 'student')
-                  .where('parentPhone', '==', parentPhone)
-                  .get()
-                  .catch(() => ({ docs: [] } as any))
-              : Promise.resolve({ docs: [] } as any)
-          ]);
-          emailSnap.docs.forEach((doc: any) => {
-            const data = doc.data();
-            if (data.studentCode && !studentCodes.includes(data.studentCode)) {
-              studentCodes.push(data.studentCode);
-            }
-          });
-          phoneSnap.docs.forEach((doc: any) => {
-            const data = doc.data();
-            if (data.studentCode && !studentCodes.includes(data.studentCode)) {
-              studentCodes.push(data.studentCode);
-            }
-          });
-        }
+        const studentCodes = await resolveParentStudentCodes(parent.userData);
         if (!studentCodes.includes(reviewData.studentCode)) {
           return NextResponse.json({ message: 'Access denied to this report.' }, { status: 403 });
         }

@@ -8,6 +8,7 @@ import {
   getExamScheduleStatus,
   isTodayOrTomorrow
 } from './examAdminUtils';
+import { SubjectiveModeBadges } from './SubjectiveModeBadges';
 
 export interface TodayTomorrowExamsTableProps {
   exams: Exam[];
@@ -98,26 +99,7 @@ export function TodayTomorrowExamsTable({
                     <tr key={exam.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
                       <td style={{ padding: '4px 8px', fontWeight: 600 }}>{exam.name}</td>
                       {type === 'subjective' && (
-                        <>
-                          <td style={{ padding: '4px 8px' }}>
-                            {mode === 'home' ? (
-                              <span className="badge badge-info" style={{ fontSize: '10px' }}>🏠 Home</span>
-                            ) : (
-                              <span className="badge badge-warning" style={{ fontSize: '10px' }}>🏫 Classroom</span>
-                            )}
-                          </td>
-                          <td style={{ padding: '4px 8px', textTransform: 'capitalize', fontSize: '12px' }}>
-                            {mode === 'classroom' ? (
-                              peerStatus === 'not_started' ? (
-                                <span style={{ color: 'var(--warning)' }}>⏳ Waiting</span>
-                              ) : peerStatus === 'assigned' ? (
-                                <span style={{ color: 'var(--accent)' }}>🔄 In Progress</span>
-                              ) : (
-                                <span style={{ color: 'var(--success)' }}>✅ Finished</span>
-                              )
-                            ) : '—'}
-                          </td>
-                        </>
+                        <SubjectiveModeBadges mode={mode} peerStatus={peerStatus} />
                       )}
                       <td style={{ padding: '4px 8px', fontSize: '11px', color: 'var(--text-muted)' }}>
                         {getAssignedNames(exam.id, exam.batchId)}

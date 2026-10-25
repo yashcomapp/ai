@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import ModalShell from '@/components/common/ModalShell';
 
 export interface ReadReceiptsModalProps {
   receiptsModalMessage: any;
@@ -95,27 +96,17 @@ export function ReadReceiptsModal({
   });
 
   return (
-    <div style={{
-      position: 'fixed',
-      inset: 0,
-      background: 'rgba(0, 0, 0, 0.6)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 10000,
-      backdropFilter: 'blur(4px)',
-      padding: '16px'
-    }}>
+    <ModalShell
+      isOpen={!!receiptsModalMessage}
+      onClose={() => setReceiptsModalMessage(null)}
+      maxWidth="340px"
+      width="340px"
+    >
       <div style={{
-        background: 'var(--surface-popover)',
-        border: '1px solid var(--border)',
-        borderRadius: '12px',
-        padding: '20px',
-        width: '340px',
         display: 'flex',
         flexDirection: 'column',
         gap: '12px',
-        maxHeight: '80%',
+        maxHeight: '80vh',
         overflowY: 'auto'
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -151,7 +142,7 @@ export function ReadReceiptsModal({
           )}
         </div>
       </div>
-    </div>
+    </ModalShell>
   );
 }
 

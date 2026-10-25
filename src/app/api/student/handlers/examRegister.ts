@@ -3,6 +3,7 @@ import { adminDb } from '@/lib/firebase/admin';
 import { deriveTopicCodeFromQuestionCode } from '@/lib/questionTypes';
 import { verifyAnyRole } from '@/lib/auth';
 import { getDateKeyIST, formatDateIST as formatDate } from '@/lib/dateUtils';
+import { fetchStudentRawAssignments } from '@/lib/studentDb';
 
 
 export async function GET(req: NextRequest) {
@@ -81,10 +82,7 @@ export async function GET(req: NextRequest) {
 
     // 3. Fetch all student-scoped assignments, attempts, absence reasons, and direct subjective exams in parallel
     const [
-      batchAssignmentsSnap,
-      studentAssignmentsSnap,
-      subAssignmentsSnap,
-      subStudentAssignmentsSnap,
+      rawAssignments,
       reviewsSnap,
       subjectiveAttemptsSnap,
       absenceReasonsSnap,
@@ -92,33 +90,7 @@ export async function GET(req: NextRequest) {
       directSubjBatchesAnySnap,
       directSubjStudentsSnap
     ] = await Promise.all([
-      // Objective batch assignments
-      batchIds.length > 0
-        ? adminDb.collection('batchAssignments')
-            .where('targetBatches', 'array-contains-any', batchIds)
-            .where('status', '==', 'active')
-            .get()
-        : Promise.resolve({ docs: [] } as any),
-
-      // Objective student specific assignments
-      adminDb.collection('batchAssignments')
-        .where('targetStudents', 'array-contains', studentCode)
-        .where('status', '==', 'active')
-        .get(),
-
-      // Subjective batch assignments
-      batchIds.length > 0
-        ? adminDb.collection('subjectiveAssignments')
-            .where('targetBatches', 'array-contains-any', batchIds)
-            .where('status', '==', 'active')
-            .get()
-        : Promise.resolve({ docs: [] } as any),
-
-      // Subjective student specific assignments
-      adminDb.collection('subjectiveAssignments')
-        .where('targetStudents', 'array-contains', studentCode)
-        .where('status', '==', 'active')
-        .get(),
+      fetchStudentRawAssignments(studentCode, batchIds),
 
       // Objective attempts (reviews collection is the source of truth)
       adminDb.collection('reviews')
@@ -156,6 +128,13 @@ export async function GET(req: NextRequest) {
         .where('targetStudents', 'array-contains', studentCode)
         .get()
     ]);
+
+    const {
+      batchAssignmentsSnapshot: batchAssignmentsSnap,
+      studentAssignmentsSnapshot: studentAssignmentsSnap,
+      subAssignmentsSnapshot: subAssignmentsSnap,
+      subStudentAssignmentsSnapshot: subStudentAssignmentsSnap
+    } = rawAssignments;
 
     // Map absence reasons by examId
     const absenceReasonMap = new Map<string, string>();

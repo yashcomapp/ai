@@ -9,7 +9,8 @@ import {
   getCanonicalBoardCode, 
   getCanonicalBoardName, 
   getCanonicalClass, 
-  getCanonicalSubjectCode 
+  getCanonicalSubjectCode,
+  buildSyllabusHierarchyFromDocs 
 } from '@/lib/syllabusUtils';
 import { getCachedSyllabus, getCachedTemplates } from '@/lib/firebase/cache';
 
@@ -469,37 +470,13 @@ export async function GET(req: NextRequest) {
     };
 
     // Dynamically build syllabusSubjects directly from live syllabus collection
-    const subjectsMap: Record<string, Record<string, Record<string, { docId: string; chapters?: any[] }>>> = {};
-
-    syllabusSnap.docs.forEach(doc => {
-      const data = doc.data();
-      const board = getCanonicalBoardName(data.board);
-      const cls = getCanonicalClass(data.class);
-      const subject = data.subject;
-      const bCode = getCanonicalBoardCode(data.boardCode || board);
-      const subjectCode = data.subjectCode || getCanonicalSubjectCode(bCode, cls, subject);
-
-      if (board && subject) {
-        boardCodes[board] = bCode;
-        if (subjectCode) {
-          subjectCodes[subject] = subjectCode;
-        }
-        if (!subjectsMap[board]) {
-          subjectsMap[board] = {};
-        }
-        if (!subjectsMap[board][cls]) {
-          subjectsMap[board][cls] = {};
-        }
-        subjectsMap[board][cls][subject] = {
-          docId: doc.id,
-          chapters: data.chapters || []
-        };
-      }
-    });
+    const built = buildSyllabusHierarchyFromDocs(syllabusSnap.docs, true);
+    Object.assign(boardCodes, built.boardCodes);
+    Object.assign(subjectCodes, built.subjectCodes);
 
     const syllabusSubjects = {
       version: 1,
-      subjects: subjectsMap
+      subjects: built.subjectsMap
     };
 
     const initialData = {

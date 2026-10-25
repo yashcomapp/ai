@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Script from 'next/script';
+import ModalShell from '@/components/common/ModalShell';
 
 interface PracticeHardwareModalProps {
   isOpen: boolean;
@@ -47,8 +48,16 @@ export function PracticeHardwareModal({
       <Script src="/libs/mediapipe/face_mesh.js" strategy="lazyOnload" />
       <Script src="/libs/mediapipe/camera_utils.js" strategy="lazyOnload" />
 
-      <div className="camera-modal" style={{ position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.65)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', zIndex: 20000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '40px 20px', overflowY: 'auto' }}>
-        <div className="camera-modal-content" style={{ background: 'var(--surface-popover)', border: '1px solid var(--border-popover)', borderRadius: 'var(--radius)', padding: '30px', maxWidth: '500px', width: '90%', textAlign: 'center', boxShadow: 'var(--shadow-lg)', margin: '0 auto' }}>
+      <ModalShell
+        isOpen={isOpen}
+        maxWidth="500px"
+        width="90%"
+        align="flex-start"
+        padding="40px 20px"
+        backdropBlur="8px"
+        zIndex={20000}
+      >
+        <div style={{ textAlign: 'center' }}>
           <h2>System Hardware Pre-Check</h2>
           <p style={{ color: 'var(--text-muted)', fontSize: '13px', margin: '10px 0 16px' }}>
             Verify your camera and microphone are working correctly before starting this proctored practice session.
@@ -157,7 +166,7 @@ export function PracticeHardwareModal({
             </button>
           )}
         </div>
-      </div>
+      </ModalShell>
     </>
   );
 }

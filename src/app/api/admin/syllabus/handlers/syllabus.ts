@@ -7,7 +7,8 @@ import {
   getCanonicalBoardCode, 
   getCanonicalBoardName, 
   getCanonicalClass, 
-  getCanonicalSubjectCode 
+  getCanonicalSubjectCode,
+  buildSyllabusHierarchyFromDocs 
 } from '@/lib/syllabusUtils';
 
 const matchTopicCode = (examTopicCodes: any, cleanCode: string, number: string, chapNum: string) => {
@@ -389,32 +390,14 @@ async function syncSyllabusConfigTree() {
     invalidateCache('config');
 
     const syllabusSnap = await adminDb.collection('syllabus').get();
-    const subjectsMap: Record<string, Record<string, Record<string, { docId: string }>>> = {};
     const boardCodes: Record<string, string> = {
       'Maharashtra Board': 'MH',
       'CBSE': 'CBSE',
       'ICSE': 'ICSE'
     };
-    const subjectCodes: Record<string, string> = {};
 
-    syllabusSnap.docs.forEach(doc => {
-      const data = doc.data();
-      const board = getCanonicalBoardName(data.board);
-      const cls = getCanonicalClass(data.class);
-      const subject = data.subject;
-      const bCode = getCanonicalBoardCode(data.boardCode || board);
-      const subjectCode = data.subjectCode || getCanonicalSubjectCode(bCode, cls, subject);
-
-      if (board && subject) {
-        boardCodes[board] = bCode;
-        if (subjectCode) {
-          subjectCodes[subject] = subjectCode;
-        }
-        if (!subjectsMap[board]) subjectsMap[board] = {};
-        if (!subjectsMap[board][cls]) subjectsMap[board][cls] = {};
-        subjectsMap[board][cls][subject] = { docId: doc.id };
-      }
-    });
+    const { subjectsMap, boardCodes: builtBoards, subjectCodes } = buildSyllabusHierarchyFromDocs(syllabusSnap.docs, false);
+    Object.assign(boardCodes, builtBoards);
 
     await Promise.all([
       adminDb.collection('config').doc('syllabusSubjects').set({

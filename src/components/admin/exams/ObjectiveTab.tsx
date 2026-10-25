@@ -4,6 +4,7 @@ import React from 'react';
 import { isExamAssigned, ObjectiveTabProps, extractAssignedSectionProps } from './types';
 import { TodayTomorrowExamsTable } from './TodayTomorrowExamsTable';
 import { AssignedExamsSection } from './AssignedExamsSection';
+import { UnassignedExamsTable } from './UnassignedExamsTable';
 
 export type { ObjectiveTabProps };
 
@@ -51,59 +52,13 @@ export default function ObjectiveTab(props: ObjectiveTabProps) {
       </div>
 
       {/* Section 1: Available for Assignment */}
-      <div id="objective-templates-section" style={{ marginBottom: '24px' }}>
-        <h3 style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text)', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-          📋 Exams Available for Assignment
-        </h3>
-        <div className="card" style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', overflow: 'hidden' }}>
-          <div style={{ overflowX: 'auto' }}>
-            <table className="reviews-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12.5px' }}>
-              <thead>
-                <tr style={{ background: 'var(--bg-soft)', borderBottom: '1px solid var(--border-light)', color: 'var(--text-muted)', fontSize: '11.5px' }}>
-                  <th style={{ padding: '4px 8px' }}>Exam Name</th>
-                  <th style={{ padding: '4px 8px' }}>Subject</th>
-                  <th style={{ padding: '4px 8px' }}>Topics</th>
-                  <th style={{ padding: '4px 8px' }}>Questions</th>
-                  <th style={{ padding: '4px 8px' }}>Marks</th>
-                  <th style={{ padding: '4px 8px', textAlign: 'right' }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredObjectiveExams.filter(exam => !isExamAssigned(exam, assignments, attemptCounts)).length === 0 ? (
-                  <tr>
-                    <td colSpan={6} style={{ padding: '12px', textAlign: 'center', color: 'var(--text-muted)' }}>No exams available for assignment.</td>
-                  </tr>
-                ) : (
-                  filteredObjectiveExams
-                    .filter(exam => !isExamAssigned(exam, assignments, attemptCounts))
-                    .map(exam => (
-                      <tr key={exam.id} style={{ borderBottom: '1px solid var(--border-light)' }}>
-                        <td style={{ padding: '4px 8px', fontWeight: 600 }}>{exam.name}</td>
-                        <td style={{ padding: '4px 8px' }}>{exam.subjectName || exam.subjects?.[0] || '—'}</td>
-                        <td style={{ padding: '4px 8px' }}>{(exam.topicCodes || []).join(', ') || '—'}</td>
-                        <td style={{ padding: '4px 8px' }}>{exam.questionCount || exam.questions?.length || 0}</td>
-                        <td style={{ padding: '4px 8px' }}>{exam.totalMarks || 0}</td>
-                        <td style={{ padding: '4px 8px', textAlign: 'right' }}>
-                          <div style={{ display: 'flex', gap: '4px', justifyContent: 'flex-end' }}>
-                            <button className="btn btn-secondary" style={{ padding: '2px 6px', fontSize: '10.5px', background: 'var(--accent-tint)', color: 'var(--accent)', fontWeight: 600 }} onClick={() => router.push(`/admin/mock-exam?examId=${encodeURIComponent(exam.id)}`)}>
-                              🧪 Mock Test
-                            </button>
-                            <button className="btn btn-primary" style={{ padding: '2px 6px', fontSize: '10.5px' }} onClick={() => handleOpenAssign(exam, 'objective')}>
-                              📋 Assign
-                            </button>
-                            <button className="btn btn-secondary" style={{ padding: '2px 6px', fontSize: '10.5px', color: 'var(--danger)' }} onClick={() => handleDeleteExam(exam.id, exam.name, 'objective')}>
-                              🗑️ Delete
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
+      <UnassignedExamsTable
+        exams={filteredObjectiveExams.filter(exam => !isExamAssigned(exam, assignments, attemptCounts))}
+        type="objective"
+        onAssign={handleOpenAssign}
+        onDelete={handleDeleteExam}
+        onMockExam={(examId) => router.push(`/admin/mock-exam?examId=${encodeURIComponent(examId)}`)}
+      />
 
       {/* Section 1b: Today's & Tomorrow's Exams */}
       <TodayTomorrowExamsTable

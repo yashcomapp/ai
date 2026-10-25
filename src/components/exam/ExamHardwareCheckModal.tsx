@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import ModalShell from '@/components/common/ModalShell';
 
 export interface ExamHardwareCheckModalProps {
   isOpen: boolean;
@@ -34,8 +35,16 @@ export default function ExamHardwareCheckModal({
   if (!isOpen) return null;
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.65)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', zIndex: 20000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '40px 20px', overflowY: 'auto' }}>
-      <div className="card" style={{ maxWidth: '480px', width: '90%', padding: '30px', textAlign: 'center', background: 'var(--surface-popover)', border: '1px solid var(--border-popover)', borderRadius: 'var(--radius)', boxShadow: 'var(--shadow-lg)', margin: '0 auto' }}>
+    <ModalShell
+      isOpen={isOpen}
+      maxWidth="480px"
+      width="90%"
+      align="flex-start"
+      padding="40px 20px"
+      backdropBlur="8px"
+      zIndex={20000}
+    >
+      <div style={{ textAlign: 'center' }}>
         {diagnosticRunning ? (
           <div style={{ padding: '20px 0' }}>
             <div className="spinner" style={{ border: '3px solid rgba(255, 255, 255, 0.1)', borderTop: '3px solid var(--accent)', borderRadius: '50%', width: '40px', height: '40px', margin: '0 auto 16px', animation: 'spin 1s linear infinite' }} />
@@ -128,6 +137,6 @@ export default function ExamHardwareCheckModal({
           </>
         )}
       </div>
-    </div>
+    </ModalShell>
   );
 }

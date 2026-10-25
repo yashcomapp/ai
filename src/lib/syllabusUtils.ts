@@ -266,4 +266,37 @@ export function getBoardCurriculumPromptMeta(selectedBoard: string, selectedClas
   };
 }
 
+/**
+ * Builds canonical hierarchical maps (board -> class -> subject) and code mappings from syllabus documents.
+ */
+export function buildSyllabusHierarchyFromDocs(docs: any[], includeChapters = false) {
+  const subjectsMap: Record<string, Record<string, Record<string, any>>> = {};
+  const boardCodes: Record<string, string> = {};
+  const subjectCodes: Record<string, string> = {};
+
+  docs.forEach((doc: any) => {
+    const data = typeof doc.data === 'function' ? doc.data() : doc;
+    const board = getCanonicalBoardName(data.board);
+    const cls = getCanonicalClass(data.class);
+    const subject = data.subject;
+    const bCode = getCanonicalBoardCode(data.boardCode || board);
+    const subjectCode = data.subjectCode || getCanonicalSubjectCode(bCode, cls, subject);
+
+    if (board && subject) {
+      boardCodes[board] = bCode;
+      if (subjectCode) {
+        subjectCodes[subject] = subjectCode;
+      }
+      if (!subjectsMap[board]) subjectsMap[board] = {};
+      if (!subjectsMap[board][cls]) subjectsMap[board][cls] = {};
+      subjectsMap[board][cls][subject] = {
+        docId: doc.id || data.id,
+        ...(includeChapters ? { chapters: data.chapters || [] } : {})
+      };
+    }
+  });
+
+  return { subjectsMap, boardCodes, subjectCodes };
+}
+
 

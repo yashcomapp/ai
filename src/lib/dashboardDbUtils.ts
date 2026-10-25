@@ -1,6 +1,5 @@
 import { adminDb } from '@/lib/firebase/admin';
 import { getDateKeyIST } from '@/lib/dateUtils';
-import { deriveTopicCodeFromQuestionCode } from '@/lib/questionTypes';
 
 /**
  * Deduplicate assignments by examId to prevent double-counting across batch & student-specific assignments.
@@ -133,27 +132,6 @@ export function calculateTimeLogSummary(timeLogDocs: any[]) {
     weekGeneralSeconds,
     streakDays
   };
-}
-
-/**
- * Extracts and maps canonical topic codes from objective or subjective exam dictionaries.
- */
-export function extractTopicCodesFromExams(examsMap: Map<string, any>, allTopicCodes: Set<string>) {
-  examsMap.forEach((examData) => {
-    let topicCode = '';
-    if (Array.isArray(examData.topicCodes) && examData.topicCodes.length > 0) {
-      topicCode = examData.topicCodes[0];
-    } else {
-      const qIds = examData.questionIds || [];
-      if (qIds.length > 0) {
-        topicCode = deriveTopicCodeFromQuestionCode(qIds[0]);
-      }
-    }
-    if (topicCode) {
-      allTopicCodes.add(topicCode);
-      examData.resolvedTopicCode = topicCode;
-    }
-  });
 }
 
 /**

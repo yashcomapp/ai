@@ -140,6 +140,46 @@ export function cleanSubjectiveExamName(examData: any) {
 }
 
 
+/**
+ * SSOT for querying active batch & student-specific objective and subjective assignments.
+ */
+export async function fetchStudentRawAssignments(studentCode: string, batchIds: string[]) {
+  const [
+    batchAssignmentsSnapshot,
+    studentAssignmentsSnapshot,
+    subAssignmentsSnapshot,
+    subStudentAssignmentsSnapshot
+  ] = await Promise.all([
+    batchIds.length > 0
+      ? adminDb.collection('batchAssignments')
+          .where('targetBatches', 'array-contains-any', batchIds)
+          .where('status', '==', 'active')
+          .get()
+      : Promise.resolve({ docs: [] } as any),
+    adminDb.collection('batchAssignments')
+      .where('targetStudents', 'array-contains', studentCode)
+      .where('status', '==', 'active')
+      .get(),
+    batchIds.length > 0
+      ? adminDb.collection('subjectiveAssignments')
+          .where('targetBatches', 'array-contains-any', batchIds)
+          .where('status', '==', 'active')
+          .get()
+      : Promise.resolve({ docs: [] } as any),
+    adminDb.collection('subjectiveAssignments')
+      .where('targetStudents', 'array-contains', studentCode)
+      .where('status', '==', 'active')
+      .get()
+  ]);
+
+  return {
+    batchAssignmentsSnapshot,
+    studentAssignmentsSnapshot,
+    subAssignmentsSnapshot,
+    subStudentAssignmentsSnapshot
+  };
+}
+
 export async function getDashboardData(uid: string, userData: any, rangeDays: number = 7) {
   try {
     let studentCode = userData.studentCode || '';
@@ -170,10 +210,7 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
     const [
       reviewsSnapshot,
       peerReviewsSnapshot,
-      batchAssignmentsSnapshot,
-      studentAssignmentsSnapshot,
-      subAssignmentsSnapshot,
-      subStudentAssignmentsSnapshot,
+      rawAssignments,
       masterySnapshot,
       attemptsSnapshot,
       examAttemptsSnapshot,
@@ -186,35 +223,7 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
     ] = await Promise.all([
       adminDb.collection('reviews').where('studentCode', '==', studentCode).get(),
       adminDb.collection('peerAssignments').where('reviewerStudentCode', '==', studentCode).where('status', '==', 'pending').get(),
-      
-      // Batch Assignments (by batch list)
-      batchIds.length > 0
-        ? adminDb.collection('batchAssignments')
-            .where('targetBatches', 'array-contains-any', batchIds)
-            .where('status', '==', 'active')
-            .get()
-        : Promise.resolve({ docs: [] } as any),
-
-      // Batch Assignments (by student specific)
-      adminDb.collection('batchAssignments')
-        .where('targetStudents', 'array-contains', studentCode)
-        .where('status', '==', 'active')
-        .get(),
-
-      // Subjective Assignments (by batch list)
-      batchIds.length > 0
-        ? adminDb.collection('subjectiveAssignments')
-            .where('targetBatches', 'array-contains-any', batchIds)
-            .where('status', '==', 'active')
-            .get()
-        : Promise.resolve({ docs: [] } as any),
-
-      // Subjective Assignments (by student specific)
-      adminDb.collection('subjectiveAssignments')
-        .where('targetStudents', 'array-contains', studentCode)
-        .where('status', '==', 'active')
-        .get(),
-
+      fetchStudentRawAssignments(studentCode, batchIds),
       // studentTopicMastery snapshot
       adminDb.collection('studentTopicMastery').where('studentCode', '==', studentCode).get(),
 
@@ -258,6 +267,13 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
         .where('studentCode', '==', studentCode)
         .get()
     ]);
+
+    const {
+      batchAssignmentsSnapshot,
+      studentAssignmentsSnapshot,
+      subAssignmentsSnapshot,
+      subStudentAssignmentsSnapshot
+    } = rawAssignments;
 
     // 3. Calculate absent exams and deduplicate assignments
     let absentExamsCount = 0;
