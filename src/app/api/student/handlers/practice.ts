@@ -473,7 +473,6 @@ export async function GET(req: NextRequest) {
     if (mediumNeeded > mediumAvailable && mediumAvailable > 0) mediumNeeded = mediumAvailable;
     if (hardNeeded > hardAvailable && hardAvailable > 0) hardNeeded = hardAvailable;
 
-    const shuffle = (arr: any[]) => shuffleArray(arr);
 
     const selectForDifficulty = (
       needed: number,
@@ -492,7 +491,7 @@ export async function GET(req: NextRequest) {
 
       const pickFromPool = (pool: any[], count: number) => {
         if (count <= 0) return;
-        const distinct = filterDistinctCandidates(shuffle(pool), currentSelected);
+        const distinct = filterDistinctCandidates(shuffleArray(pool), currentSelected);
         const picked = distinct.slice(0, count);
         selected.push(...picked);
         currentSelected.push(...picked);
@@ -505,7 +504,7 @@ export async function GET(req: NextRequest) {
       // If still need more to reach 'needed' from this difficulty
       if (selected.length < needed) {
         const pool = [...newPool, ...wrongPool, ...correctPool];
-        const distinct = filterDistinctCandidates(shuffle(pool), currentSelected);
+        const distinct = filterDistinctCandidates(shuffleArray(pool), currentSelected);
         const extra = distinct.slice(0, needed - selected.length);
         selected.push(...extra);
         currentSelected.push(...extra);
@@ -531,14 +530,14 @@ export async function GET(req: NextRequest) {
         ...eligibleCorrectByDiff.easy, ...eligibleCorrectByDiff.medium, ...eligibleCorrectByDiff.hard
       ];
       if (allEligible.length > 0) {
-        const distinctEligible = filterDistinctCandidates(shuffle(allEligible), finalQuestions);
+        const distinctEligible = filterDistinctCandidates(shuffleArray(allEligible), finalQuestions);
         const additionalNeeded = finalSize - finalQuestions.length;
         finalQuestions.push(...distinctEligible.slice(0, additionalNeeded));
       }
       
       // Secondary fallback: pull from all available topic questions (including seen/unseen)
       if (finalQuestions.length < finalSize && allQuestions.length > 0) {
-        const distinctAll = filterDistinctCandidates(shuffle(allQuestions), finalQuestions);
+        const distinctAll = filterDistinctCandidates(shuffleArray(allQuestions), finalQuestions);
         if (distinctAll.length > 0) {
           const additionalNeeded = finalSize - finalQuestions.length;
           finalQuestions.push(...distinctAll.slice(0, additionalNeeded));
@@ -547,7 +546,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Shuffle final questions
-    let finalDeduplicatedQuestions = filterDistinctCandidates(shuffle(finalQuestions));
+    let finalDeduplicatedQuestions = filterDistinctCandidates(shuffleArray(finalQuestions));
 
     // Strip answers or pass them selectively. For topic practice mode, the client needs correctAnswer/correctAnswers for immediate feedback.
     const sanitizedQuestions = finalDeduplicatedQuestions.map((q: any) => {

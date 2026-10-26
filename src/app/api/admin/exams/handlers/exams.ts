@@ -11,6 +11,7 @@ import { evaluateSessionSincerity } from '@/lib/practiceTimeUtils';
 import { getCanonicalSubjectName, parseTopicCode } from '@/lib/questionTypes';
 import { getObjectiveExamTopics, getSubjectiveExamTopics, getExamDateKey, isExamForStudent, QuotientService } from '@/services/quotient.service';
 import { ExamService, getAssignmentsForBatches } from '@/services/exam.service';
+import { getCachedBatches } from '@/lib/firebase/cache';
 
 const parseIST = (dateStr: string) => {
   if (!dateStr) return new Date();
@@ -533,7 +534,7 @@ export async function GET(req: NextRequest) {
     ] = await Promise.all([
       adminDb.collection('exams').where('status', 'in', ['active', 'draft']).get(),
       adminDb.collection('subjectiveExams').where('status', 'in', ['active', 'draft']).get(),
-      adminDb.collection('batches').select('name').get(),
+      getCachedBatches(),
       adminDb.collection('users').where('role', '==', 'student').select('studentCode', 'name', 'email', 'isDemo', 'rollNumber', 'batchIds', 'batchId', 'class', 'className', 'status').get(),
       includeParents 
         ? adminDb.collection('users').where('role', '==', 'parent').select('email', 'studentCode', 'studentCodes', 'name').get()

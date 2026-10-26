@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as admin from 'firebase-admin';
 import { adminDb } from '@/lib/firebase/admin';
+import { getCachedBatches } from '@/lib/firebase/cache';
 import { verifyRole } from '@/lib/auth';
 import { ChunkedBatch } from '@/lib/firebase/batch';
 import { evaluateQuestionAnswer, isMultipleChoiceType, parseAnswerList } from '@/lib/questionTypes';
@@ -214,7 +215,7 @@ export async function GET(req: NextRequest) {
       adminDb.collection('examAttempts').where('examId', '==', resolvedExamId).select('studentCode', 'startedAt', 'completedAt', 'proctoringSnapshotsExpiresAt').get(),
       adminDb.collection('batchAssignments').where('examId', '==', resolvedExamId).get(),
       adminDb.collection('users').where('role', '==', 'student').select('studentCode', 'name', 'batchId', 'batchIds', 'autonomous', 'status', 'lastLoginAt', 'lastActiveAt').get(),
-      adminDb.collection('batches').select('name').get(),
+      getCachedBatches(),
       getCachedSyllabus(),
       adminDb.collection('evaluations').where('examId', '==', resolvedExamId).get()
     ]);

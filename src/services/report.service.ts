@@ -147,7 +147,7 @@ export class ReportService {
         .where('role', '==', 'student')
         .select('studentCode', 'name', 'status', 'batchId', 'batchIds', 'className', 'class', 'autonomous')
         .get(),
-      adminDb.collection('batches').select('name').get(),
+      getCachedBatches(),
       adminDb.collection('parentReviews')
         .where('createdAt', '>=', startOfISTDay)
         .where('createdAt', '<=', endOfISTDay)
@@ -363,7 +363,7 @@ export class ReportService {
 
     const [students, batchesSnap, parameters] = await Promise.all([
       StudentRepository.listStudents(),
-      adminDb.collection('batches').select('name').get(),
+      getCachedBatches(),
       QuotientService.getParameters()
     ]);
 
@@ -670,7 +670,7 @@ export class ReportService {
     const endOfISTDay = new Date(`${targetDateStr}T23:59:59.999+05:30`);
 
     const [batchesSnap, students, parents, sessionLogsSnap] = await Promise.all([
-      adminDb.collection('batches').select('name').get(),
+      getCachedBatches(),
       StudentRepository.listStudents(),
       StudentRepository.listParents(),
       adminDb.collection('session_logs')

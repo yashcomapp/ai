@@ -379,8 +379,7 @@ export default function AdminExamsPage() {
   };
 
   // Scorecard modal state
-  const [selectedScorecardId, setSelectedScorecardId] = useState<string | null>(null);
-  const { scorecard: scorecardData, loading: scorecardLoading, loadScorecard: fetchScorecard, setScorecard: setScorecardData } = useScorecard();
+  const { scorecard: scorecardData, loading: scorecardLoading, loadScorecard: fetchScorecard, setScorecard: setScorecardData, selectedScorecardId, setSelectedScorecardId } = useScorecard();
 
   const [topicStatusModal, setTopicStatusModal] = useState<{
     show: boolean;
@@ -506,15 +505,6 @@ export default function AdminExamsPage() {
 
   // Dynamically load KaTeX and auto-render math expressions
   useMathRender([selectedScorecardId, scorecardData, truthTestModal]);
-
-  const loadScorecard = async (id: string, studentCode: string) => {
-    setSelectedScorecardId(id);
-    try {
-      await fetchScorecard(id, studentCode);
-    } catch (err) {
-      setSelectedScorecardId(null);
-    }
-  };
 
   const loadData = async () => {
     if (!firebaseUser) return;

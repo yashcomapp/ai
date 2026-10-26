@@ -71,3 +71,18 @@ export async function updateLiveSession(docRef: any, data: any) {
     lastActive: serverTimestamp()
   });
 }
+
+/**
+ * Sanitizes an ID string for safe usage in RTDB / Firestore session paths.
+ */
+export function sanitizeForRtdbPath(s?: string | null): string {
+  return (s || '').replace(/[.#$[\]]/g, '_');
+}
+
+/**
+ * Returns canonical session document ID combining exam ID and student code.
+ */
+export function getSessionDocId(examId?: string | null, studentCode?: string | null): string {
+  return `${sanitizeForRtdbPath(examId)}_${sanitizeForRtdbPath(studentCode)}`;
+}
+

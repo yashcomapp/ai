@@ -1,6 +1,7 @@
 import { adminDb } from '@/lib/firebase/admin';
 import { getCachedSyllabus, getFromCache, setInCache } from '@/lib/firebase/cache';
 import { getCanonicalClass, buildSyllabusHierarchyFromDocs } from './syllabusUtils';
+import { cleanStringForMatch } from './questionTypes';
 
 /**
  * Cached SSOT helper to group syllabus documents by canonical class (or fetch for a single class).
@@ -12,7 +13,6 @@ export async function getSyllabusByClass(targetClass?: string | number) {
 
   const byClass: Record<string, any[]> = {};
   const topicLookup: Record<string, { number: string; parentNumber: string; topicCode?: string; name: string }> = {};
-  const cleanString = (s: string) => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '').trim();
 
   syllabusSnap.docs.forEach((doc: any) => {
     const data = typeof doc.data === 'function' ? doc.data() : doc;
@@ -29,7 +29,7 @@ export async function getSyllabusByClass(targetClass?: string | number) {
           const num = String(item.number || `${parentNum}.${idx + 1}`);
           const code = item.topicCode || item.code || '';
           if (name) {
-            topicLookup[cleanString(name)] = { number: num, parentNumber: parentNum, topicCode: code, name };
+            topicLookup[cleanStringForMatch(name)] = { number: num, parentNumber: parentNum, topicCode: code, name };
           }
           if (item && Array.isArray(item.subtopics)) {
             flatten(item.subtopics, num);

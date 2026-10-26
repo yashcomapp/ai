@@ -25,3 +25,11 @@ export async function fetchWithToken(url: string, firebaseUser: any) {
   }
   return res.json();
 }
+
+/**
+ * Creates a standard SWR fetcher bound to the provided Firebase user instance.
+ */
+export function createTokenFetcher(firebaseUser: any) {
+  return (url: string) => fetchWithToken(url, firebaseUser);
+}
+

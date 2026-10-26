@@ -15,6 +15,8 @@ import { ReviewItem } from '@/types/review.types';
 import StepAnswerInput from '@/components/exams/StepAnswerInput';
 import { ParentPageShell } from '@/components/parent';
 import { useSubjectiveAnswers } from '@/hooks/useSubjectiveAnswers';
+import { TabsSkeleton } from '@/components/common/Skeletons';
+import { getScoreClass } from '@/types/scorecard.types';
 
 export default function ParentReviewPanel() {
   const { firebaseUser, user, logout } = useAuth();
@@ -496,12 +498,6 @@ export default function ParentReviewPanel() {
 
 
 
-  const getScoreClass = (pct: number) => {
-    if (pct < 40) return 'score-low';
-    if (pct < 75) return 'score-medium';
-    return 'score-high';
-  };
-
   const renderChildSelectorSkeleton = () => (
     <div className="child-selector-container skeleton-blink">
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -801,7 +797,7 @@ export default function ParentReviewPanel() {
         )}
 
         {loading || reviewsLoading ? (
-          renderTabsSkeleton()
+          <TabsSkeleton />
         ) : (
           <div className="review-tabs">
             <button className={`tab-btn ${activeTab === 'objective' ? 'active' : ''}`} onClick={() => setActiveTab('objective')}>

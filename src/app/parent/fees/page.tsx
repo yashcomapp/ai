@@ -4,7 +4,7 @@ import React, { useState, useEffect, Suspense } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import useSWR from 'swr';
-import { fetchWithToken } from '@/lib/swrFetcher';
+import { fetchWithToken, createTokenFetcher } from '@/lib/swrFetcher';
 import { formatDateDMY as formatDateStr } from '@/lib/dateUtils';
 import { ParentPageShell } from '@/components/parent';
 
@@ -23,9 +23,7 @@ function ParentFeesContent() {
     }
   }, [defaultCode]);
 
-  const fetcher = async (url: string) => {
-    return fetchWithToken(url, firebaseUser);
-  };
+  const fetcher = createTokenFetcher(firebaseUser);
 
   // SWR for parent children name mapping
   const { data: parentDashboardData } = useSWR<any>(

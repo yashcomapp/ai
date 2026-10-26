@@ -3,7 +3,9 @@
 import React, { useEffect, useState, Suspense } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import useSWR from 'swr';
-import { fetchWithToken } from '@/lib/swrFetcher';
+import { fetchWithToken, createTokenFetcher } from '@/lib/swrFetcher';
+import { getScoreClass, getProgressColor } from '@/types/scorecard.types';
+import { TabsSkeleton } from '@/components/common/Skeletons';
 import { t } from '@/lib/i18n';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
@@ -136,8 +138,7 @@ export default function StudentResults({ initialData }: { initialData?: { result
   };
 
   // Scorecard modal state
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const { scorecard, loading: modalLoading, loadScorecard: fetchScorecard, setScorecard } = useScorecard();
+  const { scorecard, loading: modalLoading, loadScorecard: fetchScorecard, setScorecard, selectedScorecardId: selectedId, setSelectedScorecardId: setSelectedId } = useScorecard();
 
   // Sorting and PDF export states
   const [sortField, setSortField] = useState<'submittedAt' | 'durationSpent' | 'percentage'>('submittedAt');
@@ -179,21 +180,6 @@ export default function StudentResults({ initialData }: { initialData?: { result
       }
       return sortDir === 'asc' ? comparison : -comparison;
     });
-  };
-
-  const loadScorecard = async (id: string) => {
-    setSelectedId(id);
-    try {
-      await fetchScorecard(id);
-    } catch (err) {
-      setSelectedId(null);
-    }
-  };
-
-  const getScoreClass = (pct: number) => {
-    if (pct < 40) return 'score-low';
-    if (pct < 75) return 'score-medium';
-    return 'score-high';
   };
 
   const getSuspiciousClass = (level: string) => {
@@ -294,7 +280,7 @@ export default function StudentResults({ initialData }: { initialData?: { result
         {loading ? (
           <>
             {renderWidgetsSkeleton()}
-            {renderTabsSkeleton()}
+            <TabsSkeleton />
             {renderAccordionSkeleton()}
           </>
         ) : (
@@ -421,7 +407,7 @@ export default function StudentResults({ initialData }: { initialData?: { result
                                         <tr 
                                           key={item.id} 
                                           className="topic-row-hover"
-                                          onClick={() => loadScorecard(item.id)}
+                                          onClick={() => fetchScorecard(item.id)}
                                           style={{ borderBottom: '1px solid var(--border-light)', height: '38px', cursor: 'pointer' }}
                                         >
                                           <td style={{ padding: '6px 8px', fontWeight: 600, textAlign: 'center' }}>

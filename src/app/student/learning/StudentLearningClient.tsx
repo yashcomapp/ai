@@ -3,7 +3,9 @@
 import React, { useEffect, useState, useMemo, useDeferredValue } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import useSWR from 'swr';
-import { fetchWithToken, FetchError } from '@/lib/swrFetcher';
+import { fetchWithToken, FetchError, createTokenFetcher } from '@/lib/swrFetcher';
+import { getProgressColor } from '@/types/scorecard.types';
+import { TabsSkeleton } from '@/components/common/Skeletons';
 import { useToggleSet } from '@/hooks/useToggleSet';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
@@ -348,7 +350,7 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
         {loading ? (
           <>
             {renderToolbarSkeleton()}
-            {renderTabsSkeleton()}
+            <TabsSkeleton />
             {renderSubjectListSkeleton()}
           </>
         ) : (

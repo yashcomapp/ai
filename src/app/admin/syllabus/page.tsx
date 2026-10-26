@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { TabsSkeleton, TableSkeleton } from '@/components/common/Skeletons';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { invalidateAdminReferenceData } from '@/hooks/useAdminReferenceData';
@@ -43,30 +44,6 @@ export default function AdminSyllabusPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const renderTabsSkeleton = () => (
-    <div className="tabs-container skeleton-blink" style={{ display: 'flex', gap: '8px', marginBottom: '20px', borderBottom: '1.5px solid var(--border-light)', paddingBottom: '8px', height: '45px' }}>
-      {[1, 2, 3].map(i => (
-        <div key={i} style={{ width: '100px', height: '30px', background: 'var(--bg-soft)', borderRadius: '4px' }}></div>
-      ))}
-    </div>
-  );
-
-  const renderTableSkeleton = () => (
-    <div className="card skeleton-blink" style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', overflow: 'hidden' }}>
-      <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border-light)', height: '56px', display: 'flex', alignItems: 'center' }}>
-        <div style={{ width: '220px', height: '16px', background: 'var(--bg-soft)', borderRadius: '4px' }}></div>
-      </div>
-      <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        {[1, 2, 3, 4, 5].map(i => (
-          <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: '36px', borderBottom: '1px solid var(--border-light)' }}>
-            <div style={{ width: '150px', height: '12px', background: 'var(--bg-soft)', borderRadius: '2px' }}></div>
-            <div style={{ width: '80px', height: '12px', background: 'var(--bg-soft)', borderRadius: '2px' }}></div>
-            <div style={{ width: '60px', height: '12px', background: 'var(--bg-soft)', borderRadius: '2px' }}></div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
   const [activeTab, setActiveTab] = useState<'subjects' | 'tree' | 'ai'>('subjects');
 
   // Master subjects list
@@ -1117,8 +1094,8 @@ Return ONLY a valid JSON object matching the schema below:
         </div>
         {loading ? (
           <>
-            {renderTabsSkeleton()}
-            {renderTableSkeleton()}
+            <TabsSkeleton />
+            <TableSkeleton />
           </>
         ) : (
           <>

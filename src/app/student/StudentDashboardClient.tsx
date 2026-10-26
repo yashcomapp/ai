@@ -5,7 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { t } from '@/lib/i18n';
 import { useRouter } from 'next/navigation';
 import useSWR from 'swr';
-import { fetchWithToken } from '@/lib/swrFetcher';
+import { fetchWithToken, createTokenFetcher } from '@/lib/swrFetcher';
 import TopBarTimeTracker from '@/components/TopBarTimeTracker';
 import NoticeOverlayModal from '@/components/notices/NoticeOverlayModal';
 import OverdueFeeModal from '@/components/fees/OverdueFeeModal';
@@ -122,9 +122,7 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
 
 
 
-  const fetcher = async (url: string) => {
-    return fetchWithToken(url, firebaseUser);
-  };
+  const fetcher = createTokenFetcher(firebaseUser);
 
   const [localCache, setLocalCache] = useState<DashboardData | undefined>(undefined);
 

@@ -64,3 +64,28 @@ export interface DetailedScorecard {
   proctoringViolationTriggered?: boolean;
   [key: string]: any;
 }
+
+/**
+ * Returns CSS color variable based on mastery or score percentage (SSOT):
+ * >= 90: var(--success)
+ * >= 50: var(--warning)
+ * < 50: var(--danger)
+ */
+export function getProgressColor(pct: number): string {
+  if (pct >= 90) return 'var(--success)';
+  if (pct >= 50) return 'var(--warning)';
+  return 'var(--danger)';
+}
+
+/**
+ * Returns score class string for badges (SSOT):
+ * < 40: score-low
+ * < 75: score-medium
+ * >= 75: score-high
+ */
+export function getScoreClass(pct: number): 'score-low' | 'score-medium' | 'score-high' {
+  if (pct < 40) return 'score-low';
+  if (pct < 75) return 'score-medium';
+  return 'score-high';
+}
+

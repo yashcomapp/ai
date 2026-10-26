@@ -2,7 +2,7 @@
 
 import React, { useEffect, Suspense } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { fetchWithToken } from '@/lib/swrFetcher';
+import { fetchWithToken, createTokenFetcher } from '@/lib/swrFetcher';
 import { useRouter, useSearchParams } from 'next/navigation';
 import useSWR from 'swr';
 
@@ -43,9 +43,7 @@ function ExamRegisterContent() {
   const studentCodeParam = searchParams.get('studentCode');
   const { scorecard, loading: scorecardLoading, loadScorecard, setScorecard } = useScorecard();
 
-  const fetcher = async (url: string) => {
-    return fetchWithToken(url, firebaseUser);
-  };
+  const fetcher = createTokenFetcher(firebaseUser);
 
   // If student role is logged in, default to their own student code if param not provided
   const targetCode = studentCodeParam || (user?.role === 'student' ? user?.studentCode : '');

@@ -10,6 +10,7 @@ import { ref, push, set, onValue, off, remove, serverTimestamp } from 'firebase/
 import { db } from '@/lib/firebase/firestore';
 import { rtdb } from '@/lib/firebase/rtdb';
 import { RTC_CONFIG } from '@/lib/rtcConfig';
+import { sanitizeForRtdbPath, getSessionDocId } from '@/lib/proctoring';
 
 export interface ManualCapture {
   id: string;
@@ -155,14 +156,7 @@ export default function AdminLiveMonitorPage() {
     return () => unsubscribe();
   }, [firebaseUser]);
 
-  // Helpers
-  const sanitizeForRtdbPath = (s: string) => {
-    return String(s).replace(/[.$#\[\]/]/g, '_');
-  };
-
-  const getSessionDocId = (examId: string, studentCode: string) => {
-    return `${sanitizeForRtdbPath(examId)}_${sanitizeForRtdbPath(studentCode)}`;
-  };
+  // Helpers (sanitizeForRtdbPath and getSessionDocId imported from proctoring SSOT)
 
   const isAbandoned = (lastActive: any) => {
     if (!lastActive) return false;

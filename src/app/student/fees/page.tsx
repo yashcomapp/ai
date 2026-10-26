@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import useSWR from 'swr';
-import { fetchWithToken } from '@/lib/swrFetcher';
+import { fetchWithToken, createTokenFetcher } from '@/lib/swrFetcher';
 import { formatDateDMY as formatDateStr } from '@/lib/dateUtils';
 import { StudentPageShell } from '@/components/student/StudentPageShell';
 
@@ -12,9 +12,7 @@ export default function StudentFeesPage() {
   const { firebaseUser, logout } = useAuth();
   const router = useRouter();
 
-  const fetcher = async (url: string) => {
-    return fetchWithToken(url, firebaseUser);
-  };
+  const fetcher = createTokenFetcher(firebaseUser);
 
   const { data, error, isLoading } = useSWR<any>(
     firebaseUser ? '/api/student/fees' : null,

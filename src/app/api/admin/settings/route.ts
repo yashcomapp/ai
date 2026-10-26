@@ -208,18 +208,18 @@ export async function POST(request: Request) {
     if (action === 'utility') {
       invalidateCache('admin-settings-backup');
       if (utilityType === 'resetFlags') {
-        // Clear all used counter flags on questions
-        const snap = await adminDb.collection('questions').get();
+        // Clear all used counter flags on questions via memory-bounded docId pagination
+        const questionDocs = await fetchAllByDocIdRange('questions', { selectFields: ['id'] });
         const writeBatch = new ChunkedBatch(adminDb);
-        snap.docs.forEach(doc => {
-          writeBatch.update(doc.ref, {
+        questionDocs.forEach(d => {
+          writeBatch.update(adminDb.collection('questions').doc(d.id), {
             usedInClassroomTest: false,
             timesUsed: 0,
             usageHistory: []
           });
         });
         await writeBatch.commit();
-        return NextResponse.json({ success: true });
+        return NextResponse.json({ success: true, count: questionDocs.length });
       }
 
       if (utilityType === 'systemReset') {

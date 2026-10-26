@@ -3,7 +3,7 @@ import * as admin from 'firebase-admin';
 import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole } from '@/lib/auth';
 import { NextRequest } from 'next/server';
-import { shuffleArray, isQuestionQuarantined } from '@/lib/questionTypes';
+import { shuffleArray, isQuestionQuarantined, cleanStringForMatch } from '@/lib/questionTypes';
 import { areQuestionsTooSimilar, filterDistinctCandidates } from '@/lib/questionSimilarity';
 import { getDateKeyIST } from '@/lib/dateUtils';
 import { getSyllabusByClass } from '@/lib/syllabusServerUtils';
@@ -322,14 +322,14 @@ export async function POST(request: NextRequest) {
 
     // Map normalized topic name -> { number: string, parentNumber: string } via unified getSyllabusByClass
     const { topicLookup } = await getSyllabusByClass(className);
-    const cleanString = (s: string) => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '').trim();
+    // (cleanStringForMatch sourced from questionTypes SSOT)
 
     const isMatchTopic = (q: any, top: string): boolean => {
       const qTopicName = String(q.topic || q.topicName || '').toLowerCase();
       const topLower = String(top).toLowerCase();
 
-      const cleanTop = cleanString(top);
-      const cleanQTopic = cleanString(qTopicName);
+      const cleanTop = cleanStringForMatch(top);
+      const cleanQTopic = cleanStringForMatch(qTopicName);
 
       if (cleanQTopic === cleanTop) return true;
 

@@ -7,10 +7,12 @@ export type { DetailedScorecard };
 export function useScorecard() {
   const { firebaseUser } = useAuth();
   const [scorecard, setScorecard] = useState<DetailedScorecard | null>(null);
+  const [selectedScorecardId, setSelectedScorecardId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const loadScorecard = async (id: string, studentCode?: string) => {
     if (!firebaseUser) return;
+    setSelectedScorecardId(id);
     setLoading(true);
     setScorecard(null);
     try {
@@ -31,6 +33,7 @@ export function useScorecard() {
       setScorecard(scoreData);
       return scoreData;
     } catch (err: any) {
+      setSelectedScorecardId(null);
       alert(err.message || 'Could not load detail review');
       throw err;
     } finally {
@@ -38,11 +41,16 @@ export function useScorecard() {
     }
   };
 
-  const clearScorecard = () => setScorecard(null);
+  const clearScorecard = () => {
+    setScorecard(null);
+    setSelectedScorecardId(null);
+  };
 
   return {
     scorecard,
     setScorecard,
+    selectedScorecardId,
+    setSelectedScorecardId,
     clearScorecard,
     loading,
     loadScorecard

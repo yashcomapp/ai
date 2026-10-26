@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { StatsSkeleton, TableSkeleton } from '@/components/common/Skeletons';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import StudentActivityTable from '@/components/StudentActivityTable';
@@ -35,23 +36,6 @@ export default function AdminDashboard() {
   const { firebaseUser, logout, user } = useAuth();
   const router = useRouter();
 
-  const renderStatsSkeleton = () => (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '12px', marginBottom: '20px' }} className="skeleton-blink">
-      {/* Card 1 Skeleton */}
-      <div className="card" style={{ background: 'var(--surface)', padding: '12px 14px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-        {[1, 2, 3].map(i => (
-          <div key={i} style={{ width: '100%', height: '34px', background: 'var(--bg-soft)', borderRadius: 'var(--radius-md)' }}></div>
-        ))}
-      </div>
-      {/* Card 2 Skeleton */}
-      <div className="card" style={{ background: 'var(--surface)', padding: '12px 14px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-        {[1, 2].map(i => (
-          <div key={i} style={{ width: '100%', height: '34px', background: 'var(--bg-soft)', borderRadius: 'var(--radius-md)' }}></div>
-        ))}
-      </div>
-    </div>
-  );
-
   const renderQuickActionsSkeleton = () => (
     <div className="card skeleton-blink" style={{ background: 'var(--surface)', padding: '20px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', marginBottom: '32px' }}>
       <div style={{ width: '120px', height: '14px', background: 'var(--bg-soft)', borderRadius: '4px', marginBottom: '16px' }}></div>
@@ -60,20 +44,6 @@ export default function AdminDashboard() {
           <div key={i} style={{ width: '100%', height: '36px', background: 'var(--bg-soft)', borderRadius: 'var(--radius-sm)' }}></div>
         ))}
         <div style={{ width: '100%', height: '36px', background: 'var(--bg-soft)', borderRadius: 'var(--radius-sm)', gridColumn: 'span 2' }}></div>
-      </div>
-    </div>
-  );
-
-  const renderTableSkeleton = () => (
-    <div className="card skeleton-blink" style={{ background: 'var(--surface)', padding: '24px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)' }}>
-      <div style={{ width: '180px', height: '16px', background: 'var(--bg-soft)', borderRadius: '4px', marginBottom: '16px' }}></div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        {[1, 2, 3, 4].map(i => (
-          <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', height: '32px', borderBottom: '1px solid var(--border-light)' }}>
-            <div style={{ width: '140px', height: '12px', background: 'var(--bg-soft)', borderRadius: '2px' }}></div>
-            <div style={{ width: '80px', height: '12px', background: 'var(--bg-soft)', borderRadius: '2px' }}></div>
-          </div>
-        ))}
       </div>
     </div>
   );
@@ -148,9 +118,9 @@ export default function AdminDashboard() {
 
         {loading ? (
           <>
-            {renderStatsSkeleton()}
+            <StatsSkeleton />
             {renderQuickActionsSkeleton()}
-            {renderTableSkeleton()}
+            <TableSkeleton />
           </>
         ) : (
           <>

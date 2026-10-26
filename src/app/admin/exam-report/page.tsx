@@ -9,7 +9,7 @@ import { preprocessMathText, formatRichText, parseAnswerList, isOptionSelectedBy
 import QuestionDisplay, { RichMathText } from '@/components/QuestionDisplay';
 import { playNotificationSound } from '@/lib/audioUtils';
 import { getDateKeyIST, formatDateDMY, formatTimeIST, calculateEndDatetime, toLocalISOString, getMorningTestTimes, getEveningTestTimes, formatDateTimeShort as formatDate } from '@/lib/dateUtils';
-import { formatReportStudentName, getScoreChip, getDeepScoreColor } from '@/lib/lqCardExport';
+import { formatReportStudentName, getScoreChip, getDeepScoreColor, loadHtml2Canvas } from '@/lib/lqCardExport';
 import { Batch } from '@/types/batch.types';
 import { Student } from '@/types/user.types';
 import { Exam } from '@/types/exam.types';
@@ -904,20 +904,6 @@ function ExamReportContent() {
     if (pct >= 60) return 'var(--accent)';
     if (pct >= 40) return 'var(--warning)';
     return 'var(--danger)';
-  };
-
-  // Dynamically load html2canvas if not already loaded
-  const loadHtml2Canvas = async () => {
-    if (typeof window === 'undefined') return null;
-    const w = window as any;
-    if (w.html2canvas) return w.html2canvas;
-    return new Promise<any>((resolve, reject) => {
-      const s = document.createElement('script');
-      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
-      s.onload = () => resolve((window as any).html2canvas);
-      s.onerror = () => reject(new Error('Failed to load image generation library.'));
-      document.head.appendChild(s);
-    });
   };
 
   // High-Resolution WhatsApp Result Card Exporter

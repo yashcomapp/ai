@@ -4,7 +4,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter, usePathname } from 'next/navigation';
 import useSWR from 'swr';
-import { fetchWithToken } from '@/lib/swrFetcher';
+import { fetchWithToken, createTokenFetcher } from '@/lib/swrFetcher';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { useUnreadChatCount } from '@/hooks/useUnreadChatCount';
 import {
@@ -123,9 +123,7 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
     setAbsenceRemarks('');
   };
 
-  const fetcher = async (url: string) => {
-    return fetchWithToken(url, firebaseUser);
-  };
+  const fetcher = createTokenFetcher(firebaseUser);
 
   const [localCache, setLocalCache] = useState<ParentDashboardData | null>(null);
   const [localReviewsCache, setLocalReviewsCache] = useState<{

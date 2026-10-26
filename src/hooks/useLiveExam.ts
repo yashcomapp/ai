@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { rtdb } from '@/lib/firebase/rtdb';
-import { getLiveSessionRef, createLiveSession, updateLiveSession } from '@/lib/proctoring';
+import { getLiveSessionRef, createLiveSession, updateLiveSession, getSessionDocId, sanitizeForRtdbPath } from '@/lib/proctoring';
 import { ProctoringSnapshot } from './useProctoring';
 import { getMidnightIST } from '@/lib/dateUtils';
 import { ref, onValue, set, push, off, remove } from 'firebase/database';
@@ -212,13 +212,7 @@ export function useLiveExam({
     headMovement: 0
   });
 
-  const sanitizeForRtdbPath = (s: string) => {
-    return String(s).replace(/[.$#\[\]/]/g, '_');
-  };
-
-  const getSessionDocId = () => {
-    return `${sanitizeForRtdbPath(examId || '')}_${sanitizeForRtdbPath(studentCode || '')}`;
-  };
+  // (sanitizeForRtdbPath and getSessionDocId imported from proctoring SSOT)
 
   const flushLiveProctoringSession = async (updates: any) => {
     if (mock) return;
@@ -268,7 +262,7 @@ export function useLiveExam({
     if (mock) return;
     if (!studentCode || !examId) return;
 
-    const sId = getSessionDocId();
+    const sId = getSessionDocId(examId, studentCode);
     const docRef = getLiveSessionRef(sId);
     liveSessionDocRef.current = docRef;
     liveSessionActiveRef.current = true;
@@ -372,7 +366,7 @@ export function useLiveExam({
   const setupWebRTCSignaling = async (stream: MediaStream) => {
     if (mock) return;
     if (!rtdb) return;
-    const sId = getSessionDocId();
+    const sId = getSessionDocId(examId, studentCode);
     const sigRef = ref(rtdb, `webrtcSignaling/${sId}`);
 
     // Listen for WebRTC offers from proctor dashboard
@@ -488,7 +482,7 @@ export function useLiveExam({
     }
 
     if (rtdb) {
-      const sId = getSessionDocId();
+      const sId = getSessionDocId(examId, studentCode);
       off(ref(rtdb, `webrtcSignaling/${sId}`));
       off(ref(rtdb, `webrtcSignaling/${sId}/callerCandidates`));
       remove(ref(rtdb, `webrtcSignaling/${sId}`)).catch(() => {});
