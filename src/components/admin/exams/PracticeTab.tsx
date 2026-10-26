@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Batch, Student } from './types';
-import { formatReportStudentName, exportBatchPracticeTracksImage } from '@/lib/lqCardExport';
+import { formatReportStudentName, exportBatchPracticeTracksImage, computeBatchMaxTopics } from '@/lib/lqCardExport';
 
 interface PracticeTabProps {
   batches: Batch[];
@@ -110,13 +110,7 @@ export default function PracticeTab({
         </div>
       ) : filteredPracticeBatches.map(({ batch, batchStudents, sortedStudents }) => {
         // Find the batch-level conducted/assigned topic count across all batch students
-        const batchMaxTopics = Math.max(
-          ...batchStudents.map(s => {
-            const m = masteryStats[s.studentCode];
-            return m ? (m.totalAssigned || (m.mastered + m.practicing + m.needsAttention)) : 0;
-          }),
-          0
-        );
+        const batchMaxTopics = computeBatchMaxTopics(batchStudents, masteryStats);
 
         return (
           <div key={batch.id} className="card" style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', overflow: 'hidden', marginBottom: '16px' }}>

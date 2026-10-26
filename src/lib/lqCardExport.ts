@@ -881,6 +881,22 @@ export interface BatchPracticeTracksExportParams {
 }
 
 /**
+ * Calculates the uniform maximum conducted/assigned topic count across all batch students
+ */
+export function computeBatchMaxTopics(
+  students: Array<{ studentCode: string }>,
+  masteryStats: Record<string, any>
+): number {
+  return Math.max(
+    ...students.map(s => {
+      const m = masteryStats[s.studentCode];
+      return m ? (m.totalAssigned || (m.mastered + m.practicing + m.needsAttention)) : 0;
+    }),
+    0
+  );
+}
+
+/**
  * Generates an Ultra HD lossless WhatsApp summary card for an entire batch's Practice Tracks
  * with uniform assigned topics count, efforts column, and status breakdown explanations for parents.
  */
@@ -906,10 +922,7 @@ export async function exportBatchPracticeTracksImage(params: BatchPracticeTracks
   }
 
   // Determine the uniform assigned topics count across the batch
-  const batchMaxTopics = Math.max(...students.map(s => {
-    const m = masteryStats[s.studentCode];
-    return m ? (m.totalAssigned || (m.mastered + m.practicing + m.needsAttention)) : 0;
-  }), 0);
+  const batchMaxTopics = computeBatchMaxTopics(students, masteryStats);
 
   // Sort descending by avgMastery, then by questionsAttempted
   const sorted = [...students].sort((a, b) => {

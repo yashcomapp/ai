@@ -9,7 +9,7 @@ import FeesJournal from '@/components/admin/FeesJournal';
 import ClassFilterSelect from '@/components/fees/ClassFilterSelect';
 import FeesTemplatesTab, { FeeTemplate } from '@/components/admin/fees/FeesTemplatesTab';
 import FeesMassEntryTab from '@/components/admin/fees/FeesMassEntryTab';
-import { renderSortHeader, getStatusWeight, getLateDaysString as getLateRemarks, FeeRosterRow } from '@/lib/feesUtils';
+import { renderSortHeader, getStatusWeight, getLateDaysString as getLateRemarks, FeeRosterRow, FeeStatusBadge, sortFeeStudents } from '@/lib/feesUtils';
 
 function AdminFeesContent() {
   const { firebaseUser } = useAuth();
@@ -715,32 +715,7 @@ function AdminFeesContent() {
                   </thead>
                   <tbody>
                     {(() => {
-                      const sortedStudents = [...filteredStudents].sort((a, b) => {
-                        let valA: any = '';
-                        let valB: any = '';
-                        if (studentSortField === 'name') {
-                          valA = (a.name || '').toLowerCase();
-                          valB = (b.name || '').toLowerCase();
-                        } else if (studentSortField === 'classNum') {
-                          valA = Number(a.classNum) || 0;
-                          valB = Number(b.classNum) || 0;
-                        } else if (studentSortField === 'netDues') {
-                          valA = Number(a.fee?.netPayableAmount ?? -1);
-                          valB = Number(b.fee?.netPayableAmount ?? -1);
-                        } else if (studentSortField === 'paid') {
-                          valA = Number(a.fee?.totalPaidAmount ?? -1);
-                          valB = Number(b.fee?.totalPaidAmount ?? -1);
-                        } else if (studentSortField === 'outstanding') {
-                          valA = Number(a.fee?.outstandingAmount ?? -1);
-                          valB = Number(b.fee?.outstandingAmount ?? -1);
-                        } else if (studentSortField === 'status') {
-                          valA = getStatusWeight(a);
-                          valB = getStatusWeight(b);
-                        }
-                        if (valA < valB) return studentSortDir === 'asc' ? -1 : 1;
-                        if (valA > valB) return studentSortDir === 'asc' ? 1 : -1;
-                        return 0;
-                      });
+                      const sortedStudents = sortFeeStudents(filteredStudents, studentSortField, studentSortDir);
 
                       return sortedStudents.map(s => (
                         <tr key={s.studentCode} style={{ borderBottom: '1px solid var(--border-light)' }}>
@@ -760,19 +735,15 @@ function AdminFeesContent() {
                             ₹{s.fee?.outstandingAmount !== undefined ? s.fee.outstandingAmount : '--'}
                           </td>
                           <td style={{ padding: '8px 12px' }}>
-                            {!s.fee || s.fee.totalPackageAmount === undefined ? (
-                              <span className="badge badge-secondary" style={{ fontSize: '10px' }}>UNCONFIGURED</span>
-                            ) : s.fee.hasOverdueInstallment ? (
-                              <span className="badge badge-danger" style={{ fontSize: '10px' }}>OVERDUE</span>
-                            ) : s.fee.feeStatus === 'exempted' || s.fee.netPayableAmount === 0 ? (
-                              <span className="badge badge-success" style={{ fontSize: '10px' }}>EXEMPTED</span>
-                            ) : s.fee.feeStatus === 'fully_paid' || ((s.fee?.totalPaidAmount || 0) >= s.fee.netPayableAmount && s.fee.netPayableAmount > 0) ? (
-                              <span className="badge badge-success" style={{ fontSize: '10px' }}>PAID</span>
-                            ) : s.fee.feeStatus === 'partially_paid' || (s.fee.totalPaidAmount || 0) > 0 ? (
-                              <span className="badge badge-info" style={{ fontSize: '10px' }}>PARTIAL</span>
-                            ) : (
-                              <span className="badge badge-warning" style={{ fontSize: '10px' }}>PENDING</span>
-                            )}
+                            <FeeStatusBadge 
+                              feeStatus={{
+                                unconfigured: !s.fee || s.fee.totalPackageAmount === undefined,
+                                isOverdue: s.fee?.hasOverdueInstallment,
+                                paid: s.fee?.feeStatus === 'fully_paid' || ((s.fee?.totalPaidAmount || 0) >= (s.fee?.netPayableAmount ?? 0) && (s.fee?.netPayableAmount ?? 0) > 0),
+                                partial: s.fee?.feeStatus === 'partially_paid' || (s.fee?.totalPaidAmount || 0) > 0
+                              }}
+                              feeExempted={s.fee?.feeStatus === 'exempted' || s.fee?.netPayableAmount === 0}
+                            />
                           </td>
                           <td style={{ padding: '8px 12px', textAlign: 'right' }}>
                             <button

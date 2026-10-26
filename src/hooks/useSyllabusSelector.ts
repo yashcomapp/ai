@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { isSameTopic } from '@/lib/syllabusUtils';
 
 export function useSyllabusSelector<T extends { topic: string; subject?: string; chapterNumber?: string | number }, S = any>({
@@ -172,6 +172,27 @@ export function useSyllabusSelector<T extends { topic: string; subject?: string;
     setAvailableSubjects(filteredSubjects);
   };
 
+  const boards = useMemo(() => {
+    if (!syllabusIndex || !syllabusIndex.subjects) return [];
+    return Object.keys(syllabusIndex.subjects).sort();
+  }, [syllabusIndex]);
+
+  const filteredTopics = useMemo(() => {
+    const selectedChs = Array.from(selectedChapters).map(idx => availableChapters[idx]).filter(Boolean);
+    return availableTopics.filter(top =>
+      selectedChs.some(ch => ch.chapterNumber === top.chapterNumber && (top.subject ? ch.subject === top.subject : true))
+    );
+  }, [selectedChapters, availableChapters, availableTopics]);
+
+  const resetChaptersTopics = () => {
+    setAvailableChapters([]);
+    setSelectedChapters(new Set());
+    setAvailableTopics([]);
+    setSelectedTopics([]);
+  };
+
+  const getTopicKey = (t: any) => t?.topicCode || t?.topicNumber || t?.topic || '';
+
   return {
     selectedBoard, setSelectedBoard,
     selectedClass, setSelectedClass,
@@ -182,6 +203,10 @@ export function useSyllabusSelector<T extends { topic: string; subject?: string;
     availableTopics, setAvailableTopics,
     selectedTopics, setSelectedTopics,
     classes, setClasses,
+    boards,
+    filteredTopics,
+    resetChaptersTopics,
+    getTopicKey,
     handleBoardChange,
     handleClassChange,
     handleToggleSubject,

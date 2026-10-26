@@ -231,3 +231,88 @@ export async function handleDeleteTransaction({
   });
 }
 
+/**
+ * Standard fee status badge component for fees management and journal
+ */
+export function FeeStatusBadge({
+  feeStatus,
+  feeExempted
+}: {
+  feeStatus?: {
+    unconfigured?: boolean;
+    isOverdue?: boolean;
+    paid?: boolean;
+    partial?: boolean;
+    pending?: boolean;
+  } | null;
+  feeExempted?: boolean;
+}) {
+  const st = feeStatus || {};
+  if (st.unconfigured) {
+    return <span className="badge badge-secondary" style={{ fontSize: '10px' }}>UNCONFIGURED</span>;
+  }
+  if (st.isOverdue) {
+    return <span className="badge badge-danger" style={{ fontSize: '10px' }}>OVERDUE</span>;
+  }
+  if (feeExempted) {
+    return <span className="badge badge-success" style={{ fontSize: '10px' }}>EXEMPTED</span>;
+  }
+  if (st.paid) {
+    return <span className="badge badge-success" style={{ fontSize: '10px' }}>PAID</span>;
+  }
+  if (st.partial) {
+    return <span className="badge badge-info" style={{ fontSize: '10px' }}>PARTIAL</span>;
+  }
+  return <span className="badge badge-warning" style={{ fontSize: '10px' }}>PENDING</span>;
+}
+
+/**
+ * Standard sorting logic for fee student rosters across fees management and journal
+ */
+export function sortFeeStudents<T extends { name?: string; classNum?: any; fee?: any; studentCode?: string }>(
+  students: T[],
+  sortField: string,
+  sortDir: 'asc' | 'desc',
+  studentLastPaymentMap?: Map<string, string>
+): T[] {
+  return [...students].sort((a, b) => {
+    let valA: any = '';
+    let valB: any = '';
+    if (sortField === 'name') {
+      valA = (a.name || '').toLowerCase();
+      valB = (b.name || '').toLowerCase();
+    } else if (sortField === 'classNum') {
+      valA = Number(a.classNum) || 0;
+      valB = Number(b.classNum) || 0;
+    } else if (sortField === 'package') {
+      valA = Number(a.fee?.totalPackageAmount ?? -1);
+      valB = Number(b.fee?.totalPackageAmount ?? -1);
+    } else if (sortField === 'discount') {
+      valA = Number(a.fee?.discountAmount ?? -1);
+      valB = Number(b.fee?.discountAmount ?? -1);
+    } else if (sortField === 'netDues') {
+      valA = Number(a.fee?.netPayableAmount ?? -1);
+      valB = Number(b.fee?.netPayableAmount ?? -1);
+    } else if (sortField === 'paid') {
+      valA = Number(a.fee?.totalPaidAmount ?? -1);
+      valB = Number(b.fee?.totalPaidAmount ?? -1);
+    } else if (sortField === 'outstanding') {
+      valA = Number(a.fee?.outstandingAmount ?? -1);
+      valB = Number(b.fee?.outstandingAmount ?? -1);
+    } else if (sortField === 'status') {
+      valA = getStatusWeight(a);
+      valB = getStatusWeight(b);
+    } else if (sortField === 'lastPayment' && studentLastPaymentMap) {
+      const lastA = studentLastPaymentMap.get((a.studentCode || '').toUpperCase()) || '';
+      const lastB = studentLastPaymentMap.get((b.studentCode || '').toUpperCase()) || '';
+      valA = lastA ? new Date(lastA).getTime() : 0;
+      valB = lastB ? new Date(lastB).getTime() : 0;
+    }
+
+    if (valA < valB) return sortDir === 'asc' ? -1 : 1;
+    if (valA > valB) return sortDir === 'asc' ? 1 : -1;
+    return 0;
+  });
+}
+
+

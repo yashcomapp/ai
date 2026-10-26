@@ -99,3 +99,45 @@ export function extractAssignedSectionProps(
     ...extra
   };
 }
+
+export interface BaseAssignmentModalState {
+  show: boolean;
+  examId: string;
+  examName: string;
+  targetType: 'batch' | 'student' | 'mixed';
+  selectedBatches: Set<string>;
+  selectedStudents: Set<string>;
+  openMode: 'immediate' | 'scheduled';
+  startAtStr: string;
+  endAtStr: string;
+  attemptLimit: number;
+  examDuration?: number;
+  normDuration?: number;
+  overrideDuration?: boolean;
+  isMorningTest?: boolean;
+  isEveningTest?: boolean;
+  lateEntryRestriction?: boolean;
+}
+
+export interface AssignmentModalCommonProps {
+  batches: Batch[];
+  getStudentsGroupedByBatch: () => {
+    grouped: { [batchId: string]: { batchName: string; list: any[] } };
+    unassigned: any[];
+  };
+  getMorningTestTimes: (dur: number) => { startStr: string; endStr: string };
+  getEveningTestTimes: (dur: number) => { startStr: string; endStr: string };
+}
+
+export const ASSIGNMENT_MODAL_CARD_STYLE: React.CSSProperties = {
+  background: 'var(--surface-popover)',
+  borderRadius: 'var(--radius-lg)',
+  border: '1px solid var(--border-popover)',
+  width: '94%',
+  maxHeight: '90vh',
+  overflowY: 'auto',
+  padding: '20px 24px',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '16px'
+};

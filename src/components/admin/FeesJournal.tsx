@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { formatDateDMY as formatDateStr, getDateKeyIST } from '@/lib/dateUtils';
 import DateInputDMY from '@/components/DateInputDMY';
 import ClassFilterSelect from '@/components/fees/ClassFilterSelect';
-import { renderSortHeader, getStatusWeight, deleteFeeTransaction, getLateRemarks as computeLateRemarks, confirmAndDeleteTransaction, handleDeleteTransaction, FeeRosterRow } from '@/lib/feesUtils';
+import { renderSortHeader, getStatusWeight, deleteFeeTransaction, getLateRemarks as computeLateRemarks, confirmAndDeleteTransaction, handleDeleteTransaction, FeeRosterRow, FeeStatusBadge, sortFeeStudents } from '@/lib/feesUtils';
 export type { FeeRosterRow };
 
 export interface Transaction {
@@ -403,7 +403,7 @@ export default function FeesJournal({
 
   // Filtered & Sorted Student-wise Balances
   const filteredStudents = useMemo(() => {
-    return students.filter(s => {
+    const baseList = students.filter(s => {
       // Search
       if (studentSearch.trim()) {
         const q = studentSearch.toLowerCase();
@@ -426,45 +426,9 @@ export default function FeesJournal({
       }
 
       return true;
-    }).sort((a, b) => {
-      let valA: any = '';
-      let valB: any = '';
-
-      if (studentSortField === 'name') {
-        valA = (a.name || '').toLowerCase();
-        valB = (b.name || '').toLowerCase();
-      } else if (studentSortField === 'classNum') {
-        valA = Number(a.classNum) || 0;
-        valB = Number(b.classNum) || 0;
-      } else if (studentSortField === 'package') {
-        valA = Number(a.fee?.totalPackageAmount ?? -1);
-        valB = Number(b.fee?.totalPackageAmount ?? -1);
-      } else if (studentSortField === 'discount') {
-        valA = Number(a.fee?.discountAmount ?? -1);
-        valB = Number(b.fee?.discountAmount ?? -1);
-      } else if (studentSortField === 'netDues') {
-        valA = Number(a.fee?.netPayableAmount ?? -1);
-        valB = Number(b.fee?.netPayableAmount ?? -1);
-      } else if (studentSortField === 'paid') {
-        valA = Number(a.fee?.totalPaidAmount ?? -1);
-        valB = Number(b.fee?.totalPaidAmount ?? -1);
-      } else if (studentSortField === 'outstanding') {
-        valA = Number(a.fee?.outstandingAmount ?? -1);
-        valB = Number(b.fee?.outstandingAmount ?? -1);
-      } else if (studentSortField === 'status') {
-        valA = getStatusWeight(a);
-        valB = getStatusWeight(b);
-      } else if (studentSortField === 'lastPayment') {
-        const lastA = studentLastPaymentMap.get(a.studentCode?.toUpperCase()) || '';
-        const lastB = studentLastPaymentMap.get(b.studentCode?.toUpperCase()) || '';
-        valA = lastA ? new Date(lastA).getTime() : 0;
-        valB = lastB ? new Date(lastB).getTime() : 0;
-      }
-
-      if (valA < valB) return studentSortDir === 'asc' ? -1 : 1;
-      if (valA > valB) return studentSortDir === 'asc' ? 1 : -1;
-      return 0;
     });
+
+    return sortFeeStudents<FeeRosterRow>(baseList, studentSortField, studentSortDir, studentLastPaymentMap);
   }, [students, studentSearch, studentClassFilter, studentStatusFilter, studentSortField, studentSortDir, studentLastPaymentMap]);
 
   // Filtered Student Totals
@@ -529,7 +493,7 @@ export default function FeesJournal({
   const exportStudentBalancesCSV = () => {
     const headers = ['Student Name', 'Class', 'Package Fee (INR)', 'Discount (INR)', 'Net Payable (INR)', 'Paid So Far (INR)', 'Balance Outstanding (INR)', 'Fee Status', 'Last Payment Date'];
     const rows = filteredStudents.map(s => {
-      const lastPayment = studentLastPaymentMap.get(s.studentCode?.toUpperCase());
+      const lastPayment = studentLastPaymentMap.get(s.studentCode?.toUpperCase() || '');
       const lastPayStr = lastPayment ? formatDateStr(lastPayment) : 'No Payments';
       const statusStr = !s.fee || s.fee.totalPackageAmount === undefined 
         ? 'UNCONFIGURED' 
@@ -1327,7 +1291,7 @@ export default function FeesJournal({
                 </thead>
                 <tbody>
                   {filteredStudents.map(s => {
-                    const lastPayment = studentLastPaymentMap.get(s.studentCode?.toUpperCase());
+                    const lastPayment = studentLastPaymentMap.get(s.studentCode?.toUpperCase() || '');
 
                     return (
                       <tr key={s.studentCode} style={{ borderBottom: '1px solid var(--border-light)' }}>
@@ -1353,19 +1317,15 @@ export default function FeesJournal({
                           ₹{s.fee?.outstandingAmount !== undefined ? s.fee.outstandingAmount.toLocaleString('en-IN') : '--'}
                         </td>
                         <td style={{ padding: '8px 12px' }}>
-                          {!s.fee || s.fee.totalPackageAmount === undefined ? (
-                            <span className="badge badge-secondary" style={{ fontSize: '10px' }}>UNCONFIGURED</span>
-                          ) : s.fee.hasOverdueInstallment ? (
-                            <span className="badge badge-danger" style={{ fontSize: '10px' }}>OVERDUE</span>
-                          ) : s.fee.feeStatus === 'exempted' || s.fee.netPayableAmount === 0 ? (
-                            <span className="badge badge-success" style={{ fontSize: '10px' }}>EXEMPTED</span>
-                          ) : s.fee.feeStatus === 'fully_paid' || ((s.fee.totalPaidAmount || 0) >= s.fee.netPayableAmount && s.fee.netPayableAmount > 0) ? (
-                            <span className="badge badge-success" style={{ fontSize: '10px' }}>PAID</span>
-                          ) : s.fee.feeStatus === 'partially_paid' || (s.fee.totalPaidAmount || 0) > 0 ? (
-                            <span className="badge badge-info" style={{ fontSize: '10px' }}>PARTIAL</span>
-                          ) : (
-                            <span className="badge badge-warning" style={{ fontSize: '10px' }}>PENDING</span>
-                          )}
+                          <FeeStatusBadge 
+                            feeStatus={{
+                              unconfigured: !s.fee || s.fee.totalPackageAmount === undefined,
+                              isOverdue: s.fee?.hasOverdueInstallment,
+                              paid: s.fee?.feeStatus === 'fully_paid' || ((s.fee?.totalPaidAmount || 0) >= (s.fee?.netPayableAmount ?? 0) && (s.fee?.netPayableAmount ?? 0) > 0),
+                              partial: s.fee?.feeStatus === 'partially_paid' || (s.fee?.totalPaidAmount || 0) > 0
+                            }}
+                            feeExempted={s.fee?.feeStatus === 'exempted' || s.fee?.netPayableAmount === 0}
+                          />
                         </td>
                         <td style={{ padding: '8px 12px', fontSize: '11px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
                           {lastPayment ? formatDateStr(lastPayment) : '--'}

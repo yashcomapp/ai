@@ -8,40 +8,18 @@ import TargetPicker from './TargetPicker';
 import ScheduleTimingInputs from './ScheduleTimingInputs';
 import { AttemptDurationControls } from './AttemptDurationControls';
 import { ModalShell } from '@/components/common/ModalShell';
+import { BaseAssignmentModalState, AssignmentModalCommonProps, ASSIGNMENT_MODAL_CARD_STYLE } from './types';
 
-export interface EditModalState {
-  show: boolean;
+export interface EditModalState extends BaseAssignmentModalState {
   assignmentId: string;
-  examId: string;
-  examName: string;
   collection: 'batchAssignments' | 'subjectiveAssignments';
-  targetType: 'batch' | 'student' | 'mixed';
-  selectedBatches: Set<string>;
-  selectedStudents: Set<string>;
-  openMode: 'immediate' | 'scheduled';
-  startAtStr: string;
-  endAtStr: string;
-  attemptLimit: number;
-  examDuration?: number;
-  normDuration?: number;
-  overrideDuration?: boolean;
-  isMorningTest?: boolean;
-  isEveningTest?: boolean;
-  lateEntryRestriction?: boolean;
 }
 
-interface EditAssignmentModalProps {
+interface EditAssignmentModalProps extends AssignmentModalCommonProps {
   editModal: EditModalState;
   setEditModal: React.Dispatch<React.SetStateAction<EditModalState>>;
-  batches: Batch[];
-  getStudentsGroupedByBatch: () => {
-    grouped: { [batchId: string]: { batchName: string; list: any[] } };
-    unassigned: any[];
-  };
   handleToggleBatchEdit: (id: string) => void;
   handleToggleStudentEdit: (code: string) => void;
-  getMorningTestTimes: (dur: number) => { startStr: string; endStr: string };
-  getEveningTestTimes: (dur: number) => { startStr: string; endStr: string };
   handleSaveEditedAssignment: () => void;
 }
 
@@ -64,19 +42,7 @@ export function EditAssignmentModal({
       onClose={() => setEditModal(prev => ({ ...prev, show: false }))}
       maxWidth="620px"
       zIndex={20000}
-      cardStyle={{
-        background: 'var(--surface-popover)',
-        borderRadius: 'var(--radius-lg)',
-        border: '1px solid var(--border-popover)',
-        width: '94%',
-        maxHeight: '90vh',
-        overflowY: 'auto',
-        padding: '20px 24px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '12px',
-        boxShadow: 'var(--shadow-lg)'
-      }}
+      cardStyle={ASSIGNMENT_MODAL_CARD_STYLE}
     >
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
           <div>

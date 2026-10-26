@@ -126,38 +126,6 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
             display: none !important;
           }
         }
-        @media (max-width: 480px) {
-          .page-header {
-            padding: 8px 10px !important;
-          }
-          .page-header-actions {
-            gap: 4px !important;
-          }
-          .page-header-btn {
-            width: 30px !important;
-            height: 30px !important;
-          }
-          .page-header-btn svg {
-            width: 14px !important;
-            height: 14px !important;
-          }
-        }
-        @media (max-width: 360px) {
-          .page-header {
-            padding: 6px 6px !important;
-          }
-          .page-header-actions {
-            gap: 3px !important;
-          }
-          .page-header-btn {
-            width: 27px !important;
-            height: 27px !important;
-          }
-          .page-header-btn svg {
-            width: 13px !important;
-            height: 13px !important;
-          }
-        }
       `}</style>
 
       {/* Universal Top Header Bar (Single top bar for all student pages) */}

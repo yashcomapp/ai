@@ -152,6 +152,10 @@ export default function AdminExamGeneratorPage() {
     availableTopics, setAvailableTopics,
     selectedTopics, setSelectedTopics,
     classes,
+    boards,
+    filteredTopics,
+    resetChaptersTopics: resetSyllabusChaptersTopics,
+    getTopicKey,
     handleBoardChange,
     handleClassChange,
     handleToggleSubject,
@@ -338,10 +342,7 @@ export default function AdminExamGeneratorPage() {
 
 
   const resetChaptersTopics = () => {
-    setAvailableChapters([]);
-    setSelectedChapters(new Set());
-    setAvailableTopics([]);
-    setSelectedTopics([]);
+    resetSyllabusChaptersTopics();
     setGeneratedQuestions([]);
     setShortfalls([]);
     setAvailablePool([]);
@@ -698,20 +699,7 @@ export default function AdminExamGeneratorPage() {
     return { single_mcq: tmpl.totalQuestions || 30 };
   };
 
-  // Boards and Classes derivation
-  const getBoards = () => {
-    if (!syllabusIndex || !syllabusIndex.subjects) return [];
-    return Object.keys(syllabusIndex.subjects).sort();
-  };
-
-  const filteredTopics = useMemo(() => {
-    const selectedChs = Array.from(selectedChapters).map(idx => availableChapters[idx]).filter(Boolean);
-    return availableTopics.filter(top => 
-      selectedChs.some(ch => ch.chapterNumber === top.chapterNumber && ch.subject === top.subject)
-    );
-  }, [selectedChapters, availableChapters, availableTopics]);
-
-  const getTopicKey = (t: any) => t?.topicCode || t?.topicNumber || t?.topic || '';
+  // (boards, filteredTopics, getTopicKey sourced from useSyllabusSelector SSOT)
 
   // Fetch Pool Candidate Questions
   const handleFetchPool = async () => {
@@ -1302,7 +1290,7 @@ Return ONLY valid JSON. No markdown wrappers or extra commentary.`;
                 style={{ width: '100%', padding: '5px 8px', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', background: 'var(--surface)', color: 'var(--text)', fontSize: '12px', height: '32px' }}
               >
                 <option value="">-- Choose Board --</option>
-                {getBoards().map(b => (
+                {boards.map(b => (
                   <option key={b} value={b}>{boardCodes[b] || b.toUpperCase()}</option>
                 ))}
               </select>

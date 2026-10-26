@@ -2238,3 +2238,58 @@ button, a, .brand, .tab, .btn, [role="button"], .settings-toggle, .theme-toggle,
     box-shadow: 0 0 8px 2px rgba(239, 68, 68, 0.35);
   }
 }
+
+/* ============================================================
+   UNIVERSAL TOP BAR & HEADER BUTTON STYLES
+   ============================================================ */
+.page-header-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--text);
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+@media (max-width: 480px) {
+  .page-header {
+    padding: 8px 10px !important;
+  }
+  .page-header-logo-text {
+    font-size: 1rem !important;
+  }
+  .page-header-actions {
+    gap: 6px !important;
+  }
+  .page-header-btn {
+    width: 32px !important;
+    height: 32px !important;
+  }
+  .page-header-btn svg {
+    width: 14px !important;
+    height: 14px !important;
+  }
+}
+
+@media (max-width: 360px) {
+  .page-header {
+    padding: 6px 6px !important;
+  }
+  .page-header-actions {
+    gap: 3px !important;
+  }
+  .page-header-btn {
+    width: 27px !important;
+    height: 27px !important;
+  }
+  .page-header-btn svg {
+    width: 13px !important;
+    height: 13px !important;
+  }
+}

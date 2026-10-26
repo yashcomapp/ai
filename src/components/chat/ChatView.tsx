@@ -23,6 +23,7 @@ const StarredMessagesModal = dynamic(() => import('@/components/chat/StarredMess
 const ReactionsModal = dynamic(() => import('@/components/chat/ReactionsModal'), { ssr: false });
 import { ChatRoom, Message } from '@/types/chat.types';
 import { UserProfile } from '@/types/user.types';
+import { PageHeaderBar } from '@/components/common/PageShell';
 
 export type { ChatRoom, Message, UserProfile };
 
@@ -1487,55 +1488,7 @@ export default function ChatView({ role = 'admin', hideHeader = false }: ChatVie
       
 
       {/* Top Header Bar */}
-      {!hideHeader && (
-        <div className="page-header glass" style={{ padding: '8px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderRadius: '0', borderBottom: '1px solid var(--border-light)', zIndex: 10, background: 'var(--surface-popover)' }}>
-          <div className="page-header-left" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <button 
-              onClick={() => router.push(role === 'admin' ? '/admin' : (role === 'parent' ? '/parent' : '/student'))}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                color: 'var(--text)',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: '6px',
-                borderRadius: '50%',
-                transition: 'background 0.2s'
-              }}
-              title="Back to Dashboard"
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
-            </button>
-            <span className="brand" style={{ fontWeight: 800, fontSize: '1.1rem', color: 'var(--accent)', cursor: 'pointer' }} onClick={() => router.push(role === 'admin' ? '/admin' : (role === 'parent' ? '/parent' : '/student'))}>
-              YASHCOM
-            </span>
-          </div>
-          <div className="page-header-right" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <button 
-              className="page-header-btn" 
-              onClick={() => logout()} 
-              style={{ 
-                background: 'rgba(255,255,255,0.05)', 
-                border: '1px solid var(--border)', 
-                borderRadius: '50%', 
-                width: '36px', 
-                height: '36px', 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center', 
-                color: 'var(--danger)', 
-                cursor: 'pointer',
-                flexShrink: 0
-              }} 
-              title="Logout"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-            </button>
-          </div>
-        </div>
-      )}
+      {!hideHeader && <PageHeaderBar role={role as any} background="var(--surface-popover)" logoutIcon="svg" />}
 
       {/* Main split window container */}
       <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>

@@ -299,21 +299,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             display: none !important;
           }
         }
-        @media (max-width: 480px) {
-          .page-header {
-            padding: 8px 10px !important;
-          }
-          .page-header-logo-text {
-            font-size: 1rem !important;
-          }
-          .page-header-actions {
-            gap: 6px !important;
-          }
-          .page-header-btn {
-            width: 32px !important;
-            height: 32px !important;
-          }
-        }
 
       `}</style>
 
