@@ -445,7 +445,27 @@ export async function GET(req: NextRequest) {
       // Calculate unified metrics via Single Source of Truth (QuotientService & calculateUnifiedMetrics)
       const quotientsMap = await QuotientService.calculateBulkQuotients(studentCodes, 'all');
 
-      // Fetch latest activity timestamp for practiceStats.lastActive
+      // Generate 7-day sliding window in IST
+      const now = new Date();
+      const dayKeys: string[] = [];
+      const weekDays: Array<{ dateKey: string; label: string; shortLabel: string; dayName: string; isToday: boolean }> = [];
+
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date(now.getTime() - i * 86400000);
+        const dateKey = getDateKeyIST(d);
+        const dayName = d.toLocaleDateString('en-US', { timeZone: 'Asia/Kolkata', weekday: 'short' });
+        const dayMonth = d.toLocaleDateString('en-GB', { timeZone: 'Asia/Kolkata', day: '2-digit', month: '2-digit' });
+        dayKeys.push(dateKey);
+        weekDays.push({
+          dateKey,
+          label: `${dayName} ${dayMonth}`,
+          shortLabel: dayName,
+          dayName,
+          isToday: i === 0
+        });
+      }
+
+      // Fetch practice reviews for daily 7-day history and lastActive
       const chunks: string[][] = [];
       for (let i = 0; i < studentCodes.length; i += 30) {
         chunks.push(studentCodes.slice(i, i + 30));
@@ -454,23 +474,88 @@ export async function GET(req: NextRequest) {
         chunks.map(chunk =>
           adminDb.collection('parentReviews')
             .where('studentCode', 'in', chunk)
-            .select('studentCode', 'startedAt', 'createdAt')
+            .select('studentCode', 'startedAt', 'createdAt', 'submittedAt', 'totalQuestions', 'questionsCount', 'correctCount', 'scorePercent', 'type')
             .get()
             .catch(() => null)
         )
       );
 
       const lastActiveMap: Record<string, string | null> = {};
+      const weeklyStats: Record<string, {
+        days: Record<string, { questionsCount: number; sessionsCount: number; avgScore: number; correctCount: number }>;
+        totalQuestions: number;
+        totalSessions: number;
+        activeDays: number;
+        avgScore: number;
+        activeDates: string[];
+      }> = {};
+
+      students.forEach((s: any) => {
+        const dayMap: Record<string, { questionsCount: number; sessionsCount: number; avgScore: number; correctCount: number }> = {};
+        dayKeys.forEach(dk => {
+          dayMap[dk] = { questionsCount: 0, sessionsCount: 0, avgScore: 0, correctCount: 0 };
+        });
+        weeklyStats[s.studentCode] = {
+          days: dayMap,
+          totalQuestions: 0,
+          totalSessions: 0,
+          activeDays: 0,
+          avgScore: 0,
+          activeDates: []
+        };
+      });
+
       reviewsSnaps.filter(Boolean).flatMap(s => s!.docs).forEach(doc => {
         const data = doc.data();
         const code = data.studentCode;
-        if (!code) return;
-        const itemDate = data.startedAt?.toDate ? data.startedAt.toDate() : data.createdAt?.toDate ? data.createdAt.toDate() : data.startedAt ? new Date(data.startedAt) : null;
-        if (itemDate) {
-          if (!lastActiveMap[code] || itemDate > new Date(lastActiveMap[code]!)) {
-            lastActiveMap[code] = itemDate.toISOString();
-          }
+        if (!code || !weeklyStats[code]) return;
+        if (data.type && data.type !== 'practice') return;
+
+        const itemDate = data.startedAt?.toDate ? data.startedAt.toDate() : data.createdAt?.toDate ? data.createdAt.toDate() : data.submittedAt?.toDate ? data.submittedAt.toDate() : data.startedAt ? new Date(data.startedAt) : null;
+        if (!itemDate) return;
+
+        if (!lastActiveMap[code] || itemDate > new Date(lastActiveMap[code]!)) {
+          lastActiveMap[code] = itemDate.toISOString();
         }
+
+        const dateKey = getDateKeyIST(itemDate);
+        if (weeklyStats[code].days[dateKey]) {
+          const dayData = weeklyStats[code].days[dateKey];
+          const qCount = Number(data.totalQuestions || data.questionsCount || 6);
+          const score = Number(data.scorePercent ?? (data.totalQuestions ? Math.round(((data.correctCount || 0) / data.totalQuestions) * 100) : 0));
+          const correct = Number(data.correctCount ?? Math.round((qCount * score) / 100));
+
+          dayData.sessionsCount += 1;
+          dayData.questionsCount += qCount;
+          dayData.correctCount += correct;
+        }
+      });
+
+      // Finalize weekly aggregates per student
+      Object.values(weeklyStats).forEach(w => {
+        let weekQ = 0;
+        let weekCorrect = 0;
+        let weekSess = 0;
+        let activeD = 0;
+        const activeDatesArr: string[] = [];
+
+        dayKeys.forEach(dk => {
+          const d = w.days[dk];
+          if (d.sessionsCount > 0) {
+            d.avgScore = d.questionsCount > 0 ? Math.round((d.correctCount / d.questionsCount) * 100) : 0;
+            weekQ += d.questionsCount;
+            weekCorrect += d.correctCount;
+            weekSess += d.sessionsCount;
+            activeD += 1;
+            activeDatesArr.push(dk);
+          }
+        });
+
+        w.totalQuestions = weekQ;
+        w.totalSessions = weekSess;
+        w.activeDays = activeD;
+        w.avgScore = weekQ > 0 ? Math.round((weekCorrect / weekQ) * 100) : 0;
+        w.activeDates = activeDatesArr;
       });
 
       const practiceStats: Record<string, { totalSessions: number, questionsAttempted: number, avgScore: number, examAvg: number, lastActive: string | null }> = {};
@@ -514,7 +599,7 @@ export async function GET(req: NextRequest) {
         };
       });
 
-      const responsePayload = { practiceStats, masteryStats };
+      const responsePayload = { practiceStats, masteryStats, weeklyStats, weekDays };
       await ReportCacheManager.setReport(cacheKey, responsePayload, 180);
 
       return NextResponse.json(responsePayload);

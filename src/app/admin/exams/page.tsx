@@ -71,6 +71,8 @@ export default function AdminExamsPage() {
       needsAttention: number;
     }
   }>({});
+  const [weeklyStats, setWeeklyStats] = useState<Record<string, any>>({});
+  const [weekDays, setWeekDays] = useState<Array<{ dateKey: string; label: string; shortLabel: string; dayName: string; isToday: boolean }>>([]);
   const [loadingPracticeTracks, setLoadingPracticeTracks] = useState(false);
   const [practiceTracksLoaded, setPracticeTracksLoaded] = useState(false);
 
@@ -456,6 +458,15 @@ export default function AdminExamsPage() {
         } else if (pracSortField === 'active') {
           valA = statsA.lastActive ? new Date(statsA.lastActive).getTime() : 0;
           valB = statsB.lastActive ? new Date(statsB.lastActive).getTime() : 0;
+        } else if (pracSortField === 'weeklyQuestions') {
+          valA = weeklyStats[a.studentCode]?.totalQuestions || 0;
+          valB = weeklyStats[b.studentCode]?.totalQuestions || 0;
+        } else if (pracSortField === 'weeklyActive') {
+          valA = weeklyStats[a.studentCode]?.activeDays || 0;
+          valB = weeklyStats[b.studentCode]?.activeDays || 0;
+        } else if (pracSortField === 'weeklyScore') {
+          valA = weeklyStats[a.studentCode]?.avgScore || 0;
+          valB = weeklyStats[b.studentCode]?.avgScore || 0;
         } else {
           return 0;
         }
@@ -471,7 +482,7 @@ export default function AdminExamsPage() {
         sortedStudents
       };
     }).filter(item => !q || item.sortedStudents.length > 0);
-  }, [batches, pracBatchFilter, students, deferredPracSearchName, practiceStats, masteryStats, pracSortField, pracSortDir]);
+  }, [batches, pracBatchFilter, students, deferredPracSearchName, practiceStats, masteryStats, weeklyStats, pracSortField, pracSortDir]);
 
   const openTopicStatusModal = async (student: Student, filterType: 'mastered' | 'practicing' | 'needsAttention' | 'all', e: React.MouseEvent) => {
     e.stopPropagation();
@@ -570,6 +581,8 @@ export default function AdminExamsPage() {
       const data = await res.json();
       setPracticeStats(data.practiceStats || {});
       setMasteryStats(data.masteryStats || {});
+      setWeeklyStats(data.weeklyStats || {});
+      setWeekDays(data.weekDays || []);
       setPracticeTracksLoaded(true);
     } catch (err: any) {
       console.error('Failed to load practice tracks:', err);
@@ -1320,6 +1333,8 @@ export default function AdminExamsPage() {
             handlePracSort={handlePracSort}
             practiceStats={practiceStats}
             masteryStats={masteryStats}
+            weeklyStats={weeklyStats}
+            weekDays={weekDays}
             handleRowClick={handleRowClick}
             openTopicStatusModal={openTopicStatusModal}
             formatDateDMY={formatDateDMY}

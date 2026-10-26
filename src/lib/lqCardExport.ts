@@ -855,6 +855,9 @@ export interface BatchPracticeTracksExportParams {
   students: Array<{
     name: string;
     studentCode: string;
+    className?: string;
+    class?: string;
+    rollNumber?: string | number;
     [key: string]: any;
   }>;
   practiceStats: {
@@ -877,6 +880,15 @@ export interface BatchPracticeTracksExportParams {
       needsAttention: number;
     };
   };
+  weeklyStats?: Record<string, {
+    days: Record<string, { questionsCount: number; sessionsCount: number; avgScore: number; correctCount: number }>;
+    totalQuestions: number;
+    totalSessions: number;
+    activeDays: number;
+    avgScore: number;
+    activeDates: string[];
+  }>;
+  weekDays?: Array<{ dateKey: string; label: string; shortLabel: string; dayName: string; isToday: boolean }>;
   formatDateDMY?: (date: any) => string;
 }
 
@@ -921,11 +933,23 @@ export async function exportBatchPracticeTracksImage(params: BatchPracticeTracks
     throw new Error('Could not initialize html2canvas library.');
   }
 
+  // Determine whether this is a 7-day weekly practice report or cumulative view
+  const isWeekly = Boolean(params.weeklyStats && params.weekDays && params.weekDays.length > 0);
+  const weeklyStats = params.weeklyStats || {};
+  const weekDays = params.weekDays || [];
+
   // Determine the uniform assigned topics count across the batch
   const batchMaxTopics = computeBatchMaxTopics(students, masteryStats);
 
-  // Sort descending by avgMastery, then by questionsAttempted
+  // Sorting: in weekly view, sort descending by activeDays, then totalQuestions, then avgScore
   const sorted = [...students].sort((a, b) => {
+    if (isWeekly) {
+      const wa = weeklyStats[a.studentCode] || { activeDays: 0, totalQuestions: 0, avgScore: 0 };
+      const wb = weeklyStats[b.studentCode] || { activeDays: 0, totalQuestions: 0, avgScore: 0 };
+      if (wb.activeDays !== wa.activeDays) return wb.activeDays - wa.activeDays;
+      if (wb.totalQuestions !== wa.totalQuestions) return wb.totalQuestions - wa.totalQuestions;
+      return wb.avgScore - wa.avgScore;
+    }
     const ma = masteryStats[a.studentCode]?.avgMastery || 0;
     const mb = masteryStats[b.studentCode]?.avgMastery || 0;
     if (mb !== ma) return mb - ma;
@@ -935,8 +959,19 @@ export async function exportBatchPracticeTracksImage(params: BatchPracticeTracks
   });
 
   const totalStudents = sorted.length;
-  const totalSessions = sorted.reduce((sum, s) => sum + (practiceStats[s.studentCode]?.totalSessions || 0), 0);
-  const totalQuestions = sorted.reduce((sum, s) => sum + (practiceStats[s.studentCode]?.questionsAttempted || 0), 0);
+  const totalSessions = sorted.reduce((sum, s) => {
+    if (isWeekly) return sum + (weeklyStats[s.studentCode]?.totalSessions || 0);
+    return sum + (practiceStats[s.studentCode]?.totalSessions || 0);
+  }, 0);
+  const totalQuestions = sorted.reduce((sum, s) => {
+    if (isWeekly) return sum + (weeklyStats[s.studentCode]?.totalQuestions || 0);
+    return sum + (practiceStats[s.studentCode]?.questionsAttempted || 0);
+  }, 0);
+
+  const activeStudentsCount = isWeekly
+    ? sorted.filter(s => (weeklyStats[s.studentCode]?.activeDays || 0) > 0).length
+    : sorted.filter(s => (practiceStats[s.studentCode]?.totalSessions || 0) > 0).length;
+
   const batchAvgMastery = Math.round(sorted.reduce((sum, s) => sum + (masteryStats[s.studentCode]?.avgMastery || 0), 0) / (totalStudents || 1));
   const batchAvgQuality = Math.round(sorted.reduce((sum, s) => sum + (masteryStats[s.studentCode]?.avgQuality ?? 100), 0) / (totalStudents || 1));
   const batchAvgEfforts = Math.round(sorted.reduce((sum, s) => {
@@ -947,206 +982,384 @@ export async function exportBatchPracticeTracksImage(params: BatchPracticeTracks
     return sum + eff;
   }, 0) / (totalStudents || 1));
 
+  const batchWeeklyAvg = isWeekly && totalQuestions > 0
+    ? Math.round(sorted.reduce((sum, s) => {
+        const w = weeklyStats[s.studentCode];
+        return sum + ((w?.avgScore || 0) * (w?.totalQuestions || 0));
+      }, 0) / (totalQuestions || 1))
+    : batchAvgQuality;
+
   const todayFormatted = formatDateDMY(new Date());
 
   const container = document.createElement('div');
   container.style.position = 'fixed';
   container.style.left = '0';
   container.style.top = '0';
-  container.style.width = '1080px';
+  container.style.width = isWeekly ? '1200px' : '1080px';
   container.style.backgroundColor = '#ffffff';
   container.style.color = '#0f172a';
   container.style.fontFamily = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', 'Noto Sans Devanagari', 'Mangal', sans-serif";
   (container.style as any).webkitFontSmoothing = 'antialiased';
   (container.style as any).mozOsxFontSmoothing = 'grayscale';
   (container.style as any).textRendering = 'optimizeLegibility';
-  container.style.padding = '28px 32px';
+  container.style.padding = '26px 30px';
   container.style.boxSizing = 'border-box';
   container.style.zIndex = '-9999';
   container.style.pointerEvents = 'none';
   container.style.opacity = '1';
 
-  const rowsHtml = sorted.map((s, idx) => {
-    const rank = idx + 1;
-    const rankBadge = rank === 1 ? '🥇 1' : rank === 2 ? '🥈 2' : rank === 3 ? '🥉 3' : `<span style="display:inline-block; min-width: 24px; padding: 2px 6px; border-radius: 4px; background: #e2e8f0; color: #1e293b; font-weight: 800; font-size: 12px;">${rank}</span>`;
-    const displayName = formatReportStudentName(s.name);
-    const rowBg = idx % 2 === 0 ? '#ffffff' : '#f8fafc';
+  let tableHeaderHtml = '';
+  let rowsHtml = '';
 
-    const pStat = practiceStats[s.studentCode] || { totalSessions: 0, questionsAttempted: 0, avgScore: 0, lastActive: null };
-    const mStat = masteryStats[s.studentCode] || { avgMastery: 0, avgQuality: 100, efforts: 0, mastered: 0, practicing: 0, needsAttention: 0, totalAssigned: 0 };
-    
-    // Uniform batch topic harmonization
-    const rawAssigned = mStat.mastered + mStat.practicing + mStat.needsAttention;
-    const targetTotal = batchMaxTopics > 0 ? batchMaxTopics : (mStat.totalAssigned || rawAssigned);
-    const adjustedNeedsAttention = mStat.needsAttention + Math.max(0, targetTotal - rawAssigned);
-    const quality = mStat.avgQuality ?? 100;
-    const efforts = mStat.efforts ?? (targetTotal > 0 ? Math.min(100, Math.round((pStat.totalSessions / targetTotal) * 100)) : 0);
-
-    let lastActiveText = 'Never';
-    if (pStat.lastActive) {
-      try {
-        lastActiveText = formatDateDMY(pStat.lastActive);
-      } catch {
-        lastActiveText = pStat.lastActive.split('T')[0] || 'Recent';
-      }
-    }
-
-    return `
-      <tr style="border-bottom: 1px solid #e2e8f0; height: 44px; background-color: ${rowBg};">
-        <td style="padding: 8px 10px; text-align: center; font-weight: 900; font-size: 13.5px; color: #0f172a;">${rankBadge}</td>
-        <td style="padding: 8px 14px; font-weight: 800; font-size: 14.5px; color: #0f172a; white-space: nowrap;">
-          ${displayName}
-        </td>
-        <td style="padding: 8px 8px; text-align: center; font-weight: 800; font-size: 13.5px; color: #0f172a;">
-          ${pStat.totalSessions}
-        </td>
-        <td style="padding: 8px 8px; text-align: center; font-weight: 800; font-size: 13.5px; color: #0f172a;">
-          ${pStat.questionsAttempted}
-        </td>
-        <td style="padding: 8px 8px; text-align: center; white-space: nowrap;">
-          ${pStat.totalSessions > 0 ? getScoreChip(pStat.avgScore) : `<span style="color:#94a3b8; font-weight:700;">—</span>`}
-        </td>
-        <td style="padding: 8px 8px; text-align: center; white-space: nowrap;">
-          ${getScoreChip(mStat.avgMastery, true)}
-        </td>
-        <td style="padding: 8px 8px; text-align: center; white-space: nowrap;">
-          ${getScoreChip(efforts)}
-        </td>
-        <td style="padding: 8px 8px; text-align: center; white-space: nowrap;">
-          ${getScoreChip(quality)}
-        </td>
-        <td style="padding: 8px 12px; text-align: center; white-space: nowrap;">
-          <div style="display: inline-flex; align-items: center; gap: 5px;">
-            <span style="display:inline-block; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 800; background: #dcfce7; color: #14532d; border: 1px solid #86efac;" title="Mastered (>=90%)">
-              🟢 ${mStat.mastered}
-            </span>
-            <span style="display:inline-block; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 800; background: #fef3c7; color: #92400e; border: 1px solid #fcd34d;" title="In Progress (50-89%)">
-              🟡 ${mStat.practicing}
-            </span>
-            <span style="display:inline-block; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 800; background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5;" title="Needs Attention / Unattempted">
-              🔴 ${adjustedNeedsAttention}
-            </span>
-          </div>
-          <div style="font-size: 10.5px; font-weight: 700; color: #64748b; margin-top: 2px;">
-            एकूण: <strong>${targetTotal}</strong> घटक
-          </div>
-        </td>
-        <td style="padding: 8px 10px; text-align: center; font-size: 12px; font-weight: 700; color: #475569; white-space: nowrap;">
-          ${lastActiveText}
-        </td>
+  if (isWeekly) {
+    // 7-Day Day-Wise Weekly Table Header
+    tableHeaderHtml = `
+      <tr style="background: #0f172a; color: #ffffff; font-size: 11.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; height: 42px;">
+        <th style="padding: 8px 10px; text-align: left; width: 220px;">विद्यार्थी / Student</th>
+        ${weekDays.map(wd => `
+          <th style="padding: 8px 4px; text-align: center; width: 74px; ${wd.isToday ? 'background: #1e3a8a; border-top: 3px solid #38bdf8;' : ''}">
+            <div style="font-size: 11px; font-weight: 900; line-height: 1.1;">${wd.shortLabel}</div>
+            <div style="font-size: 10px; font-weight: 700; color: ${wd.isToday ? '#7dd3fc' : '#94a3b8'}; line-height: 1.1;">${wd.label.split(' ')[1] || ''}</div>
+          </th>
+        `).join('')}
+        <th style="padding: 8px 6px; text-align: center; width: 95px; background: #0369a1;">7D Total</th>
+        <th style="padding: 8px 6px; text-align: center; width: 75px;">Active</th>
+        <th style="padding: 8px 6px; text-align: center; width: 85px;">Accuracy</th>
+        <th style="padding: 8px 10px; text-align: center; width: 155px;">Topic Status (Syllabus)</th>
       </tr>
     `;
-  }).join('');
+
+    // Strictly MAX 2 LINES per student
+    rowsHtml = sorted.map((s, idx) => {
+      const rank = idx + 1;
+      const rankBadge = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `<span style="display:inline-block; min-width: 20px; padding: 1px 4px; border-radius: 4px; background: #e2e8f0; color: #1e293b; font-weight: 800; font-size: 11.5px;">${rank}</span>`;
+      const displayName = formatReportStudentName(s.name);
+      const rowBg = idx % 2 === 0 ? '#ffffff' : '#f8fafc';
+
+      const w = weeklyStats[s.studentCode] || {
+        days: {},
+        totalQuestions: 0,
+        totalSessions: 0,
+        activeDays: 0,
+        avgScore: 0,
+        activeDates: []
+      };
+
+      const mStat = masteryStats[s.studentCode] || { avgMastery: 0, avgQuality: 100, efforts: 0, mastered: 0, practicing: 0, needsAttention: 0, totalAssigned: 0 };
+      const rawAssigned = mStat.mastered + mStat.practicing + mStat.needsAttention;
+      const targetTotal = batchMaxTopics > 0 ? batchMaxTopics : (mStat.totalAssigned || rawAssigned);
+      const adjustedNeedsAttention = mStat.needsAttention + Math.max(0, targetTotal - rawAssigned);
+
+      return `
+        <tr style="border-bottom: 1px solid #e2e8f0; height: 48px; background-color: ${rowBg};">
+          <!-- Line 1 & Line 2: Student -->
+          <td style="padding: 5px 10px; vertical-align: middle;">
+            <div style="display: flex; align-items: center; gap: 5px; line-height: 1.2;">
+              <span style="font-size: 13px; line-height: 1;">${rankBadge}</span>
+              <span style="font-weight: 800; font-size: 13px; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 175px;">${displayName}</span>
+            </div>
+            <div style="font-size: 10px; font-weight: 600; color: #64748b; margin-left: 20px; line-height: 1.2; margin-top: 2px;">
+              ${s.className || s.class || 'Batch'} ${s.rollNumber ? `• Roll ${s.rollNumber}` : ''}
+            </div>
+          </td>
+
+          <!-- 7 Day Columns (Day 1 to Day 7) -->
+          ${weekDays.map(wd => {
+            const dayData = w.days?.[wd.dateKey];
+            const hasPrac = dayData && dayData.sessionsCount > 0;
+            return `
+              <td style="padding: 4px 4px; text-align: center; vertical-align: middle; ${wd.isToday ? 'background: #f0fdf4;' : ''}">
+                ${hasPrac ? `
+                  <div style="font-weight: 900; font-size: 12.5px; color: #0f172a; line-height: 1.2;">
+                    ${dayData.questionsCount}<span style="font-size: 9.5px; font-weight: 700; color: #64748b;">Q</span>
+                  </div>
+                  <div style="font-size: 10px; font-weight: 800; color: ${dayData.avgScore >= 80 ? '#15803d' : dayData.avgScore >= 50 ? '#b45309' : '#b91c1c'}; line-height: 1.2; margin-top: 1px;">
+                    ${dayData.avgScore}%
+                  </div>
+                ` : `
+                  <div style="color: #cbd5e1; font-weight: 800; font-size: 13px; line-height: 1.2;">—</div>
+                `}
+              </td>
+            `;
+          }).join('')}
+
+          <!-- 7D Total -->
+          <td style="padding: 4px 6px; text-align: center; vertical-align: middle; background: #f0f9ff;">
+            <div style="font-weight: 900; font-size: 13px; color: #0369a1; line-height: 1.2;">
+              ${w.totalQuestions} <span style="font-size: 10px; font-weight: 700;">Qs</span>
+            </div>
+            <div style="font-size: 10px; font-weight: 700; color: #64748b; line-height: 1.2; margin-top: 1px;">
+              ${w.totalSessions} sess
+            </div>
+          </td>
+
+          <!-- Active Days -->
+          <td style="padding: 4px 6px; text-align: center; vertical-align: middle;">
+            <div style="font-weight: 900; font-size: 12px; color: ${w.activeDays >= 5 ? '#15803d' : w.activeDays >= 3 ? '#b45309' : '#64748b'}; line-height: 1.2;">
+              ${w.activeDays}/7 d
+            </div>
+            <div style="font-size: 8px; letter-spacing: 0.5px; line-height: 1.2; margin-top: 2px;">
+              ${weekDays.map(wd => (w.days?.[wd.dateKey]?.sessionsCount || 0) > 0 ? '🟢' : '⚪').join('')}
+            </div>
+          </td>
+
+          <!-- Weekly Accuracy -->
+          <td style="padding: 4px 6px; text-align: center; vertical-align: middle;">
+            ${w.totalQuestions > 0 ? getScoreChip(w.avgScore) : `<span style="color:#94a3b8; font-weight:700; font-size: 12px;">—</span>`}
+            <div style="font-size: 9.5px; font-weight: 700; color: #64748b; line-height: 1.2; margin-top: 2px;">
+              ${w.avgScore >= 85 ? '⭐ उत्तम' : w.avgScore >= 65 ? 'मध्यम' : w.totalQuestions > 0 ? 'सुधारणा हवी' : 'सराव नाही'}
+            </div>
+          </td>
+
+          <!-- Topic Mastery (SSOT) -->
+          <td style="padding: 4px 8px; text-align: center; vertical-align: middle; white-space: nowrap;">
+            <div style="display: inline-flex; align-items: center; gap: 4px; line-height: 1.2;">
+              <span style="display:inline-block; padding: 1px 5px; border-radius: 4px; font-size: 10.5px; font-weight: 800; background: #dcfce7; color: #14532d; border: 1px solid #86efac;">
+                🟢 ${mStat.mastered}
+              </span>
+              <span style="display:inline-block; padding: 1px 5px; border-radius: 4px; font-size: 10.5px; font-weight: 800; background: #fef3c7; color: #92400e; border: 1px solid #fcd34d;">
+                🟡 ${mStat.practicing}
+              </span>
+              <span style="display:inline-block; padding: 1px 5px; border-radius: 4px; font-size: 10.5px; font-weight: 800; background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5;">
+                🔴 ${adjustedNeedsAttention}
+              </span>
+            </div>
+            <div style="font-size: 10px; font-weight: 700; color: #64748b; line-height: 1.2; margin-top: 2px;">
+              एकूण: <strong>${targetTotal}</strong> घटक
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  } else {
+    // Cumulative All-Time Table Header & Rows (Fallback)
+    tableHeaderHtml = `
+      <tr style="background: #0f172a; color: #ffffff; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.6px; height: 42px;">
+        <th style="padding: 10px 10px; text-align: center; width: 50px;">Rank</th>
+        <th style="padding: 10px 14px; text-align: left;">Student Name</th>
+        <th style="padding: 10px 8px; text-align: center; width: 70px;">Sessions</th>
+        <th style="padding: 10px 8px; text-align: center; width: 80px;">Questions</th>
+        <th style="padding: 10px 8px; text-align: center; width: 80px;">Avg Score</th>
+        <th style="padding: 10px 8px; text-align: center; width: 90px;">Mastery</th>
+        <th style="padding: 10px 8px; text-align: center; width: 85px;">Efforts</th>
+        <th style="padding: 10px 8px; text-align: center; width: 85px;">Quality</th>
+        <th style="padding: 10px 12px; text-align: center; width: 195px;">Topic Status (Assigned)</th>
+        <th style="padding: 10px 10px; text-align: center; width: 95px;">Last Active</th>
+      </tr>
+    `;
+
+    rowsHtml = sorted.map((s, idx) => {
+      const rank = idx + 1;
+      const rankBadge = rank === 1 ? '🥇 1' : rank === 2 ? '🥈 2' : rank === 3 ? '🥉 3' : `<span style="display:inline-block; min-width: 24px; padding: 2px 6px; border-radius: 4px; background: #e2e8f0; color: #1e293b; font-weight: 800; font-size: 12px;">${rank}</span>`;
+      const displayName = formatReportStudentName(s.name);
+      const rowBg = idx % 2 === 0 ? '#ffffff' : '#f8fafc';
+
+      const pStat = practiceStats[s.studentCode] || { totalSessions: 0, questionsAttempted: 0, avgScore: 0, lastActive: null };
+      const mStat = masteryStats[s.studentCode] || { avgMastery: 0, avgQuality: 100, efforts: 0, mastered: 0, practicing: 0, needsAttention: 0, totalAssigned: 0 };
+      
+      const rawAssigned = mStat.mastered + mStat.practicing + mStat.needsAttention;
+      const targetTotal = batchMaxTopics > 0 ? batchMaxTopics : (mStat.totalAssigned || rawAssigned);
+      const adjustedNeedsAttention = mStat.needsAttention + Math.max(0, targetTotal - rawAssigned);
+      const quality = mStat.avgQuality ?? 100;
+      const efforts = mStat.efforts ?? (targetTotal > 0 ? Math.min(100, Math.round((pStat.totalSessions / targetTotal) * 100)) : 0);
+
+      let lastActiveText = 'Never';
+      if (pStat.lastActive) {
+        try {
+          lastActiveText = formatDateDMY(pStat.lastActive);
+        } catch {
+          lastActiveText = pStat.lastActive.split('T')[0] || 'Recent';
+        }
+      }
+
+      return `
+        <tr style="border-bottom: 1px solid #e2e8f0; height: 44px; background-color: ${rowBg};">
+          <td style="padding: 8px 10px; text-align: center; font-weight: 900; font-size: 13.5px; color: #0f172a;">${rankBadge}</td>
+          <td style="padding: 8px 14px; font-weight: 800; font-size: 14.5px; color: #0f172a; white-space: nowrap;">
+            ${displayName}
+          </td>
+          <td style="padding: 8px 8px; text-align: center; font-weight: 800; font-size: 13.5px; color: #0f172a;">
+            ${pStat.totalSessions}
+          </td>
+          <td style="padding: 8px 8px; text-align: center; font-weight: 800; font-size: 13.5px; color: #0f172a;">
+            ${pStat.questionsAttempted}
+          </td>
+          <td style="padding: 8px 8px; text-align: center; white-space: nowrap;">
+            ${pStat.totalSessions > 0 ? getScoreChip(pStat.avgScore) : `<span style="color:#94a3b8; font-weight:700;">—</span>`}
+          </td>
+          <td style="padding: 8px 8px; text-align: center; white-space: nowrap;">
+            ${getScoreChip(mStat.avgMastery, true)}
+          </td>
+          <td style="padding: 8px 8px; text-align: center; white-space: nowrap;">
+            ${getScoreChip(efforts)}
+          </td>
+          <td style="padding: 8px 8px; text-align: center; white-space: nowrap;">
+            ${getScoreChip(quality)}
+          </td>
+          <td style="padding: 8px 12px; text-align: center; white-space: nowrap;">
+            <div style="display: inline-flex; align-items: center; gap: 5px;">
+              <span style="display:inline-block; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 800; background: #dcfce7; color: #14532d; border: 1px solid #86efac;" title="Mastered (>=90%)">
+                🟢 ${mStat.mastered}
+              </span>
+              <span style="display:inline-block; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 800; background: #fef3c7; color: #92400e; border: 1px solid #fcd34d;" title="In Progress (50-89%)">
+                🟡 ${mStat.practicing}
+              </span>
+              <span style="display:inline-block; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 800; background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5;" title="Needs Attention / Unattempted">
+                🔴 ${adjustedNeedsAttention}
+              </span>
+            </div>
+            <div style="font-size: 10.5px; font-weight: 700; color: #64748b; margin-top: 2px;">
+              एकूण: <strong>${targetTotal}</strong> घटक
+            </div>
+          </td>
+          <td style="padding: 8px 10px; text-align: center; font-size: 12px; font-weight: 700; color: #475569; white-space: nowrap;">
+            ${lastActiveText}
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  const headerTitle = isWeekly
+    ? '🏋️ Daily Practice Weekly Report (मागील ७ दिवस)'
+    : '🏋️ Daily Practice & Topic Mastery Dossier';
+
+  const headerSubtitle = isWeekly && weekDays.length > 0
+    ? `${batchName} • ${weekDays[0].label} ते ${weekDays[weekDays.length - 1].label}`
+    : batchName;
+
+  const kpiCardsHtml = isWeekly ? `
+    <div style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 10px 12px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+      <div style="font-size: 22px; font-weight: 900; color: #0f172a; line-height: 1.1;">${totalStudents}</div>
+      <div style="font-size: 10.5px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 3px;">विद्यार्थी / Students</div>
+    </div>
+    <div style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 10px 12px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+      <div style="font-size: 22px; font-weight: 900; color: #15803d; line-height: 1.1;">${activeStudentsCount} <span style="font-size: 13px; font-weight: 700; color: #475569;">(${Math.round((activeStudentsCount / (totalStudents || 1)) * 100)}%)</span></div>
+      <div style="font-size: 10.5px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 3px;">सक्रिय विद्यार्थी (7d Active)</div>
+    </div>
+    <div style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 10px 12px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+      <div style="font-size: 22px; font-weight: 900; color: #0284c7; line-height: 1.1;">${totalQuestions} <span style="font-size: 13px; font-weight: 700;">Qs</span></div>
+      <div style="font-size: 10.5px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 3px;">एकूण सोडवलेले प्रश्न (7d)</div>
+    </div>
+    <div style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 10px 12px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+      <div style="font-size: 22px; font-weight: 900; color: #7c3aed; line-height: 1.1;">${totalSessions}</div>
+      <div style="font-size: 10.5px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 3px;">सराव सेट्स (7d Sessions)</div>
+    </div>
+    <div style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 10px 12px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+      <div style="font-size: 22px; font-weight: 900; color: ${getDeepScoreColor(batchWeeklyAvg)}; line-height: 1.1;">${batchWeeklyAvg}%</div>
+      <div style="font-size: 10.5px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 3px;">आठवडा अचूकता (Week Avg)</div>
+    </div>
+    <div style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 10px 12px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+      <div style="font-size: 22px; font-weight: 900; color: #0f172a; line-height: 1.1;">${batchMaxTopics} <span style="font-size: 12px; font-weight: 700; color: #475569;">घटक</span></div>
+      <div style="font-size: 10.5px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 3px;">नेमून दिलेला अभ्यासक्रम</div>
+    </div>
+  ` : `
+    <div style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 12px 14px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+      <div style="font-size: 24px; font-weight: 900; color: #0f172a; line-height: 1.1;">${totalStudents}</div>
+      <div style="font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px;">Students</div>
+    </div>
+    <div style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 12px 14px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+      <div style="font-size: 24px; font-weight: 900; color: #0369a1; line-height: 1.1;">${totalSessions}</div>
+      <div style="font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px;">Total Sessions</div>
+    </div>
+    <div style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 12px 14px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+      <div style="font-size: 24px; font-weight: 900; color: #047857; line-height: 1.1;">${totalQuestions}</div>
+      <div style="font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px;">Questions Solved</div>
+    </div>
+    <div style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 12px 14px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+      <div style="font-size: 24px; font-weight: 900; color: ${getDeepScoreColor(batchAvgMastery)}; line-height: 1.1;">${batchAvgMastery}%</div>
+      <div style="font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px;">Batch Mastery</div>
+    </div>
+    <div style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 12px 14px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+      <div style="font-size: 24px; font-weight: 900; color: ${getDeepScoreColor(batchAvgEfforts)}; line-height: 1.1;">${batchAvgEfforts}%</div>
+      <div style="font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px;">Batch Efforts</div>
+    </div>
+    <div style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 12px 14px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+      <div style="font-size: 24px; font-weight: 900; color: ${getDeepScoreColor(batchAvgQuality)}; line-height: 1.1;">${batchAvgQuality}%</div>
+      <div style="font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px;">Avg Accuracy</div>
+    </div>
+  `;
+
+  const advisoryHtml = isWeekly ? `
+    <div style="margin-top: 16px; padding: 14px 18px; background: #f8fafc; border: 1.5px solid #cbd5e1; border-left: 5px solid #0284c7; border-radius: 10px;">
+      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+        <span style="font-size: 20px; line-height: 1;">💡</span>
+        <strong style="color: #0f172a; font-size: 14px; font-weight: 900;">
+          पालकांसाठी साप्ताहिक सराव संदेश (Weekly Practice Message for Parents):
+        </strong>
+      </div>
+      <div style="color: #1e293b; font-size: 12.5px; line-height: 1.6; font-weight: 600;">
+        • <strong>दररोजचा नियमित सराव</strong> हेच संकल्पना स्पष्टतेचे आणि परीक्षेतील यशाचे मूळ आहे. आठवड्यातून किमान ५-६ दिवस नियमितपणे १-२ सराव सेट्स (६ ते १२ प्रश्न) सोडवणे आवश्यक आहे.<br/>
+        • <strong>घटक स्थिती (Topic Status):</strong> 🟢 Mastered (≥९०% अचूकता, पूर्ण प्रभुत्व) | 🟡 In Progress (५०-८९% अचूकता, सराव सुरू) | 🔴 Needs Attention (सराव बाकी किंवा <५०% गुण).<br/>
+        • ज्या विद्यार्थ्यांचा सराव बाकी किंवा अनियमित आहे, त्यांच्याकडून पालकांनी दररोज रात्री ३० मिनिटे ऑनलाइन सराव आवर्जून करून घ्यावा.
+      </div>
+    </div>
+  ` : `
+    <div style="margin-top: 20px; padding: 18px 22px; background: #f8fafc; border: 1.5px solid #cbd5e1; border-left: 5px solid #0284c7; border-radius: 10px;">
+      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+        <span style="font-size: 22px; line-height: 1;">💡</span>
+        <strong style="color: #0f172a; font-size: 15px; font-weight: 900;">
+          पालकांसाठी अत्यंत महत्त्वाचे स्पष्टीकरण व मार्गदर्शन (Topic Status & Parent Guidance):
+        </strong>
+      </div>
+      <ul style="margin: 0; padding-left: 20px; color: #1e293b; font-size: 13.5px; line-height: 1.8; font-weight: 600;">
+        <li style="margin-bottom: 8px;"><strong style="color: #0f172a;">📌 एकूण नेमून दिलेले अभ्यासक्रम घटक (${batchMaxTopics} घटक):</strong> या बॅचसाठी शिकवून पूर्ण झालेले व सरावासाठी उपलब्ध असलेले एकूण घटक = 🟢 पूर्ण प्रभुत्व + 🟡 सराव सुरू + 🔴 विशेष लक्ष आवश्यक.</li>
+        <li style="margin-bottom: 8px;"><strong style="color: #14532d;">🟢 Mastered:</strong> ≥ ९०% अचूकता आणि किमान आवश्यक प्रश्नांचा सराव पूर्ण.</li>
+        <li style="margin-bottom: 8px;"><strong style="color: #92400e;">🟡 In Progress / Practicing:</strong> अचूकता ५०% ते ८९% दरम्यान, अजून २ ते ३ सेट्स सराव आवश्यक.</li>
+        <li style="margin-bottom: 8px;"><strong style="color: #991b1b;">🔴 Needs Attention / Unattempted:</strong> अचूकता ५०% पेक्षा कमी किंवा अद्याप सराव सुरू नाही.</li>
+        <li><strong style="color: #0f172a;">📌 पालकांची भूमिका:</strong> दररोज घरी किमान २ ते ३ सराव सेट्स सोडवून सर्व 🟡 व 🔴 घटकांना 🟢 मध्ये रूपांतरित करावे.</li>
+      </ul>
+    </div>
+  `;
 
   container.innerHTML = `
-    <div style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 12px; padding: 24px 28px; box-shadow: 0 8px 30px rgba(0,0,0,0.06);">
+    <div style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 12px; padding: 22px 26px; box-shadow: 0 8px 30px rgba(0,0,0,0.06);">
       
       <!-- Header -->
-      <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #e2e8f0; padding-bottom: 16px; margin-bottom: 16px;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #e2e8f0; padding-bottom: 14px; margin-bottom: 14px;">
         <div>
-          <div style="color: #92400e; font-size: 15px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase;">
+          <div style="color: #92400e; font-size: 14.5px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase;">
             YASHCOM FOUNDATION, SHEGAON
           </div>
-          <div style="color: #0f172a; font-size: 24px; font-weight: 900; margin: 3px 0 5px; letter-spacing: -0.3px;">
-            🏋️ Daily Practice & Topic Mastery Dossier
+          <div style="color: #0f172a; font-size: 22px; font-weight: 900; margin: 3px 0 4px; letter-spacing: -0.3px;">
+            ${headerTitle}
           </div>
-          <div style="color: #0369a1; font-size: 16px; font-weight: 800;">
-            ${batchName}
+          <div style="color: #0369a1; font-size: 15px; font-weight: 800;">
+            ${headerSubtitle}
           </div>
         </div>
         <div style="text-align: right;">
-          <div style="background: #f1f5f9; border: 1.5px solid #cbd5e1; color: #1e293b; font-size: 12.5px; font-weight: 800; padding: 5px 14px; border-radius: 6px; display: inline-block;">
+          <div style="background: #f1f5f9; border: 1.5px solid #cbd5e1; color: #1e293b; font-size: 12px; font-weight: 800; padding: 4px 12px; border-radius: 6px; display: inline-block;">
             📅 ${todayFormatted}
           </div>
-          <div style="color: #475569; font-size: 12px; font-weight: 700; margin-top: 5px;">
+          <div style="color: #475569; font-size: 11.5px; font-weight: 700; margin-top: 4px;">
             Syllabus Coverage: <strong style="color:#0f172a;">${batchMaxTopics} Assigned Topics</strong>
           </div>
         </div>
       </div>
 
-      <!-- KPI Summary Cards (6-pillar view matching LQ standards) -->
-      <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-bottom: 20px;">
-        <div style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 12px 14px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-          <div style="font-size: 24px; font-weight: 900; color: #0f172a; line-height: 1.1;">${totalStudents}</div>
-          <div style="font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px;">Students</div>
-        </div>
-        <div style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 12px 14px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-          <div style="font-size: 24px; font-weight: 900; color: #0369a1; line-height: 1.1;">${totalSessions}</div>
-          <div style="font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px;">Total Sessions</div>
-        </div>
-        <div style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 12px 14px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-          <div style="font-size: 24px; font-weight: 900; color: #047857; line-height: 1.1;">${totalQuestions}</div>
-          <div style="font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px;">Questions Solved</div>
-        </div>
-        <div style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 12px 14px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-          <div style="font-size: 24px; font-weight: 900; color: ${getDeepScoreColor(batchAvgMastery)}; line-height: 1.1;">${batchAvgMastery}%</div>
-          <div style="font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px;">Batch Mastery</div>
-        </div>
-        <div style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 12px 14px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-          <div style="font-size: 24px; font-weight: 900; color: ${getDeepScoreColor(batchAvgEfforts)}; line-height: 1.1;">${batchAvgEfforts}%</div>
-          <div style="font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px;">Batch Efforts</div>
-        </div>
-        <div style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 12px 14px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
-          <div style="font-size: 24px; font-weight: 900; color: ${getDeepScoreColor(batchAvgQuality)}; line-height: 1.1;">${batchAvgQuality}%</div>
-          <div style="font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px;">Avg Accuracy</div>
-        </div>
+      <!-- KPI Summary Cards -->
+      <div style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-bottom: 16px;">
+        ${kpiCardsHtml}
       </div>
 
       <!-- Table with Executive Dark Navy Header for Maximum Legibility -->
       <table style="width: 100%; border-collapse: collapse; border: 1.5px solid #cbd5e1; border-radius: 10px; overflow: hidden;">
         <thead>
-          <tr style="background: #0f172a; color: #ffffff; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.6px; height: 42px;">
-            <th style="padding: 10px 10px; text-align: center; width: 50px;">Rank</th>
-            <th style="padding: 10px 14px; text-align: left;">Student Name</th>
-            <th style="padding: 10px 8px; text-align: center; width: 70px;">Sessions</th>
-            <th style="padding: 10px 8px; text-align: center; width: 80px;">Questions</th>
-            <th style="padding: 10px 8px; text-align: center; width: 80px;">Avg Score</th>
-            <th style="padding: 10px 8px; text-align: center; width: 90px;">Mastery</th>
-            <th style="padding: 10px 8px; text-align: center; width: 85px;">Efforts</th>
-            <th style="padding: 10px 8px; text-align: center; width: 85px;">Quality</th>
-            <th style="padding: 10px 12px; text-align: center; width: 195px;">Topic Status (Assigned)</th>
-            <th style="padding: 10px 10px; text-align: center; width: 95px;">Last Active</th>
-          </tr>
+          ${tableHeaderHtml}
         </thead>
         <tbody>
           ${rowsHtml}
         </tbody>
       </table>
 
-      <!-- Pedagogical Explanation & Parent Guidance Banner (Hindi / Marathi) - High Contrast Bullet List -->
-      <div style="margin-top: 20px; padding: 18px 22px; background: #f8fafc; border: 1.5px solid #cbd5e1; border-left: 5px solid #0284c7; border-radius: 10px;">
-        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
-          <span style="font-size: 22px; line-height: 1;">💡</span>
-          <strong style="color: #0f172a; font-size: 15px; font-weight: 900; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans Devanagari', 'Mangal', sans-serif;">
-            पालकांसाठी अत्यंत महत्त्वाचे स्पष्टीकरण व मार्गदर्शन (Topic Status & Parent Guidance):
-          </strong>
-        </div>
-        <ul style="margin: 0; padding-left: 20px; color: #1e293b; font-size: 13.5px; line-height: 1.8; font-weight: 600; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans Devanagari', 'Mangal', sans-serif;">
-          <li style="margin-bottom: 8px;">
-            <strong style="color: #0f172a;">📌 एकूण नेमून दिलेले अभ्यासक्रम घटक (${batchMaxTopics} घटक):</strong> या बॅचसाठी शिकवून पूर्ण झालेले व सरावासाठी उपलब्ध असलेले एकूण घटक = 🟢 पूर्ण प्रभुत्व + 🟡 सराव सुरू + 🔴 विशेष लक्ष आवश्यक. बॅचमधील सर्व विद्यार्थ्यांना समान अभ्यासक्रम लागू आहे.
-          </li>
-          <li style="margin-bottom: 8px;">
-            <strong style="color: #0369a1;">📌 सराव प्रयत्न (Efforts %):</strong> एकूण नेमून दिलेल्या ${batchMaxTopics} घटकांच्या तुलनेत विद्यार्थ्याने पूर्ण केलेल्या सराव सेट्सचे प्रमाण. बोर्ड परीक्षेत ९०%+ प्रभुत्व मिळवण्यासाठी १००% सराव प्रयत्न अनिवार्य आहेत.
-          </li>
-          <li style="margin-bottom: 8px;">
-            <strong style="color: #14532d;">🟢 Mastered (संकल्पना प्रभुत्व):</strong> ज्या घटकांमध्ये विद्यार्थ्याने <strong>≥ ९०% अचूकता</strong> आणि किमान आवश्यक प्रश्नांचा सराव यशस्वीरीत्या पूर्ण केला आहे. या घटकांची तयारी उत्कृष्ट आहे.
-          </li>
-          <li style="margin-bottom: 8px;">
-            <strong style="color: #92400e;">🟡 In Progress / Practicing (सराव सुरू):</strong> या घटकांचा सराव चालू असून अचूकता ५०% ते ८९% दरम्यान आहे. बोर्ड परीक्षेच्या दृष्टीने अजून २ ते ३ सराव सेट्स सोडवून ९०%+ अचूकता संपादन करणे आवश्यक आहे.
-          </li>
-          <li style="margin-bottom: 8px;">
-            <strong style="color: #991b1b;">🔴 Needs Attention / Unattempted (विशेष लक्ष द्या / सराव बाकी):</strong> ज्या घटकांमध्ये अचूकता ५०% पेक्षा कमी आहे किंवा अद्याप विद्यार्थ्याने सराव सुरूच केलेला नाही. हे घटक तत्काळ सोडवून घेणे अनिवार्य आहे.
-          </li>
-          <li>
-            <strong style="color: #0f172a;">📌 पालकांची भूमिका (Parent Action Plan):</strong> बोर्ड परीक्षेत ९०%+ गुण मिळवण्यासाठी विद्यार्थ्याने दररोज घरी न चुकता किमान २ ते ३ सराव सेट्स (१५-२० प्रश्न) सोडवणे आणि सर्व 🟡 व 🔴 घटकांना 🟢 (Mastered) मध्ये रूपांतरित करणे आवश्यक आहे.
-          </li>
-        </ul>
-      </div>
+      <!-- Advisory Banner -->
+      ${advisoryHtml}
 
       <!-- Footer -->
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; font-size: 11.5px; color: #475569; border-top: 1.5px solid #e2e8f0; padding-top: 12px;">
-        <span><strong style="color: #0f172a;">YASHCOM FOUNDATION, SHEGAON</strong> • Practice Track Evaluation Portal</span>
-        <span>Verified Batch Practice & Topic Mastery Summary • Confidential</span>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 14px; font-size: 11px; color: #475569; border-top: 1.5px solid #e2e8f0; padding-top: 10px;">
+        <span><strong style="color: #0f172a;">YASHCOM FOUNDATION, SHEGAON</strong> • Daily Practice Evaluation & Tracking System</span>
+        <span>Confidential • Designed for Class WhatsApp Group Sharing</span>
       </div>
 
     </div>
@@ -1174,7 +1387,9 @@ export async function exportBatchPracticeTracksImage(params: BatchPracticeTracks
     });
 
     const cleanBatch = batchName.replace(/[^a-zA-Z0-9_-]/g, '_');
-    const fileName = `Practice_Tracks_${cleanBatch}.png`;
+    const fileName = isWeekly
+      ? `Weekly_Practice_Report_${cleanBatch}_${todayFormatted.replace(/\//g, '-')}.png`
+      : `Practice_Tracks_${cleanBatch}.png`;
     const imageUri = canvas.toDataURL('image/png');
 
     let copiedToClipboard = false;
