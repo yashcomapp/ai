@@ -134,28 +134,60 @@ export default function AdminLiveMonitorPage() {
     return () => clearInterval(timer);
   }, []);
 
-  // Listen to Firestore active live proctoring sessions
+  // Listen to Firestore active live proctoring sessions (pauses when tab is hidden to eliminate idle read ops)
   useEffect(() => {
     if (!firebaseUser) return;
 
-    const qSessions = query(
-      collection(db, 'liveExamSessions'),
-      where('status', '==', 'in-progress')
-    );
+    let unsubscribe: (() => void) | null = null;
 
-    const unsubscribe = onSnapshot(qSessions, (snapshot) => {
-      const updated: { [key: string]: Session } = {};
-      snapshot.docs.forEach(doc => {
-        updated[doc.id] = { id: doc.id, ...doc.data() as any };
+    const setupListener = () => {
+      if (typeof document !== 'undefined' && document.hidden) return;
+      if (unsubscribe) {
+        unsubscribe();
+        unsubscribe = null;
+      }
+
+      const qSessions = query(
+        collection(db, 'liveExamSessions'),
+        where('status', '==', 'in-progress')
+      );
+
+      unsubscribe = onSnapshot(qSessions, (snapshot) => {
+        const updated: { [key: string]: Session } = {};
+        snapshot.docs.forEach(doc => {
+          updated[doc.id] = { id: doc.id, ...doc.data() as any };
+        });
+        setSessions(updated);
+        setLoading(false);
+      }, (err) => {
+        console.error('liveExamSessions listener error:', err);
+        setLoading(false);
       });
-      setSessions(updated);
-      setLoading(false);
-    }, (err) => {
-      console.error('liveExamSessions listener error:', err);
-      setLoading(false);
-    });
+    };
 
-    return () => unsubscribe();
+    setupListener();
+
+    const handleVisibilityChange = () => {
+      if (typeof document !== 'undefined' && document.hidden) {
+        if (unsubscribe) {
+          unsubscribe();
+          unsubscribe = null;
+        }
+      } else {
+        setupListener();
+      }
+    };
+
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+    }
+
+    return () => {
+      if (typeof document !== 'undefined') {
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+      }
+      if (unsubscribe) unsubscribe();
+    };
   }, [firebaseUser]);
 
   // Helpers (sanitizeForRtdbPath and getSessionDocId imported from proctoring SSOT)
