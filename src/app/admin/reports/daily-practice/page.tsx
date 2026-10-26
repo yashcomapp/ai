@@ -56,7 +56,7 @@ export default function DailyPracticeSummaryPage() {
     if (!firebaseUser) return;
     try {
       const idToken = await firebaseUser.getIdToken();
-      const res = await fetch(`/api/admin/reports/daily-practice?date=${dateVal}`, {
+      const res = await fetch(`/api/admin/reports/daily-practice?date=${dateVal}&refresh=true`, {
         headers: {
           'Authorization': `Bearer ${idToken}`
         }

@@ -27,15 +27,18 @@ async function handleDailyPractice(req: NextRequest) {
 
   const { searchParams } = new URL(req.url);
   const dateParam = searchParams.get('date');
+  const refresh = searchParams.get('refresh') === 'true';
   const targetDateStr = dateParam || getDateKeyIST();
 
   const cacheKey = `admin_report_daily_practice_${targetDateStr}`;
-  const cached = getFromCache<any>(cacheKey);
-  if (cached) {
-    return NextResponse.json(cached, { headers: REPORT_CACHE_HEADERS });
+  if (!refresh) {
+    const cached = getFromCache<any>(cacheKey);
+    if (cached) {
+      return NextResponse.json(cached, { headers: REPORT_CACHE_HEADERS });
+    }
   }
 
-  const report = await ReportService.getDailyPracticeReport(targetDateStr);
+  const report = await ReportService.getDailyPracticeReport(targetDateStr, refresh);
   setInCache(cacheKey, report, REPORT_CACHE_TTL_MS);
   return NextResponse.json(report, { headers: REPORT_CACHE_HEADERS });
 }

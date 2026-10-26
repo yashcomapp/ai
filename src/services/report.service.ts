@@ -133,10 +133,12 @@ export class ReportService {
   /**
    * Daily Practice Report with IST day boundaries and caching.
    */
-  static async getDailyPracticeReport(targetDateStr: string = getDateKeyIST()) {
+  static async getDailyPracticeReport(targetDateStr: string = getDateKeyIST(), forceRefresh: boolean = false) {
     const cacheKey = `daily-practice-report-${targetDateStr}`;
-    const cached = await ReportCacheManager.getReport<any>(cacheKey);
-    if (cached) return cached;
+    if (!forceRefresh) {
+      const cached = await ReportCacheManager.getReport<any>(cacheKey);
+      if (cached) return cached;
+    }
 
     const startOfISTDay = new Date(`${targetDateStr}T00:00:00+05:30`);
     const endOfISTDay = new Date(`${targetDateStr}T23:59:59.999+05:30`);
@@ -145,13 +147,26 @@ export class ReportService {
     const [studentsSnap, batchesSnap, rawReviewsSnap, masterySnap] = await Promise.all([
       adminDb.collection('users')
         .where('role', '==', 'student')
-        .select('studentCode', 'name', 'status', 'batchId', 'batchIds', 'className', 'class', 'autonomous')
+        .select('studentCode', 'name', 'status', 'batchId', 'batchIds', 'className', 'class', 'autonomous', 'email', 'isDemo')
         .get(),
       getCachedBatches(),
       adminDb.collection('parentReviews')
         .where('createdAt', '>=', startOfISTDay)
         .where('createdAt', '<=', endOfISTDay)
-        .select('studentCode', 'type', 'createdAt', 'startedAt')
+        .select(
+          'studentCode',
+          'type',
+          'createdAt',
+          'startedAt',
+          'scorePercent',
+          'correctCount',
+          'totalQuestions',
+          'masteryAfter',
+          'masteryBefore',
+          'durationSpent',
+          'sincerityPacingScore',
+          'integrityScore'
+        )
         .get(),
       adminDb.collection('studentTopicMastery')
         .where(
@@ -181,13 +196,15 @@ export class ReportService {
           id: doc.id,
           studentCode: data.studentCode || '',
           name: data.name || 'Unknown Student',
+          email: data.email || '',
+          isDemo: data.isDemo === true,
           status: data.status || 'active',
           batchIds: data.batchIds || (data.batchId ? [data.batchId] : []),
           className: data.className || data.class || '',
           isAutonomous: data.autonomous === true
         };
       })
-      .filter(s => s.status !== 'inactive');
+      .filter(s => s.status !== 'inactive' && !isDemoUser(s));
 
     const batches = batchesSnap.docs.map(doc => ({
       id: doc.id,
@@ -250,11 +267,21 @@ export class ReportService {
 
       sessions.forEach(sess => {
         totalAccuracy += sess.scorePercent !== undefined ? Number(sess.scorePercent) : 0;
-        totalHonesty += sess.integrityScore !== undefined ? Number(sess.integrityScore) : 100;
-        totalMastery += sess.masteryAfter !== undefined ? Number(sess.masteryAfter) : 0;
-        totalQuestions += sess.totalQuestions !== undefined ? Number(sess.totalQuestions) : 0;
+        const honesty = sess.integrityScore !== undefined
+          ? Number(sess.integrityScore)
+          : (sess.sincerityPacingScore !== undefined ? Number(sess.sincerityPacingScore) : 100);
+        totalHonesty += honesty;
+        totalMastery += sess.masteryAfter !== undefined
+          ? Number(sess.masteryAfter)
+          : (sess.masteryBefore !== undefined ? Number(sess.masteryBefore) : 0);
+        const qCount = sess.totalQuestions !== undefined
+          ? Number(sess.totalQuestions)
+          : (sess.correctCount !== undefined ? Number(sess.correctCount) : 0);
+        totalQuestions += qCount;
 
-        if (sess.createdAt && sess.startedAt) {
+        if (sess.durationSpent && Number(sess.durationSpent) > 0) {
+          totalTimeSpent += Number(sess.durationSpent);
+        } else if (sess.createdAt && sess.startedAt) {
           const duration = Math.max(0, Math.floor((sess.createdAt.getTime() - sess.startedAt.getTime()) / 1000));
           totalTimeSpent += duration;
         }
