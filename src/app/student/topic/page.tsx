@@ -20,21 +20,7 @@ import { PracticeProctorBar } from '@/components/student/practice/PracticeProcto
 import { PracticeQuestionCard } from '@/components/student/practice/PracticeQuestionCard';
 import { PracticeFeedbackModal } from '@/components/student/practice/PracticeFeedbackModal';
 import { PracticeCompletionView } from '@/components/student/practice/PracticeCompletionView';
-
-interface QuestionItem {
-  id: string;
-  questionCode: string;
-  text: string;
-  type: string;
-  options: any[];
-  assertion?: string;
-  reason?: string;
-  difficulty: string;
-  bloomLevel: string;
-  solution?: string;
-  correctAnswer?: string;
-  correctAnswers?: string[];
-}
+import { QuestionItem } from '@/types/question.types';
 
 interface PracticeData {
   topicCode: string;
@@ -523,12 +509,13 @@ function TopicPracticeContent() {
         if (isMultipleChoiceType(q.type)) {
           try {
             const rawList = parseAnswerList(uAns);
-            if (Array.isArray(rawList) && Array.isArray(q.options) && q.options.length > 0) {
+            const qOpts = q.options;
+            if (Array.isArray(rawList) && Array.isArray(qOpts) && qOpts.length > 0) {
               const matchedTexts = rawList.map((letter: string) => {
                 if (typeof letter === 'string' && /^[A-Z]$/i.test(letter)) {
                   const oIdx = letter.toUpperCase().charCodeAt(0) - 65;
-                  if (oIdx >= 0 && oIdx < q.options.length) {
-                    const opt = q.options[oIdx];
+                  if (oIdx >= 0 && oIdx < qOpts.length) {
+                    const opt = qOpts[oIdx];
                     return typeof opt === 'object' && opt ? (opt.text || opt.value || opt.label || '') : String(opt);
                   }
                 }

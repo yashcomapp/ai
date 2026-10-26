@@ -56,3 +56,18 @@ export interface SyllabusSubject {
   chapters?: Chapter[];
   [key: string]: any;
 }
+
+export interface SyllabusSelectionTopicItem {
+  chapterIdx?: number;
+  subject: string;
+  chapterName: string;
+  chapterNumber: string;
+  topic: string;
+  topicNumber: string;
+  objectiveCount?: number;
+  subjectiveCount?: number;
+  targetQuestions?: number;
+  hasSubtopics?: boolean;
+  [key: string]: any;
+}
+

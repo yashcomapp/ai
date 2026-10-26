@@ -13,7 +13,7 @@ import dynamic from 'next/dynamic';
 import { formatDateOrFallback } from '@/lib/dateUtils';
 import { getCanonicalSubjectName } from '@/lib/questionTypes';
 
-interface TopicItem {
+interface StudentLearningTopicItem {
   topicCode: string;
   topicName: string;
   topicNumber: string;
@@ -54,10 +54,10 @@ interface TopicItem {
 
 interface LearningPathData {
   studentCode: string;
-  needsAttention: TopicItem[];
-  continuePractice: TopicItem[];
-  revision: TopicItem[];
-  mastered: TopicItem[];
+  needsAttention: StudentLearningTopicItem[];
+  continuePractice: StudentLearningTopicItem[];
+  revision: StudentLearningTopicItem[];
+  mastered: StudentLearningTopicItem[];
 }
 
 export default function StudentLearning({ initialData }: { initialData?: LearningPathData }) {
@@ -151,7 +151,7 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
     }
   };
 
-  const getSortedTopics = (list: TopicItem[]) => {
+  const getSortedTopics = (list: StudentLearningTopicItem[]) => {
     return [...list].sort((a, b) => {
       let comparison = 0;
       if (sortField === 'topicName') {
@@ -194,7 +194,7 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
 
   // Filter topics based on active tab and search query
   const { grouped, sortedSubjects, topicsList } = useMemo(() => {
-    let list: TopicItem[] = [];
+    let list: StudentLearningTopicItem[] = [];
     if (data) {
       if (activeTab === 'needsAttention') {
         list = data.needsAttention || [];
@@ -215,7 +215,7 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
     }
 
     // Group filtered topics by subject, then by chapter
-    const grp = new Map<string, Map<string, TopicItem[]>>();
+    const grp = new Map<string, Map<string, StudentLearningTopicItem[]>>();
     list.forEach(topic => {
       const sName = topic.subjectName || getCanonicalSubjectName(topic.subjectCode, topic.topicCode, topic.chapterName);
       const cName = topic.chapterName || 'General';
@@ -514,7 +514,7 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                 const subjProgressColor = getProgressColor(subjectMastery);
 
                 // Helper to compute chapter average mastery
-                const getChapterMastery = (topics: TopicItem[]) => {
+                const getChapterMastery = (topics: StudentLearningTopicItem[]) => {
                   if (topics.length === 0) return 0;
                   return topics.reduce((acc, t) => acc + t.mastery, 0) / topics.length;
                 };

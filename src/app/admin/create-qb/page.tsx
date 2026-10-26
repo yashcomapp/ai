@@ -11,6 +11,7 @@ import QuestionDisplay, { QuestionStemDisplay, QuestionExplanationDisplay, RichM
 import { highlightModelAnswerKeywords } from '@/lib/questionTypes';
 import { SyllabusSelector } from '@/components/SyllabusSelector';
 import { useSyllabusSelector } from '@/hooks/useSyllabusSelector';
+import { SyllabusSelectionTopicItem } from '@/types/syllabus.types';
 import { 
   buildObjectiveSchema,
   getBoardCurriculumPromptMeta,
@@ -49,18 +50,7 @@ interface ChapterItem {
   subjectiveCount?: number;
 }
 
-interface TopicItem {
-  chapterIdx: number;
-  subject: string;
-  chapterName: string;
-  chapterNumber: string;
-  topic: string;
-  topicNumber: string;
-  objectiveCount?: number;
-  subjectiveCount?: number;
-  targetQuestions?: number;
-  hasSubtopics?: boolean;
-}
+type TopicItem = SyllabusSelectionTopicItem;
 
 function CreateQBContent() {
   const { firebaseUser } = useAuth();
