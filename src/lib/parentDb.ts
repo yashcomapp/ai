@@ -435,6 +435,7 @@ export async function getParentDashboardData(
     practiceReviews: parentReviews,
     integrityScore,
     totalCoveredTopics: totalCoveredTopics,
+    assignedTopicCodes: conductedTopicCodes,
     srsEnabled: Boolean(childUser?.srsEnabled)
   });
   

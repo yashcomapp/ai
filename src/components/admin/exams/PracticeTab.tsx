@@ -462,9 +462,8 @@ export default function PracticeTab({
                       const stats = practiceStats[student.studentCode] || { totalSessions: 0, questionsAttempted: 0, avgScore: 0, lastActive: null };
                       const mastery = masteryStats[student.studentCode] || { avgMastery: 0, avgQuality: 100, mastered: 0, practicing: 0, needsAttention: 0 };
                       const rawAssigned = (mastery.mastered + mastery.practicing + mastery.needsAttention);
-                      const targetTotal = mastery.totalAssigned || Math.max(rawAssigned, batchMaxTopics);
-                      const missingTopics = Math.max(0, targetTotal - rawAssigned);
-                      const adjustedNeedsAttention = mastery.needsAttention + missingTopics;
+                      const targetTotal = mastery.totalAssigned || (batchMaxTopics > 0 ? batchMaxTopics : rawAssigned);
+                      const adjustedNeedsAttention = mastery.needsAttention;
                       const efforts = mastery.efforts ?? (targetTotal > 0 ? Math.min(100, Math.round((stats.totalSessions / targetTotal) * 100)) : 0);
                       const quality = mastery.avgQuality ?? 100;
                       const formattedName = formatReportStudentName(student.name);

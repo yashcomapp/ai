@@ -1059,8 +1059,8 @@ export async function exportBatchPracticeTracksImage(params: BatchPracticeTracks
 
       const mStat = masteryStats[s.studentCode] || { avgMastery: 0, avgQuality: 100, efforts: 0, mastered: 0, practicing: 0, needsAttention: 0, totalAssigned: 0 };
       const rawAssigned = mStat.mastered + mStat.practicing + mStat.needsAttention;
-      const targetTotal = batchMaxTopics > 0 ? batchMaxTopics : (mStat.totalAssigned || rawAssigned);
-      const adjustedNeedsAttention = mStat.needsAttention + Math.max(0, targetTotal - rawAssigned);
+      const targetTotal = mStat.totalAssigned || (batchMaxTopics > 0 ? batchMaxTopics : rawAssigned);
+      const adjustedNeedsAttention = mStat.needsAttention;
 
       return `
         <tr style="border-bottom: 1px solid #e2e8f0; height: 48px; background-color: ${rowBg};">
@@ -1176,8 +1176,8 @@ export async function exportBatchPracticeTracksImage(params: BatchPracticeTracks
       const mStat = masteryStats[s.studentCode] || { avgMastery: 0, avgQuality: 100, efforts: 0, mastered: 0, practicing: 0, needsAttention: 0, totalAssigned: 0 };
       
       const rawAssigned = mStat.mastered + mStat.practicing + mStat.needsAttention;
-      const targetTotal = batchMaxTopics > 0 ? batchMaxTopics : (mStat.totalAssigned || rawAssigned);
-      const adjustedNeedsAttention = mStat.needsAttention + Math.max(0, targetTotal - rawAssigned);
+      const targetTotal = mStat.totalAssigned || (batchMaxTopics > 0 ? batchMaxTopics : rawAssigned);
+      const adjustedNeedsAttention = mStat.needsAttention;
       const quality = mStat.avgQuality ?? 100;
       const efforts = mStat.efforts ?? (targetTotal > 0 ? Math.min(100, Math.round((pStat.totalSessions / targetTotal) * 100)) : 0);
 

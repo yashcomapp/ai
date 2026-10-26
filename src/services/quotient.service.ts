@@ -1099,6 +1099,7 @@ export class QuotientService {
       practiceReviews: filteredReviews,
       integrityScore: resolvedIntegrityScore,
       totalCoveredTopics: totalCoveredTopicsCount,
+      assignedTopicCodes: conductedTopicCodes,
       srsEnabled: Boolean(srsEnabled)
     });
 
@@ -1158,8 +1159,8 @@ export class QuotientService {
           totalQuestionsAttempted: unifiedMetrics.totalQuestionsPracticed,
           averagePracticeScore: unifiedMetrics.practiceAvg,
           topicsAttemptedCount: practicedTopics.size,
-          totalAssignedTopics: totalCoveredTopicsCount,
-          coveragePercent: Math.min(100, Math.round((practicedTopics.size / totalCoveredTopicsCount) * 100)),
+          totalAssignedTopics: unifiedMetrics.totalTopicsCount,
+          coveragePercent: Math.min(100, Math.round((practicedTopics.size / unifiedMetrics.totalTopicsCount) * 100)),
           volumeEffortPercent: unifiedMetrics.effortsPercent,
           practicesCompletedCount: unifiedMetrics.practicesCompletedCount,
           averageQuestionsPerTopic: practicedTopics.size > 0
@@ -1182,7 +1183,7 @@ export class QuotientService {
         weight: healthWeight,
         contribution: Math.round(unifiedMetrics.lqScore * healthWeight * 10) / 10,
         details: {
-          totalTopics: totalCoveredTopicsCount,
+          totalTopics: unifiedMetrics.totalTopicsCount,
           masteredCount: unifiedMetrics.masteredTopicsCount,
           practicingCount: unifiedMetrics.practicingTopicsCount ?? 0,
           attentionCount: unifiedMetrics.needsAttentionTopicsCount,
@@ -1191,8 +1192,8 @@ export class QuotientService {
           srsOverdueCount: unifiedMetrics.srsOverdueTopicsCount,
           averageRetention: unifiedMetrics.averageRetention,
           nominalMastery: unifiedMetrics.overallMastery,
-          masteryRatio: totalCoveredTopicsCount > 0
-            ? Math.round((unifiedMetrics.masteredTopicsCount / totalCoveredTopicsCount) * 100)
+          masteryRatio: unifiedMetrics.totalTopicsCount > 0
+            ? Math.round((unifiedMetrics.masteredTopicsCount / unifiedMetrics.totalTopicsCount) * 100)
             : 0
         }
       },

@@ -29,7 +29,7 @@
  */
 
 import { calculateSrsSchedule } from '@/lib/srsRotation';
-import { deriveTopicCodeFromQuestionCode } from '@/lib/questionTypes';
+import { deriveTopicCodeFromQuestionCode, parseTopicCode, getCanonicalSubjectName } from '@/lib/questionTypes';
 
 export interface ExtractConductedTopicCodesInput {
   masteryList?: Array<{ topicCode?: string; [key: string]: any }>;
@@ -123,6 +123,291 @@ export function getRequiredConfidence(topicClassification?: string, targetQuesti
   return 12;
 }
 
+export interface ClassifyAssignedTopicsInput {
+  assignedTopicCodes: Set<string> | string[];
+  topicMasteries?: Array<any>;
+  syllabusTopicsMap?: Map<string, any>;
+  absentTopicCodes?: Set<string>;
+  practiceReviews?: Array<any>;
+  srsEnabled?: boolean;
+}
+
+export interface ClassifiedTopicItem {
+  topicCode: string;
+  topicName: string;
+  topicNumber: string;
+  chapterCode: string;
+  chapterName: string;
+  chapterNumber: string;
+  subjectCode: string;
+  subjectName: string;
+  mastery: number;
+  confidence: number;
+  requiredConfidence: number;
+  topicClassification: string;
+  targetQuestions: number;
+  state: 'mastered' | 'practicing' | 'needsAttention';
+  isUnattempted: boolean;
+  isAbsentExam: boolean;
+  isRecoveryMastered: boolean;
+  topicMasteryProgress: number;
+  priorityScore: number;
+  attempts: number;
+  lastAttempt: string | null;
+  lastScore: number;
+  practiceCount: number;
+  practiceQuestionsAttempted: number;
+  srsSchedule?: any;
+  mData?: any;
+  sData?: any;
+}
+
+export interface ClassifyAssignedTopicsResult {
+  topics: ClassifiedTopicItem[];
+  mastered: ClassifiedTopicItem[];
+  practicing: ClassifiedTopicItem[];
+  needsAttention: ClassifiedTopicItem[];
+  masteredCount: number;
+  practicingCount: number;
+  needsAttentionCount: number;
+  unattemptedCount: number;
+  totalAssignedCount: number;
+  overallMastery: number;
+  lqScore: number;
+  averageRetention: number;
+  srsDueTopicsCount: number;
+  srsOverdueTopicsCount: number;
+}
+
+function calculateTopicPriority(mastery: number, confidence: number, reqConf: number): number {
+  if (mastery < 50) return 100 - mastery;
+  if (mastery < 90) return 50 + (90 - mastery);
+  if (confidence < reqConf) return 20 + (reqConf - confidence);
+  return 0;
+}
+
+/**
+ * Single Source of Truth (SSOT) Topic Classification Engine
+ *
+ * Guarantees:
+ * 1. Starts strictly from the canonical assigned syllabus set (the N conducted topics).
+ * 2. Unifies parent/child resolution: only leaf topics are counted (never parent + child double-counted).
+ * 3. Enforces confidence requirements strictly from syllabus metadata (reqConf).
+ * 4. Places all unattempted topics in needsAttention (Red) with 0% mastery.
+ * 5. Invariant: masteredCount + practicingCount + needsAttentionCount === totalAssignedCount.
+ */
+export function classifyAssignedTopics(input: ClassifyAssignedTopicsInput): ClassifyAssignedTopicsResult {
+  const {
+    assignedTopicCodes,
+    topicMasteries = [],
+    syllabusTopicsMap = new Map(),
+    absentTopicCodes = new Set(),
+    practiceReviews = [],
+    srsEnabled = false
+  } = input;
+
+  // 1. Index student's mastery records by canonical topicCode
+  const masteryMap = new Map<string, any>();
+  topicMasteries.forEach(t => {
+    if (t && t.topicCode) {
+      masteryMap.set(String(t.topicCode).trim(), t);
+    }
+  });
+
+  // 2. Canonical filtering of assigned codes
+  const rawCodes = Array.isArray(assignedTopicCodes) ? assignedTopicCodes : Array.from(assignedTopicCodes || []);
+  const validCodes = rawCodes.map(c => String(c || '').trim()).filter(isCanonicalTopicCode);
+
+  // 3. Parent / Child Topic Code Resolution:
+  // If both parent (e.g. CBSE-8-CURI-5-5.1) and subtopic (e.g. CBSE-8-CURI-5-5.1.1) exist in the assigned set,
+  // the subtopic is the atomic unit. Omit the parent container so it is never double-counted.
+  const leafCodes = validCodes.filter(c => !validCodes.some(other => other !== c && other.startsWith(c + '.')));
+  // Deduplicate leaf codes
+  const uniqueLeafCodes = Array.from(new Set(leafCodes)).sort();
+
+  // 4. Index practice reviews for practiceCount and questions
+  const practiceCountMap = new Map<string, number>();
+  const practiceQuestionsMap = new Map<string, number>();
+  practiceReviews.forEach(r => {
+    const tCode = r.topicCode;
+    if (tCode) {
+      practiceCountMap.set(tCode, (practiceCountMap.get(tCode) || 0) + 1);
+      const qCount = Number(r.questionsCount || r.totalQuestions || 6);
+      practiceQuestionsMap.set(tCode, (practiceQuestionsMap.get(tCode) || 0) + qCount);
+    }
+  });
+
+  const mastered: ClassifiedTopicItem[] = [];
+  const practicing: ClassifiedTopicItem[] = [];
+  const needsAttention: ClassifiedTopicItem[] = [];
+  const allClassified: ClassifiedTopicItem[] = [];
+
+  let certifiedNominalSum = 0;
+  let certifiedEffectiveSum = 0;
+  let totalRetentionSum = 0;
+  let srsDueTopicsCount = 0;
+  let srsOverdueTopicsCount = 0;
+  let unattemptedCount = 0;
+
+  uniqueLeafCodes.forEach(tCode => {
+    const sData = syllabusTopicsMap.get(tCode);
+    const mData = masteryMap.get(tCode);
+    const isAbsentExam = absentTopicCodes.has(tCode);
+
+    const targetQuestions = Number(sData?.targetQuestions || sData?.totalQuestions || sData?.questionCount || 30);
+    const topicClassification = sData?.topicClassification || sData?.classification || mData?.topicClassification || (targetQuestions <= 35 ? 'minor' : (targetQuestions >= 55 ? 'major' : 'medium'));
+    const reqConf = getRequiredConfidence(topicClassification, targetQuestions);
+
+    const parsed = parseTopicCode(tCode);
+    const subCode = sData?.subjectCode || mData?.subjectCode || parsed?.subjectCode || (tCode.includes('-') ? tCode.split('-')[2] : '') || '';
+    const subName = sData?.subjectName || mData?.subjectName || getCanonicalSubjectName(subCode, tCode, sData?.chapterName);
+    const chapName = sData?.chapterName || mData?.chapterName || (parsed?.chapterNumber ? `Chapter ${parsed.chapterNumber}` : 'General');
+    const chapNum = sData?.chapterNumber || parsed?.chapterNumber || '';
+    const topName = sData?.topicName || mData?.topicName || (parsed?.topicNumber ? `Topic ${parsed.topicNumber}` : tCode);
+
+    const mastery = mData?.hasOwnProperty('mastery') ? Number(mData.mastery || 0) : 0;
+    const confidence = mData?.hasOwnProperty('confidence') ? Number(mData.confidence || 0) : 0;
+    const attempts = Number(mData?.attempts || mData?.attemptCount || mData?.totalAttempts || 0);
+    const isRecoveryMastered = Boolean(mData?.isRecoveryMastered);
+    const hasPracticed = Boolean(
+      mData && (
+        confidence > 0 ||
+        Number(mData.questionsAttempted || 0) > 0 ||
+        attempts > 0 ||
+        isRecoveryMastered
+      )
+    );
+
+    // Practice aggregations
+    let practiceCount = practiceCountMap.get(tCode) || 0;
+    let practiceQuestionsAttempted = Number(mData?.practiceQuestionsAttempted || practiceQuestionsMap.get(tCode) || 0);
+    practiceCountMap.forEach((cnt, k) => {
+      if (k !== tCode && (k.startsWith(tCode + '.') || tCode.startsWith(k + '.'))) {
+        practiceCount += cnt;
+      }
+    });
+    practiceQuestionsMap.forEach((cnt, k) => {
+      if (k !== tCode && (k.startsWith(tCode + '.') || tCode.startsWith(k + '.'))) {
+        practiceQuestionsAttempted += cnt;
+      }
+    });
+
+    const priorityScore = isAbsentExam ? 999 : (!hasPracticed ? 995 : calculateTopicPriority(mastery, confidence, reqConf));
+
+    // SRS calculation
+    let retention = 100;
+    let isDue = false;
+    let isOverdue = false;
+    let srsSchedule = null;
+
+    if (srsEnabled && hasPracticed) {
+      if (mData?.srsSchedule) {
+        srsSchedule = mData.srsSchedule;
+        retention = typeof srsSchedule.estimatedRetention === 'number' ? srsSchedule.estimatedRetention : 100;
+        isDue = Boolean(srsSchedule.isDueForRevision);
+        isOverdue = Number(srsSchedule.daysOverdue || 0) > 0;
+      } else {
+        const lastTime = mData?.lastRevisedAt || (mData?.updatedAt?.toDate ? mData.updatedAt.toDate() : mData?.updatedAt) || mData?.lastAttempt;
+        srsSchedule = calculateSrsSchedule(lastTime, Number(mData?.srsStage || 0));
+        retention = srsSchedule.estimatedRetention;
+        isDue = srsSchedule.isDueForRevision;
+        isOverdue = srsSchedule.daysOverdue > 0;
+      }
+      if (isDue) srsDueTopicsCount++;
+      if (isOverdue) srsOverdueTopicsCount++;
+    }
+    totalRetentionSum += retention;
+
+    const retentionFactor = srsEnabled ? (0.70 + 0.30 * (retention / 100)) : 1.0;
+
+    let state: 'mastered' | 'practicing' | 'needsAttention';
+    let topicMasteryProgress = 0;
+    const isCertifiedMastered = isRecoveryMastered || (mastery >= 90 && confidence >= reqConf);
+
+    if (!mData) {
+      // Unattempted in the assigned syllabus -> strictly Needs Attention (0% score)
+      state = 'needsAttention';
+      topicMasteryProgress = 0;
+      unattemptedCount++;
+    } else if (isCertifiedMastered) {
+      state = 'mastered';
+      topicMasteryProgress = mastery;
+    } else if (mastery >= 50) {
+      state = 'practicing';
+      const confRatio = Math.min(1.0, Math.max(0.05, confidence / reqConf));
+      topicMasteryProgress = mastery * confRatio;
+    } else {
+      state = 'needsAttention';
+      topicMasteryProgress = 0;
+    }
+
+    const effectiveProgress = srsEnabled ? Math.round(topicMasteryProgress * retentionFactor) : topicMasteryProgress;
+    certifiedNominalSum += topicMasteryProgress;
+    certifiedEffectiveSum += effectiveProgress;
+
+    const item: ClassifiedTopicItem = {
+      topicCode: tCode,
+      topicName: topName,
+      topicNumber: sData?.topicNumber || parsed?.topicNumber || '',
+      chapterCode: sData?.chapterCode || (chapNum ? `${parsed?.boardCode || ''}-${parsed?.classNum || ''}-${subCode}-${chapNum}` : ''),
+      chapterName: chapName,
+      chapterNumber: chapNum,
+      subjectCode: subCode,
+      subjectName: subName,
+      mastery,
+      confidence,
+      requiredConfidence: reqConf,
+      topicClassification,
+      targetQuestions,
+      state,
+      isUnattempted: !mData,
+      isAbsentExam,
+      isRecoveryMastered,
+      topicMasteryProgress,
+      priorityScore,
+      attempts,
+      lastAttempt: mData?.updatedAt?.toDate ? mData.updatedAt.toDate().toISOString() : mData?.updatedAt || mData?.lastAttempt || null,
+      lastScore: mData?.lastScore || 0,
+      practiceCount,
+      practiceQuestionsAttempted,
+      srsSchedule,
+      mData,
+      sData
+    };
+
+    allClassified.push(item);
+    if (state === 'mastered') mastered.push(item);
+    else if (state === 'practicing') practicing.push(item);
+    else needsAttention.push(item);
+  });
+
+  const totalAssignedCount = uniqueLeafCodes.length;
+  const overallMastery = totalAssignedCount > 0 ? Math.min(100, Math.round(certifiedNominalSum / totalAssignedCount)) : 0;
+  const lqScore = srsEnabled
+    ? (totalAssignedCount > 0 ? Math.min(100, Math.round(certifiedEffectiveSum / totalAssignedCount)) : overallMastery)
+    : overallMastery;
+  const averageRetention = srsEnabled
+    ? (totalAssignedCount > 0 ? Math.round(totalRetentionSum / totalAssignedCount) : 100)
+    : 100;
+
+  return {
+    topics: allClassified,
+    mastered,
+    practicing,
+    needsAttention,
+    masteredCount: mastered.length,
+    practicingCount: practicing.length,
+    needsAttentionCount: needsAttention.length,
+    unattemptedCount,
+    totalAssignedCount,
+    overallMastery,
+    lqScore,
+    averageRetention,
+    srsDueTopicsCount,
+    srsOverdueTopicsCount
+  };
+}
+
 /**
  * ATTENTION - QUERY INTEGRITY CONTRACT:
  * When querying collections passed into `calculateUnifiedMetrics`, DO NOT strip fields with partial `.select()`:
@@ -158,6 +443,9 @@ export interface UnifiedMetricsInput {
   totalCoveredTopics?: number;
   totalSyllabusTopics?: number; // Deprecated alias, use totalCoveredTopics
   srsEnabled?: boolean;
+  assignedTopicCodes?: Set<string> | string[];
+  syllabusTopicsMap?: Map<string, any>;
+  absentTopicCodes?: Set<string> | string[];
 }
 
 export interface UnifiedMetricsResult {
@@ -168,14 +456,14 @@ export interface UnifiedMetricsResult {
   subjectiveAvg: number;
   practiceAvg: number;
 
-  // 2. Mastery / LQ Score (SRS Retention Integrated)
+  // 2. Mastery / LQ Score (SRS Retention Integrated via classifyAssignedTopics)
   overallMastery: number;       // Nominal Curriculum Mastery (0-100%)
   lqScore: number;              // True Retained Learning Quotient (0-100%)
   averageRetention: number;     // Average Memory Retention Index (0-100%)
   masteredTopicsCount: number;
-  practicingTopicsCount?: number;
+  practicingTopicsCount: number;
   needsAttentionTopicsCount: number;
-  unattemptedTopicsCount?: number;
+  unattemptedTopicsCount: number;
   uniqueTopicsPracticed?: number;
   coveragePercent?: number;
   srsDueTopicsCount: number;
@@ -189,6 +477,9 @@ export interface UnifiedMetricsResult {
 
   // 4. Integrity
   integrityScore: number;
+
+  // 5. Canonical Classified Topics (Full Breakdown)
+  classifiedTopics?: ClassifyAssignedTopicsResult;
 }
 
 export function calculateUnifiedMetrics(input: UnifiedMetricsInput): UnifiedMetricsResult {
@@ -263,105 +554,34 @@ export function calculateUnifiedMetrics(input: UnifiedMetricsInput): UnifiedMetr
     ? Math.round(practicePercentages.reduce((sum, p) => sum + p, 0) / practicePercentages.length)
     : 0;
 
-  // --- 2. Topic Mastery / LQ Score (With SRS Retention Modulation) ---
-  let masteredTopicsCount = 0;
-  let practicingTopicsCount = 0;
-  let needsAttentionTopicsCount = 0;
-  let srsDueTopicsCount = 0;
-  let srsOverdueTopicsCount = 0;
+  // --- 2. Topic Mastery / LQ Score via Single Source of Truth (classifyAssignedTopics) ---
+  const assignedCodes = input.assignedTopicCodes 
+    ? (input.assignedTopicCodes instanceof Set ? input.assignedTopicCodes : new Set(input.assignedTopicCodes))
+    : extractConductedTopicCodes({
+        masteryList: topicMasteries,
+        practiceReviews,
+        objectiveReviews
+      });
 
-  let certifiedNominalSum = 0;
-  let certifiedEffectiveSum = 0;
-  let certifiedTopicsCount = 0;
-  let totalRetentionSum = 0;
-
-  topicMasteries.forEach(t => {
-    const mastery = Number(t.mastery || 0);
-    const confidence = Number(t.confidence || 0);
-    const isRecovery = !!t.isRecoveryMastered;
-    const reqConf = Number(
-      t.requiredConfidence ||
-      getRequiredConfidence(t.topicClassification, t.targetQuestions)
-    );
-    const isFullConfidence = confidence >= reqConf;
-    const hasPracticed = Number(t.confidence || 0) > 0 || Number(t.questionsAttempted || 0) > 0 || Number(t.totalAttempts || 0) > 0 || isRecovery;
-    const isSrsEnabled = Boolean(input.srsEnabled);
-
-    // Resolve SRS retention and review status (ONLY when SRS is explicitly enabled)
-    let retention = 100;
-    let isDue = false;
-    let isOverdue = false;
-
-    if (isSrsEnabled && hasPracticed) {
-      if (t.srsSchedule) {
-        retention = typeof t.srsSchedule.estimatedRetention === 'number' ? t.srsSchedule.estimatedRetention : 100;
-        isDue = Boolean(t.srsSchedule.isDueForRevision);
-        isOverdue = Number(t.srsSchedule.daysOverdue || 0) > 0;
-      } else {
-        const lastTime = t.lastRevisedAt || (t.updatedAt?.toDate ? t.updatedAt.toDate() : t.updatedAt) || t.lastAttempt;
-        const sched = calculateSrsSchedule(lastTime, Number(t.srsStage || 0));
-        retention = sched.estimatedRetention;
-        isDue = sched.isDueForRevision;
-        isOverdue = sched.daysOverdue > 0;
-      }
-    }
-
-    if (isSrsEnabled) {
-      if (isDue) srsDueTopicsCount++;
-      if (isOverdue) srsOverdueTopicsCount++;
-    }
-    totalRetentionSum += retention;
-
-    // Pedagogical Retention Modulation: Only active when SRS is enabled.
-    // When SRS is off (default), nominal syllabus mastery = effective mastery without artificial decay.
-    const retentionFactor = isSrsEnabled ? (0.70 + 0.30 * (retention / 100)) : 1.0;
-    const effectiveMastery = isSrsEnabled ? Math.round(mastery * retentionFactor) : mastery;
-
-    // Regular Topic Mastery System:
-    // 🟢 Mastered: contributes full earned accuracy (e.g. 90-100%)
-    // 🟡 In Progress: contributes earned accuracy scaled by confidence progress (confidence / reqConf)
-    // 🔴 Needs Attention / Unattempted: 0 credit
-    let topicMasteryProgress = 0;
-    if (isRecovery || (mastery >= 90 && isFullConfidence)) {
-      masteredTopicsCount += 1;
-      topicMasteryProgress = mastery;
-    } else if (mastery >= 50) {
-      practicingTopicsCount += 1;
-      const confRatio = Math.min(1.0, Math.max(0.05, confidence / reqConf));
-      topicMasteryProgress = mastery * confRatio;
-    } else {
-      needsAttentionTopicsCount += 1;
-      topicMasteryProgress = 0;
-    }
-
-    const effectiveProgress = isSrsEnabled ? Math.round(topicMasteryProgress * retentionFactor) : topicMasteryProgress;
-
-    certifiedNominalSum += topicMasteryProgress;
-    certifiedEffectiveSum += effectiveProgress;
-    certifiedTopicsCount += 1;
+  const classified = classifyAssignedTopics({
+    assignedTopicCodes: assignedCodes,
+    topicMasteries,
+    syllabusTopicsMap: input.syllabusTopicsMap,
+    absentTopicCodes: input.absentTopicCodes instanceof Set ? input.absentTopicCodes : new Set(input.absentTopicCodes || []),
+    practiceReviews,
+    srsEnabled: Boolean(input.srsEnabled)
   });
 
-  const coveredCount = totalCoveredTopics ?? totalSyllabusTopics ?? (topicMasteries.length > 0 ? topicMasteries.length : 1);
-  const safeTotalTopics = Math.max(1, coveredCount);
-
-  // Unattempted topics in the conducted/assigned curriculum default to Needs Attention
-  const unattemptedTopicsCount = Math.max(0, safeTotalTopics - (masteredTopicsCount + practicingTopicsCount + needsAttentionTopicsCount));
-  needsAttentionTopicsCount += unattemptedTopicsCount;
-
-  // Nominal Curriculum Mastery: Across the entire assigned syllabus
-  // (Unattempted topics contribute 0% mastery to the curriculum total)
-  const overallMastery = safeTotalTopics > 0
-    ? Math.min(100, Math.round(certifiedNominalSum / safeTotalTopics))
-    : (certifiedTopicsCount > 0 ? Math.round(certifiedNominalSum / certifiedTopicsCount) : (averageMarks > 0 ? averageMarks : 0));
-
-  // True Retained LQ: When SRS is enabled, modulated by retention; when SRS is off, equals overallMastery
-  const lqScore = Boolean(input.srsEnabled)
-    ? (safeTotalTopics > 0 ? Math.min(100, Math.round(certifiedEffectiveSum / safeTotalTopics)) : overallMastery)
-    : overallMastery;
-
-  const averageRetention = Boolean(input.srsEnabled)
-    ? (topicMasteries.length > 0 ? Math.round(totalRetentionSum / topicMasteries.length) : 0)
-    : 100;
+  const masteredTopicsCount = classified.masteredCount;
+  const practicingTopicsCount = classified.practicingCount;
+  const needsAttentionTopicsCount = classified.needsAttentionCount;
+  const unattemptedTopicsCount = classified.unattemptedCount;
+  const overallMastery = classified.overallMastery;
+  const lqScore = classified.lqScore;
+  const averageRetention = classified.averageRetention;
+  const srsDueTopicsCount = classified.srsDueTopicsCount;
+  const srsOverdueTopicsCount = classified.srsOverdueTopicsCount;
+  const safeTotalTopics = Math.max(1, classified.totalAssignedCount);
 
   // --- 3. Efforts Calculation ---
   // Collect unique topics practiced via self-practice (practiceReviews)
@@ -408,7 +628,8 @@ export function calculateUnifiedMetrics(input: UnifiedMetricsInput): UnifiedMetr
     practicesCompletedCount,
     totalTopicsCount: safeTotalTopics,
     totalQuestionsPracticed,
-    integrityScore: Math.min(100, Math.max(0, Math.round(integrityScore)))
+    integrityScore: Math.min(100, Math.max(0, Math.round(integrityScore))),
+    classifiedTopics: classified
   };
 }
 

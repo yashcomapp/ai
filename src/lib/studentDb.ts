@@ -1,7 +1,7 @@
 import { adminDb } from '@/lib/firebase/admin';
 import { getCachedSyllabus, getFromCache, setInCache } from '@/lib/firebase/cache';
 import { getDateKeyIST } from '@/lib/dateUtils';
-import { calculateUnifiedMetrics, extractConductedTopicCodes, getRequiredConfidence } from '@/lib/dashboardMetrics';
+import { calculateUnifiedMetrics, extractConductedTopicCodes, getRequiredConfidence, classifyAssignedTopics } from '@/lib/dashboardMetrics';
 import { deriveTopicCodeFromQuestionCode, getCanonicalSubjectName, parseTopicCode } from '@/lib/questionTypes';
 import { calculateSrsSchedule, SrsSchedule } from '@/lib/srsRotation';
 import { deduplicateAssignments, resolveIntegrityScore } from '@/lib/dashboardDbUtils';
@@ -436,6 +436,7 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
       practiceReviews: practiceReviewsList,
       integrityScore,
       totalCoveredTopics: totalCoveredTopicsCount,
+      assignedTopicCodes: conductedTopicCodes,
       srsEnabled: Boolean(userData.srsEnabled)
     });
 
@@ -1347,131 +1348,23 @@ export async function getStudentLearningData(userData: any, preloadedData?: Prel
     currentTopicCodes.add(tCode);
   });
 
-  const practiceCountMap = new Map<string, number>();
-  const practiceQuestionsMap = new Map<string, number>();
-  parentReviewsSnap.docs.forEach((doc: any) => {
-    const data = doc.data();
-    const tCode = data.topicCode;
-    if (tCode) {
-      practiceCountMap.set(tCode, (practiceCountMap.get(tCode) || 0) + 1);
-      const qCount = Number(data.questionsCount || data.totalQuestions || (Array.isArray(data.questions) ? data.questions.length : (data.questionDetails?.length || 0)));
-      practiceQuestionsMap.set(tCode, (practiceQuestionsMap.get(tCode) || 0) + qCount);
-    }
+  const syllabusTopicsMap = new Map<string, any>(syllabusTopics.map((t: any) => [t.topicCode, t]));
+  const masteryList = masterySnaps.docs.map((doc: any) => doc.data());
+  const practiceReviewsList = parentReviewsSnap.docs.map((doc: any) => doc.data());
+
+  const classified = classifyAssignedTopics({
+    assignedTopicCodes: conductedTopicCodes,
+    topicMasteries: masteryList,
+    syllabusTopicsMap,
+    absentTopicCodes,
+    practiceReviews: practiceReviewsList,
+    srsEnabled: Boolean(userData?.srsEnabled)
   });
 
-  const needsAttention: any[] = [];
-  const continuePractice: any[] = [];
+  const needsAttention: any[] = [...classified.needsAttention];
+  const continuePractice: any[] = [...classified.practicing];
   const revision: any[] = [];
-  const mastered: any[] = [];
-  const processedTopics = new Set<string>();
-
-  syllabusTopics.forEach(sData => {
-    const topicCode = sData.topicCode;
-    if (!topicCode || processedTopics.has(topicCode)) return;
-    processedTopics.add(topicCode);
-
-    const isAbsentExam = absentTopicCodes.has(topicCode);
-    const isConductedTopic = conductedTopicCodes.has(topicCode);
-    let mData = masteryMap.get(topicCode);
-
-    // If direct mData is missing, check if any subtopics exist in masteryMap
-    if (!mData) {
-      const childMasteries = Array.from(masteryMap.entries())
-        .filter(([k]) => k.startsWith(topicCode + '.') || k.startsWith(topicCode + '-'));
-      if (childMasteries.length > 0 && !isAbsentExam && !isConductedTopic) {
-        // Child topics are already added as discrete items in syllabusTopics, so skip the empty parent container
-        return;
-      }
-    }
-
-    if (!mData && !isAbsentExam && !isConductedTopic) return;
-
-    const targetQuestions = Number(sData.targetQuestions || sData.totalQuestions || sData.questionCount || 30);
-    const topicClassification = sData.topicClassification || mData?.topicClassification || (targetQuestions <= 35 ? 'minor' : (targetQuestions >= 55 ? 'major' : 'medium'));
-    const reqConf = getRequiredConfidence(topicClassification, targetQuestions);
-
-    const mastery = mData?.hasOwnProperty('mastery') ? Number(mData.mastery || 0) : 0;
-    const confidence = mData?.hasOwnProperty('confidence') ? Number(mData.confidence || 0) : 0;
-    const attempts = Number(mData?.attempts || mData?.attemptCount || 0);
-    const isRecoveryMastered = Boolean(mData?.isRecoveryMastered);
-    const hasPracticed = Boolean(
-      mData && (
-        confidence > 0 ||
-        Number(mData.questionsAttempted || 0) > 0 ||
-        attempts > 0 ||
-        isRecoveryMastered
-      )
-    );
-    const priorityScore = isAbsentExam ? 999 : (!hasPracticed ? 995 : calculatePriority(mastery, confidence, reqConf));
-
-    // Aggregate practice counts matching exact topicCode or prefix
-    let practiceCount = practiceCountMap.get(topicCode) || 0;
-    let practiceQuestionsAttempted = Number(mData?.practiceQuestionsAttempted || practiceQuestionsMap.get(topicCode) || 0);
-
-    practiceCountMap.forEach((cnt, k) => {
-      if (k !== topicCode && (k.startsWith(topicCode + '.') || topicCode.startsWith(k + '.'))) {
-        practiceCount += cnt;
-      }
-    });
-    practiceQuestionsMap.forEach((cnt, k) => {
-      if (k !== topicCode && (k.startsWith(topicCode + '.') || topicCode.startsWith(k + '.'))) {
-        practiceQuestionsAttempted += cnt;
-      }
-    });
-
-    const srsSchedule: SrsSchedule = calculateSrsSchedule(
-      mData?.lastRevisedAt || (mData?.updatedAt?.toDate ? mData.updatedAt.toDate().toISOString() : mData?.updatedAt) || mData?.lastAttempt || null,
-      mData?.srsStage !== undefined ? Number(mData.srsStage) : 0
-    );
-
-    const subCode = sData.subjectCode || mData?.subjectCode || (topicCode.includes('-') ? topicCode.split('-')[2] : '') || '';
-    const subName = sData.subjectName || mData?.subjectName || getCanonicalSubjectName(subCode, topicCode, sData.chapterName);
-    const isExamStrong = Boolean(mData?.isExamStrong);
-    const isCertifiedMastered = isRecoveryMastered || (mastery >= 90 && confidence >= reqConf);
-
-    const topicItem = {
-      topicCode,
-      topicName: sData.topicName || mData?.topicName || '',
-      topicNumber: sData.topicNumber || mData?.topicNumber || '',
-      chapterCode: sData.chapterCode || '',
-      chapterName: sData.chapterName || 'General',
-      chapterNumber: sData.chapterNumber || '',
-      subjectCode: subCode,
-      subjectName: subName,
-      mastery,
-      confidence,
-      requiredConfidence: reqConf,
-      topicClassification,
-      priorityScore,
-      isAbsentExam,
-      isRecoveryMastered,
-      isExamStrong,
-      practiceQuestionsAttempted,
-      lastAttempt: mData?.updatedAt?.toDate ? mData.updatedAt.toDate().toISOString() : mData?.updatedAt || mData?.lastAttempt || null,
-      attempts,
-      lastScore: mData?.lastScore || 0,
-      practiceCount,
-      targetQuestions,
-      totalQuestions: targetQuestions,
-      srsSchedule
-    };
-
-    const isSrsEnabled = Boolean(userData?.srsEnabled);
-
-    // Clean, direct 3-state canonical categorization matching Admin SSOT (dashboardMetrics.ts) 100%:
-    // 🟢 Mastered: mastery >= 90% with full confidence, or recovery passed
-    // 🟡 Practicing / In Progress: mastery 50-89% or >= 90% without full confidence
-    // 🔴 Focus / Needs Attention: unattempted (!mData) or mastery < 50
-    if (!mData) {
-      needsAttention.push({ ...topicItem, state: 'needsAttention', isUnattempted: true });
-    } else if (isCertifiedMastered) {
-      mastered.push({ ...topicItem, state: 'mastered', isSrsDue: false });
-    } else if (mastery >= 50) {
-      continuePractice.push({ ...topicItem, state: 'continuePractice' });
-    } else {
-      needsAttention.push({ ...topicItem, state: 'needsAttention', isUnattempted: false });
-    }
-  });
+  const mastered: any[] = [...classified.mastered];
 
   const sortFn = (a: any, b: any) => {
     // For revision, prioritize overdue SRS topics first
@@ -1497,7 +1390,19 @@ export async function getStudentLearningData(userData: any, preloadedData?: Prel
     needsAttention,
     continuePractice,
     revision,
-    mastered
+    mastered,
+    counts: {
+      masteredCount: classified.masteredCount,
+      practicingCount: classified.practicingCount,
+      needsAttentionCount: classified.needsAttentionCount,
+      totalAssignedCount: classified.totalAssignedCount
+    },
+    stats: {
+      masteredCount: classified.masteredCount,
+      practicingCount: classified.practicingCount,
+      needsAttentionCount: classified.needsAttentionCount,
+      totalAssignedCount: classified.totalAssignedCount
+    }
   };
 
   setInCache(cacheKey, result, 120000); // 2 mins cache
