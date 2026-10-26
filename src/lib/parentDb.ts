@@ -184,7 +184,7 @@ export async function getParentDashboardData(
   const allExamResults = reviewsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() as any }));
   const examResults = allExamResults.filter((e: any) => e.examType !== 'entrance');
   const entranceResults = allExamResults.filter((e: any) => e.examType === 'entrance');
-  const parentReviews = parentReviewsSnapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) }));
+  const parentReviews = parentReviewsSnapshot.docs.filter(doc => !doc.id.startsWith('daily-sync-') && (doc.data() as any).type !== 'daily_5min_sync').map(doc => ({ id: doc.id, ...(doc.data() as any) }));
   const subjectiveAttemptsList = subjectiveAttemptsSnapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) }));
 
   const now = new Date();

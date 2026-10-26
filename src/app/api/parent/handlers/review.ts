@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import * as admin from 'firebase-admin';
 import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole } from '@/lib/auth';
-import { deriveTopicCodeFromQuestionCode, parseTopicCode } from '@/lib/questionTypes';
+import { deriveTopicCodeFromQuestionCode, parseTopicCode, getCanonicalSubjectName } from '@/lib/questionTypes';
 import { ReportCacheManager } from '@/lib/reportCache';
 import { chunkArray } from '@/lib/firestoreUtils';
 import { getDateKeyIST } from '@/lib/dateUtils';
@@ -341,14 +341,20 @@ export async function GET(req: NextRequest) {
     const entranceReviews = allObjectiveMapped.filter(r => r.examType === 'entrance');
 
     // 2. Map Practice reviews
-    const mappedPracticeReviews = pracSnaps.docs.map(doc => {
+    const mappedPracticeReviews = pracSnaps.docs
+      .filter(doc => {
+        const d = doc.data();
+        if (d.type === 'daily_5min_sync' || doc.id.startsWith('daily-sync-') || !d.topicCode) return false;
+        return d.type === 'practice' || !!d.practiceSessionId;
+      })
+      .map(doc => {
       const data = doc.data();
       const status = isAutonomous ? 'approved' : (data.parentStatus || (evalMap.has(doc.id) ? 'approved' : 'pending'));
       const resolvedActor = data.reviewedByActor || evalMap.get(doc.id)?.reviewedByActor || (status === 'approved' ? (isAutonomous ? 'autonomous' : 'parent') : null);
       
       let sData = syllabusMap.get(data.topicCode || '');
-      if (!sData && data.topicCode) {
-        const parsed = parseTopicCode(data.topicCode);
+      const parsed = data.topicCode ? parseTopicCode(data.topicCode) : null;
+      if (!sData && parsed) {
         if (parsed && parsed.topicNumber && parsed.topicNumber.includes('.')) {
           const parts = parsed.topicNumber.split('.');
           if (parts.length > 2) {
@@ -364,7 +370,7 @@ export async function GET(req: NextRequest) {
       }
       let displaySubject = data.subjectName;
       if (!displaySubject || displaySubject === 'General') {
-        displaySubject = sData?.subjectName || sData?.subject || displaySubject || 'General';
+        displaySubject = sData?.subjectName || sData?.subject || (parsed?.subjectCode ? getCanonicalSubjectName(parsed.subjectCode, data.topicCode) : '') || displaySubject || 'Science & Technology';
       }
       let displayChapter = data.chapterName;
       if (!displayChapter || displayChapter === 'General' || displayChapter === '-') {

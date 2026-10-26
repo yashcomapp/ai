@@ -222,7 +222,7 @@ export async function getStudentResultsData(
     };
   });
 
-  const mappedPracticeResults = parentReviewsSnap.docs.map(doc => {
+  const mappedPracticeResults = parentReviewsSnap.docs.filter(doc => !doc.id.startsWith('daily-sync-') && doc.data().type !== 'daily_5min_sync').map(doc => {
     const data = doc.data();
     const qList = Array.isArray(data.questions) ? data.questions : (Array.isArray(data.questionDetails) ? data.questionDetails : []);
     const total = qList.length > 0 ? qList.length : (data.totalQuestions || 1);

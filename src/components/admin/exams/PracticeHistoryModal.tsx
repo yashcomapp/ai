@@ -58,8 +58,9 @@ export default function PracticeHistoryModal({
           ) : (() => {
             const groupedPrac = new Map<string, Map<string, any[]>>();
             pracHistory.forEach(h => {
-              const sName = h.subject || 'Other Subjects';
-              const cName = h.chapter || 'General';
+              if (h.type === 'daily_5min_sync' || h.id?.startsWith('daily-sync-')) return;
+              const sName = h.subject && h.subject !== 'General' ? h.subject : 'Science & Technology';
+              const cName = h.chapter && h.chapter !== 'General' && h.chapter !== '-' ? h.chapter : (h.name || 'Chapter 1');
               if (!groupedPrac.has(sName)) {
                 groupedPrac.set(sName, new Map());
               }
