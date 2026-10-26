@@ -198,3 +198,11 @@
   - Zero duplicate types across schemas and views. Canonical types MUST be imported from `@/types/`.
   - Zero unused or dead exports in `src/lib/`, `src/services/`, and `src/hooks/`.
   - Static, batch, and syllabus lookups MUST consume in-memory caches (`getCachedBatches`, `getCachedSyllabusByClass`) to eliminate redundant Firestore document reads.
+
+### X. On-Demand Proctoring & Zero Idle Streaming Invariant (`useLiveExam.ts` & `live-exam-monitor`)
+- **Rule**: Live exam session document updates MUST be strictly gated by active admin presence (`proctorPresence` in Firebase Realtime Database):
+  - **Zero Idle Syncing**: If NO admin is actively viewing `/admin/live-exam-monitor`, student exam clients MUST NEVER write periodic heartbeats, away-time ticks, or question progression metrics to `liveExamSessions`.
+  - **Local In-Memory Tracking**: Violations, time-away, and exam metrics are tracked locally in React client memory and submitted once at exam completion via `submitAttempt`.
+  - **Automatic Visibility Disconnection**: When an admin minimizes or switches away from the Live Exam Monitor tab, the Firestore `onSnapshot` listener and RTDB presence MUST immediately disconnect via `document.addEventListener('visibilitychange')`.
+  - **On-Demand Activation**: When an admin opens or views the monitor, student clients immediately detect presence, flush their current state, and stream live metrics only for the duration of the admin's active session.
+  - **Evidence Segregation**: Camera snapshots are compressed to $\le 12\text{ KB}$ and saved strictly to `liveExamEvidence`, completely decoupled from real-time session documents.
