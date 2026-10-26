@@ -11,6 +11,7 @@ import PushNotificationManager from '@/components/PushNotificationManager';
 import ToastContainer from '@/components/ToastContainer';
 import SWRProvider from '@/components/SWRProvider';
 import { ChatProvider } from '@/context/ChatContext';
+import NavigationProgressBar from '@/components/NavigationProgressBar';
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -47,6 +48,8 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="YASHCOM-LOS" />
+        <link rel="preconnect" href="https://cdn.jsdelivr.net" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://cdn.jsdelivr.net" />
         {/* KaTeX stylesheet and scripts preloaded for crisp math, formulas, and chemistry rendering */}
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css" />
         <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.js" defer></script>
@@ -68,6 +71,7 @@ export default function RootLayout({
           `}
         </Script>
         <ThemeProvider>
+          <NavigationProgressBar />
           <AuthProvider>
             <SWRProvider>
               <ChatProvider>

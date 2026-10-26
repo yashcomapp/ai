@@ -9,6 +9,35 @@
 .page-wrapper {
     background: transparent;
     min-height: 100vh;
+    animation: losPageFadeIn 0.16s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes losPageFadeIn {
+    from {
+        opacity: 0.90;
+        transform: translateY(2px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Skeleton Loading Shimmer Animation */
+.skeleton-blink {
+    animation: skeletonPulse 1.4s ease-in-out infinite;
+}
+
+@keyframes skeletonPulse {
+    0% {
+        opacity: 0.62;
+    }
+    50% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0.62;
+    }
 }
 /* ============================================================
    1. CARD SYSTEM — Apple Frosted Glass & Cupertino Squircles

@@ -70,7 +70,13 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     setMounted(true);
-  }, []);
+    // Warm up parent subroutes during background idle time
+    const routes = ['/parent/review', '/parent/attendance', '/parent/fees', '/parent/chat'];
+    const timer = setTimeout(() => {
+      routes.forEach(r => router.prefetch(r));
+    }, 1200);
+    return () => clearTimeout(timer);
+  }, [router]);
 
   const [notificationHistory, setNotificationHistory] = useState<any[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);

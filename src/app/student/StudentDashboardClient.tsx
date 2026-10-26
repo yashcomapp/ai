@@ -6,6 +6,7 @@ import { t } from '@/lib/i18n';
 import { useRouter } from 'next/navigation';
 import useSWR from 'swr';
 import { fetchWithToken, createTokenFetcher } from '@/lib/swrFetcher';
+import { triggerNavStart } from '@/components/NavigationProgressBar';
 import TopBarTimeTracker from '@/components/TopBarTimeTracker';
 import NoticeOverlayModal from '@/components/notices/NoticeOverlayModal';
 import OverdueFeeModal from '@/components/fees/OverdueFeeModal';
@@ -226,9 +227,16 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     setMounted(true);
-  }, []);
+    // Warm up high-frequency subroutes in idle background time
+    const routes = ['/student/learning', '/student/results', '/student/attendance', '/student/fees', '/student/chat', '/exam-register'];
+    const timer = setTimeout(() => {
+      routes.forEach(r => router.prefetch(r));
+    }, 1200);
+    return () => clearTimeout(timer);
+  }, [router]);
 
   const handleStartExam = (examId: string, isSubjective: boolean) => {
+    triggerNavStart();
     if (isSubjective) {
       router.push(`/student/take-subjective-exam?examId=${encodeURIComponent(examId)}`);
     } else {
@@ -238,6 +246,7 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
 
   const handleGoToPeerReview = (examId: string | null) => {
     if (examId) {
+      triggerNavStart();
       router.push(`/student/take-subjective-exam?mode=peer-review&examId=${encodeURIComponent(examId)}`);
     }
   };
@@ -672,7 +681,9 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(70px, 1fr))', gap: '6px' }}>
                 {/* Hotspot 1: Learn OS */}
                 <div 
-                  onClick={() => router.push('/student/learning')}
+                  onClick={() => { triggerNavStart(); router.push('/student/learning'); }}
+                  onMouseEnter={(e) => { router.prefetch('/student/learning'); e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'translateY(0)'; }}
                   style={{
                     display: 'flex',
                     flexDirection: 'column',
@@ -688,8 +699,6 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
                     transition: 'all 0.2s ease',
                     boxShadow: 'var(--shadow-sm)'
                   }}
-                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'translateY(0)'; }}
                 >
                   <GraduationCap size={24} color="var(--accent)" />
                   <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text)' }}>Learn OS</span>
@@ -697,7 +706,9 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
 
                 {/* Hotspot 2: Attendance showing % */}
                 <div 
-                  onClick={() => router.push('/student/attendance')}
+                  onClick={() => { triggerNavStart(); router.push('/student/attendance'); }}
+                  onMouseEnter={(e) => { router.prefetch('/student/attendance'); e.currentTarget.style.borderColor = 'var(--success)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'translateY(0)'; }}
                   style={{
                     display: 'flex',
                     flexDirection: 'column',
@@ -713,8 +724,6 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
                     transition: 'all 0.2s ease',
                     boxShadow: 'var(--shadow-sm)'
                   }}
-                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--success)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'translateY(0)'; }}
                 >
                   <Calendar size={24} color="var(--success)" />
                   <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text)' }}>
@@ -724,7 +733,9 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
 
                 {/* Hotspot 3: Exam Register */}
                 <div 
-                  onClick={() => router.push('/exam-register')}
+                  onClick={() => { triggerNavStart(); router.push('/exam-register'); }}
+                  onMouseEnter={(e) => { router.prefetch('/exam-register'); e.currentTarget.style.borderColor = 'var(--warning)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'translateY(0)'; }}
                   style={{
                     display: 'flex',
                     flexDirection: 'column',
@@ -740,8 +751,6 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
                     transition: 'all 0.2s ease',
                     boxShadow: 'var(--shadow-sm)'
                   }}
-                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--warning)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'translateY(0)'; }}
                 >
                   <ClipboardList size={24} color="var(--warning)" />
                   <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text)' }}>Exam Register</span>
@@ -749,7 +758,9 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
 
                 {/* Hotspot 4: Fees & Ledger */}
                 <div 
-                  onClick={() => router.push('/student/fees')}
+                  onClick={() => { triggerNavStart(); router.push('/student/fees'); }}
+                  onMouseEnter={(e) => { router.prefetch('/student/fees'); e.currentTarget.style.borderColor = 'var(--primary)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'translateY(0)'; }}
                   style={{
                     display: 'flex',
                     flexDirection: 'column',
@@ -765,8 +776,6 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
                     transition: 'all 0.2s ease',
                     boxShadow: 'var(--shadow-sm)'
                   }}
-                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--primary)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'translateY(0)'; }}
                 >
                   <CreditCard size={24} color="var(--primary)" />
                   <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text)' }}>Fees & Dues</span>
@@ -774,7 +783,9 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
 
                 {/* Hotspot 5: Live Chat */}
                 <div 
-                  onClick={() => router.push('/student/chat')}
+                  onClick={() => { triggerNavStart(); router.push('/student/chat'); }}
+                  onMouseEnter={(e) => { router.prefetch('/student/chat'); e.currentTarget.style.borderColor = 'var(--info)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'translateY(0)'; }}
                   style={{
                     position: 'relative',
                     display: 'flex',
@@ -791,8 +802,6 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
                     transition: 'all 0.2s ease',
                     boxShadow: 'var(--shadow-sm)'
                   }}
-                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--info)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'translateY(0)'; }}
                 >
                   <MessageSquare size={24} color="var(--info)" />
                   <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text)' }}>Live Chat</span>

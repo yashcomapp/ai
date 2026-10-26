@@ -8,6 +8,7 @@ import { useAuth } from '@/context/AuthContext';
 import TopBarTimeTracker from '@/components/TopBarTimeTracker';
 import TopBarChatButton from '@/components/chat/TopBarChatButton';
 import { useUnreadChatCount } from '@/hooks/useUnreadChatCount';
+import { triggerNavStart } from '@/components/NavigationProgressBar';
 
 const getAdminPageTitle = (pathname: string): string => {
   if (pathname === '/admin') return 'Dashboard';
@@ -129,11 +130,23 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     }
   }, [activeSubmenu, panelOpen]);
 
+  useEffect(() => {
+    if (panelOpen) {
+      // Warm up admin routes in the background
+      Object.values(ADMIN_SUBMENUS).flat().forEach(item => {
+        if (item.url && item.url !== '#') {
+          router.prefetch(item.url);
+        }
+      });
+    }
+  }, [panelOpen, router]);
+
   const handleChipClick = (e: React.MouseEvent, chipId: string) => {
     e.stopPropagation();
 
     const matchedChip = chips.find(c => c.id === chipId);
     if (matchedChip?.url) {
+      triggerNavStart();
       router.push(matchedChip.url);
       setPanelOpen(false);
       setActiveSubmenu(null);
@@ -150,6 +163,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const handleSubmenuItemClick = (item: SubmenuItem) => {
     if (item.url && item.url !== '#') {
+      triggerNavStart();
       router.push(item.url);
     } else {
       alert(`Feature "${item.en}" is legacy or placeholder.`);
@@ -319,7 +333,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0, minWidth: 0 }}>
           <div 
-            onClick={() => router.push('/admin')} 
+            onClick={() => { triggerNavStart(); router.push('/admin'); }}
+            onMouseEnter={() => router.prefetch('/admin')}
             style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', flexShrink: 0 }}
           >
             <Image 
@@ -361,7 +376,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           {/* Notices */}
           <button 
             className="page-header-btn" 
-            onClick={() => router.push('/admin/notices')} 
+            onClick={() => { triggerNavStart(); router.push('/admin/notices'); }}
+            onMouseEnter={() => router.prefetch('/admin/notices')}
             title="Notices & Announcements"
             style={{ 
               background: pathname === '/admin/notices' ? 'var(--warning-bg)' : 'rgba(255,255,255,0.05)', 
@@ -386,7 +402,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           {/* Settings */}
           <button 
             className="page-header-btn" 
-            onClick={() => router.push('/admin/settings')} 
+            onClick={() => { triggerNavStart(); router.push('/admin/settings'); }}
+            onMouseEnter={() => router.prefetch('/admin/settings')}
             title="Admin Settings"
             style={{ 
               background: pathname === '/admin/settings' ? 'var(--surface-3)' : 'rgba(255,255,255,0.05)', 
@@ -466,6 +483,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               data-chip-id={c.id}
               className={`nav-item ${isCurrentActive ? 'active' : ''}`}
               onClick={(e) => handleChipClick(e, c.id)}
+              onMouseEnter={() => {
+                if (c.url) router.prefetch(c.url);
+                ADMIN_SUBMENUS[c.id]?.forEach(s => {
+                  if (s.url && s.url !== '#') router.prefetch(s.url);
+                });
+              }}
               style={{ position: 'relative' }}
             >
               <span className="nav-icon">{c.icon}</span>
@@ -504,6 +527,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               key={idx}
               className="dropdown-item-flyout"
               onClick={() => handleSubmenuItemClick(item)}
+              onMouseEnter={() => {
+                if (item.url && item.url !== '#') router.prefetch(item.url);
+              }}
               style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

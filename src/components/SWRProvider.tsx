@@ -10,6 +10,8 @@ export default function SWRProvider({ children }: { children: React.ReactNode })
       value={{
         revalidateOnFocus: false,
         revalidateOnReconnect: false,
+        keepPreviousData: true,
+        focusThrottleInterval: 300000,
         dedupingInterval: 60000,
         onErrorRetry: (error: any, key: string, config: any, revalidate: any, { retryCount }: { retryCount: number }) => {
           const status = error?.status || (error instanceof FetchError ? error.status : undefined);

@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Bell, LogOut } from 'lucide-react';
 import TopBarChatButton from '@/components/chat/TopBarChatButton';
+import { triggerNavStart } from '@/components/NavigationProgressBar';
 
 interface ParentHeaderProps {
   pendingReviewsCount: number;
@@ -34,7 +35,8 @@ export const ParentHeader = React.memo(function ParentHeader({
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
         <div 
-          onClick={() => router.push('/parent')} 
+          onClick={() => { triggerNavStart(); router.push('/parent'); }} 
+          onMouseEnter={() => router.prefetch('/parent')}
           style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
         >
           <Image 

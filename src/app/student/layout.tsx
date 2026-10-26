@@ -12,6 +12,7 @@ import Image from 'next/image';
 import { isStudentBlockedByCurfew, isCurfewBypassed } from '@/lib/curfew';
 import TopBarChatButton from '@/components/chat/TopBarChatButton';
 import { useUnreadChatCount } from '@/hooks/useUnreadChatCount';
+import { triggerNavStart } from '@/components/NavigationProgressBar';
 
 export default function StudentLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() || '';
@@ -73,6 +74,16 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [user]);
+
+  useEffect(() => {
+    // Warm up student top routes in idle background time
+    const timer = setTimeout(() => {
+      ['/student', '/student/notifications', '/student/fees', '/student/settings', '/student/chat'].forEach(r => {
+        router.prefetch(r);
+      });
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [router]);
 
   // Hide the menu entirely during active exam taking or proctored practice sessions
   const isTakingExam = pathname.includes('/take-exam') || pathname.includes('/take-subjective-exam') || pathname.includes('/student/topic');
@@ -142,7 +153,8 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
           <div 
-            onClick={() => router.push('/student')} 
+            onClick={() => { triggerNavStart(); router.push('/student'); }} 
+            onMouseEnter={() => router.prefetch('/student')}
             style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}
           >
             <Image 
@@ -165,7 +177,8 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
           {/* Notifications Button */}
           <button 
             className="page-header-btn" 
-            onClick={() => router.push('/student/notifications')} 
+            onClick={() => { triggerNavStart(); router.push('/student/notifications'); }} 
+            onMouseEnter={() => router.prefetch('/student/notifications')}
             title="Notifications"
             style={{ 
               background: pathname === '/student/notifications' ? 'var(--accent-soft)' : 'rgba(255,255,255,0.08)', 
@@ -190,7 +203,8 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
           {/* Fees & Invoices Button */}
           <button 
             className="page-header-btn" 
-            onClick={() => router.push('/student/fees')} 
+            onClick={() => { triggerNavStart(); router.push('/student/fees'); }} 
+            onMouseEnter={() => router.prefetch('/student/fees')}
             title="Fees & Dues"
             style={{ 
               background: pathname === '/student/fees' ? 'var(--accent-soft)' : 'rgba(255,255,255,0.08)', 
@@ -212,7 +226,8 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
           {/* Settings Button */}
           <button 
             className="page-header-btn" 
-            onClick={() => router.push('/student/settings')} 
+            onClick={() => { triggerNavStart(); router.push('/student/settings'); }} 
+            onMouseEnter={() => router.prefetch('/student/settings')}
             title="Profile & Settings"
             style={{ 
               background: pathname === '/student/settings' ? 'var(--accent-soft)' : 'rgba(255,255,255,0.08)', 
