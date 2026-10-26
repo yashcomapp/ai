@@ -933,15 +933,16 @@ export async function exportBatchPracticeTracksImage(params: BatchPracticeTracks
     throw new Error('Could not initialize html2canvas library.');
   }
 
-  // Determine whether this is a 7-day weekly practice report or cumulative view
+  // Determine whether this is a day-wise period practice report or cumulative view
   const isWeekly = Boolean(params.weeklyStats && params.weekDays && params.weekDays.length > 0);
   const weeklyStats = params.weeklyStats || {};
   const weekDays = params.weekDays || [];
+  const numDays = weekDays.length;
 
   // Determine the uniform assigned topics count across the batch
   const batchMaxTopics = computeBatchMaxTopics(students, masteryStats);
 
-  // Sorting: in weekly view, sort descending by activeDays, then totalQuestions, then avgScore
+  // Sorting: in period view, sort descending by activeDays, then totalQuestions, then avgScore
   const sorted = [...students].sort((a, b) => {
     if (isWeekly) {
       const wa = weeklyStats[a.studentCode] || { activeDays: 0, totalQuestions: 0, avgScore: 0 };
@@ -995,7 +996,9 @@ export async function exportBatchPracticeTracksImage(params: BatchPracticeTracks
   container.style.position = 'fixed';
   container.style.left = '0';
   container.style.top = '0';
-  container.style.width = isWeekly ? '1200px' : '1080px';
+  container.style.width = isWeekly
+    ? (numDays <= 7 ? '1200px' : numDays <= 14 ? '1420px' : `${Math.min(1850, 1200 + (numDays - 7) * 36)}px`)
+    : '1080px';
   container.style.backgroundColor = '#ffffff';
   container.style.color = '#0f172a';
   container.style.fontFamily = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Inter', 'Noto Sans Devanagari', 'Mangal', sans-serif";
@@ -1008,24 +1011,33 @@ export async function exportBatchPracticeTracksImage(params: BatchPracticeTracks
   container.style.pointerEvents = 'none';
   container.style.opacity = '1';
 
+  const parsedContainerWidth = parseInt(container.style.width, 10);
+  const studentColWidth = numDays > 14 ? 190 : numDays > 7 ? 210 : 220;
+  const totalColWidth = numDays > 14 ? 85 : 95;
+  const activeColWidth = numDays > 14 ? 70 : 75;
+  const accColWidth = numDays > 14 ? 80 : 85;
+  const topicColWidth = numDays > 14 ? 145 : 155;
+  const reservedFixed = studentColWidth + totalColWidth + activeColWidth + accColWidth + topicColWidth + 60;
+  const dayColWidth = isWeekly && numDays > 0 ? Math.max(32, Math.floor((parsedContainerWidth - reservedFixed) / numDays)) : 74;
+
   let tableHeaderHtml = '';
   let rowsHtml = '';
 
   if (isWeekly) {
-    // 7-Day Day-Wise Weekly Table Header
+    // Dynamic Day-Wise Period Table Header
     tableHeaderHtml = `
       <tr style="background: #0f172a; color: #ffffff; font-size: 11.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; height: 42px;">
-        <th style="padding: 8px 10px; text-align: left; width: 220px;">विद्यार्थी / Student</th>
+        <th style="padding: 8px 10px; text-align: left; width: ${studentColWidth}px;">विद्यार्थी / Student</th>
         ${weekDays.map(wd => `
-          <th style="padding: 8px 4px; text-align: center; width: 74px; ${wd.isToday ? 'background: #1e3a8a; border-top: 3px solid #38bdf8;' : ''}">
-            <div style="font-size: 11px; font-weight: 900; line-height: 1.1;">${wd.shortLabel}</div>
-            <div style="font-size: 10px; font-weight: 700; color: ${wd.isToday ? '#7dd3fc' : '#94a3b8'}; line-height: 1.1;">${wd.label.split(' ')[1] || ''}</div>
+          <th style="padding: 6px 2px; text-align: center; width: ${dayColWidth}px; ${wd.isToday ? 'background: #1e3a8a; border-top: 3px solid #38bdf8;' : ''}">
+            <div style="font-size: ${numDays > 14 ? '9.5px' : '11px'}; font-weight: 900; line-height: 1.1;">${wd.shortLabel}</div>
+            <div style="font-size: ${numDays > 14 ? '8.5px' : '10px'}; font-weight: 700; color: ${wd.isToday ? '#7dd3fc' : '#94a3b8'}; line-height: 1.1;">${wd.label.split(' ')[1] || ''}</div>
           </th>
         `).join('')}
-        <th style="padding: 8px 6px; text-align: center; width: 95px; background: #0369a1;">7D Total</th>
-        <th style="padding: 8px 6px; text-align: center; width: 75px;">Active</th>
-        <th style="padding: 8px 6px; text-align: center; width: 85px;">Accuracy</th>
-        <th style="padding: 8px 10px; text-align: center; width: 155px;">Topic Status (Syllabus)</th>
+        <th style="padding: 8px 6px; text-align: center; width: ${totalColWidth}px; background: #0369a1;">${numDays}D Total</th>
+        <th style="padding: 8px 6px; text-align: center; width: ${activeColWidth}px;">Active</th>
+        <th style="padding: 8px 6px; text-align: center; width: ${accColWidth}px;">Accuracy</th>
+        <th style="padding: 8px 10px; text-align: center; width: ${topicColWidth}px;">Topic Status (Syllabus)</th>
       </tr>
     `;
 
@@ -1056,36 +1068,36 @@ export async function exportBatchPracticeTracksImage(params: BatchPracticeTracks
           <td style="padding: 5px 10px; vertical-align: middle;">
             <div style="display: flex; align-items: center; gap: 5px; line-height: 1.2;">
               <span style="font-size: 13px; line-height: 1;">${rankBadge}</span>
-              <span style="font-weight: 800; font-size: 13px; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 175px;">${displayName}</span>
+              <span style="font-weight: 800; font-size: 13px; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: ${studentColWidth - 45}px;">${displayName}</span>
             </div>
             <div style="font-size: 10px; font-weight: 600; color: #64748b; margin-left: 20px; line-height: 1.2; margin-top: 2px;">
               ${s.className || s.class || 'Batch'} ${s.rollNumber ? `• Roll ${s.rollNumber}` : ''}
             </div>
           </td>
 
-          <!-- 7 Day Columns (Day 1 to Day 7) -->
+          <!-- Day Columns (1 to numDays) -->
           ${weekDays.map(wd => {
             const dayData = w.days?.[wd.dateKey];
             const hasPrac = dayData && dayData.sessionsCount > 0;
             return `
-              <td style="padding: 4px 4px; text-align: center; vertical-align: middle; ${wd.isToday ? 'background: #f0fdf4;' : ''}">
+              <td style="padding: 3px 2px; text-align: center; vertical-align: middle; ${wd.isToday ? 'background: #f0fdf4;' : ''}">
                 ${hasPrac ? `
-                  <div style="font-weight: 900; font-size: 12.5px; color: #0f172a; line-height: 1.2;">
-                    ${dayData.questionsCount}<span style="font-size: 9.5px; font-weight: 700; color: #64748b;">Q</span>
+                  <div style="font-weight: 900; font-size: ${numDays > 14 ? '11px' : '12.5px'}; color: #0f172a; line-height: 1.2;">
+                    ${dayData.questionsCount}<span style="font-size: ${numDays > 14 ? '8px' : '9.5px'}; font-weight: 700; color: #64748b;">Q</span>
                   </div>
-                  <div style="font-size: 10px; font-weight: 800; color: ${dayData.avgScore >= 80 ? '#15803d' : dayData.avgScore >= 50 ? '#b45309' : '#b91c1c'}; line-height: 1.2; margin-top: 1px;">
+                  <div style="font-size: ${numDays > 14 ? '8.5px' : '10px'}; font-weight: 800; color: ${dayData.avgScore >= 80 ? '#15803d' : dayData.avgScore >= 50 ? '#b45309' : '#b91c1c'}; line-height: 1.2; margin-top: 1px;">
                     ${dayData.avgScore}%
                   </div>
                 ` : `
-                  <div style="color: #cbd5e1; font-weight: 800; font-size: 13px; line-height: 1.2;">—</div>
+                  <div style="color: #cbd5e1; font-weight: 800; font-size: ${numDays > 14 ? '11px' : '13px'}; line-height: 1.2;">—</div>
                 `}
               </td>
             `;
           }).join('')}
 
-          <!-- 7D Total -->
+          <!-- Period Total -->
           <td style="padding: 4px 6px; text-align: center; vertical-align: middle; background: #f0f9ff;">
-            <div style="font-weight: 900; font-size: 13px; color: #0369a1; line-height: 1.2;">
+            <div style="font-weight: 900; font-size: ${numDays > 14 ? '12px' : '13px'}; color: #0369a1; line-height: 1.2;">
               ${w.totalQuestions} <span style="font-size: 10px; font-weight: 700;">Qs</span>
             </div>
             <div style="font-size: 10px; font-weight: 700; color: #64748b; line-height: 1.2; margin-top: 1px;">
@@ -1094,16 +1106,22 @@ export async function exportBatchPracticeTracksImage(params: BatchPracticeTracks
           </td>
 
           <!-- Active Days -->
-          <td style="padding: 4px 6px; text-align: center; vertical-align: middle;">
-            <div style="font-weight: 900; font-size: 12px; color: ${w.activeDays >= 5 ? '#15803d' : w.activeDays >= 3 ? '#b45309' : '#64748b'}; line-height: 1.2;">
-              ${w.activeDays}/7 d
+          <td style="padding: 4px 4px; text-align: center; vertical-align: middle;">
+            <div style="font-weight: 900; font-size: ${numDays > 14 ? '11px' : '12px'}; color: ${w.activeDays >= Math.ceil(numDays * 0.7) ? '#15803d' : w.activeDays >= Math.ceil(numDays * 0.4) ? '#b45309' : '#64748b'}; line-height: 1.2;">
+              ${w.activeDays}/${numDays} d
             </div>
-            <div style="font-size: 8px; letter-spacing: 0.5px; line-height: 1.2; margin-top: 2px;">
-              ${weekDays.map(wd => (w.days?.[wd.dateKey]?.sessionsCount || 0) > 0 ? '🟢' : '⚪').join('')}
-            </div>
+            ${numDays <= 14 ? `
+              <div style="font-size: ${numDays > 7 ? '7px' : '8px'}; letter-spacing: 0.5px; line-height: 1.2; margin-top: 2px;">
+                ${weekDays.map(wd => (w.days?.[wd.dateKey]?.sessionsCount || 0) > 0 ? '🟢' : '⚪').join('')}
+              </div>
+            ` : `
+              <div style="font-size: 9px; font-weight: 700; color: #64748b; line-height: 1.2; margin-top: 2px;">
+                ${Math.round((w.activeDays / (numDays || 1)) * 100)}% active
+              </div>
+            `}
           </td>
 
-          <!-- Weekly Accuracy -->
+          <!-- Period Accuracy -->
           <td style="padding: 4px 6px; text-align: center; vertical-align: middle;">
             ${w.totalQuestions > 0 ? getScoreChip(w.avgScore) : `<span style="color:#94a3b8; font-weight:700; font-size: 12px;">—</span>`}
             <div style="font-size: 9.5px; font-weight: 700; color: #64748b; line-height: 1.2; margin-top: 2px;">
@@ -1221,11 +1239,11 @@ export async function exportBatchPracticeTracksImage(params: BatchPracticeTracks
   }
 
   const headerTitle = isWeekly
-    ? '🏋️ Daily Practice Weekly Report (मागील ७ दिवस)'
+    ? (numDays === 7 ? '🏋️ Daily Practice Weekly Report (मागील ७ दिवस)' : `🏋️ Daily Practice Report (${numDays} दिवसांचा अहवाल)`)
     : '🏋️ Daily Practice & Topic Mastery Dossier';
 
   const headerSubtitle = isWeekly && weekDays.length > 0
-    ? `${batchName} • ${weekDays[0].label} ते ${weekDays[weekDays.length - 1].label}`
+    ? `${batchName} • ${weekDays[0].label} ते ${weekDays[weekDays.length - 1].label} (${numDays} दिवस)`
     : batchName;
 
   const kpiCardsHtml = isWeekly ? `
@@ -1235,19 +1253,19 @@ export async function exportBatchPracticeTracksImage(params: BatchPracticeTracks
     </div>
     <div style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 10px 12px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
       <div style="font-size: 22px; font-weight: 900; color: #15803d; line-height: 1.1;">${activeStudentsCount} <span style="font-size: 13px; font-weight: 700; color: #475569;">(${Math.round((activeStudentsCount / (totalStudents || 1)) * 100)}%)</span></div>
-      <div style="font-size: 10.5px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 3px;">सक्रिय विद्यार्थी (7d Active)</div>
+      <div style="font-size: 10.5px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 3px;">सक्रिय विद्यार्थी (${numDays}d Active)</div>
     </div>
     <div style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 10px 12px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
       <div style="font-size: 22px; font-weight: 900; color: #0284c7; line-height: 1.1;">${totalQuestions} <span style="font-size: 13px; font-weight: 700;">Qs</span></div>
-      <div style="font-size: 10.5px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 3px;">एकूण सोडवलेले प्रश्न (7d)</div>
+      <div style="font-size: 10.5px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 3px;">एकूण सोडवलेले प्रश्न (${numDays}d)</div>
     </div>
     <div style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 10px 12px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
       <div style="font-size: 22px; font-weight: 900; color: #7c3aed; line-height: 1.1;">${totalSessions}</div>
-      <div style="font-size: 10.5px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 3px;">सराव सेट्स (7d Sessions)</div>
+      <div style="font-size: 10.5px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 3px;">सराव सेट्स (${numDays}d Sessions)</div>
     </div>
     <div style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 10px 12px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
       <div style="font-size: 22px; font-weight: 900; color: ${getDeepScoreColor(batchWeeklyAvg)}; line-height: 1.1;">${batchWeeklyAvg}%</div>
-      <div style="font-size: 10.5px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 3px;">आठवडा अचूकता (Week Avg)</div>
+      <div style="font-size: 10.5px; font-weight: 800; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 3px;">कालावधी अचूकता (${numDays}d Avg)</div>
     </div>
     <div style="background: #ffffff; border: 1.5px solid #cbd5e1; border-radius: 10px; padding: 10px 12px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
       <div style="font-size: 22px; font-weight: 900; color: #0f172a; line-height: 1.1;">${batchMaxTopics} <span style="font-size: 12px; font-weight: 700; color: #475569;">घटक</span></div>
@@ -1388,7 +1406,7 @@ export async function exportBatchPracticeTracksImage(params: BatchPracticeTracks
 
     const cleanBatch = batchName.replace(/[^a-zA-Z0-9_-]/g, '_');
     const fileName = isWeekly
-      ? `Weekly_Practice_Report_${cleanBatch}_${todayFormatted.replace(/\//g, '-')}.png`
+      ? `Practice_Report_${cleanBatch}_${numDays}D_${todayFormatted.replace(/\//g, '-')}.png`
       : `Practice_Tracks_${cleanBatch}.png`;
     const imageUri = canvas.toDataURL('image/png');
 

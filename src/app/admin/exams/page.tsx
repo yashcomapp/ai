@@ -565,12 +565,21 @@ export default function AdminExamsPage() {
     }
   };
 
-  const loadPracticeTracks = async () => {
+  const loadPracticeTracks = async (options?: {
+    days?: number;
+    startDate?: string;
+    endDate?: string;
+  }) => {
     if (!firebaseUser) return;
     setLoadingPracticeTracks(true);
     try {
       const idToken = await firebaseUser.getIdToken();
-      const res = await fetch('/api/admin/exams?action=practiceTracks', {
+      const params = new URLSearchParams({ action: 'practiceTracks' });
+      if (options?.days) params.set('days', String(options.days));
+      if (options?.startDate) params.set('startDate', options.startDate);
+      if (options?.endDate) params.set('endDate', options.endDate);
+
+      const res = await fetch(`/api/admin/exams?${params.toString()}`, {
         headers: {
           'Authorization': `Bearer ${idToken}`
         }
@@ -1338,6 +1347,7 @@ export default function AdminExamsPage() {
             handleRowClick={handleRowClick}
             openTopicStatusModal={openTopicStatusModal}
             formatDateDMY={formatDateDMY}
+            onSelectDuration={loadPracticeTracks}
           />
         )}
       </main>

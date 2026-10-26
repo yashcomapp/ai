@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Batch, Student } from './types';
 import { formatReportStudentName, exportBatchPracticeTracksImage, computeBatchMaxTopics } from '@/lib/lqCardExport';
+import { getDateKeyIST } from '@/lib/dateUtils';
 
 interface PracticeTabProps {
   batches: Batch[];
@@ -55,6 +56,11 @@ interface PracticeTabProps {
     e: React.MouseEvent
   ) => void;
   formatDateDMY: (dateStr: string) => string;
+  onSelectDuration?: (options?: {
+    days?: number;
+    startDate?: string;
+    endDate?: string;
+  }) => Promise<void> | void;
 }
 
 export default function PracticeTab({
@@ -74,10 +80,71 @@ export default function PracticeTab({
   weekDays = [],
   handleRowClick,
   openTopicStatusModal,
-  formatDateDMY
+  formatDateDMY,
+  onSelectDuration
 }: PracticeTabProps) {
   const [exportingBatchId, setExportingBatchId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'weekly' | 'cumulative'>('weekly');
+  const [durationPreset, setDurationPreset] = useState<'7d' | '14d' | '30d' | 'thisMonth' | 'custom' | 'cumulative'>('7d');
+  const [customStartDate, setCustomStartDate] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 6);
+    return getDateKeyIST(d);
+  });
+  const [customEndDate, setCustomEndDate] = useState(() => getDateKeyIST(new Date()));
+
+  const handlePresetChange = (preset: '7d' | '14d' | '30d' | 'thisMonth' | 'custom' | 'cumulative') => {
+    setDurationPreset(preset);
+    if (preset === 'cumulative') {
+      setViewMode('cumulative');
+      return;
+    }
+
+    setViewMode('weekly');
+
+    if (preset === '7d') {
+      onSelectDuration?.({ days: 7 });
+    } else if (preset === '14d') {
+      onSelectDuration?.({ days: 14 });
+    } else if (preset === '30d') {
+      onSelectDuration?.({ days: 30 });
+    } else if (preset === 'thisMonth') {
+      const now = new Date();
+      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+      const startKey = getDateKeyIST(firstDay);
+      const endKey = getDateKeyIST(now);
+      onSelectDuration?.({ startDate: startKey, endDate: endKey });
+    } else if (preset === 'custom') {
+      if (customStartDate && customEndDate) {
+        onSelectDuration?.({ startDate: customStartDate, endDate: customEndDate });
+      }
+    }
+  };
+
+  const handleApplyCustomRange = () => {
+    if (!customStartDate || !customEndDate) {
+      alert('Please select both from and to dates.');
+      return;
+    }
+    if (customStartDate > customEndDate) {
+      alert('Start date must be before or equal to end date.');
+      return;
+    }
+    setViewMode('weekly');
+    onSelectDuration?.({ startDate: customStartDate, endDate: customEndDate });
+  };
+
+  const getPresetBtnStyle = (isActive: boolean) => ({
+    padding: '6px 12px',
+    fontSize: '12px',
+    fontWeight: 700,
+    borderRadius: '4px',
+    border: 'none',
+    cursor: 'pointer',
+    background: isActive ? 'var(--primary)' : 'transparent',
+    color: isActive ? '#ffffff' : 'var(--text-muted)',
+    transition: 'all 0.2s'
+  });
 
   const renderSortIndicator = (field: string) => {
     if (pracSortField !== field) return <span style={{ color: 'var(--text-faint)', marginLeft: '4px' }}>⇅</span>;
@@ -86,71 +153,176 @@ export default function PracticeTab({
 
   return (
     <div id="practice-tracks-section" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      {/* Filters Bar */}
-      <div className="card" style={{ padding: '16px 20px', background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: '180px' }}>
-          <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>Filter by Batch</label>
-          <select 
-            value={pracBatchFilter}
-            onChange={(e) => setPracBatchFilter(e.target.value)}
-            style={{ padding: '8px 12px', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', background: 'var(--bg-soft)', color: 'var(--text)', fontSize: '13px' }}
-          >
-            <option value="all">All Batches</option>
-            {batches.map(b => (
-              <option key={b.id} value={b.id}>{b.name}</option>
-            ))}
-          </select>
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1, minWidth: '220px' }}>
-          <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>Search Student</label>
-          <input 
-            type="text" 
-            placeholder="Filter by student name..."
-            value={pracSearchName}
-            onChange={(e) => setPracSearchName(e.target.value)}
-            style={{ padding: '8px 12px', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', background: 'var(--bg-soft)', color: 'var(--text)', fontSize: '13px' }}
-          />
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-          <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>Report View Mode</label>
-          <div style={{ display: 'inline-flex', background: 'var(--bg-soft)', borderRadius: 'var(--radius-sm)', padding: '3px', border: '1px solid var(--border)' }}>
-            <button
-              type="button"
-              onClick={() => setViewMode('weekly')}
-              style={{
-                padding: '6px 14px',
-                fontSize: '12px',
-                fontWeight: 700,
-                borderRadius: '4px',
-                border: 'none',
-                cursor: 'pointer',
-                background: viewMode === 'weekly' ? 'var(--primary)' : 'transparent',
-                color: viewMode === 'weekly' ? '#ffffff' : 'var(--text-muted)',
-                transition: 'all 0.2s'
-              }}
+      {/* Filters & Duration Bar */}
+      <div className="card" style={{ padding: '16px 20px', background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: '180px' }}>
+            <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>Filter by Batch</label>
+            <select 
+              value={pracBatchFilter}
+              onChange={(e) => setPracBatchFilter(e.target.value)}
+              style={{ padding: '8px 12px', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', background: 'var(--bg-soft)', color: 'var(--text)', fontSize: '13px' }}
             >
-              📅 Last 7 Days (Weekly Day-Wise)
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode('cumulative')}
-              style={{
-                padding: '6px 14px',
-                fontSize: '12px',
-                fontWeight: 700,
-                borderRadius: '4px',
-                border: 'none',
-                cursor: 'pointer',
-                background: viewMode === 'cumulative' ? 'var(--primary)' : 'transparent',
-                color: viewMode === 'cumulative' ? '#ffffff' : 'var(--text-muted)',
-                transition: 'all 0.2s'
-              }}
-            >
-              📊 All-Time Cumulative
-            </button>
+              <option value="all">All Batches</option>
+              {batches.map(b => (
+                <option key={b.id} value={b.id}>{b.name}</option>
+              ))}
+            </select>
           </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1, minWidth: '220px' }}>
+            <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>Search Student</label>
+            <input 
+              type="text" 
+              placeholder="Filter by student name..."
+              value={pracSearchName}
+              onChange={(e) => setPracSearchName(e.target.value)}
+              style={{ padding: '8px 12px', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', background: 'var(--bg-soft)', color: 'var(--text)', fontSize: '13px' }}
+            />
+          </div>
+        </div>
+
+        {/* View Mode & Flexible Duration Switcher */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', borderTop: '1px solid var(--border-light)', paddingTop: '12px' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '11.5px', fontWeight: 700, color: 'var(--text-muted)', marginRight: '2px' }}>
+                DURATION / VIEW:
+              </span>
+              <div style={{ display: 'inline-flex', flexWrap: 'wrap', background: 'var(--bg-soft)', borderRadius: 'var(--radius-sm)', padding: '3px', border: '1px solid var(--border)', gap: '2px' }}>
+                <button
+                  type="button"
+                  onClick={() => handlePresetChange('7d')}
+                  style={getPresetBtnStyle(durationPreset === '7d')}
+                >
+                  📅 Last 7 Days
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handlePresetChange('14d')}
+                  style={getPresetBtnStyle(durationPreset === '14d')}
+                >
+                  📅 Last 14 Days
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handlePresetChange('30d')}
+                  style={getPresetBtnStyle(durationPreset === '30d')}
+                >
+                  📅 Last 30 Days
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handlePresetChange('thisMonth')}
+                  style={getPresetBtnStyle(durationPreset === 'thisMonth')}
+                >
+                  🗓️ This Month
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handlePresetChange('custom')}
+                  style={getPresetBtnStyle(durationPreset === 'custom')}
+                >
+                  ⚙️ Custom Range
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handlePresetChange('cumulative')}
+                  style={getPresetBtnStyle(durationPreset === 'cumulative')}
+                >
+                  📊 All-Time Cumulative
+                </button>
+              </div>
+            </div>
+
+            {/* Active Range Chip */}
+            {durationPreset !== 'cumulative' && weekDays.length > 0 && (
+              <div style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                background: 'rgba(56, 189, 248, 0.08)',
+                color: 'var(--accent)',
+                border: '1px solid rgba(56, 189, 248, 0.25)',
+                padding: '4px 10px',
+                borderRadius: '6px',
+                fontSize: '11.5px',
+                fontWeight: 700
+              }}>
+                <span>📅</span>
+                <span>{weekDays[0].label} – {weekDays[weekDays.length - 1].label}</span>
+                <span style={{ background: 'var(--accent)', color: '#fff', borderRadius: '10px', padding: '1px 7px', fontSize: '10.5px' }}>
+                  {weekDays.length} Days
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Custom Date Range Selector (displayed when 'custom' is selected) */}
+          {durationPreset === 'custom' && (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: '10px',
+              padding: '10px 14px',
+              background: 'var(--bg-soft)',
+              borderRadius: 'var(--radius-sm)',
+              border: '1px dashed var(--border)',
+              marginTop: '4px'
+            }}>
+              <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text)' }}>🗓️ Select Custom Date Range:</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>From:</label>
+                <input
+                  type="date"
+                  value={customStartDate}
+                  onChange={(e) => setCustomStartDate(e.target.value)}
+                  style={{
+                    padding: '5px 8px',
+                    border: '1px solid var(--border)',
+                    borderRadius: '4px',
+                    background: 'var(--surface)',
+                    color: 'var(--text)',
+                    fontSize: '12px'
+                  }}
+                />
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>To:</label>
+                <input
+                  type="date"
+                  value={customEndDate}
+                  onChange={(e) => setCustomEndDate(e.target.value)}
+                  style={{
+                    padding: '5px 8px',
+                    border: '1px solid var(--border)',
+                    borderRadius: '4px',
+                    background: 'var(--surface)',
+                    color: 'var(--text)',
+                    fontSize: '12px'
+                  }}
+                />
+              </div>
+              <button
+                type="button"
+                onClick={handleApplyCustomRange}
+                disabled={loadingPracticeTracks}
+                style={{
+                  padding: '5px 14px',
+                  background: 'var(--primary)',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '4px',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  cursor: 'pointer'
+                }}
+              >
+                {loadingPracticeTracks ? '⏳ Loading...' : 'Apply Range'}
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -171,7 +343,7 @@ export default function PracticeTab({
                 📦 {batch.name} — <span style={{ color: 'var(--accent)' }}>{batchStudents.length} students</span>
                 {viewMode === 'weekly' && weekDays.length > 0 && (
                   <span style={{ fontSize: '11.5px', color: 'var(--text-muted)', fontWeight: 600, marginLeft: '8px' }}>
-                    ({weekDays[0].label} – {weekDays[weekDays.length - 1].label})
+                    ({weekDays[0].label} – {weekDays[weekDays.length - 1].label}) • {weekDays.length} Days
                   </span>
                 )}
               </h4>
@@ -209,9 +381,9 @@ export default function PracticeTab({
                   cursor: 'pointer',
                   borderRadius: '6px'
                 }}
-                title={viewMode === 'weekly' ? "Export 7-day day-wise practice report image for WhatsApp" : "Export cumulative practice dossier for WhatsApp"}
+                title={viewMode === 'weekly' ? `Export ${weekDays.length}-day day-wise practice report image for WhatsApp` : "Export cumulative practice dossier for WhatsApp"}
               >
-                {exportingBatchId === batch.id ? '⏳ Exporting...' : (viewMode === 'weekly' ? '📸 Export Weekly Report (WhatsApp)' : '📸 Export WhatsApp')}
+                {exportingBatchId === batch.id ? '⏳ Exporting...' : (viewMode === 'weekly' ? `📸 Export ${weekDays.length}D Report (WhatsApp)` : '📸 Export WhatsApp')}
               </button>
             </div>
 
@@ -224,16 +396,16 @@ export default function PracticeTab({
                         STUDENT {renderSortIndicator('student')}
                       </th>
                       {weekDays.map(wd => (
-                        <th key={wd.dateKey} style={{ padding: '8px 4px', textAlign: 'center', whiteSpace: 'nowrap', background: wd.isToday ? 'rgba(56, 189, 248, 0.1)' : undefined }}>
+                        <th key={wd.dateKey} style={{ padding: '8px 4px', textAlign: 'center', whiteSpace: 'nowrap', minWidth: '50px', background: wd.isToday ? 'rgba(56, 189, 248, 0.1)' : undefined }}>
                           <div style={{ fontSize: '11px', fontWeight: 800, color: wd.isToday ? 'var(--accent)' : 'inherit' }}>{wd.shortLabel}</div>
                           <div style={{ fontSize: '10px', fontWeight: 600, color: 'var(--text-muted)' }}>{wd.label.split(' ')[1] || ''}</div>
                         </th>
                       ))}
                       <th onClick={() => handlePracSort('weeklyQuestions')} style={{ padding: '8px 8px', textAlign: 'center', cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}>
-                        7D TOTAL {renderSortIndicator('weeklyQuestions')}
+                        {weekDays.length}D TOTAL {renderSortIndicator('weeklyQuestions')}
                       </th>
                       <th onClick={() => handlePracSort('weeklyActive')} style={{ padding: '8px 8px', textAlign: 'center', cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}>
-                        ACTIVE {renderSortIndicator('weeklyActive')}
+                        ACTIVE ({weekDays.length}d) {renderSortIndicator('weeklyActive')}
                       </th>
                       <th onClick={() => handlePracSort('weeklyScore')} style={{ padding: '8px 8px', textAlign: 'center', cursor: 'pointer', userSelect: 'none', whiteSpace: 'nowrap' }}>
                         ACCURACY {renderSortIndicator('weeklyScore')}
@@ -349,13 +521,19 @@ export default function PracticeTab({
                               <div style={{
                                 fontWeight: 800,
                                 fontSize: '12px',
-                                color: w.activeDays >= 5 ? 'var(--success)' : w.activeDays >= 3 ? 'var(--warning)' : 'var(--text-muted)'
+                                color: w.activeDays >= Math.ceil(weekDays.length * 0.7) ? 'var(--success)' : w.activeDays >= Math.ceil(weekDays.length * 0.4) ? 'var(--warning)' : 'var(--text-muted)'
                               }}>
-                                {w.activeDays} / 7 d
+                                {w.activeDays} / {weekDays.length} d
                               </div>
-                              <div style={{ fontSize: '8px', letterSpacing: '0.5px', marginTop: '2px' }}>
-                                {weekDays.map(wd => (w.days?.[wd.dateKey]?.sessionsCount || 0) > 0 ? '🟢' : '⚪').join('')}
-                              </div>
+                              {weekDays.length <= 14 ? (
+                                <div style={{ fontSize: '8px', letterSpacing: '0.5px', marginTop: '2px' }}>
+                                  {weekDays.map(wd => (w.days?.[wd.dateKey]?.sessionsCount || 0) > 0 ? '🟢' : '⚪').join('')}
+                                </div>
+                              ) : (
+                                <div style={{ fontSize: '10px', fontWeight: 600, color: 'var(--text-muted)', marginTop: '2px' }}>
+                                  {Math.round((w.activeDays / (weekDays.length || 1)) * 100)}% active
+                                </div>
+                              )}
                             </td>
                             <td style={{ padding: '6px 8px', textAlign: 'center' }}>
                               <div style={{ fontWeight: 800, fontSize: '12.5px', color: w.totalQuestions > 0 ? (w.avgScore >= 80 ? 'var(--success)' : w.avgScore >= 50 ? 'var(--warning)' : 'var(--danger)') : 'var(--text-muted)' }}>

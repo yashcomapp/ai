@@ -398,7 +398,11 @@ export async function GET(req: NextRequest) {
 
     if (action === 'practiceTracks') {
       const batchIdParam = req.nextUrl.searchParams.get('batchId');
-      const cacheKey = `practice-tracks-report-v2-${batchIdParam || 'all'}`;
+      const daysParam = req.nextUrl.searchParams.get('days');
+      const startDateParam = req.nextUrl.searchParams.get('startDate');
+      const endDateParam = req.nextUrl.searchParams.get('endDate');
+
+      const cacheKey = `practice-tracks-v3-${batchIdParam || 'all'}-${daysParam || '7'}-${startDateParam || ''}-${endDateParam || ''}`;
       const cached = await ReportCacheManager.getReport<any>(cacheKey);
       if (cached) {
         return NextResponse.json(cached);
@@ -439,30 +443,64 @@ export async function GET(req: NextRequest) {
 
       const studentCodes = students.map((s: any) => s.studentCode);
       if (studentCodes.length === 0) {
-        return NextResponse.json({ practiceStats: {}, masteryStats: {} });
+        return NextResponse.json({ practiceStats: {}, masteryStats: {}, weeklyStats: {}, weekDays: [] });
       }
 
       // Calculate unified metrics via Single Source of Truth (QuotientService & calculateUnifiedMetrics)
       const quotientsMap = await QuotientService.calculateBulkQuotients(studentCodes, 'all');
 
-      // Generate 7-day sliding window in IST
+      // Generate dynamic sliding window / date keys in IST
       const now = new Date();
+      const todayKey = getDateKeyIST(now);
       const dayKeys: string[] = [];
       const weekDays: Array<{ dateKey: string; label: string; shortLabel: string; dayName: string; isToday: boolean }> = [];
 
-      for (let i = 6; i >= 0; i--) {
-        const d = new Date(now.getTime() - i * 86400000);
-        const dateKey = getDateKeyIST(d);
-        const dayName = d.toLocaleDateString('en-US', { timeZone: 'Asia/Kolkata', weekday: 'short' });
-        const dayMonth = d.toLocaleDateString('en-GB', { timeZone: 'Asia/Kolkata', day: '2-digit', month: '2-digit' });
-        dayKeys.push(dateKey);
-        weekDays.push({
-          dateKey,
-          label: `${dayName} ${dayMonth}`,
-          shortLabel: dayName,
-          dayName,
-          isToday: i === 0
-        });
+      if (startDateParam && endDateParam) {
+        // Custom date range: parse start and end, clamp up to 60 days
+        const startD = parseIST(startDateParam);
+        const endD = parseIST(endDateParam);
+        const actualStart = startD.getTime() <= endD.getTime() ? startD : endD;
+        const actualEnd = startD.getTime() <= endD.getTime() ? endD : startD;
+
+        const current = new Date(actualStart);
+        const endKey = getDateKeyIST(actualEnd);
+        let count = 0;
+
+        while (count < 60) {
+          const dateKey = getDateKeyIST(current);
+          const dayName = current.toLocaleDateString('en-US', { timeZone: 'Asia/Kolkata', weekday: 'short' });
+          const dayMonth = current.toLocaleDateString('en-GB', { timeZone: 'Asia/Kolkata', day: '2-digit', month: '2-digit' });
+
+          dayKeys.push(dateKey);
+          weekDays.push({
+            dateKey,
+            label: `${dayName} ${dayMonth}`,
+            shortLabel: dayName,
+            dayName,
+            isToday: dateKey === todayKey
+          });
+
+          if (dateKey === endKey) break;
+          current.setTime(current.getTime() + 86400000);
+          count++;
+        }
+      } else {
+        // Preset days window (default 7 days, clamped between 1 and 60)
+        const numDays = Math.min(60, Math.max(1, parseInt(daysParam || '7', 10) || 7));
+        for (let i = numDays - 1; i >= 0; i--) {
+          const d = new Date(now.getTime() - i * 86400000);
+          const dateKey = getDateKeyIST(d);
+          const dayName = d.toLocaleDateString('en-US', { timeZone: 'Asia/Kolkata', weekday: 'short' });
+          const dayMonth = d.toLocaleDateString('en-GB', { timeZone: 'Asia/Kolkata', day: '2-digit', month: '2-digit' });
+          dayKeys.push(dateKey);
+          weekDays.push({
+            dateKey,
+            label: `${dayName} ${dayMonth}`,
+            shortLabel: dayName,
+            dayName,
+            isToday: dateKey === todayKey
+          });
+        }
       }
 
       // Fetch practice reviews for daily 7-day history and lastActive
@@ -599,7 +637,19 @@ export async function GET(req: NextRequest) {
         };
       });
 
-      const responsePayload = { practiceStats, masteryStats, weeklyStats, weekDays };
+      const responsePayload = {
+        practiceStats,
+        masteryStats,
+        weeklyStats,
+        weekDays,
+        periodInfo: {
+          daysCount: dayKeys.length,
+          startDate: dayKeys[0] || '',
+          endDate: dayKeys[dayKeys.length - 1] || '',
+          startLabel: weekDays[0]?.label || '',
+          endLabel: weekDays[weekDays.length - 1]?.label || ''
+        }
+      };
       await ReportCacheManager.setReport(cacheKey, responsePayload, 180);
 
       return NextResponse.json(responsePayload);
