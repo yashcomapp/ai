@@ -10,6 +10,7 @@
 
 import { doc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase/firestore';
+import { sanitizeRealTimePayload } from '@/lib/costGuard';
 
 export interface ProctoringViolationsInput {
   tabViolations?: number;
@@ -57,8 +58,9 @@ export function getLiveSessionRef(sId: string) {
 
 export async function createLiveSession(sId: string, initialData: any) {
   const docRef = doc(db, 'liveExamSessions', sId);
+  const cleanData = sanitizeRealTimePayload('liveExamSessions', initialData);
   await setDoc(docRef, {
-    ...initialData,
+    ...cleanData,
     lastActive: serverTimestamp()
   }, { merge: true });
   return docRef;
@@ -66,8 +68,9 @@ export async function createLiveSession(sId: string, initialData: any) {
 
 export async function updateLiveSession(docRef: any, data: any) {
   if (!docRef) return;
+  const cleanData = sanitizeRealTimePayload('liveExamSessions', data);
   await updateDoc(docRef, {
-    ...data,
+    ...cleanData,
     lastActive: serverTimestamp()
   });
 }

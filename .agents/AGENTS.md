@@ -166,3 +166,35 @@
 
 
 
+
+### U. Strict Zero-Cost Cloud & Network Egress Invariants (`src/lib/costGuard.ts`)
+- **Rule**: Total Google Cloud and Firestore network egress MUST strictly remain within Google Cloud's **10 GB/month 100% Free Tier** ($₹0.00$ cost invariant).
+- **No Heavy Blobs in Real-Time Collections**:
+  - NEVER store base64 images, audio/video data URLs, or raw binary blobs in real-time collections (`liveExamSessions`, `chatMessages`, `notifications`).
+  - Real-time Firestore listeners (`onSnapshot`) re-transmit the entire document on every single update. Storing media in real-time documents causes exponential egress multiplication ($> 20\text{ GB/month}$), triggering `Cloud Firestore Internet Data Transfer Out from APAC to APAC` bills under the App Engine parent category.
+- **Segregated On-Demand Evidence Collection (`liveExamEvidence`)**:
+  - Real-time session documents MUST contain ONLY lightweight metadata and numeric counters (`proctoringSnapshotCount: number`, `manualCaptureCount: number`).
+  - Heavy evidence, photos, and manual captures MUST be written to the segregated `liveExamEvidence` collection and loaded strictly on-demand via single `getDoc` calls when an admin explicitly opens the Evidence modal.
+- **Proctoring Image Compression Standard**:
+  - All automated camera snapshots MUST use `captureCameraSnapshot(videoEl, 160, 0.22)` in [`src/hooks/useProctoring.ts`](file:///c:/Users/Admin/.gemini/antigravity/scratch/los-next/src/hooks/useProctoring.ts).
+  - Payloads must never exceed $12\text{ KB}$ per image.
+- **Automated Evidence Purge (`src/lib/purgeUtils.ts`)**:
+  - Expired `liveExamEvidence` documents must be purged automatically at midnight via `purgeExpiredProctoringSnapshots` so evidence never accumulates long-term storage or egress costs.
+- **No Paid Crons in Vercel**:
+  - Vercel paid cron jobs (`vercel.json`) are strictly forbidden. All maintenance sweeps must be opportunistic or triggered via manual admin action.
+
+### V. Automated Cost & Egress Early Warning System (`src/lib/costGuard.ts`)
+- **Rule**: All real-time Firestore mutations MUST be guarded by `sanitizeRealTimePayload` and `inspectPayloadCostSafety`.
+- **Payload Inspection Ceiling**:
+  - Maximum allowable payload for real-time streamed documents is **$30\text{ KB}$**.
+  - Any document write exceeding $30\text{ KB}$ triggers an immediate `[COST GUARD WARNING]` and dispatches an `app:cost-warning` browser event.
+- **Active Interception**:
+  - `sanitizeRealTimePayload` automatically strips rogue `proctoringSnapshots` or `manualCaptures` arrays if accidentally passed to `createLiveSession` or `updateLiveSession`, converting them to numeric counts to safeguard the project from unexpected billing.
+- **Google Cloud Budget Alert**:
+  - A budget alert threshold at **$₹100$** with email notifications MUST remain active on Google Cloud Billing account `010A2C-9022DA-A6231A` to proactively alert administrators of any unauthorized cloud spending.
+
+### W. Deduplication & Zero Dead Export Invariants
+- **Rule**:
+  - Zero duplicate types across schemas and views. Canonical types MUST be imported from `@/types/`.
+  - Zero unused or dead exports in `src/lib/`, `src/services/`, and `src/hooks/`.
+  - Static, batch, and syllabus lookups MUST consume in-memory caches (`getCachedBatches`, `getCachedSyllabusByClass`) to eliminate redundant Firestore document reads.
