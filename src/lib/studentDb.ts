@@ -894,7 +894,8 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
         subAttemptsSnap: attemptsSnapshot,
         evalsSnap: evaluationsSnapshot,
         objAssignmentsSnap: { docs: [...batchAssignmentsSnapshot.docs, ...studentAssignmentsSnapshot.docs] },
-        subAssignmentsSnap: { docs: [...subAssignmentsSnapshot.docs, ...subStudentAssignmentsSnapshot.docs] }
+        subAssignmentsSnap: { docs: [...subAssignmentsSnapshot.docs, ...subStudentAssignmentsSnapshot.docs] },
+        conductedTopicCodes: conductedTopicCodes
       });
       needsAttentionTopicsList = learningData?.needsAttention || [];
       srsDueTopicsList = Boolean(userData.srsEnabled) 
@@ -991,6 +992,7 @@ export interface PreloadedLearningData {
   subAssignmentsSnap?: any;
   evalsSnap?: any;
   absentTopicCodes?: Set<string>;
+  conductedTopicCodes?: Set<string>;
 }
 
 export async function getStudentLearningData(userData: any, preloadedData?: PreloadedLearningData) {
@@ -1135,8 +1137,23 @@ export async function getStudentLearningData(userData: any, preloadedData?: Prel
   });
 
   const absentTopicCodes = new Set<string>();
-  if (absentExamIds.size > 0) {
-    const examIdsArr = Array.from(absentExamIds);
+  const rawConductedTopicCodes = new Set<string>(preloadedData?.conductedTopicCodes || []);
+
+  const allAssignedExamIds = new Set<string>();
+  objAssignmentsSnap.docs.forEach((d: any) => {
+    const data = d.data();
+    const eid = data.examId;
+    if (eid && data.examType !== 'entrance') allAssignedExamIds.add(eid);
+  });
+  subAssignmentsSnap.docs.forEach((d: any) => {
+    const data = d.data();
+    const eid = data.examId;
+    if (eid) allAssignedExamIds.add(eid);
+  });
+  attemptedExamIds.forEach(eid => allAssignedExamIds.add(eid));
+
+  if (allAssignedExamIds.size > 0) {
+    const examIdsArr = Array.from(allAssignedExamIds);
     const chunks = [];
     for (let i = 0; i < examIdsArr.length; i += 30) {
       chunks.push(examIdsArr.slice(i, i + 30));
@@ -1151,32 +1168,53 @@ export async function getStudentLearningData(userData: any, preloadedData?: Prel
     chunkResults.forEach(([examsSnap, subExamsSnap]) => {
       examsSnap.docs.forEach((doc: any) => {
         const data = doc.data();
+        const isAbsent = absentExamIds.has(doc.id);
+        const processTopic = (tc?: string) => {
+          if (!tc || !tc.includes('-')) return;
+          rawConductedTopicCodes.add(tc);
+          if (isAbsent) absentTopicCodes.add(tc);
+        };
+
         if (data.questionCodes && Array.isArray(data.questionCodes)) {
           data.questionCodes.forEach((qc: string) => {
-            const tc = deriveTopicCodeFromQuestionCode(qc);
-            if (tc && tc.includes('-')) absentTopicCodes.add(tc);
+            processTopic(deriveTopicCodeFromQuestionCode(qc));
           });
         }
-        if (data.topicCode && data.topicCode.includes('-')) absentTopicCodes.add(data.topicCode);
-        if (data.topicCodes && Array.isArray(data.topicCodes)) {
-          data.topicCodes.forEach((tc: string) => {
-            if (tc.includes('-')) {
-              absentTopicCodes.add(tc);
-            } else if (data.boardCode && data.class && data.subjectCode && data.chapterNumber) {
-              absentTopicCodes.add(`${data.boardCode}-${data.class}-${data.subjectCode}-${data.chapterNumber}-${tc}`);
-            }
-          });
+        if (data.topicCode && /^(CBSE|MH)-\d+-[A-Za-z0-9]+-\d+-[\d\.]+$/.test(data.topicCode.trim())) {
+          processTopic(data.topicCode.trim());
         }
       });
       subExamsSnap.docs.forEach((doc: any) => {
         const data = doc.data();
-        if (data.topicCode && data.topicCode.includes('-')) absentTopicCodes.add(data.topicCode);
-        (data.topicCodes || data.topics || []).forEach((tc: string) => {
-          if (tc && tc.includes('-')) absentTopicCodes.add(tc);
-        });
+        const isAbsent = absentExamIds.has(doc.id);
+        const processTopic = (tc?: string) => {
+          if (!tc || !tc.includes('-')) return;
+          rawConductedTopicCodes.add(tc);
+          if (isAbsent) absentTopicCodes.add(tc);
+        };
+        if (data.topicCode) processTopic(data.topicCode);
+        (data.topicCodes || data.topics || []).forEach((tc: string) => processTopic(tc));
       });
     });
   }
+
+  // Also harvest topics from mastery and practice reviews
+  masterySnaps.docs.forEach((d: any) => {
+    const tc = d.data().topicCode;
+    if (tc && tc.includes('-')) rawConductedTopicCodes.add(tc);
+  });
+  parentReviewsSnap.docs.forEach((d: any) => {
+    const tc = d.data().topicCode;
+    if (tc && tc.includes('-')) rawConductedTopicCodes.add(tc);
+  });
+
+  // Canonical filtering matching Single Source of Truth
+  const conductedTopicCodes = new Set<string>();
+  rawConductedTopicCodes.forEach(code => {
+    if (code && /^(CBSE|MH)-\d+-[A-Za-z0-9]+-\d+-[\d\.]+$/.test(code.trim())) {
+      conductedTopicCodes.add(code.trim());
+    }
+  });
 
   // 3. Fetch standard syllabus topic index docs for all enrolled student classes (In-Memory Cached)
   let syllabusTopics: any[] = [];
@@ -1222,7 +1260,7 @@ export async function getStudentLearningData(userData: any, preloadedData?: Prel
     }
   });
 
-  // Check for topic codes present in mastery or absent exams but missing in syllabus topics
+  // Check for topic codes present in mastery, absent exams, or conducted topics but missing in syllabus topics
   const currentTopicCodes = new Set(syllabusTopics.map((t: any) => t.topicCode).filter(Boolean));
   const missingTopicCodes: string[] = [];
   masteryMap.forEach((_, tCode) => {
@@ -1231,6 +1269,11 @@ export async function getStudentLearningData(userData: any, preloadedData?: Prel
     }
   });
   absentTopicCodes.forEach(tCode => {
+    if (!currentTopicCodes.has(tCode)) {
+      missingTopicCodes.push(tCode);
+    }
+  });
+  conductedTopicCodes.forEach(tCode => {
     if (!currentTopicCodes.has(tCode)) {
       missingTopicCodes.push(tCode);
     }
@@ -1258,9 +1301,9 @@ export async function getStudentLearningData(userData: any, preloadedData?: Prel
     });
   }
 
-  // Synthesize any remaining topic codes that exist in mastery or absent exams but are absent in syllabusTopicIndex
+  // Synthesize any remaining topic codes that exist in mastery, absent exams, or conducted topics but are absent in syllabusTopicIndex
   const currentIndexedMap = new Map(syllabusTopics.map((t: any) => [t.topicCode, t]));
-  const allEncounteredCodes = new Set([...masteryMap.keys(), ...absentTopicCodes]);
+  const allEncounteredCodes = new Set([...masteryMap.keys(), ...absentTopicCodes, ...conductedTopicCodes]);
   
   allEncounteredCodes.forEach(tCode => {
     if (!tCode || currentIndexedMap.has(tCode)) return;
@@ -1328,19 +1371,20 @@ export async function getStudentLearningData(userData: any, preloadedData?: Prel
     processedTopics.add(topicCode);
 
     const isAbsentExam = absentTopicCodes.has(topicCode);
+    const isConductedTopic = conductedTopicCodes.has(topicCode);
     let mData = masteryMap.get(topicCode);
 
     // If direct mData is missing, check if any subtopics exist in masteryMap
     if (!mData) {
       const childMasteries = Array.from(masteryMap.entries())
         .filter(([k]) => k.startsWith(topicCode + '.') || k.startsWith(topicCode + '-'));
-      if (childMasteries.length > 0 && !isAbsentExam) {
+      if (childMasteries.length > 0 && !isAbsentExam && !isConductedTopic) {
         // Child topics are already added as discrete items in syllabusTopics, so skip the empty parent container
         return;
       }
     }
 
-    if (!mData && !isAbsentExam) return;
+    if (!mData && !isAbsentExam && !isConductedTopic) return;
 
     const targetQuestions = Number(sData.targetQuestions || sData.totalQuestions || sData.questionCount || 30);
     const topicClassification = sData.topicClassification || mData?.topicClassification || (targetQuestions <= 35 ? 'minor' : (targetQuestions >= 55 ? 'major' : 'medium'));
@@ -1348,7 +1392,17 @@ export async function getStudentLearningData(userData: any, preloadedData?: Prel
 
     const mastery = mData?.hasOwnProperty('mastery') ? Number(mData.mastery || 0) : 0;
     const confidence = mData?.hasOwnProperty('confidence') ? Number(mData.confidence || 0) : 0;
-    const priorityScore = isAbsentExam ? 999 : calculatePriority(mastery, confidence, reqConf);
+    const attempts = Number(mData?.attempts || mData?.attemptCount || 0);
+    const isRecoveryMastered = Boolean(mData?.isRecoveryMastered);
+    const hasPracticed = Boolean(
+      mData && (
+        confidence > 0 ||
+        Number(mData.questionsAttempted || 0) > 0 ||
+        attempts > 0 ||
+        isRecoveryMastered
+      )
+    );
+    const priorityScore = isAbsentExam ? 999 : (!hasPracticed ? 995 : calculatePriority(mastery, confidence, reqConf));
 
     // Aggregate practice counts matching exact topicCode or prefix
     let practiceCount = practiceCountMap.get(topicCode) || 0;
@@ -1372,8 +1426,6 @@ export async function getStudentLearningData(userData: any, preloadedData?: Prel
 
     const subCode = sData.subjectCode || mData?.subjectCode || (topicCode.includes('-') ? topicCode.split('-')[2] : '') || '';
     const subName = sData.subjectName || mData?.subjectName || getCanonicalSubjectName(subCode, topicCode, sData.chapterName);
-    const attempts = Number(mData?.attempts || mData?.attemptCount || 0);
-    const isRecoveryMastered = Boolean(mData?.isRecoveryMastered);
     const isExamStrong = Boolean(mData?.isExamStrong);
     const isCertifiedMastered = isRecoveryMastered || (mastery >= 90 && confidence >= reqConf);
 
@@ -1406,16 +1458,18 @@ export async function getStudentLearningData(userData: any, preloadedData?: Prel
 
     const isSrsEnabled = Boolean(userData?.srsEnabled);
 
-    // Clean, direct 3-state canonical categorization matching Admin 100%:
-    // 🔴 Focus / Needs Attention: mastery < 50 or unattempted absent exam
-    // 🟡 Practicing / In Progress: mastery 50-89% or >= 90% without full confidence
+    // Clean, direct 3-state canonical categorization matching Admin SSOT (dashboardMetrics.ts) 100%:
     // 🟢 Mastered: mastery >= 90% with full confidence, or recovery passed
-    if (mastery < 50 || (attempts === 0 && isAbsentExam)) {
-      needsAttention.push({ ...topicItem, state: 'needsAttention' });
-    } else if (!isCertifiedMastered) {
+    // 🟡 Practicing / In Progress: mastery 50-89% or >= 90% without full confidence
+    // 🔴 Focus / Needs Attention: unattempted (!mData) or mastery < 50
+    if (!mData) {
+      needsAttention.push({ ...topicItem, state: 'needsAttention', isUnattempted: true });
+    } else if (isCertifiedMastered) {
+      mastered.push({ ...topicItem, state: 'mastered', isSrsDue: false });
+    } else if (mastery >= 50) {
       continuePractice.push({ ...topicItem, state: 'continuePractice' });
     } else {
-      mastered.push({ ...topicItem, state: 'mastered', isSrsDue: false });
+      needsAttention.push({ ...topicItem, state: 'needsAttention', isUnattempted: false });
     }
   });
 
