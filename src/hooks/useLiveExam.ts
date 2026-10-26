@@ -68,15 +68,17 @@ export function useLiveExam({
     proctoringSnapshotsRef.current = updated;
     setProctoringSnapshots(updated);
 
-    // Sync to Firestore live session doc - broadcast count only (eliminates gigabytes of onSnapshot egress)
+    // Sync to Firestore live session doc - broadcast count only when proctor is actively watching
     if (liveSessionDocRef.current) {
-      updateLiveSession(liveSessionDocRef.current, {
-        proctoringSnapshotCount: updated.length,
-        proctoringSnapshotsExpiresAt: getMidnightIST(new Date()).toISOString(),
-        proctoringSnapshotsPurgedAt: deleteField()
-      }).catch(err => console.warn('[useLiveExam] Failed to sync snapshot count:', err));
+      if (isProctorActiveRef.current) {
+        updateLiveSession(liveSessionDocRef.current, {
+          proctoringSnapshotCount: updated.length,
+          proctoringSnapshotsExpiresAt: getMidnightIST(new Date()).toISOString(),
+          proctoringSnapshotsPurgedAt: deleteField()
+        }).catch(err => console.warn('[useLiveExam] Failed to sync snapshot count:', err));
+      }
 
-      // Persist full base64 images in dedicated evidence doc (fetched on-demand by teacher modal)
+      // Persist full compressed photos in dedicated evidence doc (fetched on-demand by teacher modal)
       const evidenceDocRef = doc(db, 'liveExamEvidence', liveSessionDocRef.current.id);
       setDoc(evidenceDocRef, {
         snapshots: updated,
@@ -198,6 +200,7 @@ export function useLiveExam({
 
   const liveSessionDocRef = useRef<any>(null);
   const liveSessionActiveRef = useRef<boolean>(false);
+  const isProctorActiveRef = useRef<boolean>(false);
   const rtcConnectionRef = useRef<RTCPeerConnection | null>(null);
   const candidatesUnsubscribeRef = useRef<(() => void) | null>(null);
   const activeStreamRef = useRef<MediaStream | null>(null);
@@ -223,6 +226,28 @@ export function useLiveExam({
     headMovement: 0
   });
 
+  // Listen to RTDB proctor presence: ONLY stream live exam metrics to Firestore when an admin is actively watching
+  useEffect(() => {
+    if (mock || !rtdb || !started) return;
+
+    const proctorPresenceRef = ref(rtdb, 'proctorPresence');
+    const unsubscribe = onValue(proctorPresenceRef, (snapshot) => {
+      const data = snapshot.val();
+      const hasActiveProctors = Boolean(data && Object.keys(data).length > 0);
+      const wasActive = isProctorActiveRef.current;
+      isProctorActiveRef.current = hasActiveProctors;
+
+      // If a proctor just came online, immediately publish our current state so we appear on their monitor!
+      if (hasActiveProctors && !wasActive && liveSessionDocRef.current && liveSessionActiveRef.current) {
+        flushLiveProctoringSession(pendingUpdatesRef.current || {});
+      }
+    });
+
+    return () => {
+      off(proctorPresenceRef);
+    };
+  }, [mock, started]);
+
   // (sanitizeForRtdbPath and getSessionDocId imported from proctoring SSOT)
 
   const flushLiveProctoringSession = async (updates: any) => {
@@ -241,6 +266,11 @@ export function useLiveExam({
     if (!liveSessionDocRef.current || !liveSessionActiveRef.current) return;
 
     pendingUpdatesRef.current = { ...(pendingUpdatesRef.current || {}), ...updates };
+
+    // On-Demand Gating: If NO admin is actively watching the Live Monitor, skip Firestore sync!
+    if (!isProctorActiveRef.current) {
+      return;
+    }
 
     const now = Date.now();
     const elapsedSinceLastSync = now - lastSyncTimeRef.current;
@@ -307,10 +337,13 @@ export function useLiveExam({
     try {
       await createLiveSession(sId, initialData);
       
-      // Fallback heartbeat only if no other metrics have synced in the last 30 seconds
+      // Fallback heartbeat only if a proctor is actively watching and no metrics have synced in the last 30 seconds
       const heartbeatInterval = setInterval(async () => {
         if (!liveSessionActiveRef.current) {
           clearInterval(heartbeatInterval);
+          return;
+        }
+        if (!isProctorActiveRef.current) {
           return;
         }
         const timeSinceSync = Date.now() - lastSyncTimeRef.current;

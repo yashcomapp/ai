@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 
 import { collection, query, where, onSnapshot, doc, updateDoc, arrayUnion, getDoc, setDoc } from 'firebase/firestore';
-import { ref, push, set, onValue, off, remove, serverTimestamp } from 'firebase/database';
+import { ref, push, set, onValue, off, remove, serverTimestamp, onDisconnect } from 'firebase/database';
 import { db } from '@/lib/firebase/firestore';
 import { rtdb } from '@/lib/firebase/rtdb';
 import { RTC_CONFIG } from '@/lib/rtcConfig';
@@ -133,6 +133,58 @@ export default function AdminLiveMonitorPage() {
     }, 10000);
     return () => clearInterval(timer);
   }, []);
+
+  // Register admin proctor presence in RTDB so student exam clients only stream live metrics when an admin is actively viewing
+  useEffect(() => {
+    if (!rtdb || !firebaseUser?.uid) return;
+
+    const myPresenceRef = ref(rtdb, `proctorPresence/${firebaseUser.uid}`);
+    let disconnectHandler: any = null;
+    try {
+      disconnectHandler = onDisconnect(myPresenceRef);
+      disconnectHandler.remove();
+    } catch (e) {
+      console.warn('onDisconnect registration warning:', e);
+    }
+
+    const setOnline = () => {
+      set(myPresenceRef, {
+        active: true,
+        email: firebaseUser.email || 'admin',
+        updatedAt: Date.now()
+      }).catch(err => console.warn('Failed to set proctor presence:', err));
+    };
+
+    const setOffline = () => {
+      remove(myPresenceRef).catch(() => {});
+    };
+
+    if (typeof document !== 'undefined' && !document.hidden) {
+      setOnline();
+    }
+
+    const handleVisibilityChange = () => {
+      if (typeof document !== 'undefined' && document.hidden) {
+        setOffline();
+      } else {
+        setOnline();
+      }
+    };
+
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+    }
+
+    return () => {
+      if (typeof document !== 'undefined') {
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+      }
+      if (disconnectHandler) {
+        disconnectHandler.cancel().catch(() => {});
+      }
+      setOffline();
+    };
+  }, [firebaseUser]);
 
   // Listen to Firestore active live proctoring sessions (pauses when tab is hidden to eliminate idle read ops)
   useEffect(() => {
