@@ -4,7 +4,8 @@ import { getLiveSessionRef, createLiveSession, updateLiveSession, getSessionDocI
 import { ProctoringSnapshot } from './useProctoring';
 import { getMidnightIST } from '@/lib/dateUtils';
 import { ref, onValue, set, push, off, remove } from 'firebase/database';
-import { deleteField } from 'firebase/firestore';
+import { deleteField, doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '@/lib/firebase/firestore';
 import { RTC_CONFIG } from '@/lib/rtcConfig';
 
 interface UseLiveExamProps {
@@ -67,15 +68,25 @@ export function useLiveExam({
     proctoringSnapshotsRef.current = updated;
     setProctoringSnapshots(updated);
 
-    // Sync to Firestore live session doc
+    // Sync to Firestore live session doc - broadcast count only (eliminates gigabytes of onSnapshot egress)
     if (liveSessionDocRef.current) {
       updateLiveSession(liveSessionDocRef.current, {
-        proctoringSnapshots: updated,
+        proctoringSnapshotCount: updated.length,
         proctoringSnapshotsExpiresAt: getMidnightIST(new Date()).toISOString(),
         proctoringSnapshotsPurgedAt: deleteField()
-      }).catch(err => console.warn('[useLiveExam] Failed to sync snapshot:', err));
+      }).catch(err => console.warn('[useLiveExam] Failed to sync snapshot count:', err));
+
+      // Persist full base64 images in dedicated evidence doc (fetched on-demand by teacher modal)
+      const evidenceDocRef = doc(db, 'liveExamEvidence', liveSessionDocRef.current.id);
+      setDoc(evidenceDocRef, {
+        snapshots: updated,
+        studentCode,
+        examId,
+        updatedAt: serverTimestamp(),
+        expiresAt: getMidnightIST(new Date()).toISOString()
+      }, { merge: true }).catch(err => console.warn('[useLiveExam] Failed to persist evidence:', err));
     }
-  }, []);
+  }, [studentCode, examId]);
 
   const [isInterrupted, setIsInterrupted] = useState<boolean>(false);
   const isInterruptedRef = useRef<boolean>(false);

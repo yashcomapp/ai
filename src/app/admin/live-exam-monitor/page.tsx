@@ -5,7 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 
-import { collection, query, where, onSnapshot, doc, updateDoc, arrayUnion } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, updateDoc, arrayUnion, getDoc, setDoc } from 'firebase/firestore';
 import { ref, push, set, onValue, off, remove, serverTimestamp } from 'firebase/database';
 import { db } from '@/lib/firebase/firestore';
 import { rtdb } from '@/lib/firebase/rtdb';
@@ -48,6 +48,8 @@ interface Session {
     imageBase64?: string;
     type?: string;
   }>;
+  proctoringSnapshotCount?: number;
+  manualCaptureCount?: number;
   manualCaptures?: ManualCapture[];
   proctoringSnapshotsExpiresAt?: string;
   status: string;
@@ -222,13 +224,31 @@ export default function AdminLiveMonitorPage() {
     });
   };
 
-  // Open snapshots & evidence modal
-  const handleOpenSnapshotsModal = (session: Session) => {
-    const snaps = (session.proctoringSnapshots || []).map(s => ({
+  // Open snapshots & evidence modal (fetches evidence on demand if not in lightweight session doc)
+  const handleOpenSnapshotsModal = async (session: Session) => {
+    let snaps = (session.proctoringSnapshots || []).map(s => ({
       ...s,
       type: s.type || 'photo'
     }));
-    const manuals = session.manualCaptures || [];
+    let manuals = session.manualCaptures || [];
+
+    // If session doc only has lightweight counts, fetch heavy payload on demand
+    if (snaps.length === 0 && manuals.length === 0) {
+      try {
+        const evDoc = await getDoc(doc(db, 'liveExamEvidence', session.id));
+        if (evDoc.exists()) {
+          const evData = evDoc.data();
+          if (Array.isArray(evData.snapshots)) {
+            snaps = evData.snapshots.map((s: any) => ({ ...s, type: s.type || 'photo' }));
+          }
+          if (Array.isArray(evData.manualCaptures)) {
+            manuals = evData.manualCaptures;
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to load on-demand evidence:', err);
+      }
+    }
     
     // Select first available item
     let initialMedia: { url: string; type: 'photo' | 'audio' | 'video' | 'both'; title?: string } | null = null;
@@ -253,22 +273,32 @@ export default function AdminLiveMonitorPage() {
     setSnapshotsModal(prev => ({ ...prev, show: false, selectedMedia: null }));
   };
 
-  // Helper to persist manual captures in Firestore session doc
+  // Helper to persist manual captures without bloating liveExamSessions stream
   const saveManualCapture = async (capture: ManualCapture) => {
     const sId = getSessionDocId(videoModal.examId, videoModal.studentCode);
     try {
-      const docRef = doc(db, 'liveExamSessions', sId);
-      await updateDoc(docRef, {
-        manualCaptures: arrayUnion(capture)
+      // 1. Save capture in dedicated evidence doc
+      const evidenceDocRef = doc(db, 'liveExamEvidence', sId);
+      await setDoc(evidenceDocRef, {
+        manualCaptures: arrayUnion(capture),
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+
+      // 2. Increment lightweight count in liveExamSessions (tiny egress)
+      const sessionDocRef = doc(db, 'liveExamSessions', sId);
+      const newCount = (sessions[sId]?.manualCaptureCount || sessions[sId]?.manualCaptures?.length || 0) + 1;
+      await updateDoc(sessionDocRef, {
+        manualCaptureCount: newCount
       });
-      // Also update local state for instantaneous responsiveness
+
+      // Update local state for instantaneous responsiveness
       setSessions(prev => {
         const current = prev[sId];
         if (!current) return prev;
         const updatedList = [...(current.manualCaptures || []), capture];
         return {
           ...prev,
-          [sId]: { ...current, manualCaptures: updatedList }
+          [sId]: { ...current, manualCaptures: updatedList, manualCaptureCount: newCount }
         };
       });
     } catch (err: any) {
@@ -848,21 +878,27 @@ export default function AdminLiveMonitorPage() {
                         <td style={{ padding: '12px 16px', color: 'var(--text-muted)', fontSize: '11px' }}>{timeAgo(s.lastActive)}</td>
                         <td style={{ padding: '12px 16px', textAlign: 'right' }}>
                           <div style={{ display: 'inline-flex', gap: '6px', alignItems: 'center', justifyContent: 'flex-end' }}>
-                            {((s.proctoringSnapshots && s.proctoringSnapshots.length > 0) || (s.manualCaptures && s.manualCaptures.length > 0)) && (
-                              <button 
-                                className="btn btn-secondary btn-sm" 
-                                style={{ fontSize: '11px', padding: '4px 8px', background: 'rgba(59, 130, 246, 0.12)', color: 'var(--accent)', borderColor: 'rgba(59, 130, 246, 0.3)', fontWeight: 700 }}
-                                onClick={() => handleOpenSnapshotsModal(s)}
-                                title="View auto-captured snapshots and manual evidence recordings"
-                              >
-                                📸 Evidence ({((s.proctoringSnapshots?.length || 0) + (s.manualCaptures?.length || 0))})
-                                {s.manualCaptures && s.manualCaptures.length > 0 && (
-                                  <span style={{ marginLeft: '4px', fontSize: '9.5px', background: 'var(--accent)', color: 'white', padding: '0 4px', borderRadius: '4px' }}>
-                                    +{s.manualCaptures.length} rec
-                                  </span>
-                                )}
-                              </button>
-                            )}
+                            {(() => {
+                              const snapCount = s.proctoringSnapshotCount ?? s.proctoringSnapshots?.length ?? 0;
+                              const manCount = s.manualCaptureCount ?? s.manualCaptures?.length ?? 0;
+                              const totalEv = snapCount + manCount;
+                              if (totalEv === 0) return null;
+                              return (
+                                <button 
+                                  className="btn btn-secondary btn-sm" 
+                                  style={{ fontSize: '11px', padding: '4px 8px', background: 'rgba(59, 130, 246, 0.12)', color: 'var(--accent)', borderColor: 'rgba(59, 130, 246, 0.3)', fontWeight: 700 }}
+                                  onClick={() => handleOpenSnapshotsModal(s)}
+                                  title="View auto-captured snapshots and manual evidence recordings"
+                                >
+                                  📸 Evidence ({totalEv})
+                                  {manCount > 0 && (
+                                    <span style={{ marginLeft: '4px', fontSize: '9.5px', background: 'var(--accent)', color: 'white', padding: '0 4px', borderRadius: '4px' }}>
+                                      +{manCount} rec
+                                    </span>
+                                  )}
+                                </button>
+                              );
+                            })()}
                             <button 
                               className="btn btn-secondary btn-sm" 
                               disabled={!s.cameraAvailable}
@@ -1123,7 +1159,10 @@ export default function AdminLiveMonitorPage() {
                     }}
                     title="Open all captured evidence for this student"
                   >
-                    📂 View Saved ({((sessions[getSessionDocId(videoModal.examId, videoModal.studentCode)]?.manualCaptures?.length || 0) + (sessions[getSessionDocId(videoModal.examId, videoModal.studentCode)]?.proctoringSnapshots?.length || 0))})
+                    📂 View Saved ({(() => {
+                      const cur = sessions[getSessionDocId(videoModal.examId, videoModal.studentCode)];
+                      return (cur?.manualCaptureCount ?? cur?.manualCaptures?.length ?? 0) + (cur?.proctoringSnapshotCount ?? cur?.proctoringSnapshots?.length ?? 0);
+                    })()})
                   </button>
                 )}
               </div>

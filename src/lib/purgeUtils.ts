@@ -65,6 +65,19 @@ async function purgeExpiredProctoringSnapshots(): Promise<{ purgedAttemptsCount:
   });
   await liveBatch.commit();
 
+  // 3. Purge dedicated liveExamEvidence documents older than expiry
+  const evidenceSnap = await adminDb.collection('liveExamEvidence')
+    .where('expiresAt', '<=', nowIso)
+    .get();
+
+  if (!evidenceSnap.empty) {
+    const evidenceBatch = new ChunkedBatch(adminDb);
+    evidenceSnap.docs.forEach(doc => {
+      evidenceBatch.delete(doc.ref);
+    });
+    await evidenceBatch.commit();
+  }
+
   return { purgedAttemptsCount, purgedLiveSessionsCount };
 }
 
