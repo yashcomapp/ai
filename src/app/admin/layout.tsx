@@ -110,24 +110,40 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     return () => document.removeEventListener('click', handleOutsideClick);
   }, []);
 
-  // Dynamically position dropdown next to active chip matching legacy admin-nav.js
+  // Dynamically position flyout submenu docked neatly next to the active chip
   useEffect(() => {
-    if (activeSubmenu && dropdownRef.current && panelOpen) {
-      const btn = document.querySelector(`[data-chip-id="${activeSubmenu}"]`);
-      if (btn) {
-        const r = btn.getBoundingClientRect();
-        const rightVal = window.innerWidth - r.left + 6;
-        let topVal = r.top;
-        const dropdownHeight = dropdownRef.current.offsetHeight;
-        const maxTop = window.innerHeight - dropdownHeight - 8;
-        if (topVal > maxTop) {
-          topVal = Math.max(8, maxTop);
+    const updatePosition = () => {
+      if (activeSubmenu && dropdownRef.current && panelOpen && panelRef.current) {
+        const btn = document.querySelector(`[data-chip-id="${activeSubmenu}"]`);
+        if (btn) {
+          const btnRect = btn.getBoundingClientRect();
+          const panelRect = panelRef.current.getBoundingClientRect();
+
+          // Place neatly to the left of the main panel
+          const rightVal = window.innerWidth - panelRect.left + 8;
+
+          // Bottom-anchor to the active chip so it stays aligned at the bottom dock
+          const chipBottomOffset = window.innerHeight - btnRect.bottom;
+          const dropdownHeight = dropdownRef.current.offsetHeight || 220;
+
+          // Align the bottom of the submenu with the bottom of the clicked chip
+          let bottomVal = Math.max(16, chipBottomOffset);
+          const maxBottom = window.innerHeight - dropdownHeight - 70;
+          if (bottomVal > maxBottom) {
+            bottomVal = Math.max(16, maxBottom);
+          }
+
+          dropdownRef.current.style.right = `${rightVal}px`;
+          dropdownRef.current.style.bottom = `${bottomVal}px`;
+          dropdownRef.current.style.top = 'auto';
+          dropdownRef.current.style.visibility = 'visible';
         }
-        dropdownRef.current.style.right = `${rightVal}px`;
-        dropdownRef.current.style.top = `${topVal}px`;
-        dropdownRef.current.style.visibility = 'visible';
       }
-    }
+    };
+
+    updatePosition();
+    window.addEventListener('resize', updatePosition);
+    return () => window.removeEventListener('resize', updatePosition);
   }, [activeSubmenu, panelOpen]);
 
   useEffect(() => {
