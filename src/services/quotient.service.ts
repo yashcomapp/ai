@@ -15,6 +15,7 @@ import { evaluateSessionSincerity } from '@/lib/practiceTimeUtils';
 import { isDemoUser, getRequiredConfidence } from '@/lib/studentDb';
 import { calculateSrsSchedule } from '@/lib/srsRotation';
 import { calculateUnifiedMetrics, extractConductedTopicCodes } from '@/lib/dashboardMetrics';
+import { getCachedSyllabusTopicsMap } from '@/lib/syllabusServerUtils';
 import { getAssignmentsForBatches } from '@/services/exam.service';
 
 export const MASTERY_THRESHOLDS = {
@@ -598,7 +599,7 @@ export class IntegrityScoreCalculator implements ParameterCalculator {
 
 const getTopicCodeFromQuestionCode = deriveTopicCodeFromQuestionCode;
 
-export function resolveSubjectCode(subjectName: string, classNum?: string | number): string {
+function resolveSubjectCode(subjectName: string, classNum?: string | number): string {
   const s = String(subjectName || '').toLowerCase();
   const c = String(classNum || '');
   if (s.includes('science and tech') && (s.includes('2') || s.includes('part 2') || s.includes('part - 2'))) return 'SCIT2';
@@ -751,7 +752,7 @@ export interface ExamIndex {
   universal: any[];
 }
 
-export function buildExamIndex(exams: any[]): ExamIndex {
+function buildExamIndex(exams: any[]): ExamIndex {
   const byStudent = new Map<string, any[]>();
   const byBatch = new Map<string, any[]>();
   const byClass = new Map<string, any[]>();
@@ -813,7 +814,7 @@ export function buildExamIndex(exams: any[]): ExamIndex {
   return { byStudent, byBatch, byClass, universal };
 }
 
-export function getRelevantExamsForStudent(index: ExamIndex, studentCode: string, bIds: string[], studentClass?: string): any[] {
+function getRelevantExamsForStudent(index: ExamIndex, studentCode: string, bIds: string[], studentClass?: string): any[] {
   const matchedMap = new Map<string, any>();
 
   // 1. Direct student matches
@@ -991,7 +992,8 @@ export class QuotientService {
     rawEvaluations: any[] = [],
     prebuiltObjIndex?: ExamIndex,
     prebuiltSubjIndex?: ExamIndex,
-    srsEnabled?: boolean
+    srsEnabled?: boolean,
+    syllabusTopicsMap?: Map<string, any>
   ): QuotientResult {
     const todayDateStr = getDateKeyIST();
     const startDate = duration ? this.getStartDateForDuration(duration) : null;
@@ -1100,7 +1102,8 @@ export class QuotientService {
       integrityScore: resolvedIntegrityScore,
       totalCoveredTopics: totalCoveredTopicsCount,
       assignedTopicCodes: conductedTopicCodes,
-      srsEnabled: Boolean(srsEnabled)
+      srsEnabled: Boolean(srsEnabled),
+      syllabusTopicsMap
     });
 
     const studentData: StudentData = {
@@ -1345,6 +1348,7 @@ export class QuotientService {
     const rawObservations = observationsSnap.docs.map((doc: any) => doc.data() as any);
     const rawReviews = parentReviewsSnap.docs.map((doc: any) => doc.data() as any);
     const rawEvaluations = evaluationsSnap.docs.map((doc: any) => doc.data() as any);
+    const syllabusTopicsMap = await getCachedSyllabusTopicsMap(studentClass ? [studentClass] : []);
 
     return this.computeStudentQuotientScore(
       studentCode,
@@ -1363,7 +1367,8 @@ export class QuotientService {
       rawEvaluations,
       undefined,
       undefined,
-      srsEnabled
+      srsEnabled,
+      syllabusTopicsMap
     );
   }
 
@@ -1584,6 +1589,8 @@ export class QuotientService {
     const prebuiltObjIndex = buildExamIndex(Array.from(examsMap.values()));
     const prebuiltSubjIndex = buildExamIndex(subjectiveExamsList);
 
+    const batchSyllabusTopicsMap = await getCachedSyllabusTopicsMap(Array.from(allClasses));
+
     studentCodes.forEach(code => {
       const bIds = studentBatchesMap.get(code) || [];
       const studentClass = studentClassMap.get(code) || '';
@@ -1612,7 +1619,8 @@ export class QuotientService {
         sEvaluations,
         prebuiltObjIndex,
         prebuiltSubjIndex,
-        studentSrsMap.get(code)
+        studentSrsMap.get(code),
+        batchSyllabusTopicsMap
       );
     });
 

@@ -3,6 +3,7 @@ import { deriveTopicCodeFromQuestionCode } from '@/lib/questionTypes';
 import { getDateKeyIST, formatDateDMY } from '@/lib/dateUtils';
 import { chunkArray } from '@/lib/firestoreUtils';
 import { calculateUnifiedMetrics, extractConductedTopicCodes } from '@/lib/dashboardMetrics';
+import { getCachedSyllabusTopicsMap } from '@/lib/syllabusServerUtils';
 import { calculateProctoringIntegrityScore } from '@/lib/proctoring';
 import { calculateSrsSchedule } from '@/lib/srsRotation';
 import { getRequiredConfidence } from '@/lib/studentDb';
@@ -417,7 +418,6 @@ export async function getParentDashboardData(
 
   // 5. Compile line chart data showing exam marks & integrity over time
   const conductedTopicCodes = extractConductedTopicCodes({
-    masteryList: masterySnapshot.docs.map(doc => doc.data()),
     classroomExams: classroomExamsSnap.docs.map((d: any) => d.data()),
     homePractice: homePracticeSnap.docs.map((d: any) => d.data()),
     assignments: allAssignmentsList.map(d => d.data()),
@@ -428,6 +428,9 @@ export async function getParentDashboardData(
 
   const totalCoveredTopics = conductedTopicCodes.size > 0 ? conductedTopicCodes.size : (masterySnapshot.docs.length > 0 ? masterySnapshot.docs.length : 1);
 
+  const childClassCode = `${childUser?.boardCode || 'MH'}-${childUser?.classNum || childUser?.class || '10'}`;
+  const syllabusTopicsMap = await getCachedSyllabusTopicsMap([childClassCode]);
+
   const unifiedMetrics = calculateUnifiedMetrics({
     objectiveReviews: examResults,
     subjectiveEvaluations: evaluationsSnapshot.docs.map(doc => doc.data()),
@@ -436,7 +439,8 @@ export async function getParentDashboardData(
     integrityScore,
     totalCoveredTopics: totalCoveredTopics,
     assignedTopicCodes: conductedTopicCodes,
-    srsEnabled: Boolean(childUser?.srsEnabled)
+    srsEnabled: Boolean(childUser?.srsEnabled),
+    syllabusTopicsMap
   });
   
   const evalsMap = new Map();

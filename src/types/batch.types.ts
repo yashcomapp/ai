@@ -19,9 +19,6 @@ export interface Batch {
   studentCount?: number;
   rollPrefix?: string;
   academicYear?: string;
-  zoomMeetingNumber?: string;
-  zoomMeetingPasscode?: string;
-  zoomMeetingActive?: boolean;
   createdAt?: any;
   updatedAt?: any;
   [key: string]: any;

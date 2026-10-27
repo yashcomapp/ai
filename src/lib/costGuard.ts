@@ -22,7 +22,7 @@ export interface CostGuardInspectionResult {
 /**
  * Calculates approximate JSON byte size of a Firestore mutation payload.
  */
-export function estimatePayloadSizeBytes(data: any): number {
+function estimatePayloadSizeBytes(data: any): number {
   if (!data) return 0;
   try {
     const serialized = JSON.stringify(data);
@@ -36,7 +36,7 @@ export function estimatePayloadSizeBytes(data: any): number {
  * Inspects any Firestore mutation payload before write.
  * Emits console and telemetry warnings if payload exceeds cost safety threshold.
  */
-export function inspectPayloadCostSafety(
+function inspectPayloadCostSafety(
   collectionName: string,
   data: any,
   ceilingBytes = REALTIME_PAYLOAD_CEILING_BYTES

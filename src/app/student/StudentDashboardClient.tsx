@@ -87,12 +87,6 @@ interface DashboardData {
     dailyHomePractices?: any[];
     studyChips?: any[];
   };
-  zoomClass?: {
-    meetingNumber: string;
-    passcode: string;
-    title: string;
-    active: boolean;
-  };
 }
 
 export default function StudentDashboardClient({ initialData }: { initialData: DashboardData | null }) {
@@ -167,9 +161,10 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
     firebaseUser ? '/api/student/active-classroom' : null,
     fetcher,
     {
-      revalidateOnFocus: true,
-      refreshInterval: 30000,
-      dedupingInterval: 10000
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      refreshInterval: 60000,
+      dedupingInterval: 30000
     }
   );
 

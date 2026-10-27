@@ -90,7 +90,7 @@ export async function fetchAllByDocIdRange(
   return options?.maxLimit ? allDocs.slice(0, options.maxLimit) : allDocs;
 }
 
-export function parsePaginationParams(reqUrl: string, defaultLimit = 500, maxLimit = 1000) {
+function parsePaginationParams(reqUrl: string, defaultLimit = 500, maxLimit = 1000) {
   const { searchParams } = new URL(reqUrl);
   const cursor = searchParams.get('cursor');
   const limitParam = searchParams.get('limit');

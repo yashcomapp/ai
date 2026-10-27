@@ -1,5 +1,6 @@
 import { adminDb } from '@/lib/firebase/admin';
-import { getCachedSyllabus, getFromCache, setInCache } from '@/lib/firebase/cache';
+import { getCachedSyllabus, getCachedBatches, getFromCache, setInCache } from '@/lib/firebase/cache';
+import { getCachedSyllabusTopicsMap } from '@/lib/syllabusServerUtils';
 import { getDateKeyIST } from '@/lib/dateUtils';
 import { calculateUnifiedMetrics, extractConductedTopicCodes, getRequiredConfidence, classifyAssignedTopics } from '@/lib/dashboardMetrics';
 import { deriveTopicCodeFromQuestionCode, getCanonicalSubjectName, parseTopicCode } from '@/lib/questionTypes';
@@ -414,9 +415,30 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
     // Resolve student integrity score
     const { integrityScore } = resolveIntegrityScore(integritySnapshot);
 
+    // Collect absent exam topic codes to accurately flag missed exams in mastery
+    const absentTopicCodes = new Set<string>();
+    absentExamsList.forEach((e: any) => {
+      if (e.topicCode) absentTopicCodes.add(e.topicCode);
+      if (Array.isArray(e.topicCodes)) e.topicCodes.forEach((tc: string) => absentTopicCodes.add(tc));
+    });
+
+    // Enrolled classes for syllabus mapping
+    const studentClassCode = `${userData.boardCode || 'MH'}-${userData.classNum || userData.class || '10'}`;
+    const enrolledClasses = new Set<string>([studentClassCode]);
+    if (batchIds.length > 0) {
+      const batchesSnap = await getCachedBatches();
+      batchesSnap.docs.forEach((d: any) => {
+        const bData = typeof d.data === 'function' ? d.data() : d;
+        if (batchIds.includes(d.id) && bData.board && bData.class) {
+          enrolledClasses.add(`${bData.board}-${bData.class}`);
+        }
+      });
+    }
+
+    const syllabusTopicsMap = await getCachedSyllabusTopicsMap(Array.from(enrolledClasses));
+
     // Calculate total unique topics on which tests/exams have been conducted/assigned via SSOT
     const conductedTopicCodes = extractConductedTopicCodes({
-      masteryList: topicMasteriesList,
       classroomExams: classroomExamsSnap.docs.map((d: any) => d.data()),
       homePractice: homePracticeSnap.docs.map((d: any) => d.data()),
       assignments: allAssignmentsList.map(d => d.data()),
@@ -437,7 +459,9 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
       integrityScore,
       totalCoveredTopics: totalCoveredTopicsCount,
       assignedTopicCodes: conductedTopicCodes,
-      srsEnabled: Boolean(userData.srsEnabled)
+      srsEnabled: Boolean(userData.srsEnabled),
+      syllabusTopicsMap,
+      absentTopicCodes
     });
 
     const profile = {
@@ -853,36 +877,6 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
       }
     });
 
-    // 7.8 Fetch Zoom Meeting Details for Student
-    let zoomMeetingNumber = '89216852281';
-    let zoomMeetingPasscode = '123456';
-    let zoomMeetingTitle = 'Yashcom Virtual Classroom';
-    let isMeetingActive = false;
-
-    if (batchIds.length > 0) {
-      try {
-        const firstBatchDoc = await adminDb.collection('batches').doc(batchIds[0]).get();
-        if (firstBatchDoc.exists) {
-          const batchData = firstBatchDoc.data()!;
-          if (batchData.zoomMeetingNumber && String(batchData.zoomMeetingNumber).trim() !== '') {
-            zoomMeetingNumber = String(batchData.zoomMeetingNumber).trim();
-            zoomMeetingPasscode = String(batchData.zoomMeetingPasscode || '').trim();
-            zoomMeetingTitle = `${batchData.name || 'Yashcom'} Live Class`;
-            isMeetingActive = batchData.zoomMeetingActive === true;
-          }
-        }
-      } catch (err) {
-        console.warn('Failed to query batch details for Zoom configuration:', err);
-      }
-    }
-
-    const zoomClass = {
-      meetingNumber: zoomMeetingNumber,
-      passcode: zoomMeetingPasscode,
-      title: zoomMeetingTitle,
-      active: isMeetingActive
-    };
-
     // 7.9 Fetch Needs Attention & SRS Due topics for action items card
     let needsAttentionTopicsList: any[] = [];
     let srsDueTopicsList: any[] = [];
@@ -959,8 +953,7 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
           scheduledEntranceExams,
           dailyHomePractices,
           studyChips
-        },
-        zoomClass
+        }
       };
 
       setInCache(cacheKey, result, 20000); // 20s in-memory TTL

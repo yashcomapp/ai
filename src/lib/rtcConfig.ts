@@ -3,7 +3,7 @@
  * Reads STUN/TURN configuration from environment variables with fallback STUN servers.
  */
 
-export function getRTCConfiguration(): RTCConfiguration {
+function getRTCConfiguration(): RTCConfiguration {
   const turnServer = process.env.NEXT_PUBLIC_TURN_SERVER_URL;
   const turnUsername = process.env.NEXT_PUBLIC_TURN_USERNAME;
   const turnCredential = process.env.NEXT_PUBLIC_TURN_CREDENTIAL;

@@ -83,7 +83,8 @@ export function extractConductedTopicCodes(input: ExtractConductedTopicCodesInpu
     }
   };
 
-  (input.masteryList || []).forEach(processItem);
+  // Strictly from assigned/conducted exams, homework, and practice sessions
+  // (Do not include masteryList directly to prevent stale legacy mastery records from inflating the assigned syllabus)
   (input.classroomExams || []).forEach(processItem);
   (input.homePractice || []).forEach(processItem);
   (input.assignments || []).forEach(processItem);
@@ -232,7 +233,10 @@ export function classifyAssignedTopics(input: ClassifyAssignedTopicsInput): Clas
     const tCode = r.topicCode;
     if (tCode) {
       practiceCountMap.set(tCode, (practiceCountMap.get(tCode) || 0) + 1);
-      const qCount = Number(r.questionsCount || r.totalQuestions || 6);
+      const qCount = Number(
+        r.questionsCount ?? 
+        (Array.isArray(r.questions) ? r.questions.length : (Array.isArray(r.questionDetails) ? r.questionDetails.length : (r.totalQuestions || 6)))
+      );
       practiceQuestionsMap.set(tCode, (practiceQuestionsMap.get(tCode) || 0) + qCount);
     }
   });
@@ -250,8 +254,28 @@ export function classifyAssignedTopics(input: ClassifyAssignedTopicsInput): Clas
   let unattemptedCount = 0;
 
   uniqueLeafCodes.forEach(tCode => {
-    const sData = syllabusTopicsMap.get(tCode);
-    const mData = masteryMap.get(tCode);
+    // Resolve syllabus metadata: exact match first, then fall back to parent topic code
+    let sData = syllabusTopicsMap.get(tCode);
+    if (!sData) {
+      for (const [sCode, val] of syllabusTopicsMap.entries()) {
+        if (tCode.startsWith(sCode + '.')) {
+          sData = val;
+          break;
+        }
+      }
+    }
+
+    // Resolve mastery record: exact match first, then fall back to parent topic code
+    let mData = masteryMap.get(tCode);
+    if (!mData) {
+      for (const [mCode, val] of masteryMap.entries()) {
+        if (tCode.startsWith(mCode + '.')) {
+          mData = val;
+          break;
+        }
+      }
+    }
+
     const isAbsentExam = absentTopicCodes.has(tCode);
 
     const targetQuestions = Number(sData?.targetQuestions || sData?.totalQuestions || sData?.questionCount || 30);

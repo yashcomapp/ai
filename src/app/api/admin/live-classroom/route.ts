@@ -1,8 +1,11 @@
 import { NextResponse } from 'next/server';
+import crypto from 'crypto';
 import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
+
+const SESSION_EXPIRY_MS = 3 * 60 * 60 * 1000; // 3 hours
 
 function sanitizeForRoom(text: string): string {
   return text
@@ -10,7 +13,7 @@ function sanitizeForRoom(text: string): string {
     .replace(/[^a-z0-9]/g, '-')
     .replace(/-+/g, '-')
     .replace(/^-|-$/g, '')
-    .slice(0, 30);
+    .slice(0, 24);
 }
 
 export async function GET(request: Request) {
@@ -20,24 +23,55 @@ export async function GET(request: Request) {
       return NextResponse.json({ message: 'Unauthorized. Admin role required.' }, { status: 403 });
     }
 
+    const now = Date.now();
+
     // Get active live session(s)
     const activeSnap = await adminDb.collection('liveClassrooms')
       .where('status', '==', 'live')
       .get();
 
-    let activeSession = null;
-    if (!activeSnap.empty) {
-      const activeDocs = activeSnap.docs.sort((a, b) => {
-        const aTime = new Date(a.data().startedAt || 0).getTime();
-        const bTime = new Date(b.data().startedAt || 0).getTime();
-        return bTime - aTime;
-      });
-      const doc = activeDocs[0];
+    const validActiveDocs: Array<{ id: string; data: any }> = [];
+    const expiredDocIds: string[] = [];
+
+    activeSnap.docs.forEach(doc => {
       const data = doc.data();
+      const startMs = new Date(data.startedAt || 0).getTime();
+      if (now - startMs > SESSION_EXPIRY_MS) {
+        expiredDocIds.push(doc.id);
+      } else {
+        validActiveDocs.push({ id: doc.id, data });
+      }
+    });
+
+    // Auto-expire obsolete sessions
+    if (expiredDocIds.length > 0) {
+      const batch = adminDb.batch();
+      expiredDocIds.forEach(id => {
+        batch.update(adminDb.collection('liveClassrooms').doc(id), {
+          status: 'ended',
+          endedAt: new Date().toISOString(),
+          endedReason: 'auto_expired'
+        });
+      });
+      batch.commit().catch(e => console.warn('Failed to auto-expire sessions:', e));
+    }
+
+    // Sort active sessions (newest first)
+    validActiveDocs.sort((a, b) => {
+      const aTime = new Date(a.data.startedAt || 0).getTime();
+      const bTime = new Date(b.data.startedAt || 0).getTime();
+      return bTime - aTime;
+    });
+
+    let activeSession = null;
+    if (validActiveDocs.length > 0) {
+      const doc = validActiveDocs[0];
+      const data = doc.data;
+      const teacherName = admin.userData?.name || 'Teacher';
       activeSession = {
         id: doc.id,
         ...data,
-        teacherUrl: `https://meet.jit.si/${data.roomName}#config.channelLastN=-1&userInfo.displayName=${encodeURIComponent(admin.userData?.name || 'Teacher - Yashcom')}`
+        teacherUrl: `https://meet.jit.si/${data.roomName}#config.channelLastN=-1&userInfo.displayName=${encodeURIComponent(teacherName)}`
       };
     }
 
@@ -91,24 +125,37 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Please select at least one batch or student.' }, { status: 400 });
       }
 
-      // End any existing live sessions first to avoid orphaned active sessions
+      // End only existing live sessions that have overlapping batches or identical title,
+      // avoiding killing independent live classes for other batches platform-wide
       const ongoingSnap = await adminDb.collection('liveClassrooms')
         .where('status', '==', 'live')
         .get();
 
       const batch = adminDb.batch();
+      let hadOverlap = false;
+
       ongoingSnap.docs.forEach(doc => {
-        batch.update(doc.ref, {
-          status: 'ended',
-          endedAt: new Date().toISOString()
-        });
+        const d = doc.data();
+        const hasBatchOverlap = (d.targetBatches || []).some((b: string) => targetBatches.includes(b));
+        const isSameTitle = (d.title || '').trim().toLowerCase() === title.trim().toLowerCase();
+        if (hasBatchOverlap || isSameTitle) {
+          batch.update(doc.ref, {
+            status: 'ended',
+            endedAt: new Date().toISOString(),
+            endedReason: 'replaced_by_new_session'
+          });
+          hadOverlap = true;
+        }
       });
-      await batch.commit();
+      if (hadOverlap) {
+        await batch.commit();
+      }
 
       const cleanTitle = sanitizeForRoom(title) || 'classroom';
-      const randomSuffix = Math.random().toString(36).substring(2, 7);
-      const roomName = `yashcom-${cleanTitle}-${randomSuffix}`;
-      const teacherDisplayName = admin.userData?.name || admin.userData?.email || 'Teacher (Yashcom)';
+      // Cryptographically secure random room name to prevent guessable public URLs
+      const roomSecret = crypto.randomBytes(12).toString('hex');
+      const roomName = `yc-${cleanTitle}-${roomSecret}`;
+      const teacherDisplayName = admin.userData?.name || 'Teacher (Yashcom)';
 
       const newSessionData = {
         title: title.trim(),
@@ -144,9 +191,21 @@ export async function POST(request: Request) {
       }
 
       const sessionRef = adminDb.collection('liveClassrooms').doc(sessionId);
+      const sessionDoc = await sessionRef.get();
+
+      if (!sessionDoc.exists) {
+        return NextResponse.json({ error: 'Live classroom session not found.' }, { status: 404 });
+      }
+
+      const sessionData = sessionDoc.data()!;
+      if (sessionData.status === 'ended') {
+        return NextResponse.json({ success: true, message: 'Session is already ended.' });
+      }
+
       await sessionRef.update({
         status: 'ended',
-        endedAt: new Date().toISOString()
+        endedAt: new Date().toISOString(),
+        endedBy: admin.userData?.name || admin.userData?.email || 'Teacher'
       });
 
       return NextResponse.json({ success: true, message: 'Live classroom ended successfully.' });

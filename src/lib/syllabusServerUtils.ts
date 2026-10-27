@@ -50,6 +50,44 @@ export async function getSyllabusByClass(targetClass?: string | number) {
 }
 
 /**
+ * Single Source of Truth (SSOT) helper to fetch or build a cached syllabus topics map (Map<topicCode, topicMetadata>)
+ * for given class codes (e.g. ['CBSE-8', 'MH-10', '10']).
+ * Uses memory caching to guarantee zero Firestore read overhead.
+ */
+export async function getCachedSyllabusTopicsMap(classCodes: string[] = []): Promise<Map<string, any>> {
+  const cleanClasses = Array.from(new Set(classCodes.map(c => String(c).trim()).filter(Boolean))).sort();
+  const cacheKey = `ssot_syllabus_topics_map_${cleanClasses.join('_')}`;
+  const cached = getFromCache<Map<string, any>>(cacheKey);
+  if (cached) return cached;
+
+  let syllabusTopics: any[] = [];
+  if (cleanClasses.length > 0) {
+    const classChunks: string[][] = [];
+    for (let i = 0; i < cleanClasses.length; i += 10) {
+      classChunks.push(cleanClasses.slice(i, i + 10));
+    }
+    const sSnaps = await Promise.all(classChunks.map(chunk =>
+      adminDb.collection('syllabusTopicIndex')
+        .where('classCode', 'in', chunk)
+        .get()
+    ));
+    sSnaps.forEach(sSnap => {
+      sSnap.docs.forEach((doc: any) => syllabusTopics.push(doc.data()));
+    });
+  }
+
+  // Fallback if none found or cleanClasses was empty
+  if (syllabusTopics.length === 0) {
+    const fallbackSnap = await adminDb.collection('syllabusTopicIndex').limit(600).get();
+    syllabusTopics = fallbackSnap.docs.map((doc: any) => doc.data());
+  }
+
+  const map = new Map<string, any>(syllabusTopics.map((t: any) => [t.topicCode, t]));
+  setInCache(cacheKey, map, 300000); // 5 mins in-memory cache
+  return map;
+}
+
+/**
  * Cached SSOT helper to query syllabusTopicIndex documents for a list of topic codes.
  * Uses 10-minute in-memory caching per topic code and chunks Firestore 'in' queries by 30.
  */

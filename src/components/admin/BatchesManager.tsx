@@ -24,10 +24,7 @@ export default function BatchesManager() {
     class: '',
     subjects: '',
     rollPrefix: '',
-    academicYear: '',
-    zoomMeetingNumber: '',
-    zoomMeetingPasscode: '',
-    zoomMeetingActive: false
+    academicYear: ''
   });
 
   const [rosterModalOpen, setRosterModalOpen] = useState(false);
@@ -52,10 +49,7 @@ export default function BatchesManager() {
         class: String(batch.class ?? ''),
         subjects: batch.subjects || '',
         rollPrefix: batch.rollPrefix || '',
-        academicYear: batch.academicYear || '',
-        zoomMeetingNumber: batch.zoomMeetingNumber || '',
-        zoomMeetingPasscode: batch.zoomMeetingPasscode || '',
-        zoomMeetingActive: batch.zoomMeetingActive || false
+        academicYear: batch.academicYear || ''
       });
     } else {
       setSelectedBatch(null);
@@ -66,10 +60,7 @@ export default function BatchesManager() {
         class: '',
         subjects: '',
         rollPrefix: '',
-        academicYear: '',
-        zoomMeetingNumber: '',
-        zoomMeetingPasscode: '',
-        zoomMeetingActive: false
+        academicYear: ''
       });
     }
     setBatchModalOpen(true);
@@ -466,40 +457,6 @@ export default function BatchesManager() {
                     placeholder="e.g., 2024-25"
                   />
                 </div>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', borderTop: '1px dashed var(--border-light)', paddingTop: '10px', marginTop: '10px' }}>
-                <div className="form-group">
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--accent)' }}>Zoom Meeting Number</label>
-                  <input 
-                    type="text" 
-                    className="form-input" 
-                    value={batchFormData.zoomMeetingNumber} 
-                    onChange={(e) => setBatchFormData(prev => ({ ...prev, zoomMeetingNumber: e.target.value }))}
-                    placeholder="e.g., 89216852281"
-                  />
-                </div>
-                <div className="form-group">
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--accent)' }}>Zoom Passcode</label>
-                  <input 
-                    type="text" 
-                    className="form-input" 
-                    value={batchFormData.zoomMeetingPasscode} 
-                    onChange={(e) => setBatchFormData(prev => ({ ...prev, zoomMeetingPasscode: e.target.value }))}
-                    placeholder="e.g., yashcom"
-                  />
-                </div>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '12px', background: 'var(--bg-soft)', padding: '10px', borderRadius: 'var(--radius)', border: '1px solid var(--border-light)' }}>
-                <input 
-                  type="checkbox" 
-                  id="zoomMeetingActive"
-                  checked={batchFormData.zoomMeetingActive}
-                  onChange={(e) => setBatchFormData(prev => ({ ...prev, zoomMeetingActive: e.target.checked }))}
-                  style={{ width: '16px', height: '16px', cursor: 'pointer' }}
-                />
-                <label htmlFor="zoomMeetingActive" style={{ fontSize: '12px', fontWeight: 700, color: 'var(--success)', cursor: 'pointer', userSelect: 'none' }}>
-                  Live Class is Running (Students can join)
-                </label>
               </div>
             </div>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '20px' }}>
