@@ -307,8 +307,27 @@ service cloud.firestore { match /databases/{database}/documents {
     }
 
     // ── config ────────────────────────────────────────────────
+    // Only public systemAccess is readable by authenticated users; all internal config is admin-only.
     match /config/{docId} {
-      allow read:  if isAuth();
+      allow read:  if isAuth() && (docId == 'systemAccess' || isAdmin());
+      allow write: if isAdmin();
+    }
+
+    // ── liveClassTargets ───────────────────────────────────────
+    // Secure per-target live classroom access:
+    // Students can ONLY read their own targeted student doc or their enrolled batch docs.
+    // Prevents reading other batches, sessions, or student codes.
+    match /liveClassTargets/{docId} {
+      allow read: if isAuth() && (
+        isAdmin() ||
+        (isStudent() && (
+          (resource.data.targetType == 'student' && resource.data.targetId == myStudentCode()) ||
+          (resource.data.targetType == 'batch' && (
+            ('batchIds' in userDoc() && userDoc().batchIds.hasAny([resource.data.targetId])) ||
+            ('batchId' in userDoc() && userDoc().batchId == resource.data.targetId)
+          ))
+        ))
+      );
       allow write: if isAdmin();
     }
 

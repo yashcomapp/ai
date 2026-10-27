@@ -7,6 +7,72 @@ export const dynamic = 'force-dynamic';
 
 const SESSION_EXPIRY_MS = 100 * 60 * 1000; // 100 minutes (free public Jitsi sessions are limited to 95 minutes)
 
+async function createLiveClassTargets(sessionId: string, sessionData: any) {
+  try {
+    const batch = adminDb.batch();
+    const expiresAt = new Date(new Date(sessionData.startedAt).getTime() + SESSION_EXPIRY_MS).toISOString();
+    
+    const targetBatches: string[] = sessionData.targetBatches || [];
+    const targetStudents: string[] = sessionData.targetStudents || [];
+    
+    for (const bId of targetBatches) {
+      const ref = adminDb.collection('liveClassTargets').doc(`batch_${bId}`);
+      batch.set(ref, {
+        sessionId,
+        targetType: 'batch',
+        targetId: bId,
+        title: sessionData.title,
+        subject: sessionData.subject || '',
+        roomName: sessionData.roomName,
+        passcode: sessionData.passcode,
+        startedAt: sessionData.startedAt,
+        expiresAt,
+        startedBy: sessionData.startedBy,
+        status: 'live',
+        updatedAt: new Date().toISOString()
+      });
+    }
+
+    for (const sCode of targetStudents) {
+      const ref = adminDb.collection('liveClassTargets').doc(`student_${sCode}`);
+      batch.set(ref, {
+        sessionId,
+        targetType: 'student',
+        targetId: sCode,
+        title: sessionData.title,
+        subject: sessionData.subject || '',
+        roomName: sessionData.roomName,
+        passcode: sessionData.passcode,
+        startedAt: sessionData.startedAt,
+        expiresAt,
+        startedBy: sessionData.startedBy,
+        status: 'live',
+        updatedAt: new Date().toISOString()
+      });
+    }
+
+    await batch.commit();
+  } catch (err) {
+    console.warn('Failed to write liveClassTargets:', err);
+  }
+}
+
+async function removeLiveClassTargets(sessionIds: string[]) {
+  if (!sessionIds.length) return;
+  try {
+    for (const sId of sessionIds) {
+      const snap = await adminDb.collection('liveClassTargets').where('sessionId', '==', sId).get();
+      if (!snap.empty) {
+        const batch = adminDb.batch();
+        snap.docs.forEach(doc => batch.delete(doc.ref));
+        await batch.commit();
+      }
+    }
+  } catch (err) {
+    console.warn('Failed to remove liveClassTargets:', err);
+  }
+}
+
 async function syncActiveSessionsToConfig() {
   try {
     const liveSnap = await adminDb.collection('liveClassrooms')
@@ -74,7 +140,10 @@ export async function GET(request: Request) {
         });
       });
       batch.commit()
-        .then(() => syncActiveSessionsToConfig())
+        .then(() => {
+          syncActiveSessionsToConfig();
+          removeLiveClassTargets(expiredDocIds);
+        })
         .catch(e => console.warn('Failed to auto-expire sessions:', e));
     }
 
@@ -153,6 +222,7 @@ export async function POST(request: Request) {
 
       const batch = adminDb.batch();
       let hadOverlap = false;
+      const replacedSessionIds: string[] = [];
 
       ongoingSnap.docs.forEach(doc => {
         const d = doc.data();
@@ -164,18 +234,21 @@ export async function POST(request: Request) {
             endedAt: new Date().toISOString(),
             endedReason: 'replaced_by_new_session'
           });
+          replacedSessionIds.push(doc.id);
           hadOverlap = true;
         }
       });
       if (hadOverlap) {
         await batch.commit();
+        await removeLiveClassTargets(replacedSessionIds);
       }
 
       const cleanTitle = sanitizeForRoom(title) || 'classroom';
       // Cryptographically secure random room name to prevent guessable public URLs
       const roomSecret = crypto.randomBytes(12).toString('hex');
       const roomName = `yc-${cleanTitle}-${roomSecret}`;
-      const passcode = Math.floor(100000 + Math.random() * 900000).toString();
+      // Cryptographically secure 6-digit numeric PIN
+      const passcode = crypto.randomInt(100000, 1000000).toString();
       const teacherDisplayName = admin.userData?.name || 'Teacher (Yashcom)';
 
       const newSessionData = {
@@ -193,7 +266,10 @@ export async function POST(request: Request) {
       };
 
       const docRef = await adminDb.collection('liveClassrooms').add(newSessionData);
-      await syncActiveSessionsToConfig();
+      await Promise.all([
+        createLiveClassTargets(docRef.id, newSessionData),
+        syncActiveSessionsToConfig()
+      ]);
 
       const teacherUrl = `https://meet.jit.si/${roomName}#config.channelLastN=-1&userInfo.displayName=${encodeURIComponent(teacherDisplayName)}`;
 
@@ -230,7 +306,10 @@ export async function POST(request: Request) {
         endedAt: new Date().toISOString(),
         endedBy: admin.userData?.name || admin.userData?.email || 'Teacher'
       });
-      await syncActiveSessionsToConfig();
+      await Promise.all([
+        removeLiveClassTargets([sessionId]),
+        syncActiveSessionsToConfig()
+      ]);
 
       return NextResponse.json({ success: true, message: 'Live classroom ended successfully.' });
     }

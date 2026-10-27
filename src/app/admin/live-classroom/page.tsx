@@ -41,6 +41,7 @@ export default function AdminLiveClassroomPage() {
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [copiedPin, setCopiedPin] = useState(false);
 
   // Batches & Students
   const [batches, setBatches] = useState<Batch[]>([]);
@@ -251,6 +252,12 @@ export default function AdminLiveClassroomPage() {
     setTimeout(() => setCopiedLink(false), 2000);
   };
 
+  const handleCopyPin = (pin: string) => {
+    navigator.clipboard.writeText(pin);
+    setCopiedPin(true);
+    setTimeout(() => setCopiedPin(false), 2000);
+  };
+
   if (loading) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '80vh' }}>
@@ -408,6 +415,16 @@ export default function AdminLiveClassroomPage() {
             >
               <Copy size={16} /> {copiedLink ? 'Copied Focus Link!' : 'Copy Student Focus Mode Link'}
             </button>
+
+            {activeSession.passcode && (
+              <button
+                onClick={() => handleCopyPin(activeSession.passcode!)}
+                className="btn btn-secondary"
+                style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 16px', fontWeight: 600, fontSize: '13px' }}
+              >
+                <Copy size={16} /> {copiedPin ? 'Copied PIN!' : `Copy PIN (${activeSession.passcode})`}
+              </button>
+            )}
           </div>
         </div>
       ) : (

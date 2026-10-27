@@ -26,6 +26,23 @@ export async function GET(req: NextRequest) {
       runCompleteAutomatedPurge()
         .then(stats => console.log('[Opportunistic Sweep] Completed daily purge:', stats))
         .catch(err => console.warn('[Opportunistic Sweep] Purge failed:', err));
+
+      // Cleanup any expired or ended liveClassTargets
+      adminDb.collection('liveClassTargets').get().then(snap => {
+        const nowMs = Date.now();
+        const batch = adminDb.batch();
+        let deletedCount = 0;
+        snap.docs.forEach(d => {
+          const data = d.data();
+          const expiresMs = data.expiresAt ? new Date(data.expiresAt).getTime() : 0;
+          const startMs = data.startedAt ? new Date(data.startedAt).getTime() : 0;
+          if ((expiresMs > 0 && nowMs >= expiresMs) || (nowMs - startMs > 100 * 60 * 1000) || data.status === 'ended') {
+            batch.delete(d.ref);
+            deletedCount++;
+          }
+        });
+        if (deletedCount > 0) batch.commit();
+      }).catch(err => console.warn('[Opportunistic Sweep] Target cleanup failed:', err));
     }
     const adminUid = adminUser.decodedToken?.uid || 'admin';
     const cacheKey = `admin_dashboard_${adminUid}_${todayStr}`;

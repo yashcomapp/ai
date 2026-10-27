@@ -321,7 +321,7 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
   const activeSrsDue: any[] = (activeData as any)?.srsDueTopics || [];
   const rawExams = activeData?.exams || { pendingObjectiveExams: [], scheduledObjectiveExams: [], pendingSubjectiveExams: [], scheduledSubjectiveExams: [], dailyHomePractices: [], studyChips: [] };
   
-  // Realtime Live Classroom Listener on config/liveClassrooms (zero polling, zero serverless invocations)
+  // Realtime Live Classroom Listener on targeted liveClassTargets (zero serverless invocations, strict per-target security)
   const [liveClassSession, setLiveClassSession] = useState<{
     id: string;
     title: string;
@@ -338,46 +338,45 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
       return;
     }
 
-    const unsub = onSnapshot(doc(db, 'config', 'liveClassrooms'), (snap) => {
-      if (!snap.exists()) {
-        setLiveClassSession(null);
-        return;
-      }
+    const studentData: any = profile || {};
+    const studentCode = studentData.studentCode || '';
+    const cleanStudentName = (studentData.name || 'Student').trim().replace(/[^a-zA-Z0-9\s]/g, '') || 'Student';
+    const studentBatchIds: string[] = Array.isArray(studentData.batchIds) 
+      ? studentData.batchIds 
+      : (studentData.batchId ? [studentData.batchId] : []);
 
-      const snapData = snap.data();
-      const sessions: any[] = Array.isArray(snapData?.activeSessions) ? snapData.activeSessions : [];
+    const targetDocIds: string[] = [];
+    if (studentCode) targetDocIds.push(`student_${studentCode}`);
+    studentBatchIds.forEach(bId => {
+      if (bId) targetDocIds.push(`batch_${bId}`);
+    });
+
+    if (targetDocIds.length === 0) {
+      setLiveClassSession(null);
+      return;
+    }
+
+    const unsubs: Array<() => void> = [];
+    const activeTargetsMap = new Map<string, any>();
+
+    const evaluateActiveSession = () => {
       const now = Date.now();
+      let matched: any = null;
 
-      const studentData: any = profile || {};
-      const studentCode = studentData.studentCode || '';
-      const cleanStudentName = (studentData.name || 'Student').trim().replace(/[^a-zA-Z0-9\s]/g, '') || 'Student';
-      const studentBatchIds: string[] = Array.isArray(studentData.batchIds) 
-        ? studentData.batchIds 
-        : (studentData.batchId ? [studentData.batchId] : []);
+      for (const target of activeTargetsMap.values()) {
+        if (!target || target.status !== 'live') continue;
+        const expiresMs = target.expiresAt ? new Date(target.expiresAt).getTime() : 0;
+        const startMs = target.startedAt ? new Date(target.startedAt).getTime() : 0;
+        if (expiresMs > 0 && now >= expiresMs) continue;
+        if (now - startMs > 100 * 60 * 1000) continue;
 
-      // Find active session targeting this student (within 100 mins expiry)
-      const matched = sessions.find((s: any) => {
-        if (!s || s.status !== 'live') return false;
-        const startMs = new Date(s.startedAt || 0).getTime();
-        if (now - startMs > 100 * 60 * 1000) return false;
-
-        const targetType = s.targetType || 'batch';
-        const targetBatches: string[] = s.targetBatches || [];
-        const targetStudents: string[] = s.targetStudents || [];
-
-        if (targetType === 'batch') {
-          return studentBatchIds.some(b => targetBatches.includes(b));
-        } else if (targetType === 'student') {
-          return targetStudents.includes(studentCode);
-        } else if (targetType === 'mixed') {
-          return studentBatchIds.some(b => targetBatches.includes(b)) || targetStudents.includes(studentCode);
-        }
-        return false;
-      });
+        matched = target;
+        break;
+      }
 
       if (matched) {
         setLiveClassSession({
-          id: matched.id,
+          id: matched.sessionId,
           title: matched.title,
           subject: matched.subject || '',
           passcode: matched.passcode || '',
@@ -388,11 +387,26 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
       } else {
         setLiveClassSession(null);
       }
-    }, (err) => {
-      console.warn('liveClassrooms onSnapshot error:', err);
+    };
+
+    targetDocIds.forEach(targetId => {
+      const unsub = onSnapshot(doc(db, 'liveClassTargets', targetId), (snap) => {
+        if (snap.exists()) {
+          activeTargetsMap.set(targetId, snap.data());
+        } else {
+          activeTargetsMap.delete(targetId);
+        }
+        evaluateActiveSession();
+      }, () => {
+        activeTargetsMap.delete(targetId);
+        evaluateActiveSession();
+      });
+      unsubs.push(unsub);
     });
 
-    return () => unsub();
+    return () => {
+      unsubs.forEach(u => u());
+    };
   }, [firebaseUser, profile]);
   
   // Real-time dynamic promotion: If client clock has reached startAt, immediately unlock exam with Start button without waiting for manual refresh
