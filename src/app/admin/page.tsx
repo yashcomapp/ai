@@ -61,6 +61,15 @@ export default function AdminDashboard() {
     }
   }, []);
 
+  // Trigger opportunistic daily maintenance in the background (non-blocking, claims day via transaction)
+  useEffect(() => {
+    if (firebaseUser) {
+      fetchWithToken('/api/admin/maintenance/daily', firebaseUser).catch(err => {
+        console.warn('[Admin] Daily maintenance trigger error:', err);
+      });
+    }
+  }, [firebaseUser]);
+
   const fetcher = async (url: string) => {
     const resData = await fetchWithToken(url, firebaseUser);
     if (resData) {

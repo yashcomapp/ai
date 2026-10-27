@@ -37,7 +37,11 @@ export async function GET(request: Request) {
     activeSnap.docs.forEach(doc => {
       const data = doc.data();
       const startMs = new Date(data.startedAt || 0).getTime();
-      if (now - startMs > SESSION_EXPIRY_MS) {
+      const expiresMs = data.expiresAt?.toDate 
+        ? data.expiresAt.toDate().getTime() 
+        : (data.expiresAt ? new Date(data.expiresAt).getTime() : startMs + SESSION_EXPIRY_MS);
+
+      if (now >= expiresMs) {
         expiredDocIds.push(doc.id);
       } else {
         validActiveDocs.push({ id: doc.id, data });
@@ -55,10 +59,11 @@ export async function GET(request: Request) {
         });
       });
 
-      // Await finding and deleting all expired liveClassTargets
-      for (const expId of expiredDocIds) {
+      // Await finding and deleting all expired liveClassTargets using chunked in-query (max 30 per query)
+      for (let i = 0; i < expiredDocIds.length; i += 30) {
+        const chunk = expiredDocIds.slice(i, i + 30);
         const targetsSnap = await adminDb.collection('liveClassTargets')
-          .where('sessionId', '==', expId)
+          .where('sessionId', 'in', chunk)
           .get();
         targetsSnap.docs.forEach(doc => {
           expireBatch.delete(doc.ref);
@@ -143,6 +148,7 @@ export async function POST(request: Request) {
       const startBatch = new ChunkedBatch(adminDb);
 
       // End overlapping sessions and delete their target documents atomically
+      const replacedSessionIds: string[] = [];
       for (const doc of ongoingSnap.docs) {
         const d = doc.data();
         const hasBatchOverlap = (d.targetBatches || []).some((b: string) => targetBatches.includes(b));
@@ -153,7 +159,16 @@ export async function POST(request: Request) {
             endedAt: new Date().toISOString(),
             endedReason: 'replaced_by_new_session'
           });
-          const oldTargets = await adminDb.collection('liveClassTargets').where('sessionId', '==', doc.id).get();
+          replacedSessionIds.push(doc.id);
+        }
+      }
+
+      if (replacedSessionIds.length > 0) {
+        for (let i = 0; i < replacedSessionIds.length; i += 30) {
+          const chunk = replacedSessionIds.slice(i, i + 30);
+          const oldTargets = await adminDb.collection('liveClassTargets')
+            .where('sessionId', 'in', chunk)
+            .get();
           oldTargets.docs.forEach(ot => startBatch.delete(ot.ref));
         }
       }
@@ -178,6 +193,7 @@ export async function POST(request: Request) {
         passcode,
         status: 'live',
         startedAt,
+        expiresAt: expiresAtDate,
         endedAt: null,
         startedBy: teacherDisplayName
       };
