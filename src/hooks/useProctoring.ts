@@ -47,6 +47,7 @@ interface ProctoringConfig {
   onSnapshotCaptured?: (snapshot: ProctoringSnapshot) => void;
   onStatusChange?: (status: string, statusClass: 'success' | 'warning' | 'error') => void;
   isNumerical?: boolean;
+  disableSnapshots?: boolean;
 }
 
 export function useProctoring({
@@ -62,7 +63,8 @@ export function useProctoring({
   onViolation,
   onSnapshotCaptured,
   onStatusChange,
-  isNumerical = false
+  isNumerical = false,
+  disableSnapshots = false
 }: ProctoringConfig) {
   const [faceStatus, setFaceStatus] = useState('📷 Waiting for camera...');
   const [faceStatusClass, setFaceStatusClass] = useState<'success' | 'warning' | 'error'>('warning');
@@ -108,6 +110,7 @@ export function useProctoring({
   const lastSnapshotTimeRef = useRef<number>(0);
 
   const takeSnapshot = useCallback((type: ProctoringSnapshot['type'], reason: string) => {
+    if (disableSnapshots || !onSnapshotCaptured) return;
     if (snapshotsCountRef.current >= 5) return;
     const now = Date.now();
     if (snapshotsCountRef.current > 0 && now - lastSnapshotTimeRef.current < 15000) return;
@@ -128,11 +131,11 @@ export function useProctoring({
     };
 
     onSnapshotCaptured?.(snapshot);
-  }, [videoRef, onSnapshotCaptured]);
+  }, [videoRef, onSnapshotCaptured, disableSnapshots]);
 
   // Periodic automated snapshots (initial check + random intervals)
   useEffect(() => {
-    if (!enabled) return;
+    if (!enabled || disableSnapshots || !onSnapshotCaptured) return;
     const initialTimer = setTimeout(() => {
       takeSnapshot('initial_check', 'Initial proctoring identity check');
     }, 2000);

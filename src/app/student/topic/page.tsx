@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useRef, Suspense } from 'react';
+import React, { useEffect, useState, useRef, Suspense, useMemo } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
@@ -10,6 +10,9 @@ import {
 } from '@/lib/questionTypes';
 import { useMathRender } from '@/hooks/useMathRender';
 import { usePractice } from '@/hooks/usePractice';
+import { useAudioLevel } from '@/hooks/useAudioLevel';
+import { useProctoring } from '@/hooks/useProctoring';
+import { useLiveExam } from '@/hooks/useLiveExam';
 import { PracticeLockPrompt } from '@/components/student/practice/PracticeLockPrompt';
 import { PracticeHardwareModal } from '@/components/student/practice/PracticeHardwareModal';
 import { PracticeProctorBar } from '@/components/student/practice/PracticeProctorBar';
@@ -87,7 +90,108 @@ function TopicPracticeContent() {
   // Modal & Mount state
   const [startModalOpen, setStartModalOpen] = useState(true);
   const [isMounted, setIsMounted] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const questionContainerRef = useRef<HTMLDivElement>(null);
+
+  // Live Exam client-side controller (In-Memory only for practice, zero Firestore streaming)
+  const {
+    tabViolations,
+    awayTimeTotal: totalAwaySeconds,
+    proctoringViolations,
+    setProctoringViolations,
+    cameraStatus,
+    cameraStream,
+    startCameraStream,
+    stopCameraStream,
+    cleanupProctoring
+  } = useLiveExam({
+    examId: topicCode || '',
+    examName: topicCode || 'Practice Topic',
+    studentCode: user?.studentCode || '',
+    studentName: user?.name || user?.email || 'Student',
+    examType: 'practice',
+    totalQuestions: data?.questions.length || null,
+    currentQuestionIndex: currentQIndex,
+    answeredCount: userAnswers.filter(a => a !== '').length,
+    cameraVideoRef: videoRef,
+    autonomous: (user as any)?.autonomous || false,
+    started: started && !finished
+  });
+
+  const noFaceCount = proctoringViolations.noFace;
+  const multipleFacesCount = proctoringViolations.multipleFaces;
+  const lookingAwayCount = proctoringViolations.lookingAway;
+  const headMovementCount = proctoringViolations.headMovement;
+  const audioLevel = useAudioLevel(cameraStream);
+
+  const currentQuestion = data?.questions?.[currentQIndex];
+
+  const isNumerical = useMemo(() => {
+    if (!currentQuestion) return false;
+    if ((currentQuestion as any).relaxProctoring === true || (currentQuestion as any).isNumerical === true) {
+      return true;
+    }
+    const text = (currentQuestion.text || '').toLowerCase();
+    const mathKeywords = [
+      'calculate', 'solve', 'evaluate', 'find the value', 'find the length', 
+      'find the area', 'simplify', 'ratio', 'percentage', 'theorem', 
+      'derivative', 'integral', 'factorize', 'expand', 'equation', 'expression',
+      'probability', 'mean', 'median', 'mode', 'standard deviation', 'calculate',
+      'numerical', 'geometry', 'algebra', 'prove', 'find the', 'what is the value'
+    ];
+    if (mathKeywords.some(keyword => text.includes(keyword))) return true;
+    
+    const mathSymbols = [
+      '\\frac', '\\sqrt', '\\times', '\\div', '\\angle', '\\cong', '\\parallel', 
+      '\\Delta', '\\pi', '\\theta', '\\alpha', '\\beta', '^', '=', '+', '-', '*', '/'
+    ];
+    if (mathSymbols.some(symbol => text.includes(symbol))) return true;
+    if (/\d+/.test(text)) return true;
+
+    if (currentQuestion.options && Array.isArray(currentQuestion.options)) {
+      for (const opt of currentQuestion.options) {
+        const optText = (opt.text || '').toLowerCase();
+        if (/\d+/.test(optText) || mathSymbols.some(symbol => optText.includes(symbol))) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }, [currentQuestion]);
+
+  // Client-side MediaPipe FaceMesh Proctoring (100% Zero-Cost: Zero Snapshot Captures)
+  const { stopProctoring } = useProctoring({
+    videoRef,
+    enabled: started && !!cameraStream && !finished,
+    lockdownShortcuts: false,
+    lockdownContextMenu: false,
+    lockdownWindowFocus: false,
+    lockdownFullscreen: false,
+    startCameraStream,
+    stopCameraStream,
+    cleanupLiveExam: cleanupProctoring,
+    isNumerical,
+    disableSnapshots: true, // Guarantees zero images generated, zero cloud egress
+    onViolation: (violationType) => {
+      if (violationType === 'no_face') {
+        setProctoringViolations(prev => ({ ...prev, noFace: prev.noFace + 1 }));
+      } else if (violationType === 'multiple_faces') {
+        setProctoringViolations(prev => ({ ...prev, multipleFaces: prev.multipleFaces + 1 }));
+      } else if (violationType === 'gaze') {
+        setProctoringViolations(prev => ({ ...prev, lookingAway: prev.lookingAway + 1 }));
+      } else if (violationType === 'movement') {
+        setProctoringViolations(prev => ({ ...prev, headMovement: prev.headMovement + 1 }));
+      }
+    }
+  });
+
+  // Attach camera stream to videoRef when available
+  useEffect(() => {
+    if (videoRef.current && cameraStream && videoRef.current.srcObject !== cameraStream) {
+      videoRef.current.srcObject = cameraStream;
+      videoRef.current.play().catch(() => {});
+    }
+  }, [cameraStream, started]);
 
   // Graded results after complete submit
   const [finalResult, setFinalResult] = useState<{
@@ -106,6 +210,10 @@ function TopicPracticeContent() {
 
   useEffect(() => {
     setIsMounted(true);
+    return () => {
+      stopProctoring();
+      stopCameraStream();
+    };
   }, []);
 
   // Timer effect for explanation reading limit on mistakes
@@ -253,6 +361,19 @@ function TopicPracticeContent() {
     }
   };
 
+  const handleRunCheck = async () => {
+    const stream = await startCameraStream();
+    if (!stream) {
+      const confirmBypass = window.confirm(
+        "⚠️ Camera access failed or denied. Do you want to proceed with practice anyway?"
+      );
+      if (confirmBypass) {
+        setStartModalOpen(false);
+        setStarted(true);
+      }
+    }
+  };
+
   const handleProceedToExam = () => {
     setStartModalOpen(false);
     setStarted(true);
@@ -319,6 +440,9 @@ function TopicPracticeContent() {
     setIsSubmittingPractice(true);
     setLoading(true);
 
+    stopProctoring();
+    stopCameraStream();
+
     try {
       const formattedAnswers = data.questions.map((q, idx) => {
         const uAns = userAnswers[idx] || '';
@@ -374,11 +498,11 @@ function TopicPracticeContent() {
           mode,
           isRecoveryMode,
           violations: {
-            tabOutCount: 0,
-            noFaceCount: 0,
-            multipleFacesCount: 0,
-            lookingAwayCount: 0,
-            headMovementCount: 0,
+            tabOutCount: tabViolations,
+            noFaceCount,
+            multipleFacesCount,
+            lookingAwayCount,
+            headMovementCount,
             screenshots: []
           },
           proctoringViolationTriggered: false
@@ -435,7 +559,7 @@ function TopicPracticeContent() {
     setUserAnswers(updated);
   };
 
-  if (user && (user as any).autonomous) {
+  if (user && (user as any)?.autonomous) {
     return <PracticeLockPrompt type="autonomous" topicCode={topicCode} category={category} />;
   }
 
@@ -529,6 +653,11 @@ function TopicPracticeContent() {
         finalResult={finalResult}
         topicData={data}
         totalSeconds={totalSeconds}
+        totalAwaySeconds={totalAwaySeconds}
+        tabViolations={tabViolations}
+        noFaceCount={noFaceCount}
+        multipleFacesCount={multipleFacesCount}
+        lookingAwayCount={lookingAwayCount}
         userAnswers={userAnswers}
         questionResults={questionResults}
       />
@@ -541,16 +670,24 @@ function TopicPracticeContent() {
 
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      {/* Overview & Start Modal */}
+      {/* Hardware check modal */}
       <PracticeHardwareModal
         isOpen={startModalOpen}
         topicData={data}
+        cameraStream={cameraStream}
+        audioLevel={audioLevel}
+        cameraStatus={cameraStatus}
+        onRunCheck={handleRunCheck}
         onProceed={handleProceedToExam}
       />
 
-      {/* Practice Progress Bar */}
+      {/* Proctoring Bar with live local webcam thumbnail */}
       {started && !finished && (
         <PracticeProctorBar
+          videoRef={videoRef}
+          tabViolations={tabViolations}
+          noFaceCount={noFaceCount}
+          lookingAwayCount={lookingAwayCount}
           totalSeconds={totalSeconds}
           currentQSeconds={currentQSeconds}
           topicCode={topicCode}

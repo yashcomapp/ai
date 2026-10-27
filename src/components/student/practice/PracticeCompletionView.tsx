@@ -47,6 +47,11 @@ export function PracticeCompletionView({
   finalResult,
   topicData,
   totalSeconds,
+  totalAwaySeconds = 0,
+  tabViolations = 0,
+  noFaceCount = 0,
+  multipleFacesCount = 0,
+  lookingAwayCount = 0,
   userAnswers,
   questionResults
 }: PracticeCompletionViewProps) {
@@ -56,9 +61,19 @@ export function PracticeCompletionView({
 
   const masteryChange = finalResult.mastery - topicData.masteryAtStart;
   const efficiency = topicData.idealTimeSeconds > 0 ? Math.round((topicData.idealTimeSeconds / totalSeconds) * 100) : 0;
+  const percentTimeAway = (totalSeconds > 0 && totalAwaySeconds) ? Math.round((totalAwaySeconds / totalSeconds) * 100) : 0;
   const practiceNum = finalResult.practiceNumber || topicData.currentSetNumber || 1;
   const practiceTopicName = finalResult.topicName || topicData.topicName || topicData.topicCode;
   const completedTimestampIST = formatDateTimeIST(finalResult.completedAt || new Date()) || '-';
+
+  const getIntegrityLevel = () => {
+    const totalIssues = (tabViolations || 0) + (noFaceCount || 0) + (multipleFacesCount || 0) + (lookingAwayCount || 0);
+    if (totalIssues === 0) return { level: 'green', text: '🟢 Excellent Integrity (100%)', class: 'integrity-green' };
+    if (totalIssues <= 3) return { level: 'yellow', text: '🟡 Good Integrity', class: 'integrity-yellow' };
+    return { level: 'red', text: '🔴 Integrity Warning', class: 'integrity-red' };
+  };
+
+  const integrity = getIntegrityLevel();
 
   const evalQuestions = finalResult.questions && finalResult.questions.length > 0 
     ? finalResult.questions 
@@ -107,11 +122,13 @@ export function PracticeCompletionView({
         </p>
 
         <div style={{ background: 'var(--bg-soft)', borderRadius: 'var(--radius)', padding: '14px', margin: '16px 0', textAlign: 'left' }}>
-          <div style={{ fontWeight: 700, fontSize: '13px', color: 'var(--text)', marginBottom: '4px' }}>
-            ✨ Practice Session Summary
-          </div>
+          <div className="integrity-level" style={{ fontWeight: 'bold', fontSize: '13px', marginBottom: '6px' }}>{integrity.text}</div>
           <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-            Great effort! Continue practicing to build confidence and reach 90%+ topic mastery.
+            {(tabViolations || 0) > 0 && <p style={{ margin: '2px 0' }}>• Tab switches: {tabViolations} times</p>}
+            {(totalAwaySeconds || 0) > 0 && <p style={{ margin: '2px 0' }}>• Time away: {formatDuration(totalAwaySeconds || 0)} ({percentTimeAway}% of total)</p>}
+            {(noFaceCount || 0) > 0 && <p style={{ margin: '2px 0' }}>• Face not detected: {noFaceCount} checks</p>}
+            {(lookingAwayCount || 0) > 0 && <p style={{ margin: '2px 0' }}>• Gaze deviations: {lookingAwayCount} checks</p>}
+            {integrity.level === 'green' && <p style={{ margin: '2px 0' }}>• 100% focused attention throughout this practice set.</p>}
           </div>
         </div>
 
