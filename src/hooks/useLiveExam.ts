@@ -63,6 +63,7 @@ export function useLiveExam({
   const proctoringSnapshotsRef = useRef<ProctoringSnapshot[]>([]);
 
   const addProctoringSnapshot = useCallback((snapshot: ProctoringSnapshot) => {
+    if (examType === 'practice') return;
     if (proctoringSnapshotsRef.current.length >= 5) return;
     const updated = [...proctoringSnapshotsRef.current, snapshot];
     proctoringSnapshotsRef.current = updated;
@@ -228,7 +229,7 @@ export function useLiveExam({
 
   // Listen to RTDB proctor presence: ONLY stream live exam metrics to Firestore when an admin is actively watching
   useEffect(() => {
-    if (mock || !rtdb || !started) return;
+    if (mock || examType === 'practice' || !rtdb || !started) return;
 
     const proctorPresenceRef = ref(rtdb, 'proctorPresence');
     const unsubscribe = onValue(proctorPresenceRef, (snapshot) => {
@@ -251,7 +252,7 @@ export function useLiveExam({
   // (sanitizeForRtdbPath and getSessionDocId imported from proctoring SSOT)
 
   const flushLiveProctoringSession = async (updates: any) => {
-    if (mock) return;
+    if (mock || examType === 'practice') return;
     if (!liveSessionDocRef.current || !liveSessionActiveRef.current) return;
     try {
       lastSyncTimeRef.current = Date.now();
@@ -262,7 +263,7 @@ export function useLiveExam({
   };
 
   const queueLiveProctoringSession = (updates: any, isUrgent = false) => {
-    if (mock) return;
+    if (mock || examType === 'practice') return;
     if (!liveSessionDocRef.current || !liveSessionActiveRef.current) return;
 
     pendingUpdatesRef.current = { ...(pendingUpdatesRef.current || {}), ...updates };
@@ -300,7 +301,7 @@ export function useLiveExam({
   };
 
   const initLiveProctoringSession = async (stream?: MediaStream | null) => {
-    if (mock) return;
+    if (mock || examType === 'practice') return;
     if (!studentCode || !examId) return;
 
     const sId = getSessionDocId(examId, studentCode);
@@ -408,7 +409,7 @@ export function useLiveExam({
   }, [currentQuestionIndex, answeredCount, tabViolations, proctoringViolations, awayTimeTotal]);
 
   const setupWebRTCSignaling = async (stream: MediaStream) => {
-    if (mock) return;
+    if (mock || examType === 'practice') return;
     if (!rtdb) return;
     const sId = getSessionDocId(examId, studentCode);
     const sigRef = ref(rtdb, `webrtcSignaling/${sId}`);
@@ -514,7 +515,7 @@ export function useLiveExam({
     }
     liveSessionActiveRef.current = false;
     cleanupWebRTC();
-    if (mock) return;
+    if (mock || examType === 'practice') return;
 
     if (liveSessionDocRef.current) {
       const finalUpdates = {
