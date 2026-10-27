@@ -446,10 +446,10 @@ export default function AdminFaultRegisterPage() {
                         </td>
                         <td style={{ padding: '8px 10px', verticalAlign: 'top' }}>
                           <div style={{ fontWeight: 700, color: 'var(--text)' }}>
-                            {crash.context?.studentName || crash.context?.studentCode || 'Anonymous'}
+                            {crash.context?.studentName || 'Student'}
                           </div>
-                          {crash.context?.studentCode && (
-                            <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>{crash.context.studentCode}</span>
+                          {crash.context?.className && (
+                            <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Class {crash.context.className}</span>
                           )}
                         </td>
                         <td style={{ padding: '8px 10px', verticalAlign: 'top', whiteSpace: 'nowrap' }}>

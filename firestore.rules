@@ -267,6 +267,22 @@ service cloud.firestore { match /databases/{database}/documents {
                        || (isStudent() && resource.data.studentCode == myStudentCode()));
     }
 
+    // ── segregated live exam evidence (proctoring snapshots & manual captures) ────
+    match /liveExamEvidence/{docId} {
+      allow read:   if isAuth() && (isAdmin()
+                       || (isParent() && isMyChildCode(resource.data.studentCode))
+                       || (isStudent() && resource.data.studentCode == myStudentCode()));
+      allow create: if isAuth() && (isAdmin()
+                       || (isStudent()
+                           && isValidStudentCode(request.resource.data.studentCode)
+                           && request.resource.data.studentCode == myStudentCode()));
+      allow update: if isAuth() && (isAdmin()
+                       || (isStudent()
+                           && resource.data.studentCode == myStudentCode()
+                           && request.resource.data.studentCode == myStudentCode()));
+      allow delete: if isAdmin();
+    }
+
     // ── per-user time-on-system tracking ──────────────────────
     function isValidTimeLogWrite() {
       let d = request.resource.data;

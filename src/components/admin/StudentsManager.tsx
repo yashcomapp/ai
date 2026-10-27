@@ -526,7 +526,7 @@ export default function StudentsManager() {
           <form onSubmit={handleSaveEdit} className="card" style={{ background: 'var(--surface-popover)', border: '1px solid var(--border-popover)', padding: '16px 20px', borderRadius: 'var(--radius-lg)', maxWidth: '560px', width: '95%', maxHeight: '92vh', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px', boxShadow: 'var(--shadow-lg)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-light)', paddingBottom: '6px', margin: 0 }}>
               <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 800 }}>Edit Profile: {selectedStudent.name}</h3>
-              <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'monospace' }}>{selectedStudent.studentCode || ''}</span>
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Class {selectedStudent.classNum || selectedStudent.class || ''}</span>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '10px' }}>

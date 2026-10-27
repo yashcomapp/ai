@@ -1870,7 +1870,7 @@ function ExamReportContent() {
             </div>
 
             <div style={{ background: 'var(--bg-soft)', padding: '12px', borderRadius: '8px', marginBottom: '16px', fontSize: '12.5px', lineHeight: 1.6 }}>
-              <div><strong>Student:</strong> {rescueModal.studentName} ({rescueModal.studentCode})</div>
+              <div><strong>Student:</strong> {rescueModal.studentName}</div>
               <div><strong>Exam:</strong> {exam?.name || examId}</div>
             </div>
 

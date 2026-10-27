@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase/admin';
+import { ChunkedBatch } from '@/lib/firebase/batch';
 import { verifyRole } from '@/lib/auth';
 import { getDateKeyIST as getISTDateString } from '@/lib/dateUtils';
 import { getFromCache, setInCache } from '@/lib/firebase/cache';
@@ -20,17 +21,17 @@ export async function GET(req: NextRequest) {
 
     const todayStr = getISTDateString();
 
-    // Opportunistic daily background purge (runs at most once per calendar day without blocking the dashboard response)
+    // Opportunistic daily background purge (runs at most once per calendar day, reliably awaited)
     if (lastDailyPurgeIST !== todayStr) {
       lastDailyPurgeIST = todayStr;
-      runCompleteAutomatedPurge()
-        .then(stats => console.log('[Opportunistic Sweep] Completed daily purge:', stats))
-        .catch(err => console.warn('[Opportunistic Sweep] Purge failed:', err));
+      try {
+        const stats = await runCompleteAutomatedPurge();
+        console.log('[Opportunistic Sweep] Completed daily purge:', stats);
 
-      // Cleanup any expired or ended liveClassTargets
-      adminDb.collection('liveClassTargets').get().then(snap => {
+        // Cleanup any expired or ended liveClassTargets
+        const snap = await adminDb.collection('liveClassTargets').get();
         const nowMs = Date.now();
-        const batch = adminDb.batch();
+        const batch = new ChunkedBatch(adminDb);
         let deletedCount = 0;
         snap.docs.forEach(d => {
           const data = d.data();
@@ -43,8 +44,12 @@ export async function GET(req: NextRequest) {
             deletedCount++;
           }
         });
-        if (deletedCount > 0) batch.commit();
-      }).catch(err => console.warn('[Opportunistic Sweep] Target cleanup failed:', err));
+        if (deletedCount > 0) {
+          await batch.commit();
+        }
+      } catch (err) {
+        console.warn('[Opportunistic Sweep] Purge failed:', err);
+      }
     }
     const adminUid = adminUser.decodedToken?.uid || 'admin';
     const cacheKey = `admin_dashboard_${adminUid}_${todayStr}`;
