@@ -151,6 +151,27 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
     }
   );
 
+  // Active Live Classroom check (checks every 30 seconds for live classes)
+  const { data: liveClassData } = useSWR<{
+    hasLiveClass: boolean;
+    session?: {
+      id: string;
+      title: string;
+      subject?: string;
+      startedAt: string;
+      startedBy?: string;
+      studentUrl: string;
+    };
+  }>(
+    firebaseUser ? '/api/student/active-classroom' : null,
+    fetcher,
+    {
+      revalidateOnFocus: true,
+      refreshInterval: 30000,
+      dedupingInterval: 10000
+    }
+  );
+
   // Live Clock Ticker: dynamically updates when scheduled exams reach startAt or late limits
   const [nowMs, setNowMs] = useState<number>(Date.now());
   useEffect(() => {
@@ -410,6 +431,59 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
           </>
         ) : (
           <>
+            {/* LIVE CLASSROOM IN PROGRESS BANNER (Jitsi Focus Mode) */}
+            {liveClassData?.hasLiveClass && liveClassData.session && (
+              <div className="card" style={{
+                background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.12), rgba(99, 102, 241, 0.12))',
+                border: '2px solid var(--danger)',
+                borderRadius: 'var(--radius)',
+                padding: '12px 16px',
+                marginBottom: '10px',
+                boxShadow: '0 4px 14px rgba(239, 68, 68, 0.2)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '12px'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span style={{ fontSize: '20px' }}>🔴</span>
+                  <div>
+                    <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--danger)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      Live Classroom in Progress
+                    </div>
+                    <div style={{ fontSize: '14.5px', fontWeight: 800, color: 'var(--text)' }}>
+                      {liveClassData.session.title}
+                    </div>
+                    {liveClassData.session.subject && (
+                      <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '1px' }}>
+                        Subject: <strong>{liveClassData.session.subject}</strong> • Started by {liveClassData.session.startedBy || 'Teacher'}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <a
+                  href={liveClassData.session.studentUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-danger"
+                  style={{
+                    padding: '8px 16px',
+                    fontWeight: 800,
+                    fontSize: '12.5px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    boxShadow: '0 2px 8px rgba(239, 68, 68, 0.35)',
+                    textDecoration: 'none'
+                  }}
+                >
+                  <span>🚀 Join Live Class (Focus Mode)</span>
+                </a>
+              </div>
+            )}
+
             {/* CARD 1: Glance (Soothing Matte Card) */}
             <div className="card card-blue" style={{
               borderRadius: 'var(--radius)',
