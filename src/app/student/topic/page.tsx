@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useRef, Suspense, useMemo } from 'react';
+import React, { useEffect, useState, useRef, Suspense } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
@@ -10,10 +10,6 @@ import {
 } from '@/lib/questionTypes';
 import { useMathRender } from '@/hooks/useMathRender';
 import { usePractice } from '@/hooks/usePractice';
-import { useAudioLevel } from '@/hooks/useAudioLevel';
-import { useProctoring } from '@/hooks/useProctoring';
-import { useLiveExam } from '@/hooks/useLiveExam';
-import { InterruptionLockoutModal } from '@/components/InterruptionLockoutModal';
 import { PracticeLockPrompt } from '@/components/student/practice/PracticeLockPrompt';
 import { PracticeHardwareModal } from '@/components/student/practice/PracticeHardwareModal';
 import { PracticeProctorBar } from '@/components/student/practice/PracticeProctorBar';
@@ -88,18 +84,10 @@ function TopicPracticeContent() {
   const [totalSeconds, setTotalSeconds] = useState(0);
   const [currentQSeconds, setCurrentQSeconds] = useState(0);
 
-  // Camera & FaceMesh
-  const [cameraModalOpen, setCameraModalOpen] = useState(true);
+  // Modal & Mount state
+  const [startModalOpen, setStartModalOpen] = useState(true);
   const [isMounted, setIsMounted] = useState(false);
-
-  const videoRef = useRef<HTMLVideoElement>(null);
   const questionContainerRef = useRef<HTMLDivElement>(null);
-
-  const prevTabViolationsRef = useRef<number>(0);
-  const prevNoFaceViolationsRef = useRef<number>(0);
-  const prevLookingAwayViolationsRef = useRef<number>(0);
-  const hasCrossedThresholdRef = useRef<boolean>(false);
-  const proctorIntervalRef = useRef<any>(null);
 
   // Graded results after complete submit
   const [finalResult, setFinalResult] = useState<{
@@ -114,120 +102,11 @@ function TopicPracticeContent() {
     questions: any[];
   } | null>(null);
 
-  const {
-    tabViolations,
-    awayTimeTotal: totalAwaySeconds,
-    proctoringViolations,
-    setProctoringViolations,
-    isInterrupted,
-    resumeExam,
-    cameraStatus,
-    cameraStream,
-    startCameraStream,
-    stopCameraStream,
-    cleanupProctoring
-  } = useLiveExam({
-    examId: topicCode || '',
-    examName: topicCode || 'Practice Topic',
-    studentCode: user?.studentCode || '',
-    studentName: user?.name || user?.email || 'Student',
-    examType: 'practice',
-    totalQuestions: data?.questions.length || null,
-    currentQuestionIndex: currentQIndex,
-    answeredCount: userAnswers.filter(a => a !== '').length,
-    cameraVideoRef: videoRef,
-    autonomous: (user as any)?.autonomous || false,
-    started: started && !finished
-  });
-
-  const noFaceCount = proctoringViolations.noFace;
-  const multipleFacesCount = proctoringViolations.multipleFaces;
-  const lookingAwayCount = proctoringViolations.lookingAway;
-  const headMovementCount = proctoringViolations.headMovement;
-  const audioLevel = useAudioLevel(cameraStream);
-
-  const currentQuestion = data?.questions?.[currentQIndex];
-
-  const isNumerical = useMemo(() => {
-    if (!currentQuestion) return false;
-    if ((currentQuestion as any).relaxProctoring === true || (currentQuestion as any).isNumerical === true) {
-      return true;
-    }
-    const text = (currentQuestion.text || '').toLowerCase();
-    const mathKeywords = [
-      'calculate', 'solve', 'evaluate', 'find the value', 'find the length', 
-      'find the area', 'simplify', 'ratio', 'percentage', 'theorem', 
-      'derivative', 'integral', 'factorize', 'expand', 'equation', 'expression',
-      'probability', 'mean', 'median', 'mode', 'standard deviation', 'calculate',
-      'numerical', 'geometry', 'algebra', 'prove', 'find the', 'what is the value'
-    ];
-    if (mathKeywords.some(keyword => text.includes(keyword))) return true;
-    
-    const mathSymbols = [
-      '\\frac', '\\sqrt', '\\times', '\\div', '\\angle', '\\cong', '\\parallel', 
-      '\\Delta', '\\pi', '\\theta', '\\alpha', '\\beta', '^', '=', '+', '-', '*', '/'
-    ];
-    if (mathSymbols.some(symbol => text.includes(symbol))) return true;
-    if (/\d+/.test(text)) return true;
-
-    if (currentQuestion.options && Array.isArray(currentQuestion.options)) {
-      for (const opt of currentQuestion.options) {
-        const optText = (opt.text || '').toLowerCase();
-        if (/\d+/.test(optText) || mathSymbols.some(symbol => optText.includes(symbol))) {
-          return true;
-        }
-      }
-    }
-    return false;
-  }, [currentQuestion]);
-
-  const {
-    stopProctoring
-  } = useProctoring({
-    videoRef,
-    enabled: started && !!cameraStream && !finished,
-    lockdownShortcuts: false,
-    lockdownContextMenu: false,
-    lockdownWindowFocus: false,
-    lockdownFullscreen: false,
-    startCameraStream,
-    stopCameraStream,
-    cleanupLiveExam: cleanupProctoring,
-    isNumerical: isNumerical,
-    onViolation: (violationType) => {
-      if (violationType === 'no_face') {
-        setProctoringViolations(prev => ({ ...prev, noFace: prev.noFace + 1 }));
-      } else if (violationType === 'multiple_faces') {
-        setProctoringViolations(prev => ({ ...prev, multipleFaces: prev.multipleFaces + 1 }));
-      } else if (violationType === 'gaze') {
-        setProctoringViolations(prev => ({ ...prev, lookingAway: prev.lookingAway + 1 }));
-      } else if (violationType === 'movement') {
-        setProctoringViolations(prev => ({ ...prev, headMovement: prev.headMovement + 1 }));
-      }
-    }
-  });
-
   useMathRender([currentQIndex, started, finished, data, feedbackOpen, isMounted, finalResult]);
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
-
-  const stopWebcam = () => {
-    if (proctorIntervalRef.current) {
-      clearInterval(proctorIntervalRef.current);
-      proctorIntervalRef.current = null;
-    }
-    stopProctoring();
-    stopCameraStream();
-  };
-
-  useEffect(() => {
-    if (videoRef.current && cameraStream && videoRef.current.srcObject !== cameraStream) {
-      videoRef.current.srcObject = cameraStream;
-      videoRef.current.play().catch(() => {});
-    }
-  }, [cameraStream, cameraModalOpen]);
 
   // Timer effect for explanation reading limit on mistakes
   useEffect(() => {
@@ -254,13 +133,6 @@ function TopicPracticeContent() {
   useEffect(() => {
     setCurrentQSeconds(0);
   }, [currentQIndex]);
-
-  // Stop webcam stream when component unmounts
-  useEffect(() => {
-    return () => {
-      stopWebcam();
-    };
-  }, [cameraStream]);
 
   // Fetch practice questions
   const fetchQuestions = async () => {
@@ -320,46 +192,6 @@ function TopicPracticeContent() {
       setLoading(false);
     }
   }, [firebaseUser, topicCode, user]);
-
-  // Proctoring limits checking
-  useEffect(() => {
-    if (!started || finished) return;
-
-    if (tabViolations >= 3) {
-      handleFinishPractice(true);
-      return;
-    }
-
-    const noFaceVal = proctoringViolations?.noFace || 0;
-    const lookingAwayVal = proctoringViolations?.lookingAway || 0;
-    const cumulativeVal = tabViolations + noFaceVal + lookingAwayVal;
-
-    const crossedTab = tabViolations > 2;
-    const crossedNoFace = noFaceVal > 3;
-    const crossedLookingAway = lookingAwayVal > 3;
-    const crossedCumulative = cumulativeVal > 4;
-
-    const isCrossedNow = crossedTab || crossedNoFace || crossedLookingAway || crossedCumulative;
-
-    if (isCrossedNow) {
-      if (!hasCrossedThresholdRef.current) {
-        hasCrossedThresholdRef.current = true;
-      } else {
-        const tabIncremented = tabViolations > prevTabViolationsRef.current;
-        const noFaceIncremented = noFaceVal > prevNoFaceViolationsRef.current;
-        const lookingAwayIncremented = lookingAwayVal > prevLookingAwayViolationsRef.current;
-
-        if (tabIncremented || noFaceIncremented || lookingAwayIncremented) {
-          handleFinishPractice(true);
-          return;
-        }
-      }
-    }
-
-    prevTabViolationsRef.current = tabViolations;
-    prevNoFaceViolationsRef.current = noFaceVal;
-    prevLookingAwayViolationsRef.current = lookingAwayVal;
-  }, [tabViolations, proctoringViolations, started, finished]);
 
   const handleConfirmTextbook = async () => {
     if (!firebaseUser || !topicCode || confirmingTextbook) return;
@@ -421,21 +253,8 @@ function TopicPracticeContent() {
     }
   };
 
-  const handleRunCheck = async () => {
-    const stream = await startCameraStream();
-    if (!stream) {
-      const confirmBypass = window.confirm(
-        "⚠️ Camera access failed or denied. Do you want to proceed with the practice anyway? (Your teacher will be notified that the camera is unavailable.)"
-      );
-      if (confirmBypass) {
-        setCameraModalOpen(false);
-        setStarted(true);
-      }
-    }
-  };
-
   const handleProceedToExam = () => {
-    setCameraModalOpen(false);
+    setStartModalOpen(false);
     setStarted(true);
   };
 
@@ -494,12 +313,11 @@ function TopicPracticeContent() {
   };
 
   // Submit complete practice set
-  const handleFinishPractice = async (proctoringViolationTriggered?: boolean) => {
+  const handleFinishPractice = async () => {
     if (!firebaseUser || !data || isSubmittingPracticeRef.current || finishedRef.current) return;
     isSubmittingPracticeRef.current = true;
     setIsSubmittingPractice(true);
     setLoading(true);
-    stopWebcam();
 
     try {
       const formattedAnswers = data.questions.map((q, idx) => {
@@ -556,14 +374,14 @@ function TopicPracticeContent() {
           mode,
           isRecoveryMode,
           violations: {
-            tabOutCount: tabViolations,
-            noFaceCount,
-            multipleFacesCount,
-            lookingAwayCount,
-            headMovementCount,
+            tabOutCount: 0,
+            noFaceCount: 0,
+            multipleFacesCount: 0,
+            lookingAwayCount: 0,
+            headMovementCount: 0,
             screenshots: []
           },
-          proctoringViolationTriggered: !!proctoringViolationTriggered
+          proctoringViolationTriggered: false
         })
       });
 
@@ -711,11 +529,6 @@ function TopicPracticeContent() {
         finalResult={finalResult}
         topicData={data}
         totalSeconds={totalSeconds}
-        totalAwaySeconds={totalAwaySeconds}
-        tabViolations={tabViolations}
-        noFaceCount={noFaceCount}
-        multipleFacesCount={multipleFacesCount}
-        lookingAwayCount={lookingAwayCount}
         userAnswers={userAnswers}
         questionResults={questionResults}
       />
@@ -728,42 +541,20 @@ function TopicPracticeContent() {
 
   return (
     <div style={{ background: 'var(--bg)', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      {/* Interruption Lockout & Resume Modal */}
-      <InterruptionLockoutModal
-        isOpen={(isInterrupted || tabViolations >= 3) && started && !finished && !cameraModalOpen}
-        tabViolations={tabViolations}
-        maxViolations={3}
-        isSubmitting={finished}
-        onManualResume={() => {
-          resumeExam();
-        }}
-        onTimeoutAutoSubmit={() => {
-          if (!finished) {
-            handleFinishPractice(true);
-          }
-        }}
-      />
-
-      {/* Camera permission & Hardware check modal */}
+      {/* Overview & Start Modal */}
       <PracticeHardwareModal
-        isOpen={cameraModalOpen}
+        isOpen={startModalOpen}
         topicData={data}
-        cameraStream={cameraStream}
-        audioLevel={audioLevel}
-        cameraStatus={cameraStatus}
-        onRunCheck={handleRunCheck}
         onProceed={handleProceedToExam}
       />
 
-      {/* Proctoring Bar */}
+      {/* Practice Progress Bar */}
       {started && !finished && (
         <PracticeProctorBar
-          videoRef={videoRef}
-          tabViolations={tabViolations}
-          noFaceCount={noFaceCount}
-          lookingAwayCount={lookingAwayCount}
           totalSeconds={totalSeconds}
           currentQSeconds={currentQSeconds}
+          topicCode={topicCode}
+          topicName={data.topicName}
         />
       )}
 

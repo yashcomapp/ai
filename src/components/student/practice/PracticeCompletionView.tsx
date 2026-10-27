@@ -34,11 +34,11 @@ interface PracticeCompletionViewProps {
     questions: any[];
   };
   totalSeconds: number;
-  totalAwaySeconds: number;
-  tabViolations: number;
-  noFaceCount: number;
-  multipleFacesCount: number;
-  lookingAwayCount: number;
+  totalAwaySeconds?: number;
+  tabViolations?: number;
+  noFaceCount?: number;
+  multipleFacesCount?: number;
+  lookingAwayCount?: number;
   userAnswers: string[];
   questionResults: (boolean | null)[];
 }
@@ -47,11 +47,6 @@ export function PracticeCompletionView({
   finalResult,
   topicData,
   totalSeconds,
-  totalAwaySeconds,
-  tabViolations,
-  noFaceCount,
-  multipleFacesCount,
-  lookingAwayCount,
   userAnswers,
   questionResults
 }: PracticeCompletionViewProps) {
@@ -59,17 +54,8 @@ export function PracticeCompletionView({
   const [showReviewList, setShowReviewList] = useState(false);
   const [reviewTab, setReviewTab] = useState<'all' | 'correct' | 'incorrect'>('all');
 
-  const getIntegrityLevel = () => {
-    const totalIssues = tabViolations + noFaceCount + multipleFacesCount + lookingAwayCount;
-    if (totalIssues === 0) return { level: 'green', text: '🟢 Excellent Integrity', class: 'integrity-green' };
-    if (totalIssues <= 5) return { level: 'yellow', text: '🟡 Good Integrity', class: 'integrity-yellow' };
-    return { level: 'red', text: '🔴 Integrity Warning', class: 'integrity-red' };
-  };
-
-  const integrity = getIntegrityLevel();
   const masteryChange = finalResult.mastery - topicData.masteryAtStart;
   const efficiency = topicData.idealTimeSeconds > 0 ? Math.round((topicData.idealTimeSeconds / totalSeconds) * 100) : 0;
-  const percentTimeAway = totalSeconds > 0 ? Math.round((totalAwaySeconds / totalSeconds) * 100) : 0;
   const practiceNum = finalResult.practiceNumber || topicData.currentSetNumber || 1;
   const practiceTopicName = finalResult.topicName || topicData.topicName || topicData.topicCode;
   const completedTimestampIST = formatDateTimeIST(finalResult.completedAt || new Date()) || '-';
@@ -121,15 +107,12 @@ export function PracticeCompletionView({
         </p>
 
         <div style={{ background: 'var(--bg-soft)', borderRadius: 'var(--radius)', padding: '14px', margin: '16px 0', textAlign: 'left' }}>
-          <div className={`integrity-level`} style={{ fontWeight: 'bold', fontSize: '13px', marginBottom: '6px' }}>{integrity.text}</div>
-          {integrity.level !== 'green' && (
-            <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-              {tabViolations > 0 && <p style={{ margin: '2px 0' }}>• Tab switches: {tabViolations} times</p>}
-              {totalAwaySeconds > 0 && <p style={{ margin: '2px 0' }}>• Time away: {formatDuration(totalAwaySeconds)} ({percentTimeAway}% of total)</p>}
-              {noFaceCount > 0 && <p style={{ margin: '2px 0' }}>• Face not detected: {noFaceCount} checks</p>}
-              {lookingAwayCount > 0 && <p style={{ margin: '2px 0' }}>• Gaze violations: {lookingAwayCount} checks</p>}
-            </div>
-          )}
+          <div style={{ fontWeight: 700, fontSize: '13px', color: 'var(--text)', marginBottom: '4px' }}>
+            ✨ Practice Session Summary
+          </div>
+          <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+            Great effort! Continue practicing to build confidence and reach 90%+ topic mastery.
+          </div>
         </div>
 
         {/* Toggle Full Question Review */}
