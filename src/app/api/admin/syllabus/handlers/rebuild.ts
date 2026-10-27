@@ -55,8 +55,8 @@ async function runIndexRebuild() {
       docId: doc.id
     };
 
-    const boardCode = boardCodes[board] || board.substring(0, 4).toUpperCase();
-    const subjectCode = subjectCodes[subjectName] || subjectName.substring(0, 4).toUpperCase();
+    const boardCode = data.boardCode || boardCodes[board] || board.substring(0, 4).toUpperCase();
+    const subjectCode = data.subjectCode || subjectCodes[subjectName] || subjectName.substring(0, 4).toUpperCase();
 
     const chapters = Array.isArray(data.chapters) ? data.chapters : [];
     for (const chapter of chapters) {

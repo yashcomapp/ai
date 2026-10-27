@@ -28,7 +28,8 @@ export async function GET(req: NextRequest) {
     }
 
     const { searchParams } = new URL(req.url);
-    const topicCode = searchParams.get('topicCode') || '';
+    const rawTopicCode = searchParams.get('topicCode') || '';
+    const topicCode = QuestionRepository.normalizeTopicCode(rawTopicCode);
     const category = searchParams.get('category') || 'needsAttention';
     const size = Number(searchParams.get('size') || '5');
     const mode = searchParams.get('mode') || '';
@@ -653,7 +654,8 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { action, topicCode, category, answers, durationSpent, violations, sessionId, proctoringViolationTriggered, mode, isRecoveryMode, disputedQuestionIds } = body;
+    const { action, category, answers, durationSpent, violations, sessionId, proctoringViolationTriggered, mode, isRecoveryMode, disputedQuestionIds } = body;
+    const topicCode = QuestionRepository.normalizeTopicCode(body.topicCode || '');
     const recoveryActive = !!isRecoveryMode || mode === 'recovery';
 
     if (action === 'approveRecovery') {

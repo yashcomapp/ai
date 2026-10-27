@@ -116,20 +116,37 @@ export class QuestionRepository {
   }
 
   /**
+   * Normalizes known legacy topic code aliases into canonical SSOT codes
+   */
+  static normalizeTopicCode(code: string): string {
+    if (!code) return code;
+    // Canonicalize legacy MH Class 8 Mathematics subject code: MH-8-MATH -> MH-8-MTH
+    if (code.startsWith('MH-8-MATH-')) {
+      return code.replace('MH-8-MATH-', 'MH-8-MTH-');
+    }
+    // Canonicalize legacy MH Class 9 SCIT ch8 typo: MH-9-SCIT-8-1.1 -> MH-9-SCIT-8-8.1.1
+    if (code === 'MH-9-SCIT-8-1.1') {
+      return 'MH-9-SCIT-8-8.1.1';
+    }
+    return code;
+  }
+
+  /**
    * Queries questions by topic Code (cascaded fallback) with memory cache
    */
   static async getQuestionsByTopic(topicCode: string): Promise<QuestionItem[]> {
     if (!topicCode) return [];
+    const normalized = this.normalizeTopicCode(topicCode);
 
-    const cached = this.topicCache.get(topicCode);
+    const cached = this.topicCache.get(normalized);
     if (cached && Date.now() < cached.expiry) {
       return cached.data;
     }
 
-    const rawResult = await this.resolveQuestionsByTopic(topicCode);
+    const rawResult = await this.resolveQuestionsByTopic(normalized);
     const result = rawResult.filter(q => !isQuestionQuarantined(q));
     // Cache for 5 minutes
-    this.topicCache.set(topicCode, { data: result, expiry: Date.now() + 5 * 60 * 1000 });
+    this.topicCache.set(normalized, { data: result, expiry: Date.now() + 5 * 60 * 1000 });
     return result;
   }
 
