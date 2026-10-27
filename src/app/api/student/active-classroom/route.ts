@@ -10,7 +10,7 @@ let liveSessionsCache: { timestamp: number; sessions: Array<{ id: string; data: 
   sessions: []
 };
 
-const SESSION_EXPIRY_MS = 3 * 60 * 60 * 1000; // 3 hours max session duration
+const SESSION_EXPIRY_MS = 100 * 60 * 1000; // 100 minutes max session duration (public Jitsi meetings limited to 95 mins)
 
 export async function GET(request: Request) {
   try {

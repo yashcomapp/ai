@@ -5,7 +5,27 @@ import { verifyRole } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
-const SESSION_EXPIRY_MS = 3 * 60 * 60 * 1000; // 3 hours
+const SESSION_EXPIRY_MS = 100 * 60 * 1000; // 100 minutes (free public Jitsi sessions are limited to 95 minutes)
+
+async function syncActiveSessionsToConfig() {
+  try {
+    const liveSnap = await adminDb.collection('liveClassrooms')
+      .where('status', '==', 'live')
+      .get();
+
+    const now = Date.now();
+    const activeSessions = liveSnap.docs
+      .map(doc => ({ id: doc.id, ...doc.data() }))
+      .filter((s: any) => now - new Date(s.startedAt || 0).getTime() <= SESSION_EXPIRY_MS);
+
+    await adminDb.collection('config').doc('liveClassrooms').set({
+      activeSessions,
+      updatedAt: new Date().toISOString()
+    });
+  } catch (err) {
+    console.warn('Failed to sync active sessions to config/liveClassrooms:', err);
+  }
+}
 
 function sanitizeForRoom(text: string): string {
   return text
@@ -53,7 +73,9 @@ export async function GET(request: Request) {
           endedReason: 'auto_expired'
         });
       });
-      batch.commit().catch(e => console.warn('Failed to auto-expire sessions:', e));
+      batch.commit()
+        .then(() => syncActiveSessionsToConfig())
+        .catch(e => console.warn('Failed to auto-expire sessions:', e));
     }
 
     // Sort active sessions (newest first)
@@ -171,6 +193,7 @@ export async function POST(request: Request) {
       };
 
       const docRef = await adminDb.collection('liveClassrooms').add(newSessionData);
+      await syncActiveSessionsToConfig();
 
       const teacherUrl = `https://meet.jit.si/${roomName}#config.channelLastN=-1&userInfo.displayName=${encodeURIComponent(teacherDisplayName)}`;
 
@@ -207,6 +230,7 @@ export async function POST(request: Request) {
         endedAt: new Date().toISOString(),
         endedBy: admin.userData?.name || admin.userData?.email || 'Teacher'
       });
+      await syncActiveSessionsToConfig();
 
       return NextResponse.json({ success: true, message: 'Live classroom ended successfully.' });
     }

@@ -10,6 +10,8 @@ import { triggerNavStart } from '@/components/NavigationProgressBar';
 import TopBarTimeTracker from '@/components/TopBarTimeTracker';
 import NoticeOverlayModal from '@/components/notices/NoticeOverlayModal';
 import OverdueFeeModal from '@/components/fees/OverdueFeeModal';
+import { db } from '@/lib/firebase/firestore';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { 
   TrendingUp, 
   AlertTriangle, 
@@ -143,28 +145,6 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
       dedupingInterval: 60000,
       keepPreviousData: true,
       fallbackData: initialData || localCache
-    }
-  );
-
-  // Active Live Classroom check (checks every 30 seconds for live classes)
-  const { data: liveClassData } = useSWR<{
-    hasLiveClass: boolean;
-    session?: {
-      id: string;
-      title: string;
-      subject?: string;
-      startedAt: string;
-      startedBy?: string;
-      studentUrl: string;
-    };
-  }>(
-    firebaseUser ? '/api/student/active-classroom' : null,
-    fetcher,
-    {
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-      refreshInterval: 60000,
-      dedupingInterval: 30000
     }
   );
 
@@ -340,6 +320,78 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
   const pendingAbsences: any[] = (activeData as any)?.pendingAbsences || [];
   const activeSrsDue: any[] = (activeData as any)?.srsDueTopics || [];
   const rawExams = activeData?.exams || { pendingObjectiveExams: [], scheduledObjectiveExams: [], pendingSubjectiveExams: [], scheduledSubjectiveExams: [], dailyHomePractices: [], studyChips: [] };
+  
+  // Realtime Live Classroom Listener on config/liveClassrooms (zero polling, zero serverless invocations)
+  const [liveClassSession, setLiveClassSession] = useState<{
+    id: string;
+    title: string;
+    subject?: string;
+    startedAt: string;
+    startedBy?: string;
+    studentUrl: string;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!firebaseUser) {
+      setLiveClassSession(null);
+      return;
+    }
+
+    const unsub = onSnapshot(doc(db, 'config', 'liveClassrooms'), (snap) => {
+      if (!snap.exists()) {
+        setLiveClassSession(null);
+        return;
+      }
+
+      const snapData = snap.data();
+      const sessions: any[] = Array.isArray(snapData?.activeSessions) ? snapData.activeSessions : [];
+      const now = Date.now();
+
+      const studentData: any = profile || {};
+      const studentCode = studentData.studentCode || '';
+      const cleanStudentName = (studentData.name || 'Student').trim().replace(/[^a-zA-Z0-9\s]/g, '') || 'Student';
+      const studentBatchIds: string[] = Array.isArray(studentData.batchIds) 
+        ? studentData.batchIds 
+        : (studentData.batchId ? [studentData.batchId] : []);
+
+      // Find active session targeting this student (within 100 mins expiry)
+      const matched = sessions.find((s: any) => {
+        if (!s || s.status !== 'live') return false;
+        const startMs = new Date(s.startedAt || 0).getTime();
+        if (now - startMs > 100 * 60 * 1000) return false;
+
+        const targetType = s.targetType || 'batch';
+        const targetBatches: string[] = s.targetBatches || [];
+        const targetStudents: string[] = s.targetStudents || [];
+
+        if (targetType === 'batch') {
+          return studentBatchIds.some(b => targetBatches.includes(b));
+        } else if (targetType === 'student') {
+          return targetStudents.includes(studentCode);
+        } else if (targetType === 'mixed') {
+          return studentBatchIds.some(b => targetBatches.includes(b)) || targetStudents.includes(studentCode);
+        }
+        return false;
+      });
+
+      if (matched) {
+        setLiveClassSession({
+          id: matched.id,
+          title: matched.title,
+          subject: matched.subject || '',
+          startedAt: matched.startedAt,
+          startedBy: matched.startedBy || 'Teacher',
+          studentUrl: `https://meet.jit.si/${matched.roomName}#config.channelLastN=1&config.startWithAudioMuted=true&config.startWithVideoMuted=false&userInfo.displayName=${encodeURIComponent(cleanStudentName)}`
+        });
+      } else {
+        setLiveClassSession(null);
+      }
+    }, (err) => {
+      console.warn('liveClassrooms onSnapshot error:', err);
+    });
+
+    return () => unsub();
+  }, [firebaseUser, profile]);
   
   // Real-time dynamic promotion: If client clock has reached startAt, immediately unlock exam with Start button without waiting for manual refresh
   const exams = useMemo(() => {
@@ -625,7 +677,7 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
         ) : (
           <>
             {/* LIVE CLASSROOM IN PROGRESS BANNER (Jitsi Focus Mode) */}
-            {liveClassData?.hasLiveClass && liveClassData.session && (
+            {liveClassSession && (
               <div className="card" style={{
                 background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.12), rgba(99, 102, 241, 0.12))',
                 border: '2px solid var(--danger)',
@@ -646,18 +698,18 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
                       Live Classroom in Progress
                     </div>
                     <div style={{ fontSize: '14.5px', fontWeight: 800, color: 'var(--text)' }}>
-                      {liveClassData.session.title}
+                      {liveClassSession.title}
                     </div>
-                    {liveClassData.session.subject && (
+                    {liveClassSession.subject && (
                       <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '1px' }}>
-                        Subject: <strong>{liveClassData.session.subject}</strong> • Started by {liveClassData.session.startedBy || 'Teacher'}
+                        Subject: <strong>{liveClassSession.subject}</strong> • Started by {liveClassSession.startedBy || 'Teacher'}
                       </div>
                     )}
                   </div>
                 </div>
 
                 <a
-                  href={liveClassData.session.studentUrl}
+                  href={liveClassSession.studentUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="btn btn-danger"

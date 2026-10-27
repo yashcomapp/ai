@@ -316,7 +316,7 @@ export default function AdminLiveClassroomPage() {
                 LIVE IN PROGRESS
               </span>
               <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                Started at {formatTimeIST(activeSession.startedAt)}
+                Started at {formatTimeIST(activeSession.startedAt)} • Auto-expires in 100 mins
               </span>
             </div>
 
@@ -474,7 +474,7 @@ export default function AdminLiveClassroomPage() {
               </div>
 
               {/* TARGET PICKER: Batches & Students Selector (Same as Exam Assignment) */}
-              <div style={{ background: 'var(--bg-soft)', borderRadius: 'var(--radius)', padding: '14px', border: '1px solid var(--border-light)', marginBottom: '20px' }}>
+              <div style={{ background: 'var(--bg-soft)', borderRadius: 'var(--radius)', padding: '14px', border: '1px solid var(--border-light)', marginBottom: '14px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                   <div style={{ fontWeight: 800, fontSize: '12.5px', color: 'var(--text)' }}>
                     🎯 Select Target Classes / Students
@@ -500,6 +500,23 @@ export default function AdminLiveClassroomPage() {
                   onToggleStudent={handleToggleStudent}
                   getStudentsGroupedByBatch={getStudentsGroupedByBatch}
                 />
+              </div>
+
+              {/* 100-Minute Session Policy Notice */}
+              <div style={{
+                padding: '8px 12px',
+                marginBottom: '18px',
+                borderRadius: 'var(--radius-sm)',
+                background: 'var(--surface-2)',
+                border: '1px solid var(--border-light)',
+                fontSize: '11.5px',
+                color: 'var(--text-muted)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}>
+                <span>⏱️</span>
+                <span><strong>100-Minute Session Duration:</strong> Public Jitsi sessions are limited to 95 minutes. The classroom automatically expires after 100 minutes.</span>
               </div>
 
               {/* Launch Action */}

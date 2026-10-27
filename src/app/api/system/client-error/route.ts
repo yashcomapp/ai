@@ -128,11 +128,20 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '50', 10)));
 
-    const snapshot = await adminDb.collection('systemFaults')
-      .where('category', '==', 'client_crash')
-      .orderBy('timestamp', 'desc')
-      .limit(limit)
-      .get();
+    let snapshot;
+    try {
+      snapshot = await adminDb.collection('systemFaults')
+        .where('category', '==', 'client_crash')
+        .orderBy('timestamp', 'desc')
+        .limit(limit)
+        .get();
+    } catch (indexErr: any) {
+      console.warn('systemFaults composite query fallback:', indexErr?.message);
+      snapshot = await adminDb.collection('systemFaults')
+        .where('category', '==', 'client_crash')
+        .limit(limit * 2)
+        .get();
+    }
 
     const faults = snapshot.docs.map(doc => {
       const data = doc.data();
@@ -141,7 +150,7 @@ export async function GET(req: NextRequest) {
         ...data,
         timestamp: data.timestamp?.toDate ? data.timestamp.toDate().toISOString() : data.timestamp
       };
-    });
+    }).sort((a, b) => new Date(b.timestamp || 0).getTime() - new Date(a.timestamp || 0).getTime()).slice(0, limit);
 
     return NextResponse.json({ success: true, faults });
   } catch (err: any) {
