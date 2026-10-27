@@ -1093,6 +1093,29 @@ export class QuotientService {
       resolvedIntegrityScore = Math.round(totalInt / filteredIntegrity.length);
     }
 
+    // Identify absent / missed exams to flag them consistently in topic mastery diagnostics
+    const attemptedObjExamIds = new Set(filteredAttempts.map((a: any) => a.examId || a.id).filter(Boolean));
+    const attemptedSubExamIds = new Set(
+      filteredEvaluations.flatMap((e: any) => [e.examId, e.attemptId, e.legacyId]).filter(Boolean)
+    );
+
+    const absentTopicCodes = new Set<string>();
+    conductedObjectiveExams.forEach((exam: any) => {
+      const eId = exam.id || exam.examId;
+      if (eId && !attemptedObjExamIds.has(eId)) {
+        if (exam.topicCode) absentTopicCodes.add(exam.topicCode);
+        if (Array.isArray(exam.topicCodes)) exam.topicCodes.forEach((tc: string) => absentTopicCodes.add(tc));
+      }
+    });
+
+    conductedSubjectiveExams.forEach((subExam: any) => {
+      const sId = subExam.id || subExam.examId;
+      if (sId && !attemptedSubExamIds.has(sId)) {
+        if (subExam.topicCode) absentTopicCodes.add(subExam.topicCode);
+        if (Array.isArray(subExam.topicCodes)) subExam.topicCodes.forEach((tc: string) => absentTopicCodes.add(tc));
+      }
+    });
+
     // Single Source of Truth Unified Metrics Calculation
     const unifiedMetrics = calculateUnifiedMetrics({
       objectiveReviews: filteredAttempts,
@@ -1103,7 +1126,8 @@ export class QuotientService {
       totalCoveredTopics: totalCoveredTopicsCount,
       assignedTopicCodes: conductedTopicCodes,
       srsEnabled: Boolean(srsEnabled),
-      syllabusTopicsMap
+      syllabusTopicsMap,
+      absentTopicCodes
     });
 
     const studentData: StudentData = {

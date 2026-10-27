@@ -4,12 +4,7 @@ import { verifyRole } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
 
-// In-memory server cache to eliminate continuous Firestore reads on student polling (TTL: 15s)
-let liveSessionsCache: { timestamp: number; sessions: Array<{ id: string; data: any }> } = {
-  timestamp: 0,
-  sessions: []
-};
-
+// Direct read from config/liveClassrooms (SSOT maintained in real-time by admin actions, zero staleness)
 const SESSION_EXPIRY_MS = 100 * 60 * 1000; // 100 minutes max session duration (public Jitsi meetings limited to 95 mins)
 
 export async function GET(request: Request) {
@@ -19,54 +14,21 @@ export async function GET(request: Request) {
       return NextResponse.json({ message: 'Unauthorized. Student role required.' }, { status: 403 });
     }
 
-    const now = Date.now();
-    let activeSessions = liveSessionsCache.sessions;
-
-    // Refresh cache if stale (> 15 seconds)
-    if (now - liveSessionsCache.timestamp > 15000) {
-      const liveSnap = await adminDb.collection('liveClassrooms')
-        .where('status', '==', 'live')
-        .get();
-
-      const validSessions: Array<{ id: string; data: any }> = [];
-      const expiredSessionIds: string[] = [];
-
-      liveSnap.docs.forEach(doc => {
-        const data = doc.data();
-        const startMs = new Date(data.startedAt || 0).getTime();
-        if (now - startMs > SESSION_EXPIRY_MS) {
-          expiredSessionIds.push(doc.id);
-        } else {
-          validSessions.push({ id: doc.id, data });
-        }
-      });
-
-      // Sort newest first
-      validSessions.sort((a, b) => {
-        const aTime = new Date(a.data.startedAt || 0).getTime();
-        const bTime = new Date(b.data.startedAt || 0).getTime();
-        return bTime - aTime;
-      });
-
-      liveSessionsCache = {
-        timestamp: now,
-        sessions: validSessions
-      };
-      activeSessions = validSessions;
-
-      // Opportunistically auto-end expired sessions in background
-      if (expiredSessionIds.length > 0) {
-        const batch = adminDb.batch();
-        expiredSessionIds.forEach(id => {
-          batch.update(adminDb.collection('liveClassrooms').doc(id), {
-            status: 'ended',
-            endedAt: new Date().toISOString(),
-            endedReason: 'auto_expired'
-          });
-        });
-        batch.commit().catch(e => console.warn('Failed to auto-expire live sessions:', e));
-      }
+    const configSnap = await adminDb.collection('config').doc('liveClassrooms').get();
+    if (!configSnap.exists) {
+      return NextResponse.json({ hasLiveClass: false });
     }
+
+    const configData = configSnap.data();
+    const sessions: any[] = Array.isArray(configData?.activeSessions) ? configData.activeSessions : [];
+    const now = Date.now();
+
+    // Filter active sessions within 100 minutes expiry
+    const activeSessions = sessions.filter((s: any) => {
+      if (!s || s.status !== 'live') return false;
+      const startMs = new Date(s.startedAt || 0).getTime();
+      return now - startMs <= SESSION_EXPIRY_MS;
+    });
 
     if (activeSessions.length === 0) {
       return NextResponse.json({ hasLiveClass: false });
@@ -81,10 +43,10 @@ export async function GET(request: Request) {
       : (studentData.batchId ? [studentData.batchId] : []);
 
     // Check ALL active sessions to find if ANY active session targets this student
-    const matchedSession = activeSessions.find(({ data }) => {
-      const targetType = data.targetType || 'batch';
-      const targetBatches: string[] = data.targetBatches || [];
-      const targetStudents: string[] = data.targetStudents || [];
+    const matchedSession = activeSessions.find((s: any) => {
+      const targetType = s.targetType || 'batch';
+      const targetBatches: string[] = s.targetBatches || [];
+      const targetStudents: string[] = s.targetStudents || [];
 
       if (targetType === 'batch') {
         return studentBatchIds.some(bId => targetBatches.includes(bId));
@@ -100,22 +62,21 @@ export async function GET(request: Request) {
       return NextResponse.json({ hasLiveClass: false });
     }
 
-    const { id, data } = matchedSession;
-
     // Build the Focus Mode Jitsi link:
     // channelLastN=1: Receives only 1 incoming video (Teacher) to save bandwidth and device load
     // startWithAudioMuted=true: Starts with microphone muted
     // startWithVideoMuted=false: Starts with camera ON so teacher can see them
-    const studentUrl = `https://meet.jit.si/${data.roomName}#config.channelLastN=1&config.startWithAudioMuted=true&config.startWithVideoMuted=false&userInfo.displayName=${encodeURIComponent(studentName)}`;
+    const studentUrl = `https://meet.jit.si/${matchedSession.roomName}#config.channelLastN=1&config.startWithAudioMuted=true&config.startWithVideoMuted=false&userInfo.displayName=${encodeURIComponent(studentName)}`;
 
     return NextResponse.json({
       hasLiveClass: true,
       session: {
-        id,
-        title: data.title,
-        subject: data.subject || '',
-        startedAt: data.startedAt,
-        startedBy: data.startedBy || 'Teacher',
+        id: matchedSession.id,
+        title: matchedSession.title,
+        subject: matchedSession.subject || '',
+        passcode: matchedSession.passcode || '',
+        startedAt: matchedSession.startedAt,
+        startedBy: matchedSession.startedBy || 'Teacher',
         studentUrl
       }
     });

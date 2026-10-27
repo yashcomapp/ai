@@ -97,19 +97,17 @@ export async function GET(request: Request) {
       };
     }
 
-    // Get recent ended sessions (last 10)
+    // Get recent ended sessions (last 10) directly via composite index
     const recentSnap = await adminDb.collection('liveClassrooms')
+      .where('status', '==', 'ended')
       .orderBy('startedAt', 'desc')
-      .limit(15)
+      .limit(10)
       .get();
 
-    const recentSessions = recentSnap.docs
-      .filter(doc => doc.data().status === 'ended')
-      .slice(0, 10)
-      .map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
+    const recentSessions = recentSnap.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
 
     return NextResponse.json({ activeSession, recentSessions });
   } catch (err: any) {
@@ -177,6 +175,7 @@ export async function POST(request: Request) {
       // Cryptographically secure random room name to prevent guessable public URLs
       const roomSecret = crypto.randomBytes(12).toString('hex');
       const roomName = `yc-${cleanTitle}-${roomSecret}`;
+      const passcode = Math.floor(100000 + Math.random() * 900000).toString();
       const teacherDisplayName = admin.userData?.name || 'Teacher (Yashcom)';
 
       const newSessionData = {
@@ -186,6 +185,7 @@ export async function POST(request: Request) {
         targetBatches,
         targetStudents,
         roomName,
+        passcode,
         status: 'live',
         startedAt: new Date().toISOString(),
         endedAt: null,

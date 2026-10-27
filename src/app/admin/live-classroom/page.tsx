@@ -25,6 +25,7 @@ interface LiveSession {
   targetBatches: string[];
   targetStudents: string[];
   roomName: string;
+  passcode?: string;
   status: 'live' | 'ended';
   startedAt: string;
   endedAt?: string | null;
@@ -340,7 +341,7 @@ export default function AdminLiveClassroomPage() {
           )}
 
           {/* Target Audience Summary */}
-          <div style={{ background: 'var(--surface)', padding: '12px 16px', borderRadius: 'var(--radius)', border: '1px solid var(--border-light)', marginBottom: '18px', display: 'flex', gap: '20px', flexWrap: 'wrap', fontSize: '12px' }}>
+          <div style={{ background: 'var(--surface)', padding: '12px 16px', borderRadius: 'var(--radius)', border: '1px solid var(--border-light)', marginBottom: '14px', display: 'flex', gap: '20px', flexWrap: 'wrap', fontSize: '12px', alignItems: 'center' }}>
             <div>
               <span style={{ color: 'var(--text-muted)' }}>Audience Type: </span>
               <strong>{activeSession.targetType === 'batch' ? 'Selected Batches' : activeSession.targetType === 'student' ? 'Individual Students' : 'Mixed'}</strong>
@@ -359,6 +360,33 @@ export default function AdminLiveClassroomPage() {
                 <strong>{activeSession.targetStudents.length} Students</strong>
               </div>
             )}
+            {activeSession.passcode && (
+              <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ color: 'var(--text-muted)' }}>Room PIN / Passcode:</span>
+                <span style={{ padding: '2px 8px', background: 'var(--primary-glow)', color: 'var(--primary)', fontWeight: 800, borderRadius: '4px', letterSpacing: '1px' }}>
+                  {activeSession.passcode}
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Moderator Security Guidance */}
+          <div style={{
+            padding: '8px 12px',
+            marginBottom: '18px',
+            borderRadius: 'var(--radius-sm)',
+            background: 'var(--surface-2)',
+            border: '1px solid var(--border-light)',
+            fontSize: '11.5px',
+            color: 'var(--text-muted)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}>
+            <span>🛡️</span>
+            <span>
+              <strong>Host Security Tip:</strong> After entering the room, click the <strong>Shield icon</strong> in Jitsi toolbar &rarr; <em>Add password</em> (enter PIN <strong>{activeSession.passcode || 'above'}</strong>) or enable <em>Lobby</em> to admit students manually.
+            </span>
           </div>
 
           {/* Quick Action Links */}

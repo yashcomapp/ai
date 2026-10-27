@@ -347,6 +347,7 @@ export async function getParentDashboardData(
   });
 
   let absentExamsCount = 0;
+  const absentTopicCodes = new Set<string>();
   
   // Calculate absences from formal assignments (Type A)
   uniqueAssignments.forEach(ass => {
@@ -361,6 +362,9 @@ export async function getParentDashboardData(
       });
       if (!attemptedObj && !attemptedSub && !attemptedInEval) {
         absentExamsCount++;
+        const exData = objectiveExamsMap.get(ass.examId);
+        if (exData?.topicCode) absentTopicCodes.add(exData.topicCode);
+        if (Array.isArray(exData?.topicCodes)) exData.topicCodes.forEach((tc: string) => absentTopicCodes.add(tc));
       }
     }
   });
@@ -385,6 +389,8 @@ export async function getParentDashboardData(
         });
         if (!attempted && !attemptedInEval) {
           absentExamsCount++;
+          if (examData.topicCode) absentTopicCodes.add(examData.topicCode);
+          if (Array.isArray(examData.topicCodes)) examData.topicCodes.forEach((tc: string) => absentTopicCodes.add(tc));
         }
       }
     }
@@ -411,6 +417,8 @@ export async function getParentDashboardData(
         });
         if (!attempted && !attemptedInEval) {
           absentExamsCount++;
+          if (examData.topicCode) absentTopicCodes.add(examData.topicCode);
+          if (Array.isArray(examData.topicCodes)) examData.topicCodes.forEach((tc: string) => absentTopicCodes.add(tc));
         }
       }
     }
@@ -440,7 +448,8 @@ export async function getParentDashboardData(
     totalCoveredTopics: totalCoveredTopics,
     assignedTopicCodes: conductedTopicCodes,
     srsEnabled: Boolean(childUser?.srsEnabled),
-    syllabusTopicsMap
+    syllabusTopicsMap,
+    absentTopicCodes
   });
   
   const evalsMap = new Map();

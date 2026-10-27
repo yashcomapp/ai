@@ -326,6 +326,7 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
     id: string;
     title: string;
     subject?: string;
+    passcode?: string;
     startedAt: string;
     startedBy?: string;
     studentUrl: string;
@@ -379,6 +380,7 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
           id: matched.id,
           title: matched.title,
           subject: matched.subject || '',
+          passcode: matched.passcode || '',
           startedAt: matched.startedAt,
           startedBy: matched.startedBy || 'Teacher',
           studentUrl: `https://meet.jit.si/${matched.roomName}#config.channelLastN=1&config.startWithAudioMuted=true&config.startWithVideoMuted=false&userInfo.displayName=${encodeURIComponent(cleanStudentName)}`
@@ -703,6 +705,11 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
                     {liveClassSession.subject && (
                       <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '1px' }}>
                         Subject: <strong>{liveClassSession.subject}</strong> • Started by {liveClassSession.startedBy || 'Teacher'}
+                        {liveClassSession.passcode && (
+                          <span style={{ marginLeft: '8px', padding: '1px 6px', background: 'var(--surface-3)', borderRadius: '4px', fontWeight: 700, color: 'var(--primary)' }}>
+                            PIN: {liveClassSession.passcode}
+                          </span>
+                        )}
                       </div>
                     )}
                   </div>

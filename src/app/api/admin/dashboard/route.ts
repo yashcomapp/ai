@@ -4,6 +4,10 @@ import { verifyRole } from '@/lib/auth';
 import { getDateKeyIST as getISTDateString } from '@/lib/dateUtils';
 import { getFromCache, setInCache } from '@/lib/firebase/cache';
 import { isDemoUser } from '@/lib/studentDb';
+import { runCompleteAutomatedPurge } from '@/lib/purgeUtils';
+
+// Opportunistic daily sweep tracker (runs at most once per day on admin load without paid crons)
+let lastDailyPurgeIST = '';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,6 +19,14 @@ export async function GET(req: NextRequest) {
     }
 
     const todayStr = getISTDateString();
+
+    // Opportunistic daily background purge (runs at most once per calendar day without blocking the dashboard response)
+    if (lastDailyPurgeIST !== todayStr) {
+      lastDailyPurgeIST = todayStr;
+      runCompleteAutomatedPurge()
+        .then(stats => console.log('[Opportunistic Sweep] Completed daily purge:', stats))
+        .catch(err => console.warn('[Opportunistic Sweep] Purge failed:', err));
+    }
     const adminUid = adminUser.decodedToken?.uid || 'admin';
     const cacheKey = `admin_dashboard_${adminUid}_${todayStr}`;
 
