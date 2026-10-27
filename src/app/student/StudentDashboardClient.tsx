@@ -103,6 +103,7 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
   const [timeFilter, setTimeFilter] = useState<'overall' | 'month' | 'week'>('overall');
   const [isAnnouncementsExpanded, setIsAnnouncementsExpanded] = useState(false);
   const [activeReflectionExam, setActiveReflectionExam] = useState<{ examId: string; examName?: string } | null>(null);
+  const [showAllActionsModal, setShowAllActionsModal] = useState<boolean>(false);
 
   const {
     notices,
@@ -407,19 +408,216 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
   }
   const greeting = getGreeting(mounted);
   const firstName = profile?.name ? profile.name.split(' ')[0] : '';
-  const hasActionItems = Boolean(
-    pendingSelfReviews.length ||
-    pendingAbsences.length ||
-    needAttentionTopics.length ||
-    activeSrsDue.length ||
-    peerReviews.count
-  );
-  const totalActionCount =
-    pendingSelfReviews.length +
-    pendingAbsences.length +
-    (peerReviews.count ? 1 : 0) +
-    needAttentionTopics.length +
-    activeSrsDue.length;
+  const allActionItems = useMemo(() => {
+    const items: Array<{
+      id: string;
+      type: 'self_review' | 'absence' | 'peer_review' | 'srs' | 'need_attention';
+      data: any;
+    }> = [];
+
+    // 1. Pending Self-Reflection Reviews (Highest Priority Action Item)
+    pendingSelfReviews.forEach((r: any) => {
+      items.push({
+        id: `self_review_${r.id || r.examId}`,
+        type: 'self_review',
+        data: r
+      });
+    });
+
+    // 2. Missed Exam Absences Pending Parent Sign-Off
+    pendingAbsences.forEach((a: any, idx: number) => {
+      items.push({
+        id: `absence_${a.id || a.examId || idx}`,
+        type: 'absence',
+        data: a
+      });
+    });
+
+    // 3. Peer Review Alert
+    if (peerReviews.count > 0) {
+      items.push({
+        id: 'peer_review',
+        type: 'peer_review',
+        data: peerReviews
+      });
+    }
+
+    // 3.5. Spaced Repetition Due (Mastered Topics Ready for Micro-Refresher)
+    if (Boolean((profile as any)?.srsEnabled) && activeSrsDue.length > 0) {
+      activeSrsDue.forEach((t: any) => {
+        items.push({
+          id: `srs_${t.topicCode}`,
+          type: 'srs',
+          data: t
+        });
+      });
+    }
+
+    // 4. Need Attention Topics
+    needAttentionTopics.forEach((t: any) => {
+      items.push({
+        id: `need_attention_${t.topicCode}`,
+        type: 'need_attention',
+        data: t
+      });
+    });
+
+    return items;
+  }, [pendingSelfReviews, pendingAbsences, peerReviews, profile, activeSrsDue, needAttentionTopics]);
+
+  const hasActionItems = allActionItems.length > 0;
+  const totalActionCount = allActionItems.length;
+
+  const renderActionItem = (item: { id: string; type: string; data: any }, inModal = false) => {
+    switch (item.type) {
+      case 'self_review': {
+        const r = item.data;
+        return (
+          <div key={item.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--danger-bg)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--danger-border)', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, minWidth: 0 }}>
+              <span style={{ fontSize: '18px', flexShrink: 0 }}>📝</span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', minWidth: 0 }}>
+                <div style={{ fontWeight: 800, fontSize: '12px', color: 'var(--danger)', wordBreak: 'break-word' }}>
+                  Exam Self-Reflection Required: {r.examName || r.examId}
+                </div>
+                <div style={{ fontSize: '10.5px', color: 'var(--text-secondary)' }}>
+                  Score: {r.score}/{r.totalMarks} ({r.percentage}%) • Complete mistake review to unblock exams
+                </div>
+              </div>
+            </div>
+            <button 
+              className="btn btn-primary" 
+              style={{ padding: '4px 12px', fontSize: '11px', borderRadius: 'var(--radius-sm)', fontWeight: 800, whiteSpace: 'nowrap', background: 'var(--danger)', color: 'var(--text-white)', border: 'none', flexShrink: 0 }}
+              onClick={() => {
+                if (inModal) setShowAllActionsModal(false);
+                setActiveReflectionExam({ examId: r.examId, examName: r.examName });
+              }}
+            >
+              Reflect & Unlock
+            </button>
+          </div>
+        );
+      }
+      case 'absence': {
+        const a = item.data;
+        return (
+          <div key={item.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--warning-bg)', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(251, 191, 36, 0.25)', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, minWidth: 0 }}>
+              <span style={{ fontSize: '18px', flexShrink: 0 }}>⚠️</span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', minWidth: 0 }}>
+                <div style={{ fontWeight: 800, fontSize: '12px', color: 'var(--warning)', wordBreak: 'break-word' }}>
+                  Missed Exam: Parent Acknowledgment Pending
+                </div>
+                <div style={{ fontSize: '10.5px', color: 'var(--text-secondary)' }}>
+                  {a.name} ({a.subject || 'General'}) • Parent must acknowledge absence in Parent Portal to unlock exams
+                </div>
+              </div>
+            </div>
+            <span style={{ padding: '3px 8px', fontSize: '10px', borderRadius: '4px', background: 'var(--surface-2)', color: 'var(--warning)', border: '1px solid rgba(251, 191, 36, 0.3)', fontWeight: 700, whiteSpace: 'nowrap', flexShrink: 0 }}>
+              Sign-off Pending
+            </span>
+          </div>
+        );
+      }
+      case 'peer_review': {
+        return (
+          <div key={item.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 10px', background: 'var(--surface-2)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
+              <ClipboardList size={16} color="var(--warning)" style={{ flexShrink: 0 }} />
+              <div style={{ fontWeight: 700, fontSize: '12px', color: 'var(--text)' }}>Peer Paper Review Pending ({peerReviews.count})</div>
+            </div>
+            <button 
+              className="btn btn-primary" 
+              style={{ padding: '4px 10px', fontSize: '11px', borderRadius: 'var(--radius-sm)', fontWeight: 700, flexShrink: 0 }}
+              onClick={() => {
+                if (inModal) setShowAllActionsModal(false);
+                handleGoToPeerReview(peerReviews.firstExamId);
+              }}
+            >
+              Grade Paper
+            </button>
+          </div>
+        );
+      }
+      case 'srs': {
+        const t = item.data;
+        return (
+          <div key={item.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 10px', background: 'var(--surface-2)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', borderLeft: '3.5px solid var(--info)', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, minWidth: 0 }}>
+              <span style={{ fontSize: '18px', flexShrink: 0 }}>🧠</span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', minWidth: 0 }}>
+                <div style={{ fontWeight: 800, fontSize: '12px', color: 'var(--info)', wordBreak: 'break-word' }}>
+                  Memory Refresher Due: {t.topicName}
+                </div>
+                <div style={{ fontSize: '10.5px', color: 'var(--text-secondary)' }}>
+                  {t.subjectName || 'General'} • {t.srsSchedule?.stageLabel || 'Interval Refresher'} • {t.srsSchedule?.estimatedRetention || 75}% Retention
+                </div>
+              </div>
+            </div>
+            <button 
+              className="btn btn-primary" 
+              style={{ padding: '4px 10px', fontSize: '11px', borderRadius: 'var(--radius-sm)', fontWeight: 800, whiteSpace: 'nowrap', background: 'var(--accent)', color: 'var(--text-on-accent)', border: 'none', flexShrink: 0 }}
+              onClick={() => {
+                if (inModal) setShowAllActionsModal(false);
+                router.push(`/student/topic?topicCode=${encodeURIComponent(t.topicCode)}&category=revision`);
+              }}
+            >
+              Start Workout
+            </button>
+          </div>
+        );
+      }
+      case 'need_attention': {
+        const t = item.data;
+        return (
+          <div key={item.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 10px', background: 'var(--surface-2)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', gap: '8px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: 700, fontSize: '12px', color: 'var(--text)', wordBreak: 'break-word' }}>{t.topicName}</div>
+              <div style={{ fontSize: '10.5px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
+                <span>{t.subjectName || 'General'}</span>
+                <span>•</span>
+                {t.isAbsentExam ? (
+                  <span style={{ color: 'var(--danger)', fontWeight: 700 }}>Missed Exam</span>
+                ) : (
+                  <span style={{ color: 'var(--warning)', fontWeight: 700 }}>{t.mastery || 0}% Mastery</span>
+                )}
+                {t.topicClassification && (
+                  <>
+                    <span>•</span>
+                    <span style={{
+                      fontSize: '9.5px',
+                      fontWeight: 700,
+                      padding: '1px 6px',
+                      borderRadius: '4px',
+                      background: (t.topicClassification === 'minor' || t.topicClassification === 'micro') ? 'var(--success-bg)' : (t.topicClassification === 'major' || t.topicClassification === 'calculative' || t.topicClassification === 'hots') ? 'var(--danger-bg)' : 'var(--info-bg)',
+                      color: (t.topicClassification === 'minor' || t.topicClassification === 'micro') ? 'var(--success)' : (t.topicClassification === 'major' || t.topicClassification === 'calculative' || t.topicClassification === 'hots') ? 'var(--danger)' : 'var(--info)',
+                      border: `1px solid ${(t.topicClassification === 'minor' || t.topicClassification === 'micro') ? 'rgba(52, 211, 153, 0.25)' : (t.topicClassification === 'major' || t.topicClassification === 'calculative' || t.topicClassification === 'hots') ? 'rgba(248, 113, 113, 0.25)' : 'rgba(56, 189, 248, 0.25)'}`
+                    }}>
+                      {(t.topicClassification === 'minor' || t.topicClassification === 'micro') && '📘 Minor (6 Qs to Master • Max 2 Sets)'}
+                      {(t.topicClassification === 'medium' || t.topicClassification === 'moderate' || t.topicClassification === 'conceptual') && '📙 Medium (10 Qs to Master • Max 3 Sets)'}
+                      {(t.topicClassification === 'major' || t.topicClassification === 'calculative' || t.topicClassification === 'hots') && '📕 Major (15 Qs to Master • Max 3 Sets)'}
+                    </span>
+                  </>
+                )}
+              </div>
+            </div>
+            <button 
+              className="btn btn-secondary btn-sm"
+              style={{ padding: '3px 8px', fontSize: '10.5px', fontWeight: 700, flexShrink: 0 }}
+              onClick={() => {
+                if (inModal) setShowAllActionsModal(false);
+                router.push(`/student/topic?topicCode=${encodeURIComponent(t.topicCode)}&category=needsAttention`);
+              }}
+            >
+              Practice
+            </button>
+          </div>
+        );
+      }
+      default:
+        return null;
+    }
+  };
 
   return (
     <div className="page-wrapper" style={{ background: 'var(--bg)', minHeight: '100vh' }}>
@@ -581,161 +779,79 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
               gap: '6px'
             }}>
               {/* Compact Header */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                {hasActionItems ? (
-                  <AlertTriangle size={18} color="var(--warning)" style={{ flexShrink: 0 }} />
-                ) : (
-                  <CheckCircle2 size={18} color="var(--success)" style={{ flexShrink: 0 }} />
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  {hasActionItems ? (
+                    <AlertTriangle size={18} color="var(--warning)" style={{ flexShrink: 0 }} />
+                  ) : (
+                    <CheckCircle2 size={18} color="var(--success)" style={{ flexShrink: 0 }} />
+                  )}
+                  <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 800, color: 'var(--text)', lineHeight: 1.2 }}>
+                    {hasActionItems 
+                      ? `${totalActionCount} Action Item(s) Need Attention` 
+                      : 'All Clear! You are fully on track!'}
+                  </h3>
+                </div>
+                {hasActionItems && allActionItems.length > 3 && (
+                  <span style={{
+                    fontSize: '11px',
+                    fontWeight: 800,
+                    padding: '2px 8px',
+                    borderRadius: '12px',
+                    background: 'var(--danger-bg)',
+                    color: 'var(--danger)',
+                    border: '1px solid var(--danger-border)',
+                    whiteSpace: 'nowrap'
+                  }}>
+                    Showing 3 of {allActionItems.length}
+                  </span>
                 )}
-                <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 800, color: 'var(--text)', lineHeight: 1.2 }}>
-                  {hasActionItems 
-                    ? `${totalActionCount} Action Item(s) Need Attention` 
-                    : 'All Clear! You are fully on track!'}
-                </h3>
               </div>
 
-              {/* 1. Pending Self-Reflection Reviews (Highest Priority Action Item) */}
-              {pendingSelfReviews.length > 0 && (
+              {/* Default View: Up to 3 Action Items */}
+              {hasActionItems && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  {pendingSelfReviews.map((r: any) => (
-                    <div key={r.id || r.examId} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--danger-bg)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--danger-border)', gap: '8px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
-                        <span style={{ fontSize: '18px' }}>📝</span>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                          <div style={{ fontWeight: 800, fontSize: '12px', color: 'var(--danger)' }}>
-                            Exam Self-Reflection Required: {r.examName || r.examId}
-                          </div>
-                          <div style={{ fontSize: '10.5px', color: 'var(--text-secondary)' }}>
-                            Score: {r.score}/{r.totalMarks} ({r.percentage}%) • Complete mistake review to unblock exams
-                          </div>
-                        </div>
-                      </div>
-                      <button 
-                        className="btn btn-primary" 
-                        style={{ padding: '4px 12px', fontSize: '11px', borderRadius: 'var(--radius-sm)', fontWeight: 800, whiteSpace: 'nowrap', background: 'var(--danger)', color: 'var(--text-white)', border: 'none' }}
-                        onClick={() => setActiveReflectionExam({ examId: r.examId, examName: r.examName })}
-                      >
-                        Reflect & Unlock
-                      </button>
-                    </div>
-                  ))}
+                  {allActionItems.slice(0, 3).map(item => renderActionItem(item, false))}
                 </div>
               )}
 
-              {/* 2. Missed Exam Absences Pending Parent Sign-Off */}
-              {pendingAbsences.length > 0 && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  {pendingAbsences.map((a: any) => (
-                    <div key={a.id || a.examId} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: 'var(--warning-bg)', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(251, 191, 36, 0.25)', gap: '8px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
-                        <span style={{ fontSize: '18px' }}>⚠️</span>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                          <div style={{ fontWeight: 800, fontSize: '12px', color: 'var(--warning)' }}>
-                            Missed Exam: Parent Acknowledgment Pending
-                          </div>
-                          <div style={{ fontSize: '10.5px', color: 'var(--text-secondary)' }}>
-                            {a.name} ({a.subject || 'General'}) • Parent must acknowledge absence in Parent Portal to unlock exams
-                          </div>
-                        </div>
-                      </div>
-                      <span style={{ padding: '3px 8px', fontSize: '10px', borderRadius: '4px', background: 'var(--surface-2)', color: 'var(--warning)', border: '1px solid rgba(251, 191, 36, 0.3)', fontWeight: 700, whiteSpace: 'nowrap' }}>
-                        Sign-off Pending
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* 3. Peer Review Alert */}
-              {peerReviews.count > 0 && (
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 10px', background: 'var(--surface-2)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <ClipboardList size={16} color="var(--warning)" />
-                    <div style={{ fontWeight: 700, fontSize: '12px', color: 'var(--text)' }}>Peer Paper Review Pending</div>
-                  </div>
-                  <button 
-                    className="btn btn-primary" 
-                    style={{ padding: '4px 10px', fontSize: '11px', borderRadius: 'var(--radius-sm)', fontWeight: 700 }}
-                    onClick={() => handleGoToPeerReview(peerReviews.firstExamId)}
-                  >
-                    Grade Paper
-                  </button>
-                </div>
-              )}
-
-              {/* 3.5. Spaced Repetition Due (Mastered Topics Ready for Micro-Refresher) */}
-              {Boolean((profile as any)?.srsEnabled) && activeSrsDue.length > 0 && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  {activeSrsDue.slice(0, 3).map((t: any) => (
-                    <div key={t.topicCode} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 10px', background: 'var(--surface-2)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', borderLeft: '3.5px solid var(--info)', gap: '8px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1 }}>
-                        <span style={{ fontSize: '18px' }}>🧠</span>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                          <div style={{ fontWeight: 800, fontSize: '12px', color: 'var(--info)' }}>
-                            Memory Refresher Due: {t.topicName}
-                          </div>
-                          <div style={{ fontSize: '10.5px', color: 'var(--text-secondary)' }}>
-                            {t.subjectName || 'General'} • {t.srsSchedule?.stageLabel || 'Interval Refresher'} • {t.srsSchedule?.estimatedRetention || 75}% Retention
-                          </div>
-                        </div>
-                      </div>
-                      <button 
-                        className="btn btn-primary" 
-                        style={{ padding: '4px 10px', fontSize: '11px', borderRadius: 'var(--radius-sm)', fontWeight: 800, whiteSpace: 'nowrap', background: 'var(--accent)', color: 'var(--text-on-accent)', border: 'none' }}
-                        onClick={() => router.push(`/student/topic?topicCode=${encodeURIComponent(t.topicCode)}&category=revision`)}
-                      >
-                        Start Workout
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* 4. Need Attention Topics List */}
-              {needAttentionTopics.length > 0 && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  {needAttentionTopics.slice(0, 4).map((t: any) => (
-                    <div key={t.topicCode} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 10px', background: 'var(--surface-2)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', gap: '8px' }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', flex: 1 }}>
-                        <div style={{ fontWeight: 700, fontSize: '12px', color: 'var(--text)' }}>{t.topicName}</div>
-                        <div style={{ fontSize: '10.5px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' }}>
-                          <span>{t.subjectName || 'General'}</span>
-                          <span>•</span>
-                          {t.isAbsentExam ? (
-                            <span style={{ color: 'var(--danger)', fontWeight: 700 }}>Missed Exam</span>
-                          ) : (
-                            <span style={{ color: 'var(--warning)', fontWeight: 700 }}>{t.mastery || 0}% Mastery</span>
-                          )}
-                          {t.topicClassification && (
-                            <>
-                              <span>•</span>
-                              <span style={{
-                                fontSize: '9.5px',
-                                fontWeight: 700,
-                                padding: '1px 6px',
-                                borderRadius: '4px',
-                                background: (t.topicClassification === 'minor' || t.topicClassification === 'micro') ? 'var(--success-bg)' : (t.topicClassification === 'major' || t.topicClassification === 'calculative' || t.topicClassification === 'hots') ? 'var(--danger-bg)' : 'var(--info-bg)',
-                                color: (t.topicClassification === 'minor' || t.topicClassification === 'micro') ? 'var(--success)' : (t.topicClassification === 'major' || t.topicClassification === 'calculative' || t.topicClassification === 'hots') ? 'var(--danger)' : 'var(--info)',
-                                border: `1px solid ${(t.topicClassification === 'minor' || t.topicClassification === 'micro') ? 'rgba(52, 211, 153, 0.25)' : (t.topicClassification === 'major' || t.topicClassification === 'calculative' || t.topicClassification === 'hots') ? 'rgba(248, 113, 113, 0.25)' : 'rgba(56, 189, 248, 0.25)'}`
-                              }}>
-                                {(t.topicClassification === 'minor' || t.topicClassification === 'micro') && '📘 Minor (6 Qs to Master • Max 2 Sets)'}
-                                {(t.topicClassification === 'medium' || t.topicClassification === 'moderate' || t.topicClassification === 'conceptual') && '📙 Medium (10 Qs to Master • Max 3 Sets)'}
-                                {(t.topicClassification === 'major' || t.topicClassification === 'calculative' || t.topicClassification === 'hots') && '📕 Major (15 Qs to Master • Max 3 Sets)'}
-                              </span>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                      <button 
-                        className="btn btn-secondary btn-sm"
-                        style={{ padding: '3px 8px', fontSize: '10.5px', fontWeight: 700 }}
-                        onClick={() => router.push(`/student/topic?topicCode=${encodeURIComponent(t.topicCode)}&category=needsAttention`)}
-                      >
-                        Practice
-                      </button>
-                    </div>
-                  ))}
-                </div>
+              {/* RED HIGHLIGHTED BUTTON: VIEW MORE */}
+              {allActionItems.length > 3 && (
+                <button
+                  type="button"
+                  onClick={() => setShowAllActionsModal(true)}
+                  style={{
+                    width: '100%',
+                    padding: '9px 14px',
+                    marginTop: '4px',
+                    fontSize: '12px',
+                    fontWeight: 800,
+                    letterSpacing: '0.6px',
+                    textTransform: 'uppercase',
+                    color: '#ffffff',
+                    background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                    border: '1px solid #b91c1c',
+                    borderRadius: 'var(--radius-sm)',
+                    boxShadow: '0 2px 8px rgba(239, 68, 68, 0.4)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    transition: 'all 0.18s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)';
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(239, 68, 68, 0.55)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)';
+                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(239, 68, 68, 0.4)';
+                  }}
+                >
+                  <AlertTriangle size={15} color="#ffffff" />
+                  <span>VIEW MORE ({allActionItems.length - 3} MORE ACTION ITEMS)</span>
+                </button>
               )}
             </div>
 
@@ -1318,6 +1434,99 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
             }
           }}
         />
+      )}
+
+      {/* ALL ACTION ITEMS MODAL */}
+      {showAllActionsModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.75)',
+          backdropFilter: 'blur(4px)',
+          zIndex: 25000,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '16px'
+        }}>
+          <div style={{
+            background: 'var(--surface)',
+            border: '1px solid var(--border-light)',
+            borderRadius: '16px',
+            maxWidth: '720px',
+            width: '100%',
+            maxHeight: '85vh',
+            display: 'flex',
+            flexDirection: 'column',
+            boxShadow: 'var(--shadow-xl)',
+            overflow: 'hidden'
+          }}>
+            {/* Modal Header */}
+            <div style={{
+              padding: '14px 18px',
+              borderBottom: '1px solid var(--border)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              background: 'var(--surface-2)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <AlertTriangle size={18} color="var(--warning)" />
+                <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: 'var(--text)' }}>
+                  All Action Items ({allActionItems.length})
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAllActionsModal(false)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  fontSize: '18px',
+                  color: 'var(--text-muted)',
+                  cursor: 'pointer',
+                  padding: '4px 8px',
+                  lineHeight: 1
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Modal Scrollable Body */}
+            <div style={{
+              padding: '14px 18px',
+              overflowY: 'auto',
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '8px'
+            }}>
+              {allActionItems.map(item => renderActionItem(item, true))}
+            </div>
+
+            {/* Modal Footer */}
+            <div style={{
+              padding: '10px 18px',
+              borderTop: '1px solid var(--border)',
+              display: 'flex',
+              justifyContent: 'flex-end',
+              background: 'var(--surface-2)'
+            }}>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => setShowAllActionsModal(false)}
+                style={{ padding: '6px 16px', fontSize: '12px', fontWeight: 700 }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
