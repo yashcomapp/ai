@@ -162,6 +162,18 @@ export class QuestionRepository {
       console.warn('getQuestionsByTopic: topicCode query failed', e);
     }
 
+    // Path 1.2: subtopics indexed with topicCode field (e.g. parent 5.1 -> subtopics 5.1.1, 5.1.2)
+    try {
+      const subtopicRange = await this.collection
+        .where('topicCode', '>=', topicCode + '.')
+        .where('topicCode', '<=', topicCode + '.\uf8ff')
+        .limit(500)
+        .get();
+      if (!subtopicRange.empty) return subtopicRange.docs.map(d => ({ id: d.id, ...d.data() } as QuestionItem));
+    } catch (e) {
+      console.warn('getQuestionsByTopic: topicCode subtopic range query failed', e);
+    }
+
     // Path 1.5: query by prefix scan (for questions stored with topic code as prefix)
     const prefixScanResult = await this.queryByQuestionCodePrefix(topicCode);
     if (prefixScanResult.length > 0) return prefixScanResult;
@@ -182,14 +194,18 @@ export class QuestionRepository {
       return deriveTopicCodeFromQuestionCode(qCode);
     };
 
-    // Path 3: robust subject prefix scan + in-memory matching (exact code + subtopic hierarchy)
+    // Path 3: robust chapter/subject prefix scan + in-memory matching (exact code + subtopic hierarchy)
     try {
       const parts = topicCode.split('-');
       if (parts.length >= 3) {
-        const subjectPrefix = `${parts[0]}-${parts[1]}-${parts[2]}-`;
+        // Prefer chapter prefix if available (prevents 1,000 document limit truncation in large subjects like MH-9-SCIT)
+        const scanPrefix = parts.length >= 4 
+          ? `${parts[0]}-${parts[1]}-${parts[2]}-${parts[3]}-` 
+          : `${parts[0]}-${parts[1]}-${parts[2]}-`;
+
         const listSnap = await this.collection
-          .where('questionCode', '>=', subjectPrefix)
-          .where('questionCode', '<=', subjectPrefix + '\uffff')
+          .where('questionCode', '>=', scanPrefix)
+          .where('questionCode', '<=', scanPrefix + '\uffff')
           .limit(1000)
           .get();
           
@@ -212,7 +228,7 @@ export class QuestionRepository {
         }
       }
     } catch (e) {
-      console.warn('getQuestionsByTopic: subject prefix query and in-memory filter failed', e);
+      console.warn('getQuestionsByTopic: chapter/subject prefix query and in-memory filter failed', e);
     }
 
     // Path 4: Subtopic fallback — if topicCode is e.g. CBSE-8-CURI-5-5.1.1, fallback to parent CBSE-8-CURI-5-5.1

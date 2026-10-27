@@ -215,21 +215,58 @@ export async function GET(req: NextRequest) {
     const finalSize = isRecoveryMode ? 8 : (isRevisionMode ? (size || getSrsMicroSetSize(topicClassification)) : (size || 6));
 
     // 1.2 Fetch all questions for this topic (STRICTLY Canonical Objective Types: OSC, OMC, OAR, OTF, ONE, OFB)
-    let allQuestions: any[] = await getQuestionsByTopic(topicCode);
-    allQuestions = allQuestions.filter((q: any) => {
+    const rawTopicQuestions = await getQuestionsByTopic(topicCode);
+
+    // Filter out non-objective types, quarantined items, and malformed MCQs with <2 options
+    const validObjectiveQuestions = rawTopicQuestions.filter((q: any) => {
       if (!q.type || !isObjectiveType(q.type)) return false;
       if (isQuestionQuarantined(q)) return false;
-      // ZERO-COLLISION: Exclude questions strictly designated for formal exams or mock tests
-      if (q.vault && q.vault !== 'practice') return false;
-      if (q.examCategory && q.examCategory !== 'standard') return false;
-      // MCQs must have at least 2 valid options to be served in practice mode
       if ((isSingleChoiceType(q.type) || isMultipleChoiceType(q.type)) && (!Array.isArray(q.options) || q.options.length < 2)) {
         return false;
       }
       return true;
     });
 
-    const topicName = allQuestions.length > 0 ? ((allQuestions[0] as any).topicName || (allQuestions[0] as any).topic || topicCode) : topicCode;
+    // 3-Tier Waterfall for Zero-Collision & Zero-Starvation Practice:
+    // Tier 1: Practice vault standard questions (preferred)
+    const tier1PracticeStandard = validObjectiveQuestions.filter(q => {
+      const isPracticeVault = !q.vault || q.vault === 'practice';
+      const isStandardCat = !q.examCategory || q.examCategory === 'standard';
+      return isPracticeVault && isStandardCat;
+    });
+
+    // Tier 2: Foundation & Mock questions (Olympiad / Homi Bhabha / competitive practice)
+    const tier2MockFoundation = validObjectiveQuestions.filter(q => {
+      return q.vault === 'mock' || q.examCategory === 'foundation';
+    });
+
+    // Tier 3: Exam Vault questions (fallback to prevent student starvation if topic only has exam questions)
+    const tier3ExamVault = validObjectiveQuestions.filter(q => {
+      return q.vault === 'exam' && q.examCategory !== 'foundation';
+    });
+
+    let allQuestions: any[] = [];
+    if (tier1PracticeStandard.length >= finalSize) {
+      allQuestions = tier1PracticeStandard;
+    } else if (tier1PracticeStandard.length + tier2MockFoundation.length >= finalSize) {
+      allQuestions = [...tier1PracticeStandard, ...tier2MockFoundation];
+    } else {
+      allQuestions = [...tier1PracticeStandard, ...tier2MockFoundation, ...tier3ExamVault];
+    }
+
+    let topicName = topicCode;
+    if (allQuestions.length > 0) {
+      topicName = (allQuestions[0] as any).topicName || (allQuestions[0] as any).topic || topicCode;
+    }
+    if (topicName === topicCode) {
+      try {
+        const sSnap = await adminDb.collection('syllabusTopicIndex').doc(topicCode).get();
+        if (sSnap.exists) {
+          const sData = sSnap.data()!;
+          topicName = sData.topicName || sData.title || sData.name || topicName;
+        }
+      } catch {}
+    }
 
     if (allQuestions.length === 0) {
       return NextResponse.json({
@@ -548,6 +585,9 @@ export async function GET(req: NextRequest) {
 
     // Shuffle final questions
     let finalDeduplicatedQuestions = filterDistinctCandidates(shuffleArray(finalQuestions));
+    if (finalDeduplicatedQuestions.length === 0 && allQuestions.length > 0) {
+      finalDeduplicatedQuestions = shuffleArray(allQuestions).slice(0, finalSize);
+    }
 
     // Strip answers or pass them selectively. For topic practice mode, the client needs correctAnswer/correctAnswers for immediate feedback.
     const sanitizedQuestions = finalDeduplicatedQuestions.map((q: any) => {
