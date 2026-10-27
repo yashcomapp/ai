@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { adminDb } from '@/lib/firebase/admin';
+import { ChunkedBatch } from '@/lib/firebase/batch';
 import { verifyRole } from '@/lib/auth';
 
 export const dynamic = 'force-dynamic';
@@ -45,7 +46,7 @@ export async function GET(request: Request) {
 
     // Reliably auto-expire obsolete sessions and await cleanup (no fire-and-forget)
     if (expiredDocIds.length > 0) {
-      const expireBatch = adminDb.batch();
+      const expireBatch = new ChunkedBatch(adminDb);
       expiredDocIds.forEach(id => {
         expireBatch.update(adminDb.collection('liveClassrooms').doc(id), {
           status: 'ended',
@@ -139,7 +140,7 @@ export async function POST(request: Request) {
         .where('status', '==', 'live')
         .get();
 
-      const startBatch = adminDb.batch();
+      const startBatch = new ChunkedBatch(adminDb);
 
       // End overlapping sessions and delete their target documents atomically
       for (const doc of ongoingSnap.docs) {
@@ -255,7 +256,7 @@ export async function POST(request: Request) {
         return NextResponse.json({ success: true, message: 'Session is already ended.' });
       }
 
-      const endBatch = adminDb.batch();
+      const endBatch = new ChunkedBatch(adminDb);
       endBatch.update(sessionRef, {
         status: 'ended',
         endedAt: new Date().toISOString(),

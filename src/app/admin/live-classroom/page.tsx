@@ -75,7 +75,8 @@ export default function AdminLiveClassroomPage() {
       if (!batchesRes.ok) throw new Error('Failed to load batches.');
       const batchesData = await batchesRes.json();
       setBatches(batchesData.batches || []);
-      setStudents(batchesData.students || []);
+      // Exclude deactivated accounts per Rule 2C
+      setStudents((batchesData.students || []).filter((s: any) => s.status !== 'inactive'));
 
       // 2. Load Live Classroom state
       const classroomRes = await fetch('/api/admin/live-classroom', {

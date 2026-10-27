@@ -358,10 +358,12 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
 
     const unsubs: Array<() => void> = [];
     const activeTargetsMap = new Map<string, any>();
+    let autoExpiryTimer: NodeJS.Timeout | null = null;
 
     const evaluateActiveSession = () => {
       const now = Date.now();
       let matched: any = null;
+      let matchedExpiresMs = 0;
 
       for (const target of activeTargetsMap.values()) {
         if (!target || target.status !== 'live') continue;
@@ -377,10 +379,21 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
         if (now - startMs > 100 * 60 * 1000) continue;
 
         matched = target;
+        matchedExpiresMs = expiresMs;
         break;
       }
 
+      if (autoExpiryTimer) {
+        clearTimeout(autoExpiryTimer);
+        autoExpiryTimer = null;
+      }
+
       if (matched) {
+        const remainingMs = matchedExpiresMs > now ? matchedExpiresMs - now : 100 * 60 * 1000;
+        autoExpiryTimer = setTimeout(() => {
+          evaluateActiveSession();
+        }, Math.min(remainingMs, 100 * 60 * 1000));
+
         setLiveClassSession({
           id: matched.sessionId,
           title: matched.title,
@@ -411,6 +424,7 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
     });
 
     return () => {
+      if (autoExpiryTimer) clearTimeout(autoExpiryTimer);
       unsubs.forEach(u => u());
     };
   }, [firebaseUser, profile]);
