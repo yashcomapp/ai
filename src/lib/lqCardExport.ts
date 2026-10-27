@@ -1,4 +1,4 @@
-import { formatDateDMY } from '@/lib/dateUtils';
+import { formatDateDMY, formatDurationHM } from '@/lib/dateUtils';
 import { playNotificationSound } from '@/lib/audioUtils';
 import { getScoreColor } from '@/lib/dashboardMetrics';
 
@@ -867,6 +867,7 @@ export interface BatchPracticeTracksExportParams {
       avgScore: number;
       examAvg?: number;
       lastActive: string | null;
+      totalDurationSeconds?: number;
     };
   };
   masteryStats: {
@@ -881,12 +882,13 @@ export interface BatchPracticeTracksExportParams {
     };
   };
   weeklyStats?: Record<string, {
-    days: Record<string, { questionsCount: number; sessionsCount: number; avgScore: number; correctCount: number }>;
+    days: Record<string, { questionsCount: number; sessionsCount: number; avgScore: number; correctCount: number; durationSeconds?: number }>;
     totalQuestions: number;
     totalSessions: number;
     activeDays: number;
     avgScore: number;
     activeDates: string[];
+    totalDurationSeconds?: number;
   }>;
   weekDays?: Array<{ dateKey: string; label: string; shortLabel: string; dayName: string; isToday: boolean }>;
   formatDateDMY?: (date: any) => string;
@@ -1071,7 +1073,7 @@ export async function exportBatchPracticeTracksImage(params: BatchPracticeTracks
               <span style="font-weight: 800; font-size: 13px; color: #0f172a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: ${studentColWidth - 45}px;">${displayName}</span>
             </div>
             <div style="font-size: 10px; font-weight: 600; color: #64748b; margin-left: 20px; line-height: 1.2; margin-top: 2px;">
-              ${s.className || s.class || 'Batch'} ${s.rollNumber ? `• Roll ${s.rollNumber}` : ''}
+              ${s.className || s.class || 'Batch'} • ⏱️ ${formatDurationHM(w.totalDurationSeconds || 0)}
             </div>
           </td>
 
@@ -1193,8 +1195,11 @@ export async function exportBatchPracticeTracksImage(params: BatchPracticeTracks
       return `
         <tr style="border-bottom: 1px solid #e2e8f0; height: 44px; background-color: ${rowBg};">
           <td style="padding: 8px 10px; text-align: center; font-weight: 900; font-size: 13.5px; color: #0f172a;">${rankBadge}</td>
-          <td style="padding: 8px 14px; font-weight: 800; font-size: 14.5px; color: #0f172a; white-space: nowrap;">
-            ${displayName}
+          <td style="padding: 6px 14px; white-space: nowrap;">
+            <div style="font-weight: 800; font-size: 14px; color: #0f172a; line-height: 1.2;">${displayName}</div>
+            <div style="font-size: 10px; font-weight: 600; color: #64748b; line-height: 1.2; margin-top: 2px;">
+              ${s.className || s.class || 'Batch'} • ⏱️ ${formatDurationHM(pStat.totalDurationSeconds || 0)}
+            </div>
           </td>
           <td style="padding: 8px 8px; text-align: center; font-weight: 800; font-size: 13.5px; color: #0f172a;">
             ${pStat.totalSessions}

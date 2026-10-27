@@ -13,13 +13,36 @@ import { getObjectiveExamTopics, getSubjectiveExamTopics, getExamDateKey, isExam
 import { ExamService, getAssignmentsForBatches } from '@/services/exam.service';
 import { getCachedBatches } from '@/lib/firebase/cache';
 
-const parseIST = (dateStr: string) => {
+const parseIST = (dateStr: string): Date => {
   if (!dateStr) return new Date();
-  const hasOffset = /[+-]\d{2}:?\d{2}$/.test(dateStr) || dateStr.endsWith('Z');
-  if (!hasOffset) {
-    return new Date(dateStr + '+05:30');
+  let trimmed = String(dateStr).trim();
+
+  // Handle slash formats e.g. 10/16/2026 or 16/10/2026
+  const slashMatch = trimmed.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (slashMatch) {
+    const n1 = parseInt(slashMatch[1], 10);
+    const n2 = parseInt(slashMatch[2], 10);
+    const year = slashMatch[3];
+    let month = n1;
+    let day = n2;
+    if (n1 > 12 && n2 <= 12) {
+      day = n1;
+      month = n2;
+    } else if (n2 > 12 && n1 <= 12) {
+      month = n1;
+      day = n2;
+    }
+    trimmed = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
   }
-  return new Date(dateStr);
+
+  const hasOffset = /[+-]\d{2}:?\d{2}$/.test(trimmed) || trimmed.endsWith('Z');
+  if (!hasOffset) {
+    const timePart = trimmed.includes('T') ? '' : 'T00:00:00';
+    const d = new Date(`${trimmed}${timePart}+05:30`);
+    if (!isNaN(d.getTime())) return d;
+  }
+  const d = new Date(trimmed);
+  return isNaN(d.getTime()) ? new Date() : d;
 };
 
 const updateExamNameWithAssignedDate = (currentName: string, assignedDate: Date): string => {
@@ -402,7 +425,7 @@ export async function GET(req: NextRequest) {
       const startDateParam = req.nextUrl.searchParams.get('startDate');
       const endDateParam = req.nextUrl.searchParams.get('endDate');
 
-      const cacheKey = `practice-tracks-v3-${batchIdParam || 'all'}-${daysParam || '7'}-${startDateParam || ''}-${endDateParam || ''}`;
+      const cacheKey = `practice-tracks-v4-${batchIdParam || 'all'}-${daysParam || '7'}-${startDateParam || ''}-${endDateParam || ''}`;
       const cached = await ReportCacheManager.getReport<any>(cacheKey);
       if (cached) {
         return NextResponse.json(cached);
@@ -481,7 +504,7 @@ export async function GET(req: NextRequest) {
           });
 
           if (dateKey === endKey) break;
-          current.setTime(current.getTime() + 86400000);
+          current.setDate(current.getDate() + 1);
           count++;
         }
       } else {
@@ -503,7 +526,7 @@ export async function GET(req: NextRequest) {
         }
       }
 
-      // Fetch practice reviews for daily 7-day history and lastActive
+      // Fetch practice reviews for daily history, time tracking, and lastActive
       const chunks: string[][] = [];
       for (let i = 0; i < studentCodes.length; i += 30) {
         chunks.push(studentCodes.slice(i, i + 30));
@@ -512,26 +535,28 @@ export async function GET(req: NextRequest) {
         chunks.map(chunk =>
           adminDb.collection('parentReviews')
             .where('studentCode', 'in', chunk)
-            .select('studentCode', 'startedAt', 'createdAt', 'submittedAt', 'totalQuestions', 'questionsCount', 'correctCount', 'scorePercent', 'type')
+            .select('studentCode', 'startedAt', 'createdAt', 'submittedAt', 'totalQuestions', 'questionsCount', 'correctCount', 'scorePercent', 'type', 'durationSpent')
             .get()
             .catch(() => null)
         )
       );
 
       const lastActiveMap: Record<string, string | null> = {};
+      const cumulativeDurationMap: Record<string, number> = {};
       const weeklyStats: Record<string, {
-        days: Record<string, { questionsCount: number; sessionsCount: number; avgScore: number; correctCount: number }>;
+        days: Record<string, { questionsCount: number; sessionsCount: number; avgScore: number; correctCount: number; durationSeconds: number }>;
         totalQuestions: number;
         totalSessions: number;
         activeDays: number;
         avgScore: number;
         activeDates: string[];
+        totalDurationSeconds: number;
       }> = {};
 
       students.forEach((s: any) => {
-        const dayMap: Record<string, { questionsCount: number; sessionsCount: number; avgScore: number; correctCount: number }> = {};
+        const dayMap: Record<string, { questionsCount: number; sessionsCount: number; avgScore: number; correctCount: number; durationSeconds: number }> = {};
         dayKeys.forEach(dk => {
-          dayMap[dk] = { questionsCount: 0, sessionsCount: 0, avgScore: 0, correctCount: 0 };
+          dayMap[dk] = { questionsCount: 0, sessionsCount: 0, avgScore: 0, correctCount: 0, durationSeconds: 0 };
         });
         weeklyStats[s.studentCode] = {
           days: dayMap,
@@ -539,7 +564,8 @@ export async function GET(req: NextRequest) {
           totalSessions: 0,
           activeDays: 0,
           avgScore: 0,
-          activeDates: []
+          activeDates: [],
+          totalDurationSeconds: 0
         };
       });
 
@@ -548,6 +574,9 @@ export async function GET(req: NextRequest) {
         const code = data.studentCode;
         if (!code || !weeklyStats[code]) return;
         if (data.type && data.type !== 'practice') return;
+
+        const duration = Math.max(0, Number(data.durationSpent) || 0);
+        cumulativeDurationMap[code] = (cumulativeDurationMap[code] || 0) + duration;
 
         const itemDate = data.startedAt?.toDate ? data.startedAt.toDate() : data.createdAt?.toDate ? data.createdAt.toDate() : data.submittedAt?.toDate ? data.submittedAt.toDate() : data.startedAt ? new Date(data.startedAt) : null;
         if (!itemDate) return;
@@ -566,6 +595,7 @@ export async function GET(req: NextRequest) {
           dayData.sessionsCount += 1;
           dayData.questionsCount += qCount;
           dayData.correctCount += correct;
+          dayData.durationSeconds += duration;
         }
       });
 
@@ -575,6 +605,7 @@ export async function GET(req: NextRequest) {
         let weekCorrect = 0;
         let weekSess = 0;
         let activeD = 0;
+        let totalDuration = 0;
         const activeDatesArr: string[] = [];
 
         dayKeys.forEach(dk => {
@@ -584,6 +615,7 @@ export async function GET(req: NextRequest) {
             weekQ += d.questionsCount;
             weekCorrect += d.correctCount;
             weekSess += d.sessionsCount;
+            totalDuration += (d.durationSeconds || 0);
             activeD += 1;
             activeDatesArr.push(dk);
           }
@@ -592,18 +624,19 @@ export async function GET(req: NextRequest) {
         w.totalQuestions = weekQ;
         w.totalSessions = weekSess;
         w.activeDays = activeD;
+        w.totalDurationSeconds = totalDuration;
         w.avgScore = weekQ > 0 ? Math.round((weekCorrect / weekQ) * 100) : 0;
         w.activeDates = activeDatesArr;
       });
 
-      const practiceStats: Record<string, { totalSessions: number, questionsAttempted: number, avgScore: number, examAvg: number, lastActive: string | null }> = {};
+      const practiceStats: Record<string, { totalSessions: number, questionsAttempted: number, avgScore: number, examAvg: number, lastActive: string | null, totalDurationSeconds: number }> = {};
       const masteryStats: Record<string, { avgMastery: number, avgQuality: number, efforts: number, mastered: number, practicing: number, needsAttention: number, totalAssigned: number }> = {};
 
       students.forEach((s: any) => {
         const code = s.studentCode;
         const qData = quotientsMap[code];
         if (!qData) {
-          practiceStats[code] = { totalSessions: 0, questionsAttempted: 0, avgScore: 0, examAvg: 0, lastActive: null };
+          practiceStats[code] = { totalSessions: 0, questionsAttempted: 0, avgScore: 0, examAvg: 0, lastActive: null, totalDurationSeconds: 0 };
           masteryStats[code] = { avgMastery: 0, avgQuality: 100, efforts: 0, mastered: 0, practicing: 0, needsAttention: 0, totalAssigned: 0 };
           return;
         }
@@ -623,7 +656,8 @@ export async function GET(req: NextRequest) {
           questionsAttempted: practiceComp?.details?.totalQuestionsAttempted ?? 0,
           avgScore: practiceComp?.details?.averagePracticeScore ?? 0,
           examAvg: examComp?.score ?? 0,
-          lastActive: lastActiveMap[code] || null
+          lastActive: lastActiveMap[code] || null,
+          totalDurationSeconds: cumulativeDurationMap[code] || 0
         };
 
         masteryStats[code] = {

@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { Batch, Student } from './types';
 import { formatReportStudentName, exportBatchPracticeTracksImage, computeBatchMaxTopics } from '@/lib/lqCardExport';
-import { getDateKeyIST } from '@/lib/dateUtils';
+import { getDateKeyIST, formatDurationHM } from '@/lib/dateUtils';
 
 interface PracticeTabProps {
   batches: Batch[];
@@ -27,6 +27,7 @@ interface PracticeTabProps {
       avgScore: number;
       examAvg?: number;
       lastActive: string | null;
+      totalDurationSeconds?: number;
     };
   };
   masteryStats: {
@@ -41,12 +42,13 @@ interface PracticeTabProps {
     };
   };
   weeklyStats?: Record<string, {
-    days: Record<string, { questionsCount: number; sessionsCount: number; avgScore: number; correctCount: number }>;
+    days: Record<string, { questionsCount: number; sessionsCount: number; avgScore: number; correctCount: number; durationSeconds?: number }>;
     totalQuestions: number;
     totalSessions: number;
     activeDays: number;
     avgScore: number;
     activeDates: string[];
+    totalDurationSeconds?: number;
   }>;
   weekDays?: Array<{ dateKey: string; label: string; shortLabel: string; dayName: string; isToday: boolean }>;
   handleRowClick: (student: Student) => void;
@@ -480,8 +482,12 @@ export default function PracticeTab({
                           >
                             <td style={{ padding: '6px 10px' }}>
                               <div style={{ fontWeight: 800, fontSize: '13px', color: 'var(--text)' }}>{formattedName}</div>
-                              <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', fontWeight: 600 }}>
-                                {student.className || student.class || 'Batch'} {student.rollNumber ? `• Roll ${student.rollNumber}` : ''}
+                              <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                <span>{student.className || student.class || 'Batch'}</span>
+                                <span>•</span>
+                                <span style={{ color: (w.totalDurationSeconds || 0) > 0 ? 'var(--accent)' : 'var(--text-muted)', fontWeight: (w.totalDurationSeconds || 0) > 0 ? 700 : 500 }} title="Total practice time in selected duration">
+                                  ⏱️ {formatDurationHM(w.totalDurationSeconds || 0)}
+                                </span>
                               </div>
                             </td>
                             {weekDays.map(wd => {
@@ -603,7 +609,16 @@ export default function PracticeTab({
                           className="hover-row"
                           style={{ borderBottom: '1px solid var(--border-light)', cursor: 'pointer', transition: 'background 0.2s' }}
                         >
-                          <td style={{ padding: '6px 10px', fontWeight: 'bold' }}>{formattedName}</td>
+                          <td style={{ padding: '6px 10px' }}>
+                            <div style={{ fontWeight: 'bold' }}>{formattedName}</div>
+                            <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                              <span>{student.className || student.class || 'Batch'}</span>
+                              <span>•</span>
+                              <span style={{ color: (stats.totalDurationSeconds || 0) > 0 ? 'var(--accent)' : 'var(--text-muted)', fontWeight: (stats.totalDurationSeconds || 0) > 0 ? 700 : 500 }} title="Total practice time (all-time)">
+                                ⏱️ {formatDurationHM(stats.totalDurationSeconds || 0)}
+                              </span>
+                            </div>
+                          </td>
                           <td style={{ padding: '6px 10px', textAlign: 'center' }}>{stats.totalSessions}</td>
                           <td style={{ padding: '6px 10px', textAlign: 'center' }}>{stats.questionsAttempted}</td>
                           <td style={{ padding: '6px 10px' }}>
