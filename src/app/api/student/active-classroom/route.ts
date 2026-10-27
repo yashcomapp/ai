@@ -13,15 +13,19 @@ export async function GET(request: Request) {
 
     const liveSnap = await adminDb.collection('liveClassrooms')
       .where('status', '==', 'live')
-      .orderBy('startedAt', 'desc')
-      .limit(1)
       .get();
 
     if (liveSnap.empty) {
       return NextResponse.json({ hasLiveClass: false });
     }
 
-    const doc = liveSnap.docs[0];
+    const liveDocs = liveSnap.docs.sort((a, b) => {
+      const aTime = new Date(a.data().startedAt || 0).getTime();
+      const bTime = new Date(b.data().startedAt || 0).getTime();
+      return bTime - aTime;
+    });
+
+    const doc = liveDocs[0];
     const data = doc.data();
 
     const studentData = student.userData || {};

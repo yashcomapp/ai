@@ -23,13 +23,16 @@ export async function GET(request: Request) {
     // Get active live session(s)
     const activeSnap = await adminDb.collection('liveClassrooms')
       .where('status', '==', 'live')
-      .orderBy('startedAt', 'desc')
-      .limit(1)
       .get();
 
     let activeSession = null;
     if (!activeSnap.empty) {
-      const doc = activeSnap.docs[0];
+      const activeDocs = activeSnap.docs.sort((a, b) => {
+        const aTime = new Date(a.data().startedAt || 0).getTime();
+        const bTime = new Date(b.data().startedAt || 0).getTime();
+        return bTime - aTime;
+      });
+      const doc = activeDocs[0];
       const data = doc.data();
       activeSession = {
         id: doc.id,
@@ -40,15 +43,17 @@ export async function GET(request: Request) {
 
     // Get recent ended sessions (last 10)
     const recentSnap = await adminDb.collection('liveClassrooms')
-      .where('status', '==', 'ended')
       .orderBy('startedAt', 'desc')
-      .limit(10)
+      .limit(15)
       .get();
 
-    const recentSessions = recentSnap.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
+    const recentSessions = recentSnap.docs
+      .filter(doc => doc.data().status === 'ended')
+      .slice(0, 10)
+      .map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
 
     return NextResponse.json({ activeSession, recentSessions });
   } catch (err: any) {
