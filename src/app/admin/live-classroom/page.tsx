@@ -245,9 +245,9 @@ export default function AdminLiveClassroomPage() {
     }
   };
 
-  // Copy student focus mode link
+  // Copy student focus mode link (Strict Webinar Mode: camera off, tile view disabled, filmstrip disabled)
   const handleCopyStudentLink = (roomName: string) => {
-    const url = `https://meet.jit.si/${roomName}#config.channelLastN=1&config.startWithAudioMuted=true&config.startWithVideoMuted=false`;
+    const url = `https://meet.jit.si/${roomName}#config.channelLastN=1&config.startWithAudioMuted=true&config.startWithVideoMuted=true&config.disableTileView=true&config.filmstrip.disabled=true&config.disableFilmstripAutohide=true&config.remoteVideoMenu.disabled=true&config.p2p.enabled=false&config.toolbarButtons=["microphone","camera","chat","raisehand","settings","hangup"]`;
     navigator.clipboard.writeText(url);
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2000);

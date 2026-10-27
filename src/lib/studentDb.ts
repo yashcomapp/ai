@@ -932,9 +932,49 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
         });
       }
 
+      // 7.12 Check active live classroom target for student or batch
+      let activeLiveClass: any = null;
+      try {
+        const studentBatchIds = Array.isArray(userData.batchIds) ? userData.batchIds : (userData.batchId ? [userData.batchId] : []);
+        const targetDocRefs: FirebaseFirestore.DocumentReference[] = [];
+        if (studentCode) targetDocRefs.push(adminDb.collection('liveClassTargets').doc(`student_${studentCode}`));
+        studentBatchIds.forEach((bId: string) => {
+          if (bId) targetDocRefs.push(adminDb.collection('liveClassTargets').doc(`batch_${bId}`));
+        });
+
+        if (targetDocRefs.length > 0) {
+          const targetSnaps = await adminDb.getAll(...targetDocRefs);
+          const now = Date.now();
+          for (const tSnap of targetSnaps) {
+            if (tSnap.exists) {
+              const tData = tSnap.data()!;
+              if (tData.status === 'live') {
+                const expiresMs = tData.expiresAt?.toDate ? tData.expiresAt.toDate().getTime() : (tData.expiresAt ? new Date(tData.expiresAt).getTime() : 0);
+                const startMs = tData.startedAt ? new Date(tData.startedAt).getTime() : 0;
+                if ((expiresMs === 0 || now < expiresMs) && (now - startMs <= 100 * 60 * 1000)) {
+                  activeLiveClass = {
+                    sessionId: tData.sessionId,
+                    title: tData.title,
+                    subject: tData.subject || '',
+                    passcode: tData.passcode || '',
+                    roomName: tData.roomName,
+                    startedAt: tData.startedAt,
+                    startedBy: tData.startedBy || 'Teacher'
+                  };
+                  break;
+                }
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to resolve active live class in dashboard:', err);
+      }
+
       // 8. Return aggregated response
       const result = {
         profile,
+        activeLiveClass,
         resultsSummary,
         needsAttention: needsAttentionTopicsList,
         srsDueTopics: srsDueTopicsList,

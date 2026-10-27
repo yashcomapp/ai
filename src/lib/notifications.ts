@@ -680,3 +680,130 @@ export async function notifyNotice(
     console.error('Error sending Notice notification:', err);
   }
 }
+
+/**
+ * 6. Event: Live Classroom Started
+ * Broadcasts push notifications to all enrolled students & parents, and creates high-priority notice
+ */
+export async function notifyLiveClassStarted(params: {
+  title: string;
+  subject?: string;
+  targetBatches?: string[];
+  targetStudents?: string[];
+  roomName: string;
+  passcode?: string;
+  startedBy?: string;
+  expiresAtDate?: Date;
+}) {
+  try {
+    const { title, subject, targetBatches = [], targetStudents = [], roomName, passcode, startedBy = 'Teacher', expiresAtDate } = params;
+    const uids = new Set<string>();
+    const studentCodes: string[] = [];
+    const parentEmails: string[] = [];
+
+    // 1. Gather all student UIDs from targetBatches
+    if (targetBatches.length > 0) {
+      const batchChunks: string[][] = [];
+      for (let i = 0; i < targetBatches.length; i += 30) {
+        batchChunks.push(targetBatches.slice(i, i + 30));
+      }
+
+      const snaps = await Promise.all(
+        batchChunks.flatMap(chunk => [
+          adminDb.collection('users')
+            .where('role', '==', 'student')
+            .where('status', '==', 'active')
+            .where('batchIds', 'array-contains-any', chunk)
+            .get()
+            .catch(() => null),
+          adminDb.collection('users')
+            .where('role', '==', 'student')
+            .where('status', '==', 'active')
+            .where('batchId', 'in', chunk)
+            .get()
+            .catch(() => null)
+        ])
+      );
+
+      snaps.forEach(snap => {
+        if (!snap) return;
+        snap.docs.forEach(doc => {
+          uids.add(doc.id);
+          const data = doc.data();
+          if (data.studentCode) studentCodes.push(data.studentCode);
+          if (data.parentEmail) parentEmails.push(data.parentEmail);
+        });
+      });
+    }
+
+    // 2. Gather student UIDs from targetStudents
+    if (targetStudents.length > 0) {
+      const studentChunks: string[][] = [];
+      for (let i = 0; i < targetStudents.length; i += 30) {
+        studentChunks.push(targetStudents.slice(i, i + 30));
+      }
+
+      const snaps = await Promise.all(
+        studentChunks.map(chunk =>
+          adminDb.collection('users')
+            .where('role', '==', 'student')
+            .where('status', '==', 'active')
+            .where('studentCode', 'in', chunk)
+            .get()
+            .catch(() => null)
+        )
+      );
+
+      snaps.forEach(snap => {
+        if (!snap) return;
+        snap.docs.forEach(doc => {
+          uids.add(doc.id);
+          const data = doc.data();
+          if (data.studentCode) studentCodes.push(data.studentCode);
+          if (data.parentEmail) parentEmails.push(data.parentEmail);
+        });
+      });
+    }
+
+    // 3. Resolve parent UIDs
+    const parentUids = await resolveParentUidsForStudents(studentCodes, parentEmails);
+    parentUids.forEach(pUid => uids.add(pUid));
+
+    // 4. Send Instant Push Notification
+    const displayTitle = '🔴 Live Classroom in Progress';
+    const subText = subject ? ` (${subject})` : '';
+    const pinText = passcode ? ` • PIN: ${passcode}` : '';
+    const displayBody = `${startedBy} started "${title}"${subText}${pinText}. Click to join!`;
+
+    await sendPushNotification(
+      Array.from(uids),
+      displayTitle,
+      displayBody,
+      {
+        type: 'live_class',
+        click_action: '/student',
+        url: '/student'
+      }
+    );
+
+    // 5. Create in-app high-priority Announcement in notices
+    const noticeRef = adminDb.collection('notices').doc();
+    const effectiveExpires = expiresAtDate || new Date(Date.now() + 100 * 60 * 1000);
+    await noticeRef.set({
+      title: `🔴 Live Class: ${title}`,
+      content: `${startedBy} has started a live classroom session for ${subject || title}.${passcode ? ` Class PIN: ${passcode}.` : ''} Open your student dashboard to join.`,
+      targetType: targetBatches.length > 0 ? 'batch' : (targetStudents.length > 0 ? 'student' : 'all'),
+      targetValues: targetBatches.length > 0 ? targetBatches : targetStudents,
+      priority: 'high',
+      authorName: startedBy,
+      authorRole: 'admin',
+      type: 'live_class',
+      isLiveClass: true,
+      roomName,
+      createdAt: new Date().toISOString(),
+      expiresAt: effectiveExpires.toISOString()
+    });
+  } catch (err) {
+    console.error('Error in notifyLiveClassStarted:', err);
+  }
+}
