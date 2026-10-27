@@ -7,92 +7,6 @@ export const dynamic = 'force-dynamic';
 
 const SESSION_EXPIRY_MS = 100 * 60 * 1000; // 100 minutes (free public Jitsi sessions are limited to 95 minutes)
 
-async function createLiveClassTargets(sessionId: string, sessionData: any) {
-  try {
-    const batch = adminDb.batch();
-    const expiresAt = new Date(new Date(sessionData.startedAt).getTime() + SESSION_EXPIRY_MS).toISOString();
-    
-    const targetBatches: string[] = sessionData.targetBatches || [];
-    const targetStudents: string[] = sessionData.targetStudents || [];
-    
-    for (const bId of targetBatches) {
-      const ref = adminDb.collection('liveClassTargets').doc(`batch_${bId}`);
-      batch.set(ref, {
-        sessionId,
-        targetType: 'batch',
-        targetId: bId,
-        title: sessionData.title,
-        subject: sessionData.subject || '',
-        roomName: sessionData.roomName,
-        passcode: sessionData.passcode,
-        startedAt: sessionData.startedAt,
-        expiresAt,
-        startedBy: sessionData.startedBy,
-        status: 'live',
-        updatedAt: new Date().toISOString()
-      });
-    }
-
-    for (const sCode of targetStudents) {
-      const ref = adminDb.collection('liveClassTargets').doc(`student_${sCode}`);
-      batch.set(ref, {
-        sessionId,
-        targetType: 'student',
-        targetId: sCode,
-        title: sessionData.title,
-        subject: sessionData.subject || '',
-        roomName: sessionData.roomName,
-        passcode: sessionData.passcode,
-        startedAt: sessionData.startedAt,
-        expiresAt,
-        startedBy: sessionData.startedBy,
-        status: 'live',
-        updatedAt: new Date().toISOString()
-      });
-    }
-
-    await batch.commit();
-  } catch (err) {
-    console.warn('Failed to write liveClassTargets:', err);
-  }
-}
-
-async function removeLiveClassTargets(sessionIds: string[]) {
-  if (!sessionIds.length) return;
-  try {
-    for (const sId of sessionIds) {
-      const snap = await adminDb.collection('liveClassTargets').where('sessionId', '==', sId).get();
-      if (!snap.empty) {
-        const batch = adminDb.batch();
-        snap.docs.forEach(doc => batch.delete(doc.ref));
-        await batch.commit();
-      }
-    }
-  } catch (err) {
-    console.warn('Failed to remove liveClassTargets:', err);
-  }
-}
-
-async function syncActiveSessionsToConfig() {
-  try {
-    const liveSnap = await adminDb.collection('liveClassrooms')
-      .where('status', '==', 'live')
-      .get();
-
-    const now = Date.now();
-    const activeSessions = liveSnap.docs
-      .map(doc => ({ id: doc.id, ...doc.data() }))
-      .filter((s: any) => now - new Date(s.startedAt || 0).getTime() <= SESSION_EXPIRY_MS);
-
-    await adminDb.collection('config').doc('liveClassrooms').set({
-      activeSessions,
-      updatedAt: new Date().toISOString()
-    });
-  } catch (err) {
-    console.warn('Failed to sync active sessions to config/liveClassrooms:', err);
-  }
-}
-
 function sanitizeForRoom(text: string): string {
   return text
     .toLowerCase()
@@ -129,22 +43,28 @@ export async function GET(request: Request) {
       }
     });
 
-    // Auto-expire obsolete sessions
+    // Reliably auto-expire obsolete sessions and await cleanup (no fire-and-forget)
     if (expiredDocIds.length > 0) {
-      const batch = adminDb.batch();
+      const expireBatch = adminDb.batch();
       expiredDocIds.forEach(id => {
-        batch.update(adminDb.collection('liveClassrooms').doc(id), {
+        expireBatch.update(adminDb.collection('liveClassrooms').doc(id), {
           status: 'ended',
           endedAt: new Date().toISOString(),
           endedReason: 'auto_expired'
         });
       });
-      batch.commit()
-        .then(() => {
-          syncActiveSessionsToConfig();
-          removeLiveClassTargets(expiredDocIds);
-        })
-        .catch(e => console.warn('Failed to auto-expire sessions:', e));
+
+      // Await finding and deleting all expired liveClassTargets
+      for (const expId of expiredDocIds) {
+        const targetsSnap = await adminDb.collection('liveClassTargets')
+          .where('sessionId', '==', expId)
+          .get();
+        targetsSnap.docs.forEach(doc => {
+          expireBatch.delete(doc.ref);
+        });
+      }
+
+      await expireBatch.commit();
     }
 
     // Sort active sessions (newest first)
@@ -214,33 +134,27 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Please select at least one batch or student.' }, { status: 400 });
       }
 
-      // End only existing live sessions that have overlapping batches or identical title,
-      // avoiding killing independent live classes for other batches platform-wide
+      // Check existing live sessions that have overlapping batches or identical title
       const ongoingSnap = await adminDb.collection('liveClassrooms')
         .where('status', '==', 'live')
         .get();
 
-      const batch = adminDb.batch();
-      let hadOverlap = false;
-      const replacedSessionIds: string[] = [];
+      const startBatch = adminDb.batch();
 
-      ongoingSnap.docs.forEach(doc => {
+      // End overlapping sessions and delete their target documents atomically
+      for (const doc of ongoingSnap.docs) {
         const d = doc.data();
         const hasBatchOverlap = (d.targetBatches || []).some((b: string) => targetBatches.includes(b));
         const isSameTitle = (d.title || '').trim().toLowerCase() === title.trim().toLowerCase();
         if (hasBatchOverlap || isSameTitle) {
-          batch.update(doc.ref, {
+          startBatch.update(doc.ref, {
             status: 'ended',
             endedAt: new Date().toISOString(),
             endedReason: 'replaced_by_new_session'
           });
-          replacedSessionIds.push(doc.id);
-          hadOverlap = true;
+          const oldTargets = await adminDb.collection('liveClassTargets').where('sessionId', '==', doc.id).get();
+          oldTargets.docs.forEach(ot => startBatch.delete(ot.ref));
         }
-      });
-      if (hadOverlap) {
-        await batch.commit();
-        await removeLiveClassTargets(replacedSessionIds);
       }
 
       const cleanTitle = sanitizeForRoom(title) || 'classroom';
@@ -250,6 +164,8 @@ export async function POST(request: Request) {
       // Cryptographically secure 6-digit numeric PIN
       const passcode = crypto.randomInt(100000, 1000000).toString();
       const teacherDisplayName = admin.userData?.name || 'Teacher (Yashcom)';
+      const startedAt = new Date().toISOString();
+      const expiresAtDate = new Date(Date.now() + SESSION_EXPIRY_MS);
 
       const newSessionData = {
         title: title.trim(),
@@ -260,23 +176,61 @@ export async function POST(request: Request) {
         roomName,
         passcode,
         status: 'live',
-        startedAt: new Date().toISOString(),
+        startedAt,
         endedAt: null,
         startedBy: teacherDisplayName
       };
 
-      const docRef = await adminDb.collection('liveClassrooms').add(newSessionData);
-      await Promise.all([
-        createLiveClassTargets(docRef.id, newSessionData),
-        syncActiveSessionsToConfig()
-      ]);
+      // Create new session document reference
+      const newSessionRef = adminDb.collection('liveClassrooms').doc();
+      startBatch.set(newSessionRef, newSessionData);
+
+      // Create isolated target documents with native Timestamp expiresAt
+      for (const bId of targetBatches) {
+        const targetRef = adminDb.collection('liveClassTargets').doc(`batch_${bId}`);
+        startBatch.set(targetRef, {
+          sessionId: newSessionRef.id,
+          targetType: 'batch',
+          targetId: bId,
+          title: newSessionData.title,
+          subject: newSessionData.subject,
+          roomName: newSessionData.roomName,
+          passcode: newSessionData.passcode,
+          startedAt: newSessionData.startedAt,
+          expiresAt: expiresAtDate,
+          startedBy: newSessionData.startedBy,
+          status: 'live',
+          updatedAt: new Date().toISOString()
+        });
+      }
+
+      for (const sCode of targetStudents) {
+        const targetRef = adminDb.collection('liveClassTargets').doc(`student_${sCode}`);
+        startBatch.set(targetRef, {
+          sessionId: newSessionRef.id,
+          targetType: 'student',
+          targetId: sCode,
+          title: newSessionData.title,
+          subject: newSessionData.subject,
+          roomName: newSessionData.roomName,
+          passcode: newSessionData.passcode,
+          startedAt: newSessionData.startedAt,
+          expiresAt: expiresAtDate,
+          startedBy: newSessionData.startedBy,
+          status: 'live',
+          updatedAt: new Date().toISOString()
+        });
+      }
+
+      // Single atomic commit: session and targets succeed or fail together
+      await startBatch.commit();
 
       const teacherUrl = `https://meet.jit.si/${roomName}#config.channelLastN=-1&userInfo.displayName=${encodeURIComponent(teacherDisplayName)}`;
 
       return NextResponse.json({
         success: true,
         session: {
-          id: docRef.id,
+          id: newSessionRef.id,
           ...newSessionData,
           teacherUrl
         }
@@ -301,15 +255,24 @@ export async function POST(request: Request) {
         return NextResponse.json({ success: true, message: 'Session is already ended.' });
       }
 
-      await sessionRef.update({
+      const endBatch = adminDb.batch();
+      endBatch.update(sessionRef, {
         status: 'ended',
         endedAt: new Date().toISOString(),
         endedBy: admin.userData?.name || admin.userData?.email || 'Teacher'
       });
-      await Promise.all([
-        removeLiveClassTargets([sessionId]),
-        syncActiveSessionsToConfig()
-      ]);
+
+      // Find and delete all corresponding liveClassTargets atomically
+      const targetsSnap = await adminDb.collection('liveClassTargets')
+        .where('sessionId', '==', sessionId)
+        .get();
+
+      targetsSnap.docs.forEach(doc => {
+        endBatch.delete(doc.ref);
+      });
+
+      // Commit end and target deletion atomically
+      await endBatch.commit();
 
       return NextResponse.json({ success: true, message: 'Live classroom ended successfully.' });
     }

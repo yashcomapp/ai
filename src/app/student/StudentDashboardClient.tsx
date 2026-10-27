@@ -365,7 +365,13 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
 
       for (const target of activeTargetsMap.values()) {
         if (!target || target.status !== 'live') continue;
-        const expiresMs = target.expiresAt ? new Date(target.expiresAt).getTime() : 0;
+        const expiresMs = target.expiresAt?.toMillis
+          ? target.expiresAt.toMillis()
+          : target.expiresAt?.seconds
+            ? target.expiresAt.seconds * 1000
+            : target.expiresAt
+              ? new Date(target.expiresAt).getTime()
+              : 0;
         const startMs = target.startedAt ? new Date(target.startedAt).getTime() : 0;
         if (expiresMs > 0 && now >= expiresMs) continue;
         if (now - startMs > 100 * 60 * 1000) continue;

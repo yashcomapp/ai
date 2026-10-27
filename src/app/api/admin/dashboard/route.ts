@@ -34,7 +34,9 @@ export async function GET(req: NextRequest) {
         let deletedCount = 0;
         snap.docs.forEach(d => {
           const data = d.data();
-          const expiresMs = data.expiresAt ? new Date(data.expiresAt).getTime() : 0;
+          const expiresMs = data.expiresAt?.toMillis 
+            ? data.expiresAt.toMillis() 
+            : (data.expiresAt ? new Date(data.expiresAt).getTime() : 0);
           const startMs = data.startedAt ? new Date(data.startedAt).getTime() : 0;
           if ((expiresMs > 0 && nowMs >= expiresMs) || (nowMs - startMs > 100 * 60 * 1000) || data.status === 'ended') {
             batch.delete(d.ref);

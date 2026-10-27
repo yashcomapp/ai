@@ -320,13 +320,17 @@ service cloud.firestore { match /databases/{database}/documents {
     match /liveClassTargets/{docId} {
       allow read: if isAuth() && (
         isAdmin() ||
-        (isStudent() && (
-          (resource.data.targetType == 'student' && resource.data.targetId == myStudentCode()) ||
-          (resource.data.targetType == 'batch' && (
-            ('batchIds' in userDoc() && userDoc().batchIds.hasAny([resource.data.targetId])) ||
-            ('batchId' in userDoc() && userDoc().batchId == resource.data.targetId)
-          ))
-        ))
+        (isStudent() &&
+          resource.data.status == 'live' &&
+          request.time < resource.data.expiresAt &&
+          (
+            (resource.data.targetType == 'student' && resource.data.targetId == myStudentCode()) ||
+            (resource.data.targetType == 'batch' && (
+              ('batchIds' in userDoc() && userDoc().batchIds.hasAny([resource.data.targetId])) ||
+              ('batchId' in userDoc() && userDoc().batchId == resource.data.targetId)
+            ))
+          )
+        )
       );
       allow write: if isAdmin();
     }
