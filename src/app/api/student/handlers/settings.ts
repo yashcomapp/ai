@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
       const mastery = Number(mData.mastery || 0);
       const confidence = Number(mData.confidence || 0);
       const reqConf = getRequiredConfidence(mData.topicClassification, mData.targetQuestions);
-      if (mastery >= 90 && (confidence >= reqConf || mData.isRecoveryMastered)) {
+      if (mastery >= 90 && confidence >= reqConf) {
         masteredTopics += 1;
       } else if (mastery < 50) {
         weakTopicsCount += 1;

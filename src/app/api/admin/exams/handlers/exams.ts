@@ -261,7 +261,6 @@ export async function GET(req: NextRequest) {
         const attempts = d ? (d.questionsAttempted || d.attempts || 0) : 0;
         const mastery = d ? Number(d.mastery || 0) : 0;
         const confidence = d ? Number(d.confidence || 0) : 0;
-        const isRecovery = d ? !!d.isRecoveryMastered : false;
         const classification = sData?.topicClassification || d?.topicClassification;
         const targetQ = sData?.targetQuestions || d?.targetQuestions;
         const reqConfidence = getRequiredConfidence(classification, targetQ);
@@ -297,17 +296,11 @@ export async function GET(req: NextRequest) {
             expColor,
             expText
           });
-        } else if ((mastery >= 90 && isFullConfidence) || isRecovery) {
+        } else if (mastery >= 90 && isFullConfidence) {
           state = 'mastered';
-          if (isRecovery) {
-            expIcon = '⚡';
-            expColor = 'var(--purple)';
-            expText = 'Mastered via Recovery Diagnostic (Passed fresh unseen + remediated question assessment).';
-          } else {
-            expIcon = '⭐';
-            expColor = 'var(--success)';
-            expText = `Mastered (${mastery}% accuracy across ${attempts} verified questions).`;
-          }
+          expIcon = '⭐';
+          expColor = 'var(--success)';
+          expText = `Mastered (${mastery}% accuracy across ${attempts} verified questions).`;
           mastered.push({
             topicCode: tCode,
             topicName: topName,
@@ -349,9 +342,9 @@ export async function GET(req: NextRequest) {
         } else if (mastery >= 50) {
           state = 'continuePractice';
           if (isLimitReached) {
-            expIcon = '⚡';
-            expColor = 'var(--purple)';
-            expText = `${maxPractices}/${maxPractices} practices done (${mastery}% accuracy). Take the Recovery Quiz (Fresh + Missed Qs) to achieve Mastered!`;
+            expIcon = '🔒';
+            expColor = 'var(--text-muted)';
+            expText = `${maxPractices}/${maxPractices} practices done (${mastery}% accuracy). Practice quota reached. Revise textbook concepts before exams.`;
           } else {
             expIcon = '📈';
             expColor = 'var(--warning)';
@@ -376,9 +369,9 @@ export async function GET(req: NextRequest) {
         } else {
           state = 'needsAttention';
           if (isLimitReached) {
-            expIcon = '⚡';
-            expColor = 'var(--purple)';
-            expText = `${maxPractices}/${maxPractices} practices done (${mastery}% accuracy). Take the Recovery Quiz (Fresh + Missed Qs) to achieve Mastered!`;
+            expIcon = '🔒';
+            expColor = 'var(--text-muted)';
+            expText = `${maxPractices}/${maxPractices} practices done (${mastery}% accuracy). Practice quota reached. Revise textbook concepts before exams.`;
           } else if (attempts === 0) {
             expIcon = '⚪';
             expColor = 'var(--text-muted)';

@@ -970,7 +970,7 @@ PARTITION REQUIREMENT (PRACTICE VAULT ONLY - FAST BATCH 1):
 For this batch, generate EXACTLY ${effectiveTargetQs} QUESTIONS tagged strictly into the 🟢 PRACTICE VAULT:
 1. 🟢 PRACTICE VAULT ("vault": "practice") — EXACTLY ${effectiveTargetQs} QUESTIONS:
    - "vault": "practice" MUST be specified on EVERY question object.
-   - Dedicated for student self-paced practice, diagnostic recovery, and spaced repetition (SRS).
+   - Dedicated for student self-paced practice, concept mastery, and spaced repetition (SRS).
    - Distribution: Foundation & Recall (~30%) + Conceptual Reasoning (~40%) + Numerical & Application (~30%).
    - Mix: OSC, OMC, OTF, OAR, ONE.
    - ZERO questions in exam vault for this batch. All ${effectiveTargetQs} questions must be tagged "vault": "practice".
@@ -981,7 +981,7 @@ PARTITION REQUIREMENT (PRACTICE VAULT ONLY - FAST BATCH 1 - ZERO NUMERICALS):
 For this batch, generate EXACTLY ${effectiveTargetQs} QUESTIONS tagged strictly into the 🟢 PRACTICE VAULT:
 1. 🟢 PRACTICE VAULT ("vault": "practice") — EXACTLY ${effectiveTargetQs} QUESTIONS:
    - "vault": "practice" MUST be specified on EVERY question object.
-   - Dedicated for student self-paced practice, diagnostic recovery, and spaced repetition (SRS).
+   - Dedicated for student self-paced practice, concept mastery, and spaced repetition (SRS).
    - Distribution: Foundation & Recall (~35%) + Conceptual Reasoning (~40%) + Application & Mechanisms (~25%).
    - Mix: OSC, OMC, OTF, OAR. (NO ONE / NO NUMERICALS).
    - ZERO questions in exam vault for this batch. All ${effectiveTargetQs} questions must be tagged "vault": "practice".
@@ -1026,7 +1026,7 @@ UNIVERSAL 2-VAULT PARTITION REQUIREMENT:
 ========================================
 ${topicHeader}
 1. 🟢 PRACTICE VAULT ("vault": "practice") — EXACTLY ${totalPractice} QUESTIONS TOTAL (~60%):
-   - Dedicated for student self-paced practice, diagnostic recovery, and spaced repetition (SRS).
+   - Dedicated for student self-paced practice, concept mastery, and spaced repetition (SRS).
    - Distribution: Foundation & Recall (~30%) + Conceptual Reasoning (~40%) + Numerical & Application (~30%).
    - Mix: OSC, OMC, OTF, OAR, ONE.
 
@@ -1040,7 +1040,7 @@ UNIVERSAL 2-VAULT PARTITION REQUIREMENT (THEORY ONLY - ZERO NUMERICALS):
 ========================================
 ${topicHeader}
 1. 🟢 PRACTICE VAULT ("vault": "practice") — EXACTLY ${totalPractice} QUESTIONS TOTAL (~60%):
-   - Dedicated for student self-paced practice, diagnostic recovery, and spaced repetition (SRS).
+   - Dedicated for student self-paced practice, concept mastery, and spaced repetition (SRS).
    - Distribution: Foundation & Recall (~35%) + Conceptual Reasoning (~40%) + Application & Mechanisms (~25%).
    - Mix: OSC, OMC, OTF, OAR. (NO ONE / NO NUMERICALS).
 

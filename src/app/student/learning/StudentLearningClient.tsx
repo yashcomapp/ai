@@ -35,7 +35,6 @@ interface StudentLearningTopicItem {
   topicClassification?: string;
   requiredConfidence?: number;
   isAbsentExam?: boolean;
-  isRecoveryMastered?: boolean;
   isExamStrong?: boolean;
   isSrsDue?: boolean;
   srsSchedule?: {
@@ -461,7 +460,7 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                       <strong style={{ color: 'var(--text)' }}>🔒 Zero-Collision Vaults:</strong> Questions in Practice are dedicated to self-study only and will never appear on scheduled exams.
                     </div>
                     <div style={{ padding: '6px 8px', background: 'var(--surface)', borderRadius: '6px', border: '1px solid var(--border-light)' }}>
-                      <strong style={{ color: 'var(--text)' }}>⚡ Guided Recovery:</strong> Completed all practice sets (2-3 sets) without 90%? A special 8-question Recovery Quiz (50% fresh + 50% missed) activates!
+                      <strong style={{ color: 'var(--text)' }}>⏱️ Deliberation Gate:</strong> Minimum 18s/question deliberate solving required. Rushed sessions (&lt; 18s/Q) are voided with a 30-min cooldown.
                     </div>
                   </div>
                 </div>
@@ -681,7 +680,6 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                                           const actionText = getActionText(topic.state);
                                           const attempts = topic.attempts || 0;
                                           const isAbsent = !!topic.isAbsentExam;
-                                          const isRecovery = !!topic.isRecoveryMastered;
                                           const state = topic.state;
 
                                            let expIcon = '⚪';
@@ -695,9 +693,9 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
 
                                            if (state === 'needsAttention') {
                                              if (isLimitReached) {
-                                               expIcon = '⚡';
-                                               expColor = 'var(--accent)';
-                                               expText = `${maxPractices}/${maxPractices} practices done (${mastery}% accuracy). Take the Recovery Quiz (Fresh + Missed Qs) to achieve Mastered!`;
+                                               expIcon = '🔒';
+                                               expColor = 'var(--text-muted)';
+                                               expText = `${maxPractices}/${maxPractices} practices done (${mastery}% accuracy). Practice quota reached. Revise textbook notes before upcoming exams.`;
                                              } else if (isAbsent) {
                                                expIcon = '⚠️';
                                                expColor = 'var(--danger)';
@@ -719,36 +717,26 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                                                expColor = 'var(--accent)';
                                                expText = `High accuracy (${mastery}%), but needs ${needed} more verified question(s) to reach full confidence for Mastered.`;
                                              } else if (isLimitReached) {
-                                               expIcon = '⚡';
-                                               expColor = 'var(--accent)';
-                                               expText = `${maxPractices}/${maxPractices} practices done (${mastery}% accuracy). Take the Recovery Quiz (Fresh + Missed Qs) to achieve Mastered!`;
+                                               expIcon = '🔒';
+                                               expColor = 'var(--text-muted)';
+                                               expText = `${maxPractices}/${maxPractices} practices done (${mastery}% accuracy). Practice quota reached. Revise textbook notes before upcoming exams.`;
                                              } else {
                                                expIcon = '📈';
                                                expColor = 'var(--warning)';
                                                expText = `${practiceCount}/${maxPractices} practices done (${mastery}% accuracy). Complete 1 practice set (6 Qs) to aim for 90%+ Mastered.`;
                                              }
                                            } else {
-                                            if (isRecovery) {
-                                              expIcon = '⚡';
-                                              expColor = 'var(--accent)';
-                                              expText = `Mastered via Recovery Diagnostic (Passed fresh unseen + remediated question assessment).`;
-                                            } else {
                                               expIcon = '⭐';
                                               expColor = 'var(--success)';
                                               expText = `Mastered (${mastery}% accuracy across ${attempts} verified questions). Concept complete.`;
                                             }
-                                          }
 
                                           const isMasteredState = state === 'mastered';
-                                          const isRecoveryAction = isLimitReached && !isMasteredState;
-                                          const targetUrl = isRecoveryAction
-                                            ? `/student/topic?topicCode=${encodeURIComponent(topic.topicCode)}&category=${topic.state}&mode=recovery`
-                                            : `/student/topic?topicCode=${encodeURIComponent(topic.topicCode)}&category=${topic.state}`;
+                                          const targetUrl = `/student/topic?topicCode=${encodeURIComponent(topic.topicCode)}&category=${topic.state}`;
 
                                           const reqMasteryQs = topic.requiredConfidence || (topic.topicClassification === 'minor' || topic.topicClassification === 'micro' ? 6 : topic.topicClassification === 'major' || topic.topicClassification === 'calculative' || topic.topicClassification === 'hots' ? 15 : 10);
 
-                                          let btnLabel = actionText;
-                                          if (isRecoveryAction) btnLabel = '⚡ Recovery Quiz';
+                                          let btnLabel = isLimitReached && !isMasteredState ? '🔒 Quota Reached' : actionText;
 
                                           return (
                                             <tr 
@@ -797,15 +785,9 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                                                     </span>
                                                   )}
                                                   {state === 'mastered' && (
-                                                    isRecovery ? (
-                                                      <span style={{ fontSize: '9px', fontWeight: 700, padding: '1px 6px', borderRadius: '10px', background: 'var(--accent-soft)', color: 'var(--accent)', border: '1px solid var(--accent-ring)' }}>
-                                                        ⚡ Recovery Mastered
-                                                      </span>
-                                                    ) : (
-                                                      <span style={{ fontSize: '9px', fontWeight: 700, padding: '1px 6px', borderRadius: '10px', background: 'var(--success-bg)', color: 'var(--success)', border: '1px solid rgba(52, 211, 153, 0.3)' }}>
-                                                        🌟 Certified Mastered
-                                                      </span>
-                                                    )
+                                                    <span style={{ fontSize: '9px', fontWeight: 700, padding: '1px 6px', borderRadius: '10px', background: 'var(--success-bg)', color: 'var(--success)', border: '1px solid rgba(52, 211, 153, 0.3)' }}>
+                                                      🌟 Certified Mastered
+                                                    </span>
                                                   )}
                                                 </div>
                                                 <div style={{ fontSize: '10.5px', fontWeight: 400, color: expColor, marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>

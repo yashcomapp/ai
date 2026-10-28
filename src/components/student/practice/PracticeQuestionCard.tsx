@@ -53,7 +53,8 @@ export function PracticeQuestionCard({
   onSubmitQuestion,
   onNext
 }: PracticeQuestionCardProps) {
-  const [readingTimer, setReadingTimer] = useState<number>(5);
+  const [readingTimer, setReadingTimer] = useState<number>(20);
+  const [correctAssimilationTimer, setCorrectAssimilationTimer] = useState<number>(0);
 
   useEffect(() => {
     if (isQSubmitted) {
@@ -62,8 +63,11 @@ export function PracticeQuestionCard({
     }
     const qType = String(question?.type || '').toLowerCase();
     const qText = String(question?.text || question?.assertion || '');
-    const isComplex = qType.includes('numerical') || qType === 'one' || qType === 'ssn' || qType === 'sln' || qType === 'oar' || qType === 'assertion_reason' || qText.length > 120;
-    const initialSeconds = isComplex ? 15 : 10;
+    const isNumerical = qType.includes('numerical') || qType === 'one' || qType === 'ssn' || qType === 'sln';
+    const isConceptual = qType === 'oar' || qType === 'assertion_reason' || qType === 'omc' || qType === 'multiple_mcq' || qText.length > 100;
+    
+    // Front-door deliberation timer: 45s for numericals, 30s for complex conceptual, 20s for standard factual
+    const initialSeconds = isNumerical ? 45 : (isConceptual ? 30 : 20);
     setReadingTimer(initialSeconds);
 
     const interval = setInterval(() => {
@@ -78,6 +82,24 @@ export function PracticeQuestionCard({
 
     return () => clearInterval(interval);
   }, [currentQIndex, isQSubmitted, question]);
+
+  useEffect(() => {
+    if (isQSubmitted && feedbackCorrect) {
+      setCorrectAssimilationTimer(4);
+      const interval = setInterval(() => {
+        setCorrectAssimilationTimer(prev => {
+          if (prev <= 1) {
+            clearInterval(interval);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      return () => clearInterval(interval);
+    } else {
+      setCorrectAssimilationTimer(0);
+    }
+  }, [isQSubmitted, feedbackCorrect, currentQIndex]);
 
   if (!question) return null;
 
@@ -156,14 +178,16 @@ export function PracticeQuestionCard({
           <button 
             className="btn btn-primary" 
             onClick={onNext} 
-            disabled={isSubmittingPractice || (!feedbackCorrect && explanationTimer > 0)}
+            disabled={isSubmittingPractice || (!feedbackCorrect && explanationTimer > 0) || (feedbackCorrect && correctAssimilationTimer > 0)}
             style={{ minWidth: '160px' }}
           >
             {isSubmittingPractice
               ? 'Submitting...'
               : (!feedbackCorrect && explanationTimer > 0 
-                ? `Wait (${explanationTimer}s)` 
-                : (currentQIndex === totalQuestions - 1 ? 'Finish Set →' : 'Next Question →'))}
+                ? `Review Solution (${explanationTimer}s)` 
+                : (feedbackCorrect && correctAssimilationTimer > 0
+                  ? `Assimilate (${correctAssimilationTimer}s)`
+                  : (currentQIndex === totalQuestions - 1 ? 'Finish Set →' : 'Next Question →')))}
           </button>
         )}
       </div>

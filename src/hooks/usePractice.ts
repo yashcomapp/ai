@@ -14,29 +14,24 @@ export function usePractice() {
     category: string;
     size: number;
     idToken: string;
-    mode?: string;
   }) => {
     if (isBusyRef.current) return null;
     isBusyRef.current = true;
     setLoading(true);
     setError(null);
     try {
-      const modeQuery = params.mode ? `&mode=${params.mode}` : '';
-      const res = await fetch(`/api/student/practice?topicCode=${params.topicCode}&category=${params.category}&size=${params.size}${modeQuery}`, {
+      const res = await fetch(`/api/student/practice?topicCode=${params.topicCode}&category=${params.category}&size=${params.size}`, {
         headers: { 'Authorization': `Bearer ${params.idToken}` }
       });
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
-        if (errData.requireRecoveryMode || errData.allowRecovery) {
-          return { requireRecoveryMode: true, allowRecovery: true, message: errData.message };
-        }
-        if (errData.requireTextbookStudy) {
+        if (errData.requireTextbookStudy || errData.locked) {
           return { requireTextbookStudy: true, message: errData.message, lockType: errData.lockType };
         }
         throw new Error(errData.message || 'Failed to start practice session.');
       }
       const data = await res.json().catch(() => ({}));
-      if (data.requireRecoveryMode || data.allowRecovery || data.requireTextbookStudy) {
+      if (data.requireTextbookStudy || data.locked) {
         return data;
       }
       setQuestions(data.questions || []);
@@ -59,8 +54,6 @@ export function usePractice() {
     answers: any[];
     violations?: any;
     idToken: string;
-    mode?: string;
-    isRecoveryMode?: boolean;
   }) => {
     if (isBusyRef.current) return null;
     isBusyRef.current = true;
@@ -77,9 +70,7 @@ export function usePractice() {
           topicCode: params.topicCode,
           category: params.category,
           answers: params.answers,
-          violations: params.violations,
-          mode: params.mode,
-          isRecoveryMode: params.isRecoveryMode || params.mode === 'recovery'
+          violations: params.violations
         })
       });
       if (!res.ok) throw new Error('Submission grading failed.');

@@ -369,10 +369,10 @@ export default function LoginPage() {
               <h3 className="landing-card-title">Adaptive Practice Engine</h3>
             </div>
             <p className="landing-card-desc">
-              Dynamic topic-level question pools with intelligent recovery cycles, automated cooldowns, and mistake-analysis.
+              Dynamic topic-level question pools with calibrated deliberation gates, automated cooldowns, and mistake-analysis.
             </p>
             <div className="landing-card-tags">
-              <span className="landing-tag">⚡ Instant Recovery</span>
+              <span className="landing-tag">⏱️ Deliberation Gate</span>
               <span className="landing-tag">🎯 Dynamic Difficulty</span>
             </div>
           </div>

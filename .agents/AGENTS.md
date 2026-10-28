@@ -42,7 +42,7 @@
 
 ### F. Topic Mastery & Diagnostic Breakdown (`src/lib/studentDb.ts`)
 - **Rule**: Topic mastery categorization and explanation logic must remain completely synchronized across Student, Parent, and Admin views:
-  - 🟢 **Mastered**: Mastery $\ge 90\%$ AND Confidence $\ge \text{requiredConfidence}$ (Minor/Micro: 12, Medium/Conceptual: 18, Major/HOTS: 24 questions; computed via `getRequiredConfidence`) OR `isRecoveryMastered === true` (passing Guided Recovery Diagnostic).
+  - 🟢 **Mastered**: Mastery $\ge 90\%$ AND Confidence $\ge \text{requiredConfidence}$ (Minor/Micro: 12, Medium/Conceptual: 18, Major/HOTS: 24 questions; computed via `getRequiredConfidence`).
   - 🟡 **In Progress / Practicing**: Mastery between $50\%$ and $89\%$ (or $\ge 90\%$ with confidence $< \text{requiredConfidence}$).
   - 🔴 **Needs Attention**: Mastery $< 50\%$ or missed scheduled exam unattempted.
   - Status dot badges (`🟢`, `🟡`, `🔴`) clicked by an admin MUST open a breakdown modal showing the exact same diagnostic guidance and explanation string displayed on the student's dashboard.
@@ -114,7 +114,7 @@
     - Mastery $60–84\%$: 20% Easy, 50% Medium, 30% Hard
     - Mastery $\ge 85\%$: 10% Easy, 40% Medium, 50% Hard
     - High-flyer rule: Mastery $\ge 80\%$ with $< 15$ attempts triggers 100% Hard mode.
-  - **Mastery Criteria**: Requires verified attempts $\ge \text{requiredConfidence}$ (Minor: 6, Medium: 10, Major: 15) and $\ge 90\%$ accuracy (or passing Guided Recovery Diagnostic) for Green Mastered status.
+  - **Mastery Criteria**: Requires verified attempts $\ge \text{requiredConfidence}$ (Minor: 6, Medium: 10, Major: 15) and $\ge 90\%$ accuracy for Green Mastered status.
   - **Option Integrity**: All MCQs served in practice sessions MUST have $\ge 2$ valid options. Corrupted entries with missing options must be automatically filtered out.
 
 ### O. Scorecard & Review Modal Question Hydration (`src/components/ScorecardModal.tsx` & `/api/student/results`)

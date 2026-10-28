@@ -32,8 +32,7 @@ export async function GET(req: NextRequest) {
     const topicCode = QuestionRepository.normalizeTopicCode(rawTopicCode);
     const category = searchParams.get('category') || 'needsAttention';
     const size = Number(searchParams.get('size') || '5');
-    const mode = searchParams.get('mode') || '';
-    const isRecoveryMode = mode === 'recovery';
+    // Clean mode parameters (Guided Recovery completely removed)
 
     if (!topicCode) {
       return NextResponse.json({ message: 'Missing topicCode parameter.' }, { status: 400 });
@@ -56,8 +55,7 @@ export async function GET(req: NextRequest) {
     let cooldownUntil: any = null;
     let dailyLockedUntil: any = null;
     let lastPracticeDate: string = '';
-    let recoveryApproved = false;
-    let recoveryImmediateUnlocked = false;
+
 
     const masteryDocId = `${studentCode}_${topicCode}`;
     const masterySnap = await adminDb.collection('studentTopicMastery').doc(masteryDocId).get();
@@ -71,8 +69,7 @@ export async function GET(req: NextRequest) {
       cooldownUntil = mData.cooldownUntil ? (mData.cooldownUntil.toDate ? mData.cooldownUntil.toDate() : new Date(mData.cooldownUntil)) : null;
       dailyLockedUntil = mData.dailyLockedUntil ? (mData.dailyLockedUntil.toDate ? mData.dailyLockedUntil.toDate() : new Date(mData.dailyLockedUntil)) : null;
       lastPracticeDate = mData.lastPracticeDate || '';
-      recoveryApproved = !!mData.recoveryApproved;
-      recoveryImmediateUnlocked = !!mData.recoveryImmediateUnlocked;
+
     }
 
     let topicClassification = masterySnap.exists ? masterySnap.data()?.topicClassification : undefined;
@@ -105,45 +102,30 @@ export async function GET(req: NextRequest) {
     const isRevisionMode = category === 'revision';
     const isPracticeLimitReached = !isRevisionMode && (completedPractices >= maxSessionsAllowed || (practiceQuestionsAttempted >= maxQuestionsAllowed && mastery < 80));
 
-    // If practice limit reached and not in recovery mode, prompt to enter Guided Recovery Diagnostic
-    if (isPracticeLimitReached && !isRecoveryMode) {
+    // 1. Quota Gate: Topic sets completed
+    if (isPracticeLimitReached) {
       return NextResponse.json({
         locked: true,
-        message: `Maximum limit of ${maxSessionsAllowed} practice sessions reached for this topic. Take the Guided Recovery Diagnostic (8 targeted questions) to strengthen core concepts and achieve Mastery.`,
-        allowRecovery: true,
-        requireRecoveryMode: true
+        requireTextbookStudy: true,
+        lockType: 'quota_reached',
+        message: `Maximum limit of ${maxSessionsAllowed} practice sessions reached for this topic. Revise your textbook notes before taking exams.`
       }, { status: 200 });
     }
 
-    // If entering recovery mode: enforce Next-Day IST and Parent/Teacher Approval Gate
-    if (isRecoveryMode) {
-      const isNextCalendarDay = lastPracticeDate ? (todayIST > lastPracticeDate) : true;
-      
-      // 1. Same-Day Gate: Student must wait until tomorrow to allow overnight sleep consolidation
-      if (!isNextCalendarDay && !recoveryImmediateUnlocked) {
-        return NextResponse.json({
-          locked: true,
-          requireRecoveryMode: true,
-          allowRecovery: true,
-          lockType: 'recovery_next_day',
-          message: `You have completed your ${maxSessionsAllowed} practice sessions for today. Please review your textbook notes today. Your Guided Recovery Diagnostic will be available tomorrow anytime.`
-        }, { status: 200 });
-      }
-
-      // 2. Parent / Teacher Approval Gate: Must be approved by parent or teacher
-      if (!recoveryApproved && !recoveryImmediateUnlocked) {
-        return NextResponse.json({
-          locked: true,
-          requireRecoveryMode: true,
-          allowRecovery: true,
-          lockType: 'recovery_awaiting_approval',
-          message: 'Your Guided Recovery Diagnostic is unlocked for today! Please ask your parent or teacher to confirm your textbook review to begin.'
-        }, { status: 200 });
-      }
+    // 2. Anti-Rushing Deliberation / Cognitive Cooldown Lock
+    if (cooldownUntil && cooldownUntil > now && !isRevisionMode) {
+      const minutesLeft = Math.ceil((cooldownUntil.getTime() - now.getTime()) / 60000);
+      return NextResponse.json({
+        locked: true,
+        requireTextbookStudy: true,
+        lockType: 'cooldown',
+        cooldownUntil: cooldownUntil.toISOString(),
+        message: `Deliberation cooldown active (${minutesLeft} min remaining). Deliberate and review your textbook notes before attempting practice again.`
+      }, { status: 200 });
     }
 
-    // GUARDRAIL 1: Daily Pacing Cap (Anti-Spam per Topic: Max 2 sessions for minor, 3 for medium/major)
-    if (dailySessions >= maxSessionsAllowed && !isRecoveryMode && !isRevisionMode) {
+    // 3. Daily Pacing Cap (Anti-Spam per Topic: Max 2 sessions for minor, 3 for medium/major)
+    if (dailySessions >= maxSessionsAllowed && !isRevisionMode) {
       return NextResponse.json({
         locked: true,
         requireTextbookStudy: true,
@@ -153,7 +135,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Active daily lock check
-    if (dailyLockedUntil && dailyLockedUntil > now && !isRecoveryMode && !isRevisionMode) {
+    if (dailyLockedUntil && dailyLockedUntil > now && !isRevisionMode) {
       return NextResponse.json({
         locked: true,
         requireTextbookStudy: true,
@@ -162,20 +144,8 @@ export async function GET(req: NextRequest) {
       }, { status: 200 });
     }
 
-    // GUARDRAIL 2: Cognitive Cooldown Lock (30-min assimilation after textbook study confirmation)
-    if (cooldownUntil && cooldownUntil > now && !isRecoveryMode && !isRevisionMode) {
-      const minutesLeft = Math.ceil((cooldownUntil.getTime() - now.getTime()) / 60000);
-      return NextResponse.json({
-        locked: true,
-        requireTextbookStudy: true,
-        lockType: 'cooldown',
-        cooldownUntil: cooldownUntil.toISOString(),
-        message: `Great job reviewing! Please wait ${minutesLeft} minutes to let the concepts settle in before trying the tests again.`
-      }, { status: 200 });
-    }
-
-    // GUARDRAIL 3: Study Break & Textbook Lock (When struggling: 12+ practice questions attempted, mastery < 75%, not yet confirmed)
-    if (practiceQuestionsAttempted >= 12 && mastery < 75 && !textbookReadConfirmed && !isRecoveryMode && !isRevisionMode) {
+    // 4. Study Break & Textbook Lock (When struggling: 12+ practice questions attempted, mastery < 75%, not yet confirmed)
+    if (practiceQuestionsAttempted >= 12 && mastery < 75 && !textbookReadConfirmed && !isRevisionMode) {
       return NextResponse.json({
         locked: true,
         requireTextbookStudy: true,
@@ -212,7 +182,7 @@ export async function GET(req: NextRequest) {
       createdAt: new Date()
     });
 
-    const finalSize = isRecoveryMode ? 8 : (isRevisionMode ? (size || getSrsMicroSetSize(topicClassification)) : (size || 6));
+    const finalSize = isRevisionMode ? (size || getSrsMicroSetSize(topicClassification)) : (size || 6);
 
     // 1.2 Fetch all questions for this topic (STRICTLY Canonical Objective Types: OSC, OMC, OAR, OTF, ONE, OFB)
     const rawTopicQuestions = await getQuestionsByTopic(topicCode);
@@ -281,77 +251,7 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    // SPECIAL RECOVERY MODE: Balanced 50% Fresh Unseen + 50% Previously Missed Questions
-    if (isRecoveryMode) {
-      const incorrectIds = new Set(questionHistory.filter((h: any) => h.wasCorrect === false).map((h: any) => h.questionId));
-      const seenIds = new Set(questionHistory.map((h: any) => h.questionId));
-
-      const incorrectQs = shuffleArray(allQuestions.filter((q: any) => incorrectIds.has(q.id)));
-      const freshQs = shuffleArray(allQuestions.filter((q: any) => !seenIds.has(q.id)));
-      const otherQs = shuffleArray(allQuestions.filter((q: any) => seenIds.has(q.id) && !incorrectIds.has(q.id)));
-
-      const targetSize = 8;
-      const targetIncorrect = Math.min(4, incorrectQs.length);
-      const targetFresh = Math.min(4, freshQs.length);
-
-      const pickedIncorrect = filterDistinctCandidates(incorrectQs).slice(0, targetIncorrect);
-      const pickedFresh = filterDistinctCandidates(freshQs, pickedIncorrect).slice(0, targetFresh);
-
-      let combined = [...pickedIncorrect, ...pickedFresh];
-
-      if (combined.length < targetSize) {
-        const pool = [...freshQs, ...incorrectQs, ...otherQs];
-        const remaining = filterDistinctCandidates(pool, combined);
-        const needed = targetSize - combined.length;
-        combined.push(...remaining.slice(0, needed));
-      }
-
-      const recoveryQuestions = shuffleArray(combined);
-      const sanitizedQuestions = recoveryQuestions.map((q: any) => {
-        let options = q.options;
-        if (Array.isArray(options)) {
-          options = options.map((opt: any) => (typeof opt === 'object' ? opt : { text: String(opt), value: String(opt) }));
-        }
-        return {
-          id: q.id,
-          questionCode: q.questionCode,
-          text: q.text || q.assertion || '',
-          type: q.type || 'OSC',
-          options: options,
-          assertion: q.assertion || '',
-          reason: q.reason || '',
-          difficulty: q.difficulty || 'medium',
-          bloomLevel: q.bloomLevel || 'Understand',
-          correctAnswer: q.correctAnswer || '',
-          correctAnswers: q.correctAnswers || [],
-          solution: q.solution || q.explanation || ''
-        };
-      });
-
-      const recoveryReqConfidence = getRequiredConfidence(topicClassification, targetQuestions);
-      return NextResponse.json({
-        topicCode,
-        topicName,
-        topicClassification: topicClassification || (targetQuestions && targetQuestions <= 35 ? 'minor' : (targetQuestions && targetQuestions >= 55 ? 'major' : 'medium')),
-        targetQuestions: targetQuestions || 50,
-        requiredConfidence: recoveryReqConfidence,
-        dailySessions,
-        practiceQuestionsAttempted,
-        isRecoveryMode: true,
-        totalQuestions: sanitizedQuestions.length,
-        maxQuestionsAvailable: allQuestions.length,
-        totalTopicPool: allQuestions.length,
-        questions: sanitizedQuestions,
-        needRequest: false,
-        isEligibleToRequest: false,
-        fullyMastered: false,
-        availableNew: freshQs.length,
-        requestedSize: sanitizedQuestions.length,
-        masteryAtStart: mastery,
-        totalAttemptedCount: questionsAttempted,
-        idealTimeSeconds: sanitizedQuestions.length * 75
-      });
-    }
+    
 
     // SPACED REPETITION WORKOUT MODE (SRS): Unseen First + Recency Decay + Mistake Verification
     if (category === 'revision') {
@@ -734,27 +634,8 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { action, category, answers, durationSpent, violations, sessionId, proctoringViolationTriggered, mode, isRecoveryMode, disputedQuestionIds } = body;
+    const { action, category, answers, durationSpent, violations, sessionId, proctoringViolationTriggered, disputedQuestionIds } = body;
     const topicCode = QuestionRepository.normalizeTopicCode(body.topicCode || '');
-    const recoveryActive = !!isRecoveryMode || mode === 'recovery';
-
-    if (action === 'approveRecovery') {
-      const targetStudent = body.targetStudentCode || studentCode;
-      const targetTopic = topicCode || body.topicCode;
-      if (!targetTopic) {
-        return NextResponse.json({ message: 'Missing topicCode.' }, { status: 400 });
-      }
-      const masteryDocId = `${targetStudent}_${targetTopic}`;
-      await adminDb.collection('studentTopicMastery').doc(masteryDocId).set({
-        recoveryApproved: true,
-        recoveryApprovedAt: new Date(),
-        recoveryApprovedBy: student.decodedToken?.email || studentName
-      }, { merge: true });
-      return NextResponse.json({ 
-        success: true,
-        message: 'Recovery Diagnostic approved successfully.'
-      });
-    }
 
     if (action === 'confirmTextbook') {
       if (!topicCode) {
@@ -788,7 +669,6 @@ export async function POST(req: NextRequest) {
       violations,
       sessionId,
       proctoringViolationTriggered: !!proctoringViolationTriggered,
-      isRecoveryMode: recoveryActive,
       disputedQuestionIds: Array.isArray(disputedQuestionIds) ? disputedQuestionIds : []
     });
 

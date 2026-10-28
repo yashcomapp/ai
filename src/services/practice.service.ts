@@ -82,10 +82,9 @@ export class PracticeService {
     violations?: any;
     sessionId?: string;
     proctoringViolationTriggered?: boolean;
-    isRecoveryMode?: boolean;
     disputedQuestionIds?: string[];
   }) {
-    const { studentCode, studentName, topicCode, category, answers, durationSpent, violations, sessionId, proctoringViolationTriggered, isRecoveryMode, disputedQuestionIds = [] } = params;
+    const { studentCode, studentName, topicCode, category, answers, durationSpent, violations, sessionId, proctoringViolationTriggered, disputedQuestionIds = [] } = params;
     const disputedSet = new Set((disputedQuestionIds || []).map(id => String(id).trim().toLowerCase()));
 
     const questionIds = answers.map(a => a.questionId).filter(Boolean);
@@ -243,8 +242,8 @@ export class PracticeService {
     const totalDuration = Number(durationSpent) || 0;
     const totalEvalCount = evaluations.length || 1;
     const avgSecondsPerQ = totalDuration / totalEvalCount;
-    // Anti-Rushing Gate: If student spent less than 10 seconds per question on average, disqualify from advancing Green Mastery
-    const isRushedSession = totalDuration > 0 && avgSecondsPerQ < 10;
+    // Anti-Rushing Gate: If student spent less than 18 seconds per question on average, void the session to protect quota and enforce 30-min cooldown
+    const isRushedSession = totalDuration === 0 || avgSecondsPerQ < 18;
 
     await adminDb.runTransaction(async (tx) => {
       const subSnap = await tx.get(submissionRef);
@@ -294,27 +293,20 @@ export class PracticeService {
       }
 
       const sessionAccuracy = evaluations.length > 0 ? (correctCount / evaluations.length) * 100 : 0;
-      if (isRecoveryMode && (sessionAccuracy >= 80 || updatedData.mastery >= 90)) {
-        const reqConfidence = updatedData.requiredConfidence || getRequiredConfidence(updatedData.topicClassification, updatedData.targetQuestions);
-        updatedData.isRecoveryMastered = true;
-        updatedData.mastery = Math.max(updatedData.mastery, 90);
-        updatedData.confidence = Math.max(updatedData.confidence, reqConfidence);
-        updatedData.recoveryCompletedAt = new Date();
-      }
 
       // Regular Topic Mastery System: Once a topic is mastered, it stays Mastered!
-      const isMasteredTopic = Boolean(existing?.isRecoveryMastered || (existing && existing.mastery >= 90));
+      const isMasteredTopic = Boolean(existing && existing.mastery >= 90);
       if (isMasteredTopic) {
         updatedData.mastery = Math.max(updatedData.mastery, 90);
       }
 
-      // Enforce Rule: Rushed sessions (< 10s per question) are disqualified from advancing Green Mastery
+      // Enforce Deliberation Gate: Rushed sessions (< 18s/question) do NOT advance mastery & trigger 30-min cooldown
       if (isRushedSession) {
         if (!isMasteredTopic) {
-          updatedData.mastery = Math.min(updatedData.mastery, 85);
+          updatedData.mastery = existingMastery;
           updatedData.confidence = existing ? (existing.confidence || 0) : 0;
         }
-        updatedData.isRecoveryMastered = false;
+        updatedData.cooldownUntil = new Date(Date.now() + 30 * 60 * 1000);
         updatedData.isRushedDisqualified = true;
       }
 
@@ -363,7 +355,7 @@ export class PracticeService {
         violations: violations || null,
         durationSpent: totalDuration,
         isRushedDisqualified: isRushedSession,
-        disqualificationReason: isRushedSession ? `Rushed practice session: Average solving time was only ${Math.round(avgSecondsPerQ)}s per question (< 10s). Green Mastery requires deliberate reading and problem-solving.` : null
+        disqualificationReason: isRushedSession ? `Rushed practice session: Average solving time was only ${Math.round(avgSecondsPerQ)}s per question (< 18s). Session voided to preserve quota. A 30-minute review cooldown has been applied.` : null
       });
     });
 
@@ -487,7 +479,7 @@ export class PracticeService {
         await adminDb.collection('parentReviews').doc(logId).set({
           studentCode,
           practiceSessionId: logId,
-          type: 'practice',
+          type: isRushedSession ? 'practice_voided' : 'practice',
           topicCode,
           topicName,
           subjectName,
@@ -505,9 +497,9 @@ export class PracticeService {
           sincerityPacingScore: sincerity.sincerityPacingScore,
           isFastFluency: sincerity.isFastFluency,
           isSolvedTooFast: sincerity.isSolvedTooFast,
-          feedbackBadge: sincerity.feedbackBadge || null,
-          parentAdvisory: sincerity.parentAdvisory || null,
-          parentAdvisoryMr: sincerity.parentAdvisoryMr || null,
+          feedbackBadge: isRushedSession ? '⚠️ Rushed Attempt (Voided)' : (sincerity.feedbackBadge || null),
+          parentAdvisory: isRushedSession ? `This session was completed in only ${totalDuration}s (${Math.round(avgSecondsPerQ)}s/question), which is below the minimum genuine deliberation threshold (18s/question). The session has been voided to preserve your practice quota. Topic mastery has not advanced, and a 30-minute review cooldown has been applied.` : (sincerity.parentAdvisory || null),
+          parentAdvisoryMr: isRushedSession ? `हे सराव सत्र फक्त ${totalDuration} सेकंदात पूर्ण केले गेले (${Math.round(avgSecondsPerQ)} से/प्रश्न), जे किमान विचारपूर्वक सोडवण्याच्या निकषांपेक्षा (१८ से/प्रश्न) कमी आहे. तुमचा सराव कोटा सुरक्षित ठेवण्यासाठी हे सत्र रद्द (voided) केले गेले आहे आणि ३० मिनिटांचा विश्राम कालावधी लागू केला आहे.` : (sincerity.parentAdvisoryMr || null),
           suspiciousLevel,
           strengths: strengths.slice(0, 3),
           needsAttention: needsAttention.slice(0, 3),
@@ -579,7 +571,8 @@ export class PracticeService {
       completedAt: new Date().toISOString(),
       questions: evaluations,
       isRushedDisqualified: isRushedSession,
-      disqualificationReason: isRushedSession ? `Rushed practice session: Average solving time was only ${Math.round(avgSecondsPerQ)}s per question (< 10s). Green Mastery requires deliberate reading and problem-solving.` : null
+      isVoided: isRushedSession,
+      disqualificationReason: isRushedSession ? `Rushed practice session: Average solving time was only ${Math.round(avgSecondsPerQ)}s per question (< 18s). Your practice quota has been preserved, but this topic is in a 30-minute review cooldown.` : null
     };
   }
 }

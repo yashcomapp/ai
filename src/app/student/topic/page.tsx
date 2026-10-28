@@ -39,7 +39,6 @@ interface PracticeData {
   masteryAtStart: number;
   idealTimeSeconds: number;
   totalAttemptedCount?: number;
-  isRecoveryMode?: boolean;
 }
 
 function TopicPracticeContent() {
@@ -50,8 +49,6 @@ function TopicPracticeContent() {
 
   const topicCode = searchParams.get('topicCode') || '';
   const category = searchParams.get('category') || 'continuePractice';
-  const mode = searchParams.get('mode') || '';
-  const isRecoveryMode = mode === 'recovery';
 
   // Session setup & lock state
   const [loading, setLoading] = useState(true);
@@ -61,11 +58,7 @@ function TopicPracticeContent() {
   const [textbookStudyMessage, setTextbookStudyMessage] = useState('');
   const [textbookConfirmedCheck, setTextbookConfirmedCheck] = useState(false);
   const [confirmingTextbook, setConfirmingTextbook] = useState(false);
-  const [lockType, setLockType] = useState<'initial' | 'cooldown' | 'daily' | 'recovery_next_day' | 'recovery_awaiting_approval' | null>(null);
-  const [showRecoveryPrompt, setShowRecoveryPrompt] = useState(false);
-  const [recoveryMessage, setRecoveryMessage] = useState('');
-  const [recoveryConfirmedCheck, setRecoveryConfirmedCheck] = useState(false);
-  const [confirmingRecovery, setConfirmingRecovery] = useState(false);
+  const [lockType, setLockType] = useState<'initial' | 'cooldown' | 'daily' | 'quota_reached' | null>(null);
 
   // Setup practice status
   const [started, setStarted] = useState(false);
@@ -253,19 +246,11 @@ function TopicPracticeContent() {
       const pData = await startSession({
         topicCode,
         category,
-        size: isRecoveryMode ? 8 : 6,
-        idToken,
-        mode
+        size: 6,
+        idToken
       });
       if (pData) {
-        if (pData.requireRecoveryMode || pData.allowRecovery) {
-          setShowRecoveryPrompt(true);
-          setLockType(pData.lockType || null);
-          setRecoveryMessage(pData.message || '');
-          setLoading(false);
-          return;
-        }
-        if (pData.requireTextbookStudy) {
+        if (pData.requireTextbookStudy || pData.locked) {
           setRequireTextbookStudy(true);
           setLockType(pData.lockType || 'initial');
           setTextbookStudyMessage(pData.message || '');
@@ -328,37 +313,6 @@ function TopicPracticeContent() {
       alert(err.message || 'Error updating textbook confirmation status.');
     } finally {
       setConfirmingTextbook(false);
-    }
-  };
-
-  const handleApproveRecovery = async () => {
-    if (!firebaseUser || !topicCode || confirmingRecovery) return;
-    setConfirmingRecovery(true);
-    try {
-      const idToken = await firebaseUser.getIdToken();
-      const res = await fetch('/api/student/practice', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${idToken}`
-        },
-        body: JSON.stringify({
-          action: 'approveRecovery',
-          topicCode
-        })
-      });
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.message || 'Failed to approve recovery diagnostic.');
-      }
-      setShowRecoveryPrompt(false);
-      setLockType(null);
-      setLoading(true);
-      router.push(`/student/topic?topicCode=${encodeURIComponent(topicCode)}&category=${category}&mode=recovery`);
-    } catch (err: any) {
-      alert(err.message || 'Error unlocking recovery diagnostic.');
-    } finally {
-      setConfirmingRecovery(false);
     }
   };
 
@@ -496,8 +450,6 @@ function TopicPracticeContent() {
           answers: formattedAnswers,
           durationSpent: totalSeconds,
           sessionId,
-          mode,
-          isRecoveryMode,
           violations: {
             tabOutCount: tabViolations,
             noFaceCount,
@@ -564,26 +516,7 @@ function TopicPracticeContent() {
     return <PracticeLockPrompt type="autonomous" topicCode={topicCode} category={category} />;
   }
 
-  if (showRecoveryPrompt) {
-    return (
-      <PracticeLockPrompt 
-        type="recovery" 
-        topicCode={topicCode} 
-        category={category}
-        lockType={lockType}
-        recoveryMessage={recoveryMessage}
-        recoveryConfirmedCheck={recoveryConfirmedCheck}
-        setRecoveryConfirmedCheck={setRecoveryConfirmedCheck}
-        confirmingRecovery={confirmingRecovery}
-        onApproveRecovery={handleApproveRecovery}
-        onStartRecovery={() => {
-          setShowRecoveryPrompt(false);
-          setLoading(true);
-          router.push(`/student/topic?topicCode=${encodeURIComponent(topicCode)}&category=${category}&mode=recovery`);
-        }}
-      />
-    );
-  }
+
 
   if (requireTextbookStudy) {
     return (

@@ -15,7 +15,7 @@ function getQuestionTimeProfile(q: any): QuestionTimeProfile {
   const text = String(q?.text || q?.assertion || '');
   const isMath = text.includes('\\frac') || text.includes('\\sqrt') || text.includes('\\int') || text.includes('=') || /[0-9]+\s*[\+\-\*\/]\s*[0-9]+/.test(text);
 
-  // 1. Numerical / Calculative / HOTS
+  // 1. Numerical / Calculative / HOTS (Minimum 45s, Ideal 90s)
   if (
     type.includes('numerical') ||
     type === 'one' ||
@@ -24,13 +24,13 @@ function getQuestionTimeProfile(q: any): QuestionTimeProfile {
     (isMath && (type.includes('mcq') || type === 'osc' || type === 'omc'))
   ) {
     return {
-      minSeconds: 15,
+      minSeconds: 45,
       idealSeconds: 90,
       category: 'numerical'
     };
   }
 
-  // 2. Conceptual / Multi-Statement / Assertion & Reason / Long Theory
+  // 2. Conceptual / Multi-Statement / Assertion & Reason / Long Theory (Minimum 28s, Ideal 55s)
   if (
     type === 'assertion_reason' ||
     type === 'oar' ||
@@ -39,19 +39,19 @@ function getQuestionTimeProfile(q: any): QuestionTimeProfile {
     type === 'omc' ||
     type === 'ssr' ||
     type === 'sla' ||
-    text.length > 150
+    text.length > 120
   ) {
     return {
-      minSeconds: 10,
-      idealSeconds: 50,
+      minSeconds: 28,
+      idealSeconds: 55,
       category: 'conceptual'
     };
   }
 
-  // 3. Direct Theoretical / Factual Recall / True-False / Short Blank / Definition
+  // 3. Direct Theoretical / Factual Recall / True-False / Short Blank / Definition (Minimum 18s, Ideal 35s)
   return {
-    minSeconds: 5,
-    idealSeconds: 25,
+    minSeconds: 18,
+    idealSeconds: 35,
     category: 'factual'
   };
 }
@@ -86,29 +86,29 @@ export function evaluateSessionSincerity(params: {
     if (profile.category === 'numerical') hasNumerical = true;
   });
 
-  // Ensure minimum baseline
-  const minRealisticTimeSeconds = Math.max(15, totalMin);
-  const idealTimeSeconds = Math.max(60, totalIdeal);
+  // Ensure realistic minimum baseline (for a 6-question science set, minimum is at least 100s)
+  const minRealisticTimeSeconds = Math.max(90, totalMin);
+  const idealTimeSeconds = Math.max(180, totalIdeal);
 
-  // A. Fast Concept Fluency: High accuracy (>=80%) on non-numerical sets in reasonable fast time
-  const isFastFluency = scorePercent >= 80 && durationSpent >= minRealisticTimeSeconds * 0.8 && !hasNumerical;
+  // A. Rushed / Solved Too Fast: Duration strictly less than minimal realistic reading time
+  const isSolvedTooFast = durationSpent < minRealisticTimeSeconds;
 
-  // B. Blind Guessing / Solved Too Fast: Duration strictly less than minimal realistic reading time + low score or rushed numericals
-  const isSolvedTooFast = durationSpent < minRealisticTimeSeconds && (scorePercent < 75 || hasNumerical);
+  // B. Fast Concept Fluency: Only legitimate if score >= 85% AND duration is at least 70% of ideal time
+  const isFastFluency = !isSolvedTooFast && scorePercent >= 85 && durationSpent >= idealTimeSeconds * 0.70 && !hasNumerical;
 
   // C. Calculate Pacing Sincerity Score (0 - 100)
   let sincerityPacingScore = 100;
   if (isFastFluency) {
     sincerityPacingScore = 100;
-  } else if (durationSpent >= idealTimeSeconds * 0.4) {
+  } else if (durationSpent >= idealTimeSeconds * 0.70) {
     sincerityPacingScore = 100;
   } else if (durationSpent >= minRealisticTimeSeconds) {
-    const ratio = (durationSpent - minRealisticTimeSeconds) / Math.max(1, (idealTimeSeconds * 0.4 - minRealisticTimeSeconds));
-    sincerityPacingScore = Math.round(70 + ratio * 30);
+    const ratio = (durationSpent - minRealisticTimeSeconds) / Math.max(1, (idealTimeSeconds * 0.70 - minRealisticTimeSeconds));
+    sincerityPacingScore = Math.round(60 + ratio * 40);
   } else {
-    // Rushed under minimum reading speed
-    const severity = Math.max(0.1, durationSpent / minRealisticTimeSeconds);
-    sincerityPacingScore = Math.round(Math.max(15, severity * 50));
+    // Rushed under minimum reading speed (severe penalty to reflect lack of deliberation)
+    const severity = Math.max(0.05, durationSpent / minRealisticTimeSeconds);
+    sincerityPacingScore = Math.round(Math.max(10, severity * 45));
   }
 
   let feedbackBadge: string | undefined;
@@ -117,13 +117,13 @@ export function evaluateSessionSincerity(params: {
 
   if (isSolvedTooFast) {
     const avgSec = questions.length > 0 ? Math.round(durationSpent / questions.length) : 0;
-    feedbackBadge = '⚠️ Solved Too Fast (Without Reading)';
-    parentAdvisory = `Your child finished ${questions.length} questions in ${Math.round(durationSpent)} seconds (Avg: ${avgSec}s per question, Expected: ${Math.round(idealTimeSeconds / 60)} mins) with low accuracy, indicating rushed guesses without reading questions carefully.`;
-    parentAdvisoryMr = `पाल्याने ${questions.length} प्रश्न फक्त ${Math.round(durationSpent)} सेकंदात सोडवले (सरासरी: ${avgSec} सेकंद प्रति प्रश्न, अपेक्षित: ${Math.round(idealTimeSeconds / 60)} मिनिटे). प्रश्न न वाचता घाईघाईत अंदाज लावून उत्तरे दिली आहेत.`;
+    feedbackBadge = '⚠️ Rushed Attempt (Under Minimum Deliberation Time)';
+    parentAdvisory = `Finished ${questions.length} questions in ${Math.round(durationSpent)} seconds (Avg: ${avgSec}s per question, Expected minimum: ${Math.round(minRealisticTimeSeconds / 60)} mins). Speed-reading without careful deliberation limits conceptual depth and long-term retention.`;
+    parentAdvisoryMr = `पाल्याने ${questions.length} प्रश्न फक्त ${Math.round(durationSpent)} सेकंदात सोडवले (सरासरी: ${avgSec} सेकंद प्रति प्रश्न). प्रश्न काळजीपूर्वक न वाचता घाईघाईत उत्तरे दिल्याने संकल्पना समजण्यात अडथळा येतो.`;
   } else if (isFastFluency) {
-    feedbackBadge = '⚡ Fast Concept Fluency';
-    parentAdvisory = `Great concept recall! Your child accurately identified theoretical concepts with fast mental retrieval.`;
-    parentAdvisoryMr = `उत्कृष्ट स्मरणशक्ती! पाल्याने सैद्धांतिक संकल्पनांचे अचूक आणि तत्परतेने उत्तर दिले.`;
+    feedbackBadge = '⚡ Sincere Concept Fluency';
+    parentAdvisory = `Great concept mastery! Completed theoretical concepts with solid deliberation and accurate retrieval.`;
+    parentAdvisoryMr = `उत्कृष्ट संकल्पना प्रभुत्व! पाल्याने योग्य विचार करून अचूक उत्तरे दिली आहेत.`;
   }
 
   return {

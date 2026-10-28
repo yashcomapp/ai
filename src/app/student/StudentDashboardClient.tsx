@@ -1509,7 +1509,7 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
               <div>
                 <h3 style={{ fontSize: '14px', fontWeight: 800, margin: 0, color: 'var(--text)' }}>Self-Study Practice</h3>
                 <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                  Practice syllabus topics and complete recovery quizzes to achieve Mastery.
+                  Practice syllabus topics and complete sets to achieve Mastery.
                 </div>
               </div>
             </div>

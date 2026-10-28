@@ -386,8 +386,7 @@ export class TopicHealthCalculator implements ParameterCalculator {
       const hasPracticed = (
         Number(rec.confidence || 0) > 0 || 
         Number(rec.totalAttempts || 0) > 0 || 
-        Number(rec.questionsAttempted || 0) > 0 || 
-        Boolean(rec.isRecoveryMastered)
+        Number(rec.questionsAttempted || 0) > 0
       );
       if (!hasPracticed) {
         return { retention: 0, factor: 0.70, isDue: false, hasPracticed: false };
@@ -442,12 +441,11 @@ export class TopicHealthCalculator implements ParameterCalculator {
         if (hasPracticed) {
           const mastery = Number(rec.mastery || 0);
           const confidence = Number(rec.confidence || 0);
-          const isRecovery = Boolean(rec.isRecoveryMastered);
           const reqConf = getRequiredConfidence(rec.topicClassification, rec.targetQuestions);
           if (isDue) srsDueCount++;
           totalRetentionSum += retention;
 
-          if (isRecovery || (mastery >= 90 && confidence >= reqConf)) {
+          if (mastery >= 90 && confidence >= reqConf) {
             masteredCount++;
           } else {
             attentionCount++;
@@ -504,13 +502,12 @@ export class TopicHealthCalculator implements ParameterCalculator {
       if (hasPracticed && record) {
         const mastery = Number(record.mastery || 0);
         const confidence = Number(record.confidence || 0);
-        const isRecovery = Boolean(record.isRecoveryMastered);
         const reqConf = getRequiredConfidence(record.topicClassification, record.targetQuestions);
         
         if (isDue) srsDueCount++;
         totalRetentionSum += retention;
 
-        if (isRecovery || (mastery >= 90 && confidence >= reqConf)) {
+        if (mastery >= 90 && confidence >= reqConf) {
           isMastered = true;
         }
 

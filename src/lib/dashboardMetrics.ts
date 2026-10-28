@@ -150,7 +150,6 @@ export interface ClassifiedTopicItem {
   state: 'mastered' | 'practicing' | 'needsAttention';
   isUnattempted: boolean;
   isAbsentExam: boolean;
-  isRecoveryMastered: boolean;
   topicMasteryProgress: number;
   priorityScore: number;
   attempts: number;
@@ -292,13 +291,11 @@ export function classifyAssignedTopics(input: ClassifyAssignedTopicsInput): Clas
     const mastery = mData?.hasOwnProperty('mastery') ? Number(mData.mastery || 0) : 0;
     const confidence = mData?.hasOwnProperty('confidence') ? Number(mData.confidence || 0) : 0;
     const attempts = Number(mData?.attempts || mData?.attemptCount || mData?.totalAttempts || 0);
-    const isRecoveryMastered = Boolean(mData?.isRecoveryMastered);
     const hasPracticed = Boolean(
       mData && (
         confidence > 0 ||
         Number(mData.questionsAttempted || 0) > 0 ||
-        attempts > 0 ||
-        isRecoveryMastered
+        attempts > 0
       )
     );
 
@@ -346,7 +343,7 @@ export function classifyAssignedTopics(input: ClassifyAssignedTopicsInput): Clas
 
     let state: 'mastered' | 'practicing' | 'needsAttention';
     let topicMasteryProgress = 0;
-    const isCertifiedMastered = isRecoveryMastered || (mastery >= 90 && confidence >= reqConf);
+    const isCertifiedMastered = mastery >= 90 && confidence >= reqConf;
 
     if (!mData) {
       // Unattempted in the assigned syllabus -> strictly Needs Attention (0% score)
@@ -386,7 +383,6 @@ export function classifyAssignedTopics(input: ClassifyAssignedTopicsInput): Clas
       state,
       isUnattempted: !mData,
       isAbsentExam,
-      isRecoveryMastered,
       topicMasteryProgress,
       priorityScore,
       attempts,
@@ -435,7 +431,7 @@ export function classifyAssignedTopics(input: ClassifyAssignedTopicsInput): Clas
 /**
  * ATTENTION - QUERY INTEGRITY CONTRACT:
  * When querying collections passed into `calculateUnifiedMetrics`, DO NOT strip fields with partial `.select()`:
- * - `topicMasteries`: requires `mastery`, `confidence`, `requiredConfidence`, `isRecoveryMastered`,
+ * - `topicMasteries`: requires `mastery`, `confidence`, `requiredConfidence`,
  *   `questionsAttempted`, `totalAttempts`, `srsSchedule`, `lastRevisedAt`, `updatedAt`, `srsStage`, `lastAttempt`.
  * - `practiceReviews`: requires `scorePercent`, `totalQuestions`, `status`, `createdAt`, `topicCode`.
  * - `objectiveReviews`: requires `percentage`, `score`, `totalMarks`, `status`.
