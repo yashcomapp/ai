@@ -3,7 +3,6 @@ import { ChunkedBatch } from '@/lib/firebase/batch';
 import { getDateKeyIST } from '@/lib/dateUtils';
 import { runCompleteAutomatedPurge } from '@/lib/purgeUtils';
 import { ExamReviewService } from '@/services/examReview.service';
-import { executeRescheduleToday } from '@/app/api/admin/exams/handlers/rescheduleToday';
 
 export interface DailyMaintenanceResult {
   executed: boolean;
@@ -86,13 +85,6 @@ export async function runDailyMaintenanceOpportunistic(): Promise<DailyMaintenan
       stats.expiredTargetsDeleted = 0;
     }
 
-    // 3. Reschedule active exams for today (06:20 AM start window with zero late entry restrictions)
-    try {
-      stats.reschedule = await executeRescheduleToday(todayStr);
-    } catch (err: any) {
-      console.error('[Daily Maintenance] Reschedule error:', err);
-      stats.reschedule = { error: err.message };
-    }
 
     // 4. Sweep autonomous exam reviews (evaluates parent reviews past review deadline)
     try {

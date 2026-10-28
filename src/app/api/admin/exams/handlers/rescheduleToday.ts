@@ -25,25 +25,21 @@ export async function executeRescheduleToday(todayKey: string = getDateKeyIST())
   let attemptsReset = 0;
   const details: string[] = [];
 
-  // 1. Update Objective Assignments (batchAssignments) for today / active
+  // 1. Update Objective Assignments (batchAssignments) scheduled for today
   const [
-    objActiveSnap,
     objStartSnap,
     objCreatedSnap,
-    subjActiveSnap,
     subjStartSnap,
     subjCreatedSnap
   ] = await Promise.all([
-    adminDb.collection('batchAssignments').where('status', '==', 'active').get(),
     adminDb.collection('batchAssignments').where('startAt', '>=', startOfTodayIST).where('startAt', '<', startOfTomorrowIST).get().catch(() => ({ docs: [] } as any)),
     adminDb.collection('batchAssignments').where('createdAt', '>=', startOfTodayIST).where('createdAt', '<', startOfTomorrowIST).get().catch(() => ({ docs: [] } as any)),
-    adminDb.collection('subjectiveAssignments').where('status', '==', 'active').get(),
     adminDb.collection('subjectiveAssignments').where('startAt', '>=', startOfTodayIST).where('startAt', '<', startOfTomorrowIST).get().catch(() => ({ docs: [] } as any)),
     adminDb.collection('subjectiveAssignments').where('createdAt', '>=', startOfTodayIST).where('createdAt', '<', startOfTomorrowIST).get().catch(() => ({ docs: [] } as any))
   ]);
 
   const seenObjDocIds = new Set<string>();
-  for (const snap of [objActiveSnap, objStartSnap, objCreatedSnap]) {
+  for (const snap of [objStartSnap, objCreatedSnap]) {
     for (const doc of snap.docs) {
       if (seenObjDocIds.has(doc.id)) continue;
       seenObjDocIds.add(doc.id);
@@ -53,8 +49,7 @@ export async function executeRescheduleToday(todayKey: string = getDateKeyIST())
       const createdAtDate = data.createdAt?.toDate ? data.createdAt.toDate() : (data.createdAt ? new Date(data.createdAt) : null);
 
       const isToday = (startAtDate && getDateKeyIST(startAtDate) === todayKey) || 
-                      (createdAtDate && getDateKeyIST(createdAtDate) === todayKey) ||
-                      data.status === 'active';
+                      (createdAtDate && getDateKeyIST(createdAtDate) === todayKey);
 
       if (isToday) {
         batch.set(doc.ref, {
@@ -69,9 +64,9 @@ export async function executeRescheduleToday(todayKey: string = getDateKeyIST())
     }
   }
 
-  // 2. Update Subjective Assignments (subjectiveAssignments) for today / active
+  // 2. Update Subjective Assignments (subjectiveAssignments) scheduled for today
   const seenSubjDocIds = new Set<string>();
-  for (const snap of [subjActiveSnap, subjStartSnap, subjCreatedSnap]) {
+  for (const snap of [subjStartSnap, subjCreatedSnap]) {
     for (const doc of snap.docs) {
       if (seenSubjDocIds.has(doc.id)) continue;
       seenSubjDocIds.add(doc.id);
@@ -81,8 +76,7 @@ export async function executeRescheduleToday(todayKey: string = getDateKeyIST())
       const createdAtDate = data.createdAt?.toDate ? data.createdAt.toDate() : (data.createdAt ? new Date(data.createdAt) : null);
 
       const isToday = (startAtDate && getDateKeyIST(startAtDate) === todayKey) || 
-                      (createdAtDate && getDateKeyIST(createdAtDate) === todayKey) ||
-                      data.status === 'active';
+                      (createdAtDate && getDateKeyIST(createdAtDate) === todayKey);
 
       if (isToday) {
         batch.set(doc.ref, {
