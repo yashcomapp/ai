@@ -82,6 +82,7 @@ function TopicPracticeContent() {
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [feedbackCorrect, setFeedbackCorrect] = useState(false);
   const [explanationTimer, setExplanationTimer] = useState(0);
+  const [errorReasons, setErrorReasons] = useState<{ [qIndex: number]: string }>({});
 
   // Timers
   const [totalSeconds, setTotalSeconds] = useState(0);
@@ -757,6 +758,8 @@ function TopicPracticeContent() {
         question={q}
         explanationTimer={explanationTimer}
         isSubmittingPractice={isSubmittingPractice}
+        selectedErrorReason={errorReasons[currentQIndex] || ''}
+        onSelectErrorReason={(reason: string) => setErrorReasons(prev => ({ ...prev, [currentQIndex]: reason }))}
         onNext={handleNext}
       />
     </div>

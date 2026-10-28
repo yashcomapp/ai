@@ -24,6 +24,8 @@ interface PracticeCompletionViewProps {
     topicName?: string;
     completedAt?: string;
     questions: any[];
+    isRushedDisqualified?: boolean;
+    disqualificationReason?: string;
   };
   topicData: {
     topicCode: string;
@@ -120,6 +122,25 @@ export function PracticeCompletionView({
         <p style={{ margin: '4px 0', fontSize: '13px', color: 'var(--text-muted)' }}>
           ⏱️ Time: {formatDuration(totalSeconds)} / Ideal: {formatDuration(topicData.idealTimeSeconds)} ({efficiency}% efficiency)
         </p>
+
+        {finalResult.isRushedDisqualified && (
+          <div style={{
+            background: 'rgba(239, 68, 68, 0.08)',
+            border: '1px solid rgba(239, 68, 68, 0.3)',
+            borderRadius: 'var(--radius)',
+            padding: '14px',
+            margin: '16px 0',
+            textAlign: 'left',
+            color: 'var(--danger)'
+          }}>
+            <div style={{ fontWeight: 'bold', fontSize: '13px', marginBottom: '4px' }}>
+              ⚠️ Session Disqualified from Green Mastery
+            </div>
+            <div style={{ fontSize: '12px', lineHeight: '1.5' }}>
+              {finalResult.disqualificationReason || 'Practice was solved too quickly without deliberation (< 10s per question). Green Mastery requires deliberate reading and thoughtful solving.'}
+            </div>
+          </div>
+        )}
 
         <div style={{ background: 'var(--bg-soft)', borderRadius: 'var(--radius)', padding: '14px', margin: '16px 0', textAlign: 'left' }}>
           <div className="integrity-level" style={{ fontWeight: 'bold', fontSize: '13px', marginBottom: '6px' }}>{integrity.text}</div>

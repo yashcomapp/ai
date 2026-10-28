@@ -17,6 +17,8 @@ interface PracticeFeedbackModalProps {
   question: any;
   explanationTimer: number;
   isSubmittingPractice: boolean;
+  selectedErrorReason?: string;
+  onSelectErrorReason?: (reason: string) => void;
   onNext: () => void;
 }
 
@@ -26,6 +28,8 @@ export function PracticeFeedbackModal({
   question,
   explanationTimer,
   isSubmittingPractice,
+  selectedErrorReason,
+  onSelectErrorReason,
   onNext
 }: PracticeFeedbackModalProps) {
   if (!isOpen || !question) return null;
@@ -105,7 +109,7 @@ export function PracticeFeedbackModal({
           </div>
         )}
         {!isCorrect && (
-          <div style={{ background: 'var(--bg-soft)', padding: '16px 18px', borderRadius: 'var(--radius-sm)', overflowY: 'auto', maxHeight: '260px', border: '1px solid var(--border-light)', textAlign: 'left' }}>
+          <div style={{ background: 'var(--bg-soft)', padding: '16px 18px', borderRadius: 'var(--radius-sm)', overflowY: 'auto', maxHeight: '240px', border: '1px solid var(--border-light)', textAlign: 'left' }}>
             <strong style={{ color: 'var(--accent)', display: 'block', marginBottom: '8px', fontSize: '15px' }}>💡 Detailed Explanation &amp; Solution:</strong>
             {question.solution || question.explanation ? (
               <RichMathText 
@@ -117,6 +121,43 @@ export function PracticeFeedbackModal({
                 Analyze the key concepts: The correct choice is <strong>{getCorrectOptionText(question)}</strong>. Review topic definitions and core principles to reinforce this concept.
               </div>
             )}
+          </div>
+        )}
+        {!isCorrect && (
+          <div style={{ 
+            background: 'var(--bg-soft)', 
+            padding: '14px 18px', 
+            borderRadius: 'var(--radius-sm)', 
+            border: '1px solid var(--border-light)',
+            textAlign: 'left' 
+          }}>
+            <strong style={{ fontSize: '13px', display: 'block', marginBottom: '8px', color: 'var(--text)' }}>
+              Why did you miss this question? <span style={{ color: 'var(--danger)' }}>*</span>
+            </strong>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+              {['Reading Errors', 'Silly Mistake', 'Calculation Error', 'Over-Thinking', 'Concept Gap', 'Guessed / Fluke'].map(reason => {
+                const isSelected = selectedErrorReason === reason;
+                return (
+                  <button
+                    key={reason}
+                    type="button"
+                    onClick={() => onSelectErrorReason && onSelectErrorReason(reason)}
+                    className={`btn btn-sm ${isSelected ? 'btn-primary' : 'btn-secondary'}`}
+                    style={{ 
+                      fontSize: '11px', 
+                      padding: '6px 12px',
+                      borderRadius: 'var(--radius-sm)',
+                      border: isSelected ? '1px solid var(--accent)' : '1px solid var(--border)',
+                      background: isSelected ? 'var(--accent-grad)' : 'var(--surface)',
+                      color: isSelected ? 'var(--text-white)' : 'var(--text)',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {reason}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         )}
         {isCorrect && (
@@ -134,14 +175,16 @@ export function PracticeFeedbackModal({
       <button 
         className="btn btn-primary" 
         onClick={onNext} 
-        disabled={isSubmittingPractice || (!isCorrect && explanationTimer > 0)}
+        disabled={isSubmittingPractice || (!isCorrect && (explanationTimer > 0 || !selectedErrorReason))}
         style={{ width: '100%', padding: '14px', fontSize: '16px', fontWeight: 800, borderRadius: 'var(--radius-sm)' }}
       >
         {isSubmittingPractice
           ? 'Submitting Practice...'
           : (isCorrect 
             ? 'Continue →' 
-            : (explanationTimer > 0 ? `Read Explanation (${explanationTimer}s)` : '✓ I Understand'))}
+            : (explanationTimer > 0 
+                ? `Read Explanation (${explanationTimer}s)` 
+                : (!selectedErrorReason ? '⚠️ Select Error Reason Above to Proceed' : '✓ I Understand')))}
       </button>
     </ModalShell>
   );

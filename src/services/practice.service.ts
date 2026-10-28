@@ -240,6 +240,12 @@ export class PracticeService {
     const fallbackTargetQuestions = topicIndexData?.targetQuestions || (fallbackClassification === 'minor' ? 12 : fallbackClassification === 'major' ? 24 : 18);
     const fallbackRequiredConfidence = topicIndexData?.requiredConfidence || getRequiredConfidence(fallbackClassification, fallbackTargetQuestions);
 
+    const totalDuration = Number(durationSpent) || 0;
+    const totalEvalCount = evaluations.length || 1;
+    const avgSecondsPerQ = totalDuration / totalEvalCount;
+    // Anti-Rushing Gate: If student spent less than 10 seconds per question on average, disqualify from advancing Green Mastery
+    const isRushedSession = totalDuration > 0 && avgSecondsPerQ < 10;
+
     await adminDb.runTransaction(async (tx) => {
       const subSnap = await tx.get(submissionRef);
       if (subSnap.exists) {
@@ -302,8 +308,18 @@ export class PracticeService {
         updatedData.mastery = Math.max(updatedData.mastery, 90);
       }
 
+      // Enforce Rule: Rushed sessions (< 10s per question) are disqualified from advancing Green Mastery
+      if (isRushedSession) {
+        if (!isMasteredTopic) {
+          updatedData.mastery = Math.min(updatedData.mastery, 85);
+          updatedData.confidence = existing ? (existing.confidence || 0) : 0;
+        }
+        updatedData.isRecoveryMastered = false;
+        updatedData.isRushedDisqualified = true;
+      }
+
       // SRS interval scheduling: ONLY active if student explicitly has srsEnabled === true
-      if (isSrsEnabled && (category === 'revision' || (isMasteredTopic && sessionAccuracy >= 80))) {
+      if (isSrsEnabled && !isRushedSession && (category === 'revision' || (isMasteredTopic && sessionAccuracy >= 80))) {
         const currentStage = Number(existing?.srsStage || 0);
         if (sessionAccuracy >= 80) {
           // Passed SRS review with flying colors -> advance to next spaced interval stage
@@ -344,7 +360,10 @@ export class PracticeService {
         questions: evaluations,
         masteryBefore: existingMastery,
         submittedAt: new Date(),
-        violations: violations || null
+        violations: violations || null,
+        durationSpent: totalDuration,
+        isRushedDisqualified: isRushedSession,
+        disqualificationReason: isRushedSession ? `Rushed practice session: Average solving time was only ${Math.round(avgSecondsPerQ)}s per question (< 10s). Green Mastery requires deliberate reading and problem-solving.` : null
       });
     });
 
@@ -558,7 +577,9 @@ export class PracticeService {
       topicCode,
       topicName: resolvedTopicName,
       completedAt: new Date().toISOString(),
-      questions: evaluations
+      questions: evaluations,
+      isRushedDisqualified: isRushedSession,
+      disqualificationReason: isRushedSession ? `Rushed practice session: Average solving time was only ${Math.round(avgSecondsPerQ)}s per question (< 10s). Green Mastery requires deliberate reading and problem-solving.` : null
     };
   }
 }

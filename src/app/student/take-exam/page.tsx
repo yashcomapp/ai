@@ -94,7 +94,7 @@ function TakeExamContent() {
       return;
     }
     const totalMistakes = wrongAnswers.length + unattemptedQuestions.length;
-    const targetSeconds = Math.min(45, Math.max(10, totalMistakes * 6));
+    const targetSeconds = Math.max(15, totalMistakes * 12);
     setReviewSecondsRemaining(targetSeconds);
 
     const timer = setInterval(() => {
@@ -122,6 +122,8 @@ function TakeExamContent() {
   const reviewContainerRef = useRef<HTMLDivElement | null>(null);
   const lastActiveTimeRef = useRef<number>(Date.now());
   const prevTabViolationsRef = useRef<number>(0);
+  const timeRemainingAtSubmitRef = useRef<number>(0);
+
   // Hook 1: countdown timer
   const {
     timeRemaining,
@@ -142,6 +144,13 @@ function TakeExamContent() {
       }
     }
   });
+
+  // Minimum Exam Duration Lock: Require at least 50% of the allocated exam duration before submission
+  const totalExamDurationSeconds = exam ? ((exam.duration || 0) * 60) : 0;
+  const minRequiredExamSeconds = Math.floor(totalExamDurationSeconds * 0.5);
+  const elapsedExamSeconds = exam ? Math.max(0, totalExamDurationSeconds - timeRemaining) : 0;
+  const isEarlySubmitLocked = !isPreviewMode && totalExamDurationSeconds > 0 && elapsedExamSeconds < minRequiredExamSeconds;
+  const earlySubmitSecondsLeft = Math.max(0, minRequiredExamSeconds - elapsedExamSeconds);
 
   const answeredCount = useMemo(() => {
     return userAnswers.filter(a => a.answer !== '').length;
@@ -606,6 +615,15 @@ function TakeExamContent() {
 
   const submitExamAction = async (finalTabViolations?: number, proctoringViolationTriggered?: boolean) => {
     if (isSubmitting) return;
+
+    // Minimum Exam Duration Lock: Block early exit unless forced by auto-submit / timer expiry / proctoring violations
+    const isForcedSubmission = Boolean(proctoringViolationTriggered || timeRemaining <= 0);
+    if (!isForcedSubmission && isEarlySubmitLocked) {
+      alert(`Submission Locked: Minimum writing time required is ${Math.floor(minRequiredExamSeconds / 60)} minutes (50% of allocated duration). You cannot submit early. Please use the remaining ${Math.ceil(earlySubmitSecondsLeft / 60)} minute(s) to verify and review all answers.`);
+      return;
+    }
+
+    timeRemainingAtSubmitRef.current = timeRemaining;
     setIsSubmitting(true);
     setSubmitErrorMessage('');
     stopAllProctoring();
@@ -1232,20 +1250,37 @@ function TakeExamContent() {
             
             {currentQIndex === (exam.questions?.length || 1) - 1 ? (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
+                {isEarlySubmitLocked && (
+                  <div style={{ 
+                    fontSize: '11px', 
+                    color: 'var(--warning)', 
+                    background: 'var(--warning-bg)', 
+                    padding: '6px 12px', 
+                    borderRadius: '6px', 
+                    border: '1px solid var(--warning-border)',
+                    fontWeight: 600,
+                    textAlign: 'right',
+                    maxWidth: '320px'
+                  }}>
+                    🔒 Minimum Exam Time: Locked until 50% time elapsed ({Math.ceil(earlySubmitSecondsLeft / 60)}m remaining). Please review your work.
+                  </div>
+                )}
                 <button 
                   className="btn btn-danger" 
-                  disabled={isSubmitting || submitCooldown > 0}
+                  disabled={isSubmitting || submitCooldown > 0 || isEarlySubmitLocked}
                   onClick={() => submitExamAction()}
                   style={{ 
-                    opacity: (isSubmitting || submitCooldown > 0) ? 0.6 : 1,
-                    cursor: (isSubmitting || submitCooldown > 0) ? 'not-allowed' : 'pointer',
+                    opacity: (isSubmitting || submitCooldown > 0 || isEarlySubmitLocked) ? 0.6 : 1,
+                    cursor: (isSubmitting || submitCooldown > 0 || isEarlySubmitLocked) ? 'not-allowed' : 'pointer',
                     minWidth: '160px',
                     fontWeight: 700
                   }}
                 >
                   {submitCooldown > 0 
                     ? `⏳ Retry in ${submitCooldown}s (Saved)` 
-                    : (isSubmitting ? 'Submitting...' : '📋 Submit Exam')
+                    : isEarlySubmitLocked
+                      ? `🔒 Locked (${Math.ceil(earlySubmitSecondsLeft / 60)}m left)`
+                      : (isSubmitting ? 'Submitting...' : '📋 Submit Exam')
                   }
                 </button>
                 {submitErrorMessage && (
@@ -1580,7 +1615,7 @@ function TakeExamContent() {
                           explanation={explanation}
                         />
 
-                        {/* Error classification box (exactly two lines of buttons in a nice box) */}
+                        {/* Error classification box (two lines of buttons in a nice box) */}
                         <div style={{ 
                           marginTop: '10px', 
                           marginBottom: '10px', 
@@ -1589,24 +1624,33 @@ function TakeExamContent() {
                           padding: '12px', 
                           background: 'var(--bg-soft)' 
                         }}>
-                          <span style={{ fontSize: '11px', fontWeight: 'bold', display: 'block', marginBottom: '8px', color: 'var(--text)' }}>
-                            Identify error reason:
-                          </span>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                            <span style={{ fontSize: '11px', fontWeight: 'bold', color: 'var(--text)' }}>
+                              Identify error reason: <span style={{ color: 'var(--danger)' }}>*</span>
+                            </span>
+                            {((timeRemainingAtSubmitRef.current || 0) > (totalExamDurationSeconds * 0.15)) && (
+                              <span style={{ fontSize: '10px', color: 'var(--warning)', fontWeight: 600 }}>
+                                ⏳ "Time Management" disabled (submitted with {Math.round((timeRemainingAtSubmitRef.current || 0) / 60)}m left)
+                              </span>
+                            )}
+                          </div>
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                             {/* Line 1 */}
                             <div style={{ display: 'flex', gap: '6px' }}>
-                              {['Reading Errors', 'Time Management', 'Over-Thinking'].map(reason => {
+                              {['Reading Errors', 'Time Management', 'Calculation Error'].map(reason => {
                                 const isSelected = selectedReasons[qItem.globalIdx] === reason;
+                                const isTimeManagementDisabled = reason === 'Time Management' && ((timeRemainingAtSubmitRef.current || 0) > (totalExamDurationSeconds * 0.15));
                                 return (
                                   <button
                                     key={reason}
                                     type="button"
+                                    title={isTimeManagementDisabled ? `Disabled: You submitted with ${Math.round((timeRemainingAtSubmitRef.current || 0) / 60)}m left on the clock` : reason}
                                     onClick={() => {
-                                      if (!isUnderstood) {
+                                      if (!isUnderstood && !isTimeManagementDisabled) {
                                         setSelectedReasons(prev => ({ ...prev, [qItem.globalIdx]: reason }));
                                       }
                                     }}
-                                    disabled={isUnderstood}
+                                    disabled={isUnderstood || isTimeManagementDisabled}
                                     className={`btn btn-sm ${isSelected ? 'btn-primary' : 'btn-secondary'}`}
                                     style={{ 
                                       fontSize: '10px', 
@@ -1615,7 +1659,9 @@ function TakeExamContent() {
                                       border: isSelected ? '1px solid var(--accent)' : '1px solid var(--border)',
                                       background: isSelected ? 'var(--accent-grad)' : 'var(--surface)',
                                       color: isSelected ? 'var(--text-white)' : 'var(--text)',
-                                      cursor: isUnderstood ? 'not-allowed' : 'pointer',
+                                      cursor: (isUnderstood || isTimeManagementDisabled) ? 'not-allowed' : 'pointer',
+                                      opacity: isTimeManagementDisabled ? 0.35 : 1,
+                                      textDecoration: isTimeManagementDisabled ? 'line-through' : 'none',
                                       whiteSpace: 'nowrap'
                                     }}
                                   >
@@ -1626,7 +1672,7 @@ function TakeExamContent() {
                             </div>
                             {/* Line 2 */}
                             <div style={{ display: 'flex', gap: '6px' }}>
-                              {['Silly Mistake', 'Concept'].map(reason => {
+                              {['Silly Mistake', 'Concept / Formula Gap', 'Over-Thinking', 'Guessed / Fluke'].map(reason => {
                                 const isSelected = selectedReasons[qItem.globalIdx] === reason;
                                 return (
                                   <button
@@ -1658,23 +1704,33 @@ function TakeExamContent() {
                           </div>
                         </div>
 
-                        <button 
-                          className={`btn btn-sm ${isUnderstood ? 'btn-success' : 'btn-primary'}`}
-                          disabled={isUnderstood}
-                          onClick={() => {
-                            if (!selectedReasons[qItem.globalIdx]) {
-                              setSelectedReasons(prev => ({ ...prev, [qItem.globalIdx]: 'Concept' }));
-                            }
-                            setReviewedQuestions(prev => {
-                              const next = new Set(prev);
-                              next.add(qItem.globalIdx);
-                              return next;
-                            });
-                          }}
-                          style={{ fontSize: '11px', padding: '6px 16px', alignSelf: 'flex-start', marginTop: '10px' }}
-                        >
-                          {isUnderstood ? '✓ Understood' : '🔘 I Understand'}
-                        </button>
+                        {(() => {
+                          const isReasonSelected = Boolean(selectedReasons[qItem.globalIdx]);
+                          return (
+                            <button 
+                              className={`btn btn-sm ${isUnderstood ? 'btn-success' : 'btn-primary'}`}
+                              disabled={isUnderstood || !isReasonSelected}
+                              onClick={() => {
+                                if (!isReasonSelected) return;
+                                setReviewedQuestions(prev => {
+                                  const next = new Set(prev);
+                                  next.add(qItem.globalIdx);
+                                  return next;
+                                });
+                              }}
+                              style={{ 
+                                fontSize: '11px', 
+                                padding: '6px 16px', 
+                                alignSelf: 'flex-start', 
+                                marginTop: '10px',
+                                opacity: (!isUnderstood && !isReasonSelected) ? 0.6 : 1,
+                                cursor: (!isUnderstood && !isReasonSelected) ? 'not-allowed' : 'pointer'
+                              }}
+                            >
+                              {isUnderstood ? '✓ Understood' : (!isReasonSelected ? '⚠️ Select Error Reason First' : '🔘 I Understand')}
+                            </button>
+                          );
+                        })()}
                       </div>
                     );
                   })
@@ -1717,11 +1773,12 @@ function TakeExamContent() {
                         setReviewSubmitting(true);
                         try {
                           const finalReasons: Record<string, string> = { ...selectedReasons };
-                          questionsToReview.forEach(q => {
-                            if (!finalReasons[q.globalIdx]) {
-                              finalReasons[q.globalIdx] = 'Concept';
-                            }
-                          });
+                          const unselected = questionsToReview.filter(q => !finalReasons[q.globalIdx]);
+                          if (unselected.length > 0) {
+                            alert(`Please classify the error reason for all ${questionsToReview.length} questions before finalizing.`);
+                            setReviewSubmitting(false);
+                            return;
+                          }
 
                           const idToken = await firebaseUser!.getIdToken();
                           const res = await fetch('/api/student/exams', {

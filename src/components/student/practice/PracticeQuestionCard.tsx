@@ -1,5 +1,6 @@
 'use client';
 
+import React, { useState, useEffect } from 'react';
 import {
   preprocessMathText,
   stripOptionLabel,
@@ -52,6 +53,32 @@ export function PracticeQuestionCard({
   onSubmitQuestion,
   onNext
 }: PracticeQuestionCardProps) {
+  const [readingTimer, setReadingTimer] = useState<number>(5);
+
+  useEffect(() => {
+    if (isQSubmitted) {
+      setReadingTimer(0);
+      return;
+    }
+    const qType = String(question?.type || '').toLowerCase();
+    const qText = String(question?.text || question?.assertion || '');
+    const isComplex = qType.includes('numerical') || qType === 'one' || qType === 'ssn' || qType === 'sln' || qType === 'oar' || qType === 'assertion_reason' || qText.length > 120;
+    const initialSeconds = isComplex ? 15 : 10;
+    setReadingTimer(initialSeconds);
+
+    const interval = setInterval(() => {
+      setReadingTimer(prev => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [currentQIndex, isQSubmitted, question]);
+
   if (!question) return null;
 
   return (
@@ -75,6 +102,11 @@ export function PracticeQuestionCard({
             Q {currentQIndex + 1} of {totalQuestions}
           </span>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            {readingTimer > 0 && !isQSubmitted && (
+              <span className="badge badge-warning" style={{ fontSize: '10px', fontWeight: 700 }}>
+                ⏱️ Deliberation Gate: {readingTimer}s
+              </span>
+            )}
             <span className="badge badge-secondary" style={{ textTransform: 'uppercase', fontSize: '10px' }}>
               {question.difficulty} • {question.bloomLevel}
             </span>
@@ -99,7 +131,7 @@ export function PracticeQuestionCard({
       </div>
 
       {/* Navigation buttons */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '15px', marginTop: '30px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '15px', marginTop: '30px' }}>
         <button 
           className="btn btn-secondary" 
           onClick={onBack}
@@ -110,20 +142,22 @@ export function PracticeQuestionCard({
         </button>
 
         {!isQSubmitted ? (
-          <button 
-            className="btn btn-primary" 
-            onClick={onSubmitQuestion}
-            disabled={!userAnswer}
-            style={{ width: '160px' }}
-          >
-            Submit &amp; Check
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <button 
+              className="btn btn-primary" 
+              onClick={onSubmitQuestion}
+              disabled={!userAnswer || readingTimer > 0}
+              style={{ minWidth: '160px' }}
+            >
+              {readingTimer > 0 ? `⏱️ Deliberate (${readingTimer}s)` : 'Submit & Check'}
+            </button>
+          </div>
         ) : (
           <button 
             className="btn btn-primary" 
-            onClick={onNext}
+            onClick={onNext} 
             disabled={isSubmittingPractice || (!feedbackCorrect && explanationTimer > 0)}
-            style={{ width: '160px' }}
+            style={{ minWidth: '160px' }}
           >
             {isSubmittingPractice
               ? 'Submitting...'
