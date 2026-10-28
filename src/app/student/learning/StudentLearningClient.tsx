@@ -485,6 +485,57 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
               </div>
             )}
 
+            {/* Active Conducted Syllabus Progress Indicator */}
+            {data && (() => {
+              const masteredCount = data.mastered?.length || 0;
+              const practiceCount = data.continuePractice?.length || 0;
+              const focusCount = data.needsAttention?.length || 0;
+              const totalConducted = masteredCount + practiceCount + focusCount;
+              const completionPercent = totalConducted > 0 ? Math.round((masteredCount / totalConducted) * 100) : 0;
+              const isAllExhausted = totalConducted > 0 && practiceCount === 0 && focusCount === 0;
+
+              return (
+                <div style={{
+                  background: isAllExhausted 
+                    ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(56, 189, 248, 0.12))' 
+                    : 'var(--surface)',
+                  border: `1px solid ${isAllExhausted ? 'rgba(52, 211, 153, 0.4)' : 'var(--border-light)'}`,
+                  borderRadius: 'var(--radius)',
+                  padding: '10px 14px',
+                  marginBottom: '10px',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                  gap: '8px'
+                }}>
+                  <div>
+                    <div style={{ fontSize: '12.5px', fontWeight: 800, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span>{isAllExhausted ? '🎉 All Conducted Topics Mastered!' : '📖 Active Syllabus Coverage (Conducted in Exams)'}</span>
+                      <span className="badge" style={{
+                        background: isAllExhausted ? 'var(--success-bg)' : 'var(--surface-2)',
+                        color: isAllExhausted ? 'var(--success)' : 'var(--accent)',
+                        border: `1px solid ${isAllExhausted ? 'rgba(52, 211, 153, 0.4)' : 'var(--border)'}`,
+                        fontSize: '10px',
+                        fontWeight: 700,
+                        padding: '1px 6px'
+                      }}>
+                        {masteredCount} / {totalConducted} Topics ({completionPercent}%)
+                      </span>
+                    </div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                      {isAllExhausted 
+                        ? 'Student has completed and mastered 100% of the syllabus pool tested so far. Next practice unlocks with upcoming exams.'
+                        : `${practiceCount + focusCount} topic(s) currently open for practice and concept elevation.`}
+                    </div>
+                  </div>
+                  <div style={{ width: '120px', height: '6px', background: 'var(--surface-2)', borderRadius: '3px', overflow: 'hidden' }}>
+                    <div style={{ width: `${completionPercent}%`, height: '100%', background: isAllExhausted ? 'var(--success)' : 'var(--accent)', transition: 'width 0.3s ease' }}></div>
+                  </div>
+                </div>
+              );
+            })()}
+
             {/* Tab Controls (Focus is fully restored) */}
             <div className="review-tabs" style={{ display: 'flex', gap: '6px', marginBottom: '10px', overflowX: 'auto', paddingBottom: '2px' }}>
               <button className={`tab-btn ${activeTab === 'needsAttention' ? 'active' : ''}`} onClick={() => setActiveTab('needsAttention')}>
@@ -504,7 +555,29 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
         {!loading && (
           <div id="student-learning-pathway">
             {sortedSubjects.length === 0 ? (
-              <div className="empty-state" style={{ textAlign: 'center', padding: '24px 0', color: 'var(--text-faint)' }}>📭 No topics found in this category.</div>
+              <div style={{ textAlign: 'center', padding: '32px 16px', background: 'var(--surface)', borderRadius: 'var(--radius)', border: '1px solid var(--border-light)', marginTop: '8px' }}>
+                {searchTerm ? (
+                  <div style={{ color: 'var(--text-muted)', fontSize: '13px' }}>🔍 No topics match "{searchTerm}".</div>
+                ) : activeTab === 'needsAttention' ? (
+                  <div>
+                    <div style={{ fontSize: '28px', marginBottom: '6px' }}>🛡️</div>
+                    <div style={{ fontWeight: 800, fontSize: '14px', color: 'var(--success)' }}>All Good — Zero Topics in Focus</div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                      No topics currently need urgent remediation. Everything tested is progressing solidly!
+                    </div>
+                  </div>
+                ) : activeTab === 'continuePractice' ? (
+                  <div>
+                    <div style={{ fontSize: '28px', marginBottom: '6px' }}>🎉</div>
+                    <div style={{ fontWeight: 800, fontSize: '14px', color: 'var(--text)' }}>All Assigned Practice Completed!</div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px', maxWidth: '460px', margin: '4px auto 0 auto', lineHeight: 1.4 }}>
+                      You have completed all practice sets and mastered all topics assigned from exams conducted to date. Next practice pools will automatically unlock when your teacher conducts upcoming exams.
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ color: 'var(--text-muted)', fontSize: '13px' }}>📚 No topics found in this category.</div>
+                )}
+              </div>
             ) : (
               sortedSubjects.map(subjName => {
                 const chapters = grouped.get(subjName)!;
