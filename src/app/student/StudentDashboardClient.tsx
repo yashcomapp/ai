@@ -1374,7 +1374,7 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
         </div>
 
         {/* Today's Study & Practice (Combined Card) */}
-        {((exams.studyChips && exams.studyChips.length > 0) || (exams.dailyHomePractices && exams.dailyHomePractices.length > 0)) && (
+        {((exams.studyChips && exams.studyChips.length > 0) || (exams.dailyHomePractices && exams.dailyHomePractices.length > 0)) ? (
           <div className="card card-cyan" style={{ 
             borderRadius: 'var(--radius)', 
             padding: '10px 12px', 
@@ -1386,6 +1386,12 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
                 <BookOpen size={18} color="var(--accent)" />
                 <h3 style={{ fontSize: '14px', fontWeight: 800, margin: 0, color: 'var(--text)', whiteSpace: 'nowrap' }}>Today's Study & Practice</h3>
               </div>
+              <button 
+                onClick={() => router.push('/student/learning')}
+                style={{ background: 'transparent', border: 'none', color: 'var(--accent)', fontSize: '11px', fontWeight: 700, cursor: 'pointer', padding: '2px 6px' }}
+              >
+                All Topics →
+              </button>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -1474,6 +1480,46 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
                 );
               })}
             </div>
+          </div>
+        ) : (
+          <div className="card card-cyan" style={{ 
+            borderRadius: 'var(--radius)', 
+            padding: '12px 14px', 
+            marginBottom: '8px',
+            boxShadow: 'var(--shadow-sm)',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '10px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{ 
+                width: '36px', 
+                height: '36px', 
+                borderRadius: '8px', 
+                background: 'rgba(56, 189, 248, 0.12)', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                flexShrink: 0 
+              }}>
+                <BookOpen size={20} color="var(--accent)" />
+              </div>
+              <div>
+                <h3 style={{ fontSize: '14px', fontWeight: 800, margin: 0, color: 'var(--text)' }}>Self-Study Practice & Revision</h3>
+                <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                  Practice syllabus topics, take revision quizzes, or strengthen concepts with adaptive questions.
+                </div>
+              </div>
+            </div>
+            <button 
+              className="btn btn-primary btn-sm"
+              onClick={() => router.push('/student/learning')}
+              style={{ padding: '6px 14px', fontSize: '11.5px', fontWeight: 700, whiteSpace: 'nowrap' }}
+            >
+              🚀 Practice Topics
+            </button>
           </div>
         )}
 

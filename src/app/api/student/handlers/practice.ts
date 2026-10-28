@@ -102,7 +102,7 @@ export async function GET(req: NextRequest) {
     const maxSessionsAllowed = isMinorTopic ? 2 : (isMajorTopic ? 4 : 3);
     const maxQuestionsAllowed = isMinorTopic ? 12 : (isMajorTopic ? 24 : 18);
 
-    const isRevisionMode = category === 'revision';
+    const isRevisionMode = category === 'revision' || category === 'mastered';
     const isPracticeLimitReached = !isRevisionMode && (completedPractices >= maxSessionsAllowed || (practiceQuestionsAttempted >= maxQuestionsAllowed && mastery < 80));
 
     // If practice limit reached and not in recovery mode, prompt to enter Guided Recovery Diagnostic
