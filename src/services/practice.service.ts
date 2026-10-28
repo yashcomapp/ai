@@ -23,16 +23,17 @@ export class PracticeService {
    */
   static getDifficultyDistribution(mastery: number, revisionMode: boolean, questionsAttempted?: number) {
     if (revisionMode) {
-      return { easy: 20, medium: 30, hard: 50 };
+      return { easy: 10, medium: 40, hard: 50 };
     }
     // Challenging questions (100% hard) for practice should be given to any student who achieves mastery (>= 80) in less than 15 questions
     if (mastery >= 80 && questionsAttempted !== undefined && questionsAttempted < 15) {
       return { easy: 0, medium: 0, hard: 100 };
     }
-    if (mastery < 30) return { easy: 70, medium: 30, hard: 0 };
-    if (mastery < 60) return { easy: 50, medium: 50, hard: 0 };
-    if (mastery < 85) return { easy: 20, medium: 50, hard: 30 };
-    return { easy: 10, medium: 40, hard: 50 };
+    // Competency-Based Pacing: Prioritize Conceptual (Medium) and Problem-Solving (Hard) over trivial recall (Easy)
+    if (mastery < 30) return { easy: 20, medium: 60, hard: 20 };
+    if (mastery < 60) return { easy: 15, medium: 55, hard: 30 };
+    if (mastery < 85) return { easy: 10, medium: 50, hard: 40 };
+    return { easy: 0, medium: 40, hard: 60 };
   }
 
   static getCategoryDistribution(category: string) {

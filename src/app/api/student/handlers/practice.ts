@@ -512,6 +512,42 @@ export async function GET(req: NextRequest) {
     if (hardNeeded > hardAvailable && hardAvailable > 0) hardNeeded = hardAvailable;
 
 
+    // Helper to prioritize conceptual depth, word problems, and math formulas over trivial recall, while capping OTF (True/False)
+    const prioritizeCognitiveDepth = (pool: any[], currentSelected: any[], maxOtf = 1): any[] => {
+      const currentOtfCount = currentSelected.filter((q: any) => q.type === 'OTF' || q.type === 'true_false').length;
+      
+      const scored = pool.map((q: any) => {
+        const isOtf = q.type === 'OTF' || q.type === 'true_false';
+        const text = String(q.text || q.assertion || '');
+        const isMath = text.includes('\\frac') || text.includes('\\sqrt') || text.includes('\\int') || text.includes('=') || /[0-9]+\s*[\+\-\*\/]\s*[0-9]+/.test(text);
+        const isNum = q.type === 'ONE' || q.type === 'numerical' || q.isNumerical;
+        const isAr = q.type === 'OAR' || q.type === 'assertion_reason';
+        const isMulti = q.type === 'OMC' || q.type === 'multiple_mcq';
+
+        let weight = 10;
+        if (isNum || (isMath && !isOtf)) weight = 40;
+        else if (isAr || isMulti || text.length > 140) weight = 35;
+        else if (text.length > 80) weight = 25;
+        else if (isOtf) weight = 2;
+
+        const jitter = Math.random() * 12;
+        return { q, score: weight + jitter, isOtf };
+      });
+
+      const nonOtf = scored.filter(s => !s.isOtf);
+      const otf = scored.filter(s => s.isOtf);
+
+      let allowed: any[];
+      if (currentOtfCount >= maxOtf && nonOtf.length > 0) {
+        allowed = nonOtf;
+      } else {
+        allowed = [...nonOtf, ...otf];
+      }
+
+      allowed.sort((a, b) => b.score - a.score);
+      return allowed.map(s => s.q);
+    };
+
     const selectForDifficulty = (
       needed: number,
       newPool: any[],
@@ -529,7 +565,8 @@ export async function GET(req: NextRequest) {
 
       const pickFromPool = (pool: any[], count: number) => {
         if (count <= 0) return;
-        const distinct = filterDistinctCandidates(shuffleArray(pool), currentSelected);
+        const prioritized = prioritizeCognitiveDepth(pool, currentSelected, 1);
+        const distinct = filterDistinctCandidates(prioritized, currentSelected);
         const picked = distinct.slice(0, count);
         selected.push(...picked);
         currentSelected.push(...picked);
@@ -542,7 +579,8 @@ export async function GET(req: NextRequest) {
       // If still need more to reach 'needed' from this difficulty
       if (selected.length < needed) {
         const pool = [...newPool, ...wrongPool, ...correctPool];
-        const distinct = filterDistinctCandidates(shuffleArray(pool), currentSelected);
+        const prioritized = prioritizeCognitiveDepth(pool, currentSelected, 1);
+        const distinct = filterDistinctCandidates(prioritized, currentSelected);
         const extra = distinct.slice(0, needed - selected.length);
         selected.push(...extra);
         currentSelected.push(...extra);
@@ -568,14 +606,16 @@ export async function GET(req: NextRequest) {
         ...eligibleCorrectByDiff.easy, ...eligibleCorrectByDiff.medium, ...eligibleCorrectByDiff.hard
       ];
       if (allEligible.length > 0) {
-        const distinctEligible = filterDistinctCandidates(shuffleArray(allEligible), finalQuestions);
+        const prioritized = prioritizeCognitiveDepth(allEligible, finalQuestions, 1);
+        const distinctEligible = filterDistinctCandidates(prioritized, finalQuestions);
         const additionalNeeded = finalSize - finalQuestions.length;
         finalQuestions.push(...distinctEligible.slice(0, additionalNeeded));
       }
       
       // Secondary fallback: pull from all available topic questions (including seen/unseen)
       if (finalQuestions.length < finalSize && allQuestions.length > 0) {
-        const distinctAll = filterDistinctCandidates(shuffleArray(allQuestions), finalQuestions);
+        const prioritizedAll = prioritizeCognitiveDepth(allQuestions, finalQuestions, 1);
+        const distinctAll = filterDistinctCandidates(prioritizedAll, finalQuestions);
         if (distinctAll.length > 0) {
           const additionalNeeded = finalSize - finalQuestions.length;
           finalQuestions.push(...distinctAll.slice(0, additionalNeeded));

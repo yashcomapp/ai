@@ -48,6 +48,42 @@ function calculateDynamicExamDuration(questions: Question[]): {
   return { duration, textualCount, numericalCount };
 }
 
+function sortQuestionsByCompetencyDepth(pool: Question[], currentSelected: Question[], maxOtfPerExam = 2): Question[] {
+  const currentOtfCount = currentSelected.filter(q => toCanonicalQuestionType(q.type) === 'OTF').length;
+
+  const scored = pool.map(q => {
+    const canonicalType = toCanonicalQuestionType(q.type);
+    const isOtf = canonicalType === 'OTF';
+    const text = String(q.text || q.assertion || '');
+    const isMath = text.includes('\\frac') || text.includes('\\sqrt') || text.includes('\\int') || text.includes('=') || /[0-9]+\s*[\+\-\*\/]\s*[0-9]+/.test(text);
+    const isNum = canonicalType === 'ONE' || isQuestionNumerical(q);
+    const isAr = canonicalType === 'OAR';
+    const isMulti = canonicalType === 'OMC';
+
+    let weight = 10;
+    if (isNum || (isMath && !isOtf)) weight = 40;
+    else if (isAr || isMulti || text.length > 140) weight = 35;
+    else if (text.length > 80) weight = 25;
+    else if (isOtf) weight = 2;
+
+    const jitter = Math.random() * 10;
+    return { q, score: weight + jitter, isOtf };
+  });
+
+  const nonOtf = scored.filter(s => !s.isOtf);
+  const otf = scored.filter(s => s.isOtf);
+
+  let allowed: typeof scored;
+  if (currentOtfCount >= maxOtfPerExam && nonOtf.length > 0) {
+    allowed = nonOtf;
+  } else {
+    allowed = [...nonOtf, ...otf];
+  }
+
+  allowed.sort((a, b) => b.score - a.score);
+  return allowed.map(s => s.q);
+}
+
 const CANONICAL_EXAM_PRESETS: Template[] = [
   {
     id: 'regular_test_30',
@@ -56,7 +92,7 @@ const CANONICAL_EXAM_PRESETS: Template[] = [
     duration: 30,
     positiveMarks: 4,
     negativeMarks: 1,
-    difficulty: { easy: 30, medium: 50, hard: 20 },
+    difficulty: { easy: 15, medium: 55, hard: 30 },
     examCategory: 'standard'
   },
   {
@@ -790,7 +826,7 @@ export default function AdminExamGeneratorPage() {
 
           let pickedForTopic = 0;
 
-          // 1. Pick preferred difficulty distributions
+          // 1. Pick preferred difficulty distributions (Prioritizing Competency & Word Problems)
           diffReqs.forEach(req => {
             const candidates = candidatePool.filter(q =>
               q.difficulty === req.diff &&
@@ -798,7 +834,8 @@ export default function AdminExamGeneratorPage() {
               !usedCodes.has(q.questionCode || q.id || '') &&
               !selected.some(sel => areQuestionsTooSimilar(q, sel))
             );
-            const picked = candidates.slice(0, req.count);
+            const prioritized = sortQuestionsByCompetencyDepth(candidates, selected, 2);
+            const picked = prioritized.slice(0, req.count);
             picked.forEach(q => {
               usedCodes.add(q.questionCode || q.id || '');
               selected.push(q);
@@ -812,7 +849,9 @@ export default function AdminExamGeneratorPage() {
               isQuestionMatchingTopic(q, t) &&
               !usedCodes.has(q.questionCode || q.id || '') &&
               !selected.some(sel => areQuestionsTooSimilar(q, sel))
-            ).slice(0, targetForTopic - pickedForTopic);
+            );
+            const prioritizedRemaining = sortQuestionsByCompetencyDepth(remaining, selected, 2);
+            const picked = prioritizedRemaining.slice(0, targetForTopic - pickedForTopic);
 
             remaining.forEach(q => {
               usedCodes.add(q.questionCode || q.id || '');
@@ -868,7 +907,8 @@ export default function AdminExamGeneratorPage() {
               !selected.some(sel => areQuestionsTooSimilar(q, sel))
             );
 
-            const picked = candidates.slice(0, targetForTopicAndType);
+            const prioritized = sortQuestionsByCompetencyDepth(candidates, selected, 2);
+            const picked = prioritized.slice(0, targetForTopicAndType);
             picked.forEach(q => {
               usedCodes.add(q.questionCode || q.id || '');
               selected.push(q);
@@ -884,9 +924,11 @@ export default function AdminExamGeneratorPage() {
                 isQuestionMatchingTopic(q, t) &&
                 !usedCodes.has(q.questionCode || q.id || '') &&
                 !selected.some(sel => areQuestionsTooSimilar(q, sel))
-              ).slice(0, stillNeeded);
+              );
+              const prioritizedRelaxed = sortQuestionsByCompetencyDepth(relaxed, selected, 2);
+              const pickedRelaxed = prioritizedRelaxed.slice(0, stillNeeded);
 
-              relaxed.forEach(q => {
+              pickedRelaxed.forEach(q => {
                 usedCodes.add(q.questionCode || q.id || '');
                 selected.push(q);
                 topicPickedCounts[tKey] = (topicPickedCounts[tKey] || 0) + 1;
@@ -900,9 +942,11 @@ export default function AdminExamGeneratorPage() {
                 isQuestionMatchingTopic(q, t) &&
                 !usedCodes.has(q.questionCode || q.id || '') &&
                 !selected.some(sel => areQuestionsTooSimilar(q, sel))
-              ).slice(0, stillNeeded);
+              );
+              const prioritizedOther = sortQuestionsByCompetencyDepth(otherTypes, selected, 2);
+              const pickedOther = prioritizedOther.slice(0, stillNeeded);
 
-              otherTypes.forEach(q => {
+              pickedOther.forEach(q => {
                 usedCodes.add(q.questionCode || q.id || '');
                 selected.push(q);
                 topicPickedCounts[tKey] = (topicPickedCounts[tKey] || 0) + 1;
@@ -935,7 +979,9 @@ export default function AdminExamGeneratorPage() {
               isQuestionMatchingTopic(q, t) &&
               !usedCodes.has(q.questionCode || q.id || '') &&
               !selected.some(sel => areQuestionsTooSimilar(q, sel))
-            ).slice(0, neededForTopic);
+            );
+            const prioritizedRemaining = sortQuestionsByCompetencyDepth(remaining, selected, 2);
+            const picked = prioritizedRemaining.slice(0, neededForTopic);
 
             remaining.forEach(q => {
               usedCodes.add(q.questionCode || q.id || '');
@@ -951,9 +997,11 @@ export default function AdminExamGeneratorPage() {
             selectedTopics.some(t => isQuestionMatchingTopic(q, t)) &&
             !usedCodes.has(q.questionCode || q.id || '') &&
             !selected.some(sel => areQuestionsTooSimilar(q, sel))
-          ).slice(0, effectiveTotalQs - selected.length);
+          );
+          const prioritizedRemaining = sortQuestionsByCompetencyDepth(remainingPool, selected, 2);
+          const picked = prioritizedRemaining.slice(0, effectiveTotalQs - selected.length);
 
-          remainingPool.forEach(q => {
+          picked.forEach(q => {
             usedCodes.add(q.questionCode || q.id || '');
             selected.push(q);
           });
