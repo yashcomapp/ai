@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import Image from 'next/image';
 import { useRouter, usePathname } from 'next/navigation';
 import { Bell, MessageSquare, Settings, LogOut } from 'lucide-react';
@@ -87,6 +88,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const pathname = usePathname() || '';
   const { logout } = useAuth();
   const unreadChatCount = useUnreadChatCount('admin', pathname);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
 
   const [panelOpen, setPanelOpen] = useState(false);
   const [activeSubmenu, setActiveSubmenu] = useState<string | null>(null);
@@ -200,7 +203,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   ];
 
   return (
-    <div className="page-wrapper" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+    <div className="page-wrapper" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', transform: 'none' }}>
       {/* Injecting Legacy styling exact layout */}
       <style>{`
         /* Floating Hamburger */
@@ -475,104 +478,107 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         {children}
       </div>
 
-      {/* Floating Hamburger Menu Trigger */}
-      {pathname !== '/admin/chat' && (
-        <button 
-          ref={hamburgerRef}
-          className={`nav-hamburger-btn ${panelOpen ? 'open' : ''}`}
-          onClick={() => { setPanelOpen(!panelOpen); setActiveSubmenu(null); }}
-          aria-label="Toggle Menu"
-        >
-          <span className="hb-icon">☰</span>
-        </button>
-      )}
+      {/* Floating Hamburger Menu & Overlay Panels (Rendered directly in document.body via Portal) */}
+      {mounted && pathname !== '/admin/chat' && createPortal(
+        <>
+          <button 
+            ref={hamburgerRef}
+            className={`nav-hamburger-btn ${panelOpen ? 'open' : ''}`}
+            onClick={() => { setPanelOpen(!panelOpen); setActiveSubmenu(null); }}
+            aria-label="Toggle Menu"
+          >
+            <span className="hb-icon">☰</span>
+          </button>
 
-      {/* Menu Panel */}
-      <div 
-        ref={panelRef}
-        className={`nav-chip-panel ${panelOpen ? 'show' : ''}`}
-      >
-        {chips.map(c => {
-          const isCurrentActive = activeSubmenu === c.id;
-          const hasChatUnread = c.id === 'manage' && unreadChatCount > 0;
-          return (
-            <button 
-              key={c.id}
-              data-chip-id={c.id}
-              className={`nav-item ${isCurrentActive ? 'active' : ''}`}
-              onClick={(e) => handleChipClick(e, c.id)}
-              onMouseEnter={() => {
-                if (c.url) router.prefetch(c.url);
-                ADMIN_SUBMENUS[c.id]?.forEach(s => {
-                  if (s.url && s.url !== '#') router.prefetch(s.url);
-                });
-              }}
-              style={{ position: 'relative' }}
-            >
-              <span className="nav-icon">{c.icon}</span>
-              <span className="nav-label">{c.en}</span>
-              {hasChatUnread && (
-                <span 
-                  style={{
-                    position: 'absolute',
-                    top: '4px',
-                    right: '6px',
-                    background: '#ef4444',
-                    color: '#fff',
-                    fontSize: '9px',
-                    fontWeight: 800,
-                    padding: '1px 5px',
-                    borderRadius: '8px',
-                    lineHeight: 1
+          {/* Menu Panel */}
+          <div 
+            ref={panelRef}
+            className={`nav-chip-panel ${panelOpen ? 'show' : ''}`}
+          >
+            {chips.map(c => {
+              const isCurrentActive = activeSubmenu === c.id;
+              const hasChatUnread = c.id === 'manage' && unreadChatCount > 0;
+              return (
+                <button 
+                  key={c.id}
+                  data-chip-id={c.id}
+                  className={`nav-item ${isCurrentActive ? 'active' : ''}`}
+                  onClick={(e) => handleChipClick(e, c.id)}
+                  onMouseEnter={() => {
+                    if (c.url) router.prefetch(c.url);
+                    ADMIN_SUBMENUS[c.id]?.forEach(s => {
+                      if (s.url && s.url !== '#') router.prefetch(s.url);
+                    });
                   }}
+                  style={{ position: 'relative' }}
                 >
-                  {unreadChatCount > 99 ? '99+' : unreadChatCount}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
+                  <span className="nav-icon">{c.icon}</span>
+                  <span className="nav-label">{c.en}</span>
+                  {hasChatUnread && (
+                    <span 
+                      style={{
+                        position: 'absolute',
+                        top: '4px',
+                        right: '6px',
+                        background: '#ef4444',
+                        color: '#fff',
+                        fontSize: '9px',
+                        fontWeight: 800,
+                        padding: '1px 5px',
+                        borderRadius: '8px',
+                        lineHeight: 1
+                      }}
+                    >
+                      {unreadChatCount > 99 ? '99+' : unreadChatCount}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
 
-      {/* Flyout Submenu Dropdown */}
-      {panelOpen && activeSubmenu && (
-        <div 
-          ref={dropdownRef}
-          className="dropdown-menu-flyout"
-        >
-          {ADMIN_SUBMENUS[activeSubmenu]?.map((item, idx) => (
+          {/* Flyout Submenu Dropdown */}
+          {panelOpen && activeSubmenu && (
             <div 
-              key={idx}
-              className="dropdown-item-flyout"
-              onClick={() => handleSubmenuItemClick(item)}
-              onMouseEnter={() => {
-                if (item.url && item.url !== '#') router.prefetch(item.url);
-              }}
-              style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+              ref={dropdownRef}
+              className="dropdown-menu-flyout"
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span>{item.icon}</span>
-                <span>{item.en}</span>
-              </div>
-              {item.url === '/admin/chat' && unreadChatCount > 0 && (
-                <span 
-                  style={{
-                    background: '#ef4444',
-                    color: '#ffffff',
-                    fontSize: '10px',
-                    fontWeight: 800,
-                    padding: '2px 6px',
-                    borderRadius: '8px',
-                    lineHeight: 1,
-                    marginLeft: '8px'
+              {ADMIN_SUBMENUS[activeSubmenu]?.map((item, idx) => (
+                <div 
+                  key={idx}
+                  className="dropdown-item-flyout"
+                  onClick={() => handleSubmenuItemClick(item)}
+                  onMouseEnter={() => {
+                    if (item.url && item.url !== '#') router.prefetch(item.url);
                   }}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
                 >
-                  {unreadChatCount > 99 ? '99+' : unreadChatCount}
-                </span>
-              )}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span>{item.icon}</span>
+                    <span>{item.en}</span>
+                  </div>
+                  {item.url === '/admin/chat' && unreadChatCount > 0 && (
+                    <span 
+                      style={{
+                        background: '#ef4444',
+                        color: '#ffffff',
+                        fontSize: '10px',
+                        fontWeight: 800,
+                        padding: '2px 6px',
+                        borderRadius: '8px',
+                        lineHeight: 1,
+                        marginLeft: '8px'
+                      }}
+                    >
+                      {unreadChatCount > 99 ? '99+' : unreadChatCount}
+                    </span>
+                  )}
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          )}
+        </>,
+        document.body
       )}
     </div>
   );
