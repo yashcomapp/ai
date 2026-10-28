@@ -170,7 +170,7 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
   };
 
   const getActionText = (state: string) => {
-    if (state === 'mastered') return 'Review';
+    if (state === 'mastered') return 'Mastered';
     return 'Practice';
   };
 
@@ -660,35 +660,38 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                                               expColor = 'var(--accent)';
                                               expText = `Mastered via Recovery Diagnostic (Passed fresh unseen + remediated question assessment).`;
                                             } else {
-                                              const srs = topic.srsSchedule;
                                               expIcon = '⭐';
                                               expColor = 'var(--success)';
-                                              if (srs) {
-                                                expText = `Mastered (${mastery}% accuracy) • Memory Fresh (${srs.estimatedRetention}%) • Next review in ${srs.daysUntilDue} day(s)`;
-                                              } else {
-                                                expText = `Mastered (${mastery}% accuracy across ${attempts} verified questions).`;
-                                              }
+                                              expText = `Mastered (${mastery}% accuracy across ${attempts} verified questions). Concept complete.`;
                                             }
                                           }
 
-                                          const isRecoveryAction = isLimitReached && state !== 'mastered';
-                                          const isSrsAction = Boolean(topic.isSrsDue);
+                                          const isMasteredState = state === 'mastered';
+                                          const isRecoveryAction = isLimitReached && !isMasteredState;
                                           const targetUrl = isRecoveryAction
                                             ? `/student/topic?topicCode=${encodeURIComponent(topic.topicCode)}&category=${topic.state}&mode=recovery`
-                                            : `/student/topic?topicCode=${encodeURIComponent(topic.topicCode)}&category=${topic.state === 'mastered' ? 'revision' : topic.state}`;
+                                            : `/student/topic?topicCode=${encodeURIComponent(topic.topicCode)}&category=${topic.state}`;
 
                                           const reqMasteryQs = topic.requiredConfidence || (topic.topicClassification === 'minor' || topic.topicClassification === 'micro' ? 6 : topic.topicClassification === 'major' || topic.topicClassification === 'calculative' || topic.topicClassification === 'hots' ? 15 : 10);
 
                                           let btnLabel = actionText;
                                           if (isRecoveryAction) btnLabel = '⚡ Recovery Quiz';
-                                          else if (isSrsAction) btnLabel = '🧠 Memory Workout';
 
                                           return (
                                             <tr 
                                               key={topic.topicCode}
-                                              onClick={() => router.push(targetUrl)}
-                                              style={{ borderBottom: '1px solid var(--border-light)', cursor: 'pointer', height: '48px' }}
-                                              className="topic-row-hover"
+                                              onClick={() => {
+                                                if (!isMasteredState) {
+                                                  router.push(targetUrl);
+                                                }
+                                              }}
+                                              style={{ 
+                                                borderBottom: '1px solid var(--border-light)', 
+                                                cursor: isMasteredState ? 'default' : 'pointer', 
+                                                height: '48px',
+                                                opacity: isMasteredState ? 0.95 : 1
+                                              }}
+                                              className={isMasteredState ? '' : 'topic-row-hover'}
                                             >
                                               <td style={{ padding: '8px', fontWeight: 600, color: 'var(--text)' }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
@@ -761,21 +764,35 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                                                 {formatDateOrFallback(topic.lastAttempt, 'Never')}
                                               </td>
                                               <td style={{ padding: '6px 8px', textAlign: 'right' }} onClick={(e) => e.stopPropagation()}>
-                                                <button 
-                                                  onClick={() => router.push(targetUrl)}
-                                                  style={{ 
-                                                    padding: '4px 12px', 
-                                                    borderRadius: '30px', 
-                                                    fontSize: '10px', 
-                                                    fontWeight: 600, 
-                                                    border: 'none', 
-                                                    background: 'var(--accent-grad)', 
-                                                    color: 'white', 
-                                                    cursor: 'pointer' 
-                                                  }}
-                                                >
-                                                  {btnLabel}
-                                                </button>
+                                                {isMasteredState ? (
+                                                  <span style={{ 
+                                                    fontSize: '11px', 
+                                                    fontWeight: 700, 
+                                                    color: 'var(--success)', 
+                                                    display: 'inline-flex', 
+                                                    alignItems: 'center', 
+                                                    gap: '4px',
+                                                    padding: '4px 8px'
+                                                  }}>
+                                                    ✓ Mastered
+                                                  </span>
+                                                ) : (
+                                                  <button 
+                                                    onClick={() => router.push(targetUrl)}
+                                                    style={{ 
+                                                      padding: '4px 12px', 
+                                                      borderRadius: '30px', 
+                                                      fontSize: '10px', 
+                                                      fontWeight: 600, 
+                                                      border: 'none', 
+                                                      background: 'var(--accent-grad)', 
+                                                      color: 'white', 
+                                                      cursor: 'pointer' 
+                                                    }}
+                                                  >
+                                                    {btnLabel}
+                                                  </button>
+                                                )}
                                               </td>
                                             </tr>
                                           );

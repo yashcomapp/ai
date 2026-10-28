@@ -1507,9 +1507,9 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
                 <BookOpen size={20} color="var(--accent)" />
               </div>
               <div>
-                <h3 style={{ fontSize: '14px', fontWeight: 800, margin: 0, color: 'var(--text)' }}>Self-Study Practice & Revision</h3>
+                <h3 style={{ fontSize: '14px', fontWeight: 800, margin: 0, color: 'var(--text)' }}>Self-Study Practice</h3>
                 <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                  Practice syllabus topics, take revision quizzes, or strengthen concepts with adaptive questions.
+                  Practice syllabus topics and complete recovery quizzes to achieve Mastery.
                 </div>
               </div>
             </div>
