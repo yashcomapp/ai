@@ -1,0 +1,553 @@
+[1/79] MH-9-SCIT-13-13.1-OSC-001 | Ans: A
+  Q: Chemistry of carbon compound is known as
+    A: Organic chemistry
+    B: Inorganic chemistry
+    C: Physical chemistry
+    D: Bio chemistry
+
+[2/79] MH-9-SCIT-13-13.1-OSC-002 | Ans: A
+  Q: Which statement is wrong regarding diamond
+    A: It is metal
+    B: It is form of carbon
+    C: It is bad conductor of electricity
+    D: If heated it will give carbon di -oxide
+
+[3/79] MH-9-SCIT-13-13.1-OSC-003 | Ans: D
+  Q: Which of not the following is an example of fossil fuel ?
+    A: Coal gas
+    B: Coke
+    C: Natural Gas
+    D: Producer Gas
+
+[4/79] MH-9-SCIT-13-13.1-OSC-004 | Ans: C
+  Q: Which is not true regarding Biogas
+    A: It contains methane
+    B: Burns without smoke
+    C: Leaves ash behind
+    D: Produced by anaerobic decomposition of animal and plant waste
+
+[5/79] MH-9-SCIT-13-13.1-OSC-005 | Ans: B
+  Q: Hydrocarbons having double or triple bonds are known as
+    A: Saturated hydrocarbons
+    B: Unsaturated hydrocarbons
+    C: alkenes
+    D: halogen
+
+[6/79] MH-9-SCIT-13-13.1-OSC-006 | Ans: C
+  Q: Molecular mass of Butane is
+    A: 54
+    B: 56
+    C: 58
+    D: 60
+
+[7/79] MH-9-SCIT-13-13.1-OSC-007 | Ans: D
+  Q: The variety of coal used as old house coal is
+    A: anthracite
+    B: peat
+    C: lignite
+    D: bituminous
+
+[8/79] MH-9-SCIT-13-13.1-OSC-008 | Ans: B
+  Q: The variety of coal having highest carbon compound
+    A: peat
+    B: anthracite
+    C: bituminous
+    D: lignite
+
+[9/79] MH-9-SCIT-13-13.1-OSC-009 | Ans: A
+  Q: Which of the following drinks is produced by mixing carbon dioxide in water ?
+    A: Soda Water
+    B: Grape water
+    C: Mineral water
+    D: Fanta
+
+[10/79] MH-9-SCIT-13-13.1-OSC-010 | Ans: C
+  Q: Coal mainly contains
+    A: Hydrogen
+    B: Oxygen
+    C: Carbon
+    D: Sodium
+
+[11/79] MH-9-SCIT-13-13.1-OSC-011 | Ans: C
+  Q: Bituminous coal contain
+    A: 80 % of carbon
+    B: 40 % of Carbon
+    C: 60 % of carbon
+    D: 11 % of carbon
+
+[12/79] MH-9-SCIT-13-13.1-OSC-012 | Ans: B
+  Q: Incomplete combustion of fuel produces
+    A: CO2
+    B: CO
+    C: H2O
+    D: H2
+
+[13/79] MH-9-SCIT-13-13.1-OSC-013 | Ans: C
+  Q: The allotrope of carbon which is a good conductor of heat and electricity is
+    A: diamond
+    B: sugar charcoal
+    C: graphite
+    D: wood charcoal
+
+[14/79] MH-9-SCIT-13-13.1-OSC-014 | Ans: C
+  Q: Which of these is not a fossil fuel?
+    A: Coal
+    B: LPG
+    C: Bio gas
+    D: Natural gas
+
+[15/79] MH-9-SCIT-13-13.1-OSC-015 | Ans: B
+  Q: A gaseous fuel which does not contain carbon monoxide is
+    A: Coal gas
+    B: Natural gas
+    C: Water gas
+    D: Producer gas
+
+[16/79] MH-9-SCIT-13-13.1-OSC-016 | Ans: B
+  Q: Why methane gas cannot be filled in cylinders?
+    A: It is very light in weight
+    B: cannot be liquefied under pressure
+    C: as it burns vigorously
+    D: as gas is produced in marshy area
+
+[17/79] MH-9-SCIT-13-13.1-OSC-017 | Ans: D
+  Q: Which statement is incorrect regarding CO2 gas?
+    A: It is tasteless, odourless,colorless gas
+    B: It is heavier than air
+    C: It neither burns nor helps in burning
+    D: None of above.
+
+[18/79] MH-9-SCIT-13-13.1-OSC-018 | Ans: A
+  Q: Fire extinguisher cylinders is filled with
+    A: Sodium bicarbonate solution
+    B: Carbonic acid
+    C: Sodium chloride
+    D: Sodium bicarbonate
+
+[19/79] MH-9-SCIT-13-13.1-OSC-019 | Ans: D
+  Q: Which statement is true regarding graphite?
+    A: Good conductor of heat
+    B: Good Conductor of electricity
+    C: It is non metal
+    D: All of above
+
+[20/79] MH-9-SCIT-13-13.1-OSC-020 | Ans: B
+  Q: Which of the following compound used as fire extinguisher
+    A: Sodium Carbonate
+    B: Sodium Bi-Carbonate
+    C: Sodium Chloride
+    D: Ammonium chloride
+
+[21/79] MH-9-SCIT-13-13.1-OSC-021 | Ans: B
+  Q: Crystals of graphites are
+    A: Pentagonal
+    B: Hexagonal
+    C: Octagonal
+    D: Depends on location
+
+[22/79] MH-9-SCIT-13-13.1-OSC-022 | Ans: A
+  Q: Methane is also called as
+    A: Marsh gas
+    B: Odorless gas
+    C: Colorless gas
+    D: Inert gas
+
+[23/79] MH-9-SCIT-13-13.1-OSC-023 | Ans: B
+  Q: The elements found in more than one form with different physical properties are called as
+    A: alloy
+    B: allotropes
+    C: Heterotrophs
+    D: Autotrophs
+
+[24/79] MH-9-SCIT-13-13.1-OSC-024 | Ans: B
+  Q: Which is odd one out on the basis of allotropes character
+    A: Diamond
+    B: Coal
+    C: Graphite
+    D: Fullerene
+
+[25/79] MH-9-SCIT-13-13.1-OSC-025 | Ans: B
+  Q: How are diamond and graphite related to carbon ?
+    A: They are isomers of carbon
+    B: They are allotropes of carbon
+    C: They are elements of carbon
+    D: They are isotopes of carbon
+
+[26/79] MH-9-SCIT-13-13.1-OSC-026 | Ans: D
+  Q: Fire extinguisher contain
+    A: Sodium carbonate and dilute HCl
+    B: Sodium Carbonate and dilute sulphuric acid
+    C: Sodium bicarbonate and dilute hydrochloric acid
+    D: Sodium bi-carbonate and dilute sulphuric acid
+
+[27/79] MH-9-SCIT-13-13.1-OSC-027 | Ans: D
+  Q: How many bonds does carbon form in diamond?
+    A: 1
+    B: 2
+    C: 3
+    D: 4
+
+[28/79] MH-9-SCIT-13-13.1-OSC-028 | Ans: D
+  Q: What is the usual test for identification of carbon dioxide ?
+    A: The gas is colourless, odourless and tasteless
+    B: It is heavier than air
+    C: Extinguishes a burning paper
+    D: Turns clear lime water milky
+
+[29/79] MH-9-SCIT-13-13.1-OSC-029 | Ans: D
+  Q: Which of the following contain methane, hydrogen and carbon dioxide?
+    A: Producer gas
+    B: Water gas
+    C: Coal gas
+    D: Bio gas
+
+[30/79] MH-9-SCIT-13-13.1-OSC-030 | Ans: C
+  Q: "Kajal" is a form of
+    A: coke
+    B: charcoal
+    C: carbon black
+    D: asphalt
+
+[31/79] MH-9-SCIT-13-13.1-OSC-031 | Ans: C
+  Q: Why do soft drinks give tingling sensation on teeth ?
+    A: Citric acid reacts with calcium in teeth
+    B: Acetic acid present as a preservative, carries out the reaction
+    C: Carbonic acid reacts with enamel of teeth
+    D: The colour in the soft drink makes a coat on teeth and creates sensitivity
+
+[32/79] MH-9-SCIT-13-13.1-OSC-032 | Ans: C
+  Q: What are 'bucky tubes' ?
+    A: Graphite tubes
+    B: Inter particle spaces in coal
+    C: Carbon nanotubes
+    D: Crystal lattice in diamond
+
+[33/79] MH-9-SCIT-13-13.1-OSC-033 | Ans: A
+  Q: Arrange the following in descending order of carbon content. (a) Anthracite (b) Bituminous (c) Lignite (d) Peat
+    A: a, b, c, d
+    B: b, c, a, d
+    C: c, a, d, b
+    D: a, d, c, b
+
+[34/79] MH-9-SCIT-13-13.1-OSC-034 | Ans: A
+  Q: What is the colour of Methane flame ?
+    A: Blue
+    B: Yellow
+    C: Red
+    D: Green
+
+[35/79] MH-9-SCIT-13-13.1-OSC-035 | Ans: A
+  Q: Which of the following is used to find out age of fossils ?
+    A: C14
+    B: C60
+    C: C12
+    D: C13
+
+[36/79] MH-9-SCIT-13-13.1-OSC-036 | Ans: A
+  Q: Find the odd one out on the basis of arrangement of atoms.
+    A: Coke
+    B: Diamond
+    C: Graphite
+    D: Fullerene
+
+[37/79] MH-9-SCIT-13-13.1-OSC-037 | Ans: A
+  Q: Graphite is NOT used for
+    A: Insulation
+    B: Lubrication
+    C: Illumination
+    D: Writing
+
+[38/79] MH-9-SCIT-13-13.1-OSC-038 | Ans: A
+  Q: Which of the following is the chemical formula of dichloromethane ?
+    A: CH2CI2
+    B: CH3CI2
+    C: CCI2
+    D: C2H2CI2
+
+[39/79] MH-9-SCIT-13-13.1-OSC-039 | Ans: D
+  Q: Which of the following type of coal has lowest content of carbon ?
+    A: Anthracite
+    B: Bituminous
+    C: Lignite
+    D: Peat
+
+[40/79] MH-9-SCIT-13-13.1-OSC-040 | Ans: A
+  Q: Which of the following compounds is soluble in water ?
+    A: Methane
+    B: Right :The problem is the hydrogen bonds between the water molecules. If methane were to dissolve, it would have to force its way between water molecules and so break hydrogen bonds. That costs a reasonable amount of energy. The only attractions possible between methane and water molecules are the much weaker van der Waals forces - and not much energy is released when these are set up. It simp
+    C: Ethane
+    D: Wrong: Ethane which is composed of carbon and hydrogen only has no polar group and is not water soluble.
+
+[41/79] MH-9-SCIT-13-13.1-OSC-041 | Ans: A
+  Q: What is the percentage of Hydrogen in Methane ?
+    A: 25%
+    B: None of the above
+    C: 50%
+    D: None of the above
+
+[42/79] MH-9-SCIT-13-13.1-OSC-042 | Ans: B
+  Q: In which hydrocarbon there is a triple bond between carbon atoms ?
+    A: Ethylene
+    B: None of the above
+    C: Acetylene
+    D: None of the above
+
+[43/79] MH-9-SCIT-13-13.1-OSC-043 | Ans: A
+  Q: State correct option for the following statement: "Carbon dioxide is formed when Benzene is burnt".
+    A: Always
+    B: Never
+    C: Depends on catalyst
+    D: Depends on Temperature
+
+[44/79] MH-9-SCIT-13-13.1-OSC-044 | Ans: C
+  Q: Which of the following is NOT a carbon compound ?
+    A: Feathers
+    B: Polythene
+    C: Caustic soda
+    D: Cork
+
+[45/79] MH-9-SCIT-13-13.1-OSC-045 | Ans: D
+  Q: Select the correct set up for laboratory preparation of Carbon-di-oxide
+    A: Option 1
+    B: Option 2
+    C: Option 3
+    D: Option 4
+
+[46/79] MH-9-SCIT-13-13.1-OSC-046 | Ans: B
+  Q: How does activated charcoal work in a water purifier ?
+    A: by absorbing impurities
+    B: by adsorbing impurities
+    C: by precipitating impurities
+    D: by coagulating impurities
+
+[47/79] MH-9-SCIT-13-13.1-OSC-047 | Ans: B
+  Q: What is common in alum, diamond and rock-salt ?
+    A: All of them are examples of solids that occur as large size single crystals
+    B: All of them have 'carbon' atom in structure
+    C: All of them are equally hard to break
+    D: All of them belong to same column of periodic table
+
+[48/79] MH-9-SCIT-13-13.1-OSC-048 | Ans: C
+  Q: Why is methane formed in marshes in nature ?
+    A: Availability of organic matter
+    B: Availability of suitable temperature
+    C: Non-availability of free oxygen
+    D: Availability of water in marshy areas
+
+[49/79] MH-9-SCIT-13-13.1-OSC-049 | Ans: D
+  Q: What is the general molecular formula of the group 'alkynes' ?
+    A: CnH2n+2
+    B: CnH2n
+    C: CnHn
+    D: CnH2n-2
+
+[50/79] MH-9-SCIT-13-13.1-OSC-050 | Ans: B
+  Q: Paddy fields are a chief source of which green house gas ?
+    A: Carbon dioxide
+    B: Methane
+    C: Oxygen
+    D: Propane
+
+[51/79] MH-9-SCIT-13-13.1-OSC-051 | Ans: D
+  Q: What is the chemical formula of Methane ?
+    A: K2CO3
+    B: Wrong: Potassium carbonate
+    C: Na2CO3
+    D: Wrong: Sodium Carbonate
+
+[52/79] MH-9-SCIT-13-13.1-OSC-052 | Ans: B
+  Q: Naptha is obtained by which process ?
+    A: Fractional distillation of petroleum
+    B: Combustion of petroleum
+    C: Distillation of coal
+    D: Option D
+
+[53/79] MH-9-SCIT-13-13.1-OSC-053 | Ans: C
+  Q: Which of the following hydrocarbons is used in welding work ?
+    A: Option 1
+    B: Option 2
+    C: Option 3
+    D: Option 4
+
+[54/79] MH-9-SCIT-13-13.1-OSC-054 | Ans: C
+  Q: What is the symbolic term of diamond ?
+    A: D
+    B: None of the above
+    C: Di
+    D: None of the above
+
+[55/79] MH-9-SCIT-13-13.1-OSC-055 | Ans: B
+  Q: Which of the following substances is used in a lead pencil as a 'lead' ?
+    A: Bone black
+    B: None of the above
+    C: Graphite & Clay
+    D: None of the above
+
+[56/79] MH-9-SCIT-13-13.1-OSC-056 | Ans: B
+  Q: Which of the following could not be an alkane ?
+    A: C3H6
+    B: None of the above
+    C: C4H6
+    D: Right: The general formula for an alkane is CnH2n+2 where n is the number of carbon atoms in the molecule
+
+[57/79] MH-9-SCIT-13-13.1-OSC-057 | Ans: D
+  Q: What is % of carbon present in C2H6 ?
+    A: 40
+    B: 30
+    C: 70
+    D: 80
+
+[58/79] MH-9-SCIT-13-13.1-OSC-058 | Ans: A
+  Q: Which of the best fuel from the followings ?
+    A: Butane
+    B: Right: Heat of Combustion 2874 (kJ/mol)
+    C: Carbon
+    D: Wrong: Heat of Combustion 393.5 (kJ/mol)
+
+[59/79] MH-9-SCIT-13-13.1-OSC-059 | Ans: D
+  Q: What is the chemical formula of acetylene ?
+    A: CH4
+    B: Wrong : Methane
+    C: C2H6
+    D: Wrong: Ethane
+
+[60/79] MH-9-SCIT-13-13.1-OSC-060 | Ans: A
+  Q: Which of the following statements correctly explains the difference between 'C and 'C12' ?
+    A: 'C represents the mixture of all the naturally occurring isotopes of carbon where as 'C12' represents the most predominant isotope
+    B: None of the above
+    C: Both 'C and 'C12' represent the chemical elemental signs of carbon
+    D: None of the above
+
+[61/79] MH-9-SCIT-13-13.1-OSC-061 | Ans: B
+  Q: Which of the following gas is used in "Gas Cylinder'' to cook the food ?
+    A: Oxygen.
+    B: Butane.
+    C: Coal gas.
+    D: Water gas.
+
+[62/79] MH-9-SCIT-13-13.1-OSC-062 | Ans: A
+  Q: In which of the following substances the carbon atoms are arranged in a regular tetrahedral structure ?
+    A: Diamond.
+    B: Benzene.
+    C: Graphite.
+    D: Carbon black.
+
+[63/79] MH-9-SCIT-13-13.1-OSC-063 | Ans: A
+  Q: Which basic elements are present in all organic compounds ?
+    A: C, H,0
+    B: None of the above
+    C: C, H, S, N
+    D: None of the above
+
+[64/79] MH-9-SCIT-13-13.1-OSC-064 | Ans: B
+  Q: What does the following structural formula represent ?
+    A: Methane
+    B: None of the above
+    C: Ethylene
+    D: Right: Double Bond
+
+[65/79] MH-9-SCIT-13-13.1-OSC-065 | Ans: D
+  Q: Which of the followings is true in case of sugar ?
+    A: Hygroscopic
+    B: Wrong: Hygroscopic is a property of a substance to absorb or adsorb water from its surroundings. Example: Zinc chloride, sodium chloride and sodium hydroxide crystals
+    C: Anhydrous
+    D: Wrong: A compound with all water removed, especially water of hydration. For example, strongly heating copper(II) sulfate pentahydrate (CuSO4
+
+[66/79] MH-9-SCIT-13-13.1-OSC-066 | Ans: B
+  Q: What is the general molecular formula of 'Olefins' ?
+    A: CnH2n+2
+    B: CnH2n
+    C: CnHn
+    D: CnH2n-2
+
+[67/79] MH-9-SCIT-13-13.1-OSC-067 | Ans: B
+  Q: Which one of the following represents acetylene ?
+    A: Option 1
+    B: Wrong: Double bond: Ethane
+    C: Option 2
+    D: Right: Triple bond
+
+[68/79] MH-9-SCIT-13-13.1-OSC-068 | Ans: C
+  Q: Which is the "odd one out" ?
+    A: Petrol
+    B: None of the above
+    C: Gunpowder
+    D: None of the above
+
+[69/79] MH-9-SCIT-13-13.1-OSC-069 | Ans: C
+  Q: Which of the following is the main constituent in the cooking gas ?
+    A: Carbon
+    B: None of the above
+    C: Methane
+    D: None of the above
+
+[70/79] MH-9-SCIT-13-13.1-OSC-070 | Ans: D
+  Q: What happens when excess of carbon dioxide is passed through clear lime water ?
+    A: The liquid remains clean
+    B: The liquid becomes cloudy
+    C: Calcium carbonate is precipitated
+    D: Calcium carbonate is first precipitated and then soluble calcium bicarbonate is formed
+
+[71/79] MH-9-SCIT-13-13.1-OSC-071 | Ans: A
+  Q: Which of the following substance used in the hydrogenation of vegetable oil ?
+    A: Finely divided nickel
+    B: Platinised gauze
+    C: Finely divided platinum
+    D: Finely divided iron
+
+[72/79] MH-9-SCIT-13-13.1-OSC-072 | Ans: C
+  Q: This structural formula represents a molecule of which organic compound ?
+    A: Propane
+    B: Ethylene
+    C: Acetylene
+    D: Option D
+
+[73/79] MH-9-SCIT-13-13.1-OSC-073 | Ans: A
+  Q: The gas bubbles out of marsh are called ?
+    A: Methane
+    B: None of the above
+    C: Ethane
+    D: None of the above
+
+[74/79] MH-9-SCIT-13-13.1-OSC-074 | Ans: B
+  Q: What is the structure given below of ?
+    A: Polyester
+    B: None of the above
+    C: Polythene
+    D: None of the above
+
+[75/79] MH-9-SCIT-13-13.1-OSC-075 | Ans: B
+  Q: Observe the diagram and identify the gas collected in the glass jar.
+    A: CO
+    B: None of the above
+    C: CO2
+    D: None of the above
+
+[76/79] MH-9-SCIT-13-13.1-OSC-076 | Ans: B
+  Q: What is the percentage of Hydrogen in the compound C2H6 ?
+    A: 10
+    B: None of the above
+    C: 20
+    D: None of the above
+
+[77/79] MH-9-SCIT-13-13.1-OSC-077 | Ans: D
+  Q: Which of the following is Not the statement about carbon-dioxide ?
+    A: The gas is colourless, odourless and tasteless
+    B: It is heavier than air
+    C: It turns wet
+    D: It supports combustion
+
+[78/79] MH-9-SCIT-13-13.1-OSC-078 | Ans: D
+  Q: What will happen when CO2 is passed through lime water for longer time ?
+    A: It will turn milky
+    B: No effect
+    C: Carbon-dioxide will not dissolve in it
+    D: It will turn milky first and then colourless.
+
+[79/79] MH-9-SCIT-13-13.1-OSC-079 | Ans: C
+  Q: What is a soda water?
+    A: Carbonic acid
+    B: Sulphuric acid
+    C: Carboxylic acid
+    D: Nitrous acid.
+
