@@ -1,0 +1,963 @@
+=== [1/107] MH-9-SCIT-17-17.1-OSC-001 (OSC) ===
+Text: The epithelial tissue in the urinary bladder that allows in the absorption of useful material are
+  (A) stratified squamous epithelium tissue
+  (B) simple cuboidal epithelium tissue
+  (C) simple columnar epithelium tissue
+  (D) glandular epithelium tissue
+Correct Answer: B
+Current Solution: 
+
+=== [2/107] MH-9-SCIT-17-17.1-OSC-002 (OSC) ===
+Text: The intercellular material surrounding connective tissue cells is
+  (A) ground substance
+  (B) matrix
+  (C) adipose
+  (D) bone
+Correct Answer: B
+Current Solution: Connective tissue consists of matrix and the cells are embedded in the matrix. The matrix may be jel
+
+=== [3/107] MH-9-SCIT-17-17.1-OSC-003 (OSC) ===
+Text: Blood is classified as a(n) _______ tissue.
+  (A) nervous
+  (B) epithelial
+  (C) muscle
+  (D) connective
+Correct Answer: D
+Current Solution: 
+
+=== [4/107] MH-9-SCIT-17-17.1-OSC-004 (OSC) ===
+Text: Contractility is a property of ________ tissue.
+  (A) muscle
+  (B) nervous
+  (C) epithelial
+  (D) connective
+Correct Answer: A
+Current Solution: Muscle contains special proteins called contracite proteins, which contract and relax to cause movem
+
+=== [5/107] MH-9-SCIT-17-17.1-OSC-005 (OSC) ===
+Text: Bone matrix is rich in
+  (A) fluoride and calcium
+  (B) calcium and phosphorus
+  (C) calcium and potassium
+  (D) phosphorus and potassium
+Correct Answer: B
+Current Solution: Bone matrix is hard or rigid matrix.
+
+=== [6/107] MH-9-SCIT-17-17.1-OSC-006 (OSC) ===
+Text: Nerve cell does not contain
+  (A) axon
+  (B) nucleus
+  (C) tendons
+  (D) dendrites
+Correct Answer: C
+Current Solution: 
+
+=== [7/107] MH-9-SCIT-17-17.1-OSC-007 (OSC) ===
+Text: The girth and width of the stem increase due to
+  (A) Apical meristem
+  (B) Lateral Meristem
+  (C) Inter calary meristem
+  (D) All of above
+Correct Answer: B
+Current Solution: 
+
+=== [8/107] MH-9-SCIT-17-17.1-OSC-008 (OSC) ===
+Text: Which of the following helps in repair of tissue and fills up the space inside the organ?
+  (A) Tendon
+  (B) Adipose tissue
+  (C) Areolar
+  (D) Cartilage
+Correct Answer: C
+Current Solution: They are found between skin and muscles, around the blood vessels, nerves and in the bone marrow.
+
+=== [9/107] MH-9-SCIT-17-17.1-OSC-009 (OSC) ===
+Text: Which tissue connects bones to bones
+  (A) Tendons
+  (B) Cartilages
+  (C) Ligaments
+  (D) Areolar
+Correct Answer: C
+Current Solution: 
+
+=== [10/107] MH-9-SCIT-17-17.1-OSC-010 (OSC) ===
+Text: Brain consist of which tissue
+  (A) Cartilage
+  (B) Areolar
+  (C) Nervous
+  (D) Adipose
+Correct Answer: C
+Current Solution: Other examples are Spinal cord and nerves.
+
+=== [11/107] MH-9-SCIT-17-17.1-OSC-011 (OSC) ===
+Text: Cambium is also known as
+  (A) Apical meristem
+  (B) Lateral Meristem
+  (C) Inter calary meristem
+  (D) All of above
+Correct Answer: B
+Current Solution: 
+
+=== [12/107] MH-9-SCIT-17-17.1-OSC-012 (OSC) ===
+Text: What type of tissue has lignified cell wall?
+  (A) Parenchyma
+  (B) Collenchyma
+  (C) Sclerenchyma
+  (D) Aerenchyma
+Correct Answer: C
+Current Solution: 
+
+=== [13/107] MH-9-SCIT-17-17.1-OSC-013 (OSC) ===
+Text: While doing work and running, you move your organs like hands, legs etc. Which among the following is correct?
+  (A) Smooth muscles contract and pull the ligament to move the bones
+  (B) Smooth muscles contract and pull the tendons to move the bones
+  (C) Skeletal muscles contract and pull the ligament to move the bones
+  (D) Skeletal muscles contract and pull the tendon to move the bones
+Correct Answer: D
+Current Solution: Smooth muscles : Involuntary muscle ; Skeletal muscles are voluntary muscle
+
+=== [14/107] MH-9-SCIT-17-17.1-OSC-014 (OSC) ===
+Text: A person met with an accident in which two long bones of hand were dislocated. Which among the following may be the possible reason?
+  (A) Tendon break
+  (B) Break of skeletal muscle
+  (C) Ligament break
+  (D) Areolar tissue break
+Correct Answer: C
+Current Solution: 
+
+=== [15/107] MH-9-SCIT-17-17.1-OSC-015 (OSC) ===
+Text: Nose is made up of
+  (A) bone
+  (B) cartilage
+  (C) tendon
+  (D) ligament
+Correct Answer: B
+Current Solution: 
+
+=== [16/107] MH-9-SCIT-17-17.1-OSC-016 (OSC) ===
+Text: Which of the following tissues has dead cells?
+  (A) Parenchyma
+  (B) Sclerenchyma
+  (C) Collenchyma
+  (D) Chlorenchyma
+Correct Answer: B
+Current Solution: 
+
+=== [17/107] MH-9-SCIT-17-17.1-OSC-017 (OSC) ===
+Text: Find out incorrect sentence
+  (A) Parenchyma tissues have intercellular spaces
+  (B) Collenchymatous tissues are irregularly thickened at corners
+  (C) Apical meristem which is known as cambium increase the girth and width of the stem and root.
+  (D) Generally more stomata are found in the lower leaf surface than the upper part of the leaf
+Correct Answer: C
+Current Solution: 
+
+=== [18/107] MH-9-SCIT-17-17.1-OSC-018 (OSC) ===
+Text: Which plant tissue help in growing tips of stem and roots
+  (A) Apical meristem
+  (B) Lateral Meristem
+  (C) Inter calary meristem
+  (D) All of above
+Correct Answer: A
+Current Solution: 
+
+=== [19/107] MH-9-SCIT-17-17.1-OSC-019 (OSC) ===
+Text: Parenchyma is a type of what tissue
+  (A) Phloem
+  (B) Xylem
+  (C) Simple Permanent Tissue
+  (D) Complex Permanent Tissue
+Correct Answer: C
+Current Solution: 
+
+=== [20/107] MH-9-SCIT-17-17.1-OSC-020 (OSC) ===
+Text: Who secrete digestive enzymes and perform the function of absorption of nutrients from digested food
+  (A) Cuboidal epithelium
+  (B) Ciliated epithelium
+  (C) Columnar epithelium
+  (D) Glandular epithelium
+Correct Answer: C
+Current Solution: 
+
+=== [21/107] MH-9-SCIT-17-17.1-OSC-021 (OSC) ===
+Text: Which of the following tissues is dead at maturity?
+  (A) Parenchyma.
+  (B) Sclerenchyma.
+  (C) Collenchyma.
+  (D) Epidermis
+Correct Answer: B
+Current Solution: Deposition of lignin , the cell walls are thickened. This act as cement and harden the walls. Eg. H
+
+=== [22/107] MH-9-SCIT-17-17.1-OSC-022 (OSC) ===
+Text: The three shapes of cells used to classify most epithelial tissue are
+  (A) squamous, columnar, and cuboidal
+  (B) hexagonal, polyhedral, and transitional
+  (C) flat, irregular, and oblong
+  (D) thick, slender, and flattened
+Correct Answer: A
+Current Solution: 
+
+=== [23/107] MH-9-SCIT-17-17.1-OSC-023 (OSC) ===
+Text: Skeletal muscle is
+  (A) striated and voluntary
+  (B) non striated and involuntary
+  (C) striated and involuntary
+  (D) non striated and voluntary
+Correct Answer: A
+Current Solution: 
+
+=== [24/107] MH-9-SCIT-17-17.1-OSC-024 (OSC) ===
+Text: Cartilage is not found in
+  (A) nose
+  (B) ear
+  (C) kidney
+  (D) larynx
+Correct Answer: C
+Current Solution: Cartilage is found in nose,ear,trachea,larynx.
+
+=== [25/107] MH-9-SCIT-17-17.1-OSC-025 (OSC) ===
+Text: Nervous tissue is not found in
+  (A) brain
+  (B) spinal cord
+  (C) tendons
+  (D) nerves
+Correct Answer: C
+Current Solution: 
+
+=== [26/107] MH-9-SCIT-17-17.1-OSC-026 (OSC) ===
+Text: Voluntary muscles are found in
+  (A) alimentary canal
+  (B) limbs
+  (C) iris of the eye
+  (D) bronchi of lungs
+Correct Answer: B
+Current Solution: Voluntary muscles whose movement controls according to our will. They are usually skeletal muscles.
+
+=== [27/107] MH-9-SCIT-17-17.1-OSC-027 (OSC) ===
+Text: Fluid matrix of blood is called
+  (A) RBC
+  (B) WBC
+  (C) Plasma
+  (D) Ligaments
+Correct Answer: C
+Current Solution: 
+
+=== [28/107] MH-9-SCIT-17-17.1-OSC-028 (OSC) ===
+Text: At the base of leaves which tissues are present
+  (A) Apical meristem
+  (B) Lateral Meristem
+  (C) Inter calary meristem
+  (D) All of above
+Correct Answer: C
+Current Solution: 
+
+=== [29/107] MH-9-SCIT-17-17.1-OSC-029 (OSC) ===
+Text: The muscular tissue which function throughout the life continuously without fatigue is
+  (A) skeletal muscle
+  (B) cardiac muscle
+  (C) smooth muscle
+  (D) voluntary muscle
+Correct Answer: B
+Current Solution: 
+
+=== [30/107] MH-9-SCIT-17-17.1-OSC-030 (OSC) ===
+Text: Which one of the following is mismatched?
+  (A) Chlorenchyma : Photosynthesis
+  (B) Parenchyma : Storage
+  (C) Aerenchyma : Covering of plant body
+  (D) Sclerenchyma : Dead tissue
+Correct Answer: C
+Current Solution: Aerenchyma help aquatic plant to float
+
+=== [31/107] MH-9-SCIT-17-17.1-OSC-031 (OSC) ===
+Text: Group of tissues called
+  (A) cell
+  (B) organ
+  (C) organism
+  (D) organ system
+Correct Answer: B
+Current Solution: 
+
+=== [32/107] MH-9-SCIT-17-17.1-OSC-032 (OSC) ===
+Text: Fats are stored in human body as
+  (A) cuboidal epithelium
+  (B) adipose tissue
+  (C) bones
+  (D) cartilage
+Correct Answer: B
+Current Solution: 
+
+=== [33/107] MH-9-SCIT-17-17.1-OSC-033 (OSC) ===
+Text: Who connects muscles to the bone
+  (A) Ligaments
+  (B) Tendons
+  (C) Blood
+  (D) Cartilage
+Correct Answer: B
+Current Solution: 
+
+=== [34/107] MH-9-SCIT-17-17.1-OSC-034 (OSC) ===
+Text: The cells which are situated in the lining of blood vessels are
+  (A) simple squamous epithelium
+  (B) stratified squamous epithelium
+  (C) Columnar epithelium
+  (D) Cuboidal epithelium
+Correct Answer: A
+Current Solution: 
+
+=== [35/107] MH-9-SCIT-17-17.1-OSC-035 (OSC) ===
+Text: Which tissue system of the plant body is largely responsible for photosynthesis
+  (A) Parenchyma
+  (B) Chlorenchyma
+  (C) Aerenchyma
+  (D) Collenchyma
+Correct Answer: B
+Current Solution: 
+
+=== [36/107] MH-9-SCIT-17-17.1-OSC-036 (OSC) ===
+Text: Fern belongs to the subgroup
+  (A) bryophyte
+  (B) Pteridophyta
+  (C) algae
+  (D) thallophyta
+Correct Answer: B
+Current Solution: 
+
+=== [37/107] MH-9-SCIT-17-17.1-OSC-037 (OSC) ===
+Text: Parenchyma cells:
+  (A) may be either photosynthetic or non-photosynthetic.
+  (B) can differentiate into other kinds of cells in response to an injury to the plant.
+  (C) may contain various storage materials, such as starch grains, oils, or water.
+  (D) must be living cells in order to function
+Correct Answer: C
+Current Solution: 
+
+=== [38/107] MH-9-SCIT-17-17.1-OSC-038 (OSC) ===
+Text: The extremely flexible tissue that provides support in soft, non-woody plants, allowing them to grow upward, is:
+  (A) parenchyma tissue.
+  (B) Collenchyma tissue.
+  (C) Sclerenchyma tissue.
+  (D) meristematic tissue.
+Correct Answer: B
+Current Solution: 
+
+=== [39/107] MH-9-SCIT-17-17.1-OSC-039 (OSC) ===
+Text: The soft part of a plant body, such as a potato, consists largely of _____________ tissue.
+  (A) Sclerenchyma
+  (B) Collenchyma
+  (C) parenchyma
+  (D) phloem
+Correct Answer: C
+Current Solution: 
+
+=== [40/107] MH-9-SCIT-17-17.1-OSC-040 (OSC) ===
+Text: What two tissues transport materials throughout the entire plant body?
+  (A) Sclerenchyma and xylem
+  (B) phloem and xylem
+  (C) parenchyma and xylem
+  (D) Sclerenchyma and Collenchyma
+Correct Answer: B
+Current Solution: 
+
+=== [41/107] MH-9-SCIT-17-17.1-OSC-041 (OSC) ===
+Text: What tissue conducts water and dissolved minerals from the roots to the stems and leaves?
+  (A) parenchyma
+  (B) xylem
+  (C) phloem
+  (D) parenchyma
+Correct Answer: B
+Current Solution: 
+
+=== [42/107] MH-9-SCIT-17-17.1-OSC-042 (OSC) ===
+Text: A type of xylem, are extremely efficient in conducting water.
+  (A) Sieve tube elements
+  (B) Companion cells
+  (C) Tracheids
+  (D) Vessel elements
+Correct Answer: A
+Current Solution: 
+
+=== [43/107] MH-9-SCIT-17-17.1-OSC-043 (OSC) ===
+Text: Growth that results in an increase in stem or root length occurs in which specific area of the plant?
+  (A) lateral meristem
+  (B) apical meristem
+  (C) vascular cambium
+  (D) cork cambium
+Correct Answer: B
+Current Solution: 
+
+=== [44/107] MH-9-SCIT-17-17.1-OSC-044 (OSC) ===
+Text: The Tissue that lines and covers the body is
+  (A) Epithelial
+  (B) connective
+  (C) nervous
+  (D) muscle
+Correct Answer: A
+Current Solution: 
+
+=== [45/107] MH-9-SCIT-17-17.1-OSC-045 (OSC) ===
+Text: Which tissue help to fill up space inside the organs ,supports internal organs and help to repair of tissue
+  (A) Adipose
+  (B) None of the above
+  (C) Areolar
+  (D) None of the above
+Correct Answer: B
+Current Solution: 
+
+=== [46/107] MH-9-SCIT-17-17.1-OSC-046 (OSC) ===
+Text: Starch in potato is stored in
+  (A) Sclerenchyma
+  (B) Collenchyma
+  (C) Parenchyma
+  (D) Chlorenchyma
+Correct Answer: C
+Current Solution: 
+
+=== [47/107] MH-9-SCIT-17-17.1-OSC-047 (OSC) ===
+Text: Tendons and ligaments are examples of
+  (A) Fibrous connective tissue
+  (B) Cartilage
+  (C) Muscular tissue
+  (D) Adipose tissue
+Correct Answer: A
+Current Solution: 
+
+=== [48/107] MH-9-SCIT-17-17.1-OSC-048 (OSC) ===
+Text: Which one of the following pairs is correctly matched?
+  (A) Meristem - Actively dividing cells
+  (B) Xylem - Transport of food
+  (C) Phloem - Transport of water
+  (D) Sclerenchyma - Storage of starch
+Correct Answer: A
+Current Solution: 
+
+=== [49/107] MH-9-SCIT-17-17.1-OSC-049 (OSC) ===
+Text: Which one of the following is not the part of permanent tissue ?
+  (A) Protective tissue
+  (B) Cambium tissue
+  (C) Supporting tissue
+  (D) Conducting tissue
+Correct Answer: B
+Current Solution: 
+
+=== [50/107] MH-9-SCIT-17-17.1-OSC-050 (OSC) ===
+Text: Which of the following is not supportive tissue ?
+  (A) Parenchyma
+  (B) Collenchyma
+  (C) Sclerenchyma
+  (D) Vascular tissue
+Correct Answer: D
+Current Solution: 
+
+=== [51/107] MH-9-SCIT-17-17.1-OSC-051 (OSC) ===
+Text: Which of the following organ contain smooth muscle
+  (A) Iris of eye only
+  (B) Uterus only
+  (C) Bronchi only
+  (D) All of these
+Correct Answer: D
+Current Solution: 
+
+=== [52/107] MH-9-SCIT-17-17.1-OSC-052 (OSC) ===
+Text: Which type of tissues support, defend and store food in animal?
+  (A) Epithelial
+  (B) Connective
+  (C) Nervous
+  (D) Muscular
+Correct Answer: B
+Current Solution: 
+
+=== [53/107] MH-9-SCIT-17-17.1-OSC-053 (OSC) ===
+Text: Which type of tissue is responsible for receiving, interpreting and producing a response to stimuli?
+  (A) Muscle tissue
+  (B) Nervous tissue
+  (C) Epithelial tissue
+  (D) Connective tissue
+Correct Answer: B
+Current Solution: 
+
+=== [54/107] MH-9-SCIT-17-17.1-OSC-054 (OSC) ===
+Text: It is found that aerosol spray propellants are posing danger to the ozone layer. Which of the following chemicals are present in these propellants ?
+  (A) Ethanoic acid and Sulpuric acid
+  (B) None of the above
+  (C) Sulphur dioxide and water vapours
+  (D) None of the above
+Correct Answer: D
+Current Solution: 
+
+=== [55/107] MH-9-SCIT-17-17.1-OSC-055 (OSC) ===
+Text: At which of the following locations intercalary meristem will be present ?
+  (A) Node
+  (B) Cambium
+  (C) Vascular bundle
+  (D) Epidermis
+Correct Answer: A
+Current Solution: 
+
+=== [56/107] MH-9-SCIT-17-17.1-OSC-056 (OSC) ===
+Text: Identify odd one out on the basis of coelom.
+  (A) Tapeworm
+  (B) Hook work
+  (C) Roundworm
+  (D) Pin worm
+Correct Answer: A
+Current Solution: 
+
+=== [57/107] MH-9-SCIT-17-17.1-OSC-057 (OSC) ===
+Text: Identify the tissue that stores food in potato.
+  (A) Companion cells
+  (B) Parenchyma cells
+  (C) Collenchyma cells
+  (D) Intercalary meristem
+Correct Answer: B
+Current Solution: 
+
+=== [58/107] MH-9-SCIT-17-17.1-OSC-058 (OSC) ===
+Text: Identify odd one out on the basis of circulatory system.
+  (A) Nereis
+  (B) Balanoglossus
+  (C) Myxine
+  (D) Octopus
+Correct Answer: B
+Current Solution: 
+
+=== [59/107] MH-9-SCIT-17-17.1-OSC-059 (OSC) ===
+Text: How is sound produced in flute ?
+  (A) Vibrations are set up in stretched string
+  (B) None of the above
+  (C) By vibrating stretched diaphragm
+  (D) None of the above
+Correct Answer: C
+Current Solution: 
+
+=== [60/107] MH-9-SCIT-17-17.1-OSC-060 (OSC) ===
+Text: Tissue level :: Organ level -> Community :: ?
+  (A) population
+  (B) None of the above
+  (C) ecosystem
+  (D) None of the above
+Correct Answer: B
+Current Solution: 
+
+=== [61/107] MH-9-SCIT-17-17.1-OSC-061 (OSC) ===
+Text: The cells are thickened due to deposition of lignin are
+  (A) Collenchyma
+  (B) None of the above
+  (C) Aerenchyma
+  (D) None of the above
+Correct Answer: C
+Current Solution: 
+
+=== [62/107] MH-9-SCIT-17-17.1-OSC-062 (OSC) ===
+Text: Cloth Linen is made up of
+  (A) Sclerenchyma
+  (B) None of the above
+  (C) Collenchyma
+  (D) None of the above
+Correct Answer: A
+Current Solution: 
+
+=== [63/107] MH-9-SCIT-17-17.1-OSC-063 (OSC) ===
+Text: Tissues which connect bones to bones are
+  (A) Ligament
+  (B) None of the above
+  (C) Cartilage
+  (D) None of the above
+Correct Answer: A
+Current Solution: 
+
+=== [64/107] MH-9-SCIT-17-17.1-OSC-064 (OSC) ===
+Text: Which of the following tissues found in respiratory track?
+  (A) Squamous epithelium
+  (B) None of the above
+  (C) Cuboidal epithelium
+  (D) None of the above
+Correct Answer: D
+Current Solution: 
+
+=== [65/107] MH-9-SCIT-17-17.1-OSC-065 (OSC) ===
+Text: Which statement is not correct regarding collenchyma
+  (A) The cells of this tissue are dead,elongated and regularly thickened.
+  (B) Right : Wrong statement. The cells are living , and irregularly thickened.
+  (C) They are located in the leaf stalk
+  (D) None of the above
+Correct Answer: A
+Current Solution: 
+
+=== [66/107] MH-9-SCIT-17-17.1-OSC-066 (OSC) ===
+Text: Identify odd one out on the basis of presence of chitin.
+  (A) Mushroom
+  (B) Nereis
+  (C) Centipede
+  (D) Beetle
+Correct Answer: B
+Current Solution: 
+
+=== [67/107] MH-9-SCIT-17-17.1-OSC-067 (OSC) ===
+Text: Which of the following plants will not have aerenchyma tissue ?
+  (A) Colocasia
+  (B) Pistia
+  (C) Bamboo
+  (D) Banana
+Correct Answer: C
+Current Solution: A spongy tissue with large air spaces found between the cells of the stems and leaves of aquatic plants, providing buoyancy and allowing the circulation of gases. Makes stem spongy
+
+=== [68/107] MH-9-SCIT-17-17.1-OSC-068 (OSC) ===
+Text: Which part of Gynoecium is sticky ?
+  (A) Ovary
+  (B) Stamen
+  (C) Anther
+  (D) Stigma
+Correct Answer: D
+Current Solution: 
+
+=== [69/107] MH-9-SCIT-17-17.1-OSC-069 (OSC) ===
+Text: Which of the following part of a leaf carries on most of the photosynthesis of a plant?
+  (A) Epidermis
+  (B) Wrong: The epidermis is the outermost cellular layer which covers the whole plant structure, i.e. it covers roots, stem, leaves, flowers and fruit. It is composed of a single layer of living cells, although there are exceptions. The epidermis serves several functions, it protects against water loss, regulates gas exchange, secretes metabolic compounds, and (especially in roots) absorbs water a
+  (C) Epidermal layer
+  (D) None of the above
+Correct Answer: D
+Current Solution: 
+
+=== [70/107] MH-9-SCIT-17-17.1-OSC-070 (OSC) ===
+Text: The tissues responsible for conduction of water and minerals in plants
+  (A) Xylem
+  (B) Phloem
+  (C) Collenchyma
+  (D) Parenchyma
+Correct Answer: A
+Current Solution: 
+
+=== [71/107] MH-9-SCIT-17-17.1-OSC-071 (OSC) ===
+Text: The tissue which conducts food in plants
+  (A) Aerenchyma
+  (B) Phloem
+  (C) Sclerenchyma
+  (D) Xylem
+Correct Answer: B
+Current Solution: 
+
+=== [72/107] MH-9-SCIT-17-17.1-OSC-072 (OSC) ===
+Text: The living tissue in xylem
+  (A) Tracheids
+  (B) Xylem vessels
+  (C) Xylem parenchyma
+  (D) Xylem fibre
+Correct Answer: C
+Current Solution: 
+
+=== [73/107] MH-9-SCIT-17-17.1-OSC-073 (OSC) ===
+Text: The tissue present at the tip of root and stem
+  (A) Apical meristematic
+  (B) Cambium meristematic
+  (C) Inter calary meristematic
+  (D) All of above
+Correct Answer: A
+Current Solution: 
+
+=== [74/107] MH-9-SCIT-17-17.1-OSC-074 (OSC) ===
+Text: Two plant tissues which provide support
+  (A) Aerenchyma & Parenchyma
+  (B) Parenchyma & Chlorenchyma
+  (C) Collenchyma & Sclerenchyma
+  (D) Aerenchyma & Chlorenchyma
+Correct Answer: C
+Current Solution: 
+
+=== [75/107] MH-9-SCIT-17-17.1-OSC-075 (OSC) ===
+Text: A parenchyma cell which contains chloroplasts
+  (A) Collenchyma
+  (B) Chlorenchyma
+  (C) Aerenchyma
+  (D) Sclerenchyma
+Correct Answer: B
+Current Solution: 
+
+=== [76/107] MH-9-SCIT-17-17.1-OSC-076 (OSC) ===
+Text: A tissue which mainly responsible for storage of food in plants
+  (A) Sclerenchyma
+  (B) Collenchyma
+  (C) Aerenchyma
+  (D) Parenchyma
+Correct Answer: D
+Current Solution: 
+
+=== [77/107] MH-9-SCIT-17-17.1-OSC-077 (OSC) ===
+Text: The tissue which help aquatic plants to float
+  (A) Sclerenchyma
+  (B) Collenchyma
+  (C) Aerenchyma
+  (D) Parenchyma
+Correct Answer: C
+Current Solution: 
+
+=== [78/107] MH-9-SCIT-17-17.1-OSC-078 (OSC) ===
+Text: Hard walnut shell are made up of
+  (A) Parenchyma
+  (B) Sclerenchyma
+  (C) Collenchyma
+  (D) None of above
+Correct Answer: B
+Current Solution: 
+
+=== [79/107] MH-9-SCIT-17-17.1-OSC-079 (OSC) ===
+Text: Voluntary muscles are not found in
+  (A) alimentary canal
+  (B) limbs
+  (C) iris of the eye
+  (D) bronchi of lungs
+Correct Answer: B
+Current Solution: Voluntary muscles whose movement controls according to our will. They are usually skeletal muscles.
+
+=== [80/107] MH-9-SCIT-17-17.1-OSC-080 (OSC) ===
+Text: The tissue which lines the intestine and respiratory tract
+  (A) Squamous epithelial
+  (B) Stratified epithelial
+  (C) Cuboidal epithelial
+  (D) Columnar epithelial
+Correct Answer: D
+Current Solution: Location of Columnar epithelial
+
+=== [81/107] MH-9-SCIT-17-17.1-OSC-081 (OSC) ===
+Text: The tissue found in outer layer of skin
+  (A) Stratified epithelial
+  (B) Squamous epithelial
+  (C) Granular epithelial
+  (D) Ciliated epithelial
+Correct Answer: B
+Current Solution: 
+
+=== [82/107] MH-9-SCIT-17-17.1-OSC-082 (OSC) ===
+Text: The tissue which join bone to muscle
+  (A) Ligament
+  (B) Tendon
+  (C) Adipose tissue
+  (D) Cartilage
+Correct Answer: B
+Current Solution: 
+
+=== [83/107] MH-9-SCIT-17-17.1-OSC-083 (OSC) ===
+Text: A connective tissue which stores fat
+  (A) Areolar
+  (B) Adipose
+  (C) Fibrous tissue
+  (D) Lymph
+Correct Answer: B
+Current Solution: 
+
+=== [84/107] MH-9-SCIT-17-17.1-OSC-084 (OSC) ===
+Text: A flexible supporting tissue in animal
+  (A) Striated muscle
+  (B) Unstriated muscle
+  (C) Cardiac muscle
+  (D) All of above
+Correct Answer: D
+Current Solution: 
+
+=== [85/107] MH-9-SCIT-17-17.1-OSC-085 (OSC) ===
+Text: The muscular tissue responsible for the movement of internal organ.
+  (A) Striated muscle
+  (B) Unstriated muscle
+  (C) Striated voluntary
+  (D) Unstriated involuntary
+Correct Answer: D
+Current Solution: 
+
+=== [86/107] MH-9-SCIT-17-17.1-OSC-086 (OSC) ===
+Text: The tissue attached to the limb
+  (A) Striated voluntary
+  (B) Unstriated muscle
+  (C) Cardiac muscle
+  (D) All of above
+Correct Answer: A
+Current Solution: 
+
+=== [87/107] MH-9-SCIT-17-17.1-OSC-087 (OSC) ===
+Text: The tissue found in the wall of the heart
+  (A) Striated muscle
+  (B) Unstriated muscle
+  (C) Cardiac muscle
+  (D) All of above
+Correct Answer: C
+Current Solution: 
+
+=== [88/107] MH-9-SCIT-17-17.1-OSC-088 (OSC) ===
+Text: The tissue which conduct impulse
+  (A) Blood tissue
+  (B) Lymph tissue
+  (C) Neural tissue
+  (D) None of above
+Correct Answer: C
+Current Solution: 
+
+=== [89/107] MH-9-SCIT-17-17.1-OSC-089 (OSC) ===
+Text: Cell body of neuron is also called as
+  (A) Cyton
+  (B) Axon
+  (C) Dendron
+  (D) Nerve
+Correct Answer: A
+Current Solution: 
+
+=== [90/107] MH-9-SCIT-17-17.1-OSC-090 (OSC) ===
+Text: A voluntary muscular tissue
+  (A) Cardiac muscle
+  (B) Striated voluntary
+  (C) Unstriated voluntary
+  (D) Unstriated involuntary
+Correct Answer: B
+Current Solution: 
+
+=== [91/107] MH-9-SCIT-17-17.1-OSC-091 (OSC) ===
+Text: Skeletal tissue which is porus and with high supply of blood vessels and nerves
+  (A) Cartilage
+  (B) Bone
+  (C) Lymph
+  (D) Plasma
+Correct Answer: B
+Current Solution: 
+
+=== [92/107] MH-9-SCIT-17-17.1-OSC-092 (OSC) ===
+Text: Non porus skeletal tissue is
+  (A) Cartilage
+  (B) Bone
+  (C) Fibrous connective
+  (D) Ligament
+Correct Answer: A
+Current Solution: 
+
+=== [93/107] MH-9-SCIT-17-17.1-OSC-093 (OSC) ===
+Text: Liquid part of the blood is called
+  (A) Lymph
+  (B) Plasma
+  (C) Fluid
+  (D) R.B.C & W.B.C
+Correct Answer: B
+Current Solution: 
+
+=== [94/107] MH-9-SCIT-17-17.1-OSC-094 (OSC) ===
+Text: Lymph is the
+  (A) fluid connective tissue.
+  (B) supportive connective tissue
+  (C) packing connective tissue
+  (D) binding connective tissue
+Correct Answer: A
+Current Solution: 
+
+=== [95/107] MH-9-SCIT-17-17.1-OSC-095 (OSC) ===
+Text: Which quality is usually possessed by insect pollinated flowers ?
+  (A) Brightly coloured.
+  (B) White in colour.
+  (C) Arranged in clusters.
+  (D) Green in colour.
+Correct Answer: A
+Current Solution: 
+
+=== [96/107] MH-9-SCIT-17-17.1-OSC-096 (OSC) ===
+Text: Nephrolepis belong to which class ?
+  (A) Thallophyia.
+  (B) Bryophyta.
+  (C) Pteridophyta
+  (D) Gymnosperm.
+Correct Answer: C
+Current Solution: 
+
+=== [97/107] MH-9-SCIT-17-17.1-OSC-097 (OSC) ===
+Text: Which one of the following is dicotyledon ?
+  (A) Grass.
+  (B) Coconut.
+  (C) Jack fruit.
+  (D) Maize.
+Correct Answer: C
+Current Solution: 
+
+=== [98/107] MH-9-SCIT-17-17.1-OSC-098 (OSC) ===
+Text: Which one of the following is an essential part of photosynthesis ?
+  (A) Production of Oxygen.
+  (B) Use of Oxygen.
+  (C) Photolysis of water.
+  (D) Glycolysis of glucose.
+Correct Answer: C
+Current Solution: 
+
+=== [99/107] MH-9-SCIT-17-17.1-OSC-099 (OSC) ===
+Text: Observe the below figure. Which letter shows the part where light energy gets converted into chemical energy ?
+  (A) a
+  (B) Wrong: Outer Membrane
+  (C) b
+  (D) Right: stromal lamellae.
+Correct Answer: B
+Current Solution: Plant Cell: Chloroplast
+
+=== [100/107] MH-9-SCIT-17-17.1-OSC-100 (OSC) ===
+Text: Which group of animals are without exoskeleton ?
+  (A) Amphibians
+  (B) Aves
+  (C) Mammals
+  (D) Pisces
+Correct Answer: A
+Current Solution: An exoskeleton is the external skeleton that supports and protects an animal's body, in contrast to the internal skeleton (endoskeleton) of, for example, a human. Exoskeletons are known as "shells". Examples of exoskeleton animals include insects such as grasshoppers and cockroaches, and crustaceans such as crabs and lobsters
+
+=== [101/107] MH-9-SCIT-17-17.1-OSC-101 (OSC) ===
+Text: Which of the following animals have false body cavity ?
+  (A) Earthworms
+  (B) Flat worms
+  (C) Roundworms
+  (D) Tapeworms
+Correct Answer: B
+Current Solution: 
+
+=== [102/107] MH-9-SCIT-17-17.1-OSC-102 (OSC) ===
+Text: Which of the following animal belongs to the phylum Mollusca ?
+  (A) Acorn worm
+  (B) Coral
+  (C) Oyster
+  (D) Silkmoth
+Correct Answer: C
+Current Solution: 
+
+=== [103/107] MH-9-SCIT-17-17.1-OSC-103 (OSC) ===
+Text: Which of the following animals is an Omnivore ?
+  (A) Bear
+  (B) Fox
+  (C) Horse
+  (D) Leopard
+Correct Answer: A
+Current Solution: An omnivore is an animal whose species normally derives its energy and nutrients from a diet consisting of a variety of food sources that may include plants, animals, algae, fungi and bacteria
+
+=== [104/107] MH-9-SCIT-17-17.1-OSC-104 (OSC) ===
+Text: Which of the following chemicals has affected the ozone layer ?
+  (A) Carbon compound
+  (B) None of the above
+  (C) NO2
+  (D) None of the above
+Correct Answer: C
+Current Solution: The chlorine atom in Chloroflucro carbon , written often as Cl., behaves very differently from the chlorine molecule (Cl2). The radical Cl. is long-lived in the upper atmosphere, where it catalyzes the conversion of ozone into O2. Ozone absorbs UV-B radiation, so its depletion allows more of this high energy radiation to reach the Earth's surface.
+
+=== [105/107] MH-9-SCIT-17-17.1-OSC-105 (OSC) ===
+Text: Choose the correct statement about DNA.
+  (A) It contains Uracil.
+  (B) None of the above
+  (C) It is present in nucleolus.
+  (D) None of the above
+Correct Answer: D
+Current Solution: 
+
+=== [106/107] MH-9-SCIT-17-17.1-OSC-106 (OSC) ===
+Text: Which of these organic substances is deposited in the cells of many plants?
+  (A) Urea
+  (B) Albumin
+  (C) Casein
+  (D) Tannin.
+Correct Answer: D
+Current Solution: 
+
+=== [107/107] MH-9-SCIT-17-17.1-OSC-107 (OSC) ===
+Text: Why are plants die in winter by frost?
+  (A) Water in the plant freezes
+  (B) Desiccations
+  (C) Water expands and breaks the cells
+  (D) No photosynthesis takes place at a lower temperature.
+Correct Answer: C
+Current Solution: Frost is the coating or deposit of ice that may form in humid air in cold conditions, usually overnight.
+
