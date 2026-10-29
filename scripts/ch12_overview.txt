@@ -1,0 +1,798 @@
+[1/114] MH-9-SCIT-12-12.1-OSC-001 | Ans: A
+  Q: Through which of the following medium transverse waves can be propagated ?
+    A: Solids
+    B: Ozone
+    C: Gases
+    D: Any medium
+
+[2/114] MH-9-SCIT-12-12.1-OSC-002 | Ans: A
+  Q: When sound travels through air, the air particles
+    A: vibrates along the direction of wave propagation
+    B: vibrates but not in any fixed direction
+    C: vibrates perpendicular to the direction of wave propagation
+    D: do not vibrate
+
+[3/114] MH-9-SCIT-12-12.1-OSC-003 | Ans: C
+  Q: When a sound wave travels through a medium
+    A: particles are transferred from one place to another
+    B: energy is transferred in a periodic manner
+    C: energy is transferred at a constant speed
+    D: none of the above statements is applicable
+
+[4/114] MH-9-SCIT-12-12.1-OSC-004 | Ans: B
+  Q: The method of detecting the presence, position and direction of motion of distant objects by reflecting a beam of sound waves is known as _____.
+    A: RADAR
+    B: SONAR
+    C: MIR
+    D: CRO
+
+[5/114] MH-9-SCIT-12-12.1-OSC-005 | Ans: A
+  Q: If you go on increasing the stretching force on a wire in guitar, its frequency
+    A: increases
+    B: decreases
+    C: remains unchanged
+    D: none of the above
+
+[6/114] MH-9-SCIT-12-12.1-OSC-006 | Ans: D
+  Q: Of the following properties of a wave, the one that is independent of the others is its ------------.
+    A: frequency
+    B: wavelength
+    C: speed
+    D: amplitude
+
+[7/114] MH-9-SCIT-12-12.1-OSC-007 | Ans: A
+  Q: The amplitude of a sound wave determines its ________________.
+    A: loudness
+    B: pitch
+    C: wavelength
+    D: overtones
+
+[8/114] MH-9-SCIT-12-12.1-OSC-008 | Ans: D
+  Q: Which of the following quantities is transferred during wave propagation?
+    A: Speed
+    B: Mass
+    C: Matter
+    D: Energy
+
+[9/114] MH-9-SCIT-12-12.1-OSC-009 | Ans: B
+  Q: When a wire of Sitar is plucked what type of waves are produced in the wire
+    A: Longitudinal waves
+    B: Transverse waves
+    C: Electromagnetic
+    D: All of Above
+
+[10/114] MH-9-SCIT-12-12.1-OSC-010 | Ans: C
+  Q: Which statement is not correct with respective sound wave?
+    A: Sound wave travel through different part of the medium
+    B: Sound wave travel with a constant velocity
+    C: Vibrating particles travel up and down with sound waves
+    D: Particles of medium simply vibrates around their mean position
+
+[11/114] MH-9-SCIT-12-12.1-OSC-011 | Ans: C
+  Q: A stone is thrown in a pond to form ripples. A leaf placed on the surface of the water moves up and down. This is due to
+    A: Gravitational force
+    B: Longitudinal waves
+    C: Transverse waves
+    D: Surface tension
+
+[12/114] MH-9-SCIT-12-12.1-OSC-012 | Ans: A
+  Q: Why velocity of sound in moist air as compared to dry air is more?
+    A: Because it's rate of vibration increases.
+    B: Temperature is less in moist air as compare to dry air
+    C: Pressure is more in humid air
+    D: None of above
+
+[13/114] MH-9-SCIT-12-12.1-OSC-013 | Ans: D
+  Q: An example for mechanical wave.
+    A: Radio wave
+    B: Light wave
+    C: Infrared radiation
+    D: Sound wave
+
+[14/114] MH-9-SCIT-12-12.1-OSC-014 | Ans: B
+  Q: Crest and through are formed in
+    A: Longitudinal waves
+    B: Transverse waves
+    C: Both longitudinal and transverse waves
+    D: None of above
+
+[15/114] MH-9-SCIT-12-12.1-OSC-015 | Ans: C
+  Q: Find correct option: (A)String Vibration (I)Tabala (B)Membrane vibration (II)Bicycle bell (C)Vibration of air (III)Sitar (D)Vibration of plate (IV)Flute
+    A: A-I ,B-II,C-III,D-IV
+    B: A-II ,B-I ,C- iV ,D-III
+    C: A-III , B-I , C-IV ,D-2
+    D: A-IV ,B-III,C-II,D-I
+
+[16/114] MH-9-SCIT-12-12.1-OSC-016 | Ans: A
+  Q: The frequency of a source is 20 kHz. The frequency of sound wave produced by it in water and air will be
+    A: Same as the source
+    B: more than 20 kHz
+    C: less than 20 kHz
+    D: depends upon velocity
+
+[17/114] MH-9-SCIT-12-12.1-OSC-017 | Ans: B
+  Q: The time period of simple pendulum is 0.2 sec. What is the frequency of oscillation?
+    A: 0.5 Hz
+    B: 5 Hz
+    C: 50 Hz
+    D: 1 Hz
+
+[18/114] MH-9-SCIT-12-12.1-OSC-018 | Ans: D
+  Q: Which is not endocrine glands in human body
+    A: Pituitary
+    B: None of the above
+    C: Adrenal
+    D: None of the above
+
+[19/114] MH-9-SCIT-12-12.1-OSC-019 | Ans: B
+  Q: A crest is a point of
+    A: zero displacement
+    B: maximum displacement
+    C: minimum displacement
+    D: none of above
+
+[20/114] MH-9-SCIT-12-12.1-OSC-020 | Ans: B
+  Q: Waves produced in wire of sitar when the wire is plunked is
+    A: longitudinal
+    B: transverse
+    C: Both 1 & 2
+    D: electromagnetic
+
+[21/114] MH-9-SCIT-12-12.1-OSC-021 | Ans: B
+  Q: If a wave of time period T travels with velocity V, then the wavelength is given by
+    A: V/T
+    B: VT
+    C: 1/VT
+    D: T/V
+
+[22/114] MH-9-SCIT-12-12.1-OSC-022 | Ans: A
+  Q: SONAR is based on the principle of
+    A: echo
+    B: resonance
+    C: reverberation
+    D: None of these
+
+[23/114] MH-9-SCIT-12-12.1-OSC-023 | Ans: C
+  Q: An echo sounder in a fishing boat receives an echo from a shoal of fish 0.4 s after it was sent. If the speed of sound in water is 1500 m/s. How deep is the shoal ?
+    A: 150 m
+    B: 7500 m
+    C: 300 m
+    D: 600 m
+
+[24/114] MH-9-SCIT-12-12.1-OSC-024 | Ans: C
+  Q: Arrange speed of sound in following media in ascending order. (a) Air at 0 oC (b) Iron (c) Blood (d) Distilled Water
+    A: d, a, c, b
+    B: b, c, d, a
+    C: a, d, c, b
+    D: a, c, d, b
+
+[25/114] MH-9-SCIT-12-12.1-OSC-025 | Ans: D
+  Q: Which of the following is not an example of transverse wave ?
+    A: Light emitted by CFL
+    B: TV signal from satellite
+    C: Ripples on surface of pond
+    D: Musical notes of an orchestra
+
+[26/114] MH-9-SCIT-12-12.1-OSC-026 | Ans: C
+  Q: Which wave consists of compressions & rarefaction ?
+    A: Transverse
+    B: Light wave
+    C: Longitudinal
+    D: X-ray
+
+[27/114] MH-9-SCIT-12-12.1-OSC-027 | Ans: C
+  Q: Intensity of sound is
+    A: response to ear
+    B: pitch of sound
+    C: amount of energy passing per sec/unit area
+    D: volume of sound
+
+[28/114] MH-9-SCIT-12-12.1-OSC-028 | Ans: C
+  Q: Speed of sound will be high in
+    A: Ni
+    B: Fe
+    C: Al
+    D: Brass
+
+[29/114] MH-9-SCIT-12-12.1-OSC-029 | Ans: B
+  Q: Sound of single frequency is called
+    A: note
+    B: tone
+    C: tune
+    D: node
+
+[30/114] MH-9-SCIT-12-12.1-OSC-030 | Ans: D
+  Q: Sound travel faster at
+    A: 0 oC
+    B: -20 oC
+    C: 30 oC
+    D: 50 oC
+
+[31/114] MH-9-SCIT-12-12.1-OSC-031 | Ans: C
+  Q: In human ear loudness and pitch of sound is identified by
+    A: Pinna
+    B: Auditory nerve
+    C: Cochlea
+    D: Hammer
+
+[32/114] MH-9-SCIT-12-12.1-OSC-032 | Ans: B
+  Q: Sound produced before an earth-quake by vibration of earth surface
+    A: Ultrasonic
+    B: Infrasonic
+    C: Audible
+    D: All of above
+
+[33/114] MH-9-SCIT-12-12.1-OSC-033 | Ans: D
+  Q: Similar vibrations in same length of wire in a guitar and violin produce different sound because of their
+    A: different shapes
+    B: different designs
+    C: different wood quality
+    D: all of the above
+
+[34/114] MH-9-SCIT-12-12.1-OSC-034 | Ans: C
+  Q: A sound with a frequency 5000 hertz falls in the category of
+    A: ultrasound
+    B: infrasound
+    C: audible sound
+    D: whisper
+
+[35/114] MH-9-SCIT-12-12.1-OSC-035 | Ans: A
+  Q: Which of the following is a percussion musical instrument?
+    A: Mridangam
+    B: Flute
+    C: Bell
+    D: Guitar
+
+[36/114] MH-9-SCIT-12-12.1-OSC-036 | Ans: D
+  Q: Sound can propagate in
+    A: solid medium
+    B: liquid medium
+    C: gaseous medium
+    D: any of the above
+
+[37/114] MH-9-SCIT-12-12.1-OSC-037 | Ans: C
+  Q: Shrillness of a sound ---------- the amplitude of the vibration producing it
+    A: depends on
+    B: is independent of
+    C: varies directly with
+    D: varies inversely with
+
+[38/114] MH-9-SCIT-12-12.1-OSC-038 | Ans: B
+  Q: The period of simple pendulum is independent of which quantity ?
+    A: Length of pendulum
+    B: None of the above
+    C: Mass of bob
+    D: None of the above
+
+[39/114] MH-9-SCIT-12-12.1-OSC-039 | Ans: B
+  Q: Who am I; if I am useful for communication between ships . To detect cracks in metallic bells . To destroy microbes from milk .For welding plastic material.
+    A: Heat
+    B: Ultrasound
+    C: SONAR
+    D: Reverberation
+
+[40/114] MH-9-SCIT-12-12.1-OSC-040 | Ans: B
+  Q: Speed of sound is maximum in which of the following media ?
+    A: Vacuum
+    B: Solids
+    C: Liquids
+    D: Gases
+
+[41/114] MH-9-SCIT-12-12.1-OSC-041 | Ans: C
+  Q: The time period of a simple pendulum is,
+    A: Option 1
+    B: Option 2
+    C: Option 3
+    D: Option 4
+
+[42/114] MH-9-SCIT-12-12.1-OSC-042 | Ans: B
+  Q: What will be the time period of a wave, having frequency 50 Hz ?
+    A: 0.2 s
+    B: 0.02 s
+    C: 0.5 s
+    D: 0.05 s
+
+[43/114] MH-9-SCIT-12-12.1-OSC-043 | Ans: B
+  Q: Which part of the human ear recognises qualities of sound i.e. loudness and pitch ?
+    A: Eardrum
+    B: Cochlea
+    C: Auditory Canal
+    D: Auditory nerve
+
+[44/114] MH-9-SCIT-12-12.1-OSC-044 | Ans: B
+  Q: Which of the following represents the distance between two successive compressions ?
+    A: λ/4
+    B: λ
+    C: 2λ
+    D: λ/2
+
+[45/114] MH-9-SCIT-12-12.1-OSC-045 | Ans: A
+  Q: Identify odd one out in context of sound.
+    A: RADAR
+    B: SONAR
+    C: Sonography
+    D: Bat
+
+[46/114] MH-9-SCIT-12-12.1-OSC-046 | Ans: B
+  Q: A person standing in a valley between two hills fired a gun and heard first echo after 0.5 sec. If the second echo is heard after 0.9 sec, what will be the distance between two hills ?
+    A: 228 m
+    B: 238 m
+    C: 248 m
+    D: 245 m
+
+[47/114] MH-9-SCIT-12-12.1-OSC-047 | Ans: C
+  Q: Observe the diagram and decide the frequency of oscillation.
+    A: 1 Hz
+    B: 2 Hz
+    C: 0.5 Hz
+    D: 4 Hz
+
+[48/114] MH-9-SCIT-12-12.1-OSC-048 | Ans: A
+  Q: Which of the following is a mixture of transverse and longitudinal waves ?
+    A: Seismic wave
+    B: Micro-wave
+    C: X-ray
+    D: Light-wave
+
+[49/114] MH-9-SCIT-12-12.1-OSC-049 | Ans: A
+  Q: What is the velocity of sound in a vacuum ?
+    A: 0 m/s
+    B: Right: Sound requires medium to travel. Since in vacuum there is no medium it cannot travel.
+    C: 330 m/s
+    D: None of the above
+
+[50/114] MH-9-SCIT-12-12.1-OSC-050 | Ans: A
+  Q: What is the unit of intensity of sound ?
+    A: Decibels
+    B: None of the above
+    C: Hertz
+    D: Wrong: The SI derived unit for frequency is the Hertz. - The symbol for Hertz is Hz
+
+[51/114] MH-9-SCIT-12-12.1-OSC-051 | Ans: D
+  Q: Which of the following is not affected when waves pass from one medium into another medium ?
+    A: Amplitude
+    B: None of the above
+    C: Frequency
+    D: None of the above
+
+[52/114] MH-9-SCIT-12-12.1-OSC-052 | Ans: B
+  Q: The sound of an explosion on the surface of a lake is heard by a boat man 100 m away and a diver 100 m below the point of explosion.
+    A: boat man will heard the sound first
+    B: diver will heard the sound first
+    C: both will heard at the same time
+    D: can not say
+
+[53/114] MH-9-SCIT-12-12.1-OSC-053 | Ans: A
+  Q: Sound in air propagates in form of
+    A: longitudinal waves
+    B: transverse waves
+    C: both longitudinal and transverse waves
+    D: none of above
+
+[54/114] MH-9-SCIT-12-12.1-OSC-054 | Ans: C
+  Q: The multiple reflection of a sound in a hall is called
+    A: echo
+    B: scanning
+    C: reverberation
+    D: all of these
+
+[55/114] MH-9-SCIT-12-12.1-OSC-055 | Ans: D
+  Q: The speed of sound in air at 0 oC is nearly
+    A: 1540 m/s
+    B: 450 m/s
+    C: 5100 m/s
+    D: 330 m/s
+
+[56/114] MH-9-SCIT-12-12.1-OSC-056 | Ans: C
+  Q: The time period of simple pendulum is 2s. Find its frequency.
+    A: 2 Hz
+    B: 1 Hz
+    C: 0.5 Hz
+    D: 4 Hz
+
+[57/114] MH-9-SCIT-12-12.1-OSC-057 | Ans: B
+  Q: Sonar makes use of
+    A: infrasonic sound
+    B: ultrasonic sound
+    C: ordinary sound
+    D: light
+
+[58/114] MH-9-SCIT-12-12.1-OSC-058 | Ans: C
+  Q: What is the range of frequency of sonic sound waves ?
+    A: between 20 Hertz and 2,000 Hertz
+    B: between 200 Hertz and 20,000 Hertz
+    C: between 20 Hertz and 20,000 Hertz
+    D: between 2000 Hertz and 20,000 Hertz
+
+[59/114] MH-9-SCIT-12-12.1-OSC-059 | Ans: A
+  Q: In which of the following case the sound becomes noise ?
+    A: When the intensity of sound is 80 decibels
+    B: When the intensity of sound is 100 decibels
+    C: When the intensity of sound is 130 decibels
+    D: When the intensity of sound is 150 decibels
+
+[60/114] MH-9-SCIT-12-12.1-OSC-060 | Ans: C
+  Q: Which of the following is the quantity that remains unchanged, when a sound wave goes from air to water ?
+    A: Speed
+    B: Wrong : Sound travels slowest in Gas, Faster through Liquid and fastest through Solid
+    C: Amplitude
+    D: None of the above
+
+[61/114] MH-9-SCIT-12-12.1-OSC-061 | Ans: D
+  Q: If two students are talking to each other in a classroom and if suddenly we take out the complete air from the classroom, what happens to the velocity of sound ?
+    A: It will remain as it is
+    B: None of the above
+    C: It will increase
+    D: None of the above
+
+[62/114] MH-9-SCIT-12-12.1-OSC-062 | Ans: A
+  Q: An ultrasonic wave is sent from a ship towards the bottom of the sea. It is found that the time interval between the sending and receiving of the wave is 1.6s . What is the depth of the sea, if the velocity of sound in the seawater is 1400 m/s?
+    A: 1120 m
+    B: 560 m
+    C: 1400 m
+    D: 112 m
+
+[63/114] MH-9-SCIT-12-12.1-OSC-063 | Ans: B
+  Q: Which of the following statement best describes frequency?
+    A: The maximum disturbance caused by a wave
+    B: The number of complete vibration per second
+    C: The distance between one crest of a wave and the next one
+    D: The distance travelled by a wave per second
+
+[64/114] MH-9-SCIT-12-12.1-OSC-064 | Ans: B
+  Q: Why sound cannot be heard in vacuum
+    A: Sound energy gets blocked
+    B: Vibration of particle is not possible
+    C: Intensity of sound wave get reduced
+    D: Due to temperature and pressure difference
+
+[65/114] MH-9-SCIT-12-12.1-OSC-065 | Ans: D
+  Q: The velocities of sound waves in four media P,Q,R and S are 1800 km/hr,900 km/hr ,0 km/hr and 1200 km/hr respectively. Which medium could be a liquid medium
+    A: P
+    B: Q
+    C: R
+    D: S
+
+[66/114] MH-9-SCIT-12-12.1-OSC-066 | Ans: D
+  Q: A sonar device on a submarine sends out signal and receives an echo after 5 sec. Calculate speed of sound in water if the distance of the object from the submarine is 3625 m
+    A: 725 m
+    B: 362.5 m
+    C: 7250 m
+    D: 1450 m
+
+[67/114] MH-9-SCIT-12-12.1-OSC-067 | Ans: C
+  Q: For the constant velocity of sound if the frequency of wave is doubled ,its wavelength
+    A: become doubled
+    B: remain same
+    C: become half of the origin
+    D: none of above
+
+[68/114] MH-9-SCIT-12-12.1-OSC-068 | Ans: C
+  Q: The maximum speed of vibration which produce audible sound will be in
+    A: Dry air
+    B: Sea water
+    C: Ground glass
+    D: Dry oxygen
+
+[69/114] MH-9-SCIT-12-12.1-OSC-069 | Ans: C
+  Q: A musical instrument is producing a continuous note. This note cannot be heard by a person having a normal hearing range. This note must be passing through
+    A: water
+    B: wax
+    C: vacuum
+    D: empty vessel
+
+[70/114] MH-9-SCIT-12-12.1-OSC-070 | Ans: D
+  Q: What is the unit of speed of sound ?
+    A: Decibels
+    B: Hertz
+    C: Metre
+    D: Metre per second
+
+[71/114] MH-9-SCIT-12-12.1-OSC-071 | Ans: A
+  Q: How do the bats find their way in total darkness ?
+    A: With the help of sound waves
+    B: With the help of light waves
+    C: With the help of laser beams
+    D: With the help of radioactive rays
+
+[72/114] MH-9-SCIT-12-12.1-OSC-072 | Ans: B
+  Q: The speed of sound will be high at 25 degree centigrade in
+    A: Distilled water
+    B: Sea water
+    C: Ethanol
+    D: Methanol
+
+[73/114] MH-9-SCIT-12-12.1-OSC-073 | Ans: B
+  Q: Compression are the regions where
+    A: Density and pressure is low
+    B: Density and pressure is high
+    C: Density is low and pressure is high
+    D: Density is high and pressure is low
+
+[74/114] MH-9-SCIT-12-12.1-OSC-074 | Ans: A
+  Q: Sound waves is
+    A: Longitudinal waves
+    B: Transverse waves
+    C: Both longitudinal and transverse waves
+    D: None of these
+
+[75/114] MH-9-SCIT-12-12.1-OSC-075 | Ans: A
+  Q: The maximum displacement of the particle from the mean from its mean position is called
+    A: Amplitude
+    B: Wavelength
+    C: Wave number
+    D: Frequency
+
+[76/114] MH-9-SCIT-12-12.1-OSC-076 | Ans: C
+  Q: A bat hears echo of its squeak after 0.1 second. How far the obstacle from the bat (Speed of sound is 344 m/s)
+    A: 18 m
+    B: 170 m
+    C: 17.2 m
+    D: 180 m
+
+[77/114] MH-9-SCIT-12-12.1-OSC-077 | Ans: C
+  Q: A human being is able to hear sounds because of the vibration of the
+    A: pinna
+    B: cochlea
+    C: ear drum
+    D: ear canal
+
+[78/114] MH-9-SCIT-12-12.1-OSC-078 | Ans: C
+  Q: The pulling of a stretched string produces sound because
+    A: of the increase in its tension
+    B: its state of rest changes
+    C: it is set in vibration
+    D: of the applied force
+
+[79/114] MH-9-SCIT-12-12.1-OSC-079 | Ans: C
+  Q: The SI unit of lambda is
+    A: Hz
+    B: Frequency
+    C: meter
+    D: tone
+
+[80/114] MH-9-SCIT-12-12.1-OSC-080 | Ans: A
+  Q: Which is the odd one in the following ?
+    A: Microphone
+    B: Electric bell
+    C: Loud speaker
+    D: Radio
+
+[81/114] MH-9-SCIT-12-12.1-OSC-081 | Ans: A
+  Q: Bats use echoes while flying in the dark. Which of the following is emitted by the bat to use echoes ?
+    A: Ultrasonic sound
+    B: Infrasonic sound
+    C: Ultraviolet rays
+    D: Infrared rays
+
+[82/114] MH-9-SCIT-12-12.1-OSC-082 | Ans: D
+  Q: Hydrogen bombs explode constantly on the Sun. But no sound of explosion is heard on the earth because
+    A: None of the above
+    B: None of the above
+    C: None of the above
+    D: None of the above
+
+[83/114] MH-9-SCIT-12-12.1-OSC-083 | Ans: A
+  Q: What will be the. Approximate wavelength of a sound from a tuning fork of frequency 330 Hz
+    A: 100 cm.
+    B: 10 cm.
+    C: 1cm.
+    D: 330cm.
+
+[84/114] MH-9-SCIT-12-12.1-OSC-084 | Ans: A
+  Q: Loudness of sound depends on
+    A: amplitude.
+    B: frequency.
+    C: velocity.
+    D: wave length.
+
+[85/114] MH-9-SCIT-12-12.1-OSC-085 | Ans: C
+  Q: In which of the following medium sound has the highest velocity ?
+    A: Gas
+    B: None of the above
+    C: Liquid
+    D: None of the above
+
+[86/114] MH-9-SCIT-12-12.1-OSC-086 | Ans: A
+  Q: In which form do the sound waves travel ?
+    A: Longitudinal
+    B: None of the above
+    C: Transverse
+    D: None of the above
+
+[87/114] MH-9-SCIT-12-12.1-OSC-087 | Ans: B
+  Q: An echo from the bed of the sea is received 0.4 seconds after an echo sounder pulse is transmitted. What is the depth of the sea ? (The speed of sound in water is 1500 m/s)
+    A: 150 meters
+    B: None of the above
+    C: 300 meters
+    D: None of the above
+
+[88/114] MH-9-SCIT-12-12.1-OSC-088 | Ans: B
+  Q: Which of the following waves are a mixture of transverse and longitudinal waves ?
+    A: Electromagnetic waves
+    B: Seismic waves
+    C: Sound waves
+    D: Tsunami waves
+
+[89/114] MH-9-SCIT-12-12.1-OSC-089 | Ans: D
+  Q: What is the frequency of the sound produced by bats while flying in the dark to avoid collisions with obstacles?
+    A: Below 10,000 hertz
+    B: Above 10.000 hertz
+    C: Below 20,000 hertz
+    D: Above 20,000 hertz
+
+[90/114] MH-9-SCIT-12-12.1-OSC-090 | Ans: D
+  Q: What is the speed of sound in dry air at 0o C
+    A: 330 m/s
+    B: None of the above
+    C: 330.5 m/s
+    D: None of the above
+
+[91/114] MH-9-SCIT-12-12.1-OSC-091 | Ans: D
+  Q: Television signals broadcast from the moon can be received on the earth, while the T.V. programme broadcast from Bombay can't be received at places about 100 Km away from Bombay. Why ?
+    A: There is no atmosphere around the moon
+    B: There is atmosphere around the earth
+    C: Effect of gravity on the T.V. signals
+    D: T.V. signals travel straight and can't follow the curvature of the earth.
+
+[92/114] MH-9-SCIT-12-12.1-OSC-092 | Ans: A
+  Q: In which of the materials given below, the speed of sound is largest ?
+    A: Steel
+    B: Water
+    C: Wood
+    D: Air
+
+[93/114] MH-9-SCIT-12-12.1-OSC-093 | Ans: B
+  Q: At which point the velocity of the bob is maximum ?
+    A: Points f and h
+    B: Point g
+    C: Somewhere between points f and g
+    D: Somewhere between points g and h.
+
+[94/114] MH-9-SCIT-12-12.1-OSC-094 | Ans: B
+  Q: What is the time period a wave whose frequency is 100 Hz ?
+    A: 0.1 sec.
+    B: 0.01 sec.
+    C: 0.001 sec
+    D: 100 sec.
+
+[95/114] MH-9-SCIT-12-12.1-OSC-095 | Ans: A
+  Q: What does the loudness of the sound depend upon?
+    A: Amplitude
+    B: Pitch
+    C: Speed
+    D: Wavelength
+
+[96/114] MH-9-SCIT-12-12.1-OSC-096 | Ans: A
+  Q: The time period of a pendulum is one second. What should be done to keep the time period the same if that pendulum is taken on the moon?
+    A: The bob of the pendulum should be made heavy.
+    B: The bob of the pendulum should be made light.
+    C: Length of the pendulum should be increased.
+    D: Length of the pendulum should be decreased.
+
+[97/114] MH-9-SCIT-12-12.1-OSC-097 | Ans: D
+  Q: In which medium speed of sound is minimum?
+    A: Vacuum
+    B: Hot dry air
+    C: Hot humid air
+    D: Cold and dry air.
+
+[98/114] MH-9-SCIT-12-12.1-OSC-098 | Ans: B
+  Q: What is the limit of tolerance of sound for the human beings?
+    A: 20 decibels
+    B: 85 decibels
+    C: 120 decibels
+    D: 150 decibels.
+
+[99/114] MH-9-SCIT-12-12.1-OSC-099 | Ans: B
+  Q: When a wave disturbance passes through a medium, what will be the motion of the particles of the medium ?
+    A: Translational motion
+    B: Vibrational motion
+    C: Rotational motion
+    D: Random motion
+
+[100/114] MH-9-SCIT-12-12.1-OSC-100 | Ans: D
+  Q: Bats detect the obstacles in their path by receiving the reflected
+    A: infrasonic waves
+    B: radio waves
+    C: electro-magnetic waves
+    D: ultrasonic waves
+
+[101/114] MH-9-SCIT-12-12.1-OSC-101 | Ans: D
+  Q: The frequency of a wave travelling at a speed of 500 m/s is 25 Hz. Its time period will be ______.
+    A: 20 s
+    B: 0.05 s
+    C: 25 s
+    D: 0.04 s
+
+[102/114] MH-9-SCIT-12-12.1-OSC-102 | Ans: C
+  Q: The amplitude of a wave is
+    A: the distance the wave moves in one second
+    B: the distance the wave moves in one time period of the wave
+    C: the maximum distance moved by the medium particles on either side of the mean position
+    D: the distance equal to one wave length
+
+[103/114] MH-9-SCIT-12-12.1-OSC-103 | Ans: B
+  Q: Which of the following is not a characteristic of a musical sound?
+    A: Pitch
+    B: Wavelength
+    C: Amplitude
+    D: Note
+
+[104/114] MH-9-SCIT-12-12.1-OSC-104 | Ans: C
+  Q: The physical quantity, which oscillates in most waves, is
+    A: mass
+    B: energy
+    C: amplitude
+    D: wavelength
+
+[105/114] MH-9-SCIT-12-12.1-OSC-105 | Ans: C
+  Q: Which of the following will remain unchanged when a sound wave travels in air or in water?
+    A: Amplitude
+    B: Wavelength
+    C: Frequency
+    D: Speed
+
+[106/114] MH-9-SCIT-12-12.1-OSC-106 | Ans: B
+  Q: A sound source sends waves of 400 Hz. It produces waves of wavelength 2.5 m. The velocity of sound waves is
+    A: 100 m/s
+    B: 1000 m/s
+    C: 10000 m/s
+    D: 3000 km/s
+
+[107/114] MH-9-SCIT-12-12.1-OSC-107 | Ans: A
+  Q: A source of frequency of 500 Hz emits waves of wavelength 0.4 m, how long does the waves take to travel 600 m?
+    A: 3 s
+    B: 6 s
+    C: 9 s
+    D: 12 s
+
+[108/114] MH-9-SCIT-12-12.1-OSC-108 | Ans: B
+  Q: Sound and light waves both
+    A: have similar wavelength
+    B: obey the laws of reflection
+    C: travel as longitudinal waves
+    D: travel through vacuum
+
+[109/114] MH-9-SCIT-12-12.1-OSC-109 | Ans: A
+  Q: Rarefactions are the region where
+    A: Density and pressure is low
+    B: Density and pressure is high
+    C: Density is low and pressure is high
+    D: Density is high and pressure is low
+
+[110/114] MH-9-SCIT-12-12.1-OSC-110 | Ans: A
+  Q: Sound waves are called longitudinal waves because
+    A: particles of the medium through which the sound is transported vibrate parallel to the direction that the sound wave moves.
+    B: particles of the medium through which the sound is transported vibrate perpendicular to the direction that the sound wave moves.
+    C: they have an electric and magnetic nature
+    D: all of above
+
+[111/114] MH-9-SCIT-12-12.1-OSC-111 | Ans: B
+  Q: The minimum distance between the source and the reflector, so that an echo is heard is approximately equal to ______.
+    A: 10 m
+    B: 17 m
+    C: 34 m
+    D: 50 m
+
+[112/114] MH-9-SCIT-12-12.1-OSC-112 | Ans: C
+  Q: If the speed of a wave is 340 m/s and its frequency is 1700 Hz, then lambda for this wave in cm will be
+    A: 2
+    B: 0.2
+    C: 20
+    D: 200
+
+[113/114] MH-9-SCIT-12-12.1-OSC-113 | Ans: B
+  Q: How sound wave is different than light wave ?
+    A: light wave transfer energy while sound wave not.
+    B: sound wave is not capable of traveling through a vacuum.
+    C: sound wave is not capable of reflecting and a light wave is.
+    D: capable of existing with a variety of frequencies and a light wave has a single frequency.
+
+[114/114] MH-9-SCIT-12-12.1-OSC-114 | Ans: D
+  Q: A guitar string is being set to vibration by plucking it. What type of wave are the vibration of string and sound
+    A: Transverse and Transverse
+    B: Longitudinal and Longitudinal
+    C: Longitudinal and Transverse
+    D: Transverse and longitudinal
+
