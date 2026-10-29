@@ -1,0 +1,871 @@
+=== [1/90] MH-9-SCIT-15-15.1.1-OAR-001 (OAR) ===
+Topic: MH-9-SCIT-15-15.1.1 - Root pressure theory
+Text: Assertion (A): Root pressure plays a significant role in pushing water up to small heights in herbaceous plants.
+Reason (R): Root pressure alone is sufficient to lift water to the tops of very tall trees exceeding 100 meters in height.
+  (A) Both Assertion (A) and Reason (R) are true, and Reason (R) is the correct explanation of Assertion (A).
+  (B) Both Assertion (A) and Reason (R) are true, but Reason (R) is NOT the correct explanation of Assertion (A).
+  (C) Assertion (A) is true, but Reason (R) is false.
+  (D) Assertion (A) is false, but Reason (R) is true.
+Correct Answer: C []
+Current Solution: Assertion is true because root pressure effectively pushes water in small herbaceous plants. Reason is false because root pressure is insufficient to lift water to great heights in tall trees, where transpiration pull is essential.
+
+=== [2/90] MH-9-SCIT-15-15.1.1-OAR-002 (OAR) ===
+Topic: MH-9-SCIT-15-15.1.1 - Root pressure theory
+Text: Assertion (A): Root pressure is maximum when transpiration rate is very low or zero.
+Reason (R): High transpiration rates create a continuous tension (negative pressure) in the xylem that relieves and overrides positive root pressure.
+  (A) Both Assertion (A) and Reason (R) are true, and Reason (R) is the correct explanation of Assertion (A).
+  (B) Both Assertion (A) and Reason (R) are true, but Reason (R) is NOT the correct explanation of Assertion (A).
+  (C) Assertion (A) is true, but Reason (R) is false.
+  (D) Assertion (A) is false, but Reason (R) is true.
+Correct Answer: A []
+Current Solution: Both assertion and reason are true, and high transpiration creates tension that prevents the accumulation of positive hydrostatic pressure in the roots.
+
+=== [3/90] MH-9-SCIT-15-15.1.1-OAR-003 (OAR) ===
+Topic: MH-9-SCIT-15-15.1.1 - Root pressure theory
+Text: Assertion (A): Guttation is frequently mistaken for morning dew by casual observers.
+Reason (R): Dew is atmospheric moisture condensed onto leaf surfaces, whereas guttation water is actively expelled from inside the plant by root pressure.
+  (A) Both Assertion (A) and Reason (R) are true, and Reason (R) is the correct explanation of Assertion (A).
+  (B) Both Assertion (A) and Reason (R) are true, but Reason (R) is NOT the correct explanation of Assertion (A).
+  (C) Assertion (A) is true, but Reason (R) is false.
+  (D) Assertion (A) is false, but Reason (R) is true.
+Correct Answer: A []
+Current Solution: Both assertion and reason are true, and the internal origin of guttation sap distinguishes it from external dew condensation.
+
+=== [4/90] MH-9-SCIT-15-15.1.1-OMC-001 (OMC) ===
+Topic: MH-9-SCIT-15-15.1.1 - Root pressure theory
+Text: Which of the following factors are directly involved in generating root pressure in plants?
+  (A) Intense solar radiation hitting upper canopy leaves
+  (B) Active uptake of mineral ions by root hairs
+  (C) Osmotic influx of water into root xylem vessels
+  (D) Positive hydrostatic pressure pushing xylem sap upward
+Correct Answer: Active uptake of mineral ions by root hairs ['Active uptake of mineral ions by root hairs', 'Osmotic influx of water into root xylem vessels', 'Positive hydrostatic pressure pushing xylem sap upward']
+Current Solution: Root pressure is generated locally in roots via active ion absorption and subsequent osmotic water flow. Solar radiation drives transpiration pull, not root pressure.
+
+=== [5/90] MH-9-SCIT-15-15.1.1-OMC-002 (OMC) ===
+Topic: MH-9-SCIT-15-15.1.1 - Root pressure theory
+Text: Which of the following statements correctly distinguish between root pressure and transpiration pull in plant transport?
+  (A) Root pressure creates a positive push, whereas transpiration pull creates a negative tension (suction).
+  (B) Root pressure is dominant in tall trees, while transpiration pull operates only in tiny herbs.
+  (C) Root pressure requires active cellular energy in roots, whereas transpiration pull relies on solar evaporation energy from leaves.
+  (D) Root pressure causes guttation, while transpiration pull drives rapid daytime water loss through open stomata.
+Correct Answer: Root pressure creates a positive push, whereas transpiration pull creates a negative tension (suction). ['Root pressure creates a positive push, whereas transpiration pull creates a negative tension (suction).', 'Root pressure requires active cellular energy in roots, whereas transpiration pull relies on solar evaporation energy from leaves.', 'Root pressure causes guttation, while transpiration pull drives rapid daytime water loss through open stomata.']
+Current Solution: Root pressure is positive, active, and causes guttation. Transpiration pull is negative tension, solar-driven, and dominant in tall trees.
+
+=== [6/90] MH-9-SCIT-15-15.1.1-OSC-001 (OSC) ===
+Topic: MH-9-SCIT-15-15.1.1 - Root pressure theory
+Text: Which plant tissue is primarily responsible for the upward transport of water and dissolved minerals from the roots to the aerial parts?
+  (A) Cortex
+  (B) Pith
+  (C) Xylem
+  (D) Phloem
+Correct Answer: Xylem ['Xylem']
+Current Solution: Xylem tissue consists of tracheids, vessels, xylem parenchyma, and xylem fibers, which together conduct water and minerals upward from the roots.
+
+=== [7/90] MH-9-SCIT-15-15.1.1-OSC-002 (OSC) ===
+Topic: MH-9-SCIT-15-15.1.1 - Root pressure theory
+Text: What type of hydrostatic pressure is developed in the root xylem due to continuous water influx driven by osmotic gradients?
+  (A) Capillary surface tension pressure
+  (B) Negative suction pressure
+  (C) Atmospheric vacuum pressure
+  (D) Positive root pressure
+Correct Answer: Positive root pressure ['Positive root pressure']
+Current Solution: The osmotic accumulation of water inside the root xylem vessels creates a positive hydrostatic pressure that pushes sap upward.
+
+=== [8/90] MH-9-SCIT-15-15.1.1-OSC-003 (OSC) ===
+Topic: MH-9-SCIT-15-15.1.1 - Root pressure theory
+Text: Which observable biological phenomenon serves as direct visible evidence of the existence of root pressure in plants?
+  (A) Guttation (exudation of water droplets from leaf margins)
+  (B) Secondary thickening of tree trunks
+  (C) Stomatal transpiration during dry noon
+  (D) Photosynthesis in chloroplasts
+Correct Answer: Guttation (exudation of water droplets from leaf margins) ['Guttation (exudation of water droplets from leaf margins)']
+Current Solution: Guttation, the loss of liquid water through specialized pores (hydathodes) at leaf margins, is driven by positive root pressure when transpiration is low.
+
+=== [9/90] MH-9-SCIT-15-15.1.1-OSC-004 (OSC) ===
+Topic: MH-9-SCIT-15-15.1.1 - Root pressure theory
+Text: Under what environmental conditions is root pressure most pronounced and observable in plants?
+  (A) High temperature and very low soil moisture
+  (B) Strong wind and intense blazing sunlight
+  (C) High humidity and low transpiration rates (such as early mornings or nights)
+  (D) Complete darkness combined with severe drought
+Correct Answer: High humidity and low transpiration rates (such as early mornings or nights) ['High humidity and low transpiration rates (such as early mornings or nights)']
+Current Solution: When transpiration is minimal due to high humidity and cool temperatures, water continues to enter roots osmotically, maximizing root pressure effects like guttation.
+
+=== [10/90] MH-9-SCIT-15-15.1.1-OSC-005 (OSC) ===
+Topic: MH-9-SCIT-15-15.1.1 - Root pressure theory
+Text: What happens to the rate of guttation if a potted plant is placed in an atmosphere with extremely high humidity?
+  (A) Water is sucked back into the leaves.
+  (B) Guttation completely stops because roots die.
+  (C) Guttation increases because root pressure pushes out excess water unhindered by evaporation.
+  (D) Stomata open wide to release dry air.
+Correct Answer: Guttation increases because root pressure pushes out excess water unhindered by evaporation. ['Guttation increases because root pressure pushes out excess water unhindered by evaporation.']
+Current Solution: High atmospheric humidity prevents transpiration, causing root pressure to force liquid water out through hydathodes (guttation).
+
+=== [11/90] MH-9-SCIT-15-15.1.1-OSC-006 (OSC) ===
+Topic: MH-9-SCIT-15-15.1.1 - Root pressure theory
+Text: What are the specialized marginal structures on leaves through which water is expelled during guttation?
+  (A) Lenticels
+  (B) Hydathodes
+  (C) Cuticles
+  (D) Stomata
+Correct Answer: Hydathodes ['Hydathodes']
+Current Solution: Hydathodes are specialized pore structures located at the tips or margins of leaves that facilitate the exudation of liquid water driven by root pressure.
+
+=== [12/90] MH-9-SCIT-15-15.1.1-OSC-007 (OSC) ===
+Topic: MH-9-SCIT-15-15.1.1 - Root pressure theory
+Text: Why is root pressure alone considered inadequate to explain water transport in giant redwood or eucalyptus trees?
+  (A) Because giant trees do not possess xylem vessels.
+  (B) Because root pressure pulls water downward instead of upward.
+  (C) Because roots stop absorbing minerals after a plant grows taller than one meter.
+  (D) Because the magnitude of root pressure is too small to push water up heights of tens or hundreds of meters.
+Correct Answer: Because the magnitude of root pressure is too small to push water up heights of tens or hundreds of meters. ['Because the magnitude of root pressure is too small to push water up heights of tens or hundreds of meters.']
+Current Solution: Root pressure can generate a pressure head sufficient for small plants, but gravity and frictional resistance in tall trees require the powerful negative pressure of transpiration pull.
+
+=== [13/90] MH-9-SCIT-15-15.1.1-OSC-008 (OSC) ===
+Topic: MH-9-SCIT-15-15.1.1 - Root pressure theory
+Text: If a plant stem is cut near the base early in the morning, what phenomenon is frequently observed at the cut surface?
+  (A) Leaves turn bright yellow within seconds.
+  (B) Xylem sap oozes or bleeds out due to active root pressure.
+  (C) The stem instantly shrivels and dries up.
+  (D) Air is violently sucked into the stem tissues.
+Correct Answer: Xylem sap oozes or bleeds out due to active root pressure. ['Xylem sap oozes or bleeds out due to active root pressure.']
+Current Solution: Cutting the stem removes the opposing transpiration pull, allowing the positive hydrostatic root pressure to force xylem sap out of the cut stump.
+
+=== [14/90] MH-9-SCIT-15-15.1.1-OSC-009 (OSC) ===
+Topic: MH-9-SCIT-15-15.1.1 - Root pressure theory
+Text: What primary role does root pressure play during early spring in deciduous plants before new leaves emerge?
+  (A) It drives rapid photosynthesis in root cells.
+  (B) It causes leaves to shed prematurely.
+  (C) It helps re-establish water columns in the stem xylem and pushes stored nutrients upward.
+  (D) It produces flowers underground.
+Correct Answer: It helps re-establish water columns in the stem xylem and pushes stored nutrients upward. ['It helps re-establish water columns in the stem xylem and pushes stored nutrients upward.']
+Current Solution: In spring before leaves develop (when transpiration is absent), root pressure helps push sap up to bud break locations.
+
+=== [15/90] MH-9-SCIT-15-15.1.1-OSC-010 (OSC) ===
+Topic: MH-9-SCIT-15-15.1.1 - Root pressure theory
+Text: Which cellular layer in the root acts as a selective barrier regulating ion transport into the vascular cylinder to build root pressure?
+  (A) Periderm
+  (B) Root cap
+  (C) Epidermis
+  (D) Endodermis (with Casparian strip)
+Correct Answer: Endodermis (with Casparian strip) ['Endodermis (with Casparian strip)']
+Current Solution: The endodermal cell walls possess the Casparian strip, which forces water and ions to pass through cell membranes selectively, enabling osmotic pressure build-up.
+
+=== [16/90] MH-9-SCIT-15-15.1.1-OSC-011 (OSC) ===
+Topic: MH-9-SCIT-15-15.1.1 - Root pressure theory
+Text: How does metabolic inhibitors (such as poisons that block cellular respiration / ATP production) affect root pressure?
+  (A) Root pressure drops or ceases because active ion transport stops.
+  (B) Root pressure converts into strong suction.
+  (C) Root pressure increases significantly.
+  (D) Root pressure remains completely unaffected.
+Correct Answer: Root pressure drops or ceases because active ion transport stops. ['Root pressure drops or ceases because active ion transport stops.']
+Current Solution: Since root pressure depends on active metabolic transport of ions using ATP, inhibiting respiration stops ion pumping and eliminates root pressure.
+
+=== [17/90] MH-9-SCIT-15-15.1.1-OSC-012 (OSC) ===
+Topic: MH-9-SCIT-15-15.1.1 - Root pressure theory
+Text: What term is used to describe the exudation of drops of liquid water from the edges of leaves caused by root pressure?
+  (A) Guttation
+  (B) Evaporation
+  (C) Transpiration
+  (D) Respiration
+Correct Answer: Guttation ['Guttation']
+Current Solution: Guttation is the secretion of droplets of water from the pores of plants, typically driven by root pressure.
+
+=== [18/90] MH-9-SCIT-15-15.1.1-OSC-013 (OSC) ===
+Topic: MH-9-SCIT-15-15.1.1 - Root pressure theory
+Text: Which of the following best defines the direction of force exerted by root pressure within the plant body?
+  (A) Randomly in all directions without orientation
+  (B) Laterally from bark to pith
+  (C) Upward from roots toward the stem and leaves
+  (D) Downward from leaves to roots
+Correct Answer: Upward from roots toward the stem and leaves ['Upward from roots toward the stem and leaves']
+Current Solution: Root pressure creates a positive hydrostatic pressure gradient that pushes water and dissolved solutes upward through xylem vessels.
+
+=== [19/90] MH-9-SCIT-15-15.1.1-OSC-014 (OSC) ===
+Topic: MH-9-SCIT-15-15.1.1 - Root pressure theory
+Text: Why do plants exhibit guttation mostly during nighttime or early morning hours?
+  (A) Because sunlight destroys water droplets instantly.
+  (B) Because roots only absorb water in total darkness.
+  (C) Because stomata close to absorb moonlight.
+  (D) Because humidity is high and transpiration is minimal, allowing root pressure to build up unhindered.
+Correct Answer: Because humidity is high and transpiration is minimal, allowing root pressure to build up unhindered. ['Because humidity is high and transpiration is minimal, allowing root pressure to build up unhindered.']
+Current Solution: Low transpiration rates at night allow positive root pressure to accumulate and force liquid water out through hydathodes.
+
+=== [20/90] MH-9-SCIT-15-15.1.1-OSC-015 (OSC) ===
+Topic: MH-9-SCIT-15-15.1.1 - Root pressure theory
+Text: What physiological limitation prevents root pressure from being the primary mechanism of water ascent in gymnosperms and tall angiosperms?
+  (A) Absence of xylem tissue in tall trees
+  (B) Lack of root systems in tall trees
+  (C) Insufficient pressure magnitude to overcome gravity and fluid friction over long vertical distances
+  (D) Permanent closure of all hydathodes
+Correct Answer: Insufficient pressure magnitude to overcome gravity and fluid friction over long vertical distances ['Insufficient pressure magnitude to overcome gravity and fluid friction over long vertical distances']
+Current Solution: Root pressure maxes out at a few meters of water head, making it incapable of lifting water against gravity to the crowns of tall trees.
+
+=== [21/90] MH-9-SCIT-15-15.1.1-OSC-016 (OSC) ===
+Topic: MH-9-SCIT-15-15.1.1 - Root pressure theory
+Text: Which plant organ is exclusively responsible for generating root pressure?
+  (A) Roots
+  (B) Leaves
+  (C) Branches
+  (D) Flowers
+Correct Answer: Roots ['Roots']
+Current Solution: Root pressure is generated in the root system as a result of osmotic water uptake driven by active mineral accumulation.
+
+=== [22/90] MH-9-SCIT-15-15.1.1-OSC-017 (OSC) ===
+Topic: MH-9-SCIT-15-15.1.1 - Root pressure theory
+Text: An investigator sets up an experiment with a well-watered potted tomato plant under a bell jar in a saturated atmosphere. Over several hours, water droplets accumulate along the leaf tips. If a metabolic poison that halts ATP synthesis is injected into the root zone, what is the expected long-term effect on droplet formation?
+  (A) Droplets will turn into vapor instantly.
+  (B) Droplet formation will accelerate rapidly.
+  (C) Droplet formation will remain completely unaffected.
+  (D) Droplet formation will cease because active ion pumping and root pressure generation are halted.
+Correct Answer: Droplet formation will cease because active ion pumping and root pressure generation are halted. ['Droplet formation will cease because active ion pumping and root pressure generation are halted.']
+Current Solution: Inhibiting ATP production stops active mineral transport into root xylem, eliminating the osmotic gradient and root pressure, thereby stopping guttation.
+
+=== [23/90] MH-9-SCIT-15-15.1.1-OSC-018 (OSC) ===
+Topic: MH-9-SCIT-15-15.1.1 - Root pressure theory
+Text: How does high soil salinity impact root pressure generation in most agricultural crop plants?
+  (A) High salinity increases root pressure by drawing extra water into roots.
+  (B) High salinity creates an external osmotic pressure that hinders or reverses water entry, reducing or eliminating root pressure.
+  (C) High salinity turns xylem vessels into phloem.
+  (D) High salinity has zero effect on plant water relations.
+Correct Answer: High salinity creates an external osmotic pressure that hinders or reverses water entry, reducing or eliminating root pressure. ['High salinity creates an external osmotic pressure that hinders or reverses water entry, reducing or eliminating root pressure.']
+Current Solution: Excess salt in soil lowers soil water potential below that of root cells, preventing water influx and shutting down root pressure generation (physiological drought).
+
+=== [24/90] MH-9-SCIT-15-15.1.1-OSC-019 (OSC) ===
+Topic: MH-9-SCIT-15-15.1.1 - Root pressure theory
+Text: A student hypothesizes that root pressure is solely a physical capillary phenomenon independent of living root cells. Which classical experimental observation refutes this hypothesis?
+  (A) Stomata open in the presence of carbon dioxide.
+  (B) Applying metabolic poisons or low temperatures to roots immediately halts root pressure exudation.
+  (C) Water rises in capillary glass tubes when placed in water.
+  (D) Leaves turn green when exposed to sunlight.
+Correct Answer: Applying metabolic poisons or low temperatures to roots immediately halts root pressure exudation. ['Applying metabolic poisons or low temperatures to roots immediately halts root pressure exudation.']
+Current Solution: Physical capillarity does not require living cells or metabolic energy; the fact that metabolic inhibitors and low temperatures abolish root pressure proves it is a biological, active cellular process.
+
+=== [25/90] MH-9-SCIT-15-15.1.1-OTF-001 (OTF) ===
+Topic: MH-9-SCIT-15-15.1.1 - Root pressure theory
+Text: Root pressure is generated as a result of active absorption of mineral ions by root cells followed by osmotic entry of water.
+  (A) False
+  (B) True
+Correct Answer: True ['True']
+Current Solution: Active uptake of ions creates a concentration gradient, causing water to flow osmotically into the root xylem and generate a positive hydrostatic pressure known as root pressure.
+
+=== [26/90] MH-9-SCIT-15-15.1.1-OTF-002 (OTF) ===
+Topic: MH-9-SCIT-15-15.1.1 - Root pressure theory
+Text: Root pressure is an active physiological process that requires metabolic energy from living root cells.
+  (A) False
+  (B) True
+Correct Answer: True ['True']
+Current Solution: The active uptake of mineral ions into root cells against concentration gradients requires cellular energy (ATP), making root pressure an active process.
+
+=== [27/90] MH-9-SCIT-15-15.1.1-OTF-003 (OTF) ===
+Topic: MH-9-SCIT-15-15.1.1 - Root pressure theory
+Text: The liquid exuded during guttation is pure distilled water containing no dissolved solutes.
+  (A) False
+  (B) True
+Correct Answer: False ['False']
+Current Solution: Guttation fluid is xylem sap, which contains various dissolved organic and inorganic solutes (minerals, salts, sugars).
+
+=== [28/90] MH-9-SCIT-15-15.1.1-OTF-004 (OTF) ===
+Topic: MH-9-SCIT-15-15.1.1 - Root pressure theory
+Text: Root pressure is a passive physical process identical to water flowing down a sloped pipe.
+  (A) False
+  (B) True
+Correct Answer: False ['False']
+Current Solution: Root pressure relies on active, living cell transport of ions and cellular respiration, making it a biological process rather than purely passive physical flow.
+
+=== [29/90] MH-9-SCIT-15-15.1.1-OTF-005 (OTF) ===
+Topic: MH-9-SCIT-15-15.1.1 - Root pressure theory
+Text: Hydathodes are structurally identical to normal stomata and open and close in response to light.
+  (A) True
+  (B) False
+Correct Answer: False ['False']
+Current Solution: Unlike stomata, hydathodes are typically permanently open pores located at leaf margins that are not regulated by guard cells for gas exchange.
+
+=== [30/90] MH-9-SCIT-15-15.1.1-OTF-006 (OTF) ===
+Topic: MH-9-SCIT-15-15.1.1 - Root pressure theory
+Text: Root pressure operates independently of soil water availability and mineral concentration.
+  (A) False
+  (B) True
+Correct Answer: False ['False']
+Current Solution: Root pressure depends heavily on soil moisture and ion concentration gradients between soil and root cells.
+
+=== [31/90] MH-9-SCIT-15-15.1.2-OAR-001 (OAR) ===
+Topic: MH-9-SCIT-15-15.1.2 - Transpiration pull mechanism through stomata
+Text: Assertion (A): Transpiration pull helps in the ascent of sap to great heights in tall trees.
+Reason (R): The continuous column of water in xylem vessels remains unbroken due to the cohesive forces between water molecules.
+  (A) Both Assertion (A) and Reason (R) are true, and Reason (R) is the correct explanation of Assertion (A).
+  (B) Both Assertion (A) and Reason (R) are true, but Reason (R) is NOT the correct explanation of Assertion (A).
+  (C) Assertion (A) is true, but Reason (R) is false.
+  (D) Assertion (A) is false, but Reason (R) is true.
+Correct Answer: A []
+Current Solution: Both assertion and reason are true, and the cohesion between water molecules allows the transpiration pull to lift water columns without breaking.
+
+=== [32/90] MH-9-SCIT-15-15.1.2-OAR-002 (OAR) ===
+Topic: MH-9-SCIT-15-15.1.2 - Transpiration pull mechanism through stomata
+Text: Assertion (A): Transpiration is often described as a necessary evil for plants.
+Reason (R): While it causes substantial water loss, it is essential for creating the transpiration pull required to transport water and minerals upward.
+  (A) Both Assertion (A) and Reason (R) are true, and Reason (R) is the correct explanation of Assertion (A).
+  (B) Both Assertion (A) and Reason (R) are true, but Reason (R) is NOT the correct explanation of Assertion (A).
+  (C) Assertion (A) is true, but Reason (R) is false.
+  (D) Assertion (A) is false, but Reason (R) is true.
+Correct Answer: A []
+Current Solution: Both assertion and reason are true, capturing the dual nature of transpiration as both a water-loss hazard and an essential transport mechanism.
+
+=== [33/90] MH-9-SCIT-15-15.1.2-OAR-003 (OAR) ===
+Topic: MH-9-SCIT-15-15.1.2 - Transpiration pull mechanism through stomata
+Text: Assertion (A): Stomata open during the day in most plants.
+Reason (R): Sunlight triggers osmotic changes in guard cells that promote water entry and turgidity.
+  (A) Both Assertion (A) and Reason (R) are true, and Reason (R) is the correct explanation of Assertion (A).
+  (B) Both Assertion (A) and Reason (R) are true, but Reason (R) is NOT the correct explanation of Assertion (A).
+  (C) Assertion (A) is true, but Reason (R) is false.
+  (D) Assertion (A) is false, but Reason (R) is true.
+Correct Answer: A []
+Current Solution: Both assertion and reason are true, and light-induced osmotic adjustments drive guard cell turgidity and stomatal opening.
+
+=== [34/90] MH-9-SCIT-15-15.1.2-OMC-001 (OMC) ===
+Topic: MH-9-SCIT-15-15.1.2 - Transpiration pull mechanism through stomata
+Text: Which of the following factors accelerate the rate of transpiration in a typical flowering plant?
+  (A) Bright sunlight causing stomatal opening
+  (B) Moderate to high wind speed
+  (C) High ambient temperature
+  (D) High relative humidity in the air
+Correct Answer: High ambient temperature ['High ambient temperature', 'Bright sunlight causing stomatal opening', 'Moderate to high wind speed']
+Current Solution: High temperature, sunlight, and wind speed increase transpiration, whereas high relative humidity decreases it.
+
+=== [35/90] MH-9-SCIT-15-15.1.2-OSC-001 (OSC) ===
+Topic: MH-9-SCIT-15-15.1.2 - Transpiration pull mechanism through stomata
+Text: What is the primary process by which plants lose water in the form of vapor through their aerial parts?
+  (A) Transpiration
+  (B) Photosynthesis
+  (C) Guttation
+  (D) Respiration
+Correct Answer: Transpiration ['Transpiration']
+Current Solution: Transpiration is the biological process of water loss in the form of water vapor primarily through microscopic pores called stomata on leaves.
+
+=== [36/90] MH-9-SCIT-15-15.1.2-OSC-002 (OSC) ===
+Topic: MH-9-SCIT-15-15.1.2 - Transpiration pull mechanism through stomata
+Text: Which specialized cells flank each stomatal pore and control its opening and closing by changing their turgor pressure?
+  (A) Guard cells
+  (B) Root hair cells
+  (C) Cortex cells
+  (D) Xylem vessels
+Correct Answer: Guard cells ['Guard cells']
+Current Solution: Guard cells are kidney-shaped (in dicots) or dumbbell-shaped (in monocots) cells that swell or shrink to open and close the stomatal pore.
+
+=== [37/90] MH-9-SCIT-15-15.1.2-OSC-003 (OSC) ===
+Topic: MH-9-SCIT-15-15.1.2 - Transpiration pull mechanism through stomata
+Text: What is the nature of the suction force or tension created at the leaf surface due to the continuous evaporation of water during transpiration?
+  (A) Centrifugal outward force
+  (B) Gravitational magnetic pull
+  (C) Positive hydrostatic pressure pushing water down
+  (D) Transpiration pull (negative suction pressure)
+Correct Answer: Transpiration pull (negative suction pressure) ['Transpiration pull (negative suction pressure)']
+Current Solution: Evaporation of water from leaf mesophyll cells creates a negative pressure gradient known as transpiration pull, which draws water upward through the xylem.
+
+=== [38/90] MH-9-SCIT-15-15.1.2-OSC-004 (OSC) ===
+Topic: MH-9-SCIT-15-15.1.2 - Transpiration pull mechanism through stomata
+Text: How does high atmospheric humidity affect the rate of transpiration in plants?
+  (A) It causes stomata to open wider than normal.
+  (B) It decreases the rate of transpiration because the moisture gradient between leaf and air is reduced.
+  (C) It increases the rate of transpiration significantly.
+  (D) It completely stops all plant respiration.
+Correct Answer: It decreases the rate of transpiration because the moisture gradient between leaf and air is reduced. ['It decreases the rate of transpiration because the moisture gradient between leaf and air is reduced.']
+Current Solution: High humidity means the surrounding air is already laden with moisture, slowing down the evaporation rate from leaf surfaces.
+
+=== [39/90] MH-9-SCIT-15-15.1.2-OSC-005 (OSC) ===
+Topic: MH-9-SCIT-15-15.1.2 - Transpiration pull mechanism through stomata
+Text: Which environmental factor increases the rate of transpiration by sweeping away water vapor accumulating around the leaf surface?
+  (A) Saturated soil flooding
+  (B) Wind speed / air movement
+  (C) Absolute darkness
+  (D) Freezing sub-zero temperatures
+Correct Answer: Wind speed / air movement ['Wind speed / air movement']
+Current Solution: Moving air carries away humid air from the leaf boundary layer, maintaining a steep concentration gradient that accelerates transpiration.
+
+=== [40/90] MH-9-SCIT-15-15.1.2-OSC-006 (OSC) ===
+Topic: MH-9-SCIT-15-15.1.2 - Transpiration pull mechanism through stomata
+Text: What physical property of water molecules allows them to stick to the inner cellulose walls of xylem vessels (adhesion)?
+  (A) Hydrophobic repulsion
+  (B) Magnetic repulsion
+  (C) Inert gaseous expansion
+  (D) Attractive forces between unlike molecules (water and xylem wall)
+Correct Answer: Attractive forces between unlike molecules (water and xylem wall) ['Attractive forces between unlike molecules (water and xylem wall)']
+Current Solution: Adhesion refers to the intermolecular attraction between water molecules and solid surfaces like the hydrophilic walls of xylem conduits.
+
+=== [41/90] MH-9-SCIT-15-15.1.2-OSC-007 (OSC) ===
+Topic: MH-9-SCIT-15-15.1.2 - Transpiration pull mechanism through stomata
+Text: What is the primary driving energy source that powers the transpiration pull mechanism in plants?
+  (A) Kinetic energy from soil friction
+  (B) Chemical energy from root cellular respiration
+  (C) Geothermal earth heat
+  (D) Thermal energy from solar radiation (sunlight)
+Correct Answer: Thermal energy from solar radiation (sunlight) ['Thermal energy from solar radiation (sunlight)']
+Current Solution: Solar radiation provides the heat energy required to evaporate water from leaf mesophyll cells, driving the entire transpiration stream passively.
+
+=== [42/90] MH-9-SCIT-15-15.1.2-OSC-008 (OSC) ===
+Topic: MH-9-SCIT-15-15.1.2 - Transpiration pull mechanism through stomata
+Text: How do guard cells change their shape to open the stomatal pore during daylight?
+  (A) They turn into hard wooden fibers.
+  (B) They dissolve into liquid sap.
+  (C) They take up water, become turgid, and bow outward.
+  (D) They shrink and lose all water content.
+Correct Answer: They take up water, become turgid, and bow outward. ['They take up water, become turgid, and bow outward.']
+Current Solution: Accumulation of solutes in guard cells causes osmotic water entry, making them turgid and opening the pore between them.
+
+=== [43/90] MH-9-SCIT-15-15.1.2-OSC-009 (OSC) ===
+Topic: MH-9-SCIT-15-15.1.2 - Transpiration pull mechanism through stomata
+Text: Which plant tissue forms the continuous unbroken pipeline through which the transpiration pull draws water upward?
+  (A) Cork periderm
+  (B) Cambium meristem
+  (C) Phloem sieve tubes
+  (D) Xylem vessels and tracheids
+Correct Answer: Xylem vessels and tracheids ['Xylem vessels and tracheids']
+Current Solution: Xylem tissue provides hollow, dead, lignified conduits specialized for long-distance upward water transport under tension.
+
+=== [44/90] MH-9-SCIT-15-15.1.2-OSC-010 (OSC) ===
+Topic: MH-9-SCIT-15-15.1.2 - Transpiration pull mechanism through stomata
+Text: What happens to the turgor pressure of guard cells when they lose water, causing stomata to close?
+  (A) Turgor pressure remains completely unchanged.
+  (B) Turgor pressure turns negative like a vacuum.
+  (C) Turgor pressure drops (flaccid state), causing inner walls to straighten and close the pore.
+  (D) Turgor pressure increases to maximum.
+Correct Answer: Turgor pressure drops (flaccid state), causing inner walls to straighten and close the pore. ['Turgor pressure drops (flaccid state), causing inner walls to straighten and close the pore.']
+Current Solution: Water loss reduces guard cell turgor, making them flaccid and closing the stomatal aperture.
+
+=== [45/90] MH-9-SCIT-15-15.1.2-OSC-011 (OSC) ===
+Topic: MH-9-SCIT-15-15.1.2 - Transpiration pull mechanism through stomata
+Text: Which property of water molecules refers to the strong intermolecular attraction between similar water molecules that maintains water column integrity?
+  (A) Cohesion
+  (B) Surface tension scattering
+  (C) Capillary viscosity
+  (D) Adhesion
+Correct Answer: Cohesion ['Cohesion']
+Current Solution: Cohesion is the mutual attraction between water molecules due to hydrogen bonding, preventing the water column from snapping under tension.
+
+=== [46/90] MH-9-SCIT-15-15.1.2-OSC-012 (OSC) ===
+Topic: MH-9-SCIT-15-15.1.2 - Transpiration pull mechanism through stomata
+Text: Through which specialized structures does the majority of transpirational water loss occur in herbaceous dicot plants?
+  (A) Root hair cell walls
+  (B) Cuticle surface cracks
+  (C) Lenticels on woody bark
+  (D) Stomata on leaf epidermis
+Correct Answer: Stomata on leaf epidermis ['Stomata on leaf epidermis']
+Current Solution: Stomatal transpiration accounts for the vast majority of water vapor loss in most plants.
+
+=== [47/90] MH-9-SCIT-15-15.1.2-OSC-013 (OSC) ===
+Topic: MH-9-SCIT-15-15.1.2 - Transpiration pull mechanism through stomata
+Text: What effect does a sudden drop in ambient temperature have on the transpiration rate, assuming other factors remain constant?
+  (A) Transpiration turns into active water absorption.
+  (B) Transpiration rate decreases due to reduced thermal evaporation energy.
+  (C) Transpiration rate increases drastically.
+  (D) Transpiration rate remains completely infinite.
+Correct Answer: Transpiration rate decreases due to reduced thermal evaporation energy. ['Transpiration rate decreases due to reduced thermal evaporation energy.']
+Current Solution: Lower temperatures reduce the kinetic energy and vaporization rate of water molecules, lowering transpiration.
+
+=== [48/90] MH-9-SCIT-15-15.1.2-OSC-014 (OSC) ===
+Topic: MH-9-SCIT-15-15.1.2 - Transpiration pull mechanism through stomata
+Text: What happens to a plant if transpiration exceeds water absorption from the soil for a prolonged period?
+  (A) The plant undergoes rapid growth spurts.
+  (B) The plant stops all metabolic processes permanently.
+  (C) The plant wilts due to loss of cell turgor pressure.
+  (D) The plant converts excess water into solid crystals.
+Correct Answer: The plant wilts due to loss of cell turgor pressure. ['The plant wilts due to loss of cell turgor pressure.']
+Current Solution: Excessive water loss without adequate replacement causes cells to lose turgor, resulting in wilting.
+
+=== [49/90] MH-9-SCIT-15-15.1.2-OSC-015 (OSC) ===
+Topic: MH-9-SCIT-15-15.1.2 - Transpiration pull mechanism through stomata
+Text: Which structural adaptation in xerophytic plants helps minimize water loss through transpiration?
+  (A) Continuous production of excess liquid sap
+  (B) Absence of any vascular tissue
+  (C) Thin, delicate cuticles and wide open pores
+  (D) Thick waxy cuticles and sunken stomata
+Correct Answer: Thick waxy cuticles and sunken stomata ['Thick waxy cuticles and sunken stomata']
+Current Solution: Xerophytes feature thick cuticles and stomata recessed in pits (sunken stomata) to trap humid air and reduce transpiration.
+
+=== [50/90] MH-9-SCIT-15-15.1.2-OSC-016 (OSC) ===
+Topic: MH-9-SCIT-15-15.1.2 - Transpiration pull mechanism through stomata
+Text: How does an increase in wind velocity affect the boundary layer of water vapor surrounding a transpiring leaf?
+  (A) It thickens the layer, stopping transpiration.
+  (B) It converts the water vapor into liquid rain.
+  (C) It seals all stomatal pores shut.
+  (D) It strips away and thins out the humid boundary layer, accelerating evaporation.
+Correct Answer: It strips away and thins out the humid boundary layer, accelerating evaporation. ['It strips away and thins out the humid boundary layer, accelerating evaporation.']
+Current Solution: Wind disrupts and thins the stagnant layer of humid air resting on the leaf surface, steepening the vapor pressure gradient.
+
+=== [51/90] MH-9-SCIT-15-15.1.2-OSC-017 (OSC) ===
+Topic: MH-9-SCIT-15-15.1.2 - Transpiration pull mechanism through stomata
+Text: Which cellular components directly surround and regulate the aperture of a stomatal pore?
+  (A) Vessel elements
+  (B) Sieve tube members
+  (C) Guard cells
+  (D) Companion cells
+Correct Answer: Guard cells ['Guard cells']
+Current Solution: Guard cells are the specialized epidermal cells that border and govern the opening and closing of stomata.
+
+=== [52/90] MH-9-SCIT-15-15.1.2-OSC-018 (OSC) ===
+Topic: MH-9-SCIT-15-15.1.2 - Transpiration pull mechanism through stomata
+Text: An experimental setup involves measuring water uptake of a leafy shoot using a potometer under different environmental conditions. If the apparatus is moved from a quiet indoor room into a bright, breezy balcony, what change in bubble movement within the potometer capillary tube is expected?
+  (A) The air bubble will move backward away from the shoot.
+  (B) The air bubble will stop moving entirely.
+  (C) The air bubble will move faster toward the shoot due to increased transpiration pull.
+  (D) The air bubble will dissolve into the glass.
+Correct Answer: The air bubble will move faster toward the shoot due to increased transpiration pull. ['The air bubble will move faster toward the shoot due to increased transpiration pull.']
+Current Solution: Sunlight and wind increase the rate of transpiration, causing the shoot to absorb water faster, which pulls the air bubble through the capillary more rapidly.
+
+=== [53/90] MH-9-SCIT-15-15.1.2-OSC-019 (OSC) ===
+Topic: MH-9-SCIT-15-15.1.2 - Transpiration pull mechanism through stomata
+Text: A researcher applies a chemical inhibitor that permanently locks guard cells in a rigid, flaccid state, preventing them from becoming turgid. What will be the long-term physiological consequence for the plant?
+  (A) Roots will stop absorbing minerals entirely while stems turn green.
+  (B) Stomata will remain permanently closed, severely restricting carbon dioxide intake for photosynthesis and halting transpiration.
+  (C) The plant will grow at twice its normal speed.
+  (D) Stomata will remain wide open, causing the plant to undergo rapid hyper-photosynthesis.
+Correct Answer: Stomata will remain permanently closed, severely restricting carbon dioxide intake for photosynthesis and halting transpiration. ['Stomata will remain permanently closed, severely restricting carbon dioxide intake for photosynthesis and halting transpiration.']
+Current Solution: Flaccid guard cells keep stomata closed. While this prevents water loss, it starves the plant of carbon dioxide \(\ce{CO2} \), crippling photosynthesis.
+
+=== [54/90] MH-9-SCIT-15-15.1.2-OTF-001 (OTF) ===
+Topic: MH-9-SCIT-15-15.1.2 - Transpiration pull mechanism through stomata
+Text: Stomata are microscopic pores found mainly on the epidermis of plant leaves that regulate gas exchange and water loss.
+  (A) True
+  (B) False
+Correct Answer: True ['True']
+Current Solution: Stomata are specialized epidermal pores bounded by guard cells that control transpiration and gaseous exchange.
+
+=== [55/90] MH-9-SCIT-15-15.1.2-OTF-002 (OTF) ===
+Topic: MH-9-SCIT-15-15.1.2 - Transpiration pull mechanism through stomata
+Text: Stomata generally remain closed during the night in most plants to conserve water.
+  (A) True
+  (B) False
+Correct Answer: True ['True']
+Current Solution: In most plants, stomata open in daylight to facilitate photosynthesis and gas exchange and close at night to minimize unnecessary water loss.
+
+=== [56/90] MH-9-SCIT-15-15.1.2-OTF-003 (OTF) ===
+Topic: MH-9-SCIT-15-15.1.2 - Transpiration pull mechanism through stomata
+Text: Transpiration serves as a cooling mechanism for plants exposed to intense sunlight.
+  (A) True
+  (B) False
+Correct Answer: True ['True']
+Current Solution: The evaporation of water from leaf surfaces absorbs latent heat, effectively cooling plant tissues on hot days.
+
+=== [57/90] MH-9-SCIT-15-15.1.2-OTF-004 (OTF) ===
+Topic: MH-9-SCIT-15-15.1.2 - Transpiration pull mechanism through stomata
+Text: Transpiration helps in the absorption and upward distribution of dissolved mineral salts from roots to leaves.
+  (A) True
+  (B) False
+Correct Answer: True ['True']
+Current Solution: The upward suction of the transpiration stream carries essential mineral ions dissolved in water all the way to the canopy.
+
+=== [58/90] MH-9-SCIT-15-15.1.2-OTF-005 (OTF) ===
+Topic: MH-9-SCIT-15-15.1.2 - Transpiration pull mechanism through stomata
+Text: Transpiration pull operates via a negative pressure (tension) mechanism rather than a positive push.
+  (A) True
+  (B) False
+Correct Answer: True ['True']
+Current Solution: Unlike root pressure which pushes water, transpiration pull exerts a pulling tension from the top of the plant.
+
+=== [59/90] MH-9-SCIT-15-15.1.2-OTF-006 (OTF) ===
+Topic: MH-9-SCIT-15-15.1.2 - Transpiration pull mechanism through stomata
+Text: Cohesion and adhesion forces together form the basis of the cohesion-tension theory of water transport in plants.
+  (A) True
+  (B) False
+Correct Answer: True ['True']
+Current Solution: The cohesion-tension theory explains that water is pulled up plants by transpiration tension, sustained by cohesion between water molecules and adhesion to vessel walls.
+
+=== [60/90] MH-9-SCIT-15-15.1.2-OTF-007 (OTF) ===
+Topic: MH-9-SCIT-15-15.1.2 - Transpiration pull mechanism through stomata
+Text: Transpiration occurs only through stomata and never through any other part of the plant body.
+  (A) False
+  (B) True
+Correct Answer: False ['False']
+Current Solution: While stomata account for most water loss, minor transpiration also occurs through the cuticle (cuticular transpiration) and lenticels (lenticular transpiration).
+
+=== [61/90] MH-9-SCIT-15-15.1.3-OAR-001 (OAR) ===
+Topic: MH-9-SCIT-15-15.1.3 - Phloem transport using ATP energy
+Text: Assertion (A): Phloem transport of food requires cellular energy derived from ATP.
+Reason (R): Sugars are actively transported into phloem sieve tubes against a concentration gradient using energy.
+  (A) Both Assertion (A) and Reason (R) are true, and Reason (R) is the correct explanation of Assertion (A).
+  (B) Both Assertion (A) and Reason (R) are true, but Reason (R) is NOT the correct explanation of Assertion (A).
+  (C) Assertion (A) is true, but Reason (R) is false.
+  (D) Assertion (A) is false, but Reason (R) is true.
+Correct Answer: A []
+Current Solution: Both assertion and reason are true, and active transport against concentration gradients explains the necessity of ATP in phloem loading.
+
+=== [62/90] MH-9-SCIT-15-15.1.3-OAR-002 (OAR) ===
+Topic: MH-9-SCIT-15-15.1.3 - Phloem transport using ATP energy
+Text: Assertion (A): Phloem transport is bi-directional while xylem transport is strictly unidirectional upward.
+Reason (R): Food synthesized in leaves can be sent upward to growing buds or downward to roots, whereas water absorbed by roots only moves upward.
+  (A) Both Assertion (A) and Reason (R) are true, and Reason (R) is the correct explanation of Assertion (A).
+  (B) Both Assertion (A) and Reason (R) are true, but Reason (R) is NOT the correct explanation of Assertion (A).
+  (C) Assertion (A) is true, but Reason (R) is false.
+  (D) Assertion (A) is false, but Reason (R) is true.
+Correct Answer: A []
+Current Solution: Both assertion and reason are true, and the directional versatility of phloem stems from source-sink dynamics compared to transpiration-driven xylem flow.
+
+=== [63/90] MH-9-SCIT-15-15.1.3-OAR-003 (OAR) ===
+Topic: MH-9-SCIT-15-15.1.3 - Phloem transport using ATP energy
+Text: Assertion (A): Sugars move through the phloem from regions of high concentration (source) to regions of low concentration (sink) using ATP energy.
+Reason (R): Active transport enables plants to build up high sugar concentrations in sieve tubes against passive diffusion gradients.
+  (A) Both Assertion (A) and Reason (R) are true, and Reason (R) is the correct explanation of Assertion (A).
+  (B) Both Assertion (A) and Reason (R) are true, but Reason (R) is NOT the correct explanation of Assertion (A).
+  (C) Assertion (A) is true, but Reason (R) is false.
+  (D) Assertion (A) is false, but Reason (R) is true.
+Correct Answer: A []
+Current Solution: Both assertion and reason are true, and active transport allows plants to accumulate solutes against concentration gradients.
+
+=== [64/90] MH-9-SCIT-15-15.1.3-OMC-001 (OMC) ===
+Topic: MH-9-SCIT-15-15.1.3 - Phloem transport using ATP energy
+Text: Which of the following features characterize phloem transport in plants?
+  (A) It can occur in both upward and downward directions.
+  (B) It is strictly unidirectional from roots to leaves.
+  (C) It transports sugars and amino acids.
+  (D) It requires metabolic energy in the form of ATP.
+Correct Answer: It requires metabolic energy in the form of ATP. ['It requires metabolic energy in the form of ATP.', 'It transports sugars and amino acids.', 'It can occur in both upward and downward directions.']
+Current Solution: Phloem translocation consumes ATP, carries organic solutes like sugars and amino acids, and operates bi-directionally (not unidirectional).
+
+=== [65/90] MH-9-SCIT-15-15.1.3-OMC-002 (OMC) ===
+Topic: MH-9-SCIT-15-15.1.3 - Phloem transport using ATP energy
+Text: Which of the following statements correctly contrast xylem transport with phloem transport?
+  (A) Xylem transport is bi-directional, whereas phloem transport is strictly unidirectional.
+  (B) Xylem conducts water and minerals, whereas phloem conducts organic food (sugars).
+  (C) Xylem utilizes dead tracheids and vessels, whereas phloem utilizes living sieve tubes and companion cells.
+  (D) Xylem transport is passive relying on transpiration pull, whereas phloem transport is active requiring ATP energy.
+Correct Answer: Xylem conducts water and minerals, whereas phloem conducts organic food (sugars). ['Xylem conducts water and minerals, whereas phloem conducts organic food (sugars).', 'Xylem transport is passive relying on transpiration pull, whereas phloem transport is active requiring ATP energy.', 'Xylem utilizes dead tracheids and vessels, whereas phloem utilizes living sieve tubes and companion cells.']
+Current Solution: Xylem is passive, unidirectional, water/mineral conducting, and utilizes dead cells. Phloem is active (ATP), bi-directional, food conducting, and utilizes living cells.
+
+=== [66/90] MH-9-SCIT-15-15.1.3-OSC-001 (OSC) ===
+Topic: MH-9-SCIT-15-15.1.3 - Phloem transport using ATP energy
+Text: Which plant vascular tissue is responsible for the transport of food and organic nutrients (translocation)?
+  (A) Xylem
+  (B) Phloem
+  (C) Pith
+  (D) Cortex
+Correct Answer: Phloem ['Phloem']
+Current Solution: Phloem tissue is responsible for the transport of food synthesized during photosynthesis from source regions to sink regions in plants.
+
+=== [67/90] MH-9-SCIT-15-15.1.3-OSC-002 (OSC) ===
+Topic: MH-9-SCIT-15-15.1.3 - Phloem transport using ATP energy
+Text: What chemical energy currency is utilized by plant cells to actively load sugars into phloem sieve tubes?
+  (A) ATP (Adenosine triphosphate)
+  (B) ADP
+  (C) AMP
+  (D) NADPH
+Correct Answer: ATP (Adenosine triphosphate) ['ATP (Adenosine triphosphate)']
+Current Solution: Cellular respiration produces ATP, which is directly consumed to drive the active transport of sugars into phloem sieve elements.
+
+=== [68/90] MH-9-SCIT-15-15.1.3-OSC-003 (OSC) ===
+Topic: MH-9-SCIT-15-15.1.3 - Phloem transport using ATP energy
+Text: What term is given to the transport of soluble organic food materials synthesized in leaves to other parts of the plant via phloem?
+  (A) Guttation
+  (B) Transpiration
+  (C) Osmosis
+  (D) Translocation
+Correct Answer: Translocation ['Translocation']
+Current Solution: Translocation is the biological term for the movement of organic solutes (sugars and amino acids) through the phloem.
+
+=== [69/90] MH-9-SCIT-15-15.1.3-OSC-004 (OSC) ===
+Topic: MH-9-SCIT-15-15.1.3 - Phloem transport using ATP energy
+Text: Which specialized cellular elements of the phloem tissue are directly involved in conducting food materials longitudinally?
+  (A) Root hair cells
+  (B) Tracheids and vessels
+  (C) Sieve tubes and companion cells
+  (D) Xylem fibers
+Correct Answer: Sieve tubes and companion cells ['Sieve tubes and companion cells']
+Current Solution: Sieve tube elements form the conducting channels, supported metabolically by adjacent companion cells during phloem transport.
+
+=== [70/90] MH-9-SCIT-15-15.1.3-OSC-005 (OSC) ===
+Topic: MH-9-SCIT-15-15.1.3 - Phloem transport using ATP energy
+Text: What happens to osmotic pressure inside phloem sieve tubes when ATP is used to actively load sucrose into them?
+  (A) Osmotic pressure causes the phloem tube to evaporate instantly.
+  (B) Osmotic pressure drops to zero, repelling water.
+  (C) Osmotic pressure increases, causing water to flow into the phloem from adjacent xylem via osmosis.
+  (D) Osmotic pressure remains completely unaffected.
+Correct Answer: Osmotic pressure increases, causing water to flow into the phloem from adjacent xylem via osmosis. ['Osmotic pressure increases, causing water to flow into the phloem from adjacent xylem via osmosis.']
+Current Solution: Active loading of sugars lowers water potential inside the sieve tube, drawing water osmotically from xylem and creating high hydrostatic pressure.
+
+=== [71/90] MH-9-SCIT-15-15.1.3-OSC-006 (OSC) ===
+Topic: MH-9-SCIT-15-15.1.3 - Phloem transport using ATP energy
+Text: What is designated as a 'source' in the context of phloem translocation?
+  (A) The soil surrounding the root system.
+  (B) Any region where food is synthesized or released from storage, such as mature leaves.
+  (C) The atmosphere surrounding the leaf canopy.
+  (D) Any region where food is consumed or stored, such as roots.
+Correct Answer: Any region where food is synthesized or released from storage, such as mature leaves. ['Any region where food is synthesized or released from storage, such as mature leaves.']
+Current Solution: A source is the site of sugar production (photosynthesis) or mobilization from storage tissues.
+
+=== [72/90] MH-9-SCIT-15-15.1.3-OSC-007 (OSC) ===
+Topic: MH-9-SCIT-15-15.1.3 - Phloem transport using ATP energy
+Text: What is designated as a 'sink' in phloem transport mechanics?
+  (A) A stagnant pool of water beneath the plant.
+  (B) A region where water evaporates into the atmosphere.
+  (C) A leaf producing glucose in bright sunlight.
+  (D) A region that stores or consumes food, such as developing roots, fruits, or tubers.
+Correct Answer: A region that stores or consumes food, such as developing roots, fruits, or tubers. ['A region that stores or consumes food, such as developing roots, fruits, or tubers.']
+Current Solution: A sink is any plant organ that receives sugars for consumption, growth, or storage.
+
+=== [73/90] MH-9-SCIT-15-15.1.3-OSC-008 (OSC) ===
+Topic: MH-9-SCIT-15-15.1.3 - Phloem transport using ATP energy
+Text: How does metabolic poison that inhibits cellular respiration (blocking ATP synthesis) affect phloem translocation?
+  (A) Phloem transport remains entirely unaffected.
+  (B) Phloem transport stops or slows down drastically because ATP is required for active sugar loading.
+  (C) Phloem transport speeds up exponentially.
+  (D) Phloem converts into xylem tissue instantly.
+Correct Answer: Phloem transport stops or slows down drastically because ATP is required for active sugar loading. ['Phloem transport stops or slows down drastically because ATP is required for active sugar loading.']
+Current Solution: Blocking cellular respiration halts ATP production, which directly inhibits the active transport mechanisms required for phloem loading and sap flow.
+
+=== [74/90] MH-9-SCIT-15-15.1.3-OSC-009 (OSC) ===
+Topic: MH-9-SCIT-15-15.1.3 - Phloem transport using ATP energy
+Text: Which of the following organic molecules is predominantly translocated through the phloem tissue in plants?
+  (A) Atmospheric carbon dioxide
+  (B) Inorganic mineral salts
+  (C) Sucrose and amino acids
+  (D) Cellulose fibers
+Correct Answer: Sucrose and amino acids ['Sucrose and amino acids']
+Current Solution: Sucrose is the primary sugar transported in phloem sap, accompanied by amino acids and other organic nitrogenous compounds.
+
+=== [75/90] MH-9-SCIT-15-15.1.3-OSC-010 (OSC) ===
+Topic: MH-9-SCIT-15-15.1.3 - Phloem transport using ATP energy
+Text: What happens at the sink region during phloem translocation regarding sugar and ATP utilization?
+  (A) Sugars are converted into solid stone.
+  (B) Sugars are synthesized from scratch using sunlight.
+  (C) Sugars are actively unloaded from the phloem into sink cells, often utilizing ATP.
+  (D) Water is forced out of the plant through hydathodes.
+Correct Answer: Sugars are actively unloaded from the phloem into sink cells, often utilizing ATP. ['Sugars are actively unloaded from the phloem into sink cells, often utilizing ATP.']
+Current Solution: At the sink, sugars are removed from the phloem sieve elements, lowering osmotic pressure and completing the pressure-flow cycle.
+
+=== [76/90] MH-9-SCIT-15-15.1.3-OSC-011 (OSC) ===
+Topic: MH-9-SCIT-15-15.1.3 - Phloem transport using ATP energy
+Text: According to the pressure-flow hypothesis, what drives the bulk flow of sap through phloem sieve tubes from source to sink?
+  (A) Capillary suction from leaf stomata
+  (B) Gravity pulling sap downward
+  (C) Intense wind shaking the branches
+  (D) A hydrostatic pressure gradient created by active ATP-driven loading at the source and unloading at the sink
+Correct Answer: A hydrostatic pressure gradient created by active ATP-driven loading at the source and unloading at the sink ['A hydrostatic pressure gradient created by active ATP-driven loading at the source and unloading at the sink']
+Current Solution: Pressure-flow theory explains that sap moves in bulk from high hydrostatic pressure at the source to low hydrostatic pressure at the sink, driven by active solute loading.
+
+=== [77/90] MH-9-SCIT-15-15.1.3-OSC-012 (OSC) ===
+Topic: MH-9-SCIT-15-15.1.3 - Phloem transport using ATP energy
+Text: Which plant tissue is specifically adapted for conducting manufactured food materials from leaves to storage organs?
+  (A) Xylem
+  (B) Phloem
+  (C) Collenchyma
+  (D) Sclerenchyma
+Correct Answer: Phloem ['Phloem']
+Current Solution: Phloem is the specialized vascular tissue dedicated to food conduction in vascular plants.
+
+=== [78/90] MH-9-SCIT-15-15.1.3-OSC-013 (OSC) ===
+Topic: MH-9-SCIT-15-15.1.3 - Phloem transport using ATP energy
+Text: What is the primary cellular source of the ATP required for active phloem loading in leaves?
+  (A) Atmospheric lightning strikes
+  (B) Cellular respiration occurring in companion cells and mesophyll cells
+  (C) Direct absorption of sunlight by sieve plates
+  (D) Friction between water molecules in xylem
+Correct Answer: Cellular respiration occurring in companion cells and mesophyll cells ['Cellular respiration occurring in companion cells and mesophyll cells']
+Current Solution: Cellular respiration in companion cells generates the ATP needed to power active transport pumps.
+
+=== [79/90] MH-9-SCIT-15-15.1.3-OSC-014 (OSC) ===
+Topic: MH-9-SCIT-15-15.1.3 - Phloem transport using ATP energy
+Text: Why can phloem transport food both upward and downward while xylem transport is unidirectional?
+  (A) Because phloem utilizes ATP to create directional pressure gradients between any source and sink, whereas xylem relies on unidirectional transpiration pull.
+  (B) Because xylem has no walls.
+  (C) Because phloem tubes are made of rubber.
+  (D) Because gravity reverses direction inside phloem vessels.
+Correct Answer: Because phloem utilizes ATP to create directional pressure gradients between any source and sink, whereas xylem relies on unidirectional transpiration pull. ['Because phloem utilizes ATP to create directional pressure gradients between any source and sink, whereas xylem relies on unidirectional transpiration pull.']
+Current Solution: Bi-directional phloem flow is dictated by the relative locations of sugar sources and sinks, driven by active pressure gradients.
+
+=== [80/90] MH-9-SCIT-15-15.1.3-OSC-015 (OSC) ===
+Topic: MH-9-SCIT-15-15.1.3 - Phloem transport using ATP energy
+Text: Which of the following describes the condition of a plant's storage organ (such as a potato tuber in spring) relative to phloem transport?
+  (A) It acts as a sugar source, mobilizing stored starch and loading sugars into phloem to feed growing shoots.
+  (B) It acts exclusively as a permanent dead end.
+  (C) It acts as a water evaporating organ.
+  (D) It performs photosynthesis in total darkness.
+Correct Answer: It acts as a sugar source, mobilizing stored starch and loading sugars into phloem to feed growing shoots. ['It acts as a sugar source, mobilizing stored starch and loading sugars into phloem to feed growing shoots.']
+Current Solution: During spring, stored reserves in tubers or roots are converted to sugars and exported upward as a source via phloem.
+
+=== [81/90] MH-9-SCIT-15-15.1.3-OSC-016 (OSC) ===
+Topic: MH-9-SCIT-15-15.1.3 - Phloem transport using ATP energy
+Text: What structural feature connects adjacent sieve tube elements end-to-end to facilitate uninterrupted sap flow?
+  (A) Sieve plates with perforations
+  (B) Casparian strips
+  (C) Lignified annular rings
+  (D) Stomatal pores
+Correct Answer: Sieve plates with perforations ['Sieve plates with perforations']
+Current Solution: Sieve plates are perforated end walls between sieve tube elements that allow cytoplasm and sap to flow freely from cell to cell.
+
+=== [82/90] MH-9-SCIT-15-15.1.3-OSC-017 (OSC) ===
+Topic: MH-9-SCIT-15-15.1.3 - Phloem transport using ATP energy
+Text: An experimental girdling (ringings) technique is performed on a woody tree branch, removing a complete ring of bark (including the phloem) down to the cambium while leaving the internal xylem intact. After several weeks, what observation is made at the bark region immediately above the ring?
+  (A) The branch dies instantly from lack of water.
+  (B) Roots grow out of the bark above the ring.
+  (C) The bark above the ring swells up and accumulates sugars because downward food transport is blocked by the phloem removal.
+  (D) Leaves turn completely white and drop off.
+Correct Answer: The bark above the ring swells up and accumulates sugars because downward food transport is blocked by the phloem removal. ['The bark above the ring swells up and accumulates sugars because downward food transport is blocked by the phloem removal.']
+Current Solution: Girdling removes the phloem, stopping downward food transport to roots, causing sugars and swelling to accumulate just above the cut while xylem keeps upper leaves hydrated temporarily.
+
+=== [83/90] MH-9-SCIT-15-15.1.3-OSC-018 (OSC) ===
+Topic: MH-9-SCIT-15-15.1.3 - Phloem transport using ATP energy
+Text: A researcher applies radioactively labeled carbon dioxide (\( \ce{14CO2} \)) to the leaves of a plant. Tracking the radioactive sugars over time reveals that radioactivity moves into both the roots below and the growing shoot tips above. Which physiological mechanism explains this observation?
+  (A) Osmotic evaporation through leaf cuticles.
+  (B) Unidirectional upward movement through xylem vessels driven by root pressure.
+  (C) Active bi-directional translocation through phloem tissue utilizing ATP energy.
+  (D) Passive diffusion through intercellular air spaces.
+Correct Answer: Active bi-directional translocation through phloem tissue utilizing ATP energy. ['Active bi-directional translocation through phloem tissue utilizing ATP energy.']
+Current Solution: Radioactive carbon is incorporated into sugars during photosynthesis and distributed bi-directionally to all sinks via ATP-powered phloem translocation.
+
+=== [84/90] MH-9-SCIT-15-15.1.3-OSC-019 (OSC) ===
+Topic: MH-9-SCIT-15-15.1.3 - Phloem transport using ATP energy
+Text: If a plant is treated with a chemical that selectively damages companion cells without harming sieve tube elements, what will be the immediate physiological consequence?
+  (A) Photosynthesis in leaves will increase threefold.
+  (B) Water transport through xylem will accelerate.
+  (C) Phloem loading and translocation will fail because companion cells supply the necessary ATP and metabolic support.
+  (D) Roots will begin producing flowers.
+Correct Answer: Phloem loading and translocation will fail because companion cells supply the necessary ATP and metabolic support. ['Phloem loading and translocation will fail because companion cells supply the necessary ATP and metabolic support.']
+Current Solution: Companion cells are the metabolic engines for sieve tubes; destroying them halts ATP generation and phloem loading, stopping translocation.
+
+=== [85/90] MH-9-SCIT-15-15.1.3-OTF-001 (OTF) ===
+Topic: MH-9-SCIT-15-15.1.3 - Phloem transport using ATP energy
+Text: The transport of food through phloem tissue is an active process that requires metabolic energy in the form of ATP.
+  (A) True
+  (B) False
+Correct Answer: True ['True']
+Current Solution: Unlike xylem transport which can rely on passive transpiration pull, phloem translocation utilizes ATP energy to load and unload sugars actively.
+
+=== [86/90] MH-9-SCIT-15-15.1.3-OTF-002 (OTF) ===
+Topic: MH-9-SCIT-15-15.1.3 - Phloem transport using ATP energy
+Text: Phloem transport can occur in both upward and downward directions depending on the plant's metabolic needs.
+  (A) True
+  (B) False
+Correct Answer: True ['True']
+Current Solution: Unlike xylem which transports strictly upward, phloem translocation is bi-directional, moving food from sources (leaves/storage) to sinks (roots, fruits, growing shoots).
+
+=== [87/90] MH-9-SCIT-15-15.1.3-OTF-003 (OTF) ===
+Topic: MH-9-SCIT-15-15.1.3 - Phloem transport using ATP energy
+Text: Companion cells associated with sieve tubes play a vital metabolic role in supplying ATP and proteins for phloem loading.
+  (A) True
+  (B) False
+Correct Answer: True ['True']
+Current Solution: Sieve tube elements lack nuclei and rely heavily on adjacent metabolically active companion cells for ATP and regulatory functions.
+
+=== [88/90] MH-9-SCIT-15-15.1.3-OTF-004 (OTF) ===
+Topic: MH-9-SCIT-15-15.1.3 - Phloem transport using ATP energy
+Text: Sieve tube elements possess mature nuclei and dense cytoplasmic organelles that directly drive active transport.
+  (A) False
+  (B) True
+Correct Answer: False ['False']
+Current Solution: Mature sieve tube elements lack nuclei and have sparse cytoplasm to maximize internal channel space for sap flow, depending on companion cells for metabolic regulation.
+
+=== [89/90] MH-9-SCIT-15-15.1.3-OTF-005 (OTF) ===
+Topic: MH-9-SCIT-15-15.1.3 - Phloem transport using ATP energy
+Text: The translocation of food in phloem is an energy-requiring process.
+  (A) True
+  (B) False
+Correct Answer: True ['True']
+Current Solution: Phloem transport requires metabolic energy in the form of ATP for loading and unloading processes.
+
+=== [90/90] MH-9-SCIT-15-15.1.3-OTF-006 (OTF) ===
+Topic: MH-9-SCIT-15-15.1.3 - Phloem transport using ATP energy
+Text: Phloem transport ceases entirely if the plant is deprived of oxygen, because ATP production via cellular respiration stops.
+  (A) False
+  (B) True
+Correct Answer: True ['True']
+Current Solution: Without oxygen, aerobic respiration ceases, ATP levels drop, active loading stops, and phloem translocation is blocked.
+
