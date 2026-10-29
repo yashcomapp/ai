@@ -1,0 +1,1155 @@
+MH-9-SCIT-19-19.1-OSC-001 | ca=A | sol_len=0
+  Q: The SI unit of heat is
+    (A) Joule
+    (B) Calories
+    (C) Kilocalories
+    (D) Kelvin
+
+MH-9-SCIT-19-19.1-OSC-002 | ca=B | sol_len=0
+  Q: ACs are placed at higher level in room
+    (A) Based on principle of conduction of heat
+    (B) Based on principle of convection of heat
+    (C) Based on principle of radiation
+    (D) For saving electricity
+
+MH-9-SCIT-19-19.1-OSC-003 | ca=B | sol_len=0
+  Q: Select the incorrect statement from the following:
+    (A) Heat transfers easily through conductors.
+    (B) The particles in a conductor are very far apart.
+    (C) Heat transfer is very slow in insulators.
+    (D) In good conductors, the particles are very close together.
+
+MH-9-SCIT-19-19.1-OSC-004 | ca=A | sol_len=0
+  Q: Transfer of heat to neighboring molecule without leaving its place is called
+    (A) Conduction
+    (B) Convection
+    (C) Conductor
+    (D) Insulator
+
+MH-9-SCIT-19-19.1-OSC-005 | ca=D | sol_len=0
+  Q: Earth's surface remains cooler because of which of the following phenomena ?
+    (A) Absorption
+    (B) Condensation
+    (C) Sublimation
+    (D) Evaporation
+
+MH-9-SCIT-19-19.1-OSC-006 | ca=C | sol_len=0
+  Q: Which of the following expands most on heating?
+    (A) Solid
+    (B) Liquid
+    (C) Gas
+    (D) All of them
+
+MH-9-SCIT-19-19.1-OSC-007 | ca=A | sol_len=0
+  Q: Gaps are left between railway tracks because
+    (A) Gaps give space to the tracks to expand in summer
+    (B) Gaps hold tracks firmly
+    (C) To produce gentle sound when train moves on tracks
+    (D) All of above
+
+MH-9-SCIT-19-19.1-OSC-008 | ca=D | sol_len=0
+  Q: The measure of degree of hotness or coldness of body is called
+    (A) Heat energy
+    (B) Specific heat
+    (C) Kelvin
+    (D) Temperature
+
+MH-9-SCIT-19-19.1-OSC-009 | ca=D | sol_len=0
+  Q: Temperature at which ice changes to water is known as its
+    (A) freezing point
+    (B) cooling point
+    (C) boiling point
+    (D) melting point
+
+MH-9-SCIT-19-19.1-OSC-010 | ca=C | sol_len=100
+  Q: When heat is added to boiling water, the water temperature
+    (A) Increases.
+    (B) Decreases.
+    (C) Stays the same.
+    (D) Can not say
+
+MH-9-SCIT-19-19.1-OSC-011 | ca=B | sol_len=99
+  Q: Which is the correct option for explaining 'melting of Ice' ?
+    (A) Heat is absorbed and temperature increases
+    (B) Heat is absorbed but temperature remains same
+    (C) Heat is emitted and temperature decreases
+    (D) Heat is emitted but temperature increases
+
+MH-9-SCIT-19-19.1-OSC-012 | ca=C | sol_len=0
+  Q: The temperature shown by a mercury-in-glass thermometer increases. Which of the following is constant?
+    (A) density of the mercury
+    (B) internal energy of the mercury
+    (C) mass of the mercury
+    (D) volume of the mercury
+
+MH-9-SCIT-19-19.1-OSC-013 | ca=C | sol_len=92
+  Q: In a vacuum flask, which methods of heat transfer are prevented by the vacuum?
+    (A) conduction only
+    (B) convection only
+    (C) conduction and convection only
+    (D) conduction, convection, and radiation
+
+MH-9-SCIT-19-19.1-OSC-014 | ca=B | sol_len=0
+  Q: Transfer of heat always takes from
+    (A) Equal temperature
+    (B) Higher Temperature to Lower temperature
+    (C) Lower Temperature to higher temperature
+    (D) Depends on situation
+
+MH-9-SCIT-19-19.1-OSC-015 | ca=D | sol_len=0
+  Q: A substance that does not allow heat to travel through it is called
+    (A) a conductor
+    (B) a convector
+    (C) a radiator
+    (D) as insulator
+
+MH-9-SCIT-19-19.1-OSC-016 | ca=C | sol_len=0
+  Q: A medium that does not require to transfer heat is
+    (A) Conduction
+    (B) Insulation
+    (C) Radiation
+    (D) Convection
+
+MH-9-SCIT-19-19.1-OSC-017 | ca=B | sol_len=0
+  Q: Heat indicator is
+    (A) Thermometer
+    (B) Temperature
+    (C) Calorimeter
+    (D) Radiation
+
+MH-9-SCIT-19-19.1-OSC-018 | ca=B | sol_len=20
+  Q: Find odd one out on basis of heat capacity
+    (A) Plastic
+    (B) Copper
+    (C) Glass
+    (D) Paper
+
+MH-9-SCIT-19-19.1-OSC-019 | ca=D | sol_len=0
+  Q: Which thermometer is used by weather department
+    (A) Clinical Thermometer
+    (B) Lab Thermometer
+    (C) Pyrometer
+    (D) Maximum Minimum Thermometer
+
+MH-9-SCIT-19-19.1-OSC-020 | ca=B | sol_len=0
+  Q: Range of clinical thermometer is
+    (A) 0o C to 110o C
+    (B) 35o C to 42o C
+    (C) 30o C to 45o C
+    (D) None of above
+
+MH-9-SCIT-19-19.1-OSC-021 | ca=A | sol_len=0
+  Q: The lower fixed point on the Celsius scale is
+    (A) Melting point of ice
+    (B) Boiling point of water
+    (C) Melting point of mercury
+    (D) Average of melting point of water and mercury
+
+MH-9-SCIT-19-19.1-OSC-022 | ca=C | sol_len=58
+  Q: How many divisions are on Fahrenheit Thermometer scale
+    (A) 100
+    (B) 10
+    (C) 180
+    (D) 182
+
+MH-9-SCIT-19-19.1-OSC-023 | ca=A | sol_len=0
+  Q: Range of lab thermometer is
+    (A) -10o C to 110o C
+    (B) -110o C to 110o C
+    (C) 0o C to 100o C
+    (D) None of above
+
+MH-9-SCIT-19-19.1-OSC-024 | ca=A | sol_len=99
+  Q: The fact that desert sand is very hot in the day and very cold at night is evidence that sand has
+    (A) low specific heat capacity.
+    (B) high specific heat capacity.
+    (C) Fertile
+    (D) None of above
+
+MH-9-SCIT-19-19.1-OSC-025 | ca=D | sol_len=55
+  Q: We feel cool when we rub our hand with evaporating liquid because it
+    (A) gives out latent heat of fusion
+    (B) absorbs latent heat of fusion
+    (C) gives out latent heat of vaporization
+    (D) absorbs latent heat of vaporization
+
+MH-9-SCIT-19-19.1-OSC-026 | ca=B | sol_len=0
+  Q: The total amount of energy required to change state of matter is called
+    (A) Specific heat
+    (B) Latent heat
+    (C) Molecular energy
+    (D) Kinetic energy
+
+MH-9-SCIT-19-19.1-OSC-027 | ca=B | sol_len=0
+  Q: Specific heat of substance is
+    (A) Amount of energy required to change state of matter
+    (B) Amount of energy required to change temperature of substance by 1 degree Celsius for 1 gm
+    (C) Total molecular energy of substance
+    (D) Energy of moving body
+
+MH-9-SCIT-19-19.1-OSC-028 | ca=B | sol_len=100
+  Q: The unit of specific heat is
+    (A) cal / degree centigrade
+    (B) cal/g/degree centigrade
+    (C) cal/g
+    (D) none of these
+
+MH-9-SCIT-19-19.1-OSC-029 | ca=C | sol_len=100
+  Q: How much heat is require to convert 5 gm of ice into water
+    (A) 540 cal
+    (B) 80 cal
+    (C) 400 cal
+    (D) 200 cal
+
+MH-9-SCIT-19-19.1-OSC-030 | ca=D | sol_len=0
+  Q: Absolute zero and 0 k corresponds to
+    (A) -273 K
+    (B) 273o C
+    (C) 273 K
+    (D) -273o C
+
+MH-9-SCIT-19-19.1-OSC-031 | ca=D | sol_len=0
+  Q: What are the missing words from the following sentence? Heat is a form of ______ measured in ____
+    (A) Power and joules
+    (B) Power and degree centigrade
+    (C) Energy and degree centigrade
+    (D) Energy and joules
+
+MH-9-SCIT-19-19.1-OSC-032 | ca=A | sol_len=0
+  Q: Joule is the unit of
+    (A) Heat
+    (B) Temperature
+    (C) Pressure
+    (D) Force
+
+MH-9-SCIT-19-19.1-OSC-033 | ca=C | sol_len=0
+  Q: Thermos flasks are used to keep drinks hot. The inside of the Thermos flasks has a silver surface. This silver surface
+    (A) is good at absorbing heat.
+    (B) is a good conductor of heat.
+    (C) is a good reflector of heat.
+    (D) is a poor conductor of heat
+
+MH-9-SCIT-19-19.1-OSC-034 | ca=A | sol_len=0
+  Q: The heat gained or lost by a body during a change of state is referred to as _______ heat since there is no change in temperature.
+    (A) latent
+    (B) specific
+    (C) convection
+    (D) conduction
+
+MH-9-SCIT-19-19.1-OSC-035 | ca=C | sol_len=88
+  Q: How many calories of heat required to convert 10 gm of water at 20 oC to 40 oC
+    (A) 100 cal
+    (B) 50 cal
+    (C) 200 cal
+    (D) 540 cal
+
+MH-9-SCIT-19-19.1-OSC-036 | ca=B | sol_len=88
+  Q: The quantity of heat required to raise the temperature of 2000 g of water from 10 oC to 50 oC
+    (A) 80 cal
+    (B) 80,000 cal
+    (C) 8000 cal
+    (D) none of these
+
+MH-9-SCIT-19-19.1-OSC-037 | ca=A | sol_len=0
+  Q: The instrument used to detect the radiation of heat is
+    (A) Thermoscope
+    (B) Barometer
+    (C) Stethoscope
+    (D) Kinemoscope
+
+MH-9-SCIT-19-19.1-OSC-038 | ca=D | sol_len=92
+  Q: Conduction is possible:
+    (A) When bodies are apart from each other
+    (B) When the bodies have same temperature and in thermal contact
+    (C) When they have different temperature and with no contact.
+    (D) When they are in contact and should have different temperature
+
+MH-9-SCIT-19-19.1-OSC-039 | ca=A | sol_len=25
+  Q: A circular disc of copper has a symmetrical hole at its centre. The disc is uniformly heated. The diameter of the hole will
+    (A) Increase
+    (B) Decrease
+    (C) Remain the same
+    (D) None of above
+
+MH-9-SCIT-19-19.1-OSC-040 | ca=D | sol_len=0
+  Q: The measure of degree of hotness or coldness of a body is called
+    (A) Heat energy
+    (B) Celsius
+    (C) Kelvin
+    (D) Temperature
+
+MH-9-SCIT-19-19.1-OSC-041 | ca=A | sol_len=0
+  Q: When a temperature of a substance is increased:
+    (A) Kinetic energy of the molecules of the substance increases
+    (B) Kinetic energy of the molecules of the substance decreases
+    (C) The amplitude of vibrations of molecules of the substance about their mean position decreases
+    (D) It does not show any changes
+
+MH-9-SCIT-19-19.1-OSC-042 | ca=C | sol_len=0
+  Q: Birds glide effortlessly in the air with the help of:
+    (A) conduction of heat in the air
+    (B) radiation of light through atmosphere
+    (C) convection current of air
+    (D) due to fats present in the body
+
+MH-9-SCIT-19-19.1-OSC-043 | ca=A | sol_len=100
+  Q: Fahrenheit scale divides two fixed points into
+    (A) 180 parts
+    (B) 212 parts
+    (C) 100 parts
+    (D) 32 parts
+
+MH-9-SCIT-19-19.1-OSC-044 | ca=B | sol_len=25
+  Q: 233 K is equal to
+    (A) 40o F
+    (B) -40o F
+    (C) 172o F
+    (D) -172o F
+
+MH-9-SCIT-19-19.1-OSC-045 | ca=A | sol_len=0
+  Q: At what temperature do the Fahrenheit and Celsius scales give the same reading?
+    (A) -40 oC
+    (B) 0 oC
+    (C) 574.25 oC
+    (D) 273 oC
+
+MH-9-SCIT-19-19.1-OSC-046 | ca=B | sol_len=0
+  Q: When 1 g of ice melts at 0 oC ?
+    (A) 80 cal of heat is liberated
+    (B) 80 cal of heat is absorbed
+    (C) no heat is required
+    (D) none of above
+
+MH-9-SCIT-19-19.1-OSC-047 | ca=C | sol_len=0
+  Q: Celsius scale divides two fixed points into
+    (A) 180 parts
+    (B) 212 parts
+    (C) 100 parts
+    (D) 32 parts
+
+MH-9-SCIT-19-19.1-OSC-048 | ca=B | sol_len=100
+  Q: In hot water bottles, water is used because
+    (A) its specific heat is low
+    (B) its specific heat is high
+    (C) it is cheap
+    (D) 1& 3 only
+
+MH-9-SCIT-19-19.1-OSC-049 | ca=B | sol_len=35
+  Q: -40 oF on absolute scale is equal to
+    (A) 0 K
+    (B) 233 K
+    (C) 273 K
+    (D) 313 K
+
+MH-9-SCIT-19-19.1-OSC-050 | ca=A | sol_len=0
+  Q: Which of the following factors rule predominantly in the event of dew formation, sweating, rate of evaporation ?
+    (A) Humidity
+    (B) Surface area
+    (C) Volume
+    (D) Radiation
+
+MH-9-SCIT-19-19.1-OSC-051 | ca=C | sol_len=0
+  Q: ------ is a unit of heat.
+    (A) oC
+    (B) oF
+    (C) cal
+    (D) cal/gmoC
+
+MH-9-SCIT-19-19.1-OSC-052 | ca=A | sol_len=0
+  Q: The inner surface of thermos flask is silvered to shine like mirror. This prevents heat exchange due
+    (A) Radiation
+    (B) Absorption
+    (C) Conduction
+    (D) Convection
+
+MH-9-SCIT-19-19.1-OSC-053 | ca=A | sol_len=0
+  Q: SI unit of heat is
+    (A) J
+    (B) K
+    (C) J/g K
+    (D) J/g
+
+MH-9-SCIT-19-19.1-OSC-054 | ca=B | sol_len=85
+  Q: Which of the following is an insulator?
+    (A) Iron
+    (B) Glass
+    (C) Brass
+    (D) Silver
+
+MH-9-SCIT-19-19.1-OSC-055 | ca=A | sol_len=0
+  Q: The heat required to melt mass of solid is called
+    (A) latent heat of fusion
+    (B) latent heat of vaporisation
+    (C) specific heat
+    (D) heat capacity
+
+MH-9-SCIT-19-19.1-OSC-056 | ca=D | sol_len=100
+  Q: The specific latent heat of fusion of ice is
+    (A) 4.2 J/goC
+    (B) 4200 J/kgoC
+    (C) 336 J/g
+    (D) 336000 J/kg
+
+MH-9-SCIT-19-19.1-OSC-057 | ca=A | sol_len=0
+  Q: A. Latent heat is responsible for the change in temperature of a substance. B. Mass affects the amount of heat required to raise the temperature of a substance
+    (A) Both the statements are true
+    (B) Both the statements are false
+    (C) Statement A is true while statement B is false
+    (D) Statement B is true while statement A is false
+
+MH-9-SCIT-19-19.1-OSC-058 | ca=D | sol_len=0
+  Q: Which of the following is not a scale of temperature?
+    (A) Kelvin scale
+    (B) Celsius scale
+    (C) Fahrenheit scale
+    (D) Richter Scale
+
+MH-9-SCIT-19-19.1-OSC-059 | ca=B | sol_len=100
+  Q: Convection current sets up due to generation of difference in the
+    (A) density
+    (B) temperature
+    (C) mass
+    (D) weight
+
+MH-9-SCIT-19-19.1-OSC-060 | ca=A | sol_len=105
+  Q: '1'0'o'C' 'i's' 'e'q'u'a'l' 't'o'
+    (A) '2'7'4'.'1'5' 'K'
+    (B) '3'7'3' 'K'
+    (C) '4'7'3' 'K'
+    (D) '5'7'3' 'K'
+
+MH-9-SCIT-19-19.1-OSC-061 | ca=D | sol_len=99
+  Q: Water freezes at...
+    (A) Zero degrees Celsius
+    (B) 273 degrees Kelvin
+    (C) 32 degrees Fahrenheit
+    (D) All of the Above
+
+MH-9-SCIT-19-19.1-OSC-062 | ca=C | sol_len=0
+  Q: Which statement is false with respect to evaporation & boiling
+    (A) Boiling takes place throughout the mass of the liquid
+    (B) Evaporation takes place at all temperature
+    (C) Both evaporation and boiling causes cooling effect
+    (D) None of above
+
+MH-9-SCIT-19-19.1-OSC-063 | ca=A | sol_len=0
+  Q: Principle of calorimeter is
+    (A) " Two bodies at different temperature are placed in contact with each other then the heat lost by the body at higher temperature is equal to the heat gained by the body at lower temperature "
+    (B) Specific heat of the substance
+    (C) Latent heat
+    (D) All of above
+
+MH-9-SCIT-19-19.1-OSC-064 | ca=A | sol_len=100
+  Q: Vacuum in thermos flask act as
+    (A) insulator
+    (B) conductor
+    (C) radiation medium
+    (D) None of above
+
+MH-9-SCIT-19-19.1-OSC-065 | ca=D | sol_len=0
+  Q: Which statement is true?
+    (A) 1 cal = 4.186 joules
+    (B) 1 kcal = 4186 joules
+    (C) 1 kcal = 1000 cal
+    (D) all of above
+
+MH-9-SCIT-19-19.1-OSC-066 | ca=C | sol_len=0
+  Q: What is the freezing point of water on Kelvin scale ?
+    (A) 373 oK
+    (B) None of the above
+    (C) 337 oK
+    (D) None of the above
+
+MH-9-SCIT-19-19.1-OSC-067 | ca=B | sol_len=53
+  Q: In which of the following methods of heat transfer; gravitational field is essential ?
+    (A) Conduction
+    (B) Wrong: Heat conduction in solids and liquids not affected by gravity
+    (C) Stirring of liquid
+    (D) Right: Thermal radiation heat transfer is not affected by gravity
+
+MH-9-SCIT-19-19.1-OSC-068 | ca=D | sol_len=0
+  Q: The temperature of a body has changed by 20 oC. What will be the change in its temperature in Kelvin scale ?
+    (A) 293 K
+    (B) 27.3 K
+    (C) 253 K
+    (D) 20 K
+
+MH-9-SCIT-19-19.1-OSC-069 | ca=A | sol_len=0
+  Q: Water is used as coolant because
+    (A) it has high specific heat capacity
+    (B) It is easily available
+    (C) It is a good conductor of heat
+    (D) It is inexpensive
+
+MH-9-SCIT-19-19.1-OSC-070 | ca=C | sol_len=0
+  Q: Temperature is measured by two types of scales that is oC andoF. 1 oC = 5(F - 32)/9. Using this information, select the correct option for length of two thermometers having same temperature range; one in Celsius scale and one in Fahrenheit scale
+    (A) Length (Celsius scale) = 5/9 [ Length (Fahrenheit Scale)] + 32
+    (B) Length (Celsius scale) = 2 x [Length (Fahrenheit Scale)]
+    (C) Length (Celsius scale) = Length (Fahrenheit Scale)
+    (D) Length (Celsius scale) = 1/2 x [Length (Fahrenheit Scale)]
+
+MH-9-SCIT-19-19.1-OSC-071 | ca=C | sol_len=0
+  Q: In the context of diagram, choose the correct statement.
+    (A) Heat is retained due to CO2
+    (B) Green house does not radiate heat
+    (C) Heat is transferred by radiation and retained due to internal reflection.
+    (D) Heat collected in a green house is not related with incident radiation.
+
+MH-9-SCIT-19-19.1-OSC-072 | ca=D | sol_len=0
+  Q: The section 'A of the thermos flask shown in the figure, will stop heat transfer by which of the following methods ?
+    (A) Conduction
+    (B) Conduction and convection
+    (C) Convection and radiation
+    (D) Conduction, convection and radiation
+
+MH-9-SCIT-19-19.1-OSC-073 | ca=D | sol_len=0
+  Q: Why solar panels are painted black on the roofs of houses to trap the heat from the sun.
+    (A) Black surfaces are the best emitter of heat radiation
+    (B) Solar panels painted black look better on roofs
+    (C) Black paint is cheaper to buy
+    (D) Black surfaces are the best absorber of heat radiation
+
+MH-9-SCIT-19-19.1-OSC-074 | ca=C | sol_len=0
+  Q: The rate of evaporation is higher on a windy day because
+    (A) the temperature of a windy day is higher
+    (B) the temperature of a windy day is lower
+    (C) the particles which escape are carried away by the wind
+    (D) the liquid particles move faster
+
+MH-9-SCIT-19-19.1-OSC-075 | ca=A | sol_len=0
+  Q: Radiation is a means of heat transfer where
+    (A) A medium is not required.
+    (B) Heat travels from particle to particle.
+    (C) Heat travels by moving particles.
+    (D) A solid changes into a liquid.
+
+MH-9-SCIT-19-19.1-OSC-076 | ca=A | sol_len=99
+  Q: How many calories of heat is required to convert 1 gm. of ice at 0 degree C into 1 gm. of water at the same temperature?
+    (A) 80 calories
+    (B) 800 calories
+    (C) 0.8 calories
+    (D) 8 calories
+
+MH-9-SCIT-19-19.1-OSC-077 | ca=C | sol_len=0
+  Q: The temperature at which a liquid changes to a gas is known as its
+    (A) Melting point
+    (B) Freezing point
+    (C) Boiling point
+    (D) Cooling point
+
+MH-9-SCIT-19-19.1-OSC-078 | ca=B | sol_len=0
+  Q: Heater are placed at lower level in room
+    (A) We can get heat directly
+    (B) Hot air rises up
+    (C) Principle of conduction
+    (D) All of above
+
+MH-9-SCIT-19-19.1-OSC-079 | ca=B | sol_len=0
+  Q: Dark colored clothes are preferred during winter because
+    (A) They would not get dirty
+    (B) They absorb heat energy from surrounding
+    (C) They look good
+    (D) Heat is transferred to the surrounding
+
+MH-9-SCIT-19-19.1-OSC-080 | ca=C | sol_len=0
+  Q: Which of the following will expand more on heating?
+    (A) Iron
+    (B) water
+    (C) carbon dioxide
+    (D) None of these
+
+MH-9-SCIT-19-19.1-OSC-081 | ca=D | sol_len=0
+  Q: The rise in temperature of substance depends on
+    (A) The quantity of heat supplied
+    (B) Total mass of the substance
+    (C) The nature of substance
+    (D) All of above
+
+MH-9-SCIT-19-19.1-OSC-082 | ca=A | sol_len=37
+  Q: Find odd man out
+    (A) Rubber
+    (B) Copper
+    (C) Aluminum
+    (D) Gold
+
+MH-9-SCIT-19-19.1-OSC-083 | ca=A | sol_len=25
+  Q: A circular disc of copper has a symmetrical hole at its centre. The disc is uniformly heated. The disc is uniformly heated. The diameter of the hole will
+    (A) Increase
+    (B) Decrease
+    (C) Remain the same
+    (D) None of above
+
+MH-9-SCIT-19-19.1-OSC-084 | ca=C | sol_len=10
+  Q: The amount of heat required to change a unit mass of a solid into a liquid, without changing its tem
+    (A) Vaporization
+    (B) Boiling
+    (C) Fusion
+    (D) Evaporation
+
+MH-9-SCIT-19-19.1-OSC-085 | ca=C | sol_len=0
+  Q: Convection of heat takes place
+    (A) Only in solid
+    (B) Only in liquid
+    (C) Only in fluid
+    (D) Only in gaseous
+
+MH-9-SCIT-19-19.1-OSC-086 | ca=B | sol_len=71
+  Q: Pyrometer is used in
+    (A) Lab
+    (B) Furnace
+    (C) Weather Dept.
+    (D) All of above
+
+MH-9-SCIT-19-19.1-OSC-087 | ca=B | sol_len=0
+  Q: Land breeze blows during
+    (A) Day
+    (B) Night
+    (C) Both 1 and 2
+    (D) None of these
+
+MH-9-SCIT-19-19.1-OSC-088 | ca=C | sol_len=75
+  Q: Unit Of heat is
+    (A) oC
+    (B) oF
+    (C) Cal
+    (D) cal/gmoC
+
+MH-9-SCIT-19-19.1-OSC-089 | ca=B | sol_len=99
+  Q: Calorimeter is made up of
+    (A) Iron
+    (B) Copper
+    (C) Tin
+    (D) Silver
+
+MH-9-SCIT-19-19.1-OSC-090 | ca=A | sol_len=0
+  Q: Principle of thermometer is based on
+    (A) Expansion and contraction of liquid due to heat
+    (B) Liquid is clearly visible
+    (C) Made up of glass material
+    (D) All of above
+
+MH-9-SCIT-19-19.1-OSC-091 | ca=A | sol_len=100
+  Q: Calorimeter is used for to find
+    (A) Specific heat
+    (B) Temperature increase
+    (C) Changes of state due to heat
+    (D) All of above
+
+MH-9-SCIT-19-19.1-OSC-092 | ca=A | sol_len=35
+  Q: No. of divisions on Kelvin scale is
+    (A) 100
+    (B) 10
+    (C) 180
+    (D) 182
+
+MH-9-SCIT-19-19.1-OSC-093 | ca=A | sol_len=0
+  Q: What is value of melting point of ice on Celsius ,Fahrenheit ,Kelvin scale respectively
+    (A) 0 ,32,273
+    (B) 32,0,274
+    (C) 0,34,272
+    (D) 0,32,270
+
+MH-9-SCIT-19-19.1-OSC-094 | ca=D | sol_len=4
+  Q: What is normal temperature of Human body
+    (A) 35 degree Centigrade
+    (B) 96.5 degree Centigrade
+    (C) 98 degree Centigrade
+    (D) 37 degree Centigrade
+
+MH-9-SCIT-19-19.1-OSC-095 | ca=D | sol_len=0
+  Q: Mercury is used in thermometer because of
+    (A) High difference in freezing and boiling point
+    (B) Does not stick to glass
+    (C) Expand and contract uniformly
+    (D) All of above
+
+MH-9-SCIT-19-19.1-OSC-096 | ca=A | sol_len=0
+  Q: A bimetallic strip when placed in a Bunsen flame, the strip is seen to bend because
+    (A) the two metals expand at different rates.
+    (B) the bunsen flame causes one of the metals to melt.
+    (C) only one of the metals expands.
+    (D) the two metals expand at the same rate.
+
+MH-9-SCIT-19-19.1-OSC-097 | ca=B | sol_len=100
+  Q: Which is not correct statement ?
+    (A) Heat transfer is high in conductor
+    (B) In conductor specific heat capacity is high
+    (C) Conductor can be solid ,liquid or gases
+    (D) None of above
+
+MH-9-SCIT-19-19.1-OSC-098 | ca=A | sol_len=0
+  Q: The total amount of heat required to raise temperature of unit mass of a substance by 1 degree Centigrade is called
+    (A) Specific heat
+    (B) Latent heat
+    (C) Molecular energy
+    (D) Kinetic energy
+
+MH-9-SCIT-19-19.1-OSC-099 | ca=C | sol_len=10
+  Q: The energy required for a change of state without changing its temperature is called
+    (A) chemical energy
+    (B) state energy
+    (C) latent energy
+    (D) heat energy
+
+MH-9-SCIT-19-19.1-OSC-100 | ca=C | sol_len=82
+  Q: The SI unit of latent heat is
+    (A) J/goC
+    (B) J/oC
+    (C) J/kg
+    (D) J/kgoC
+
+MH-9-SCIT-19-19.1-OSC-101 | ca=B | sol_len=100
+  Q: The quantity of heat required to raise the temperature of 2000 g of water from 100 oC to 500 oC
+    (A) 80 cal
+    (B) 80,000 cal
+    (C) 8000 cal
+    (D) none of these
+
+MH-9-SCIT-19-19.1-OSC-102 | ca=B | sol_len=29
+  Q: Why calorimeter is kept in a wooden box ?
+    (A) To minimise chemical reaction
+    (B) To minimise heat exchange
+    (C) To protect from surrounding
+    (D) Calorimeter is a good conductor of heat
+
+MH-9-SCIT-19-19.1-OSC-103 | ca=D | sol_len=33
+  Q: Which of the following is NOT a process involving heat transfer ?
+    (A) Melting
+    (B) Boiling.
+    (C) Evaporation
+    (D) Radiation
+
+MH-9-SCIT-19-19.1-OSC-104 | ca=A | sol_len=0
+  Q: Arrange copper, air, water, mercury in increasing order of their heat conductivity.
+    (A) air, water, mercury, copper
+    (B) water, air, mercury, copper
+    (C) water, air, copper, mercury
+    (D) air, water, copper, mercury
+
+MH-9-SCIT-19-19.1-OSC-105 | ca=B | sol_len=198
+  Q: Observe the following diagrams showing two methods to cool a liquid. Select the correct option
+    (A) Temperature of liquid in pot 'A' will drop faster
+    (B) Temperature of liquid in pot 'B' will drop faster
+    (C) Temperature of liquid in pot 'A and B' will drop at equal rate
+    (D) Temperature of liquid in pot 'A' will surely decrease but nothing can be predicted about temperature of liquid in pot B
+
+MH-9-SCIT-19-19.1-OSC-106 | ca=A | sol_len=0
+  Q: What is the freezing point of water in Kelvin Scale ?
+    (A) 0 oK
+    (B) -23 oK
+    (C) 100 oK
+    (D) 273 oK
+
+MH-9-SCIT-19-19.1-OSC-107 | ca=C | sol_len=0
+  Q: Which of the following substance does not act as an insulator ?
+    (A) Air
+    (B) Wrong: Insulator
+    (C) Oil
+    (D) Wrong: Insulator
+
+MH-9-SCIT-19-19.1-OSC-108 | ca=C | sol_len=0
+  Q: Which of the following is the fastest mode of transfer of heat energy ?
+    (A) Conduction
+    (B) None of the above
+    (C) Convection
+    (D) None of the above
+
+MH-9-SCIT-19-19.1-OSC-109 | ca=C | sol_len=41
+  Q: How many calories of heat is required to convert 5 gm. of water at 100 oC into 5 gm. of steam at the same temperature ?
+    (A) 270 calories
+    (B) None of the above
+    (C) 540 calories
+    (D) None of the above
+
+MH-9-SCIT-19-19.1-OSC-110 | ca=B | sol_len=0
+  Q: Two identical rods A & B are made up of iron and brass respectively are heated to the same temperature range. The final length will be
+    (A) length of rod A > length of rod B
+    (B) length of rod B > length of rod A
+    (C) length of rod A = length of rod B
+    (D) none of above
+
+MH-9-SCIT-19-19.1-OSC-111 | ca=A | sol_len=0
+  Q: The unit 'cal' belongs to
+    (A) heat
+    (B) temperature
+    (C) work
+    (D) coefficient of linear expansion
+
+MH-9-SCIT-19-19.1-OSC-112 | ca=B | sol_len=0
+  Q: Which statement is incorrect with respect to heat and temperature ?
+    (A) Heat is a form of energy while temperature is a quantity which determines heat
+    (B) S.I unit of heat and temperature is joule.
+    (C) Heat is measured by calorimetry while temperature is measured by thermometer
+    (D) Two bodies at same temperature may differ in the quantities of heat contained in them.
+
+MH-9-SCIT-19-19.1-OSC-113 | ca=A | sol_len=138
+  Q: How many calories of heat is required to convert 1 gm. of ice at 0 oC into 1 gm. of water at the same temperature ?
+    (A) 80 calories
+    (B) 800 calories
+    (C) 0.8 calories
+    (D) 8 calories
+
+MH-9-SCIT-19-19.1-OSC-114 | ca=C | sol_len=0
+  Q: On Fahrenheit scale, the boiling point of water is :
+    (A) 100 oF
+    (B) 80 oF
+    (C) 212 oF
+    (D) 32 oF
+
+MH-9-SCIT-19-19.1-OSC-115 | ca=A | sol_len=0
+  Q: The size of one degree on Celsius scale x and the size of one degree on Fahrenheit scale y are related as:
+    (A) x = 1.8y
+    (B) 1.8x = y
+    (C) x = y
+    (D) x = 0.5y
+
+MH-9-SCIT-19-19.1-OSC-116 | ca=B | sol_len=0
+  Q: The temperature of a body rises through 1 oC.What is the corresponding rise on Kelvin scale?
+    (A) 0 K
+    (B) 1 K
+    (C) 1.5 K
+    (D) 273 K
+
+MH-9-SCIT-19-19.1-OSC-117 | ca=B | sol_len=21
+  Q: Which of the following substance has highest specific heat ?
+    (A) copper
+    (B) ice
+    (C) lead
+    (D) mercury
+
+MH-9-SCIT-19-19.1-OSC-118 | ca=C | sol_len=0
+  Q: Which of the following is the unit of heat ?
+    (A) Centigrade
+    (B) Kelvin
+    (C) Kilocalorie
+    (D) Fahrenheit
+
+MH-9-SCIT-19-19.1-OSC-119 | ca=B | sol_len=212
+  Q: What happens when water changes to ice ?
+    (A) Heat energy is absorbed
+    (B) Heat energy is released
+    (C) Heat energy is either absorbed or released
+    (D) Heat energy is neither absorbed nor released
+
+MH-9-SCIT-19-19.1-OSC-120 | ca=B | sol_len=934
+  Q: The surface water in a lake is just about to freeze. What will be the most likely temperature at the bottom of the lake ?
+    (A) 0o C
+    (B) None of the above
+    (C) 4o C
+    (D) Right: Because the maximum density of water occurs at \(4^\circ\text{C}\),
+
+MH-9-SCIT-19-19.1-OSC-121 | ca=D | sol_len=0
+  Q: From which one of the following mixtures will you get lowest temperature ?
+    (A) Ice and common salt
+    (B) None of the above
+    (C) Ice and sugar
+    (D) None of the above
+
+MH-9-SCIT-19-19.1-OSC-122 | ca=D | sol_len=0
+  Q: Why water is used to put off the fire ?
+    (A) Water cools the fire
+    (B) None of the above
+    (C) The heat for vaporisation of water is taken from the fire and so it is extinguished
+    (D) None of the above
+
+MH-9-SCIT-19-19.1-OSC-123 | ca=D | sol_len=0
+  Q: In the given groups of substances only one group contains substances which do not conduct heat at all. Which is that group ?
+    (A) Iron, Plastic, Camphor, Zinc
+    (B) Wrong: Plastic and Camphor does not conduct heat
+    (C) Gold, Iodine. Silver. Paper
+    (D) Wrong: Iodine and Paper are bad conductor of heat
+
+MH-9-SCIT-19-19.1-OSC-124 | ca=C | sol_len=124
+  Q: Identify the pair of substances which contracts on melting ?
+    (A) Copper and zinc
+    (B) Wrong: A piece of solid copper & zinc sinks in liquid copper and liquid zinc respectively
+    (C) Wax and ice
+    (D) Wrong: Both wax and ice floats in its liquid
+
+MH-9-SCIT-19-19.1-OSC-125 | ca=D | sol_len=0
+  Q: Water at 40c is cooled or heated it shows peculiar behavior. Which is that peculiar behavior ?
+    (A) When heated it contracts and when cooled it expands
+    (B) None of the above
+    (C) When cooled it contracts and when heated it expands
+    (D) None of the above
+
+MH-9-SCIT-19-19.1-OSC-126 | ca=A | sol_len=191
+  Q: What is the temperature range for which mercury can be used as thermometric liquid ?
+    (A) -39o C to 357o C
+    (B) Right: Mercury, which is used as a thermometric liquid, has the following characteristic properties : 1. Mercury has a high boiling point of about 357o C and therefore can be used to measure temperatures as high as 357o C. 2. Mercury has a freezing point of about
+    (C) - 117o C to 273o C
+    (D) None of the above
+
+MH-9-SCIT-19-19.1-OSC-127 | ca=C | sol_len=0
+  Q: At what temperature water has the highest density ?
+    (A) 0o C
+    (B) Wrong: Freezing Point of water
+    (C) 25o C
+    (D) None of the above
+
+MH-9-SCIT-19-19.1-OSC-128 | ca=B | sol_len=56
+  Q: What will happen if one gram of copper and one gram of water at the same temperature are kept in refrigerator at the same time?
+    (A) None of the above
+    (B) None of the above
+    (C) Both of them will gel cooled at the same lime.
+    (D) Nothing can be said about which will get cooled first.
+
+MH-9-SCIT-19-19.1-OSC-129 | ca=C | sol_len=0
+  Q: Specific heat capacity of Aluminium is 0.2 cal/gram oC. Which of the following statements is correct ?
+    (A) Heat required lo increase me temperature of 0.2 gram of aluminum by \(1^\circ\text{C}\) is 1 cal.
+    (B) Heat required to increase the temperature of 1 gram of aluminum by 0.\(2^\circ\text{C}\) is 1 cal.
+    (C) Heat required to increase the temperature of 1 gram of aluminum by \(1^\circ\text{C}\) is 0.2 cal.
+    (D) Heat required to increase the temperature of 0.2 gram of aluminum by 0.\(2^\circ\text{C}\) is 0.2 cal.
+
+MH-9-SCIT-19-19.1-OSC-130 | ca=A | sol_len=73
+  Q: If the temperature of a ball is 113o on the Fahrenheit scale, what will be its temperature on the Celsius scale ?
+    (A) 45o
+    (B) 81o
+    (C) 32o
+    (D) 145o
+
+MH-9-SCIT-19-19.1-OSC-131 | ca=B | sol_len=100
+  Q: Which of the following substances has maximum specific heat ?
+    (A) Hydrogen.
+    (B) Water.
+    (C) Mercury.
+    (D) Copper.
+
+MH-9-SCIT-19-19.1-OSC-132 | ca=B | sol_len=0
+  Q: In the SI system the unit of temperature is
+    (A) Celsius.
+    (B) Kelvin.
+    (C) calorie
+    (D) Fahrenheit.
+
+MH-9-SCIT-19-19.1-OSC-133 | ca=B | sol_len=53
+  Q: 32o Fahrenheit temperature means how many degrees in Celsius
+    (A) -5o C
+    (B) None of the above
+    (C) 0o C
+    (D) None of the above
+
+MH-9-SCIT-19-19.1-OSC-134 | ca=C | sol_len=0
+  Q: Which one of the following has the maximum thermal capacity ?
+    (A) Brass
+    (B) Wrong: Specific Heat Capacity: .380 J/gm K
+    (C) Copper
+    (D) Wrong: Specific Heat Capacity: .385 J/gm K
+
+MH-9-SCIT-19-19.1-OSC-135 | ca=C | sol_len=0
+  Q: What is the melting point of ice in Kelvin Scale ?
+    (A) -273K
+    (B) 0 K
+    (C) 273K
+    (D) 373K
+
+MH-9-SCIT-19-19.1-OSC-136 | ca=D | sol_len=0
+  Q: Which of the following is the fastest form of transfer of heat ?
+    (A) Conduction
+    (B) Convection
+    (C) Regelation
+    (D) Radiation
+
+MH-9-SCIT-19-19.1-OSC-137 | ca=A | sol_len=642
+  Q: Due to which of the following factors the convection currents are formed ?
+    (A) Change in density
+    (B) Change in mass
+    (C) Change in viscosity
+    (D) Change in weight
+
+MH-9-SCIT-19-19.1-OSC-138 | ca=B | sol_len=0
+  Q: What should be done to increase the rate of evaporation ?
+    (A) Decrease the area of free surface of the liquid
+    (B) Decrease the pressure over the liquid
+    (C) Increase the pressure over the liquid
+    (D) Keep the liquid in a close vessel
+
+MH-9-SCIT-19-19.1-OSC-139 | ca=D | sol_len=0
+  Q: Why does the calorimeter have polished silver surface ?
+    (A) Because it is a bad absorber of heat
+    (B) Because it is a good absorber of heat
+    (C) Because it is a good emitter of heat
+    (D) Because it is a good reflector of heat
+
+MH-9-SCIT-19-19.1-OSC-140 | ca=D | sol_len=147
+  Q: 'I'f' 'n'e'w' 't'e'm'p'e'r'a't'u'r'e' 's'c'a'l'e' 'i's' 'p'r'e'p'a'r'e'd' 's'u'c'h' 't'h'a't' 'm'e'l't'i'n'g' 'p'o'i'n't' 'o'f' 'i'c'e' 'o'n' 't'h'a't' 's'c'a'l'e' 'i's' '4'0'o'C' 'a'n'd' 'b'o'i'l'i'n'g' 'p'o'i'n't' 'o'f' 'w'a't'e'r' 'i's' '1'4'0'o'C'.' 'W'h'a't' 'w'i'l'l' 'b'e' 't'h'e' 't'e'm'p'e'r'a't'u'r'e' 'o'f' 'a' 'n'o'r'm'a'l' 'm'a'n' 'o'n' 't'h'i's' 's'c'a'l'e' '?'
+    (A) '4'7'o'C'
+    (B) 'W'r'o'n'g'
+    (C) '5'7'o'C'
+    (D) 'W'r'o'n'g'
+
+MH-9-SCIT-19-19.1-OSC-141 | ca=C | sol_len=0
+  Q: Why is copper used to prepare calorimeter ?
+    (A) It does not rust
+    (B) None of the above
+    (C) It is cheap and easily available.
+    (D) None of the above
+
+MH-9-SCIT-19-19.1-OSC-142 | ca=C | sol_len=7
+  Q: At what temperature Centigrade and Fahrenheit in thermometers read the same ?
+    (A) 0o
+    (B) -40o
+    (C) 100o
+    (D) Option D
+
+MH-9-SCIT-19-19.1-OSC-143 | ca=A | sol_len=55
+  Q: Which of the following statement is correct ?
+    (A) Longitudinal waves propagate through solids, liquids and gases
+    (B) Longitudinal waves propagate through solids and liquids
+    (C) Longitudinal or transverse waves don't propagate through gases
+    (D) Longitudinal waves propagate through gases only
+
+MH-9-SCIT-19-19.1-OSC-144 | ca=B | sol_len=0
+  Q: The periodic time of a sound wave is 1/200 sec. Then what will be its frequency ?
+    (A) 100 Hz
+    (B) 200 Hz
+    (C) 20 Hz
+    (D) 340 Hz
+
+MH-9-SCIT-19-19.1-OSC-145 | ca=B | sol_len=302
+  Q: What energy is contained in the balloon after air is blown into it and till it bursts ?
+    (A) Sound
+    (B) Potential
+    (C) Electrostatic
+    (D) Option D
+
+MH-9-SCIT-19-19.1-OSC-146 | ca=D | sol_len=162
+  Q: Why Salt (sodium chloride) is sprinkled on the ice collected on roads in winter ?
+    (A) Coolness of ice is not felt.
+    (B) The melting point is lowered.
+    (C) Melting point is raised and ice does not melts
+    (D) The melting point is lowered and ice melts quickly
+
+MH-9-SCIT-19-19.1-OSC-147 | ca=A | sol_len=69
+  Q: Loudness of sound depends upon which of the following quantity ?
+    (A) Amplitude
+    (B) None of the above
+    (C) Period
+    (D) None of the above
+
+MH-9-SCIT-19-19.1-OSC-148 | ca=B | sol_len=0
+  Q: Which range must be selected for calibration of a clinical thermometer in absolute scale ?
+    (A) 298 K to 305 K
+    (B) None of the above
+    (C) 308 K to 315 K
+    (D) None of the above
+
+MH-9-SCIT-19-19.1-OSC-149 | ca=A | sol_len=5
+  Q: Calculate the amount of heat required to convert 15 gm water at 100
+    (A) 8100 calories
+    (B) None of the above
+    (C) 800 calories
+    (D) None of the above
+
+MH-9-SCIT-19-19.1-OSC-150 | ca=A | sol_len=58
+  Q: If the temperature of a ball is 113
+    (A) 45o
+    (B) 81o C
+    (C) 32o C
+    (D) 145o C
+
+MH-9-SCIT-19-19.1-OSC-151 | ca=B | sol_len=0
+  Q: In an experiment a wooden block X is stuck to the black metal plate and a wooden block Y is stuck to the shiny metal plate, using wax The metal plates are of equal length, breadth and thickness .The same amount of heat is supplied to both the surfaces. What will you observe ?
+    (A) The wax will melt and the two wooden blocks will fall off at the same time.
+    (B) The wax holding block X will melt first and this block will fall off first because the dark surface absorbs heat better than the shiny surface.
+    (C) The wax holding block Y will melt first and this block will fall off first because the shiny surface reflects nearly all the heat that falls on it
+    (D) The wax holding block Y will melt first because the shiny surface absorbs heat better than the dark surface.
+
+MH-9-SCIT-19-19.1-OSC-152 | ca=C | sol_len=189
+  Q: 'S'u'p'p'o's'e' 'y'o'u' 'h'e'a't' 's'o'm'e' 'w'a't'e'r' 'i'n' 'a' 'b'e'a'k'e'r' 'f'r'o'm' '2'0'o'C' 't'o' '6'0'o'C'.' 'W'h'i'c'h' 'o'f' 't'h'e' 'f'o'l'l'o'w'i'n'g' 's't'a't'e'm'e'n't's' 'a'b'o'u't' 't'h'e' 'w'a't'e'r' 'i's' 't'r'u'e' '?'
+    (A) 'T'h'e' 'v'o'l'u'm'e' 'a'n'd' 't'h'e' 'd'e'n's'i't'y' 'b'o't'h' 'i'n'c'r'e'a's'e'
+    (B) 'T'h'e' 'v'o'l'u'm'e' 'a'n'd' 't'h'e' 'd'e'n's'i't'y' 'b'o't'h' 'd'e'c'r'e'a's'e'
+    (C) 'T'h'e' 'v'o'l'u'm'e' 'i'n'c'r'e'a's'e's' 'a'n'd' 't'h'e' 'd'e'n's'i't'y' 'd'e'c'r'e'a's'e's'
+    (D) 'T'h'e' 'v'o'l'u'm'e' 'd'e'c'r'e'a's'e's' 'a'n'd' 't'h'e' 'd'e'n's'i't'y' 'i'n'c'r'e'a's'e's'.'
+
+MH-9-SCIT-19-19.1-OSC-153 | ca=B | sol_len=75
+  Q: 'E'q'u'a'l' 'v'o'l'u'm'e's' 'o'f' 'a'i'r',' 'c'o'p'p'e'r' 'a'n'd' 'w'a't'e'r' 'e'x'p'a'n'd' 'b'y' 'd'i'f'f'e'r'e'n't' 'a'm'o'u'n't's' 'w'h'e'n' 'h'e'a't'e'd' 't'h'r'o'u'g'h' 't'h'e' 's'a'm'e' 't'e'm'p'e'r'a't'u'r'e' 'r'a'n'g'e',' 's'a'y' '2'0'o'C' 't'o' '3'0'o'C'.' 'W'h'a't' 'i's' 't'h'e' 'c'o'r'r'e'c't' 'o'r'd'e'r' 'i'f' 't'h'e'y' 'a'r'e' 'a'r'r'a'n'g'e'd' 'i'n' 'o'r'd'e'r' 'o'f' 'i'n'c'r'e'a's'i'n'g' 'e'x'p'a'n's'i'o'n',' 's't'a'r't'i'n'g' 'w'i't'h' 't'h'e' 'o'n'e' 't'h'a't' 'e'x'p'a'n'd's' 'l'e'a's't' '?'
+    (A) 'W'a't'e'r',' 'c'o'p'p'e'r',' 'a'i'r'
+    (B) 'C'o'p'p'e'r',' 'w'a't'e'r',' 'a'i'r','
+    (C) 'A'i'r',' 'w'a't'e'r',' 'c'o'p'p'e'r'
+    (D) 'W'a't'e'r',' 'a'i'r',' 'c'o'p'p'e'r'
+
+MH-9-SCIT-19-19.1-OSC-154 | ca=C | sol_len=208
+  Q: Which one of the following decides the direction of flow of heat energy from one substance to another?
+    (A) Heat Capacity
+    (B) Temperature
+    (C) Thermal energy
+    (D) Specific heat capacity.
+
+MH-9-SCIT-19-19.1-OSC-155 | ca=A | sol_len=0
+  Q: Water equivalent of a copper calorimeter is 90 gm. How many gm of water will have the same heat capacity as that of the calorimeter?
+    (A) 90 gm
+    (B) 1 gm
+    (C) 9 gm
+    (D) 0.1 gm.
+
+MH-9-SCIT-19-19.1-OSC-156 | ca=A | sol_len=0
+  Q: Thermal conductivity indicates
+    (A) Capacity to carry heat
+    (B) Capacity to carry electrons
+    (C) Capacity to carry electric charge
+    (D) None of above
+
+MH-9-SCIT-19-19.1-OSC-157 | ca=A | sol_len=0
+  Q: The total amount of energy required to change temperature of a substance is called
+    (A) Specific heat
+    (B) Latent heat
+    (C) Molecular energy
+    (D) Kinetic energy
+
+MH-9-SCIT-19-19.1-OSC-158 | ca=C | sol_len=0
+  Q: Stainless steel pans are usually provided with copper bottoms. The reason for this could be that
+    (A) copper bottom makes the pan more durable.
+    (B) such pans appear colorful.
+    (C) copper is better conductor of heat than the stainless steel.
+    (D) copper is easier to clean than the stainless steel.
+
+MH-9-SCIT-19-19.1-OSC-159 | ca=A | sol_len=10
+  Q: On converting 25 oC, 38 oC and 66 oC to Kelvin scale, the correct sequence of temperature will be
+    (A) 298 oK, 311 oK and 339 oK
+    (B) 298 oK, 300 oK and 338 oK
+    (C) 273 oK, 278 oK and 543 oK
+    (D) 298 oK, 310 oK and 338 oK
+
+MH-9-SCIT-19-19.1-OSC-160 | ca=D | sol_len=29
+  Q: Convert 373 k to the Celsius scale
+    (A) 0 oC
+    (B) 646 oC
+    (C) 700 oC
+    (D) 100 oC
+
+MH-9-SCIT-19-19.1-OSC-161 | ca=B | sol_len=100
+  Q: How much heat is require to convert 1 gm of ice into water
+    (A) 540 cal
+    (B) 80 cal
+    (C) 400 cal
+    (D) 800 cal
+
+MH-9-SCIT-19-19.1-OSC-162 | ca=A | sol_len=52
+  Q: \(10^\circ\text{C}\) is equal to
+    (A) 274.15 K
+    (B) 373 K
+    (C) 473 K
+    (D) 573 K
+
+MH-9-SCIT-19-19.1-OSC-163 | ca=D | sol_len=105
+  Q: If new temperature scale is prepared such that melting point of ice on that scale is \(40^\circ\text{C}\) and boiling point of water is \(140^\circ\text{C}\). What will be the temperature of a normal man on this scale ?
+    (A) \(47^\circ\text{C}\)
+    (B) None of the above
+    (C) \(57^\circ\text{C}\)
+    (D) None of the above
+
+MH-9-SCIT-19-19.1-OSC-164 | ca=C | sol_len=94
+  Q: Suppose you heat some water in a beaker from \(20^\circ\text{C}\) to \(60^\circ\text{C}\). Which of the following statements about the water is true ?
+    (A) The volume and the density both increase
+    (B) The volume and the density both decrease
+    (C) The volume increases and the density decreases
+    (D) The volume decreases and the density increases.
+
+MH-9-SCIT-19-19.1-OSC-165 | ca=B | sol_len=37
+  Q: Equal volumes of air, copper and water expand by different amounts when heated through the same temperature range, say \(20^\circ\text{C}\) to \(30^\circ\text{C}\). What is the correct order if they are arranged in order of increasing expansion, starting with the one that expands least ?
+    (A) Water, copper, air
+    (B) Copper, water, air,
+    (C) Air, water, copper
+    (D) Water, air, copper
+

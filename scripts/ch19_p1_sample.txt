@@ -1,0 +1,315 @@
+[MH-9-SCIT-19-19.1-OSC-001] ca=A
+  Q: The SI unit of heat is
+    (A) Joule
+    (B) Calories
+    (C) Kilocalories
+    (D) Kelvin
+
+[MH-9-SCIT-19-19.1-OSC-002] ca=B
+  Q: ACs are placed at higher level in room
+    (A) Based on principle of conduction of heat
+    (B) Based on principle of convection of heat
+    (C) Based on principle of radiation
+    (D) For saving electricity
+
+[MH-9-SCIT-19-19.1-OSC-003] ca=B
+  Q: Select the incorrect statement from the following:
+    (A) Heat transfers easily through conductors.
+    (B) The particles in a conductor are very far apart.
+    (C) Heat transfer is very slow in insulators.
+    (D) In good conductors, the particles are very close together.
+
+[MH-9-SCIT-19-19.1-OSC-004] ca=A
+  Q: Transfer of heat to neighboring molecule without leaving its place is called
+    (A) Conduction
+    (B) Convection
+    (C) Conductor
+    (D) Insulator
+
+[MH-9-SCIT-19-19.1-OSC-005] ca=D
+  Q: Earth's surface remains cooler because of which of the following phenomena ?
+    (A) Absorption
+    (B) Condensation
+    (C) Sublimation
+    (D) Evaporation
+
+[MH-9-SCIT-19-19.1-OSC-006] ca=C
+  Q: Which of the following expands most on heating?
+    (A) Solid
+    (B) Liquid
+    (C) Gas
+    (D) All of them
+
+[MH-9-SCIT-19-19.1-OSC-007] ca=A
+  Q: Gaps are left between railway tracks because
+    (A) Gaps give space to the tracks to expand in summer
+    (B) Gaps hold tracks firmly
+    (C) To produce gentle sound when train moves on tracks
+    (D) All of above
+
+[MH-9-SCIT-19-19.1-OSC-008] ca=D
+  Q: The measure of degree of hotness or coldness of body is called
+    (A) Heat energy
+    (B) Specific heat
+    (C) Kelvin
+    (D) Temperature
+
+[MH-9-SCIT-19-19.1-OSC-009] ca=D
+  Q: Temperature at which ice changes to water is known as its
+    (A) freezing point
+    (B) cooling point
+    (C) boiling point
+    (D) melting point
+
+[MH-9-SCIT-19-19.1-OSC-010] ca=C
+  Q: When heat is added to boiling water, the water temperature
+    (A) Increases.
+    (B) Decreases.
+    (C) Stays the same.
+    (D) Can not say
+
+[MH-9-SCIT-19-19.1-OSC-011] ca=B
+  Q: Which is the correct option for explaining 'melting of Ice' ?
+    (A) Heat is absorbed and temperature increases
+    (B) Heat is absorbed but temperature remains same
+    (C) Heat is emitted and temperature decreases
+    (D) Heat is emitted but temperature increases
+
+[MH-9-SCIT-19-19.1-OSC-012] ca=C
+  Q: The temperature shown by a mercury-in-glass thermometer increases. Which of the following is constant?
+    (A) density of the mercury
+    (B) internal energy of the mercury
+    (C) mass of the mercury
+    (D) volume of the mercury
+
+[MH-9-SCIT-19-19.1-OSC-013] ca=C
+  Q: In a vacuum flask, which methods of heat transfer are prevented by the vacuum?
+    (A) conduction only
+    (B) convection only
+    (C) conduction and convection only
+    (D) conduction, convection, and radiation
+
+[MH-9-SCIT-19-19.1-OSC-014] ca=B
+  Q: Transfer of heat always takes from
+    (A) Equal temperature
+    (B) Higher Temperature to Lower temperature
+    (C) Lower Temperature to higher temperature
+    (D) Depends on situation
+
+[MH-9-SCIT-19-19.1-OSC-015] ca=D
+  Q: A substance that does not allow heat to travel through it is called
+    (A) a conductor
+    (B) a convector
+    (C) a radiator
+    (D) as insulator
+
+[MH-9-SCIT-19-19.1-OSC-016] ca=C
+  Q: A medium that does not require to transfer heat is
+    (A) Conduction
+    (B) Insulation
+    (C) Radiation
+    (D) Convection
+
+[MH-9-SCIT-19-19.1-OSC-017] ca=B
+  Q: Heat indicator is
+    (A) Thermometer
+    (B) Temperature
+    (C) Calorimeter
+    (D) Radiation
+
+[MH-9-SCIT-19-19.1-OSC-018] ca=B
+  Q: Find odd one out on basis of heat capacity
+    (A) Plastic
+    (B) Copper
+    (C) Glass
+    (D) Paper
+
+[MH-9-SCIT-19-19.1-OSC-019] ca=D
+  Q: Which thermometer is used by weather department
+    (A) Clinical Thermometer
+    (B) Lab Thermometer
+    (C) Pyrometer
+    (D) Maximum Minimum Thermometer
+
+[MH-9-SCIT-19-19.1-OSC-020] ca=B
+  Q: Range of clinical thermometer is
+    (A) 0o C to 110o C
+    (B) 35o C to 42o C
+    (C) 30o C to 45o C
+    (D) None of above
+
+[MH-9-SCIT-19-19.1-OSC-021] ca=A
+  Q: The lower fixed point on the Celsius scale is
+    (A) Melting point of ice
+    (B) Boiling point of water
+    (C) Melting point of mercury
+    (D) Average of melting point of water and mercury
+
+[MH-9-SCIT-19-19.1-OSC-022] ca=C
+  Q: How many divisions are on Fahrenheit Thermometer scale
+    (A) 100
+    (B) 10
+    (C) 180
+    (D) 182
+
+[MH-9-SCIT-19-19.1-OSC-023] ca=A
+  Q: Range of lab thermometer is
+    (A) -10o C to 110o C
+    (B) -110o C to 110o C
+    (C) 0o C to 100o C
+    (D) None of above
+
+[MH-9-SCIT-19-19.1-OSC-024] ca=A
+  Q: The fact that desert sand is very hot in the day and very cold at night is evidence that sand has
+    (A) low specific heat capacity.
+    (B) high specific heat capacity.
+    (C) Fertile
+    (D) None of above
+
+[MH-9-SCIT-19-19.1-OSC-025] ca=D
+  Q: We feel cool when we rub our hand with evaporating liquid because it
+    (A) gives out latent heat of fusion
+    (B) absorbs latent heat of fusion
+    (C) gives out latent heat of vaporization
+    (D) absorbs latent heat of vaporization
+
+[MH-9-SCIT-19-19.1-OSC-026] ca=B
+  Q: The total amount of energy required to change state of matter is called
+    (A) Specific heat
+    (B) Latent heat
+    (C) Molecular energy
+    (D) Kinetic energy
+
+[MH-9-SCIT-19-19.1-OSC-027] ca=B
+  Q: Specific heat of substance is
+    (A) Amount of energy required to change state of matter
+    (B) Amount of energy required to change temperature of substance by 1 degree Celsius for 1 gm
+    (C) Total molecular energy of substance
+    (D) Energy of moving body
+
+[MH-9-SCIT-19-19.1-OSC-028] ca=B
+  Q: The unit of specific heat is
+    (A) cal / degree centigrade
+    (B) cal/g/degree centigrade
+    (C) cal/g
+    (D) none of these
+
+[MH-9-SCIT-19-19.1-OSC-029] ca=C
+  Q: How much heat is require to convert 5 gm of ice into water
+    (A) 540 cal
+    (B) 80 cal
+    (C) 400 cal
+    (D) 200 cal
+
+[MH-9-SCIT-19-19.1-OSC-030] ca=D
+  Q: Absolute zero and 0 k corresponds to
+    (A) -273 K
+    (B) 273o C
+    (C) 273 K
+    (D) -273o C
+
+[MH-9-SCIT-19-19.1-OSC-031] ca=D
+  Q: What are the missing words from the following sentence? Heat is a form of ______ measured in ____
+    (A) Power and joules
+    (B) Power and degree centigrade
+    (C) Energy and degree centigrade
+    (D) Energy and joules
+
+[MH-9-SCIT-19-19.1-OSC-032] ca=A
+  Q: Joule is the unit of
+    (A) Heat
+    (B) Temperature
+    (C) Pressure
+    (D) Force
+
+[MH-9-SCIT-19-19.1-OSC-033] ca=C
+  Q: Thermos flasks are used to keep drinks hot. The inside of the Thermos flasks has a silver surface. This silver surface
+    (A) is good at absorbing heat.
+    (B) is a good conductor of heat.
+    (C) is a good reflector of heat.
+    (D) is a poor conductor of heat
+
+[MH-9-SCIT-19-19.1-OSC-034] ca=A
+  Q: The heat gained or lost by a body during a change of state is referred to as _______ heat since there is no change in temperature.
+    (A) latent
+    (B) specific
+    (C) convection
+    (D) conduction
+
+[MH-9-SCIT-19-19.1-OSC-035] ca=C
+  Q: How many calories of heat required to convert 10 gm of water at 20 oC to 40 oC
+    (A) 100 cal
+    (B) 50 cal
+    (C) 200 cal
+    (D) 540 cal
+
+[MH-9-SCIT-19-19.1-OSC-036] ca=B
+  Q: The quantity of heat required to raise the temperature of 2000 g of water from 10 oC to 50 oC
+    (A) 80 cal
+    (B) 80,000 cal
+    (C) 8000 cal
+    (D) none of these
+
+[MH-9-SCIT-19-19.1-OSC-037] ca=A
+  Q: The instrument used to detect the radiation of heat is
+    (A) Thermoscope
+    (B) Barometer
+    (C) Stethoscope
+    (D) Kinemoscope
+
+[MH-9-SCIT-19-19.1-OSC-038] ca=D
+  Q: Conduction is possible:
+    (A) When bodies are apart from each other
+    (B) When the bodies have same temperature and in thermal contact
+    (C) When they have different temperature and with no contact.
+    (D) When they are in contact and should have different temperature
+
+[MH-9-SCIT-19-19.1-OSC-039] ca=A
+  Q: A circular disc of copper has a symmetrical hole at its centre. The disc is uniformly heated. The diameter of the hole will
+    (A) Increase
+    (B) Decrease
+    (C) Remain the same
+    (D) None of above
+
+[MH-9-SCIT-19-19.1-OSC-040] ca=D
+  Q: The measure of degree of hotness or coldness of a body is called
+    (A) Heat energy
+    (B) Celsius
+    (C) Kelvin
+    (D) Temperature
+
+[MH-9-SCIT-19-19.1-OSC-041] ca=A
+  Q: When a temperature of a substance is increased:
+    (A) Kinetic energy of the molecules of the substance increases
+    (B) Kinetic energy of the molecules of the substance decreases
+    (C) The amplitude of vibrations of molecules of the substance about their mean position decreases
+    (D) It does not show any changes
+
+[MH-9-SCIT-19-19.1-OSC-042] ca=C
+  Q: Birds glide effortlessly in the air with the help of:
+    (A) conduction of heat in the air
+    (B) radiation of light through atmosphere
+    (C) convection current of air
+    (D) due to fats present in the body
+
+[MH-9-SCIT-19-19.1-OSC-043] ca=A
+  Q: Fahrenheit scale divides two fixed points into
+    (A) 180 parts
+    (B) 212 parts
+    (C) 100 parts
+    (D) 32 parts
+
+[MH-9-SCIT-19-19.1-OSC-044] ca=B
+  Q: 233 K is equal to
+    (A) 40o F
+    (B) -40o F
+    (C) 172o F
+    (D) -172o F
+
+[MH-9-SCIT-19-19.1-OSC-045] ca=A
+  Q: At what temperature do the Fahrenheit and Celsius scales give the same reading?
+    (A) -40 oC
+    (B) 0 oC
+    (C) 574.25 oC
+    (D) 273 oC
+
