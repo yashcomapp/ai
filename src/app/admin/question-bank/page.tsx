@@ -52,6 +52,7 @@ export default function AdminQuestionBankPage() {
   const [filterSubject, setFilterSubject] = useState('');
   const [filterChapter, setFilterChapter] = useState('');
   const [filterTopic, setFilterTopic] = useState('');
+  const [filterPool, setFilterPool] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
   const [filterType, setFilterType] = useState('');
   const [filterUsage, setFilterUsage] = useState('all');
@@ -118,7 +119,8 @@ export default function AdminQuestionBankPage() {
     bloomLevel: 'Remember',
     requiresFigure: false,
     imageUrl: '',
-    examCategory: 'standard'
+    examCategory: 'standard',
+    vault: 'exam'
   });
 
   const [savingQuestion, setSavingQuestion] = useState(false);
@@ -164,6 +166,7 @@ export default function AdminQuestionBankPage() {
         subject: filterSubject,
         chapterNumber: filterChapter,
         topicNumber: filterTopic,
+        pool: filterPool,
         category: filterCategory,
         type: filterType,
         usageStatus: filterUsage !== 'all' ? filterUsage : ''
@@ -199,12 +202,14 @@ export default function AdminQuestionBankPage() {
         const s = urlParams.get('subject') || '';
         const ch = urlParams.get('chapterNumber') || urlParams.get('chapter') || '';
         const top = urlParams.get('topicNumber') || urlParams.get('topic') || '';
+        const p = urlParams.get('pool') || urlParams.get('vault') || '';
 
         if (b) setFilterBoard(b);
         if (c) setFilterClass(c);
         if (s) setFilterSubject(s);
         if (ch) setFilterChapter(ch);
         if (top) setFilterTopic(top);
+        if (p) setFilterPool(p);
       }
     }
   }, [firebaseUser]);
@@ -218,7 +223,7 @@ export default function AdminQuestionBankPage() {
     }, 250);
 
     return () => clearTimeout(debounceTimer);
-  }, [firebaseUser, filterBoard, filterClass, filterSubject, filterChapter, filterTopic, filterCategory, filterType, filterUsage, itemsPerPage]);
+  }, [firebaseUser, filterBoard, filterClass, filterSubject, filterChapter, filterTopic, filterPool, filterCategory, filterType, filterUsage, itemsPerPage]);
 
   // Handle Page click navigation
   const handleNextPage = () => {
@@ -345,6 +350,7 @@ export default function AdminQuestionBankPage() {
     setFilterSubject('');
     setFilterChapter('');
     setFilterTopic('');
+    setFilterPool('');
     setFilterCategory('');
     setFilterType('');
     setFilterUsage('all');
@@ -748,7 +754,8 @@ ${JSON.stringify(missingList, null, 2)}`;
       bloomLevel: 'Remember',
       requiresFigure: false,
       imageUrl: '',
-      examCategory: 'standard'
+      examCategory: 'standard',
+      vault: filterPool || 'exam'
     });
     setShowEditModal(true);
   };
@@ -774,7 +781,8 @@ ${JSON.stringify(missingList, null, 2)}`;
       bloomLevel: q.bloomLevel || 'Remember',
       requiresFigure: !!q.requiresFigure,
       imageUrl: q.imageUrl || '',
-      examCategory: q.examCategory || 'standard'
+      examCategory: q.examCategory || 'standard',
+      vault: q.vault || (q.examCategory === 'foundation' ? 'mock' : 'practice')
     });
     setShowEditModal(true);
   };
@@ -915,6 +923,19 @@ ${JSON.stringify(missingList, null, 2)}`;
               </select>
             </div>
             <div>
+              <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '5px' }}>Pool</label>
+              <select 
+                value={filterPool} 
+                onChange={(e) => { setFilterPool(e.target.value); setCurrentPage(1); setLastCodesHistory(['']); }}
+                style={{ width: '100%', padding: '6px', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', background: 'var(--surface)', color: 'var(--text)', fontSize: '12px' }}
+              >
+                <option value="">-- All Pools --</option>
+                <option value="exam">Exams Pool</option>
+                <option value="practice">Practice Pool</option>
+                <option value="mock">Mock (Foundation) Pool</option>
+              </select>
+            </div>
+            <div>
               <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '5px' }}>Category</label>
               <select 
                 value={filterCategory} 
@@ -1052,6 +1073,15 @@ ${JSON.stringify(missingList, null, 2)}`;
                           <span style={{ fontWeight: 700, color: 'var(--accent)', fontSize: '11px' }}>{q.questionCode}</span>
                           <span className="badge badge-info" style={{ fontSize: '9.5px', padding: '1px 6px', borderRadius: '4px' }}>{q.type}</span>
                           <span className="badge" style={{ fontSize: '9.5px', padding: '1px 6px', borderRadius: '4px', background: 'var(--bg-soft)', color: 'var(--text)' }}>{q.difficulty}</span>
+                          {q.vault === 'exam' && (
+                            <span className="badge" style={{ fontSize: '9.5px', padding: '1px 6px', borderRadius: '4px', background: 'rgba(59, 130, 246, 0.15)', color: '#38bdf8', fontWeight: 700 }}>Exam Pool</span>
+                          )}
+                          {q.vault === 'practice' && (
+                            <span className="badge" style={{ fontSize: '9.5px', padding: '1px 6px', borderRadius: '4px', background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', fontWeight: 700 }}>Practice Pool</span>
+                          )}
+                          {(q.vault === 'mock' || q.vault === 'foundation' || q.examCategory === 'foundation') && (
+                            <span className="badge" style={{ fontSize: '9.5px', padding: '1px 6px', borderRadius: '4px', background: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b', fontWeight: 700 }}>Mock (Foundation)</span>
+                          )}
                           {q.usedInClassroomTest ? (
                             <span className="badge" style={{ fontSize: '9.5px', padding: '1px 6px', borderRadius: '4px', background: 'rgba(107, 70, 193, 0.1)', color: 'var(--accent)', fontWeight: 700 }}>Used</span>
                           ) : (
@@ -1312,6 +1342,22 @@ ${JSON.stringify(missingList, null, 2)}`;
                   >
                     <option value="standard">Standard</option>
                     <option value="foundation">Foundation</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '5px' }}>Pool</label>
+                  <select 
+                    value={(editorModal as any).vault || ((editorModal as any).examCategory === 'foundation' ? 'mock' : 'exam')} 
+                    onChange={(e) => setEditorModal(prev => ({ 
+                      ...prev, 
+                      vault: e.target.value, 
+                      examCategory: e.target.value === 'mock' ? 'foundation' : (prev as any).examCategory || 'standard' 
+                    }))}
+                    style={{ width: '100%', padding: '6px', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', background: 'var(--surface)', color: 'var(--text)', fontSize: '12px' }}
+                  >
+                    <option value="exam">Exams Pool</option>
+                    <option value="practice">Practice Pool</option>
+                    <option value="mock">Mock (Foundation) Pool</option>
                   </select>
                 </div>
                 <div>

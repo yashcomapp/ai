@@ -116,6 +116,7 @@ export async function GET(req: NextRequest) {
     }
 
     const topicNumber = searchParams.get('topicNumber') || searchParams.get('topic') || '';
+    const pool = searchParams.get('pool') || searchParams.get('vault') || '';
     const category = searchParams.get('category') || '';
     const type = searchParams.get('type') || '';
     const limitVal = parseInt(searchParams.get('limit') || '20');
@@ -236,6 +237,21 @@ export async function GET(req: NextRequest) {
         }
 
         if (!matchesTop) return false;
+      }
+
+      // Pool / Vault check
+      if (pool) {
+        const qVault = String(q.vault || '').trim().toLowerCase();
+        const searchPool = pool.trim().toLowerCase();
+        if (searchPool === 'exam') {
+          if (qVault !== 'exam') return false;
+        } else if (searchPool === 'practice') {
+          if (qVault !== 'practice') return false;
+        } else if (searchPool === 'mock' || searchPool === 'foundation') {
+          if (qVault !== 'mock' && qVault !== 'foundation' && q.examCategory !== 'foundation') return false;
+        } else if (qVault !== searchPool) {
+          return false;
+        }
       }
 
       // Type check
