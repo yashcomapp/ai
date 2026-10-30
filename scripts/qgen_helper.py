@@ -3,10 +3,11 @@ import os
 
 # Helper to generate questions with correct schema
 def make_q(qcode, topic_code, text, options, correct_ans, qtype, diff, vault, category='standard', solution=""):
+    ch_num = int(topic_code.split('-')[3]) if len(topic_code.split('-')) >= 4 else 1
     return {
         "questionCode": qcode,
         "topicCode": topic_code,
-        "chapterNumber": 2,
+        "chapterNumber": ch_num,
         "class": "9",
         "board": "Maharashtra Board",
         "boardCode": "MH",
