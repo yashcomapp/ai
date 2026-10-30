@@ -53,8 +53,11 @@ async function commitTopic(jsonPath, topicCode) {
     chunk.forEach(q => {
       const chNum = parseInt(topicCode.split('-')[3]);
       const docRef = db.collection('questions').doc(q.questionCode);
+      const solutionText = q.solution || q.explanation || '';
       batch.set(docRef, {
         ...q,
+        solution: solutionText,
+        explanation: solutionText,
         chapterNumber: chNum,
         class: '9',
         subjectCode: 'SCIT',
