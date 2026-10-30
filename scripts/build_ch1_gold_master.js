@@ -55,37 +55,11 @@ function convertToThreePartSolution(q) {
     .replace(/\*\*Step-by-step Explanation:\*\*/g, '')
     .trim();
 
-  // Part 1: Scientific Principle & Mathematical Derivation
-  step1 = `In classical mechanics, the governing principle for this scenario is based on Newton's laws of motion and standard kinematic definitions.
-The fundamental relationship dictates that:
-\\[
-\\text{Correct Outcome} \\implies \\text{Option } ${q.correctAnswer} \\quad (${correctOpt})
-\\]
-${cleanExisting.length > 0 ? cleanExisting : `When analyzed under standard kinematic and dynamic conditions, the system verifies that ${correctOpt} is the physically exact answer.`}`;
+  if (cleanExisting.length > 0) {
+    return `${cleanExisting}\n\nCorrect Choice is (${q.correctAnswer}).`;
+  }
 
-  // Part 2: Physical Context & Practical Illustration
-  step2 = `This physical principle is demonstrated universally in everyday dynamics. For example, during uniform motion or acceleration, the interaction between external forces, mass inertia, and time progression determines the exact trajectory and kinematic state of the body in all inertial reference frames.`;
-
-  // Part 3: Step-by-Step Option & Misconception Analysis
-  let optAnalysis = [];
-  ['A', 'B', 'C', 'D'].forEach((letter, idx) => {
-    const optText = cleanKaTeX(q.options[idx] || '');
-    if (letter === q.correctAnswer) {
-      optAnalysis.push(`- **Option ${letter} (${optText})**: Correct. Directly satisfies the physical equations and mechanical principles.`);
-    } else {
-      optAnalysis.push(`- **Option ${letter} (${optText})**: Incorrect. Does not satisfy the kinematic or dynamic conditions defined by the problem.`);
-    }
-  });
-  step3 = optAnalysis.join('\n');
-
-  return `### 1. Scientific Principle & Mathematical Derivation:
-${step1.trim()}
-
-### 2. Physical Context & Practical Illustration:
-${step2.trim()}
-
-### 3. Step-by-Step Option & Misconception Analysis:
-${step3.trim()}`;
+  return `• When analyzed under standard kinematic and physical principles, ${correctOpt} is the correct solution.\nCorrect Choice is (${q.correctAnswer}).`;
 }
 
 const enhancedList = [];
