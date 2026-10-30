@@ -18,7 +18,11 @@ async function commitTopic(jsonPath, topicCode) {
   const usedCodes = new Set();
   existingSnap.docs.forEach(doc => {
     const data = doc.data();
-    if (data.usageCount > 0 || (data.usedInExams && data.usedInExams.length > 0) || (data.usedInPractices && data.usedInPractices.length > 0)) {
+    if (data.usageCount > 0 || 
+        (data.usedInExams && data.usedInExams.length > 0) || 
+        (data.usedInPractices && data.usedInPractices.length > 0) ||
+        data.usageStatus === 'used' ||
+        data.used === true) {
       usedCodes.add(doc.id);
     }
   });
@@ -47,11 +51,18 @@ async function commitTopic(jsonPath, topicCode) {
     const chunk = questions.slice(i, i + 400);
     const batch = db.batch();
     chunk.forEach(q => {
+      const chNum = parseInt(topicCode.split('-')[3]);
       const docRef = db.collection('questions').doc(q.questionCode);
       batch.set(docRef, {
         ...q,
+        chapterNumber: chNum,
+        class: '9',
+        subjectCode: 'SCIT',
+        boardCode: 'MH',
         board: 'Maharashtra Board',
         subject: 'Science and Technology',
+        status: 'active',
+        isLegacy: false,
         createdAt: new Date(),
         updatedAt: new Date()
       }, { merge: true });
