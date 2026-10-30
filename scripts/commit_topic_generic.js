@@ -51,7 +51,26 @@ async function commitTopic(jsonPath, topicCode) {
     const chunk = questions.slice(i, i + 400);
     const batch = db.batch();
     chunk.forEach(q => {
-      const chNum = parseInt(topicCode.split('-')[3]);
+      const parts = topicCode.split('-');
+      const boardCode = parts[0];
+      const classNum = parts[1];
+      const subjectCode = parts[2];
+      const chNum = parseInt(parts[3]);
+
+      let boardName = 'CBSE';
+      let subjectName = 'Mathematics';
+      if (boardCode === 'MH') {
+        boardName = 'Maharashtra Board';
+        if (subjectCode === 'SCIT') subjectName = 'Science and Technology';
+        else if (subjectCode === 'MTH1') subjectName = 'Mathematics Part - 1 (Algebra)';
+        else if (subjectCode === 'MTH2') subjectName = 'Mathematics Part - 2 (Geometry)';
+      } else if (boardCode === 'CBSE') {
+        boardName = 'CBSE';
+        if (subjectCode === 'MGP1') subjectName = 'Ganit Prakash Part 1';
+        else if (subjectCode === 'CURI') subjectName = 'Curiosity Science';
+        else if (subjectCode === 'MGM') subjectName = 'Mathematics (Ganita Manjari)';
+      }
+
       const docRef = db.collection('questions').doc(q.questionCode);
       const solutionText = q.solution || q.explanation || '';
       batch.set(docRef, {
@@ -59,11 +78,11 @@ async function commitTopic(jsonPath, topicCode) {
         solution: solutionText,
         explanation: solutionText,
         chapterNumber: chNum,
-        class: '9',
-        subjectCode: 'SCIT',
-        boardCode: 'MH',
-        board: 'Maharashtra Board',
-        subject: 'Science and Technology',
+        class: classNum,
+        subjectCode: subjectCode,
+        boardCode: boardCode,
+        board: boardName,
+        subject: subjectName,
         status: 'active',
         isLegacy: false,
         createdAt: new Date(),

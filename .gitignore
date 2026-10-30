@@ -36,3 +36,6 @@ debug-*.js
 .env*
 *.zip
 exports/
+
+__pycache__/
+*.pyc
