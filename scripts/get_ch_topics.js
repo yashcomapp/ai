@@ -25,9 +25,16 @@ if (!admin.apps.length) {
 const db = admin.firestore();
 
 async function main() {
+  const chNum = process.argv[2] || '14';
   const doc = await db.collection('syllabus').doc('mh_9_scit').get();
   const data = doc.data();
-  console.log('Sample chapter structure:', JSON.stringify(data.chapters[12], null, 2));
+  const ch = (data.chapters || []).find(c => String(c.number) === String(chNum));
+  if (ch) {
+    console.log(`\nChapter ${ch.number}: ${ch.name}`);
+    (ch.topics || []).forEach(t => {
+      console.log(`  ${t.topicCode || t.code}: ${t.name || t.title}`);
+    });
+  }
 }
 
 main().then(() => process.exit(0)).catch(e => { console.error(e); process.exit(1); });
