@@ -476,12 +476,13 @@ export function evaluateQuestionAnswer(type: string, userAnswer: any, correctAns
   }
 }
 
-export function extractAssertionAndReason(q: any): { assertion: string; reason: string } {
+export function extractAssertionAndReason(q: any): { assertion: string; reason: string; diagram?: string } {
   if (!q) return { assertion: '', reason: '' };
 
   let rawAssertion = String(q.assertion || '').trim();
   let rawReason = String(q.reason || '').trim();
   const rawText = String(q.text || '').trim();
+  let diagram = String(q.diagram || '').trim();
 
   // Normalize literal escaped \n and <br> in strings
   const normalizeDelims = (s: string) => s.replace(/\\n/g, '\n').replace(/<br\s*\/?>/gi, '\n');
@@ -489,8 +490,27 @@ export function extractAssertionAndReason(q: any): { assertion: string; reason: 
   let sourceAssertion = normalizeDelims(rawAssertion || rawText);
   let sourceReason = normalizeDelims(rawReason);
 
-  // Reason split regex: matches variants of Reason (R):, Reason:, (R):, R:, Reason (R), etc.
-  const reasonRegex = /(?:(?:\n|^|\s)\s*(?:Reason\s*\((?:R)\)|Reason\s*[:\-]|(?:\(R\)\s*[:\-]?)|(?:R\s*[:\-]|\bR\s*[:\-])))\s*[:\-]?\s*/i;
+  // If diagram is not explicitly provided, extract any SVG/HTML diagram block from the text/assertion
+  if (!diagram) {
+    const svgMatch = sourceAssertion.match(/(?:<div[^>]*>)?\s*<svg[\s\S]*?<\/svg>\s*(?:<\/div>)?/i);
+    if (svgMatch) {
+      diagram = svgMatch[0].trim();
+      sourceAssertion = sourceAssertion.replace(svgMatch[0], '').trim();
+    }
+  } else {
+    // If diagram was passed, remove it from sourceAssertion if present to avoid duplication
+    sourceAssertion = sourceAssertion.replace(diagram, '').trim();
+  }
+
+  // Strip common preamble boilerplate sentences like:
+  // "Given below are two statements labeled as Assertion (A) and Reason (R):"
+  sourceAssertion = sourceAssertion.replace(
+    /^(?:(?:Given\s+below\s+are\s+two\s+statements|Two\s+statements\s+are\s+given\s+below|Directions?:?\s*In\s+the\s+following\s+questions?)[^:\n]*[:\n]*)\s*/i,
+    ''
+  ).trim();
+
+  // Reason split regex: matches variants of Reason (R):, Reason:, (R):, R:, Reason (R), etc., including markdown bold
+  const reasonRegex = /(?:(?:\n|^|\s)\s*(?:[*_]{0,3}Reason\s*\((?:R)\)[*_]{0,3}|[*_]{0,3}Reason[*_]{0,3}\s*[:\-]|(?:\(R\)\s*[:\-]?)|(?:R\s*[:\-]|\bR\s*[:\-])))\s*[:\-]?\s*/i;
 
   if (reasonRegex.test(sourceAssertion)) {
     const parts = sourceAssertion.split(reasonRegex);
@@ -501,36 +521,50 @@ export function extractAssertionAndReason(q: any): { assertion: string; reason: 
       }
     }
   } else if (!sourceReason && reasonRegex.test(normalizeDelims(rawText))) {
-    const parts = normalizeDelims(rawText).split(reasonRegex);
+    let cleanRaw = normalizeDelims(rawText);
+    if (diagram) cleanRaw = cleanRaw.replace(diagram, '').trim();
+    cleanRaw = cleanRaw.replace(
+      /^(?:(?:Given\s+below\s+are\s+two\s+statements|Two\s+statements\s+are\s+given\s+below|Directions?:?\s*In\s+the\s+following\s+questions?)[^:\n]*[:\n]*)\s*/i,
+      ''
+    ).trim();
+    const parts = cleanRaw.split(reasonRegex);
     if (parts.length >= 2) {
       sourceAssertion = parts[0].trim();
       sourceReason = parts.slice(1).join(' ').trim();
     }
   }
 
-  // Strip redundant leading prefixes and HTML tags from assertion
+  // Strip redundant leading prefixes, markdown wrappers, and HTML tags from assertion
   const cleanAssertion = sourceAssertion
     .replace(/^<\s*(?:strong|b|p|span)[^>]*>/i, '')
+    .replace(/^[*_]{1,3}\s*Assertion\s*(\([A-Za-z]\))?\s*[*_]{0,3}\s*[:\-]?\s*/i, '')
     .replace(/^Assertion\s*\((?:A)\)\s*[:\-]?\s*/i, '')
     .replace(/^Assertion\s*[:\-]?\s*/i, '')
     .replace(/^\(?A\)?\s*[:\-]\s*/i, '')
     .replace(/^\(A\)\s*/i, '')
     .replace(/^<\s*\/(?:strong|b|p|span)[^>]*>\s*/i, '')
+    .replace(/[*_]{1,3}\s*Reason\s*[*_]{0,3}\s*[:\-]?\s*$/i, '')
+    .replace(/^[*_]{1,3}\s*/, '')
+    .replace(/[*_]{1,3}\s*$/, '')
     .trim();
 
-  // Strip redundant leading prefixes and HTML tags from reason
+  // Strip redundant leading prefixes, markdown wrappers, and HTML tags from reason
   const cleanReason = sourceReason
     .replace(/^<\s*(?:strong|b|p|span)[^>]*>/i, '')
+    .replace(/^[*_]{1,3}\s*Reason\s*(\([A-Za-z]\))?\s*[*_]{0,3}\s*[:\-]?\s*/i, '')
     .replace(/^Reason\s*\((?:R)\)\s*[:\-]?\s*/i, '')
     .replace(/^Reason\s*[:\-]?\s*/i, '')
     .replace(/^\(?R\)?\s*[:\-]\s*/i, '')
     .replace(/^\(R\)\s*/i, '')
     .replace(/^<\s*\/(?:strong|b|p|span)[^>]*>\s*/i, '')
+    .replace(/^[*_]{1,3}\s*/, '')
+    .replace(/[*_]{1,3}\s*$/, '')
     .trim();
 
   return {
     assertion: cleanAssertion || sourceAssertion || rawText,
-    reason: cleanReason || sourceReason || ''
+    reason: cleanReason || sourceReason || '',
+    diagram: diagram || undefined
   };
 }
 

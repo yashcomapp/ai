@@ -33,8 +33,8 @@ from mh10_mth2_svg_helpers import (
 
 TOPIC_CODE = "MH-10-MTH2-1-1.1"
 
-def make_q(qcode, topic, text, options, answer_val, qtype, difficulty, vault, category, explanation):
-    return {
+def make_q(qcode, topic, text, options, answer_val, qtype, difficulty, vault, category, explanation, assertion=None, reason=None, diagram=None):
+    q = {
         "questionCode": qcode,
         "topicCode": topic,
         "text": text,
@@ -47,6 +47,13 @@ def make_q(qcode, topic, text, options, answer_val, qtype, difficulty, vault, ca
         "explanation": explanation,
         "solution": explanation
     }
+    if assertion:
+        q["assertion"] = assertion
+    if reason:
+        q["reason"] = reason
+    if diagram:
+        q["diagram"] = diagram
+    return q
 
 # =========================================================================
 # EXAM POOL (40 Questions: 001 - 040)
@@ -609,13 +616,10 @@ q30_exp = (
 exam_data.append((q30_text, ["True", "False"], "A", "OTF", "easy", q30_exp))
 
 # Q31 (OAR) - Assertion Reason Median with SVG
-q31_svg = svg_median_triangle(top='A', b_left='B', mid='D', b_right='C', title="Assertion & Reason - Median")
-q31_text = (
-    f"{q31_svg}\n"
-    r"Given below are two statements labeled as Assertion (A) and Reason (R):" "\n\n"
-    r"**Assertion (A):** In $\triangle ABC$, median $AD$ divides the triangle into $\triangle ABD$ and $\triangle ADC$ such that $A(\triangle ABD) = A(\triangle ADC)$." "\n"
-    r"**Reason (R):** Triangles having equal bases on the same straight line and sharing a common vertex have equal heights."
-)
+q31_svg = svg_median_triangle(top='A', b_left='B', mid='D', b_right='C', title="Median Area Property")
+q31_assertion = r"In $\triangle ABC$, median $AD$ divides the triangle into $\triangle ABD$ and $\triangle ADC$ such that $A(\triangle ABD) = A(\triangle ADC)$."
+q31_reason = r"Triangles having equal bases on the same straight line and sharing a common vertex have equal heights."
+q31_text = f"{q31_svg}\nAssertion (A): {q31_assertion}\nReason (R): {q31_reason}"
 q31_exp = (
     r"**Step-by-step Solution:**" "\n\n"
     r"1. **Check Assertion (A):** In $\triangle ABC$, median $AD$ divides $BC$ into two equal parts ($BD = DC$). Both $\triangle ABD$ and $\triangle ADC$ share the vertex $A$ and have bases on line $BC$. Hence, their areas are equal. Assertion (A) is **True**." "\n"
@@ -628,16 +632,13 @@ exam_data.append((q31_text, [
     "Both Assertion (A) and Reason (R) are true, but Reason (R) is NOT the correct explanation of Assertion (A).",
     "Assertion (A) is true, but Reason (R) is false.",
     "Assertion (A) is false, but Reason (R) is true."
-], "A", "OAR", "medium", q31_exp))
+], "A", "OAR", "medium", q31_exp, q31_assertion, q31_reason, q31_svg))
 
 # Q32 (OAR) - Parallel Lines Assertion Reason with SVG
-q32_svg = svg_parallel_lines_triangles(top_l='A', top_r='D', bot_l='B', bot_r='C', title="Parallel Lines Equal Areas")
-q32_text = (
-    f"{q32_svg}\n"
-    r"Given below are two statements labeled as Assertion (A) and Reason (R):" "\n\n"
-    r"**Assertion (A):** If line segment $AD \parallel \text{segment } BC$, then $A(\triangle ABC) = A(\triangle DBC)$." "\n"
-    r"**Reason (R):** The perpendicular distance between two parallel lines is constant throughout, so triangles having a common base and vertices on a parallel line have equal heights."
-)
+q32_svg = svg_parallel_lines_triangles(top_l='A', top_r='D', bot_l='B', bot_r='C', title="Triangles Between Parallel Lines")
+q32_assertion = r"If line segment $AD \parallel \text{segment } BC$, then $A(\triangle ABC) = A(\triangle DBC)$."
+q32_reason = r"The perpendicular distance between two parallel lines is constant throughout, so triangles having a common base and vertices on a parallel line have equal heights."
+q32_text = f"{q32_svg}\nAssertion (A): {q32_assertion}\nReason (R): {q32_reason}"
 q32_exp = (
     r"**Step-by-step Solution:**" "\n\n"
     r"1. **Assertion (A):** $\triangle ABC$ and $\triangle DBC$ share the common base $BC$. Since $AD \parallel BC$, both vertices $A$ and $D$ are on the parallel line, making their heights equal. Hence $A(\triangle ABC) = A(\triangle DBC)$. Assertion (A) is **True**." "\n"
@@ -649,14 +650,12 @@ exam_data.append((q32_text, [
     "Both Assertion (A) and Reason (R) are true, but Reason (R) is NOT the correct explanation of Assertion (A).",
     "Assertion (A) is true, but Reason (R) is false.",
     "Assertion (A) is false, but Reason (R) is true."
-], "A", "OAR", "medium", q32_exp))
+], "A", "OAR", "medium", q32_exp, q32_assertion, q32_reason, q32_svg))
 
 # Q33 (OAR) - Reciprocal Base and Height Ratio
-q33_text = (
-    r"Given below are two statements labeled as Assertion (A) and Reason (R):" "\n\n"
-    r"**Assertion (A):** If the bases of two triangles are in the ratio $2 : 3$ and their heights are in the ratio $3 : 2$, then the two triangles have equal areas." "\n"
-    r"**Reason (R):** The ratio of the areas of two triangles is given by $\frac{A_1}{A_2} = \frac{b_1 \times h_1}{b_2 \times h_2}$, and $\frac{2 \times 3}{3 \times 2} = 1$."
-)
+q33_assertion = r"If the bases of two triangles are in the ratio $2 : 3$ and their heights are in the ratio $3 : 2$, then the two triangles have equal areas."
+q33_reason = r"The ratio of the areas of two triangles is given by $\frac{A_1}{A_2} = \frac{b_1 \times h_1}{b_2 \times h_2}$, and $\frac{2 \times 3}{3 \times 2} = 1$."
+q33_text = f"Assertion (A): {q33_assertion}\nReason (R): {q33_reason}"
 q33_exp = (
     r"**Step-by-step Solution:**" "\n\n"
     r"1. **Check Assertion (A):** Area ratio is $\frac{A_1}{A_2} = \left(\frac{b_1}{b_2}\right) \times \left(\frac{h_1}{h_2}\right) = \frac{2}{3} \times \frac{3}{2} = 1$. Since the ratio is $1$, $A_1 = A_2$. Assertion (A) is **True**." "\n"
@@ -669,14 +668,12 @@ exam_data.append((q33_text, [
     "Both Assertion (A) and Reason (R) are true, but Reason (R) is NOT the correct explanation of Assertion (A).",
     "Assertion (A) is true, but Reason (R) is false.",
     "Assertion (A) is false, but Reason (R) is true."
-], "A", "OAR", "medium", q33_exp))
+], "A", "OAR", "medium", q33_exp, q33_assertion, q33_reason, None))
 
 # Q34 (OAR) - Equal Area Does Not Imply Equal Perimeters
-q34_text = (
-    r"Given below are two statements labeled as Assertion (A) and Reason (R):" "\n\n"
-    r"**Assertion (A):** Two triangles having equal areas always have equal perimeters." "\n"
-    r"**Reason (R):** The area of a triangle depends only on its base and corresponding height ($A = \frac{1}{2} b h$), whereas perimeter depends on the sum of all three side lengths."
-)
+q34_assertion = r"Two triangles having equal areas always have equal perimeters."
+q34_reason = r"The area of a triangle depends only on its base and corresponding height ($A = \frac{1}{2} b h$), whereas perimeter depends on the sum of all three side lengths."
+q34_text = f"Assertion (A): {q34_assertion}\nReason (R): {q34_reason}"
 q34_exp = (
     r"**Step-by-step Solution:**" "\n\n"
     r"1. **Check Assertion (A):** Two triangles can have identical areas with completely different side lengths (e.g. a right triangle with sides $3, 4, 5$ has area $6$ and perimeter $12$; a triangle with base $12$ and height $1$ has area $6$ but perimeter $> 24$). Thus, Assertion (A) is **False**." "\n"
@@ -688,7 +685,7 @@ exam_data.append((q34_text, [
     "Both Assertion (A) and Reason (R) are true, but Reason (R) is NOT the correct explanation of Assertion (A).",
     "Assertion (A) is true, but Reason (R) is false.",
     "Assertion (A) is false, but Reason (R) is true."
-], "D", "OAR", "medium", q34_exp))
+], "D", "OAR", "medium", q34_exp, q34_assertion, q34_reason, None))
 
 # Q35 (ONE) - Practice Set 1.1 Q1 Value of k with SVG
 q35_svg = svg_two_triangles(('A','B','C','D'), 'b₁ = 9', 'h₁ = 5', ('P','Q','R','S'), 'b₂ = 10', 'h₂ = 6', title="Find Value of k")
@@ -1158,12 +1155,9 @@ prac_data.append((q63_text, ["True", "False"], "B", "OTF", "easy", q63_exp))
 
 # Q64 (OAR) - Trapezium Diagonals Assertion Reason with SVG
 q64_svg = svg_trapezium_diagonals(title="Trapezium Non-Parallel Triangles")
-q64_text = (
-    f"{q64_svg}\n"
-    r"Given below are two statements labeled as Assertion (A) and Reason (R):" "\n\n"
-    r"**Assertion (A):** In trapezium $ABCD$ with $AB \parallel CD$ and diagonals intersecting at $P$, $A(\triangle APD) = A(\triangle BPC)$." "\n"
-    r"**Reason (R):** Subtracting the area of the common sub-triangle $\triangle DPC$ from the equal areas $A(\triangle ADC) = A(\triangle BDC)$ leaves $A(\triangle APD) = A(\triangle BPC)$."
-)
+q64_assertion = r"In trapezium $ABCD$ with $AB \parallel CD$ and diagonals intersecting at $P$, $A(\triangle APD) = A(\triangle BPC)$."
+q64_reason = r"Subtracting the area of the common sub-triangle $\triangle DPC$ from the equal areas $A(\triangle ADC) = A(\triangle BDC)$ leaves $A(\triangle APD) = A(\triangle BPC)$."
+q64_text = f"{q64_svg}\nAssertion (A): {q64_assertion}\nReason (R): {q64_reason}"
 q64_exp = (
     r"**Step-by-step Solution:**" "\n\n"
     r"1. Both $\triangle ADC$ and $\triangle BDC$ have common base $CD$ and equal heights (lying between parallel lines $AB \parallel CD$). Hence $A(\triangle ADC) = A(\triangle BDC)$." "\n"
@@ -1175,14 +1169,12 @@ prac_data.append((q64_text, [
     "Both Assertion (A) and Reason (R) are true, but Reason (R) is NOT the correct explanation of Assertion (A).",
     "Assertion (A) is true, but Reason (R) is false.",
     "Assertion (A) is false, but Reason (R) is true."
-], "A", "OAR", "medium", q64_exp))
+], "A", "OAR", "medium", q64_exp, q64_assertion, q64_reason, q64_svg))
 
 # Q65 (OAR) - Ratio of Areas Equal Heights
-q65_text = (
-    r"Given below are two statements labeled as Assertion (A) and Reason (R):" "\n\n"
-    r"**Assertion (A):** In $\triangle ABC$, if $D$ is a point on $BC$ such that $BD : DC = 1 : 4$, then $A(\triangle ABD) = \frac{1}{5} A(\triangle ABC)$." "\n"
-    r"**Reason (R):** The total base is $BC = BD + DC = 1 + 4 = 5$ parts, and triangles having equal heights have areas proportional to their bases."
-)
+q65_assertion = r"In $\triangle ABC$, if $D$ is a point on $BC$ such that $BD : DC = 1 : 4$, then $A(\triangle ABD) = \frac{1}{5} A(\triangle ABC)$."
+q65_reason = r"The total base is $BC = BD + DC = 1 + 4 = 5$ parts, and triangles having equal heights have areas proportional to their bases."
+q65_text = f"Assertion (A): {q65_assertion}\nReason (R): {q65_reason}"
 q65_exp = (
     r"**Step-by-step Solution:**" "\n\n"
     r"1. $\triangle ABD$ and $\triangle ABC$ share vertex $A$ and collinear bases on line $BC$. Hence, they have equal heights." "\n"
@@ -1194,16 +1186,13 @@ prac_data.append((q65_text, [
     "Both Assertion (A) and Reason (R) are true, but Reason (R) is NOT the correct explanation of Assertion (A).",
     "Assertion (A) is true, but Reason (R) is false.",
     "Assertion (A) is false, but Reason (R) is true."
-], "A", "OAR", "easy", q65_exp))
+], "A", "OAR", "easy", q65_exp, q65_assertion, q65_reason, None))
 
 # Q66 (OAR) - Practice Set 1.1 Q3 Assertion Reason with SVG
 q66_svg = svg_practice_set_1_1_q3(rq_val='6', ps_val='6', pr_val='12', qt_label='QT = 3', title="Two Altitudes in a Triangle")
-q66_text = (
-    f"{q66_svg}\n"
-    r"Given below are two statements labeled as Assertion (A) and Reason (R):" "\n\n"
-    r"**Assertion (A):** In $\triangle PQR$, if $RQ = 6, PS = 6$ (with $PS \perp \text{ray } RQ$) and $PR = 12, QT \perp PR$, then $QT = 3$." "\n"
-    r"**Reason (R):** The area of a triangle remains constant regardless of which side is chosen as the base and its corresponding altitude."
-)
+q66_assertion = r"In $\triangle PQR$, if $RQ = 6, PS = 6$ (with $PS \perp \text{ray } RQ$) and $PR = 12, QT \perp PR$, then $QT = 3$."
+q66_reason = r"The area of a triangle remains constant regardless of which side is chosen as the base and its corresponding altitude."
+q66_text = f"{q66_svg}\nAssertion (A): {q66_assertion}\nReason (R): {q66_reason}"
 q66_exp = (
     r"**Step-by-step Solution:**" "\n\n"
     r"1. Area of $\triangle PQR = \frac{1}{2} \times 6 \times 6 = 18$." "\n"
@@ -1215,7 +1204,7 @@ prac_data.append((q66_text, [
     "Both Assertion (A) and Reason (R) are true, but Reason (R) is NOT the correct explanation of Assertion (A).",
     "Assertion (A) is true, but Reason (R) is false.",
     "Assertion (A) is false, but Reason (R) is true."
-], "A", "OAR", "medium", q66_exp))
+], "A", "OAR", "medium", q66_exp, q66_assertion, q66_reason, q66_svg))
 
 # Q67 (ONE) - Practice Set 1.1 Q2 Numeric with SVG
 q67_svg = svg_practice_set_1_1_q2(bc_val='5', ad_val='10', title="Numeric Ratio Practice")
@@ -1417,11 +1406,9 @@ q80_exp = (
 mock_data.append((q80_text, ["heights", "bases", "angles", "medians"], "A", "OFB", "easy", q80_exp))
 
 # Q81 (OAR) - Foundation Assertion Reason
-q81_text = (
-    r"Given below are two statements labeled as Assertion (A) and Reason (R):" "\n\n"
-    r"**Assertion (A):** The ratio of the areas of two triangles is equal to the ratio of the products of their bases and corresponding heights." "\n"
-    r"**Reason (R):** The area of a triangle is calculated as $\frac{1}{2} \times \text{base} \times \text{height}$, and the factor of $\frac{1}{2}$ cancels out when taking the ratio."
-)
+q81_assertion = r"The ratio of the areas of two triangles is equal to the ratio of the products of their bases and corresponding heights."
+q81_reason = r"The area of a triangle is calculated as $\frac{1}{2} \times \text{base} \times \text{height}$, and the factor of $\frac{1}{2}$ cancels out when taking the ratio."
+q81_text = f"Assertion (A): {q81_assertion}\nReason (R): {q81_reason}"
 q81_exp = (
     r"**Step-by-step Solution:**" "\n\n"
     r"1. **Assertion (A):** This is the fundamental property of Topic 1.1: $\frac{A_1}{A_2} = \frac{b_1 \times h_1}{b_2 \times h_2}$. (True)" "\n"
@@ -1433,16 +1420,13 @@ mock_data.append((q81_text, [
     "Both Assertion (A) and Reason (R) are true, but Reason (R) is NOT the correct explanation of Assertion (A).",
     "Assertion (A) is true, but Reason (R) is false.",
     "Assertion (A) is false, but Reason (R) is true."
-], "A", "OAR", "easy", q81_exp))
+], "A", "OAR", "easy", q81_exp, q81_assertion, q81_reason, None))
 
 # Q82 (OAR) - Foundation Assertion Reason on Median
-q82_svg = svg_median_triangle(top='X', b_left='Y', mid='M', b_right='Z', title="Foundation - Median Area Property")
-q82_text = (
-    f"{q82_svg}\n"
-    r"Given below are two statements labeled as Assertion (A) and Reason (R):" "\n\n"
-    r"**Assertion (A):** If segment $XM$ is a median of $\triangle XYZ$, then $A(\triangle XYM) = \frac{1}{2} A(\triangle XYZ)$." "\n"
-    r"**Reason (R):** A median divides the opposite side into two equal segments, creating two triangles that share the same vertex and have equal collinear bases."
-)
+q82_svg = svg_median_triangle(top='X', b_left='Y', mid='M', b_right='Z', title="Median of a Triangle")
+q82_assertion = r"If segment $XM$ is a median of $\triangle XYZ$, then $A(\triangle XYM) = \frac{1}{2} A(\triangle XYZ)$."
+q82_reason = r"A median divides the opposite side into two equal segments, creating two triangles that share the same vertex and have equal collinear bases."
+q82_text = f"{q82_svg}\nAssertion (A): {q82_assertion}\nReason (R): {q82_reason}"
 q82_exp = (
     r"**Step-by-step Solution:**" "\n\n"
     r"1. Since $XM$ is a median, $YM = MZ$." "\n"
@@ -1455,7 +1439,7 @@ mock_data.append((q82_text, [
     "Both Assertion (A) and Reason (R) are true, but Reason (R) is NOT the correct explanation of Assertion (A).",
     "Assertion (A) is true, but Reason (R) is false.",
     "Assertion (A) is false, but Reason (R) is true."
-], "A", "OAR", "easy", q82_exp))
+], "A", "OAR", "easy", q82_exp, q82_assertion, q82_reason, q82_svg))
 
 print(f"Loaded {len(mock_data)} Mock/Foundation questions.")
 
@@ -1469,21 +1453,30 @@ for idx, item in enumerate(exam_data):
     qnum = idx + 1
     qtype = item[3]
     qcode = f"{TOPIC_CODE}-{qtype}-{qnum:03d}"
-    all_questions.append(make_q(qcode, TOPIC_CODE, item[0], item[1], item[2], qtype, item[4], "exam", "standard", item[5]))
+    assertion = item[6] if len(item) > 6 else None
+    reason = item[7] if len(item) > 7 else None
+    diagram = item[8] if len(item) > 8 else None
+    all_questions.append(make_q(qcode, TOPIC_CODE, item[0], item[1], item[2], qtype, item[4], "exam", "standard", item[5], assertion, reason, diagram))
 
 # 30 Practice (041 - 070)
 for idx, item in enumerate(prac_data):
     qnum = idx + 41
     qtype = item[3]
     qcode = f"{TOPIC_CODE}-{qtype}-{qnum:03d}"
-    all_questions.append(make_q(qcode, TOPIC_CODE, item[0], item[1], item[2], qtype, item[4], "practice", "standard", item[5]))
+    assertion = item[6] if len(item) > 6 else None
+    reason = item[7] if len(item) > 7 else None
+    diagram = item[8] if len(item) > 8 else None
+    all_questions.append(make_q(qcode, TOPIC_CODE, item[0], item[1], item[2], qtype, item[4], "practice", "standard", item[5], assertion, reason, diagram))
 
 # 12 Mock/Foundation (071 - 082)
 for idx, item in enumerate(mock_data):
     qnum = idx + 71
     qtype = item[3]
     qcode = f"{TOPIC_CODE}-{qtype}-{qnum:03d}"
-    all_questions.append(make_q(qcode, TOPIC_CODE, item[0], item[1], item[2], qtype, item[4], "mock", "foundation", item[5]))
+    assertion = item[6] if len(item) > 6 else None
+    reason = item[7] if len(item) > 7 else None
+    diagram = item[8] if len(item) > 8 else None
+    all_questions.append(make_q(qcode, TOPIC_CODE, item[0], item[1], item[2], qtype, item[4], "mock", "foundation", item[5], assertion, reason, diagram))
 
 print(f"\nTotal canonical questions assembled: {len(all_questions)}")
 assert len(all_questions) == 82, f"Expected 82 questions, got {len(all_questions)}"

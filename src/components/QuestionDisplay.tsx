@@ -688,7 +688,7 @@ export const QuestionDisplay: React.FC<QuestionDisplayProps> = React.memo(({
      ----------------------------------------------------------------------- */
   const renderStem = () => {
     if (isAR) {
-      const { assertion, reason } = extractAssertionAndReason({ text: qText, type: qType, ...(typeof question === 'object' ? question : {}) });
+      const { assertion, reason, diagram } = extractAssertionAndReason({ text: qText, type: qType, ...(typeof question === 'object' ? question : {}) });
       return (
         <div style={{ marginBottom: mode === 'stem-only' ? 0 : '14px' }}>
           {(prefix || headerRight || (showQuestionCode && qCode)) && (
@@ -704,12 +704,17 @@ export const QuestionDisplay: React.FC<QuestionDisplayProps> = React.memo(({
               {headerRight}
             </div>
           )}
-          <div style={{ background: 'var(--bg-soft, #f8fafc)', border: '1px solid var(--border-light, #e2e8f0)', borderRadius: '6px', padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          {diagram && (
+            <div style={{ marginBottom: '12px' }}>
+              <RichMathText content={diagram} onDiagramClick={handleDiagramClick} />
+            </div>
+          )}
+          <div style={{ background: 'var(--bg-soft, #f8fafc)', border: '1px solid var(--border-light, #e2e8f0)', borderRadius: '6px', padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <div>
-              <strong>Assertion (A):</strong> <RichMathText content={assertion} inline onDiagramClick={handleDiagramClick} />
+              <strong style={{ color: 'var(--accent, #3b82f6)' }}>Assertion (A):</strong> <RichMathText content={assertion} inline onDiagramClick={handleDiagramClick} />
             </div>
             <div>
-              <strong>Reason (R):</strong> <RichMathText content={reason} inline onDiagramClick={handleDiagramClick} />
+              <strong style={{ color: 'var(--accent, #3b82f6)' }}>Reason (R):</strong> <RichMathText content={reason} inline onDiagramClick={handleDiagramClick} />
             </div>
           </div>
         </div>
