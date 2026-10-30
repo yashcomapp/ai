@@ -23,7 +23,7 @@ async function check() {
     'questions', 'syllabus', 'syllabusTopicIndex', 'exams', 'subjectiveExams',
     'examAttempts', 'subjectiveAttempts', 'reviews', 'parentReviews',
     'evaluations', 'studentTopicMastery', 'liveExamSessions', 'liveExamEvidence',
-    'chatMessages', 'chatChannels', 'users', 'batches', 'notices',
+    'chatMessages', 'chatChannels', 'chatRooms', 'users', 'batches', 'notices',
     'attendance', 'dailyPractices', 'practiceSubmissions'
   ];
   console.log('Collection Document Counts (via aggregation count - zero payload):');

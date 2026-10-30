@@ -52,7 +52,8 @@ export async function getSyllabusByClass(targetClass?: string | number) {
 /**
  * Single Source of Truth (SSOT) helper to fetch or build a cached syllabus topics map (Map<topicCode, topicMetadata>)
  * for given class codes (e.g. ['CBSE-8', 'MH-10', '10']).
- * Uses memory caching to guarantee zero Firestore read overhead.
+ * Constructs the entire 2,813 topic index dynamically from the 16 root syllabus documents
+ * via getCachedSyllabus, guaranteeing ZERO unbounded reads to syllabusTopicIndex.
  */
 export async function getCachedSyllabusTopicsMap(classCodes: string[] = []): Promise<Map<string, any>> {
   const cleanClasses = Array.from(new Set(classCodes.map(c => String(c).trim()).filter(Boolean))).sort();
@@ -60,53 +61,108 @@ export async function getCachedSyllabusTopicsMap(classCodes: string[] = []): Pro
   const cached = getFromCache<Map<string, any>>(cacheKey);
   if (cached) return cached;
 
-  let syllabusTopics: any[] = [];
-  if (cleanClasses.length > 0) {
-    const classChunks: string[][] = [];
-    for (let i = 0; i < cleanClasses.length; i += 10) {
-      classChunks.push(cleanClasses.slice(i, i + 10));
+  const syllabusSnap = await getCachedSyllabus();
+  const map = new Map<string, any>();
+
+  syllabusSnap.docs.forEach((doc: any) => {
+    const data = typeof doc.data === 'function' ? doc.data() : doc;
+    const boardCode = data.boardCode || (data.board === 'CBSE' ? 'CBSE' : 'MH');
+    const classNum = String(data.class || '');
+    const subjectCode = data.subjectCode || '';
+    const subjectName = data.subject || data.subjectName || '';
+
+    // If specific classCodes requested, check matching
+    if (cleanClasses.length > 0) {
+      const matchClass = cleanClasses.some(c => c === classNum || c === `${boardCode}-${classNum}` || c.endsWith(`-${classNum}`));
+      if (!matchClass) return;
     }
-    const sSnaps = await Promise.all(classChunks.map(chunk =>
-      adminDb.collection('syllabusTopicIndex')
-        .where('classCode', 'in', chunk)
-        .get()
-    ));
-    sSnaps.forEach(sSnap => {
-      sSnap.docs.forEach((doc: any) => syllabusTopics.push(doc.data()));
+
+    (data.chapters || []).forEach((ch: any) => {
+      const chNum = String(ch.number || ch.chapterNumber || '');
+      const chName = ch.name || '';
+      (ch.topics || []).forEach((t: any) => {
+        const tNum = String(t.topicNumber || t.number || '');
+        const tCode = t.topicCode || `${boardCode}-${classNum}-${subjectCode}-${chNum}-${tNum}`;
+        const tObj = {
+          topicCode: tCode,
+          topicNumber: tNum,
+          topicName: t.name || t.title || '',
+          name: t.name || t.title || '',
+          title: t.name || t.title || '',
+          chapterNumber: chNum,
+          chapterName: chName,
+          boardCode,
+          class: classNum,
+          classCode: classNum,
+          subjectCode,
+          subjectName,
+          targetQuestions: t.targetQuestions || 30,
+          totalQuestions: t.totalQuestions || 30,
+          subtopics: t.subtopics || []
+        };
+        map.set(tCode, tObj);
+
+        // Subtopics
+        (t.subtopics || []).forEach((st: any, idx: number) => {
+          let stNum = '';
+          let stName = '';
+          if (typeof st === 'string') {
+            stNum = `${tNum}.${idx + 1}`;
+            stName = st;
+          } else if (st && typeof st === 'object') {
+            stNum = String(st.topicNumber || st.number || `${tNum}.${idx + 1}`);
+            stName = st.name || st.title || '';
+          }
+          const stCode = `${tCode}.${idx + 1}`;
+          map.set(stCode, {
+            topicCode: stCode,
+            parentTopicCode: tCode,
+            topicNumber: stNum,
+            topicName: stName,
+            name: stName,
+            title: stName,
+            chapterNumber: chNum,
+            chapterName: chName,
+            boardCode,
+            class: classNum,
+            classCode: classNum,
+            subjectCode,
+            subjectName,
+            targetQuestions: t.targetQuestions || 30,
+            totalQuestions: t.totalQuestions || 30
+          });
+        });
+      });
     });
-  }
+  });
 
-  // Fallback if none found or cleanClasses was empty
-  if (syllabusTopics.length === 0) {
-    const fallbackSnap = await adminDb.collection('syllabusTopicIndex').limit(600).get();
-    syllabusTopics = fallbackSnap.docs.map((doc: any) => doc.data());
-  }
-
-  const map = new Map<string, any>(syllabusTopics.map((t: any) => [t.topicCode, t]));
-  setInCache(cacheKey, map, 300000); // 5 mins in-memory cache
+  setInCache(cacheKey, map, 600000); // 10 mins cache
   return map;
 }
 
 /**
- * Cached SSOT helper to query syllabusTopicIndex documents for a list of topic codes.
- * Uses 10-minute in-memory caching per topic code and chunks Firestore 'in' queries by 30.
+ * Cached SSOT helper to query topic metadata for a list of topic codes.
+ * Uses in-memory syllabus topics map to resolve topic metadata with ZERO Firestore reads.
+ * Falls back to direct document lookup only for non-standard unindexed codes.
  */
 export async function fetchTopicIndexByCodes(topicCodes: string[]): Promise<Map<string, any>> {
   const result = new Map<string, any>();
   const uniqueCodes = Array.from(new Set((topicCodes || []).filter(Boolean)));
   if (uniqueCodes.length === 0) return result;
 
+  const fullTopicsMap = await getCachedSyllabusTopicsMap();
   const missingCodes: string[] = [];
 
   uniqueCodes.forEach(code => {
-    const cached = getFromCache<any>(`topic_index_${code}`);
-    if (cached) {
-      result.set(code, cached);
+    const found = fullTopicsMap.get(code);
+    if (found) {
+      result.set(code, found);
     } else {
       missingCodes.push(code);
     }
   });
 
+  // Only query syllabusTopicIndex if codes were not in the official 16 syllabus documents
   if (missingCodes.length > 0) {
     const chunks: string[][] = [];
     for (let i = 0; i < missingCodes.length; i += 30) {

@@ -1250,40 +1250,10 @@ export async function getStudentLearningData(userData: any, preloadedData?: Prel
     }
   });
 
-  // 3. Fetch standard syllabus topic index docs for all enrolled student classes (In-Memory Cached)
-  let syllabusTopics: any[] = [];
+  // 3. Fetch standard syllabus topic index docs for all enrolled student classes (In-Memory Cached from 16 root docs)
   const classesArr = Array.from(allClasses).sort();
-  const classKey = `syllabus_topics_${classesArr.join('_')}`;
-  let cachedTopics = getFromCache<any[]>(classKey);
-
-  if (cachedTopics) {
-    syllabusTopics = cachedTopics;
-  } else {
-    if (classesArr.length > 0) {
-      const classChunks = [];
-      for (let i = 0; i < classesArr.length; i += 10) {
-        classChunks.push(classesArr.slice(i, i + 10));
-      }
-      const sSnaps = await Promise.all(classChunks.map(chunk =>
-        adminDb.collection('syllabusTopicIndex')
-          .where('classCode', 'in', chunk)
-          .get()
-      ));
-      sSnaps.forEach(sSnap => {
-        sSnap.docs.forEach((doc: any) => syllabusTopics.push(doc.data()));
-      });
-    }
-
-    // Fallback if no topics match
-    if (syllabusTopics.length === 0) {
-      const syllabusTopicsSnap = await adminDb.collection('syllabusTopicIndex').limit(500).get();
-      syllabusTopics = syllabusTopicsSnap.docs.map((doc: any) => doc.data());
-    }
-
-    if (syllabusTopics.length > 0) {
-      setInCache(classKey, syllabusTopics, 300000); // 5 minutes in-memory cache
-    }
-  }
+  const cachedTopicsMap = await getCachedSyllabusTopicsMap(classesArr);
+  let syllabusTopics: any[] = Array.from(cachedTopicsMap.values());
 
   // Populate masteryMap
   const masteryMap = new Map<string, any>();

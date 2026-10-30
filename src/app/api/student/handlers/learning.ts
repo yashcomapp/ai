@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole } from '@/lib/auth';
 import { getStudentLearningData } from '@/lib/studentDb';
+import { getFromCache, setInCache } from '@/lib/firebase/cache';
 
 export async function GET(req: NextRequest) {
   try {
@@ -10,10 +11,24 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ message: 'Unauthorized. Student role required.' }, { status: 403 });
     }
 
+    const studentCode = student.userData?.studentCode || '';
+    const cacheKey = `student_learning_${studentCode}`;
+    const cached = getFromCache<any>(cacheKey);
+    if (cached) {
+      return NextResponse.json(cached, {
+        headers: {
+          'Cache-Control': 'private, max-age=60, stale-while-revalidate=120'
+        }
+      });
+    }
+
     const data = await getStudentLearningData(student.userData);
+    if (studentCode) {
+      setInCache(cacheKey, data, 60000); // 60s in-memory cache
+    }
     return NextResponse.json(data, {
       headers: {
-        'Cache-Control': 'private, max-age=30, stale-while-revalidate=60'
+        'Cache-Control': 'private, max-age=60, stale-while-revalidate=120'
       }
     });
 
