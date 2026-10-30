@@ -19,6 +19,8 @@ import {
   formatUserAnswerSummary,
   isAssertionReasonType,
   isMultipleChoiceType,
+  isObjectiveType,
+  isSubjectiveType,
   toCanonicalQuestionType,
   stripOptionLabel,
   DEFAULT_ASSERTION_REASON_OPTIONS
@@ -338,7 +340,11 @@ export default function AdminQuestionBankPage() {
 
   const handleCategoryChange = (cat: string) => {
     setFilterCategory(cat);
-    setFilterType('');
+    if (cat === 'objective' && filterType && isSubjectiveType(filterType)) {
+      setFilterType('');
+    } else if (cat === 'subjective' && filterType && isObjectiveType(filterType)) {
+      setFilterType('');
+    }
     setCurrentPage(1);
     setLastCodesHistory(['']);
   };
@@ -951,37 +957,35 @@ ${JSON.stringify(missingList, null, 2)}`;
               <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '5px' }}>Type</label>
               <select 
                 value={filterType} 
-                disabled={!filterCategory}
-                onChange={(e) => setFilterType(e.target.value)}
+                onChange={(e) => {
+                  setFilterType(e.target.value);
+                  setCurrentPage(1);
+                  setLastCodesHistory(['']);
+                }}
                 style={{ width: '100%', padding: '6px', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', background: 'var(--surface)', color: 'var(--text)', fontSize: '12px' }}
               >
-                {!filterCategory ? (
-                  <option value="">-- Choose Category First --</option>
-                ) : (
-                  <>
-                    <option value="">-- All Types --</option>
-                    {filterCategory === 'objective' ? (
-                      <>
-                        <option value="single_mcq">Single MCQ (OSC)</option>
-                        <option value="multiple_mcq">Multiple MCQ (OMC)</option>
-                        <option value="true_false">True / False (OTF)</option>
-                        <option value="assertion_reason">Assertion Reason (OAR)</option>
-                        <option value="fill_blanks">Fill in Blanks (OFB)</option>
-                        <option value="numerical">Numerical Entry (ONE)</option>
-                      </>
-                    ) : (
-                      <>
-                        <option value="subjective_short">Subjective Short (SSA - 2M)</option>
-                        <option value="subjective_long">Subjective Long (SLA - 4M)</option>
-                        <option value="subjective_reason">Subjective Reason (SSR - 2M)</option>
-                        <option value="subjective_notes">Subjective Notes (SSR - 2M)</option>
-                        <option value="subjective_define">Subjective Define (SDF - 1M)</option>
-                        <option value="subjective_laws">Subjective Laws (SLP - 1M)</option>
-                        <option value="numerical_short">Numerical Short (SSN - 2M)</option>
-                        <option value="numerical_long">Numerical Long (SLN - 4M)</option>
-                      </>
-                    )}
-                  </>
+                <option value="">-- All Types --</option>
+                {(!filterCategory || filterCategory === 'objective') && (
+                  <optgroup label="Objective Types">
+                    <option value="single_mcq">Single MCQ (OSC)</option>
+                    <option value="multiple_mcq">Multiple MCQ (OMC)</option>
+                    <option value="true_false">True / False (OTF)</option>
+                    <option value="assertion_reason">Assertion Reason (OAR)</option>
+                    <option value="fill_blanks">Fill in Blanks (OFB)</option>
+                    <option value="numerical">Numerical Entry (ONE)</option>
+                  </optgroup>
+                )}
+                {(!filterCategory || filterCategory === 'subjective') && (
+                  <optgroup label="Subjective Types">
+                    <option value="subjective_short">Subjective Short (SSA - 2M)</option>
+                    <option value="subjective_long">Subjective Long (SLA - 4M)</option>
+                    <option value="subjective_reason">Subjective Reason (SSR - 2M)</option>
+                    <option value="subjective_notes">Subjective Notes (SSR - 2M)</option>
+                    <option value="subjective_define">Subjective Define (SDF - 1M)</option>
+                    <option value="subjective_laws">Subjective Laws (SLP - 1M)</option>
+                    <option value="numerical_short">Numerical Short (SSN - 2M)</option>
+                    <option value="numerical_long">Numerical Long (SLN - 4M)</option>
+                  </optgroup>
                 )}
               </select>
             </div>
@@ -989,7 +993,11 @@ ${JSON.stringify(missingList, null, 2)}`;
               <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '5px' }}>Usage</label>
               <select 
                 value={filterUsage} 
-                onChange={(e) => setFilterUsage(e.target.value)}
+                onChange={(e) => {
+                  setFilterUsage(e.target.value);
+                  setCurrentPage(1);
+                  setLastCodesHistory(['']);
+                }}
                 style={{ width: '100%', padding: '6px', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', background: 'var(--surface)', color: 'var(--text)', fontSize: '12px' }}
               >
                 <option value="all">-- All Statuses --</option>
