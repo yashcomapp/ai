@@ -23,17 +23,17 @@ export async function GET(req: NextRequest) {
     if (cached) {
       return NextResponse.json(cached, {
         headers: {
-          'Cache-Control': 'private, max-age=15, stale-while-revalidate=30'
+          'Cache-Control': 'private, max-age=45, stale-while-revalidate=90'
         }
       });
     }
 
     const data = await getDashboardData(uid, userData, rangeDays);
-    setInCache(cacheKey, data, 20000); // 20s in-memory cache
+    setInCache(cacheKey, data, 60000); // 60s in-memory cache
 
     return NextResponse.json(data, {
       headers: {
-        'Cache-Control': 'private, max-age=15, stale-while-revalidate=30'
+        'Cache-Control': 'private, max-age=45, stale-while-revalidate=90'
       }
     });
   } catch (error: any) {

@@ -29,8 +29,8 @@ const SUBJECTIVE_CODES = new Set(['SDF', 'SLP', 'SSA', 'SSR', 'SSN', 'SLA', 'SLN
 async function syncAllSyllabusCounts() {
   console.log('=== SYNCING ALL 16 SYLLABUS DOCUMENTS & TOPIC COUNTS ===\n');
 
-  console.log('1. Fetching all questions...');
-  const qSnap = await db.collection('questions').get();
+  console.log('1. Fetching question topic codes & types (lean projection)...');
+  const qSnap = await db.collection('questions').select('topicCode', 'type').get();
   console.log(`Fetched ${qSnap.size} questions.`);
 
   const topicObjCounts = {};

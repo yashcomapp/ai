@@ -129,6 +129,11 @@ export async function GET(req: NextRequest) {
     const canonicalSubjectCode = getCanonicalSubjectCode(canonicalBoard, canonicalClass, subject);
     const canonicalBoardName = getCanonicalBoardName(canonicalBoard);
 
+    // Strict Safety Guard: Never execute unbounded collection sweep across 19,000+ questions
+    if (!canonicalBoard && !canonicalClass && !canonicalSubjectCode && !subject) {
+      return NextResponse.json({ questions: [], totalCount: 0 });
+    }
+
     // Fetch base documents matching canonical SSOT boardCode, class, subjectCode
     const cacheKey = `qb_base_${canonicalBoard}_${canonicalClass}_${canonicalSubjectCode || subject}`;
     let allQuestions = getFromCache<any[]>(cacheKey);
@@ -163,7 +168,7 @@ export async function GET(req: NextRequest) {
         const legacySnap = await legacyQuery.get();
         allQuestions = legacySnap.docs.map(doc => ({ id: doc.id, ...doc.data() as any }));
       }
-      setInCache(cacheKey, allQuestions, 60000); // 1 min cache
+      setInCache(cacheKey, allQuestions, 300000); // 5 min cache (auto-invalidated on write)
     }
 
     // In-memory filter for chapter, topic, category, type, usageStatus

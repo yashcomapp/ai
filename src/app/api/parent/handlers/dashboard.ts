@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
     if (cached) {
       return NextResponse.json(cached, {
         headers: {
-          'Cache-Control': 'private, max-age=15, stale-while-revalidate=30'
+          'Cache-Control': 'private, max-age=45, stale-while-revalidate=90'
         }
       });
     }
@@ -32,11 +32,11 @@ export async function GET(req: NextRequest) {
     if (!data.children || data.children.length === 0) {
       return NextResponse.json({ message: 'No active enrolled students are linked to this parent account. Access is restricted.' }, { status: 403 });
     }
-    setInCache(cacheKey, data, 20000); // 20s in-memory cache
+    setInCache(cacheKey, data, 60000); // 60s in-memory cache
 
     return NextResponse.json(data, {
       headers: {
-        'Cache-Control': 'private, max-age=15, stale-while-revalidate=30'
+        'Cache-Control': 'private, max-age=45, stale-while-revalidate=90'
       }
     });
 

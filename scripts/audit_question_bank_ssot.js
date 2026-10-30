@@ -40,8 +40,10 @@ async function runAudit() {
     syllabusByBoardClassSubjName[nameKey] = d.subjectCode;
   });
 
-  console.log('\n=== 2. AUDIT ALL QUESTIONS IN QUESTION BANK ===');
-  const qSnap = await db.collection('questions').get();
+  console.log('\n=== 2. AUDIT ALL QUESTIONS IN QUESTION BANK (LEAN PROJECTION) ===');
+  const qSnap = await db.collection('questions').select(
+    'questionCode', 'topicCode', 'board', 'boardCode', 'class', 'subject', 'subjectCode', 'chapterNumber', 'topicNumber', 'type', 'vault'
+  ).get();
   console.log(`Total Question Docs: ${qSnap.size}`);
 
   const discrepancies = [];

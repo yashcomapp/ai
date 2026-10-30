@@ -268,10 +268,10 @@ export async function POST(request: Request) {
       }
 
       if (utilityType === 'purgeOrphans') {
-        // Delete any questions not mapped to an active syllabus
+        // Delete any questions not mapped to an active syllabus (use lean projection to save egress)
         const [questionsSnap, syllabusSnap] = await Promise.all([
-          adminDb.collection('questions').get(),
-          adminDb.collection('syllabus').get()
+          adminDb.collection('questions').select('subjectCode').get(),
+          adminDb.collection('syllabus').select('subjectCode').get()
         ]);
 
         const activeSubjectCodes = new Set(syllabusSnap.docs.map(doc => doc.data().subjectCode).filter(Boolean));

@@ -24,12 +24,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'Unauthorized. Admin role required.' }, { status: 403 });
     }
 
-    const { mode } = await req.json().catch(() => ({ mode: 'dry_run' }));
+    const { mode, board, classNum, subjectCode } = await req.json().catch(() => ({ mode: 'dry_run' }));
     const isDryRun = mode === 'dry_run';
 
     // 1. Fetch all questions and syllabus topic index
     const [questionsSnap, topicIndexSnap] = await Promise.all([
-      adminDb.collection('questions').get(),
+      (() => {
+        let q: admin.firestore.Query = adminDb.collection('questions');
+        if (board) q = q.where('boardCode', '==', getCanonicalBoardCode(board));
+        if (classNum) q = q.where('class', '==', getCanonicalClass(classNum));
+        if (subjectCode) q = q.where('subjectCode', '==', subjectCode);
+        return q.get();
+      })(),
       adminDb.collection('syllabusTopicIndex').get()
     ]);
 
