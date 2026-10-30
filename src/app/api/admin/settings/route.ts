@@ -268,9 +268,16 @@ export async function POST(request: Request) {
       }
 
       if (utilityType === 'purgeOrphans') {
-        // Delete any questions not mapped to an active syllabus (use lean projection to save egress)
+        // Delete any questions not mapped to an active syllabus (scoped batch with limit to prevent unbounded 19k scan)
+        const targetBoard = body?.board;
+        const targetClass = body?.classNum;
+        let qQuery: FirebaseFirestore.Query = adminDb.collection('questions');
+        if (targetBoard) qQuery = qQuery.where('boardCode', '==', targetBoard);
+        if (targetClass) qQuery = qQuery.where('class', '==', targetClass);
+        qQuery = qQuery.select('subjectCode').limit(1000);
+
         const [questionsSnap, syllabusSnap] = await Promise.all([
-          adminDb.collection('questions').select('subjectCode').get(),
+          qQuery.get(),
           adminDb.collection('syllabus').select('subjectCode').get()
         ]);
 

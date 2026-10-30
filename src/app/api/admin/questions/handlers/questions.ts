@@ -129,31 +129,41 @@ export async function GET(req: NextRequest) {
     const canonicalSubjectCode = getCanonicalSubjectCode(canonicalBoard, canonicalClass, subject);
     const canonicalBoardName = getCanonicalBoardName(canonicalBoard);
 
-    // Strict Safety Guard: Never execute unbounded collection sweep across 19,000+ questions
-    if (!canonicalBoard && !canonicalClass && !canonicalSubjectCode && !subject) {
+    // Strict Safety Guard: Require at least one valid scoping filter
+    let appliedFilterCount = 0;
+    let baseQuery: admin.firestore.Query = adminDb.collection('questions');
+    if (canonicalBoard) {
+      baseQuery = baseQuery.where('boardCode', '==', canonicalBoard);
+      appliedFilterCount++;
+    }
+    if (canonicalClass) {
+      baseQuery = baseQuery.where('class', '==', canonicalClass);
+      appliedFilterCount++;
+    }
+    if (canonicalSubjectCode) {
+      baseQuery = baseQuery.where('subjectCode', '==', canonicalSubjectCode);
+      appliedFilterCount++;
+    } else if (subject) {
+      baseQuery = baseQuery.where('subject', '==', subject);
+      appliedFilterCount++;
+    }
+
+    if (appliedFilterCount === 0) {
       return NextResponse.json({ questions: [], totalCount: 0 });
     }
+
+    // Always cap baseQuery so an unexpectedly broad query can NEVER read more than 1,000 documents
+    baseQuery = baseQuery.limit(1000);
 
     // Fetch base documents matching canonical SSOT boardCode, class, subjectCode
     const cacheKey = `qb_base_${canonicalBoard}_${canonicalClass}_${canonicalSubjectCode || subject}`;
     let allQuestions = getFromCache<any[]>(cacheKey);
 
     if (!allQuestions) {
-      let baseQuery: admin.firestore.Query = adminDb.collection('questions');
-      if (canonicalBoard) {
-        baseQuery = baseQuery.where('boardCode', '==', canonicalBoard);
-      }
-      if (canonicalClass) {
-        baseQuery = baseQuery.where('class', '==', canonicalClass);
-      }
-      if (canonicalSubjectCode) {
-        baseQuery = baseQuery.where('subjectCode', '==', canonicalSubjectCode);
-      }
-
       const baseSnap = await baseQuery.get();
       if (!baseSnap.empty) {
         allQuestions = baseSnap.docs.map(doc => ({ id: doc.id, ...doc.data() as any }));
-      } else {
+      } else if (!canonicalSubjectCode && subject) {
         // Fallback for unmigrated legacy documents using full string names
         let legacyQuery: admin.firestore.Query = adminDb.collection('questions');
         if (canonicalBoardName) {
@@ -162,11 +172,11 @@ export async function GET(req: NextRequest) {
         if (canonicalClass) {
           legacyQuery = legacyQuery.where('class', '==', canonicalClass);
         }
-        if (subject) {
-          legacyQuery = legacyQuery.where('subject', '==', subject);
-        }
+        legacyQuery = legacyQuery.where('subject', '==', subject).limit(500);
         const legacySnap = await legacyQuery.get();
         allQuestions = legacySnap.docs.map(doc => ({ id: doc.id, ...doc.data() as any }));
+      } else {
+        allQuestions = [];
       }
       setInCache(cacheKey, allQuestions, 300000); // 5 min cache (auto-invalidated on write)
     }

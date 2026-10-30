@@ -243,17 +243,21 @@ export async function POST(request: Request) {
       // Single atomic commit: session and targets succeed or fail together
       await startBatch.commit();
 
-      // Broadcast push notifications and in-app notice asynchronously
-      notifyLiveClassStarted({
-        title: newSessionData.title,
-        subject: newSessionData.subject,
-        targetBatches,
-        targetStudents,
-        roomName: newSessionData.roomName,
-        passcode: newSessionData.passcode,
-        startedBy: newSessionData.startedBy,
-        expiresAtDate
-      }).catch(err => console.error('Failed to dispatch live class notifications:', err));
+      // Await push notifications and in-app notice so Vercel does not terminate execution early
+      try {
+        await notifyLiveClassStarted({
+          title: newSessionData.title,
+          subject: newSessionData.subject,
+          targetBatches,
+          targetStudents,
+          roomName: newSessionData.roomName,
+          passcode: newSessionData.passcode,
+          startedBy: newSessionData.startedBy,
+          expiresAtDate
+        });
+      } catch (err) {
+        console.error('Failed to dispatch live class notifications:', err);
+      }
 
       const teacherUrl = `https://meet.jit.si/${roomName}#config.channelLastN=-1&userInfo.displayName=${encodeURIComponent(teacherDisplayName)}`;
 

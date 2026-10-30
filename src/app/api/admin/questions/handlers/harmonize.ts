@@ -5,6 +5,7 @@ import { verifyRole } from '@/lib/auth';
 import { ChunkedBatch } from '@/lib/firebase/batch';
 import { preprocessMathText, QUESTION_TYPE_MAP } from '@/lib/questionTypes';
 import { invalidateCache } from '@/lib/firebase/cache';
+import { getCachedSyllabusTopicsMap } from '@/lib/syllabusServerUtils';
 
 
 import { 
@@ -27,6 +28,13 @@ export async function POST(req: NextRequest) {
     const { mode, board, classNum, subjectCode } = await req.json().catch(() => ({ mode: 'dry_run' }));
     const isDryRun = mode === 'dry_run';
 
+    if (!board && !classNum && !subjectCode) {
+      return NextResponse.json({
+        message: 'Scope required. Please specify board, classNum, or subjectCode to run harmonization in cost-safe batches.',
+        stats: { totalScanned: 0, details: [] }
+      }, { status: 400 });
+    }
+
     // 1. Fetch all questions and syllabus topic index
     const [questionsSnap, topicIndexSnap] = await Promise.all([
       (() => {
@@ -36,12 +44,12 @@ export async function POST(req: NextRequest) {
         if (subjectCode) q = q.where('subjectCode', '==', subjectCode);
         return q.get();
       })(),
-      adminDb.collection('syllabusTopicIndex').get()
+      getCachedSyllabusTopicsMap()
     ]);
 
     const topicIndexMap = new Map<string, string>();
-    topicIndexSnap.docs.forEach(doc => {
-      topicIndexMap.set(doc.id, doc.data()?.topicName || '');
+    topicIndexSnap.forEach((doc: any, tId: string) => {
+      topicIndexMap.set(tId, doc?.topicName || doc?.name || '');
     });
 
     const stats = {

@@ -31,9 +31,19 @@ export async function runDailyMaintenanceOpportunistic(): Promise<DailyMaintenan
     const doc = await tx.get(maintenanceRef);
     const data = doc.data();
 
-    // Already completed or claimed today
+    // Already completed or currently active today
     if (data?.lastDailyRunIST === todayStr) {
-      return { claimed: false, status: data.status || 'completed' };
+      if (data.status === 'completed') {
+        return { claimed: false, status: 'completed' };
+      }
+      // If running within last 15 mins, wait for it
+      if (data.status === 'running') {
+        const claimedAt = data.claimedAt ? new Date(data.claimedAt).getTime() : 0;
+        if (Date.now() - claimedAt < 15 * 60 * 1000) {
+          return { claimed: false, status: 'running' };
+        }
+      }
+      // If failed or stale running lock (>15m), allow retry
     }
 
     tx.set(maintenanceRef, {
