@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useRef, Suspense, useMemo } from 'react';
+import React, { useEffect, useState, useRef, Suspense, useMemo, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
@@ -378,8 +378,17 @@ function TopicPracticeContent() {
     }
   };
 
+  // Scroll to top immediately on question navigation to prevent layout jumping
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    if (questionContainerRef.current) {
+      questionContainerRef.current.scrollTop = 0;
+    }
+  }, [currentQIndex]);
+
   const handleNext = () => {
     setFeedbackOpen(false);
+    window.scrollTo({ top: 0, behavior: 'instant' });
     if (!data) return;
     if (currentQIndex < data.questions.length - 1) {
       setCurrentQIndex(currentQIndex + 1);
@@ -480,37 +489,50 @@ function TopicPracticeContent() {
     }
   };
 
-  const handleCheckboxChange = (letter: string) => {
-    let currentChoices: string[] = [];
-    try {
-      currentChoices = JSON.parse(userAnswers[currentQIndex] || '[]');
-    } catch {
-      currentChoices = [];
+  const handleCheckboxChange = useCallback((letter: string) => {
+    setUserAnswers(prev => {
+      let currentChoices: string[] = [];
+      try {
+        currentChoices = JSON.parse(prev[currentQIndex] || '[]');
+      } catch {
+        currentChoices = [];
+      }
+
+      if (currentChoices.includes(letter)) {
+        currentChoices = currentChoices.filter(x => x !== letter);
+      } else {
+        currentChoices.push(letter);
+      }
+
+      const updated = [...prev];
+      updated[currentQIndex] = JSON.stringify(currentChoices);
+      return updated;
+    });
+  }, [currentQIndex]);
+
+  const handleRadioChange = useCallback((choice: string) => {
+    setUserAnswers(prev => {
+      const updated = [...prev];
+      const currentVal = updated[currentQIndex] || '';
+      updated[currentQIndex] = currentVal === choice ? '' : choice;
+      return updated;
+    });
+  }, [currentQIndex]);
+
+  const handleTextAnswerChange = useCallback((val: string) => {
+    setUserAnswers(prev => {
+      const updated = [...prev];
+      updated[currentQIndex] = val;
+      return updated;
+    });
+  }, [currentQIndex]);
+
+  const handleBack = useCallback(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    if (currentQIndex > 0) {
+      setCurrentQIndex(prev => prev - 1);
     }
-
-    if (currentChoices.includes(letter)) {
-      currentChoices = currentChoices.filter(x => x !== letter);
-    } else {
-      currentChoices.push(letter);
-    }
-
-    const updated = [...userAnswers];
-    updated[currentQIndex] = JSON.stringify(currentChoices);
-    setUserAnswers(updated);
-  };
-
-  const handleRadioChange = (choice: string) => {
-    const updated = [...userAnswers];
-    const currentVal = updated[currentQIndex] || '';
-    updated[currentQIndex] = currentVal === choice ? '' : choice;
-    setUserAnswers(updated);
-  };
-
-  const handleTextAnswerChange = (val: string) => {
-    const updated = [...userAnswers];
-    updated[currentQIndex] = val;
-    setUserAnswers(updated);
-  };
+  }, [currentQIndex]);
 
   if (user && (user as any)?.autonomous) {
     return <PracticeLockPrompt type="autonomous" topicCode={topicCode} category={category} />;
@@ -631,9 +653,34 @@ function TopicPracticeContent() {
 
       {/* Main Practice Container */}
       {started && !finished && (
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', maxWidth: '800px', width: '100%', margin: '0 auto', padding: '24px 12px' }}>
+        <div className="practice-main-container">
+          <style>{`
+            .practice-main-container {
+              flex: 1;
+              display: flex;
+              flex-direction: column;
+              max-width: 800px;
+              width: 100%;
+              margin: 0 auto;
+              padding: 20px 12px;
+            }
+            .practice-progress-row {
+              display: flex;
+              gap: 6px;
+              margin-bottom: 16px;
+            }
+            @media (max-width: 640px) {
+              .practice-main-container {
+                padding: 6px 8px !important;
+              }
+              .practice-progress-row {
+                margin-bottom: 8px !important;
+                gap: 4px !important;
+              }
+            }
+          `}</style>
           {/* Progress Indicator */}
-          <div style={{ display: 'flex', gap: '6px', marginBottom: '20px' }}>
+          <div className="practice-progress-row">
             {data.questions.map((_, idx) => {
               const isCurrent = idx === currentQIndex;
               const isSubmitted = submittedAnswers[idx];
@@ -677,7 +724,7 @@ function TopicPracticeContent() {
             onCheckboxChange={handleCheckboxChange}
             onRadioChange={handleRadioChange}
             onTextAnswerChange={handleTextAnswerChange}
-            onBack={() => currentQIndex > 0 && setCurrentQIndex(currentQIndex - 1)}
+            onBack={handleBack}
             onSubmitQuestion={handleSubmitQuestion}
             onNext={handleNext}
           />

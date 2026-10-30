@@ -1,6 +1,7 @@
 import { adminDb } from '@/lib/firebase/admin';
 import { QuestionItem } from '@/types/question.types';
 import { deriveTopicCodeFromQuestionCode, isQuestionQuarantined } from '@/lib/questionTypes';
+import { getCanonicalBoardCode, getCanonicalSubjectCode } from '@/lib/syllabusUtils';
 
 export class QuestionRepository {
   private static collection = adminDb.collection('questions');
@@ -31,17 +32,26 @@ export class QuestionRepository {
    */
   static async getDuplicateGroups(
     limitVal = 10000,
-    filters?: { board?: string; classNum?: string; subject?: string }
+    filters?: { board?: string; classNum?: string; subject?: string; boardCode?: string; subjectCode?: string }
   ): Promise<{ text: string; questions: { questionCode: string; text: string; difficulty?: string; timesUsed?: number }[] }[]> {
     let query: FirebaseFirestore.Query = this.collection;
 
-    if (filters?.board) {
+    const bCode = filters?.boardCode || (filters?.board ? getCanonicalBoardCode(filters.board) : '');
+    const sCode = filters?.subjectCode || (filters?.subject ? getCanonicalSubjectCode(filters.subject, bCode, filters?.classNum) : '');
+
+    if (bCode) {
+      query = query.where('boardCode', '==', bCode);
+    } else if (filters?.board) {
       query = query.where('board', '==', filters.board);
     }
+
     if (filters?.classNum) {
-      query = query.where('class', '==', filters.classNum);
+      query = query.where('class', '==', String(filters.classNum));
     }
-    if (filters?.subject) {
+
+    if (sCode) {
+      query = query.where('subjectCode', '==', sCode);
+    } else if (filters?.subject) {
       query = query.where('subject', '==', filters.subject);
     }
 

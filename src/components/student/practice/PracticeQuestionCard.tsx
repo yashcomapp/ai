@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   preprocessMathText,
   stripOptionLabel,
@@ -36,7 +36,7 @@ interface PracticeQuestionCardProps {
   onNext: () => void;
 }
 
-export function PracticeQuestionCard({
+export const PracticeQuestionCard = React.memo(function PracticeQuestionCard({
   question,
   currentQIndex,
   totalQuestions,
@@ -55,6 +55,18 @@ export function PracticeQuestionCard({
 }: PracticeQuestionCardProps) {
   const [readingTimer, setReadingTimer] = useState<number>(20);
   const [correctAssimilationTimer, setCorrectAssimilationTimer] = useState<number>(0);
+
+  const handleSelectOption = useCallback((letter: string) => {
+    if (isMultipleChoiceType(question?.type)) {
+      onCheckboxChange(letter);
+    } else {
+      onRadioChange(letter);
+    }
+  }, [question?.type, onCheckboxChange, onRadioChange]);
+
+  const handleTextInput = useCallback((text: string) => {
+    onTextAnswerChange(text);
+  }, [onTextAnswerChange]);
 
   useEffect(() => {
     if (isQSubmitted) {
@@ -105,11 +117,10 @@ export function PracticeQuestionCard({
 
   return (
     <div 
-      className="card" 
+      className="card practice-question-card" 
       ref={questionContainerRef as any} 
       style={{ 
         background: 'var(--surface)', 
-        padding: '24px', 
         borderRadius: 'var(--radius-lg)', 
         border: '1px solid var(--border-light)', 
         flex: 1, 
@@ -118,6 +129,27 @@ export function PracticeQuestionCard({
         justifyContent: 'space-between' 
       }}
     >
+      <style>{`
+        .practice-question-card {
+          padding: 24px;
+        }
+        .practice-nav-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 15px;
+          margin-top: 24px;
+        }
+        @media (max-width: 640px) {
+          .practice-question-card {
+            padding: 14px 10px !important;
+          }
+          .practice-nav-row {
+            margin-top: 14px !important;
+            gap: 8px !important;
+          }
+        }
+      `}</style>
       <div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
           <span className="badge badge-info" style={{ textTransform: 'uppercase', fontSize: '10px' }}>
@@ -141,19 +173,13 @@ export function PracticeQuestionCard({
           userAnswer={userAnswer}
           isSubmitted={isQSubmitted}
           isCorrect={feedbackCorrect}
-          onSelectOption={(letter) => {
-            if (isMultipleChoiceType(question.type)) {
-              onCheckboxChange(letter);
-            } else {
-              onRadioChange(letter);
-            }
-          }}
-          onTextInput={(text) => onTextAnswerChange(text)}
+          onSelectOption={handleSelectOption}
+          onTextInput={handleTextInput}
         />
       </div>
 
       {/* Navigation buttons */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '15px', marginTop: '30px' }}>
+      <div className="practice-nav-row">
         <button 
           className="btn btn-secondary" 
           onClick={onBack}
@@ -193,4 +219,4 @@ export function PracticeQuestionCard({
       </div>
     </div>
   );
-}
+});

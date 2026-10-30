@@ -135,6 +135,9 @@ export function useMathRender(dependencyArray: any[] = []) {
                 for (let j = 0; j < m.addedNodes.length; j++) {
                   const node = m.addedNodes[j] as any;
                   if (node && node.nodeType === 1) {
+                    if (typeof node.closest === 'function' && node.closest('.practice-proctor-bar, .proctor-bar, video, .proctor-timer, .violation-stats')) {
+                      continue;
+                    }
                     const hasClass = typeof node.classList?.contains === 'function' && node.classList.contains('math-container');
                     const hasChild = typeof node.querySelector === 'function' && node.querySelector('.math-container') !== null;
                     if (hasClass || hasChild) {

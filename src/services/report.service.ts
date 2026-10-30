@@ -1377,21 +1377,24 @@ export class ReportService {
 
     const subjectData = subjectDoc.data()!;
     const subjectName = subjectData.subject || '';
+    const subjectCode = subjectData.subjectCode || '';
     const classVal = subjectData.class || '';
 
     const [examsSnap, subjectiveExamsSnap] = await Promise.all([
       adminDb.collection('exams')
         .where('class', '==', classVal)
-        .where('subjectName', '==', subjectName)
         .get(),
       adminDb.collection('subjectiveExams')
         .where('class', '==', classVal)
-        .where('subject', '==', subjectName)
         .get()
     ]);
 
-    let examsList = examsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() as any }));
-    let subjectiveExamsList = subjectiveExamsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() as any }));
+    let examsList = examsSnap.docs
+      .map(doc => ({ id: doc.id, ...doc.data() as any }))
+      .filter(e => (!subjectName && !subjectCode) || e.subjectName === subjectName || (subjectCode && e.subjectCode === subjectCode) || e.subject === subjectName);
+    let subjectiveExamsList = subjectiveExamsSnap.docs
+      .map(doc => ({ id: doc.id, ...doc.data() as any }))
+      .filter(e => (!subjectName && !subjectCode) || e.subject === subjectName || (subjectCode && e.subjectCode === subjectCode) || e.subjectName === subjectName);
 
     if (examId) {
       examsList = examsList.filter(exam => exam.id === examId);

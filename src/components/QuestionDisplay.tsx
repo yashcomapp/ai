@@ -24,6 +24,9 @@ import {
 } from '@/lib/questionTypes';
 import { loadKatexAssets } from '@/hooks/useMathRender';
 
+const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
+const OPTION_TEXT_FLEX_STYLE: React.CSSProperties = { flex: 1 };
+
 /* =========================================================================
    1. Universal Rich Math & SVG Diagram Renderer (Flicker-Free SSOT)
    ========================================================================= */
@@ -53,7 +56,7 @@ export const RichMathText: React.FC<RichMathTextProps> = React.memo(({
   const lastHtmlRef = useRef<string>('');
   const formattedHtml = useMemo(() => formatRichText(content || ''), [content]);
 
-  useEffect(() => {
+  useIsomorphicLayoutEffect(() => {
     const el = containerRef.current;
     if (!el) return;
 
@@ -891,7 +894,7 @@ export const QuestionDisplay: React.FC<QuestionDisplayProps> = React.memo(({
                 style={{ width: '17px', height: '17px' }}
               />
               <span style={{ fontWeight: 700 }}>({letter})</span>
-              <RichMathText content={stripOptionLabel(optText)} inline style={{ flex: 1 }} onDiagramClick={handleDiagramClick} />
+              <RichMathText content={stripOptionLabel(optText)} inline style={OPTION_TEXT_FLEX_STYLE} onDiagramClick={handleDiagramClick} />
               {badge}
             </div>
           );
