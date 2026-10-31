@@ -2,14 +2,12 @@ import { adminDb } from '@/lib/firebase/admin';
 import * as admin from 'firebase-admin';
 import { getDateKeyIST } from '@/lib/dateUtils';
 import { deriveTopicCodeFromQuestionCode } from '@/lib/questionTypes';
-import { chunkArray } from '@/lib/firestoreUtils';
 import { 
   StudentData, 
   QuotientResult, 
   QuotientComponentResult,
   ParameterCalculator, 
-  ScoreResult, 
-  StudentObservation 
+  ScoreResult 
 } from '@/types/quotient.types';
 import { evaluateSessionSincerity } from '@/lib/practiceTimeUtils';
 import { isDemoUser, getRequiredConfidence } from '@/lib/studentDb';

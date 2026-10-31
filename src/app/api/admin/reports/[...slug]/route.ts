@@ -100,16 +100,6 @@ async function handleLearningQuotientPost(req: NextRequest) {
     return NextResponse.json({ success: true, message: 'Learning quotient report caches refreshed.' }, { headers: NO_CACHE_HEADERS });
   }
 
-  // Classroom behavioral observations have been formally deprecated in favor of the 4 academic pillars:
-  // Exam Performance (30%), Topic Mastery (30%), Practice Efforts (25%), Practice Quality (15%).
-  if (['saveParameter', 'deleteParameter', 'batchAward', 'logSingleObservation', 'saveObservation'].includes(action)) {
-    return NextResponse.json({
-      success: true,
-      deprecated: true,
-      message: 'Classroom observations have been superseded by the 4 academic pillars and do not alter Learning Quotient scores.'
-    }, { headers: NO_CACHE_HEADERS });
-  }
-
   return NextResponse.json({
     message: `Unknown or invalid action: '${action}'. Valid actions: refresh.`
   }, { status: 400, headers: NO_CACHE_HEADERS });
