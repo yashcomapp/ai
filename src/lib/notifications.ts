@@ -570,13 +570,32 @@ export async function notifyNotice(
     const uids = new Set<string>();
 
     if (targetType === 'all') {
-      // Notify all active parents and students (doc IDs only)
-      const snaps = await adminDb.collection('users').select('status').get();
-      snaps.docs.forEach(doc => {
-        if (doc.data().status !== 'inactive') {
-          uids.add(doc.id);
+      // Notify all active parents and students (paged in 500-doc chunks, in-code status filter)
+      let lastDoc: FirebaseFirestore.DocumentSnapshot | null = null;
+      let hasMore = true;
+      while (hasMore) {
+        let q: FirebaseFirestore.Query = adminDb.collection('users')
+          .select('status')
+          .limit(500);
+        if (lastDoc) {
+          q = q.startAfter(lastDoc);
         }
-      });
+        const snap = await q.get();
+        if (snap.empty) {
+          hasMore = false;
+          break;
+        }
+        snap.docs.forEach(doc => {
+          if (doc.data().status !== 'inactive') {
+            uids.add(doc.id);
+          }
+        });
+        if (snap.docs.length < 500) {
+          hasMore = false;
+        } else {
+          lastDoc = snap.docs[snap.docs.length - 1];
+        }
+      }
     } else if (targetType === 'batch' && targetValues.length > 0) {
       // Notify all students in this batch and their parents
       const batchChunks: string[][] = [];

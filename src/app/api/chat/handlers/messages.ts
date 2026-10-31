@@ -514,13 +514,14 @@ export async function POST(req: NextRequest) {
       return !(p === senderId || (senderIsAdmin && (p === 'admin' || p === authResult.decodedToken?.uid)));
     });
 
-    otherParticipants.forEach((p: string) => {
-      roomUpdates[`unreadCounts.${p}`] = admin.firestore.FieldValue.increment(1);
-    });
-
     const batch = adminDb.batch();
     batch.set(messageIdRef, messagePayload);
     batch.update(roomRef, roomUpdates);
+
+    // Atomically increment unread counter for other participants using FieldPath (supports dots in parent email keys)
+    otherParticipants.forEach((p: string) => {
+      batch.update(roomRef, new admin.firestore.FieldPath('unreadCounts', p), admin.firestore.FieldValue.increment(1));
+    });
 
     await batch.commit();
 

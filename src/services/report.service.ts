@@ -92,27 +92,22 @@ export class ReportService {
       const cached = ReportCacheManager.get(cacheKey);
       if (cached) return cached;
     }
-    const [scoresSnap, studentsSnap] = await Promise.all([
-      adminDb.collection('integrityScores').select('integrityScore', 'score').get(),
+    const [aggSnap, reviewAggSnap, studentsSnap] = await Promise.all([
+      adminDb.collection('integrityScores').aggregate({
+        total: admin.firestore.AggregateField.count(),
+        avg: admin.firestore.AggregateField.average('integrityScore')
+      }).get(),
+      adminDb.collection('integrityScores').where('integrityScore', '<', 60).count().get(),
       adminDb.collection('users')
         .where('role', '==', 'student')
         .select('name', 'email', 'studentCode', 'rollNumber', 'class', 'status', 'isDemo')
         .get()
     ]);
 
-    const scores = scoresSnap.docs.map(doc => {
-      const data = doc.data();
-      const val = data.integrityScore !== undefined ? data.integrityScore : data.score;
-      return {
-        ...data,
-        resolvedScore: val !== undefined ? Number(val) : 100
-      };
-    });
-    const totalScores = scores.length;
-    const reviewCount = scores.filter(s => s.resolvedScore < 60).length;
-    const avgScore = totalScores > 0
-      ? Math.round(scores.reduce((sum, s) => sum + s.resolvedScore, 0) / totalScores)
-      : 100;
+    const aggData = aggSnap.data();
+    const totalScores = aggData.total || 0;
+    const reviewCount = reviewAggSnap.data().count || 0;
+    const avgScore = aggData.avg !== null && !isNaN(aggData.avg) ? Math.round(aggData.avg) : 100;
 
     const students = studentsSnap.docs.map(doc => {
       const data = doc.data();
@@ -395,10 +390,9 @@ export class ReportService {
     const cachedFullBulk = await ReportCacheManager.getReport<any>(fullBulkCacheKey);
     if (cachedFullBulk) return cachedFullBulk;
 
-    const [students, batchesSnap, parameters] = await Promise.all([
+    const [students, batchesSnap] = await Promise.all([
       StudentRepository.listStudents(),
-      getCachedBatches(),
-      QuotientService.getParameters()
+      getCachedBatches()
     ]);
 
     const batches = batchesSnap.docs.map(doc => ({
@@ -556,7 +550,7 @@ export class ReportService {
     const fullBulkResult = {
       success: true,
       batches,
-      parameters,
+      parameters: [],
       students: studentsWithLQ
     };
 

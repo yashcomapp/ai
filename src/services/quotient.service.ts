@@ -850,46 +850,7 @@ export class QuotientService {
     new IntegrityScoreCalculator()
   ];
 
-  /**
-   * Fetches active parameters from Firestore or seeds defaults.
-   */
-  static async getParameters(): Promise<any[]> {
-    const parametersSnap = await adminDb.collection('quotientParameters').orderBy('createdAt', 'asc').get();
-    let parameters = parametersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-    const defaultStandardParams = [
-      { id: 'activeParticipation', name: 'Active Participation', weight: 0.20, createdAt: new Date() },
-      { id: 'sincerity', name: 'Sincerity & Behavior', weight: 0.20, createdAt: new Date() },
-      { id: 'timelyWork', name: 'Timely Work', weight: 0.20, createdAt: new Date() },
-      { id: 'parentScore', name: 'Parent Score (Strict)', weight: 0.40, createdAt: new Date() }
-    ];
-
-    if (parameters.length === 0) {
-      const batch = adminDb.batch();
-      defaultStandardParams.forEach(p => {
-        const ref = adminDb.collection('quotientParameters').doc(p.id);
-        batch.set(ref, p);
-      });
-      await batch.commit();
-      return defaultStandardParams;
-    }
-
-    // Ensure Parent Score (Strict) exists in Firestore
-    const hasParentScore = parameters.some(p => p.id === 'parentScore');
-    if (!hasParentScore) {
-      const parentScoreParam = { id: 'parentScore', name: 'Parent Score (Strict)', weight: 0.40, createdAt: new Date() };
-      await adminDb.collection('quotientParameters').doc('parentScore').set(parentScoreParam, { merge: true });
-      parameters.push(parentScoreParam);
-    }
-
-    return parameters.map((p: any) => {
-      let weight = p.weight;
-      if (weight === undefined || weight === null) {
-        weight = p.id === 'parentScore' ? 0.40 : 0.20;
-      }
-      return { ...p, weight };
-    });
-  }
 
   /**
    * Fetches all records from Firestore and calculates the overall student LQ scorecard.
@@ -969,7 +930,6 @@ export class QuotientService {
   static computeStudentQuotientScore(
     studentCode: string,
     duration: string,
-    activeParameters: any[],
     bIds: string[],
     rawAttempts: any[],
     rawAssignments: any[],
@@ -1129,7 +1089,6 @@ export class QuotientService {
       practiceRecords: filteredPractice,
       integrityRecords: filteredIntegrity,
       observations: filteredObservations,
-      activeParameters,
       assignedTopics,
       parentReviews: filteredReviews,
       allPracticeRecords: rawPractice,
@@ -1242,7 +1201,6 @@ export class QuotientService {
   }
 
   static async calculateStudentQuotient(studentCode: string, duration: string = 'monthly'): Promise<QuotientResult> {
-    const activeParameters = await this.getParameters();
 
     // 1. Fetch user doc first to resolve batchIds and class
     const studentUserQuery = await adminDb.collection('users')
@@ -1366,7 +1324,6 @@ export class QuotientService {
     return this.computeStudentQuotientScore(
       studentCode,
       duration,
-      activeParameters,
       bIds,
       rawAttempts,
       rawAssignments,
@@ -1386,7 +1343,6 @@ export class QuotientService {
   }
 
   static async calculateBulkQuotients(studentCodes: string[], duration: string = 'monthly'): Promise<Record<string, QuotientResult>> {
-    const activeParameters = await this.getParameters();
 
     if (!studentCodes || studentCodes.length === 0) {
       return {};
@@ -1616,7 +1572,6 @@ export class QuotientService {
       resultsMap[code] = this.computeStudentQuotientScore(
         code,
         duration,
-        activeParameters,
         bIds,
         sAttempts,
         sAssignments,
@@ -1638,121 +1593,5 @@ export class QuotientService {
     return resultsMap;
   }
 
-  /**
-   * Saves or creates a quotient evaluation parameter.
-   */
-  static async saveParameter(name: string, parameterId?: string): Promise<{ id: string; name: string }> {
-    const id = parameterId || name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-    await adminDb.collection('quotientParameters').doc(id).set({
-      id,
-      name,
-      createdAt: new Date()
-    });
-    return { id, name };
-  }
 
-  /**
-   * Deletes a quotient evaluation parameter.
-   */
-  static async deleteParameter(parameterId: string): Promise<void> {
-    await adminDb.collection('quotientParameters').doc(parameterId).delete();
-  }
-
-  /**
-   * Logs a batch award observation across multiple students atomically.
-   */
-  static async batchAward(studentCodes: string[], parameterId: string, score: number, actorEmail: string): Promise<void> {
-    const codeChunks = chunkArray(studentCodes, 30);
-    const chunkPromises = codeChunks.map(async (chunk) => {
-      const snapshot = await adminDb.collection('studentObservations')
-        .where('parameterId', '==', parameterId)
-        .where('studentCode', 'in', chunk)
-        .get();
-      
-      const batch = adminDb.batch();
-      snapshot.docs.forEach(doc => {
-        batch.delete(doc.ref);
-      });
-      chunk.forEach(code => {
-        const ref = adminDb.collection('studentObservations').doc();
-        batch.set(ref, {
-          studentCode: code,
-          type: 'custom',
-          parameterId,
-          score: Number(score),
-          observedBy: actorEmail,
-          observedAt: new Date()
-        });
-      });
-      await batch.commit();
-    });
-    await Promise.all(chunkPromises);
-  }
-
-  /**
-   * Logs single observation scores across multiple parameters for a student atomically.
-   */
-  static async logSingleObservation(studentCode: string, scores: Record<string, number>, actorEmail: string): Promise<void> {
-    const batch = adminDb.batch();
-
-    const existingQuery = await adminDb.collection('studentObservations')
-      .where('studentCode', '==', studentCode)
-      .get();
-    
-    existingQuery.docs.forEach(doc => {
-      const data = doc.data();
-      // Delete legacy standard docs or docs matching any of the submitted parameter IDs
-      if (!data.parameterId || Object.prototype.hasOwnProperty.call(scores, data.parameterId)) {
-        batch.delete(doc.ref);
-      }
-    });
-
-    Object.entries(scores).forEach(([paramId, scoreVal]) => {
-      const ref = adminDb.collection('studentObservations').doc();
-      batch.set(ref, {
-        studentCode,
-        type: 'custom',
-        parameterId: paramId,
-        score: Number(scoreVal),
-        observedBy: actorEmail,
-        observedAt: new Date()
-      });
-    });
-
-    await batch.commit();
-  }
-
-  /**
-   * Logs a standard classroom observation assessment for a student in Firestore atomically.
-   * Scoped strictly to standard observations without modifying or deleting custom parameter observations.
-   */
-  static async saveObservation(obs: Omit<StudentObservation, 'observedAt'>): Promise<void> {
-    const existingQuery = await adminDb.collection('studentObservations')
-      .where('studentCode', '==', obs.studentCode)
-      .get();
-    
-    const batch = adminDb.batch();
-
-    existingQuery.docs.forEach(doc => {
-      const data = doc.data();
-      const isStandardObs = data.type === 'standard' || (!data.parameterId && data.activeParticipation !== undefined);
-      if (isStandardObs) {
-        batch.delete(doc.ref);
-      }
-    });
-
-    const docRef = adminDb.collection('studentObservations').doc();
-    batch.set(docRef, {
-      studentCode: obs.studentCode,
-      type: 'standard',
-      activeParticipation: Number(obs.activeParticipation ?? 0),
-      sincerity: Number(obs.sincerity ?? 0),
-      timelyWork: Number(obs.timelyWork ?? 0),
-      parentScore: Number(obs.parentScore ?? 0),
-      observedBy: obs.observedBy,
-      observedAt: new Date()
-    });
-
-    await batch.commit();
-  }
 }
