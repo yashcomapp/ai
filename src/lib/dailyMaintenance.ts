@@ -9,10 +9,10 @@ export interface DailyMaintenanceResult {
   reason?: string;
   dateIST: string;
   durationMs?: number;
+  hasPillarErrors?: boolean;
   stats?: {
     purge?: any;
     expiredTargetsDeleted?: number;
-    reschedule?: any;
     autonomousReviews?: any;
   };
 }
@@ -31,7 +31,7 @@ export async function runDailyMaintenanceOpportunistic(): Promise<DailyMaintenan
     const doc = await tx.get(maintenanceRef);
     const data = doc.data();
 
-    // Already completed or currently active today
+    // Already completed today without errors
     if (data?.lastDailyRunIST === todayStr) {
       if (data.status === 'completed') {
         return { claimed: false, status: 'completed' };
@@ -43,7 +43,7 @@ export async function runDailyMaintenanceOpportunistic(): Promise<DailyMaintenan
           return { claimed: false, status: 'running' };
         }
       }
-      // If failed or stale running lock (>15m), allow retry
+      // If failed, partially_failed, or stale running lock (>15m), allow retry
     }
 
     tx.set(maintenanceRef, {
@@ -95,8 +95,7 @@ export async function runDailyMaintenanceOpportunistic(): Promise<DailyMaintenan
       stats.expiredTargetsDeleted = 0;
     }
 
-
-    // 4. Sweep autonomous exam reviews (evaluates parent reviews past review deadline)
+    // 3. Sweep autonomous exam reviews (evaluates parent reviews past review deadline)
     try {
       stats.autonomousReviews = await ExamReviewService.sweepAutonomousReviews();
     } catch (err: any) {
@@ -105,22 +104,29 @@ export async function runDailyMaintenanceOpportunistic(): Promise<DailyMaintenan
     }
 
     const durationMs = Date.now() - startTime;
+    const hasPillarErrors = Boolean(
+      (stats.purge && stats.purge.error) ||
+      (stats.autonomousReviews && stats.autonomousReviews.error)
+    );
+    const runStatus = hasPillarErrors ? 'partially_failed' : 'completed';
 
     // Record completion in config/systemMaintenance
     await maintenanceRef.set({
       lastDailyRunIST: todayStr,
-      status: 'completed',
+      status: runStatus,
       completedAt: new Date().toISOString(),
       durationMs,
+      hasPillarErrors,
       stats
     }, { merge: true });
 
-    console.log(`[Daily Maintenance] Completed daily maintenance in ${durationMs}ms:`, stats);
+    console.log(`[Daily Maintenance] Finished daily maintenance (${runStatus}) in ${durationMs}ms:`, stats);
 
     return {
       executed: true,
       dateIST: todayStr,
       durationMs,
+      hasPillarErrors,
       stats
     };
   } catch (error: any) {

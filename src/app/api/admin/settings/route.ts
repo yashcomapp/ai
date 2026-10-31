@@ -268,13 +268,18 @@ export async function POST(request: Request) {
       }
 
       if (utilityType === 'purgeOrphans') {
-        // Delete any questions not mapped to an active syllabus (scoped batch with limit to prevent unbounded 19k scan)
+        // Delete any questions not mapped to an active syllabus with cursor-based pagination
+        const startAfterDocId = body?.cursor || body?.lastDocId;
         const targetBoard = body?.board;
         const targetClass = body?.classNum;
         let qQuery: FirebaseFirestore.Query = adminDb.collection('questions');
         if (targetBoard) qQuery = qQuery.where('boardCode', '==', targetBoard);
         if (targetClass) qQuery = qQuery.where('class', '==', targetClass);
-        qQuery = qQuery.select('subjectCode').limit(1000);
+
+        qQuery = qQuery.select('subjectCode').orderBy(firebaseAdmin.firestore.FieldPath.documentId()).limit(1000);
+        if (startAfterDocId) {
+          qQuery = qQuery.startAfter(startAfterDocId);
+        }
 
         const [questionsSnap, syllabusSnap] = await Promise.all([
           qQuery.get(),
@@ -297,7 +302,14 @@ export async function POST(request: Request) {
         await writeBatch.commit();
         invalidateCache('syllabus');
         invalidateCache('questions');
-        return NextResponse.json({ success: true, count });
+        const lastDoc = questionsSnap.docs[questionsSnap.docs.length - 1];
+        return NextResponse.json({
+          success: true,
+          count,
+          processed: questionsSnap.size,
+          nextCursor: lastDoc ? lastDoc.id : null,
+          hasMore: questionsSnap.size === 1000
+        });
       }
 
       if (utilityType === 'purgeSnapshots') {

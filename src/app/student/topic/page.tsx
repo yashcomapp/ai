@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useRef, Suspense, useMemo, useCallback } from 'react';
+import { mutate } from 'swr';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
@@ -479,6 +480,13 @@ function TopicPracticeContent() {
       setFinalResult(resData);
       finishedRef.current = true;
       setFinished(true);
+
+      // Invalidate client-side caches so learning path & dashboard reflect new mastery immediately
+      try {
+        localStorage.removeItem('yc_student_learning_cache');
+        mutate('/api/student/learning');
+        mutate('/api/student/dashboard');
+      } catch (e) {}
     } catch (err: any) {
       console.error(err);
       setError(err.message || 'Error submitting practice session');

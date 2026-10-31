@@ -79,64 +79,98 @@ export async function getCachedSyllabusTopicsMap(classCodes: string[] = []): Pro
 
     (data.chapters || []).forEach((ch: any) => {
       const chNum = String(ch.number || ch.chapterNumber || '');
-      const chName = ch.name || '';
+      if (!chNum) return;
+      const chName = ch.name || ch.title || '';
+
       (ch.topics || []).forEach((t: any) => {
         const tNum = String(t.topicNumber || t.number || '');
+        if (!tNum) return;
+        const tName = t.name || t.title || '';
         const tCode = t.topicCode || `${boardCode}-${classNum}-${subjectCode}-${chNum}-${tNum}`;
+        const subtopics = Array.isArray(t.subtopics) ? t.subtopics : [];
+        const hasSubs = subtopics.length > 0;
+        const subtopicsSum = hasSubs
+          ? subtopics.reduce((acc: number, s: any) => acc + (Number(s?.targetQuestions) || 30), 0)
+          : 0;
+        const topicTarget = hasSubs ? subtopicsSum : (Number(t.targetQuestions) || 50);
+        const topicClassification = t.topicClassification || (topicTarget <= 35 ? 'minor' : (topicTarget >= 55 ? 'major' : 'medium'));
+
         const tObj = {
           topicCode: tCode,
           topicNumber: tNum,
-          topicName: t.name || t.title || '',
-          name: t.name || t.title || '',
-          title: t.name || t.title || '',
+          topicName: tName,
+          name: tName,
+          title: tName,
           chapterNumber: chNum,
           chapterName: chName,
+          chapter: chName,
+          chapterTitle: chName,
+          board: boardCode === 'CBSE' ? 'CBSE' : 'Maharashtra Board',
           boardCode,
           class: classNum,
           classCode: classNum,
           subjectCode,
           subjectName,
-          targetQuestions: t.targetQuestions || 30,
-          totalQuestions: t.totalQuestions || 30,
-          subtopics: t.subtopics || []
+          subject: subjectName,
+          targetQuestions: topicTarget,
+          totalQuestions: topicTarget,
+          topicClassification,
+          hasSubtopics: hasSubs,
+          subtopics
         };
         map.set(tCode, tObj);
 
-        // Subtopics
-        (t.subtopics || []).forEach((st: any, idx: number) => {
-          let stNum = '';
-          let stName = '';
+        // Subtopics indexing matching rebuild.ts SSOT canonical structure
+        for (let sIdx = 0; sIdx < subtopics.length; sIdx++) {
+          const st = subtopics[sIdx];
+          let subNum = '';
+          let subName = '';
+          let subTarget = 30;
+          let subClassification = 'minor';
+
           if (typeof st === 'string') {
-            stNum = `${tNum}.${idx + 1}`;
-            stName = st;
+            subNum = `${tNum}.${sIdx + 1}`;
+            subName = st.trim();
+            subTarget = 30;
+            subClassification = 'minor';
           } else if (st && typeof st === 'object') {
-            stNum = String(st.topicNumber || st.number || `${tNum}.${idx + 1}`);
-            stName = st.name || st.title || '';
+            subNum = st.topicNumber ? String(st.topicNumber) : (st.number ? String(st.number) : `${tNum}.${sIdx + 1}`);
+            subName = st.name || st.title || '';
+            subTarget = Number(st.targetQuestions) || 30;
+            subClassification = st.topicClassification || (subTarget <= 35 ? 'minor' : (subTarget >= 55 ? 'major' : 'medium'));
           }
-          const stCode = `${tCode}.${idx + 1}`;
-          map.set(stCode, {
-            topicCode: stCode,
+
+          if (!subNum || !subName) continue;
+
+          const subCode = st?.topicCode || `${boardCode}-${classNum}-${subjectCode}-${chNum}-${subNum}`;
+          map.set(subCode, {
+            topicCode: subCode,
             parentTopicCode: tCode,
-            topicNumber: stNum,
-            topicName: stName,
-            name: stName,
-            title: stName,
+            topicNumber: subNum,
+            topicName: subName,
+            name: subName,
+            title: subName,
             chapterNumber: chNum,
             chapterName: chName,
+            chapter: chName,
+            chapterTitle: chName,
+            board: boardCode === 'CBSE' ? 'CBSE' : 'Maharashtra Board',
             boardCode,
             class: classNum,
             classCode: classNum,
             subjectCode,
             subjectName,
-            targetQuestions: t.targetQuestions || 30,
-            totalQuestions: t.totalQuestions || 30
+            subject: subjectName,
+            targetQuestions: subTarget,
+            totalQuestions: subTarget,
+            topicClassification: subClassification
           });
-        });
+        }
       });
     });
   });
 
-  setInCache(cacheKey, map, 600000); // 10 mins cache
+  setInCache(cacheKey, map, 1800000); // 30 mins cache
   return map;
 }
 

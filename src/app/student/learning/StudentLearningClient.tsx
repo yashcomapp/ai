@@ -104,10 +104,10 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
     fetcher,
     {
       fallbackData: initialData || localCache || undefined,
-      revalidateOnFocus: false,
-      revalidateOnMount: !initialData,
-      revalidateIfStale: !initialData,
-      dedupingInterval: 60000
+      revalidateOnFocus: true,
+      revalidateOnMount: true,
+      revalidateIfStale: true,
+      dedupingInterval: 5000
     }
   );
 

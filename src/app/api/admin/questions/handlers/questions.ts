@@ -152,8 +152,10 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ questions: [], totalCount: 0 });
     }
 
-    // Always cap baseQuery so an unexpectedly broad query can NEVER read more than 1,000 documents
-    baseQuery = baseQuery.limit(1000);
+    // Safety limit: allow up to 3,000 for a specific subject (covers subjects like MH-9-SCIT with ~1,200 Qs without truncation)
+    // For broad queries without a subject, cap at 1,000 to prevent unbounded collection scans.
+    const queryLimit = (canonicalSubjectCode || subject) ? 3000 : 1000;
+    baseQuery = baseQuery.limit(queryLimit);
 
     // Fetch base documents matching canonical SSOT boardCode, class, subjectCode
     const cacheKey = `qb_base_${canonicalBoard}_${canonicalClass}_${canonicalSubjectCode || subject}`;
@@ -161,23 +163,7 @@ export async function GET(req: NextRequest) {
 
     if (!allQuestions) {
       const baseSnap = await baseQuery.get();
-      if (!baseSnap.empty) {
-        allQuestions = baseSnap.docs.map(doc => ({ id: doc.id, ...doc.data() as any }));
-      } else if (!canonicalSubjectCode && subject) {
-        // Fallback for unmigrated legacy documents using full string names
-        let legacyQuery: admin.firestore.Query = adminDb.collection('questions');
-        if (canonicalBoardName) {
-          legacyQuery = legacyQuery.where('board', '==', canonicalBoardName);
-        }
-        if (canonicalClass) {
-          legacyQuery = legacyQuery.where('class', '==', canonicalClass);
-        }
-        legacyQuery = legacyQuery.where('subject', '==', subject).limit(500);
-        const legacySnap = await legacyQuery.get();
-        allQuestions = legacySnap.docs.map(doc => ({ id: doc.id, ...doc.data() as any }));
-      } else {
-        allQuestions = [];
-      }
+      allQuestions = baseSnap.docs.map(doc => ({ id: doc.id, ...doc.data() as any }));
       setInCache(cacheKey, allQuestions, 300000); // 5 min cache (auto-invalidated on write)
     }
 
