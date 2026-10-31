@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { mutate } from 'swr';
 import Script from 'next/script';
 import { stripOptionLabel, preprocessMathText, parseAnswerList, isOptionSelectedByUser, isOptionCorrect, getQuestionCorrectAnswer, getRawOptionKey, getRawOptionText, extractAssertionAndReason, isMultipleChoiceType, isSingleChoiceType, isTrueFalseType, isAssertionReasonType, isNumericalType, isFillBlanksType, isObjectiveType, resolveOptionDisplayText, DEFAULT_ASSERTION_REASON_OPTIONS, getOptionText } from '@/lib/questionTypes';
 import QuestionDisplay, { RichMathText } from '@/components/QuestionDisplay';
@@ -702,6 +703,12 @@ function TakeExamContent() {
           }).catch(err => console.warn('Background snapshot sync failed:', err));
         }).catch(() => {});
       }
+      
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('yc_student_learning_cache');
+      }
+      mutate('/api/student/learning').catch(() => {});
+      mutate('/api/student/dashboard').catch(() => {});
       
       if (resData.status === 'student_review') {
         setWrongAnswers(resData.wrongAnswers || []);

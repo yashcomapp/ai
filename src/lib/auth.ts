@@ -7,6 +7,34 @@ export interface VerifiedUser {
   userData: any;
 }
 
+// Cache of last synced claims per UID to prevent redundant Firebase Auth admin writes
+// while a user's client is waiting to refresh its ID token.
+const lastSyncedClaimsMap = new Map<string, { hash: string; timestamp: number }>();
+const CLAIMS_SYNC_THROTTLE_MS = 5 * 60 * 1000; // 5 minutes
+
+export function getClaimsHash(userData: any): string {
+  if (!userData) return '';
+  const role = (userData.role || '').toLowerCase();
+  const studentCode = userData.studentCode || '';
+  let subKey = '';
+  if (role === 'student') {
+    const batches = (
+      Array.isArray(userData.batchIds)
+        ? userData.batchIds.filter(Boolean)
+        : (userData.batchId ? [userData.batchId] : [])
+    ).map(String).sort().join(',');
+    subKey = `b:${batches}`;
+  } else if (role === 'parent') {
+    const codes = (
+      Array.isArray(userData.studentCodes)
+        ? userData.studentCodes.filter(Boolean)
+        : (userData.studentCode ? [userData.studentCode] : [])
+    ).map(String).sort().join(',');
+    subKey = `c:${codes}`;
+  }
+  return `${role}|${studentCode}|${subKey}`;
+}
+
 /**
  * Synchronizes canonical role, studentCode, batchIds, and studentCodes to Firebase Auth Custom Claims.
  * This ensures firestore.rules can read request.auth.token.role without incurring extra userDoc get() reads.
@@ -33,6 +61,7 @@ export async function syncUserCustomClaims(uid: string, userData: any, revokeTok
 
   try {
     await adminAuth.setCustomUserClaims(uid, claims);
+    lastSyncedClaimsMap.set(uid, { hash: getClaimsHash(userData), timestamp: Date.now() });
     if (revokeTokens) {
       await adminAuth.revokeRefreshTokens(uid).catch(() => {});
     }
@@ -183,9 +212,13 @@ export async function verifyAnyRole(
       }
     }
 
-    // Proactively synchronize custom user claims if absent or stale (fully awaited)
+    // Proactively synchronize custom user claims if absent or stale (throttled in-memory to prevent repeated writes)
     if (!areClaimsEqual(decodedToken, userData)) {
-      await syncUserCustomClaims(uid, userData);
+      const claimsHash = getClaimsHash(userData);
+      const lastSync = lastSyncedClaimsMap.get(uid);
+      if (!lastSync || lastSync.hash !== claimsHash || (Date.now() - lastSync.timestamp) > CLAIMS_SYNC_THROTTLE_MS) {
+        await syncUserCustomClaims(uid, userData);
+      }
     }
 
     return { decodedToken, userData, role: userRole };

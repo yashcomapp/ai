@@ -44,6 +44,7 @@ export default function AdminQuestionBankPage() {
   // Question bank items list
   const [questions, setQuestions] = useState<Question[]>([]);
   const [totalCount, setTotalCount] = useState(0);
+  const [isTruncated, setIsTruncated] = useState(false);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
   const [lastCodesHistory, setLastCodesHistory] = useState<string[]>(['']); // Stack of last codes for prev/next paging
@@ -183,6 +184,7 @@ export default function AdminQuestionBankPage() {
       const data = await res.json();
       setQuestions(data.questions || []);
       setTotalCount(data.totalCount || 0);
+      setIsTruncated(Boolean(data.isTruncated));
       setSelectedCodes(new Set());
     } catch (err: any) {
       setError(err.message || 'Error occurred pulling questions.');
@@ -1027,7 +1029,14 @@ ${JSON.stringify(missingList, null, 2)}`;
             </div>
             
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Total: <strong>{totalCount}</strong> questions</span>
+              <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                Total: <strong>{totalCount}</strong> questions
+              </span>
+              {isTruncated && (
+                <span style={{ fontSize: '11px', color: '#f59e0b', background: 'rgba(245,158,11,0.1)', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(245,158,11,0.3)', fontWeight: 600 }}>
+                  ⚠️ Cap reached ({totalCount}). Scope by Chapter or Topic.
+                </span>
+              )}
               <select 
                 value={itemsPerPage} 
                 onChange={(e) => { setItemsPerPage(parseInt(e.target.value)); setCurrentPage(1); setLastCodesHistory(['']); }}

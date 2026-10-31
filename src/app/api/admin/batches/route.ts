@@ -95,7 +95,7 @@ export async function POST(request: Request) {
         updatedAt: new Date()
       });
       invalidateUserCache(studentDoc.id);
-      await syncUserCustomClaims(studentDoc.id, { ...studentData, batchIds: newBatchIds }, true);
+      await syncUserCustomClaims(studentDoc.id, { ...studentData, batchIds: newBatchIds }, false);
       
       return NextResponse.json({ success: true });
     }
@@ -120,7 +120,7 @@ export async function POST(request: Request) {
         updatedAt: new Date()
       });
       invalidateUserCache(studentId);
-      await syncUserCustomClaims(studentId, { ...studentData, batchIds: newBatchIds }, true);
+      await syncUserCustomClaims(studentId, { ...studentData, batchIds: newBatchIds }, false);
       
       return NextResponse.json({ success: true });
     }

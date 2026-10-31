@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState, useCallback, useMemo, Suspense } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { mutate } from 'swr';
 import Script from 'next/script';
 import { useMathRender } from '@/hooks/useMathRender';
 import { db } from '@/lib/firebase/firestore';
@@ -470,6 +471,12 @@ function TakeSubjectiveExamContent() {
       if (!res.ok) {
         throw new Error('Failed to submit exam attempt.');
       }
+
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('yc_student_learning_cache');
+      }
+      mutate('/api/student/learning').catch(() => {});
+      mutate('/api/student/dashboard').catch(() => {});
 
       setBlockingMessage('');
       setExamSubmitted(true);

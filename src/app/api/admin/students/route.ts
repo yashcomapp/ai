@@ -111,8 +111,8 @@ export async function POST(request: Request) {
 
     await studentDocRef.update(cleanUpdates);
 
-    // Keep custom claims in sync and revoke stale tokens if role, status, or batches were modified
-    const shouldRevoke = cleanUpdates.status !== undefined || cleanUpdates.role !== undefined || cleanUpdates.batchIds !== undefined || cleanUpdates.batchId !== undefined;
+    // Keep custom claims in sync. Strictly revoke tokens ONLY on account deactivation or role changes to prevent signing out active students mid-exam.
+    const shouldRevoke = cleanUpdates.status === 'inactive' || (cleanUpdates.role !== undefined && cleanUpdates.role !== studentData.role);
     await syncUserCustomClaims(studentId, {
       ...studentData,
       ...cleanUpdates
@@ -201,7 +201,7 @@ export async function POST(request: Request) {
               updatedAt: new Date()
             });
             invalidateUserCache(pDoc.id);
-            await syncUserCustomClaims(pDoc.id, { ...pData, status: 'active' }, true);
+            await syncUserCustomClaims(pDoc.id, { ...pData, status: 'active' }, false);
           }
         }
       }

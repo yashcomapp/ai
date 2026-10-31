@@ -685,6 +685,11 @@ export async function POST(req: NextRequest) {
       isLate: Boolean(body.isLate)
     });
 
+    // Invalidate caches so student results and learning dashboard reflect the submission immediately
+    invalidateCache(`student_learning_${studentCode}`);
+    invalidateCache(studentCode);
+    invalidateCache('admin_dashboard_');
+
     return NextResponse.json({
       success: true,
       score: txResult.score,
