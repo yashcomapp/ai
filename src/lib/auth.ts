@@ -1,3 +1,4 @@
+import { NextResponse } from 'next/server';
 import { adminAuth, adminDb } from '@/lib/firebase/admin';
 import { UserRole } from '@/types/user.types';
 import { isStudentBlockedByCurfew } from '@/lib/curfew';
@@ -5,6 +6,7 @@ import { isStudentBlockedByCurfew } from '@/lib/curfew';
 export interface VerifiedUser {
   decodedToken: any;
   userData: any;
+  claimsUpdated?: boolean;
 }
 
 // Cache of last synced claims per UID to prevent redundant Firebase Auth admin writes
@@ -12,7 +14,7 @@ export interface VerifiedUser {
 const lastSyncedClaimsMap = new Map<string, { hash: string; timestamp: number }>();
 const CLAIMS_SYNC_THROTTLE_MS = 5 * 60 * 1000; // 5 minutes
 
-export function getClaimsHash(userData: any): string {
+function getClaimsHash(userData: any): string {
   if (!userData) return '';
   const role = (userData.role || '').toLowerCase();
   const studentCode = userData.studentCode || '';
@@ -132,15 +134,14 @@ export function areClaimsEqual(decodedToken: any, userData: any): boolean {
   return true;
 }
 
-export async function revokeUserTokens(uid: string): Promise<boolean> {
-  if (!uid) return false;
-  try {
-    await adminAuth.revokeRefreshTokens(uid);
-    return true;
-  } catch (err) {
-    console.warn(`Failed to revoke refresh tokens for user ${uid}:`, err);
-    return false;
+export function attachClaimsHeader(
+  res: NextResponse,
+  verified: { claimsUpdated?: boolean } | null | undefined
+): NextResponse {
+  if (verified?.claimsUpdated) {
+    res.headers.set('x-claims-updated', 'true');
   }
+  return res;
 }
 
 export async function verifyToken(req: Request): Promise<any | null> {
@@ -170,13 +171,13 @@ export function invalidateUserCache(uid?: string) {
 export async function verifyRole(req: Request, role: UserRole): Promise<VerifiedUser | null> {
   const result = await verifyAnyRole(req, [role]);
   if (!result) return null;
-  return { decodedToken: result.decodedToken, userData: result.userData };
+  return { decodedToken: result.decodedToken, userData: result.userData, claimsUpdated: result.claimsUpdated };
 }
 
 export async function verifyAnyRole(
   req: Request,
   roles: UserRole[]
-): Promise<{ decodedToken: any; userData: any; role: UserRole } | null> {
+): Promise<{ decodedToken: any; userData: any; role: UserRole; claimsUpdated?: boolean } | null> {
   const decodedToken = await verifyToken(req);
   if (!decodedToken) return null;
 
@@ -224,15 +225,16 @@ export async function verifyAnyRole(
     }
 
     // Proactively synchronize custom user claims if absent or stale (throttled in-memory to prevent repeated writes)
+    let claimsUpdated = false;
     if (!areClaimsEqual(decodedToken, userData)) {
       const claimsHash = getClaimsHash(userData);
       const lastSync = lastSyncedClaimsMap.get(uid);
       if (!lastSync || lastSync.hash !== claimsHash || (Date.now() - lastSync.timestamp) > CLAIMS_SYNC_THROTTLE_MS) {
-        await syncUserCustomClaims(uid, userData);
+        claimsUpdated = await syncUserCustomClaims(uid, userData);
       }
     }
 
-    return { decodedToken, userData, role: userRole };
+    return { decodedToken, userData, role: userRole, claimsUpdated };
   }
 
   return null;

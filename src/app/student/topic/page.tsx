@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useRef, Suspense, useMemo, useCallback } from 'react';
 import { mutate } from 'swr';
+import { mutateFresh } from '@/lib/swrFetcher';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
@@ -484,8 +485,8 @@ function TopicPracticeContent() {
       // Invalidate client-side caches so learning path & dashboard reflect new mastery immediately
       try {
         localStorage.removeItem('yc_student_learning_cache');
-        mutate('/api/student/learning');
-        mutate('/api/student/dashboard');
+        mutateFresh('/api/student/learning', firebaseUser).catch(() => {});
+        mutateFresh('/api/student/dashboard', firebaseUser).catch(() => {});
       } catch (e) {}
     } catch (err: any) {
       console.error(err);

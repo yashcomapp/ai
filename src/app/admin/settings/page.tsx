@@ -301,20 +301,40 @@ export default function AdminSettingsPage() {
     setProcessing(true);
     try {
       const idToken = await firebaseUser!.getIdToken();
-      const res = await fetch('/api/admin/settings', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${idToken}`
-        },
-        body: JSON.stringify({
-          action: 'utility',
-          utilityType
-        })
-      });
-      if (!res.ok) throw new Error('Utility request failed.');
-      const data = await res.json();
-      alert(data.message || '✅ Database utility completed successfully.');
+      let cursor: string | null = null;
+      let totalCount = 0;
+      let totalProcessed = 0;
+      let hasMore = true;
+
+      while (hasMore) {
+        const res: Response = await fetch('/api/admin/settings', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${idToken}`
+          },
+          body: JSON.stringify({
+            action: 'utility',
+            utilityType,
+            cursor
+          })
+        });
+        if (!res.ok) throw new Error('Utility request failed.');
+        const data = await res.json();
+        totalCount += (data.count || 0);
+        totalProcessed += (data.processed || 0);
+        cursor = data.nextCursor;
+        hasMore = utilityType === 'purgeOrphans' && !!data.hasMore && !!cursor;
+
+        if (utilityType !== 'purgeOrphans') {
+          alert(data.message || '✅ Database utility completed successfully.');
+          break;
+        }
+      }
+
+      if (utilityType === 'purgeOrphans') {
+        alert(`✅ Orphaned questions purge completed: ${totalCount} questions removed out of ${totalProcessed} scanned.`);
+      }
     } catch (err: any) {
       alert(`❌ Utility execution failed: ${err.message}`);
     } finally {

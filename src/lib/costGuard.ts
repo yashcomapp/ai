@@ -106,7 +106,7 @@ export function sanitizeRealTimePayload<T extends Record<string, any>>(
 /**
  * Cost Guard query auditor: warns if a query on large collections executes without filters or limit.
  */
-export function assertCostSafeQuery(collectionName: string, filtersCount: number, limitVal?: number): void {
+function assertCostSafeQuery(collectionName: string, filtersCount: number, limitVal?: number): void {
   if (filtersCount === 0 && (!limitVal || limitVal > 500)) {
     console.warn(`[COST GUARD ALERT] Potentially unbounded query on '${collectionName}' with 0 filters and limit=${limitVal}. Add filters or projection to keep Firestore data transfer within free tier.`);
   }

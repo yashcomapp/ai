@@ -5,6 +5,7 @@ import { ProctoringViolations } from '@/types/attempt.types';
 import { ChunkedBatch } from '@/lib/firebase/batch';
 import { deriveTopicCodeFromQuestionCode } from '@/lib/questionTypes';
 import { MasteryService } from './mastery.service';
+import { IntegrityService } from './integrity.service';
 import { invalidateCache } from '@/lib/firebase/cache';
 import { ReportCacheManager } from '@/lib/reportCache';
 
@@ -1036,6 +1037,15 @@ export class ExamService {
           }
         });
       }
+      const qCodes = targetExamData.questionCodes || targetExamData.questionIds || [];
+      if (Array.isArray(qCodes)) {
+        qCodes.forEach((code: any) => {
+          if (typeof code === 'string') {
+            const derived = deriveTopicCodeFromQuestionCode(code);
+            if (derived) affectedTopicCodes.add(derived);
+          }
+        });
+      }
     }
 
     // 2. Query attempts, reviews, evaluations, absence reasons, and peer assignments
@@ -1059,6 +1069,38 @@ export class ExamService {
       adminDb.collection('parentReviews').where('examId', '==', examId).get().catch(() => ({ docs: [] } as any))
     ]);
 
+    // Harvest topic codes from existing evaluations and reviews
+    reviewsSnap.docs.forEach(doc => {
+      const data = doc.data();
+      if (Array.isArray(data.questionDetails)) {
+        data.questionDetails.forEach((qd: any) => {
+          const tc = qd.topicCode || deriveTopicCodeFromQuestionCode(qd.questionCode);
+          if (tc) affectedTopicCodes.add(tc);
+        });
+      }
+    });
+
+    evalsSnap.docs.forEach(doc => {
+      const data = doc.data();
+      if (Array.isArray(data.questionReviews)) {
+        data.questionReviews.forEach((qr: any) => {
+          const tc = qr.topicCode || deriveTopicCodeFromQuestionCode(qr.questionCode || qr.questionId);
+          if (tc) affectedTopicCodes.add(tc);
+        });
+      }
+    });
+
+    parentReviewsSnap.docs.forEach((doc: any) => {
+      const data = doc.data();
+      if (data.topicCode) affectedTopicCodes.add(data.topicCode);
+      if (Array.isArray(data.questionDetails)) {
+        data.questionDetails.forEach((qd: any) => {
+          const tc = qd.topicCode || deriveTopicCodeFromQuestionCode(qd.questionCode);
+          if (tc) affectedTopicCodes.add(tc);
+        });
+      }
+    });
+
     const isSpecificStudentFilter = targetType === 'student' && targetStudents.length > 0;
     const filterSet = isSpecificStudentFilter ? new Set(targetStudents.map(s => String(s).trim())) : null;
 
@@ -1067,9 +1109,25 @@ export class ExamService {
       filterSet.forEach(sc => affectedStudentCodes.add(sc));
     }
 
+    const affectedWeeksByStudent = new Map<string, Set<string>>(); // studentCode -> Set of "year_week"
+    const registerWeekForStudent = (studentCode: string, dateVal: any) => {
+      if (!studentCode) return;
+      const d = dateVal?.toDate ? dateVal.toDate() : (dateVal ? new Date(dateVal) : new Date());
+      if (isNaN(d.getTime())) return;
+      const { year, week } = IntegrityService.getWeekDetails(d);
+      const key = `${year}_${week}`;
+      if (!affectedWeeksByStudent.has(studentCode)) {
+        affectedWeeksByStudent.set(studentCode, new Set());
+      }
+      affectedWeeksByStudent.get(studentCode)!.add(key);
+    };
+
     const shouldDeleteDoc = (data: any, docId: string): boolean => {
       const sc = data?.studentCode || (docId.includes('_') ? docId.split('_').slice(1).join('_') : '');
-      if (sc) affectedStudentCodes.add(sc);
+      if (sc) {
+        affectedStudentCodes.add(sc);
+        registerWeekForStudent(sc, data?.completedAt || data?.startedAt || data?.createdAt);
+      }
       if (!filterSet) return true;
       return filterSet.has(sc) || filterSet.has(docId);
     };
@@ -1147,7 +1205,7 @@ export class ExamService {
 
     await batch.commit();
 
-    // Recalculate or purge topic mastery for affected students
+    // 3. Recalculate or purge topic mastery for affected students
     let masteryRecalculated = 0;
     const candidateTopicArray = Array.from(affectedTopicCodes);
 
@@ -1161,6 +1219,83 @@ export class ExamService {
         masteryRecalculated += updatedCount;
       } catch (err) {
         console.warn(`Mastery recalculation warning for student ${studentCode} during reassignment reset:`, err);
+      }
+    }
+
+    // 4. Reverse / recalculate integrity scores for all affected student weeks
+    for (const [studentCode, weeks] of affectedWeeksByStudent.entries()) {
+      for (const yw of Array.from(weeks)) {
+        const [yearStr, weekStr] = yw.split('_');
+        const targetYear = Number(yearStr);
+        const targetWeek = Number(weekStr);
+
+        try {
+          const [survivingReviewsSnap, survivingParentReviewsSnap] = await Promise.all([
+            adminDb.collection('reviews').where('studentCode', '==', studentCode).get(),
+            adminDb.collection('parentReviews').where('studentCode', '==', studentCode).get()
+          ]);
+
+          let totalTabViolations = 0;
+          let totalNoFace = 0;
+          let totalLookingAway = 0;
+          let totalMultipleFaces = 0;
+          let sessionCount = 0;
+
+          const checkDoc = (docData: any, docId: string) => {
+            if (docData.examId === examId || docId.startsWith(`${examId}_`)) return;
+            const dateVal = docData.startedAt?.toDate ? docData.startedAt.toDate() : (docData.createdAt?.toDate ? docData.createdAt.toDate() : (docData.completedAt?.toDate ? docData.completedAt.toDate() : null));
+            if (!dateVal) return;
+            const { year: wYear, week: wWeek } = IntegrityService.getWeekDetails(dateVal);
+            if (wYear === targetYear && wWeek === targetWeek) {
+              sessionCount++;
+              totalTabViolations += (docData.tabViolations || 0);
+              const pViols = docData.proctoringViolations || docData.violations || {};
+              totalNoFace += (pViols.noFace || pViols.noFaceCount || 0);
+              totalLookingAway += (pViols.lookingAway || pViols.lookingAwayCount || 0);
+              totalMultipleFaces += (pViols.multipleFaces || pViols.multipleFacesCount || 0);
+            }
+          };
+
+          survivingReviewsSnap.docs.forEach(d => checkDoc(d.data(), d.id));
+          survivingParentReviewsSnap.docs.forEach(d => checkDoc(d.data(), d.id));
+
+          const integrityRef = adminDb.collection('integrityScores').doc(`${studentCode}_${targetYear}_${targetWeek}`);
+          if (sessionCount === 0) {
+            await integrityRef.set({
+              studentCode,
+              year: targetYear,
+              week: targetWeek,
+              integrityScore: 100,
+              score: 100,
+              violationsCount: 0,
+              totalSessions: 0,
+              tabViolations: 0,
+              level: 'excellent',
+              updatedAt: new Date()
+            }, { merge: true });
+          } else {
+            const { integrityScore } = IntegrityService.calculateScore(totalTabViolations, {
+              noFace: totalNoFace,
+              lookingAway: totalLookingAway,
+              multipleFaces: totalMultipleFaces,
+              headMovement: 0
+            });
+            await integrityRef.set({
+              studentCode,
+              year: targetYear,
+              week: targetWeek,
+              integrityScore,
+              score: integrityScore,
+              violationsCount: totalTabViolations + totalNoFace + totalLookingAway,
+              totalSessions: sessionCount,
+              tabViolations: totalTabViolations,
+              level: integrityScore >= 90 ? 'good' : (integrityScore >= 75 ? 'attention' : 'review'),
+              updatedAt: new Date()
+            }, { merge: true });
+          }
+        } catch (intErr) {
+          console.warn(`Integrity recalculation warning for student ${studentCode} week ${yw}:`, intErr);
+        }
       }
     }
 

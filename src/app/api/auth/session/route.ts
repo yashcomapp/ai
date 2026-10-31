@@ -90,10 +90,15 @@ export async function POST(req: NextRequest) {
       const studentCode = userData.studentCode || '';
       const activeSessionToken = userData.activeSessionToken || null;
 
-      let claimsUpdated = false;
+      let claimsUpdated = !!verified.claimsUpdated;
       if (!areClaimsEqual(decodedToken, userData)) {
         await syncUserCustomClaims(uid, userData);
         claimsUpdated = true;
+      }
+
+      const responseHeaders: Record<string, string> = {};
+      if (claimsUpdated) {
+        responseHeaders['x-claims-updated'] = 'true';
       }
 
       if (action === 'check_role') {
@@ -102,7 +107,7 @@ export async function POST(req: NextRequest) {
           studentCode,
           activeSessionToken,
           claimsUpdated
-        });
+        }, { headers: responseHeaders });
       }
 
       return NextResponse.json({
@@ -119,7 +124,7 @@ export async function POST(req: NextRequest) {
           curfewBypass: userData.curfewBypass || false
         },
         serverTime: Date.now()
-      });
+      }, { headers: responseHeaders });
     }
 
     const decodedToken = await verifyToken(req);
@@ -140,8 +145,9 @@ export async function POST(req: NextRequest) {
     const studentCode = userData.studentCode || '';
     const activeSessionToken = userData.activeSessionToken || null;
 
-    if (userDoc.exists && (decodedToken.role !== role || (role === 'student' && decodedToken.studentCode !== studentCode))) {
-      syncUserCustomClaims(uid, userData).catch(() => {});
+    let claimsUpdatedFallback = false;
+    if (userDoc.exists && !areClaimsEqual(decodedToken, userData)) {
+      claimsUpdatedFallback = await syncUserCustomClaims(uid, userData);
     }
 
     if (role === 'parent') {

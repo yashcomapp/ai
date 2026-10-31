@@ -18,24 +18,23 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const rangeDays = parseInt(searchParams.get('rangeDays') || '7', 10);
 
+    const responseHeaders: Record<string, string> = {
+      'Cache-Control': 'private, max-age=45, stale-while-revalidate=90'
+    };
+    if (student.claimsUpdated) {
+      responseHeaders['x-claims-updated'] = 'true';
+    }
+
     const cacheKey = `student_dashboard_${studentCode}_${rangeDays}`;
     const cached = getFromCache<any>(cacheKey);
     if (cached) {
-      return NextResponse.json(cached, {
-        headers: {
-          'Cache-Control': 'private, no-cache, no-store, max-age=0, must-revalidate'
-        }
-      });
+      return NextResponse.json(cached, { headers: responseHeaders });
     }
 
     const data = await getDashboardData(uid, userData, rangeDays);
     setInCache(cacheKey, data, 60000); // 60s in-memory cache
 
-    return NextResponse.json(data, {
-      headers: {
-        'Cache-Control': 'private, no-cache, no-store, max-age=0, must-revalidate'
-      }
-    });
+    return NextResponse.json(data, { headers: responseHeaders });
   } catch (error: any) {
     console.error('API student dashboard route error:', error);
     return NextResponse.json({ message: error.message || 'Internal Server Error' }, { status: 500 });

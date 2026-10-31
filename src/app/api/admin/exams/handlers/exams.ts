@@ -1217,6 +1217,17 @@ export async function PUT(req: NextRequest) {
       updates.targetStudents = targetStudents;
     }
 
+    const isRescheduled = assignData.startAt && Math.abs(updatedStart.getTime() - (assignData.startAt.toDate ? assignData.startAt.toDate().getTime() : new Date(assignData.startAt).getTime())) > 600000;
+    if ((resetAttempts || isRescheduled) && assignData.examId) {
+      const examType = collection === 'batchAssignments' ? 'objective' : 'subjective';
+      await ExamService.resetExamAttemptsAndRecordsForReassignment({
+        examId: assignData.examId,
+        type: examType,
+        targetType: targetType || assignData.targetType || 'batch',
+        targetStudents: targetStudents || assignData.targetStudents || []
+      });
+    }
+
     await assignRef.update(updates);
 
     if (assignData.examId) {
@@ -1233,21 +1244,6 @@ export async function PUT(req: NextRequest) {
         }
       } catch (err) {
         console.warn('Failed to update exam name during assignment schedule update:', err);
-      }
-    }
-
-    const isRescheduled = assignData.startAt && Math.abs(updatedStart.getTime() - (assignData.startAt.toDate ? assignData.startAt.toDate().getTime() : new Date(assignData.startAt).getTime())) > 600000;
-    if ((resetAttempts || isRescheduled) && assignData.examId) {
-      try {
-        const examType = collection === 'batchAssignments' ? 'objective' : 'subjective';
-        await ExamService.resetExamAttemptsAndRecordsForReassignment({
-          examId: assignData.examId,
-          type: examType,
-          targetType: targetType || assignData.targetType || 'batch',
-          targetStudents: targetStudents || assignData.targetStudents || []
-        });
-      } catch (resetErr) {
-        console.warn('Assignment reschedule reset error (non-fatal):', resetErr);
       }
     }
 

@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState, useCallback, useMemo, Suspense } fr
 import { useAuth } from '@/context/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { mutate } from 'swr';
+import { mutateFresh } from '@/lib/swrFetcher';
 import Script from 'next/script';
 import { useMathRender } from '@/hooks/useMathRender';
 import { db } from '@/lib/firebase/firestore';
@@ -475,8 +476,8 @@ function TakeSubjectiveExamContent() {
       if (typeof window !== 'undefined') {
         localStorage.removeItem('yc_student_learning_cache');
       }
-      mutate('/api/student/learning').catch(() => {});
-      mutate('/api/student/dashboard').catch(() => {});
+      mutateFresh('/api/student/learning', firebaseUser).catch(() => {});
+      mutateFresh('/api/student/dashboard', firebaseUser).catch(() => {});
 
       setBlockingMessage('');
       setExamSubmitted(true);

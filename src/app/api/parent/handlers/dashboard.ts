@@ -18,14 +18,17 @@ export async function GET(req: NextRequest) {
     const selectedStudentCode = searchParams.get('studentCode') || 'all';
     const rangeDays = parseInt(searchParams.get('rangeDays') || '7', 10);
 
+    const responseHeaders: Record<string, string> = {
+      'Cache-Control': 'private, max-age=45, stale-while-revalidate=90'
+    };
+    if (parentAuth.claimsUpdated) {
+      responseHeaders['x-claims-updated'] = 'true';
+    }
+
     const cacheKey = `parent_dashboard_${parentEmail}_${selectedStudentCode}_${rangeDays}`;
     const cached = getFromCache<any>(cacheKey);
     if (cached) {
-      return NextResponse.json(cached, {
-        headers: {
-          'Cache-Control': 'private, no-cache, no-store, max-age=0, must-revalidate'
-        }
-      });
+      return NextResponse.json(cached, { headers: responseHeaders });
     }
 
     const data = await getParentDashboardData(parentEmail, parentData, selectedStudentCode === 'all' ? null : selectedStudentCode, rangeDays);
@@ -34,11 +37,7 @@ export async function GET(req: NextRequest) {
     }
     setInCache(cacheKey, data, 60000); // 60s in-memory cache
 
-    return NextResponse.json(data, {
-      headers: {
-        'Cache-Control': 'private, no-cache, no-store, max-age=0, must-revalidate'
-      }
-    });
+    return NextResponse.json(data, { headers: responseHeaders });
 
   } catch (error: any) {
     console.error('API parent dashboard error:', error);

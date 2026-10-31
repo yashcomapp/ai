@@ -1,3 +1,5 @@
+import { mutate } from 'swr';
+
 export class FetchError extends Error {
   status?: number;
   info?: any;
@@ -10,13 +12,14 @@ export class FetchError extends Error {
   }
 }
 
-export async function fetchWithToken(url: string, firebaseUser: any) {
+export async function fetchWithToken(url: string, firebaseUser: any, options?: RequestInit) {
   if (!firebaseUser) return null;
   const idToken = await firebaseUser.getIdToken();
   const res = await fetch(url, {
-    cache: 'no-store',
+    ...options,
     headers: {
-      'Authorization': `Bearer ${idToken}`
+      'Authorization': `Bearer ${idToken}`,
+      ...(options?.headers || {})
     }
   });
 
@@ -38,5 +41,21 @@ export async function fetchWithToken(url: string, firebaseUser: any) {
  */
 export function createTokenFetcher(firebaseUser: any) {
   return (url: string) => fetchWithToken(url, firebaseUser);
+}
+
+/**
+ * Performs a fresh fetch bypassing the browser HTTP cache and immediately
+ * updates the SWR in-memory cache without triggering another redundant request.
+ */
+export async function mutateFresh(key: string, firebaseUser: any) {
+  if (!firebaseUser) return;
+  try {
+    const data = await fetchWithToken(key, firebaseUser, { cache: 'no-store' });
+    if (data !== undefined && data !== null) {
+      await mutate(key, data, { revalidate: false });
+    }
+  } catch (err) {
+    console.warn(`Failed to mutate fresh data for key ${key}:`, err);
+  }
 }
 

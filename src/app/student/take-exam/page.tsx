@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react'
 import { useAuth } from '@/context/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { mutate } from 'swr';
+import { mutateFresh } from '@/lib/swrFetcher';
 import Script from 'next/script';
 import { stripOptionLabel, preprocessMathText, parseAnswerList, isOptionSelectedByUser, isOptionCorrect, getQuestionCorrectAnswer, getRawOptionKey, getRawOptionText, extractAssertionAndReason, isMultipleChoiceType, isSingleChoiceType, isTrueFalseType, isAssertionReasonType, isNumericalType, isFillBlanksType, isObjectiveType, resolveOptionDisplayText, DEFAULT_ASSERTION_REASON_OPTIONS, getOptionText } from '@/lib/questionTypes';
 import QuestionDisplay, { RichMathText } from '@/components/QuestionDisplay';
@@ -707,8 +708,8 @@ function TakeExamContent() {
       if (typeof window !== 'undefined') {
         localStorage.removeItem('yc_student_learning_cache');
       }
-      mutate('/api/student/learning').catch(() => {});
-      mutate('/api/student/dashboard').catch(() => {});
+      mutateFresh('/api/student/learning', firebaseUser).catch(() => {});
+      mutateFresh('/api/student/dashboard', firebaseUser).catch(() => {});
       
       if (resData.status === 'student_review') {
         setWrongAnswers(resData.wrongAnswers || []);
