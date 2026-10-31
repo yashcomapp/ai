@@ -6,6 +6,7 @@ import { PracticeService } from '@/services/practice.service';
 import { shuffleArray, isObjectiveType, isSingleChoiceType, isMultipleChoiceType, isAssertionReasonType, isQuestionQuarantined } from '@/lib/questionTypes';
 import { getDateKeyIST } from '@/lib/dateUtils';
 import { getRequiredConfidence } from '@/lib/studentDb';
+import { MASTERY_THRESHOLDS } from '@/lib/dashboardMetrics';
 import { filterDistinctCandidates, areQuestionsTooSimilar } from '@/lib/questionSimilarity';
 import { getSrsMicroSetSize, selectSrsQuestions } from '@/lib/srsRotation';
 
@@ -588,7 +589,7 @@ export async function GET(req: NextRequest) {
     });
 
     const reqConfidence = getRequiredConfidence(topicClassification, targetQuestions);
-    const isFullyMastered = (mastery >= 90 && questionsAttempted >= reqConfidence);
+    const isFullyMastered = (mastery >= MASTERY_THRESHOLDS.MASTERED_MIN && questionsAttempted >= reqConfidence);
     const resolvedScope = isMinorTopic ? 'minor' : (rawScope === 'major' || rawScope === 'calculative' || rawScope === 'hots' ? 'major' : 'medium');
 
     return NextResponse.json({

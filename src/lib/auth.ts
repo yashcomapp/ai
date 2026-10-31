@@ -74,6 +74,10 @@ export async function syncUserCustomClaims(uid: string, userData: any, revokeTok
 
   try {
     await adminAuth.setCustomUserClaims(uid, claims);
+
+    if (shouldRevoke) {
+      await adminAuth.revokeRefreshTokens(uid);
+    }
     
     // Sweep stale entries if map exceeds 100 entries to prevent memory unbounded growth
     if (lastSyncedClaimsMap.size > 100) {
@@ -84,14 +88,13 @@ export async function syncUserCustomClaims(uid: string, userData: any, revokeTok
         }
       }
     }
-    lastSyncedClaimsMap.set(uid, { hash: getClaimsHash(userData), timestamp: Date.now() });
+    lastSyncedClaimsMap.set(uid, { hash: claimsHash, timestamp: Date.now() });
 
-    if (shouldRevoke) {
-      await adminAuth.revokeRefreshTokens(uid).catch(() => {});
-    }
     return true;
   } catch (err) {
-    console.warn(`Failed to set custom claims for user ${uid}:`, err);
+    // If either claim set or token revocation fails, never cache the failure so subsequent requests retry
+    lastSyncedClaimsMap.delete(uid);
+    console.warn(`Failed to set custom claims or revoke tokens for user ${uid}:`, err);
     return false;
   }
 }

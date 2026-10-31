@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Batch, Student } from './types';
 import { formatReportStudentName, exportBatchPracticeTracksImage, computeBatchMaxTopics } from '@/lib/lqCardExport';
 import { getDateKeyIST, formatDurationHM } from '@/lib/dateUtils';
+import { MASTERY_THRESHOLDS } from '@/lib/dashboardMetrics';
 
 interface PracticeTabProps {
   batches: Batch[];
@@ -638,7 +639,7 @@ export default function PracticeTab({
                                 <div style={{
                                   width: `${mastery.avgMastery}%`,
                                   height: '100%',
-                                  background: mastery.avgMastery >= 90 ? 'var(--success)' : mastery.avgMastery >= 50 ? 'var(--warning)' : 'var(--danger)'
+                                  background: mastery.avgMastery >= MASTERY_THRESHOLDS.MASTERED_MIN ? 'var(--success)' : mastery.avgMastery >= MASTERY_THRESHOLDS.PRACTICING_MIN ? 'var(--warning)' : 'var(--danger)'
                                 }} />
                               </div>
                             </div>

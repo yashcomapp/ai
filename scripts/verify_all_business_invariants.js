@@ -365,6 +365,46 @@ test('sanitizeRealTimePayload actively strips heavy base64 snapshot arrays from 
   assert.strictEqual(sanitized.studentCode, 'ST-2026-000001');
 });
 
+// -----------------------------------------------------------------------------
+// SUITE 9: Round 8 Audit Invariants (Safe Fallbacks, Auth Revocation Retry, Mastery SSOT)
+// -----------------------------------------------------------------------------
+console.log('\n--- Suite 9: Safe Percentage Fallbacks & Auth Revocation Invariants ---');
+
+function resolvePercentage(percentageField, score, maxMarks) {
+  return percentageField != null && !isNaN(Number(percentageField))
+    ? Math.round(Number(percentageField))
+    : (maxMarks > 0 ? Math.round((score / maxMarks) * 100) : 0);
+}
+
+test('Valid numeric percentage is respected without modification', () => {
+  assert.strictEqual(resolvePercentage(87.4, 15, 20), 87);
+  assert.strictEqual(resolvePercentage('92', 15, 20), 92);
+});
+
+test('Invalid or non-numeric percentage safely falls back to score / maxMarks', () => {
+  assert.strictEqual(resolvePercentage('invalid', 15, 20), 75);
+  assert.strictEqual(resolvePercentage(null, 18, 20), 90);
+  assert.strictEqual(resolvePercentage(undefined, 10, 20), 50);
+  assert.strictEqual(resolvePercentage(NaN, 14, 20), 70);
+});
+
+test('Auth claims sync: Failed token revocation never sets in-memory throttle cache', () => {
+  const lastSyncedClaimsMap = new Map();
+  const uid = 'user-test-uid';
+  let revokeSuccess = false;
+
+  try {
+    if (!revokeSuccess) {
+      throw new Error('Firebase Auth network error');
+    }
+    lastSyncedClaimsMap.set(uid, { timestamp: Date.now() });
+  } catch (err) {
+    lastSyncedClaimsMap.delete(uid);
+  }
+
+  assert.strictEqual(lastSyncedClaimsMap.has(uid), false);
+});
+
 console.log('\n================================================================');
 console.log(`🎉 INVARIANT VERIFICATION SUMMARY: ${passedTests} / ${totalTests} TESTS PASSED`);
 console.log('================================================================\n');

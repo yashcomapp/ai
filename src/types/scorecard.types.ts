@@ -1,3 +1,5 @@
+import { MASTERY_THRESHOLDS } from '@/lib/dashboardMetrics';
+
 /**
  * Canonical Scorecard Type Definitions (SSOT).
  */
@@ -72,8 +74,8 @@ export interface DetailedScorecard {
  * < 50: var(--danger)
  */
 export function getProgressColor(pct: number): string {
-  if (pct >= 90) return 'var(--success)';
-  if (pct >= 50) return 'var(--warning)';
+  if (pct >= MASTERY_THRESHOLDS.MASTERED_MIN) return 'var(--success)';
+  if (pct >= MASTERY_THRESHOLDS.PRACTICING_MIN) return 'var(--warning)';
   return 'var(--danger)';
 }
 

@@ -3,6 +3,7 @@ import * as admin from 'firebase-admin';
 import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole } from '@/lib/auth';
 import { getRequiredConfidence } from '@/lib/studentDb';
+import { MASTERY_THRESHOLDS } from '@/lib/dashboardMetrics';
 
 export async function GET(req: NextRequest) {
   try {
@@ -43,9 +44,9 @@ export async function GET(req: NextRequest) {
       const mastery = Number(mData.mastery || 0);
       const confidence = Number(mData.confidence || 0);
       const reqConf = getRequiredConfidence(mData.topicClassification, mData.targetQuestions);
-      if (mastery >= 90 && confidence >= reqConf) {
+      if (mastery >= MASTERY_THRESHOLDS.MASTERED_MIN && confidence >= reqConf) {
         masteredTopics += 1;
-      } else if (mastery < 50) {
+      } else if (mastery < MASTERY_THRESHOLDS.PRACTICING_MIN) {
         weakTopicsCount += 1;
       }
     });

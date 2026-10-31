@@ -12,7 +12,7 @@ import dynamic from 'next/dynamic';
 
 import { formatDateOrFallback } from '@/lib/dateUtils';
 import { getCanonicalSubjectName } from '@/lib/questionTypes';
-import { MASTERY_THRESHOLDS } from '@/lib/dashboardMetrics';
+import { MASTERY_THRESHOLDS, getRequiredConfidence } from '@/lib/dashboardMetrics';
 
 interface StudentLearningTopicItem {
   topicCode: string;
@@ -711,7 +711,7 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                                                expText = `${practiceCount}/${maxPractices} practices done (${mastery}% accuracy). ${Math.max(0, maxPractices - practiceCount)} practice(s) left — focus on weak areas.`;
                                              }
                                            } else if (state === 'continuePractice') {
-                                             const reqConf = topic.requiredConfidence || (topic.topicClassification === 'minor' || topic.topicClassification === 'micro' ? 6 : (topic.topicClassification === 'major' || topic.topicClassification === 'calculative' || topic.topicClassification === 'hots' ? 15 : 10));
+                                             const reqConf = topic.requiredConfidence || getRequiredConfidence(topic.topicClassification, topic.targetQuestions);
                                              if (mastery >= MASTERY_THRESHOLDS.MASTERED_MIN && attempts < reqConf) {
                                                const needed = Math.max(1, reqConf - attempts);
                                                expIcon = '📖';
@@ -735,7 +735,7 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                                           const isMasteredState = state === 'mastered';
                                           const targetUrl = `/student/topic?topicCode=${encodeURIComponent(topic.topicCode)}&category=${topic.state}`;
 
-                                          const reqMasteryQs = topic.requiredConfidence || (topic.topicClassification === 'minor' || topic.topicClassification === 'micro' ? 6 : topic.topicClassification === 'major' || topic.topicClassification === 'calculative' || topic.topicClassification === 'hots' ? 15 : 10);
+                                          const reqMasteryQs = topic.requiredConfidence || getRequiredConfidence(topic.topicClassification, topic.targetQuestions);
 
                                           let btnLabel = isLimitReached && !isMasteredState ? '🔒 Quota Reached' : actionText;
 

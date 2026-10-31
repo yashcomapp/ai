@@ -7,6 +7,7 @@ import { notifyNewExam } from '@/lib/notifications';
 import { getDateKeyIST } from '@/lib/dateUtils';
 import { ReportCacheManager } from '@/lib/reportCache';
 import { getRequiredConfidence, isDemoUser } from '@/lib/studentDb';
+import { MASTERY_THRESHOLDS } from '@/lib/dashboardMetrics';
 import { evaluateSessionSincerity } from '@/lib/practiceTimeUtils';
 import { getCanonicalSubjectName, parseTopicCode } from '@/lib/questionTypes';
 import { getObjectiveExamTopics, getSubjectiveExamTopics, getExamDateKey, isExamForStudent, QuotientService } from '@/services/quotient.service';
@@ -296,7 +297,7 @@ export async function GET(req: NextRequest) {
             expColor,
             expText
           });
-        } else if (mastery >= 90 && isFullConfidence) {
+        } else if (mastery >= MASTERY_THRESHOLDS.MASTERED_MIN && isFullConfidence) {
           state = 'mastered';
           expIcon = '⭐';
           expColor = 'var(--success)';
@@ -317,7 +318,7 @@ export async function GET(req: NextRequest) {
             expColor,
             expText
           });
-        } else if (mastery >= 90 && !isFullConfidence) {
+        } else if (mastery >= MASTERY_THRESHOLDS.MASTERED_MIN && !isFullConfidence) {
           state = 'revision';
           const needed = Math.max(1, reqConfidence - attempts);
           expIcon = '📖';
