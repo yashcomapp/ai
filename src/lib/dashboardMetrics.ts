@@ -193,8 +193,8 @@ export interface ClassifyAssignedTopicsResult {
 }
 
 function calculateTopicPriority(mastery: number, confidence: number, reqConf: number): number {
-  if (mastery < 50) return 100 - mastery;
-  if (mastery < 90) return 50 + (90 - mastery);
+  if (mastery < MASTERY_THRESHOLDS.PRACTICING_MIN) return 100 - mastery;
+  if (mastery < MASTERY_THRESHOLDS.MASTERED_MIN) return 50 + (MASTERY_THRESHOLDS.MASTERED_MIN - mastery);
   if (confidence < reqConf) return 20 + (reqConf - confidence);
   return 0;
 }
@@ -356,7 +356,7 @@ export function classifyAssignedTopics(input: ClassifyAssignedTopicsInput): Clas
 
     let state: 'mastered' | 'practicing' | 'needsAttention';
     let topicMasteryProgress = 0;
-    const isCertifiedMastered = mastery >= 90 && confidence >= reqConf;
+    const isCertifiedMastered = mastery >= MASTERY_THRESHOLDS.MASTERED_MIN && confidence >= reqConf;
 
     if (!mData) {
       // Unattempted in the assigned syllabus -> strictly Needs Attention (0% score)
@@ -366,7 +366,7 @@ export function classifyAssignedTopics(input: ClassifyAssignedTopicsInput): Clas
     } else if (isCertifiedMastered) {
       state = 'mastered';
       topicMasteryProgress = mastery;
-    } else if (mastery >= 50) {
+    } else if (mastery >= MASTERY_THRESHOLDS.PRACTICING_MIN) {
       state = 'practicing';
       const confRatio = Math.min(1.0, Math.max(0.05, confidence / reqConf));
       topicMasteryProgress = mastery * confRatio;
@@ -512,7 +512,7 @@ export interface UnifiedMetricsResult {
   integrityScore: number;
 
   // 5. Canonical Classified Topics (Full Breakdown)
-  classifiedTopics?: ClassifyAssignedTopicsResult;
+  classifiedTopics: ClassifyAssignedTopicsResult;
 }
 
 export function calculateUnifiedMetrics(input: UnifiedMetricsInput): UnifiedMetricsResult {

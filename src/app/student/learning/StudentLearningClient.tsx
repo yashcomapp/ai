@@ -12,6 +12,7 @@ import dynamic from 'next/dynamic';
 
 import { formatDateOrFallback } from '@/lib/dateUtils';
 import { getCanonicalSubjectName } from '@/lib/questionTypes';
+import { MASTERY_THRESHOLDS } from '@/lib/dashboardMetrics';
 
 interface StudentLearningTopicItem {
   topicCode: string;
@@ -174,14 +175,14 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
   };
 
   const getMasteryClass = (mastery: number) => {
-    if (mastery < 50) return 'low';
-    if (mastery < 90) return 'medium';
+    if (mastery < MASTERY_THRESHOLDS.PRACTICING_MIN) return 'low';
+    if (mastery < MASTERY_THRESHOLDS.MASTERED_MIN) return 'medium';
     return 'high';
   };
 
   const getProgressColor = (mastery: number) => {
-    if (mastery < 50) return 'var(--danger)';
-    if (mastery < 90) return 'var(--warning)';
+    if (mastery < MASTERY_THRESHOLDS.PRACTICING_MIN) return 'var(--danger)';
+    if (mastery < MASTERY_THRESHOLDS.MASTERED_MIN) return 'var(--warning)';
     return 'var(--success)';
   };
 
@@ -711,7 +712,7 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                                              }
                                            } else if (state === 'continuePractice') {
                                              const reqConf = topic.requiredConfidence || (topic.topicClassification === 'minor' || topic.topicClassification === 'micro' ? 6 : (topic.topicClassification === 'major' || topic.topicClassification === 'calculative' || topic.topicClassification === 'hots' ? 15 : 10));
-                                             if (mastery >= 90 && attempts < reqConf) {
+                                             if (mastery >= MASTERY_THRESHOLDS.MASTERED_MIN && attempts < reqConf) {
                                                const needed = Math.max(1, reqConf - attempts);
                                                expIcon = '📖';
                                                expColor = 'var(--accent)';
@@ -723,7 +724,7 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                                              } else {
                                                expIcon = '📈';
                                                expColor = 'var(--warning)';
-                                               expText = `${practiceCount}/${maxPractices} practices done (${mastery}% accuracy). Complete 1 practice set (6 Qs) to aim for 90%+ Mastered.`;
+                                               expText = `${practiceCount}/${maxPractices} practices done (${mastery}% accuracy). Complete 1 practice set (6 Qs) to aim for ${MASTERY_THRESHOLDS.MASTERED_MIN}%+ Mastered.`;
                                              }
                                            } else {
                                               expIcon = '⭐';

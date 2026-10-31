@@ -5,7 +5,6 @@ import { chunkArray } from '@/lib/firestoreUtils';
 import { calculateUnifiedMetrics, extractConductedTopicCodes } from '@/lib/dashboardMetrics';
 import { getCachedSyllabusTopicsMap, fetchTopicIndexByCodes } from '@/lib/syllabusServerUtils';
 import { calculateProctoringIntegrityScore } from '@/lib/proctoring';
-import { calculateSrsSchedule } from '@/lib/srsRotation';
 import { getFromCache, setInCache } from '@/lib/firebase/cache';
 import { deduplicateAssignments, resolveIntegrityScore, calculateTimeLogSummary, resolveParentStudentCodes } from '@/lib/dashboardDbUtils';
 import { getAssignmentsForBatches } from '@/services/exam.service';

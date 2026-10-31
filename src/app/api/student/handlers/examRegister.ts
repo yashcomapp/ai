@@ -261,7 +261,7 @@ export async function GET(req: NextRequest) {
         const maxMarks = isSubjective
           ? (subjectiveExamsMetadata.get(examId)?.totalMarks || 100)
           : (attempt.totalMarks ?? examsMetadata.get(examId)?.totalMarks ?? 100);
-        const percentage = maxMarks > 0 ? Math.round((score / maxMarks) * 100) : 0;
+        const percentage = attempt.percentage != null ? Math.round(Number(attempt.percentage)) : (maxMarks > 0 ? Math.round((score / maxMarks) * 100) : 0);
         const examName = isSubjective
           ? (subjectiveExamsMetadata.get(examId)?.name || assignment.name || 'Subjective Test')
           : (examsMetadata.get(examId)?.name || attempt.examName || 'Objective Test');
@@ -358,7 +358,7 @@ export async function GET(req: NextRequest) {
       if (hasAttempt) {
         const score = attempt.finalScore ?? attempt.score ?? 0;
         const maxMarks = examData.totalMarks || 100;
-        const percentage = maxMarks > 0 ? Math.round((score / maxMarks) * 100) : 0;
+        const percentage = attempt.percentage != null ? Math.round(Number(attempt.percentage)) : (maxMarks > 0 ? Math.round((score / maxMarks) * 100) : 0);
 
         processedExams.set(examId, {
           examId,
@@ -393,7 +393,7 @@ export async function GET(req: NextRequest) {
         if (data.examType === 'entrance') return;
         const score = data.score ?? 0;
         const maxMarks = data.totalMarks ?? data.totalQuestions ?? 100;
-        const percentage = maxMarks > 0 ? Math.round((score / maxMarks) * 100) : 0;
+        const percentage = data.percentage != null ? Math.round(Number(data.percentage)) : (maxMarks > 0 ? Math.round((score / maxMarks) * 100) : 0);
         let topicCode = '';
         if (Array.isArray(data.topicCodes) && data.topicCodes.length > 0) {
           topicCode = data.topicCodes[0];

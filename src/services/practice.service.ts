@@ -11,6 +11,7 @@ import { invalidateCache } from '@/lib/firebase/cache';
 import { evaluateSessionSincerity } from '@/lib/practiceTimeUtils';
 import { calculateSrsSchedule } from '@/lib/srsRotation';
 import { getRequiredConfidence } from '@/lib/studentDb';
+import { MASTERY_THRESHOLDS } from '@/lib/dashboardMetrics';
 import { fetchTopicIndexByCodes } from '@/lib/syllabusServerUtils';
 
 const DIFFICULTY_WEIGHTS: Record<string, number> = { easy: 1, medium: 2, hard: 3 };
@@ -298,9 +299,9 @@ export class PracticeService {
       // Regular Topic Mastery System: Once a topic is mastered (>= 90% mastery AND confidence >= reqConf), it stays Mastered!
       const existingConf = existing ? (existing.confidence || (existing as any).verifiedAttempts || 0) : 0;
       const targetReqConf = updatedData.requiredConfidence || fallbackRequiredConfidence;
-      const isMasteredTopic = Boolean(existing && existing.mastery >= 90 && existingConf >= targetReqConf);
+      const isMasteredTopic = Boolean(existing && existing.mastery >= MASTERY_THRESHOLDS.MASTERED_MIN && existingConf >= targetReqConf);
       if (isMasteredTopic) {
-        updatedData.mastery = Math.max(updatedData.mastery, 90);
+        updatedData.mastery = Math.max(updatedData.mastery, MASTERY_THRESHOLDS.MASTERED_MIN);
       }
 
       // Enforce Deliberation Gate: Rushed sessions (< 18s/question) do NOT advance mastery & trigger 30-min cooldown
@@ -323,7 +324,7 @@ export class PracticeService {
           updatedData.srsStage = nextStage;
           updatedData.lastRevisedAt = new Date();
           updatedData.nextReviewDate = sched.nextReviewDate;
-          updatedData.mastery = Math.max(updatedData.mastery, 90);
+          updatedData.mastery = Math.max(updatedData.mastery, MASTERY_THRESHOLDS.MASTERED_MIN);
         } else if (sessionAccuracy < 60) {
           // Concept retention degraded -> reset SRS stage to 0 to rebuild
           updatedData.srsStage = 0;

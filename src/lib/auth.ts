@@ -52,7 +52,7 @@ export async function syncUserCustomClaims(uid: string, userData: any, revokeTok
   // In-memory cooldown throttle: prevent repeated Firebase Auth Admin API writes within 5 minutes
   const claimsHash = getClaimsHash(userData);
   const lastSync = lastSyncedClaimsMap.get(uid);
-  if (!shouldRevoke && lastSync && lastSync.hash === claimsHash && (Date.now() - lastSync.timestamp) <= CLAIMS_SYNC_THROTTLE_MS) {
+  if (lastSync && lastSync.hash === claimsHash && (Date.now() - lastSync.timestamp) <= CLAIMS_SYNC_THROTTLE_MS) {
     return false;
   }
 
@@ -168,8 +168,10 @@ const CACHE_TTL_MS = 60000; // 60 seconds
 export function invalidateUserCache(uid?: string) {
   if (uid) {
     userCache.delete(uid);
+    lastSyncedClaimsMap.delete(uid);
   } else {
     userCache.clear();
+    lastSyncedClaimsMap.clear();
   }
 }
 

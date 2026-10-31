@@ -95,13 +95,17 @@ async function handleLearningQuotientPost(req: NextRequest) {
     await ReportCacheManager.invalidatePattern('bulk-');
   };
 
+  if (action === 'refresh') {
+    await invalidateAllLQCaches();
+    return NextResponse.json({ success: true, message: 'Learning quotient report caches refreshed.' }, { headers: NO_CACHE_HEADERS });
+  }
+
   if (action === 'saveParameter') {
     const { parameterId, name } = body;
     if (!name) {
       return NextResponse.json({ message: 'Parameter name is required.' }, { status: 400 });
     }
     const parameter = await QuotientService.saveParameter(name, parameterId);
-    await invalidateAllLQCaches();
     return NextResponse.json({ success: true, message: 'Parameter saved successfully.', parameter }, { headers: NO_CACHE_HEADERS });
   }
 
@@ -111,7 +115,6 @@ async function handleLearningQuotientPost(req: NextRequest) {
       return NextResponse.json({ message: 'Parameter ID is required.' }, { status: 400 });
     }
     await QuotientService.deleteParameter(parameterId);
-    await invalidateAllLQCaches();
     return NextResponse.json({ success: true, message: 'Parameter deleted successfully.' }, { headers: NO_CACHE_HEADERS });
   }
 
@@ -121,7 +124,6 @@ async function handleLearningQuotientPost(req: NextRequest) {
       return NextResponse.json({ message: 'Missing required parameters for batch award.' }, { status: 400 });
     }
     await QuotientService.batchAward(studentCodes, parameterId, score, actorEmail);
-    await invalidateAllLQCaches();
     return NextResponse.json({ success: true, message: 'Batch award observation logged successfully.' }, { headers: NO_CACHE_HEADERS });
   }
 
@@ -131,7 +133,6 @@ async function handleLearningQuotientPost(req: NextRequest) {
       return NextResponse.json({ message: 'Missing required parameters.' }, { status: 400 });
     }
     await QuotientService.logSingleObservation(studentCode, scores, actorEmail);
-    await invalidateAllLQCaches();
     return NextResponse.json({ success: true, message: 'Student observation logged successfully.' }, { headers: NO_CACHE_HEADERS });
   }
 
@@ -149,7 +150,6 @@ async function handleLearningQuotientPost(req: NextRequest) {
     parentScore: parentScore !== undefined ? Number(parentScore) : 50,
     observedBy: actorEmail
   });
-  await invalidateAllLQCaches();
 
   return NextResponse.json({
     success: true,
