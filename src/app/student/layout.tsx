@@ -22,9 +22,15 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
   const [curfewActive, setCurfewActive] = useState(false);
   const [maintenance, setMaintenance] = useState<{ active: boolean; message: string } | null>(null);
 
+  const userRef = useRef(user);
+  useEffect(() => {
+    userRef.current = user;
+  }, [user]);
+
   useEffect(() => {
     const unsub = onSnapshot(doc(db, 'config', 'systemAccess'), (snapshot) => {
-      const isBypassed = isCurfewBypassed(user?.email, user);
+      const currentUser = userRef.current;
+      const isBypassed = isCurfewBypassed(currentUser?.email, currentUser);
 
       if (snapshot.exists()) {
         const data = snapshot.data();
@@ -41,7 +47,7 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
       }
     }, () => {});
     return () => unsub();
-  }, [user]);
+  }, []);
 
   useEffect(() => {
     const getOfficialTime = () => {

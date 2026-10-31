@@ -25,11 +25,11 @@ async function resolveObjectiveExam(inputExamId: string) {
     decoded.replace(/\+/g, ' ')
   ]);
 
-  for (const cand of candidates) {
-    if (cand && cand !== inputExamId) {
-      snap = await adminDb.collection('exams').doc(cand).get();
-      if (snap.exists) return { snap, examId: snap.id };
-    }
+  const candidateList = Array.from(candidates).filter(c => c && c !== inputExamId);
+  if (candidateList.length > 0) {
+    const snaps = await adminDb.getAll(...candidateList.map(c => adminDb.collection('exams').doc(c)));
+    const matched = snaps.find(s => s.exists);
+    if (matched) return { snap: matched, examId: matched.id };
   }
 
   const clean = (s: string) => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -50,7 +50,10 @@ async function resolveObjectiveExam(inputExamId: string) {
   const CACHE_KEY = 'all_exams_summary_for_fuzzy';
   let cachedDocs = getFromCache<any[]>(CACHE_KEY);
   if (!cachedDocs) {
-    const allExamsSnap = await adminDb.collection('exams').select('title', 'name', 'examId', 'id').get();
+    const allExamsSnap = await adminDb.collection('exams')
+      .where('status', 'in', ['active', 'draft'])
+      .select('title', 'name', 'examId', 'id')
+      .get();
     cachedDocs = allExamsSnap.docs;
     setInCache(CACHE_KEY, cachedDocs, 300000); // 5 min TTL
   }

@@ -1,4 +1,3 @@
-import { NextResponse } from 'next/server';
 import { adminAuth, adminDb } from '@/lib/firebase/admin';
 import { UserRole } from '@/types/user.types';
 import { isStudentBlockedByCurfew } from '@/lib/curfew';
@@ -45,6 +44,13 @@ export async function syncUserCustomClaims(uid: string, userData: any, revokeTok
   if (!uid || !userData) return false;
   const role = (userData.role || '').toLowerCase();
   if (!role) return false;
+
+  // In-memory cooldown throttle: prevent repeated Firebase Auth Admin API writes within 5 minutes
+  const claimsHash = getClaimsHash(userData);
+  const lastSync = lastSyncedClaimsMap.get(uid);
+  if (!revokeTokens && lastSync && lastSync.hash === claimsHash && (Date.now() - lastSync.timestamp) <= CLAIMS_SYNC_THROTTLE_MS) {
+    return false;
+  }
 
   const claims: Record<string, any> = {
     role,
@@ -134,16 +140,6 @@ export function areClaimsEqual(decodedToken: any, userData: any): boolean {
   return true;
 }
 
-export function attachClaimsHeader(
-  res: NextResponse,
-  verified: { claimsUpdated?: boolean } | null | undefined
-): NextResponse {
-  if (verified?.claimsUpdated) {
-    res.headers.set('x-claims-updated', 'true');
-  }
-  return res;
-}
-
 export async function verifyToken(req: Request): Promise<any | null> {
   const authHeader = req.headers.get('Authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
@@ -227,11 +223,7 @@ export async function verifyAnyRole(
     // Proactively synchronize custom user claims if absent or stale (throttled in-memory to prevent repeated writes)
     let claimsUpdated = false;
     if (!areClaimsEqual(decodedToken, userData)) {
-      const claimsHash = getClaimsHash(userData);
-      const lastSync = lastSyncedClaimsMap.get(uid);
-      if (!lastSync || lastSync.hash !== claimsHash || (Date.now() - lastSync.timestamp) > CLAIMS_SYNC_THROTTLE_MS) {
-        claimsUpdated = await syncUserCustomClaims(uid, userData);
-      }
+      claimsUpdated = await syncUserCustomClaims(uid, userData);
     }
 
     return { decodedToken, userData, role: userRole, claimsUpdated };

@@ -46,14 +46,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // 1. Monitor Firebase Auth state change & maintain proactive token freshness
   useEffect(() => {
-    // Proactive token refresh every 20 minutes to ensure token custom claims never stay stale
+    // Proactive token refresh every 25 minutes (only when window is active) to keep custom claims synchronized
     const refreshInterval = setInterval(async () => {
-      if (auth.currentUser) {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible' && auth.currentUser) {
         try {
           await auth.currentUser.getIdToken(true);
         } catch (e) {}
       }
-    }, 20 * 60 * 1000);
+    }, 25 * 60 * 1000);
 
     const unsubscribe = onAuthStateChanged(auth, async (fUser) => {
       setFirebaseUser(fUser);

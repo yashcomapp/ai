@@ -10,7 +10,12 @@ service cloud.firestore { match /databases/{database}/documents {
     function tokenRole() { return isAuth() && 'role' in token() ? token().role : null; }
     function userDoc()   { return get(/databases/$(database)/documents/users/$(uid())).data; }
     function userRole()  { return tokenRole() != null ? tokenRole() : (isAuth() && exists(/databases/$(database)/documents/users/$(uid())) ? userDoc().role : null); }
-    function isAdmin()   { return isAuth() && exists(/databases/$(database)/documents/users/$(uid())) && userDoc().role == 'admin' && userDoc().status != 'inactive'; }
+    function isAdmin()   {
+      return isAuth() && (
+        (tokenRole() == 'admin' && (!('status' in token()) || token().status != 'inactive')) ||
+        (exists(/databases/$(database)/documents/users/$(uid())) && userDoc().role == 'admin' && userDoc().status != 'inactive')
+      );
+    }
     function isStudent() { return isAuth() && userRole() == 'student'; }
     function isParent()  { return isAuth() && userRole() == 'parent'; }
 
@@ -18,7 +23,7 @@ service cloud.firestore { match /databases/{database}/documents {
     function userEmail() {
       return (isAuth() && 'email' in token() && token().email != null)
         ? token().email
-        : userDoc().email;
+        : (exists(/databases/$(database)/documents/users/$(uid())) ? userDoc().email : '');
     }
 
     // Returns the calling user's own studentCode (ST-YYYY-NNNNNN).
@@ -26,7 +31,7 @@ service cloud.firestore { match /databases/{database}/documents {
     function myStudentCode() {
       return (isAuth() && 'studentCode' in token() && token().studentCode != null)
         ? token().studentCode
-        : userDoc().studentCode;
+        : (exists(/databases/$(database)/documents/users/$(uid())) ? userDoc().studentCode : '');
     }
 
     // Returns caller key (PR-email for parent, studentCode for student, else empty)
@@ -41,8 +46,10 @@ service cloud.firestore { match /databases/{database}/documents {
       return studentCode != null && (
         ('studentCodes' in token() && token().studentCodes.hasAny([studentCode])) ||
         ('studentCode' in token() && studentCode == token().studentCode) ||
-        ('studentCodes' in userDoc() && userDoc().studentCodes.hasAny([studentCode])) ||
-        ('studentCode' in userDoc() && studentCode == userDoc().studentCode)
+        (exists(/databases/$(database)/documents/users/$(uid())) && (
+          ('studentCodes' in userDoc() && userDoc().studentCodes.hasAny([studentCode])) ||
+          ('studentCode' in userDoc() && studentCode == userDoc().studentCode)
+        ))
       );
     }
 
@@ -101,21 +108,19 @@ service cloud.firestore { match /databases/{database}/documents {
     }
 
     // ── questions ─────────────────────────────────────────────
-    // 🟠 HIGH FIX: Prevent students from reading correctAnswer field
-    // Students need to read questions during exams/practice, but NOT answers.
+    // 🔴 SECURITY FIX: Questions and answers must NEVER be queryable directly via client SDK.
+    // Students load sanitized questions (with correctAnswer stripped) strictly via secure API endpoints.
     match /questions/{docId} {
-      allow read:  if isAuth();
-      allow write: if isAdmin();
+      allow read, write: if isAdmin();
     }
 
     // ── exams ─────────────────────────────────────────────────
+    // Exams are loaded securely through API routes to prevent client tampering.
     match /exams/{docId} {
-      allow read:  if isAuth();
-      allow write: if isAdmin();
+      allow read, write: if isAdmin();
     }
     match /subjectiveExams/{docId} {
-      allow read:  if isAuth();
-      allow write: if isAdmin();
+      allow read, write: if isAdmin();
     }
 
     // ── assignments ───────────────────────────────────────────

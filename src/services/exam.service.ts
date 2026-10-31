@@ -821,8 +821,8 @@ export class ExamService {
     if (uniqueCandidateCodes.length > 0) {
       try {
         const [otherObjExamsSnap, otherSubjExamsSnap] = await Promise.all([
-          adminDb.collection('exams').select('questionCodes', 'questionIds', 'questions').get(),
-          adminDb.collection('subjectiveExams').select('questionCodes', 'questionIds', 'questions').get()
+          adminDb.collection('exams').where('status', 'in', ['active', 'draft']).select('questionCodes', 'questionIds', 'questions').get(),
+          adminDb.collection('subjectiveExams').where('status', 'in', ['active', 'draft']).select('questionCodes', 'questionIds', 'questions').get()
         ]);
 
         const otherActiveQuestions = new Set<string>();
@@ -957,8 +957,8 @@ export class ExamService {
     const classes = ['6', '7', '8', '9', '10', '11', '12'];
     
     const [objDocs, subjDocs] = await Promise.all([
-      adminDb.collection('exams').select('class', 'sequence', 'name').get(),
-      adminDb.collection('subjectiveExams').select('class', 'sequence', 'name').get()
+      adminDb.collection('exams').where('status', 'in', ['active', 'draft']).select('class', 'sequence', 'name').get(),
+      adminDb.collection('subjectiveExams').where('status', 'in', ['active', 'draft']).select('class', 'sequence', 'name').get()
     ]);
 
     const classMaxSeq: Record<string, number> = {};

@@ -6,8 +6,17 @@ import { verifyToken, verifyAnyRole, invalidateUserCache, syncUserCustomClaims, 
 import { chunkArray } from '@/lib/firestoreUtils';
 import { isStudentBlockedByCurfew, CURFEW_RESTRICTION_MESSAGE } from '@/lib/curfew';
 
+const parentDeactCache = new Map<string, { result: { shouldDeactivate: boolean; reason: 'student_autonomous' | 'all_students_inactive' | null }; expiresAt: number }>();
+
 async function checkParentDeactivationStatus(userData: any, email?: string): Promise<{ shouldDeactivate: boolean; reason: 'student_autonomous' | 'all_students_inactive' | null }> {
   const parentEmail = email?.toLowerCase();
+  if (parentEmail) {
+    const cached = parentDeactCache.get(parentEmail);
+    if (cached && Date.now() < cached.expiresAt) {
+      return cached.result;
+    }
+  }
+
   let studentCodes: string[] = [];
   if (Array.isArray(userData?.studentCodes)) {
     studentCodes = userData.studentCodes.filter(Boolean);
@@ -34,15 +43,19 @@ async function checkParentDeactivationStatus(userData: any, email?: string): Pro
 
   if (studentCodes.length > 0) {
     const chunks = chunkArray(studentCodes, 30);
-    for (const chunk of chunks) {
-      const snap = await adminDb.collection('users').where('role', '==', 'student').where('studentCode', 'in', chunk).get();
+    const snaps = await Promise.all(
+      chunks.map(chunk =>
+        adminDb.collection('users').where('role', '==', 'student').where('studentCode', 'in', chunk).get()
+      )
+    );
+    snaps.forEach(snap => {
       snap.docs.forEach(doc => {
         const d = doc.data();
         if (!childrenDocs.some(c => c.studentCode === d.studentCode)) {
           childrenDocs.push(d);
         }
       });
-    }
+    });
   }
 
   // Deduplicate childrenDocs by studentCode
@@ -54,23 +67,28 @@ async function checkParentDeactivationStatus(userData: any, email?: string): Pro
     return true;
   });
 
+  let result: { shouldDeactivate: boolean; reason: 'student_autonomous' | 'all_students_inactive' | null } = { shouldDeactivate: false, reason: null };
   if (childrenDocs.length === 0) {
-    return { shouldDeactivate: true, reason: 'all_students_inactive' };
+    result = { shouldDeactivate: true, reason: 'all_students_inactive' };
+  } else {
+    // Check if ALL linked students are inactive
+    const activeChildren = childrenDocs.filter(c => c.status !== 'inactive');
+    if (activeChildren.length === 0) {
+      result = { shouldDeactivate: true, reason: 'all_students_inactive' };
+    } else {
+      // Check if ALL active linked students are in Autonomous Mode
+      const nonAutonomousActiveCount = activeChildren.filter(c => c.autonomous !== true).length;
+      if (nonAutonomousActiveCount === 0) {
+        result = { shouldDeactivate: true, reason: 'student_autonomous' };
+      }
+    }
   }
 
-  // Check if ALL linked students are inactive
-  const activeChildren = childrenDocs.filter(c => c.status !== 'inactive');
-  if (activeChildren.length === 0) {
-    return { shouldDeactivate: true, reason: 'all_students_inactive' };
+  if (parentEmail) {
+    parentDeactCache.set(parentEmail, { result, expiresAt: Date.now() + 60000 });
   }
 
-  // Check if ALL active linked students are in Autonomous Mode
-  const nonAutonomousActiveCount = activeChildren.filter(c => c.autonomous !== true).length;
-  if (nonAutonomousActiveCount === 0) {
-    return { shouldDeactivate: true, reason: 'student_autonomous' };
-  }
-
-  return { shouldDeactivate: false, reason: null };
+  return result;
 }
 
 export async function POST(req: NextRequest) {
@@ -90,11 +108,7 @@ export async function POST(req: NextRequest) {
       const studentCode = userData.studentCode || '';
       const activeSessionToken = userData.activeSessionToken || null;
 
-      let claimsUpdated = !!verified.claimsUpdated;
-      if (!areClaimsEqual(decodedToken, userData)) {
-        await syncUserCustomClaims(uid, userData);
-        claimsUpdated = true;
-      }
+      const claimsUpdated = !!verified.claimsUpdated;
 
       const responseHeaders: Record<string, string> = {};
       if (claimsUpdated) {
@@ -136,7 +150,7 @@ export async function POST(req: NextRequest) {
     const userDocRef = adminDb.collection('users').doc(uid);
     const userDoc = await userDocRef.get();
 
-    if (!userDoc.exists && action !== 'start_session' && action !== 'end_session') {
+    if (!userDoc.exists && action !== 'end_session') {
       return NextResponse.json({ message: 'User profile not found. Please contact admin.' }, { status: 404 });
     }
 
@@ -231,12 +245,13 @@ export async function POST(req: NextRequest) {
       await userDocRef.set(updateData, { merge: true });
       invalidateUserCache(uid);
 
-      // Async non-blocking session audit log with 5-minute debounce
+      // Await session audit log & notification so Vercel runtime does not kill promises mid-flight
       const lastLoginTime = userData.lastLoginAt?.toMillis ? userData.lastLoginAt.toMillis() : (userData.lastLoginAt ? new Date(userData.lastLoginAt).getTime() : 0);
       const isRecentLogin = lastLoginTime > 0 && (Date.now() - lastLoginTime < 5 * 60 * 1000);
 
+      const backgroundTasks: Promise<any>[] = [];
       if (!isRecentLogin) {
-        adminDb.collection('session_logs').add({
+        backgroundTasks.push(adminDb.collection('session_logs').add({
           uid,
           email: email || userData.email || '',
           name: userData.name || userData.displayName || email || role,
@@ -244,12 +259,20 @@ export async function POST(req: NextRequest) {
           batchIds: userData.batchIds || [],
           timestamp: admin.firestore.FieldValue.serverTimestamp(),
           type: 'login'
-        }).catch((e) => console.error('Session log write failed:', e));
+        }).catch((e) => console.error('Session log write failed:', e)));
       }
 
-      // Async non-blocking login notification
       if (role === 'student') {
-        notifyStudentLogin(studentCode, userData.name || userData.displayName || email || 'Student').catch((e) => console.error('Login notify failed:', e));
+        backgroundTasks.push(notifyStudentLogin(studentCode, userData.name || userData.displayName || email || 'Student').catch((e) => console.error('Login notify failed:', e)));
+      }
+
+      if (backgroundTasks.length > 0) {
+        await Promise.allSettled(backgroundTasks);
+      }
+
+      const responseHeaders: Record<string, string> = {};
+      if (claimsUpdatedFallback) {
+        responseHeaders['x-claims-updated'] = 'true';
       }
 
       return NextResponse.json({
@@ -267,7 +290,7 @@ export async function POST(req: NextRequest) {
           maintenanceBypass: userData.maintenanceBypass || false
         },
         serverTime: Date.now()
-      });
+      }, { headers: responseHeaders });
     }
 
     if (action === 'check_role') {
@@ -275,7 +298,7 @@ export async function POST(req: NextRequest) {
         role,
         studentCode,
         activeSessionToken
-      });
+      }, { headers: claimsUpdatedFallback ? { 'x-claims-updated': 'true' } : {} });
     }
 
     if (action === 'get_profile') {
@@ -292,24 +315,7 @@ export async function POST(req: NextRequest) {
           curfewBypass: userData.curfewBypass || false
         },
         serverTime: Date.now()
-      });
-    }
-
-    if (action === 'start_session') {
-      const { sessionToken } = body;
-      const updateData: Record<string, any> = {
-        lastLoginAt: admin.firestore.FieldValue.serverTimestamp()
-      };
-      
-      // Admin is exempt from setting activeSessionToken
-      if (role !== 'admin' && sessionToken) {
-        updateData.activeSessionToken = sessionToken;
-      }
-
-      await userDocRef.set(updateData, { merge: true });
-      invalidateUserCache(uid);
-
-      return NextResponse.json({ success: true });
+      }, { headers: claimsUpdatedFallback ? { 'x-claims-updated': 'true' } : {} });
     }
 
     if (action === 'end_session') {
@@ -326,7 +332,7 @@ export async function POST(req: NextRequest) {
 
       if (role === 'student') {
         const studentName = userData.name || userData.displayName || email || 'Student';
-        notifyStudentLogout(studentCode, studentName, uid).catch(e => console.error(e));
+        await notifyStudentLogout(studentCode, studentName, uid).catch(e => console.error(e));
       }
 
       // Log session logout

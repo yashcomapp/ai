@@ -340,7 +340,7 @@ export class ExamReviewService {
 
     const now = new Date();
 
-    for (const chunk of chunks) {
+    await Promise.all(chunks.map(async (chunk) => {
       // 1. Sweep 'reviews' collection
       const pendingReviewsSnap = await adminDb.collection('reviews')
         .where('studentCode', 'in', chunk)
@@ -456,7 +456,7 @@ export class ExamReviewService {
           await batch.commit();
         }
       }
-    }
+    }));
 
     return {
       success: true,

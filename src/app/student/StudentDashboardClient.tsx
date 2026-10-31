@@ -332,6 +332,20 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
     studentUrl: string;
   } | null>(null);
 
+  const activeLiveClassFallback = (activeData as any)?.activeLiveClass;
+  const activeLiveClassRef = useRef(activeLiveClassFallback);
+  useEffect(() => {
+    activeLiveClassRef.current = activeLiveClassFallback;
+  }, [activeLiveClassFallback]);
+
+  const studentTargetKey = useMemo(() => {
+    const sData: any = user || profile || {};
+    const sCode = sData.studentCode || user?.studentCode || '';
+    const rBatches = sData.batchIds || user?.batchIds || (sData.batchId ? [sData.batchId] : (user?.batchId ? [user.batchId] : []));
+    const bArr: string[] = Array.isArray(rBatches) ? rBatches : (rBatches ? [rBatches] : []);
+    return `${sCode}::${bArr.slice().sort().join(',')}`;
+  }, [user?.studentCode, profile?.studentCode, user?.batchIds, (profile as any)?.batchIds, user?.batchId, (profile as any)?.batchId]);
+
   useEffect(() => {
     if (!firebaseUser) {
       setLiveClassSession(null);
@@ -393,13 +407,6 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
           evaluateActiveSession();
         }, Math.min(remainingMs, 100 * 60 * 1000));
 
-        // Strict Webinar/Classroom Focus Mode:
-        // - startWithVideoMuted=true: Student joins with camera OFF
-        // - disableTileView=true: Disables grid view completely so students cannot view all peers
-        // - filmstrip.disabled=true: Hides video thumbnail carousel of other students completely
-        // - channelLastN=1: Limits stream download to only 1 (the presenter/teacher)
-        // - p2p.enabled=false: Bridges connection, prevents direct peer-to-peer video streaming
-        // - toolbarButtons: Removes tileview button from student interface
         setLiveClassSession({
           id: matched.sessionId,
           title: matched.title,
@@ -409,8 +416,8 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
           startedBy: matched.startedBy || 'Teacher',
           studentUrl: `https://meet.jit.si/${matched.roomName}#config.channelLastN=1&config.startWithAudioMuted=true&config.startWithVideoMuted=true&config.disableTileView=true&config.filmstrip.disabled=true&config.disableFilmstripAutohide=true&config.remoteVideoMenu.disabled=true&config.p2p.enabled=false&config.toolbarButtons=["microphone","camera","chat","raisehand","settings","hangup"]&userInfo.displayName=${encodeURIComponent(cleanStudentName)}`
         });
-      } else if ((activeData as any)?.activeLiveClass) {
-        const alc = (activeData as any).activeLiveClass;
+      } else if (activeLiveClassRef.current) {
+        const alc = activeLiveClassRef.current;
         setLiveClassSession({
           id: alc.sessionId,
           title: alc.title,
@@ -447,7 +454,7 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
       if (autoExpiryTimer) clearTimeout(autoExpiryTimer);
       unsubs.forEach(u => u());
     };
-  }, [firebaseUser, user, profile, (activeData as any)?.activeLiveClass]);
+  }, [firebaseUser?.uid, studentTargetKey]);
   
   // Real-time dynamic promotion: If client clock has reached startAt, immediately unlock exam with Start button without waiting for manual refresh
   const exams = useMemo(() => {
