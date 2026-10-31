@@ -12,8 +12,9 @@ service cloud.firestore { match /databases/{database}/documents {
     function userRole()  { return tokenRole() != null ? tokenRole() : (isAuth() && exists(/databases/$(database)/documents/users/$(uid())) ? userDoc().role : null); }
     function isAdmin()   {
       return isAuth() && (
-        (tokenRole() == 'admin' && (!('status' in token()) || token().status != 'inactive')) ||
-        (exists(/databases/$(database)/documents/users/$(uid())) && userDoc().role == 'admin' && userDoc().status != 'inactive')
+        tokenRole() != null
+          ? (tokenRole() == 'admin' && (!('status' in token()) || token().status != 'inactive'))
+          : (exists(/databases/$(database)/documents/users/$(uid())) && userDoc().role == 'admin' && userDoc().status != 'inactive')
       );
     }
     function isStudent() { return isAuth() && userRole() == 'student'; }
@@ -23,7 +24,7 @@ service cloud.firestore { match /databases/{database}/documents {
     function userEmail() {
       return (isAuth() && 'email' in token() && token().email != null)
         ? token().email
-        : (exists(/databases/$(database)/documents/users/$(uid())) ? userDoc().email : '');
+        : (tokenRole() != null ? '' : (exists(/databases/$(database)/documents/users/$(uid())) ? userDoc().email : ''));
     }
 
     // Returns the calling user's own studentCode (ST-YYYY-NNNNNN).
@@ -31,7 +32,7 @@ service cloud.firestore { match /databases/{database}/documents {
     function myStudentCode() {
       return (isAuth() && 'studentCode' in token() && token().studentCode != null)
         ? token().studentCode
-        : (exists(/databases/$(database)/documents/users/$(uid())) ? userDoc().studentCode : '');
+        : (tokenRole() != null ? '' : (exists(/databases/$(database)/documents/users/$(uid())) ? userDoc().studentCode : ''));
     }
 
     // Returns caller key (PR-email for parent, studentCode for student, else empty)
@@ -44,12 +45,14 @@ service cloud.firestore { match /databases/{database}/documents {
     // Helper to check if studentCode belongs to a child of parent
     function isMyChildCode(studentCode) {
       return studentCode != null && (
-        ('studentCodes' in token() && token().studentCodes.hasAny([studentCode])) ||
-        ('studentCode' in token() && studentCode == token().studentCode) ||
-        (exists(/databases/$(database)/documents/users/$(uid())) && (
-          ('studentCodes' in userDoc() && userDoc().studentCodes.hasAny([studentCode])) ||
-          ('studentCode' in userDoc() && studentCode == userDoc().studentCode)
-        ))
+        ('studentCodes' in token())
+          ? token().studentCodes.hasAny([studentCode])
+          : ('studentCode' in token() && token().studentCode != null)
+            ? studentCode == token().studentCode
+            : (exists(/databases/$(database)/documents/users/$(uid())) && (
+                ('studentCodes' in userDoc() && userDoc().studentCodes.hasAny([studentCode])) ||
+                ('studentCode' in userDoc() && studentCode == userDoc().studentCode)
+              ))
       );
     }
 
@@ -124,22 +127,15 @@ service cloud.firestore { match /databases/{database}/documents {
     }
 
     // ── assignments ───────────────────────────────────────────
+    // Assignments are queried securely through server-side APIs
     match /assignments/{docId} {
-      allow read:   if isAuth();
-      allow create: if isAdmin();
-      allow update: if isAdmin()
-                    || (isStudent()
-                        && request.resource.data.diff(resource.data).affectedKeys()
-                                         .hasOnly(['status', 'completedAt']));
-      allow delete: if isAdmin();
+      allow read, write: if isAdmin();
     }
     match /subjectiveAssignments/{docId} {
-      allow read:   if isAuth();
-      allow write:  if isAdmin();
+      allow read, write: if isAdmin();
     }
     match /batchAssignments/{docId} {
-      allow read:   if isAuth();
-      allow write:  if isAdmin();
+      allow read, write: if isAdmin();
     }
 
     // ── reviews / exam attempts ───────────────────────────────
@@ -264,8 +260,7 @@ service cloud.firestore { match /databases/{database}/documents {
 
     // ── peer assignments ──────────────────────────────────────
     match /peerAssignments/{docId} {
-      allow read:  if isAuth();
-      allow write: if isAdmin();
+      allow read, write: if isAdmin();
     }
 
     // ── live exam monitoring (heartbeat + WebRTC signaling) ────
@@ -364,9 +359,12 @@ service cloud.firestore { match /databases/{database}/documents {
             (
               (resource.data.targetType == 'student' && resource.data.targetId == myStudentCode()) ||
               (resource.data.targetType == 'batch' && (
-                ('batchIds' in token() && token().batchIds.hasAny([resource.data.targetId])) ||
-                ('batchIds' in userDoc() && userDoc().batchIds.hasAny([resource.data.targetId])) ||
-                ('batchId' in userDoc() && userDoc().batchId == resource.data.targetId)
+                ('batchIds' in token())
+                  ? token().batchIds.hasAny([resource.data.targetId])
+                  : (exists(/databases/$(database)/documents/users/$(uid())) && (
+                      ('batchIds' in userDoc() && userDoc().batchIds.hasAny([resource.data.targetId])) ||
+                      ('batchId' in userDoc() && userDoc().batchId == resource.data.targetId)
+                    ))
               ))
             )
           )
@@ -377,8 +375,7 @@ service cloud.firestore { match /databases/{database}/documents {
 
     // ── examCounters ──────────────────────────────────────────
     match /examCounters/{docId} {
-      allow read:  if isAuth();
-      allow write: if isAdmin();
+      allow read, write: if isAdmin();
     }
 
 
@@ -445,7 +442,7 @@ service cloud.firestore { match /databases/{database}/documents {
       allow delete: if isAdmin();
 
       match /messages/{messageId} {
-        allow read: if isAuth() && isRoomParticipant(roomId);
+        allow read: if isAuth() && (isAdmin() || (('participants' in resource.data) ? resource.data.participants.hasAny([callerKey()]) : isRoomParticipant(roomId)));
         allow create: if isAuth() && isRoomParticipant(roomId) && request.resource.data.senderId == callerKey();
         allow update: if isAuth() && isRoomParticipant(roomId) && (
           (isAdmin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['text', 'isEdited', 'updatedAt', 'isDeleted', 'mediaUrl', 'mediaMetadata', 'deletedAt'])) ||

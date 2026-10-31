@@ -957,8 +957,8 @@ export class ExamService {
     const classes = ['6', '7', '8', '9', '10', '11', '12'];
     
     const [objDocs, subjDocs] = await Promise.all([
-      adminDb.collection('exams').where('status', 'in', ['active', 'draft']).select('class', 'sequence', 'name').get(),
-      adminDb.collection('subjectiveExams').where('status', 'in', ['active', 'draft']).select('class', 'sequence', 'name').get()
+      adminDb.collection('exams').select('class', 'sequence', 'name').get(),
+      adminDb.collection('subjectiveExams').select('class', 'sequence', 'name').get()
     ]);
 
     const classMaxSeq: Record<string, number> = {};

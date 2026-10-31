@@ -2,18 +2,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminAuth, adminDb } from '@/lib/firebase/admin';
 import * as admin from 'firebase-admin';
 import { notifyStudentLogin, notifyStudentLogout } from '@/lib/notifications';
-import { verifyToken, verifyAnyRole, invalidateUserCache, syncUserCustomClaims, areClaimsEqual } from '@/lib/auth';
+import { verifyToken, verifyAnyRole, invalidateUserCache, syncUserCustomClaims, areClaimsEqual, getParentDeactCache, setParentDeactCache } from '@/lib/auth';
 import { chunkArray } from '@/lib/firestoreUtils';
 import { isStudentBlockedByCurfew, CURFEW_RESTRICTION_MESSAGE } from '@/lib/curfew';
-
-const parentDeactCache = new Map<string, { result: { shouldDeactivate: boolean; reason: 'student_autonomous' | 'all_students_inactive' | null }; expiresAt: number }>();
 
 async function checkParentDeactivationStatus(userData: any, email?: string): Promise<{ shouldDeactivate: boolean; reason: 'student_autonomous' | 'all_students_inactive' | null }> {
   const parentEmail = email?.toLowerCase();
   if (parentEmail) {
-    const cached = parentDeactCache.get(parentEmail);
-    if (cached && Date.now() < cached.expiresAt) {
-      return cached.result;
+    const cached = getParentDeactCache(parentEmail);
+    if (cached) {
+      return cached;
     }
   }
 
@@ -85,7 +83,7 @@ async function checkParentDeactivationStatus(userData: any, email?: string): Pro
   }
 
   if (parentEmail) {
-    parentDeactCache.set(parentEmail, { result, expiresAt: Date.now() + 60000 });
+    setParentDeactCache(parentEmail, result);
   }
 
   return result;

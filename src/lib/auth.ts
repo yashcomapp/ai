@@ -54,6 +54,7 @@ export async function syncUserCustomClaims(uid: string, userData: any, revokeTok
 
   const claims: Record<string, any> = {
     role,
+    status: userData.status || 'active',
     studentCode: userData.studentCode || null
   };
 
@@ -96,6 +97,10 @@ export function areClaimsEqual(decodedToken: any, userData: any): boolean {
   const userRole = (userData.role || '').toLowerCase();
   const tokenRole = (decodedToken.role || '').toLowerCase();
   if (tokenRole !== userRole) return false;
+
+  const userStatus = userData.status || 'active';
+  const tokenStatus = decodedToken.status || 'active';
+  if (tokenStatus !== userStatus) return false;
 
   const userStudentCode = userData.studentCode || null;
   const tokenStudentCode = decodedToken.studentCode || null;
@@ -164,6 +169,38 @@ export function invalidateUserCache(uid?: string) {
   }
 }
 
+// In-memory cache for parent deactivation checks
+const parentDeactCache = new Map<string, { result: { shouldDeactivate: boolean; reason: 'student_autonomous' | 'all_students_inactive' | null }; expiresAt: number }>();
+
+export function getParentDeactCache(email: string) {
+  const cached = parentDeactCache.get(email.toLowerCase());
+  if (cached && Date.now() < cached.expiresAt) {
+    return cached.result;
+  }
+  return null;
+}
+
+export function setParentDeactCache(email: string, result: { shouldDeactivate: boolean; reason: 'student_autonomous' | 'all_students_inactive' | null }) {
+  if (parentDeactCache.size > 500) {
+    const now = Date.now();
+    for (const [k, v] of parentDeactCache.entries()) {
+      if (v.expiresAt < now) parentDeactCache.delete(k);
+    }
+    if (parentDeactCache.size > 500) {
+      parentDeactCache.clear();
+    }
+  }
+  parentDeactCache.set(email.toLowerCase(), { result, expiresAt: Date.now() + 60000 });
+}
+
+export function invalidateParentDeactCache(email?: string) {
+  if (email) {
+    parentDeactCache.delete(email.toLowerCase());
+  } else {
+    parentDeactCache.clear();
+  }
+}
+
 export async function verifyRole(req: Request, role: UserRole): Promise<VerifiedUser | null> {
   const result = await verifyAnyRole(req, [role]);
   if (!result) return null;
@@ -221,12 +258,12 @@ export async function verifyAnyRole(
     }
 
     // Proactively synchronize custom user claims if absent or stale (throttled in-memory to prevent repeated writes)
-    let claimsUpdated = false;
-    if (!areClaimsEqual(decodedToken, userData)) {
-      claimsUpdated = await syncUserCustomClaims(uid, userData);
+    const claimsMismatch = !areClaimsEqual(decodedToken, userData);
+    if (claimsMismatch) {
+      await syncUserCustomClaims(uid, userData);
     }
 
-    return { decodedToken, userData, role: userRole, claimsUpdated };
+    return { decodedToken, userData, role: userRole, claimsUpdated: claimsMismatch };
   }
 
   return null;

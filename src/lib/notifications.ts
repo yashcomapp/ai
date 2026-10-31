@@ -570,9 +570,13 @@ export async function notifyNotice(
     const uids = new Set<string>();
 
     if (targetType === 'all') {
-      // Notify all parents and students (doc IDs only)
-      const snaps = await adminDb.collection('users').select().get();
-      snaps.docs.forEach(doc => uids.add(doc.id));
+      // Notify all active parents and students (doc IDs only)
+      const snaps = await adminDb.collection('users').select('status').get();
+      snaps.docs.forEach(doc => {
+        if (doc.data().status !== 'inactive') {
+          uids.add(doc.id);
+        }
+      });
     } else if (targetType === 'batch' && targetValues.length > 0) {
       // Notify all students in this batch and their parents
       const batchChunks: string[][] = [];
@@ -601,8 +605,9 @@ export async function notifyNotice(
       snaps.forEach(snap => {
         if (!snap) return;
         snap.docs.forEach(doc => {
-          uids.add(doc.id);
           const data = doc.data();
+          if (data.status === 'inactive') return;
+          uids.add(doc.id);
           if (data.studentCode) studentCodes.push(data.studentCode);
           if (data.parentEmail) parentEmails.push(data.parentEmail);
         });
@@ -633,8 +638,9 @@ export async function notifyNotice(
       snaps.forEach(snap => {
         if (!snap) return;
         snap.docs.forEach(doc => {
-          uids.add(doc.id);
           const data = doc.data();
+          if (data.status === 'inactive') return;
+          uids.add(doc.id);
           if (data.studentCode) studentCodes.push(data.studentCode);
           if (data.parentEmail) parentEmails.push(data.parentEmail);
         });

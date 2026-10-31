@@ -51,7 +51,7 @@ async function resolveObjectiveExam(inputExamId: string) {
   let cachedDocs = getFromCache<any[]>(CACHE_KEY);
   if (!cachedDocs) {
     const allExamsSnap = await adminDb.collection('exams')
-      .where('status', 'in', ['active', 'draft'])
+      
       .select('title', 'name', 'examId', 'id')
       .get();
     cachedDocs = allExamsSnap.docs;

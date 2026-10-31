@@ -334,6 +334,7 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
 
   const activeLiveClassFallback = (activeData as any)?.activeLiveClass;
   const activeLiveClassRef = useRef(activeLiveClassFallback);
+  const alcSessionId = activeLiveClassFallback?.sessionId || '';
   useEffect(() => {
     activeLiveClassRef.current = activeLiveClassFallback;
   }, [activeLiveClassFallback]);
@@ -454,7 +455,7 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
       if (autoExpiryTimer) clearTimeout(autoExpiryTimer);
       unsubs.forEach(u => u());
     };
-  }, [firebaseUser?.uid, studentTargetKey]);
+  }, [firebaseUser?.uid, studentTargetKey, alcSessionId]);
   
   // Real-time dynamic promotion: If client clock has reached startAt, immediately unlock exam with Start button without waiting for manual refresh
   const exams = useMemo(() => {

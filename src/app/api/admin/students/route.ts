@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { adminDb, adminAuth } from '@/lib/firebase/admin';
-import { verifyRole, invalidateUserCache, syncUserCustomClaims } from '@/lib/auth';
+import { verifyRole, invalidateUserCache, syncUserCustomClaims, invalidateParentDeactCache } from '@/lib/auth';
 import { ChunkedBatch } from '@/lib/firebase/batch';
 import { getFromCache, setInCache, invalidateCache, getCachedBatches } from '@/lib/firebase/cache';
 import { isDemoUser } from '@/lib/studentDb';
@@ -205,6 +205,7 @@ export async function POST(request: Request) {
           }
         }
       }
+      invalidateParentDeactCache(parentEmail || undefined);
     }
 
     invalidateUserCache(studentId);

@@ -86,7 +86,12 @@ export class ReportService {
   /**
    * Compiles proctoring compliance and integrity statistics.
    */
-  static async getIntegrityReport() {
+  static async getIntegrityReport(forceRefresh: boolean = false) {
+    const cacheKey = 'admin_integrity_report';
+    if (!forceRefresh) {
+      const cached = await ReportCacheManager.getReport<any>(cacheKey);
+      if (cached) return cached;
+    }
     const [scoresSnap, studentsSnap] = await Promise.all([
       adminDb.collection('integrityScores').select('integrityScore', 'score').get(),
       adminDb.collection('users')
@@ -122,12 +127,14 @@ export class ReportService {
       };
     }).filter(s => s.status !== 'inactive' && !isDemoUser(s));
 
-    return {
+    const result = {
       totalScores,
       reviewCount,
       avgScore,
       students
     };
+    await ReportCacheManager.setReport(cacheKey, result, 300);
+    return result;
   }
 
   /**
