@@ -340,7 +340,7 @@ export async function GET(req: NextRequest) {
             expColor,
             expText
           });
-        } else if (mastery >= 50) {
+        } else if (mastery >= MASTERY_THRESHOLDS.PRACTICING_MIN) {
           state = 'continuePractice';
           if (isLimitReached) {
             expIcon = '🔒';
@@ -349,7 +349,7 @@ export async function GET(req: NextRequest) {
           } else {
             expIcon = '📈';
             expColor = 'var(--warning)';
-            expText = `${practiceCount}/${maxPractices} practices done (${mastery}% accuracy). Complete 1 practice set (6 Qs) to aim for 90%+ Mastered.`;
+            expText = `${practiceCount}/${maxPractices} practices done (${mastery}% accuracy). Complete 1 practice set (6 Qs) to aim for ${MASTERY_THRESHOLDS.MASTERED_MIN}%+ Mastered.`;
           }
           practicing.push({
             topicCode: tCode,

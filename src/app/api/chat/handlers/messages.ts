@@ -5,6 +5,26 @@ import { verifyRole, verifyAnyRole } from '@/lib/auth';
 import { sendPushNotification } from '@/lib/notifications';
 import { chunkArray } from '@/lib/firestoreUtils';
 
+// In-memory 30s cache for chat room metadata to prevent redundant Firestore get() on every message action
+const chatRoomCache = new Map<string, { data: any; timestamp: number }>();
+
+async function getChatRoomData(roomId: string, forceFresh: boolean = false): Promise<any | null> {
+  const cached = chatRoomCache.get(roomId);
+  const now = Date.now();
+  if (!forceFresh && cached && (now - cached.timestamp < 30000)) {
+    return cached.data;
+  }
+  const snap = await adminDb.collection('chatRooms').doc(roomId).get();
+  if (!snap.exists) return null;
+  const data = snap.data()!;
+  chatRoomCache.set(roomId, { data, timestamp: now });
+  return data;
+}
+
+export function invalidateChatRoomCache(roomId: string) {
+  chatRoomCache.delete(roomId);
+}
+
 
 function getUserKey(authResult: { decodedToken: any; userData: any; role: string }): string {
   const { decodedToken, userData, role } = authResult;
@@ -99,13 +119,12 @@ export async function GET(req: NextRequest) {
 
     const { userData, role } = authResult;
 
-    // Load room doc to verify participant check
+    // Load room doc to verify participant check (in-memory cached 30s)
     const roomRef = adminDb.collection('chatRooms').doc(roomId);
-    const roomSnap = await roomRef.get();
-    if (!roomSnap.exists) {
+    const roomData = await getChatRoomData(roomId);
+    if (!roomData) {
       return NextResponse.json({ error: 'Chat room not found.' }, { status: 404 });
     }
-    const roomData = roomSnap.data()!;
 
     if (role !== 'admin') {
       const userKey = role === 'parent' 

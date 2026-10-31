@@ -100,60 +100,19 @@ async function handleLearningQuotientPost(req: NextRequest) {
     return NextResponse.json({ success: true, message: 'Learning quotient report caches refreshed.' }, { headers: NO_CACHE_HEADERS });
   }
 
-  if (action === 'saveParameter') {
-    const { parameterId, name } = body;
-    if (!name) {
-      return NextResponse.json({ message: 'Parameter name is required.' }, { status: 400 });
-    }
-    const parameter = await QuotientService.saveParameter(name, parameterId);
-    return NextResponse.json({ success: true, message: 'Parameter saved successfully.', parameter }, { headers: NO_CACHE_HEADERS });
+  // Classroom behavioral observations have been formally deprecated in favor of the 4 academic pillars:
+  // Exam Performance (30%), Topic Mastery (30%), Practice Efforts (25%), Practice Quality (15%).
+  if (['saveParameter', 'deleteParameter', 'batchAward', 'logSingleObservation', 'saveObservation'].includes(action)) {
+    return NextResponse.json({
+      success: true,
+      deprecated: true,
+      message: 'Classroom observations have been superseded by the 4 academic pillars and do not alter Learning Quotient scores.'
+    }, { headers: NO_CACHE_HEADERS });
   }
-
-  if (action === 'deleteParameter') {
-    const { parameterId } = body;
-    if (!parameterId) {
-      return NextResponse.json({ message: 'Parameter ID is required.' }, { status: 400 });
-    }
-    await QuotientService.deleteParameter(parameterId);
-    return NextResponse.json({ success: true, message: 'Parameter deleted successfully.' }, { headers: NO_CACHE_HEADERS });
-  }
-
-  if (action === 'batchAward') {
-    const { studentCodes, parameterId, score } = body;
-    if (!studentCodes || !Array.isArray(studentCodes) || !parameterId || score === undefined) {
-      return NextResponse.json({ message: 'Missing required parameters for batch award.' }, { status: 400 });
-    }
-    await QuotientService.batchAward(studentCodes, parameterId, score, actorEmail);
-    return NextResponse.json({ success: true, message: 'Batch award observation logged successfully.' }, { headers: NO_CACHE_HEADERS });
-  }
-
-  if (action === 'logSingleObservation') {
-    const { studentCode, scores } = body;
-    if (!studentCode || !scores || typeof scores !== 'object') {
-      return NextResponse.json({ message: 'Missing required parameters.' }, { status: 400 });
-    }
-    await QuotientService.logSingleObservation(studentCode, scores, actorEmail);
-    return NextResponse.json({ success: true, message: 'Student observation logged successfully.' }, { headers: NO_CACHE_HEADERS });
-  }
-
-  // Default action: save standard classroom observation
-  const { studentCode, activeParticipation, sincerity, timelyWork, parentScore } = body;
-  if (!studentCode || activeParticipation === undefined || sincerity === undefined || timelyWork === undefined) {
-    return NextResponse.json({ message: 'Missing required parameters.' }, { status: 400 });
-  }
-
-  await QuotientService.saveObservation({
-    studentCode,
-    activeParticipation: Number(activeParticipation),
-    sincerity: Number(sincerity),
-    timelyWork: Number(timelyWork),
-    parentScore: parentScore !== undefined ? Number(parentScore) : 50,
-    observedBy: actorEmail
-  });
 
   return NextResponse.json({
     success: true,
-    message: 'Classroom observation logged successfully.'
+    message: 'Action completed.'
   }, { headers: NO_CACHE_HEADERS });
 }
 

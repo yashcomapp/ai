@@ -37,6 +37,28 @@ export default function LearningQuotientReportPage() {
   const [students, setStudents] = useState<StudentLQ[]>([]);
   const [batches, setBatches] = useState<{ id: string; name: string }[]>([]);
   const [selectedBatchId, setSelectedBatchId] = useState<string>('all');
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleRefreshCaches = async () => {
+    if (!firebaseUser) return;
+    setRefreshing(true);
+    try {
+      const idToken = await firebaseUser.getIdToken();
+      await fetch('/api/admin/reports/learning-quotient', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${idToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ action: 'refresh' })
+      });
+      await loadRoster(duration);
+    } catch (e) {
+      console.error('Error refreshing LQ cache:', e);
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   // Sorting state
   const [sortField, setSortField] = useState<string>('overallQuotient');
@@ -672,6 +694,27 @@ _Empowering Conceptual Excellence_`;
                 <option value="6m">📅 Last 6 Months</option>
               </select>
             </div>
+
+            <button
+              onClick={handleRefreshCaches}
+              disabled={refreshing || loading}
+              style={{
+                padding: '6px 12px',
+                borderRadius: 'var(--radius-sm)',
+                border: '1px solid var(--border-light)',
+                background: 'var(--bg-soft)',
+                color: 'var(--text)',
+                fontSize: '11px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}
+              title="Clear report cache and recalculate quotient data"
+            >
+              {refreshing ? '🔄 Refreshing...' : '🔄 Refresh Data'}
+            </button>
 
             <button
               className="btn btn-secondary"

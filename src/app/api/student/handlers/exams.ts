@@ -633,7 +633,7 @@ export async function POST(req: NextRequest) {
         }
       });
 
-      const percentage = (body as any)?.percentage != null && !isNaN(Number((body as any).percentage)) ? Math.round(Number((body as any).percentage)) : (totalMarks > 0 ? Math.round((score / totalMarks) * 100) : 0);
+      const percentage = totalMarks > 0 ? Math.round((score / totalMarks) * 100) : 0;
       return NextResponse.json({
         success: true,
         preview: true,

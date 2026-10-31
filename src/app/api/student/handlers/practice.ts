@@ -589,7 +589,8 @@ export async function GET(req: NextRequest) {
     });
 
     const reqConfidence = getRequiredConfidence(topicClassification, targetQuestions);
-    const isFullyMastered = (mastery >= MASTERY_THRESHOLDS.MASTERED_MIN && questionsAttempted >= reqConfidence);
+    const currentConfidence = masterySnap.exists ? (Number(masterySnap.data()!.confidence ?? questionsAttempted)) : 0;
+    const isFullyMastered = (mastery >= MASTERY_THRESHOLDS.MASTERED_MIN && currentConfidence >= reqConfidence);
     const resolvedScope = isMinorTopic ? 'minor' : (rawScope === 'major' || rawScope === 'calculative' || rawScope === 'hots' ? 'major' : 'medium');
 
     return NextResponse.json({
