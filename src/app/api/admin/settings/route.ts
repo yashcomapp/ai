@@ -16,7 +16,7 @@ export async function GET(request: Request) {
     const action = searchParams.get('action') || '';
 
     if (action === 'loadExams') {
-      const snap = await adminDb.collection('subjectiveExams').orderBy('createdAt', 'desc').limit(200).select('name', 'class', 'subjectCode', 'subjects', 'createdAt').get();
+      const snap = await adminDb.collection('subjectiveExams').select('name', 'class', 'subjectCode', 'subjects', 'createdAt').get();
       const exams = snap.docs.map(doc => ({
         examId: doc.id,
         name: doc.data().name || doc.id,
@@ -227,16 +227,17 @@ export async function POST(request: Request) {
         const protectedCollections = ['syllabus', 'syllabusTopicIndex', 'users', 'templates', 'config', 'batches', '_systemBackups'];
         const collections = await adminDb.listCollections();
         
-        await Promise.all(collections.map(async col => {
-          if (protectedCollections.includes(col.id)) return;
+        for (let i = 0; i < collections.length; i++) {
+          const col = collections[i];
+          if (protectedCollections.includes(col.id)) continue;
           const snap = await col.get();
-          if (snap.empty) return;
+          if (snap.empty) continue;
           const writeBatch = new ChunkedBatch(adminDb);
           snap.docs.forEach(doc => {
             writeBatch.delete(doc.ref);
           });
           await writeBatch.commit();
-        }));
+        }
         invalidateCache();
         return NextResponse.json({ success: true });
       }
@@ -248,17 +249,18 @@ export async function POST(request: Request) {
         }
 
         const protectedCollections = ['syllabus', 'syllabusTopicIndex', 'users', 'templates', 'config', 'batches', '_systemBackups'];
-        await Promise.all(selectedCollections.map(async colName => {
-          if (!protectedCollections.includes(colName)) return;
+        for (let i = 0; i < selectedCollections.length; i++) {
+          const colName = selectedCollections[i];
+          if (!protectedCollections.includes(colName)) continue;
           const colRef = adminDb.collection(colName);
           const snap = await colRef.get();
-          if (snap.empty) return;
+          if (snap.empty) continue;
           const writeBatch = new ChunkedBatch(adminDb);
           snap.docs.forEach(doc => {
             writeBatch.delete(doc.ref);
           });
           await writeBatch.commit();
-        }));
+        }
         invalidateCache();
         return NextResponse.json({ success: true });
       }

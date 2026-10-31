@@ -571,9 +571,11 @@ export async function notifyNotice(
 
     if (targetType === 'all') {
       // Notify all active parents and students (doc IDs only)
-      const snaps = await adminDb.collection('users').where('status', '!=', 'inactive').select('status').get();
+      const snaps = await adminDb.collection('users').select('status').get();
       snaps.docs.forEach(doc => {
-        uids.add(doc.id);
+        if (doc.data().status !== 'inactive') {
+          uids.add(doc.id);
+        }
       });
     } else if (targetType === 'batch' && targetValues.length > 0) {
       // Notify all students in this batch and their parents

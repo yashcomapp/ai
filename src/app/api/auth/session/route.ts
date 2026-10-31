@@ -174,6 +174,7 @@ export async function POST(req: NextRequest) {
           invalidateUserCache(uid);
           userData.status = 'inactive';
           userData.deactivationReason = deactCheck.reason;
+          await syncUserCustomClaims(uid, userData, true);
         }
 
         if (deactCheck.reason === 'student_autonomous') {
