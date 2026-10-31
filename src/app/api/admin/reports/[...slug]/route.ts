@@ -111,9 +111,8 @@ async function handleLearningQuotientPost(req: NextRequest) {
   }
 
   return NextResponse.json({
-    success: true,
-    message: 'Action completed.'
-  }, { headers: NO_CACHE_HEADERS });
+    message: `Unknown or invalid action: '${action}'. Valid actions: refresh.`
+  }, { status: 400, headers: NO_CACHE_HEADERS });
 }
 
 // ── 3. Login Register Report Handler ──────────────────────────────────

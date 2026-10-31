@@ -51,125 +51,12 @@ export function useReports() {
     return fetchReport(url, idToken);
   };
 
-  const saveClassObservation = async (
-    idToken: string, 
-    data: { studentCode: string; activeParticipation: number; sincerity: number; timelyWork: number; parentScore?: number }
-  ) => {
-    setLoading(true);
-    try {
-      const res = await fetch('/api/admin/reports/learning-quotient', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${idToken}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(data)
-      });
-      if (!res.ok) throw new Error('Failed to save classroom observation.');
-      return await res.json();
-    } catch (err: any) {
-      setError(err.message || 'Failed to save observation.');
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const saveQuotientParameter = async (idToken: string, name: string, parameterId?: string) => {
-    setLoading(true);
-    try {
-      const res = await fetch('/api/admin/reports/learning-quotient', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${idToken}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ action: 'saveParameter', name, parameterId })
-      });
-      if (!res.ok) throw new Error('Failed to save parameter');
-      return await res.json();
-    } catch (err: any) {
-      setError(err.message || 'Failed to save parameter');
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const deleteQuotientParameter = async (idToken: string, parameterId: string) => {
-    setLoading(true);
-    try {
-      const res = await fetch('/api/admin/reports/learning-quotient', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${idToken}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ action: 'deleteParameter', parameterId })
-      });
-      if (!res.ok) throw new Error('Failed to delete parameter');
-      return await res.json();
-    } catch (err: any) {
-      setError(err.message || 'Failed to delete parameter');
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const batchAwardObservations = async (idToken: string, payload: { studentCodes: string[]; parameterId: string; score: number }) => {
-    setLoading(true);
-    try {
-      const res = await fetch('/api/admin/reports/learning-quotient', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${idToken}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ action: 'batchAward', ...payload })
-      });
-      if (!res.ok) throw new Error('Failed to batch award observations');
-      return await res.json();
-    } catch (err: any) {
-      setError(err.message || 'Failed to batch award');
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const logSingleObservation = async (idToken: string, studentCode: string, scores: Record<string, number>) => {
-    setLoading(true);
-    try {
-      const res = await fetch('/api/admin/reports/learning-quotient', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${idToken}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ action: 'logSingleObservation', studentCode, scores })
-      });
-      if (!res.ok) throw new Error('Failed to save student observations');
-      return await res.json();
-    } catch (err: any) {
-      setError(err.message || 'Failed to save student observations');
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return {
     loading,
     error,
     getUsageReport,
     getIntegrityReport,
     getParentPendingReport,
-    getQuotientReport,
-    saveClassObservation,
-    saveQuotientParameter,
-    deleteQuotientParameter,
-    batchAwardObservations,
-    logSingleObservation
+    getQuotientReport
   };
 }
