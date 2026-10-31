@@ -747,20 +747,14 @@ export async function DELETE(req: NextRequest) {
 
     const roomRef = adminDb.collection('chatRooms').doc(roomId);
     
-    // 1. Delete all messages inside the subcollection in chunks of 450 to stay within Firestore batch limits
-    const messagesSnap = await roomRef.collection('messages').get();
-    const messageIds = messagesSnap.docs.map(doc => doc.id);
-    const chunks: string[][] = [];
-    for (let i = 0; i < messageIds.length; i += 450) {
-      chunks.push(messageIds.slice(i, i + 450));
-    }
-
-    for (const chunk of chunks) {
+    // 1. Delete all messages inside the subcollection in bounded batches of 450
+    while (true) {
+      const snap = await roomRef.collection('messages').limit(450).get();
+      if (snap.empty) break;
       const batch = adminDb.batch();
-      chunk.forEach(msgId => {
-        batch.delete(roomRef.collection('messages').doc(msgId));
-      });
+      snap.docs.forEach(doc => batch.delete(doc.ref));
       await batch.commit();
+      if (snap.size < 450) break;
     }
 
     // 2. Delete the chat room document itself
