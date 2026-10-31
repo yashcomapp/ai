@@ -121,8 +121,7 @@ async function handleLearningQuotientPost(req: NextRequest) {
       return NextResponse.json({ message: 'Missing required parameters for batch award.' }, { status: 400 });
     }
     await QuotientService.batchAward(studentCodes, parameterId, score, actorEmail);
-    invalidateCache('admin_report_lq_');
-    await ReportService.updateBatchAwardInCache(studentCodes, parameterId, Number(score));
+    await invalidateAllLQCaches();
     return NextResponse.json({ success: true, message: 'Batch award observation logged successfully.' }, { headers: NO_CACHE_HEADERS });
   }
 
@@ -132,8 +131,7 @@ async function handleLearningQuotientPost(req: NextRequest) {
       return NextResponse.json({ message: 'Missing required parameters.' }, { status: 400 });
     }
     await QuotientService.logSingleObservation(studentCode, scores, actorEmail);
-    invalidateCache('admin_report_lq_');
-    await ReportService.updateStudentObservationInCache(studentCode, scores);
+    await invalidateAllLQCaches();
     return NextResponse.json({ success: true, message: 'Student observation logged successfully.' }, { headers: NO_CACHE_HEADERS });
   }
 
@@ -151,13 +149,7 @@ async function handleLearningQuotientPost(req: NextRequest) {
     parentScore: parentScore !== undefined ? Number(parentScore) : 50,
     observedBy: actorEmail
   });
-  invalidateCache('admin_report_lq_');
-  await ReportService.updateStudentObservationInCache(studentCode, {
-    activeParticipation: Number(activeParticipation),
-    sincerity: Number(sincerity),
-    timelyWork: Number(timelyWork),
-    parentScore: parentScore !== undefined ? Number(parentScore) : 50
-  });
+  await invalidateAllLQCaches();
 
   return NextResponse.json({
     success: true,

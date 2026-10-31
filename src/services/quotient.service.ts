@@ -24,7 +24,7 @@ export { MASTERY_THRESHOLDS };
 export class ExamPerformanceCalculator implements ParameterCalculator {
   id = 'exam';
   name = 'Exam';
-  weight = 0.25;
+  weight = 0.30;
 
   calculate(data: StudentData): ScoreResult {
     const { assignments, attempts } = data;
@@ -109,7 +109,7 @@ export class ExamPerformanceCalculator implements ParameterCalculator {
 export class PracticeEngagementCalculator implements ParameterCalculator {
   id = 'practice';
   name = 'Practice';
-  weight = 0.20;
+  weight = 0.25;
 
   calculate(data: StudentData): ScoreResult {
     const { practiceRecords, assignedTopics = [] } = data;
@@ -203,7 +203,7 @@ export class PracticeEngagementCalculator implements ParameterCalculator {
 export class PracticeQualityCalculator implements ParameterCalculator {
   id = 'quality';
   name = 'Quality';
-  weight = 0.10;
+  weight = 0.15;
 
   calculate(data: StudentData): ScoreResult {
     const { practiceRecords, attempts = [], assignedTopics = [] } = data;
@@ -347,7 +347,7 @@ export class PracticeQualityCalculator implements ParameterCalculator {
 export class TopicHealthCalculator implements ParameterCalculator {
   id = 'topicHealth';
   name = 'Topic Health';
-  weight = 0.25;
+  weight = 0.30;
 
   calculate(data: StudentData): ScoreResult {
     const { practiceRecords, assignedTopics, conductedExams = [], attempts = [] } = data;
@@ -1285,7 +1285,6 @@ export class QuotientService {
       assignmentsSnap,
       practiceSnap,
       integritySnap,
-      observationsSnap,
       parentReviewsSnap,
       examsSnap,
       subjectiveExamsSnap,
@@ -1297,7 +1296,6 @@ export class QuotientService {
       // studentTopicMastery: Full document required for retention, SRS schedule, attempts, and confidence calculations
       adminDb.collection('studentTopicMastery').where('studentCode', '==', studentCode).get(),
       adminDb.collection('integrityScores').where('studentCode', '==', studentCode).get(),
-      adminDb.collection('studentObservations').where('studentCode', '==', studentCode).get(),
       // parentReviews: Full document required for calculateUnifiedMetrics (scorePercent, percentage, totalQuestions, questionsCount, topicCode, status) and PracticeQualityCalculator (pacing, sincerity)
       adminDb.collection('parentReviews').where('studentCode', '==', studentCode).get(),
       objExamsQuery,
@@ -1360,7 +1358,7 @@ export class QuotientService {
     const rawAssignments = assignmentsSnap.docs.map((doc: any) => doc.data() as any).filter((ass: any) => ass.examType !== 'entrance');
     const rawPractice = practiceSnap.docs.map((doc: any) => doc.data() as any);
     const rawIntegrity = integritySnap.docs.map((doc: any) => doc.data() as any);
-    const rawObservations = observationsSnap.docs.map((doc: any) => doc.data() as any);
+    const rawObservations: any[] = [];
     const rawReviews = parentReviewsSnap.docs.map((doc: any) => doc.data() as any);
     const rawEvaluations = evaluationsSnap.docs.map((doc: any) => doc.data() as any);
     const syllabusTopicsMap = await getCachedSyllabusTopicsMap(studentClass ? [studentClass] : []);
@@ -1485,7 +1483,6 @@ export class QuotientService {
       assignmentsSnaps,
       practiceSnaps,
       integritySnaps,
-      observationsSnaps,
       reviewsSnaps,
       evaluationsSnaps,
       examsSnap,
@@ -1497,7 +1494,6 @@ export class QuotientService {
       // studentTopicMastery: Full document required for retention, SRS schedule, attempts, and confidence calculations
       Promise.all(activeStudentChunks.map(chunk => adminDb.collection('studentTopicMastery').where('studentCode', 'in', chunk).get().catch(() => null as any))),
       Promise.all(activeStudentChunks.map(chunk => adminDb.collection('integrityScores').where('studentCode', 'in', chunk).get().catch(() => null as any))),
-      Promise.all(activeStudentChunks.map(chunk => adminDb.collection('studentObservations').where('studentCode', 'in', chunk).get().catch(() => null as any))),
       // parentReviews: Full document required for calculateUnifiedMetrics and PracticeQualityCalculator
       Promise.all(activeStudentChunks.map(chunk => adminDb.collection('parentReviews').where('studentCode', 'in', chunk).get().catch(() => null as any))),
       Promise.all(activeStudentChunks.map(chunk => adminDb.collection('evaluations').where('studentCode', 'in', chunk).get().catch(() => null as any))),
@@ -1522,7 +1518,7 @@ export class QuotientService {
     const rawAssignments = flattenDocs(assignmentsSnaps).map((d: any) => d.data()).filter((ass: any) => ass.examType !== 'entrance' && !isDemoUser(ass));
     const rawPractice = flattenDocs(practiceSnaps).map((d: any) => d.data()).filter((p: any) => !isDemoUser(p));
     const rawIntegrity = flattenDocs(integritySnaps).map((d: any) => d.data()).filter((i: any) => !isDemoUser(i));
-    const rawObservations = flattenDocs(observationsSnaps).map((d: any) => d.data()).filter((o: any) => !isDemoUser(o));
+    const rawObservations: any[] = [];
     const rawReviews = flattenDocs(reviewsSnaps).map((d: any) => d.data()).filter((r: any) => !isDemoUser(r));
     const rawEvaluations = flattenDocs(evaluationsSnaps).map((d: any) => d.data()).filter((e: any) => !isDemoUser(e));
 
