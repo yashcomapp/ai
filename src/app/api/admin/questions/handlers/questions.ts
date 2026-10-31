@@ -290,9 +290,12 @@ export async function GET(req: NextRequest) {
     }
     paginated = paginated.slice(0, limitVal);
 
+    const isTruncated = allQuestions.length >= queryLimit;
     return NextResponse.json({
       questions: paginated,
-      totalCount
+      totalCount,
+      hasMore: isTruncated || (lastCode ? paginated.length === limitVal : totalCount > limitVal),
+      isTruncated
     });
   } catch (error: any) {
     console.error('API load questions error:', error);

@@ -10,7 +10,7 @@ service cloud.firestore { match /databases/{database}/documents {
     function tokenRole() { return isAuth() && 'role' in token() ? token().role : null; }
     function userDoc()   { return get(/databases/$(database)/documents/users/$(uid())).data; }
     function userRole()  { return tokenRole() != null ? tokenRole() : (isAuth() && exists(/databases/$(database)/documents/users/$(uid())) ? userDoc().role : null); }
-    function isAdmin()   { return isAuth() && userRole() == 'admin'; }
+    function isAdmin()   { return isAuth() && exists(/databases/$(database)/documents/users/$(uid())) && userDoc().role == 'admin' && userDoc().status != 'inactive'; }
     function isStudent() { return isAuth() && userRole() == 'student'; }
     function isParent()  { return isAuth() && userRole() == 'parent'; }
 

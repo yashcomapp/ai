@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase/admin';
-import { verifyRole } from '@/lib/auth';
+import { verifyRole, syncUserCustomClaims, invalidateUserCache } from '@/lib/auth';
 import { ChunkedBatch } from '@/lib/firebase/batch';
 import { isDemoUser } from '@/lib/studentDb';
 
@@ -89,10 +89,13 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Student is already mapped to this batch' }, { status: 400 });
       }
       
+      const newBatchIds = [...currentBatches, batchId];
       await studentDoc.ref.update({
-        batchIds: [...currentBatches, batchId],
+        batchIds: newBatchIds,
         updatedAt: new Date()
       });
+      invalidateUserCache(studentDoc.id);
+      await syncUserCustomClaims(studentDoc.id, { ...studentData, batchIds: newBatchIds }, true);
       
       return NextResponse.json({ success: true });
     }
@@ -109,11 +112,15 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'Student not found' }, { status: 404 });
       }
       
-      const currentBatches = studentDoc.data()?.batchIds || [];
+      const studentData = studentDoc.data() || {};
+      const currentBatches = studentData.batchIds || [];
+      const newBatchIds = currentBatches.filter((id: string) => id !== batchId);
       await studentRef.update({
-        batchIds: currentBatches.filter((id: string) => id !== batchId),
+        batchIds: newBatchIds,
         updatedAt: new Date()
       });
+      invalidateUserCache(studentId);
+      await syncUserCustomClaims(studentId, { ...studentData, batchIds: newBatchIds }, true);
       
       return NextResponse.json({ success: true });
     }

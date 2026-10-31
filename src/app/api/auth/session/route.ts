@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminAuth, adminDb } from '@/lib/firebase/admin';
 import * as admin from 'firebase-admin';
 import { notifyStudentLogin, notifyStudentLogout } from '@/lib/notifications';
-import { verifyToken, verifyAnyRole, invalidateUserCache, syncUserCustomClaims } from '@/lib/auth';
+import { verifyToken, verifyAnyRole, invalidateUserCache, syncUserCustomClaims, areClaimsEqual } from '@/lib/auth';
 import { chunkArray } from '@/lib/firestoreUtils';
 import { isStudentBlockedByCurfew, CURFEW_RESTRICTION_MESSAGE } from '@/lib/curfew';
 
@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
       const activeSessionToken = userData.activeSessionToken || null;
 
       let claimsUpdated = false;
-      if (decodedToken.role !== role || (role === 'student' && decodedToken.studentCode !== studentCode)) {
+      if (!areClaimsEqual(decodedToken, userData)) {
         await syncUserCustomClaims(uid, userData);
         claimsUpdated = true;
       }

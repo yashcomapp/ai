@@ -11,7 +11,7 @@ export interface VerifiedUser {
  * Synchronizes canonical role, studentCode, batchIds, and studentCodes to Firebase Auth Custom Claims.
  * This ensures firestore.rules can read request.auth.token.role without incurring extra userDoc get() reads.
  */
-export async function syncUserCustomClaims(uid: string, userData: any): Promise<boolean> {
+export async function syncUserCustomClaims(uid: string, userData: any, revokeTokens: boolean = false): Promise<boolean> {
   if (!uid || !userData) return false;
   const role = (userData.role || '').toLowerCase();
   if (!role) return false;
@@ -33,9 +33,72 @@ export async function syncUserCustomClaims(uid: string, userData: any): Promise<
 
   try {
     await adminAuth.setCustomUserClaims(uid, claims);
+    if (revokeTokens) {
+      await adminAuth.revokeRefreshTokens(uid).catch(() => {});
+    }
     return true;
   } catch (err) {
     console.warn(`Failed to set custom claims for user ${uid}:`, err);
+    return false;
+  }
+}
+
+export function areClaimsEqual(decodedToken: any, userData: any): boolean {
+  if (!decodedToken || !userData) return false;
+  const userRole = (userData.role || '').toLowerCase();
+  const tokenRole = (decodedToken.role || '').toLowerCase();
+  if (tokenRole !== userRole) return false;
+
+  const userStudentCode = userData.studentCode || null;
+  const tokenStudentCode = decodedToken.studentCode || null;
+  if (tokenStudentCode !== userStudentCode) return false;
+
+  if (userRole === 'student') {
+    const userBatchIds: string[] = (
+      Array.isArray(userData.batchIds)
+        ? userData.batchIds.filter(Boolean)
+        : (userData.batchId ? [userData.batchId] : [])
+    ).map(String).sort();
+
+    const tokenBatchIds: string[] = (
+      Array.isArray(decodedToken.batchIds)
+        ? decodedToken.batchIds.filter(Boolean)
+        : []
+    ).map(String).sort();
+
+    if (userBatchIds.length !== tokenBatchIds.length) return false;
+    for (let i = 0; i < userBatchIds.length; i++) {
+      if (userBatchIds[i] !== tokenBatchIds[i]) return false;
+    }
+  } else if (userRole === 'parent') {
+    const userStudentCodes: string[] = (
+      Array.isArray(userData.studentCodes)
+        ? userData.studentCodes.filter(Boolean)
+        : (userData.studentCode ? [userData.studentCode] : [])
+    ).map(String).sort();
+
+    const tokenStudentCodes: string[] = (
+      Array.isArray(decodedToken.studentCodes)
+        ? decodedToken.studentCodes.filter(Boolean)
+        : []
+    ).map(String).sort();
+
+    if (userStudentCodes.length !== tokenStudentCodes.length) return false;
+    for (let i = 0; i < userStudentCodes.length; i++) {
+      if (userStudentCodes[i] !== tokenStudentCodes[i]) return false;
+    }
+  }
+
+  return true;
+}
+
+export async function revokeUserTokens(uid: string): Promise<boolean> {
+  if (!uid) return false;
+  try {
+    await adminAuth.revokeRefreshTokens(uid);
+    return true;
+  } catch (err) {
+    console.warn(`Failed to revoke refresh tokens for user ${uid}:`, err);
     return false;
   }
 }
@@ -120,9 +183,9 @@ export async function verifyAnyRole(
       }
     }
 
-    // Proactively synchronize custom user claims if absent or stale
-    if (decodedToken.role !== userRole || (userRole === 'student' && decodedToken.studentCode !== userData.studentCode)) {
-      syncUserCustomClaims(uid, userData).catch(() => {});
+    // Proactively synchronize custom user claims if absent or stale (fully awaited)
+    if (!areClaimsEqual(decodedToken, userData)) {
+      await syncUserCustomClaims(uid, userData);
     }
 
     return { decodedToken, userData, role: userRole };

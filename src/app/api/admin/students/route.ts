@@ -111,11 +111,12 @@ export async function POST(request: Request) {
 
     await studentDocRef.update(cleanUpdates);
 
-    // Keep custom claims in sync
-    syncUserCustomClaims(studentId, {
+    // Keep custom claims in sync and revoke stale tokens if role, status, or batches were modified
+    const shouldRevoke = cleanUpdates.status !== undefined || cleanUpdates.role !== undefined || cleanUpdates.batchIds !== undefined || cleanUpdates.batchId !== undefined;
+    await syncUserCustomClaims(studentId, {
       ...studentData,
       ...cleanUpdates
-    }).catch(() => {});
+    }, shouldRevoke);
 
     // If autonomous mode is modified, synchronize linked parent user account status & auto-approve legacy pending reviews
     if (cleanUpdates.autonomous !== undefined) {
@@ -189,6 +190,7 @@ export async function POST(request: Request) {
               updatedAt: new Date()
             });
             invalidateUserCache(pDoc.id);
+            await syncUserCustomClaims(pDoc.id, { ...pData, status: 'inactive' }, true);
           }
         } else {
           // Reactivate parent if student is regular (non-autonomous) and active
@@ -199,6 +201,7 @@ export async function POST(request: Request) {
               updatedAt: new Date()
             });
             invalidateUserCache(pDoc.id);
+            await syncUserCustomClaims(pDoc.id, { ...pData, status: 'active' }, true);
           }
         }
       }

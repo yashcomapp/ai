@@ -4,6 +4,7 @@ import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole, verifyAnyRole } from '@/lib/auth';
 import { ExamService } from '@/services/exam.service';
 import { cleanSubjectiveExamName } from '@/lib/studentDb';
+import { invalidateCache } from '@/lib/firebase/cache';
 
 async function getAttemptQuestions(attempt: any, exam: any): Promise<any[]> {
   if (attempt && Array.isArray(attempt.questionSnapshot) && attempt.questionSnapshot.length > 0) {
@@ -601,6 +602,10 @@ export async function POST(req: NextRequest) {
     };
 
     await attemptRef.update(submissionUpdates);
+
+    // Invalidate caches so student results and learning dashboard reflect the submission immediately
+    invalidateCache(studentCode);
+    invalidateCache('admin_dashboard_');
 
     // Mark questions as used in database for safety
     if (examData.mode === 'home' && Array.isArray(attemptData.questionIds)) {
