@@ -6,7 +6,6 @@ import { calculateUnifiedMetrics, extractConductedTopicCodes } from '@/lib/dashb
 import { getCachedSyllabusTopicsMap, fetchTopicIndexByCodes } from '@/lib/syllabusServerUtils';
 import { calculateProctoringIntegrityScore } from '@/lib/proctoring';
 import { calculateSrsSchedule } from '@/lib/srsRotation';
-import { getRequiredConfidence } from '@/lib/studentDb';
 import { getFromCache, setInCache } from '@/lib/firebase/cache';
 import { deduplicateAssignments, resolveIntegrityScore, calculateTimeLogSummary, resolveParentStudentCodes } from '@/lib/dashboardDbUtils';
 import { getAssignmentsForBatches } from '@/services/exam.service';
@@ -648,12 +647,20 @@ export async function getParentDashboardData(
   practicesToday.forEach((p: any) => { todayQuestionsAnswered += (p.totalQuestions || p.questionsCount || 10); });
   subjectiveToday.forEach(doc => { todayQuestionsAnswered += (doc.data().totalQuestions || 5); });
 
-  // Topic Diagnostics: Needs Attention Yesterday vs Practiced & Removed Today
-  const masteriesList = masterySnapshot.docs.map(doc => doc.data());
-  const needsAttentionTopicCodes = new Set<string>();
-  const needsAttentionTopicsList: string[] = [];
-  const masteredTopicCodes = new Set<string>();
-  const inProgressTopicCodes = new Set<string>();
+  // Topic Diagnostics: Needs Attention Yesterday vs Practiced & Removed Today (SSOT via unifiedMetrics.classifiedTopics)
+  const classifiedResult = unifiedMetrics.classifiedTopics;
+  const masteredTopics = classifiedResult?.mastered || [];
+  const practicingTopics = classifiedResult?.practicing || [];
+  const needsAttentionTopics = classifiedResult?.needsAttention || [];
+
+  const masteredTopicCodes = new Set<string>(masteredTopics.map(t => t.topicCode));
+  const inProgressTopicCodes = new Set<string>(practicingTopics.map(t => t.topicCode));
+  const needsAttentionTopicCodes = new Set<string>(needsAttentionTopics.map(t => t.topicCode));
+
+  const needsAttentionTopicsList: string[] = needsAttentionTopics.map(t =>
+    t.chapterName ? `${t.chapterName} — ${t.topicName}` : t.topicName
+  );
+
   const srsDueTopicsList: Array<{
     topicCode: string;
     topicName: string;
@@ -663,39 +670,20 @@ export async function getParentDashboardData(
     daysOverdue: number;
   }> = [];
 
-  masteriesList.forEach(m => {
-    const sData = syllabusMap.get(m.topicCode);
-    const mLevel = Number(m.masteryLevel || m.mastery) || 0;
-    const conf = Number(m.confidence) || 0;
-    const practiceQuestions = Number(m.practiceQuestionsAttempted || 0);
-    const practiceCount = Number(m.practiceCount || 0);
-    const reqConf = getRequiredConfidence(sData?.topicClassification || m.topicClassification, sData?.targetQuestions || m.targetQuestions);
-    const isMastered = (mLevel >= 90 && conf >= reqConf);
-    const displayName = sData ? `${sData.chapterName} — ${sData.topicName}` : (m.topicName || m.topicCode || 'Topic');
-    const subjectName = sData?.subjectName || m.subjectName || 'General';
-
-    const lastTime = m.lastRevisedAt || (m.updatedAt?.toDate ? m.updatedAt.toDate() : m.updatedAt) || m.lastAttempt;
-    const srsSched = calculateSrsSchedule(lastTime, Number(m.srsStage || 0));
-
-    if (isMastered) {
-      masteredTopicCodes.add(m.topicCode);
-      if (childUser?.srsEnabled && srsSched.isDueForRevision) {
+  if (childUser?.srsEnabled) {
+    (classifiedResult?.topics || []).forEach(t => {
+      if (t.state === 'mastered' && t.srsSchedule?.isDueForRevision) {
         srsDueTopicsList.push({
-          topicCode: m.topicCode,
-          topicName: displayName,
-          subjectName,
-          stageLabel: srsSched.stageLabel,
-          estimatedRetention: srsSched.estimatedRetention,
-          daysOverdue: srsSched.daysOverdue
+          topicCode: t.topicCode,
+          topicName: t.chapterName ? `${t.chapterName} — ${t.topicName}` : t.topicName,
+          subjectName: t.subjectName || 'General',
+          stageLabel: t.srsSchedule.stageLabel || 'Review Due',
+          estimatedRetention: typeof t.srsSchedule.estimatedRetention === 'number' ? t.srsSchedule.estimatedRetention : 100,
+          daysOverdue: t.srsSchedule.daysOverdue || 0
         });
       }
-    } else if (mLevel >= 50) {
-      inProgressTopicCodes.add(m.topicCode);
-    } else {
-      needsAttentionTopicCodes.add(m.topicCode);
-      needsAttentionTopicsList.push(displayName);
-    }
-  });
+    });
+  }
 
   const topicsPracticedTodayCodes = new Set<string>();
   const topicsPracticedTodayList: string[] = [];

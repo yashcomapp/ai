@@ -1005,17 +1005,6 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
   }
 export { getRequiredConfidence };
 
-function getTopicState(mastery: number, confidence: number, requiredConfidence = 10): string {
-  if (mastery < 25) return 'Started';
-  if (mastery < 50) return 'Learning';
-  if (mastery >= 90 && confidence >= requiredConfidence) return 'Mastered';
-  return 'Practicing';
-}
-
-function calculatePriority(mastery: number, confidence: number, requiredConfidence = 10): number {
-  return (100 - mastery) + Math.max(0, (requiredConfidence - confidence) * 2);
-}
-
 export interface PreloadedLearningData {
   masterySnaps?: any;
   parentReviewsSnap?: any;

@@ -14,17 +14,11 @@ import {
 import { evaluateSessionSincerity } from '@/lib/practiceTimeUtils';
 import { isDemoUser, getRequiredConfidence } from '@/lib/studentDb';
 import { calculateSrsSchedule } from '@/lib/srsRotation';
-import { calculateUnifiedMetrics, extractConductedTopicCodes } from '@/lib/dashboardMetrics';
+import { calculateUnifiedMetrics, extractConductedTopicCodes, MASTERY_THRESHOLDS } from '@/lib/dashboardMetrics';
 import { getCachedSyllabusTopicsMap } from '@/lib/syllabusServerUtils';
 import { getAssignmentsForBatches } from '@/services/exam.service';
 
-export const MASTERY_THRESHOLDS = {
-  MASTERED_MASTERY: 90,
-  MASTERED_CONFIDENCE: 10,
-  MEDIUM_HIGH_MASTERY: 70,
-  MEDIUM_MASTERY: 50,
-  WEAK_MASTERY: 50
-};
+export { MASTERY_THRESHOLDS };
 
 // Strategy 1: Exam Performance & Absenteeism
 export class ExamPerformanceCalculator implements ParameterCalculator {

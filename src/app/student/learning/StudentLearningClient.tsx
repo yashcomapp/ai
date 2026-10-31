@@ -174,14 +174,14 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
   };
 
   const getMasteryClass = (mastery: number) => {
-    if (mastery < 40) return 'low';
-    if (mastery < 70) return 'medium';
+    if (mastery < 50) return 'low';
+    if (mastery < 90) return 'medium';
     return 'high';
   };
 
   const getProgressColor = (mastery: number) => {
-    if (mastery < 40) return 'var(--danger)';
-    if (mastery < 70) return 'var(--warning)';
+    if (mastery < 50) return 'var(--danger)';
+    if (mastery < 90) return 'var(--warning)';
     return 'var(--success)';
   };
 

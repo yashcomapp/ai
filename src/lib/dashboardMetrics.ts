@@ -31,6 +31,19 @@
 import { calculateSrsSchedule } from '@/lib/srsRotation';
 import { deriveTopicCodeFromQuestionCode, parseTopicCode, getCanonicalSubjectName } from '@/lib/questionTypes';
 
+/**
+ * Canonical Mastery Thresholds (Rule 2F Single Source of Truth)
+ * - Mastered: Mastery >= 90% AND Confidence >= requiredConfidence
+ * - Practicing: Mastery 50% - 89.99% (or >= 90% with confidence < requiredConfidence)
+ * - Needs Attention: Mastery < 50% (or unattempted assigned syllabus topic)
+ */
+export const MASTERY_THRESHOLDS = {
+  MASTERED_MIN: 90,
+  MASTERED_MASTERY: 90, // Alias for backward compatibility
+  PRACTICING_MIN: 50,
+  NEEDS_ATTENTION_MAX: 49.99
+} as const;
+
 export interface ExtractConductedTopicCodesInput {
   masteryList?: Array<{ topicCode?: string; [key: string]: any }>;
   classroomExams?: Array<{ topicCode?: string; resolvedTopicCode?: string; topicCodes?: string[]; topics?: string[]; questionIds?: string[]; questionCodes?: string[]; [key: string]: any }>;

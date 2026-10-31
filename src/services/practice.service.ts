@@ -295,8 +295,10 @@ export class PracticeService {
 
       const sessionAccuracy = evaluations.length > 0 ? (correctCount / evaluations.length) * 100 : 0;
 
-      // Regular Topic Mastery System: Once a topic is mastered, it stays Mastered!
-      const isMasteredTopic = Boolean(existing && existing.mastery >= 90);
+      // Regular Topic Mastery System: Once a topic is mastered (>= 90% mastery AND confidence >= reqConf), it stays Mastered!
+      const existingConf = existing ? (existing.confidence || (existing as any).verifiedAttempts || 0) : 0;
+      const targetReqConf = updatedData.requiredConfidence || fallbackRequiredConfidence;
+      const isMasteredTopic = Boolean(existing && existing.mastery >= 90 && existingConf >= targetReqConf);
       if (isMasteredTopic) {
         updatedData.mastery = Math.max(updatedData.mastery, 90);
       }
