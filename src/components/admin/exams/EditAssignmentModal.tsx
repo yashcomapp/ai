@@ -2,7 +2,7 @@
 
 import React from 'react';
 import DateTimeInputDMY from '@/components/DateTimeInputDMY';
-import { calculateEndDatetime, toLocalISOString } from '@/lib/dateUtils';
+import { calculateEndDatetime, toLocalISOString, getDateKeyIST } from '@/lib/dateUtils';
 import { Batch } from '@/types/batch.types';
 import TargetPicker from './TargetPicker';
 import ScheduleTimingInputs from './ScheduleTimingInputs';
@@ -145,6 +145,26 @@ export function EditAssignmentModal({
                 }} 
               /> 🌙 9 PM Test
             </label>
+            <label style={{ fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', whiteSpace: 'nowrap', background: editModal.isTodaySlot ? 'rgba(16, 185, 129, 0.2)' : 'rgba(16, 185, 129, 0.08)', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(16, 185, 129, 0.25)' }}>
+              <input 
+                type="checkbox" 
+                checked={!!editModal.isTodaySlot} 
+                onChange={(e) => {
+                  const checked = e.target.checked;
+                  setEditModal(prev => {
+                    let updates: any = { isTodaySlot: checked, isMorningTest: false, isEveningTest: false };
+                    if (checked) {
+                      updates.openMode = 'scheduled';
+                      updates.lateEntryRestriction = false;
+                      const todayStr = getDateKeyIST();
+                      updates.startAtStr = `${todayStr}T06:20`;
+                      updates.endAtStr = `${todayStr}T23:59`;
+                    }
+                    return { ...prev, ...updates };
+                  });
+                }} 
+              /> 📅 Today Slot (06:20 AM – 11:59 PM)
+            </label>
           </div>
 
           <ScheduleTimingInputs
@@ -196,6 +216,22 @@ export function EditAssignmentModal({
             </div>
           )}
         />
+
+        {editModal.startsCount && editModal.startsCount > 0 ? (
+          <div style={{ background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.25)', padding: '10px 12px', borderRadius: 'var(--radius-sm)', fontSize: '12px' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', color: '#ef4444', fontWeight: 600 }}>
+              <input 
+                type="checkbox" 
+                checked={!!editModal.resetAttempts} 
+                onChange={(e) => setEditModal(prev => ({ ...prev, resetAttempts: e.target.checked }))} 
+              />
+              🔄 Reset existing {editModal.startsCount} student attempt(s) on reschedule
+            </label>
+            <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
+              Checked by default: allows students who already started or took the test to re-attempt in the new window.
+            </div>
+          </div>
+        ) : null}
 
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '6px' }}>
           <button className="btn btn-secondary" onClick={() => setEditModal(prev => ({ ...prev, show: false }))}>Cancel</button>

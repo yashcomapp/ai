@@ -99,7 +99,6 @@ export default function AdminExamsPage() {
   const [expandedChapters, setExpandedChapters] = useState<Set<string>>(new Set());
   const [isObjAssignedSectionExpanded, setIsObjAssignedSectionExpanded] = useState(false);
   const [isSubjAssignedSectionExpanded, setIsSubjAssignedSectionExpanded] = useState(false);
-  const [reschedulingToday, setReschedulingToday] = useState(false);
 
   const toggleClassExpanded = (clsKey: string) => {
     setExpandedClasses(prev => {
@@ -268,6 +267,9 @@ export default function AdminExamsPage() {
     classroomTimePerQ: number;
     isMorningTest?: boolean;
     isEveningTest?: boolean;
+    isTodaySlot?: boolean;
+    resetAttempts?: boolean;
+    startsCount?: number;
   }>({
     show: false,
     type: 'objective',
@@ -288,7 +290,8 @@ export default function AdminExamsPage() {
     classroomDuration: 60,
     classroomTimePerQ: 5,
     isMorningTest: false,
-    isEveningTest: false
+    isEveningTest: false,
+    isTodaySlot: false
   });
 
   const [assigning, setAssigning] = useState(false);
@@ -311,6 +314,9 @@ export default function AdminExamsPage() {
     lateEntryRestriction: boolean;
     isMorningTest?: boolean;
     isEveningTest?: boolean;
+    isTodaySlot?: boolean;
+    resetAttempts?: boolean;
+    startsCount?: number;
   }>({
     show: false,
     id: '',
@@ -328,7 +334,10 @@ export default function AdminExamsPage() {
     examDuration: 30,
     lateEntryRestriction: false,
     isMorningTest: false,
-    isEveningTest: false
+    isEveningTest: false,
+    isTodaySlot: false,
+    resetAttempts: false,
+    startsCount: 0
   });
 
   const [lotteryModal, setLotteryModal] = useState<{
@@ -770,7 +779,8 @@ export default function AdminExamsPage() {
       classroomDuration: normDuration || 60,
       classroomTimePerQ: 5,
       isMorningTest: false,
-      isEveningTest: false
+      isEveningTest: false,
+      isTodaySlot: false
     });
   };
 
@@ -807,13 +817,8 @@ export default function AdminExamsPage() {
     const activeAssign = assignments.find(a => a.examId === examId && a.collection === collection);
     if (!activeAssign) return;
 
-    // Check if started by anyone
+    // Count active attempts
     const startsCount = attemptCounts[examId] || 0;
-    if (startsCount > 0) {
-      alert(`❌ Cannot reschedule: this exam has already been started by ${startsCount} student(s).`);
-      return;
-    }
-
     const exam = (collection === 'batchAssignments' ? exams : subjectiveExams).find(e => e.id === examId);
     const normDuration = exam ? getNormExamDuration(exam, collection === 'batchAssignments' ? 'objective' : 'subjective') : (activeAssign.examDuration || 30);
     const isOverridden = Boolean(activeAssign.examDuration && activeAssign.examDuration !== normDuration);
@@ -835,7 +840,10 @@ export default function AdminExamsPage() {
       examDuration: activeAssign.examDuration || normDuration,
       lateEntryRestriction: activeAssign.lateEntryRestriction === true,
       isMorningTest: false,
-      isEveningTest: false
+      isEveningTest: false,
+      isTodaySlot: false,
+      resetAttempts: startsCount > 0,
+      startsCount
     });
   };
 
@@ -858,12 +866,12 @@ export default function AdminExamsPage() {
 
     if (openMode !== 'immediate') {
       const now = new Date();
-      const startDateTime = new Date(startAtStr);
-      if (startDateTime < now) {
-        alert('❌ Error: Cannot assign exams with a start date/time in the past.');
+      const endDateTime = new Date(endAtStr);
+      if (endDateTime <= now) {
+        alert('❌ Error: The exam end date/time is in the past.');
         return;
       }
-      const endDateTime = new Date(endAtStr);
+      const startDateTime = new Date(startAtStr);
       if (endDateTime <= startDateTime) {
         alert('❌ Error: End datetime must be after start datetime.');
         return;
@@ -894,7 +902,8 @@ export default function AdminExamsPage() {
           examMode,
           classroomDuration,
           classroomTimePerQ,
-          lateEntryRestriction
+          lateEntryRestriction,
+          resetAttempts: (attemptCounts[examId] || 0) > 0
         })
       });
 
@@ -935,12 +944,12 @@ export default function AdminExamsPage() {
 
     if (openMode !== 'immediate') {
       const now = new Date();
-      const startDateTime = new Date(startAtStr);
-      if (startDateTime < now) {
-        alert('❌ Error: Cannot assign exams with a start date/time in the past.');
+      const endDateTime = new Date(endAtStr);
+      if (endDateTime <= now) {
+        alert('❌ Error: The exam end date/time is in the past.');
         return;
       }
-      const endDateTime = new Date(endAtStr);
+      const startDateTime = new Date(startAtStr);
       if (endDateTime <= startDateTime) {
         alert('❌ Error: End datetime must be after start datetime.');
         return;
@@ -966,7 +975,8 @@ export default function AdminExamsPage() {
           endAtStr,
           attemptLimit,
           examDuration,
-          lateEntryRestriction
+          lateEntryRestriction,
+          resetAttempts: editModal.resetAttempts === true
         })
       });
 
@@ -1098,31 +1108,6 @@ export default function AdminExamsPage() {
     }
   };
 
-  const handleRescheduleToday = async () => {
-    if (!confirm('Reschedule all exams for today to 06:20 AM IST and reset active session attempts?\n\nThis will:\n• Set start time to 06:20 AM today (no late entry restriction)\n• Clear stuck active attempts for today\n• Refresh today assignments across both objective & subjective exams.')) {
-      return;
-    }
-    setReschedulingToday(true);
-    try {
-      const idToken = await firebaseUser!.getIdToken();
-      const res = await fetch('/api/admin/exams/reschedule-today', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${idToken}`
-        }
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Rescheduling failed.');
-      alert(`✅ Reschedule Successful:\n\n• Assignments Updated: ${data.assignmentsUpdated ?? 0}\n• Attempts Reset: ${data.attemptsReset ?? 0}\n\n${data.message || ''}`);
-      await loadData();
-    } catch (err: any) {
-      alert(err.message || 'Error executing reschedule today.');
-    } finally {
-      setReschedulingToday(false);
-    }
-  };
-
   // Filters application
   const filteredObjectiveExams = exams.filter(exam => {
     if (objFilterName && !exam.name.toLowerCase().includes(objFilterName.toLowerCase())) return false;
@@ -1190,15 +1175,6 @@ export default function AdminExamsPage() {
       <main style={{ flex: 1, padding: '24px 12px', maxWidth: '1100px', width: '100%', margin: '0 auto' }}>
         {/* Actions Toolbar */}
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center', justifyContent: 'flex-end', flexWrap: 'wrap', marginBottom: '16px' }}>
-          <button 
-            className="btn btn-secondary" 
-            style={{ padding: '6px 12px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }} 
-            onClick={handleRescheduleToday}
-            disabled={reschedulingToday}
-            title="Reschedule today's assigned exams to 06:20 AM IST and clear stuck attempts"
-          >
-            {reschedulingToday ? '⏳ Rescheduling...' : '🔄 Reschedule Today'}
-          </button>
           <button className="btn btn-primary" style={{ padding: '6px 12px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }} onClick={() => router.push('/admin/exam-generator')}>
             ⚡ Exam Generator
           </button>

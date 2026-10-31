@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
     if (cached) {
       return NextResponse.json(cached, {
         headers: {
-          'Cache-Control': 'private, max-age=45, stale-while-revalidate=90'
+          'Cache-Control': 'private, no-cache, no-store, max-age=0, must-revalidate'
         }
       });
     }
@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json(data, {
       headers: {
-        'Cache-Control': 'private, max-age=45, stale-while-revalidate=90'
+        'Cache-Control': 'private, no-cache, no-store, max-age=0, must-revalidate'
       }
     });
   } catch (error: any) {

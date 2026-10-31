@@ -14,10 +14,17 @@ export async function fetchWithToken(url: string, firebaseUser: any) {
   if (!firebaseUser) return null;
   const idToken = await firebaseUser.getIdToken();
   const res = await fetch(url, {
+    cache: 'no-store',
     headers: {
       'Authorization': `Bearer ${idToken}`
     }
   });
+
+  // If server signaled that custom claims were newly synchronized, refresh client ID token
+  if (res.headers.get('x-claims-updated') === 'true' && typeof firebaseUser.getIdToken === 'function') {
+    firebaseUser.getIdToken(true).catch(() => {});
+  }
+
   if (!res.ok) {
     const errData = await res.json().catch(() => ({}));
     const errorMessage = errData.message || errData.error || `Failed to fetch data from ${url} (Status: ${res.status})`;

@@ -61,7 +61,18 @@ export async function syncUserCustomClaims(uid: string, userData: any, revokeTok
 
   try {
     await adminAuth.setCustomUserClaims(uid, claims);
+    
+    // Sweep stale entries if map exceeds 100 entries to prevent memory unbounded growth
+    if (lastSyncedClaimsMap.size > 100) {
+      const now = Date.now();
+      for (const [key, val] of lastSyncedClaimsMap.entries()) {
+        if (now - val.timestamp > CLAIMS_SYNC_THROTTLE_MS) {
+          lastSyncedClaimsMap.delete(key);
+        }
+      }
+    }
     lastSyncedClaimsMap.set(uid, { hash: getClaimsHash(userData), timestamp: Date.now() });
+
     if (revokeTokens) {
       await adminAuth.revokeRefreshTokens(uid).catch(() => {});
     }

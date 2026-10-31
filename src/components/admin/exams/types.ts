@@ -116,7 +116,10 @@ export interface BaseAssignmentModalState {
   overrideDuration?: boolean;
   isMorningTest?: boolean;
   isEveningTest?: boolean;
+  isTodaySlot?: boolean;
   lateEntryRestriction?: boolean;
+  resetAttempts?: boolean;
+  startsCount?: number;
 }
 
 export interface AssignmentModalCommonProps {
