@@ -31,7 +31,8 @@ export function useReports() {
   };
 
   const getIntegrityReport = async (idToken: string, forceRefresh?: boolean) => {
-    return fetchReport(`/api/admin/integrity${forceRefresh ? '?refresh=true' : ''}`, idToken);
+    const url = forceRefresh ? '/api/admin/integrity?refresh=true' : '/api/admin/integrity';
+    return fetchReport(url, idToken);
   };
 
 

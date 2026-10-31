@@ -1,9 +1,14 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase/admin';
 import { getFromCache, setInCache } from '@/lib/firebase/cache';
+import { verifyToken } from '@/lib/auth';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
+    // Public registration endpoint: unauthenticated visitors select batches on /register.
+    // If an authenticated user calls it, verifyToken verifies their token.
+    await verifyToken(req).catch(() => null);
+
     const cacheKey = 'all-batches';
     const cached = getFromCache<any[]>(cacheKey);
     if (cached) {

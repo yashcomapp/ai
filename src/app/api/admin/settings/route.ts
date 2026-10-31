@@ -16,7 +16,7 @@ export async function GET(request: Request) {
     const action = searchParams.get('action') || '';
 
     if (action === 'loadExams') {
-      const snap = await adminDb.collection('subjectiveExams').select('name', 'class', 'subjectCode', 'subjects', 'createdAt').get();
+      const snap = await adminDb.collection('subjectiveExams').orderBy('createdAt', 'desc').limit(200).select('name', 'class', 'subjectCode', 'subjects', 'createdAt').get();
       const exams = snap.docs.map(doc => ({
         examId: doc.id,
         name: doc.data().name || doc.id,
@@ -227,18 +227,16 @@ export async function POST(request: Request) {
         const protectedCollections = ['syllabus', 'syllabusTopicIndex', 'users', 'templates', 'config', 'batches', '_systemBackups'];
         const collections = await adminDb.listCollections();
         
-        for (const col of collections) {
-          if (protectedCollections.includes(col.id)) continue;
-          
+        await Promise.all(collections.map(async col => {
+          if (protectedCollections.includes(col.id)) return;
           const snap = await col.get();
-          if (snap.empty) continue;
-          
+          if (snap.empty) return;
           const writeBatch = new ChunkedBatch(adminDb);
           snap.docs.forEach(doc => {
             writeBatch.delete(doc.ref);
           });
           await writeBatch.commit();
-        }
+        }));
         invalidateCache();
         return NextResponse.json({ success: true });
       }
@@ -250,19 +248,17 @@ export async function POST(request: Request) {
         }
 
         const protectedCollections = ['syllabus', 'syllabusTopicIndex', 'users', 'templates', 'config', 'batches', '_systemBackups'];
-        for (const colName of selectedCollections) {
-          if (!protectedCollections.includes(colName)) continue;
-
+        await Promise.all(selectedCollections.map(async colName => {
+          if (!protectedCollections.includes(colName)) return;
           const colRef = adminDb.collection(colName);
           const snap = await colRef.get();
-          if (snap.empty) continue;
-
+          if (snap.empty) return;
           const writeBatch = new ChunkedBatch(adminDb);
           snap.docs.forEach(doc => {
             writeBatch.delete(doc.ref);
           });
           await writeBatch.commit();
-        }
+        }));
         invalidateCache();
         return NextResponse.json({ success: true });
       }
@@ -283,7 +279,7 @@ export async function POST(request: Request) {
 
         const [questionsSnap, syllabusSnap] = await Promise.all([
           qQuery.get(),
-          adminDb.collection('syllabus').select('subjectCode').get()
+          getCachedSyllabus()
         ]);
 
         const activeSubjectCodes = new Set(syllabusSnap.docs.map(doc => doc.data().subjectCode).filter(Boolean));

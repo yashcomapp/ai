@@ -91,7 +91,8 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
       try {
         const token = await firebaseUser.getIdToken();
         const sCode = user?.studentCode || scorecard?.studentCode || '';
-        const res = await fetch(`/api/student/bookmarks${sCode ? `?studentCode=${encodeURIComponent(sCode)}` : ''}`, {
+        const bookmarksUrl = sCode ? `/api/student/bookmarks?studentCode=${encodeURIComponent(sCode)}` : '/api/student/bookmarks';
+        const res = await fetch(bookmarksUrl, {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (res.ok) {

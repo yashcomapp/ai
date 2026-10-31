@@ -343,7 +343,7 @@ export async function POST(req: NextRequest) {
       ];
 
       const purgeResults: Record<string, number> = {};
-      for (const colName of COLLECTIONS_TO_PURGE) {
+      await Promise.all(COLLECTIONS_TO_PURGE.map(async colName => {
         let deletedForCol = 0;
         const colRef = adminDb.collection(colName);
         while (true) {
@@ -356,7 +356,7 @@ export async function POST(req: NextRequest) {
           if (snap.size < 400) break;
         }
         purgeResults[colName] = deletedForCol;
-      }
+      }));
 
       // Reset studentProfiles cached metrics
       const profilesSnap = await adminDb.collection('studentProfiles').get();

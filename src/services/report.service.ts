@@ -93,7 +93,7 @@ export class ReportService {
       if (cached) return cached;
     }
     const [scoresSnap, studentsSnap] = await Promise.all([
-      adminDb.collection('integrityScores').select('integrityScore', 'score').get(),
+      adminDb.collection('integrityScores').limit(1000).select('integrityScore', 'score').get(),
       adminDb.collection('users')
         .where('role', '==', 'student')
         .select('name', 'email', 'studentCode', 'rollNumber', 'class', 'status', 'isDemo')

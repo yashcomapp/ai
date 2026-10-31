@@ -172,13 +172,13 @@ export class ReportCacheManager {
   static async clearAll() {
     this.clear();
     try {
-      const snap = await adminDb.collection('reportCache').select('key').get();
-      const docRefs = snap.docs.map(doc => doc.ref);
-      for (let i = 0; i < docRefs.length; i += 500) {
+      while (true) {
+        const snap = await adminDb.collection('reportCache').limit(500).select('key').get();
+        if (snap.empty) break;
         const batch = adminDb.batch();
-        const chunk = docRefs.slice(i, i + 500);
-        chunk.forEach(ref => batch.delete(ref));
+        snap.docs.forEach(doc => batch.delete(doc.ref));
         await batch.commit();
+        if (snap.size < 500) break;
       }
     } catch (err) {
       console.warn('Failed to clear Firestore reportCache:', err);
