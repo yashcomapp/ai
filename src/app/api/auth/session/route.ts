@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminAuth, adminDb } from '@/lib/firebase/admin';
 import * as admin from 'firebase-admin';
 import { notifyStudentLogin, notifyStudentLogout } from '@/lib/notifications';
-import { verifyToken, verifyAnyRole, invalidateUserCache } from '@/lib/auth';
+import { verifyToken, verifyAnyRole, invalidateUserCache, syncUserCustomClaims } from '@/lib/auth';
 import { chunkArray } from '@/lib/firestoreUtils';
 import { isStudentBlockedByCurfew, CURFEW_RESTRICTION_MESSAGE } from '@/lib/curfew';
 
@@ -90,15 +90,23 @@ export async function POST(req: NextRequest) {
       const studentCode = userData.studentCode || '';
       const activeSessionToken = userData.activeSessionToken || null;
 
+      let claimsUpdated = false;
+      if (decodedToken.role !== role || (role === 'student' && decodedToken.studentCode !== studentCode)) {
+        await syncUserCustomClaims(uid, userData);
+        claimsUpdated = true;
+      }
+
       if (action === 'check_role') {
         return NextResponse.json({
           role,
           studentCode,
-          activeSessionToken
+          activeSessionToken,
+          claimsUpdated
         });
       }
 
       return NextResponse.json({
+        claimsUpdated,
         profile: {
           uid,
           email,
@@ -131,6 +139,10 @@ export async function POST(req: NextRequest) {
     const role = (userData.role || 'pending').toLowerCase();
     const studentCode = userData.studentCode || '';
     const activeSessionToken = userData.activeSessionToken || null;
+
+    if (userDoc.exists && (decodedToken.role !== role || (role === 'student' && decodedToken.studentCode !== studentCode))) {
+      syncUserCustomClaims(uid, userData).catch(() => {});
+    }
 
     if (role === 'parent') {
       const deactCheck = await checkParentDeactivationStatus(userData, email);

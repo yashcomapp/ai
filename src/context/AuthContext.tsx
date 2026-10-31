@@ -81,6 +81,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const profile: UserProfile = data.profile;
         setUser(profile);
 
+        // If custom claims were newly synchronized by backend, force-refresh token so client holds claims immediately
+        if (data.claimsUpdated) {
+          try {
+            await fUser.getIdToken(true);
+          } catch (e) {
+            console.warn('Could not refresh ID token after claims update:', e);
+          }
+        }
+
         if (data.serverTime) {
           sessionStorage.setItem('yc_serverTime', data.serverTime.toString());
           sessionStorage.setItem('yc_loadPerformanceTime', performance.now().toString());

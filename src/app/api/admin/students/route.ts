@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { adminDb, adminAuth } from '@/lib/firebase/admin';
-import { verifyRole, invalidateUserCache } from '@/lib/auth';
+import { verifyRole, invalidateUserCache, syncUserCustomClaims } from '@/lib/auth';
 import { ChunkedBatch } from '@/lib/firebase/batch';
 import { getFromCache, setInCache, invalidateCache, getCachedBatches } from '@/lib/firebase/cache';
 import { isDemoUser } from '@/lib/studentDb';
@@ -110,6 +110,12 @@ export async function POST(request: Request) {
     const parentEmail = (cleanUpdates.parentEmail || studentData.parentEmail || '').trim().toLowerCase();
 
     await studentDocRef.update(cleanUpdates);
+
+    // Keep custom claims in sync
+    syncUserCustomClaims(studentId, {
+      ...studentData,
+      ...cleanUpdates
+    }).catch(() => {});
 
     // If autonomous mode is modified, synchronize linked parent user account status & auto-approve legacy pending reviews
     if (cleanUpdates.autonomous !== undefined) {

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as admin from 'firebase-admin';
 import { adminDb, adminAuth } from '@/lib/firebase/admin';
-import { verifyRole, invalidateUserCache } from '@/lib/auth';
+import { verifyRole, invalidateUserCache, syncUserCustomClaims } from '@/lib/auth';
 import { decrypt } from '@/lib/encryption';
 import { getBirthdatePassword } from '@/lib/dateUtils';
 export async function GET(req: NextRequest) {
@@ -181,6 +181,13 @@ export async function POST(req: NextRequest) {
         registeredFrom: id
       }, { merge: true });
 
+      // Synchronize Firebase Auth custom claims for student
+      await syncUserCustomClaims(studentId, {
+        role: 'student',
+        studentCode,
+        batchIds: regData.batchId ? [regData.batchId] : []
+      });
+
       // Step 2e: Increment studentCount in batches collection
       if (regData.batchId && batchSnap && batchSnap.exists) {
         await adminDb.collection('batches').doc(regData.batchId).update({
@@ -306,6 +313,12 @@ export async function POST(req: NextRequest) {
           createdAt: existingParentData?.createdAt || admin.firestore.FieldValue.serverTimestamp(),
           registeredFrom: id
         }, { merge: true });
+
+        // Synchronize Firebase Auth custom claims for parent
+        await syncUserCustomClaims(parentId, {
+          role: 'parent',
+          studentCodes: newStudentCodes
+        });
 
         invalidateUserCache(parentId);
       } else {

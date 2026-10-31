@@ -7,6 +7,39 @@ export interface VerifiedUser {
   userData: any;
 }
 
+/**
+ * Synchronizes canonical role, studentCode, batchIds, and studentCodes to Firebase Auth Custom Claims.
+ * This ensures firestore.rules can read request.auth.token.role without incurring extra userDoc get() reads.
+ */
+export async function syncUserCustomClaims(uid: string, userData: any): Promise<boolean> {
+  if (!uid || !userData) return false;
+  const role = (userData.role || '').toLowerCase();
+  if (!role) return false;
+
+  const claims: Record<string, any> = {
+    role,
+    studentCode: userData.studentCode || null
+  };
+
+  if (role === 'student') {
+    claims.batchIds = Array.isArray(userData.batchIds)
+      ? userData.batchIds.filter(Boolean)
+      : (userData.batchId ? [userData.batchId] : []);
+  } else if (role === 'parent') {
+    claims.studentCodes = Array.isArray(userData.studentCodes)
+      ? userData.studentCodes.filter(Boolean)
+      : (userData.studentCode ? [userData.studentCode] : []);
+  }
+
+  try {
+    await adminAuth.setCustomUserClaims(uid, claims);
+    return true;
+  } catch (err) {
+    console.warn(`Failed to set custom claims for user ${uid}:`, err);
+    return false;
+  }
+}
+
 export async function verifyToken(req: Request): Promise<any | null> {
   const authHeader = req.headers.get('Authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
@@ -86,6 +119,12 @@ export async function verifyAnyRole(
         return null;
       }
     }
+
+    // Proactively synchronize custom user claims if absent or stale
+    if (decodedToken.role !== userRole || (userRole === 'student' && decodedToken.studentCode !== userData.studentCode)) {
+      syncUserCustomClaims(uid, userData).catch(() => {});
+    }
+
     return { decodedToken, userData, role: userRole };
   }
 

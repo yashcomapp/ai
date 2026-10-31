@@ -6,28 +6,41 @@ service cloud.firestore { match /databases/{database}/documents {
     // ── Helpers ──────────────────────────────────────────────
     function isAuth()    { return request.auth != null; }
     function uid()       { return request.auth.uid; }
+    function token()     { return request.auth.token; }
+    function tokenRole() { return isAuth() && 'role' in token() ? token().role : null; }
     function userDoc()   { return get(/databases/$(database)/documents/users/$(uid())).data; }
-    function userRole()  { return userDoc().role; }
+    function userRole()  { return tokenRole() != null ? tokenRole() : (isAuth() && exists(/databases/$(database)/documents/users/$(uid())) ? userDoc().role : null); }
     function isAdmin()   { return isAuth() && userRole() == 'admin'; }
     function isStudent() { return isAuth() && userRole() == 'student'; }
     function isParent()  { return isAuth() && userRole() == 'parent'; }
 
+    // Returns user email from Auth token, falling back to userDoc only if absent
+    function userEmail() {
+      return (isAuth() && 'email' in token() && token().email != null)
+        ? token().email
+        : userDoc().email;
+    }
+
     // Returns the calling user's own studentCode (ST-YYYY-NNNNNN).
-    // Only valid when isStudent() is true.
+    // Prioritizes JWT token claims over document read.
     function myStudentCode() {
-      return userDoc().studentCode;
+      return (isAuth() && 'studentCode' in token() && token().studentCode != null)
+        ? token().studentCode
+        : userDoc().studentCode;
     }
 
     // Returns caller key (PR-email for parent, studentCode for student, else empty)
     function callerKey() {
       return isParent() 
-        ? 'PR-' + userDoc().email.lower() 
+        ? 'PR-' + userEmail().lower() 
         : (isStudent() ? myStudentCode() : '');
     }
 
     // Helper to check if studentCode belongs to a child of parent
     function isMyChildCode(studentCode) {
       return studentCode != null && (
+        ('studentCodes' in token() && token().studentCodes.hasAny([studentCode])) ||
+        ('studentCode' in token() && studentCode == token().studentCode) ||
         ('studentCodes' in userDoc() && userDoc().studentCodes.hasAny([studentCode])) ||
         ('studentCode' in userDoc() && studentCode == userDoc().studentCode)
       );
@@ -36,7 +49,7 @@ service cloud.firestore { match /databases/{database}/documents {
     // Helper to check if student user document belongs to parent
     function isMyChildDoc(studentData) {
       return studentData.role == 'student' && (
-        studentData.parentEmail == userDoc().email ||
+        studentData.parentEmail == userEmail() ||
         isMyChildCode(studentData.studentCode)
       );
     }
@@ -53,7 +66,7 @@ service cloud.firestore { match /databases/{database}/documents {
     // User creation is managed via backend Admin SDK.
     match /users/{userId} {
       allow get:    if isAuth() && (uid() == userId || isAdmin() || (isParent() && (userId == uid() || isMyChildDoc(resource.data))));
-      allow list:   if isAuth() && (isAdmin() || (isParent() && (resource.data.parentEmail == userDoc().email || isMyChildCode(resource.data.studentCode))));
+      allow list:   if isAuth() && (isAdmin() || (isParent() && (resource.data.parentEmail == userEmail() || isMyChildCode(resource.data.studentCode))));
       allow create: if isAdmin();
       allow update: if isAdmin()
                     || (isAuth() && uid() == userId
@@ -207,7 +220,7 @@ service cloud.firestore { match /databases/{database}/documents {
                         && request.resource.data.reviewerId == myStudentCode()
                         && request.resource.data.reviewerType == 'peer')
                        || (isParent() 
-                           && request.resource.data.reviewerId == userDoc().email
+                           && request.resource.data.reviewerId == userEmail()
                            && request.resource.data.reviewerType == 'parent'
                            && isMyChildCode(request.resource.data.revieweeCode))
                        || isAdmin();
@@ -231,7 +244,7 @@ service cloud.firestore { match /databases/{database}/documents {
                        || (isParent() 
                            && isMyChildCode(request.resource.data.studentCode)
                            && request.resource.data.evaluatorType == 'parent'
-                           && request.resource.data.evaluatorName == userDoc().email)
+                           && request.resource.data.evaluatorName == userEmail())
                        || (isStudent()
                            && request.resource.data.evaluatorType == 'peer'
                            && (request.resource.data.evaluatorId == myStudentCode() || request.resource.data.evaluatorCode == myStudentCode()));
@@ -346,6 +359,7 @@ service cloud.firestore { match /databases/{database}/documents {
             (
               (resource.data.targetType == 'student' && resource.data.targetId == myStudentCode()) ||
               (resource.data.targetType == 'batch' && (
+                ('batchIds' in token() && token().batchIds.hasAny([resource.data.targetId])) ||
                 ('batchIds' in userDoc() && userDoc().batchIds.hasAny([resource.data.targetId])) ||
                 ('batchId' in userDoc() && userDoc().batchId == resource.data.targetId)
               ))
