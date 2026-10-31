@@ -300,21 +300,11 @@ export function AssignExamModal({
           onChangeOverrideDuration={(checked) => {
             setAssignModal(prev => {
               const dur = checked ? (Number(prev.examDuration) || prev.normDuration || 30) : (prev.normDuration || 30);
-              let updates: any = { overrideDuration: checked, examDuration: dur };
-              if (prev.startAtStr && dur && dur > 0) {
-                updates.endAtStr = calculateEndDatetime(prev.startAtStr, dur);
-              }
-              return { ...prev, ...updates };
+              return { ...prev, overrideDuration: checked, examDuration: dur };
             });
           }}
           onChangeExamDuration={(dur) => {
-            setAssignModal(prev => {
-              let updates: any = { examDuration: dur };
-              if (prev.startAtStr && typeof dur === 'number' && dur > 0) {
-                updates.endAtStr = calculateEndDatetime(prev.startAtStr, dur);
-              }
-              return { ...prev, ...updates };
-            });
+            setAssignModal(prev => ({ ...prev, examDuration: dur === '' ? ('' as any) : Number(dur) }));
           }}
           onBlurExamDuration={() => {
             setAssignModal(prev => {
@@ -322,8 +312,7 @@ export function AssignExamModal({
                 const fallback = prev.normDuration || 30;
                 return {
                   ...prev,
-                  examDuration: fallback,
-                  endAtStr: prev.startAtStr ? calculateEndDatetime(prev.startAtStr, fallback) : prev.endAtStr
+                  examDuration: fallback
                 };
               }
               return prev;

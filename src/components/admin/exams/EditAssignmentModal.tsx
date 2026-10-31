@@ -184,29 +184,18 @@ export function EditAssignmentModal({
           onChangeOverrideDuration={(checked) => {
             setEditModal(prev => {
               const dur = checked ? (Number(prev.examDuration) || prev.normDuration || 30) : (prev.normDuration || 30);
-              let updates: any = { overrideDuration: checked, examDuration: dur };
-              if (prev.startAtStr && dur && dur > 0) {
-                updates.endAtStr = calculateEndDatetime(prev.startAtStr, dur);
-              }
-              return { ...prev, ...updates };
+              return { ...prev, overrideDuration: checked, examDuration: dur };
             });
           }}
           onChangeExamDuration={(dur) => {
-            setEditModal(prev => {
-              let updates: any = { examDuration: dur };
-              if (prev.startAtStr && typeof dur === 'number' && dur > 0) {
-                updates.endAtStr = calculateEndDatetime(prev.startAtStr, dur);
-              }
-              return { ...prev, ...updates };
-            });
+            setEditModal(prev => ({ ...prev, examDuration: dur === '' ? ('' as any) : Number(dur) }));
           }}
           onBlurExamDuration={() => {
             if (!editModal.examDuration || Number(editModal.examDuration) < 1) {
               const fallbackDur = editModal.normDuration || 30;
               setEditModal(prev => ({
                 ...prev,
-                examDuration: fallbackDur,
-                endAtStr: prev.startAtStr ? calculateEndDatetime(prev.startAtStr, fallbackDur) : prev.endAtStr
+                examDuration: fallbackDur
               }));
             }
           }}

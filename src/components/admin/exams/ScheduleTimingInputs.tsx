@@ -42,13 +42,15 @@ export function ScheduleTimingInputs<T extends ScheduleTimingModalState>({
             onChange={(val) => {
               const is6or9 = /T(06|21):/.test(val) || val.includes('06:00') || val.includes('21:00');
               setState(prev => {
-                const dur = getDuration(prev);
-                return { 
-                  ...prev, 
+                let updates: any = { 
                   startAtStr: val, 
-                  endAtStr: calculateEndDatetime(val, dur),
                   lateEntryRestriction: is6or9 ? true : prev.lateEntryRestriction
                 };
+                if (!prev.endAtStr) {
+                  const dur = getDuration(prev);
+                  updates.endAtStr = calculateEndDatetime(val, dur || 60);
+                }
+                return { ...prev, ...updates };
               });
             }}
           />

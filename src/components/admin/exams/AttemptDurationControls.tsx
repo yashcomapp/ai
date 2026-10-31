@@ -71,43 +71,44 @@ export function AttemptDurationControls({
             <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>
               Duration (Minutes)
             </label>
-            <label
-              style={{
-                fontSize: '11px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-                cursor: 'pointer',
-                color: overrideDuration ? 'var(--primary)' : 'var(--text-muted)',
-              }}
-            >
-              <input
-                type="checkbox"
-                checked={overrideDuration}
-                onChange={(e) => onChangeOverrideDuration?.(e.target.checked)}
-                style={{ cursor: 'pointer' }}
-              />
-              <span>Override</span>
-            </label>
+            {overrideDuration && (
+              <span
+                onClick={() => {
+                  onChangeOverrideDuration?.(false);
+                }}
+                style={{
+                  fontSize: '10px',
+                  color: 'var(--primary)',
+                  cursor: 'pointer',
+                  textDecoration: 'underline'
+                }}
+                title="Click to reset to standard question norm"
+              >
+                Reset to Norm
+              </span>
+            )}
           </div>
           <input
             type="number"
+            min={1}
+            max={360}
             value={examDuration === undefined || examDuration === null ? '' : examDuration}
-            disabled={!overrideDuration}
+            placeholder="e.g. 30, 45, 60"
             onChange={(e) => {
               const raw = e.target.value;
+              onChangeOverrideDuration?.(true);
               onChangeExamDuration?.(raw === '' ? '' : (isNaN(Number(raw)) ? '' : Number(raw)));
             }}
             onBlur={onBlurExamDuration}
             style={{
               width: '100%',
               padding: '5px 6px',
-              background: overrideDuration ? 'var(--surface)' : 'var(--surface-muted, rgba(255, 255, 255, 0.05))',
-              color: overrideDuration ? 'var(--text)' : 'var(--text-muted)',
-              border: '1px solid var(--border-light)',
+              background: 'var(--surface)',
+              color: 'var(--text)',
+              border: overrideDuration ? '1px solid var(--primary)' : '1px solid var(--border-light)',
               borderRadius: 'var(--radius-sm)',
-              cursor: overrideDuration ? 'text' : 'not-allowed',
-              opacity: overrideDuration ? 1 : 0.8,
+              cursor: 'text',
+              opacity: 1,
             }}
           />
           {durationHelperText}
