@@ -248,6 +248,9 @@ export async function verifyAnyRole(
 
   // Rule: Inactive accounts must be blocked centrally at the authorization boundary
   if (userData.status === 'inactive') {
+    if (decodedToken.status !== 'inactive') {
+      await syncUserCustomClaims(uid, userData, true).catch(() => {});
+    }
     return null;
   }
 

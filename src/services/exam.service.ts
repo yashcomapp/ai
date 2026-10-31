@@ -955,7 +955,11 @@ export class ExamService {
    */
   static async reSyncClassExamCounters() {
     const classes = ['6', '7', '8', '9', '10', '11', '12'];
-    const classFilter = ['6', '7', '8', '9', '10', '11', '12', 6, 7, 8, 9, 10, 11, 12];
+    const classFilter = [
+      '6', '7', '8', '9', '10', '11', '12',
+      6, 7, 8, 9, 10, 11, 12,
+      'Class 6', 'Class 7', 'Class 8', 'Class 9', 'Class 10', 'Class 11', 'Class 12'
+    ];
     
     const [objDocs, subjDocs] = await Promise.all([
       adminDb.collection('exams').where('class', 'in', classFilter).select('class', 'sequence', 'name').get(),
@@ -965,7 +969,8 @@ export class ExamService {
     const classMaxSeq: Record<string, number> = {};
 
     const processDoc = (data: any) => {
-      const classNum = String(data.class || '').trim();
+      const rawClass = String(data.class || '').trim();
+      const classNum = rawClass.replace(/[^0-9]/g, '');
       if (!classNum) return;
 
       let seq = Number(data.sequence) || 0;
