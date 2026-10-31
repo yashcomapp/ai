@@ -442,7 +442,7 @@ service cloud.firestore { match /databases/{database}/documents {
       allow delete: if isAdmin();
 
       match /messages/{messageId} {
-        allow read: if isAuth() && (isAdmin() || (('participants' in resource.data) ? resource.data.participants.hasAny([callerKey()]) : isRoomParticipant(roomId)));
+        allow read: if isAuth() && isRoomParticipant(roomId);
         allow create: if isAuth() && isRoomParticipant(roomId) && request.resource.data.senderId == callerKey();
         allow update: if isAuth() && isRoomParticipant(roomId) && (
           (isAdmin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['text', 'isEdited', 'updatedAt', 'isDeleted', 'mediaUrl', 'mediaMetadata', 'deletedAt'])) ||

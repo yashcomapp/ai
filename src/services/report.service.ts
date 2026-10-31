@@ -89,7 +89,7 @@ export class ReportService {
   static async getIntegrityReport(forceRefresh: boolean = false) {
     const cacheKey = 'admin_integrity_report';
     if (!forceRefresh) {
-      const cached = await ReportCacheManager.getReport<any>(cacheKey);
+      const cached = ReportCacheManager.get(cacheKey);
       if (cached) return cached;
     }
     const [scoresSnap, studentsSnap] = await Promise.all([
@@ -133,7 +133,7 @@ export class ReportService {
       avgScore,
       students
     };
-    await ReportCacheManager.setReport(cacheKey, result, 300);
+    ReportCacheManager.set(cacheKey, result, 60);
     return result;
   }
 

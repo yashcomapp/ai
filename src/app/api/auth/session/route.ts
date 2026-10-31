@@ -198,7 +198,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    if (userData.status === 'inactive' && role !== 'admin') {
+    if (userData.status === 'inactive') {
       if (role === 'parent') {
         if (userData.deactivationReason === 'student_autonomous') {
           return NextResponse.json({ 

@@ -477,7 +477,6 @@ export async function POST(req: NextRequest) {
       senderId,
       senderName,
       senderRole,
-      participants: roomData.participants || [],
       text: text || (type === 'poll' ? '📊 Poll' : ''),
       type: type || 'text',
       mediaUrl: mediaUrl || null,

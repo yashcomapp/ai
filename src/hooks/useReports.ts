@@ -30,8 +30,8 @@ export function useReports() {
     return fetchReport('/api/admin/reports/usage', idToken);
   };
 
-  const getIntegrityReport = async (idToken: string) => {
-    return fetchReport('/api/admin/integrity', idToken);
+  const getIntegrityReport = async (idToken: string, forceRefresh?: boolean) => {
+    return fetchReport(`/api/admin/integrity${forceRefresh ? '?refresh=true' : ''}`, idToken);
   };
 
 

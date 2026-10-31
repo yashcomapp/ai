@@ -4,6 +4,7 @@ import { verifyRole } from '@/lib/auth';
 import { ChunkedBatch } from '@/lib/firebase/batch';
 import { ReportService } from '@/services/report.service';
 import { IntegrityService } from '@/services/integrity.service';
+import { ReportCacheManager } from '@/lib/reportCache';
 export async function GET(request: Request) {
   try {
     const admin = await verifyRole(request, 'admin');
@@ -28,7 +29,8 @@ export async function GET(request: Request) {
     }
 
     // Fetch aggregate statistics AND student list via ReportService
-    const data = await ReportService.getIntegrityReport();
+    const forceRefresh = url.searchParams.get('refresh') === 'true';
+    const data = await ReportService.getIntegrityReport(forceRefresh);
     return NextResponse.json({
       totalScores: data.totalScores,
       reviewCount: data.reviewCount,
@@ -75,6 +77,7 @@ export async function POST(request: Request) {
         resetReason: reason || 'Admin override reset',
         updatedAt: new Date()
       }, { merge: true });
+      ReportCacheManager.invalidate('admin_integrity_report');
       return NextResponse.json({ success: true });
     }
 
@@ -91,6 +94,7 @@ export async function POST(request: Request) {
         batch.delete(doc.ref);
       });
       await batch.commit();
+      ReportCacheManager.invalidate('admin_integrity_report');
       return NextResponse.json({ success: true });
     }
 
@@ -223,6 +227,7 @@ export async function POST(request: Request) {
     });
 
     await writeBatch.commit();
+    ReportCacheManager.invalidate('admin_integrity_report');
 
     return NextResponse.json({ success: true, count: studentCodes.length });
   } catch (err: any) {

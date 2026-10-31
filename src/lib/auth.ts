@@ -16,6 +16,7 @@ const CLAIMS_SYNC_THROTTLE_MS = 5 * 60 * 1000; // 5 minutes
 function getClaimsHash(userData: any): string {
   if (!userData) return '';
   const role = (userData.role || '').toLowerCase();
+  const status = (userData.status || 'active').toLowerCase();
   const studentCode = userData.studentCode || '';
   let subKey = '';
   if (role === 'student') {
@@ -33,7 +34,7 @@ function getClaimsHash(userData: any): string {
     ).map(String).sort().join(',');
     subKey = `c:${codes}`;
   }
-  return `${role}|${studentCode}|${subKey}`;
+  return `${role}|${status}|${studentCode}|${subKey}`;
 }
 
 /**
@@ -45,10 +46,13 @@ export async function syncUserCustomClaims(uid: string, userData: any, revokeTok
   const role = (userData.role || '').toLowerCase();
   if (!role) return false;
 
+  const isInactive = (userData.status || '').toLowerCase() === 'inactive';
+  const shouldRevoke = revokeTokens || isInactive;
+
   // In-memory cooldown throttle: prevent repeated Firebase Auth Admin API writes within 5 minutes
   const claimsHash = getClaimsHash(userData);
   const lastSync = lastSyncedClaimsMap.get(uid);
-  if (!revokeTokens && lastSync && lastSync.hash === claimsHash && (Date.now() - lastSync.timestamp) <= CLAIMS_SYNC_THROTTLE_MS) {
+  if (!shouldRevoke && lastSync && lastSync.hash === claimsHash && (Date.now() - lastSync.timestamp) <= CLAIMS_SYNC_THROTTLE_MS) {
     return false;
   }
 
@@ -82,7 +86,7 @@ export async function syncUserCustomClaims(uid: string, userData: any, revokeTok
     }
     lastSyncedClaimsMap.set(uid, { hash: getClaimsHash(userData), timestamp: Date.now() });
 
-    if (revokeTokens) {
+    if (shouldRevoke) {
       await adminAuth.revokeRefreshTokens(uid).catch(() => {});
     }
     return true;
@@ -242,8 +246,8 @@ export async function verifyAnyRole(
 
   if (!userData) return null;
 
-  // Rule: Inactive non-admin accounts must be blocked centrally at the authorization boundary
-  if (userData.status === 'inactive' && (userData.role || '').toLowerCase() !== 'admin') {
+  // Rule: Inactive accounts must be blocked centrally at the authorization boundary
+  if (userData.status === 'inactive') {
     return null;
   }
 
@@ -258,12 +262,17 @@ export async function verifyAnyRole(
     }
 
     // Proactively synchronize custom user claims if absent or stale (throttled in-memory to prevent repeated writes)
-    const claimsMismatch = !areClaimsEqual(decodedToken, userData);
-    if (claimsMismatch) {
-      await syncUserCustomClaims(uid, userData);
+    let claimsUpdated = false;
+    if (!areClaimsEqual(decodedToken, userData)) {
+      const didSync = await syncUserCustomClaims(uid, userData);
+      const lastSync = lastSyncedClaimsMap.get(uid);
+      const currentHash = getClaimsHash(userData);
+      // Only signal claimsUpdated if Firebase Auth custom claims were actually updated
+      const isKnownUpdated = didSync || (lastSync && lastSync.hash === currentHash);
+      claimsUpdated = isKnownUpdated ? true : false;
     }
 
-    return { decodedToken, userData, role: userRole, claimsUpdated: claimsMismatch };
+    return { decodedToken, userData, role: userRole, claimsUpdated };
   }
 
   return null;

@@ -340,7 +340,7 @@ export class ExamReviewService {
 
     const now = new Date();
 
-    await Promise.allSettled(chunks.map(async (chunk) => {
+    const sweepResults = await Promise.allSettled(chunks.map(async (chunk) => {
       // 1. Sweep 'reviews' collection
       const pendingReviewsSnap = await adminDb.collection('reviews')
         .where('studentCode', 'in', chunk)
@@ -458,14 +458,24 @@ export class ExamReviewService {
       }
     }));
 
+    const failedChunks = sweepResults.filter(r => r.status === 'rejected');
+    const hasFailures = failedChunks.length > 0;
+    if (hasFailures) {
+      console.error(`Autonomous sweep encountered failures in ${failedChunks.length} of ${chunks.length} chunks:`, failedChunks.map((f: any) => f.reason));
+    }
+
     return {
-      success: true,
+      success: !hasFailures,
+      partialFailure: hasFailures,
+      failedChunksCount: failedChunks.length,
       studentsScanned: studentCodes.length,
       reviewsApproved,
       attemptsApproved,
       parentReviewsApproved,
       evaluationsApproved,
-      message: `Swept ${studentCodes.length} autonomous students: approved ${reviewsApproved} reviews, ${attemptsApproved} attempts, ${parentReviewsApproved} parentReviews, ${evaluationsApproved} evaluations.`
+      message: hasFailures
+        ? `Swept ${studentCodes.length} autonomous students with ${failedChunks.length} failed chunks: approved ${reviewsApproved} reviews, ${attemptsApproved} attempts, ${parentReviewsApproved} parentReviews, ${evaluationsApproved} evaluations.`
+        : `Swept ${studentCodes.length} autonomous students: approved ${reviewsApproved} reviews, ${attemptsApproved} attempts, ${parentReviewsApproved} parentReviews, ${evaluationsApproved} evaluations.`
     };
   }
 }
