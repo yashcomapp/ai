@@ -256,12 +256,13 @@ export async function GET(req: NextRequest) {
       }
 
       // Type check
+      const qTypeVal = q.type || q.typeCode || q.qtype;
       if (type) {
-        if (toCanonicalQuestionType(q.type) !== toCanonicalQuestionType(type) && q.type !== type) return false;
+        if (toCanonicalQuestionType(qTypeVal) !== toCanonicalQuestionType(type) && qTypeVal !== type) return false;
       } else if (category === 'objective') {
-        if (!isObjectiveType(q.type)) return false;
+        if (!isObjectiveType(qTypeVal)) return false;
       } else if (category === 'subjective') {
-        if (!isSubjectiveType(q.type)) return false;
+        if (!isSubjectiveType(qTypeVal)) return false;
       }
 
       // Usage status check

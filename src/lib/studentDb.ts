@@ -1,6 +1,6 @@
 import { adminDb } from '@/lib/firebase/admin';
 import { getCachedSyllabus, getCachedBatches, getFromCache, setInCache } from '@/lib/firebase/cache';
-import { getCachedSyllabusTopicsMap } from '@/lib/syllabusServerUtils';
+import { getCachedSyllabusTopicsMap, fetchTopicIndexByCodes } from '@/lib/syllabusServerUtils';
 import { getDateKeyIST } from '@/lib/dateUtils';
 import { calculateUnifiedMetrics, extractConductedTopicCodes, getRequiredConfidence, classifyAssignedTopics } from '@/lib/dashboardMetrics';
 import { deriveTopicCodeFromQuestionCode, getCanonicalSubjectName, parseTopicCode } from '@/lib/questionTypes';
@@ -1284,24 +1284,12 @@ export async function getStudentLearningData(userData: any, preloadedData?: Prel
   });
 
   if (missingTopicCodes.length > 0) {
-    // Fetch missing syllabus details in chunks of 30 (Firestore IN operator limit) in parallel
-    const missingChunks = [];
-    for (let i = 0; i < missingTopicCodes.length; i += 30) {
-      missingChunks.push(missingTopicCodes.slice(i, i + 30));
-    }
-    const extraSnaps = await Promise.all(missingChunks.map(chunk =>
-      adminDb.collection('syllabusTopicIndex')
-        .where('topicCode', 'in', chunk)
-        .get()
-    ));
-    extraSnaps.forEach(extraSnap => {
-      extraSnap.docs.forEach((doc: any) => {
-        const d = doc.data();
-        if (d.topicCode && !currentTopicCodes.has(d.topicCode)) {
-          syllabusTopics.push(d);
-          currentTopicCodes.add(d.topicCode);
-        }
-      });
+    const extraMap = await fetchTopicIndexByCodes(missingTopicCodes);
+    extraMap.forEach((d, code) => {
+      if (d && !currentTopicCodes.has(code)) {
+        syllabusTopics.push(d);
+        currentTopicCodes.add(code);
+      }
     });
   }
 

@@ -2,6 +2,7 @@ import { adminDb } from '@/lib/firebase/admin';
 import { IntegrityService } from '@/services/integrity.service';
 import { deriveTopicCodeFromQuestionCode, parseTopicCode } from '@/lib/questionTypes';
 import { getFromCache, setInCache } from '@/lib/firebase/cache';
+import { fetchTopicIndexByCodes } from '@/lib/syllabusServerUtils';
 
 export function determineExamType(data: any): string {
   if (data.examType === 'practice') return 'practice';
@@ -120,15 +121,7 @@ export async function getStudentResultsData(
   });
 
   const uniqueTopicCodes = Array.from(allTopicCodes);
-  const refs = uniqueTopicCodes.map(code => adminDb.collection('syllabusTopicIndex').doc(code));
-  const syllabusSnaps = refs.length > 0 ? await adminDb.getAll(...refs).catch(() => []) : [];
-
-  const syllabusMap = new Map<string, any>();
-  syllabusSnaps.forEach(snap => {
-    if (snap && snap.exists) {
-      syllabusMap.set(snap.id, snap.data());
-    }
-  });
+  const syllabusMap = await fetchTopicIndexByCodes(uniqueTopicCodes);
 
   const examResults = reviewsSnap.docs.map(doc => {
     const data = doc.data();

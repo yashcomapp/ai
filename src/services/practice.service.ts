@@ -11,6 +11,7 @@ import { invalidateCache } from '@/lib/firebase/cache';
 import { evaluateSessionSincerity } from '@/lib/practiceTimeUtils';
 import { calculateSrsSchedule } from '@/lib/srsRotation';
 import { getRequiredConfidence } from '@/lib/studentDb';
+import { fetchTopicIndexByCodes } from '@/lib/syllabusServerUtils';
 
 const DIFFICULTY_WEIGHTS: Record<string, number> = { easy: 1, medium: 2, hard: 3 };
 const BLOOM_WEIGHTS: Record<string, number> = {
@@ -232,9 +233,9 @@ export class PracticeService {
     const studentDocData = !studentUserSnap.empty ? studentUserSnap.docs[0].data() : {};
     const isSrsEnabled = Boolean(studentDocData?.srsEnabled);
 
-    // Fetch topic index metadata for classification and confidence thresholds
-    const topicIndexSnap = await adminDb.collection('syllabusTopicIndex').doc(topicCode).get();
-    const topicIndexData = topicIndexSnap.exists ? topicIndexSnap.data() : null;
+    // Fetch topic index metadata from cached SSOT for classification and confidence thresholds
+    const topicIndexMap = await fetchTopicIndexByCodes([topicCode]);
+    const topicIndexData = topicIndexMap.get(topicCode) || null;
     const fallbackClassification = topicIndexData?.topicClassification || 'minor';
     const fallbackTargetQuestions = topicIndexData?.targetQuestions || (fallbackClassification === 'minor' ? 12 : fallbackClassification === 'major' ? 24 : 18);
     const fallbackRequiredConfidence = topicIndexData?.requiredConfidence || getRequiredConfidence(fallbackClassification, fallbackTargetQuestions);
@@ -389,24 +390,22 @@ export class PracticeService {
         let subjectName = 'General';
         let chapterName = 'General';
         
-        let syllabusSnap = await adminDb.collection('syllabusTopicIndex').doc(topicCode).get();
-        if (!syllabusSnap.exists) {
+        const sMap = await fetchTopicIndexByCodes([topicCode]);
+        let sData = sMap.get(topicCode);
+        if (!sData) {
           const parsed = parseTopicCode(topicCode);
           if (parsed && parsed.topicNumber && parsed.topicNumber.includes('.')) {
             const parts = parsed.topicNumber.split('.');
             if (parts.length > 2) {
               const parentNum = parts.slice(0, 2).join('.');
               const parentCode = `${parsed.boardCode}-${parsed.classNum}-${parsed.subjectCode}-${parsed.chapterNumber}-${parentNum}`;
-              const pSnap = await adminDb.collection('syllabusTopicIndex').doc(parentCode).get();
-              if (pSnap.exists) {
-                syllabusSnap = pSnap;
-              }
+              const pMap = await fetchTopicIndexByCodes([parentCode]);
+              sData = pMap.get(parentCode);
             }
           }
         }
 
-        if (syllabusSnap.exists) {
-          const sData = syllabusSnap.data()!;
+        if (sData) {
           topicName = sData.topicName || sData.title || sData.name || topicName;
           subjectName = sData.subjectName || sData.subject || subjectName;
           chapterName = sData.chapterName || sData.chapterTitle || sData.chapter || (sData.chapterNumber ? (String(sData.chapterNumber).startsWith('Chapter') ? String(sData.chapterNumber) : `Chapter ${sData.chapterNumber}`) : chapterName);

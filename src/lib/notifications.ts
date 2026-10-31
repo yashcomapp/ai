@@ -1,6 +1,7 @@
 import * as admin from 'firebase-admin';
 import { adminDb } from '@/lib/firebase/admin';
 import { formatTimeIST, getDateKeyIST } from '@/lib/dateUtils';
+import { fetchTopicIndexByCodes } from '@/lib/syllabusServerUtils';
 
 // In-memory deduplication cache to prevent duplicate notifications within cooldown period
 const recentNotificationCache = new Map<string, number>();
@@ -419,12 +420,11 @@ export async function notifyNewExam(
     let resolvedTopics = topicCodes;
     if (topicCodes.length > 0) {
       try {
-        const refs = topicCodes.map((code: string) => {
-          const fullCode = code.includes('-') ? code : `${boardCode}-${classVal}-${subjectCode}-${chapterNumber}-${code}`;
-          return adminDb.collection('syllabusTopicIndex').doc(fullCode);
-        });
-        const snaps = await adminDb.getAll(...refs).catch(() => []);
-        resolvedTopics = snaps.filter(s => s && s.exists).map(s => s.data()?.topicName || s.id);
+        const fullCodes: string[] = topicCodes.map((code: string) =>
+          code.includes('-') ? code : `${boardCode}-${classVal}-${subjectCode}-${chapterNumber}-${code}`
+        );
+        const topicMap = await fetchTopicIndexByCodes(fullCodes);
+        resolvedTopics = fullCodes.map((c: string) => topicMap.get(c)?.topicName || c);
       } catch (e) {
         console.warn('Failed to resolve topic names in notification:', e);
       }

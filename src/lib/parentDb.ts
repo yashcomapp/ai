@@ -3,7 +3,7 @@ import { deriveTopicCodeFromQuestionCode } from '@/lib/questionTypes';
 import { getDateKeyIST, formatDateDMY } from '@/lib/dateUtils';
 import { chunkArray } from '@/lib/firestoreUtils';
 import { calculateUnifiedMetrics, extractConductedTopicCodes } from '@/lib/dashboardMetrics';
-import { getCachedSyllabusTopicsMap } from '@/lib/syllabusServerUtils';
+import { getCachedSyllabusTopicsMap, fetchTopicIndexByCodes } from '@/lib/syllabusServerUtils';
 import { calculateProctoringIntegrityScore } from '@/lib/proctoring';
 import { calculateSrsSchedule } from '@/lib/srsRotation';
 import { getRequiredConfidence } from '@/lib/studentDb';
@@ -274,15 +274,7 @@ export async function getParentDashboardData(
   });
 
   const uniqueTopicCodes = Array.from(allTopicCodes);
-  const refs = uniqueTopicCodes.map(code => adminDb.collection('syllabusTopicIndex').doc(code));
-  const syllabusSnaps = refs.length > 0 ? await adminDb.getAll(...refs).catch(() => []) : [];
-
-  const syllabusMap = new Map<string, any>();
-  syllabusSnaps.forEach(snap => {
-    if (snap && snap.exists) {
-      syllabusMap.set(snap.id, snap.data());
-    }
-  });
+  const syllabusMap = await fetchTopicIndexByCodes(uniqueTopicCodes);
 
   // Distinct stats for Exams vs Self-Directed Practice
   const completedExams = examResults.filter((e: any) => e.percentage != null || e.score != null);

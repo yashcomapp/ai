@@ -4,6 +4,7 @@ import { verifyRole } from '@/lib/auth';
 import { getDateKeyIST as getISTDateString } from '@/lib/dateUtils';
 import { getFromCache, setInCache } from '@/lib/firebase/cache';
 import { isDemoUser } from '@/lib/studentDb';
+import { runDailyMaintenanceOpportunistic } from '@/lib/dailyMaintenance';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,6 +14,11 @@ export async function GET(req: NextRequest) {
     if (!adminUser) {
       return NextResponse.json({ message: 'Unauthorized. Admin role required.' }, { status: 403 });
     }
+
+    // Opportunistically trigger daily maintenance in background (runs once per IST calendar day via atomic claim)
+    runDailyMaintenanceOpportunistic().catch(err => {
+      console.warn('[Admin Dashboard] Opportunistic daily maintenance error:', err);
+    });
 
     const todayStr = getISTDateString();
     const adminUid = adminUser.decodedToken?.uid || 'admin';
@@ -37,7 +43,7 @@ export async function GET(req: NextRequest) {
       chatRoomsSnap,
       recentRegsSnap
     ] = await Promise.all([
-      adminDb.collection('users').where('role', '==', 'student').get(),
+      adminDb.collection('users').where('role', '==', 'student').select('status', 'isDemo', 'demo', 'studentCode').get(),
       adminDb.collection('batches').count().get(),
       adminDb.collection('exams').where('status', '==', 'active').count().get(),
       adminDb.collection('studentFees').where('hasOverdueInstallment', '==', true).count().get(),
