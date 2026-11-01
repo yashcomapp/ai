@@ -192,7 +192,7 @@ export async function GET(req: NextRequest) {
     const validObjectiveQuestions = rawTopicQuestions.filter((q: any) => {
       if (!q.type || !isObjectiveType(q.type)) return false;
       if (isQuestionQuarantined(q)) return false;
-      if ((isSingleChoiceType(q.type) || isMultipleChoiceType(q.type)) && (!Array.isArray(q.options) || q.options.length < 2)) {
+      if (!Array.isArray(q.options) || q.options.length < 2) {
         return false;
       }
       return true;
@@ -570,6 +570,8 @@ export async function GET(req: NextRequest) {
             { text: 'A is false but R is true', value: 'D' }
           ];
         }
+      } else if (Array.isArray(options)) {
+        options = options.map((opt: any) => (typeof opt === 'object' ? opt : { text: String(opt), value: String(opt) }));
       }
 
       return {

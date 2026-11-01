@@ -19,6 +19,7 @@ import {
   isOptionCorrect,
   isOptionSelectedByUser,
   parseAnswerList,
+  evaluateQuestionAnswer,
   KATEX_AUTO_RENDER_OPTIONS,
   DEFAULT_ASSERTION_REASON_OPTIONS
 } from '@/lib/questionTypes';
@@ -837,7 +838,71 @@ export const QuestionDisplay: React.FC<QuestionDisplayProps> = React.memo(({
      C. Render Practice Mode Options (mode='practice')
      ----------------------------------------------------------------------- */
   const renderPracticeOptions = () => {
-    if (!resolvedOptions || resolvedOptions.length === 0) return null;
+    if (!resolvedOptions || resolvedOptions.length === 0) {
+      if (isNumericalType(qType) || isFillBlanksType(qType)) {
+        const isCorrectInput = isSubmitted && evaluateQuestionAnswer(qType, qUserAnswer, qCorrectAnswer);
+        return (
+          <div style={{ marginTop: '10px' }}>
+            <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '6px' }}>
+              {isNumericalType(qType) ? 'Enter Numerical Answer:' : 'Type Answer:'}
+            </label>
+            <input
+              type={isNumericalType(qType) ? 'number' : 'text'}
+              value={qUserAnswer}
+              disabled={isSubmitted}
+              onChange={(e) => onTextInput?.(e.target.value)}
+              placeholder="Type your answer here..."
+              style={{
+                width: '100%',
+                padding: '10px 12px',
+                border: isSubmitted
+                  ? isCorrectInput
+                    ? '1.5px solid var(--success, #16a34a)'
+                    : '1.5px solid var(--danger, #dc2626)'
+                  : '1.5px solid var(--border-light, #e2e8f0)',
+                borderRadius: '6px',
+                fontSize: '14px',
+                background: isSubmitted
+                  ? isCorrectInput
+                    ? 'rgba(22, 163, 74, 0.08)'
+                    : 'rgba(220, 38, 38, 0.08)'
+                  : 'var(--surface, #fff)',
+                color: 'var(--text)'
+              }}
+            />
+            {isSubmitted && (
+              <div style={{ marginTop: '8px', fontSize: '12.5px', fontWeight: 600 }}>
+                {isCorrectInput ? (
+                  <span style={{ color: 'var(--success, #16a34a)' }}>✓ Correct Answer: {qCorrectAnswer}</span>
+                ) : (
+                  <span style={{ color: 'var(--danger, #dc2626)' }}>
+                    ✗ Incorrect. Correct Answer: <strong style={{ color: 'var(--success, #16a34a)' }}>{qCorrectAnswer}</strong>
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      }
+      if (isSubjectiveType(qType) || String(qType).startsWith('sub') || String(qType).includes('reasoning') || String(qType).includes('different')) {
+        return (
+          <div style={{ marginTop: '10px' }}>
+            <label style={{ display: 'block', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '6px' }}>
+              Write Explanation:
+            </label>
+            <textarea
+              value={qUserAnswer}
+              disabled={isSubmitted}
+              onChange={(e) => onTextInput?.(e.target.value)}
+              placeholder="Write your explanation or step-by-step answer here..."
+              rows={4}
+              style={{ width: '100%', padding: '10px 12px', border: '1.5px solid var(--border-light, #e2e8f0)', borderRadius: '6px', fontSize: '14px', background: 'var(--surface, #fff)', color: 'var(--text)', resize: 'vertical' }}
+            />
+          </div>
+        );
+      }
+      return null;
+    }
     const isMulti = isMultipleChoiceType(qType);
 
     return (
