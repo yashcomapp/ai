@@ -9,7 +9,7 @@ import { ReportCacheManager } from '@/lib/reportCache';
 import { getRequiredConfidence, isDemoUser } from '@/lib/studentDb';
 import { MASTERY_THRESHOLDS } from '@/lib/dashboardMetrics';
 import { evaluateSessionSincerity } from '@/lib/practiceTimeUtils';
-import { getCanonicalSubjectName, parseTopicCode } from '@/lib/questionTypes';
+import { getCanonicalSubjectName, parseTopicCode, normalizeTopicCode } from '@/lib/questionTypes';
 import { getObjectiveExamTopics, getSubjectiveExamTopics, getExamDateKey, isExamForStudent, QuotientService } from '@/services/quotient.service';
 import { ExamService, getAssignmentsForBatches } from '@/services/exam.service';
 import { getCachedBatches } from '@/lib/firebase/cache';
@@ -178,22 +178,34 @@ export async function GET(req: NextRequest) {
       subjExamsMap.forEach(exam => {
         const examDateStr = getExamDateKey(exam) || todayDateStr;
         if (examDateStr <= todayDateStr && isExamForStudent(exam, studentCodeParam, bIds, studentClass)) {
-          getSubjectiveExamTopics(exam).forEach(t => conductedTopicsSet.add(t));
+          getSubjectiveExamTopics(exam).forEach(t => {
+            const norm = normalizeTopicCode(t);
+            if (norm) conductedTopicsSet.add(norm);
+          });
         }
       });
 
       masterySnap.docs.forEach(d => {
-        if (d.data().topicCode) conductedTopicsSet.add(d.data().topicCode);
+        const tc = d.data().topicCode;
+        if (tc) {
+          const norm = normalizeTopicCode(tc);
+          if (norm) conductedTopicsSet.add(norm);
+        }
       });
       parentReviewsSnap.docs.forEach(d => {
-        if (d.data().topicCode) conductedTopicsSet.add(d.data().topicCode);
+        const tc = d.data().topicCode;
+        if (tc) {
+          const norm = normalizeTopicCode(tc);
+          if (norm) conductedTopicsSet.add(norm);
+        }
       });
 
       const practiceCountMap = new Map<string, number>();
       const practiceQuestionsMap = new Map<string, number>();
       parentReviewsSnap.docs.forEach(doc => {
         const data = doc.data();
-        const tCode = data.topicCode;
+        const rawCode = data.topicCode;
+        const tCode = rawCode ? normalizeTopicCode(rawCode) : '';
         if (tCode) {
           practiceCountMap.set(tCode, (practiceCountMap.get(tCode) || 0) + 1);
           const qCount = Number(data.questionsCount || data.totalQuestions || (Array.isArray(data.questions) ? data.questions.length : (data.questionDetails?.length || 0)));
