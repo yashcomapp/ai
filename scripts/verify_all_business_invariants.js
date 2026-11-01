@@ -405,6 +405,93 @@ test('Auth claims sync: Failed token revocation never sets in-memory throttle ca
   assert.strictEqual(lastSyncedClaimsMap.has(uid), false);
 });
 
+// -----------------------------------------------------------------------------
+// SUITE 10: Canonical SSOT Barrier & Ingress Rejection Gate (Rule 2.R & 2.K)
+// -----------------------------------------------------------------------------
+console.log('\n--- Suite 10: Canonical SSOT Barrier & Ingress Rejection Gate ---');
+
+const CANONICAL_BOARDS = ['CBSE', 'MH'];
+const CANONICAL_CLASSES = ['8', '9', '10'];
+const CANONICAL_SUBJECTS = {
+  CBSE: { '8': ['MGP1', 'MGP2', 'CURI'], '9': ['MGM', 'SCIE'], '10': ['MATH', 'SCI'] },
+  MH: { '8': ['MTH', 'SCI'], '9': ['MTH1', 'MTH2', 'SCIT'], '10': ['MTH1', 'MTH2', 'SCIT1', 'SCIT2'] }
+};
+const CANONICAL_TYPES = ['OSC', 'OMC', 'OTF', 'OAR', 'OFB', 'ONE', 'SDF', 'SLP', 'SSA', 'SSR', 'SSN', 'SLA', 'SLN'];
+
+function validateStudentCode(sc) {
+  if (!sc || typeof sc !== 'string') return { valid: false, error: 'Student code required' };
+  return /^ST-\d{4}-\d{6}$/.test(sc.trim()) ? { valid: true } : { valid: false, error: 'Invalid format' };
+}
+
+function validateSubjectCode(board, cls, subj) {
+  if (!CANONICAL_BOARDS.includes(board)) return { valid: false, error: `Invalid board ${board}` };
+  const cleanClass = String(cls || '').trim();
+  if (!CANONICAL_CLASSES.includes(cleanClass)) return { valid: false, error: `Invalid class ${cls}` };
+  const allowed = CANONICAL_SUBJECTS[board]?.[cleanClass] || [];
+  if (!allowed.includes(subj)) return { valid: false, error: `Invalid subject ${subj}` };
+  return { valid: true };
+}
+
+function validateTopicCode(tc) {
+  if (!tc || typeof tc !== 'string') return { valid: false };
+  const parts = tc.trim().split('-');
+  if (parts.length < 5) return { valid: false, error: 'Must have at least 5 parts' };
+  const [b, c, s, ch, ...rest] = parts;
+  const sRes = validateSubjectCode(b, c, s);
+  if (!sRes.valid) return sRes;
+  if (!/^\d+$/.test(ch)) return { valid: false, error: 'Invalid chapter' };
+  const tNum = rest.join('-');
+  if (!/^[\d\.]+$/.test(tNum)) return { valid: false, error: 'Invalid topic number' };
+  return { valid: true };
+}
+
+function validateQuestionCode(qc) {
+  if (!qc || typeof qc !== 'string') return { valid: false };
+  const parts = qc.trim().split('-');
+  if (parts.length < 7) return { valid: false, error: 'Must have at least 7 parts' };
+  const seq = parts[parts.length - 1];
+  const type = parts[parts.length - 2];
+  const topicCode = parts.slice(0, parts.length - 2).join('-');
+  const tRes = validateTopicCode(topicCode);
+  if (!tRes.valid) return tRes;
+  if (!CANONICAL_TYPES.includes(type)) return { valid: false, error: `Invalid question type ${type}` };
+  if (!/^\d{3,}$/.test(seq)) return { valid: false, error: 'Invalid sequence' };
+  return { valid: true };
+}
+
+test('Strict Student Code format (ST-YYYY-XXXXXX) enforced', () => {
+  assert.strictEqual(validateStudentCode('ST-2026-000001').valid, true);
+  assert.strictEqual(validateStudentCode('ST-2026-000050').valid, true);
+  assert.strictEqual(validateStudentCode('ST-26-001').valid, false);
+  assert.strictEqual(validateStudentCode('STUDENT-001').valid, false);
+  assert.strictEqual(validateStudentCode(null).valid, false);
+});
+
+test('Strict Subject Code per Board & Class strictly rejects legacy aliases', () => {
+  // MH Class 8: MTH is canonical, MATH is legacy rejected
+  assert.strictEqual(validateSubjectCode('MH', '8', 'MTH').valid, true);
+  assert.strictEqual(validateSubjectCode('MH', '8', 'MATH').valid, false);
+  assert.strictEqual(validateSubjectCode('MH', '8', 'SCI').valid, true);
+  // CBSE Class 8: MGP1 is canonical, MATH is rejected
+  assert.strictEqual(validateSubjectCode('CBSE', '8', 'MGP1').valid, true);
+  assert.strictEqual(validateSubjectCode('CBSE', '8', 'MATH').valid, false);
+});
+
+test('Strict Topic Code barrier rejects non-canonical subjects or malformed chapters', () => {
+  assert.strictEqual(validateTopicCode('MH-8-MTH-13-13.1.2').valid, true);
+  assert.strictEqual(validateTopicCode('CBSE-8-MGP1-3-3.1').valid, true);
+  assert.strictEqual(validateTopicCode('MH-8-MATH-13-13.1.2').valid, false); // Legacy MATH rejected
+  assert.strictEqual(validateTopicCode('MH-8-MTH-Ch13-13.1.2').valid, false); // 'Ch13' rejected, must be numeric
+});
+
+test('Strict Question Code barrier rejects invalid types, short sequences, or bad topic prefixes', () => {
+  assert.strictEqual(validateQuestionCode('MH-8-MTH-13-13.1.2-OSC-001').valid, true);
+  assert.strictEqual(validateQuestionCode('CBSE-8-MGP1-3-3.1-SLA-010').valid, true);
+  assert.strictEqual(validateQuestionCode('MH-8-MATH-13-13.1.2-OSC-001').valid, false); // Legacy subject in questionCode rejected
+  assert.strictEqual(validateQuestionCode('MH-8-MTH-13-13.1.2-XYZ-001').valid, false); // Invalid question type rejected
+  assert.strictEqual(validateQuestionCode('MH-8-MTH-13-13.1.2-OSC-1').valid, false); // Sequence < 3 digits rejected
+});
+
 console.log('\n================================================================');
 console.log(`🎉 INVARIANT VERIFICATION SUMMARY: ${passedTests} / ${totalTests} TESTS PASSED`);
 console.log('================================================================\n');

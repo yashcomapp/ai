@@ -6,6 +6,7 @@ import { ChunkedBatch } from '@/lib/firebase/batch';
 import { shuffleArray, isQuestionQuarantined } from '@/lib/questionTypes';
 import { getDateKeyIST } from '@/lib/dateUtils';
 import { getCachedBatches } from '@/lib/firebase/cache';
+import { assertCanonicalExamPayload } from '@/lib/canonicalValidation';
 
 export async function GET(request: NextRequest) {
   try {
@@ -26,7 +27,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ success: true, batches, syllabusSubjects });
   } catch (err: any) {
     console.error(err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    const status = err.message?.includes('[CANONICAL BARRIER VIOLATION]') ? 400 : 500;
+    return NextResponse.json({ error: err.message }, { status });
   }
 }
 export async function POST(request: Request) {
@@ -141,6 +143,9 @@ export async function POST(request: Request) {
       createdBy: createdBy || 'admin'
     };
 
+    // Canonical Ingress Barrier (Rule 2.R & 2.L & 2.K)
+    assertCanonicalExamPayload(examData);
+
     await adminDb.collection('subjectiveExams').doc(examId).set(examData);
 
     // 3. Write Assignment mapping to subjectiveAssignments
@@ -189,6 +194,7 @@ export async function POST(request: Request) {
 
   } catch (err: any) {
     console.error(err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    const status = err.message?.includes('[CANONICAL BARRIER VIOLATION]') ? 400 : 500;
+    return NextResponse.json({ error: err.message }, { status });
   }
 }

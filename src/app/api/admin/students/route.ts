@@ -5,6 +5,7 @@ import { ChunkedBatch } from '@/lib/firebase/batch';
 import { getFromCache, setInCache, invalidateCache, getCachedBatches } from '@/lib/firebase/cache';
 import { isDemoUser } from '@/lib/studentDb';
 import { ExamReviewService } from '@/services/examReview.service';
+import { assertCanonicalStudentCode } from '@/lib/canonicalValidation';
 
 export async function GET(request: Request) {
   try {
@@ -74,7 +75,8 @@ export async function GET(request: Request) {
     });
   } catch (err: any) {
     console.error(err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    const status = err.message?.includes('[CANONICAL BARRIER VIOLATION]') ? 400 : 500;
+    return NextResponse.json({ error: err.message }, { status });
   }
 }
 
@@ -86,6 +88,9 @@ export async function POST(request: Request) {
     const body = await request.json();
 
     if (body.action === 'sweep_autonomous') {
+      if (body.studentCode) {
+        assertCanonicalStudentCode(body.studentCode);
+      }
       const result = await ExamReviewService.sweepAutonomousReviews(body.studentCode);
       return NextResponse.json(result);
     }
@@ -96,6 +101,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing parameters' }, { status: 400 });
     }
     
+    // Canonical Ingress Barrier (Rule 2.R & 2.B)
+    if (updateData.studentCode) {
+      assertCanonicalStudentCode(updateData.studentCode);
+    }
+
     // Exclude protected system fields from manual updates
     const cleanUpdates = { ...updateData };
     delete cleanUpdates.id;
@@ -214,7 +224,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true });
   } catch (err: any) {
     console.error(err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    const status = err.message?.includes('[CANONICAL BARRIER VIOLATION]') ? 400 : 500;
+    return NextResponse.json({ error: err.message }, { status });
   }
 }
 
@@ -276,6 +287,7 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ success: true });
   } catch (err: any) {
     console.error(err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    const status = err.message?.includes('[CANONICAL BARRIER VIOLATION]') ? 400 : 500;
+    return NextResponse.json({ error: err.message }, { status });
   }
 }

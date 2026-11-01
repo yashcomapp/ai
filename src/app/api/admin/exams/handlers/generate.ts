@@ -13,6 +13,7 @@ import {
   buildSyllabusHierarchyFromDocs 
 } from '@/lib/syllabusUtils';
 import { getCachedSyllabus, getCachedTemplates } from '@/lib/firebase/cache';
+import { assertCanonicalExamPayload } from '@/lib/canonicalValidation';
 
 
 const INITIAL_METADATA_TTL = 300000; // 5 minutes
@@ -690,6 +691,9 @@ export async function POST(req: NextRequest) {
         source: 'exam_generator'
       };
 
+      // Canonical Ingress Barrier (Rule 2.R & 2.L & 2.K)
+      assertCanonicalExamPayload(examData);
+
       if (isAllSubjective) {
         examData.questionIds = questionCodes || [];
         examData.mode = 'home';
@@ -754,6 +758,7 @@ export async function POST(req: NextRequest) {
 
   } catch (error: any) {
     console.error('API create generated exam error:', error);
-    return NextResponse.json({ message: error.message || 'Internal Server Error' }, { status: 500 });
+    const status = error.message?.includes('[CANONICAL BARRIER VIOLATION]') ? 400 : 500;
+    return NextResponse.json({ message: error.message || 'Internal Server Error' }, { status });
   }
 }

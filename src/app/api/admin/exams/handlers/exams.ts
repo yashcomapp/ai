@@ -13,6 +13,7 @@ import { getCanonicalSubjectName, parseTopicCode, normalizeTopicCode } from '@/l
 import { getObjectiveExamTopics, getSubjectiveExamTopics, getExamDateKey, isExamForStudent, QuotientService } from '@/services/quotient.service';
 import { ExamService, getAssignmentsForBatches } from '@/services/exam.service';
 import { getCachedBatches } from '@/lib/firebase/cache';
+import { assertCanonicalStudentCode } from '@/lib/canonicalValidation';
 
 const parseIST = (dateStr: string): Date => {
   if (!dateStr) return new Date();
@@ -946,6 +947,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'Missing parameters (examId, type).' }, { status: 400 });
     }
 
+    // Canonical Ingress Barrier (Rule 2.R & 2.B)
+    if (Array.isArray(targetStudents)) {
+      for (const sc of targetStudents) {
+        if (sc) assertCanonicalStudentCode(sc);
+      }
+    }
+
     // Guard against duplicate active assignment by superseding/archiving previous assignment
     const collName = type === 'objective' ? 'batchAssignments' : 'subjectiveAssignments';
     const dupSnap = await adminDb.collection(collName)
@@ -1146,7 +1154,8 @@ export async function POST(req: NextRequest) {
     }
   } catch (error: any) {
     console.error('API create exam assignment error:', error);
-    return NextResponse.json({ message: error.message || 'Internal Server Error' }, { status: 500 });
+    const status = error.message?.includes('[CANONICAL BARRIER VIOLATION]') ? 400 : 500;
+    return NextResponse.json({ message: error.message || 'Internal Server Error' }, { status });
   }
 }
 

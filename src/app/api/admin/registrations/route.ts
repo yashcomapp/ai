@@ -4,6 +4,7 @@ import { adminDb, adminAuth } from '@/lib/firebase/admin';
 import { verifyRole, invalidateUserCache, syncUserCustomClaims } from '@/lib/auth';
 import { decrypt } from '@/lib/encryption';
 import { getBirthdatePassword } from '@/lib/dateUtils';
+import { assertCanonicalStudentCode } from '@/lib/canonicalValidation';
 export async function GET(req: NextRequest) {
   try {
     const adminUser = await verifyRole(req, 'admin');
@@ -145,6 +146,7 @@ export async function POST(req: NextRequest) {
       });
 
       const studentCode = `ST-${year}-${String(nextSeq).padStart(6, '0')}`;
+      assertCanonicalStudentCode(studentCode);
 
       // Step 2c: Retrieve batch class to populate user.class
       let batchClass = null;
@@ -391,7 +393,8 @@ export async function POST(req: NextRequest) {
 
   } catch (error: any) {
     console.error('API registrations action error:', error);
-    return NextResponse.json({ message: error.message || 'Internal Server Error' }, { status: 500 });
+    const status = error.message?.includes('[CANONICAL BARRIER VIOLATION]') ? 400 : 500;
+    return NextResponse.json({ message: error.message || 'Internal Server Error' }, { status });
   }
 }
 

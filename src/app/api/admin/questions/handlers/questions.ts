@@ -16,6 +16,7 @@ import {
   extractChapterFromTopic 
 } from '@/lib/syllabusUtils';
 import { syncTopicCountsToSyllabus } from '@/lib/syllabusSync';
+import { assertCanonicalQuestionPayload } from '@/lib/canonicalValidation';
 
 
 export async function GET(req: NextRequest) {
@@ -485,6 +486,9 @@ export async function POST(req: NextRequest) {
           }
         }
 
+        // Canonical Ingress Barrier (Rule 2.R & 2.K)
+        assertCanonicalQuestionPayload(questionDoc);
+
         if (item.id && item.id !== finalCode) {
           batch.delete(adminDb.collection('questions').doc(item.id));
         }
@@ -627,6 +631,9 @@ export async function POST(req: NextRequest) {
       questionDoc.timesUsed = 0;
     }
 
+    // Canonical Ingress Barrier (Rule 2.R & 2.K)
+    assertCanonicalQuestionPayload(questionDoc);
+
     if (id && id !== finalCode) {
       await adminDb.collection('questions').doc(id).delete();
     }
@@ -642,7 +649,8 @@ export async function POST(req: NextRequest) {
 
   } catch (error: any) {
     console.error('API save question error:', error);
-    return NextResponse.json({ message: error.message || 'Internal Server Error' }, { status: 500 });
+    const status = error.message?.includes('[CANONICAL BARRIER VIOLATION]') ? 400 : 500;
+    return NextResponse.json({ message: error.message || 'Internal Server Error' }, { status });
   }
 }
 
