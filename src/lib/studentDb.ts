@@ -3,7 +3,7 @@ import { getCachedSyllabus, getCachedBatches, getFromCache, setInCache } from '@
 import { getCachedSyllabusTopicsMap, fetchTopicIndexByCodes } from '@/lib/syllabusServerUtils';
 import { getDateKeyIST } from '@/lib/dateUtils';
 import { calculateUnifiedMetrics, extractConductedTopicCodes, getRequiredConfidence, classifyAssignedTopics } from '@/lib/dashboardMetrics';
-import { deriveTopicCodeFromQuestionCode, getCanonicalSubjectName, parseTopicCode } from '@/lib/questionTypes';
+import { deriveTopicCodeFromQuestionCode, getCanonicalSubjectName, parseTopicCode, normalizeTopicCode } from '@/lib/questionTypes';
 import { calculateSrsSchedule, SrsSchedule } from '@/lib/srsRotation';
 import { deduplicateAssignments, resolveIntegrityScore } from '@/lib/dashboardDbUtils';
 import { getAssignmentsForBatches } from '@/services/exam.service';
@@ -1194,8 +1194,11 @@ export async function getStudentLearningData(userData: any, preloadedData?: Prel
         const isAbsent = absentExamIds.has(doc.id);
         const processTopic = (tc?: string) => {
           if (!tc || !tc.includes('-')) return;
-          rawConductedTopicCodes.add(tc);
-          if (isAbsent) absentTopicCodes.add(tc);
+          const norm = normalizeTopicCode(tc);
+          if (norm) {
+            rawConductedTopicCodes.add(norm);
+            if (isAbsent) absentTopicCodes.add(norm);
+          }
         };
 
         if (data.questionCodes && Array.isArray(data.questionCodes)) {
@@ -1212,8 +1215,11 @@ export async function getStudentLearningData(userData: any, preloadedData?: Prel
         const isAbsent = absentExamIds.has(doc.id);
         const processTopic = (tc?: string) => {
           if (!tc || !tc.includes('-')) return;
-          rawConductedTopicCodes.add(tc);
-          if (isAbsent) absentTopicCodes.add(tc);
+          const norm = normalizeTopicCode(tc);
+          if (norm) {
+            rawConductedTopicCodes.add(norm);
+            if (isAbsent) absentTopicCodes.add(norm);
+          }
         };
         if (data.topicCode) processTopic(data.topicCode);
         (data.topicCodes || data.topics || []).forEach((tc: string) => processTopic(tc));
@@ -1224,18 +1230,27 @@ export async function getStudentLearningData(userData: any, preloadedData?: Prel
   // Also harvest topics from mastery and practice reviews
   masterySnaps.docs.forEach((d: any) => {
     const tc = d.data().topicCode;
-    if (tc && tc.includes('-')) rawConductedTopicCodes.add(tc);
+    if (tc && tc.includes('-')) {
+      const norm = normalizeTopicCode(tc);
+      if (norm) rawConductedTopicCodes.add(norm);
+    }
   });
   parentReviewsSnap.docs.forEach((d: any) => {
     const tc = d.data().topicCode;
-    if (tc && tc.includes('-')) rawConductedTopicCodes.add(tc);
+    if (tc && tc.includes('-')) {
+      const norm = normalizeTopicCode(tc);
+      if (norm) rawConductedTopicCodes.add(norm);
+    }
   });
 
   // Canonical filtering matching Single Source of Truth
   const conductedTopicCodes = new Set<string>();
   rawConductedTopicCodes.forEach(code => {
-    if (code && /^(CBSE|MH)-\d+-[A-Za-z0-9]+-\d+-[\d\.]+$/.test(code.trim())) {
-      conductedTopicCodes.add(code.trim());
+    if (code) {
+      const norm = normalizeTopicCode(code.trim());
+      if (norm && /^(CBSE|MH)-\d+-[A-Za-z0-9]+-\d+-[\d\.]+$/.test(norm)) {
+        conductedTopicCodes.add(norm);
+      }
     }
   });
 

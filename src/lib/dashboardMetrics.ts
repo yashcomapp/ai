@@ -29,7 +29,7 @@
  */
 
 import { calculateSrsSchedule } from '@/lib/srsRotation';
-import { deriveTopicCodeFromQuestionCode, parseTopicCode, getCanonicalSubjectName } from '@/lib/questionTypes';
+import { deriveTopicCodeFromQuestionCode, parseTopicCode, getCanonicalSubjectName, normalizeTopicCode } from '@/lib/questionTypes';
 
 /**
  * Canonical Mastery Thresholds (Rule 2F Single Source of Truth)
@@ -71,9 +71,9 @@ export function extractConductedTopicCodes(input: ExtractConductedTopicCodesInpu
 
   const addCode = (code?: string) => {
     if (code && typeof code === 'string') {
-      const trimmed = code.trim();
-      if (isCanonicalTopicCode(trimmed)) {
-        conducted.add(trimmed);
+      const normalized = normalizeTopicCode(code.trim());
+      if (isCanonicalTopicCode(normalized)) {
+        conducted.add(normalized);
       }
     }
   };
@@ -223,13 +223,19 @@ export function classifyAssignedTopics(input: ClassifyAssignedTopicsInput): Clas
   const masteryMap = new Map<string, any>();
   topicMasteries.forEach(t => {
     if (t && t.topicCode) {
-      masteryMap.set(String(t.topicCode).trim(), t);
+      const raw = String(t.topicCode).trim();
+      const norm = normalizeTopicCode(raw);
+      masteryMap.set(raw, t);
+      const existing = masteryMap.get(norm);
+      if (!existing || Number(t.mastery || 0) > Number(existing.mastery || 0)) {
+        masteryMap.set(norm, t);
+      }
     }
   });
 
   // 2. Canonical filtering of assigned codes
   const rawCodes = Array.isArray(assignedTopicCodes) ? assignedTopicCodes : Array.from(assignedTopicCodes || []);
-  const validCodes = rawCodes.map(c => String(c || '').trim()).filter(isCanonicalTopicCode);
+  const validCodes = rawCodes.map(c => normalizeTopicCode(String(c || '').trim())).filter(isCanonicalTopicCode);
 
   // 3. Parent / Child Topic Code Resolution:
   // If both parent (e.g. CBSE-8-CURI-5-5.1) and subtopic (e.g. CBSE-8-CURI-5-5.1.1) exist in the assigned set,
@@ -242,7 +248,8 @@ export function classifyAssignedTopics(input: ClassifyAssignedTopicsInput): Clas
   const practiceCountMap = new Map<string, number>();
   const practiceQuestionsMap = new Map<string, number>();
   practiceReviews.forEach(r => {
-    const tCode = r.topicCode;
+    const rawCode = r.topicCode ? String(r.topicCode).trim() : '';
+    const tCode = rawCode ? normalizeTopicCode(rawCode) : '';
     if (tCode) {
       practiceCountMap.set(tCode, (practiceCountMap.get(tCode) || 0) + 1);
       const qCount = Number(
@@ -251,6 +258,12 @@ export function classifyAssignedTopics(input: ClassifyAssignedTopicsInput): Clas
       );
       practiceQuestionsMap.set(tCode, (practiceQuestionsMap.get(tCode) || 0) + qCount);
     }
+  });
+
+  const normAbsentTopicCodes = new Set<string>();
+  absentTopicCodes.forEach(c => {
+    const norm = normalizeTopicCode(String(c || '').trim());
+    if (norm) normAbsentTopicCodes.add(norm);
   });
 
   const mastered: ClassifiedTopicItem[] = [];
@@ -288,7 +301,7 @@ export function classifyAssignedTopics(input: ClassifyAssignedTopicsInput): Clas
       }
     }
 
-    const isAbsentExam = absentTopicCodes.has(tCode);
+    const isAbsentExam = normAbsentTopicCodes.has(tCode);
 
     const targetQuestions = Number(sData?.targetQuestions || sData?.totalQuestions || sData?.questionCount || 30);
     const topicClassification = sData?.topicClassification || sData?.classification || mData?.topicClassification || (targetQuestions <= 35 ? 'minor' : (targetQuestions >= 55 ? 'major' : 'medium'));

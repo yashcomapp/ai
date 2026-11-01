@@ -1,6 +1,6 @@
 import { adminDb } from '@/lib/firebase/admin';
 import { QuestionItem } from '@/types/question.types';
-import { deriveTopicCodeFromQuestionCode, isQuestionQuarantined } from '@/lib/questionTypes';
+import { deriveTopicCodeFromQuestionCode, isQuestionQuarantined, normalizeTopicCode } from '@/lib/questionTypes';
 import { getCanonicalBoardCode, getCanonicalSubjectCode } from '@/lib/syllabusUtils';
 
 export class QuestionRepository {
@@ -129,16 +129,7 @@ export class QuestionRepository {
    * Normalizes known legacy topic code aliases into canonical SSOT codes
    */
   static normalizeTopicCode(code: string): string {
-    if (!code) return code;
-    // Canonicalize legacy MH Class 8 Mathematics subject code: MH-8-MATH -> MH-8-MTH
-    if (code.startsWith('MH-8-MATH-')) {
-      return code.replace('MH-8-MATH-', 'MH-8-MTH-');
-    }
-    // Canonicalize legacy MH Class 9 SCIT ch8 typo: MH-9-SCIT-8-1.1 -> MH-9-SCIT-8-8.1.1
-    if (code === 'MH-9-SCIT-8-1.1') {
-      return 'MH-9-SCIT-8-8.1.1';
-    }
-    return code;
+    return normalizeTopicCode(code);
   }
 
   /**

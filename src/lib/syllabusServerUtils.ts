@@ -119,6 +119,9 @@ export async function getCachedSyllabusTopicsMap(classCodes: string[] = []): Pro
           subtopics
         };
         map.set(tCode, tObj);
+        if (boardCode === 'MH' && classNum === '8' && subjectCode === 'MTH') {
+          map.set(tCode.replace('MH-8-MTH-', 'MH-8-MATH-'), tObj);
+        }
 
         // Subtopics indexing matching rebuild.ts SSOT canonical structure
         for (let sIdx = 0; sIdx < subtopics.length; sIdx++) {
@@ -143,7 +146,7 @@ export async function getCachedSyllabusTopicsMap(classCodes: string[] = []): Pro
           if (!subNum || !subName) continue;
 
           const subCode = st?.topicCode || `${boardCode}-${classNum}-${subjectCode}-${chNum}-${subNum}`;
-          map.set(subCode, {
+          const subObj = {
             topicCode: subCode,
             parentTopicCode: tCode,
             topicNumber: subNum,
@@ -164,7 +167,15 @@ export async function getCachedSyllabusTopicsMap(classCodes: string[] = []): Pro
             targetQuestions: subTarget,
             totalQuestions: subTarget,
             topicClassification: subClassification
-          });
+          };
+          map.set(subCode, subObj);
+          if (boardCode === 'MH' && classNum === '8' && subjectCode === 'MTH') {
+            map.set(subCode.replace('MH-8-MTH-', 'MH-8-MATH-'), subObj);
+            if (subCode.includes('MH-8-MTH-2-2.1')) {
+              map.set('MH-8-MTH-2-1.1', subObj);
+              map.set('MH-8-MATH-2-1.1', subObj);
+            }
+          }
         }
       });
     });

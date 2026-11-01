@@ -655,22 +655,49 @@ export const SUBJECTIVE_QUESTION_TYPES = [
   { id: 'SLN', label: 'Numerical Long (SLN - 4m)', code: 'SLN' }
 ];
 
+/**
+ * SSOT Canonical Topic Code Normalizer:
+ * Enforces canonical board and subject standards across CBSE and Maharashtra Board.
+ * Ensures legacy aliases and known typos are mapped to canonical SSOT keys.
+ */
+export function normalizeTopicCode(code?: string | null): string {
+  if (!code || typeof code !== 'string') return '';
+  let normalized = code.trim();
+  // Canonicalize legacy MH Class 8 Mathematics subject code: MH-8-MATH -> MH-8-MTH
+  if (normalized.startsWith('MH-8-MATH-')) {
+    normalized = normalized.replace('MH-8-MATH-', 'MH-8-MTH-');
+  }
+  // Canonicalize legacy MH Class 8 Chapter 2 topic numbering typo: MH-8-MTH-2-1.1 -> MH-8-MTH-2-2.1
+  if (normalized.startsWith('MH-8-MTH-2-1.1')) {
+    normalized = normalized.replace('MH-8-MTH-2-1.1', 'MH-8-MTH-2-2.1');
+  }
+  // Canonicalize legacy MH Class 9 SCIT ch8 typo: MH-9-SCIT-8-1.1 -> MH-9-SCIT-8-8.1.1
+  if (normalized === 'MH-9-SCIT-8-1.1') {
+    normalized = 'MH-9-SCIT-8-8.1.1';
+  }
+  return normalized;
+}
+
 export function deriveTopicCodeFromQuestionCode(qCode: string): string {
   if (!qCode) return '';
-  const cleanCode = qCode.replace(/[-_]\d+$/, '');
+  let cleanCode = qCode.replace(/[-_]\d+$/, '');
+  if (cleanCode.startsWith('MH-8-MATH-')) {
+    cleanCode = cleanCode.replace('MH-8-MATH-', 'MH-8-MTH-');
+  }
   const parts = cleanCode.split(/[-_]/);
+  let derived = '';
   if (parts.length >= 5) {
     if (parts[4].includes('.')) {
-      return `${parts[0]}-${parts[1]}-${parts[2]}-${parts[3]}-${parts[4]}`;
+      derived = `${parts[0]}-${parts[1]}-${parts[2]}-${parts[3]}-${parts[4]}`;
     } else if (parts.length >= 7 && /^\d+$/.test(parts[4]) && /^\d+$/.test(parts[5]) && /^\d+$/.test(parts[6])) {
-      return `${parts[0]}-${parts[1]}-${parts[2]}-${parts[4]}-${parts[5]}.${parts[6]}`;
+      derived = `${parts[0]}-${parts[1]}-${parts[2]}-${parts[4]}-${parts[5]}.${parts[6]}`;
     } else if (parts.length === 6 && /^\d+$/.test(parts[4]) && /^\d+$/.test(parts[5])) {
-      return `${parts[0]}-${parts[1]}-${parts[2]}-${parts[4]}-${parts[4]}.${parts[5]}`;
+      derived = `${parts[0]}-${parts[1]}-${parts[2]}-${parts[4]}-${parts[4]}.${parts[5]}`;
     } else if (/^\d+$/.test(parts[3]) && parts[4].includes('.')) {
-      return `${parts[0]}-${parts[1]}-${parts[2]}-${parts[3]}-${parts[4]}`;
+      derived = `${parts[0]}-${parts[1]}-${parts[2]}-${parts[3]}-${parts[4]}`;
     }
   }
-  return '';
+  return normalizeTopicCode(derived);
 }
 
 export interface ParsedTopicCode {
@@ -693,7 +720,7 @@ export interface ParsedTopicCode {
  */
 export function parseTopicCode(topicCode?: string | null): ParsedTopicCode | null {
   if (!topicCode || typeof topicCode !== 'string') return null;
-  const clean = topicCode.trim();
+  const clean = normalizeTopicCode(topicCode);
   if (!clean.includes('-')) return null;
   const parts = clean.split('-');
   if (parts.length < 3) return null;
