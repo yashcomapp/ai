@@ -240,8 +240,10 @@ export async function getParentDashboardData(
   objectiveExamsMap.forEach((examData, id) => {
     let topicCode = '';
     if (Array.isArray(examData.topicCodes) && examData.topicCodes.length > 0) {
-      topicCode = examData.topicCodes[0];
-    } else {
+      const candidate = examData.topicCodes.find((tc: string) => tc && tc.split('-').length >= 5);
+      if (candidate) topicCode = candidate;
+    }
+    if (!topicCode) {
       const qCodes = examData.questionCodes || [];
       if (qCodes.length > 0) {
         topicCode = deriveTopicCodeFromQuestionCode(qCodes[0]);
@@ -258,8 +260,10 @@ export async function getParentDashboardData(
   subjectiveExamsMap.forEach((examData, id) => {
     let topicCode = '';
     if (Array.isArray(examData.topicCodes) && examData.topicCodes.length > 0) {
-      topicCode = examData.topicCodes[0];
-    } else {
+      const candidate = examData.topicCodes.find((tc: string) => tc && tc.split('-').length >= 5);
+      if (candidate) topicCode = candidate;
+    }
+    if (!topicCode) {
       const qIds = examData.questionIds || [];
       if (qIds.length > 0) {
         topicCode = deriveTopicCodeFromQuestionCode(qIds[0]);

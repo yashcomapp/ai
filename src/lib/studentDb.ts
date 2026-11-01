@@ -69,7 +69,7 @@ export function resolveTopicNames(syllabusList: any, examData: any) {
         Object.values(sylData.chapters).forEach((ch: any) => {
           if (String(ch.number) === String(targetChapterNum) && ch.topics) {
             ch.topics.forEach((t: any) => {
-              if (targetTopicCodes.includes(String(t.number))) {
+              if (targetTopicCodes.some((tc: string) => tc === String(t.number) || tc === t.topicCode || tc.endsWith(`-${t.number}`))) {
                 topicNames.push(t.name);
               }
             });
@@ -86,7 +86,7 @@ export function resolveTopicNames(syllabusList: any, examData: any) {
           Object.values(sylData.chapters).forEach((ch: any) => {
             if (ch.topics) {
               ch.topics.forEach((t: any) => {
-                if (targetTopicCodes.includes(String(t.number))) {
+                if (targetTopicCodes.some((tc: string) => tc === String(t.number) || tc === t.topicCode || tc.endsWith(`-${t.number}`))) {
                   topicNames.push(t.name);
                 }
               });

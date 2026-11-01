@@ -658,6 +658,26 @@ export async function POST(req: NextRequest) {
       const chapTrunc = truncateChapter(chapter || subjectName || 'Exam');
       const examId = `${seq3digit}-${boardCode}-${classNum}-${chapTrunc}-${topicPart}-${dateStrYY}`;
 
+      // Canonicalize topicCodes to full canonical SSOT format: {board}-{class}-{subject}-{chapter}-{topic}
+      const canonicalTopicCodes = Array.from(new Set(
+        (Array.isArray(topicCodes) ? topicCodes : []).map((tc: string) => {
+          if (tc && String(tc).split('-').length >= 5) return String(tc).trim();
+          const tStr = String(tc || '').trim();
+          const ch = tStr.includes('.') ? tStr.split('.')[0] : (chapterNumber || '1');
+          return `${boardCode}-${cleanClass}-${subjectCode}-${ch}-${tStr}`;
+        })
+      ));
+
+      if (Array.isArray(validQuestionCodes)) {
+        for (const qc of validQuestionCodes) {
+          const parts = String(qc).split('-');
+          if (parts.length >= 7) {
+            canonicalTopicCodes.push(parts.slice(0, parts.length - 2).join('-'));
+          }
+        }
+      }
+      const finalTopicCodes = Array.from(new Set(canonicalTopicCodes));
+
       const examData: any = {
         examId,
         id: examId,
@@ -675,7 +695,7 @@ export async function POST(req: NextRequest) {
         weightageMode: weightageMode || 'equal',
         chapter: chapter || '',
         chapterNumber: chapterNumber || '',
-        topicCodes: topicCodes || [],
+        topicCodes: finalTopicCodes,
         isMixed: !!isMixed,
         examType: examType || (isAllSubjective ? 'subjective' : 'obj'),
         examCategory: body.examCategory || templateDetails?.examCategory || 'standard',
