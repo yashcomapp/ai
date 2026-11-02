@@ -4,7 +4,7 @@ import { verifyRole } from '@/lib/auth';
 import { isTopicPurelyQualitative } from '@/lib/curriculumGuard';
 import { deriveTopicCodeFromQuestionCode, normalizeTopicCode } from '@/lib/questionTypes';
 import { classifyAssignedTopics } from '@/lib/dashboardMetrics';
-import { getFromCache, setInCache } from '@/lib/firebase/cache';
+import { getFromCache, setInCache, getCachedBatches } from '@/lib/firebase/cache';
 import { getCachedSyllabusTopicsMap } from '@/lib/syllabusServerUtils';
 
 export const dynamic = 'force-dynamic';
@@ -44,9 +44,10 @@ export async function GET(req: NextRequest) {
       return NextResponse.json(cachedResponse);
     }
 
-    // 1. Get batch details
-    const batchDoc = await adminDb.collection('batches').doc(batchId).get();
-    if (!batchDoc.exists) {
+    // 1. Get batch details (from in-memory cache to avoid redundant document reads)
+    const batchesSnap = await getCachedBatches();
+    const batchDoc = batchesSnap.docs.find(d => d.id === batchId);
+    if (!batchDoc) {
       return NextResponse.json({ message: 'Batch not found.' }, { status: 404 });
     }
     const batchData = batchDoc.data()!;
@@ -234,8 +235,8 @@ export async function GET(req: NextRequest) {
       // Decision strategy based on REAL DATA:
       // If we know cachedAvgDocs: compare targeted getAll count vs expected query reads.
       // If cachedAvgDocs is null: default to query path to establish baseline count safely without missing legacy docs.
-      const targetedRefsCount = studentCodes.length * variantsList.length;
-      const shouldUseGetAll = cachedAvgDocs !== null && targetedRefsCount < (studentCodes.length * cachedAvgDocs);
+      // Always use the query path: reads strictly existing documents and avoids phantom billed reads on non-existent references
+      const shouldUseGetAll = false;
 
       let totalMasteryDocsFound = 0;
 

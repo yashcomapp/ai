@@ -122,27 +122,32 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
 
   const fetcher = createTokenFetcher(firebaseUser);
 
-  const [localCache, setLocalCache] = useState<DashboardData | undefined>(undefined);
-
-  useEffect(() => {
+  const [localCache, setLocalCache] = useState<DashboardData | undefined>(() => {
+    if (typeof window === 'undefined') return undefined;
     try {
-      const cached = localStorage.getItem('yc_student_dashboard_cache');
-      if (cached) {
-        setLocalCache(JSON.parse(cached));
+      const raw = sessionStorage.getItem('yc_student_dashboard_cache') || localStorage.getItem('yc_student_dashboard_cache');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        const cachedAt = parsed?._cachedAt || 0;
+        // Accept fresh cache within 3 minutes for instant zero-read loading
+        if (Date.now() - cachedAt < 180000) {
+          return parsed.data || parsed;
+        }
       }
     } catch (e) {
       console.warn('Failed to load cached dashboard data:', e);
     }
-  }, []);
+    return undefined;
+  });
 
   const { data, error, isLoading, mutate } = useSWR<DashboardData>(
     firebaseUser ? '/api/student/dashboard' : null,
     fetcher,
     {
       revalidateOnFocus: false,
-      revalidateOnMount: !initialData,
+      revalidateOnMount: !initialData && !localCache,
       revalidateIfStale: false,
-      dedupingInterval: 300000,
+      dedupingInterval: 120000,
       keepPreviousData: true,
       fallbackData: initialData || localCache
     }
@@ -214,7 +219,9 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
   useEffect(() => {
     if (data) {
       try {
-        localStorage.setItem('yc_student_dashboard_cache', JSON.stringify(data));
+        const payload = JSON.stringify({ data, _cachedAt: Date.now() });
+        sessionStorage.setItem('yc_student_dashboard_cache', payload);
+        localStorage.setItem('yc_student_dashboard_cache', payload);
       } catch (e) {
         console.warn('Failed to cache dashboard data:', e);
       }

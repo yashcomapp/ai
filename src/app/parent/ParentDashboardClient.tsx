@@ -131,13 +131,33 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
 
   const fetcher = createTokenFetcher(firebaseUser);
 
-  const [localCache, setLocalCache] = useState<ParentDashboardData | null>(null);
+  const [localCache, setLocalCache] = useState<ParentDashboardData | null>(() => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const code = defaultChildCode;
+      if (code) {
+        const cached = localStorage.getItem(`yc_parent_dashboard_cache_${code}`);
+        if (cached) return JSON.parse(cached);
+      }
+    } catch (e) {}
+    return null;
+  });
   const [localReviewsCache, setLocalReviewsCache] = useState<{
     objectiveReviews: ReviewItem[];
     practiceReviews: ReviewItem[];
     subjectiveReviews: ReviewItem[];
     entranceReviews: ReviewItem[];
-  } | null>(null);
+  } | null>(() => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const code = defaultChildCode;
+      if (code) {
+        const cachedReviews = localStorage.getItem(`yc_parent_reviews_cache_${code}`);
+        if (cachedReviews) return JSON.parse(cachedReviews);
+      }
+    } catch (e) {}
+    return null;
+  });
 
   useEffect(() => {
     if (!selectedChildCode) return;
@@ -178,12 +198,12 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
       return resData;
     },
     { 
-      fallbackData: selectedChildCode === defaultChildCode ? serverInitialData : (localCache || undefined),
+      fallbackData: selectedChildCode === defaultChildCode ? (serverInitialData || localCache || undefined) : (localCache || undefined),
       revalidateOnFocus: false,
-      revalidateOnMount: !serverInitialData,
+      revalidateOnMount: !serverInitialData && !localCache,
       revalidateIfStale: false,
       keepPreviousData: true,
-      dedupingInterval: 300000 
+      dedupingInterval: 120000 
     }
   );
 

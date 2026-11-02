@@ -147,7 +147,7 @@ export async function GET(req: NextRequest) {
       recentRegistrations: recentRegs
     };
 
-    setInCache(cacheKey, result, 45000); // 45s in-memory cache
+    setInCache(cacheKey, result, 120000); // 120s in-memory cache
 
     return NextResponse.json(result, {
       headers: {

@@ -137,6 +137,20 @@ export async function GET(req: NextRequest) {
       }
     }
 
+    const bypassCache = req.headers.get('x-bypass-cache') === 'true' ||
+      req.headers.get('cache-control')?.includes('no-cache') ||
+      req.headers.get('cache-control')?.includes('no-store') ||
+      searchParams.get('fresh') === 'true' ||
+      searchParams.get('refresh') === 'true';
+
+    const cacheKey = `parent_reviews_${studentCode}`;
+    if (!bypassCache) {
+      const cached = getFromCache<any>(cacheKey);
+      if (cached) {
+        return NextResponse.json(cached);
+      }
+    }
+
     // Fetch student profile to see if they are autonomous and verify status
     const studentUserSnap = await adminDb.collection('users')
       .where('role', '==', 'student')
@@ -522,6 +536,8 @@ export async function GET(req: NextRequest) {
       entranceReviews: sortedEntranceReviews,
       isAutonomousChild: isAutonomous
     };
+
+    setInCache(cacheKey, responseData, 120000); // 2-min in-memory cache
 
     return NextResponse.json(responseData, {
       headers: {

@@ -6,6 +6,7 @@ import { IntegrityService } from '@/services/integrity.service';
 import { deriveTopicCodeFromQuestionCode, parseTopicCode } from '@/lib/questionTypes';
 import { getStudentResultsData, determineExamType } from '@/lib/resultsDb';
 import { resolveParentStudentCodes } from '@/lib/dashboardDbUtils';
+import { getFromCache, setInCache } from '@/lib/firebase/cache';
 
 export async function GET(req: NextRequest) {
   try {
@@ -43,6 +44,17 @@ export async function GET(req: NextRequest) {
     }
 
     if (id) {
+      const bypassCache = req.headers.get('x-bypass-cache') === 'true' ||
+        req.headers.get('cache-control')?.includes('no-cache') ||
+        searchParams.get('fresh') === 'true';
+      const scorecardCacheKey = `scorecard_${id}_${studentCode || 'any'}`;
+      if (!bypassCache) {
+        const cachedScorecard = getFromCache<any>(scorecardCacheKey);
+        if (cachedScorecard) {
+          return NextResponse.json(cachedScorecard);
+        }
+      }
+
       let reviewData: any = null;
       let isPractice = false;
       let evaluationsList: any[] = [];
@@ -636,7 +648,7 @@ export async function GET(req: NextRequest) {
 
       const resolvedSubmittedAt = reviewData.submittedAt || reviewData.completedAt || reviewData.createdAt || reviewData.timestamp || reviewData.updatedAt || reviewData.startedAt || reviewData.processedAt || null;
 
-      return NextResponse.json({
+      const scorecardResult = {
         id,
         examId: reviewData.examId || reviewData.examCode || (id.includes('_') ? id.split('_')[0] : id),
         studentCode: reviewData.studentCode || studentCode,
@@ -681,16 +693,39 @@ export async function GET(req: NextRequest) {
         })(),
         wrongAnswerReasons: reviewData.wrongAnswerReasons || [],
         questions: questionsWithAnswers
-      });
+      };
+
+      setInCache(scorecardCacheKey, scorecardResult, 300000); // 5 min cache for completed scorecards
+      return NextResponse.json(scorecardResult);
     }
 
     const isListAutonomous = student?.userData?.autonomous === true;
     const studentBatches = student?.userData?.batchIds || [];
 
+    const bypassListCache = req.headers.get('x-bypass-cache') === 'true' ||
+      req.headers.get('cache-control')?.includes('no-cache') ||
+      req.headers.get('cache-control')?.includes('no-store') ||
+      searchParams.get('fresh') === 'true' ||
+      searchParams.get('refresh') === 'true';
+
+    const resultsListCacheKey = `student_results_${studentCode}_${isListAutonomous ? 'auto' : 'norm'}`;
+    if (!bypassListCache) {
+      const cachedList = getFromCache<any>(resultsListCacheKey);
+      if (cachedList) {
+        return NextResponse.json(cachedList, {
+          headers: {
+            'Cache-Control': 'private, max-age=45, stale-while-revalidate=90'
+          }
+        });
+      }
+    }
+
     const data = await getStudentResultsData(studentCode, isListAutonomous, studentBatches);
+    setInCache(resultsListCacheKey, data, 120000); // 2 min in-memory cache
+
     return NextResponse.json(data, {
       headers: {
-        'Cache-Control': 'private, max-age=15, stale-while-revalidate=30'
+        'Cache-Control': 'private, max-age=45, stale-while-revalidate=90'
       }
     });
 

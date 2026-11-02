@@ -40,7 +40,7 @@ export async function GET(req: NextRequest) {
     }
 
     const data = await getDashboardData(uid, userData, rangeDays, bypassCache);
-    setInCache(cacheKey, data, 45000); // 45s in-memory cache
+    setInCache(cacheKey, data, 120000); // 120s in-memory cache
 
     return NextResponse.json(data, { headers: responseHeaders });
   } catch (error: any) {

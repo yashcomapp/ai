@@ -41,106 +41,135 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    let unsubscribe = () => {};
-    try {
-      let q;
-      if (role === 'admin') {
-        q = query(collection(db, 'chatRooms'), orderBy('lastMessage.timestamp', 'desc'), limit(100));
-      } else if (role === 'student') {
-        const sCode = user?.studentCode;
-        if (!sCode) {
-          setLoading(false);
-          return;
-        }
-        q = query(collection(db, 'chatRooms'), where('participants', 'array-contains', sCode));
-      } else if (role === 'parent') {
-        const pKey = user?.email ? `PR-${user.email.toLowerCase().trim()}` : '';
-        if (!pKey) {
-          setLoading(false);
-          return;
-        }
-        q = query(collection(db, 'chatRooms'), where('participants', 'array-contains', pKey));
-      } else {
-        setLoading(false);
+    let unsubscribe: (() => void) | null = null;
+
+    const setupListener = () => {
+      // Zero Idle Reads Invariant: Do not subscribe if the tab/window is hidden
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
         return;
       }
+      if (unsubscribe) return;
 
-      unsubscribe = onSnapshot(
-        q,
-        (snapshot) => {
-          let total = 0;
-          const rms: any[] = [];
+      try {
+        let q;
+        if (role === 'admin') {
+          q = query(collection(db, 'chatRooms'), orderBy('lastMessage.timestamp', 'desc'), limit(50));
+        } else if (role === 'student') {
+          const sCode = user?.studentCode;
+          if (!sCode) {
+            setLoading(false);
+            return;
+          }
+          q = query(collection(db, 'chatRooms'), where('participants', 'array-contains', sCode));
+        } else if (role === 'parent') {
+          const pKey = user?.email ? `PR-${user.email.toLowerCase().trim()}` : '';
+          if (!pKey) {
+            setLoading(false);
+            return;
+          }
+          q = query(collection(db, 'chatRooms'), where('participants', 'array-contains', pKey));
+        } else {
+          setLoading(false);
+          return;
+        }
 
-          snapshot.docs.forEach((doc) => {
-            const data = doc.data();
-            rms.push({
-              roomId: doc.id,
-              id: doc.id,
-              ...data,
+        unsubscribe = onSnapshot(
+          q,
+          (snapshot) => {
+            let total = 0;
+            const rms: any[] = [];
+
+            snapshot.docs.forEach((doc) => {
+              const data = doc.data();
+              rms.push({
+                roomId: doc.id,
+                id: doc.id,
+                ...data,
+              });
+
+              const uCounts = data.unreadCounts || {};
+
+              if (role === 'admin') {
+                const adminCount = Number(uCounts['admin'] || 0);
+                const uidCount = firebaseUser?.uid ? Number(uCounts[firebaseUser.uid] || 0) : 0;
+                total += Math.max(adminCount, uidCount);
+              } else if (role === 'student') {
+                const sCode = user?.studentCode || '';
+                const sCount = sCode
+                  ? Math.max(
+                      Number(uCounts[sCode] || 0),
+                      Number(uCounts[sCode.toUpperCase()] || 0),
+                      Number(uCounts[sCode.toLowerCase()] || 0)
+                    )
+                  : 0;
+                const uidCount = firebaseUser?.uid ? Number(uCounts[firebaseUser.uid] || 0) : 0;
+                total += Math.max(sCount, uidCount);
+              } else if (role === 'parent') {
+                const pKey = user?.email ? `PR-${user.email.toLowerCase().trim()}` : '';
+                const sCode = user?.studentCode || '';
+                const pCount = pKey ? Number(uCounts[pKey] || 0) : 0;
+                const sCount = sCode
+                  ? Math.max(
+                      Number(uCounts[`PR-${sCode}`] || 0),
+                      Number(uCounts[`PR-${sCode.toUpperCase()}`] || 0)
+                    )
+                  : 0;
+                const uidCount = firebaseUser?.uid ? Number(uCounts[firebaseUser.uid] || 0) : 0;
+                total += Math.max(pCount, sCount, uidCount);
+              }
             });
 
-            const uCounts = data.unreadCounts || {};
-
-            if (role === 'admin') {
-              const adminCount = Number(uCounts['admin'] || 0);
-              const uidCount = firebaseUser?.uid ? Number(uCounts[firebaseUser.uid] || 0) : 0;
-              total += Math.max(adminCount, uidCount);
-            } else if (role === 'student') {
-              const sCode = user?.studentCode || '';
-              const sCount = sCode
-                ? Math.max(
-                    Number(uCounts[sCode] || 0),
-                    Number(uCounts[sCode.toUpperCase()] || 0),
-                    Number(uCounts[sCode.toLowerCase()] || 0)
-                  )
-                : 0;
-              const uidCount = firebaseUser?.uid ? Number(uCounts[firebaseUser.uid] || 0) : 0;
-              total += Math.max(sCount, uidCount);
-            } else if (role === 'parent') {
-              const pKey = user?.email ? `PR-${user.email.toLowerCase().trim()}` : '';
-              const sCode = user?.studentCode || '';
-              const pCount = pKey ? Number(uCounts[pKey] || 0) : 0;
-              const sCount = sCode
-                ? Math.max(
-                    Number(uCounts[`PR-${sCode}`] || 0),
-                    Number(uCounts[`PR-${sCode.toUpperCase()}`] || 0)
-                  )
-                : 0;
-              const uidCount = firebaseUser?.uid ? Number(uCounts[firebaseUser.uid] || 0) : 0;
-              total += Math.max(pCount, sCount, uidCount);
-            }
-          });
-
-          // Trigger sound if unread count increased and user is not currently in chat
-          if (!isInitialMountRef.current && total > previousUnreadRef.current) {
-            const isCurrentlyInChat = pathnameRef.current?.includes('/chat');
-            if (!isCurrentlyInChat) {
-              try {
-                playNotificationSound();
-              } catch {
-                // Ignore audio autoplay restrictions
+            // Trigger sound if unread count increased and user is not currently in chat
+            if (!isInitialMountRef.current && total > previousUnreadRef.current) {
+              const isCurrentlyInChat = pathnameRef.current?.includes('/chat');
+              if (!isCurrentlyInChat) {
+                try {
+                  playNotificationSound();
+                } catch {
+                  // Ignore audio autoplay restrictions
+                }
               }
+            } else {
+              isInitialMountRef.current = false;
             }
-          } else {
-            isInitialMountRef.current = false;
+
+            previousUnreadRef.current = total;
+            setUnreadCount(total);
+            setRooms(rms);
+            setLoading(false);
+          },
+          (err) => {
+            console.warn('ChatContext listener warning:', err);
+            setLoading(false);
           }
+        );
+      } catch (err) {
+        console.warn('ChatContext setup error:', err);
+        setLoading(false);
+      }
+    };
 
-          previousUnreadRef.current = total;
-          setUnreadCount(total);
-          setRooms(rms);
-          setLoading(false);
-        },
-        (err) => {
-          console.warn('ChatContext listener warning:', err);
-          setLoading(false);
+    const handleVisibility = () => {
+      if (document.visibilityState === 'hidden') {
+        if (unsubscribe) {
+          unsubscribe();
+          unsubscribe = null;
         }
-      );
-    } catch (err) {
-      console.warn('ChatContext setup error:', err);
-      setLoading(false);
-    }
+      } else {
+        setupListener();
+      }
+    };
 
-    return () => unsubscribe();
+    setupListener();
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibility);
+      if (unsubscribe) {
+        unsubscribe();
+        unsubscribe = null;
+      }
+    };
   }, [firebaseUser, user?.studentCode, user?.email, role]);
 
   const value = useMemo(
