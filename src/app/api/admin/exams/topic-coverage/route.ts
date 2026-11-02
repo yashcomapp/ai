@@ -35,15 +35,15 @@ export async function GET(req: NextRequest) {
     const batchData = batchDoc.data()!;
     const batchClass = String(batchData.class || batchData.className || '').trim();
 
-    // Fetch active students in this batch
+    // Fetch active students in this batch (Rule 2C: filter inactive students in memory to avoid requiring composite inequality index)
     const studentsSnap = await adminDb.collection('users')
       .where('role', '==', 'student')
-      .where('status', '!=', 'inactive')
       .get();
 
     const batchStudents = studentsSnap.docs
       .map(d => ({ id: d.id, ...d.data() }))
       .filter((s: any) => {
+        if (s.status === 'inactive') return false;
         const bIds = s.batchIds || [s.batchId].filter(Boolean);
         return bIds.includes(batchId) || (batchClass && (s.class === batchClass || s.className === batchClass));
       });

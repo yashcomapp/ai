@@ -78,14 +78,13 @@ export async function POST(req: NextRequest) {
 
     // 3. Look up student user documents to get their UID and user-facing name (Rule 2B/2D)
     const userDocsSnap = await adminDb.collection('users')
-      .where('role', '==', 'student')
       .where('studentCode', 'in', studentCodes.slice(0, 30))
       .get();
 
     const studentMap = new Map<string, { uid: string; name: string }>();
     userDocsSnap.docs.forEach(doc => {
       const data = doc.data();
-      if (data.studentCode) {
+      if (data.role === 'student' && data.studentCode) {
         studentMap.set(data.studentCode, {
           uid: doc.id,
           name: data.name || data.studentCode
