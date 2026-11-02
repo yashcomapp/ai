@@ -412,6 +412,7 @@ export class ExamReviewService {
         for (const doc of pendingParentReviewsSnap.docs) {
           batch.update(doc.ref, {
             status: 'approved',
+            parentStatus: 'approved',
             autoApprovedAutonomous: true,
             updatedAt: now
           });

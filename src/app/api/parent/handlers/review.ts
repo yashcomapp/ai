@@ -662,12 +662,13 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ message: 'Access Denied. Review document does not match this child.' }, { status: 403 });
       }
 
-      if (rData.parentStatus === 'approved') {
+      if (rData.parentStatus === 'approved' && rData.status === 'approved') {
         return NextResponse.json({ success: true, message: 'Review successfully approved!' });
       }
 
-      // 1. Update review parentStatus
+      // 1. Update review parentStatus and status for SSOT parity
       await reviewRef.update({
+        status: 'approved',
         parentStatus: 'approved',
         reviewedAt: new Date(),
         reviewedBy: parentEmail,
@@ -714,8 +715,9 @@ export async function POST(req: NextRequest) {
           const ref = snap.ref;
           const rId = snap.id;
           const rData = snap.data()!;
-          if (rData.studentCode === childStudentCode && rData.parentStatus !== 'approved') {
+          if (rData.studentCode === childStudentCode && (rData.parentStatus !== 'approved' || rData.status !== 'approved')) {
             batch.update(ref, {
+              status: 'approved',
               parentStatus: 'approved',
               reviewedAt: new Date(),
               reviewedBy: parentEmail,

@@ -154,6 +154,12 @@ export async function resolveParentStudentCodes(parentData: any): Promise<string
     }
   }
 
+  // Zero-Cost Read Optimization: If parent already has valid studentCodes array, return immediately without redundant queries
+  if (studentCodes.length > 0) {
+    return Array.from(new Set(studentCodes.filter(Boolean)));
+  }
+
+  // Fallback ONLY for newly registered or unlinked parents without studentCodes
   const parentEmail = parentData?.email?.toLowerCase();
   const parentPhone = parentData?.phone || parentData?.parentPhone || parentData?.mobile;
   if (parentEmail || parentPhone) {
@@ -187,6 +193,14 @@ export async function resolveParentStudentCodes(parentData: any): Promise<string
           studentCodes.push(data.studentCode);
         }
       });
+
+      // Self-heal parent document by caching resolved studentCodes so fallback queries run only once
+      const parentDocId = parentData?.id || parentData?.uid;
+      if (parentDocId && studentCodes.length > 0) {
+        adminDb.collection('users').doc(parentDocId).update({
+          studentCodes: Array.from(new Set(studentCodes.filter(Boolean)))
+        }).catch(() => null);
+      }
     } catch (err) {
       console.warn('Error resolving parent student codes:', err);
     }
