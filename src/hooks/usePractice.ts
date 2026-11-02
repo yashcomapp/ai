@@ -14,13 +14,15 @@ export function usePractice() {
     category: string;
     size: number;
     idToken: string;
+    numericalFocus?: boolean;
   }) => {
     if (isBusyRef.current) return null;
     isBusyRef.current = true;
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/student/practice?topicCode=${params.topicCode}&category=${params.category}&size=${params.size}`, {
+      const numQuery = params.numericalFocus ? '&numericalFocus=true' : '';
+      const res = await fetch(`/api/student/practice?topicCode=${params.topicCode}&category=${params.category}&size=${params.size}${numQuery}`, {
         headers: { 'Authorization': `Bearer ${params.idToken}` }
       });
       if (!res.ok) {

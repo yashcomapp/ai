@@ -101,9 +101,29 @@ export async function GET(req: NextRequest) {
     const maxQuestionsAllowed = isMinorTopic ? 12 : (isMajorTopic ? 24 : 18);
 
     const isRevisionMode = category === 'revision';
-    const isPracticeLimitReached = !isRevisionMode && (completedPractices >= maxSessionsAllowed || (practiceQuestionsAttempted >= maxQuestionsAllowed && mastery < 80));
 
-    // 1. Quota Gate: Topic sets completed
+    // Check for Teacher-Assigned Practice (Assigned tracks bypass self-serve quotas)
+    let isTeacherAssigned = false;
+    let hasNumericalFocus = searchParams.get('numericalFocus') === 'true';
+
+    try {
+      const assignedSnap = await adminDb.collection('assignedPractices').doc(`${studentCode}_${topicCode}`).get();
+      if (assignedSnap.exists) {
+        const aData = assignedSnap.data()!;
+        if (aData.status === 'pending' && (Number(aData.setsCompleted) || 0) < (Number(aData.setsCount) || 1)) {
+          isTeacherAssigned = true;
+          if (aData.numericalFocus) {
+            hasNumericalFocus = true;
+          }
+        }
+      }
+    } catch (e) {
+      // silent fallback
+    }
+
+    const isPracticeLimitReached = !isTeacherAssigned && !isRevisionMode && (completedPractices >= maxSessionsAllowed || (practiceQuestionsAttempted >= maxQuestionsAllowed && mastery < 80));
+
+    // 1. Quota Gate: Topic sets completed (bypassed if teacher explicitly assigned practice)
     if (isPracticeLimitReached) {
       return NextResponse.json({
         locked: true,
@@ -125,8 +145,8 @@ export async function GET(req: NextRequest) {
       }, { status: 200 });
     }
 
-    // 3. Daily Pacing Cap (Anti-Spam per Topic: Max 2 sessions for minor, 3 for medium/major)
-    if (dailySessions >= maxSessionsAllowed && !isRevisionMode) {
+    // 3. Daily Pacing Cap (Anti-Spam per Topic: Max 2 sessions for minor, 3 for medium/major, bypassed if teacher assigned)
+    if (!isTeacherAssigned && dailySessions >= maxSessionsAllowed && !isRevisionMode) {
       return NextResponse.json({
         locked: true,
         requireTextbookStudy: true,
@@ -188,31 +208,45 @@ export async function GET(req: NextRequest) {
     // 1.2 Fetch all questions for this topic (STRICTLY Canonical Objective Types: OSC, OMC, OAR, OTF, ONE, OFB)
     const rawTopicQuestions = await getQuestionsByTopic(topicCode);
 
-    // Filter out non-objective types, quarantined items, and malformed MCQs with <2 options
+    // Filter out non-objective types, quarantined items, and malformed MCQs with <2 options (ONE & OFB have empty/custom options)
     const validObjectiveQuestions = rawTopicQuestions.filter((q: any) => {
       if (!q.type || !isObjectiveType(q.type)) return false;
       if (isQuestionQuarantined(q)) return false;
-      if (!Array.isArray(q.options) || q.options.length < 2) {
-        return false;
+      if (q.type !== 'ONE' && q.type !== 'OFB') {
+        if (!Array.isArray(q.options) || q.options.length < 2) {
+          return false;
+        }
       }
       return true;
     });
 
+    // If teacher requested focus on numerical questions, filter/prioritize ONE type questions
+    let candidatePool = validObjectiveQuestions;
+    if (hasNumericalFocus) {
+      const numericalQs = validObjectiveQuestions.filter((q: any) => q.type === 'ONE');
+      if (numericalQs.length >= finalSize) {
+        candidatePool = numericalQs;
+      } else if (numericalQs.length > 0) {
+        const otherQs = validObjectiveQuestions.filter((q: any) => q.type !== 'ONE');
+        candidatePool = [...numericalQs, ...otherQs];
+      }
+    }
+
     // 3-Tier Waterfall for Zero-Collision & Zero-Starvation Practice:
     // Tier 1: Practice vault standard questions (preferred)
-    const tier1PracticeStandard = validObjectiveQuestions.filter(q => {
+    const tier1PracticeStandard = candidatePool.filter(q => {
       const isPracticeVault = !q.vault || q.vault === 'practice';
       const isStandardCat = !q.examCategory || q.examCategory === 'standard';
       return isPracticeVault && isStandardCat;
     });
 
     // Tier 2: Foundation & Mock questions (Olympiad / Homi Bhabha / competitive practice)
-    const tier2MockFoundation = validObjectiveQuestions.filter(q => {
+    const tier2MockFoundation = candidatePool.filter(q => {
       return q.vault === 'mock' || q.examCategory === 'foundation';
     });
 
     // Tier 3: Exam Vault questions (fallback to prevent student starvation if topic only has exam questions)
-    const tier3ExamVault = validObjectiveQuestions.filter(q => {
+    const tier3ExamVault = candidatePool.filter(q => {
       return q.vault === 'exam' && q.examCategory !== 'foundation';
     });
 
@@ -689,6 +723,28 @@ export async function POST(req: NextRequest) {
         status: 'completed',
         completedAt: new Date()
       });
+    }
+
+    // Check if this practice fulfills a teacher-assigned practice
+    try {
+      const assignedRef = adminDb.collection('assignedPractices').doc(`${studentCode}_${topicCode}`);
+      const assignedSnap = await assignedRef.get();
+      if (assignedSnap.exists) {
+        const aData = assignedSnap.data()!;
+        if (aData.status === 'pending') {
+          const newCompleted = (Number(aData.setsCompleted) || 0) + 1;
+          const targetSets = Number(aData.setsCount) || 1;
+          const isFinished = newCompleted >= targetSets;
+          await assignedRef.update({
+            setsCompleted: newCompleted,
+            status: isFinished ? 'completed' : 'pending',
+            completedAt: isFinished ? new Date() : null,
+            updatedAt: new Date()
+          });
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to update assignedPractices after grading:', err);
     }
 
     return NextResponse.json({

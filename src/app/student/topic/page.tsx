@@ -51,6 +51,7 @@ function TopicPracticeContent() {
 
   const topicCode = searchParams.get('topicCode') || '';
   const category = searchParams.get('category') || 'continuePractice';
+  const isNumericalFocus = searchParams.get('numericalFocus') === 'true';
 
   // Session setup & lock state
   const [loading, setLoading] = useState(true);
@@ -249,7 +250,8 @@ function TopicPracticeContent() {
         topicCode,
         category,
         size: 6,
-        idToken
+        idToken,
+        numericalFocus: isNumericalFocus
       });
       if (pData) {
         if (pData.requireTextbookStudy || pData.locked) {
@@ -722,6 +724,25 @@ function TopicPracticeContent() {
               );
             })}
           </div>
+
+          {/* Teacher-Assigned Numerical Focus Badge */}
+          {isNumericalFocus && (
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              background: 'rgba(56, 189, 248, 0.12)',
+              color: '#38bdf8',
+              border: '1px solid rgba(56, 189, 248, 0.3)',
+              padding: '6px 12px',
+              borderRadius: '8px',
+              fontSize: '12px',
+              fontWeight: 700,
+              marginBottom: '12px'
+            }}>
+              <span>🔢</span> Teacher Assigned Focus: Numerical Calculations (Formula & Substitution)
+            </div>
+          )}
 
           {/* Question View */}
           <PracticeQuestionCard

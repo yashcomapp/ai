@@ -16,6 +16,7 @@ import { useScorecard } from '@/hooks/useScorecard';
 import { toISTDateTimeLocalInput, formatDateDMY, parseDateInput, getDateKeyIST, formatDateTimeIST, getMorningTestTimes, getEveningTestTimes } from '@/lib/dateUtils';
 import ObjectiveTab from '@/components/admin/exams/ObjectiveTab';
 import SubjectiveTab from '@/components/admin/exams/SubjectiveTab';
+import TopicCoverageTab from '@/components/admin/exams/TopicCoverageTab';
 import PracticeTab from '@/components/admin/exams/PracticeTab';
 import { isExamAssigned, Exam, Assignment, Batch, Student } from '@/components/admin/exams/types';
 import {
@@ -42,7 +43,7 @@ export default function AdminExamsPage() {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [activeTab, setActiveTab] = useState<'objective' | 'subjective' | 'practice'>('objective');
+  const [activeTab, setActiveTab] = useState<'objective' | 'subjective' | 'coverage' | 'practice'>('objective');
 
   // Master lists
   const [exams, setExams] = useState<Exam[]>([]);
@@ -1208,6 +1209,13 @@ export default function AdminExamsPage() {
             Subjective Exams
           </button>
           <button 
+            className={`tab-btn ${activeTab === 'coverage' ? 'active' : ''}`}
+            onClick={() => setActiveTab('coverage')}
+            style={{ padding: '8px 16px', border: 'none', cursor: 'pointer', background: 'none', fontWeight: 600, borderBottom: activeTab === 'coverage' ? '2.5px solid var(--accent)' : 'none', color: activeTab === 'coverage' ? 'var(--accent)' : 'var(--text-muted)' }}
+          >
+            📊 Topic Coverage & Mastery
+          </button>
+          <button 
             className={`tab-btn ${activeTab === 'practice' ? 'active' : ''}`}
             onClick={() => setActiveTab('practice')}
             style={{ padding: '8px 16px', border: 'none', cursor: 'pointer', background: 'none', fontWeight: 600, borderBottom: activeTab === 'practice' ? '2.5px solid var(--accent)' : 'none', color: activeTab === 'practice' ? 'var(--accent)' : 'var(--text-muted)' }}
@@ -1301,6 +1309,11 @@ export default function AdminExamsPage() {
             openTruthTestReport={openTruthTestReport}
             router={router}
           />
+        )}
+
+        {/* Tab Content: Topic Coverage & Mastery (Conducted Topics Only) */}
+        {activeTab === 'coverage' && (
+          <TopicCoverageTab batches={batches} />
         )}
 
         {/* Tab Content: Practice Track summary logs */}
