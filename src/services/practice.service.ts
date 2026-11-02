@@ -230,6 +230,7 @@ export class PracticeService {
     const logId = `${studentCode}_${practiceExamCode}`;
 
     const submissionRef = adminDb.collection('practiceSubmissions').doc(logId);
+    const parentReviewsRef = adminDb.collection('parentReviews').doc(logId);
     const docId = `${studentCode}_${topicCode}`;
     const docRef = adminDb.collection('studentTopicMastery').doc(docId);
 
@@ -246,13 +247,38 @@ export class PracticeService {
       .get();
     const studentDocData = !studentUserSnap.empty ? studentUserSnap.docs[0].data() : {};
     const isSrsEnabled = Boolean(studentDocData?.srsEnabled);
+    const isAutonomous = studentDocData?.autonomous === true;
+    const finalStudentName = studentName || studentDocData?.name || studentDocData?.displayName || studentCode;
 
     // Fetch topic index metadata from cached SSOT for classification and confidence thresholds
     const topicIndexMap = await fetchTopicIndexByCodes([topicCode]);
-    const topicIndexData = topicIndexMap.get(topicCode) || null;
-    const fallbackClassification = topicIndexData?.topicClassification || 'minor';
-    const fallbackTargetQuestions = topicIndexData?.targetQuestions || (fallbackClassification === 'minor' ? 12 : fallbackClassification === 'major' ? 24 : 18);
-    const fallbackRequiredConfidence = topicIndexData?.requiredConfidence || getRequiredConfidence(fallbackClassification, fallbackTargetQuestions);
+    let sData = topicIndexMap.get(topicCode) || null;
+    if (!sData) {
+      const parsed = parseTopicCode(topicCode);
+      if (parsed && parsed.topicNumber && parsed.topicNumber.includes('.')) {
+        const parts = parsed.topicNumber.split('.');
+        if (parts.length > 2) {
+          const parentNum = parts.slice(0, 2).join('.');
+          const parentCode = `${parsed.boardCode}-${parsed.classNum}-${parsed.subjectCode}-${parsed.chapterNumber}-${parentNum}`;
+          const pMap = await fetchTopicIndexByCodes([parentCode]);
+          sData = pMap.get(parentCode) || null;
+        }
+      }
+    }
+
+    let topicName = topicCode;
+    let subjectName = 'General';
+    let chapterName = 'General';
+    if (sData) {
+      topicName = sData.topicName || sData.title || sData.name || topicName;
+      subjectName = sData.subjectName || sData.subject || subjectName;
+      chapterName = sData.chapterName || sData.chapterTitle || sData.chapter || (sData.chapterNumber ? (String(sData.chapterNumber).startsWith('Chapter') ? String(sData.chapterNumber) : `Chapter ${sData.chapterNumber}`) : chapterName);
+    }
+    const resolvedTopicName = topicName;
+
+    const fallbackClassification = sData?.topicClassification || 'minor';
+    const fallbackTargetQuestions = sData?.targetQuestions || (fallbackClassification === 'minor' ? 12 : fallbackClassification === 'major' ? 24 : 18);
+    const fallbackRequiredConfidence = sData?.requiredConfidence || getRequiredConfidence(fallbackClassification, fallbackTargetQuestions);
 
     const totalDuration = Number(durationSpent) || 0;
     const totalEvalCount = evaluations.length || 1;
@@ -260,17 +286,93 @@ export class PracticeService {
     // Anti-Rushing Gate: If student spent less than 18 seconds per question on average, void the session to protect quota and enforce 30-min cooldown
     const isRushedSession = totalDuration === 0 || avgSecondsPerQ < 18;
 
+    const validQuestionsCount = Math.max(1, evaluations.length - disputedCount);
+    const scorePercent = Math.min(100, Math.max(0, Math.round((correctCount / validQuestionsCount) * 100)));
+
+    // Guarding Fence Invariant: Prevent scorePercent and correctCount divergence
+    if (correctCount > 0 && scorePercent === 0) {
+      throw new Error(`[CRITICAL INVARIANT] Practice score calculation error: correctCount is ${correctCount}/${validQuestionsCount} but scorePercent computed as 0%`);
+    }
+
+    const strengths: string[] = [];
+    const needsAttention: string[] = [];
+    evaluations.forEach(ev => {
+      if (ev.isCorrect) {
+        strengths.push(ev.text);
+      } else {
+        needsAttention.push(ev.text);
+      }
+    });
+
+    let suspiciousLevel = 'green';
+    let integrityScore = 100;
+    if (violations) {
+      const { integrityScore: calcScore } = IntegrityService.calculateScore(
+        violations.tabOutCount || 0,
+        {
+          noFace: violations.noFaceCount || 0,
+          lookingAway: violations.lookingAwayCount || 0,
+          multipleFaces: violations.multipleFacesCount || 0,
+          headMovement: violations.headMovementCount || 0
+        }
+      );
+      integrityScore = calcScore;
+
+      const tabOut = violations.tabOutCount || 0;
+      const otherViolations = (violations.noFaceCount || 0) + 
+                             (violations.lookingAwayCount || 0) + 
+                             (violations.multipleFacesCount || 0) + 
+                             (violations.headMovementCount || 0);
+      if (tabOut > 2 || (violations.noFaceCount || 0) > 3 || (violations.lookingAwayCount || 0) > 3 || (tabOut + otherViolations) > 4 || proctoringViolationTriggered) {
+        suspiciousLevel = 'red';
+      } else if (tabOut > 0 || otherViolations > 0) {
+        suspiciousLevel = 'yellow';
+      }
+    }
+
+    // Evaluate Time Sincerity and Pacing Velocity
+    const sincerity = evaluateSessionSincerity({
+      questions: evaluations,
+      durationSpent: Number(durationSpent || 0),
+      scorePercent
+    });
+
+    if (sincerity.isSolvedTooFast && suspiciousLevel === 'green') {
+      suspiciousLevel = 'yellow';
+    }
+
+    // Query existing count for this student & topic to determine the sequential practiceNumber
+    let practiceNumber = 1;
+    try {
+      const countSnap = await adminDb.collection('parentReviews')
+        .where('studentCode', '==', studentCode)
+        .where('topicCode', '==', topicCode)
+        .count()
+        .get();
+      practiceNumber = (countSnap.data().count || 0) + 1;
+    } catch (cErr) {
+      console.warn('Failed to calculate practice test sequence number:', cErr);
+    }
+
+    const now = new Date();
+    const sessionStartedAt = new Date(Date.now() - (durationSpent || 0) * 1000);
+
+    // ATOMIC SSOT TRANSACTION: Locks studentTopicMastery, parentReviews, and practiceSubmissions together
     await adminDb.runTransaction(async (tx) => {
-      const subSnap = await tx.get(submissionRef);
-      if (subSnap.exists) {
-        const subData = subSnap.data()!;
-        finalMastery = subData.finalMastery || 0;
-        finalConfidence = subData.finalConfidence || 0;
-        correctCount = subData.score || 0;
-        existingMastery = subData.masteryBefore || 0;
+      const [subSnap, pReviewSnap] = await Promise.all([
+        tx.get(submissionRef),
+        tx.get(parentReviewsRef)
+      ]);
+
+      if (subSnap.exists || pReviewSnap.exists) {
+        const existingDoc = subSnap.exists ? subSnap.data()! : pReviewSnap.data()!;
+        finalMastery = existingDoc.finalMastery || existingDoc.masteryAfter || 0;
+        finalConfidence = existingDoc.finalConfidence || 0;
+        correctCount = existingDoc.correctCount ?? existingDoc.score ?? 0;
+        existingMastery = existingDoc.masteryBefore || 0;
         
         evaluations.length = 0;
-        evaluations.push(...(subData.questions || []));
+        evaluations.push(...(existingDoc.questions || existingDoc.questionDetails || []));
         isAlreadySubmitted = true;
         return;
       }
@@ -291,7 +393,7 @@ export class PracticeService {
         weightedPointsPossible: 0,
         lastExamCode: '',
         questionHistory: [] as any[],
-        createdAt: new Date()
+        createdAt: now
       };
       const recordToUpdate = existing || defaultRecord;
       const updatedData = MasteryService.calculateTopicMasteryUpdate(recordToUpdate, evaluations, practiceExamCode);
@@ -333,23 +435,23 @@ export class PracticeService {
         if (sessionAccuracy >= 80) {
           // Passed SRS review with flying colors -> advance to next spaced interval stage
           const nextStage = Math.min(5, currentStage + 1);
-          const sched = calculateSrsSchedule(new Date(), nextStage);
+          const sched = calculateSrsSchedule(now, nextStage);
           updatedData.srsStage = nextStage;
-          updatedData.lastRevisedAt = new Date();
+          updatedData.lastRevisedAt = now;
           updatedData.nextReviewDate = sched.nextReviewDate;
           updatedData.mastery = Math.max(updatedData.mastery, MASTERY_THRESHOLDS.MASTERED_MIN);
         } else if (sessionAccuracy < 60) {
           // Concept retention degraded -> reset SRS stage to 0 to rebuild
           updatedData.srsStage = 0;
-          updatedData.lastRevisedAt = new Date();
+          updatedData.lastRevisedAt = now;
           if (!isMasteredTopic) {
             updatedData.mastery = Math.min(updatedData.mastery, 85);
           }
         } else {
           // 60-79%: Keep at current stage and set refreshed review interval
-          const sched = calculateSrsSchedule(new Date(), currentStage);
+          const sched = calculateSrsSchedule(now, currentStage);
           updatedData.srsStage = currentStage;
-          updatedData.lastRevisedAt = new Date();
+          updatedData.lastRevisedAt = now;
           updatedData.nextReviewDate = sched.nextReviewDate;
         }
       }
@@ -357,221 +459,125 @@ export class PracticeService {
       finalMastery = updatedData.mastery;
       finalConfidence = updatedData.confidence;
 
-      tx.set(docRef, updatedData, { merge: true });
-
-      // Save submission lock document in the transaction
-      tx.set(submissionRef, {
+      // Construct ONE Single Source of Truth Session Payload
+      const unifiedSessionPayload = {
         studentCode,
+        practiceSessionId: logId,
+        type: isRushedSession ? 'practice_voided' : 'practice',
+        examType: 'practice',
         topicCode,
+        topicName,
+        subjectName,
+        chapterName,
+        scorePercent,
+        percentage: scorePercent,
+        correctCount,
+        score: correctCount,
+        total: validQuestionsCount,
+        totalQuestions: validQuestionsCount,
+        disputedCount,
         finalMastery,
         finalConfidence,
-        score: correctCount,
-        questions: evaluations,
         masteryBefore: existingMastery,
-        submittedAt: new Date(),
-        violations: violations || null,
+        masteryAfter: finalMastery,
+        masteryChange: finalMastery - existingMastery,
         durationSpent: totalDuration,
+        idealTimeSeconds: sincerity.idealTimeSeconds,
+        minRealisticTimeSeconds: sincerity.minRealisticTimeSeconds,
+        sincerityPacingScore: sincerity.sincerityPacingScore,
+        isFastFluency: sincerity.isFastFluency,
+        isSolvedTooFast: sincerity.isSolvedTooFast,
+        feedbackBadge: isRushedSession ? '⚠️ Rushed Attempt (Voided)' : (sincerity.feedbackBadge || null),
+        parentAdvisory: isRushedSession ? `This session was completed in only ${totalDuration}s (${Math.round(avgSecondsPerQ)}s/question), which is below the minimum genuine deliberation threshold (18s/question). The session has been voided to preserve your practice quota. Topic mastery has not advanced, and a 30-minute review cooldown has been applied.` : (sincerity.parentAdvisory || null),
+        parentAdvisoryMr: isRushedSession ? `हे सराव सत्र फक्त ${totalDuration} सेकंदात पूर्ण केले गेले (${Math.round(avgSecondsPerQ)} से/प्रश्न), जे किमान विचारपूर्वक सोडवण्याच्या निकषांपेक्षा (१८ से/प्रश्न) कमी आहे. तुमचा सराव कोटा सुरक्षित ठेवण्यासाठी हे सत्र रद्द (voided) केले गेले आहे आणि ३० मिनिटांचा विश्राम कालावधी लागू केला आहे.` : (sincerity.parentAdvisoryMr || null),
+        suspiciousLevel,
+        integrityScore,
+        strengths: strengths.slice(0, 3),
+        needsAttention: needsAttention.slice(0, 3),
+        startedAt: sessionStartedAt,
+        createdAt: now,
+        timestamp: now.toISOString(),
+        submittedAt: now,
+        completedAt: now,
+        updatedAt: now,
+        parentStatus: isAutonomous ? 'approved' : 'pending',
+        status: isAutonomous ? 'approved' : 'pending',
+        reviewedByActor: isAutonomous ? 'autonomous' : null,
+        practiceNumber: practiceNumber,
+        questions: evaluations,
+        questionDetails: evaluations.map(e => ({
+          questionId: e.questionId || e.id || '',
+          questionCode: e.questionCode || '',
+          questionText: e.text || e.assertion || '',
+          text: e.text || e.assertion || '',
+          type: e.type || 'OSC',
+          options: e.options || [],
+          userAnswer: e.userAnswer ?? '',
+          studentAnswer: e.userAnswer ?? '',
+          correctAnswer: e.correctAnswer ?? '',
+          correctAnswers: e.correctAnswers || [],
+          isCorrect: !!e.isCorrect,
+          solution: e.solution || '',
+          difficulty: e.difficulty || 'medium',
+          bloomLevel: e.bloomLevel || 'Understand',
+          marks: e.marks || 1
+        })),
+        answers: answers || {},
+        results: evaluations.reduce((acc, ev) => ({ ...acc, [ev.code || ev.questionCode || ev.id]: ev.isCorrect }), {}),
+        violations: violations || null,
+        tabViolations: violations?.tabOutCount || 0,
+        proctoringViolationTriggered: Boolean(proctoringViolationTriggered),
         isRushedDisqualified: isRushedSession,
         disqualificationReason: isRushedSession ? `Rushed practice session: Average solving time was only ${Math.round(avgSecondsPerQ)}s per question (< 18s). Session voided to preserve quota. A 30-minute review cooldown has been applied.` : null
-      });
+      };
+
+      // Atomic Writes in Single Transaction: SSOT parentReviews, mirrored practiceSubmissions clone, and studentTopicMastery
+      tx.set(parentReviewsRef, unifiedSessionPayload);
+      tx.set(submissionRef, unifiedSessionPayload);
+      tx.set(docRef, updatedData, { merge: true });
     });
 
-    let practiceNumber = 1;
-    let resolvedTopicName = topicCode;
-
     if (!isAlreadySubmitted) {
-      // Write a masteryExamLog document for audit trail
-      await adminDb.collection('masteryExamLog').doc(logId).set({
-        studentCode,
-        examCode: practiceExamCode,
-        examType: 'practice',
-        topicsUpdated: 1,
-        topicsFailed: 0,
-        topicDeltas: {
-          [topicCode]: {
-            questionsAttemptedDelta,
-            questionsCorrectDelta,
-            questionsWrongDelta,
-            weightedPointsEarnedDelta,
-            weightedPointsPossibleDelta
-          }
-        },
-        reversed: false,
-        processedAt: new Date()
-      });
-
-      // Write to parentReviews collection for parents & admin history popup
+      // Write masteryExamLog document for audit trail
       try {
-        let topicName = topicCode;
-        let subjectName = 'General';
-        let chapterName = 'General';
-        
-        const sMap = await fetchTopicIndexByCodes([topicCode]);
-        let sData = sMap.get(topicCode);
-        if (!sData) {
-          const parsed = parseTopicCode(topicCode);
-          if (parsed && parsed.topicNumber && parsed.topicNumber.includes('.')) {
-            const parts = parsed.topicNumber.split('.');
-            if (parts.length > 2) {
-              const parentNum = parts.slice(0, 2).join('.');
-              const parentCode = `${parsed.boardCode}-${parsed.classNum}-${parsed.subjectCode}-${parsed.chapterNumber}-${parentNum}`;
-              const pMap = await fetchTopicIndexByCodes([parentCode]);
-              sData = pMap.get(parentCode);
-            }
-          }
-        }
-
-        if (sData) {
-          topicName = sData.topicName || sData.title || sData.name || topicName;
-          subjectName = sData.subjectName || sData.subject || subjectName;
-          chapterName = sData.chapterName || sData.chapterTitle || sData.chapter || (sData.chapterNumber ? (String(sData.chapterNumber).startsWith('Chapter') ? String(sData.chapterNumber) : `Chapter ${sData.chapterNumber}`) : chapterName);
-        }
-        resolvedTopicName = topicName;
-
-        const strengths: string[] = [];
-        const needsAttention: string[] = [];
-        evaluations.forEach(ev => {
-          if (ev.isCorrect) {
-            strengths.push(ev.text);
-          } else {
-            needsAttention.push(ev.text);
-          }
-        });
-
-        let suspiciousLevel = 'green';
-        let integrityScore = 100;
-        if (violations) {
-          const { integrityScore: calcScore } = IntegrityService.calculateScore(
-            violations.tabOutCount || 0,
-            {
-              noFace: violations.noFaceCount || 0,
-              lookingAway: violations.lookingAwayCount || 0,
-              multipleFaces: violations.multipleFacesCount || 0,
-              headMovement: violations.headMovementCount || 0
-            }
-          );
-          integrityScore = calcScore;
-
-          const tabOut = violations.tabOutCount || 0;
-          const otherViolations = (violations.noFaceCount || 0) + 
-                                 (violations.lookingAwayCount || 0) + 
-                                 (violations.multipleFacesCount || 0) + 
-                                 (violations.headMovementCount || 0);
-          if (tabOut > 2 || (violations.noFaceCount || 0) > 3 || (violations.lookingAwayCount || 0) > 3 || (tabOut + otherViolations) > 4 || proctoringViolationTriggered) {
-            suspiciousLevel = 'red';
-          } else if (tabOut > 0 || otherViolations > 0) {
-            suspiciousLevel = 'yellow';
-          }
-        }
-
-        const validQuestionsCount = Math.max(1, evaluations.length - disputedCount);
-        const scorePercent = Math.min(100, Math.max(0, Math.round((correctCount / validQuestionsCount) * 100)));
-
-        // Guarding Fence Invariant: Prevent scorePercent and correctCount divergence
-        if (correctCount > 0 && scorePercent === 0) {
-          throw new Error(`[CRITICAL INVARIANT] Practice score calculation error: correctCount is ${correctCount}/${validQuestionsCount} but scorePercent computed as 0%`);
-        }
-
-        // Evaluate Time Sincerity and Pacing Velocity
-        const sincerity = evaluateSessionSincerity({
-          questions: evaluations,
-          durationSpent: Number(durationSpent || 0),
-          scorePercent
-        });
-
-        if (sincerity.isSolvedTooFast && suspiciousLevel === 'green') {
-          suspiciousLevel = 'yellow';
-        }
-
-        // Query existing parentReviews count for this student & topic to determine the sequential practiceNumber
-        try {
-          const countSnap = await adminDb.collection('parentReviews')
-            .where('studentCode', '==', studentCode)
-            .where('topicCode', '==', topicCode)
-            .count()
-            .get();
-          practiceNumber = (countSnap.data().count || 0) + 1;
-        } catch (cErr) {
-          console.warn('Failed to calculate practice test sequence number:', cErr);
-        }
-
-        const now = new Date();
-        await adminDb.collection('parentReviews').doc(logId).set({
+        await adminDb.collection('masteryExamLog').doc(logId).set({
           studentCode,
-          practiceSessionId: logId,
-          type: isRushedSession ? 'practice_voided' : 'practice',
-          topicCode,
-          topicName,
-          subjectName,
-          chapterName,
-          scorePercent,
-          percentage: scorePercent,
-          correctCount,
-          score: correctCount,
-          totalQuestions: evaluations.length - disputedCount,
-          disputedCount,
-          masteryBefore: existingMastery,
-          masteryAfter: finalMastery,
-          masteryChange: finalMastery - existingMastery,
-          durationSpent: Number(durationSpent || 0),
-          idealTimeSeconds: sincerity.idealTimeSeconds,
-          minRealisticTimeSeconds: sincerity.minRealisticTimeSeconds,
-          sincerityPacingScore: sincerity.sincerityPacingScore,
-          isFastFluency: sincerity.isFastFluency,
-          isSolvedTooFast: sincerity.isSolvedTooFast,
-          feedbackBadge: isRushedSession ? '⚠️ Rushed Attempt (Voided)' : (sincerity.feedbackBadge || null),
-          parentAdvisory: isRushedSession ? `This session was completed in only ${totalDuration}s (${Math.round(avgSecondsPerQ)}s/question), which is below the minimum genuine deliberation threshold (18s/question). The session has been voided to preserve your practice quota. Topic mastery has not advanced, and a 30-minute review cooldown has been applied.` : (sincerity.parentAdvisory || null),
-          parentAdvisoryMr: isRushedSession ? `हे सराव सत्र फक्त ${totalDuration} सेकंदात पूर्ण केले गेले (${Math.round(avgSecondsPerQ)} से/प्रश्न), जे किमान विचारपूर्वक सोडवण्याच्या निकषांपेक्षा (१८ से/प्रश्न) कमी आहे. तुमचा सराव कोटा सुरक्षित ठेवण्यासाठी हे सत्र रद्द (voided) केले गेले आहे आणि ३० मिनिटांचा विश्राम कालावधी लागू केला आहे.` : (sincerity.parentAdvisoryMr || null),
-          suspiciousLevel,
-          strengths: strengths.slice(0, 3),
-          needsAttention: needsAttention.slice(0, 3),
-          startedAt: new Date(Date.now() - (durationSpent || 0) * 1000),
-          createdAt: now,
-          timestamp: now.toISOString(),
-          submittedAt: now,
-          parentStatus: 'pending',
-          practiceNumber: practiceNumber,
-          questions: evaluations,
-          questionDetails: evaluations.map(e => ({
-            questionId: e.questionId || e.id || '',
-            questionCode: e.questionCode || '',
-            questionText: e.text || e.assertion || '',
-            text: e.text || e.assertion || '',
-            type: e.type || 'OSC',
-            options: e.options || [],
-            userAnswer: e.userAnswer ?? '',
-            correctAnswer: e.correctAnswer ?? '',
-            correctAnswers: e.correctAnswers || [],
-            isCorrect: !!e.isCorrect,
-            solution: e.solution || '',
-            difficulty: e.difficulty || 'medium',
-            bloomLevel: e.bloomLevel || 'Understand',
-            marks: e.marks || 1
-          }))
+          examCode: practiceExamCode,
+          examType: 'practice',
+          topicsUpdated: 1,
+          topicsFailed: 0,
+          topicDeltas: {
+            [topicCode]: {
+              questionsAttemptedDelta,
+              questionsCorrectDelta,
+              questionsWrongDelta,
+              weightedPointsEarnedDelta,
+              weightedPointsPossibleDelta
+            }
+          },
+          reversed: false,
+          processedAt: new Date()
         });
+      } catch (logErr) {
+        console.warn('Failed to write masteryExamLog:', logErr);
+      }
 
-        // Trigger push notification to Parent
-        const isAutonomous = studentDocData?.autonomous === true;
-        const studentName = studentDocData?.name || studentDocData?.displayName || studentCode;
-        
-        if (!isAutonomous) {
-          notifyReviewPending({
-            studentCode,
-            studentName,
-            topicName,
-            scorePercent,
-            reviewId: logId,
-            startedAt: new Date(Date.now() - (durationSpent || 0) * 1000),
-            completedAt: now,
-            durationSpentSec: durationSpent || 0,
-            tabViolations: violations?.tabOutCount || 0,
-            gazeViolations: violations?.lookingAwayCount || 0
-          }).catch(err => {
-            console.error('Error sending review pending notification:', err);
-          });
-        }
-      } catch (err) {
-        console.warn('Failed to write to parentReviews collection:', err);
+      // Trigger push notification to Parent if not autonomous
+      if (!isAutonomous) {
+        notifyReviewPending({
+          studentCode,
+          studentName: finalStudentName,
+          topicName: resolvedTopicName,
+          scorePercent,
+          reviewId: logId,
+          startedAt: sessionStartedAt,
+          completedAt: now,
+          durationSpentSec: durationSpent || 0,
+          tabViolations: violations?.tabOutCount || 0,
+          gazeViolations: violations?.lookingAwayCount || 0
+        }).catch(err => {
+          console.error('Error sending review pending notification:', err);
+        });
       }
     }
 

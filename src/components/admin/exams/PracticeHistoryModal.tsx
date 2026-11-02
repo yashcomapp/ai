@@ -36,6 +36,15 @@ export default function PracticeHistoryModal({
 }: PracticeHistoryModalProps) {
   if (!selectedPracStudent) return null;
 
+  const getScore = (item: any): number => {
+    if (typeof item.scorePercent === 'number' && item.scorePercent > 0) return item.scorePercent;
+    if (typeof item.percentage === 'number' && item.percentage > 0) return item.percentage;
+    const c = Number(item.correctCount ?? item.score ?? 0);
+    const t = Math.max(1, item.totalQuestions || item.total || (item.questions || []).length || 1);
+    if (c > 0) return Math.min(100, Math.round((c / t) * 100));
+    return item.scorePercent || item.percentage || 0;
+  };
+
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.45)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', zIndex: 20000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
       <div style={{ background: 'var(--surface-popover)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-popover)', maxWidth: '750px', width: '100%', maxHeight: '85vh', overflowY: 'auto', padding: '24px', display: 'flex', flexDirection: 'column', gap: '15px', boxShadow: 'var(--shadow-lg)' }}>
@@ -77,12 +86,12 @@ export default function PracticeHistoryModal({
               const chapters = groupedPrac.get(sName)!;
               const topics = Array.from(chapters.values()).flat();
               if (topics.length === 0) return 0;
-              return topics.reduce((acc, t) => acc + (t.scorePercent || 0), 0) / topics.length;
+              return topics.reduce((acc, t) => acc + getScore(t), 0) / topics.length;
             };
 
             const getChapAvg = (topics: any[]) => {
               if (topics.length === 0) return 0;
-              return topics.reduce((acc, t) => acc + (t.scorePercent || 0), 0) / topics.length;
+              return topics.reduce((acc, t) => acc + getScore(t), 0) / topics.length;
             };
 
             const getProgressCol = (pct: number) => {
@@ -170,7 +179,7 @@ export default function PracticeHistoryModal({
                                     if (modalSortKey === 'name') {
                                       cmp = (a.name || a.topicName || '').localeCompare(b.name || b.topicName || '', undefined, { numeric: true, sensitivity: 'base' });
                                     } else if (modalSortKey === 'score') {
-                                      cmp = (a.scorePercent || 0) - (b.scorePercent || 0);
+                                      cmp = getScore(a) - getScore(b);
                                     } else if (modalSortKey === 'date') {
                                       const da = a.date ? new Date(a.date).getTime() : (a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate().getTime() : new Date(a.createdAt).getTime()) : 0);
                                       const db = b.date ? new Date(b.date).getTime() : (b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate().getTime() : new Date(b.createdAt).getTime()) : 0);
@@ -244,7 +253,7 @@ export default function PracticeHistoryModal({
                                         </thead>
                                         <tbody>
                                           {sortedTopics.map((h, hIdx) => {
-                                            const score = Math.round(h.scorePercent || 0);
+                                            const score = Math.round(getScore(h));
                                             const level = h.suspiciousLevel || 'green';
                                             const dotCol = level === 'red' ? 'var(--danger)' : (level === 'yellow' ? 'var(--warning)' : 'var(--success)');
 
