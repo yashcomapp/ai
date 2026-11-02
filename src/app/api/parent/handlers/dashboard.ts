@@ -25,17 +25,25 @@ export async function GET(req: NextRequest) {
       responseHeaders['x-claims-updated'] = 'true';
     }
 
+    const bypassCache = req.headers.get('x-bypass-cache') === 'true' ||
+      req.headers.get('cache-control')?.includes('no-cache') ||
+      req.headers.get('cache-control')?.includes('no-store') ||
+      searchParams.get('fresh') === 'true' ||
+      searchParams.get('refresh') === 'true';
+
     const cacheKey = `parent_dashboard_${parentEmail}_${selectedStudentCode}_${rangeDays}`;
-    const cached = getFromCache<any>(cacheKey);
-    if (cached) {
-      return NextResponse.json(cached, { headers: responseHeaders });
+    if (!bypassCache) {
+      const cached = getFromCache<any>(cacheKey);
+      if (cached) {
+        return NextResponse.json(cached, { headers: responseHeaders });
+      }
     }
 
-    const data = await getParentDashboardData(parentEmail, parentData, selectedStudentCode === 'all' ? null : selectedStudentCode, rangeDays);
+    const data = await getParentDashboardData(parentEmail, parentData, selectedStudentCode === 'all' ? null : selectedStudentCode, rangeDays, bypassCache);
     if (!data.children || data.children.length === 0) {
       return NextResponse.json({ message: 'No active enrolled students are linked to this parent account. Access is restricted.' }, { status: 403 });
     }
-    setInCache(cacheKey, data, 60000); // 60s in-memory cache
+    setInCache(cacheKey, data, 45000); // 45s in-memory cache
 
     return NextResponse.json(data, { headers: responseHeaders });
 

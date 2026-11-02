@@ -163,12 +163,14 @@ export async function fetchStudentRawAssignments(studentCode: string, batchIds: 
   };
 }
 
-export async function getDashboardData(uid: string, userData: any, rangeDays: number = 7) {
+export async function getDashboardData(uid: string, userData: any, rangeDays: number = 7, bypassCache: boolean = false) {
   try {
     let studentCode = userData.studentCode || '';
     const cacheKey = `student_dashboard_fn_${uid}_${studentCode || 'unknown'}_${rangeDays}`;
-    const cached = getFromCache<any>(cacheKey);
-    if (cached) return cached;
+    if (!bypassCache) {
+      const cached = getFromCache<any>(cacheKey);
+      if (cached) return cached;
+    }
 
     const batchIds: string[] = [...(userData.batchIds || [])];
     if (userData.batchId && !batchIds.includes(userData.batchId)) {
@@ -996,7 +998,7 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
         }
       };
 
-      setInCache(cacheKey, result, 300000); // 5 mins in-memory TTL
+      setInCache(cacheKey, result, 45000); // 45s in-memory TTL (bounds multi-instance freshness)
       return result;
     } catch (error: any) {
       console.error('getDashboardData error:', error);
@@ -1018,15 +1020,17 @@ export interface PreloadedLearningData {
   conductedTopicCodes?: Set<string>;
 }
 
-export async function getStudentLearningData(userData: any, preloadedData?: PreloadedLearningData) {
+export async function getStudentLearningData(userData: any, preloadedData?: PreloadedLearningData, bypassCache: boolean = false) {
   const studentCode = userData.studentCode;
   if (!studentCode) {
     throw new Error('Missing student identifier profile.');
   }
 
   const cacheKey = `learning_data_${studentCode}`;
-  const cached = getFromCache<any>(cacheKey);
-  if (cached && !preloadedData) return cached;
+  if (!bypassCache) {
+    const cached = getFromCache<any>(cacheKey);
+    if (cached && !preloadedData) return cached;
+  }
 
   const batchIds: string[] = userData.batchIds || (userData.batchId ? [userData.batchId] : []);
 
@@ -1400,6 +1404,6 @@ export async function getStudentLearningData(userData: any, preloadedData?: Prel
     }
   };
 
-  setInCache(cacheKey, result, 300000); // 5 mins in-memory TTL
+  setInCache(cacheKey, result, 60000); // 60s in-memory TTL (bounds multi-instance freshness)
   return result;
 }

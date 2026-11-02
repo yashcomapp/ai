@@ -701,11 +701,19 @@ export async function GET(req: NextRequest) {
 
     const includeParents = req.nextUrl.searchParams.get('includeParents') === 'true';
 
+    const bypassCache = req.headers.get('x-bypass-cache') === 'true' ||
+      req.headers.get('cache-control')?.includes('no-cache') ||
+      req.headers.get('cache-control')?.includes('no-store') ||
+      req.nextUrl.searchParams.get('fresh') === 'true' ||
+      req.nextUrl.searchParams.get('refresh') === 'true';
+
     // 0. High-performance in-memory cache to eliminate massive redundant reads on every tab open/switch
     const cacheKey = `admin_exams_full_payload_${includeParents ? 'with_parents' : 'no_parents'}`;
-    const cachedPayload = getFromCache<any>(cacheKey);
-    if (cachedPayload) {
-      return NextResponse.json(cachedPayload);
+    if (!bypassCache) {
+      const cachedPayload = getFromCache<any>(cacheKey);
+      if (cachedPayload) {
+        return NextResponse.json(cachedPayload);
+      }
     }
 
     const [
@@ -902,8 +910,8 @@ export async function GET(req: NextRequest) {
       attemptCounts
     };
 
-    // Store in-memory cache for 2 minutes to prevent repeated multi-collection reads
-    setInCache(cacheKey, fullResponse, 120000);
+    // Store in-memory cache for 30 seconds to prevent repeated multi-collection reads on tab switches
+    setInCache(cacheKey, fullResponse, 30000);
 
     return NextResponse.json(fullResponse);
 

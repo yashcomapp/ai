@@ -65,10 +65,18 @@ export async function GET(req: NextRequest) {
       }
     }
 
+    const bypassCache = req.headers.get('x-bypass-cache') === 'true' ||
+      req.headers.get('cache-control')?.includes('no-cache') ||
+      req.headers.get('cache-control')?.includes('no-store') ||
+      searchParams.get('fresh') === 'true' ||
+      searchParams.get('refresh') === 'true';
+
     const cacheKey = `user_time_log_${targetUid}`;
-    const cachedStats = getFromCache<any>(cacheKey);
-    if (cachedStats) {
-      return NextResponse.json(cachedStats);
+    if (!bypassCache) {
+      const cachedStats = getFromCache<any>(cacheKey);
+      if (cachedStats) {
+        return NextResponse.json(cachedStats);
+      }
     }
 
     const fourteenDaysAgo = new Date();
@@ -138,7 +146,7 @@ export async function GET(req: NextRequest) {
       todayPct
     };
 
-    setInCache(cacheKey, responseData, 300000); // 5 mins cache
+    setInCache(cacheKey, responseData, 30000); // 30s in-memory TTL
 
     return NextResponse.json(responseData);
   } catch (error: any) {

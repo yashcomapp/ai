@@ -50,7 +50,13 @@ export function createTokenFetcher(firebaseUser: any) {
 export async function mutateFresh(key: string, firebaseUser: any) {
   if (!firebaseUser) return;
   try {
-    const data = await fetchWithToken(key, firebaseUser, { cache: 'no-store' });
+    const data = await fetchWithToken(key, firebaseUser, { 
+      cache: 'no-store',
+      headers: {
+        'Cache-Control': 'no-cache, no-store',
+        'x-bypass-cache': 'true'
+      }
+    });
     if (data !== undefined && data !== null) {
       await mutate(key, data, { revalidate: false });
     }

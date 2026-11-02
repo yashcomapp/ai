@@ -16,15 +16,23 @@ export async function GET(req: NextRequest) {
 
     const todayStr = getISTDateString();
     const adminUid = adminUser.decodedToken?.uid || 'admin';
+    const bypassCache = req.headers.get('x-bypass-cache') === 'true' ||
+      req.headers.get('cache-control')?.includes('no-cache') ||
+      req.headers.get('cache-control')?.includes('no-store') ||
+      req.nextUrl.searchParams.get('refresh') === 'true' ||
+      req.nextUrl.searchParams.get('fresh') === 'true';
+
     const cacheKey = `admin_dashboard_${adminUid}_${todayStr}`;
 
-    const cached = getFromCache<any>(cacheKey);
-    if (cached) {
-      return NextResponse.json(cached, {
-        headers: {
-          'Cache-Control': 'private, max-age=15, stale-while-revalidate=30'
-        }
-      });
+    if (!bypassCache) {
+      const cached = getFromCache<any>(cacheKey);
+      if (cached) {
+        return NextResponse.json(cached, {
+          headers: {
+            'Cache-Control': 'private, max-age=15, stale-while-revalidate=30'
+          }
+        });
+      }
     }
 
     // Fetch counts and recent registrations in parallel
@@ -139,7 +147,7 @@ export async function GET(req: NextRequest) {
       recentRegistrations: recentRegs
     };
 
-    setInCache(cacheKey, result, 120000); // 2 mins in-memory cache
+    setInCache(cacheKey, result, 45000); // 45s in-memory cache
 
     return NextResponse.json(result, {
       headers: {

@@ -13,11 +13,14 @@ export async function getParentDashboardData(
   parentEmail: string,
   parentData: any,
   selectedStudentCode: string | null,
-  rangeDays: number = 7
+  rangeDays: number = 7,
+  bypassCache: boolean = false
 ) {
   const cacheKey = `parent_dashboard_fn_${parentEmail || 'unknown'}_${selectedStudentCode || 'all'}_${rangeDays}`;
-  const cached = getFromCache<any>(cacheKey);
-  if (cached) return cached;
+  if (!bypassCache) {
+    const cached = getFromCache<any>(cacheKey);
+    if (cached) return cached;
+  }
 
   // Resolve child list
   const studentCodes = await resolveParentStudentCodes(parentData);
@@ -792,6 +795,6 @@ export async function getParentDashboardData(
     })
   };
 
-  setInCache(cacheKey, result, 300000); // 5 mins in-memory TTL
+  setInCache(cacheKey, result, 45000); // 45s in-memory TTL (bounds multi-instance freshness)
   return result;
 }

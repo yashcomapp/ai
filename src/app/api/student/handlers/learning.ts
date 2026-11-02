@@ -12,6 +12,12 @@ export async function GET(req: NextRequest) {
     }
 
     const studentCode = student.userData?.studentCode || '';
+    const bypassCache = req.headers.get('x-bypass-cache') === 'true' ||
+      req.headers.get('cache-control')?.includes('no-cache') ||
+      req.headers.get('cache-control')?.includes('no-store') ||
+      req.nextUrl.searchParams.get('fresh') === 'true' ||
+      req.nextUrl.searchParams.get('refresh') === 'true';
+
     const cacheKey = `student_learning_${studentCode}`;
     const responseHeaders: Record<string, string> = {
       'Cache-Control': 'private, max-age=60, stale-while-revalidate=120'
@@ -20,12 +26,14 @@ export async function GET(req: NextRequest) {
       responseHeaders['x-claims-updated'] = 'true';
     }
 
-    const cached = getFromCache<any>(cacheKey);
-    if (cached) {
-      return NextResponse.json(cached, { headers: responseHeaders });
+    if (!bypassCache) {
+      const cached = getFromCache<any>(cacheKey);
+      if (cached) {
+        return NextResponse.json(cached, { headers: responseHeaders });
+      }
     }
 
-    const data = await getStudentLearningData(student.userData);
+    const data = await getStudentLearningData(student.userData, undefined, bypassCache);
     if (studentCode) {
       setInCache(cacheKey, data, 60000); // 60s in-memory cache
     }

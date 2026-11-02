@@ -25,14 +25,22 @@ export async function GET(req: NextRequest) {
       responseHeaders['x-claims-updated'] = 'true';
     }
 
+    const bypassCache = req.headers.get('x-bypass-cache') === 'true' ||
+      req.headers.get('cache-control')?.includes('no-cache') ||
+      req.headers.get('cache-control')?.includes('no-store') ||
+      searchParams.get('fresh') === 'true' ||
+      searchParams.get('refresh') === 'true';
+
     const cacheKey = `student_dashboard_${studentCode}_${rangeDays}`;
-    const cached = getFromCache<any>(cacheKey);
-    if (cached) {
-      return NextResponse.json(cached, { headers: responseHeaders });
+    if (!bypassCache) {
+      const cached = getFromCache<any>(cacheKey);
+      if (cached) {
+        return NextResponse.json(cached, { headers: responseHeaders });
+      }
     }
 
-    const data = await getDashboardData(uid, userData, rangeDays);
-    setInCache(cacheKey, data, 60000); // 60s in-memory cache
+    const data = await getDashboardData(uid, userData, rangeDays, bypassCache);
+    setInCache(cacheKey, data, 45000); // 45s in-memory cache
 
     return NextResponse.json(data, { headers: responseHeaders });
   } catch (error: any) {

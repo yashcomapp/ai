@@ -16,7 +16,9 @@ const NO_CACHE_HEADERS = {
   'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate'
 };
 
-const REPORT_CACHE_TTL_MS = 900000; // 15 minutes (admins have an on-demand "Refresh Data" button for immediate bust)
+const USAGE_CACHE_TTL_MS = 30000; // 30s for real-time presence & online status
+const STANDARD_REPORT_TTL_MS = 60000; // 60s for daily practice, login register, parent pending, truth test
+const LQ_REPORT_TTL_MS = 120000; // 2 minutes for bulk learning quotient report (with on-demand refresh)
 
 // ── 1. Daily Practice Report Handler ──────────────────────────────────
 async function handleDailyPractice(req: NextRequest) {
@@ -39,7 +41,7 @@ async function handleDailyPractice(req: NextRequest) {
   }
 
   const report = await ReportService.getDailyPracticeReport(targetDateStr, refresh);
-  setInCache(cacheKey, report, REPORT_CACHE_TTL_MS);
+  setInCache(cacheKey, report, STANDARD_REPORT_TTL_MS);
   return NextResponse.json(report, { headers: REPORT_CACHE_HEADERS });
 }
 
@@ -62,7 +64,7 @@ async function handleLearningQuotientGet(req: NextRequest) {
     }
 
     const report = await ReportService.getSingleLearningQuotientReport(studentCode, duration);
-    setInCache(cacheKey, report, REPORT_CACHE_TTL_MS);
+    setInCache(cacheKey, report, LQ_REPORT_TTL_MS);
     return NextResponse.json(report, { headers: NO_CACHE_HEADERS });
   }
 
@@ -73,7 +75,7 @@ async function handleLearningQuotientGet(req: NextRequest) {
   }
 
   const report = await ReportService.getBulkLearningQuotientReport(duration);
-  setInCache(bulkCacheKey, report, REPORT_CACHE_TTL_MS);
+  setInCache(bulkCacheKey, report, LQ_REPORT_TTL_MS);
   return NextResponse.json(report, { headers: NO_CACHE_HEADERS });
 }
 
@@ -123,7 +125,7 @@ async function handleLoginRegister(req: NextRequest) {
   }
 
   const report = await ReportService.getLoginRegisterReport(targetDateStr);
-  setInCache(cacheKey, report, REPORT_CACHE_TTL_MS);
+  setInCache(cacheKey, report, STANDARD_REPORT_TTL_MS);
   return NextResponse.json(report, { headers: REPORT_CACHE_HEADERS });
 }
 
@@ -141,7 +143,7 @@ async function handleParentPending(req: NextRequest) {
   }
 
   const report = await ReportService.getParentPendingReport();
-  setInCache(cacheKey, report, REPORT_CACHE_TTL_MS);
+  setInCache(cacheKey, report, STANDARD_REPORT_TTL_MS);
   return NextResponse.json(report, { headers: REPORT_CACHE_HEADERS });
 }
 
@@ -166,7 +168,7 @@ async function handleTruthTest(req: NextRequest) {
   }
 
   const report = await ReportService.getTruthTestReport(examId);
-  setInCache(cacheKey, report, REPORT_CACHE_TTL_MS);
+  setInCache(cacheKey, report, STANDARD_REPORT_TTL_MS);
   return NextResponse.json(report, { headers: REPORT_CACHE_HEADERS });
 }
 
@@ -184,7 +186,7 @@ async function handleUsage(req: NextRequest) {
   }
 
   const report = await ReportService.getUsageReport();
-  setInCache(cacheKey, report, REPORT_CACHE_TTL_MS);
+  setInCache(cacheKey, report, USAGE_CACHE_TTL_MS);
   return NextResponse.json(report, { headers: REPORT_CACHE_HEADERS });
 }
 
