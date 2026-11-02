@@ -492,6 +492,200 @@ test('Strict Question Code barrier rejects invalid types, short sequences, or ba
   assert.strictEqual(validateQuestionCode('MH-8-MTH-13-13.1.2-OSC-1').valid, false); // Sequence < 3 digits rejected
 });
 
+// -----------------------------------------------------------------------------
+// SUITE 11: Curriculum Guard & Pedagogical Ceiling Invariants
+// -----------------------------------------------------------------------------
+console.log('\n--- Suite 11: Curriculum Guard & Pedagogical Ceiling Invariants ---');
+
+const QUALITATIVE_TOPIC_PATTERNS = [
+  /environment/i,
+  /ecology/i,
+  /ecosystem/i,
+  /microbe/i,
+  /bacteria/i,
+  /fungi/i,
+  /classification\s+of\s+plants/i,
+  /living\s+world/i,
+  /cell\s+and\s+cell\s+organelles/i,
+  /disaster\s+management/i,
+  /solid\s+waste/i,
+  /weather\s+and\s+climate/i,
+  /meteorology/i,
+  /first\s+aid/i,
+  /health\s+and\s+disease/i,
+  /pollution/i,
+  /biotechnology/i,
+  /tissue\s+culture/i,
+  /man-made\s+material/i,
+  /useful\s+and\s+harmful/i
+];
+
+const QUALITATIVE_CHAPTER_CODES = new Set([
+  'MH-9-SCIT-6',   // Classification of Plants
+  'MH-9-SCIT-7',   // Energy Flow in an Ecosystem
+  'MH-9-SCIT-8',   // Useful and Harmful Microbes
+  'MH-9-SCIT-9',   // Environmental Management
+  'MH-9-SCIT-10',  // ICT
+  'MH-9-SCIT-17',  // Introduction to Biotechnology
+  'MH-8-SCI-1',    // Living World and Classification of Microbes
+  'MH-8-SCI-2',    // Health and Diseases
+  'MH-8-SCI-7',    // Metals and Nonmetals
+  'MH-8-SCI-8',    // Pollution
+  'MH-8-SCI-9',    // Disaster Management
+  'MH-8-SCI-10',   // Cell and Cell Organelles
+  'MH-8-SCI-17',   // Man-made Materials
+  'MH-8-SCI-18',   // Ecosystems
+  'CBSE-8-CURI-5', // Curiosity: Reproduction / Microorganisms
+  'MH-10-SCIT2-7', // Introduction to Microbiology
+  'MH-10-SCIT2-8'  // Cell Biology and Biotechnology
+]);
+
+const PROHIBITED_ADVANCED_KEYWORDS = [
+  { pattern: /\bdifferential\s+equations?\b/i, label: 'Differential Equations' },
+  { pattern: /\bnavier[- ]stokes\b/i, label: 'Navier-Stokes Equations' },
+  { pattern: /\bhamiltonian\b/i, label: 'Hamiltonian Mechanics' },
+  { pattern: /schr(?:o|ö|oe)dinger/i, label: 'Schrodinger Equation' },
+  { pattern: /\blorentz\s+(?:force|factor|transformation)\b/i, label: 'Lorentz Transformations' },
+  { pattern: /\brelativistic\s+(?:time\s+dilation|beaming|mass)\b/i, label: 'Relativistic Physics' },
+  { pattern: /\bsynchrotron\b/i, label: 'Synchrotron Radiation' },
+  { pattern: /\bschwarzschild\s+radius\b/i, label: 'Schwarzschild Metric' },
+  { pattern: /\bbragg's\s+law\b/i, label: "Bragg's Law Crystallography" },
+  { pattern: /\bcrystal\s+field\s+splitting\b/i, label: 'Crystal Field Theory' },
+  { pattern: /\bgibbs\s+free\s+energy\b/i, label: 'Gibbs Free Energy Thermodynamics' },
+  { pattern: /\blapse\s+rate\b/i, label: 'Atmospheric Lapse Rate Calculation' },
+  { pattern: /\bpsychrometric\b/i, label: 'Psychrometric Thermodynamics' },
+  { pattern: /\bactual\s+vapor\s+pressure.*saturation\b/i, label: 'Vapor Pressure Numericals' },
+  { pattern: /\bphytoremediation\b/i, label: 'Phytoremediation / Hyperaccumulation' },
+  { pattern: /\bhyperaccumulat/i, label: 'Hyperaccumulating Plants' },
+  { pattern: /\bfluidized\s+bed\s+incinerator\b/i, label: 'Fluidized Bed Combustion' },
+  { pattern: /\bbaghouse\s+filters?\b/i, label: 'Baghouse Fabric Filters' },
+  { pattern: /\bglomerular\s+filtration\s+rate\b/i, label: 'GFR Ultrafiltration Math' },
+  { pattern: /\bpotometer\s+transpires\b/i, label: 'Potometer Transpiration Rate Math' },
+  { pattern: /\bdomestic\s+dog\s*\(2n\s*=\s*78\)/i, label: 'Canine Cytogenetics' }
+];
+
+function isTopicPurelyQualitative(topicCode, chapterName, subjectName) {
+  if (!topicCode && !chapterName) return false;
+  const tCode = String(topicCode || '').trim();
+  for (const prefix of QUALITATIVE_CHAPTER_CODES) {
+    if (tCode === prefix || tCode.startsWith(`${prefix}-`) || tCode.startsWith(`${prefix}.`)) {
+      return true;
+    }
+  }
+  const combined = `${tCode} ${chapterName || ''} ${subjectName || ''}`.toLowerCase();
+  for (const pat of QUALITATIVE_TOPIC_PATTERNS) {
+    if (pat.test(combined)) return true;
+  }
+  return false;
+}
+
+function validateQuestionCurriculum(q) {
+  const errors = [];
+  if (!q) return { valid: true, errors };
+  const type = String(q.type || '').toUpperCase();
+  const topicCode = String(q.topicCode || '');
+  const chapterName = String(q.chapterName || q.chapterTitle || '');
+  const subjectName = String(q.subject || q.subjectName || '');
+
+  // 1. Numerical Disqualification Guard
+  if (type === 'ONE') {
+    if (isTopicPurelyQualitative(topicCode, chapterName, subjectName)) {
+      errors.push(`[CURRICULUM GUARD] Numerical question (ONE) rejected: Topic '${topicCode}' is purely qualitative.`);
+    }
+  }
+
+  // 2. School-Level Ceiling Barrier (Classes 8–10)
+  const fullText = `${q.text || ''} ${q.solution || ''} ${q.explanation || ''} ${Array.isArray(q.options) ? q.options.map(o => typeof o === 'object' ? (o.text || '') : String(o)).join(' ') : ''}`;
+  for (const { pattern, label } of PROHIBITED_ADVANCED_KEYWORDS) {
+    if (pattern.test(fullText)) {
+      errors.push(`[CURRICULUM GUARD] Out-of-syllabus concept rejected: Contains prohibited advanced term '${label}'.`);
+      break;
+    }
+  }
+
+  return { valid: errors.length === 0, errors };
+}
+
+test('Qualitative Topic Detector correctly identifies theoretical chapters vs computational chapters', () => {
+  // Environmental Science & Qualitative Chapters
+  assert.strictEqual(isTopicPurelyQualitative('MH-9-SCIT-9-9.1', 'Environmental Management'), true);
+  assert.strictEqual(isTopicPurelyQualitative('MH-9-SCIT-8-8.1', 'Useful and Harmful Microbes'), true);
+  assert.strictEqual(isTopicPurelyQualitative('MH-8-SCI-9-9.1', 'Disaster Management'), true);
+  assert.strictEqual(isTopicPurelyQualitative('MH-8-SCI-1-1.1', 'Living World and Classification of Microbes'), true);
+  
+  // Quantitative / Computational Chapters (Maths & Physics)
+  assert.strictEqual(isTopicPurelyQualitative('MH-9-SCIT-1-1.1', 'Laws of Motion'), false);
+  assert.strictEqual(isTopicPurelyQualitative('MH-9-SCIT-11-11.1', 'Reflection of Light'), false);
+  assert.strictEqual(isTopicPurelyQualitative('MH-9-MTH1-1-1.1', 'Sets'), false);
+  assert.strictEqual(isTopicPurelyQualitative('CBSE-8-MGP1-3-3.1', 'Linear Equations in One Variable'), false);
+});
+
+test('Curriculum Guard rejects artificial numericals (ONE) on qualitative chapters', () => {
+  const badNumerical = {
+    type: 'ONE',
+    topicCode: 'MH-9-SCIT-9-9.2',
+    chapterName: 'Environmental Management',
+    text: 'A bioreactor digests 50 kg of organic waste and extracts 12 m3 of methane. Calculate the rate.',
+    solution: 'Rate is 0.24 m3/kg.'
+  };
+  const result = validateQuestionCurriculum(badNumerical);
+  assert.strictEqual(result.valid, false);
+  assert.strictEqual(result.errors.length, 1);
+  assert.strictEqual(result.errors[0].includes('Numerical question (ONE) rejected'), true);
+});
+
+test('Curriculum Guard allows valid numericals (ONE) on physics and mathematics topics', () => {
+  const validPhysicsNumerical = {
+    type: 'ONE',
+    topicCode: 'MH-9-SCIT-1-1.2',
+    chapterName: 'Laws of Motion',
+    text: 'A body of mass 5 kg accelerates at 2 m/s^2. Calculate the applied force in Newtons.',
+    solution: 'F = m * a = 5 * 2 = 10 N.'
+  };
+  const result = validateQuestionCurriculum(validPhysicsNumerical);
+  assert.strictEqual(result.valid, true);
+  assert.strictEqual(result.errors.length, 0);
+});
+
+test('Curriculum Guard rejects out-of-syllabus college/engineering/MBBS concepts', () => {
+  const phytoremediationQuestion = {
+    type: 'OSC',
+    topicCode: 'MH-9-SCIT-9-9.2',
+    chapterName: 'Environmental Management',
+    text: 'Which hyperaccumulating plant is used in phytoremediation?',
+    options: ['Sunflower', 'Rose', 'Tulip', 'Mango'],
+    solution: 'Phytoremediation uses hyperaccumulating plants.'
+  };
+  const result = validateQuestionCurriculum(phytoremediationQuestion);
+  assert.strictEqual(result.valid, false);
+  assert.strictEqual(result.errors[0].includes('Phytoremediation / Hyperaccumulation'), true);
+
+  const schrodingerQuestion = {
+    type: 'OSC',
+    topicCode: 'MH-9-SCIT-5-5.1',
+    chapterName: 'Atomic Structure',
+    text: 'Solve the time-independent Schrodinger equation for the hydrogen atom.',
+    solution: 'Wave mechanics apply.'
+  };
+  const result2 = validateQuestionCurriculum(schrodingerQuestion);
+  assert.strictEqual(result2.valid, false);
+  assert.strictEqual(result2.errors[0].includes('Schrodinger Equation'), true);
+});
+
+test('Curriculum Guard passes authentic Class 8-10 textbook questions', () => {
+  const authenticBalbharti = {
+    type: 'OSC',
+    topicCode: 'MH-9-SCIT-9-9.1',
+    chapterName: 'Environmental Management',
+    text: 'Which meteorological observatory in Pune was established by the India Meteorological Department?',
+    options: ['Shimla Office', 'Mausam Bhavan', 'Pashan Observatory', 'Colaba Observatory'],
+    solution: 'IMD established the observatory at Pune to record and analyze meteorological observations.'
+  };
+  const result = validateQuestionCurriculum(authenticBalbharti);
+  assert.strictEqual(result.valid, true);
+  assert.strictEqual(result.errors.length, 0);
+});
+
 console.log('\n================================================================');
 console.log(`🎉 INVARIANT VERIFICATION SUMMARY: ${passedTests} / ${totalTests} TESTS PASSED`);
 console.log('================================================================\n');

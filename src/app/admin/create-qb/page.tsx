@@ -22,6 +22,7 @@ import {
   getCanonicalTopicCode,
   extractChapterFromTopic
 } from '@/lib/syllabusUtils';
+import { isTopicPurelyQualitative, validateQuestionCurriculum } from '@/lib/curriculumGuard';
 
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
@@ -789,12 +790,16 @@ Please check if the user has attached or pasted any textbook screenshots, diagra
       requirementsSection = `\n========================================\nCONSOLIDATED STUDENT REQUESTED REQUIREMENTS:\n========================================\nPlease generate questions specifically matching these student requested targets:\n${paramRequirements.split(', ').map(r => `- ${r}`).join('\n')}\n`;
     }
 
-    const isCalculativeTopic = isMath || promptTopics.some(t => {
+    const isQualitativeSelection = promptTopics.length > 0 && promptTopics.every(t => 
+      isTopicPurelyQualitative(t.topicCode, t.chapterName, t.subject)
+    );
+
+    const isCalculativeTopic = !isQualitativeSelection && (isMath || promptTopics.some(t => {
       const text = `${t.subject || ''} ${t.chapterName || ''} ${t.topic || ''}`.toLowerCase();
       return /physic|motion|force|gravitat|light|reflection|refraction|electric|current|circuit|sound|work|energy|power|heat|thermodynamic|optics|lens|mirror|wave|mole concept|stoichiometr|density|pressure|floatation|kinematics|fluid|magnetic/i.test(text);
-    });
+    }));
 
-    const allowNumericals = isMath || includeNumericals;
+    const allowNumericals = !isQualitativeSelection && (isMath || includeNumericals);
 
     const buildBatchInstruction = (total: number) => {
       const scopeTag = scope === 'practice_only' 
@@ -1114,7 +1119,11 @@ ${buildVectorFigureInstruction()}
 ========================================
 CRITICAL RULES & LEVEL/SOURCE FIDELITY:
 ========================================
-1. STRICT BOARD & CLASS LEVEL ALIGNMENT: Align difficulty, vocabulary, and concepts with official ${selectedBoard} Class ${selectedClass} textbooks (NCERT / State Board).
+1. STRICT BOARD & CLASS LEVEL ALIGNMENT (MIDDLE & SECONDARY SCHOOL ONLY):
+   - Every question MUST strictly fall within the official prescribed ${selectedBoard} Class ${selectedClass} textbook curriculum (NCERT / Balbharti).
+   - PEDAGOGICAL CEILING: The target students are aged 13–15 in middle/secondary school. DO NOT exceed standard school-level curriculum.
+   - ABSOLUTELY ZERO university, GATE, JEE-Advanced, MBBS/NEET, or M.Tech engineering concepts.
+   - STRICTLY FORBIDDEN ADVANCED TERMS: Differential equations, Navier-Stokes, Hamiltonian/Schrödinger mechanics, relativistic physics, synchrotron radiation, crystal field splitting, Gibbs free energy, phytoremediation, hyperaccumulating plants, fluidized bed incinerators, activated carbon dioxin injection, industrial baghouses, leachate reverse osmosis, GFR podocyte ultrafiltration, potometer transpiration math, nerve impulse velocity math, supercomputing FLOPS conversions.
 2. ZERO PLACEHOLDER, ZERO DUPLICATE OPTIONS & ZERO SYNTHETIC LOOPS POLICY:
    - NEVER generate dummy/placeholder options like "Option A", "None of these", or "All of the above". Every option MUST be an authentic, plausible scientific/mathematical choice.
    - STRICT ZERO DUPLICATE OPTIONS: Every option in the "options" array MUST be unique, mutually distinct, and non-overlapping. Under no circumstances should any question contain duplicate, identical, or near-identical options differing by only 1-2 words or minor phrasing.
@@ -1127,10 +1136,10 @@ CRITICAL RULES & LEVEL/SOURCE FIDELITY:
 7. For numerical: "correctAnswer" MUST be a clean numeric string (e.g. "24.5", "10", "3:1"). Specify required unit in question text.
 8. ${allowNumericals ? `STRICT GRADE-LEVEL & SYLLABUS REALISM (Class ${selectedClass}):
    - All numerical questions (ONE) MUST strictly match the formulas, concepts, and mathematical scope taught in prescribed ${selectedBoard} Class ${selectedClass} textbooks (NCERT / State Board).
-   - ZERO HIGHER-GRADE OR UNIVERSITY HALLUCINATIONS: Strictly forbid introducing complex organic stoichiometry (e.g. lactose molar mass 342 g/mol, fermentation conversion to lactic acid, advanced molarity conversions), multi-step chemical kinetics, or university-level formulas not taught in the Class ${selectedClass} textbook.
-   - NEVER invent artificial numerical calculations or fake arithmetic problems on purely qualitative concepts (e.g. cell biology, taxonomy, tissue functions, bacterial fermentation). Only generate numericals where authentic, textbook-standard numerical problems exist for this specific topic and grade.` : `NUMERICAL QUESTIONS STRICTLY FORBIDDEN / ZERO FAKE ARITHMETIC:
-   - Numericals (ONE) are DISABLED for this topic. Strictly DO NOT generate any "numerical" (ONE) or arithmetic calculation questions.
-   - Strictly DO NOT invent or fabricate artificial stoichiometry, chemical molar mass calculations (e.g. lactose molar mass 342 g/mol, lactic acid moles, organic reaction stoichiometry), fake speeds, or synthetic physics equations for qualitative/biological concepts (fermentation, lactobacilli, cell structure, tissues, classification, ecological relations).
+   - ZERO HIGHER-GRADE OR UNIVERSITY HALLUCINATIONS: Strictly forbid introducing complex organic stoichiometry, multi-step chemical kinetics, or university-level formulas not taught in the Class ${selectedClass} textbook.
+   - NEVER invent artificial numerical calculations or fake arithmetic problems on purely qualitative concepts (e.g. cell biology, taxonomy, tissue functions, bacterial fermentation, environmental management, disaster management, first aid). Only generate numericals where authentic, textbook-standard numerical problems exist for this specific topic and grade.` : `NUMERICAL QUESTIONS STRICTLY FORBIDDEN / ZERO FAKE ARITHMETIC (QUALITATIVE/THEORETICAL TOPIC):
+   - Numericals (ONE) are COMPLETELY DISABLED for this qualitative topic. Strictly DO NOT generate any "numerical" (ONE) or arithmetic calculation questions.
+   - Strictly DO NOT invent or fabricate artificial flow rates, methane extraction volumes, earthworm consumption mass, transpiration rates, lapse rates, stoichiometry, or synthetic physics equations for qualitative/biological concepts (environmental management, solid waste, disaster management, first aid, cell biology, taxonomy, microbes).
    - All questions MUST be purely conceptual, mechanistic, experimental, or factual questions using OSC, OMC, OTF, and OAR only.`}
 9. MANDATORY ATTRIBUTES: Each question object MUST include:
    - "vault": "practice" | "exam" | "mock"
@@ -1763,7 +1772,14 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
 
     list.forEach((q, idx) => {
       const qNum = idx + 1;
-      const qErrors = validateQuestion(q, questionType);
+      const qErrors = [...validateQuestion(q, questionType)];
+
+      // Curriculum Guard (Zero-Invented-Numericals on Qualitative & School-Level Ceiling)
+      const currResult = validateQuestionCurriculum(q);
+      if (!currResult.valid) {
+        qErrors.push(...currResult.errors);
+      }
+
       if (qErrors.length > 0) {
         questionErrorsMap[idx] = qErrors;
         if (!q.ignoreValidation) {
@@ -2290,20 +2306,35 @@ Strictly output ONLY the \`\`\`json ... \`\`\` code block. Zero text before or a
                 </div>
 
                 {/* Numericals Toggle */}
-                <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: 'pointer', margin: 0, padding: '3px 8px', background: includeNumericals ? 'var(--accent-soft)' : 'var(--bg-soft)', borderRadius: 'var(--radius-sm)', border: `1px solid ${includeNumericals ? 'var(--accent-ring)' : 'var(--border-light)'}` }}>
-                  <input
-                    type="checkbox"
-                    checked={includeNumericals}
-                    onChange={(e) => {
-                      setIncludeNumericals(e.target.checked);
-                      setNumericalsManuallyToggled(true);
-                    }}
-                    style={{ width: '13px', height: '13px', cursor: 'pointer' }}
-                  />
-                  <span style={{ fontSize: '11px', fontWeight: 600, color: includeNumericals ? 'var(--accent)' : 'var(--text)' }}>
-                    {includeNumericals ? 'Numericals Included (ONE)' : 'Numericals Off (Theory Only)'}
-                  </span>
-                </label>
+                {(() => {
+                  const pTopics = getPromptTargetTopics();
+                  const isQualitative = pTopics.length > 0 && pTopics.every(t => isTopicPurelyQualitative(t.topicCode, t.chapterName, t.subject));
+                  if (isQualitative) {
+                    return (
+                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '3px 8px', background: 'rgba(239, 68, 68, 0.08)', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(239, 68, 68, 0.25)' }}>
+                        <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--danger)' }}>
+                          🚫 Numericals Prohibited (Qualitative Topic)
+                        </span>
+                      </div>
+                    );
+                  }
+                  return (
+                    <label style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', cursor: 'pointer', margin: 0, padding: '3px 8px', background: includeNumericals ? 'var(--accent-soft)' : 'var(--bg-soft)', borderRadius: 'var(--radius-sm)', border: `1px solid ${includeNumericals ? 'var(--accent-ring)' : 'var(--border-light)'}` }}>
+                      <input
+                        type="checkbox"
+                        checked={includeNumericals}
+                        onChange={(e) => {
+                          setIncludeNumericals(e.target.checked);
+                          setNumericalsManuallyToggled(true);
+                        }}
+                        style={{ width: '13px', height: '13px', cursor: 'pointer' }}
+                      />
+                      <span style={{ fontSize: '11px', fontWeight: 600, color: includeNumericals ? 'var(--accent)' : 'var(--text)' }}>
+                        {includeNumericals ? 'Numericals Included (ONE)' : 'Numericals Off (Theory Only)'}
+                      </span>
+                    </label>
+                  );
+                })()}
 
                 {/* Batch Scope Selector (Fast 2-Batch Partitioning) */}
                 {questionType === 'objective' && (() => {

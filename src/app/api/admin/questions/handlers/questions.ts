@@ -5,6 +5,7 @@ import { verifyRole } from '@/lib/auth';
 import { QuestionRepository } from '@/repositories/question.repository';
 import { ChunkedBatch } from '@/lib/firebase/batch';
 import { validateQuestion, normalizeBloomLevel, OBJECTIVE_QUESTION_TYPES, SUBJECTIVE_QUESTION_TYPES, QUESTION_TYPE_MAP, cleanStringForMatch, toCanonicalQuestionType, isObjectiveType, isSubjectiveType, stripCitations, canonicalizeQuestionAnswers } from '@/lib/questionTypes';
+import { validateQuestionCurriculum } from '@/lib/curriculumGuard';
 import { getFromCache, setInCache, invalidateCache } from '@/lib/firebase/cache';
 import { 
   getCanonicalBoardCode, 
@@ -440,6 +441,18 @@ export async function POST(req: NextRequest) {
 
         const resolvedMarks = QUESTION_TYPE_MAP[p.typeCode]?.defaultMarks ?? QUESTION_TYPE_MAP[normalizedQType]?.defaultMarks ?? marksMap[normalizedQType] ?? (Number(item.marks) > 0 ? Number(item.marks) : 4);
         const cleanOptions = Array.isArray(item.options) ? item.options.map((opt: any) => stripCitations(opt)) : [];
+
+        // Curriculum Guard (Middle/Secondary School Boundaries & Zero-Invented-Numericals)
+        const currValidation = validateQuestionCurriculum({
+          ...item,
+          type: p.typeCode,
+          topicCode,
+          chapterName: finalTopicName
+        });
+        if (!currValidation.valid) {
+          throw new Error(`Curriculum violation on item #${idx + 1} (${p.typeCode}): ${currValidation.errors.join(' | ')}`);
+        }
+
         const { correctAnswer: canonicalAns, correctAnswers: canonicalAnsList } = canonicalizeQuestionAnswers({
           ...item,
           type: p.typeCode,
@@ -586,6 +599,18 @@ export async function POST(req: NextRequest) {
 
     const resolvedMarks = marksMap[normalizedQType] ?? (Number(body.marks) > 0 ? Number(body.marks) : 4);
     const cleanOptions = Array.isArray(options) ? options.map((opt: any) => stripCitations(opt)) : [];
+
+    // Curriculum Guard (Middle/Secondary School Boundaries & Zero-Invented-Numericals)
+    const currValidation = validateQuestionCurriculum({
+      ...body,
+      type: typeCode,
+      topicCode,
+      chapterName: finalTopicName
+    });
+    if (!currValidation.valid) {
+      return NextResponse.json({ message: currValidation.errors.join(' | ') }, { status: 400 });
+    }
+
     const { correctAnswer: canonicalAns, correctAnswers: canonicalAnsList } = canonicalizeQuestionAnswers({
       ...body,
       type: typeCode,
