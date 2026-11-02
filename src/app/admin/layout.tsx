@@ -115,7 +115,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     return () => document.removeEventListener('click', handleOutsideClick);
   }, []);
 
-  // Dynamically position flyout submenu docked neatly next to the active chip
+  // Dynamically position flyout submenu neatly beside the active chip
   useEffect(() => {
     const updatePosition = () => {
       if (activeSubmenu && dropdownRef.current && panelOpen && panelRef.current) {
@@ -124,31 +124,36 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           const btnRect = btn.getBoundingClientRect();
           const panelRect = panelRef.current.getBoundingClientRect();
 
-          // Place neatly to the left of the main panel
+          // Place neatly to the left of the main panel (beside it)
           const rightVal = window.innerWidth - panelRect.left + 8;
 
-          // Bottom-anchor to the active chip so it stays aligned at the bottom dock
-          const chipBottomOffset = window.innerHeight - btnRect.bottom;
+          // Align the top of the submenu with the top of the clicked chip
+          let topVal = btnRect.top;
           const dropdownHeight = dropdownRef.current.offsetHeight || 220;
-
-          // Align the bottom of the submenu with the bottom of the clicked chip
-          let bottomVal = Math.max(16, chipBottomOffset);
-          const maxBottom = window.innerHeight - dropdownHeight - 70;
-          if (bottomVal > maxBottom) {
-            bottomVal = Math.max(16, maxBottom);
+          const maxTop = window.innerHeight - dropdownHeight - 16;
+          
+          if (topVal > maxTop) {
+            topVal = Math.max(16, maxTop);
           }
 
           dropdownRef.current.style.right = `${rightVal}px`;
-          dropdownRef.current.style.bottom = `${bottomVal}px`;
-          dropdownRef.current.style.top = 'auto';
+          dropdownRef.current.style.top = `${topVal}px`;
+          dropdownRef.current.style.bottom = 'auto';
+          dropdownRef.current.style.left = 'auto';
           dropdownRef.current.style.visibility = 'visible';
         }
       }
     };
 
+    // Run immediately and in the next animation frame to ensure accurate DOM dimensions
     updatePosition();
+    const frameId = requestAnimationFrame(updatePosition);
+
     window.addEventListener('resize', updatePosition);
-    return () => window.removeEventListener('resize', updatePosition);
+    return () => {
+      cancelAnimationFrame(frameId);
+      window.removeEventListener('resize', updatePosition);
+    };
   }, [activeSubmenu, panelOpen]);
 
   useEffect(() => {
