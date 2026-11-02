@@ -9,6 +9,7 @@ import { getRequiredConfidence } from '@/lib/studentDb';
 import { MASTERY_THRESHOLDS } from '@/lib/dashboardMetrics';
 import { filterDistinctCandidates, areQuestionsTooSimilar } from '@/lib/questionSimilarity';
 import { getSrsMicroSetSize, selectSrsQuestions } from '@/lib/srsRotation';
+import { invalidateCache } from '@/lib/firebase/cache';
 
 
 async function getQuestionsByTopic(topicCode: string) {
@@ -744,6 +745,9 @@ export async function POST(req: NextRequest) {
     } catch (err) {
       console.warn('Failed to update assignedPractices after grading:', err);
     }
+
+    // Invalidate topic coverage cache so admin dashboard immediately reflects updated mastery
+    invalidateCache('topic-coverage');
 
     return NextResponse.json({
       success: true,

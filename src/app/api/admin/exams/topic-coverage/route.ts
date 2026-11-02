@@ -4,7 +4,8 @@ import { verifyRole } from '@/lib/auth';
 import { isTopicPurelyQualitative } from '@/lib/curriculumGuard';
 import { deriveTopicCodeFromQuestionCode, normalizeTopicCode } from '@/lib/questionTypes';
 import { classifyAssignedTopics } from '@/lib/dashboardMetrics';
-import { getFromCache, setInCache, getCachedSyllabus } from '@/lib/firebase/cache';
+import { getFromCache, setInCache } from '@/lib/firebase/cache';
+import { getCachedSyllabusTopicsMap } from '@/lib/syllabusServerUtils';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -183,65 +184,75 @@ export async function GET(req: NextRequest) {
 
     const conductedTopicCodes = Object.keys(topicExamsMap);
 
-    // 5. In-Memory Syllabus Metadata via getCachedSyllabus() (Zero extra Firestore reads)
-    const syllabusSnap = await getCachedSyllabus();
-    const syllabusTopicsMap = new Map<string, any>();
+    // 5. In-Memory SSOT Syllabus Topics Map via getCachedSyllabusTopicsMap()
+    // Built strictly under rebuild.ts canonical rules; guarantees 100% parity across Learning OS, Parent & Admin reports
+    const syllabusTopicsMap = await getCachedSyllabusTopicsMap(batchClass ? [batchClass] : []);
 
-    syllabusSnap.docs.forEach(d => {
-      const data = d.data();
-      const subjName = data.name || data.subject || '';
-      const cls = data.class || '';
-      (data.chapters || []).forEach((ch: any) => {
-        const chName = ch.name || ch.title || '';
-        (ch.topics || []).forEach((top: any) => {
-          if (top.code) {
-            const norm = normalizeTopicCode(top.code);
-            syllabusTopicsMap.set(norm, {
-              topicCode: norm,
-              topicName: top.name || top.title || norm,
-              chapterName: chName,
-              subjectName: subjName,
-              className: cls,
-              topicClassification: top.topicClassification || top.classification || 'medium',
-              targetQuestions: Number(top.targetQuestions) || 30,
-              requiredConfidence: Number(top.requiredConfidence) || 18,
-              hasNumericals: !isTopicPurelyQualitative(norm, chName, subjName)
-            });
-          }
-        });
-      });
-    });
-
-    // 6. Fetch Student Topic Mastery in efficient parallel batch chunks
-    // For 15-25 batch students, this takes only 2-3 queries instead of hundreds of individual reads
+    // 6. Fetch Student Topic Mastery (Cost-Optimized to bill strictly conducted topics)
     const studentMasteryMap = new Map<string, any[]>();
     studentCodes.forEach(sc => studentMasteryMap.set(sc, []));
 
-    if (studentCodes.length > 0) {
-      const studentChunks: string[][] = [];
-      for (let i = 0; i < studentCodes.length; i += 10) {
-        studentChunks.push(studentCodes.slice(i, i + 10));
-      }
+    if (studentCodes.length > 0 && conductedTopicCodes.length > 0) {
+      const totalTargetedRefs = studentCodes.length * conductedTopicCodes.length;
 
-      const masterySnaps = await Promise.all(
-        studentChunks.map(chunk =>
-          adminDb.collection('studentTopicMastery')
-            .where('studentCode', 'in', chunk)
-            .select('studentCode', 'topicCode', 'mastery', 'verifiedConfidence', 'confidence', 'requiredConfidence', 'practiceQuestionsAttempted')
-            .get()
-            .catch(() => ({ docs: [] } as any))
-        )
-      );
-
-      masterySnaps.forEach(snap => {
-        snap.docs.forEach((doc: any) => {
-          const d = doc.data();
-          const sCode = d.studentCode;
-          if (sCode && studentMasteryMap.has(sCode)) {
-            studentMasteryMap.get(sCode)!.push(d);
-          }
+      // When targeted conducted doc count is <= full history (~60 docs per student),
+      // fetch ONLY the exact conducted topic documents via getAll(). This avoids reading
+      // the student's entire historical catalog of non-conducted topics.
+      if (totalTargetedRefs <= studentCodes.length * 60) {
+        const docRefs: FirebaseFirestore.DocumentReference[] = [];
+        studentCodes.forEach(sCode => {
+          conductedTopicCodes.forEach(tc => {
+            docRefs.push(adminDb.collection('studentTopicMastery').doc(`${sCode}_${tc}`));
+          });
         });
-      });
+
+        const chunks: FirebaseFirestore.DocumentReference[][] = [];
+        for (let i = 0; i < docRefs.length; i += 200) {
+          chunks.push(docRefs.slice(i, i + 200));
+        }
+
+        const chunkSnaps = await Promise.all(
+          chunks.map(chunk => adminDb.getAll(...chunk))
+        );
+
+        chunkSnaps.forEach(snaps => {
+          snaps.forEach(snap => {
+            if (snap.exists) {
+              const d = snap.data()!;
+              const sCode = d.studentCode || snap.id.split('_')[0];
+              if (sCode && studentMasteryMap.has(sCode)) {
+                studentMasteryMap.get(sCode)!.push(d);
+              }
+            }
+          });
+        });
+      } else {
+        // Fallback: chunked query by studentCode in chunks of 30
+        const studentChunks: string[][] = [];
+        for (let i = 0; i < studentCodes.length; i += 30) {
+          studentChunks.push(studentCodes.slice(i, i + 30));
+        }
+
+        const masterySnaps = await Promise.all(
+          studentChunks.map(chunk =>
+            adminDb.collection('studentTopicMastery')
+              .where('studentCode', 'in', chunk)
+              .select('studentCode', 'topicCode', 'mastery', 'verifiedConfidence', 'confidence', 'requiredConfidence', 'practiceQuestionsAttempted')
+              .get()
+              .catch(() => ({ docs: [] } as any))
+          )
+        );
+
+        masterySnaps.forEach(snap => {
+          snap.docs.forEach((doc: any) => {
+            const d = doc.data();
+            const sCode = d.studentCode;
+            if (sCode && studentMasteryMap.has(sCode)) {
+              studentMasteryMap.get(sCode)!.push(d);
+            }
+          });
+        });
+      }
     }
 
     // 7. SSOT Classification via classifyAssignedTopics for each student

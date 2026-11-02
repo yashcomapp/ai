@@ -489,6 +489,7 @@ export class AttemptService {
     try {
       invalidateCache(studentCode);
       invalidateCache('admin_dashboard_');
+      invalidateCache('topic-coverage');
     } catch (e) {}
 
     return result;
