@@ -919,6 +919,7 @@ export class ExamService {
     try {
       invalidateCache('admin_dashboard_');
       invalidateCache('admin_students_list');
+      invalidateCache('admin_exams_full_payload');
       invalidateCache('qb_base_');
       await Promise.all([
         ReportCacheManager.invalidateReport(`exam-report-objective-${examId}`),
@@ -1309,6 +1310,7 @@ export class ExamService {
     try {
       invalidateCache('admin_dashboard_');
       invalidateCache('admin_students_list');
+      invalidateCache('admin_exams_full_payload');
       await Promise.all([
         ReportCacheManager.invalidateReport(`exam-report-objective-${examId}`),
         ReportCacheManager.invalidateReport(`exam-report-subjective-${examId}`),

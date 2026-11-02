@@ -141,8 +141,8 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
     {
       revalidateOnFocus: false,
       revalidateOnMount: !initialData,
-      revalidateIfStale: !initialData,
-      dedupingInterval: 60000,
+      revalidateIfStale: false,
+      dedupingInterval: 300000,
       keepPreviousData: true,
       fallbackData: initialData || localCache
     }

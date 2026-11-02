@@ -181,9 +181,9 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
       fallbackData: selectedChildCode === defaultChildCode ? serverInitialData : (localCache || undefined),
       revalidateOnFocus: false,
       revalidateOnMount: !serverInitialData,
-      revalidateIfStale: true,
+      revalidateIfStale: false,
       keepPreviousData: true,
-      dedupingInterval: 10000 
+      dedupingInterval: 300000 
     }
   );
 
@@ -233,9 +233,10 @@ export default function ParentDashboardClient({ initialData: serverInitialData }
     {
       fallbackData: localReviewsCache || undefined,
       revalidateOnFocus: false,
-      revalidateOnMount: true,
-      revalidateIfStale: true,
-      dedupingInterval: 10000
+      revalidateOnMount: !localReviewsCache,
+      revalidateIfStale: false,
+      keepPreviousData: true,
+      dedupingInterval: 300000
     }
   );
 

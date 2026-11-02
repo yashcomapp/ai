@@ -12,7 +12,7 @@ import {
   getCanonicalSubjectCode,
   buildSyllabusHierarchyFromDocs 
 } from '@/lib/syllabusUtils';
-import { getCachedSyllabus, getCachedTemplates } from '@/lib/firebase/cache';
+import { getCachedSyllabus, getCachedTemplates, invalidateCache } from '@/lib/firebase/cache';
 import { assertCanonicalExamPayload } from '@/lib/canonicalValidation';
 
 
@@ -771,6 +771,7 @@ export async function POST(req: NextRequest) {
         console.warn('Batch mark questions as used warning:', bErr);
       }
 
+      invalidateCache('admin_exams_full_payload');
       return NextResponse.json({ success: true, examId });
     }
 

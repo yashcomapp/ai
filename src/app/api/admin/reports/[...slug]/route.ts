@@ -16,7 +16,7 @@ const NO_CACHE_HEADERS = {
   'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate'
 };
 
-const REPORT_CACHE_TTL_MS = 60000; // 60 seconds
+const REPORT_CACHE_TTL_MS = 900000; // 15 minutes (admins have an on-demand "Refresh Data" button for immediate bust)
 
 // ── 1. Daily Practice Report Handler ──────────────────────────────────
 async function handleDailyPractice(req: NextRequest) {

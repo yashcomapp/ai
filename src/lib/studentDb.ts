@@ -996,7 +996,7 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
         }
       };
 
-      setInCache(cacheKey, result, 20000); // 20s in-memory TTL
+      setInCache(cacheKey, result, 300000); // 5 mins in-memory TTL
       return result;
     } catch (error: any) {
       console.error('getDashboardData error:', error);
@@ -1400,6 +1400,6 @@ export async function getStudentLearningData(userData: any, preloadedData?: Prel
     }
   };
 
-  setInCache(cacheKey, result, 120000); // 2 mins cache
+  setInCache(cacheKey, result, 300000); // 5 mins in-memory TTL
   return result;
 }

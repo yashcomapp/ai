@@ -3,6 +3,7 @@ import { adminDb } from '@/lib/firebase/admin';
 import * as admin from 'firebase-admin';
 import { getDateKeyIST } from '@/lib/dateUtils';
 import { verifyAnyRole } from '@/lib/auth';
+import { getFromCache, setInCache, invalidateCache } from '@/lib/firebase/cache';
 
 
 
@@ -64,6 +65,12 @@ export async function GET(req: NextRequest) {
       }
     }
 
+    const cacheKey = `user_time_log_${targetUid}`;
+    const cachedStats = getFromCache<any>(cacheKey);
+    if (cachedStats) {
+      return NextResponse.json(cachedStats);
+    }
+
     const fourteenDaysAgo = new Date();
     fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
     const fourteenDaysAgoKey = getDateKeyIST(fourteenDaysAgo);
@@ -120,7 +127,7 @@ export async function GET(req: NextRequest) {
       else if (todayPct < -3) todayTrend = 'down';
     }
 
-    return NextResponse.json({
+    const responseData = {
       success: true,
       todaySeconds,
       thisWeekSeconds,
@@ -129,7 +136,11 @@ export async function GET(req: NextRequest) {
       trend,
       todayTrend,
       todayPct
-    });
+    };
+
+    setInCache(cacheKey, responseData, 300000); // 5 mins cache
+
+    return NextResponse.json(responseData);
   } catch (error: any) {
     console.error('GET time-log error:', error);
     return NextResponse.json({ message: error.message || 'Internal Server Error' }, { status: 500 });
@@ -210,6 +221,8 @@ export async function POST(req: NextRequest) {
         updatedAt: admin.firestore.FieldValue.serverTimestamp()
       }, { merge: true });
     }
+
+    invalidateCache(`user_time_log_${uid}`);
 
     return NextResponse.json({ success: true });
   } catch (error: any) {

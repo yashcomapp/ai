@@ -12,7 +12,7 @@ import { evaluateSessionSincerity } from '@/lib/practiceTimeUtils';
 import { getCanonicalSubjectName, parseTopicCode, normalizeTopicCode } from '@/lib/questionTypes';
 import { getObjectiveExamTopics, getSubjectiveExamTopics, getExamDateKey, isExamForStudent, QuotientService } from '@/services/quotient.service';
 import { ExamService, getAssignmentsForBatches } from '@/services/exam.service';
-import { getCachedBatches } from '@/lib/firebase/cache';
+import { getCachedBatches, getFromCache, setInCache, invalidateCache } from '@/lib/firebase/cache';
 import { assertCanonicalStudentCode } from '@/lib/canonicalValidation';
 
 const parseIST = (dateStr: string): Date => {
@@ -701,6 +701,13 @@ export async function GET(req: NextRequest) {
 
     const includeParents = req.nextUrl.searchParams.get('includeParents') === 'true';
 
+    // 0. High-performance in-memory cache to eliminate massive redundant reads on every tab open/switch
+    const cacheKey = `admin_exams_full_payload_${includeParents ? 'with_parents' : 'no_parents'}`;
+    const cachedPayload = getFromCache<any>(cacheKey);
+    if (cachedPayload) {
+      return NextResponse.json(cachedPayload);
+    }
+
     const [
       examsList,
       subjExamsList,
@@ -885,7 +892,7 @@ export async function GET(req: NextRequest) {
       });
     });
 
-    return NextResponse.json({
+    const fullResponse = {
       exams,
       subjectiveExams,
       batches,
@@ -893,7 +900,12 @@ export async function GET(req: NextRequest) {
       parents,
       assignments: [...objAssignments, ...subjAssignments],
       attemptCounts
-    });
+    };
+
+    // Store in-memory cache for 2 minutes to prevent repeated multi-collection reads
+    setInCache(cacheKey, fullResponse, 120000);
+
+    return NextResponse.json(fullResponse);
 
   } catch (error: any) {
     console.error('API load admin exams error:', error);
@@ -1086,6 +1098,7 @@ export async function POST(req: NextRequest) {
       } catch (err) {
         console.error('Error sending exam notifications:', err);
       }
+      invalidateCache('admin_exams_full_payload');
       return NextResponse.json({ success: true, id: assignmentDocId });
     } else {
       payload.examType = 'subjective';
@@ -1150,6 +1163,7 @@ export async function POST(req: NextRequest) {
       } catch (err) {
         console.error('Error sending exam notifications:', err);
       }
+      invalidateCache('admin_exams_full_payload');
       return NextResponse.json({ success: true, id: assignmentDocId });
     }
   } catch (error: any) {
@@ -1199,6 +1213,7 @@ export async function PUT(req: NextRequest) {
         status,
         updatedAt: admin.firestore.FieldValue.serverTimestamp()
       });
+      invalidateCache('admin_exams_full_payload');
       return NextResponse.json({ success: true, message: `Assignment status updated to ${status}.` });
     }
 
@@ -1269,6 +1284,7 @@ export async function PUT(req: NextRequest) {
       }
     }
 
+    invalidateCache('admin_exams_full_payload');
     return NextResponse.json({ success: true, message: 'Assignment updated successfully.' });
 
   } catch (error: any) {
@@ -1294,6 +1310,7 @@ export async function DELETE(req: NextRequest) {
     }
 
     const result = await ExamService.deleteExamCompletely(examId, type);
+    invalidateCache('admin_exams_full_payload');
     return NextResponse.json(result);
 
   } catch (error: any) {

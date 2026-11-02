@@ -792,6 +792,6 @@ export async function getParentDashboardData(
     })
   };
 
-  setInCache(cacheKey, result, 20000); // 20s in-memory TTL
+  setInCache(cacheKey, result, 300000); // 5 mins in-memory TTL
   return result;
 }
