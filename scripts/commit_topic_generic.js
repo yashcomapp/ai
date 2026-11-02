@@ -73,8 +73,24 @@ async function commitTopic(jsonPath, topicCode) {
 
       const docRef = db.collection('questions').doc(q.questionCode);
       const solutionText = q.solution || q.explanation || '';
+
+      // Canonicalize answer to prevent numeric indices from ever being committed
+      let finalAns = q.correctAnswer !== undefined && q.correctAnswer !== null ? q.correctAnswer : (q.ans !== undefined && q.ans !== null ? q.ans : q.correctOption);
+      if (typeof finalAns === 'number' && Number.isInteger(finalAns) && finalAns >= 0 && finalAns < 26) {
+        finalAns = String.fromCharCode(65 + finalAns);
+      }
+      let finalAnsList = Array.isArray(q.correctAnswers) ? q.correctAnswers : (finalAns !== undefined ? [finalAns] : []);
+      finalAnsList = finalAnsList.map(a => {
+        if (typeof a === 'number' && Number.isInteger(a) && a >= 0 && a < 26) {
+          return String.fromCharCode(65 + a);
+        }
+        return String(a);
+      });
+
       batch.set(docRef, {
         ...q,
+        correctAnswer: finalAns !== undefined ? finalAns : '',
+        correctAnswers: finalAnsList,
         solution: solutionText,
         explanation: solutionText,
         chapterNumber: chNum,

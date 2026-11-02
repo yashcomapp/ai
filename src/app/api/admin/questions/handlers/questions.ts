@@ -4,7 +4,7 @@ import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole } from '@/lib/auth';
 import { QuestionRepository } from '@/repositories/question.repository';
 import { ChunkedBatch } from '@/lib/firebase/batch';
-import { validateQuestion, normalizeBloomLevel, OBJECTIVE_QUESTION_TYPES, SUBJECTIVE_QUESTION_TYPES, QUESTION_TYPE_MAP, cleanStringForMatch, toCanonicalQuestionType, isObjectiveType, isSubjectiveType, stripCitations } from '@/lib/questionTypes';
+import { validateQuestion, normalizeBloomLevel, OBJECTIVE_QUESTION_TYPES, SUBJECTIVE_QUESTION_TYPES, QUESTION_TYPE_MAP, cleanStringForMatch, toCanonicalQuestionType, isObjectiveType, isSubjectiveType, stripCitations, canonicalizeQuestionAnswers } from '@/lib/questionTypes';
 import { getFromCache, setInCache, invalidateCache } from '@/lib/firebase/cache';
 import { 
   getCanonicalBoardCode, 
@@ -439,13 +439,20 @@ export async function POST(req: NextRequest) {
         }
 
         const resolvedMarks = QUESTION_TYPE_MAP[p.typeCode]?.defaultMarks ?? QUESTION_TYPE_MAP[normalizedQType]?.defaultMarks ?? marksMap[normalizedQType] ?? (Number(item.marks) > 0 ? Number(item.marks) : 4);
+        const cleanOptions = Array.isArray(item.options) ? item.options.map((opt: any) => stripCitations(opt)) : [];
+        const { correctAnswer: canonicalAns, correctAnswers: canonicalAnsList } = canonicalizeQuestionAnswers({
+          ...item,
+          type: p.typeCode,
+          options: cleanOptions
+        });
+
         const questionDoc: any = {
           questionCode: finalCode,
           type: p.typeCode,
           text: stripCitations(item.text),
-          options: Array.isArray(item.options) ? item.options.map((opt: any) => stripCitations(opt)) : [],
-          correctAnswer: stripCitations(item.correctAnswer || ''),
-          correctAnswers: Array.isArray(item.correctAnswers) ? item.correctAnswers.map((ans: any) => stripCitations(ans)) : [],
+          options: cleanOptions,
+          correctAnswer: stripCitations(canonicalAns),
+          correctAnswers: canonicalAnsList.map((ans: any) => stripCitations(ans)),
           assertion: stripCitations(item.assertion || ''),
           reason: stripCitations(item.reason || ''),
           solution: stripCitations(item.solution || ''),
@@ -578,14 +585,20 @@ export async function POST(req: NextRequest) {
     }
 
     const resolvedMarks = marksMap[normalizedQType] ?? (Number(body.marks) > 0 ? Number(body.marks) : 4);
+    const cleanOptions = Array.isArray(options) ? options.map((opt: any) => stripCitations(opt)) : [];
+    const { correctAnswer: canonicalAns, correctAnswers: canonicalAnsList } = canonicalizeQuestionAnswers({
+      ...body,
+      type: typeCode,
+      options: cleanOptions
+    });
 
     const questionDoc: any = {
       questionCode: finalCode,
       type: typeCode,
       text: stripCitations(text),
-      options: Array.isArray(options) ? options.map((opt: any) => stripCitations(opt)) : [],
-      correctAnswer: stripCitations(correctAnswer || ''),
-      correctAnswers: Array.isArray(correctAnswers) ? correctAnswers.map((ans: any) => stripCitations(ans)) : [],
+      options: cleanOptions,
+      correctAnswer: stripCitations(canonicalAns),
+      correctAnswers: canonicalAnsList.map((ans: any) => stripCitations(ans)),
       assertion: stripCitations(assertion || ''),
       reason: stripCitations(reason || ''),
       solution: stripCitations(solution || ''),

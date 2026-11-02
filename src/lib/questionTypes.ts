@@ -1027,7 +1027,7 @@ function restoreLatex(obj: any): any {
 
 export function cleanOptionPrefix(str: string): string {
   if (!str) return '';
-  const s = stripCitations(String(str)).trim();
+  let s = stripCitations(String(str)).replace(/\\s\{\d+\}/g, '').trim();
 
   // Guard against ratios (e.g. "1:4", "2:1", "4:5:6"), decimals ("1.5"), or ranges ("1-4")
   if (/^\d+(?::\d+)+/.test(s) || /^\d+\.\d+/.test(s) || /^\d+-\d+/.test(s)) {
@@ -1645,6 +1645,83 @@ export function getQuestionCorrectAnswer(q: any): any {
   if (q.correct_answer !== undefined && q.correct_answer !== null && q.correct_answer !== '') return q.correct_answer;
   if (q.correctOption !== undefined && q.correctOption !== null && q.correctOption !== '') return q.correctOption;
   return null;
+}
+
+/**
+ * Canonicalizes question answers across all ingress sources.
+ * Guarantees that:
+ * 1. Numeric indices (0, 1, 2) or numeric strings ("0", "1") are deterministically converted to canonical letters ('A', 'B', 'C') matching options.
+ * 2. Letters ('A', 'B') are preserved.
+ * 3. Verbatim option strings are matched to options and converted to letters.
+ * 4. For OMC (multiple choice), correctAnswers is an array and correctAnswer is comma-separated list of letters.
+ * 5. For OAR (Assertion-Reason), correctAnswer is strictly 'A', 'B', 'C', or 'D'.
+ * 6. Neither correctAnswer nor correctAnswers is ever empty, null, undefined, or a falsey number.
+ */
+export function canonicalizeQuestionAnswers(q: any): { correctAnswer: any; correctAnswers: string[] } {
+  if (!q) return { correctAnswer: '', correctAnswers: [] };
+
+  const rawType = q.typeCode || q.type || 'OSC';
+  const canonicalType = toCanonicalQuestionType(rawType);
+  const options = Array.isArray(q.options) ? q.options : [];
+
+  // Extract raw answer candidate across all legacy keys
+  let raw = q.correctAnswer;
+  if (raw === undefined || raw === null || raw === '') {
+    if (q.ans !== undefined && q.ans !== null && q.ans !== '') raw = q.ans;
+    else if (q.answer !== undefined && q.answer !== null && q.answer !== '') raw = q.answer;
+    else if (q.correctOption !== undefined && q.correctOption !== null && q.correctOption !== '') raw = q.correctOption;
+    else if (q.correct_answer !== undefined && q.correct_answer !== null && q.correct_answer !== '') raw = q.correct_answer;
+  }
+
+  let rawList: any[] = [];
+  if (Array.isArray(q.correctAnswers) && q.correctAnswers.length > 0) {
+    rawList = q.correctAnswers;
+  } else if (Array.isArray(raw)) {
+    rawList = raw;
+  } else if (raw !== undefined && raw !== null && raw !== '') {
+    rawList = parseAnswerList(raw);
+  }
+
+  // Handle Objective Multiple Choice (OMC)
+  if (canonicalType === 'OMC') {
+    const normList = rawList.map(item => {
+      const norm = normalizeOptionAnswer(item, options);
+      return norm || String(item).trim();
+    }).filter(Boolean);
+
+    const primary = normList.join(', ');
+    return {
+      correctAnswer: primary,
+      correctAnswers: normList
+    };
+  }
+
+  // Handle Assertion & Reason (OAR)
+  if (canonicalType === 'OAR') {
+    const rawStr = String(rawList[0] || raw || '').trim().toUpperCase();
+    const match = rawStr.match(/[A-D]/);
+    const letter = match ? match[0] : (['A', 'B', 'C', 'D'].includes(rawStr) ? rawStr : 'A');
+    return {
+      correctAnswer: letter,
+      correctAnswers: [letter]
+    };
+  }
+
+  // Handle Single Choice / True False / Numerical / Definitions / etc.
+  const single = rawList[0] !== undefined ? rawList[0] : raw;
+  if (single !== undefined && single !== null && single !== '') {
+    const norm = normalizeOptionAnswer(single, options);
+    const finalVal = norm || String(single).trim();
+    return {
+      correctAnswer: finalVal,
+      correctAnswers: [finalVal]
+    };
+  }
+
+  return {
+    correctAnswer: '',
+    correctAnswers: []
+  };
 }
 
 export function isOptionSelectedByUser(userAns: any, optKey: string, optIndex: number, optText?: string, allOptions?: any[]): boolean {
