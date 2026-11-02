@@ -653,7 +653,7 @@ export const QuestionDisplay: React.FC<QuestionDisplayProps> = React.memo(({
   const qText = text ?? question?.text ?? question?.questionText ?? '';
   const qType = type ?? question?.type ?? '';
   const rawOptions = options ?? question?.options ?? null;
-  const qCorrectAnswer = correctAnswer ?? question?.correctAnswer ?? question?.answer ?? question?.correct_answer ?? '';
+  const qCorrectAnswer = (correctAnswer !== undefined && correctAnswer !== null) ? correctAnswer : ((question?.correctAnswer !== undefined && question?.correctAnswer !== null) ? question.correctAnswer : (question?.answer ?? question?.correct_answer ?? ''));
   const qCorrectAnswers = correctAnswers ?? question?.correctAnswers ?? (Array.isArray(qCorrectAnswer) ? qCorrectAnswer : []);
   const qUserAnswer = userAnswer ?? selectedAnswer ?? question?.userAnswer ?? '';
   const qExplanation = explanation ?? solution ?? question?.explanation ?? question?.solution ?? '';
@@ -1116,7 +1116,7 @@ export const QuestionDisplay: React.FC<QuestionDisplayProps> = React.memo(({
         )}
 
         {/* Correct answer subtitle when options list is rendered */}
-        {resolvedOptions && resolvedOptions.length > 0 && (qCorrectAnswers?.length > 0 || qCorrectAnswer) && (
+        {resolvedOptions && resolvedOptions.length > 0 && (qCorrectAnswers?.length > 0 || (qCorrectAnswer !== undefined && qCorrectAnswer !== null && qCorrectAnswer !== '')) && (
           <div style={{ fontSize: '12px', color: 'var(--success, #16a34a)', fontWeight: 700, marginTop: '4px' }}>
             ℹ️ Correct Answer: {(() => {
               const correctList = (qCorrectAnswers && qCorrectAnswers.length > 0)
@@ -1135,6 +1135,16 @@ export const QuestionDisplay: React.FC<QuestionDisplayProps> = React.memo(({
                   })
                   .filter(Boolean);
                 return matched.length > 0 ? matched.join(', ') : correctList.join(', ');
+              }
+              const singleAns = correctList[0] ?? qCorrectAnswer;
+              const normLetter = normalizeOptionAnswer(singleAns, resolvedOptions);
+              if (normLetter && /^[A-Z]$/.test(normLetter)) {
+                const idx = normLetter.charCodeAt(0) - 65;
+                if (idx >= 0 && idx < resolvedOptions.length) {
+                  const opt = resolvedOptions[idx];
+                  const optText = getRawOptionText(opt);
+                  return `(${normLetter}) ${stripOptionLabel(optText)}`;
+                }
               }
               return `Option ${Array.isArray(qCorrectAnswer) ? qCorrectAnswer.join(', ') : String(qCorrectAnswer)}`;
             })()}

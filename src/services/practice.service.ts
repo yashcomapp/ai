@@ -121,8 +121,12 @@ export class PracticeService {
 
       const isMultiple = isMultipleChoiceType(qData.type);
       const resolvedCorrectAnswer = isMultiple
-        ? (Array.isArray(qData.correctAnswers) && qData.correctAnswers.length > 0 ? qData.correctAnswers : parseAnswerList(qData.correctAnswer))
-        : (qData.correctAnswer || (Array.isArray(qData.correctAnswers) ? qData.correctAnswers[0] : ''));
+        ? (Array.isArray(qData.correctAnswers) && qData.correctAnswers.length > 0 
+            ? qData.correctAnswers 
+            : (Array.isArray(qData.correctAnswer) ? qData.correctAnswer : (qData.correctAnswer !== undefined && qData.correctAnswer !== null ? parseAnswerList(qData.correctAnswer) : [])))
+        : (qData.correctAnswer !== undefined && qData.correctAnswer !== null && qData.correctAnswer !== ''
+            ? qData.correctAnswer 
+            : (Array.isArray(qData.correctAnswers) && qData.correctAnswers.length > 0 ? qData.correctAnswers[0] : ''));
 
       let isCorrect = false;
       if (!isDisputed) {
@@ -186,7 +190,7 @@ export class PracticeService {
         difficulty: qData.difficulty || 'medium',
         bloomLevel: qData.bloomLevel || 'Understand',
         userAnswer: ans.selectedOptionText || ans.answer,
-        correctAnswer: qData.correctAnswer || '',
+        correctAnswer: (qData.correctAnswer !== undefined && qData.correctAnswer !== null) ? qData.correctAnswer : '',
         correctAnswers: qData.correctAnswers || [],
         isCorrect,
         isDisputed,

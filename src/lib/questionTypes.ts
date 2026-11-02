@@ -262,6 +262,18 @@ export function normalizeOptionAnswer(value: any, options?: any[]): string {
     if (idx !== -1) return String.fromCharCode(65 + idx);
   }
 
+  // 2b. Numeric string representing 0-based option index (e.g. "0", "1", "2")
+  if (/^[0-9]+$/.test(valueStr)) {
+    const num = parseInt(valueStr, 10);
+    if (Array.isArray(options) && options.length > 0) {
+      if (num >= 0 && num < options.length) {
+        return String.fromCharCode(65 + num);
+      }
+    } else if (num >= 0 && num < 26) {
+      return String.fromCharCode(65 + num);
+    }
+  }
+
   // 3. Fallback for single letter A-Z only
   if (/^[A-Z]$/i.test(valueStr)) {
     return valueStr.toUpperCase();
@@ -384,7 +396,8 @@ export function evaluateQuestionAnswer(type: string, userAnswer: any, correctAns
     // 1. Multiple Choice (Multi-Select)
     case 'OMC': {
       let rawCorrect = correctAnswer;
-      if ((!rawCorrect || (Array.isArray(rawCorrect) && rawCorrect.length === 0)) && Array.isArray(options) && options.length > 0) {
+      const isMissingCorrect = rawCorrect === undefined || rawCorrect === null || rawCorrect === '' || (Array.isArray(rawCorrect) && rawCorrect.length === 0);
+      if (isMissingCorrect && Array.isArray(options) && options.length > 0) {
         const fromOpts = options
           .map((opt, idx) => (opt && typeof opt === 'object' && (opt.isCorrect || opt.correct)) ? String.fromCharCode(65 + idx) : null)
           .filter(Boolean);
@@ -404,7 +417,8 @@ export function evaluateQuestionAnswer(type: string, userAnswer: any, correctAns
     // 2. Single MCQ
     case 'OSC': {
       let rawCorrect = correctAnswer;
-      if (!rawCorrect && Array.isArray(options) && options.length > 0) {
+      const isMissingCorrect = rawCorrect === undefined || rawCorrect === null || rawCorrect === '';
+      if (isMissingCorrect && Array.isArray(options) && options.length > 0) {
         const fromOpt = options.find((opt: any) => opt && typeof opt === 'object' && (opt.isCorrect || opt.correct));
         if (fromOpt) rawCorrect = fromOpt.text || fromOpt.value || fromOpt.label || '';
       }
@@ -1658,12 +1672,11 @@ export function isOptionSelectedByUser(userAns: any, optKey: string, optIndex: n
     if (allOptions && Array.isArray(allOptions) && allOptions.length > 0) {
       const normLetter = normalizeOptionAnswer(item, allOptions);
       if (normLetter && normLetter === charCode) return true;
-    } else {
-      const idxStr = String(optIndex);
-      const oneBasedIdxStr = String(optIndex + 1);
-      if (itemStr === idxStr || itemStr === oneBasedIdxStr) return true;
-      if (itemUpper.length === 1 && itemUpper.charCodeAt(0) - 65 === optIndex) return true;
     }
+    const idxStr = String(optIndex);
+    const oneBasedIdxStr = String(optIndex + 1);
+    if (itemStr === idxStr || itemStr === oneBasedIdxStr) return true;
+    if (itemUpper.length === 1 && itemUpper.charCodeAt(0) - 65 === optIndex) return true;
 
     return false;
   });
@@ -1694,12 +1707,11 @@ export function isOptionCorrect(correctAns: any, optKey: string, optIndex: numbe
     if (allOptions && Array.isArray(allOptions) && allOptions.length > 0) {
       const normLetter = normalizeOptionAnswer(item, allOptions);
       if (normLetter && normLetter === charCode) return true;
-    } else {
-      const idxStr = String(optIndex);
-      const oneBasedIdxStr = String(optIndex + 1);
-      if (itemStr === idxStr || itemStr === oneBasedIdxStr) return true;
-      if (itemUpper.length === 1 && itemUpper.charCodeAt(0) - 65 === optIndex) return true;
     }
+    const idxStr = String(optIndex);
+    const oneBasedIdxStr = String(optIndex + 1);
+    if (itemStr === idxStr || itemStr === oneBasedIdxStr) return true;
+    if (itemUpper.length === 1 && itemUpper.charCodeAt(0) - 65 === optIndex) return true;
 
     return false;
   });

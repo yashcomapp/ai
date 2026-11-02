@@ -88,8 +88,12 @@ export class AttemptService {
 
       const isMultiple = isMultipleChoiceType(q.type);
       const correctAnswer = isMultiple
-        ? (Array.isArray(q.correctAnswers) && q.correctAnswers.length > 0 ? q.correctAnswers : parseAnswerList(q.correctAnswer))
-        : (q.correctAnswer || (Array.isArray(q.correctAnswers) ? q.correctAnswers[0] : ''));
+        ? (Array.isArray(q.correctAnswers) && q.correctAnswers.length > 0 
+            ? q.correctAnswers 
+            : (Array.isArray(q.correctAnswer) ? q.correctAnswer : (q.correctAnswer !== undefined && q.correctAnswer !== null ? parseAnswerList(q.correctAnswer) : [])))
+        : (q.correctAnswer !== undefined && q.correctAnswer !== null && q.correctAnswer !== ''
+            ? q.correctAnswer 
+            : (Array.isArray(q.correctAnswers) && q.correctAnswers.length > 0 ? q.correctAnswers[0] : ''));
       const isAttempted = ans && ans !== '' && ans !== '[]' && ans !== '{}';
       
       let isCorrect = false;

@@ -222,7 +222,7 @@ export function PracticeCompletionView({
                   : [qItem.userAnswer];
                 const parsedCorrectAns = isMulti
                   ? (Array.isArray(qItem.correctAnswers) && qItem.correctAnswers.length > 0 ? qItem.correctAnswers : (Array.isArray(qItem.correctAnswer) ? qItem.correctAnswer : parseAnswerList(qItem.correctAnswer)))
-                  : [qItem.correctAnswer || (Array.isArray(qItem.correctAnswers) ? qItem.correctAnswers[0] : '')];
+                  : [(qItem.correctAnswer !== undefined && qItem.correctAnswer !== null && qItem.correctAnswer !== '') ? qItem.correctAnswer : (Array.isArray(qItem.correctAnswers) && qItem.correctAnswers.length > 0 ? qItem.correctAnswers[0] : '')];
 
                 return (
                   <div key={idx} style={{ background: 'var(--surface)', padding: '12px', borderRadius: 'var(--radius-sm)', border: `1px solid ${qItem.isCorrect ? 'var(--success)' : 'var(--danger)'}` }}>

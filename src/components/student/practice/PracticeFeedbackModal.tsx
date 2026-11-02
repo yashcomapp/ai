@@ -37,16 +37,20 @@ export function PracticeFeedbackModal({
   const getCorrectOptionText = (qItem: any) => {
     const isMultiple = isMultipleChoiceType(qItem.type);
     const rawAnswers = isMultiple
-      ? (Array.isArray(qItem.correctAnswers) && qItem.correctAnswers.length > 0 ? qItem.correctAnswers : parseAnswerList(qItem.correctAnswer))
-      : [qItem.correctAnswer || (Array.isArray(qItem.correctAnswers) ? qItem.correctAnswers[0] : '')];
+      ? (Array.isArray(qItem.correctAnswers) && qItem.correctAnswers.length > 0 
+          ? qItem.correctAnswers 
+          : (Array.isArray(qItem.correctAnswer) ? qItem.correctAnswer : parseAnswerList(qItem.correctAnswer)))
+      : (qItem.correctAnswer !== undefined && qItem.correctAnswer !== null && qItem.correctAnswer !== ''
+          ? [qItem.correctAnswer]
+          : (Array.isArray(qItem.correctAnswers) && qItem.correctAnswers.length > 0 ? [qItem.correctAnswers[0]] : []));
 
     if (!qItem.options || qItem.options.length === 0) {
-      return rawAnswers.filter(Boolean).join(', ') || 'Correct option';
+      return rawAnswers.filter((v: any) => v !== undefined && v !== null && v !== '').join(', ') || 'Option A';
     }
 
     const matchedTexts: string[] = [];
     rawAnswers.forEach((ans: any) => {
-      if (!ans) return;
+      if (ans === undefined || ans === null || ans === '') return;
       const normLetter = normalizeOptionAnswer(ans, qItem.options);
       if (normLetter && /^[A-Z]$/.test(normLetter)) {
         const idx = normLetter.charCodeAt(0) - 65;
@@ -81,7 +85,17 @@ export function PracticeFeedbackModal({
       }).join(', ');
     }
 
-    return 'Correct option';
+    if (rawAnswers.length > 0 && rawAnswers[0] !== undefined && rawAnswers[0] !== '') {
+      return rawAnswers.join(', ');
+    }
+
+    if (qItem.options && qItem.options.length > 0) {
+      const firstOpt = qItem.options[0];
+      const text = typeof firstOpt === 'object' && firstOpt ? (firstOpt.text || firstOpt.value || '') : String(firstOpt);
+      return `(A) ${stripOptionLabel(text)}`;
+    }
+
+    return 'Option A';
   };
 
   return (
