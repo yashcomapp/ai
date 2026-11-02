@@ -686,6 +686,73 @@ test('Curriculum Guard passes authentic Class 8-10 textbook questions', () => {
   assert.strictEqual(result.errors.length, 0);
 });
 
+
+// -----------------------------------------------------------------------------
+// SUITE 12: Practice Submission & Parent Review Architectural Guards
+// -----------------------------------------------------------------------------
+console.log('\n--- Suite 12: Practice Submission & Parent Review Architectural Guards ---');
+
+test('Practice scorePercent and correctCount can NEVER diverge or write 0% when correctCount > 0', () => {
+  const evaluateScore = (correctCount, validCount) => {
+    if (validCount <= 0) throw new Error('[CRITICAL INVARIANT] validCount cannot be <= 0');
+    const validQuestionsCount = validCount;
+    const scorePercent = Math.min(100, Math.max(0, Math.round((correctCount / validQuestionsCount) * 100)));
+    if (correctCount > 0 && scorePercent === 0) {
+      throw new Error(`[CRITICAL INVARIANT] Practice score calculation error: correctCount is ${correctCount}/${validQuestionsCount} but scorePercent computed as 0%`);
+    }
+    return scorePercent;
+  };
+
+  assert.strictEqual(evaluateScore(4, 6), 67);
+  assert.strictEqual(evaluateScore(6, 6), 100);
+  assert.strictEqual(evaluateScore(1, 6), 17);
+  assert.strictEqual(evaluateScore(0, 6), 0);
+  assert.throws(() => evaluateScore(1, 0), /CRITICAL INVARIANT/);
+});
+
+test('Self-healing pipeline auto-restores true percentage if legacy doc has scorePercent: 0 with score > 0', () => {
+  const resolveReviewScore = (prDoc) => {
+    const totalQ = Math.max(1, prDoc.totalQuestions || (prDoc.questions || []).length || 1);
+    const correctQ = Number(prDoc.correctCount ?? prDoc.score ?? 0);
+    let sp = Number(prDoc.scorePercent);
+    if (isNaN(sp) || (sp === 0 && correctQ > 0)) {
+      sp = Math.min(100, Math.max(0, Math.round((correctQ / totalQ) * 100)));
+    }
+    return { scorePercent: sp, correctCount: correctQ, totalQuestions: totalQ };
+  };
+
+  // Legacy glitched record with scorePercent: 0 but score: 4
+  const glitchedPr = { scorePercent: 0, correctCount: 4, totalQuestions: 6 };
+  const healed = resolveReviewScore(glitchedPr);
+  assert.strictEqual(healed.scorePercent, 67);
+  assert.strictEqual(healed.correctCount, 4);
+
+  // Normal 0/6 failure stays 0%
+  const zeroPr = { scorePercent: 0, correctCount: 0, totalQuestions: 6 };
+  assert.strictEqual(resolveReviewScore(zeroPr).scorePercent, 0);
+});
+
+test('Evaluations never store blank correctAnswer when resolved answer key exists', () => {
+  const resolveAnswerForStorage = (qData, resolvedCorrectAnswer) => {
+    return (qData.correctAnswer !== undefined && qData.correctAnswer !== null && qData.correctAnswer !== '')
+      ? qData.correctAnswer
+      : (typeof resolvedCorrectAnswer === 'string' && resolvedCorrectAnswer !== ''
+          ? resolvedCorrectAnswer
+          : (Array.isArray(resolvedCorrectAnswer) && resolvedCorrectAnswer.length > 0
+              ? resolvedCorrectAnswer.join(',')
+              : (Array.isArray(qData.correctAnswers) && qData.correctAnswers.length > 0 ? qData.correctAnswers[0] : '')));
+  };
+
+  // Case 1: correctAnswer has value "A"
+  assert.strictEqual(resolveAnswerForStorage({ correctAnswer: 'A' }, 'A'), 'A');
+  // Case 2: correctAnswer is empty string "", but resolvedCorrectAnswer has "A"
+  assert.strictEqual(resolveAnswerForStorage({ correctAnswer: '' }, 'A'), 'A');
+  // Case 3: correctAnswer is missing, but correctAnswers array has ["B"]
+  assert.strictEqual(resolveAnswerForStorage({ correctAnswers: ['B'] }, ''), 'B');
+  // Case 4: Multiple choice array of letters
+  assert.strictEqual(resolveAnswerForStorage({}, ['A', 'C']), 'A,C');
+});
+
 console.log('\n================================================================');
 console.log(`🎉 INVARIANT VERIFICATION SUMMARY: ${passedTests} / ${totalTests} TESTS PASSED`);
 console.log('================================================================\n');

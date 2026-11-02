@@ -178,6 +178,15 @@ export class PracticeService {
         }
       }
 
+      // Authoritative Answer Key Guard: Never store blank correctAnswer when resolved key exists
+      const resolvedAnswerForStorage = (qData.correctAnswer !== undefined && qData.correctAnswer !== null && qData.correctAnswer !== '')
+        ? qData.correctAnswer
+        : (typeof resolvedCorrectAnswer === 'string' && resolvedCorrectAnswer !== ''
+            ? resolvedCorrectAnswer
+            : (Array.isArray(resolvedCorrectAnswer) && resolvedCorrectAnswer.length > 0
+                ? resolvedCorrectAnswer.join(',')
+                : (Array.isArray(qData.correctAnswers) && qData.correctAnswers.length > 0 ? qData.correctAnswers[0] : '')));
+
       evaluations.push({
         id: ans.questionId,
         questionCode: qData.questionCode,
@@ -190,8 +199,8 @@ export class PracticeService {
         difficulty: qData.difficulty || 'medium',
         bloomLevel: qData.bloomLevel || 'Understand',
         userAnswer: ans.selectedOptionText || ans.answer,
-        correctAnswer: (qData.correctAnswer !== undefined && qData.correctAnswer !== null) ? qData.correctAnswer : '',
-        correctAnswers: qData.correctAnswers || [],
+        correctAnswer: resolvedAnswerForStorage,
+        correctAnswers: Array.isArray(qData.correctAnswers) && qData.correctAnswers.length > 0 ? qData.correctAnswers : (resolvedAnswerForStorage ? [resolvedAnswerForStorage] : []),
         isCorrect,
         isDisputed,
         examCategory: qData.examCategory || 'standard'
@@ -456,7 +465,12 @@ export class PracticeService {
         }
 
         const validQuestionsCount = Math.max(1, evaluations.length - disputedCount);
-        const scorePercent = Math.round((correctCount / validQuestionsCount) * 100);
+        const scorePercent = Math.min(100, Math.max(0, Math.round((correctCount / validQuestionsCount) * 100)));
+
+        // Guarding Fence Invariant: Prevent scorePercent and correctCount divergence
+        if (correctCount > 0 && scorePercent === 0) {
+          throw new Error(`[CRITICAL INVARIANT] Practice score calculation error: correctCount is ${correctCount}/${validQuestionsCount} but scorePercent computed as 0%`);
+        }
 
         // Evaluate Time Sincerity and Pacing Velocity
         const sincerity = evaluateSessionSincerity({
@@ -491,7 +505,9 @@ export class PracticeService {
           subjectName,
           chapterName,
           scorePercent,
+          percentage: scorePercent,
           correctCount,
+          score: correctCount,
           totalQuestions: evaluations.length - disputedCount,
           disputedCount,
           masteryBefore: existingMastery,

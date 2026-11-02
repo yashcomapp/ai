@@ -391,8 +391,16 @@ export async function GET(req: NextRequest) {
         chapter: displayChapter,
         date: startIso || createdIso || updatedIso || null,
         rawTimestamp,
-        scorePercent: data.scorePercent || 0,
-        correctCount: data.correctCount || 0,
+        scorePercent: (() => {
+          const totalQ = Math.max(1, data.totalQuestions || (data.questions || []).length || 1);
+          const correctQ = Number(data.correctCount ?? data.score ?? 0);
+          let sp = Number(data.scorePercent);
+          if (isNaN(sp) || (sp === 0 && correctQ > 0)) {
+            sp = Math.min(100, Math.max(0, Math.round((correctQ / totalQ) * 100)));
+          }
+          return sp || 0;
+        })(),
+        correctCount: Number(data.correctCount ?? data.score ?? 0),
         totalQuestions: data.totalQuestions || 1,
         masteryBefore: data.masteryBefore || 0,
         masteryAfter: data.masteryAfter || 0,

@@ -224,11 +224,15 @@ export async function getStudentResultsData(
       : (data.correctCount !== undefined && data.correctCount !== null
           ? Number(data.correctCount)
           : qList.filter((q: any) => q.isCorrect).length);
-    const percentage = data.scorePercent !== undefined && data.scorePercent !== null
+    let percentage = data.scorePercent !== undefined && data.scorePercent !== null
       ? Number(data.scorePercent)
       : (data.percentage !== undefined && data.percentage !== null
           ? Number(data.percentage)
           : (total > 0 ? Math.round((score / total) * 100) : 0));
+    // Self-healing guard: If score > 0 but stored percentage is 0, auto-derive true percentage
+    if (score > 0 && percentage === 0 && total > 0) {
+      percentage = Math.round((score / total) * 100);
+    }
 
     const resolvedSubmittedAt = data.submittedAt || data.createdAt || data.updatedAt || data.startedAt || null;
 

@@ -186,7 +186,21 @@ export async function getParentDashboardData(
   const allExamResults = reviewsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() as any }));
   const examResults = allExamResults.filter((e: any) => e.examType !== 'entrance');
   const entranceResults = allExamResults.filter((e: any) => e.examType === 'entrance');
-  const parentReviews = parentReviewsSnapshot.docs.filter(doc => !doc.id.startsWith('daily-sync-') && (doc.data() as any).type !== 'daily_5min_sync').map(doc => ({ id: doc.id, ...(doc.data() as any) }));
+  const parentReviews = parentReviewsSnapshot.docs.filter(doc => !doc.id.startsWith('daily-sync-') && (doc.data() as any).type !== 'daily_5min_sync').map(doc => {
+    const data = doc.data() as any;
+    const totalQ = Math.max(1, data.totalQuestions || (data.questions || []).length || 1);
+    const correctQ = Number(data.correctCount ?? data.score ?? 0);
+    let sp = Number(data.scorePercent);
+    if (isNaN(sp) || (sp === 0 && correctQ > 0)) {
+      sp = Math.min(100, Math.max(0, Math.round((correctQ / totalQ) * 100)));
+    }
+    return {
+      id: doc.id,
+      ...data,
+      scorePercent: sp,
+      correctCount: correctQ
+    };
+  });
   const subjectiveAttemptsList = subjectiveAttemptsSnapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) }));
 
   const now = new Date();
