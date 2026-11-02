@@ -1,17 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole } from '@/lib/auth';
-import { getDateKeyIST } from '@/lib/dateUtils';
 import { isTopicPurelyQualitative } from '@/lib/curriculumGuard';
+import { deriveTopicCodeFromQuestionCode, normalizeTopicCode } from '@/lib/questionTypes';
+import { classifyAssignedTopics } from '@/lib/dashboardMetrics';
+import { getFromCache, setInCache, getCachedSyllabus } from '@/lib/firebase/cache';
 
 export const dynamic = 'force-dynamic';
+export const maxDuration = 60;
 
 /**
  * GET /api/admin/exams/topic-coverage?batchId=<batchId>
  * 
- * Aggregates conducted topics for a given batch from assigned exams,
- * calculating batch-level topic mastery, student distribution (Green/Yellow/Red),
- * and exam occurrences. Strictly returns CONDUCTED topics only.
+ * Aggregates conducted topics for a given batch from assigned exams.
+ * Strictly returns CONDUCTED topics only.
+ * 
+ * Performance & Cost Invariants:
+ * 1. Zero full-collection scans (strictly queries users belonging to batchId with .select()).
+ * 2. Parallel getAll() batch reads for exams and mastery records.
+ * 3. In-memory cached syllabus index via getCachedSyllabus().
+ * 4. SSOT classification via classifyAssignedTopics (guaranteeing exact dashboard parity).
+ * 5. 3-minute in-memory caching to eliminate redundant round-trips on batch navigation.
  */
 export async function GET(req: NextRequest) {
   try {
@@ -27,7 +36,14 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ message: 'Missing batchId parameter.' }, { status: 400 });
     }
 
-    // 1. Get batch details and students in this batch
+    // 0. Cache Check (3-minute TTL for instant response and zero redundant reads)
+    const cacheKey = `topic-coverage_${batchId}`;
+    const cachedResponse = getFromCache<any>(cacheKey);
+    if (cachedResponse) {
+      return NextResponse.json(cachedResponse);
+    }
+
+    // 1. Get batch details
     const batchDoc = await adminDb.collection('batches').doc(batchId).get();
     if (!batchDoc.exists) {
       return NextResponse.json({ message: 'Batch not found.' }, { status: 404 });
@@ -35,96 +51,221 @@ export async function GET(req: NextRequest) {
     const batchData = batchDoc.data()!;
     const batchClass = String(batchData.class || batchData.className || '').trim();
 
-    // Fetch active students in this batch (Rule 2C: filter inactive students in memory to avoid requiring composite inequality index)
+    // 2. Fetch students belonging strictly to this batch (Targeted query with .select())
     const studentsSnap = await adminDb.collection('users')
       .where('role', '==', 'student')
+      .where('batchIds', 'array-contains', batchId)
+      .select('studentCode', 'name', 'status', 'batchIds', 'batchId')
       .get();
 
-    const batchStudents = studentsSnap.docs
-      .map(d => ({ id: d.id, ...d.data() }))
-      .filter((s: any) => {
-        if (s.status === 'inactive') return false;
-        const bIds = s.batchIds || [s.batchId].filter(Boolean);
-        return bIds.includes(batchId) || (batchClass && (s.class === batchClass || s.className === batchClass));
-      });
+    let batchStudents = studentsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-    const studentCodes = batchStudents.map((s: any) => s.studentCode).filter(Boolean);
+    // Fallback for legacy student documents with singular batchId
+    if (batchStudents.length === 0) {
+      const legacySnap = await adminDb.collection('users')
+        .where('role', '==', 'student')
+        .where('batchId', '==', batchId)
+        .select('studentCode', 'name', 'status', 'batchIds', 'batchId')
+        .get();
+      batchStudents = legacySnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    }
 
-    // 2. Find all exams assigned or conducted for this batch
-    // We check both batchAssignments collection and direct exam properties
-    const [assignmentsSnap, subjAssignmentsSnap, examsSnap, subjExamsSnap] = await Promise.all([
-      adminDb.collection('batchAssignments').where('targetBatches', 'array-contains', batchId).get().catch(() => ({ docs: [] } as any)),
-      adminDb.collection('subjectiveAssignments').where('targetBatches', 'array-contains', batchId).get().catch(() => ({ docs: [] } as any)),
-      adminDb.collection('exams').where('batchId', '==', batchId).get().catch(() => ({ docs: [] } as any)),
-      adminDb.collection('subjectiveExams').where('batchId', '==', batchId).get().catch(() => ({ docs: [] } as any))
+    // Exclude inactive students per Rule 2C
+    batchStudents = batchStudents.filter((s: any) => s.status !== 'inactive' && s.studentCode);
+    const studentCodes = batchStudents.map((s: any) => String(s.studentCode).trim());
+
+    // 3. Find all conducted/assigned exams for this batch
+    const [assignmentsSnap, subjAssignmentsSnap, batchExamsSnap, batchSubjExamsSnap] = await Promise.all([
+      adminDb.collection('batchAssignments').where('targetBatches', 'array-contains', batchId).select('examId').get().catch(() => ({ docs: [] } as any)),
+      adminDb.collection('subjectiveAssignments').where('targetBatches', 'array-contains', batchId).select('examId').get().catch(() => ({ docs: [] } as any)),
+      adminDb.collection('exams').where('batchId', '==', batchId).select('name', 'title', 'scheduledDate', 'createdAt', 'topicCodes', 'topicCode', 'questionCodes').get().catch(() => ({ docs: [] } as any)),
+      adminDb.collection('subjectiveExams').where('batchId', '==', batchId).select('name', 'title', 'scheduledDate', 'createdAt', 'topicCodes', 'topicCode', 'questionCodes').get().catch(() => ({ docs: [] } as any))
     ]);
 
-    const conductedExamIds = new Set<string>();
+    const examDataMap = new Map<string, { examId: string; name: string; date: string; type: string; topicCodes: string[] }>();
+
+    // Process exams already directly attached to batch
+    batchExamsSnap.docs.forEach((d: any) => {
+      const data = d.data();
+      const extractedTopics = extractTopicsFromExam(data);
+      examDataMap.set(d.id, {
+        examId: d.id,
+        name: data.name || data.title || d.id,
+        date: formatDateFromField(data.scheduledDate || data.createdAt),
+        type: 'objective',
+        topicCodes: extractedTopics
+      });
+    });
+
+    batchSubjExamsSnap.docs.forEach((d: any) => {
+      const data = d.data();
+      const extractedTopics = extractTopicsFromExam(data);
+      examDataMap.set(d.id, {
+        examId: d.id,
+        name: data.name || data.title || d.id,
+        date: formatDateFromField(data.scheduledDate || data.createdAt),
+        type: 'subjective',
+        topicCodes: extractedTopics
+      });
+    });
+
+    // Collect additional assigned exam IDs that need fetching
+    const assignedObjExamIds = new Set<string>();
+    const assignedSubjExamIds = new Set<string>();
+
     assignmentsSnap.docs.forEach((d: any) => {
-      const data = d.data();
-      if (data.examId) conductedExamIds.add(data.examId);
+      const eid = d.data()?.examId;
+      if (eid && !examDataMap.has(eid)) assignedObjExamIds.add(eid);
     });
+
     subjAssignmentsSnap.docs.forEach((d: any) => {
-      const data = d.data();
-      if (data.examId) conductedExamIds.add(data.examId);
+      const eid = d.data()?.examId;
+      if (eid && !examDataMap.has(eid)) assignedSubjExamIds.add(eid);
     });
-    examsSnap.docs.forEach((d: any) => conductedExamIds.add(d.id));
-    subjExamsSnap.docs.forEach((d: any) => conductedExamIds.add(d.id));
 
-    // Also look up exams targeting the batch class if batch-specific assignments are sparse
-    if (batchClass && conductedExamIds.size === 0) {
-      const classExamsSnap = await adminDb.collection('exams').where('class', '==', batchClass).limit(50).get().catch(() => ({ docs: [] } as any));
-      classExamsSnap.docs.forEach((d: any) => conductedExamIds.add(d.id));
-    }
+    // Fetch assigned exams in efficient parallel chunks using getAll()
+    const objIdsToFetch = Array.from(assignedObjExamIds).slice(0, 100);
+    const subjIdsToFetch = Array.from(assignedSubjExamIds).slice(0, 50);
 
-    // 3. For all conducted exams, extract unique topicCodes
-    const topicExamsMap: { [topicCode: string]: Array<{ examId: string; name: string; date: string; type: string }> } = {};
+    const [objSnaps, subjSnaps] = await Promise.all([
+      objIdsToFetch.length > 0
+        ? adminDb.getAll(...objIdsToFetch.map(id => adminDb.collection('exams').doc(id)))
+        : Promise.resolve([]),
+      subjIdsToFetch.length > 0
+        ? adminDb.getAll(...subjIdsToFetch.map(id => adminDb.collection('subjectiveExams').doc(id)))
+        : Promise.resolve([])
+    ]);
 
-    const examDocsToFetch = Array.from(conductedExamIds).slice(0, 150);
-    for (const eid of examDocsToFetch) {
-      let eSnap = await adminDb.collection('exams').doc(eid).get();
-      let eType = 'objective';
-      if (!eSnap.exists) {
-        eSnap = await adminDb.collection('subjectiveExams').doc(eid).get();
-        eType = 'subjective';
-      }
-      if (eSnap.exists) {
-        const eData = eSnap.data()!;
-        const examName = eData.name || eData.title || eid;
-        const examDate = eData.scheduledDate || eData.createdAt ? (eData.createdAt.toDate ? eData.createdAt.toDate().toISOString() : String(eData.createdAt)) : '';
-        
-        let tCodes: string[] = [];
-        if (Array.isArray(eData.topicCodes) && eData.topicCodes.length > 0) {
-          tCodes = eData.topicCodes;
-        } else if (eData.topicCode) {
-          tCodes = [eData.topicCode];
-        } else if (Array.isArray(eData.questionCodes) && eData.questionCodes.length > 0) {
-          // Derive topicCode from questionCodes: MH-9-SCIT-1-1.1-OSC-001 -> MH-9-SCIT-1-1.1
-          const extracted = new Set<string>();
-          eData.questionCodes.forEach((qc: string) => {
-            const parts = String(qc).split('-');
-            if (parts.length >= 6) {
-              extracted.add(parts.slice(0, 5).join('-'));
-            }
-          });
-          tCodes = Array.from(extracted);
-        }
-
-        tCodes.forEach(tc => {
-          if (!topicExamsMap[tc]) topicExamsMap[tc] = [];
-          topicExamsMap[tc].push({
-            examId: eid,
-            name: examName,
-            date: examDate,
-            type: eType
-          });
+    objSnaps.forEach(snap => {
+      if (snap.exists) {
+        const data = snap.data()!;
+        const extracted = extractTopicsFromExam(data);
+        examDataMap.set(snap.id, {
+          examId: snap.id,
+          name: data.name || data.title || snap.id,
+          date: formatDateFromField(data.scheduledDate || data.createdAt),
+          type: 'objective',
+          topicCodes: extracted
         });
       }
-    }
+    });
+
+    subjSnaps.forEach(snap => {
+      if (snap.exists) {
+        const data = snap.data()!;
+        const extracted = extractTopicsFromExam(data);
+        examDataMap.set(snap.id, {
+          examId: snap.id,
+          name: data.name || data.title || snap.id,
+          date: formatDateFromField(data.scheduledDate || data.createdAt),
+          type: 'subjective',
+          topicCodes: extracted
+        });
+      }
+    });
+
+    // 4. Map conducted exams to canonical topic codes
+    const topicExamsMap: { [canonicalTopicCode: string]: Array<{ examId: string; name: string; date: string; type: string }> } = {};
+
+    examDataMap.forEach(exam => {
+      exam.topicCodes.forEach(rawTc => {
+        const tc = normalizeTopicCode(rawTc);
+        if (!tc) return;
+        if (!topicExamsMap[tc]) topicExamsMap[tc] = [];
+        topicExamsMap[tc].push({
+          examId: exam.examId,
+          name: exam.name,
+          date: exam.date,
+          type: exam.type
+        });
+      });
+    });
 
     const conductedTopicCodes = Object.keys(topicExamsMap);
 
-    // 4. Load topic metadata from syllabusTopicIndex or syllabus
+    // 5. In-Memory Syllabus Metadata via getCachedSyllabus() (Zero extra Firestore reads)
+    const syllabusSnap = await getCachedSyllabus();
+    const syllabusTopicsMap = new Map<string, any>();
+
+    syllabusSnap.docs.forEach(d => {
+      const data = d.data();
+      const subjName = data.name || data.subject || '';
+      const cls = data.class || '';
+      (data.chapters || []).forEach((ch: any) => {
+        const chName = ch.name || ch.title || '';
+        (ch.topics || []).forEach((top: any) => {
+          if (top.code) {
+            const norm = normalizeTopicCode(top.code);
+            syllabusTopicsMap.set(norm, {
+              topicCode: norm,
+              topicName: top.name || top.title || norm,
+              chapterName: chName,
+              subjectName: subjName,
+              className: cls,
+              topicClassification: top.topicClassification || top.classification || 'medium',
+              targetQuestions: Number(top.targetQuestions) || 30,
+              requiredConfidence: Number(top.requiredConfidence) || 18,
+              hasNumericals: !isTopicPurelyQualitative(norm, chName, subjName)
+            });
+          }
+        });
+      });
+    });
+
+    // 6. Fetch Student Topic Mastery in efficient parallel batch chunks
+    // For 15-25 batch students, this takes only 2-3 queries instead of hundreds of individual reads
+    const studentMasteryMap = new Map<string, any[]>();
+    studentCodes.forEach(sc => studentMasteryMap.set(sc, []));
+
+    if (studentCodes.length > 0) {
+      const studentChunks: string[][] = [];
+      for (let i = 0; i < studentCodes.length; i += 10) {
+        studentChunks.push(studentCodes.slice(i, i + 10));
+      }
+
+      const masterySnaps = await Promise.all(
+        studentChunks.map(chunk =>
+          adminDb.collection('studentTopicMastery')
+            .where('studentCode', 'in', chunk)
+            .select('studentCode', 'topicCode', 'mastery', 'verifiedConfidence', 'confidence', 'requiredConfidence', 'practiceQuestionsAttempted')
+            .get()
+            .catch(() => ({ docs: [] } as any))
+        )
+      );
+
+      masterySnaps.forEach(snap => {
+        snap.docs.forEach((doc: any) => {
+          const d = doc.data();
+          const sCode = d.studentCode;
+          if (sCode && studentMasteryMap.has(sCode)) {
+            studentMasteryMap.get(sCode)!.push(d);
+          }
+        });
+      });
+    }
+
+    // 7. SSOT Classification via classifyAssignedTopics for each student
+    // Ensures 100% parity with Learning OS, Student Dashboard, Parent Portal, and Admin Reports
+    const studentClassifiedResults = new Map<string, Map<string, any>>();
+
+    batchStudents.forEach((st: any) => {
+      const sCode = st.studentCode;
+      const masteries = studentMasteryMap.get(sCode) || [];
+
+      const result = classifyAssignedTopics({
+        assignedTopicCodes: conductedTopicCodes,
+        topicMasteries: masteries,
+        syllabusTopicsMap
+      });
+
+      const topicItemMap = new Map<string, any>();
+      result.topics.forEach(item => {
+        topicItemMap.set(item.topicCode, item);
+      });
+      studentClassifiedResults.set(sCode, topicItemMap);
+    });
+
+    // 8. Aggregate Conducted Topics Statistics
     const topicsData: Array<{
       topicCode: string;
       topicName: string;
@@ -149,31 +290,14 @@ export async function GET(req: NextRequest) {
       }>;
     }> = [];
 
-    // Fetch student topic mastery for all batch students on these conducted topics
     for (const tc of conductedTopicCodes) {
-      // Get topic metadata
-      let tName = tc;
-      let chName = '';
-      let subjName = '';
-      let clsName = batchClass;
+      const sMeta = syllabusTopicsMap.get(tc);
+      const tName = sMeta?.topicName || tc;
+      const chName = sMeta?.chapterName || '';
+      const subjName = sMeta?.subjectName || '';
+      const clsName = sMeta?.className || batchClass;
+      const hasNumericals = sMeta?.hasNumericals ?? !isTopicPurelyQualitative(tc, chName, subjName);
 
-      try {
-        const sSnap = await adminDb.collection('syllabusTopicIndex').doc(tc).get();
-        if (sSnap.exists) {
-          const sd = sSnap.data()!;
-          tName = sd.topicName || tName;
-          chName = sd.chapterName || chName;
-          subjName = sd.subjectName || sd.subject || subjName;
-          clsName = sd.class || clsName;
-        }
-      } catch (err) {
-        // silent fallback
-      }
-
-      // Check whether this topic can have numerical questions
-      const hasNumericals = !isTopicPurelyQualitative(tc, chName, subjName);
-
-      // Student performance stats
       let scoreSum = 0;
       let evaluatedCount = 0;
       let masteredCount = 0;
@@ -184,37 +308,39 @@ export async function GET(req: NextRequest) {
 
       for (const st of batchStudents) {
         const sCode = (st as any).studentCode;
-        if (!sCode) continue;
+        const studentMap = studentClassifiedResults.get(sCode);
+        const item = studentMap?.get(tc);
 
-        const mDocId = `${sCode}_${tc}`;
-        const mSnap = await adminDb.collection('studentTopicMastery').doc(mDocId).get();
         let mastery = 0;
         let confidence = 0;
-        let reqConf = 18;
-
-        if (mSnap.exists) {
-          const md = mSnap.data()!;
-          mastery = Number(md.mastery) || 0;
-          confidence = Number(md.verifiedConfidence) || Number(md.confidence) || 0;
-          reqConf = Number(md.requiredConfidence) || 18;
-        }
-
+        let reqConf = sMeta?.requiredConfidence || 18;
         let status: 'mastered' | 'practicing' | 'needsAttention' | 'unattempted' = 'unattempted';
-        if (mSnap.exists) {
-          if (mastery >= 90 && confidence >= reqConf) {
+
+        if (item) {
+          mastery = Number(item.mastery) || 0;
+          confidence = Number(item.confidence) || 0;
+          reqConf = Number(item.requiredConfidence) || reqConf;
+
+          if (item.isUnattempted) {
+            status = 'unattempted';
+            needsAttentionCount++;
+          } else if (item.state === 'mastered') {
             status = 'mastered';
             masteredCount++;
-          } else if (mastery >= 50) {
+            scoreSum += mastery;
+            evaluatedCount++;
+          } else if (item.state === 'practicing') {
             status = 'practicing';
             practicingCount++;
+            scoreSum += mastery;
+            evaluatedCount++;
           } else {
             status = 'needsAttention';
             needsAttentionCount++;
+            scoreSum += mastery;
+            evaluatedCount++;
           }
-          scoreSum += mastery;
-          evaluatedCount++;
         } else {
-          // If unattempted, categorize as needs attention under Rule 2F
           status = 'unattempted';
           needsAttentionCount++;
         }
@@ -245,14 +371,14 @@ export async function GET(req: NextRequest) {
         studentsMastered: masteredCount,
         studentsPracticing: practicingCount,
         studentsNeedsAttention: needsAttentionCount,
-        students: studentRoster.sort((a, b) => a.mastery - b.mastery) // Lowest mastery first for rapid remediation
+        students: studentRoster.sort((a, b) => a.mastery - b.mastery)
       });
     }
 
-    // Sort topics by chapter and topicCode
+    // Sort topics by canonical topicCode
     topicsData.sort((a, b) => a.topicCode.localeCompare(b.topicCode, undefined, { numeric: true }));
 
-    return NextResponse.json({
+    const payload = {
       success: true,
       batchId,
       batchName: batchData.name || batchId,
@@ -260,9 +386,56 @@ export async function GET(req: NextRequest) {
       totalStudents: batchStudents.length,
       conductedTopicsCount: topicsData.length,
       topics: topicsData
-    });
+    };
+
+    // Cache result in memory for 3 minutes (invalidated immediately when teacher assigns practice)
+    setInCache(cacheKey, payload, 180000);
+
+    return NextResponse.json(payload);
+
   } catch (err: any) {
     console.error('Error in GET /api/admin/exams/topic-coverage:', err);
     return NextResponse.json({ message: err.message || 'Internal server error.' }, { status: 500 });
   }
+}
+
+// ---------------------------------------------------------------------------
+// Helper Functions
+// ---------------------------------------------------------------------------
+
+function extractTopicsFromExam(examData: any): string[] {
+  if (!examData) return [];
+  const found = new Set<string>();
+
+  if (Array.isArray(examData.topicCodes)) {
+    examData.topicCodes.forEach((tc: any) => {
+      const code = normalizeTopicCode(String(tc || '').trim());
+      if (code) found.add(code);
+    });
+  }
+
+  if (examData.topicCode) {
+    const code = normalizeTopicCode(String(examData.topicCode || '').trim());
+    if (code) found.add(code);
+  }
+
+  if (Array.isArray(examData.questionCodes)) {
+    examData.questionCodes.forEach((qc: any) => {
+      const str = String(qc || '').trim();
+      const derived = deriveTopicCodeFromQuestionCode(str);
+      const code = normalizeTopicCode(derived);
+      if (code) found.add(code);
+    });
+  }
+
+  return Array.from(found);
+}
+
+function formatDateFromField(field: any): string {
+  if (!field) return '';
+  if (typeof field === 'string') return field;
+  if (field.toDate && typeof field.toDate === 'function') {
+    return field.toDate().toISOString();
+  }
+  return String(field);
 }

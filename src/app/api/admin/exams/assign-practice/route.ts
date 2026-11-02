@@ -4,6 +4,7 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { verifyRole } from '@/lib/auth';
 import { getDateKeyIST } from '@/lib/dateUtils';
 import { isTopicPurelyQualitative } from '@/lib/curriculumGuard';
+import { invalidateCache } from '@/lib/firebase/cache';
 
 export const dynamic = 'force-dynamic';
 
@@ -76,19 +77,54 @@ export async function POST(req: NextRequest) {
       // silent fallback
     }
 
-    // 3. Look up student user documents to get their UID and user-facing name (Rule 2B/2D)
-    const userDocsSnap = await adminDb.collection('users')
-      .where('studentCode', 'in', studentCodes.slice(0, 30))
-      .get();
+    // 3. Look up student user documents in chunks of 30 (Rule 2B/2D)
+    // and verify they are active students belonging to this batch
+    const codeChunks: string[][] = [];
+    for (let i = 0; i < studentCodes.length; i += 30) {
+      codeChunks.push(studentCodes.slice(i, i + 30));
+    }
+
+    const userDocsSnaps = await Promise.all(
+      codeChunks.map(chunk =>
+        adminDb.collection('users')
+          .where('studentCode', 'in', chunk)
+          .select('studentCode', 'name', 'role', 'batchIds', 'batchId', 'status')
+          .get()
+      )
+    );
 
     const studentMap = new Map<string, { uid: string; name: string }>();
-    userDocsSnap.docs.forEach(doc => {
-      const data = doc.data();
-      if (data.role === 'student' && data.studentCode) {
-        studentMap.set(data.studentCode, {
-          uid: doc.id,
-          name: data.name || data.studentCode
-        });
+    userDocsSnaps.forEach(snap => {
+      snap.docs.forEach(doc => {
+        const data = doc.data();
+        if (data.role === 'student' && data.studentCode && data.status !== 'inactive') {
+          const bIds = data.batchIds || [data.batchId].filter(Boolean);
+          if (bIds.includes(batchId)) {
+            studentMap.set(data.studentCode, {
+              uid: doc.id,
+              name: data.name || data.studentCode
+            });
+          }
+        }
+      });
+    });
+
+    const validStudentCodes = studentCodes.filter(c => studentMap.has(c));
+    if (validStudentCodes.length === 0) {
+      return NextResponse.json({
+        message: 'No active students from this batch matched the provided student codes.'
+      }, { status: 400 });
+    }
+
+    // 4. Batch read existing assignedPractices documents to preserve progress
+    const docRefs = validStudentCodes.map(sCode =>
+      adminDb.collection('assignedPractices').doc(`${sCode}_${topicCode}`)
+    );
+    const existingSnaps = await adminDb.getAll(...docRefs);
+    const existingMap = new Map<string, any>();
+    existingSnaps.forEach(snap => {
+      if (snap.exists) {
+        existingMap.set(snap.id, snap.data());
       }
     });
 
@@ -96,10 +132,15 @@ export async function POST(req: NextRequest) {
     const batch = adminDb.batch();
     let assignedCount = 0;
 
-    for (const sCode of studentCodes) {
-      const studentInfo = studentMap.get(sCode) || { uid: '', name: sCode };
+    for (const sCode of validStudentCodes) {
+      const studentInfo = studentMap.get(sCode)!;
       const docId = `${sCode}_${topicCode}`;
       const docRef = adminDb.collection('assignedPractices').doc(docId);
+      const existingData = existingMap.get(docId);
+
+      const existingCompleted = existingData ? (Number(existingData.setsCompleted) || 0) : 0;
+      // Add new sets on top of existing completed sets to never wipe student progress
+      const targetSetsCount = existingCompleted + cleanSetsCount;
 
       batch.set(docRef, {
         studentCode: sCode,
@@ -111,8 +152,8 @@ export async function POST(req: NextRequest) {
         chapterName,
         subject: subjectName,
         className,
-        setsCount: cleanSetsCount,
-        setsCompleted: 0,
+        setsCount: targetSetsCount,
+        setsCompleted: existingCompleted,
         numericalFocus: finalNumericalFocus,
         note: String(note || '').trim(),
         dueDate: dueDate || null,
@@ -143,6 +184,9 @@ export async function POST(req: NextRequest) {
     }
 
     await batch.commit();
+
+    // Invalidate cached coverage for this batch so next view reflects new status
+    invalidateCache(`topic-coverage_${batchId}`);
 
     return NextResponse.json({
       success: true,

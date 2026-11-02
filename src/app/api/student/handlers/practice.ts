@@ -102,9 +102,9 @@ export async function GET(req: NextRequest) {
 
     const isRevisionMode = category === 'revision';
 
-    // Check for Teacher-Assigned Practice (Assigned tracks bypass self-serve quotas)
+    // Check for Teacher-Assigned Practice (Assigned tracks bypass self-serve quotas and securely gate numerical focus)
     let isTeacherAssigned = false;
-    let hasNumericalFocus = searchParams.get('numericalFocus') === 'true';
+    let hasNumericalFocus = false;
 
     try {
       const assignedSnap = await adminDb.collection('assignedPractices').doc(`${studentCode}_${topicCode}`).get();
@@ -112,9 +112,7 @@ export async function GET(req: NextRequest) {
         const aData = assignedSnap.data()!;
         if (aData.status === 'pending' && (Number(aData.setsCompleted) || 0) < (Number(aData.setsCount) || 1)) {
           isTeacherAssigned = true;
-          if (aData.numericalFocus) {
-            hasNumericalFocus = true;
-          }
+          hasNumericalFocus = aData.numericalFocus === true;
         }
       }
     } catch (e) {

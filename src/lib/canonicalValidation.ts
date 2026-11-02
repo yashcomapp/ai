@@ -66,7 +66,7 @@ export interface ValidationResult {
 /**
  * Validates studentCode format strictly (ST-YYYY-XXXXXX).
  */
-export function validateStudentCode(studentCode?: string | null): ValidationResult {
+function validateStudentCode(studentCode?: string | null): ValidationResult {
   if (!studentCode || typeof studentCode !== 'string') {
     return { valid: false, error: 'Student code is required and must be a string.' };
   }
@@ -91,7 +91,7 @@ export function assertCanonicalStudentCode(studentCode?: string | null): void {
 /**
  * Validates boardCode strictly ('CBSE' or 'MH').
  */
-export function validateBoardCode(boardCode?: string | null): ValidationResult {
+function validateBoardCode(boardCode?: string | null): ValidationResult {
   if (!boardCode || typeof boardCode !== 'string') {
     return { valid: false, error: 'Board code is required and must be a string.' };
   }
@@ -108,7 +108,7 @@ export function validateBoardCode(boardCode?: string | null): ValidationResult {
 /**
  * Validates subjectCode strictly against the given board and class.
  */
-export function validateSubjectCode(boardCode?: string | null, classNum?: string | number | null, subjectCode?: string | null): ValidationResult {
+function validateSubjectCode(boardCode?: string | null, classNum?: string | number | null, subjectCode?: string | null): ValidationResult {
   const boardRes = validateBoardCode(boardCode);
   if (!boardRes.valid) return boardRes;
 
@@ -147,7 +147,7 @@ export interface ParsedCanonicalTopic {
 /**
  * Validates topicCode strictly (${boardCode}-${class}-${subjectCode}-${chapterNumber}-${topicNumber}).
  */
-export function validateTopicCode(topicCode?: string | null): ValidationResult & { parsed?: ParsedCanonicalTopic } {
+function validateTopicCode(topicCode?: string | null): ValidationResult & { parsed?: ParsedCanonicalTopic } {
   if (!topicCode || typeof topicCode !== 'string') {
     return { valid: false, error: 'Topic code is required.' };
   }
@@ -196,7 +196,7 @@ export function validateTopicCode(topicCode?: string | null): ValidationResult &
   };
 }
 
-export function assertCanonicalTopicCode(topicCode?: string | null): ParsedCanonicalTopic {
+function assertCanonicalTopicCode(topicCode?: string | null): ParsedCanonicalTopic {
   const result = validateTopicCode(topicCode);
   if (!result.valid || !result.parsed) {
     throw new Error(`[CANONICAL BARRIER VIOLATION] ${result.error}`);
@@ -219,7 +219,7 @@ export interface ParsedCanonicalQuestion {
 /**
  * Validates questionCode strictly (${boardCode}-${class}-${subjectCode}-${chapterNumber}-${topicNumber}-${typeCode}-${sequence}).
  */
-export function validateQuestionCode(questionCode?: string | null): ValidationResult & { parsed?: ParsedCanonicalQuestion } {
+function validateQuestionCode(questionCode?: string | null): ValidationResult & { parsed?: ParsedCanonicalQuestion } {
   if (!questionCode || typeof questionCode !== 'string') {
     return { valid: false, error: 'Question code is required.' };
   }
@@ -271,7 +271,7 @@ export function validateQuestionCode(questionCode?: string | null): ValidationRe
   };
 }
 
-export function assertCanonicalQuestionCode(questionCode?: string | null): ParsedCanonicalQuestion {
+function assertCanonicalQuestionCode(questionCode?: string | null): ParsedCanonicalQuestion {
   const result = validateQuestionCode(questionCode);
   if (!result.valid || !result.parsed) {
     throw new Error(`[CANONICAL BARRIER VIOLATION] ${result.error}`);
