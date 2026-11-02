@@ -83,30 +83,32 @@ export async function GET(req: NextRequest) {
       adminDb.collection('subjectiveExams').where('batchId', '==', batchId).select('name', 'title', 'scheduledDate', 'createdAt', 'topicCodes', 'topicCode', 'questionCodes').get().catch(() => ({ docs: [] } as any))
     ]);
 
-    const examDataMap = new Map<string, { examId: string; name: string; date: string; type: string; topicCodes: string[] }>();
+    const examDataMap = new Map<string, { examId: string; name: string; date: string; type: string; topicCodes: string[]; rawTopicCodes: string[] }>();
 
     // Process exams already directly attached to batch
     batchExamsSnap.docs.forEach((d: any) => {
       const data = d.data();
-      const extractedTopics = extractTopicsFromExam(data);
+      const extracted = extractTopicsFromExam(data);
       examDataMap.set(d.id, {
         examId: d.id,
         name: data.name || data.title || d.id,
         date: formatDateFromField(data.scheduledDate || data.createdAt),
         type: 'objective',
-        topicCodes: extractedTopics
+        topicCodes: extracted.normalized,
+        rawTopicCodes: extracted.raw
       });
     });
 
     batchSubjExamsSnap.docs.forEach((d: any) => {
       const data = d.data();
-      const extractedTopics = extractTopicsFromExam(data);
+      const extracted = extractTopicsFromExam(data);
       examDataMap.set(d.id, {
         examId: d.id,
         name: data.name || data.title || d.id,
         date: formatDateFromField(data.scheduledDate || data.createdAt),
         type: 'subjective',
-        topicCodes: extractedTopics
+        topicCodes: extracted.normalized,
+        rawTopicCodes: extracted.raw
       });
     });
 
@@ -146,7 +148,8 @@ export async function GET(req: NextRequest) {
           name: data.name || data.title || snap.id,
           date: formatDateFromField(data.scheduledDate || data.createdAt),
           type: 'objective',
-          topicCodes: extracted
+          topicCodes: extracted.normalized,
+          rawTopicCodes: extracted.raw
         });
       }
     });
@@ -160,17 +163,18 @@ export async function GET(req: NextRequest) {
           name: data.name || data.title || snap.id,
           date: formatDateFromField(data.scheduledDate || data.createdAt),
           type: 'subjective',
-          topicCodes: extracted
+          topicCodes: extracted.normalized,
+          rawTopicCodes: extracted.raw
         });
       }
     });
 
-    // 4. Map conducted exams to canonical topic codes
+    // 4. Map conducted exams to canonical topic codes and track raw code variants
     const topicExamsMap: { [canonicalTopicCode: string]: Array<{ examId: string; name: string; date: string; type: string }> } = {};
+    const topicVariantsMap = new Map<string, Set<string>>();
 
     examDataMap.forEach(exam => {
-      exam.topicCodes.forEach(rawTc => {
-        const tc = normalizeTopicCode(rawTc);
+      exam.topicCodes.forEach((tc, idx) => {
         if (!tc) return;
         if (!topicExamsMap[tc]) topicExamsMap[tc] = [];
         topicExamsMap[tc].push({
@@ -179,6 +183,15 @@ export async function GET(req: NextRequest) {
           date: exam.date,
           type: exam.type
         });
+
+        if (!topicVariantsMap.has(tc)) {
+          topicVariantsMap.set(tc, new Set<string>());
+        }
+        topicVariantsMap.get(tc)!.add(tc);
+        const rawCode = exam.rawTopicCodes?.[idx];
+        if (rawCode) {
+          topicVariantsMap.get(tc)!.add(rawCode);
+        }
       });
     });
 
@@ -186,23 +199,52 @@ export async function GET(req: NextRequest) {
 
     // 5. In-Memory SSOT Syllabus Topics Map via getCachedSyllabusTopicsMap()
     // Built strictly under rebuild.ts canonical rules; guarantees 100% parity across Learning OS, Parent & Admin reports
-    const syllabusTopicsMap = await getCachedSyllabusTopicsMap(batchClass ? [batchClass] : []);
+    const numericClass = batchClass.replace(/\D/g, '');
+    const classCodesFilter: string[] = [];
+    if (numericClass) classCodesFilter.push(numericClass);
+    if (batchClass && batchClass !== numericClass) classCodesFilter.push(batchClass);
 
-    // 6. Fetch Student Topic Mastery (Cost-Optimized to bill strictly conducted topics)
+    let syllabusTopicsMap = await getCachedSyllabusTopicsMap(classCodesFilter);
+    if (!syllabusTopicsMap || syllabusTopicsMap.size === 0) {
+      // Retry with no class filter if the specific batch class filter returned empty (e.g. "Class 8th Foundation")
+      syllabusTopicsMap = await getCachedSyllabusTopicsMap();
+    }
+
+    // 6. Fetch Student Topic Mastery (Real Data-Driven Strategy & Legacy Protection)
     const studentMasteryMap = new Map<string, any[]>();
     studentCodes.forEach(sc => studentMasteryMap.set(sc, []));
 
     if (studentCodes.length > 0 && conductedTopicCodes.length > 0) {
-      const totalTargetedRefs = studentCodes.length * conductedTopicCodes.length;
+      // Collect all topic code variants (canonical + raw) for all conducted topics
+      const allTopicCodeVariants = new Set<string>();
+      conductedTopicCodes.forEach(tc => {
+        const variants = topicVariantsMap.get(tc);
+        if (variants) {
+          variants.forEach(v => allTopicCodeVariants.add(v));
+        } else {
+          allTopicCodeVariants.add(tc);
+        }
+      });
+      const variantsList = Array.from(allTopicCodeVariants);
 
-      // When targeted conducted doc count is <= full history (~60 docs per student),
-      // fetch ONLY the exact conducted topic documents via getAll(). This avoids reading
-      // the student's entire historical catalog of non-conducted topics.
-      if (totalTargetedRefs <= studentCodes.length * 60) {
+      // Check cached historical average mastery documents per student for this batch
+      const avgDocsCacheKey = `batch_mastery_avg_docs_${batchId}`;
+      const cachedAvgDocs = getFromCache<number>(avgDocsCacheKey);
+
+      // Decision strategy based on REAL DATA:
+      // If we know cachedAvgDocs: compare targeted getAll count vs expected query reads.
+      // If cachedAvgDocs is null: default to query path to establish baseline count safely without missing legacy docs.
+      const targetedRefsCount = studentCodes.length * variantsList.length;
+      const shouldUseGetAll = cachedAvgDocs !== null && targetedRefsCount < (studentCodes.length * cachedAvgDocs);
+
+      let totalMasteryDocsFound = 0;
+
+      if (shouldUseGetAll) {
+        // Targeted getAll on canonical + raw code variants
         const docRefs: FirebaseFirestore.DocumentReference[] = [];
         studentCodes.forEach(sCode => {
-          conductedTopicCodes.forEach(tc => {
-            docRefs.push(adminDb.collection('studentTopicMastery').doc(`${sCode}_${tc}`));
+          variantsList.forEach(code => {
+            docRefs.push(adminDb.collection('studentTopicMastery').doc(`${sCode}_${code}`));
           });
         });
 
@@ -222,12 +264,45 @@ export async function GET(req: NextRequest) {
               const sCode = d.studentCode || snap.id.split('_')[0];
               if (sCode && studentMasteryMap.has(sCode)) {
                 studentMasteryMap.get(sCode)!.push(d);
+                totalMasteryDocsFound++;
               }
             }
           });
         });
+
+        // Item 1 Safeguard: Check if any student ended up with 0 mastery records (when batch history > 0)
+        // Fall back to studentCode query for those specific students to ensure no legacy/subtopic documents are missed
+        const studentsNeedingFallback = studentCodes.filter(sc => (studentMasteryMap.get(sc) || []).length === 0);
+        if (studentsNeedingFallback.length > 0 && (cachedAvgDocs || 0) > 0) {
+          const fallbackChunks: string[][] = [];
+          for (let i = 0; i < studentsNeedingFallback.length; i += 30) {
+            fallbackChunks.push(studentsNeedingFallback.slice(i, i + 30));
+          }
+
+          const fallbackSnaps = await Promise.all(
+            fallbackChunks.map(chunk =>
+              adminDb.collection('studentTopicMastery')
+                .where('studentCode', 'in', chunk)
+                .select('studentCode', 'topicCode', 'mastery', 'verifiedConfidence', 'confidence', 'requiredConfidence', 'practiceQuestionsAttempted')
+                .get()
+                .catch(() => ({ docs: [] } as any))
+            )
+          );
+
+          fallbackSnaps.forEach(snap => {
+            snap.docs.forEach((doc: any) => {
+              const d = doc.data();
+              const sCode = d.studentCode;
+              if (sCode && studentMasteryMap.has(sCode)) {
+                studentMasteryMap.get(sCode)!.push(d);
+                totalMasteryDocsFound++;
+              }
+            });
+          });
+        }
       } else {
-        // Fallback: chunked query by studentCode in chunks of 30
+        // Query path: reads ONLY existing documents across studentCodes in chunks of 30
+        // Automatically returns all raw, legacy, and normalized mastery records
         const studentChunks: string[][] = [];
         for (let i = 0; i < studentCodes.length; i += 30) {
           studentChunks.push(studentCodes.slice(i, i + 30));
@@ -249,10 +324,15 @@ export async function GET(req: NextRequest) {
             const sCode = d.studentCode;
             if (sCode && studentMasteryMap.has(sCode)) {
               studentMasteryMap.get(sCode)!.push(d);
+              totalMasteryDocsFound++;
             }
           });
         });
       }
+
+      // Update real-data cache of average mastery docs per student for this batch (1-hour TTL)
+      const currentAvg = Math.ceil(totalMasteryDocsFound / Math.max(1, studentCodes.length));
+      setInCache(avgDocsCacheKey, currentAvg, 3600000);
     }
 
     // 7. SSOT Classification via classifyAssignedTopics for each student
@@ -414,32 +494,37 @@ export async function GET(req: NextRequest) {
 // Helper Functions
 // ---------------------------------------------------------------------------
 
-function extractTopicsFromExam(examData: any): string[] {
-  if (!examData) return [];
-  const found = new Set<string>();
+function extractTopicsFromExam(examData: any): { normalized: string[]; raw: string[] } {
+  if (!examData) return { normalized: [], raw: [] };
+  const rawCodes: string[] = [];
+  const normalizedCodes: string[] = [];
+
+  const addCode = (rawStr: string) => {
+    const trimmed = String(rawStr || '').trim();
+    if (!trimmed) return;
+    const norm = normalizeTopicCode(trimmed);
+    if (norm) {
+      rawCodes.push(trimmed);
+      normalizedCodes.push(norm);
+    }
+  };
 
   if (Array.isArray(examData.topicCodes)) {
-    examData.topicCodes.forEach((tc: any) => {
-      const code = normalizeTopicCode(String(tc || '').trim());
-      if (code) found.add(code);
-    });
+    examData.topicCodes.forEach((tc: any) => addCode(tc));
   }
 
   if (examData.topicCode) {
-    const code = normalizeTopicCode(String(examData.topicCode || '').trim());
-    if (code) found.add(code);
+    addCode(examData.topicCode);
   }
 
   if (Array.isArray(examData.questionCodes)) {
     examData.questionCodes.forEach((qc: any) => {
-      const str = String(qc || '').trim();
-      const derived = deriveTopicCodeFromQuestionCode(str);
-      const code = normalizeTopicCode(derived);
-      if (code) found.add(code);
+      const derived = deriveTopicCodeFromQuestionCode(String(qc || '').trim());
+      if (derived) addCode(derived);
     });
   }
 
-  return Array.from(found);
+  return { normalized: normalizedCodes, raw: rawCodes };
 }
 
 function formatDateFromField(field: any): string {
