@@ -20,10 +20,13 @@ export async function GET(req: NextRequest) {
       studentCode = paramStudentCode;
     } else if (role === 'parent') {
       const parentData = authResult.userData;
-      if (paramStudentCode && (parentData?.studentCodes?.includes(paramStudentCode) || parentData?.studentCode === paramStudentCode)) {
+      const pCodes = Array.isArray(parentData?.studentCodes)
+        ? parentData.studentCodes
+        : (parentData?.studentCode ? [parentData.studentCode] : []);
+      if (paramStudentCode && pCodes.includes(paramStudentCode)) {
         studentCode = paramStudentCode;
       } else {
-        studentCode = parentData?.studentCode || (parentData?.studentCodes && parentData.studentCodes[0]) || '';
+        studentCode = pCodes[0] || '';
       }
     }
 
@@ -63,7 +66,14 @@ export async function POST(req: NextRequest) {
       studentCode = bodyStudentCode;
     } else if (authResult.role === 'parent') {
       const parentData = authResult.userData;
-      studentCode = bodyStudentCode || parentData?.studentCode || (parentData?.studentCodes && parentData.studentCodes[0]) || '';
+      const pCodes = Array.isArray(parentData?.studentCodes)
+        ? parentData.studentCodes
+        : (parentData?.studentCode ? [parentData.studentCode] : []);
+      if (bodyStudentCode && pCodes.includes(bodyStudentCode)) {
+        studentCode = bodyStudentCode;
+      } else {
+        studentCode = pCodes[0] || '';
+      }
     }
 
     if (!studentCode) {

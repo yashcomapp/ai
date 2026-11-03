@@ -13,7 +13,7 @@ function ParentFeesContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const parentCodes = (user as any)?.studentCodes || ((user as any)?.studentCode ? [(user as any)?.studentCode] : []);
+  const parentCodes = Array.isArray((user as any)?.studentCodes) ? (user as any).studentCodes : ((user as any)?.studentCode ? [(user as any)?.studentCode] : []);
   const defaultCode = searchParams.get('studentCode') || parentCodes[0] || '';
   const [selectedChildCode, setSelectedChildCode] = useState(defaultCode);
 

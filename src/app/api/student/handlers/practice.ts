@@ -23,6 +23,10 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ message: 'Unauthorized. Student role required.' }, { status: 403 });
     }
 
+    if ((student.userData as any)?.studentMode === 'limited') {
+      return NextResponse.json({ message: 'Access Denied. Limited Mode students do not have access to practice sessions.' }, { status: 403 });
+    }
+
     const studentCode = student.userData?.studentCode;
     const studentName = student.userData?.name || 'Student';
     if (!studentCode) {
@@ -662,6 +666,10 @@ export async function POST(req: NextRequest) {
     const student = await verifyRole(req, 'student');
     if (!student) {
       return NextResponse.json({ message: 'Unauthorized. Student role required.' }, { status: 403 });
+    }
+
+    if ((student.userData as any)?.studentMode === 'limited') {
+      return NextResponse.json({ message: 'Access Denied. Limited Mode students do not have access to practice sessions.' }, { status: 403 });
     }
 
     const studentCode = student.userData?.studentCode;

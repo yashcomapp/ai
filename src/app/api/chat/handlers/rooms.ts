@@ -363,7 +363,7 @@ export async function GET(req: NextRequest) {
 
       const pEmail = parent.userData?.email?.toLowerCase().trim() || '';
       const pKey = `PR-${pEmail}`;
-      const pCodes = parent.userData?.studentCodes || (parent.userData?.studentCode ? [parent.userData?.studentCode] : []);
+      const pCodes = Array.isArray(parent.userData?.studentCodes) ? parent.userData.studentCodes : (parent.userData?.studentCode ? [parent.userData.studentCode] : []);
 
       if (pKey && pCodes.length > 0) {
         const uCodes = pCodes.map((sc: string) => sc.trim().toUpperCase());

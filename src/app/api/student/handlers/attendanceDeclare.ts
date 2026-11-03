@@ -221,7 +221,7 @@ export async function DELETE(req: NextRequest) {
         return NextResponse.json({ message: 'Forbidden.' }, { status: 403 });
       }
     } else if (session.role === 'parent') {
-      const parentCodes = session.userData?.studentCodes || (session.userData?.studentCode ? [session.userData?.studentCode] : []);
+      const parentCodes = Array.isArray(session.userData?.studentCodes) ? session.userData.studentCodes : (session.userData?.studentCode ? [session.userData.studentCode] : []);
       const parentCodesUpper = parentCodes.map((c: string) => c.toUpperCase());
       if (!parentCodesUpper.includes(studentCode.toUpperCase())) {
         return NextResponse.json({ message: 'Forbidden.' }, { status: 403 });

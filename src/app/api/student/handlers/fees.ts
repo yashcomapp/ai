@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
         const { searchParams } = new URL(req.url);
         const targetStudentCode = searchParams.get('studentCode')?.trim().toUpperCase();
         
-        const parentCodes = parentSession.userData?.studentCodes || (parentSession.userData?.studentCode ? [parentSession.userData?.studentCode] : []);
+        const parentCodes = Array.isArray(parentSession.userData?.studentCodes) ? parentSession.userData.studentCodes : (parentSession.userData?.studentCode ? [parentSession.userData.studentCode] : []);
         const parentCodesUpper = parentCodes.map((c: string) => c.toUpperCase());
 
         if (targetStudentCode && parentCodesUpper.includes(targetStudentCode)) {

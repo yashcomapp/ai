@@ -4,6 +4,7 @@ import { deriveTopicCodeFromQuestionCode } from '@/lib/questionTypes';
 import { verifyAnyRole } from '@/lib/auth';
 import { getDateKeyIST, formatDateIST as formatDate } from '@/lib/dateUtils';
 import { fetchStudentRawAssignments, getAssignmentsForBatches } from '@/lib/studentDb';
+import { resolveParentStudentCodes } from '@/lib/dashboardDbUtils';
 
 
 export async function GET(req: NextRequest) {
@@ -26,28 +27,7 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ message: 'Forbidden. Students can only view their own register.' }, { status: 403 });
       }
     } else if (callerRole === 'parent') {
-      const parentData = caller.userData;
-      let childrenCodes: string[] = [];
-      if (Array.isArray(parentData?.studentCodes)) {
-        childrenCodes = parentData.studentCodes.filter(Boolean);
-      } else if (parentData?.studentCode) {
-        childrenCodes = [parentData.studentCode];
-      }
-      
-      const parentEmail = parentData?.email?.toLowerCase();
-      if (parentEmail) {
-        const querySnap = await adminDb.collection('users')
-          .where('role', '==', 'student')
-          .where('parentEmail', '==', parentEmail)
-          .get();
-        querySnap.docs.forEach(doc => {
-          const data = doc.data();
-          if (data.studentCode && !childrenCodes.includes(data.studentCode)) {
-            childrenCodes.push(data.studentCode);
-          }
-        });
-      }
-
+      const childrenCodes = await resolveParentStudentCodes(caller.userData);
       if (!studentCode) {
         return NextResponse.json({ message: 'Missing studentCode parameter.' }, { status: 400 });
       }

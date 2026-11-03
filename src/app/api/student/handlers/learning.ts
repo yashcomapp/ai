@@ -12,6 +12,10 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ message: 'Unauthorized. Student role required.' }, { status: 403 });
     }
 
+    if ((student.userData as any)?.studentMode === 'limited') {
+      return NextResponse.json({ message: 'Access Denied. Limited Mode students do not have access to Learning OS.' }, { status: 403 });
+    }
+
     const studentCode = student.userData?.studentCode || '';
     const bypassCache = shouldBypassCache(req, studentCode);
 

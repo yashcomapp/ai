@@ -856,6 +856,29 @@ test('Limited Mode strictly isolates features: permits Tests, Attendance, Fees; 
   assert.strictEqual(evaluateStudentFeatureAccess(regularStudent, 'learn_os'), true);
 });
 
+test('API Endpoint access control strictly rejects Limited Mode from learning, results, and practice', () => {
+  const isApiAllowedForStudent = (student, endpoint) => {
+    const isLimited = student?.studentMode === 'limited';
+    if (isLimited && ['learning', 'results', 'practice'].includes(endpoint)) {
+      return false;
+    }
+    return true;
+  };
+
+  const limitedStudent = { studentMode: 'limited' };
+  assert.strictEqual(isApiAllowedForStudent(limitedStudent, 'learning'), false);
+  assert.strictEqual(isApiAllowedForStudent(limitedStudent, 'results'), false);
+  assert.strictEqual(isApiAllowedForStudent(limitedStudent, 'practice'), false);
+  assert.strictEqual(isApiAllowedForStudent(limitedStudent, 'dashboard'), true);
+  assert.strictEqual(isApiAllowedForStudent(limitedStudent, 'attendance'), true);
+  assert.strictEqual(isApiAllowedForStudent(limitedStudent, 'fees'), true);
+
+  const regularStudent = { studentMode: 'regular' };
+  assert.strictEqual(isApiAllowedForStudent(regularStudent, 'learning'), true);
+  assert.strictEqual(isApiAllowedForStudent(regularStudent, 'results'), true);
+  assert.strictEqual(isApiAllowedForStudent(regularStudent, 'practice'), true);
+});
+
 // -----------------------------------------------------------------------------
 // SUITE 14: Parent Student Codes & Legacy Link Isolation
 // -----------------------------------------------------------------------------

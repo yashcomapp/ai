@@ -47,7 +47,7 @@ export async function GET(req: NextRequest) {
       if (isDemoUser(data)) return null;
       const uid = doc.id;
       const baseName = data.name || data.displayName || 'Unknown';
-      const pCodes = data.studentCodes || (data.studentCode ? [data.studentCode] : []);
+      const pCodes = Array.isArray(data.studentCodes) ? data.studentCodes : (data.studentCode ? [data.studentCode] : []);
       const hasActiveChild = pCodes.some((code: string) => activeStudentCodes.has(code.toLowerCase()));
       if (!hasActiveChild) return null;
 

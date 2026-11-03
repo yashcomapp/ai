@@ -1,3 +1,4 @@
+import { resolveParentStudentCodes } from '@/lib/dashboardDbUtils';
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase/admin';
 import { verifyAnyRole } from '@/lib/auth';
@@ -70,67 +71,32 @@ export async function GET(req: NextRequest) {
       const parentData = parentAuth.userData;
       const parentEmail = parentData.email?.toLowerCase() || '';
 
-      // Resolve children student codes and batch ids
-      let childrenCodes: string[] = [];
-      if (Array.isArray(parentData?.studentCodes)) {
-        childrenCodes = parentData.studentCodes.filter(Boolean);
-      } else if (parentData?.studentCode) {
-        childrenCodes = [parentData.studentCode];
-      } else if (parentData?.studentId) {
-        childrenCodes = [parentData.studentId];
-      }
-
-      // Query parentEmail matching and studentCodes in parallel
+      // Resolve canonical children student codes via SSOT
+      const childrenCodes = await resolveParentStudentCodes(parentData);
       let childrenBatches: string[] = [];
+
       try {
-        const [studsSnap, snaps] = await Promise.all([
-          parentEmail
-            ? adminDb.collection('users')
-                .where('role', '==', 'student')
-                .where('parentEmail', '==', parentEmail)
-                .get()
-                .catch(() => ({ docs: [] } as any))
-            : Promise.resolve({ docs: [] } as any),
-          childrenCodes.length > 0
-            ? adminDb.collection('users')
-                .where('role', '==', 'student')
-                .where('studentCode', 'in', childrenCodes.slice(0, 30))
-                .get()
-                .catch(() => ({ docs: [] } as any))
-            : Promise.resolve({ docs: [] } as any)
-        ]);
+        if (childrenCodes.length > 0) {
+          const snaps = await adminDb.collection('users')
+            .where('role', '==', 'student')
+            .where('studentCode', 'in', childrenCodes.slice(0, 30))
+            .get()
+            .catch(() => ({ docs: [] } as any));
 
-        studsSnap.docs.forEach((doc: any) => {
-          const d = doc.data();
-          if (d.studentCode && !childrenCodes.includes(d.studentCode)) {
-            childrenCodes.push(d.studentCode);
-          }
-          if (d.batchId && !childrenBatches.includes(d.batchId)) {
-            childrenBatches.push(d.batchId);
-          }
-          if (Array.isArray(d.batchIds)) {
-            d.batchIds.forEach((b: string) => {
-              if (b && !childrenBatches.includes(b)) {
-                childrenBatches.push(b);
-              }
-            });
-          }
-        });
-
-        snaps.docs.forEach((doc: any) => {
-          const d = doc.data();
-          if (d.batchId && !childrenBatches.includes(d.batchId)) {
-            childrenBatches.push(d.batchId);
-          }
-          if (Array.isArray(d.batchIds)) {
-            d.batchIds.forEach((b: string) => {
-              if (b && !childrenBatches.includes(b)) {
-                childrenBatches.push(b);
-              }
-            });
-          }
-        });
-      } catch (e) {
+          snaps.docs.forEach((doc: any) => {
+            const d = doc.data();
+            if (d.batchId && !childrenBatches.includes(d.batchId)) {
+              childrenBatches.push(d.batchId);
+            }
+            if (Array.isArray(d.batchIds)) {
+              d.batchIds.forEach((b: string) => {
+                if (b && !childrenBatches.includes(b)) {
+                  childrenBatches.push(b);
+                }
+              });
+            }
+          });
+        }      } catch (e) {
         console.warn('Error fetching children for parent notice matching:', e);
       }
 

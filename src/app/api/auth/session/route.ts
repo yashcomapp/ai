@@ -1,3 +1,4 @@
+import { resolveParentStudentCodes } from '@/lib/dashboardDbUtils';
 import { NextRequest, NextResponse } from 'next/server';
 import { adminAuth, adminDb } from '@/lib/firebase/admin';
 import * as admin from 'firebase-admin';
@@ -15,29 +16,8 @@ async function checkParentDeactivationStatus(userData: any, email?: string): Pro
     }
   }
 
-  let studentCodes: string[] = [];
-  if (Array.isArray(userData?.studentCodes)) {
-    studentCodes = userData.studentCodes.filter(Boolean);
-  } else if (userData?.studentCode) {
-    studentCodes = [userData.studentCode];
-  } else if (userData?.studentId) {
-    studentCodes = [userData.studentId];
-  }
-
+  const studentCodes = await resolveParentStudentCodes(userData);
   let childrenDocs: any[] = [];
-  if (parentEmail) {
-    const querySnap = await adminDb.collection('users')
-      .where('role', '==', 'student')
-      .where('parentEmail', '==', parentEmail)
-      .get();
-    querySnap.docs.forEach(doc => {
-      const d = doc.data();
-      if (d.studentCode && !studentCodes.includes(d.studentCode)) {
-        studentCodes.push(d.studentCode);
-      }
-      childrenDocs.push(d);
-    });
-  }
 
   if (studentCodes.length > 0) {
     const chunks = chunkArray(studentCodes, 30);
@@ -75,7 +55,7 @@ async function checkParentDeactivationStatus(userData: any, email?: string): Pro
       result = { shouldDeactivate: true, reason: 'all_students_inactive' };
     } else {
       // Check if ALL active linked students are in Autonomous Mode
-      const nonAutonomousActiveCount = activeChildren.filter(c => c.autonomous !== true).length;
+      const nonAutonomousActiveCount = activeChildren.filter(c => c.autonomous !== true && c.studentMode !== 'autonomous' && c.studentMode !== 'limited').length;
       if (nonAutonomousActiveCount === 0) {
         result = { shouldDeactivate: true, reason: 'student_autonomous' };
       }

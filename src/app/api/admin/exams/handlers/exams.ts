@@ -756,7 +756,7 @@ export async function GET(req: NextRequest) {
       const data = doc.data();
       if (isDemoUser(data)) return null;
       const pEmail = data.email || '';
-      const pCodes = data.studentCodes || (data.studentCode ? [data.studentCode] : []);
+      const pCodes = Array.isArray(data.studentCodes) ? data.studentCodes : (data.studentCode ? [data.studentCode] : []);
       
       const childNames: string[] = [];
       pCodes.forEach((code: string) => {

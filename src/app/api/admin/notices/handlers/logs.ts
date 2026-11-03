@@ -235,7 +235,7 @@ export async function GET(req: NextRequest) {
       const pEmail = d.email?.toLowerCase().trim();
       if (!pEmail) return;
 
-      const pCodes = d.studentCodes || (d.studentCode ? [d.studentCode] : []);
+      const pCodes = Array.isArray(d.studentCodes) ? d.studentCodes : (d.studentCode ? [d.studentCode] : []);
       const matchedStuds = studentsList.filter(s => pCodes.includes(s.studentCode) || pCodes.includes(s.uid));
       
       if (matchedStuds.length > 0) {

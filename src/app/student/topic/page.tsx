@@ -49,6 +49,12 @@ function TopicPracticeContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  useEffect(() => {
+    if ((user as any)?.studentMode === 'limited') {
+      router.replace('/student');
+    }
+  }, [user, router]);
+
   const topicCode = searchParams.get('topicCode') || '';
   const category = searchParams.get('category') || 'continuePractice';
   const isNumericalFocus = searchParams.get('numericalFocus') === 'true';

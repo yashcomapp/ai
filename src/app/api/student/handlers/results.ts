@@ -21,6 +21,10 @@ export async function GET(req: NextRequest) {
     const parent = role === 'parent' ? authResult : null;
     const adminUser = role === 'admin' ? authResult : null;
 
+    if (student && (student.userData as any)?.studentMode === 'limited') {
+      return NextResponse.json({ message: 'Access Denied. Limited Mode students do not have access to performance scorecards.' }, { status: 403 });
+    }
+
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');
     const paramStudentCode = searchParams.get('studentCode');
