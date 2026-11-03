@@ -107,40 +107,39 @@ export async function GET(req: NextRequest) {
       const rec = existingRecords[student.studentCode] || existingRecords[codeUpper];
 
       if (hasLeave && hasLeave.status === 'approved') {
-        status = 'leave';
-        remarks = `Approved Leave: ${hasLeave.remarks || hasLeave.type || 'Leave'}`;
         isLeaveApproved = true;
+        remarks = `Approved Leave: ${hasLeave.remarks || hasLeave.type || 'Leave'}`;
       } else if (hasDecl && (hasDecl.status === 'leave' || hasDecl.status === 'absent')) {
-        status = hasDecl.status;
-        remarks = `Parent Declared: ${hasDecl.remarks || (hasDecl.status === 'leave' ? 'Leave' : 'Absent')}`;
         isLeaveApproved = hasDecl.status === 'leave';
+        remarks = `Parent Declared: ${hasDecl.remarks || (hasDecl.status === 'leave' ? 'Leave' : 'Absent')}`;
         selfMarked = true;
         selfMarkedBy = hasDecl.declaredBy || 'parent';
         selfMarkedAt = hasDecl.createdAt || null;
-      } else {
-        if (hasLeave && hasLeave.status === 'pending') {
-          pendingLeave = {
-            id: hasLeave.applicationId || hasLeave.id,
-            startDate: hasLeave.startDate,
-            endDate: hasLeave.endDate,
-            remarks: hasLeave.remarks || '',
-            status: hasLeave.status
-          };
-        }
-        if (hasDecl && !rec) {
-          status = hasDecl.status || 'present';
-          remarks = `Parent Declared: ${hasDecl.remarks || ''}`;
-          selfMarked = true;
-          selfMarkedBy = hasDecl.declaredBy || 'parent';
-          selfMarkedAt = hasDecl.createdAt || null;
-        }
-        if (rec) {
-          status = rec.status || 'present';
-          remarks = rec.remarks || '';
-          selfMarked = !!rec.selfMarked;
-          selfMarkedBy = rec.selfMarkedBy || null;
-          selfMarkedAt = rec.selfMarkedAt || null;
-        }
+      }
+
+      if (hasLeave && hasLeave.status === 'pending') {
+        pendingLeave = {
+          id: hasLeave.applicationId || hasLeave.id,
+          startDate: hasLeave.startDate,
+          endDate: hasLeave.endDate,
+          remarks: hasLeave.remarks || '',
+          status: hasLeave.status
+        };
+      }
+
+      // Authoritative Admin Override:
+      // If the admin has already submitted a verified attendance record for this student on this date,
+      // the admin's saved status takes precedence over automatic leave/declaration defaults.
+      if (rec) {
+        status = rec.status || (isLeaveApproved ? 'leave' : 'present');
+        remarks = rec.remarks || remarks;
+        selfMarked = !!rec.selfMarked;
+        selfMarkedBy = rec.selfMarkedBy || selfMarkedBy;
+        selfMarkedAt = rec.selfMarkedAt || selfMarkedAt;
+      } else if (isLeaveApproved) {
+        status = 'leave';
+      } else if (hasDecl && hasDecl.status === 'absent') {
+        status = 'absent';
       }
 
       return {

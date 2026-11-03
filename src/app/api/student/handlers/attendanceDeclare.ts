@@ -4,6 +4,7 @@ import { verifyAnyRole } from '@/lib/auth';
 import { getDateKeyIST } from '@/lib/dateUtils';
 import { resolveParentStudentCodes } from '@/lib/dashboardDbUtils';
 import { invalidateCache } from '@/lib/firebase/cache';
+import { getStudentMode } from '@/types/user.types';
 
 
 export async function GET(req: NextRequest) {
@@ -126,10 +127,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid status. Choose present or leave.' }, { status: 400 });
     }
 
-    const isAutonomous = role === 'student' && session.userData?.autonomous === true;
-    if (status === 'leave' && role !== 'parent' && !isAutonomous) {
-      return NextResponse.json({ error: 'Forbidden. Only parent accounts or autonomous students can declare excused leaves.' }, { status: 403 });
-    }
+    const studentMode = getStudentMode(session.userData);
+    const isAutonomous = studentMode === 'autonomous';
 
     // Resolve today's date in IST YYYY-MM-DD
     const todayStr = getDateKeyIST();

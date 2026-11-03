@@ -391,147 +391,148 @@ export default function AdminAttendancePage() {
                             </div>
                           </td>
                           <td style={{ padding: '8px 12px' }}>
-                            {student.isLeaveApproved ? (
-                              <span className="badge badge-secondary" style={{ padding: '4px 8px', borderRadius: '4px', fontSize: '10.5px', fontWeight: 700 }}>
-                                Excused Leave 🌴
-                              </span>
-                            ) : (
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                {student.pendingLeave && (
-                                  <div style={{ display: 'flex', gap: '6px', marginBottom: '4px' }}>
-                                    <button
-                                      onClick={() => handleApproveLeave(student.pendingLeave!.id)}
-                                      className="btn"
-                                      style={{
-                                        padding: '4px 8px',
-                                        fontSize: '10.5px',
-                                        borderRadius: '4px',
-                                        fontWeight: 'bold',
-                                        background: 'var(--success)',
-                                        border: 'none',
-                                        color: 'var(--text-white)',
-                                        cursor: 'pointer'
-                                      }}
-                                    >
-                                      Approve 🌴
-                                    </button>
-                                    <button
-                                      onClick={() => handleDeleteLeave(student.pendingLeave!.id)}
-                                      className="btn"
-                                      style={{
-                                        padding: '4px 8px',
-                                        fontSize: '10.5px',
-                                        borderRadius: '4px',
-                                        fontWeight: 'bold',
-                                        background: 'var(--danger)',
-                                        border: 'none',
-                                        color: 'var(--text-white)',
-                                        cursor: 'pointer'
-                                      }}
-                                    >
-                                      Decline ✖
-                                    </button>
-                                  </div>
-                                )}
-                                <div style={{ display: 'flex', gap: '4px' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                              {student.isLeaveApproved && (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                  <span className="badge badge-secondary" style={{ padding: '2px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 700 }}>
+                                    Excused Leave 🌴
+                                  </span>
+                                </div>
+                              )}
+                              {student.pendingLeave && (
+                                <div style={{ display: 'flex', gap: '6px', marginBottom: '4px' }}>
                                   <button
-                                    onClick={() => handleStatusChange(student.studentCode, 'present')}
+                                    onClick={() => handleApproveLeave(student.pendingLeave!.id)}
+                                    className="btn"
                                     style={{
+                                      padding: '4px 8px',
+                                      fontSize: '10.5px',
+                                      borderRadius: '4px',
+                                      fontWeight: 'bold',
+                                      background: 'var(--success)',
                                       border: 'none',
-                                      background: student.status === 'present' ? 'var(--success)' : 'var(--bg-soft)',
-                                      color: student.status === 'present' ? 'var(--text-white)' : 'var(--text-muted)',
-                                      width: '26px',
-                                      height: '26px',
-                                      borderRadius: '50%',
-                                      display: 'inline-flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'center',
-                                      cursor: 'pointer',
-                                      fontWeight: 'bold'
+                                      color: 'var(--text-white)',
+                                      cursor: 'pointer'
                                     }}
-                                    title="Present"
                                   >
-                                    P
+                                    Approve 🌴
                                   </button>
                                   <button
-                                    onClick={() => handleStatusChange(student.studentCode, 'absent')}
+                                    onClick={() => handleDeleteLeave(student.pendingLeave!.id)}
+                                    className="btn"
                                     style={{
+                                      padding: '4px 8px',
+                                      fontSize: '10.5px',
+                                      borderRadius: '4px',
+                                      fontWeight: 'bold',
+                                      background: 'var(--danger)',
                                       border: 'none',
-                                      background: student.status === 'absent' ? 'var(--danger)' : 'var(--bg-soft)',
-                                      color: student.status === 'absent' ? 'var(--text-white)' : 'var(--text-muted)',
-                                      width: '26px',
-                                      height: '26px',
-                                      borderRadius: '50%',
-                                      display: 'inline-flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'center',
-                                      cursor: 'pointer',
-                                      fontWeight: 'bold'
+                                      color: 'var(--text-white)',
+                                      cursor: 'pointer'
                                     }}
-                                    title="Absent"
                                   >
-                                    A
-                                  </button>
-                                  <button
-                                    onClick={() => handleStatusChange(student.studentCode, 'late')}
-                                    style={{
-                                      border: 'none',
-                                      background: student.status === 'late' ? 'var(--warning)' : 'var(--bg-soft)',
-                                      color: student.status === 'late' ? 'var(--text-white)' : 'var(--text-muted)',
-                                      width: '26px',
-                                      height: '26px',
-                                      borderRadius: '50%',
-                                      display: 'inline-flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'center',
-                                      cursor: 'pointer',
-                                      fontWeight: 'bold'
-                                    }}
-                                    title="Late"
-                                  >
-                                    L
-                                  </button>
-                                  <button
-                                    onClick={() => handleStatusChange(student.studentCode, 'leave')}
-                                    style={{
-                                      border: 'none',
-                                      background: student.status === 'leave' ? 'var(--accent)' : 'var(--bg-soft)',
-                                      color: student.status === 'leave' ? 'var(--text-white)' : 'var(--text-muted)',
-                                      width: '26px',
-                                      height: '26px',
-                                      borderRadius: '50%',
-                                      display: 'inline-flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'center',
-                                      cursor: 'pointer',
-                                      fontWeight: 'bold'
-                                    }}
-                                    title="Leave"
-                                  >
-                                    🌴
-                                  </button>
-                                  <button
-                                    onClick={() => handleStatusChange(student.studentCode, 'half_day')}
-                                    style={{
-                                      border: 'none',
-                                      background: student.status === 'half_day' ? 'var(--purple)' : 'var(--bg-soft)',
-                                      color: student.status === 'half_day' ? 'var(--text-white)' : 'var(--text-muted)',
-                                      width: '26px',
-                                      height: '26px',
-                                      borderRadius: '50%',
-                                      display: 'inline-flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'center',
-                                      cursor: 'pointer',
-                                      fontWeight: 'bold'
-                                    }}
-                                    title="Half Day"
-                                  >
-                                    ½
+                                    Decline ✖
                                   </button>
                                 </div>
+                              )}
+                              <div style={{ display: 'flex', gap: '4px' }}>
+                                <button
+                                  onClick={() => handleStatusChange(student.studentCode, 'present')}
+                                  style={{
+                                    border: 'none',
+                                    background: student.status === 'present' ? 'var(--success)' : 'var(--bg-soft)',
+                                    color: student.status === 'present' ? 'var(--text-white)' : 'var(--text-muted)',
+                                    width: '26px',
+                                    height: '26px',
+                                    borderRadius: '50%',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    cursor: 'pointer',
+                                    fontWeight: 'bold'
+                                  }}
+                                  title="Present"
+                                >
+                                  P
+                                </button>
+                                <button
+                                  onClick={() => handleStatusChange(student.studentCode, 'absent')}
+                                  style={{
+                                    border: 'none',
+                                    background: student.status === 'absent' ? 'var(--danger)' : 'var(--bg-soft)',
+                                    color: student.status === 'absent' ? 'var(--text-white)' : 'var(--text-muted)',
+                                    width: '26px',
+                                    height: '26px',
+                                    borderRadius: '50%',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    cursor: 'pointer',
+                                    fontWeight: 'bold'
+                                  }}
+                                  title="Absent"
+                                >
+                                  A
+                                </button>
+                                <button
+                                  onClick={() => handleStatusChange(student.studentCode, 'late')}
+                                  style={{
+                                    border: 'none',
+                                    background: student.status === 'late' ? 'var(--warning)' : 'var(--bg-soft)',
+                                    color: student.status === 'late' ? 'var(--text-white)' : 'var(--text-muted)',
+                                    width: '26px',
+                                    height: '26px',
+                                    borderRadius: '50%',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    cursor: 'pointer',
+                                    fontWeight: 'bold'
+                                  }}
+                                  title="Late"
+                                >
+                                  L
+                                </button>
+                                <button
+                                  onClick={() => handleStatusChange(student.studentCode, 'leave')}
+                                  style={{
+                                    border: 'none',
+                                    background: student.status === 'leave' ? 'var(--accent)' : 'var(--bg-soft)',
+                                    color: student.status === 'leave' ? 'var(--text-white)' : 'var(--text-muted)',
+                                    width: '26px',
+                                    height: '26px',
+                                    borderRadius: '50%',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    cursor: 'pointer',
+                                    fontWeight: 'bold'
+                                  }}
+                                  title="Leave"
+                                >
+                                  🌴
+                                </button>
+                                <button
+                                  onClick={() => handleStatusChange(student.studentCode, 'half_day')}
+                                  style={{
+                                    border: 'none',
+                                    background: student.status === 'half_day' ? 'var(--purple)' : 'var(--bg-soft)',
+                                    color: student.status === 'half_day' ? 'var(--text-white)' : 'var(--text-muted)',
+                                    width: '26px',
+                                    height: '26px',
+                                    borderRadius: '50%',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    cursor: 'pointer',
+                                    fontWeight: 'bold'
+                                  }}
+                                  title="Half Day"
+                                >
+                                  ½
+                                </button>
                               </div>
-                            )}
+                            </div>
                           </td>
                           <td style={{ padding: '8px 12px' }}>
                             <input

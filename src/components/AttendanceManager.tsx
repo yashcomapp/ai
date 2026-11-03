@@ -97,6 +97,15 @@ export default function AttendanceManager({ role }: AttendanceManagerProps) {
   const dailyLogs = attendanceData?.dailyLogs || [];
   const isCurrentlyOnLeaveToday = !!attendanceData?.isCurrentlyOnLeaveToday;
 
+    // Reason Presets
+  const REASON_PRESETS = [
+    { label: '🤒 Illness / Fever', text: 'Illness / fever (तब्येत बरी नाही / आजारी)' },
+    { label: '👨‍👩‍👧 Family Function', text: 'Family function (कौटुंबिक कार्यक्रम)' },
+    { label: '🚗 Out of Town', text: 'Out of town / travel (बाहेरगावी गेलो आहे)' },
+    { label: '💼 Urgent Work', text: 'Urgent personal work (घरगुती महत्त्वाचे काम)' },
+    { label: '🏥 Doctor Visit', text: 'Doctor appointment (वैद्यकीय तपासणी)' },
+  ];
+
   // Voluntary check-in card states
   const [submittingVoluntary, setSubmittingVoluntary] = useState(false);
   const [voluntaryStatus, setVoluntaryStatus] = useState<'present' | 'half_day' | 'leave' | 'absent'>('present');
@@ -104,10 +113,15 @@ export default function AttendanceManager({ role }: AttendanceManagerProps) {
   const [voluntaryError, setVoluntaryError] = useState('');
   const [voluntarySuccess, setVoluntarySuccess] = useState('');
 
+  // Confirmation Modals State
+  const [showAbsentWarningModal, setShowAbsentWarningModal] = useState(false);
+  const [showLeaveConfirmModal, setShowLeaveConfirmModal] = useState(false);
+  const [leaveConfirmSource, setLeaveConfirmSource] = useState<'daily' | 'declaration'>('declaration');
+
   // Leave declaration state variables
-  const [leaveDurationType, setLeaveDurationType] = useState<'single' | 'multiple'>('single');
-  const [declStart, setDeclStart] = useState(tomorrowStr);
-  const [declEnd, setDeclEnd] = useState(tomorrowStr);
+  const [leaveDurationType, setLeaveDurationType] = useState<'today' | 'tomorrow' | 'multiple'>('today');
+  const [declStart, setDeclStart] = useState(todayStr);
+  const [declEnd, setDeclEnd] = useState(todayStr);
   const [declRemarks, setDeclRemarks] = useState('');
   const [submittingDecl, setSubmittingDecl] = useState(false);
   const [declError, setDeclError] = useState('');
@@ -118,15 +132,18 @@ export default function AttendanceManager({ role }: AttendanceManagerProps) {
     setVoluntaryError('');
     setVoluntarySuccess('');
     setVoluntaryRemarks('');
+    setShowAbsentWarningModal(false);
+    setShowLeaveConfirmModal(false);
   }, [selectedChildCode]);
 
-  const handleMarkVoluntary = async () => {
+  const executeMarkVoluntary = async (statusToMark: 'present' | 'half_day' | 'leave' | 'absent', remarksToSubmit?: string) => {
     if (!firebaseUser) return;
     if (role === 'parent' && !selectedChildCode) return;
 
     setSubmittingVoluntary(true);
     setVoluntaryError('');
     setVoluntarySuccess('');
+    const finalRemarks = remarksToSubmit !== undefined ? remarksToSubmit : voluntaryRemarks;
     try {
       const token = await firebaseUser.getIdToken();
       const postUrl = role === 'student' 
@@ -138,20 +155,34 @@ export default function AttendanceManager({ role }: AttendanceManagerProps) {
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ 
           studentCode: selectedChildCode || undefined,
-          status: voluntaryStatus, 
-          remarks: voluntaryRemarks 
+          status: statusToMark, 
+          remarks: finalRemarks 
         })
       });
       const resData = await res.json();
       if (!res.ok) throw new Error(resData.error || resData.message || 'Failed to submit attendance.');
       
-      setVoluntarySuccess(`Voluntary attendance for ${displayName} has been marked successfully for today.`);
+      const statusLabel = statusToMark === 'leave' ? 'Excused Leave (रजा)' : statusToMark === 'absent' ? 'Absent (अनुपस्थित)' : statusToMark.toUpperCase();
+      setVoluntarySuccess(`Voluntary attendance for ${displayName} marked as ${statusLabel} for today.`);
       mutateAttendance();
     } catch (e: any) {
       setVoluntaryError(e.message || 'An error occurred.');
     } finally {
       setSubmittingVoluntary(false);
     }
+  };
+
+  const handleMarkVoluntaryClick = () => {
+    if (voluntaryStatus === 'absent') {
+      setShowAbsentWarningModal(true);
+      return;
+    }
+    if (voluntaryStatus === 'leave') {
+      setLeaveConfirmSource('daily');
+      setShowLeaveConfirmModal(true);
+      return;
+    }
+    executeMarkVoluntary(voluntaryStatus);
   };
 
   // Multi-day declaration states declared below todayStr
@@ -170,24 +201,64 @@ export default function AttendanceManager({ role }: AttendanceManagerProps) {
   );
   const declarations = declData?.declarations || [];
 
-  // Reset declaration statuses on child change
+    // Reset declaration statuses on child change
   useEffect(() => {
     setDeclError('');
     setDeclSuccess('');
-    setDeclStart(tomorrowStr);
-    setDeclEnd(tomorrowStr);
+    setDeclStart(todayStr);
+    setDeclEnd(todayStr);
     setDeclRemarks('');
-    setLeaveDurationType('single');
+    setLeaveDurationType('today');
   }, [selectedChildCode]);
 
-  const handleCreateDeclaration = async (e: React.FormEvent) => {
+  const handleDeclarationFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!firebaseUser) return;
-    if (role === 'parent' && !selectedChildCode) return;
     if (!declStart || !declEnd) {
       setDeclError('Please select both start and end dates.');
       return;
     }
+    if (declStart > declEnd) {
+      setDeclError('End date cannot be earlier than start date.');
+      return;
+    }
+    setLeaveConfirmSource('declaration');
+    setShowLeaveConfirmModal(true);
+  };
+
+  const executeConfirmLeave = async () => {
+    if (!firebaseUser) return;
+    if (role === 'parent' && !selectedChildCode) return;
+
+    if (leaveConfirmSource === 'daily') {
+      // Submitting leave for today from daily check-in
+      setShowLeaveConfirmModal(false);
+      await executeMarkVoluntary('leave', voluntaryRemarks);
+      // Also register in attendance declarations for comprehensive record
+      try {
+        const token = await firebaseUser.getIdToken();
+        const postUrl = role === 'student' 
+          ? '/api/student/attendance/declare' 
+          : `/api/student/attendance/declare?studentCode=${selectedChildCode}`;
+        await fetch(postUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({
+            studentCode: selectedChildCode || undefined,
+            status: 'leave',
+            startDate: todayStr,
+            endDate: todayStr,
+            remarks: voluntaryRemarks || 'Voluntary single day leave'
+          })
+        });
+        mutateDecls();
+        mutateAttendance();
+      } catch (err) {
+        console.error('Error auto-syncing leave declaration:', err);
+      }
+      return;
+    }
+
+    // Submitting from Leave Request section
     setSubmittingDecl(true);
     setDeclError('');
     setDeclSuccess('');
@@ -213,21 +284,36 @@ export default function AttendanceManager({ role }: AttendanceManagerProps) {
       const resData = await res.json();
       if (!res.ok) throw new Error(resData.error || resData.message || 'Failed to submit declaration.');
       
-      const successMsg = `✅ Excused Leave Registered: excusing dates ${declStart} to ${declEnd} successfully.`;
+      const successMsg = `✅ Excused Leave Registered: ${declStart === declEnd ? formatDateStr(declStart) : `${formatDateStr(declStart)} to ${formatDateStr(declEnd)}`} registered successfully.`;
       setDeclSuccess(successMsg);
-      alert('✅ Leave Applied Successfully!');
+      setShowLeaveConfirmModal(false);
       
-      setDeclStart(tomorrowStr);
-      setDeclEnd(tomorrowStr);
+      setDeclStart(todayStr);
+      setDeclEnd(todayStr);
       setDeclRemarks('');
-      setLeaveDurationType('single');
+      setLeaveDurationType('today');
       mutateDecls();
       mutateAttendance();
     } catch (err: any) {
       setDeclError(err.message || 'An error occurred.');
+      setShowLeaveConfirmModal(false);
     } finally {
       setSubmittingDecl(false);
     }
+  };
+
+  const getLeaveDateSummary = (start: string, end: string) => {
+    if (!start) return '';
+    if (start === end) {
+      const isToday = start === todayStr;
+      const isTomorrow = start === tomorrowStr;
+      return `${formatDateStr(start)} (${isToday ? 'Today • आजची रजा' : isTomorrow ? 'Tomorrow • उद्याची रजा' : '1 Day • १ दिवस'})`;
+    }
+    const s = new Date(start);
+    const e = new Date(end);
+    const diffTime = Math.abs(e.getTime() - s.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+    return `${formatDateStr(start)} to ${formatDateStr(end)} (${diffDays} Days • दिवस)`;
   };
 
   const handleDeleteDeclaration = async (declarationId: string) => {
@@ -310,7 +396,8 @@ export default function AttendanceManager({ role }: AttendanceManagerProps) {
                 {voluntaryError && <div className="alert-box alert-box-danger" style={{ marginBottom: '12px', padding: '10px' }}>{voluntaryError}</div>}
                 {voluntarySuccess && <div className="alert-box alert-box-success" style={{ marginBottom: '12px', padding: '10px' }}>{voluntarySuccess}</div>}
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%' }}>
+                  {/* Status Selection Buttons */}
                   <div style={{
                     display: 'grid',
                     gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
@@ -337,43 +424,80 @@ export default function AttendanceManager({ role }: AttendanceManagerProps) {
                       type="button"
                       onClick={() => setVoluntaryStatus('leave')}
                       className={`btn ${voluntaryStatus === 'leave' ? 'btn-primary' : 'btn-secondary'}`}
-                      style={{ fontSize: '12px', padding: '8px 10px', justifyContent: 'center', textAlign: 'center', whiteSpace: 'nowrap' }}
+                      style={{ fontSize: '12px', padding: '8px 10px', justifyContent: 'center', textAlign: 'center', whiteSpace: 'nowrap', border: voluntaryStatus === 'leave' ? '2px solid var(--accent)' : undefined }}
                     >
-                      Leave • छुट्टी
+                      🌴 Leave • छुट्टी
                     </button>
                     <button 
                       type="button"
                       onClick={() => setVoluntaryStatus('absent')}
-                      className={`btn ${voluntaryStatus === 'absent' ? 'btn-primary' : 'btn-secondary'}`}
+                      className={`btn ${voluntaryStatus === 'absent' ? 'btn-danger' : 'btn-secondary'}`}
                       style={{ fontSize: '12px', padding: '8px 10px', justifyContent: 'center', textAlign: 'center', whiteSpace: 'nowrap' }}
                     >
-                      Absent • अनुपस्थित
+                      ⚠️ Absent • अनुपस्थित
                     </button>
                   </div>
+
+                  {/* Contextual guidance on status selection */}
+                  {voluntaryStatus === 'absent' ? (
+                    <div style={{ padding: '8px 12px', borderRadius: '6px', background: 'var(--danger-bg)', border: '1px solid var(--danger-border)', fontSize: '11.5px', color: 'var(--danger)' }}>
+                      ⚠️ <strong>Warning • चेतावणी:</strong> 'Absent' indicates an unexcused absence that will reduce your attendance percentage. If you are unwell or have family work, choose <strong>Leave (रजा)</strong> instead.
+                    </div>
+                  ) : voluntaryStatus === 'leave' ? (
+                    <div style={{ padding: '8px 12px', borderRadius: '6px', background: 'var(--accent-soft)', border: '1px solid var(--accent-ring)', fontSize: '11.5px', color: 'var(--accent)' }}>
+                      🌴 <strong>Excused Leave • मंजूर रजा:</strong> Taking an excused day off today. This does NOT penalize your attendance percentage.
+                    </div>
+                  ) : null}
+
+                  {/* Reason quick-chips */}
+                  {(voluntaryStatus === 'leave' || voluntaryStatus === 'absent') && (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
+                      <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>Quick Reason:</span>
+                      {REASON_PRESETS.map((p, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => setVoluntaryRemarks(p.text)}
+                          style={{
+                            fontSize: '11px',
+                            padding: '3px 8px',
+                            borderRadius: '12px',
+                            border: '1px solid var(--border-light)',
+                            background: voluntaryRemarks === p.text ? 'var(--accent-soft)' : 'var(--bg-soft)',
+                            color: voluntaryRemarks === p.text ? 'var(--accent)' : 'var(--text)',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          {p.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                   
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center', width: '100%' }}>
                     <input 
                       type="text" 
                       value={voluntaryRemarks}
                       onChange={(e) => setVoluntaryRemarks(e.target.value)}
-                      placeholder="Optional remarks • टिप्पणी (वैकल्पिक)"
+                      placeholder="Remarks / Reason (कारण: जैसे तबियत ठीक नहीं, कौटुंबिक कार्यक्रम)"
                       style={{ flex: '1 1 200px', minWidth: '0', width: '100%', padding: '8px 12px', fontSize: '12px', borderRadius: '4px', border: '1px solid var(--border-light)', background: 'var(--bg-soft)', color: 'var(--text)' }}
                     />
 
                     <button 
-                      onClick={handleMarkVoluntary}
+                      type="button"
+                      onClick={handleMarkVoluntaryClick}
                       disabled={submittingVoluntary}
-                      className="btn btn-primary"
+                      className={`btn ${voluntaryStatus === 'absent' ? 'btn-danger' : 'btn-primary'}`}
                       style={{ flex: '1 1 auto', minWidth: '180px', fontSize: '12px', padding: '8px 16px', fontWeight: 'bold', justifyContent: 'center' }}
                     >
                       {submittingVoluntary ? 'Submitting...' : (
                         voluntaryStatus === 'leave'
-                          ? '🌴 Apply Leave Today • आज की छुट्टी दर्ज करें'
+                          ? '🌴 Apply Leave Today • आजची रजा नोंदवा'
                           : voluntaryStatus === 'absent'
-                          ? '⚠️ Report Absence Today • अनुपस्थिति दर्ज करें'
+                          ? '⚠️ Report Absence Today • अनुपस्थिती नोंदवा'
                           : voluntaryStatus === 'half_day'
                           ? '🌓 Report Half Day Today • आधा दिन दर्ज करें'
-                          : '🙋 Mark Present Today • उपस्थिति दर्ज करें'
+                          : '🙋 Mark Present Today • उपस्थिती नोंदवा'
                       )}
                     </button>
                   </div>
@@ -382,90 +506,342 @@ export default function AttendanceManager({ role }: AttendanceManagerProps) {
             )}
           </div>
 
-          {/* Section 2: Leave Request (Future Dates / Multi-Day) - accessible to both Students & Parents */}
+          {/* Section 2: Leave Application (Today / Tomorrow / Multiple Days) */}
           <div style={{
-            border: '2px solid var(--danger-border, var(--danger))',
+            border: '2px solid var(--accent-ring, var(--border))',
             borderRadius: 'var(--radius-md)',
             padding: '16px',
-            background: 'var(--danger-bg)',
+            background: 'var(--bg-soft)',
             width: '100%',
             boxSizing: 'border-box'
           }}>
-            <h3 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: 'bold', color: 'var(--danger)' }}>Leave Request (Advance / Multi-day) • छुट्टी का आवेदन</h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+              <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 'bold', color: 'var(--text)' }}>
+                🌴 Apply for Excused Leave • रजेचा अर्ज / छुट्टी का आवेदन
+              </h3>
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                For {displayName}
+              </span>
+            </div>
+
+            <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginBottom: '12px' }}>
+              Select whether you need leave for Today, Tomorrow, or a custom date range. Excused leaves do not penalize your attendance rate.
+            </div>
 
             {declError && <div className="alert-box alert-box-danger" style={{ marginBottom: '12px', padding: '10px' }}>{declError}</div>}
             {declSuccess && <div className="alert-box alert-box-success" style={{ marginBottom: '12px', padding: '10px' }}>{declSuccess}</div>}
 
-            <form onSubmit={handleCreateDeclaration} style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%' }}>
+            <form onSubmit={handleDeclarationFormSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px', width: '100%' }}>
               
-              {/* Select Leave Duration Option */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '12px', marginBottom: '4px' }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 600 }}>
-                  <input 
-                    type="radio" 
-                    name="leaveDuration" 
-                    value="single" 
-                    checked={leaveDurationType === 'single'}
-                    onChange={() => {
-                      setLeaveDurationType('single');
-                      setDeclStart(tomorrowStr);
-                      setDeclEnd(tomorrowStr);
-                    }}
-                  />
-                  <span>Apply leave for tomorrow ({formatDateStr(tomorrowStr)}) • कल की छुट्टी</span>
-                </label>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontWeight: 600 }}>
-                  <input 
-                    type="radio" 
-                    name="leaveDuration" 
-                    value="multiple" 
-                    checked={leaveDurationType === 'multiple'}
-                    onChange={() => {
-                      setLeaveDurationType('multiple');
-                      setDeclStart(tomorrowStr);
-                      setDeclEnd(tomorrowStr);
-                    }}
-                  />
-                  <span>Multiple Days • एक से अधिक दिन</span>
-                </label>
+              {/* Leave Timing Presets */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+                gap: '8px',
+                width: '100%'
+              }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLeaveDurationType('today');
+                    setDeclStart(todayStr);
+                    setDeclEnd(todayStr);
+                  }}
+                  style={{
+                    padding: '10px 12px',
+                    borderRadius: 'var(--radius-sm)',
+                    border: leaveDurationType === 'today' ? '2px solid var(--accent)' : '1px solid var(--border-light)',
+                    background: leaveDurationType === 'today' ? 'var(--accent-soft)' : 'var(--surface)',
+                    color: leaveDurationType === 'today' ? 'var(--accent)' : 'var(--text)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'flex-start',
+                    gap: '2px',
+                    textAlign: 'left'
+                  }}
+                >
+                  <div style={{ fontSize: '12.5px', fontWeight: 700 }}>🌴 Today • आजची रजा</div>
+                  <div style={{ fontSize: '11px', opacity: 0.8 }}>{formatDateStr(todayStr)}</div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLeaveDurationType('tomorrow');
+                    setDeclStart(tomorrowStr);
+                    setDeclEnd(tomorrowStr);
+                  }}
+                  style={{
+                    padding: '10px 12px',
+                    borderRadius: 'var(--radius-sm)',
+                    border: leaveDurationType === 'tomorrow' ? '2px solid var(--accent)' : '1px solid var(--border-light)',
+                    background: leaveDurationType === 'tomorrow' ? 'var(--accent-soft)' : 'var(--surface)',
+                    color: leaveDurationType === 'tomorrow' ? 'var(--accent)' : 'var(--text)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'flex-start',
+                    gap: '2px',
+                    textAlign: 'left'
+                  }}
+                >
+                  <div style={{ fontSize: '12.5px', fontWeight: 700 }}>🌴 Tomorrow • उद्याची रजा</div>
+                  <div style={{ fontSize: '11px', opacity: 0.8 }}>{formatDateStr(tomorrowStr)}</div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLeaveDurationType('multiple');
+                    setDeclStart(todayStr);
+                    setDeclEnd(tomorrowStr);
+                  }}
+                  style={{
+                    padding: '10px 12px',
+                    borderRadius: 'var(--radius-sm)',
+                    border: leaveDurationType === 'multiple' ? '2px solid var(--accent)' : '1px solid var(--border-light)',
+                    background: leaveDurationType === 'multiple' ? 'var(--accent-soft)' : 'var(--surface)',
+                    color: leaveDurationType === 'multiple' ? 'var(--accent)' : 'var(--text)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'flex-start',
+                    gap: '2px',
+                    textAlign: 'left'
+                  }}
+                >
+                  <div style={{ fontSize: '12.5px', fontWeight: 700 }}>📅 Custom Dates • इतर दिवस</div>
+                  <div style={{ fontSize: '11px', opacity: 0.8 }}>Select start & end date</div>
+                </button>
               </div>
 
+              {/* Date pickers for Custom Dates */}
               {leaveDurationType === 'multiple' && (
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center', padding: '6px 0', width: '100%' }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center', padding: '10px', background: 'var(--surface)', borderRadius: '6px', border: '1px solid var(--border-light)', width: '100%' }}>
                   {/* Start Date */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: '1 1 180px', minWidth: '0' }}>
                     <span style={{ fontSize: '12px', fontWeight: 600, whiteSpace: 'nowrap' }}>Start Date:</span>
-                    <DateInputDMY value={declStart} min={tomorrowStr} onChange={(val) => setDeclStart(val)} required style={{ flex: 1, minWidth: '120px' }} inputStyle={{ padding: '6px 28px 6px 10px', background: 'var(--bg-soft)' }} />
+                    <DateInputDMY value={declStart} min={todayStr} onChange={(val) => {
+                      setDeclStart(val);
+                      if (val > declEnd) setDeclEnd(val);
+                    }} required style={{ flex: 1, minWidth: '120px' }} inputStyle={{ padding: '6px 28px 6px 10px', background: 'var(--bg-soft)' }} />
                   </div>
 
                   {/* End Date */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: '1 1 180px', minWidth: '0' }}>
                     <span style={{ fontSize: '12px', fontWeight: 600, whiteSpace: 'nowrap' }}>End Date:</span>
-                    <DateInputDMY value={declEnd} min={tomorrowStr || declStart} onChange={(val) => setDeclEnd(val)} required style={{ flex: 1, minWidth: '120px' }} inputStyle={{ padding: '6px 28px 6px 10px', background: 'var(--bg-soft)' }} />
+                    <DateInputDMY value={declEnd} min={declStart || todayStr} onChange={(val) => setDeclEnd(val)} required style={{ flex: 1, minWidth: '120px' }} inputStyle={{ padding: '6px 28px 6px 10px', background: 'var(--bg-soft)' }} />
                   </div>
                 </div>
               )}
+
+              {/* Reason Quick Chips */}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
+                <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>Quick Reason:</span>
+                {REASON_PRESETS.map((p, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => setDeclRemarks(p.text)}
+                    style={{
+                      fontSize: '11px',
+                      padding: '3px 8px',
+                      borderRadius: '12px',
+                      border: '1px solid var(--border-light)',
+                      background: declRemarks === p.text ? 'var(--accent-soft)' : 'var(--surface)',
+                      color: declRemarks === p.text ? 'var(--accent)' : 'var(--text)',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
 
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center', width: '100%' }}>
                 <input 
                   type="text" 
                   value={declRemarks}
                   onChange={(e) => setDeclRemarks(e.target.value)}
-                  placeholder="Reason / Remarks (कारण: जैसे तबियत ठीक नहीं, पारिवारिक कार्य)"
-                  style={{ flex: '1 1 200px', minWidth: '0', width: '100%', padding: '8px 12px', fontSize: '12px', borderRadius: '4px', border: '1px solid var(--border-light)', background: 'var(--bg-soft)', color: 'var(--text)' }}
+                  placeholder="Reason / Remarks (कारण: उदा. आजारी, कौटुंबिक कार्यक्रम)"
+                  style={{ flex: '1 1 200px', minWidth: '0', width: '100%', padding: '8px 12px', fontSize: '12px', borderRadius: '4px', border: '1px solid var(--border-light)', background: 'var(--surface)', color: 'var(--text)' }}
                 />
 
                 <button 
                   type="submit" 
                   disabled={submittingDecl}
                   className="btn btn-primary"
-                  style={{ flex: '1 1 auto', minWidth: '180px', fontSize: '12px', padding: '8px 16px', fontWeight: 'bold', justifyContent: 'center' }}
+                  style={{ flex: '1 1 auto', minWidth: '200px', fontSize: '12px', padding: '8px 16px', fontWeight: 'bold', justifyContent: 'center' }}
                 >
-                  {submittingDecl ? 'Submitting...' : 'Submit Leave Declaration • छुट्टी का आवेदन भेजें'}
+                  {submittingDecl ? 'Submitting...' : 'Review & Confirm Leave • रजेचा अर्ज पाठवा'}
                 </button>
               </div>
             </form>
           </div>
+
+
+        {/* Modal 1: Accidental Absence Warning Modal */}
+        {showAbsentWarningModal && (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '16px' }}>
+            <div className="card" style={{ background: 'var(--surface-popover)', border: '2px solid var(--danger)', borderRadius: 'var(--radius-lg)', maxWidth: '480px', width: '100%', padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', boxShadow: 'var(--shadow-lg)' }}>
+              
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'rgba(239, 68, 68, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px', flexShrink: 0 }}>
+                  ⚠️
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: 'var(--danger)' }}>
+                    Confirm Unexcused Absence
+                  </h3>
+                  <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                    अनुपस्थिती नोंदवण्याची पुष्टी करा
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ fontSize: '13px', lineHeight: '1.5', color: 'var(--text)' }}>
+                You are about to mark <strong>{displayName}</strong> as <strong>ABSENT (अनुपस्थित)</strong> for today (<strong>{formatDateStr(todayStr)}</strong>).
+              </div>
+
+              <div style={{ padding: '10px 12px', background: 'var(--danger-bg)', border: '1px solid var(--danger-border)', borderRadius: '6px', fontSize: '12px', color: 'var(--danger)', lineHeight: '1.4' }}>
+                ⚠️ <strong>Important Notice:</strong> Marking 'Absent' records an <em>unexcused absence</em> and lowers your attendance percentage. If you cannot attend due to sickness, family function, or emergency, please submit <strong>Excused Leave (रजा)</strong> instead!
+              </div>
+
+              <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                (जर आजारी असाल किंवा कौटुंबिक अडचण असेल, तर 'रजा' (Leave) निवडा. रजेमुळे उपस्थितीच्या टक्केवारीवर कोणताही परिणाम होत नाही.)
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '4px' }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAbsentWarningModal(false);
+                    setVoluntaryStatus('leave');
+                    setLeaveConfirmSource('daily');
+                    setShowLeaveConfirmModal(true);
+                  }}
+                  className="btn btn-primary"
+                  style={{ padding: '10px', fontSize: '13px', fontWeight: 700, justifyContent: 'center' }}
+                >
+                  🌴 Switch to Excused Leave (Recommended) • रजा निवडा
+                </button>
+
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setShowAbsentWarningModal(false)}
+                    className="btn btn-secondary"
+                    style={{ flex: 1, padding: '8px', fontSize: '12px', justifyContent: 'center' }}
+                  >
+                    Cancel • रद्द करा
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowAbsentWarningModal(false);
+                      executeMarkVoluntary('absent');
+                    }}
+                    style={{ flex: 1, padding: '8px', fontSize: '12px', fontWeight: 600, background: 'var(--danger)', color: 'var(--text-white)', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                  >
+                    ⚠️ Proceed with Absent
+                  </button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        )}
+
+        {/* Modal 2: Leave Confirmation Modal */}
+        {showLeaveConfirmModal && (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0, 0, 0, 0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: '16px' }}>
+            <div className="card" style={{ background: 'var(--surface-popover)', border: '2px solid var(--accent)', borderRadius: 'var(--radius-lg)', maxWidth: '500px', width: '100%', padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', boxShadow: 'var(--shadow-lg)' }}>
+              
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-light)', paddingBottom: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span style={{ fontSize: '24px' }}>🌴</span>
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: 'var(--accent)' }}>
+                      Confirm Leave Application
+                    </h3>
+                    <div style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>
+                      रजेच्या अर्जाची पुष्टी करा
+                    </div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowLeaveConfirmModal(false)}
+                  style={{ border: 'none', background: 'transparent', fontSize: '1.4rem', cursor: 'pointer', color: 'var(--text-muted)' }}
+                >
+                  ×
+                </button>
+              </div>
+
+              {/* Summary Details */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', background: 'var(--bg-soft)', padding: '14px', borderRadius: '8px', border: '1px solid var(--border-light)', fontSize: '12.5px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>Student Name:</span>
+                  <strong>{displayName}</strong>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>Leave Type:</span>
+                  <span className="badge badge-success" style={{ fontSize: '11px' }}>Excused Leave • मंजूर रजा</span>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>Leave Date(s):</span>
+                  <strong style={{ color: 'var(--accent)' }}>
+                    {leaveConfirmSource === 'daily'
+                      ? `${formatDateStr(todayStr)} (Today • आजची रजा)`
+                      : getLeaveDateSummary(declStart, declEnd)}
+                  </strong>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>Reason:</span>
+                  <span style={{ fontStyle: 'italic', maxWidth: '240px', textAlign: 'right' }}>
+                    {(leaveConfirmSource === 'daily' ? voluntaryRemarks : declRemarks) || 'General leave / वैयक्तिक कारण'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Reassurance text */}
+              <div style={{ padding: '10px 12px', background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.25)', borderRadius: '6px', fontSize: '11.5px', color: 'var(--success)', lineHeight: '1.4' }}>
+                ✓ <strong>Attendance Protected:</strong> This request will be submitted to the teacher and recorded in the class roster. Excused leaves do not penalize your attendance percentage.
+                <div style={{ marginTop: '3px', opacity: 0.9 }}>
+                  (मंजूर रजेमुळे तुमच्या उपस्थितीच्या टक्केवारीवर कोणताही नकारात्मक परिणाम होत नाही.)
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px', marginTop: '6px' }}>
+                <button
+                  type="button"
+                  onClick={() => setShowLeaveConfirmModal(false)}
+                  className="btn btn-secondary"
+                  disabled={submittingDecl || submittingVoluntary}
+                  style={{ flex: 1, padding: '10px', fontSize: '12px', justifyContent: 'center' }}
+                >
+                  ✕ Edit / Cancel • रद्द करा
+                </button>
+
+                <button
+                  type="button"
+                  onClick={executeConfirmLeave}
+                  disabled={submittingDecl || submittingVoluntary}
+                  className="btn btn-primary"
+                  style={{ flex: 2, padding: '10px', fontSize: '12px', fontWeight: 700, justifyContent: 'center' }}
+                >
+                  {(submittingDecl || submittingVoluntary) ? 'Submitting...' : '✓ Confirm & Submit Leave • अर्ज पाठवा'}
+                </button>
+              </div>
+
+            </div>
+          </div>
+        )}
 
           {/* Declarations List */}
           {declarations.length > 0 && (
