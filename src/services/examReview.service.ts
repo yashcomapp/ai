@@ -402,7 +402,7 @@ export class ExamReviewService {
       // 3. Sweep 'parentReviews' collection
       const pendingParentReviewsSnap = await adminDb.collection('parentReviews')
         .where('studentCode', 'in', chunk)
-        .where('status', '==', 'pending')
+        .where('status', 'in', ['pending', 'pending_parent', 'student_review'])
         .get()
         .catch(() => ({ docs: [] } as any));
 

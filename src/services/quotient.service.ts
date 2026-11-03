@@ -1,3 +1,4 @@
+import { deriveScorePercent } from '@/lib/scoreUtils';
 import { adminDb } from '@/lib/firebase/admin';
 import * as admin from 'firebase-admin';
 import { getDateKeyIST } from '@/lib/dateUtils';
@@ -163,7 +164,7 @@ export class PracticeEngagementCalculator implements ParameterCalculator {
       if (tCode) {
         topicPracticeMap.set(tCode, (topicPracticeMap.get(tCode) || 0) + (rev.totalQuestions || 0));
       }
-      const sPercent = Number(rev.scorePercent != null ? rev.scorePercent : (rev.percentage != null ? rev.percentage : (rev.totalMarks ? (rev.score / rev.totalMarks) * 100 : (rev.totalQuestions ? (rev.score / rev.totalQuestions) * 100 : 0))));
+      const sPercent = deriveScorePercent(rev);
       if (!isNaN(sPercent)) sessionScores.push(sPercent);
     });
 
@@ -230,7 +231,7 @@ export class PracticeQualityCalculator implements ParameterCalculator {
     let fluencyCount = 0;
 
     parentReviews.forEach((rev: any) => {
-      const sPercent = Number(rev.scorePercent != null ? rev.scorePercent : (rev.percentage != null ? rev.percentage : (rev.totalMarks ? (rev.score / rev.totalMarks) * 100 : (rev.totalQuestions ? (rev.score / rev.totalQuestions) * 100 : 0))));
+      const sPercent = deriveScorePercent(rev);
       if (!isNaN(sPercent)) sessionScores.push(sPercent);
 
       let pacing = rev.sincerityPacingScore;

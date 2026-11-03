@@ -28,25 +28,59 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
   }, [user]);
 
   useEffect(() => {
-    const unsub = onSnapshot(doc(db, 'config', 'systemAccess'), (snapshot) => {
-      const currentUser = userRef.current;
-      const isBypassed = isCurfewBypassed(currentUser?.email, currentUser);
+    let unsub: (() => void) | null = null;
 
-      if (snapshot.exists()) {
-        const data = snapshot.data();
-        if (!isBypassed && data.maintenanceMode && data.blockedRoles?.includes('student')) {
-          setMaintenance({
-            active: true,
-            message: data.message || 'The system is undergoing scheduled maintenance. Access will be restored shortly.'
-          });
+    const attachListener = () => {
+      if (unsub) return;
+      unsub = onSnapshot(doc(db, 'config', 'systemAccess'), (snapshot) => {
+        const currentUser = userRef.current;
+        const isBypassed = isCurfewBypassed(currentUser?.email, currentUser);
+
+        if (snapshot.exists()) {
+          const data = snapshot.data();
+          if (!isBypassed && data.maintenanceMode && data.blockedRoles?.includes('student')) {
+            setMaintenance({
+              active: true,
+              message: data.message || 'The system is undergoing scheduled maintenance. Access will be restored shortly.'
+            });
+          } else {
+            setMaintenance(null);
+          }
         } else {
           setMaintenance(null);
         }
-      } else {
-        setMaintenance(null);
+      }, () => {});
+    };
+
+    const detachListener = () => {
+      if (unsub) {
+        unsub();
+        unsub = null;
       }
-    }, () => {});
-    return () => unsub();
+    };
+
+    if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+      attachListener();
+    }
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        attachListener();
+      } else {
+        detachListener();
+      }
+    };
+
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+    }
+
+    return () => {
+      if (typeof document !== 'undefined') {
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+      }
+      detachListener();
+    };
   }, []);
 
   useEffect(() => {

@@ -1,3 +1,4 @@
+import { deriveScoreMetrics } from '@/lib/scoreUtils';
 import { adminDb } from '@/lib/firebase/admin';
 import * as admin from 'firebase-admin';
 import { isDemoUser } from '@/lib/studentDb';
@@ -268,7 +269,8 @@ export class ReportService {
       let totalTimeSpent = 0;
 
       sessions.forEach(sess => {
-        totalAccuracy += sess.scorePercent !== undefined ? Number(sess.scorePercent) : 0;
+        const { totalQuestions: qCount, scorePercent: acc } = deriveScoreMetrics(sess);
+        totalAccuracy += acc;
         const honesty = sess.integrityScore !== undefined
           ? Number(sess.integrityScore)
           : (sess.sincerityPacingScore !== undefined ? Number(sess.sincerityPacingScore) : 100);
@@ -276,9 +278,6 @@ export class ReportService {
         totalMastery += sess.masteryAfter !== undefined
           ? Number(sess.masteryAfter)
           : (sess.masteryBefore !== undefined ? Number(sess.masteryBefore) : 0);
-        const qCount = sess.totalQuestions !== undefined
-          ? Number(sess.totalQuestions)
-          : (sess.correctCount !== undefined ? Number(sess.correctCount) : 0);
         totalQuestions += qCount;
 
         if (sess.durationSpent && Number(sess.durationSpent) > 0) {

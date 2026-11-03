@@ -30,6 +30,7 @@
 
 import { calculateSrsSchedule } from '@/lib/srsRotation';
 import { deriveTopicCodeFromQuestionCode, parseTopicCode, getCanonicalSubjectName, normalizeTopicCode } from '@/lib/questionTypes';
+import { deriveScoreMetrics } from '@/lib/scoreUtils';
 
 /**
  * Canonical Mastery Thresholds (Rule 2F Single Source of Truth)
@@ -584,16 +585,9 @@ export function calculateUnifiedMetrics(input: UnifiedMetricsInput): UnifiedMetr
   const practicePercentages: number[] = [];
   let totalQuestionsPracticed = 0;
   practiceReviews.forEach(p => {
-    if (p.scorePercent != null && !isNaN(Number(p.scorePercent))) {
-      practicePercentages.push(Number(p.scorePercent));
-    } else if (p.percentage != null && !isNaN(Number(p.percentage))) {
-      practicePercentages.push(Number(p.percentage));
-    }
-    if (p.totalQuestions != null) {
-      totalQuestionsPracticed += Number(p.totalQuestions) || 0;
-    } else if (p.questionsCount != null) {
-      totalQuestionsPracticed += Number(p.questionsCount) || 0;
-    }
+    const { totalQuestions: qCount, scorePercent: pAcc } = deriveScoreMetrics(p);
+    practicePercentages.push(pAcc);
+    totalQuestionsPracticed += qCount;
   });
 
   const practiceAvg = practicePercentages.length > 0

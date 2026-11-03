@@ -50,3 +50,18 @@ export function deriveScoreMetrics(data: any): {
 export function deriveScorePercent(data: any): number {
   return deriveScoreMetrics(data).scorePercent;
 }
+
+/**
+ * Single Source of Truth (SSOT) for determining whether a parent/teacher review is approved.
+ * Fully backward-compatible with legacy records where only parentStatus === 'approved'
+ * or status === 'approved'.
+ */
+export function isReviewApproved(data: any): boolean {
+  if (!data) return false;
+  return data.parentStatus === 'approved' || data.status === 'approved';
+}
+
+export function isReviewPending(data: any): boolean {
+  if (!data) return false;
+  return !isReviewApproved(data);
+}

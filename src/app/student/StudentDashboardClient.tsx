@@ -443,23 +443,48 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
     // Run initial evaluation immediately for instant banner display from activeData
     evaluateActiveSession();
 
-    targetDocIds.forEach(targetId => {
-      const unsub = onSnapshot(doc(db, 'liveClassTargets', targetId), (snap) => {
-        if (snap.exists()) {
-          activeTargetsMap.set(targetId, snap.data());
-        } else {
+    const subscribeTargets = () => {
+      unsubs.forEach(u => u());
+      unsubs.length = 0;
+      targetDocIds.forEach(targetId => {
+        const unsub = onSnapshot(doc(db, 'liveClassTargets', targetId), (snap) => {
+          if (snap.exists()) {
+            activeTargetsMap.set(targetId, snap.data());
+          } else {
+            activeTargetsMap.delete(targetId);
+          }
+          evaluateActiveSession();
+        }, () => {
           activeTargetsMap.delete(targetId);
-        }
-        evaluateActiveSession();
-      }, () => {
-        activeTargetsMap.delete(targetId);
-        evaluateActiveSession();
+          evaluateActiveSession();
+        });
+        unsubs.push(unsub);
       });
-      unsubs.push(unsub);
-    });
+    };
+
+    if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+      subscribeTargets();
+    }
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        subscribeTargets();
+        evaluateActiveSession();
+      } else {
+        unsubs.forEach(u => u());
+        unsubs.length = 0;
+      }
+    };
+
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+    }
 
     return () => {
       if (autoExpiryTimer) clearTimeout(autoExpiryTimer);
+      if (typeof document !== 'undefined') {
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+      }
       unsubs.forEach(u => u());
     };
   }, [firebaseUser?.uid, studentTargetKey, alcSessionId]);

@@ -129,21 +129,41 @@ export async function POST(request: Request) {
       ...cleanUpdates
     }, shouldRevoke);
 
-    // If autonomous mode is modified, synchronize linked parent user account status & auto-approve legacy pending reviews
-    if (cleanUpdates.autonomous !== undefined) {
-      const isAutonomous = cleanUpdates.autonomous === true;
-
-      // 1. If switched to Autonomous, auto-approve any legacy pending parent reviews for this student
-      if (isAutonomous && studentCode) {
-        try {
-          await ExamReviewService.sweepAutonomousReviews(studentCode);
-        } catch (mErr) {
-          console.warn('Could not auto-approve pending reviews on autonomous toggle:', mErr);
-        }
+    // 1. If switched to Autonomous, auto-approve any legacy pending parent reviews for this student
+    if (cleanUpdates.autonomous === true && studentCode) {
+      try {
+        await ExamReviewService.sweepAutonomousReviews(studentCode);
+      } catch (mErr) {
+        console.warn('Could not auto-approve pending reviews on autonomous toggle:', mErr);
       }
+    }
 
-      // 2. Synchronize linked parent accounts safely (handling multi-student siblings)
+    // 2. Parent-Student Linking Lifecycle: Handle parent email re-assignment
+    const oldParentEmail = (studentData.parentEmail || '').trim().toLowerCase();
+    const newParentEmail = cleanUpdates.parentEmail !== undefined 
+      ? (cleanUpdates.parentEmail || '').trim().toLowerCase() 
+      : oldParentEmail;
+
+    if (studentCode && oldParentEmail && oldParentEmail !== newParentEmail) {
+      // Unlink student from old parent account
+      const oldParentSnaps = await adminDb.collection('users')
+        .where('role', '==', 'parent')
+        .where('email', '==', oldParentEmail)
+        .get()
+        .catch(() => ({ docs: [] } as any));
+      for (const oldDoc of oldParentSnaps.docs) {
+        await oldDoc.ref.update({
+          studentCodes: FieldValue.arrayRemove(studentCode)
+        });
+        invalidateUserCache(oldDoc.id);
+      }
+      invalidateParentDeactCache(oldParentEmail);
+    }
+
+    // 3. Synchronize linked parent accounts safely (handling multi-student siblings & autonomous status)
+    if (cleanUpdates.parentEmail !== undefined || cleanUpdates.autonomous !== undefined || cleanUpdates.status !== undefined) {
       const parentUserDocs: any[] = [];
+      const effectiveAutonomous = cleanUpdates.autonomous !== undefined ? cleanUpdates.autonomous : studentData.autonomous === true;
 
       if (studentCode) {
         const [snapByCode, snapByArray] = await Promise.all([
@@ -158,8 +178,8 @@ export async function POST(request: Request) {
         });
       }
 
-      if (parentEmail) {
-        const snapByEmail = await adminDb.collection('users').where('role', '==', 'parent').where('email', '==', parentEmail).get();
+      if (newParentEmail) {
+        const snapByEmail = await adminDb.collection('users').where('role', '==', 'parent').where('email', '==', newParentEmail).get();
         snapByEmail.docs.forEach(d => {
           if (!parentUserDocs.some(existing => existing.id === d.id)) parentUserDocs.push(d);
         });
@@ -170,7 +190,7 @@ export async function POST(request: Request) {
         invalidateUserCache(pDoc.id);
 
         // SSOT Linking Guarantee: Ensure studentCode is registered in parent's studentCodes array
-        if (studentCode) {
+        if (studentCode && pData.email?.toLowerCase() === newParentEmail) {
           const currentCodes = Array.isArray(pData.studentCodes)
             ? pData.studentCodes
             : (pData.studentCode ? [pData.studentCode] : []);
@@ -181,7 +201,7 @@ export async function POST(request: Request) {
           }
         }
 
-        if (isAutonomous) {
+        if (effectiveAutonomous) {
           // Check if parent has any other non-autonomous active child before deactivating
           let allCodes: string[] = [];
           if (Array.isArray(pData.studentCodes)) {
@@ -228,7 +248,7 @@ export async function POST(request: Request) {
           }
         }
       }
-      invalidateParentDeactCache(parentEmail || undefined);
+      invalidateParentDeactCache(newParentEmail || undefined);
     }
 
     invalidateUserCache(studentId);

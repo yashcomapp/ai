@@ -11,24 +11,58 @@ export default function ParentLayout({ children }: { children: React.ReactNode }
   const [maintenance, setMaintenance] = useState<{ active: boolean; message: string } | null>(null);
 
   useEffect(() => {
-    const unsub = onSnapshot(doc(db, 'config', 'systemAccess'), (snapshot) => {
-      const isBypassed = isCurfewBypassed(user?.email, user);
+    let unsub: (() => void) | null = null;
 
-      if (snapshot.exists()) {
-        const data = snapshot.data();
-        if (!isBypassed && data.maintenanceMode && data.blockedRoles?.includes('parent')) {
-          setMaintenance({
-            active: true,
-            message: data.message || 'The system is undergoing scheduled maintenance. Access will be restored shortly.'
-          });
+    const attachListener = () => {
+      if (unsub) return;
+      unsub = onSnapshot(doc(db, 'config', 'systemAccess'), (snapshot) => {
+        const isBypassed = isCurfewBypassed(user?.email, user);
+
+        if (snapshot.exists()) {
+          const data = snapshot.data();
+          if (!isBypassed && data.maintenanceMode && data.blockedRoles?.includes('parent')) {
+            setMaintenance({
+              active: true,
+              message: data.message || 'The system is undergoing scheduled maintenance. Access will be restored shortly.'
+            });
+          } else {
+            setMaintenance(null);
+          }
         } else {
           setMaintenance(null);
         }
-      } else {
-        setMaintenance(null);
+      }, () => {});
+    };
+
+    const detachListener = () => {
+      if (unsub) {
+        unsub();
+        unsub = null;
       }
-    }, () => {});
-    return () => unsub();
+    };
+
+    if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+      attachListener();
+    }
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        attachListener();
+      } else {
+        detachListener();
+      }
+    };
+
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+    }
+
+    return () => {
+      if (typeof document !== 'undefined') {
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+      }
+      detachListener();
+    };
   }, [user]);
 
   if (maintenance?.active) {

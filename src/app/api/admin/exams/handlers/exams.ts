@@ -15,6 +15,7 @@ import { ExamService, getAssignmentsForBatches } from '@/services/exam.service';
 import { getCachedBatches, getFromCache, setInCache, invalidateCache } from '@/lib/firebase/cache';
 import { assertCanonicalStudentCode } from '@/lib/canonicalValidation';
 import { shouldBypassCache } from '@/lib/cacheBypassGuard';
+import { deriveScoreMetrics } from '@/lib/scoreUtils';
 
 const parseIST = (dateStr: string): Date => {
   if (!dateStr) return new Date();
@@ -596,9 +597,7 @@ export async function GET(req: NextRequest) {
         const dateKey = getDateKeyIST(itemDate);
         if (weeklyStats[code].days[dateKey]) {
           const dayData = weeklyStats[code].days[dateKey];
-          const qCount = Number(data.totalQuestions || data.questionsCount || 6);
-          const score = Number(data.scorePercent ?? (data.totalQuestions ? Math.round(((data.correctCount || 0) / data.totalQuestions) * 100) : 0));
-          const correct = Number(data.correctCount ?? Math.round((qCount * score) / 100));
+          const { score: correct, totalQuestions: qCount } = deriveScoreMetrics(data);
 
           dayData.sessionsCount += 1;
           dayData.questionsCount += qCount;

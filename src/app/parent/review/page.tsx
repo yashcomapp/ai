@@ -17,6 +17,7 @@ import { ParentPageShell } from '@/components/parent';
 import { useSubjectiveAnswers } from '@/hooks/useSubjectiveAnswers';
 import { TabsSkeleton } from '@/components/common/Skeletons';
 import { getScoreClass } from '@/types/scorecard.types';
+import { deriveScoreMetrics, isReviewApproved, isReviewPending } from '@/lib/scoreUtils';
 
 export default function ParentReviewPanel() {
   const { firebaseUser, user, logout } = useAuth();
@@ -326,9 +327,9 @@ export default function ParentReviewPanel() {
           }
         } else if (!tabParam && !data.isAutonomousChild) {
           // If objective has 0 pending but practice has pending, automatically switch to practice tab
-          const objPendingCount = obj.filter((r: any) => r.status === 'pending').length;
-          const pracPendingCount = prac.filter((r: any) => r.status === 'pending').length;
-          const subjPendingCount = subj.filter((r: any) => r.status === 'pending').length;
+          const objPendingCount = obj.filter((r: any) => isReviewPending(r)).length;
+          const pracPendingCount = prac.filter((r: any) => isReviewPending(r)).length;
+          const subjPendingCount = subj.filter((r: any) => isReviewPending(r)).length;
 
           if (objPendingCount === 0 && pracPendingCount > 0) {
             setActiveTab('practice');
@@ -627,11 +628,12 @@ export default function ParentReviewPanel() {
       const g = groupsMap.get(dateKey)!;
       g.items.push(item);
       g.setsDone += 1;
-      const qCount = item.totalQuestions || 1;
+      const { score, totalQuestions: qCount } = deriveScoreMetrics(item);
       g.totalQuestions += qCount;
-      g.correctCount += (item.correctCount !== undefined ? item.correctCount : Math.round((item.scorePercent || 0) * qCount / 100));
+      g.correctCount += score;
       g.totalTimeSeconds += (qCount * 90); // Estimated 90s per question
-      if (item.status !== 'approved') {
+      const isItemApproved = isReviewApproved(item);
+      if (!isItemApproved) {
         g.isApproved = false;
       }
       g.allReviewIds.push(item.id);
@@ -705,8 +707,8 @@ export default function ParentReviewPanel() {
       : (activeTab === 'mock'
         ? entranceReviews
         : practiceReviews));
-  const pendingReviews = currentReviews.filter(r => r.status === 'pending');
-  const approvedReviews = currentReviews.filter(r => r.status === 'approved');
+  const pendingReviews = currentReviews.filter(r => isReviewPending(r));
+  const approvedReviews = currentReviews.filter(r => isReviewApproved(r));
 
   return (
     <ParentPageShell maxWidth="1000px">
@@ -801,19 +803,19 @@ export default function ParentReviewPanel() {
         ) : (
           <div className="review-tabs">
             <button className={`tab-btn ${activeTab === 'objective' ? 'active' : ''}`} onClick={() => setActiveTab('objective')}>
-              Obj / वस्तुनिष्ठ <span className="tab-count">{objectiveReviews.filter(r => r.status === 'pending').length}</span>
+              Obj / वस्तुनिष्ठ <span className="tab-count">{objectiveReviews.filter(r => isReviewPending(r)).length}</span>
             </button>
             {!isAutonomousChild && (
               <button className={`tab-btn ${activeTab === 'subjective' ? 'active' : ''}`} onClick={() => setActiveTab('subjective')}>
-                Subj / विषयनिष्ठ <span className="tab-count">{subjectiveReviews.filter(r => r.status === 'pending').length}</span>
+                Subj / विषयनिष्ठ <span className="tab-count">{subjectiveReviews.filter(r => isReviewPending(r)).length}</span>
               </button>
             )}
             <button className={`tab-btn ${activeTab === 'mock' ? 'active' : ''}`} onClick={() => setActiveTab('mock')}>
-              Mock / मॉक टेस्ट <span className="tab-count">{entranceReviews.filter(r => r.status === 'pending').length}</span>
+              Mock / मॉक टेस्ट <span className="tab-count">{entranceReviews.filter(r => isReviewPending(r)).length}</span>
             </button>
             {!isAutonomousChild && (
               <button className={`tab-btn ${activeTab === 'practice' ? 'active' : ''}`} onClick={() => setActiveTab('practice')}>
-                Prac / दैनिक अभ्यास <span className="tab-count">{practiceReviews.filter(r => r.status === 'pending').length}</span>
+                Prac / दैनिक अभ्यास <span className="tab-count">{practiceReviews.filter(r => isReviewPending(r)).length}</span>
               </button>
             )}
           </div>
@@ -1190,13 +1192,13 @@ export default function ParentReviewPanel() {
                                 questionMarks={q.marks}
                                 reviewAnswers={reviewAnswers}
                                 setReviewAnswers={setReviewAnswers}
-                                disabled={selectedReview.status !== 'pending'}
+                                disabled={!isReviewPending(selectedReview)}
                               />
 
                               <textarea 
                                 placeholder="Add comments / feedback (optional)"
                                 rows={2}
-                                disabled={selectedReview.status !== 'pending'}
+                                disabled={!isReviewPending(selectedReview)}
                                 value={reviewFeedback[`pf_${idx}`] || ''}
                                 onChange={(e) => setReviewFeedback(prev => ({ ...prev, [`pf_${idx}`]: e.target.value }))}
                                 style={{ width: '100%', marginTop: '10px', padding: '8px 12px', border: '1.5px solid var(--border)', borderRadius: '6px', fontSize: '12.5px', background: 'var(--surface-2)', color: 'var(--text)', fontFamily: 'inherit', outline: 'none' }}
@@ -1224,7 +1226,7 @@ export default function ParentReviewPanel() {
             </div>
             <div className="modal-footer" style={{ padding: '12px 24px', borderTop: '1px solid var(--border-light)', display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
               <button className="btn btn-secondary" onClick={() => setSelectedReview(null)}>Close</button>
-              {selectedReview.status === 'pending' && questions.length > 0 && (
+              {isReviewPending(selectedReview) && questions.length > 0 && (
                 <button className="btn className-primary" style={{ background: 'var(--accent)', color: 'white', border: 'none', padding: '8px 16px', borderRadius: 'var(--radius)', cursor: 'pointer', fontSize: '13px', fontWeight: 600 }} onClick={handleApprove} disabled={approving || loadingQuestions}>
                   {approving ? 'Submitting evaluations...' : '✅ Submit Subjective Review'}
                 </button>
@@ -1257,7 +1259,7 @@ export default function ParentReviewPanel() {
               Your child was absent for this scheduled test. Please select or enter the reason for absence below to acknowledge and unblock your child for new tests.
             </p>
 
-            {selectedReview.status === 'pending' ? (
+            {isReviewPending(selectedReview) ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '4px' }}>Reason for Absence / गैरहजरीचे कारण:</label>
@@ -1351,7 +1353,7 @@ export default function ParentReviewPanel() {
             setScorecard(null);
           }}
           actionButton={
-            selectedReview.status === 'pending' ? (
+            isReviewPending(selectedReview) ? (
               <button 
                 className="btn btn-primary" 
                 onClick={handleApprove} 

@@ -8,7 +8,7 @@ import { calculateProctoringIntegrityScore } from '@/lib/proctoring';
 import { getFromCache, setInCache } from '@/lib/firebase/cache';
 import { deduplicateAssignments, resolveIntegrityScore, calculateTimeLogSummary, resolveParentStudentCodes } from '@/lib/dashboardDbUtils';
 import { getAssignmentsForBatches } from '@/services/exam.service';
-import { deriveScoreMetrics } from '@/lib/scoreUtils';
+import { deriveScoreMetrics, deriveScorePercent } from '@/lib/scoreUtils';
 
 export async function getParentDashboardData(
   parentEmail: string,
@@ -293,15 +293,13 @@ export async function getParentDashboardData(
 
   // Distinct stats for Exams vs Self-Directed Practice
   const completedExams = examResults.filter((e: any) => e.percentage != null || e.score != null);
-  const completedPractice = parentReviews.filter((p: any) => p.scorePercent != null);
-
   const examScores = completedExams.map((e: any) => parseFloat(e.percentage) || 0);
-  const practiceScores = completedPractice.map((p: any) => parseFloat(p.scorePercent) || 0);
+  const practiceScores = parentReviews.map((p: any) => deriveScorePercent(p));
 
   const examAvgScore = completedExams.length ? Math.round(examScores.reduce((s, v) => s + v, 0) / completedExams.length) : 0;
-  const practiceAvgScore = completedPractice.length ? Math.round(practiceScores.reduce((s, v) => s + v, 0) / completedPractice.length) : 0;
+  const practiceAvgScore = practiceScores.length ? Math.round(practiceScores.reduce((s, v) => s + v, 0) / practiceScores.length) : 0;
   
-  const totalSessions = completedExams.length + completedPractice.length;
+  const totalSessions = completedExams.length + practiceScores.length;
   const allScores = [...examScores, ...practiceScores];
   const avgScore = totalSessions ? Math.round(allScores.reduce((s, v) => s + v, 0) / totalSessions) : 0;
 
@@ -335,7 +333,7 @@ export async function getParentDashboardData(
       type: 'practice',
       id: p.id,
       name: p.name || 'Practice',
-      score: p.scorePercent || 0,
+      score: deriveScorePercent(p),
       date: getResolvedDate(p),
       subject: p.subjectName || 'General',
       status: p.status
@@ -649,7 +647,7 @@ export async function getParentDashboardData(
 
   const allScoresToday: number[] = [
     ...examsToday.map((e: any) => Number(e.percentage) || 0),
-    ...practicesToday.map((p: any) => Number(p.scorePercent) || 0),
+    ...practicesToday.map((p: any) => deriveScorePercent(p)),
     ...subjectiveToday.map(doc => Number(doc.data().percentage) || 0)
   ];
 

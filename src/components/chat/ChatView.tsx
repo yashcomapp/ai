@@ -383,53 +383,85 @@ export default function ChatView({ role = 'admin', hideHeader = false }: ChatVie
     };
 
     // Set up Firestore snapshot listener as the authoritative live message source
-    let unsubscribe = () => {};
-    try {
-      const q = query(
-        collection(db, 'chatRooms', activeRoomId, 'messages'),
-        orderBy('createdAt', 'desc'),
-        limit(100)
-      );
+    let unsubscribe: (() => void) | null = null;
 
-      unsubscribe = onSnapshot(q, (snapshot) => {
-        const msgs = snapshot.docs.map(doc => ({
-          messageId: doc.id,
-          ...doc.data()
-        })) as unknown as Message[];
+    const setupListener = () => {
+      if (unsubscribe) return;
+      try {
+        const q = query(
+          collection(db, 'chatRooms', activeRoomId, 'messages'),
+          orderBy('createdAt', 'desc'),
+          limit(100)
+        );
 
-        if (!isInitialMessagesMountRef.current && msgs.length > 0) {
-          const latestMsg = msgs[0];
-          const isMine = role === 'admin'
-            ? (latestMsg.senderRole === 'admin' || latestMsg.senderId === 'admin' || latestMsg.senderId === firebaseUser?.uid)
-            : (latestMsg.senderId === myUserKey);
+        unsubscribe = onSnapshot(q, (snapshot) => {
+          const msgs = snapshot.docs.map(doc => ({
+            messageId: doc.id,
+            ...doc.data()
+          })) as unknown as Message[];
 
-          const isNew = !seenMessageIdsRef.current.has(latestMsg.messageId);
-          if (isNew && !isMine) {
-            playNotificationSound();
+          if (!isInitialMessagesMountRef.current && msgs.length > 0) {
+            const latestMsg = msgs[0];
+            const isMine = role === 'admin'
+              ? (latestMsg.senderRole === 'admin' || latestMsg.senderId === 'admin' || latestMsg.senderId === firebaseUser?.uid)
+              : (latestMsg.senderId === myUserKey);
+
+            const isNew = !seenMessageIdsRef.current.has(latestMsg.messageId);
+            if (isNew && !isMine) {
+              playNotificationSound();
+            }
+          } else {
+            setTimeout(() => {
+              isInitialMessagesMountRef.current = false;
+            }, 1000);
           }
-        } else {
-          setTimeout(() => {
-            isInitialMessagesMountRef.current = false;
-          }, 1000);
-        }
 
-        // Keep seen message IDs cache up to date
-        msgs.forEach(m => seenMessageIdsRef.current.add(m.messageId));
+          // Keep seen message IDs cache up to date
+          msgs.forEach(m => seenMessageIdsRef.current.add(m.messageId));
 
-        setMessages(msgs.reverse());
-        setUseApiPolling(false);
-      }, (error) => {
-        console.warn("Firestore snapshot subscription failed. Falling back to API polling:", error);
+          setMessages(msgs.reverse());
+          setUseApiPolling(false);
+        }, (error) => {
+          console.warn("Firestore snapshot subscription failed. Falling back to API polling:", error);
+          setUseApiPolling(true);
+          fetchFallbackMessages();
+        });
+      } catch (err) {
+        console.warn("Failed to subscribe to Firestore snapshots. Falling back to API polling:", err);
         setUseApiPolling(true);
         fetchFallbackMessages();
-      });
-    } catch (err) {
-      console.warn("Failed to subscribe to Firestore snapshots. Falling back to API polling:", err);
-      setUseApiPolling(true);
-      fetchFallbackMessages();
+      }
+    };
+
+    const teardownListener = () => {
+      if (unsubscribe) {
+        unsubscribe();
+        unsubscribe = null;
+      }
+    };
+
+    if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+      setupListener();
     }
 
-    return () => unsubscribe();
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        setupListener();
+      } else {
+        teardownListener();
+      }
+    };
+
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', handleVisibility);
+    }
+
+    return () => {
+      if (typeof document !== 'undefined') {
+        document.removeEventListener('visibilitychange', handleVisibility);
+      }
+      teardownListener();
+    };
   }, [activeRoomId, firebaseUser, role, myUserKey]);
 
   // Synchronize active room mute states independently without tearing down message listener
