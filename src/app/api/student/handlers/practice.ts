@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase/admin';
-import { verifyRole } from '@/lib/auth';
+import { verifyRole, isStudentLimited } from '@/lib/auth';
 import { QuestionRepository } from '@/repositories/question.repository';
 import { PracticeService } from '@/services/practice.service';
 import { shuffleArray, isObjectiveType, isSingleChoiceType, isMultipleChoiceType, isAssertionReasonType, isQuestionQuarantined } from '@/lib/questionTypes';
@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ message: 'Unauthorized. Student role required.' }, { status: 403 });
     }
 
-    if ((student.userData as any)?.studentMode === 'limited') {
+    if (isStudentLimited(student)) {
       return NextResponse.json({ message: 'Access Denied. Limited Mode students do not have access to practice sessions.' }, { status: 403 });
     }
 
@@ -668,7 +668,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'Unauthorized. Student role required.' }, { status: 403 });
     }
 
-    if ((student.userData as any)?.studentMode === 'limited') {
+    if (isStudentLimited(student)) {
       return NextResponse.json({ message: 'Access Denied. Limited Mode students do not have access to practice sessions.' }, { status: 403 });
     }
 

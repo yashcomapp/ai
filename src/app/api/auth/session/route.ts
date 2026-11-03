@@ -1,4 +1,5 @@
 import { resolveParentStudentCodes } from '@/lib/dashboardDbUtils';
+import { getStudentMode } from '@/types/user.types';
 import { NextRequest, NextResponse } from 'next/server';
 import { adminAuth, adminDb } from '@/lib/firebase/admin';
 import * as admin from 'firebase-admin';
@@ -55,8 +56,8 @@ async function checkParentDeactivationStatus(userData: any, email?: string): Pro
       result = { shouldDeactivate: true, reason: 'all_students_inactive' };
     } else {
       // Check if ALL active linked students are in Autonomous Mode
-      const nonAutonomousActiveCount = activeChildren.filter(c => c.autonomous !== true && c.studentMode !== 'autonomous' && c.studentMode !== 'limited').length;
-      if (nonAutonomousActiveCount === 0) {
+      const regularActiveCount = activeChildren.filter(c => getStudentMode(c) === 'regular').length;
+      if (regularActiveCount === 0) {
         result = { shouldDeactivate: true, reason: 'student_autonomous' };
       }
     }

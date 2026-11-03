@@ -1,3 +1,4 @@
+import { getStudentMode } from '@/types/user.types';
 import { NextRequest, NextResponse } from 'next/server';
 import * as admin from 'firebase-admin';
 import { adminDb } from '@/lib/firebase/admin';
@@ -471,7 +472,7 @@ export async function GET(req: NextRequest) {
           className: data.className || data.class || '',
           status: data.status || 'active',
           autonomous: !!data.autonomous,
-          studentMode: data.studentMode || (data.autonomous ? 'autonomous' : 'regular')
+          studentMode: getStudentMode(data)
         };
       }).filter((s: any) => !!s.studentCode && s.status !== 'inactive' && !isDemoUser(s));
 
@@ -748,7 +749,7 @@ export async function GET(req: NextRequest) {
         className: data.className || data.class || '',
         status: data.status || 'active',
         autonomous: !!data.autonomous,
-        studentMode: data.studentMode || (data.autonomous ? 'autonomous' : 'regular')
+        studentMode: getStudentMode(data)
       };
     }).filter(s => !!s.studentCode && s.status !== 'inactive' && !isDemoUser(s));
 

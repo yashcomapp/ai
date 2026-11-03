@@ -1,5 +1,7 @@
 'use client';
 
+import { getStudentMode } from '@/types/user.types';
+
 import React, { useEffect, useState, useRef, Suspense, useMemo, useCallback } from 'react';
 import { mutate } from 'swr';
 import { mutateFresh } from '@/lib/swrFetcher';
@@ -50,7 +52,7 @@ function TopicPracticeContent() {
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    if ((user as any)?.studentMode === 'limited') {
+    if (getStudentMode(user) === 'limited') {
       router.replace('/student');
     }
   }, [user, router]);

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyRole } from '@/lib/auth';
+import { verifyRole, isStudentLimited } from '@/lib/auth';
 import { ExamReviewService } from '@/services/examReview.service';
 
 
@@ -8,6 +8,9 @@ export async function GET(req: NextRequest) {
     const caller = await verifyRole(req, 'student');
     if (!caller) {
       return NextResponse.json({ message: 'Unauthorized. Student session required.' }, { status: 403 });
+    }
+    if (isStudentLimited(caller)) {
+      return NextResponse.json({ message: 'Access Denied. Limited Mode students do not have access to exam reviews.' }, { status: 403 });
     }
 
     const { searchParams } = new URL(req.url);
@@ -35,6 +38,9 @@ export async function POST(req: NextRequest) {
     const caller = await verifyRole(req, 'student');
     if (!caller) {
       return NextResponse.json({ message: 'Unauthorized. Student session required.' }, { status: 403 });
+    }
+    if (isStudentLimited(caller)) {
+      return NextResponse.json({ message: 'Access Denied. Limited Mode students cannot submit exam reviews.' }, { status: 403 });
     }
 
     const studentCode = caller.userData?.studentCode || '';

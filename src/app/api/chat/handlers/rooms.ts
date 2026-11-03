@@ -37,7 +37,7 @@ async function getBatchNamesMap(): Promise<Map<string, string>> {
   }
 }
 
-function sanitizeAndHealRoomName(room: any, batchNamesMap: Map<string, string>, healPromises?: Promise<any>[]): string {
+function sanitizeAndHealRoomName(room: any, batchNamesMap: Map<string, string>, healPromises: Promise<any>[]): string {
   if (room.type === 'group') {
     let batchId = '';
     if (room.roomId?.startsWith('room_batch_')) {
@@ -49,9 +49,7 @@ function sanitizeAndHealRoomName(room: any, batchNamesMap: Map<string, string>, 
       const properName = batchNamesMap.get(batchId)!;
       if (room.name !== properName) {
         const p = adminDb.collection('chatRooms').doc(room.id || room.roomId).update({ name: properName }).catch(() => {});
-        if (healPromises) {
-          healPromises.push(p);
-        }
+        healPromises.push(p);
         room.name = properName;
       }
       return properName;

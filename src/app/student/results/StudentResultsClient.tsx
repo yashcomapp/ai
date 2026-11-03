@@ -1,5 +1,7 @@
 'use client';
 
+import { getStudentMode } from '@/types/user.types';
+
 import React, { useEffect, useState, Suspense } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import useSWR from 'swr';
@@ -44,7 +46,7 @@ export default function StudentResults({ initialData }: { initialData?: { result
 
   // Redirect Mode 3 / Limited students away from performance results
   useEffect(() => {
-    if ((user as any)?.studentMode === 'limited' || (user as any)?.studentMode === 'restricted') {
+    if (getStudentMode(user) === 'limited') {
       router.replace('/student');
     }
   }, [user, router]);

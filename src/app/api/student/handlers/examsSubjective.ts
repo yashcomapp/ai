@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as admin from 'firebase-admin';
 import { adminDb } from '@/lib/firebase/admin';
-import { verifyRole, verifyAnyRole } from '@/lib/auth';
+import { verifyRole, verifyAnyRole, isStudentLimited } from '@/lib/auth';
 import { ExamService } from '@/services/exam.service';
 import { cleanSubjectiveExamName } from '@/lib/studentDb';
 import { invalidateCache } from '@/lib/firebase/cache';
@@ -139,6 +139,9 @@ export async function GET(req: NextRequest) {
 
     // A. Peer Review Mode
     if (mode === 'peer-review') {
+      if (isStudentLimited(caller)) {
+        return NextResponse.json({ message: 'Access Denied. Limited Mode students do not participate in peer reviews.' }, { status: 403 });
+      }
       const myAttemptsSnap = await adminDb.collection('subjectiveAttempts')
         .where('examId', '==', examId)
         .where('studentCode', '==', studentCode)

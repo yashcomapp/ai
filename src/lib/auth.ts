@@ -1,5 +1,10 @@
 import { adminAuth, adminDb } from '@/lib/firebase/admin';
-import { UserRole } from '@/types/user.types';
+import { UserRole, getStudentMode } from '@/types/user.types';
+
+export function isStudentLimited(userOrAuth: any): boolean {
+  const userData = userOrAuth?.userData || userOrAuth;
+  return getStudentMode(userData) === 'limited';
+}
 import { isStudentBlockedByCurfew } from '@/lib/curfew';
 
 export interface VerifiedUser {
@@ -114,6 +119,9 @@ export function areClaimsEqual(decodedToken: any, userData: any): boolean {
   if (tokenStudentCode !== userStudentCode) return false;
 
   if (userRole === 'student') {
+    const userMode = getStudentMode(userData);
+    const tokenMode = decodedToken.studentMode || (decodedToken.autonomous ? 'autonomous' : 'regular');
+    if (tokenMode !== userMode) return false;
     const userBatchIds: string[] = (
       Array.isArray(userData.batchIds)
         ? userData.batchIds.filter(Boolean)

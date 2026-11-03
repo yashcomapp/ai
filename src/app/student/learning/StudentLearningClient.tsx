@@ -1,5 +1,7 @@
 'use client';
 
+import { getStudentMode } from '@/types/user.types';
+
 import React, { useEffect, useState, useMemo, useDeferredValue } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import useSWR from 'swr';
@@ -67,7 +69,7 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
   const [localCache, setLocalCache] = useState<LearningPathData | null>(null);
 
   useEffect(() => {
-    if ((user as any)?.studentMode === 'limited' || (user as any)?.studentMode === 'restricted') {
+    if (getStudentMode(user) === 'limited') {
       router.replace('/student');
     }
   }, [user, router]);

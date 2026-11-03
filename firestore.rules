@@ -18,6 +18,12 @@ service cloud.firestore { match /databases/{database}/documents {
       );
     }
     function isStudent() { return isAuth() && userRole() == 'student'; }
+    function isLimitedStudent() {
+      return isStudent() && (
+        ('studentMode' in token() && (token().studentMode == 'limited' || token().studentMode == 'restricted')) ||
+        (exists(/databases/$(database)/documents/users/$(uid())) && (userDoc().studentMode == 'limited' || userDoc().studentMode == 'restricted'))
+      );
+    }
     function isParent()  { return isAuth() && userRole() == 'parent'; }
 
     // Returns user email from Auth token, falling back to userDoc only if absent
@@ -148,7 +154,7 @@ service cloud.firestore { match /databases/{database}/documents {
     match /reviews/{docId} {
       allow read:   if isAuth() && (isAdmin()
                        || (isParent() && isMyChildCode(resource.data.studentCode))
-                       || (isStudent()
+                       || (isStudent() && !isLimitedStudent()
                            && resource.data.studentCode == myStudentCode()));
       allow create: if isAdmin()
                     || (isStudent()
@@ -240,7 +246,7 @@ service cloud.firestore { match /databases/{database}/documents {
     match /evaluations/{docId} {
       allow read:   if isAuth() && (isAdmin()
                        || (isParent() && isMyChildCode(resource.data.studentCode))
-                       || (isStudent() && resource.data.studentCode == myStudentCode()));
+                       || (isStudent() && !isLimitedStudent() && resource.data.studentCode == myStudentCode()));
       allow create: if isAdmin()
                        || (isParent() 
                            && isMyChildCode(request.resource.data.studentCode)
@@ -314,7 +320,7 @@ service cloud.firestore { match /databases/{database}/documents {
     match /studentTopicMastery/{docId} {
       allow read:   if isAuth() && (isAdmin()
                        || (isParent() && isMyChildCode(resource.data.studentCode))
-                       || (isStudent() && resource.data.studentCode == myStudentCode()));
+                       || (isStudent() && !isLimitedStudent() && resource.data.studentCode == myStudentCode()));
       allow write:  if isAdmin();
     }
 
@@ -323,7 +329,7 @@ service cloud.firestore { match /databases/{database}/documents {
     match /studentProfiles/{docId} {
       allow read:  if isAuth() && (isAdmin()
                       || (isParent() && isMyChildCode(docId))
-                      || (isStudent() && docId == myStudentCode()));
+                      || (isStudent() && !isLimitedStudent() && docId == myStudentCode()));
       allow write: if isAdmin();
     }
 
@@ -383,7 +389,7 @@ service cloud.firestore { match /databases/{database}/documents {
     match /parentReviews/{docId} {
       allow read:   if isAuth() && (isAdmin()
                        || (isParent() && isMyChildCode(resource.data.studentCode))
-                       || (isStudent()
+                       || (isStudent() && !isLimitedStudent()
                            && resource.data.studentCode == myStudentCode()));
       allow create: if isAdmin()
                     || (isStudent()

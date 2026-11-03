@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as admin from 'firebase-admin';
 import { adminDb } from '@/lib/firebase/admin';
-import { verifyRole, verifyAnyRole } from '@/lib/auth';
+import { verifyRole, verifyAnyRole, isStudentLimited } from '@/lib/auth';
 import { ExamRepository } from '@/repositories/exam.repository';
 import { ExamService } from '@/services/exam.service';
 import { AttemptService } from '@/services/attempt.service';
@@ -689,6 +689,14 @@ export async function POST(req: NextRequest) {
     invalidateCache(`student_learning_${studentCode}`);
     invalidateCache(studentCode);
     invalidateCache('admin_dashboard_');
+
+    if (isStudentLimited(caller)) {
+      return NextResponse.json({
+        success: true,
+        status: 'submitted',
+        message: 'Exam submission processed successfully.'
+      });
+    }
 
     return NextResponse.json({
       success: true,

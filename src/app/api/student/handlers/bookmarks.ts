@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as admin from 'firebase-admin';
 import { adminDb } from '@/lib/firebase/admin';
-import { verifyAnyRole } from '@/lib/auth';
+import { verifyAnyRole, isStudentLimited } from '@/lib/auth';
 
 
 export async function GET(req: NextRequest) {
@@ -15,6 +15,9 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const paramStudentCode = searchParams.get('studentCode') || '';
 
+    if (authResult.role === 'student' && isStudentLimited(authResult)) {
+      return NextResponse.json({ message: 'Access Denied. Limited Mode students do not have access to bookmarks.' }, { status: 403 });
+    }
     let studentCode = authResult.role === 'student' ? authResult.userData?.studentCode : '';
     if (role === 'admin' && paramStudentCode) {
       studentCode = paramStudentCode;
@@ -61,6 +64,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'Missing questionCode.' }, { status: 400 });
     }
 
+    if (authResult.role === 'student' && isStudentLimited(authResult)) {
+      return NextResponse.json({ message: 'Access Denied. Limited Mode students cannot save bookmarks.' }, { status: 403 });
+    }
     let studentCode = authResult.role === 'student' ? authResult.userData?.studentCode : '';
     if (authResult.role === 'admin' && bodyStudentCode) {
       studentCode = bodyStudentCode;

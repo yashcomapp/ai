@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase/admin';
-import { verifyRole } from '@/lib/auth';
+import { verifyRole, isStudentLimited } from '@/lib/auth';
 import { getStudentLearningData } from '@/lib/studentDb';
 import { getFromCache, setInCache } from '@/lib/firebase/cache';
 import { shouldBypassCache } from '@/lib/cacheBypassGuard';
@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ message: 'Unauthorized. Student role required.' }, { status: 403 });
     }
 
-    if ((student.userData as any)?.studentMode === 'limited') {
+    if (isStudentLimited(student)) {
       return NextResponse.json({ message: 'Access Denied. Limited Mode students do not have access to Learning OS.' }, { status: 403 });
     }
 

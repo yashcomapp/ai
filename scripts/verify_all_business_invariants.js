@@ -816,8 +816,7 @@ test('Student Mode Resolution accurately maps legacy and canonical flags', () =>
 
 test('Student Modes enforce strict parent login disabled boundaries for Mode 2 and Mode 3', () => {
   const isParentDisabled = (student) => {
-    const mode = getStudentMode(student);
-    return mode === 'autonomous' || mode === 'limited';
+    return getStudentMode(student) !== 'regular';
   };
 
   // Mode 1: Parent login enabled
@@ -825,9 +824,12 @@ test('Student Modes enforce strict parent login disabled boundaries for Mode 2 a
 
   // Mode 2: Parent login disabled
   assert.strictEqual(isParentDisabled({ studentMode: 'autonomous' }), true);
+  assert.strictEqual(isParentDisabled({ autonomous: true }), true);
 
-  // Mode 3: Parent login disabled
+  // Mode 3: Parent login disabled (even if autonomous boolean was mistakenly false)
   assert.strictEqual(isParentDisabled({ studentMode: 'limited' }), true);
+  assert.strictEqual(isParentDisabled({ studentMode: 'limited', autonomous: false }), true);
+  assert.strictEqual(isParentDisabled({ studentMode: 'restricted' }), true);
 });
 
 test('Limited Mode strictly isolates features: permits Tests, Attendance, Fees; blocks LOS & performance metrics', () => {
@@ -856,10 +858,10 @@ test('Limited Mode strictly isolates features: permits Tests, Attendance, Fees; 
   assert.strictEqual(evaluateStudentFeatureAccess(regularStudent, 'learn_os'), true);
 });
 
-test('API Endpoint access control strictly rejects Limited Mode from learning, results, and practice', () => {
+test('API Endpoint access control strictly rejects Limited Mode from learning, results, practice, reviews, and bookmarks', () => {
   const isApiAllowedForStudent = (student, endpoint) => {
-    const isLimited = student?.studentMode === 'limited';
-    if (isLimited && ['learning', 'results', 'practice'].includes(endpoint)) {
+    const isLimited = getStudentMode(student) === 'limited';
+    if (isLimited && ['learning', 'results', 'practice', 'examReview', 'peerReview', 'bookmarks'].includes(endpoint)) {
       return false;
     }
     return true;
@@ -869,6 +871,9 @@ test('API Endpoint access control strictly rejects Limited Mode from learning, r
   assert.strictEqual(isApiAllowedForStudent(limitedStudent, 'learning'), false);
   assert.strictEqual(isApiAllowedForStudent(limitedStudent, 'results'), false);
   assert.strictEqual(isApiAllowedForStudent(limitedStudent, 'practice'), false);
+  assert.strictEqual(isApiAllowedForStudent(limitedStudent, 'examReview'), false);
+  assert.strictEqual(isApiAllowedForStudent(limitedStudent, 'peerReview'), false);
+  assert.strictEqual(isApiAllowedForStudent(limitedStudent, 'bookmarks'), false);
   assert.strictEqual(isApiAllowedForStudent(limitedStudent, 'dashboard'), true);
   assert.strictEqual(isApiAllowedForStudent(limitedStudent, 'attendance'), true);
   assert.strictEqual(isApiAllowedForStudent(limitedStudent, 'fees'), true);
@@ -877,6 +882,9 @@ test('API Endpoint access control strictly rejects Limited Mode from learning, r
   assert.strictEqual(isApiAllowedForStudent(regularStudent, 'learning'), true);
   assert.strictEqual(isApiAllowedForStudent(regularStudent, 'results'), true);
   assert.strictEqual(isApiAllowedForStudent(regularStudent, 'practice'), true);
+  assert.strictEqual(isApiAllowedForStudent(regularStudent, 'examReview'), true);
+  assert.strictEqual(isApiAllowedForStudent(regularStudent, 'peerReview'), true);
+  assert.strictEqual(isApiAllowedForStudent(regularStudent, 'bookmarks'), true);
 });
 
 // -----------------------------------------------------------------------------

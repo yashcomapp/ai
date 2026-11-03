@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as admin from 'firebase-admin';
 import { adminDb } from '@/lib/firebase/admin';
-import { verifyRole, verifyAnyRole } from '@/lib/auth';
+import { verifyRole, verifyAnyRole, isStudentLimited } from '@/lib/auth';
 import { IntegrityService } from '@/services/integrity.service';
 import { deriveTopicCodeFromQuestionCode, parseTopicCode } from '@/lib/questionTypes';
 import { getStudentResultsData, determineExamType } from '@/lib/resultsDb';
@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
     const parent = role === 'parent' ? authResult : null;
     const adminUser = role === 'admin' ? authResult : null;
 
-    if (student && (student.userData as any)?.studentMode === 'limited') {
+    if (student && isStudentLimited(student)) {
       return NextResponse.json({ message: 'Access Denied. Limited Mode students do not have access to performance scorecards.' }, { status: 403 });
     }
 

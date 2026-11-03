@@ -1,5 +1,7 @@
 'use client';
 
+import { getStudentMode } from '@/types/user.types';
+
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { t } from '@/lib/i18n';
@@ -145,7 +147,7 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
     }
   );
 
-  const isLimited = (user as any)?.studentMode === 'limited' || (data?.profile as any)?.studentMode === 'limited';
+  const isLimited = getStudentMode(user) === 'limited' || getStudentMode(data?.profile) === 'limited';
 
   useEffect(() => {
     if (((user as any)?.autonomous || isLimited) && examTab !== 'objective') {

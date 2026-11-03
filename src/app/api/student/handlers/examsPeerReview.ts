@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyRole, verifyAnyRole } from '@/lib/auth';
+import { verifyRole, verifyAnyRole, isStudentLimited } from '@/lib/auth';
 import { ReviewService } from '@/services/review.service';
 import { ReportCacheManager } from '@/lib/reportCache';
 
@@ -16,6 +16,9 @@ export async function POST(req: NextRequest) {
     }
 
     const student = caller;
+    if (caller.role === 'student' && isStudentLimited(caller)) {
+      return NextResponse.json({ message: 'Access Denied. Limited Mode students do not participate in peer reviews.' }, { status: 403 });
+    }
 
     const body = await req.json();
     const { attemptId, examId, revieweeCode, questionReviews, totalScore } = body;

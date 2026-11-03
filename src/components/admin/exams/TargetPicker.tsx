@@ -1,3 +1,4 @@
+import { getStudentMode } from '@/types/user.types';
 import React from 'react';
 import { Batch } from '@/types/batch.types';
 
@@ -32,7 +33,7 @@ export default function TargetPicker({
   ];
   // Deduplicate by studentCode
   const uniqueStudents = Array.from(new Map(allStudents.map(s => [s.studentCode, s])).values());
-  const limitedStudents = uniqueStudents.filter(s => s.studentMode === 'limited' || s.studentMode === 'restricted');
+  const limitedStudents = uniqueStudents.filter(s => getStudentMode(s) === 'limited');
   const allLimitedSelected = limitedStudents.length > 0 && limitedStudents.every(s => selectedStudents.has(s.studentCode));
 
   return (
@@ -147,7 +148,7 @@ export default function TargetPicker({
                   </div>
                 );
                 group.list.forEach(s => {
-                  const sMode = s.studentMode || (s.autonomous ? 'autonomous' : 'regular');
+                  const sMode = getStudentMode(s);
                   const modePrefix = sMode === 'autonomous' ? '* ' : (sMode === 'limited' ? '◇ ' : '');
                   elements.push(
                     <label key={`${bid}-${s.studentCode}`} style={{ display: 'block', fontSize: '12px', padding: '2px 0', marginLeft: '12px', cursor: 'pointer' }}>
@@ -168,7 +169,7 @@ export default function TargetPicker({
                   </div>
                 );
                 unassigned.forEach(s => {
-                  const sMode = s.studentMode || (s.autonomous ? 'autonomous' : 'regular');
+                  const sMode = getStudentMode(s);
                   const modePrefix = sMode === 'autonomous' ? '* ' : (sMode === 'limited' ? '◇ ' : '');
                   elements.push(
                     <label key={`unassigned-${s.studentCode}`} style={{ display: 'block', fontSize: '12px', padding: '2px 0', marginLeft: '12px', cursor: 'pointer' }}>

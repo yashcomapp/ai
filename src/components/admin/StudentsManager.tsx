@@ -1,5 +1,7 @@
 'use client';
 
+import { getStudentMode } from '@/types/user.types';
+
 import React, { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
@@ -230,7 +232,7 @@ export default function StudentsManager() {
 
   const handleOpenEditModal = (student: Student) => {
     setSelectedStudent(student);
-    const sMode = student.studentMode || (student.autonomous ? 'autonomous' : 'regular');
+    const sMode = getStudentMode(student);
     setEditFormData({
       name: student.name || '',
       dob: formatToDDMMYYYY(student.dob) || '',
@@ -426,7 +428,7 @@ export default function StudentsManager() {
                           style={{ background: 'none', border: 'none', color: 'var(--accent)', fontWeight: 700, padding: 0, cursor: 'pointer', textAlign: 'left' }}
                         >
                           {(() => {
-                            const mode = s.studentMode || (s.autonomous ? 'autonomous' : 'regular');
+                            const mode = getStudentMode(s);
                             if (mode === 'autonomous') return '* ';
                             if (mode === 'limited') return '◇ ';
                             return '';
@@ -457,7 +459,7 @@ export default function StudentsManager() {
                       <td style={{ padding: '12px 16px', textAlign: 'right' }}>
                         <div style={{ display: 'flex', gap: '5px', justifyContent: 'flex-end', alignItems: 'center' }}>
                           {(() => {
-                            const mode = s.studentMode || (s.autonomous ? 'autonomous' : 'regular');
+                            const mode = getStudentMode(s);
                             const isA = mode === 'autonomous';
                             const isL = mode === 'limited';
                             const letter = isA ? 'A' : (isL ? 'L' : 'R');
@@ -522,7 +524,7 @@ export default function StudentsManager() {
               <div>
                 <strong>Student Mode:</strong>{' '}
                 {(() => {
-                  const mode = selectedStudent.studentMode || (selectedStudent.autonomous ? 'autonomous' : 'regular');
+                  const mode = getStudentMode(selectedStudent);
                   if (mode === 'autonomous') return '* Autonomous (Mode 2 - Parent login disabled)';
                   if (mode === 'limited') return '◇ Limited (Mode 3 - Tests, Attendance & Fees only)';
                   return 'Regular (Mode 1 - Full features + Parent login enabled)';

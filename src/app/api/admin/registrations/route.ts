@@ -177,16 +177,19 @@ export async function POST(req: NextRequest) {
         role: 'student',
         batchIds: regData.batchId ? [regData.batchId] : [],
         status: 'active',
-        autonomous: isAutonomous,
+        autonomous: regData.studentMode ? (regData.studentMode === 'autonomous' || regData.studentMode === 'limited') : isAutonomous,
+        studentMode: regData.studentMode || (isAutonomous ? 'autonomous' : 'regular'),
         parentEmail: regData.parentEmail || null,
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
         registeredFrom: id
       }, { merge: true });
 
       // Synchronize Firebase Auth custom claims for student
+      const registeredMode = regData.studentMode || (isAutonomous ? 'autonomous' : 'regular');
       await syncUserCustomClaims(studentId, {
         role: 'student',
         studentCode,
+        studentMode: registeredMode,
         batchIds: regData.batchId ? [regData.batchId] : []
       });
 

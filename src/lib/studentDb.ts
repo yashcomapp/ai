@@ -1,3 +1,4 @@
+import { getStudentMode } from '@/types/user.types';
 import { adminDb } from '@/lib/firebase/admin';
 import * as admin from 'firebase-admin';
 import { getCachedSyllabus, getCachedBatches, getFromCache, setInCache } from '@/lib/firebase/cache';
@@ -193,8 +194,8 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
     const thresholdDateStr = getDateKeyIST(thresholdDate); // "YYYY-MM-DD" in IST
 
     // Student Mode (Mode 1: Regular, Mode 2: Autonomous, Mode 3: Limited)
-    const studentMode = userData.studentMode || (userData.autonomous ? 'autonomous' : 'regular');
-    const isLimited = (studentMode === 'limited' || studentMode === 'restricted');
+    const studentMode = getStudentMode(userData);
+    const isLimited = studentMode === 'limited';
 
     // 2. Fetch student statistics and other items in parallel
     // Cost Guard: If student is in Limited Mode (Mode 3), bypass 9 metric/review Firestore queries completely!
