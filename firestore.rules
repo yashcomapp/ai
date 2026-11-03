@@ -17,7 +17,13 @@ service cloud.firestore { match /databases/{database}/documents {
           : (exists(/databases/$(database)/documents/users/$(uid())) && userDoc().role == 'admin' && userDoc().status != 'inactive')
       );
     }
-    function isStudent() { return isAuth() && userRole() == 'student'; }
+        function isStudent() {
+      return isAuth() && userRole() == 'student' && (
+        ('status' in token())
+          ? token().status != 'inactive'
+          : (!exists(/databases/$(database)/documents/users/$(uid())) || userDoc().status != 'inactive')
+      );
+    }
     function isLimitedStudent() {
       return isStudent() && (
         ('studentMode' in token())
@@ -25,7 +31,13 @@ service cloud.firestore { match /databases/{database}/documents {
           : (exists(/databases/$(database)/documents/users/$(uid())) && (userDoc().studentMode == 'limited' || userDoc().studentMode == 'restricted'))
       );
     }
-    function isParent()  { return isAuth() && userRole() == 'parent'; }
+    function isParent()  {
+      return isAuth() && userRole() == 'parent' && (
+        ('status' in token())
+          ? token().status != 'inactive'
+          : (!exists(/databases/$(database)/documents/users/$(uid())) || userDoc().status != 'inactive')
+      );
+    }
 
     // Returns user email from Auth token, falling back to userDoc only if absent
     function userEmail() {

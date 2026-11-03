@@ -112,6 +112,7 @@ export function areClaimsEqual(decodedToken: any, userData: any): boolean {
   const tokenRole = (decodedToken.role || '').toLowerCase();
   if (tokenRole !== userRole) return false;
 
+  if (!('status' in decodedToken)) return false;
   const userStatus = userData.status || 'active';
   const tokenStatus = decodedToken.status || 'active';
   if (tokenStatus !== userStatus) return false;
@@ -122,6 +123,7 @@ export function areClaimsEqual(decodedToken: any, userData: any): boolean {
 
   if (userRole === 'student') {
     if (!('studentMode' in decodedToken)) return false;
+    if (!('batchIds' in decodedToken)) return false;
     const userMode = getStudentMode(userData);
     const tokenMode = getStudentMode(decodedToken);
     if (tokenMode !== userMode) return false;
@@ -142,6 +144,7 @@ export function areClaimsEqual(decodedToken: any, userData: any): boolean {
       if (userBatchIds[i] !== tokenBatchIds[i]) return false;
     }
   } else if (userRole === 'parent') {
+    if (!('studentCodes' in decodedToken)) return false;
     const userStudentCodes: string[] = (
       Array.isArray(userData.studentCodes)
         ? userData.studentCodes.filter(Boolean)

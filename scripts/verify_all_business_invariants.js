@@ -1003,14 +1003,24 @@ test('Claims builder and equality check strictly sync studentMode for all 3 mode
   }
 
   function checkClaimsEqual(tokenClaims, userDoc) {
+    if (!tokenClaims || !userDoc) return false;
     const userRole = (userDoc.role || '').toLowerCase();
     const tokenRole = (tokenClaims.role || '').toLowerCase();
     if (tokenRole !== userRole) return false;
+
+    if (!('status' in tokenClaims)) return false;
+    const userStatus = userDoc.status || 'active';
+    const tokenStatus = tokenClaims.status || 'active';
+    if (tokenStatus !== userStatus) return false;
+
     if (userRole === 'student') {
       if (!('studentMode' in tokenClaims)) return false;
+      if (!('batchIds' in tokenClaims)) return false;
       const userMode = getStudentMode(userDoc);
       const tokenMode = getStudentMode(tokenClaims);
       if (tokenMode !== userMode) return false;
+    } else if (userRole === 'parent') {
+      if (!('studentCodes' in tokenClaims)) return false;
     }
     return true;
   }
@@ -1033,11 +1043,32 @@ test('Claims builder and equality check strictly sync studentMode for all 3 mode
   assert.strictEqual(limClaims.studentMode, 'limited');
   assert.strictEqual(checkClaimsEqual(limClaims, limDoc), true);
 
-  // Missing studentMode in token must compare as unequal to force backfill sync for regular students
-  assert.strictEqual(checkClaimsEqual({ role: 'student' }, regDoc), false, 'Token missing studentMode must trigger sync');
+  // Missing status, studentMode, batchIds, or studentCodes must compare as unequal to force backfill sync
+  assert.strictEqual(checkClaimsEqual({ role: 'student' }, regDoc), false, 'Token missing status must trigger sync');
+  assert.strictEqual(checkClaimsEqual({ role: 'student', status: 'active' }, regDoc), false, 'Token missing studentMode must trigger sync');
+  assert.strictEqual(checkClaimsEqual({ role: 'student', status: 'active', studentMode: 'regular' }, regDoc), false, 'Token missing batchIds must trigger sync');
+  assert.strictEqual(checkClaimsEqual({ role: 'parent', status: 'active' }, { role: 'parent' }), false, 'Parent token missing studentCodes must trigger sync');
 
   // Mismatch triggers token refresh
-  assert.strictEqual(checkClaimsEqual({ role: 'student', studentMode: 'regular' }, limDoc), false);
+  assert.strictEqual(checkClaimsEqual({ role: 'student', status: 'active', studentMode: 'regular', batchIds: [] }, limDoc), false);
+});
+
+test('Firestore rules isStudent and isParent check status != inactive without doc reads', () => {
+  function evalIsStudent(token) {
+    return token.role === 'student' && (
+      ('status' in token) ? token.status !== 'inactive' : true
+    );
+  }
+  function evalIsParent(token) {
+    return token.role === 'parent' && (
+      ('status' in token) ? token.status !== 'inactive' : true
+    );
+  }
+
+  assert.strictEqual(evalIsStudent({ role: 'student', status: 'active' }), true);
+  assert.strictEqual(evalIsStudent({ role: 'student', status: 'inactive' }), false);
+  assert.strictEqual(evalIsParent({ role: 'parent', status: 'active' }), true);
+  assert.strictEqual(evalIsParent({ role: 'parent', status: 'inactive' }), false);
 });
 
 test('Firestore rules ternary logic avoids document reads when studentMode claim exists', () => {

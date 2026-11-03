@@ -1,4 +1,5 @@
 import { deriveScoreMetrics } from '@/lib/scoreUtils';
+import { getStudentMode } from '@/types/user.types';
 import { adminDb } from '@/lib/firebase/admin';
 import * as admin from 'firebase-admin';
 import { isDemoUser } from '@/lib/studentDb';
@@ -640,11 +641,11 @@ export class ReportService {
 
       // Match linked parents in O(1) time
       const matchedParentsSet = new Set<any>();
-      if (s.studentCode) {
+      if (s.studentCode && getStudentMode(s) === 'regular') {
         const byCode = parentsByStudentCode.get(s.studentCode.toUpperCase()) || [];
         byCode.forEach(p => matchedParentsSet.add(p));
       }
-      if (s.parentEmail) {
+      if (s.parentEmail && getStudentMode(s) === 'regular') {
         const byEmail = parentsByEmail.get(s.parentEmail.toLowerCase().trim()) || [];
         byEmail.forEach(p => matchedParentsSet.add(p));
       }
@@ -800,7 +801,7 @@ export class ReportService {
     const activeStudentsMap = new Map<string, any>();
     studentsSnap.docs.forEach(doc => {
       const data = doc.data();
-      if (data.status !== 'inactive' && data.studentCode) {
+      if (data.status !== 'inactive' && data.studentCode && getStudentMode(data) === 'regular') {
         activeStudentsMap.set(data.studentCode, {
           studentCode: data.studentCode,
           name: data.name || '',

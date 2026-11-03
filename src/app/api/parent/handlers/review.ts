@@ -101,8 +101,19 @@ export async function GET(req: NextRequest) {
           .catch(() => ({ empty: true, docs: [] } as any))
       ]);
 
-      if (parent && !childrenCodes.includes(attemptData.studentCode)) {
-        return NextResponse.json({ message: 'Access denied.' }, { status: 403 });
+      if (parent) {
+        if (!childrenCodes.includes(attemptData.studentCode)) {
+          return NextResponse.json({ message: 'Access denied.' }, { status: 403 });
+        }
+        const studentUserSnap = await adminDb.collection('users')
+          .where('role', '==', 'student')
+          .where('studentCode', '==', attemptData.studentCode)
+          .limit(1)
+          .get()
+          .catch(() => null);
+        if (studentUserSnap && !studentUserSnap.empty && getStudentMode(studentUserSnap.docs[0].data()) !== 'regular') {
+          return NextResponse.json({ message: 'Access denied. Parent review is disabled for Autonomous and Limited student accounts.' }, { status: 403 });
+        }
       }
 
       const examData = examSnap.exists ? examSnap.data()! : {};
