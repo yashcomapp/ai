@@ -3,6 +3,7 @@ import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole } from '@/lib/auth';
 import { getStudentLearningData } from '@/lib/studentDb';
 import { getFromCache, setInCache } from '@/lib/firebase/cache';
+import { shouldBypassCache } from '@/lib/cacheBypassGuard';
 
 export async function GET(req: NextRequest) {
   try {
@@ -12,11 +13,7 @@ export async function GET(req: NextRequest) {
     }
 
     const studentCode = student.userData?.studentCode || '';
-    const bypassCache = req.headers.get('x-bypass-cache') === 'true' ||
-      req.headers.get('cache-control')?.includes('no-cache') ||
-      req.headers.get('cache-control')?.includes('no-store') ||
-      req.nextUrl.searchParams.get('fresh') === 'true' ||
-      req.nextUrl.searchParams.get('refresh') === 'true';
+    const bypassCache = shouldBypassCache(req, studentCode);
 
     const cacheKey = `student_learning_${studentCode}`;
     const responseHeaders: Record<string, string> = {

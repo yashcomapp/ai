@@ -8,6 +8,7 @@ import { calculateProctoringIntegrityScore } from '@/lib/proctoring';
 import { getFromCache, setInCache } from '@/lib/firebase/cache';
 import { deduplicateAssignments, resolveIntegrityScore, calculateTimeLogSummary, resolveParentStudentCodes } from '@/lib/dashboardDbUtils';
 import { getAssignmentsForBatches } from '@/services/exam.service';
+import { deriveScoreMetrics } from '@/lib/scoreUtils';
 
 export async function getParentDashboardData(
   parentEmail: string,
@@ -188,17 +189,12 @@ export async function getParentDashboardData(
   const entranceResults = allExamResults.filter((e: any) => e.examType === 'entrance');
   const parentReviews = parentReviewsSnapshot.docs.filter(doc => !doc.id.startsWith('daily-sync-') && (doc.data() as any).type !== 'daily_5min_sync').map(doc => {
     const data = doc.data() as any;
-    const totalQ = Math.max(1, data.totalQuestions || (data.questions || []).length || 1);
-    const correctQ = Number(data.correctCount ?? data.score ?? 0);
-    let sp = Number(data.scorePercent);
-    if (isNaN(sp) || (sp === 0 && correctQ > 0)) {
-      sp = Math.min(100, Math.max(0, Math.round((correctQ / totalQ) * 100)));
-    }
+    const { score, scorePercent } = deriveScoreMetrics(data);
     return {
       id: doc.id,
       ...data,
-      scorePercent: sp,
-      correctCount: correctQ
+      scorePercent,
+      correctCount: score
     };
   });
   const subjectiveAttemptsList = subjectiveAttemptsSnapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) }));

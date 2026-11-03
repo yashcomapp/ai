@@ -11,6 +11,8 @@ import { ExamService } from '@/services/exam.service';
 import { getFromCache, setInCache, invalidateCache } from '@/lib/firebase/cache';
 import { resolveParentStudentCodes } from '@/lib/dashboardDbUtils';
 import { fetchTopicIndexByCodes } from '@/lib/syllabusServerUtils';
+import { deriveScoreMetrics } from '@/lib/scoreUtils';
+import { shouldBypassCache } from '@/lib/cacheBypassGuard';
 
 
 function safeDateToISO(val: any): string | null {
@@ -137,11 +139,7 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    const bypassCache = req.headers.get('x-bypass-cache') === 'true' ||
-      req.headers.get('cache-control')?.includes('no-cache') ||
-      req.headers.get('cache-control')?.includes('no-store') ||
-      searchParams.get('fresh') === 'true' ||
-      searchParams.get('refresh') === 'true';
+    const bypassCache = shouldBypassCache(req, studentCode);
 
     const cacheKey = `parent_reviews_${studentCode}`;
     if (!bypassCache) {
@@ -405,17 +403,9 @@ export async function GET(req: NextRequest) {
         chapter: displayChapter,
         date: startIso || createdIso || updatedIso || null,
         rawTimestamp,
-        scorePercent: (() => {
-          const totalQ = Math.max(1, data.totalQuestions || (data.questions || []).length || 1);
-          const correctQ = Number(data.correctCount ?? data.score ?? 0);
-          let sp = Number(data.scorePercent);
-          if (isNaN(sp) || (sp === 0 && correctQ > 0)) {
-            sp = Math.min(100, Math.max(0, Math.round((correctQ / totalQ) * 100)));
-          }
-          return sp || 0;
-        })(),
-        correctCount: Number(data.correctCount ?? data.score ?? 0),
-        totalQuestions: data.totalQuestions || 1,
+        scorePercent: deriveScoreMetrics(data).scorePercent,
+        correctCount: deriveScoreMetrics(data).score,
+        totalQuestions: deriveScoreMetrics(data).totalQuestions,
         masteryBefore: data.masteryBefore || 0,
         masteryAfter: data.masteryAfter || 0,
         masteryChange: data.masteryChange || 0,
@@ -537,7 +527,7 @@ export async function GET(req: NextRequest) {
       isAutonomousChild: isAutonomous
     };
 
-    setInCache(cacheKey, responseData, 120000); // 2-min in-memory cache
+    setInCache(cacheKey, responseData, 45000); // 45s in-memory cache
 
     return NextResponse.json(responseData, {
       headers: {
@@ -678,7 +668,10 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ message: 'Access Denied. Review document does not match this child.' }, { status: 403 });
       }
 
-      if (rData.parentStatus === 'approved' && rData.status === 'approved') {
+      if (rData.parentStatus === 'approved' || rData.status === 'approved') {
+        if (rData.parentStatus !== 'approved' || rData.status !== 'approved') {
+          reviewRef.update({ status: 'approved', parentStatus: 'approved' }).catch(() => null);
+        }
         return NextResponse.json({ success: true, message: 'Review successfully approved!' });
       }
 

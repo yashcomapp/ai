@@ -1,5 +1,6 @@
 import { adminDb } from '@/lib/firebase/admin';
 import { getDateKeyIST } from '@/lib/dateUtils';
+import { getFromCache, setInCache } from '@/lib/firebase/cache';
 
 /**
  * Deduplicate assignments by examId to prevent double-counting across batch & student-specific assignments.
@@ -154,15 +155,27 @@ export async function resolveParentStudentCodes(parentData: any): Promise<string
     }
   }
 
-  // Zero-Cost Read Optimization: If parent already has valid studentCodes array, return immediately without redundant queries
-  if (studentCodes.length > 0) {
+  const parentEmail = parentData?.email?.toLowerCase();
+  const parentDocId = parentData?.id || parentData?.uid;
+  const parentPhone = parentData?.phone || parentData?.parentPhone || parentData?.mobile;
+
+  // Zero-Cost Read Optimization: If parent has multiple stored studentCodes, return immediately
+  if (studentCodes.length > 1) {
     return Array.from(new Set(studentCodes.filter(Boolean)));
   }
 
-  // Fallback ONLY for newly registered or unlinked parents without studentCodes
-  const parentEmail = parentData?.email?.toLowerCase();
-  const parentPhone = parentData?.phone || parentData?.parentPhone || parentData?.mobile;
-  if (parentEmail || parentPhone) {
+  // If array has exactly 1 studentCode, throttle fallback sibling discovery to once per 5 minutes
+  let shouldCheckFallback = studentCodes.length === 0;
+  if (studentCodes.length === 1) {
+    const siblingCheckKey = `parent_sibling_check_${parentEmail || parentDocId || studentCodes[0]}`;
+    const hasCheckedSiblingsRecently = getFromCache<boolean>(siblingCheckKey);
+    if (!hasCheckedSiblingsRecently) {
+      shouldCheckFallback = true;
+      setInCache(siblingCheckKey, true, 300000); // 5 min cooldown
+    }
+  }
+
+  if (shouldCheckFallback && (parentEmail || parentPhone)) {
     try {
       const [emailSnap, phoneSnap] = await Promise.all([
         parentEmail
@@ -181,22 +194,24 @@ export async function resolveParentStudentCodes(parentData: any): Promise<string
           : Promise.resolve({ docs: [] } as any)
       ]);
 
+      let newlyDiscovered = false;
       emailSnap.docs.forEach((doc: any) => {
         const data = doc.data();
         if (data.status !== 'inactive' && typeof data.studentCode === 'string' && data.studentCode.startsWith('ST-') && !studentCodes.includes(data.studentCode)) {
           studentCodes.push(data.studentCode);
+          newlyDiscovered = true;
         }
       });
       phoneSnap.docs.forEach((doc: any) => {
         const data = doc.data();
         if (data.status !== 'inactive' && typeof data.studentCode === 'string' && data.studentCode.startsWith('ST-') && !studentCodes.includes(data.studentCode)) {
           studentCodes.push(data.studentCode);
+          newlyDiscovered = true;
         }
       });
 
-      // Self-heal parent document by caching resolved studentCodes so fallback queries run only once
-      const parentDocId = parentData?.id || parentData?.uid;
-      if (parentDocId && studentCodes.length > 0) {
+      // Self-heal parent document by caching resolved studentCodes if newly discovered or empty
+      if (parentDocId && (newlyDiscovered || (parentData?.studentCodes || []).length === 0) && studentCodes.length > 0) {
         adminDb.collection('users').doc(parentDocId).update({
           studentCodes: Array.from(new Set(studentCodes.filter(Boolean)))
         }).catch(() => null);

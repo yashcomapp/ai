@@ -7,6 +7,8 @@ import { deriveTopicCodeFromQuestionCode, parseTopicCode } from '@/lib/questionT
 import { getStudentResultsData, determineExamType } from '@/lib/resultsDb';
 import { resolveParentStudentCodes } from '@/lib/dashboardDbUtils';
 import { getFromCache, setInCache } from '@/lib/firebase/cache';
+import { deriveScoreMetrics } from '@/lib/scoreUtils';
+import { shouldBypassCache } from '@/lib/cacheBypassGuard';
 
 export async function GET(req: NextRequest) {
   try {
@@ -44,9 +46,7 @@ export async function GET(req: NextRequest) {
     }
 
     if (id) {
-      const bypassCache = req.headers.get('x-bypass-cache') === 'true' ||
-        req.headers.get('cache-control')?.includes('no-cache') ||
-        searchParams.get('fresh') === 'true';
+      const bypassCache = shouldBypassCache(req, studentCode || id);
       const scorecardCacheKey = `scorecard_${id}_${studentCode || 'any'}`;
       if (!bypassCache) {
         const cachedScorecard = getFromCache<any>(scorecardCacheKey);
@@ -274,18 +274,7 @@ export async function GET(req: NextRequest) {
       }
 
       if (isPractice) {
-        const qList = Array.isArray(reviewData.questions) ? reviewData.questions : (Array.isArray(reviewData.questionDetails) ? reviewData.questionDetails : []);
-        const total = qList.length > 0 ? qList.length : (reviewData.totalQuestions || 1);
-        const score = reviewData.score !== undefined && reviewData.score !== null
-          ? Number(reviewData.score)
-          : (reviewData.correctCount !== undefined && reviewData.correctCount !== null
-              ? Number(reviewData.correctCount)
-              : qList.filter((q: any) => q.isCorrect).length);
-        const percentage = reviewData.scorePercent !== undefined && reviewData.scorePercent !== null
-          ? Number(reviewData.scorePercent)
-          : (reviewData.percentage !== undefined && reviewData.percentage !== null
-              ? Number(reviewData.percentage)
-              : (total > 0 ? Math.round((score / total) * 100) : 0));
+        const { score, totalQuestions: total, scorePercent: percentage } = deriveScoreMetrics(reviewData);
 
         reviewData.examCode = reviewData.topicCode || '';
         reviewData.examName = reviewData.topicName || 'Practice Session';
@@ -702,11 +691,7 @@ export async function GET(req: NextRequest) {
     const isListAutonomous = student?.userData?.autonomous === true;
     const studentBatches = student?.userData?.batchIds || [];
 
-    const bypassListCache = req.headers.get('x-bypass-cache') === 'true' ||
-      req.headers.get('cache-control')?.includes('no-cache') ||
-      req.headers.get('cache-control')?.includes('no-store') ||
-      searchParams.get('fresh') === 'true' ||
-      searchParams.get('refresh') === 'true';
+    const bypassListCache = shouldBypassCache(req, studentCode);
 
     const resultsListCacheKey = `student_results_${studentCode}_${isListAutonomous ? 'auto' : 'norm'}`;
     if (!bypassListCache) {
@@ -721,7 +706,7 @@ export async function GET(req: NextRequest) {
     }
 
     const data = await getStudentResultsData(studentCode, isListAutonomous, studentBatches);
-    setInCache(resultsListCacheKey, data, 120000); // 2 min in-memory cache
+    setInCache(resultsListCacheKey, data, 45000); // 45s in-memory cache
 
     return NextResponse.json(data, {
       headers: {

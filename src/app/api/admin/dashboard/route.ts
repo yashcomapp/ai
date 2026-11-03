@@ -4,6 +4,7 @@ import { verifyRole } from '@/lib/auth';
 import { getDateKeyIST as getISTDateString } from '@/lib/dateUtils';
 import { getFromCache, setInCache } from '@/lib/firebase/cache';
 import { isDemoUser } from '@/lib/studentDb';
+import { shouldBypassCache } from '@/lib/cacheBypassGuard';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,11 +17,7 @@ export async function GET(req: NextRequest) {
 
     const todayStr = getISTDateString();
     const adminUid = adminUser.decodedToken?.uid || 'admin';
-    const bypassCache = req.headers.get('x-bypass-cache') === 'true' ||
-      req.headers.get('cache-control')?.includes('no-cache') ||
-      req.headers.get('cache-control')?.includes('no-store') ||
-      req.nextUrl.searchParams.get('refresh') === 'true' ||
-      req.nextUrl.searchParams.get('fresh') === 'true';
+    const bypassCache = shouldBypassCache(req, adminUid);
 
     const cacheKey = `admin_dashboard_${adminUid}_${todayStr}`;
 
@@ -147,7 +144,7 @@ export async function GET(req: NextRequest) {
       recentRegistrations: recentRegs
     };
 
-    setInCache(cacheKey, result, 120000); // 120s in-memory cache
+    setInCache(cacheKey, result, 45000); // 45s in-memory cache
 
     return NextResponse.json(result, {
       headers: {

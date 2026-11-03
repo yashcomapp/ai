@@ -998,7 +998,7 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
         }
       };
 
-      setInCache(cacheKey, result, 120000); // 120s in-memory TTL (bounds multi-instance freshness)
+      setInCache(cacheKey, result, 45000); // 45s in-memory TTL (bounds multi-instance freshness)
       return result;
     } catch (error: any) {
       console.error('getDashboardData error:', error);

@@ -3,6 +3,7 @@ import { IntegrityService } from '@/services/integrity.service';
 import { deriveTopicCodeFromQuestionCode, parseTopicCode } from '@/lib/questionTypes';
 import { getFromCache, setInCache } from '@/lib/firebase/cache';
 import { fetchTopicIndexByCodes } from '@/lib/syllabusServerUtils';
+import { deriveScoreMetrics } from '@/lib/scoreUtils';
 
 export function determineExamType(data: any): string {
   if (data.examType === 'practice') return 'practice';
@@ -217,22 +218,7 @@ export async function getStudentResultsData(
 
   const mappedPracticeResults = parentReviewsSnap.docs.filter(doc => !doc.id.startsWith('daily-sync-') && doc.data().type !== 'daily_5min_sync').map(doc => {
     const data = doc.data();
-    const qList = Array.isArray(data.questions) ? data.questions : (Array.isArray(data.questionDetails) ? data.questionDetails : []);
-    const total = qList.length > 0 ? qList.length : (data.totalQuestions || 1);
-    const score = data.score !== undefined && data.score !== null
-      ? Number(data.score)
-      : (data.correctCount !== undefined && data.correctCount !== null
-          ? Number(data.correctCount)
-          : qList.filter((q: any) => q.isCorrect).length);
-    let percentage = data.scorePercent !== undefined && data.scorePercent !== null
-      ? Number(data.scorePercent)
-      : (data.percentage !== undefined && data.percentage !== null
-          ? Number(data.percentage)
-          : (total > 0 ? Math.round((score / total) * 100) : 0));
-    // Self-healing guard: If score > 0 but stored percentage is 0, auto-derive true percentage
-    if (score > 0 && percentage === 0 && total > 0) {
-      percentage = Math.round((score / total) * 100);
-    }
+    const { score, totalQuestions: total, scorePercent: percentage } = deriveScoreMetrics(data);
 
     const resolvedSubmittedAt = data.submittedAt || data.createdAt || data.updatedAt || data.startedAt || null;
 

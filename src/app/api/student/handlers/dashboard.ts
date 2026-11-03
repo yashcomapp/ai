@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyRole } from '@/lib/auth';
 import { getDashboardData } from '@/lib/studentDb';
 import { getFromCache, setInCache } from '@/lib/firebase/cache';
+import { shouldBypassCache } from '@/lib/cacheBypassGuard';
 
 
 export async function GET(req: NextRequest) {
@@ -25,11 +26,7 @@ export async function GET(req: NextRequest) {
       responseHeaders['x-claims-updated'] = 'true';
     }
 
-    const bypassCache = req.headers.get('x-bypass-cache') === 'true' ||
-      req.headers.get('cache-control')?.includes('no-cache') ||
-      req.headers.get('cache-control')?.includes('no-store') ||
-      searchParams.get('fresh') === 'true' ||
-      searchParams.get('refresh') === 'true';
+    const bypassCache = shouldBypassCache(req, studentCode || uid);
 
     const cacheKey = `student_dashboard_${studentCode}_${rangeDays}`;
     if (!bypassCache) {
@@ -40,7 +37,7 @@ export async function GET(req: NextRequest) {
     }
 
     const data = await getDashboardData(uid, userData, rangeDays, bypassCache);
-    setInCache(cacheKey, data, 120000); // 120s in-memory cache
+    setInCache(cacheKey, data, 45000); // 45s in-memory cache
 
     return NextResponse.json(data, { headers: responseHeaders });
   } catch (error: any) {

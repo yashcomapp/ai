@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { formatReportStudentName } from '@/lib/lqCardExport';
+import { deriveScorePercent } from '@/lib/scoreUtils';
 
 export interface PracticeHistoryModalProps {
   selectedPracStudent: any;
@@ -37,12 +38,7 @@ export default function PracticeHistoryModal({
   if (!selectedPracStudent) return null;
 
   const getScore = (item: any): number => {
-    if (typeof item.scorePercent === 'number' && item.scorePercent > 0) return item.scorePercent;
-    if (typeof item.percentage === 'number' && item.percentage > 0) return item.percentage;
-    const c = Number(item.correctCount ?? item.score ?? 0);
-    const t = Math.max(1, item.totalQuestions || item.total || (item.questions || []).length || 1);
-    if (c > 0) return Math.min(100, Math.round((c / t) * 100));
-    return item.scorePercent || item.percentage || 0;
+    return deriveScorePercent(item);
   };
 
   return (

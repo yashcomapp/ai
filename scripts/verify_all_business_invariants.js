@@ -710,6 +710,40 @@ test('Practice scorePercent and correctCount can NEVER diverge or write 0% when 
   assert.throws(() => evaluateScore(1, 0), /CRITICAL INVARIANT/);
 });
 
+test('deriveScoreMetrics and deriveScorePercent SSOT repairs corrupted or legacy practice records', () => {
+  function deriveScoreMetrics(data) {
+    if (!data) return { score: 0, totalQuestions: 1, scorePercent: 0 };
+    const qList = Array.isArray(data.questions) ? data.questions : (Array.isArray(data.questionDetails) ? data.questionDetails : []);
+    const totalQuestions = Math.max(1, Number(data.totalQuestions || data.totalMarks || data.total || qList.length || 1));
+    const score = data.correctCount !== undefined && data.correctCount !== null
+      ? Number(data.correctCount)
+      : (data.score !== undefined && data.score !== null ? Number(data.score) : qList.filter(q => q.isCorrect).length);
+    let scorePercent = data.scorePercent !== undefined && data.scorePercent !== null
+      ? Number(data.scorePercent)
+      : (data.percentage !== undefined && data.percentage !== null ? Number(data.percentage) : (totalQuestions > 0 ? Math.round((score / totalQuestions) * 100) : 0));
+    if (isNaN(scorePercent) || (score > 0 && scorePercent === 0 && totalQuestions > 0)) {
+      scorePercent = Math.min(100, Math.max(0, Math.round((score / totalQuestions) * 100)));
+    }
+    return { score, totalQuestions, scorePercent: Math.min(100, Math.max(0, scorePercent)) };
+  }
+
+  // Corrupted record with score: 5, total: 6, but scorePercent: 0
+  const r1 = deriveScoreMetrics({ score: 5, totalQuestions: 6, scorePercent: 0 });
+  assert.strictEqual(r1.score, 5);
+  assert.strictEqual(r1.scorePercent, 83);
+
+  // Question details fallback
+  const r2 = deriveScoreMetrics({ questionDetails: [{ isCorrect: true }, { isCorrect: false }, { isCorrect: true }] });
+  assert.strictEqual(r2.score, 2);
+  assert.strictEqual(r2.totalQuestions, 3);
+  assert.strictEqual(r2.scorePercent, 67);
+
+  // Legitimate zero score stays zero
+  const r3 = deriveScoreMetrics({ correctCount: 0, totalQuestions: 6, scorePercent: 0 });
+  assert.strictEqual(r3.score, 0);
+  assert.strictEqual(r3.scorePercent, 0);
+});
+
 test('Self-healing pipeline auto-restores true percentage if legacy doc has scorePercent: 0 with score > 0', () => {
   const resolveReviewScore = (prDoc) => {
     const totalQ = Math.max(1, prDoc.totalQuestions || (prDoc.questions || []).length || 1);

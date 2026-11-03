@@ -4,6 +4,7 @@ import * as admin from 'firebase-admin';
 import { getDateKeyIST } from '@/lib/dateUtils';
 import { verifyAnyRole } from '@/lib/auth';
 import { getFromCache, setInCache, invalidateCache } from '@/lib/firebase/cache';
+import { shouldBypassCache } from '@/lib/cacheBypassGuard';
 
 
 
@@ -65,11 +66,7 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    const bypassCache = req.headers.get('x-bypass-cache') === 'true' ||
-      req.headers.get('cache-control')?.includes('no-cache') ||
-      req.headers.get('cache-control')?.includes('no-store') ||
-      searchParams.get('fresh') === 'true' ||
-      searchParams.get('refresh') === 'true';
+    const bypassCache = shouldBypassCache(req, targetUid);
 
     const cacheKey = `user_time_log_${targetUid}`;
     if (!bypassCache) {

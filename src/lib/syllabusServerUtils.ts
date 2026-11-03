@@ -189,9 +189,12 @@ export async function fetchTopicIndexByCodes(topicCodes: string[]): Promise<Map<
   const missingCodes: string[] = [];
 
   uniqueCodes.forEach(code => {
-    const found = fullTopicsMap.get(code);
+    const cached = getFromCache<any>(`topic_index_${code}`);
+    const found = fullTopicsMap.get(code) || (cached !== null ? cached : undefined);
     if (found) {
       result.set(code, found);
+    } else if (cached === null) {
+      // Sentinel: previously confirmed not to exist, avoid repeating query
     } else {
       missingCodes.push(code);
     }
@@ -220,6 +223,13 @@ export async function fetchTopicIndexByCodes(topicCodes: string[]): Promise<Map<
           setInCache(`topic_index_${d.topicCode}`, d, 600000);
         }
       });
+    });
+
+    // Cache negative results to eliminate repeated queries for non-existent codes
+    missingCodes.forEach(code => {
+      if (!result.has(code)) {
+        setInCache(`topic_index_${code}`, null, 600000);
+      }
     });
   }
 

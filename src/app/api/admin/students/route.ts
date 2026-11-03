@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { adminDb, adminAuth } from '@/lib/firebase/admin';
+import { FieldValue } from 'firebase-admin/firestore';
 import { verifyRole, invalidateUserCache, syncUserCustomClaims, invalidateParentDeactCache } from '@/lib/auth';
 import { ChunkedBatch } from '@/lib/firebase/batch';
 import { getFromCache, setInCache, invalidateCache, getCachedBatches } from '@/lib/firebase/cache';
@@ -168,6 +169,18 @@ export async function POST(request: Request) {
         const pData = pDoc.data() || {};
         invalidateUserCache(pDoc.id);
 
+        // SSOT Linking Guarantee: Ensure studentCode is registered in parent's studentCodes array
+        if (studentCode) {
+          const currentCodes = Array.isArray(pData.studentCodes)
+            ? pData.studentCodes
+            : (pData.studentCode ? [pData.studentCode] : []);
+          if (!currentCodes.includes(studentCode)) {
+            await pDoc.ref.update({
+              studentCodes: FieldValue.arrayUnion(studentCode)
+            });
+          }
+        }
+
         if (isAutonomous) {
           // Check if parent has any other non-autonomous active child before deactivating
           let allCodes: string[] = [];
@@ -270,6 +283,17 @@ export async function DELETE(request: Request) {
         .get();
       reviewsSnap.docs.forEach(doc => {
         batch.delete(doc.ref);
+      });
+      // 4. Clean up studentCode from any linked parent accounts
+      const parentSnaps = await adminDb.collection('users')
+        .where('role', '==', 'parent')
+        .where('studentCodes', 'array-contains', studentCode)
+        .get()
+        .catch(() => ({ docs: [] } as any));
+      parentSnaps.docs.forEach((pDoc: any) => {
+        batch.update(pDoc.ref, {
+          studentCodes: FieldValue.arrayRemove(studentCode)
+        });
       });
     }
     

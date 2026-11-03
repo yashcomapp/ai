@@ -14,6 +14,7 @@ import { getObjectiveExamTopics, getSubjectiveExamTopics, getExamDateKey, isExam
 import { ExamService, getAssignmentsForBatches } from '@/services/exam.service';
 import { getCachedBatches, getFromCache, setInCache, invalidateCache } from '@/lib/firebase/cache';
 import { assertCanonicalStudentCode } from '@/lib/canonicalValidation';
+import { shouldBypassCache } from '@/lib/cacheBypassGuard';
 
 const parseIST = (dateStr: string): Date => {
   if (!dateStr) return new Date();
@@ -701,11 +702,7 @@ export async function GET(req: NextRequest) {
 
     const includeParents = req.nextUrl.searchParams.get('includeParents') === 'true';
 
-    const bypassCache = req.headers.get('x-bypass-cache') === 'true' ||
-      req.headers.get('cache-control')?.includes('no-cache') ||
-      req.headers.get('cache-control')?.includes('no-store') ||
-      req.nextUrl.searchParams.get('fresh') === 'true' ||
-      req.nextUrl.searchParams.get('refresh') === 'true';
+    const bypassCache = shouldBypassCache(req, adminUser.decodedToken?.uid || 'admin');
 
     // 0. High-performance in-memory cache to eliminate massive redundant reads on every tab open/switch
     const cacheKey = `admin_exams_full_payload_${includeParents ? 'with_parents' : 'no_parents'}`;
