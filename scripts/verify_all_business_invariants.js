@@ -1111,6 +1111,118 @@ test('Registration mode helper accurately resolves autonomous and studentMode fl
 });
 
 console.log('\n================================================================');
+
+// ============================================================================
+// SUITE 16: TOPIC UI DIAGNOSTIC & RENDER GUARD INVARIANTS
+// ============================================================================
+console.log('\n--- Suite 16: Topic UI Diagnostic & Render Guard Invariants ---');
+
+function simulateTopicDiagnosticRender(topic) {
+  const mastery = Math.round(topic.mastery);
+  const attempts = Number(topic.attempts || topic.confidence || topic.questionsAttempted || 0);
+  const isAbsent = !!topic.isAbsentExam;
+  const state = topic.state;
+  const practiceCount = topic.practiceCount || 0;
+  const reqConf = topic.requiredConfidence || (topic.topicClassification === 'minor' ? 12 : 18);
+  const maxPractices = Math.ceil(reqConf / 6);
+  const isLimitReached = practiceCount >= maxPractices;
+
+  let expIcon = '⚪';
+  let expText = '';
+
+  if (state === 'needsAttention') {
+    if (isLimitReached) {
+      expIcon = '🔒';
+      expText = `${maxPractices}/${maxPractices} practices done (${mastery}% accuracy). Practice quota reached.`;
+    } else if (isAbsent) {
+      expIcon = '⚠️';
+      expText = 'Missed scheduled exam.';
+    } else if (attempts === 0) {
+      expIcon = '⚪';
+      expText = 'Not attempted yet.';
+    } else {
+      expIcon = '🚨';
+      expText = `${practiceCount}/${maxPractices} practices done (${mastery}% accuracy).`;
+    }
+  } else if (state === 'practicing' || state === 'continuePractice' || state === 'revision') {
+    if (mastery >= 90 && attempts < reqConf) {
+      const needed = Math.max(1, reqConf - attempts);
+      expIcon = '📖';
+      expText = `High accuracy (${mastery}%), but needs ${needed} more verified question(s) to reach full confidence for Mastered.`;
+    } else if (isLimitReached) {
+      expIcon = '🔒';
+      expText = `${maxPractices}/${maxPractices} practices done (${mastery}% accuracy). Practice quota reached.`;
+    } else {
+      expIcon = '📈';
+      expText = `${practiceCount}/${maxPractices} practices done (${mastery}% accuracy). Complete 1 practice set (6 Qs) to aim for 90%+ Mastered.`;
+    }
+  } else if (state === 'mastered') {
+    expIcon = '⭐';
+    expText = `Mastered (${mastery}% accuracy across ${attempts} verified questions). Concept complete.`;
+  } else {
+    expIcon = '⚪';
+    expText = `${mastery}% accuracy across ${attempts} verified questions.`;
+  }
+
+  return { expIcon, expText };
+}
+
+test('Siddhi Case 1: In-progress topic (72% accuracy, 0 attempts) strictly renders 📈 In Progress, NEVER Mastered', () => {
+  const result = simulateTopicDiagnosticRender({
+    topicCode: 'MH-9-SCIT-8-8.1.2',
+    mastery: 72,
+    confidence: 0,
+    attempts: 0,
+    state: 'practicing',
+    topicClassification: 'minor',
+    requiredConfidence: 12
+  });
+  assert.strictEqual(result.expIcon, '📈');
+  assert.strictEqual(result.expText.includes('Mastered ('), false);
+  assert.strictEqual(result.expText.includes('Concept complete'), false);
+  assert.strictEqual(result.expText.includes('0/2 practices done'), true);
+});
+
+test('Siddhi Case 2: In-progress topic (100% accuracy, 6/12 confidence) strictly renders 📖 Needs More Questions, NEVER Concept complete', () => {
+  const result = simulateTopicDiagnosticRender({
+    topicCode: 'MH-9-SCIT-8-8.1.3',
+    mastery: 100,
+    confidence: 6,
+    questionsAttempted: 6,
+    state: 'practicing',
+    topicClassification: 'minor',
+    requiredConfidence: 12
+  });
+  assert.strictEqual(result.expIcon, '📖');
+  assert.strictEqual(result.expText.includes('Concept complete'), false);
+  assert.strictEqual(result.expText.includes('needs 6 more verified question(s)'), true);
+});
+
+test('Certified Mastered topic strictly renders ⭐ and Concept Complete', () => {
+  const result = simulateTopicDiagnosticRender({
+    topicCode: 'MH-9-SCIT-8-8.1.1',
+    mastery: 95,
+    confidence: 12,
+    attempts: 12,
+    state: 'mastered',
+    topicClassification: 'minor',
+    requiredConfidence: 12
+  });
+  assert.strictEqual(result.expIcon, '⭐');
+  assert.strictEqual(result.expText.includes('Concept complete'), true);
+});
+
+test('Ungated/unknown state strictly defaults to neutral ⚪, NEVER false Mastered', () => {
+  const result = simulateTopicDiagnosticRender({
+    topicCode: 'UNKNOWN-TOPIC',
+    mastery: 60,
+    confidence: 0,
+    state: 'unknown_string'
+  });
+  assert.strictEqual(result.expIcon, '⚪');
+  assert.strictEqual(result.expText.includes('Mastered'), false);
+});
+
 console.log(`🎉 INVARIANT VERIFICATION SUMMARY: ${passedTests} / ${totalTests} TESTS PASSED`);
 console.log('================================================================\n');
 

@@ -46,6 +46,11 @@
   - 🟡 **In Progress / Practicing**: Mastery between $50\%$ and $89\%$ (or $\ge 90\%$ with confidence $< \text{requiredConfidence}$).
   - 🔴 **Needs Attention**: Mastery $< 50\%$ or missed scheduled exam unattempted.
   - Status dot badges (`🟢`, `🟡`, `🔴`) clicked by an admin MUST open a breakdown modal showing the exact same diagnostic guidance and explanation string displayed on the student's dashboard.
+  - **Exhaustive Status Matching & Anti-Ungated Fallback Invariant**:
+    - UI components, diagnostic formatters, and APIs must NEVER use a bare `else` block to default to `Mastered`, `⭐ Certified Mastered`, or `Concept complete`.
+    - Rendering Mastered status strictly requires an explicit state assertion (`state === 'mastered'`).
+    - Practicing display strictly matches `state === 'practicing' || state === 'continuePractice' || state === 'revision'`.
+    - Any unrecognized state MUST safely fall back to neutral gray `⚪`, never an achievement badge.
 
 ### G. Attendance & Leave Calculation (`src/lib/attendanceUtils.ts`)
 - **Rule**: ALL attendance stats (total days, effective present days, leaves, late arrivals, percentage) MUST be computed via `calculateAttendanceSummary` in [`src/lib/attendanceUtils.ts`](file:///c:/Users/Admin/.gemini/antigravity/scratch/los-next/src/lib/attendanceUtils.ts).
