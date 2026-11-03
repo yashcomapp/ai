@@ -1,4 +1,5 @@
 import { adminDb } from '@/lib/firebase/admin';
+import * as admin from 'firebase-admin';
 import { getCachedSyllabus, getCachedBatches, getFromCache, setInCache } from '@/lib/firebase/cache';
 import { getCachedSyllabusTopicsMap, fetchTopicIndexByCodes } from '@/lib/syllabusServerUtils';
 import { getDateKeyIST } from '@/lib/dateUtils';
@@ -191,7 +192,12 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
     const thresholdDate = new Date(Date.now() - timeLimitMs);
     const thresholdDateStr = getDateKeyIST(thresholdDate); // "YYYY-MM-DD" in IST
 
+    // Student Mode (Mode 1: Regular, Mode 2: Autonomous, Mode 3: Limited)
+    const studentMode = userData.studentMode || (userData.autonomous ? 'autonomous' : 'regular');
+    const isLimited = (studentMode === 'limited' || studentMode === 'restricted');
+
     // 2. Fetch student statistics and other items in parallel
+    // Cost Guard: If student is in Limited Mode (Mode 3), bypass 9 metric/review Firestore queries completely!
     const [
       reviewsSnapshot,
       peerReviewsSnapshot,
@@ -205,53 +211,49 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
       homePracticeSnap,
       parentReviewsSnapshot,
       integritySnapshot
-    ] = await Promise.all([
-      adminDb.collection('reviews').where('studentCode', '==', studentCode).get(),
-      adminDb.collection('peerAssignments').where('reviewerStudentCode', '==', studentCode).where('status', '==', 'pending').get(),
-      fetchStudentRawAssignments(studentCode, batchIds),
-      // studentTopicMastery snapshot
-      adminDb.collection('studentTopicMastery').where('studentCode', '==', studentCode).get(),
-
-      // Fetch student's attempts to filter out completed subjective exams
-      adminDb.collection('subjectiveAttempts').where('studentCode', '==', studentCode).get(),
-
-      // Fetch student's objective exam attempts
-      adminDb.collection('examAttempts').where('studentCode', '==', studentCode).get(),
-
-      // Fetch evaluations (all evaluations regardless of evaluatorType: teacher, parent, peer)
-      adminDb.collection('evaluations')
-        .where('studentCode', '==', studentCode)
-        .get(),
-
-      // Load syllabus mapping cache
-      getCachedSyllabus(),
-
-      // Classroom Tests scoped by student's batchIds (entire history for correct absent stats)
-      batchIds.length > 0
-        ? adminDb.collection('subjectiveExams')
-            .where('type', '==', 'classroom_test')
-            .where('batchId', 'in', batchIds)
+    ] = isLimited
+      ? await Promise.all([
+          Promise.resolve({ docs: [] } as unknown as admin.firestore.QuerySnapshot), // reviews (0 reads)
+          Promise.resolve({ docs: [] } as unknown as admin.firestore.QuerySnapshot), // peerAssignments (0 reads)
+          fetchStudentRawAssignments(studentCode, batchIds),
+          Promise.resolve({ docs: [] } as unknown as admin.firestore.QuerySnapshot), // studentTopicMastery (0 reads)
+          adminDb.collection('subjectiveAttempts').where('studentCode', '==', studentCode).get(),
+          adminDb.collection('examAttempts').where('studentCode', '==', studentCode).get(),
+          Promise.resolve({ docs: [] } as unknown as admin.firestore.QuerySnapshot), // evaluations (0 reads)
+          Promise.resolve([] as any[]), // syllabus (0 reads)
+          Promise.resolve({ docs: [] } as unknown as admin.firestore.QuerySnapshot), // classroomExams (0 reads)
+          Promise.resolve({ docs: [] } as unknown as admin.firestore.QuerySnapshot), // homePractice (0 reads)
+          Promise.resolve({ docs: [] } as unknown as admin.firestore.QuerySnapshot), // parentReviews (0 reads)
+          Promise.resolve({ docs: [] } as unknown as admin.firestore.QuerySnapshot)  // integrityScores (0 reads)
+        ])
+      : await Promise.all([
+          adminDb.collection('reviews').where('studentCode', '==', studentCode).get(),
+          adminDb.collection('peerAssignments').where('reviewerStudentCode', '==', studentCode).where('status', '==', 'pending').get(),
+          fetchStudentRawAssignments(studentCode, batchIds),
+          adminDb.collection('studentTopicMastery').where('studentCode', '==', studentCode).get(),
+          adminDb.collection('subjectiveAttempts').where('studentCode', '==', studentCode).get(),
+          adminDb.collection('examAttempts').where('studentCode', '==', studentCode).get(),
+          adminDb.collection('evaluations').where('studentCode', '==', studentCode).get(),
+          getCachedSyllabus(),
+          batchIds.length > 0
+            ? adminDb.collection('subjectiveExams')
+                .where('type', '==', 'classroom_test')
+                .where('batchId', 'in', batchIds)
+                .get()
+            : Promise.resolve({ docs: [] } as unknown as admin.firestore.QuerySnapshot),
+          batchIds.length > 0
+            ? adminDb.collection('subjectiveExams')
+                .where('type', '==', 'home_practice')
+                .where('batchId', 'in', batchIds)
+                .get()
+            : Promise.resolve({ docs: [] } as unknown as admin.firestore.QuerySnapshot),
+          adminDb.collection('parentReviews')
+            .where('studentCode', '==', studentCode)
+            .get(),
+          adminDb.collection('integrityScores')
+            .where('studentCode', '==', studentCode)
             .get()
-        : Promise.resolve({ docs: [] } as any),
-
-      // Home Practices scoped by student's batchIds (entire history for correct absent stats)
-      batchIds.length > 0
-        ? adminDb.collection('subjectiveExams')
-            .where('type', '==', 'home_practice')
-            .where('batchId', 'in', batchIds)
-            .get()
-        : Promise.resolve({ docs: [] } as any),
-
-      // parentReviews snapshot
-      adminDb.collection('parentReviews')
-        .where('studentCode', '==', studentCode)
-        .get(),
-
-      // Integrity Scores
-      adminDb.collection('integrityScores')
-        .where('studentCode', '==', studentCode)
-        .get()
-    ]);
+        ]);
 
     const {
       batchAssignmentsSnapshot,
@@ -264,7 +266,7 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
     let absentExamsCount = 0;
     const now = new Date();
     const todayDateStr = getDateKeyIST(new Date());
-    const reviews = reviewsSnapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as any) }));
+    const reviews = (reviewsSnapshot.docs as any[]).map((doc: any) => ({ id: doc.id, ...(doc.data() as any) }));
     
     // Deduplicate assignments by examId to prevent double-counting of multiple assignments (e.g. batch + student-specific)
     const allAssignmentsList = [
@@ -467,23 +469,24 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
     });
 
     const profile = {
-      overallMastery: unifiedMetrics.overallMastery,
-      lqScore: unifiedMetrics.lqScore,
-      averageRetention: unifiedMetrics.averageRetention,
-      masteredTopics: unifiedMetrics.masteredTopicsCount,
-      needsAttentionTopics: unifiedMetrics.needsAttentionTopicsCount,
-      srsDueTopicsCount: unifiedMetrics.srsDueTopicsCount,
-      srsOverdueTopicsCount: unifiedMetrics.srsOverdueTopicsCount,
-      absentExamsCount,
-      practicesCompletedCount: unifiedMetrics.practicesCompletedCount,
-      totalTopicsCount: unifiedMetrics.totalTopicsCount,
-      effortsPercent: unifiedMetrics.effortsPercent,
-      totalQuestionsPracticed: unifiedMetrics.totalQuestionsPracticed,
-      practiceAvgScore: unifiedMetrics.practiceAvg,
+      overallMastery: isLimited ? 0 : unifiedMetrics.overallMastery,
+      lqScore: isLimited ? 0 : unifiedMetrics.lqScore,
+      averageRetention: isLimited ? 0 : unifiedMetrics.averageRetention,
+      masteredTopics: isLimited ? 0 : unifiedMetrics.masteredTopicsCount,
+      needsAttentionTopics: isLimited ? 0 : unifiedMetrics.needsAttentionTopicsCount,
+      srsDueTopicsCount: isLimited ? 0 : unifiedMetrics.srsDueTopicsCount,
+      srsOverdueTopicsCount: isLimited ? 0 : unifiedMetrics.srsOverdueTopicsCount,
+      absentExamsCount: isLimited ? 0 : absentExamsCount,
+      practicesCompletedCount: isLimited ? 0 : unifiedMetrics.practicesCompletedCount,
+      totalTopicsCount: isLimited ? 0 : unifiedMetrics.totalTopicsCount,
+      effortsPercent: isLimited ? 0 : unifiedMetrics.effortsPercent,
+      totalQuestionsPracticed: isLimited ? 0 : unifiedMetrics.totalQuestionsPracticed,
+      practiceAvgScore: isLimited ? 0 : unifiedMetrics.practiceAvg,
       integrityScore: unifiedMetrics.integrityScore,
       name: userData.name || 'Student',
       studentCode,
-      autonomous: userData.autonomous || false,
+      autonomous: isLimited ? true : (userData.autonomous || false),
+      studentMode: isLimited ? 'limited' : studentMode,
       batchId: userData.batchId || null,
       batchIds: userData.batchIds || []
     };
@@ -983,8 +986,8 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
         pendingSelfReviews: pendingSelfReviewsList,
         pendingAbsences: pendingAbsencesList,
         peerReviews: {
-          count: peerReviewsCount,
-          firstExamId: firstPeerReviewExamId
+          count: isLimited ? 0 : peerReviewsCount,
+          firstExamId: isLimited ? null : firstPeerReviewExamId
         },
         exams: {
           pendingObjectiveExams,
@@ -993,8 +996,8 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
           scheduledSubjectiveExams,
           pendingEntranceExams,
           scheduledEntranceExams,
-          dailyHomePractices,
-          studyChips
+          dailyHomePractices: isLimited ? [] : dailyHomePractices,
+          studyChips: isLimited ? [] : studyChips
         }
       };
 

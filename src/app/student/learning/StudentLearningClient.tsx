@@ -67,6 +67,12 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
   const [localCache, setLocalCache] = useState<LearningPathData | null>(null);
 
   useEffect(() => {
+    if ((user as any)?.studentMode === 'limited' || (user as any)?.studentMode === 'restricted') {
+      router.replace('/student');
+    }
+  }, [user, router]);
+
+  useEffect(() => {
     try {
       const cached = localStorage.getItem('yc_student_learning_cache');
       if (cached) {

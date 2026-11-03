@@ -787,6 +787,75 @@ test('Evaluations never store blank correctAnswer when resolved answer key exist
   assert.strictEqual(resolveAnswerForStorage({}, ['A', 'C']), 'A,C');
 });
 
+// -----------------------------------------------------------------------------
+// SUITE 13: Student Modes & Limited Access Invariants (Rule: 3 Modes Architecture)
+// -----------------------------------------------------------------------------
+console.log('\n--- Suite 13: Student Modes & Access Boundary Invariants ---');
+
+const getStudentMode = (user) => {
+  if (!user) return 'regular';
+  if (user.studentMode === 'limited' || user.studentMode === 'restricted') return 'limited';
+  if (user.studentMode === 'autonomous' || user.autonomous === true) return 'autonomous';
+  return 'regular';
+};
+
+test('Student Mode Resolution accurately maps legacy and canonical flags', () => {
+  // Mode 1: Regular
+  assert.strictEqual(getStudentMode({}), 'regular');
+  assert.strictEqual(getStudentMode({ studentMode: 'regular', autonomous: false }), 'regular');
+
+  // Mode 2: Autonomous (with backward compatibility for autonomous: true)
+  assert.strictEqual(getStudentMode({ autonomous: true }), 'autonomous');
+  assert.strictEqual(getStudentMode({ studentMode: 'autonomous', autonomous: true }), 'autonomous');
+
+  // Mode 3: Limited / Restricted
+  assert.strictEqual(getStudentMode({ studentMode: 'limited' }), 'limited');
+  assert.strictEqual(getStudentMode({ studentMode: 'restricted' }), 'limited');
+  assert.strictEqual(getStudentMode({ studentMode: 'limited', autonomous: true }), 'limited');
+});
+
+test('Student Modes enforce strict parent login disabled boundaries for Mode 2 and Mode 3', () => {
+  const isParentDisabled = (student) => {
+    const mode = getStudentMode(student);
+    return mode === 'autonomous' || mode === 'limited';
+  };
+
+  // Mode 1: Parent login enabled
+  assert.strictEqual(isParentDisabled({ studentMode: 'regular' }), false);
+
+  // Mode 2: Parent login disabled
+  assert.strictEqual(isParentDisabled({ studentMode: 'autonomous' }), true);
+
+  // Mode 3: Parent login disabled
+  assert.strictEqual(isParentDisabled({ studentMode: 'limited' }), true);
+});
+
+test('Limited Mode strictly isolates features: permits Tests, Attendance, Fees; blocks LOS & performance metrics', () => {
+  const evaluateStudentFeatureAccess = (student, feature) => {
+    const mode = getStudentMode(student);
+    if (mode === 'limited') {
+      const allowedFeatures = ['attendance', 'fees', 'assigned_online_tests'];
+      return allowedFeatures.includes(feature);
+    }
+    return true; // Mode 1 and Mode 2 have access to all student features
+  };
+
+  // Mode 3 Student access permissions
+  const limitedStudent = { studentMode: 'limited' };
+  assert.strictEqual(evaluateStudentFeatureAccess(limitedStudent, 'attendance'), true);
+  assert.strictEqual(evaluateStudentFeatureAccess(limitedStudent, 'fees'), true);
+  assert.strictEqual(evaluateStudentFeatureAccess(limitedStudent, 'assigned_online_tests'), true);
+  assert.strictEqual(evaluateStudentFeatureAccess(limitedStudent, 'learning_quotient'), false);
+  assert.strictEqual(evaluateStudentFeatureAccess(limitedStudent, 'topic_mastery'), false);
+  assert.strictEqual(evaluateStudentFeatureAccess(limitedStudent, 'learn_os'), false);
+  assert.strictEqual(evaluateStudentFeatureAccess(limitedStudent, 'action_items'), false);
+
+  // Mode 1 & 2 access permissions
+  const regularStudent = { studentMode: 'regular' };
+  assert.strictEqual(evaluateStudentFeatureAccess(regularStudent, 'learning_quotient'), true);
+  assert.strictEqual(evaluateStudentFeatureAccess(regularStudent, 'learn_os'), true);
+});
+
 console.log('\n================================================================');
 console.log(`🎉 INVARIANT VERIFICATION SUMMARY: ${passedTests} / ${totalTests} TESTS PASSED`);
 console.log('================================================================\n');

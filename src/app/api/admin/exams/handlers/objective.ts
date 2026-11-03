@@ -306,6 +306,7 @@ export async function GET(req: NextRequest) {
         batchId: data.batchId || null,
         batchIds: data.batchIds || [],
         autonomous: data.autonomous || false,
+        studentMode: data.studentMode || (data.autonomous ? 'autonomous' : 'regular'),
         status: data.status || 'active',
         lastLoginAt: data.lastLoginAt ? (data.lastLoginAt.toDate ? data.lastLoginAt.toDate().toISOString() : new Date(data.lastLoginAt).toISOString()) : null,
         lastActiveAt: data.lastActiveAt ? (data.lastActiveAt.toDate ? data.lastActiveAt.toDate().toISOString() : new Date(data.lastActiveAt).toISOString()) : null

@@ -39,8 +39,15 @@ interface ResultSummaryItem {
 
 
 export default function StudentResults({ initialData }: { initialData?: { results: ResultSummaryItem[] } }) {
-  const { firebaseUser, logout } = useAuth();
+  const { firebaseUser, user, logout } = useAuth();
   const router = useRouter();
+
+  // Redirect Mode 3 / Limited students away from performance results
+  useEffect(() => {
+    if ((user as any)?.studentMode === 'limited' || (user as any)?.studentMode === 'restricted') {
+      router.replace('/student');
+    }
+  }, [user, router]);
 
   // Cache loading
   const [localCache, setLocalCache] = useState<{ results: ResultSummaryItem[] } | null>(null);

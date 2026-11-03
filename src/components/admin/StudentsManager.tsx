@@ -31,6 +31,7 @@ export default function StudentsManager() {
     dob: '',
     parentEmail: '',
     batchIds: [] as string[],
+    studentMode: 'regular' as 'regular' | 'autonomous' | 'limited',
     autonomous: false,
     curfewBypass: false,
     srsEnabled: false
@@ -46,10 +47,27 @@ export default function StudentsManager() {
   const [togglingAutonomousId, setTogglingAutonomousId] = useState<string | null>(null);
   const [sweepingAutonomous, setSweepingAutonomous] = useState(false);
 
-  const handleToggleAutonomous = async (studentId: string, studentName: string, currentAutonomous: boolean) => {
-    const nextAutonomous = !currentAutonomous;
-    const modeLabel = nextAutonomous ? 'Autonomous Mode (A)' : 'Regular Mode (R)';
-    if (!confirm(`Switch "${studentName}" to ${modeLabel}?\n\n${nextAutonomous ? '• Parent exam review requirements will be removed.\n• Linked parent account will be deactivated.' : '• Parent exam review requirements will be restored.\n• Linked parent account will be reactivated.'}`)) {
+  const handleCycleStudentMode = async (studentId: string, studentName: string, currentModeStr?: string, currentAutonomous?: boolean) => {
+    const currentMode = currentModeStr || (currentAutonomous ? 'autonomous' : 'regular');
+    let nextMode: 'regular' | 'autonomous' | 'limited' = 'regular';
+    let nextTitle = '';
+    let nextBulletPoints = '';
+
+    if (currentMode === 'regular') {
+      nextMode = 'autonomous';
+      nextTitle = 'Autonomous Mode (A)';
+      nextBulletPoints = '• Access to all student features\n• Parent login disabled (parental things removed)\n• Automatic review approvals';
+    } else if (currentMode === 'autonomous') {
+      nextMode = 'limited';
+      nextTitle = 'Limited Mode (L)';
+      nextBulletPoints = '• Student has limited access: Attendance, Fees & assigned Online Tests only\n• Performance matrix, LQ, Mastery & LOS cards removed\n• Parent login disabled';
+    } else {
+      nextMode = 'regular';
+      nextTitle = 'Regular Mode (R)';
+      nextBulletPoints = '• Access to all student features\n• Parent login enabled & active';
+    }
+
+    if (!confirm(`Switch "${studentName}" to ${nextTitle}?\n\n${nextBulletPoints}`)) {
       return;
     }
 
@@ -64,7 +82,10 @@ export default function StudentsManager() {
         },
         body: JSON.stringify({
           studentId,
-          updateData: { autonomous: nextAutonomous }
+          updateData: { 
+            studentMode: nextMode,
+            autonomous: nextMode !== 'regular'
+          }
         })
       });
       if (!res.ok) throw new Error('Failed to update student mode.');
@@ -209,12 +230,14 @@ export default function StudentsManager() {
 
   const handleOpenEditModal = (student: Student) => {
     setSelectedStudent(student);
+    const sMode = student.studentMode || (student.autonomous ? 'autonomous' : 'regular');
     setEditFormData({
       name: student.name || '',
       dob: formatToDDMMYYYY(student.dob) || '',
       parentEmail: student.parentEmail || '',
       batchIds: student.batchIds || [],
-      autonomous: student.autonomous || false,
+      studentMode: sMode,
+      autonomous: sMode !== 'regular',
       curfewBypass: student.curfewBypass || false,
       srsEnabled: student.srsEnabled || false
     });
@@ -236,7 +259,10 @@ export default function StudentsManager() {
         },
         body: JSON.stringify({
           studentId: selectedStudent.id,
-          updateData: editFormData
+          updateData: {
+            ...editFormData,
+            autonomous: editFormData.studentMode !== 'regular'
+          }
         })
       });
       if (!res.ok) throw new Error('Save edits failed.');
@@ -399,7 +425,12 @@ export default function StudentsManager() {
                           onClick={() => router.push(`/exam-register?studentCode=${s.studentCode}`)}
                           style={{ background: 'none', border: 'none', color: 'var(--accent)', fontWeight: 700, padding: 0, cursor: 'pointer', textAlign: 'left' }}
                         >
-                          {s.autonomous ? '⭐ ' : ''}{s.name || '—'}
+                          {(() => {
+                            const mode = s.studentMode || (s.autonomous ? 'autonomous' : 'regular');
+                            if (mode === 'autonomous') return '* ';
+                            if (mode === 'limited') return '◇ ';
+                            return '';
+                          })()}{s.name || '—'}
                         </button>
                       </td>
                       <td style={{ padding: '12px 16px', maxWidth: '170px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={s.email || ''}>
@@ -425,25 +456,39 @@ export default function StudentsManager() {
                       </td>
                       <td style={{ padding: '12px 16px', textAlign: 'right' }}>
                         <div style={{ display: 'flex', gap: '5px', justifyContent: 'flex-end', alignItems: 'center' }}>
-                          <button 
-                            className="btn btn-sm" 
-                            style={{ 
-                              padding: '3px 8px', 
-                              fontSize: '11px', 
-                              fontWeight: 800, 
-                              borderRadius: '4px',
-                              background: s.autonomous ? 'rgba(168, 85, 247, 0.16)' : 'var(--bg-soft)',
-                              color: s.autonomous ? 'var(--purple, #c084fc)' : 'var(--text-muted)',
-                              border: s.autonomous ? '1px solid rgba(168, 85, 247, 0.45)' : '1px solid var(--border-light)',
-                              cursor: 'pointer',
-                              whiteSpace: 'nowrap'
-                            }} 
-                            onClick={() => handleToggleAutonomous(s.id, s.name, !!s.autonomous)} 
-                            disabled={togglingAutonomousId === s.id}
-                            title={s.autonomous ? 'Autonomous Mode (A) - Click to switch to Regular (R)' : 'Regular Mode (R) - Click to switch to Autonomous (A)'}
-                          >
-                            {togglingAutonomousId === s.id ? '...' : (s.autonomous ? '⭐ A' : 'R')}
-                          </button>
+                          {(() => {
+                            const mode = s.studentMode || (s.autonomous ? 'autonomous' : 'regular');
+                            const isA = mode === 'autonomous';
+                            const isL = mode === 'limited';
+                            const letter = isA ? 'A' : (isL ? 'L' : 'R');
+                            const title = isA 
+                              ? 'Autonomous Mode (A) - Click to switch to Limited Mode (L)' 
+                              : (isL 
+                                ? 'Limited Mode (L) - Click to switch to Regular Mode (R)' 
+                                : 'Regular Mode (R) - Click to switch to Autonomous Mode (A)');
+
+                            return (
+                              <button 
+                                className="btn btn-sm" 
+                                style={{ 
+                                  padding: '3px 8px', 
+                                  fontSize: '11px', 
+                                  fontWeight: 800, 
+                                  borderRadius: '4px',
+                                  background: isA ? 'rgba(168, 85, 247, 0.16)' : (isL ? 'rgba(245, 158, 11, 0.16)' : 'var(--bg-soft)'),
+                                  color: isA ? 'var(--purple, #c084fc)' : (isL ? 'var(--warning, #f59e0b)' : 'var(--text-muted)'),
+                                  border: isA ? '1px solid rgba(168, 85, 247, 0.45)' : (isL ? '1px solid rgba(245, 158, 11, 0.45)' : '1px solid var(--border-light)'),
+                                  cursor: 'pointer',
+                                  whiteSpace: 'nowrap'
+                                }} 
+                                onClick={() => handleCycleStudentMode(s.id, s.name, s.studentMode, s.autonomous)} 
+                                disabled={togglingAutonomousId === s.id}
+                                title={title}
+                              >
+                                {togglingAutonomousId === s.id ? '...' : letter}
+                              </button>
+                            );
+                          })()}
                           <button className="btn btn-secondary btn-sm" style={{ padding: '3px 8px', fontSize: '11px' }} onClick={() => handleOpenViewModal(s)} title="View Student Info">View</button>
                           <button className="btn btn-secondary btn-sm" style={{ padding: '3px 8px', fontSize: '11px' }} onClick={() => handleOpenEditModal(s)} title="Edit Student Profile">Edit</button>
                           <button className="btn btn-secondary btn-sm" style={{ padding: '3px 8px', fontSize: '11px' }} onClick={() => handleOpenResetModal(s)} title="Send Password Reset Link">Reset Key</button>
@@ -474,7 +519,15 @@ export default function StudentsManager() {
               <div><strong>Parent Email:</strong> {selectedStudent.parentEmail || '—'}</div>
               <div><strong>Fee Status:</strong> <span className="badge badge-info">{selectedStudent.feeStatus || 'pending'}</span></div>
               <div><strong>Overall Mastery Index:</strong> {selectedStudent.overallMastery !== undefined ? `${Math.round(selectedStudent.overallMastery)}%` : '—'}</div>
-              <div><strong>Autonomous Mode:</strong> {selectedStudent.autonomous ? 'Yes' : 'No'}</div>
+              <div>
+                <strong>Student Mode:</strong>{' '}
+                {(() => {
+                  const mode = selectedStudent.studentMode || (selectedStudent.autonomous ? 'autonomous' : 'regular');
+                  if (mode === 'autonomous') return '* Autonomous (Mode 2 - Parent login disabled)';
+                  if (mode === 'limited') return '◇ Limited (Mode 3 - Tests, Attendance & Fees only)';
+                  return 'Regular (Mode 1 - Full features + Parent login enabled)';
+                })()}
+              </div>
               <div><strong>Sleep Curfew Bypass:</strong> {selectedStudent.curfewBypass ? 'Bypassed' : 'Normal Curfew (Default)'}</div>
               <div><strong>Presence State:</strong> {selectedStudent.presenceState ? (selectedStudent.presenceState === 'active' ? 'Active' : 'Idle/Away') : '—'}</div>
               <div><strong>Last Activity Time:</strong> {selectedStudent.lastActiveAt ? new Date(selectedStudent.lastActiveAt.seconds ? selectedStudent.lastActiveAt.seconds * 1000 : selectedStudent.lastActiveAt).toLocaleString() : '—'}</div>
@@ -613,20 +666,45 @@ export default function StudentsManager() {
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '10px', background: 'var(--bg-soft)', padding: '8px 12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)' }}>
-              <div className="form-group" style={{ margin: 0 }}>
-                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 800, cursor: 'pointer' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', background: 'var(--bg-soft)', padding: '10px 12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)' }}>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: 800, color: 'var(--text)' }}>
+                Student Mode / विद्यार्थी प्रकार:
+              </label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', cursor: 'pointer', fontWeight: editFormData.studentMode === 'regular' ? 700 : 500 }}>
                   <input 
-                    type="checkbox" 
-                    checked={editFormData.autonomous}
-                    onChange={(e) => setEditFormData(prev => ({ ...prev, autonomous: e.target.checked }))}
+                    type="radio" 
+                    name="editStudentModeRadio"
+                    value="regular"
+                    checked={editFormData.studentMode === 'regular'}
+                    onChange={() => setEditFormData(prev => ({ ...prev, studentMode: 'regular', autonomous: false }))}
                   />
-                  Autonomous Student Mode
+                  <span>🔵 <strong>Regular (R)</strong> — Full features with Parent login enabled</span>
                 </label>
-                <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginLeft: '18px', lineHeight: 1.2 }}>
-                  Removes parent exam review requirements and deactivates parent login.
-                </div>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', cursor: 'pointer', fontWeight: editFormData.studentMode === 'autonomous' ? 700 : 500 }}>
+                  <input 
+                    type="radio" 
+                    name="editStudentModeRadio"
+                    value="autonomous"
+                    checked={editFormData.studentMode === 'autonomous'}
+                    onChange={() => setEditFormData(prev => ({ ...prev, studentMode: 'autonomous', autonomous: true }))}
+                  />
+                  <span>🟣 <strong>* Autonomous (A)</strong> — Full features with Parent login disabled (auto-approved)</span>
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', cursor: 'pointer', fontWeight: editFormData.studentMode === 'limited' ? 700 : 500 }}>
+                  <input 
+                    type="radio" 
+                    name="editStudentModeRadio"
+                    value="limited"
+                    checked={editFormData.studentMode === 'limited'}
+                    onChange={() => setEditFormData(prev => ({ ...prev, studentMode: 'limited', autonomous: true }))}
+                  />
+                  <span>🟠 <strong>◇ Limited (L)</strong> — Attendance, Fees & Online Tests only (performance cards removed)</span>
+                </label>
               </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '10px', background: 'var(--bg-soft)', padding: '8px 12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-light)' }}>
 
               <div className="form-group" style={{ margin: 0 }}>
                 <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 800, cursor: 'pointer' }}>

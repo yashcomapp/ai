@@ -112,14 +112,6 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
     handleMarkNoticeAsSeen
   } = useNotices({ role: 'student', firebaseUser });
 
-  useEffect(() => {
-    if ((user as any)?.autonomous && examTab !== 'objective') {
-      setExamTab('objective');
-    }
-  }, [user, examTab]);
-
-
-
   const fetcher = createTokenFetcher(firebaseUser);
 
   const [localCache, setLocalCache] = useState<DashboardData | undefined>(() => {
@@ -152,6 +144,14 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
       fallbackData: initialData || localCache
     }
   );
+
+  const isLimited = (user as any)?.studentMode === 'limited' || (data?.profile as any)?.studentMode === 'limited';
+
+  useEffect(() => {
+    if (((user as any)?.autonomous || isLimited) && examTab !== 'objective') {
+      setExamTab('objective');
+    }
+  }, [user, isLimited, examTab]);
 
   // Live Clock Ticker: dynamically updates when scheduled exams reach startAt or late limits
   const [nowMs, setNowMs] = useState<number>(Date.now());
@@ -830,178 +830,202 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
               </div>
             )}
 
-            {/* CARD 1: Glance (Soothing Matte Card) */}
-            <div className="card card-blue" style={{
-              borderRadius: 'var(--radius)',
-              padding: '10px 12px',
-              marginBottom: '8px',
-              boxShadow: 'var(--shadow-sm)',
-              position: 'relative'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', flexWrap: 'nowrap', gap: '6px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <TrendingUp size={18} color="var(--info)" />
-                  <h3 style={{ fontSize: '14px', fontWeight: 800, margin: 0, color: 'var(--text)', lineHeight: 1.2, whiteSpace: 'nowrap' }}>Glance</h3>
+            {isLimited && (
+              <div style={{
+                borderRadius: 'var(--radius)',
+                padding: '12px 14px',
+                marginBottom: '8px',
+                background: 'rgba(245, 158, 11, 0.08)',
+                border: '1px solid rgba(245, 158, 11, 0.28)',
+                boxShadow: 'var(--shadow-sm)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px'
+              }}>
+                <span style={{ fontSize: '18px' }}>◇</span>
+                <div style={{ fontSize: '12px', color: 'var(--text)', lineHeight: 1.4 }}>
+                  <strong>Limited Mode Active:</strong> Welcome, <strong>{profile?.name || user?.name || 'Student'}</strong>! You can appear for your assigned online tests below, check attendance, and view fees.
                 </div>
-                {/* Interactive Time Range Filter Dropdown */}
-                <select
-                  className="glance-period-select"
-                  value={timeFilter}
-                  onChange={(e: any) => setTimeFilter(e.target.value)}
-                  style={{
-                    background: 'var(--surface-2)',
-                    color: 'var(--text)',
-                    fontSize: '11px',
-                    fontWeight: 600,
-                    padding: '3px 8px',
-                    borderRadius: 'var(--radius-pill)',
-                    border: '1px solid var(--border)',
-                    outline: 'none',
-                    cursor: 'pointer',
-                    width: 'auto',
-                    minWidth: '90px',
-                    maxWidth: '110px',
-                    flexShrink: 0
-                  }}
-                >
-                  <option value="overall">Overall</option>
-                  <option value="month">This Month</option>
-                  <option value="week">This Week</option>
-                </select>
               </div>
+            )}
 
-              {/* 3 Stats Grid */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', alignItems: 'center' }}>
-                {/* Stat 1: Avg Exam Marks (Click opens results page) */}
-                <div 
-                  onClick={() => router.push('/student/results')}
-                  style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', justifyContent: 'center', gap: '2px', cursor: 'pointer', background: 'var(--surface-2)', padding: '8px 4px', borderRadius: '10px', border: '1px solid var(--border)', transition: 'all 0.2s', boxShadow: 'var(--shadow-sm)' }}
-                  title="Click to view detailed exam results"
-                >
-                  <div style={{ fontSize: '1.55rem', fontWeight: 800, color: 'var(--info)', lineHeight: 1 }}>
-                    {resultsSummary?.examCount ? Math.round(resultsSummary.averageScore) : 0}%
+            {/* CARD 1 & CARD 2: Glance & Action Items (Removed in Limited Mode) */}
+            {!isLimited && (
+              <>
+                {/* CARD 1: Glance (Soothing Matte Card) */}
+                <div className="card card-blue" style={{
+                  borderRadius: 'var(--radius)',
+                  padding: '10px 12px',
+                  marginBottom: '8px',
+                  boxShadow: 'var(--shadow-sm)',
+                  position: 'relative'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', flexWrap: 'nowrap', gap: '6px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <TrendingUp size={18} color="var(--info)" />
+                      <h3 style={{ fontSize: '14px', fontWeight: 800, margin: 0, color: 'var(--text)', lineHeight: 1.2, whiteSpace: 'nowrap' }}>Glance</h3>
+                    </div>
+                    {/* Interactive Time Range Filter Dropdown */}
+                    <select
+                      className="glance-period-select"
+                      value={timeFilter}
+                      onChange={(e: any) => setTimeFilter(e.target.value)}
+                      style={{
+                        background: 'var(--surface-2)',
+                        color: 'var(--text)',
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        padding: '3px 8px',
+                        borderRadius: 'var(--radius-pill)',
+                        border: '1px solid var(--border)',
+                        outline: 'none',
+                        cursor: 'pointer',
+                        width: 'auto',
+                        minWidth: '90px',
+                        maxWidth: '110px',
+                        flexShrink: 0
+                      }}
+                    >
+                      <option value="overall">Overall</option>
+                      <option value="month">This Month</option>
+                      <option value="week">This Week</option>
+                    </select>
                   </div>
-                  <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 700 }}>
-                    Average Marks
+
+                  {/* 3 Stats Grid */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', alignItems: 'center' }}>
+                    {/* Stat 1: Avg Exam Marks (Click opens results page) */}
+                    <div 
+                      onClick={() => router.push('/student/results')}
+                      style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', justifyContent: 'center', gap: '2px', cursor: 'pointer', background: 'var(--surface-2)', padding: '8px 4px', borderRadius: '10px', border: '1px solid var(--border)', transition: 'all 0.2s', boxShadow: 'var(--shadow-sm)' }}
+                      title="Click to view detailed exam results"
+                    >
+                      <div style={{ fontSize: '1.55rem', fontWeight: 800, color: 'var(--info)', lineHeight: 1 }}>
+                        {resultsSummary?.examCount ? Math.round(resultsSummary.averageScore) : 0}%
+                      </div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 700 }}>
+                        Average Marks
+                      </div>
+                    </div>
+
+                    {/* Stat 2: LQ Score */}
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', justifyContent: 'center', gap: '2px', background: 'var(--surface-2)', padding: '8px 4px', borderRadius: '10px', border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
+                      <div style={{ fontSize: '1.55rem', fontWeight: 800, color: 'var(--success)', lineHeight: 1 }}>
+                        {Math.round((profile as any)?.lqScore ?? profile?.overallMastery ?? 0)}%
+                      </div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 700 }}>
+                        LQ Score
+                      </div>
+                      {Boolean((profile as any)?.srsEnabled) ? (
+                        <div style={{ fontSize: '9.5px', color: 'var(--text-secondary)', fontWeight: 600 }}>
+                          🧠 {(profile as any)?.averageRetention ?? 0}% Retention
+                        </div>
+                      ) : (
+                        <div style={{ fontSize: '9.5px', color: 'var(--text-secondary)', fontWeight: 600 }}>
+                          Mastery Index
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Stat 3: Efforts % */}
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', justifyContent: 'center', gap: '2px', background: 'var(--surface-2)', padding: '8px 4px', borderRadius: '10px', border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
+                      <div style={{ fontSize: '1.55rem', fontWeight: 800, color: 'var(--warning)', lineHeight: 1 }}>
+                        {Math.round((profile as any)?.effortsPercent ?? Math.min(100, Math.round((((profile as any)?.practicesCompletedCount || 0) / Math.max(1, (profile as any)?.totalTopicsCount || 24)) * 100)))}%
+                      </div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 700 }}>
+                        Efforts %
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                {/* Stat 2: LQ Score */}
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', justifyContent: 'center', gap: '2px', background: 'var(--surface-2)', padding: '8px 4px', borderRadius: '10px', border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
-                  <div style={{ fontSize: '1.55rem', fontWeight: 800, color: 'var(--success)', lineHeight: 1 }}>
-                    {Math.round((profile as any)?.lqScore ?? profile?.overallMastery ?? 0)}%
-                  </div>
-                  <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 700 }}>
-                    LQ Score
-                  </div>
-                  {Boolean((profile as any)?.srsEnabled) ? (
-                    <div style={{ fontSize: '9.5px', color: 'var(--text-secondary)', fontWeight: 600 }}>
-                      🧠 {(profile as any)?.averageRetention ?? 0}% Retention
+                {/* CARD 2: Action Needed / All Clear Ledger */}
+                <div className={hasActionItems ? "card card-amber" : "card card-emerald"} style={{
+                  borderRadius: 'var(--radius)',
+                  padding: '10px 12px',
+                  marginBottom: '8px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '6px'
+                }}>
+                  {/* Compact Header */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      {hasActionItems ? (
+                        <AlertTriangle size={18} color="var(--warning)" style={{ flexShrink: 0 }} />
+                      ) : (
+                        <CheckCircle2 size={18} color="var(--success)" style={{ flexShrink: 0 }} />
+                      )}
+                      <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 800, color: 'var(--text)', lineHeight: 1.2 }}>
+                        {hasActionItems 
+                          ? `${totalActionCount} Action Item(s) Need Attention` 
+                          : 'All Clear! You are fully on track!'}
+                      </h3>
                     </div>
-                  ) : (
-                    <div style={{ fontSize: '9.5px', color: 'var(--text-secondary)', fontWeight: 600 }}>
-                      Mastery Index
+                    {hasActionItems && allActionItems.length > 3 && (
+                      <span style={{
+                        fontSize: '11px',
+                        fontWeight: 800,
+                        padding: '2px 8px',
+                        borderRadius: '12px',
+                        background: 'var(--danger-bg)',
+                        color: 'var(--danger)',
+                        border: '1px solid var(--danger-border)',
+                        whiteSpace: 'nowrap'
+                      }}>
+                        Showing 3 of {allActionItems.length}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Default View: Up to 3 Action Items */}
+                  {hasActionItems && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      {allActionItems.slice(0, 3).map(item => renderActionItem(item, false))}
                     </div>
                   )}
-                </div>
 
-                {/* Stat 3: Efforts % */}
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', justifyContent: 'center', gap: '2px', background: 'var(--surface-2)', padding: '8px 4px', borderRadius: '10px', border: '1px solid var(--border)', boxShadow: 'var(--shadow-sm)' }}>
-                  <div style={{ fontSize: '1.55rem', fontWeight: 800, color: 'var(--warning)', lineHeight: 1 }}>
-                    {Math.round((profile as any)?.effortsPercent ?? Math.min(100, Math.round((((profile as any)?.practicesCompletedCount || 0) / Math.max(1, (profile as any)?.totalTopicsCount || 24)) * 100)))}%
-                  </div>
-                  <div style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 700 }}>
-                    Efforts %
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* CARD 2: Action Needed / All Clear Ledger */}
-            <div className={hasActionItems ? "card card-amber" : "card card-emerald"} style={{
-              borderRadius: 'var(--radius)',
-              padding: '10px 12px',
-              marginBottom: '8px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '6px'
-            }}>
-              {/* Compact Header */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  {hasActionItems ? (
-                    <AlertTriangle size={18} color="var(--warning)" style={{ flexShrink: 0 }} />
-                  ) : (
-                    <CheckCircle2 size={18} color="var(--success)" style={{ flexShrink: 0 }} />
+                  {/* RED HIGHLIGHTED BUTTON: VIEW MORE */}
+                  {allActionItems.length > 3 && (
+                    <button
+                      type="button"
+                      onClick={() => setShowAllActionsModal(true)}
+                      style={{
+                        width: '100%',
+                        padding: '9px 14px',
+                        marginTop: '4px',
+                        fontSize: '12px',
+                        fontWeight: 800,
+                        letterSpacing: '0.6px',
+                        textTransform: 'uppercase',
+                        color: '#ffffff',
+                        background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                        border: '1px solid #b91c1c',
+                        borderRadius: 'var(--radius-sm)',
+                        boxShadow: '0 2px 8px rgba(239, 68, 68, 0.4)',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px',
+                        transition: 'all 0.18s ease'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)';
+                        e.currentTarget.style.boxShadow = '0 4px 12px rgba(239, 68, 68, 0.55)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)';
+                        e.currentTarget.style.boxShadow = '0 2px 8px rgba(239, 68, 68, 0.4)';
+                      }}
+                    >
+                      <AlertTriangle size={15} color="#ffffff" />
+                      <span>VIEW MORE ({allActionItems.length - 3} MORE ACTION ITEMS)</span>
+                    </button>
                   )}
-                  <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 800, color: 'var(--text)', lineHeight: 1.2 }}>
-                    {hasActionItems 
-                      ? `${totalActionCount} Action Item(s) Need Attention` 
-                      : 'All Clear! You are fully on track!'}
-                  </h3>
                 </div>
-                {hasActionItems && allActionItems.length > 3 && (
-                  <span style={{
-                    fontSize: '11px',
-                    fontWeight: 800,
-                    padding: '2px 8px',
-                    borderRadius: '12px',
-                    background: 'var(--danger-bg)',
-                    color: 'var(--danger)',
-                    border: '1px solid var(--danger-border)',
-                    whiteSpace: 'nowrap'
-                  }}>
-                    Showing 3 of {allActionItems.length}
-                  </span>
-                )}
-              </div>
-
-              {/* Default View: Up to 3 Action Items */}
-              {hasActionItems && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  {allActionItems.slice(0, 3).map(item => renderActionItem(item, false))}
-                </div>
-              )}
-
-              {/* RED HIGHLIGHTED BUTTON: VIEW MORE */}
-              {allActionItems.length > 3 && (
-                <button
-                  type="button"
-                  onClick={() => setShowAllActionsModal(true)}
-                  style={{
-                    width: '100%',
-                    padding: '9px 14px',
-                    marginTop: '4px',
-                    fontSize: '12px',
-                    fontWeight: 800,
-                    letterSpacing: '0.6px',
-                    textTransform: 'uppercase',
-                    color: '#ffffff',
-                    background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-                    border: '1px solid #b91c1c',
-                    borderRadius: 'var(--radius-sm)',
-                    boxShadow: '0 2px 8px rgba(239, 68, 68, 0.4)',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px',
-                    transition: 'all 0.18s ease'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)';
-                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(239, 68, 68, 0.55)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)';
-                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(239, 68, 68, 0.4)';
-                  }}
-                >
-                  <AlertTriangle size={15} color="#ffffff" />
-                  <span>VIEW MORE ({allActionItems.length - 3} MORE ACTION ITEMS)</span>
-                </button>
-              )}
-            </div>
+              </>
+            )}
 
             {/* CARD 3: Quick Navigation Hotspot Grid */}
             <div className="card card-purple" style={{
@@ -1017,30 +1041,32 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
                 <Rocket size={18} color="var(--accent)" /> Quick Navigation
               </h3>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(70px, 1fr))', gap: '6px' }}>
-                {/* Hotspot 1: Learn OS */}
-                <div 
-                  onClick={() => { triggerNavStart(); router.push('/student/learning'); }}
-                  onMouseEnter={(e) => { router.prefetch('/student/learning'); e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'translateY(0)'; }}
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    padding: '8px 4px',
-                    background: 'var(--surface-2)',
-                    border: '1px solid var(--border)',
-                    borderRadius: 'var(--radius-sm)',
-                    cursor: 'pointer',
-                    textAlign: 'center',
-                    gap: '4px',
-                    transition: 'all 0.2s ease',
-                    boxShadow: 'var(--shadow-sm)'
-                  }}
-                >
-                  <GraduationCap size={24} color="var(--accent)" />
-                  <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text)' }}>Learn OS</span>
-                </div>
+                {/* Hotspot 1: Learn OS (Removed in Limited Mode) */}
+                {!isLimited && (
+                  <div 
+                    onClick={() => { triggerNavStart(); router.push('/student/learning'); }}
+                    onMouseEnter={(e) => { router.prefetch('/student/learning'); e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'translateY(0)'; }}
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '8px 4px',
+                      background: 'var(--surface-2)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 'var(--radius-sm)',
+                      cursor: 'pointer',
+                      textAlign: 'center',
+                      gap: '4px',
+                      transition: 'all 0.2s ease',
+                      boxShadow: 'var(--shadow-sm)'
+                    }}
+                  >
+                    <GraduationCap size={24} color="var(--accent)" />
+                    <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text)' }}>Learn OS</span>
+                  </div>
+                )}
 
                 {/* Hotspot 2: Attendance showing % */}
                 <div 
@@ -1170,13 +1196,15 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
               <FileText size={18} color="var(--primary)" />
               <h3 style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text)', margin: 0 }}>Exams & Review</h3>
             </div>
-            <div className="review-badge" style={{ background: 'var(--primary)', color: 'white', padding: '2px 8px', borderRadius: '20px', fontSize: '11px', fontWeight: 800, cursor: 'pointer' }}>
-              Pending: {resultsSummary?.pendingReviewCount || 0}
-            </div>
+            {!isLimited && (
+              <div className="review-badge" style={{ background: 'var(--primary)', color: 'white', padding: '2px 8px', borderRadius: '20px', fontSize: '11px', fontWeight: 800, cursor: 'pointer' }}>
+                Pending: {resultsSummary?.pendingReviewCount || 0}
+              </div>
+            )}
           </div>
 
           {/* Peer Review Container */}
-          {peerReviews.count > 0 && (
+          {!isLimited && peerReviews.count > 0 && (
             <div className="peer-review-link-container" style={{ display: 'block', padding: '6px 12px', borderBottom: '1px solid var(--border)', background: 'var(--success-bg)' }}>
               <a className="peer-review-link" onClick={() => handleGoToPeerReview(peerReviews.firstExamId)} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: 'var(--success)', fontSize: '12px', fontWeight: 700, textDecoration: 'none', cursor: 'pointer' }}>
                 <RotateCcw size={14} color="var(--success)" />
@@ -1188,7 +1216,7 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
           )}
 
           {/* Exam Tabs (Obj, Sub, Mock) */}
-          {(user as any)?.autonomous !== true ? (
+          {!isLimited && (user as any)?.autonomous !== true ? (
             <div className="exam-tabs" style={{ display: 'flex', borderBottom: '1px solid var(--border)', background: 'var(--surface-2)', padding: '6px 8px', gap: '6px' }}>
               <div 
                 className={`exam-tab ${examTab === 'objective' ? 'active' : ''}`} 
@@ -1413,8 +1441,9 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
           )}
         </div>
 
-        {/* Today's Study & Practice (Combined Card) */}
-        {((exams.studyChips && exams.studyChips.length > 0) || (exams.dailyHomePractices && exams.dailyHomePractices.length > 0)) ? (
+        {/* Today's Study & Practice (Removed in Limited Mode) */}
+        {!isLimited && (
+          ((exams.studyChips && exams.studyChips.length > 0) || (exams.dailyHomePractices && exams.dailyHomePractices.length > 0)) ? (
           <div className="card card-cyan" style={{ 
             borderRadius: 'var(--radius)', 
             padding: '10px 12px', 
@@ -1561,7 +1590,7 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
               🚀 Practice Topics
             </button>
           </div>
-        )}
+        ))}
 
             {/* Student Dashboard Footer with Account Status & Log Out */}
             <div style={{

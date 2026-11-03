@@ -452,7 +452,7 @@ export async function GET(req: NextRequest) {
           return { docs: Array.from(docMap.values()) };
         });
       } else {
-        studentsPromise = adminDb.collection('users').where('role', '==', 'student').select('studentCode', 'name', 'email', 'isDemo', 'rollNumber', 'batchIds', 'batchId', 'class', 'className', 'status').get();
+        studentsPromise = adminDb.collection('users').where('role', '==', 'student').select('studentCode', 'name', 'email', 'isDemo', 'rollNumber', 'batchIds', 'batchId', 'class', 'className', 'status', 'autonomous', 'studentMode').get();
       }
 
       const studentsList = await studentsPromise;
@@ -469,7 +469,9 @@ export async function GET(req: NextRequest) {
           batchId: data.batchId || null,
           class: data.class || data.className || '',
           className: data.className || data.class || '',
-          status: data.status || 'active'
+          status: data.status || 'active',
+          autonomous: !!data.autonomous,
+          studentMode: data.studentMode || (data.autonomous ? 'autonomous' : 'regular')
         };
       }).filter((s: any) => !!s.studentCode && s.status !== 'inactive' && !isDemoUser(s));
 
@@ -722,7 +724,7 @@ export async function GET(req: NextRequest) {
       adminDb.collection('exams').where('status', 'in', ['active', 'draft']).get(),
       adminDb.collection('subjectiveExams').where('status', 'in', ['active', 'draft']).get(),
       getCachedBatches(),
-      adminDb.collection('users').where('role', '==', 'student').select('studentCode', 'name', 'email', 'isDemo', 'rollNumber', 'batchIds', 'batchId', 'class', 'className', 'status').get(),
+      adminDb.collection('users').where('role', '==', 'student').select('studentCode', 'name', 'email', 'isDemo', 'rollNumber', 'batchIds', 'batchId', 'class', 'className', 'status', 'autonomous', 'studentMode').get(),
       includeParents 
         ? adminDb.collection('users').where('role', '==', 'parent').select('email', 'studentCode', 'studentCodes', 'name').get()
         : Promise.resolve({ docs: [] } as any)
@@ -744,7 +746,9 @@ export async function GET(req: NextRequest) {
         batchId: data.batchId || null,
         class: data.class || data.className || '',
         className: data.className || data.class || '',
-        status: data.status || 'active'
+        status: data.status || 'active',
+        autonomous: !!data.autonomous,
+        studentMode: data.studentMode || (data.autonomous ? 'autonomous' : 'regular')
       };
     }).filter(s => !!s.studentCode && s.status !== 'inactive' && !isDemoUser(s));
 

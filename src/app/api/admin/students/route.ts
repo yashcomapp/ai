@@ -114,6 +114,18 @@ export async function POST(request: Request) {
     delete cleanUpdates.role;
     cleanUpdates.updatedAt = new Date();
 
+    // Harmonize Student Mode & Autonomous Flag (Rule: Mode 2 & Mode 3 have parent login disabled)
+    if (cleanUpdates.studentMode !== undefined) {
+      if (cleanUpdates.studentMode === 'autonomous' || cleanUpdates.studentMode === 'limited') {
+        cleanUpdates.autonomous = true;
+      } else {
+        cleanUpdates.autonomous = false;
+        cleanUpdates.studentMode = 'regular';
+      }
+    } else if (cleanUpdates.autonomous !== undefined) {
+      cleanUpdates.studentMode = cleanUpdates.autonomous ? 'autonomous' : 'regular';
+    }
+
     const studentDocRef = adminDb.collection('users').doc(studentId);
     const studentSnap = await studentDocRef.get();
     const studentData = studentSnap.exists ? studentSnap.data() || {} : {};

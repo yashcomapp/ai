@@ -1,5 +1,14 @@
 export type UserRole = 'admin' | 'student' | 'parent';
 
+export type StudentMode = 'regular' | 'autonomous' | 'limited';
+
+export function getStudentMode(user: any): StudentMode {
+  if (!user) return 'regular';
+  if (user.studentMode === 'limited' || user.studentMode === 'restricted') return 'limited';
+  if (user.studentMode === 'autonomous' || user.autonomous === true) return 'autonomous';
+  return 'regular';
+}
+
 export interface User {
   id: string;
   name: string;
@@ -16,6 +25,8 @@ export interface User {
   studentCodes?: string[];
   studentName?: string;
   srsEnabled?: boolean;
+  autonomous?: boolean;
+  studentMode?: StudentMode;
   createdAt: any;
 }
 
@@ -96,6 +107,7 @@ export interface Registration {
   batchName: string;
   tempId: string;
   autonomous?: boolean;
+  studentMode?: StudentMode;
   status: 'pending' | 'approved' | 'rejected';
   password?: string;
   createdAt: any;
@@ -123,6 +135,7 @@ export interface Student {
   parentEmail?: string;
   srsEnabled?: boolean;
   autonomous?: boolean;
+  studentMode?: StudentMode;
   lastLoginAt?: string | null;
   lastActiveAt?: any;
   createdAt?: any;

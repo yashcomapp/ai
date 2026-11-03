@@ -25,38 +25,88 @@ export default function TargetPicker({
   onToggleStudent,
   getStudentsGroupedByBatch
 }: TargetPickerProps) {
+  const { grouped, unassigned } = getStudentsGroupedByBatch();
+  const allStudents = [
+    ...Object.values(grouped).flatMap(g => g.list),
+    ...unassigned
+  ];
+  // Deduplicate by studentCode
+  const uniqueStudents = Array.from(new Map(allStudents.map(s => [s.studentCode, s])).values());
+  const limitedStudents = uniqueStudents.filter(s => s.studentMode === 'limited' || s.studentMode === 'restricted');
+  const allLimitedSelected = limitedStudents.length > 0 && limitedStudents.every(s => selectedStudents.has(s.studentCode));
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-      <div>
-        <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px' }}>
-          Assign Target
-        </label>
-        <div style={{ display: 'flex', gap: '15px' }}>
-          <label style={{ fontSize: '12px', cursor: 'pointer' }}>
-            <input 
-              type="radio" 
-              name="targetTypePicker" 
-              checked={targetType === 'batch'} 
-              onChange={() => onChangeTargetType('batch')} 
-            /> 📦 Entire Batches
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+        <div>
+          <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px' }}>
+            Assign Target
           </label>
-          <label style={{ fontSize: '12px', cursor: 'pointer' }}>
-            <input 
-              type="radio" 
-              name="targetTypePicker" 
-              checked={targetType === 'student'} 
-              onChange={() => onChangeTargetType('student')} 
-            /> 👤 Individual Students
-          </label>
-          <label style={{ fontSize: '12px', cursor: 'pointer' }}>
-            <input 
-              type="radio" 
-              name="targetTypePicker" 
-              checked={targetType === 'mixed'} 
-              onChange={() => onChangeTargetType('mixed')} 
-            /> 🔀 Mixed (Batches + Students)
-          </label>
+          <div style={{ display: 'flex', gap: '15px' }}>
+            <label style={{ fontSize: '12px', cursor: 'pointer' }}>
+              <input 
+                type="radio" 
+                name="targetTypePicker" 
+                checked={targetType === 'batch'} 
+                onChange={() => onChangeTargetType('batch')} 
+              /> 📦 Entire Batches
+            </label>
+            <label style={{ fontSize: '12px', cursor: 'pointer' }}>
+              <input 
+                type="radio" 
+                name="targetTypePicker" 
+                checked={targetType === 'student'} 
+                onChange={() => onChangeTargetType('student')} 
+              /> 👤 Individual Students
+            </label>
+            <label style={{ fontSize: '12px', cursor: 'pointer' }}>
+              <input 
+                type="radio" 
+                name="targetTypePicker" 
+                checked={targetType === 'mixed'} 
+                onChange={() => onChangeTargetType('mixed')} 
+              /> 🔀 Mixed (Batches + Students)
+            </label>
+          </div>
         </div>
+
+        {/* Single Button to Target Mode 3 (Limited) Students */}
+        {limitedStudents.length > 0 && (
+          <button
+            type="button"
+            className="btn btn-sm"
+            onClick={() => {
+              if (targetType === 'batch') {
+                onChangeTargetType('student');
+              }
+              const shouldSelect = !allLimitedSelected;
+              limitedStudents.forEach(s => {
+                if (shouldSelect) {
+                  if (!selectedStudents.has(s.studentCode)) onToggleStudent(s.studentCode);
+                } else {
+                  if (selectedStudents.has(s.studentCode)) onToggleStudent(s.studentCode);
+                }
+              });
+            }}
+            style={{
+              padding: '4px 10px',
+              fontSize: '11px',
+              fontWeight: 800,
+              borderRadius: '6px',
+              background: allLimitedSelected ? 'var(--warning)' : 'rgba(245, 158, 11, 0.14)',
+              color: allLimitedSelected ? '#ffffff' : 'var(--warning, #d97706)',
+              border: '1px solid rgba(245, 158, 11, 0.45)',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px'
+            }}
+            title={allLimitedSelected ? 'Deselect all Mode 3 (Limited) students' : 'Select all Mode 3 (Limited) students'}
+          >
+            <span>◇</span>
+            <span>{allLimitedSelected ? 'Deselect' : 'Select'} Mode 3 Students ({limitedStudents.length})</span>
+          </button>
+        )}
       </div>
 
       {/* Batches selections */}
@@ -87,7 +137,6 @@ export default function TargetPicker({
           </label>
           <div style={{ maxHeight: '150px', overflowY: 'auto', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', padding: '5px' }}>
             {(() => {
-              const { grouped, unassigned } = getStudentsGroupedByBatch();
               const elements: React.ReactNode[] = [];
 
               Object.entries(grouped).forEach(([bid, group]) => {
@@ -98,13 +147,15 @@ export default function TargetPicker({
                   </div>
                 );
                 group.list.forEach(s => {
+                  const sMode = s.studentMode || (s.autonomous ? 'autonomous' : 'regular');
+                  const modePrefix = sMode === 'autonomous' ? '* ' : (sMode === 'limited' ? '◇ ' : '');
                   elements.push(
                     <label key={`${bid}-${s.studentCode}`} style={{ display: 'block', fontSize: '12px', padding: '2px 0', marginLeft: '12px', cursor: 'pointer' }}>
                       <input 
                         type="checkbox" 
                         checked={selectedStudents.has(s.studentCode)} 
                         onChange={() => onToggleStudent(s.studentCode)} 
-                      /> 👤 {s.name}
+                      /> 👤 {modePrefix}{s.name}
                     </label>
                   );
                 });
@@ -117,13 +168,15 @@ export default function TargetPicker({
                   </div>
                 );
                 unassigned.forEach(s => {
+                  const sMode = s.studentMode || (s.autonomous ? 'autonomous' : 'regular');
+                  const modePrefix = sMode === 'autonomous' ? '* ' : (sMode === 'limited' ? '◇ ' : '');
                   elements.push(
                     <label key={`unassigned-${s.studentCode}`} style={{ display: 'block', fontSize: '12px', padding: '2px 0', marginLeft: '12px', cursor: 'pointer' }}>
                       <input 
                         type="checkbox" 
                         checked={selectedStudents.has(s.studentCode)} 
                         onChange={() => onToggleStudent(s.studentCode)} 
-                      /> 👤 {s.name}
+                      /> 👤 {modePrefix}{s.name}
                     </label>
                   );
                 });
