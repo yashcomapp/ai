@@ -553,20 +553,7 @@
         }
       ]
     },
-    {
-      "collectionGroup": "liveClassrooms",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "status",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "startedAt",
-          "order": "DESCENDING"
-        }
-      ]
-    },
+
     {
       "collectionGroup": "systemFaults",
       "queryScope": "COLLECTION",

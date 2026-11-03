@@ -77,23 +77,7 @@ export async function runDailyMaintenanceOpportunistic(): Promise<DailyMaintenan
       stats.purge = { error: err.message };
     }
 
-    // 2. Targeted cleanup of expired liveClassTargets using indexed expiresAt <= now query
-    try {
-      const now = new Date();
-      const expiredTargetsSnap = await adminDb.collection('liveClassTargets')
-        .where('expiresAt', '<=', now)
-        .get();
 
-      const targetBatch = new ChunkedBatch(adminDb);
-      expiredTargetsSnap.docs.forEach(d => targetBatch.delete(d.ref));
-      if (expiredTargetsSnap.size > 0) {
-        await targetBatch.commit();
-      }
-      stats.expiredTargetsDeleted = expiredTargetsSnap.size;
-    } catch (err: any) {
-      console.error('[Daily Maintenance] Target cleanup error:', err);
-      stats.expiredTargetsDeleted = 0;
-    }
 
     // 3. Sweep autonomous exam reviews (evaluates parent reviews past review deadline)
     try {

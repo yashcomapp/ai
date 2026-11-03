@@ -13,7 +13,6 @@ import { triggerNavStart } from '@/components/NavigationProgressBar';
 
 const getAdminPageTitle = (pathname: string): string => {
   if (pathname === '/admin') return 'Dashboard';
-  if (pathname.startsWith('/admin/live-classroom')) return 'Live Classroom (Jitsi)';
   if (pathname.startsWith('/admin/exam-generator')) return 'Exam Generator';
   if (pathname.startsWith('/admin/exam-report')) return 'Exam Report';
   if (pathname.startsWith('/admin/classroom-test')) return 'Classroom Test & Suites';
@@ -51,7 +50,6 @@ interface SubmenuItem {
 
 const ADMIN_SUBMENUS: { [key: string]: SubmenuItem[] } = {
   exams: [
-    { icon: '🎥', en: 'Live Classroom', url: '/admin/live-classroom' },
     { icon: '📝', en: 'Create Exam', url: '/admin/exam-generator' },
     { icon: '📚', en: 'All Exams', url: '/admin/exams' },
     { icon: '🔴', en: 'Live Monitor', url: '/admin/live-exam-monitor' },

@@ -361,36 +361,7 @@ service cloud.firestore { match /databases/{database}/documents {
       allow write: if isAdmin();
     }
 
-    // ── liveClassTargets ───────────────────────────────────────
-    // Secure per-target live classroom access:
-    // Students can ONLY read their own targeted student doc or their enrolled batch docs.
-    // Prevents reading other batches, sessions, or student codes.
-    match /liveClassTargets/{docId} {
-      allow read: if isAuth() && (
-        isAdmin() ||
-        (isStudent() && (
-          // Allow listening even before document is created (resource == null)
-          resource == null ||
-          // When live, allow reading only if student is target student or in target batch
-          (
-            resource.data.status == 'live' &&
-            request.time < resource.data.expiresAt &&
-            (
-              (resource.data.targetType == 'student' && resource.data.targetId == myStudentCode()) ||
-              (resource.data.targetType == 'batch' && (
-                ('batchIds' in token())
-                  ? token().batchIds.hasAny([resource.data.targetId])
-                  : (exists(/databases/$(database)/documents/users/$(uid())) && (
-                      ('batchIds' in userDoc() && userDoc().batchIds.hasAny([resource.data.targetId])) ||
-                      ('batchId' in userDoc() && userDoc().batchId == resource.data.targetId)
-                    ))
-              ))
-            )
-          )
-        ))
-      );
-      allow write: if isAdmin();
-    }
+
 
     // ── examCounters ──────────────────────────────────────────
     match /examCounters/{docId} {
