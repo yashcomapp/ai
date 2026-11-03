@@ -30,7 +30,8 @@ function getClaimsHash(userData: any): string {
         ? userData.batchIds.filter(Boolean)
         : (userData.batchId ? [userData.batchId] : [])
     ).map(String).sort().join(',');
-    subKey = `b:${batches}`;
+    const mode = getStudentMode(userData);
+    subKey = `b:${batches}|m:${mode}`;
   } else if (role === 'parent') {
     const codes = (
       Array.isArray(userData.studentCodes)
@@ -71,6 +72,7 @@ export async function syncUserCustomClaims(uid: string, userData: any, revokeTok
     claims.batchIds = Array.isArray(userData.batchIds)
       ? userData.batchIds.filter(Boolean)
       : (userData.batchId ? [userData.batchId] : []);
+    claims.studentMode = getStudentMode(userData);
   } else if (role === 'parent') {
     claims.studentCodes = Array.isArray(userData.studentCodes)
       ? userData.studentCodes.filter(Boolean)
@@ -120,7 +122,7 @@ export function areClaimsEqual(decodedToken: any, userData: any): boolean {
 
   if (userRole === 'student') {
     const userMode = getStudentMode(userData);
-    const tokenMode = decodedToken.studentMode || (decodedToken.autonomous ? 'autonomous' : 'regular');
+    const tokenMode = getStudentMode(decodedToken);
     if (tokenMode !== userMode) return false;
     const userBatchIds: string[] = (
       Array.isArray(userData.batchIds)

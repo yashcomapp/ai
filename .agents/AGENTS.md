@@ -218,7 +218,8 @@
      - Never use ad-hoc inline checks (`studentMode === 'limited'`, `autonomous !== true`, or custom string matching).
      - Always use canonical helper functions from `src/types/` and `src/lib/`:
        - `getStudentMode(user)` (resolves `'regular' | 'autonomous' | 'limited'`).
-       - `getStudentModeSymbol(user)`, `getStudentModePrefix(user)`, `getStudentModeSuffix(user)`.
+       - `getStudentModeSuffix(user)`.
+       - `resolveRegistrationMode(regData, isAutonomous)`.
        - `isStudentLimited(caller)`.
        - `resolveParentStudentCodes(parentData)`.
        - `calculateAttendanceSummary(...)`.

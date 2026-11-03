@@ -891,16 +891,12 @@ test('API Endpoint access control strictly rejects Limited Mode from learning, r
   assert.strictEqual(isApiAllowedForStudent(regularStudent, 'submitReview'), true);
 });
 
-test('Student Mode UI Symbols strictly enforce * for Autonomous, ◇ for Limited, and empty for Regular', () => {
+test('Student Mode UI Suffix strictly enforces * for Autonomous, ◇ for Limited, and empty for Regular', () => {
   function getStudentModeSymbol(user) {
     const mode = getStudentMode(user);
     if (mode === 'autonomous') return '*';
     if (mode === 'limited') return '◇';
     return '';
-  }
-  function getStudentModePrefix(user) {
-    const sym = getStudentModeSymbol(user);
-    return sym ? `${sym} ` : '';
   }
   function getStudentModeSuffix(user) {
     const sym = getStudentModeSymbol(user);
@@ -910,19 +906,16 @@ test('Student Mode UI Symbols strictly enforce * for Autonomous, ◇ for Limited
   // Autonomous mode
   assert.strictEqual(getStudentModeSymbol({ studentMode: 'autonomous' }), '*');
   assert.strictEqual(getStudentModeSymbol({ autonomous: true }), '*');
-  assert.strictEqual(getStudentModePrefix({ autonomous: true }), '* ');
   assert.strictEqual(getStudentModeSuffix({ autonomous: true }), ' *');
 
   // Limited mode
   assert.strictEqual(getStudentModeSymbol({ studentMode: 'limited' }), '◇');
   assert.strictEqual(getStudentModeSymbol({ studentMode: 'restricted' }), '◇');
-  assert.strictEqual(getStudentModePrefix({ studentMode: 'limited' }), '◇ ');
   assert.strictEqual(getStudentModeSuffix({ studentMode: 'limited' }), ' ◇');
 
   // Regular mode
   assert.strictEqual(getStudentModeSymbol({ studentMode: 'regular' }), '');
   assert.strictEqual(getStudentModeSymbol({}), '');
-  assert.strictEqual(getStudentModePrefix({ studentMode: 'regular' }), '');
   assert.strictEqual(getStudentModeSuffix({ studentMode: 'regular' }), '');
 });
 
@@ -988,6 +981,98 @@ test('Parent studentCodes array is SSOT; leftover legacy studentCode is ignored 
   };
   const res3 = resolveParentCodesPure(parent3);
   assert.deepStrictEqual(res3, ['ST-2026-000055']);
+});
+
+console.log('\n--- Suite 15: Auth Claims & Firestore Rules Read Optimization ---');
+
+test('Claims builder and equality check strictly sync studentMode for all 3 modes', () => {
+  function buildStudentClaims(userData) {
+    const role = (userData.role || '').toLowerCase();
+    const claims = {
+      role,
+      status: userData.status || 'active',
+      studentCode: userData.studentCode || null
+    };
+    if (role === 'student') {
+      claims.batchIds = Array.isArray(userData.batchIds)
+        ? userData.batchIds.filter(Boolean)
+        : (userData.batchId ? [userData.batchId] : []);
+      claims.studentMode = getStudentMode(userData);
+    }
+    return claims;
+  }
+
+  function checkClaimsEqual(tokenClaims, userDoc) {
+    const userRole = (userDoc.role || '').toLowerCase();
+    const tokenRole = (tokenClaims.role || '').toLowerCase();
+    if (tokenRole !== userRole) return false;
+    if (userRole === 'student') {
+      const userMode = getStudentMode(userDoc);
+      const tokenMode = getStudentMode(tokenClaims);
+      if (tokenMode !== userMode) return false;
+    }
+    return true;
+  }
+
+  // 1. Regular student
+  const regDoc = { role: 'student', studentMode: 'regular' };
+  const regClaims = buildStudentClaims(regDoc);
+  assert.strictEqual(regClaims.studentMode, 'regular');
+  assert.strictEqual(checkClaimsEqual(regClaims, regDoc), true);
+
+  // 2. Autonomous student
+  const autoDoc = { role: 'student', studentMode: 'autonomous', autonomous: true };
+  const autoClaims = buildStudentClaims(autoDoc);
+  assert.strictEqual(autoClaims.studentMode, 'autonomous');
+  assert.strictEqual(checkClaimsEqual(autoClaims, autoDoc), true);
+
+  // 3. Limited student
+  const limDoc = { role: 'student', studentMode: 'limited' };
+  const limClaims = buildStudentClaims(limDoc);
+  assert.strictEqual(limClaims.studentMode, 'limited');
+  assert.strictEqual(checkClaimsEqual(limClaims, limDoc), true);
+
+  // Mismatch triggers token refresh
+  assert.strictEqual(checkClaimsEqual({ role: 'student', studentMode: 'regular' }, limDoc), false);
+});
+
+test('Firestore rules ternary logic avoids document reads when studentMode claim exists', () => {
+  let docReadCount = 0;
+  function mockGetDoc() {
+    docReadCount++;
+    return { studentMode: 'limited' };
+  }
+
+  function evalIsLimitedStudent(token) {
+    // Ternary expression as in firestore.rules
+    return ('studentMode' in token)
+      ? (token.studentMode === 'limited' || token.studentMode === 'restricted')
+      : (mockGetDoc().studentMode === 'limited');
+  }
+
+  // Token has studentMode claim -> zero document reads
+  docReadCount = 0;
+  assert.strictEqual(evalIsLimitedStudent({ studentMode: 'regular' }), false);
+  assert.strictEqual(docReadCount, 0, 'Must NOT read document when claim is present');
+
+  assert.strictEqual(evalIsLimitedStudent({ studentMode: 'limited' }), true);
+  assert.strictEqual(docReadCount, 0, 'Must NOT read document when claim is present');
+
+  // Token lacks studentMode claim -> fallback document read
+  assert.strictEqual(evalIsLimitedStudent({}), true);
+  assert.strictEqual(docReadCount, 1, 'Evaluates document read fallback only when claim is missing');
+});
+
+test('Registration mode helper accurately resolves autonomous and studentMode flags', () => {
+  function resolveRegistrationMode(regData, isAutonomous) {
+    return regData?.studentMode ? getStudentMode(regData) : (isAutonomous ? 'autonomous' : 'regular');
+  }
+
+  assert.strictEqual(resolveRegistrationMode({ studentMode: 'limited' }, false), 'limited');
+  assert.strictEqual(resolveRegistrationMode({ studentMode: 'restricted' }, false), 'limited');
+  assert.strictEqual(resolveRegistrationMode({ studentMode: 'autonomous' }, false), 'autonomous');
+  assert.strictEqual(resolveRegistrationMode({}, true), 'autonomous');
+  assert.strictEqual(resolveRegistrationMode({}, false), 'regular');
 });
 
 console.log('\n================================================================');

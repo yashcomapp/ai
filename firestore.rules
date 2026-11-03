@@ -20,8 +20,9 @@ service cloud.firestore { match /databases/{database}/documents {
     function isStudent() { return isAuth() && userRole() == 'student'; }
     function isLimitedStudent() {
       return isStudent() && (
-        ('studentMode' in token() && (token().studentMode == 'limited' || token().studentMode == 'restricted')) ||
-        (exists(/databases/$(database)/documents/users/$(uid())) && (userDoc().studentMode == 'limited' || userDoc().studentMode == 'restricted'))
+        ('studentMode' in token())
+          ? (token().studentMode == 'limited' || token().studentMode == 'restricted')
+          : (exists(/databases/$(database)/documents/users/$(uid())) && (userDoc().studentMode == 'limited' || userDoc().studentMode == 'restricted'))
       );
     }
     function isParent()  { return isAuth() && userRole() == 'parent'; }
