@@ -43,6 +43,7 @@ export class PracticeService {
       case 'needsAttention':
         return { new: 70, wrong: 30, correct: 0 };
       case 'continuePractice':
+      case 'practicing':
         return { new: 50, wrong: 50, correct: 0 };
       case 'revision':
         return { new: 20, wrong: 0, correct: 80 };

@@ -228,7 +228,7 @@ export default function TopicStatusBreakdownModal({
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {list.map((t, idx) => {
                   const isMastered = t.state === 'mastered';
-                  const isPracticing = t.state === 'continuePractice' || t.state === 'revision';
+                  const isPracticing = t.state === 'practicing' || t.state === 'continuePractice' || t.state === 'revision';
                   const statusColor = isMastered ? 'var(--success)' : isPracticing ? 'var(--warning)' : 'var(--danger)';
                   const statusBg = isMastered ? 'rgba(16,185,129,0.06)' : isPracticing ? 'rgba(245,158,11,0.06)' : 'rgba(239,68,68,0.06)';
                   const statusBorder = isMastered ? 'rgba(16,185,129,0.25)' : isPracticing ? 'rgba(245,158,11,0.25)' : 'rgba(239,68,68,0.25)';

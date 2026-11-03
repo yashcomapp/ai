@@ -52,6 +52,7 @@ interface StudentLearningTopicItem {
     stageLabel: string;
   };
   practiceQuestionsAttempted?: number;
+  questionsAttempted?: number;
 }
 
 interface LearningPathData {
@@ -687,7 +688,7 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                                           const confidence = Math.round(topic.confidence);
                                           const masteryClass = getMasteryClass(mastery);
                                           const actionText = getActionText(topic.state);
-                                          const attempts = topic.attempts || 0;
+                                          const attempts = Number(topic.attempts || topic.confidence || topic.questionsAttempted || 0);
                                           const isAbsent = !!topic.isAbsentExam;
                                           const state = topic.state;
 
@@ -695,9 +696,8 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                                            let expColor = 'var(--text-muted)';
                                            let expText = '';
                                            const practiceCount = topic.practiceCount || 0;
-                                           const rawScope = String(topic.topicClassification || '').toLowerCase().trim();
-                                           const isMinorTopic = rawScope === 'minor' || rawScope === 'micro' || (topic.targetQuestions !== undefined && topic.targetQuestions <= 20);
-                                           const maxPractices = isMinorTopic ? 2 : 3;
+                                           const reqConf = topic.requiredConfidence || getRequiredConfidence(topic.topicClassification, topic.targetQuestions);
+                                           const maxPractices = Math.ceil(reqConf / 6);
                                            const isLimitReached = practiceCount >= maxPractices;
 
                                            if (state === 'needsAttention') {
@@ -718,8 +718,7 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                                                expColor = 'var(--danger)';
                                                expText = `${practiceCount}/${maxPractices} practices done (${mastery}% accuracy). ${Math.max(0, maxPractices - practiceCount)} practice(s) left — focus on weak areas.`;
                                              }
-                                           } else if (state === 'continuePractice') {
-                                             const reqConf = topic.requiredConfidence || getRequiredConfidence(topic.topicClassification, topic.targetQuestions);
+                                           } else if (state === 'practicing' || state === 'continuePractice' || state === 'revision') {
                                              if (mastery >= MASTERY_THRESHOLDS.MASTERED_MIN && attempts < reqConf) {
                                                const needed = Math.max(1, reqConf - attempts);
                                                expIcon = '📖';
@@ -734,11 +733,15 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                                                expColor = 'var(--warning)';
                                                expText = `${practiceCount}/${maxPractices} practices done (${mastery}% accuracy). Complete 1 practice set (6 Qs) to aim for ${MASTERY_THRESHOLDS.MASTERED_MIN}%+ Mastered.`;
                                              }
-                                           } else {
+                                           } else if (state === 'mastered') {
                                               expIcon = '⭐';
                                               expColor = 'var(--success)';
                                               expText = `Mastered (${mastery}% accuracy across ${attempts} verified questions). Concept complete.`;
-                                            }
+                                           } else {
+                                              expIcon = '⚪';
+                                              expColor = 'var(--text-muted)';
+                                              expText = `${mastery}% accuracy across ${attempts} verified questions.`;
+                                           }
 
                                           const isMasteredState = state === 'mastered';
                                           const targetUrl = `/student/topic?topicCode=${encodeURIComponent(topic.topicCode)}&category=${topic.state}`;
@@ -777,10 +780,10 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                                                       color: (topic.topicClassification === 'minor' || topic.topicClassification === 'micro') ? 'var(--success)' : (topic.topicClassification === 'major' || topic.topicClassification === 'calculative' || topic.topicClassification === 'hots') ? 'var(--danger)' : 'var(--info)',
                                                       border: `1px solid ${(topic.topicClassification === 'minor' || topic.topicClassification === 'micro') ? 'rgba(52, 211, 153, 0.3)' : (topic.topicClassification === 'major' || topic.topicClassification === 'calculative' || topic.topicClassification === 'hots') ? 'rgba(248, 113, 113, 0.3)' : 'rgba(56, 189, 248, 0.3)'}`
                                                     }}>
-                                                      {(topic.topicClassification === 'minor' || topic.topicClassification === 'micro') && '📘 Minor (6 Qs • Max 2 Sets)'}
-                                                      {(topic.topicClassification === 'medium' || topic.topicClassification === 'moderate' || topic.topicClassification === 'conceptual') && '📙 Medium (10 Qs • Max 3 Sets)'}
-                                                      {(topic.topicClassification === 'major' || topic.topicClassification === 'calculative' || topic.topicClassification === 'hots') && '📕 Major (15 Qs • Max 3 Sets)'}
-                                                      {topic.topicClassification !== 'minor' && topic.topicClassification !== 'micro' && topic.topicClassification !== 'medium' && topic.topicClassification !== 'moderate' && topic.topicClassification !== 'conceptual' && topic.topicClassification !== 'major' && topic.topicClassification !== 'calculative' && topic.topicClassification !== 'hots' && '📙 Standard (10 Qs • Max 3 Sets)'}
+                                                      {(topic.topicClassification === 'minor' || topic.topicClassification === 'micro') && '📘 Minor (Target: 12 Qs • Max 2 Sets)'}
+                                                      {(topic.topicClassification === 'medium' || topic.topicClassification === 'moderate' || topic.topicClassification === 'conceptual') && '📙 Medium (Target: 18 Qs • Max 3 Sets)'}
+                                                      {(topic.topicClassification === 'major' || topic.topicClassification === 'calculative' || topic.topicClassification === 'hots') && '📕 Major (Target: 24 Qs • Max 4 Sets)'}
+                                                      {topic.topicClassification !== 'minor' && topic.topicClassification !== 'micro' && topic.topicClassification !== 'medium' && topic.topicClassification !== 'moderate' && topic.topicClassification !== 'conceptual' && topic.topicClassification !== 'major' && topic.topicClassification !== 'calculative' && topic.topicClassification !== 'hots' && '📙 Standard (Target: 18 Qs • Max 3 Sets)'}
                                                     </span>
                                                   )}
                                                   {isAbsent && (

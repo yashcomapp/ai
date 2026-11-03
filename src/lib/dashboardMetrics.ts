@@ -317,7 +317,14 @@ export function classifyAssignedTopics(input: ClassifyAssignedTopicsInput): Clas
 
     const mastery = mData?.hasOwnProperty('mastery') ? Number(mData.mastery || 0) : 0;
     const confidence = mData?.hasOwnProperty('confidence') ? Number(mData.confidence || 0) : 0;
-    const attempts = Number(mData?.attempts || mData?.attemptCount || mData?.totalAttempts || 0);
+    const attempts = Number(
+      mData?.attempts ?? 
+      mData?.attemptCount ?? 
+      mData?.totalAttempts ?? 
+      mData?.questionsAttempted ?? 
+      mData?.confidence ?? 
+      0
+    );
     const hasPracticed = Boolean(
       mData && (
         confidence > 0 ||
