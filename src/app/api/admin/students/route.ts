@@ -164,9 +164,14 @@ export async function POST(request: Request) {
         .get()
         .catch(() => ({ docs: [] } as any));
       for (const oldDoc of oldParentSnaps.docs) {
-        await oldDoc.ref.update({
+        const oldData = oldDoc.data();
+        const updates: any = {
           studentCodes: FieldValue.arrayRemove(studentCode)
-        });
+        };
+        if (oldData.studentCode === studentCode) {
+          updates.studentCode = FieldValue.delete();
+        }
+        await oldDoc.ref.update(updates);
         invalidateUserCache(oldDoc.id);
       }
       invalidateParentDeactCache(oldParentEmail);
@@ -200,6 +205,18 @@ export async function POST(request: Request) {
       for (const pDoc of parentUserDocs) {
         const pData = pDoc.data() || {};
         invalidateUserCache(pDoc.id);
+
+        // If this parent does not match the new parent email, ensure studentCode and legacy studentCode are removed
+        if (studentCode && newParentEmail && pData.email?.toLowerCase() !== newParentEmail) {
+          const updates: any = {
+            studentCodes: FieldValue.arrayRemove(studentCode)
+          };
+          if (pData.studentCode === studentCode) {
+            updates.studentCode = FieldValue.delete();
+          }
+          await pDoc.ref.update(updates);
+          continue;
+        }
 
         // SSOT Linking Guarantee: Ensure studentCode is registered in parent's studentCodes array
         if (studentCode && pData.email?.toLowerCase() === newParentEmail) {
@@ -316,16 +333,33 @@ export async function DELETE(request: Request) {
       reviewsSnap.docs.forEach(doc => {
         batch.delete(doc.ref);
       });
-      // 4. Clean up studentCode from any linked parent accounts
-      const parentSnaps = await adminDb.collection('users')
-        .where('role', '==', 'parent')
-        .where('studentCodes', 'array-contains', studentCode)
-        .get()
-        .catch(() => ({ docs: [] } as any));
-      parentSnaps.docs.forEach((pDoc: any) => {
-        batch.update(pDoc.ref, {
-          studentCodes: FieldValue.arrayRemove(studentCode)
-        });
+      // 4. Clean up studentCode and studentCodes from any linked parent accounts
+      const [parentSnapsByArray, parentSnapsByCode] = await Promise.all([
+        adminDb.collection('users')
+          .where('role', '==', 'parent')
+          .where('studentCodes', 'array-contains', studentCode)
+          .get()
+          .catch(() => ({ docs: [] } as any)),
+        adminDb.collection('users')
+          .where('role', '==', 'parent')
+          .where('studentCode', '==', studentCode)
+          .get()
+          .catch(() => ({ docs: [] } as any))
+      ]);
+
+      const seenParentDocIds = new Set<string>();
+      [...parentSnapsByArray.docs, ...parentSnapsByCode.docs].forEach((pDoc: any) => {
+        if (!seenParentDocIds.has(pDoc.id)) {
+          seenParentDocIds.add(pDoc.id);
+          const pData = pDoc.data();
+          const updates: any = {
+            studentCodes: FieldValue.arrayRemove(studentCode)
+          };
+          if (pData.studentCode === studentCode) {
+            updates.studentCode = FieldValue.delete();
+          }
+          batch.update(pDoc.ref, updates);
+        }
       });
     }
     

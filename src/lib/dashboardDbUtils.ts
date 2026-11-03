@@ -148,11 +148,10 @@ export async function resolveParentStudentCodes(parentData: any): Promise<string
         studentCodes.push(code);
       }
     });
-  }
-  if (typeof parentData?.studentCode === 'string' && parentData.studentCode.startsWith('ST-')) {
-    if (!studentCodes.includes(parentData.studentCode)) {
-      studentCodes.push(parentData.studentCode);
-    }
+  } else if (typeof parentData?.studentCode === 'string' && parentData.studentCode.startsWith('ST-')) {
+    // Only fall back to legacy single studentCode if studentCodes array was never initialized on this parent doc.
+    // If studentCodes exists (even if empty []), it is the SSOT and leftover legacy studentCode is ignored.
+    studentCodes.push(parentData.studentCode);
   }
 
   const parentEmail = parentData?.email?.toLowerCase();

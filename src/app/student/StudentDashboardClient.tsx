@@ -466,13 +466,26 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
       subscribeTargets();
     }
 
+    let detachTimer: NodeJS.Timeout | null = null;
+
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        subscribeTargets();
+        if (detachTimer) {
+          clearTimeout(detachTimer);
+          detachTimer = null;
+        }
+        if (unsubs.length === 0) {
+          subscribeTargets();
+        }
         evaluateActiveSession();
       } else {
-        unsubs.forEach(u => u());
-        unsubs.length = 0;
+        if (!detachTimer) {
+          detachTimer = setTimeout(() => {
+            unsubs.forEach(u => u());
+            unsubs.length = 0;
+            detachTimer = null;
+          }, 180000); // 3-minute grace period before detachment
+        }
       }
     };
 
@@ -482,6 +495,7 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
 
     return () => {
       if (autoExpiryTimer) clearTimeout(autoExpiryTimer);
+      if (detachTimer) clearTimeout(detachTimer);
       if (typeof document !== 'undefined') {
         document.removeEventListener('visibilitychange', handleVisibilityChange);
       }

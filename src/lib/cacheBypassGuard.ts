@@ -15,6 +15,8 @@ const BYPASS_COOLDOWN_MS = 15000; // 15 seconds cooldown per user
  *      to protect against cache evasion and Firestore read spikes.
  * 2. Rate-Limiting: A user can only bypass the server cache once every 15 seconds.
  *    Subsequent requests within the cooldown window will safely use the server cache.
+ *    (Uses zero-overhead in-memory TTL to strictly honor Rule 2.U zero-cost cloud invariants
+ *    without incurring paid external Redis clusters or burning billable Firestore writes).
  */
 export function shouldBypassCache(req: NextRequest, userUidOrKey: string): boolean {
   if (!userUidOrKey) return false;

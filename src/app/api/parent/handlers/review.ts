@@ -273,6 +273,7 @@ export async function GET(req: NextRequest) {
 
     // Batch query syllabusTopicIndex via unified fetchTopicIndexByCodes
     const syllabusMap = await fetchTopicIndexByCodes(Array.from(allTopicCodes));
+    const pendingAutoHeals: Promise<any>[] = [];
     // 1. Map Objective reviews
     const allObjectiveMapped = objSnaps.docs
       .map(doc => {
@@ -318,7 +319,7 @@ export async function GET(req: NextRequest) {
         
         // Auto-heal status in Firestore if parent evaluation exists but review status is not approved
         if (isReviewed && data.status !== 'approved') {
-          adminDb.collection('reviews').doc(doc.id).update({ status: 'approved' }).catch(() => null);
+          pendingAutoHeals.push(adminDb.collection('reviews').doc(doc.id).update({ status: 'approved' }).catch(() => null));
         }
 
         const resolvedActor = data.reviewedByActor || evalMap.get(doc.id)?.reviewedByActor || (isReviewed ? 'parent' : null);
@@ -394,6 +395,8 @@ export async function GET(req: NextRequest) {
       const updatedIso = safeDateToISO(data.updatedAt);
       const rawTimestamp = safeDateToTimestamp(data.startedAt) || safeDateToTimestamp(data.createdAt) || safeDateToTimestamp(data.updatedAt);
 
+      const scoreMetrics = deriveScoreMetrics(data);
+
       return {
         id: doc.id,
         type: 'practice',
@@ -403,9 +406,9 @@ export async function GET(req: NextRequest) {
         chapter: displayChapter,
         date: startIso || createdIso || updatedIso || null,
         rawTimestamp,
-        scorePercent: deriveScoreMetrics(data).scorePercent,
-        correctCount: deriveScoreMetrics(data).score,
-        totalQuestions: deriveScoreMetrics(data).totalQuestions,
+        scorePercent: scoreMetrics.scorePercent,
+        correctCount: scoreMetrics.score,
+        totalQuestions: scoreMetrics.totalQuestions,
         masteryBefore: data.masteryBefore || 0,
         masteryAfter: data.masteryAfter || 0,
         masteryChange: data.masteryChange || 0,
@@ -528,6 +531,10 @@ export async function GET(req: NextRequest) {
     };
 
     setInCache(cacheKey, responseData, 45000); // 45s in-memory cache
+
+    if (pendingAutoHeals.length > 0) {
+      await Promise.allSettled(pendingAutoHeals);
+    }
 
     return NextResponse.json(responseData, {
       headers: {
@@ -670,7 +677,7 @@ export async function POST(req: NextRequest) {
 
       if (rData.parentStatus === 'approved' || rData.status === 'approved') {
         if (rData.parentStatus !== 'approved' || rData.status !== 'approved') {
-          reviewRef.update({ status: 'approved', parentStatus: 'approved' }).catch(() => null);
+          await reviewRef.update({ status: 'approved', parentStatus: 'approved' }).catch(() => null);
         }
         return NextResponse.json({ success: true, message: 'Review successfully approved!' });
       }

@@ -53,7 +53,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       try {
         let q;
         if (role === 'admin') {
-          q = query(collection(db, 'chatRooms'), orderBy('lastMessage.timestamp', 'desc'), limit(50));
+          q = query(collection(db, 'chatRooms'), orderBy('lastMessage.timestamp', 'desc'), limit(100));
         } else if (role === 'student') {
           const sCode = user?.studentCode;
           if (!sCode) {
@@ -149,14 +149,30 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       }
     };
 
+    let detachTimer: NodeJS.Timeout | null = null;
+
     const handleVisibility = () => {
       if (document.visibilityState === 'hidden') {
-        if (unsubscribe) {
-          unsubscribe();
-          unsubscribe = null;
+        // Zero Idle Reads with Throttled Detach:
+        // Idle listeners cost 0 reads in Firestore. Immediate detachment causes re-reads on quick app switches.
+        // We delay detachment by 3 minutes so frequent app switches pay 0 re-read penalties.
+        if (!detachTimer) {
+          detachTimer = setTimeout(() => {
+            if (unsubscribe) {
+              unsubscribe();
+              unsubscribe = null;
+            }
+            detachTimer = null;
+          }, 180000); // 3-minute grace period
         }
       } else {
-        setupListener();
+        if (detachTimer) {
+          clearTimeout(detachTimer);
+          detachTimer = null;
+        }
+        if (!unsubscribe) {
+          setupListener();
+        }
       }
     };
 
@@ -164,6 +180,10 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     document.addEventListener('visibilitychange', handleVisibility);
 
     return () => {
+      if (detachTimer) {
+        clearTimeout(detachTimer);
+        detachTimer = null;
+      }
       document.removeEventListener('visibilitychange', handleVisibility);
       if (unsubscribe) {
         unsubscribe();

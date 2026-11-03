@@ -41,26 +41,9 @@ export default function ParentLayout({ children }: { children: React.ReactNode }
       }
     };
 
-    if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
-      attachListener();
-    }
-
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        attachListener();
-      } else {
-        detachListener();
-      }
-    };
-
-    if (typeof document !== 'undefined') {
-      document.addEventListener('visibilitychange', handleVisibilityChange);
-    }
+    attachListener();
 
     return () => {
-      if (typeof document !== 'undefined') {
-        document.removeEventListener('visibilitychange', handleVisibilityChange);
-      }
       detachListener();
     };
   }, [user]);

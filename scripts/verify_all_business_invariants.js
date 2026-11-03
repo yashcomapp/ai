@@ -856,6 +856,50 @@ test('Limited Mode strictly isolates features: permits Tests, Attendance, Fees; 
   assert.strictEqual(evaluateStudentFeatureAccess(regularStudent, 'learn_os'), true);
 });
 
+// -----------------------------------------------------------------------------
+// SUITE 14: Parent Student Codes & Legacy Link Isolation
+// -----------------------------------------------------------------------------
+console.log('\n--- Suite 14: Parent Student Codes & Legacy Link Isolation ---');
+
+function resolveParentCodesPure(parentData) {
+  const codes = [];
+  if (Array.isArray(parentData?.studentCodes)) {
+    parentData.studentCodes.forEach((c) => {
+      if (typeof c === 'string' && c.startsWith('ST-')) {
+        codes.push(c);
+      }
+    });
+  } else if (typeof parentData?.studentCode === 'string' && parentData.studentCode.startsWith('ST-')) {
+    codes.push(parentData.studentCode);
+  }
+  return codes;
+}
+
+test('Parent studentCodes array is SSOT; leftover legacy studentCode is ignored when studentCodes exists', () => {
+  // Scenario 1: Parent has studentCodes array with 1 student, legacy field has old unlinked student
+  const parent1 = {
+    studentCodes: ['ST-2026-000001'],
+    studentCode: 'ST-2026-000099' // Old child that was unlinked
+  };
+  const res1 = resolveParentCodesPure(parent1);
+  assert.deepStrictEqual(res1, ['ST-2026-000001']);
+
+  // Scenario 2: Parent has empty studentCodes array (all children unlinked), legacy field has unlinked student
+  const parent2 = {
+    studentCodes: [],
+    studentCode: 'ST-2026-000099'
+  };
+  const res2 = resolveParentCodesPure(parent2);
+  assert.deepStrictEqual(res2, []); // Must NOT resurrect old student
+
+  // Scenario 3: Legacy document where studentCodes array was never initialized
+  const parent3 = {
+    studentCode: 'ST-2026-000055'
+  };
+  const res3 = resolveParentCodesPure(parent3);
+  assert.deepStrictEqual(res3, ['ST-2026-000055']);
+});
+
 console.log('\n================================================================');
 console.log(`🎉 INVARIANT VERIFICATION SUMMARY: ${passedTests} / ${totalTests} TESTS PASSED`);
 console.log('================================================================\n');
