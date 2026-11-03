@@ -60,7 +60,7 @@ export async function GET(req: NextRequest) {
       docsToDelete.forEach(id => {
         batch.delete(adminDb.collection('notices').doc(id));
       });
-      batch.commit().catch(err => console.error('Error purging exam result notices:', err));
+      await batch.commit().catch(err => console.error('Error purging exam result notices:', err));
     }
 
     return NextResponse.json({ success: true, notices });

@@ -37,7 +37,7 @@ async function getBatchNamesMap(): Promise<Map<string, string>> {
   }
 }
 
-function sanitizeAndHealRoomName(room: any, batchNamesMap: Map<string, string>): string {
+function sanitizeAndHealRoomName(room: any, batchNamesMap: Map<string, string>, healPromises?: Promise<any>[]): string {
   if (room.type === 'group') {
     let batchId = '';
     if (room.roomId?.startsWith('room_batch_')) {
@@ -48,7 +48,10 @@ function sanitizeAndHealRoomName(room: any, batchNamesMap: Map<string, string>):
     if (batchId && batchNamesMap.has(batchId)) {
       const properName = batchNamesMap.get(batchId)!;
       if (room.name !== properName) {
-        adminDb.collection('chatRooms').doc(room.id || room.roomId).update({ name: properName }).catch(() => {});
+        const p = adminDb.collection('chatRooms').doc(room.id || room.roomId).update({ name: properName }).catch(() => {});
+        if (healPromises) {
+          healPromises.push(p);
+        }
         room.name = properName;
       }
       return properName;
@@ -184,9 +187,13 @@ export async function GET(req: NextRequest) {
       });
 
       // Heal and ensure real batch names are displayed for all class groups
+      const adminHealPromises: Promise<any>[] = [];
       rooms.forEach(room => {
-        sanitizeAndHealRoomName(room, batchNamesMap);
+        sanitizeAndHealRoomName(room, batchNamesMap, adminHealPromises);
       });
+      if (adminHealPromises.length > 0) {
+        await Promise.allSettled(adminHealPromises);
+      }
 
       // Sort with latest communication on top
       rooms.sort((a, b) => {
@@ -332,9 +339,13 @@ export async function GET(req: NextRequest) {
         if (room.id === dmRoomId || room.roomId === dmRoomId) return true;
         return isExistentCommunication(room);
       });
+      const studentHealPromises: Promise<any>[] = [];
       rooms.forEach(room => {
-        sanitizeAndHealRoomName(room, batchNamesMap);
+        sanitizeAndHealRoomName(room, batchNamesMap, studentHealPromises);
       });
+      if (studentHealPromises.length > 0) {
+        await Promise.allSettled(studentHealPromises);
+      }
       rooms.sort((a, b) => {
         const timeA = a.lastMessage?.timestamp ? new Date(a.lastMessage.timestamp).getTime() : (a.createdAt ? new Date(a.createdAt).getTime() : 0);
         const timeB = b.lastMessage?.timestamp ? new Date(b.lastMessage.timestamp).getTime() : (b.createdAt ? new Date(b.createdAt).getTime() : 0);
@@ -528,9 +539,13 @@ export async function GET(req: NextRequest) {
       
       let rooms = roomsQuery.docs.map((doc: any) => ({ id: doc.id, ...doc.data() }));
       rooms = rooms.filter(room => isExistentCommunication(room));
+      const parentHealPromises: Promise<any>[] = [];
       rooms.forEach(room => {
-        sanitizeAndHealRoomName(room, batchNamesMap);
+        sanitizeAndHealRoomName(room, batchNamesMap, parentHealPromises);
       });
+      if (parentHealPromises.length > 0) {
+        await Promise.allSettled(parentHealPromises);
+      }
       rooms.sort((a, b) => {
         const timeA = a.lastMessage?.timestamp ? new Date(a.lastMessage.timestamp).getTime() : (a.createdAt ? new Date(a.createdAt).getTime() : 0);
         const timeB = b.lastMessage?.timestamp ? new Date(b.lastMessage.timestamp).getTime() : (b.createdAt ? new Date(b.createdAt).getTime() : 0);
