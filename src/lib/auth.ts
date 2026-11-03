@@ -121,6 +121,7 @@ export function areClaimsEqual(decodedToken: any, userData: any): boolean {
   if (tokenStudentCode !== userStudentCode) return false;
 
   if (userRole === 'student') {
+    if (!('studentMode' in decodedToken)) return false;
     const userMode = getStudentMode(userData);
     const tokenMode = getStudentMode(decodedToken);
     if (tokenMode !== userMode) return false;

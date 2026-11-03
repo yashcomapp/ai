@@ -1007,6 +1007,7 @@ test('Claims builder and equality check strictly sync studentMode for all 3 mode
     const tokenRole = (tokenClaims.role || '').toLowerCase();
     if (tokenRole !== userRole) return false;
     if (userRole === 'student') {
+      if (!('studentMode' in tokenClaims)) return false;
       const userMode = getStudentMode(userDoc);
       const tokenMode = getStudentMode(tokenClaims);
       if (tokenMode !== userMode) return false;
@@ -1031,6 +1032,9 @@ test('Claims builder and equality check strictly sync studentMode for all 3 mode
   const limClaims = buildStudentClaims(limDoc);
   assert.strictEqual(limClaims.studentMode, 'limited');
   assert.strictEqual(checkClaimsEqual(limClaims, limDoc), true);
+
+  // Missing studentMode in token must compare as unequal to force backfill sync for regular students
+  assert.strictEqual(checkClaimsEqual({ role: 'student' }, regDoc), false, 'Token missing studentMode must trigger sync');
 
   // Mismatch triggers token refresh
   assert.strictEqual(checkClaimsEqual({ role: 'student', studentMode: 'regular' }, limDoc), false);
