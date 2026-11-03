@@ -1,5 +1,5 @@
 'use client';
-
+import { getStudentModeSuffix } from '@/types/user.types';
 import React, { useEffect, useState, Suspense } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -73,7 +73,7 @@ function TeacherFinalReviewContent() {
       const map: { [key: string]: string } = {};
       swrStudents.forEach((s: any) => {
         if (s.studentCode) {
-          map[s.studentCode] = s.name + (s.autonomous ? ' ⭐' : '');
+          map[s.studentCode] = s.name + getStudentModeSuffix(s);
         }
       });
       setStudentMap(map);

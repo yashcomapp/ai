@@ -858,10 +858,10 @@ test('Limited Mode strictly isolates features: permits Tests, Attendance, Fees; 
   assert.strictEqual(evaluateStudentFeatureAccess(regularStudent, 'learn_os'), true);
 });
 
-test('API Endpoint access control strictly rejects Limited Mode from learning, results, practice, reviews, and bookmarks', () => {
+test('API Endpoint access control strictly rejects Limited Mode from learning, results, practice, reviews, bookmarks, and examRegister', () => {
   const isApiAllowedForStudent = (student, endpoint) => {
     const isLimited = getStudentMode(student) === 'limited';
-    if (isLimited && ['learning', 'results', 'practice', 'examReview', 'peerReview', 'bookmarks'].includes(endpoint)) {
+    if (isLimited && ['learning', 'results', 'practice', 'examReview', 'peerReview', 'bookmarks', 'examRegister', 'submitReview'].includes(endpoint)) {
       return false;
     }
     return true;
@@ -874,6 +874,8 @@ test('API Endpoint access control strictly rejects Limited Mode from learning, r
   assert.strictEqual(isApiAllowedForStudent(limitedStudent, 'examReview'), false);
   assert.strictEqual(isApiAllowedForStudent(limitedStudent, 'peerReview'), false);
   assert.strictEqual(isApiAllowedForStudent(limitedStudent, 'bookmarks'), false);
+  assert.strictEqual(isApiAllowedForStudent(limitedStudent, 'examRegister'), false);
+  assert.strictEqual(isApiAllowedForStudent(limitedStudent, 'submitReview'), false);
   assert.strictEqual(isApiAllowedForStudent(limitedStudent, 'dashboard'), true);
   assert.strictEqual(isApiAllowedForStudent(limitedStudent, 'attendance'), true);
   assert.strictEqual(isApiAllowedForStudent(limitedStudent, 'fees'), true);
@@ -885,6 +887,63 @@ test('API Endpoint access control strictly rejects Limited Mode from learning, r
   assert.strictEqual(isApiAllowedForStudent(regularStudent, 'examReview'), true);
   assert.strictEqual(isApiAllowedForStudent(regularStudent, 'peerReview'), true);
   assert.strictEqual(isApiAllowedForStudent(regularStudent, 'bookmarks'), true);
+  assert.strictEqual(isApiAllowedForStudent(regularStudent, 'examRegister'), true);
+  assert.strictEqual(isApiAllowedForStudent(regularStudent, 'submitReview'), true);
+});
+
+test('Student Mode UI Symbols strictly enforce * for Autonomous, ◇ for Limited, and empty for Regular', () => {
+  function getStudentModeSymbol(user) {
+    const mode = getStudentMode(user);
+    if (mode === 'autonomous') return '*';
+    if (mode === 'limited') return '◇';
+    return '';
+  }
+  function getStudentModePrefix(user) {
+    const sym = getStudentModeSymbol(user);
+    return sym ? `${sym} ` : '';
+  }
+  function getStudentModeSuffix(user) {
+    const sym = getStudentModeSymbol(user);
+    return sym ? ` ${sym}` : '';
+  }
+
+  // Autonomous mode
+  assert.strictEqual(getStudentModeSymbol({ studentMode: 'autonomous' }), '*');
+  assert.strictEqual(getStudentModeSymbol({ autonomous: true }), '*');
+  assert.strictEqual(getStudentModePrefix({ autonomous: true }), '* ');
+  assert.strictEqual(getStudentModeSuffix({ autonomous: true }), ' *');
+
+  // Limited mode
+  assert.strictEqual(getStudentModeSymbol({ studentMode: 'limited' }), '◇');
+  assert.strictEqual(getStudentModeSymbol({ studentMode: 'restricted' }), '◇');
+  assert.strictEqual(getStudentModePrefix({ studentMode: 'limited' }), '◇ ');
+  assert.strictEqual(getStudentModeSuffix({ studentMode: 'limited' }), ' ◇');
+
+  // Regular mode
+  assert.strictEqual(getStudentModeSymbol({ studentMode: 'regular' }), '');
+  assert.strictEqual(getStudentModeSymbol({}), '');
+  assert.strictEqual(getStudentModePrefix({ studentMode: 'regular' }), '');
+  assert.strictEqual(getStudentModeSuffix({ studentMode: 'regular' }), '');
+});
+
+test('Parent Dashboard & Review Portal strictly excludes Mode 2 (Autonomous) and Mode 3 (Limited) students', () => {
+  const children = [
+    { studentCode: 'ST-001', role: 'student', status: 'active', studentMode: 'regular' },
+    { studentCode: 'ST-002', role: 'student', status: 'active', studentMode: 'autonomous' },
+    { studentCode: 'ST-003', role: 'student', status: 'active', studentMode: 'limited' },
+    { studentCode: 'ST-004', role: 'student', status: 'inactive', studentMode: 'regular' }
+  ];
+
+  // In parentDb.ts: Only active regular students are visible to parents
+  const visibleToParent = children.filter(c => c.role === 'student' && c.status !== 'inactive' && getStudentMode(c) === 'regular');
+  assert.strictEqual(visibleToParent.length, 1);
+  assert.strictEqual(visibleToParent[0].studentCode, 'ST-001');
+
+  // Review access check
+  const canParentReviewChild = (childDoc) => getStudentMode(childDoc) === 'regular';
+  assert.strictEqual(canParentReviewChild(children[0]), true);  // Regular -> allowed
+  assert.strictEqual(canParentReviewChild(children[1]), false); // Autonomous -> disabled
+  assert.strictEqual(canParentReviewChild(children[2]), false); // Limited -> disabled
 });
 
 // -----------------------------------------------------------------------------

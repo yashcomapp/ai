@@ -13,6 +13,7 @@ import { resolveParentStudentCodes } from '@/lib/dashboardDbUtils';
 import { fetchTopicIndexByCodes } from '@/lib/syllabusServerUtils';
 import { deriveScoreMetrics } from '@/lib/scoreUtils';
 import { shouldBypassCache } from '@/lib/cacheBypassGuard';
+import { getStudentMode } from '@/types/user.types';
 
 
 function safeDateToISO(val: any): string | null {
@@ -158,6 +159,10 @@ export async function GET(req: NextRequest) {
     
     if (studentUserSnap.empty || studentUserSnap.docs[0].data()?.status === 'inactive') {
       return NextResponse.json({ message: 'Access denied. Student is not active.' }, { status: 403 });
+    }
+
+    if (parent && getStudentMode(studentUserSnap.docs[0].data()) !== 'regular') {
+      return NextResponse.json({ message: 'Access denied. Parent review is disabled for Autonomous and Limited student accounts.' }, { status: 403 });
     }
 
     const isAutonomous = studentUserSnap.docs[0].data()?.autonomous === true;
@@ -587,6 +592,10 @@ export async function POST(req: NextRequest) {
 
     if (!studentQuerySnap || studentQuerySnap.empty || studentQuerySnap.docs[0].data()?.status === 'inactive') {
       return NextResponse.json({ message: 'Access denied. Student is not active.' }, { status: 403 });
+    }
+
+    if (getStudentMode(studentQuerySnap.docs[0].data()) !== 'regular') {
+      return NextResponse.json({ message: 'Access denied. Parent review is disabled for Autonomous and Limited student accounts.' }, { status: 403 });
     }
 
     const childName = studentQuerySnap.docs[0].data()?.name || childStudentCode;

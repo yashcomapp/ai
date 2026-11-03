@@ -211,7 +211,7 @@ export async function resolveParentStudentCodes(parentData: any): Promise<string
 
       // Self-heal parent document by caching resolved studentCodes if newly discovered or empty
       if (parentDocId && (newlyDiscovered || (parentData?.studentCodes || []).length === 0) && studentCodes.length > 0) {
-        adminDb.collection('users').doc(parentDocId).update({
+        await adminDb.collection('users').doc(parentDocId).update({
           studentCodes: Array.from(new Set(studentCodes.filter(Boolean)))
         }).catch(() => null);
       }

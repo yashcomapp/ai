@@ -512,7 +512,15 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
       }).filter(Boolean)
     );
 
-    const resultsSummary = {
+    const resultsSummary = isLimited ? {
+      examCount: 0,
+      averageScore: 0,
+      bestScore: 0,
+      objectiveAvg: 0,
+      subjectiveAvg: 0,
+      practiceAvg: 0,
+      pendingReviewCount: 0
+    } : {
       examCount: unifiedMetrics.examCount,
       averageScore: unifiedMetrics.averageMarks, // Unified composite exam average
       bestScore: allPercentages.length ? Math.round(Math.max(...allPercentages)) : 0,

@@ -1,5 +1,5 @@
 'use client';
-
+import { getStudentModeSuffix } from '@/types/user.types';
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
@@ -36,7 +36,7 @@ export default function UsageReportPage() {
       const map: { [key: string]: string } = {};
       swrStudents.forEach((s: any) => {
         if (s.studentCode) {
-          map[s.studentCode] = s.name + (s.autonomous ? ' ⭐' : '');
+          map[s.studentCode] = s.name + getStudentModeSuffix(s);
         }
       });
       setStudentMap(map);

@@ -1111,7 +1111,8 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
                   </span>
                 </div>
 
-                {/* Hotspot 3: Exam Register */}
+                {/* Hotspot 3: Exam Register (Removed in Limited Mode) */}
+                {!isLimited && (
                 <div 
                   onClick={() => { triggerNavStart(); router.push('/exam-register'); }}
                   onMouseEnter={(e) => { router.prefetch('/exam-register'); e.currentTarget.style.borderColor = 'var(--warning)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
@@ -1135,7 +1136,7 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
                   <ClipboardList size={24} color="var(--warning)" />
                   <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text)' }}>Exam Register</span>
                 </div>
-
+                )}
                 {/* Hotspot 4: Fees & Ledger */}
                 <div 
                   onClick={() => { triggerNavStart(); router.push('/student/fees'); }}

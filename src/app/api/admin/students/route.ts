@@ -7,6 +7,7 @@ import { getFromCache, setInCache, invalidateCache, getCachedBatches } from '@/l
 import { isDemoUser } from '@/lib/studentDb';
 import { ExamReviewService } from '@/services/examReview.service';
 import { assertCanonicalStudentCode } from '@/lib/canonicalValidation';
+import { getStudentMode } from '@/types/user.types';
 
 export async function GET(request: Request) {
   try {
@@ -178,9 +179,14 @@ export async function POST(request: Request) {
     }
 
     // 3. Synchronize linked parent accounts safely (handling multi-student siblings & autonomous status)
-    if (cleanUpdates.parentEmail !== undefined || cleanUpdates.autonomous !== undefined || cleanUpdates.status !== undefined) {
+    if (cleanUpdates.parentEmail !== undefined || cleanUpdates.autonomous !== undefined || cleanUpdates.studentMode !== undefined || cleanUpdates.status !== undefined) {
       const parentUserDocs: any[] = [];
-      const effectiveAutonomous = cleanUpdates.autonomous !== undefined ? cleanUpdates.autonomous : studentData.autonomous === true;
+      const effectiveMode = cleanUpdates.studentMode !== undefined 
+        ? getStudentMode({ studentMode: cleanUpdates.studentMode, autonomous: cleanUpdates.autonomous })
+        : (cleanUpdates.autonomous !== undefined 
+            ? (cleanUpdates.autonomous ? 'autonomous' : 'regular') 
+            : getStudentMode(studentData));
+      const effectiveParentDisabled = effectiveMode !== 'regular';
 
       if (studentCode) {
         const [snapByCode, snapByArray] = await Promise.all([
@@ -230,7 +236,7 @@ export async function POST(request: Request) {
           }
         }
 
-        if (effectiveAutonomous) {
+        if (effectiveParentDisabled) {
           // Check if parent has any other non-autonomous active child before deactivating
           let allCodes: string[] = [];
           if (Array.isArray(pData.studentCodes)) {
@@ -250,7 +256,7 @@ export async function POST(request: Request) {
               
               hasOtherRegularChild = otherStudentsSnap.docs.some(d => {
                 const s = d.data();
-                return s.status === 'active' && s.autonomous !== true;
+                return s.status === 'active' && getStudentMode(s) === 'regular';
               });
             }
           }

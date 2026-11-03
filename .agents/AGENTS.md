@@ -206,3 +206,35 @@
   - **Automatic Visibility Disconnection**: When an admin minimizes or switches away from the Live Exam Monitor tab, the Firestore `onSnapshot` listener and RTDB presence MUST immediately disconnect via `document.addEventListener('visibilitychange')`.
   - **On-Demand Activation**: When an admin opens or views the monitor, student clients immediately detect presence, flush their current state, and stream live metrics only for the duration of the admin's active session.
   - **Evidence Segregation**: Camera snapshots are compressed to $\le 12\text{ KB}$ and saved strictly to `liveExamEvidence`, completely decoupled from real-time session documents.
+
+### Y. Mandatory Adversarial Pre-Delivery Audit Protocol
+- **Rule**: Prior to declaring any task complete or committing changes, the agent MUST execute this mechanical adversarial audit protocol to identify edge cases, data leaks, stale/broken assumptions, and unhandled branches.
+- **Checklist**:
+  1. **Full-Stack Perimeter Enforcement (Defense in Depth)**:
+     - **UI Tier**: Client components must cleanly adapt (hide restricted navigation, buttons, cards, tabs, and action items). Never show disabled or broken UI elements for restricted accounts.
+     - **API Tier**: All endpoints (`GET`, `POST`, `PUT`, `DELETE`) touching restricted features must perform server-side role and mode verification using canonical helpers (`isStudentLimited`, `getStudentMode`, etc.). They must return HTTP 403 or sanitized responses (stripping questions, solutions, scorecards, percentages, and teacher evaluations).
+     - **Database Tier (`firestore.rules`)**: Direct client SDK operations must be blocked by rule expressions (`isLimitedStudent()`, ownership validation, etc.) to guarantee that browser devtools / console queries cannot bypass API guards.
+  2. **Single Source of Truth (SSOT) Helper Invariant**:
+     - Never use ad-hoc inline checks (`studentMode === 'limited'`, `autonomous !== true`, or custom string matching).
+     - Always use canonical helper functions from `src/types/` and `src/lib/`:
+       - `getStudentMode(user)` (resolves `'regular' | 'autonomous' | 'limited'`).
+       - `getStudentModeSymbol(user)`, `getStudentModePrefix(user)`, `getStudentModeSuffix(user)`.
+       - `isStudentLimited(caller)`.
+       - `resolveParentStudentCodes(parentData)`.
+       - `calculateAttendanceSummary(...)`.
+       - `deriveScoreMetrics(...)`.
+     - Ensure zero dead exports: Any exported helper must have active call sites or tests.
+  3. **Serverless Lifecycle & Promise Await Guarantee**:
+     - In Vercel serverless / edge runtime environments, process execution freezes as soon as a `NextResponse` is returned.
+     - EVERY database write, cache invalidation, self-healing operation, and background sweep MUST be collected into an array and awaited (e.g. `await Promise.allSettled(healPromises)`) before returning the JSON response.
+     - Never fire un-awaited `.catch(...)` mutations on Firestore documents.
+  4. **Multi-Writer Entity State Synchronization**:
+     - Whenever paired state fields exist (`studentMode` and `autonomous`), ALL mutation paths (admin student edit, registration approvals, bulk import, user self-updates) must write synchronized values.
+     - Reading paths must tolerate legacy database variations by always passing the document through canonical normalization functions (`getStudentMode(doc)`), ensuring invalid or legacy combinations cannot bypass security rules.
+  5. **Network Egress & Listener Detach Optimization**:
+     - Real-time listeners (`onSnapshot`) on expensive multi-document collections MUST debounce detachment on tab visibility changes (2–5 minute delay) to prevent costly full result set re-reads on brief app switches.
+     - Critical single-document listeners (`config/systemAccess`) should remain attached or utilize local memory caches.
+     - Real-time streamed payloads must not exceed $30\text{ KB}$, and camera evidence must be compressed to $\le 12\text{ KB}$ and stored strictly in segregated on-demand collections (`liveExamEvidence`).
+  6. **Automated Verification & Zero-Error Compilation**:
+     - Run `node scripts/verify_all_business_invariants.js` and verify all tests pass (40/40+).
+     - Run `npm run build` and ensure exit code 0 across all 136+ routes before committing.

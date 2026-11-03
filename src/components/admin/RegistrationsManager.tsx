@@ -72,7 +72,7 @@ export default function RegistrationsManager() {
   const handleApprove = async (id: string, isAuto?: boolean) => {
     const reg = registrations.find(r => r.id === id);
     const targetAuto = typeof isAuto === 'boolean' ? isAuto : (reg?.autonomous !== false);
-    if (!confirm(`Approve this registration as ${targetAuto ? '⭐ Autonomous (Parent review bypassed)' : 'Regular'}? This will create student and parent accounts.`)) return;
+    if (!confirm(`Approve this registration as ${targetAuto ? '* Autonomous (Parent review bypassed)' : 'Regular'}? This will create student and parent accounts.`)) return;
     
     setLoading(true);
     try {
@@ -322,7 +322,7 @@ export default function RegistrationsManager() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <strong>{reg.studentName}</strong>
                       <span className="badge" style={{ fontSize: '9px', padding: '2px 6px', background: reg.autonomous !== false ? 'rgba(16, 185, 129, 0.15)' : 'rgba(156, 163, 175, 0.15)', color: reg.autonomous !== false ? '#059669' : 'var(--text-muted)' }}>
-                        {reg.autonomous !== false ? '⭐ Autonomous' : 'Regular'}
+                        {reg.autonomous !== false ? '* Autonomous' : 'Regular'}
                       </span>
                     </div>
                     <div style={{ color: 'var(--text-muted)', fontSize: '10px' }}>{reg.studentEmail}</div>
@@ -380,7 +380,7 @@ export default function RegistrationsManager() {
                 <div>
                   <label style={{ display: 'block', fontSize: '10px', color: 'var(--text-muted)' }}>Mode</label>
                   <span className="badge" style={{ fontSize: '10px', background: selectedReg.autonomous !== false ? 'rgba(16, 185, 129, 0.15)' : 'rgba(156, 163, 175, 0.15)', color: selectedReg.autonomous !== false ? '#059669' : 'var(--text-muted)' }}>
-                    {selectedReg.autonomous !== false ? '⭐ Autonomous (Parent review bypassed)' : 'Regular'}
+                    {selectedReg.autonomous !== false ? '* Autonomous (Parent review bypassed)' : 'Regular'}
                   </span>
                 </div>
                 <div style={{ gridColumn: '1/-1' }}><label style={{ display: 'block', fontSize: '10px', color: 'var(--text-muted)' }}>Address</label><span>{selectedReg.address}</span></div>
@@ -430,7 +430,7 @@ export default function RegistrationsManager() {
                     style={{ width: '16px', height: '16px', cursor: 'pointer' }}
                   />
                   <label htmlFor="edit-autonomous" style={{ fontSize: '12px', fontWeight: 600, cursor: 'pointer', margin: 0, color: 'var(--text)' }}>
-                    ⭐ Autonomous Student Mode (Recommended — parent reviews bypassed)
+                    * Autonomous Student Mode (Recommended — parent reviews bypassed)
                   </label>
                 </div>
                 <div>

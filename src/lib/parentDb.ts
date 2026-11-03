@@ -9,6 +9,7 @@ import { getFromCache, setInCache } from '@/lib/firebase/cache';
 import { deduplicateAssignments, resolveIntegrityScore, calculateTimeLogSummary, resolveParentStudentCodes } from '@/lib/dashboardDbUtils';
 import { getAssignmentsForBatches } from '@/services/exam.service';
 import { deriveScoreMetrics, deriveScorePercent } from '@/lib/scoreUtils';
+import { getStudentMode } from '@/types/user.types';
 
 export async function getParentDashboardData(
   parentEmail: string,
@@ -40,7 +41,7 @@ export async function getParentDashboardData(
     results.forEach(snap => {
       snap.docs.forEach(doc => {
         const data = doc.data();
-        if (data.role === 'student' && data.status !== 'inactive') {
+        if (data.role === 'student' && data.status !== 'inactive' && getStudentMode(data) === 'regular') {
           childrenDocs.push({
             uid: doc.id,
             ...data

@@ -1,5 +1,5 @@
 'use client';
-
+import { getStudentModeSuffix } from '@/types/user.types';
 import React, { useEffect, useState, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
@@ -929,7 +929,7 @@ export default function AdminLiveMonitorPage() {
                               ⏰ LATE
                             </span>
                           )}
-                          👤 {s.studentName || 'Student'}{(s as any).autonomous ? ' ⭐' : ''}
+                          👤 {s.studentName || 'Student'}{getStudentModeSuffix(s)}
                           {s.micAvailable === false && (
                             <span style={{ marginLeft: '6px', color: 'var(--warning)', background: 'rgba(245, 158, 11, 0.1)', padding: '1px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 700 }} title="Microphone Offline / Bypassed">
                               🎙️ Offline

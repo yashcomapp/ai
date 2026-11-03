@@ -9,6 +9,7 @@ import useSWR from 'swr';
 import dynamic from 'next/dynamic';
 const ScorecardModal = dynamic(() => import('@/components/ScorecardModal'), { ssr: false });
 import { useScorecard } from '@/hooks/useScorecard';
+import { getStudentMode } from '@/types/user.types';
 
 interface ExamRecord {
   examId: string;
@@ -93,6 +94,17 @@ function ExamRegisterContent() {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: 'var(--bg)', color: 'var(--text-muted)' }}>
         <span>Verifying credentials...</span>
+      </div>
+    );
+  }
+
+  if (user?.role === 'student' && getStudentMode(user) === 'limited') {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', padding: '24px', textAlign: 'center' }}>
+        <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text)', marginBottom: '8px' }}>Access Denied / प्रवेश प्रतिबंधित</h3>
+        <p style={{ color: 'var(--text-muted)', fontSize: '13px' }}>
+          Exam register is restricted for Limited Mode student accounts.
+        </p>
       </div>
     );
   }

@@ -9,6 +9,23 @@ export function getStudentMode(user: any): StudentMode {
   return 'regular';
 }
 
+export function getStudentModeSymbol(user: any): string {
+  const mode = getStudentMode(user);
+  if (mode === 'autonomous') return '*';
+  if (mode === 'limited') return '◇';
+  return '';
+}
+
+export function getStudentModePrefix(user: any): string {
+  const sym = getStudentModeSymbol(user);
+  return sym ? `${sym} ` : '';
+}
+
+export function getStudentModeSuffix(user: any): string {
+  const sym = getStudentModeSymbol(user);
+  return sym ? ` ${sym}` : '';
+}
+
 export interface User {
   id: string;
   name: string;

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminDb, adminAuth } from '@/lib/firebase/admin';
 import { verifyRole } from '@/lib/auth';
 import { isDemoUser } from '@/lib/studentDb';
+import { getStudentMode } from '@/types/user.types';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,6 +29,7 @@ export async function GET(req: NextRequest) {
         role: 'student' as const,
         name: baseName,
         isAutonomous: !!data.autonomous,
+        studentMode: getStudentMode(data),
         email: data.email || '',
         studentCode: data.studentCode || '',
         status: data.status || 'active',

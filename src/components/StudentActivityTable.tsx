@@ -3,12 +3,14 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { formatDurationHM, formatDateTimeIST } from '@/lib/dateUtils';
+import { getStudentMode } from '@/types/user.types';
 
 interface UserActivity {
   uid: string;
   role: 'student' | 'parent';
   name: string;
   isAutonomous?: boolean;
+  studentMode?: string;
   email: string;
   studentCode: string;
   lastLoginAt: string | null;
@@ -281,21 +283,44 @@ export default function StudentActivityTable() {
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                         {isLive && <span style={{ fontSize: '12px' }}>🟢</span>}
                         <span style={{ fontWeight: 700, color: 'var(--text)' }}>{a.name}</span>
-                        {a.role === 'student' && a.isAutonomous && (
-                          <span 
-                            title="Autonomous Student" 
-                            style={{ 
-                              fontSize: '10.5px', 
-                              padding: '1px 6px', 
-                              borderRadius: '10px', 
-                              background: 'rgba(234, 179, 8, 0.15)', 
-                              color: '#ca8a04',
-                              fontWeight: 700 
-                            }}
-                          >
-                            ⭐ Auto
-                          </span>
-                        )}
+                        {a.role === 'student' && (() => {
+                          const sMode = getStudentMode(a);
+                          if (sMode === 'autonomous') {
+                            return (
+                              <span 
+                                title="Autonomous Student (Mode 2)" 
+                                style={{ 
+                                  fontSize: '10.5px', 
+                                  padding: '1px 6px', 
+                                  borderRadius: '10px', 
+                                  background: 'rgba(168, 85, 247, 0.15)', 
+                                  color: 'var(--purple, #a855f7)',
+                                  fontWeight: 700 
+                                }}
+                              >
+                                * Auto
+                              </span>
+                            );
+                          }
+                          if (sMode === 'limited') {
+                            return (
+                              <span 
+                                title="Limited Mode Student (Mode 3)" 
+                                style={{ 
+                                  fontSize: '10.5px', 
+                                  padding: '1px 6px', 
+                                  borderRadius: '10px', 
+                                  background: 'rgba(245, 158, 11, 0.15)', 
+                                  color: 'var(--warning, #d97706)',
+                                  fontWeight: 700 
+                                }}
+                              >
+                                ◇ Limited
+                              </span>
+                            );
+                          }
+                          return null;
+                        })()}
                         {roleFilter === 'all' && (
                           <span style={{
                             fontSize: '10px',

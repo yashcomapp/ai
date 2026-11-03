@@ -342,7 +342,7 @@ export async function GET(req: NextRequest) {
     if (finishedAttempt && finishedCount >= attemptLimit) {
       return NextResponse.json({
         status: 'blocked',
-        finishedAttempt,
+        ...(isStudentLimited(caller) ? {} : { finishedAttempt }),
         message: 'Exam already submitted. Re-attempt is not allowed.'
       });
     }

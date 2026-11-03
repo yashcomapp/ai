@@ -728,6 +728,10 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ success: true, preview: true, message: 'Admin simulator review accepted.' });
     }
 
+    if (isStudentLimited(caller)) {
+      return NextResponse.json({ message: 'Access Denied: Exam review is restricted for this student account.' }, { status: 403 });
+    }
+
     const student = caller;
     const body = await req.json();
     const { examId, wrongAnswerReasons, reviewedQuestionIds, challenges, timeSpentSeconds, examName } = body;

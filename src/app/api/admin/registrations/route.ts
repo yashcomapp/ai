@@ -5,6 +5,7 @@ import { verifyRole, invalidateUserCache, syncUserCustomClaims } from '@/lib/aut
 import { decrypt } from '@/lib/encryption';
 import { getBirthdatePassword } from '@/lib/dateUtils';
 import { assertCanonicalStudentCode } from '@/lib/canonicalValidation';
+import { getStudentMode } from '@/types/user.types';
 export async function GET(req: NextRequest) {
   try {
     const adminUser = await verifyRole(req, 'admin');
@@ -177,15 +178,15 @@ export async function POST(req: NextRequest) {
         role: 'student',
         batchIds: regData.batchId ? [regData.batchId] : [],
         status: 'active',
-        autonomous: regData.studentMode ? (regData.studentMode === 'autonomous' || regData.studentMode === 'limited') : isAutonomous,
-        studentMode: regData.studentMode || (isAutonomous ? 'autonomous' : 'regular'),
+        autonomous: (regData.studentMode ? getStudentMode(regData) : (isAutonomous ? 'autonomous' : 'regular')) !== 'regular',
+        studentMode: regData.studentMode ? getStudentMode(regData) : (isAutonomous ? 'autonomous' : 'regular'),
         parentEmail: regData.parentEmail || null,
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
         registeredFrom: id
       }, { merge: true });
 
       // Synchronize Firebase Auth custom claims for student
-      const registeredMode = regData.studentMode || (isAutonomous ? 'autonomous' : 'regular');
+      const registeredMode = regData.studentMode ? getStudentMode(regData) : (isAutonomous ? 'autonomous' : 'regular');
       await syncUserCustomClaims(studentId, {
         role: 'student',
         studentCode,
@@ -276,7 +277,7 @@ export async function POST(req: NextRequest) {
                 .get();
               hasOtherRegularChild = otherStudentsSnap.docs.some(d => {
                 const s = d.data();
-                return s.status === 'active' && s.autonomous !== true;
+                return s.status === 'active' && getStudentMode(s) === 'regular';
               });
             }
 

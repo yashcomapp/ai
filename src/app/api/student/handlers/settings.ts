@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as admin from 'firebase-admin';
 import { adminDb } from '@/lib/firebase/admin';
-import { verifyRole } from '@/lib/auth';
+import { verifyRole, isStudentLimited } from '@/lib/auth';
 import { getRequiredConfidence } from '@/lib/studentDb';
 import { MASTERY_THRESHOLDS } from '@/lib/dashboardMetrics';
 
@@ -17,39 +17,43 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ message: 'Missing student code mapping.' }, { status: 400 });
     }
 
-    // A. Query reviews to compute exams taken & average score
-    const reviewsSnap = await adminDb.collection('reviews')
-      .where('studentCode', '==', studentCode)
-      .where('status', 'in', ['pending', 'approved'])
-      .get();
-
-    const reviews = reviewsSnap.docs.map(doc => doc.data());
-    const totalExams = reviews.length;
+    let totalExams = 0;
     let avgScore = 'N/A';
-
-    if (totalExams > 0) {
-      const sum = reviews.reduce((s, r) => s + parseFloat(r.percentage || 0), 0);
-      avgScore = (sum / totalExams).toFixed(1) + '%';
-    }
-
-    // Query studentTopicMastery for dynamic stats
-    const masterySnap = await adminDb.collection('studentTopicMastery')
-      .where('studentCode', '==', studentCode)
-      .get();
-      
     let masteredTopics = 0;
     let weakTopicsCount = 0;
-    masterySnap.docs.forEach(doc => {
-      const mData = doc.data();
-      const mastery = Number(mData.mastery || 0);
-      const confidence = Number(mData.confidence || 0);
-      const reqConf = getRequiredConfidence(mData.topicClassification, mData.targetQuestions);
-      if (mastery >= MASTERY_THRESHOLDS.MASTERED_MIN && confidence >= reqConf) {
-        masteredTopics += 1;
-      } else if (mastery < MASTERY_THRESHOLDS.PRACTICING_MIN) {
-        weakTopicsCount += 1;
+
+    if (!isStudentLimited(student)) {
+      // A. Query reviews to compute exams taken & average score
+      const reviewsSnap = await adminDb.collection('reviews')
+        .where('studentCode', '==', studentCode)
+        .where('status', 'in', ['pending', 'approved'])
+        .get();
+
+      const reviews = reviewsSnap.docs.map(doc => doc.data());
+      totalExams = reviews.length;
+
+      if (totalExams > 0) {
+        const sum = reviews.reduce((s, r) => s + parseFloat(r.percentage || 0), 0);
+        avgScore = (sum / totalExams).toFixed(1) + '%';
       }
-    });
+
+      // Query studentTopicMastery for dynamic stats
+      const masterySnap = await adminDb.collection('studentTopicMastery')
+        .where('studentCode', '==', studentCode)
+        .get();
+        
+      masterySnap.docs.forEach(doc => {
+        const mData = doc.data();
+        const mastery = Number(mData.mastery || 0);
+        const confidence = Number(mData.confidence || 0);
+        const reqConf = getRequiredConfidence(mData.topicClassification, mData.targetQuestions);
+        if (mastery >= MASTERY_THRESHOLDS.MASTERED_MIN && confidence >= reqConf) {
+          masteredTopics += 1;
+        } else if (mastery < MASTERY_THRESHOLDS.PRACTICING_MIN) {
+          weakTopicsCount += 1;
+        }
+      });
+    }
 
     return NextResponse.json({
       profile: {

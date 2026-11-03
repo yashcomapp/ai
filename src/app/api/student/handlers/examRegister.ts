@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase/admin';
 import { deriveTopicCodeFromQuestionCode } from '@/lib/questionTypes';
-import { verifyAnyRole } from '@/lib/auth';
+import { verifyAnyRole, isStudentLimited } from '@/lib/auth';
+import { getStudentMode } from '@/types/user.types';
 import { getDateKeyIST, formatDateIST as formatDate } from '@/lib/dateUtils';
 import { fetchStudentRawAssignments, getAssignmentsForBatches } from '@/lib/studentDb';
 import { resolveParentStudentCodes } from '@/lib/dashboardDbUtils';
@@ -20,6 +21,9 @@ export async function GET(req: NextRequest) {
 
     // Authorization checks
     if (callerRole === 'student') {
+      if (isStudentLimited(caller)) {
+        return NextResponse.json({ message: 'Access Denied: Exam register is restricted for this student account.' }, { status: 403 });
+      }
       const ownCode = caller.userData?.studentCode;
       if (!studentCode) {
         studentCode = ownCode;
@@ -54,6 +58,9 @@ export async function GET(req: NextRequest) {
     }
 
     const studentUser = studentQuerySnap.docs[0].data();
+    if (callerRole === 'parent' && getStudentMode(studentUser) !== 'regular') {
+      return NextResponse.json({ message: 'Access Denied: Parent access is disabled for Autonomous and Limited student accounts.' }, { status: 403 });
+    }
     const studentName = studentUser.name || 'Student';
     const batchIds: string[] = studentUser.batchIds || (studentUser.batchId ? [studentUser.batchId] : []);
     const studentClassRaw = studentUser.classNum || studentUser.class || studentUser.grade;
@@ -523,15 +530,18 @@ export async function POST(req: NextRequest) {
     const targetStudentCode = String(studentCode).trim().toUpperCase();
 
     if (callerRole === 'student') {
+      if (isStudentLimited(caller)) {
+        return NextResponse.json({ message: 'Access Denied: Exam register is restricted for this student account.' }, { status: 403 });
+      }
       const callerStudentCode = (caller.userData?.studentCode || '').trim().toUpperCase();
       if (callerStudentCode !== targetStudentCode) {
         return NextResponse.json({ message: 'Forbidden: You can only submit absence reasons for your own account.' }, { status: 403 });
       }
     } else if (callerRole === 'parent') {
-      const singleCode = (caller.userData?.studentCode || '').trim().toUpperCase();
-      const codeArray = Array.isArray(caller.userData?.studentCodes)
-        ? caller.userData.studentCodes.map((c: string) => String(c).trim().toUpperCase())
-        : (singleCode ? [singleCode] : []);
+      const childrenCodes = await resolveParentStudentCodes(caller.userData);
+      const codeArray = childrenCodes.map(c => c.toUpperCase());
+
+
       if (!codeArray.includes(targetStudentCode)) {
         return NextResponse.json({ message: 'Forbidden: You can only submit absence reasons for your linked children.' }, { status: 403 });
       }

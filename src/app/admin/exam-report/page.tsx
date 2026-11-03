@@ -1,5 +1,5 @@
 'use client';
-
+import { getStudentModeSuffix } from '@/types/user.types';
 import DateTimeInputDMY from '@/components/DateTimeInputDMY';
 import React, { useEffect, useState, useMemo, Suspense } from 'react';
 import { useAuth } from '@/context/AuthContext';
@@ -1446,7 +1446,7 @@ function ExamReportContent() {
                                 ⏰ LATE
                               </span>
                             )}
-                            {a.studentName}{students.find(s => s.studentCode === a.studentCode)?.autonomous ? ' ⭐' : ''}
+                            {a.studentName}{getStudentModeSuffix(students.find(s => s.studentCode === a.studentCode))}
                             {a.micAvailable === false && (
                               <span style={{ marginLeft: '6px', color: 'var(--warning)', background: 'var(--warning-bg, rgba(217, 119, 6, 0.1))', padding: '1px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 700 }} title="Microphone Bypassed / Offline">
                                 🎙️
@@ -2225,7 +2225,7 @@ function ExamReportContent() {
                     ⏰ LATE
                   </span>
                 )}
-                <span>👤 Student Attempt Details: {selectedAttempt.studentName}{students.find(s => s.studentCode === selectedAttempt.studentCode)?.autonomous ? ' ⭐' : ''}</span>
+                <span>👤 Student Attempt Details: {selectedAttempt.studentName}{getStudentModeSuffix(students.find(s => s.studentCode === selectedAttempt.studentCode))}</span>
               </h4>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 {/* View Mode Switcher */}
