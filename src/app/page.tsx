@@ -340,7 +340,7 @@ export default function LoginPage() {
           Learning, Reimagined for <span className="hero-title-accent">Every Mind</span>
         </h1>
         <p className="hero-desc">
-          Built to empower students with autonomous daily practice, adaptive diagnostic analytics, and real-time parent-teacher synergy.
+          Built to empower students with autonomous daily practice, adaptive diagnostic analytics, and verified proctored evaluations.
         </p>
 
         <div className="hero-actions">
@@ -395,15 +395,15 @@ export default function LoginPage() {
           {/* Card 3: Cyan Accent Card */}
           <div className="landing-card card-cyan">
             <div className="landing-card-header">
-              <div className="landing-card-icon-box">🤝</div>
-              <h3 className="landing-card-title">5-Min Daily Parent Sync</h3>
+              <div className="landing-card-icon-box">🛡️</div>
+              <h3 className="landing-card-title">AI Proctoring & Integrity</h3>
             </div>
             <p className="landing-card-desc">
-              Structured nightly review rituals bringing parents, students, and teachers together on a shared progress ledger.
+              Real-time automated exam proctoring with tab-switch detection, face verification, and anti-cheat compliance scoring.
             </p>
             <div className="landing-card-tags">
-              <span className="landing-tag">📸 Verified Proof</span>
-              <span className="landing-tag">🛡️ Full Visibility</span>
+              <span className="landing-tag">🛡️ Anti-Cheat Guard</span>
+              <span className="landing-tag">📷 Live Proctoring</span>
             </div>
           </div>
         </div>
