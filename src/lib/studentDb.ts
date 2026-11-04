@@ -147,6 +147,17 @@ export function cleanSubjectiveExamName(examData: any) {
 
 
 /**
+ * SSOT helper to consistently resolve student batch IDs across all callers.
+ */
+export function deriveStudentBatchIds(userData: any): string[] {
+  const batchIds: string[] = [...(userData?.batchIds || [])];
+  if (userData?.batchId && !batchIds.includes(userData.batchId)) {
+    batchIds.push(userData.batchId);
+  }
+  return batchIds;
+}
+
+/**
  * SSOT for querying active batch & student-specific objective and subjective assignments.
  */
 export async function fetchStudentRawAssignments(studentCode: string, batchIds: string[]) {
@@ -198,7 +209,7 @@ export async function loadStudentCoreData(
   isLimited: boolean,
   bypassCache: boolean = false
 ): Promise<StudentCoreData> {
-  const cacheKey = `student_core_${studentCode}`;
+  const cacheKey = `student_core_${studentCode}_${isLimited ? 'lim' : 'full'}`;
   if (!bypassCache) {
     const cached = getFromCache<StudentCoreData>(cacheKey);
     if (cached) return cached;
@@ -314,10 +325,7 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
       if (cached) return cached;
     }
 
-    const batchIds: string[] = [...(userData.batchIds || [])];
-    if (userData.batchId && !batchIds.includes(userData.batchId)) {
-      batchIds.push(userData.batchId);
-    }
+    const batchIds = deriveStudentBatchIds(userData);
 
     if (!studentCode) {
       // Auto-generate a fallback studentCode for testing/legacy users on the fly
@@ -1107,7 +1115,7 @@ export async function getStudentLearningData(userData: any, preloadedData?: Prel
     if (cached && !preloadedData) return cached;
   }
 
-  const batchIds: string[] = userData.batchIds || (userData.batchId ? [userData.batchId] : []);
+  const batchIds = deriveStudentBatchIds(userData);
 
   // 1. Fetch batches to get all associated class codes (for multi-class enrolled students) in 1 batch RPC
   const batchRefs = batchIds.map((id: string) => adminDb.collection('batches').doc(id));

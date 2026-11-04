@@ -178,7 +178,7 @@ service cloud.firestore { match /databases/{database}/documents {
                         && resource.data.studentCode == myStudentCode()
                         && request.resource.data.studentCode == myStudentCode()
                         && request.resource.data.diff(resource.data).affectedKeys()
-                                         .hasOnly(['studentFeedback', 'studentReflection', 'studentReviewCompletedAt', 'status', 'updatedAt']))
+                                         .hasOnly(['studentFeedback', 'studentReflection', 'studentReviewCompletedAt', 'updatedAt']))
                     || (isParent()
                         && isMyChildCode(resource.data.studentCode)
                         && request.resource.data.diff(resource.data).affectedKeys()
@@ -394,7 +394,7 @@ service cloud.firestore { match /databases/{database}/documents {
                         && resource.data.studentCode == myStudentCode()
                         && request.resource.data.studentCode == myStudentCode()
                         && request.resource.data.diff(resource.data).affectedKeys()
-                                         .hasOnly(['studentFeedback', 'studentReflection', 'studentReflections', 'studentReviewCompletedAt', 'reflectionStatus', 'status', 'updatedAt']));
+                                         .hasOnly(['studentFeedback', 'studentReflection', 'studentReflections', 'studentReviewCompletedAt', 'reflectionStatus', 'updatedAt']));
       allow delete: if isAdmin();
     }
 

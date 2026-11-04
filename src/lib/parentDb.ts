@@ -833,6 +833,59 @@ export async function getParentDashboardData(
       needsAttentionCount: unifiedMetrics.needsAttentionTopicsCount,
       masteredTopicsCount: unifiedMetrics.masteredTopicsCount
     },
+    // Lever 3 Precursor: Actionable learning mistake pattern insights derived from student reflections (0 extra reads)
+    reflectionInsights: (() => {
+      const categoryCounts: Record<string, number> = {};
+      let totalReflections = 0;
+      parentReviews.slice(0, 50).forEach((pr: any) => {
+        (pr.studentReflections || []).forEach((ref: any) => {
+          if (ref && ref.category) {
+            categoryCounts[ref.category] = (categoryCounts[ref.category] || 0) + 1;
+            totalReflections++;
+          }
+        });
+      });
+
+      if (totalReflections === 0) return null;
+
+      const categoryLabels: Record<string, string> = {
+        conceptual_misunderstanding: 'Concept Gaps',
+        calculation_error: 'Calculation Errors',
+        misread_question: 'Misread Questions',
+        silly_mistake: 'Silly Mistakes',
+        over_thinking: 'Over-Thinking',
+        guessed: 'Guesses'
+      };
+
+      const adviceByDominantCategory: Record<string, string> = {
+        conceptual_misunderstanding: 'Review core textbook definitions and examples before beginning practice sets.',
+        misread_question: 'Take an extra 10–15 seconds to read each question and all options carefully before selecting.',
+        calculation_error: 'Use scratch paper for rough calculations and re-check intermediate arithmetic steps.',
+        over_thinking: 'Trust your first conceptual intuition and stick to standard principles.',
+        silly_mistake: 'Double-check signs, units, and negative coefficients before locking your choice.',
+        guessed: 'Review foundational chapter summaries rather than guessing unverified concepts.'
+      };
+
+      const sortedCategories = Object.entries(categoryCounts).sort((a, b) => b[1] - a[1]);
+      const dominant = sortedCategories[0];
+      const dominantCategory = dominant ? dominant[0] : '';
+      const dominantCount = dominant ? dominant[1] : 0;
+      const dominantPercent = Math.round((dominantCount / totalReflections) * 100);
+
+      return {
+        totalReflections,
+        dominantCategory,
+        dominantLabel: categoryLabels[dominantCategory] || dominantCategory,
+        dominantPercent,
+        breakdown: sortedCategories.map(([cat, count]) => ({
+          category: cat,
+          label: categoryLabels[cat] || cat,
+          count,
+          percent: Math.round((count / totalReflections) * 100)
+        })),
+        pedagogicalAdvice: adviceByDominantCategory[dominantCategory] || 'Review missed questions carefully.'
+      };
+    })(),
     recentActivity,
     chartData: formattedChartData,
     children: childrenList,
