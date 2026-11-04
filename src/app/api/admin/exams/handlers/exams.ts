@@ -435,13 +435,8 @@ export async function GET(req: NextRequest) {
       const startDateParam = req.nextUrl.searchParams.get('startDate');
       const endDateParam = req.nextUrl.searchParams.get('endDate');
 
-      // Rule C7: Require batchId or custom date range to prevent unbounded database scans
-      if (!batchIdParam && (!startDateParam || !endDateParam)) {
-        return NextResponse.json(
-          { message: 'Specify batchId or startDate/endDate (max 30 days).' },
-          { status: 400 }
-        );
-      }
+      // Rule C7: Bounded date range — clamp preset days (default 7, max 30) or custom range to prevent unbounded database scans
+      const numDays = Math.min(30, Math.max(1, parseInt(daysParam || '7', 10) || 7));
 
       const cacheKey = `practice-tracks-v4-${batchIdParam || 'all'}-${daysParam || '7'}-${startDateParam || ''}-${endDateParam || ''}`;
       const cached = await ReportCacheManager.getReport<any>(cacheKey);

@@ -76,6 +76,7 @@ export default function AdminExamsPage() {
   const [weekDays, setWeekDays] = useState<Array<{ dateKey: string; label: string; shortLabel: string; dayName: string; isToday: boolean }>>([]);
   const [loadingPracticeTracks, setLoadingPracticeTracks] = useState(false);
   const [practiceTracksLoaded, setPracticeTracksLoaded] = useState(false);
+  const [practiceTracksError, setPracticeTracksError] = useState<string | null>(null);
 
   // Filtering states
   const [objFilterName, setObjFilterName] = useState('');
@@ -582,10 +583,11 @@ export default function AdminExamsPage() {
   }) => {
     if (!firebaseUser) return;
     setLoadingPracticeTracks(true);
+    setPracticeTracksError(null);
     try {
       const idToken = await firebaseUser.getIdToken();
       const params = new URLSearchParams({ action: 'practiceTracks' });
-      if (options?.days) params.set('days', String(options.days));
+      params.set('days', String(options?.days || 7));
       if (options?.startDate) params.set('startDate', options.startDate);
       if (options?.endDate) params.set('endDate', options.endDate);
 
@@ -595,17 +597,19 @@ export default function AdminExamsPage() {
         }
       });
       if (!res.ok) {
-        throw new Error('Failed to load practice tracks data.');
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.message || 'Failed to load practice tracks data.');
       }
       const data = await res.json();
       setPracticeStats(data.practiceStats || {});
       setMasteryStats(data.masteryStats || {});
       setWeeklyStats(data.weeklyStats || {});
       setWeekDays(data.weekDays || []);
-      setPracticeTracksLoaded(true);
     } catch (err: any) {
       console.error('Failed to load practice tracks:', err);
+      setPracticeTracksError(err?.message || 'Failed to load practice tracks data.');
     } finally {
+      setPracticeTracksLoaded(true);
       setLoadingPracticeTracks(false);
     }
   };
@@ -678,10 +682,10 @@ export default function AdminExamsPage() {
   }, [firebaseUser]);
 
   useEffect(() => {
-    if (activeTab === 'practice' && !practiceTracksLoaded && !loadingPracticeTracks && firebaseUser) {
+    if (activeTab === 'practice' && !practiceTracksLoaded && !loadingPracticeTracks && !practiceTracksError && firebaseUser) {
       loadPracticeTracks();
     }
-  }, [activeTab, practiceTracksLoaded, loadingPracticeTracks, firebaseUser]);
+  }, [activeTab, practiceTracksLoaded, loadingPracticeTracks, practiceTracksError, firebaseUser]);
 
   useEffect(() => {
     if (!loading) {

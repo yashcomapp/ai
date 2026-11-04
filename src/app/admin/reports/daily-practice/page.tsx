@@ -52,8 +52,8 @@ export default function DailyPracticeSummaryPage() {
   }, [user, router]);
 
   const loadData = async (dateVal: string) => {
-    setLoading(true);
     if (!firebaseUser) return;
+    setLoading(true);
     try {
       const idToken = await firebaseUser.getIdToken();
       const res = await fetch(`/api/admin/reports/daily-practice?date=${dateVal}&refresh=true`, {

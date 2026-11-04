@@ -410,7 +410,7 @@ export class ReportService {
     if (!quotientsMap) {
       const studentCodes = students.map(s => s.studentCode).filter(Boolean) as string[];
       quotientsMap = await QuotientService.calculateBulkQuotients(studentCodes, duration);
-      await ReportCacheManager.setReport(cacheKey, quotientsMap, 300);
+      await ReportCacheManager.setReport(cacheKey, quotientsMap, 1800);
     }
     
     // Chunked targeted queries for parents and registrations associated with loaded students
@@ -554,7 +554,7 @@ export class ReportService {
       students: studentsWithLQ
     };
 
-    await ReportCacheManager.setReport(fullBulkCacheKey, fullBulkResult, 300);
+    await ReportCacheManager.setReport(fullBulkCacheKey, fullBulkResult, 1800);
     return fullBulkResult;
   }
 

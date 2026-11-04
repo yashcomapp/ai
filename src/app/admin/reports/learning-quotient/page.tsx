@@ -136,8 +136,8 @@ export default function LearningQuotientReportPage() {
 
   // Load initial student roster based on duration
   const loadRoster = async (selectedDuration: string = duration) => {
-    setLoading(true);
     if (!firebaseUser) return;
+    setLoading(true);
     try {
       const idToken = await firebaseUser.getIdToken();
       const resData = await getQuotientReport(idToken, undefined, selectedDuration);
@@ -153,7 +153,9 @@ export default function LearningQuotientReportPage() {
   };
 
   useEffect(() => {
-    loadRoster(duration);
+    if (firebaseUser) {
+      loadRoster(duration);
+    }
   }, [firebaseUser, duration]);
 
   const generateStudentComments = (studentInfo: any, details: any): string => {

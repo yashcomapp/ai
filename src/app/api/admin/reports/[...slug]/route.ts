@@ -18,7 +18,7 @@ const NO_CACHE_HEADERS = {
 
 const USAGE_CACHE_TTL_MS = 30000; // 30s for real-time presence & online status
 const STANDARD_REPORT_TTL_MS = 60000; // 60s for daily practice, login register, parent pending, truth test
-const LQ_REPORT_TTL_MS = 120000; // 2 minutes for bulk learning quotient report (with on-demand refresh)
+const LQ_REPORT_TTL_MS = 1800000; // 30 minutes for bulk learning quotient report (with on-demand refresh)
 
 // ── 1. Daily Practice Report Handler ──────────────────────────────────
 async function handleDailyPractice(req: NextRequest) {
