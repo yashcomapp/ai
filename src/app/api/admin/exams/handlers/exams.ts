@@ -435,6 +435,14 @@ export async function GET(req: NextRequest) {
       const startDateParam = req.nextUrl.searchParams.get('startDate');
       const endDateParam = req.nextUrl.searchParams.get('endDate');
 
+      // Rule C7: Require batchId or custom date range to prevent unbounded database scans
+      if (!batchIdParam && (!startDateParam || !endDateParam)) {
+        return NextResponse.json(
+          { message: 'Specify batchId or startDate/endDate (max 30 days).' },
+          { status: 400 }
+        );
+      }
+
       const cacheKey = `practice-tracks-v4-${batchIdParam || 'all'}-${daysParam || '7'}-${startDateParam || ''}-${endDateParam || ''}`;
       const cached = await ReportCacheManager.getReport<any>(cacheKey);
       if (cached) {
@@ -501,7 +509,7 @@ export async function GET(req: NextRequest) {
         const endKey = getDateKeyIST(actualEnd);
         let count = 0;
 
-        while (count < 60) {
+        while (count < 30) {
           const dateKey = getDateKeyIST(current);
           const dayName = current.toLocaleDateString('en-US', { timeZone: 'Asia/Kolkata', weekday: 'short' });
           const dayMonth = current.toLocaleDateString('en-GB', { timeZone: 'Asia/Kolkata', day: '2-digit', month: '2-digit' });
@@ -521,7 +529,7 @@ export async function GET(req: NextRequest) {
         }
       } else {
         // Preset days window (default 7 days, clamped between 1 and 60)
-        const numDays = Math.min(60, Math.max(1, parseInt(daysParam || '7', 10) || 7));
+        const numDays = Math.min(30, Math.max(1, parseInt(daysParam || '7', 10) || 7));
         for (let i = numDays - 1; i >= 0; i--) {
           const d = new Date(now.getTime() - i * 86400000);
           const dateKey = getDateKeyIST(d);

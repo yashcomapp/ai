@@ -562,6 +562,63 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
 
         {/* Syllabus Accordion Lists */}
         {!loading && (
+          <>
+            {/* P2: Start Here High-Impact Remediation Banner */}
+            {activeTab === 'needsAttention' && data?.needsAttention && data.needsAttention.length > 0 && !searchTerm && (() => {
+              const topTopic = data.needsAttention[0];
+              const targetUrl = `/student/topic?topicCode=${encodeURIComponent(topTopic.topicCode)}&category=needsAttention`;
+              const accuracy = Math.round(topTopic.mastery || 0);
+              return (
+                <div style={{
+                  marginBottom: '12px',
+                  padding: '12px 16px',
+                  background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.12) 0%, rgba(249, 115, 22, 0.08) 100%)',
+                  border: '1px solid rgba(239, 68, 68, 0.35)',
+                  borderRadius: 'var(--radius)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '12px',
+                  flexWrap: 'wrap'
+                }}>
+                  <div style={{ flex: '1 1 300px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', fontWeight: 700, color: 'var(--danger)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      <span>🎯</span>
+                      <span>Recommended Next Step • Highest Impact</span>
+                    </div>
+                    <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text)', marginTop: '2px' }}>
+                      Start here: {topTopic.topicName || topTopic.topicCode}
+                    </div>
+                    <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                      {accuracy > 0
+                        ? `You scored ${accuracy}% accuracy on recent assessments. Complete 1 practice set to build toward Mastered.`
+                        : 'Unattempted concept baseline. Complete 1 practice set (6 Qs) to assess your understanding.'}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => router.push(targetUrl)}
+                    className="btn btn-sm btn-primary"
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      fontWeight: 700,
+                      fontSize: '12px',
+                      padding: '6px 14px',
+                      borderRadius: '6px',
+                      background: 'var(--accent)',
+                      color: '#fff',
+                      cursor: 'pointer',
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    <span>Start 1st Practice</span>
+                    <span>→</span>
+                  </button>
+                </div>
+              );
+            })()}
+
           <div id="student-learning-pathway">
             {sortedSubjects.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '32px 16px', background: 'var(--surface)', borderRadius: 'var(--radius)', border: '1px solid var(--border-light)', marginTop: '8px' }}>
@@ -808,9 +865,26 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                                                 </div>
                                               </td>
                                               <td style={{ padding: '6px 8px', textAlign: 'center' }}>
-                                                <span className={`badge badge-${masteryClass}`} style={{ fontSize: '10px', fontWeight: 'bold', padding: '2px 6px', borderRadius: '4px' }}>
-                                                  {mastery}%
-                                                </span>
+                                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px' }}>
+                                                  <span className={`badge badge-${masteryClass}`} style={{ fontSize: '10px', fontWeight: 'bold', padding: '2px 6px', borderRadius: '4px' }}>
+                                                    {mastery}%
+                                                  </span>
+                                                  {state !== 'mastered' && (
+                                                    <div 
+                                                      style={{ width: '44px', height: '4px', background: 'var(--border-light)', borderRadius: '2px', overflow: 'hidden' }} 
+                                                      title={`${mastery}% / 90% target`}
+                                                    >
+                                                      <div 
+                                                        style={{ 
+                                                          width: `${Math.min(100, Math.round((mastery / 90) * 100))}%`, 
+                                                          height: '100%', 
+                                                          background: mastery >= 80 ? 'var(--warning)' : 'var(--danger)', 
+                                                          borderRadius: '2px' 
+                                                        }} 
+                                                      />
+                                                    </div>
+                                                  )}
+                                                </div>
                                               </td>
                                               <td style={{ padding: '6px 8px', textAlign: 'center', color: 'var(--text-muted)' }}>
                                                 {confidence}%
@@ -823,7 +897,13 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                                                  ) : (
                                                     <>
                                                       {topic.practiceCount}/{maxPractices} practices
-                                                      <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>({topic.attempts} / {reqMasteryQs} to Master)</div>
+                                                      <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
+                                                        {state === 'mastered'
+                                                          ? 'Concept certified'
+                                                          : mastery >= 80
+                                                            ? `${mastery}% → 90% (${Math.max(1, reqMasteryQs - topic.attempts)} more Qs)`
+                                                            : `(${topic.attempts} / ${reqMasteryQs} to Master)`}
+                                                      </div>
                                                     </>
                                                  )}
                                                </td>
@@ -879,6 +959,7 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
               })
             )}
           </div>
+          </>
         )}
       </div>
     </div>

@@ -1054,17 +1054,46 @@ export async function getStudentLearningData(userData: any, preloadedData?: Prel
       parentReviewsSnap || adminDb.collection('parentReviews')
         .where('studentCode', '==', studentCode)
         .where('type', '==', 'practice')
+        .orderBy('createdAt', 'desc')
+        .limit(100)
+        .get()
+        .catch(() =>
+          adminDb.collection('parentReviews')
+            .where('studentCode', '==', studentCode)
+            .where('type', '==', 'practice')
+            .get()
+        ),
+      attemptsSnap || adminDb.collection('examAttempts')
+        .where('studentCode', '==', studentCode)
+        .select('examId', 'status', 'completedAt')
         .get(),
-      attemptsSnap || adminDb.collection('examAttempts').where('studentCode', '==', studentCode).get(),
-      reviewsSnap || adminDb.collection('reviews').where('studentCode', '==', studentCode).get(),
-      subAttemptsSnap || adminDb.collection('subjectiveAttempts').where('studentCode', '==', studentCode).get(),
+      reviewsSnap || adminDb.collection('reviews')
+        .where('studentCode', '==', studentCode)
+        .orderBy('completedAt', 'desc')
+        .limit(100)
+        .get()
+        .catch(() =>
+          adminDb.collection('reviews')
+            .where('studentCode', '==', studentCode)
+            .get()
+        ),
+      subAttemptsSnap || Promise.resolve({ docs: [] } as any),
       objAssignmentsSnap || (batchIds.length > 0
-        ? getAssignmentsForBatches(batchIds, { type: 'objective', status: null }).then(r => ({ docs: r.objectiveDocs }))
+        ? getAssignmentsForBatches(batchIds, { type: 'objective', status: 'active' }).then(r => ({ docs: r.objectiveDocs }))
         : Promise.resolve({ docs: [] } as any)),
       subAssignmentsSnap || (batchIds.length > 0
-        ? getAssignmentsForBatches(batchIds, { type: 'subjective', status: null }).then(r => ({ docs: r.subjectiveDocs }))
+        ? getAssignmentsForBatches(batchIds, { type: 'subjective', status: 'active' }).then(r => ({ docs: r.subjectiveDocs }))
         : Promise.resolve({ docs: [] } as any)),
-      evalsSnap || adminDb.collection('evaluations').where('studentCode', '==', studentCode).get()
+      evalsSnap || adminDb.collection('evaluations')
+        .where('studentCode', '==', studentCode)
+        .orderBy('createdAt', 'desc')
+        .limit(100)
+        .get()
+        .catch(() =>
+          adminDb.collection('evaluations')
+            .where('studentCode', '==', studentCode)
+            .get()
+        )
     ]);
 
     masterySnaps = fMastery;

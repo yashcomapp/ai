@@ -239,6 +239,49 @@ export async function verifyAnyRole(
 
   const uid = decodedToken.uid;
   const now = Date.now();
+
+  // Rule C8: Fast-path using validated custom claims to eliminate Firestore reads
+  const hasCompleteClaims = decodedToken.role && decodedToken.status !== undefined
+    && (decodedToken.role !== 'student' || decodedToken.studentMode !== undefined);
+
+  if (hasCompleteClaims) {
+    if (decodedToken.status === 'inactive') return null;
+    const tokenRole = (decodedToken.role || '').toLowerCase() as UserRole;
+    if (!roles.includes(tokenRole)) return null;
+
+    if (tokenRole === 'student') {
+      // Students still need 1 read for curfew (curfewBypass changes dynamically)
+      const cached = userCache.get(uid);
+      let curfewUserData: any = cached && cached.expiresAt > now ? cached.data : null;
+      if (!curfewUserData) {
+        try {
+          const snap = await adminDb.collection('users').doc(uid).get();
+          if (!snap.exists) return null;
+          curfewUserData = snap.data()!;
+          userCache.set(uid, { data: curfewUserData, expiresAt: now + CACHE_TTL_MS });
+        } catch {
+          return null;
+        }
+      }
+      if (curfewUserData.status === 'inactive') return null;
+      const email = decodedToken.email || curfewUserData.email || '';
+      if (isStudentBlockedByCurfew(email, curfewUserData)) return null;
+      return { decodedToken, userData: { ...curfewUserData, role: tokenRole }, role: tokenRole };
+    }
+
+    // Parent/Admin: Zero Firestore reads
+    const userData = {
+      role: tokenRole,
+      status: decodedToken.status,
+      studentCode: decodedToken.studentCode || '',
+      studentCodes: decodedToken.studentCodes || (decodedToken.studentCode ? [decodedToken.studentCode] : []),
+      batchIds: decodedToken.batchIds || [],
+      email: decodedToken.email || '',
+      name: decodedToken.name || ''
+    };
+    return { decodedToken, userData, role: tokenRole };
+  }
+
   let userData: any = null;
 
   const cached = userCache.get(uid);

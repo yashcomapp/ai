@@ -139,13 +139,35 @@ export async function getParentDashboardData(
   ] = await Promise.all([
     adminDb.collection('reviews')
       .where('studentCode', '==', targetStudentCode)
-      .get(),
+      .orderBy('completedAt', 'desc')
+      .limit(100)
+      .get()
+      .catch(() =>
+        adminDb.collection('reviews')
+          .where('studentCode', '==', targetStudentCode)
+          .get()
+      ),
     adminDb.collection('parentReviews')
       .where('studentCode', '==', targetStudentCode)
-      .get(),
+      .where('type', '==', 'practice')
+      .orderBy('createdAt', 'desc')
+      .limit(100)
+      .get()
+      .catch(() =>
+        adminDb.collection('parentReviews')
+          .where('studentCode', '==', targetStudentCode)
+          .get()
+      ),
     adminDb.collection('subjectiveAttempts')
       .where('studentCode', '==', targetStudentCode)
-      .get(),
+      .orderBy('submittedAt', 'desc')
+      .limit(100)
+      .get()
+      .catch(() =>
+        adminDb.collection('subjectiveAttempts')
+          .where('studentCode', '==', targetStudentCode)
+          .get()
+      ),
 
     // Batch & Subjective Assignments (via unified getAssignmentsForBatches)
     getAssignmentsForBatches(childBatchIds, {
@@ -153,20 +175,34 @@ export async function getParentDashboardData(
       studentCode: targetStudentCode
     }),
 
-    // Classroom Tests scoped by student's batchIds (entire history for correct absent stats)
+    // Classroom Tests scoped by student's batchIds and scheduledDate >= thresholdDateStr
     childBatchIds.length > 0
       ? adminDb.collection('subjectiveExams')
           .where('type', '==', 'classroom_test')
           .where('batchId', 'in', childBatchIds)
+          .where('scheduledDate', '>=', thresholdDateStr)
           .get()
+          .catch(() =>
+            adminDb.collection('subjectiveExams')
+              .where('type', '==', 'classroom_test')
+              .where('batchId', 'in', childBatchIds)
+              .get()
+          )
       : Promise.resolve({ docs: [] } as any),
 
-    // Home Practices scoped by student's batchIds (entire history for correct absent stats)
+    // Home Practices scoped by student's batchIds and scheduledDate >= thresholdDateStr
     childBatchIds.length > 0
       ? adminDb.collection('subjectiveExams')
           .where('type', '==', 'home_practice')
           .where('batchId', 'in', childBatchIds)
+          .where('scheduledDate', '>=', thresholdDateStr)
           .get()
+          .catch(() =>
+            adminDb.collection('subjectiveExams')
+              .where('type', '==', 'home_practice')
+              .where('batchId', 'in', childBatchIds)
+              .get()
+          )
       : Promise.resolve({ docs: [] } as any),
 
     // Integrity Scores
@@ -182,7 +218,14 @@ export async function getParentDashboardData(
     // Evaluations (all evaluations regardless of evaluatorType)
     adminDb.collection('evaluations')
       .where('studentCode', '==', targetStudentCode)
+      .orderBy('createdAt', 'desc')
+      .limit(100)
       .get()
+      .catch(() =>
+        adminDb.collection('evaluations')
+          .where('studentCode', '==', targetStudentCode)
+          .get()
+      )
   ]);
 
   const allExamResults = reviewsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() as any }));

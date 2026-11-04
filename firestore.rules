@@ -100,7 +100,7 @@ service cloud.firestore { match /databases/{database}/documents {
       allow update: if isAdmin()
                     || (isAuth() && uid() == userId
                         && request.resource.data.diff(resource.data).affectedKeys()
-                             .hasOnly(['name', 'studentName', 'phone', 'mobile', 'parentMobile', 'parentName', 'address', 'photoUrl', 'avatarUrl', 'updatedAt', 'lastActiveAt', 'lastLoginAt', 'fcmTokens', 'fcmToken', 'pushSubscription', 'preferences', 'theme', 'settings']));
+                             .hasOnly(['name', 'studentName', 'phone', 'mobile', 'parentMobile', 'parentName', 'address', 'photoUrl', 'avatarUrl', 'updatedAt', 'lastActiveAt', 'lastLoginAt', 'preferences', 'theme', 'settings']));
       allow delete: if isAdmin();
     }
 
