@@ -1080,6 +1080,7 @@ export async function POST(req: NextRequest) {
       topicCode,
       topicCodes,
       title: origExamData.name || origExamData.title || '',
+      name: origExamData.name || origExamData.title || '',
       subject: origExamData.subject || origExamData.subjects?.[0] || 'General',
       chapter: origExamData.chapter || origExamData.chapterName || ''
     };

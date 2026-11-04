@@ -5,11 +5,9 @@ import { verifyRole, invalidateUserCache, syncUserCustomClaims } from '@/lib/aut
 import { decrypt } from '@/lib/encryption';
 import { getBirthdatePassword } from '@/lib/dateUtils';
 import { assertCanonicalStudentCode } from '@/lib/canonicalValidation';
-import { StudentMode, getStudentMode } from '@/types/user.types';
+import { StudentMode, getStudentMode, resolveRegistrationMode } from '@/types/user.types';
 
-function resolveRegistrationMode(regData: any, isAutonomous: boolean): StudentMode {
-  return regData?.studentMode ? getStudentMode(regData) : (isAutonomous ? 'autonomous' : 'regular');
-}
+// resolveRegistrationMode imported from @/types/user.types (SSOT)
 export async function GET(req: NextRequest) {
   try {
     const adminUser = await verifyRole(req, 'admin');

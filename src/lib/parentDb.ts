@@ -872,18 +872,26 @@ export async function getParentDashboardData(
       const dominantCount = dominant ? dominant[1] : 0;
       const dominantPercent = Math.round((dominantCount / totalReflections) * 100);
 
+      const breakdownItems = sortedCategories.map(([cat, count]) => ({
+        category: cat,
+        label: categoryLabels[cat] || cat,
+        count,
+        percent: Math.round((count / totalReflections) * 100)
+      }));
+
+      const childFirstName = (childUser?.name || 'Student').trim().split(' ')[0];
+      const breakdownText = breakdownItems.map(b => `${b.percent}% ${b.label} (${b.count})`).join(', ');
+      const advice = adviceByDominantCategory[dominantCategory] || 'Review missed questions carefully.';
+      const actionableSummary = `${childFirstName}'s last ${totalReflections} mistake reflections: ${breakdownText}. Recommendation: ${advice}`;
+
       return {
         totalReflections,
         dominantCategory,
         dominantLabel: categoryLabels[dominantCategory] || dominantCategory,
         dominantPercent,
-        breakdown: sortedCategories.map(([cat, count]) => ({
-          category: cat,
-          label: categoryLabels[cat] || cat,
-          count,
-          percent: Math.round((count / totalReflections) * 100)
-        })),
-        pedagogicalAdvice: adviceByDominantCategory[dominantCategory] || 'Review missed questions carefully.'
+        breakdown: breakdownItems,
+        pedagogicalAdvice: advice,
+        actionableSummary
       };
     })(),
     recentActivity,

@@ -16,6 +16,10 @@ function getStudentModeSymbol(user: any): string {
   return '';
 }
 
+export function resolveRegistrationMode(regData: any, isAutonomous: boolean): StudentMode {
+  return regData?.studentMode ? getStudentMode(regData) : (isAutonomous ? 'autonomous' : 'regular');
+}
+
 export function getStudentModeSuffix(user: any): string {
   const sym = getStudentModeSymbol(user);
   return sym ? ` ${sym}` : '';

@@ -6,6 +6,21 @@
  */
 
 const assert = require('assert');
+const { registerTsHook } = require('./ts-loader.js');
+registerTsHook();
+
+// ==============================================================================
+// S22: IMPORT REAL PRODUCTION FUNCTIONS DIRECTLY FROM SRC (SSOT)
+// ==============================================================================
+const { getRequiredConfidence } = require('../src/lib/dashboardMetrics.ts');
+const { calculateAttendanceSummary } = require('../src/lib/attendanceUtils.ts');
+const { sanitizeRealTimePayload } = require('../src/lib/costGuard.ts');
+const { deriveScoreMetrics, deriveScorePercent } = require('../src/lib/scoreUtils.ts');
+const { validateStudentCode, validateBoardCode, validateSubjectCode, validateTopicCode, validateQuestionCode } = require('../src/lib/canonicalValidation.ts');
+const { isTopicPurelyQualitative, validateQuestionCurriculum } = require('../src/lib/curriculumGuard.ts');
+const { getStudentMode, getStudentModeSuffix, resolveRegistrationMode } = require('../src/types/user.types.ts');
+const { isStudentLimited } = require('../src/lib/auth.ts');
+
 
 console.log('================================================================');
 console.log('🔍 RUNNING COMPREHENSIVE BUSINESS LOGIC & INVARIANT VERIFICATION');
@@ -32,19 +47,7 @@ function test(description, fn) {
 // -----------------------------------------------------------------------------
 console.log('--- Suite 1: Confidence Requirement Engine ---');
 
-function getRequiredConfidence(topicClassification, targetQuestions) {
-  const cls = String(topicClassification || '').toLowerCase().trim();
-  if (cls === 'minor' || cls === 'micro') return 12;
-  if (cls === 'medium' || cls === 'moderate' || cls === 'conceptual') return 18;
-  if (cls === 'major' || cls === 'calculative' || cls === 'hots') return 24;
-  
-  if (targetQuestions !== undefined) {
-    if (targetQuestions <= 30) return 12;
-    if (targetQuestions <= 50) return 18;
-    return 24;
-  }
-  return 12;
-}
+// [S22 REAL IMPORT] getRequiredConfidence imported from @/lib/dashboardMetrics
 
 test('Minor/Micro topics require 12 questions (2 sets of 6)', () => {
   assert.strictEqual(getRequiredConfidence('minor'), 12);
@@ -283,32 +286,7 @@ test('Runtime calculateAll weights without conducted exams sum to 1.00', () => {
 // -----------------------------------------------------------------------------
 console.log('\n--- Suite 7: Attendance Calculation Invariants ---');
 
-function calculateAttendanceSummary(records) {
-  let totalDays = 0;
-  let fullPresentDays = 0;
-  let absentDays = 0;
-  let leaveDays = 0;
-  let lateDays = 0;
-  let halfDays = 0;
-
-  records.forEach(rec => {
-    if (!rec || !rec.status || rec.status === 'not_marked') return;
-    totalDays++;
-    const status = rec.status.toLowerCase();
-    if (status === 'present') fullPresentDays++;
-    else if (status === 'absent') absentDays++;
-    else if (status === 'late') { fullPresentDays++; lateDays++; }
-    else if (status === 'leave') leaveDays++;
-    else if (status === 'half_day') halfDays++;
-  });
-
-  const effectivePresentDays = (fullPresentDays * 1.0) + (halfDays * 0.5);
-  const attendancePercentage = totalDays > 0
-    ? Math.min(100, Math.max(0, Math.round((effectivePresentDays / totalDays) * 100)))
-    : 100;
-
-  return { totalDays, presentDays: fullPresentDays, absentDays, leaveDays, lateDays, halfDays, effectivePresentDays, attendancePercentage };
-}
+// [S22 REAL IMPORT] calculateAttendanceSummary imported from @/lib/attendanceUtils
 
 test('Standardized attendance stats correctly credit present, late, half-day, and leave', () => {
   const records = [
@@ -336,18 +314,7 @@ test('Standardized attendance stats correctly credit present, late, half-day, an
 // -----------------------------------------------------------------------------
 console.log('\n--- Suite 8: Zero-Cost Cloud Egress Safety ---');
 
-function sanitizeRealTimePayload(payload) {
-  const sanitized = { ...payload };
-  if (Array.isArray(sanitized.proctoringSnapshots)) {
-    sanitized.proctoringSnapshotCount = sanitized.proctoringSnapshots.length;
-    delete sanitized.proctoringSnapshots;
-  }
-  if (Array.isArray(sanitized.manualCaptures)) {
-    sanitized.manualCaptureCount = sanitized.manualCaptures.length;
-    delete sanitized.manualCaptures;
-  }
-  return sanitized;
-}
+// [S22 REAL IMPORT] sanitizeRealTimePayload imported from @/lib/costGuard
 
 test('sanitizeRealTimePayload actively strips heavy base64 snapshot arrays from real-time payloads', () => {
   const heavyPayload = {
@@ -357,7 +324,7 @@ test('sanitizeRealTimePayload actively strips heavy base64 snapshot arrays from 
     manualCaptures: ['data:image/jpeg;base64,yyyyyy1']
   };
 
-  const sanitized = sanitizeRealTimePayload(heavyPayload);
+  const sanitized = sanitizeRealTimePayload('liveExamSessions', heavyPayload);
   assert.strictEqual(sanitized.proctoringSnapshots, undefined);
   assert.strictEqual(sanitized.manualCaptures, undefined);
   assert.strictEqual(sanitized.proctoringSnapshotCount, 2);
@@ -418,46 +385,7 @@ const CANONICAL_SUBJECTS = {
 };
 const CANONICAL_TYPES = ['OSC', 'OMC', 'OTF', 'OAR', 'OFB', 'ONE', 'SDF', 'SLP', 'SSA', 'SSR', 'SSN', 'SLA', 'SLN'];
 
-function validateStudentCode(sc) {
-  if (!sc || typeof sc !== 'string') return { valid: false, error: 'Student code required' };
-  return /^ST-\d{4}-\d{6}$/.test(sc.trim()) ? { valid: true } : { valid: false, error: 'Invalid format' };
-}
-
-function validateSubjectCode(board, cls, subj) {
-  if (!CANONICAL_BOARDS.includes(board)) return { valid: false, error: `Invalid board ${board}` };
-  const cleanClass = String(cls || '').trim();
-  if (!CANONICAL_CLASSES.includes(cleanClass)) return { valid: false, error: `Invalid class ${cls}` };
-  const allowed = CANONICAL_SUBJECTS[board]?.[cleanClass] || [];
-  if (!allowed.includes(subj)) return { valid: false, error: `Invalid subject ${subj}` };
-  return { valid: true };
-}
-
-function validateTopicCode(tc) {
-  if (!tc || typeof tc !== 'string') return { valid: false };
-  const parts = tc.trim().split('-');
-  if (parts.length < 5) return { valid: false, error: 'Must have at least 5 parts' };
-  const [b, c, s, ch, ...rest] = parts;
-  const sRes = validateSubjectCode(b, c, s);
-  if (!sRes.valid) return sRes;
-  if (!/^\d+$/.test(ch)) return { valid: false, error: 'Invalid chapter' };
-  const tNum = rest.join('-');
-  if (!/^[\d\.]+$/.test(tNum)) return { valid: false, error: 'Invalid topic number' };
-  return { valid: true };
-}
-
-function validateQuestionCode(qc) {
-  if (!qc || typeof qc !== 'string') return { valid: false };
-  const parts = qc.trim().split('-');
-  if (parts.length < 7) return { valid: false, error: 'Must have at least 7 parts' };
-  const seq = parts[parts.length - 1];
-  const type = parts[parts.length - 2];
-  const topicCode = parts.slice(0, parts.length - 2).join('-');
-  const tRes = validateTopicCode(topicCode);
-  if (!tRes.valid) return tRes;
-  if (!CANONICAL_TYPES.includes(type)) return { valid: false, error: `Invalid question type ${type}` };
-  if (!/^\d{3,}$/.test(seq)) return { valid: false, error: 'Invalid sequence' };
-  return { valid: true };
-}
+// [S22 REAL IMPORT] validateStudentCode, validateSubjectCode, validateTopicCode, validateQuestionCode imported from @/lib/canonicalValidation
 
 test('Strict Student Code format (ST-YYYY-XXXXXX) enforced', () => {
   assert.strictEqual(validateStudentCode('ST-2026-000001').valid, true);
@@ -497,114 +425,7 @@ test('Strict Question Code barrier rejects invalid types, short sequences, or ba
 // -----------------------------------------------------------------------------
 console.log('\n--- Suite 11: Curriculum Guard & Pedagogical Ceiling Invariants ---');
 
-const QUALITATIVE_TOPIC_PATTERNS = [
-  /environment/i,
-  /ecology/i,
-  /ecosystem/i,
-  /microbe/i,
-  /bacteria/i,
-  /fungi/i,
-  /classification\s+of\s+plants/i,
-  /living\s+world/i,
-  /cell\s+and\s+cell\s+organelles/i,
-  /disaster\s+management/i,
-  /solid\s+waste/i,
-  /weather\s+and\s+climate/i,
-  /meteorology/i,
-  /first\s+aid/i,
-  /health\s+and\s+disease/i,
-  /pollution/i,
-  /biotechnology/i,
-  /tissue\s+culture/i,
-  /man-made\s+material/i,
-  /useful\s+and\s+harmful/i
-];
-
-const QUALITATIVE_CHAPTER_CODES = new Set([
-  'MH-9-SCIT-6',   // Classification of Plants
-  'MH-9-SCIT-7',   // Energy Flow in an Ecosystem
-  'MH-9-SCIT-8',   // Useful and Harmful Microbes
-  'MH-9-SCIT-9',   // Environmental Management
-  'MH-9-SCIT-10',  // ICT
-  'MH-9-SCIT-17',  // Introduction to Biotechnology
-  'MH-8-SCI-1',    // Living World and Classification of Microbes
-  'MH-8-SCI-2',    // Health and Diseases
-  'MH-8-SCI-7',    // Metals and Nonmetals
-  'MH-8-SCI-8',    // Pollution
-  'MH-8-SCI-9',    // Disaster Management
-  'MH-8-SCI-10',   // Cell and Cell Organelles
-  'MH-8-SCI-17',   // Man-made Materials
-  'MH-8-SCI-18',   // Ecosystems
-  'CBSE-8-CURI-5', // Curiosity: Reproduction / Microorganisms
-  'MH-10-SCIT2-7', // Introduction to Microbiology
-  'MH-10-SCIT2-8'  // Cell Biology and Biotechnology
-]);
-
-const PROHIBITED_ADVANCED_KEYWORDS = [
-  { pattern: /\bdifferential\s+equations?\b/i, label: 'Differential Equations' },
-  { pattern: /\bnavier[- ]stokes\b/i, label: 'Navier-Stokes Equations' },
-  { pattern: /\bhamiltonian\b/i, label: 'Hamiltonian Mechanics' },
-  { pattern: /schr(?:o|ö|oe)dinger/i, label: 'Schrodinger Equation' },
-  { pattern: /\blorentz\s+(?:force|factor|transformation)\b/i, label: 'Lorentz Transformations' },
-  { pattern: /\brelativistic\s+(?:time\s+dilation|beaming|mass)\b/i, label: 'Relativistic Physics' },
-  { pattern: /\bsynchrotron\b/i, label: 'Synchrotron Radiation' },
-  { pattern: /\bschwarzschild\s+radius\b/i, label: 'Schwarzschild Metric' },
-  { pattern: /\bbragg's\s+law\b/i, label: "Bragg's Law Crystallography" },
-  { pattern: /\bcrystal\s+field\s+splitting\b/i, label: 'Crystal Field Theory' },
-  { pattern: /\bgibbs\s+free\s+energy\b/i, label: 'Gibbs Free Energy Thermodynamics' },
-  { pattern: /\blapse\s+rate\b/i, label: 'Atmospheric Lapse Rate Calculation' },
-  { pattern: /\bpsychrometric\b/i, label: 'Psychrometric Thermodynamics' },
-  { pattern: /\bactual\s+vapor\s+pressure.*saturation\b/i, label: 'Vapor Pressure Numericals' },
-  { pattern: /\bphytoremediation\b/i, label: 'Phytoremediation / Hyperaccumulation' },
-  { pattern: /\bhyperaccumulat/i, label: 'Hyperaccumulating Plants' },
-  { pattern: /\bfluidized\s+bed\s+incinerator\b/i, label: 'Fluidized Bed Combustion' },
-  { pattern: /\bbaghouse\s+filters?\b/i, label: 'Baghouse Fabric Filters' },
-  { pattern: /\bglomerular\s+filtration\s+rate\b/i, label: 'GFR Ultrafiltration Math' },
-  { pattern: /\bpotometer\s+transpires\b/i, label: 'Potometer Transpiration Rate Math' },
-  { pattern: /\bdomestic\s+dog\s*\(2n\s*=\s*78\)/i, label: 'Canine Cytogenetics' }
-];
-
-function isTopicPurelyQualitative(topicCode, chapterName, subjectName) {
-  if (!topicCode && !chapterName) return false;
-  const tCode = String(topicCode || '').trim();
-  for (const prefix of QUALITATIVE_CHAPTER_CODES) {
-    if (tCode === prefix || tCode.startsWith(`${prefix}-`) || tCode.startsWith(`${prefix}.`)) {
-      return true;
-    }
-  }
-  const combined = `${tCode} ${chapterName || ''} ${subjectName || ''}`.toLowerCase();
-  for (const pat of QUALITATIVE_TOPIC_PATTERNS) {
-    if (pat.test(combined)) return true;
-  }
-  return false;
-}
-
-function validateQuestionCurriculum(q) {
-  const errors = [];
-  if (!q) return { valid: true, errors };
-  const type = String(q.type || '').toUpperCase();
-  const topicCode = String(q.topicCode || '');
-  const chapterName = String(q.chapterName || q.chapterTitle || '');
-  const subjectName = String(q.subject || q.subjectName || '');
-
-  // 1. Numerical Disqualification Guard
-  if (type === 'ONE') {
-    if (isTopicPurelyQualitative(topicCode, chapterName, subjectName)) {
-      errors.push(`[CURRICULUM GUARD] Numerical question (ONE) rejected: Topic '${topicCode}' is purely qualitative.`);
-    }
-  }
-
-  // 2. School-Level Ceiling Barrier (Classes 8–10)
-  const fullText = `${q.text || ''} ${q.solution || ''} ${q.explanation || ''} ${Array.isArray(q.options) ? q.options.map(o => typeof o === 'object' ? (o.text || '') : String(o)).join(' ') : ''}`;
-  for (const { pattern, label } of PROHIBITED_ADVANCED_KEYWORDS) {
-    if (pattern.test(fullText)) {
-      errors.push(`[CURRICULUM GUARD] Out-of-syllabus concept rejected: Contains prohibited advanced term '${label}'.`);
-      break;
-    }
-  }
-
-  return { valid: errors.length === 0, errors };
-}
+// [S22 REAL IMPORT] isTopicPurelyQualitative, validateQuestionCurriculum imported from @/lib/curriculumGuard
 
 test('Qualitative Topic Detector correctly identifies theoretical chapters vs computational chapters', () => {
   // Environmental Science & Qualitative Chapters
@@ -711,21 +532,7 @@ test('Practice scorePercent and correctCount can NEVER diverge or write 0% when 
 });
 
 test('deriveScoreMetrics and deriveScorePercent SSOT repairs corrupted or legacy practice records', () => {
-  function deriveScoreMetrics(data) {
-    if (!data) return { score: 0, totalQuestions: 1, scorePercent: 0 };
-    const qList = Array.isArray(data.questions) ? data.questions : (Array.isArray(data.questionDetails) ? data.questionDetails : []);
-    const totalQuestions = Math.max(1, Number(data.totalQuestions || data.totalMarks || data.total || qList.length || 1));
-    const score = data.correctCount !== undefined && data.correctCount !== null
-      ? Number(data.correctCount)
-      : (data.score !== undefined && data.score !== null ? Number(data.score) : qList.filter(q => q.isCorrect).length);
-    let scorePercent = data.scorePercent !== undefined && data.scorePercent !== null
-      ? Number(data.scorePercent)
-      : (data.percentage !== undefined && data.percentage !== null ? Number(data.percentage) : (totalQuestions > 0 ? Math.round((score / totalQuestions) * 100) : 0));
-    if (isNaN(scorePercent) || (score > 0 && scorePercent === 0 && totalQuestions > 0)) {
-      scorePercent = Math.min(100, Math.max(0, Math.round((score / totalQuestions) * 100)));
-    }
-    return { score, totalQuestions, scorePercent: Math.min(100, Math.max(0, scorePercent)) };
-  }
+  // [S22 REAL IMPORT] deriveScoreMetrics imported from @/lib/scoreUtils
 
   // Corrupted record with score: 5, total: 6, but scorePercent: 0
   const r1 = deriveScoreMetrics({ score: 5, totalQuestions: 6, scorePercent: 0 });
@@ -792,12 +599,7 @@ test('Evaluations never store blank correctAnswer when resolved answer key exist
 // -----------------------------------------------------------------------------
 console.log('\n--- Suite 13: Student Modes & Access Boundary Invariants ---');
 
-const getStudentMode = (user) => {
-  if (!user) return 'regular';
-  if (user.studentMode === 'limited' || user.studentMode === 'restricted') return 'limited';
-  if (user.studentMode === 'autonomous' || user.autonomous === true) return 'autonomous';
-  return 'regular';
-};
+// [S22 REAL IMPORT] getStudentMode imported from @/types/user.types
 
 test('Student Mode Resolution accurately maps legacy and canonical flags', () => {
   // Mode 1: Regular
@@ -1099,9 +901,7 @@ test('Firestore rules ternary logic avoids document reads when studentMode claim
 });
 
 test('Registration mode helper accurately resolves autonomous and studentMode flags', () => {
-  function resolveRegistrationMode(regData, isAutonomous) {
-    return regData?.studentMode ? getStudentMode(regData) : (isAutonomous ? 'autonomous' : 'regular');
-  }
+  // [S22 REAL IMPORT] resolveRegistrationMode imported from @/types/user.types
 
   assert.strictEqual(resolveRegistrationMode({ studentMode: 'limited' }, false), 'limited');
   assert.strictEqual(resolveRegistrationMode({ studentMode: 'restricted' }, false), 'limited');

@@ -1,7 +1,7 @@
 # 📚 LOS-Next — Complete Codebase Architecture, Endpoint Map & Audit Review
 
 **Repository:** `yashcomapp/ai`  
-**Current Git Head:** `3902f15` on `main`  
+**Current Git Head:** `c00b0a6` on `main`  
 **Framework:** Next.js 14.2 (App Router) + TypeScript + Firebase Firestore + Realtime DB + Vercel  
 **Target Audience:** DeepSeek Audit & Verification Agent  
 
@@ -724,9 +724,32 @@ export async function postPracticeReflect(req: NextRequest) {
 }
 ```
 
-### C. Firestore Security Rules Allowlist ([`firestore.rules`](file:///c:/Users/Admin/.gemini/antigravity/scratch/los-next/firestore.rules))
+### C. Firestore Security Rules Allowlists ([firestore.rules](file:///c:/Users/Admin/.gemini/antigravity/scratch/los-next/firestore.rules))
 ```protobuf
-    // ── parentReviews ─────────────────────────────────────────
+    // ── reviews (Objective Exam Reviews) ───────────────────────
+    match /reviews/{docId} {
+      allow read:   if isAuth() && (isAdmin()
+                       || (isParent() && isMyChildCode(resource.data.studentCode))
+                       || (isStudent() && !isLimitedStudent()
+                           && resource.data.studentCode == myStudentCode()));
+      allow create: if isAdmin()
+                    || (isStudent() && !isLimitedStudent()
+                        && isValidStudentCode(request.resource.data.studentCode)
+                        && request.resource.data.studentCode == myStudentCode());
+      allow update: if isAdmin()
+                    || (isStudent() && !isLimitedStudent()
+                        && resource.data.studentCode == myStudentCode()
+                        && request.resource.data.studentCode == myStudentCode()
+                        && request.resource.data.diff(resource.data).affectedKeys()
+                                         .hasOnly(['studentFeedback', 'studentReflection', 'studentReviewCompletedAt', 'updatedAt']))
+                    || (isParent()
+                        && isMyChildCode(resource.data.studentCode)
+                        && request.resource.data.diff(resource.data).affectedKeys()
+                                         .hasOnly(['status', 'reviewedAt', 'reviewedBy', 'updatedAt']));
+      allow delete: if isAdmin();
+    }
+
+    // ── parentReviews (Practice Session Reviews) ────────────────
     match /parentReviews/{docId} {
       allow read:   if isAuth() && (isAdmin()
                        || (isParent() && isMyChildCode(resource.data.studentCode))
@@ -745,7 +768,7 @@ export async function postPracticeReflect(req: NextRequest) {
                         && resource.data.studentCode == myStudentCode()
                         && request.resource.data.studentCode == myStudentCode()
                         && request.resource.data.diff(resource.data).affectedKeys()
-                                         .hasOnly(['studentFeedback', 'studentReflection', 'studentReflections', 'studentReviewCompletedAt', 'reflectionStatus', 'status', 'updatedAt']));
+                                         .hasOnly(['studentFeedback', 'studentReflection', 'studentReflections', 'studentReviewCompletedAt', 'reflectionStatus', 'updatedAt']));
       allow delete: if isAdmin();
     }
 ```

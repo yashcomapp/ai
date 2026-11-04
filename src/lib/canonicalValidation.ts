@@ -66,7 +66,7 @@ export interface ValidationResult {
 /**
  * Validates studentCode format strictly (ST-YYYY-XXXXXX).
  */
-function validateStudentCode(studentCode?: string | null): ValidationResult {
+export function validateStudentCode(studentCode?: string | null): ValidationResult {
   if (!studentCode || typeof studentCode !== 'string') {
     return { valid: false, error: 'Student code is required and must be a string.' };
   }
@@ -91,7 +91,7 @@ export function assertCanonicalStudentCode(studentCode?: string | null): void {
 /**
  * Validates boardCode strictly ('CBSE' or 'MH').
  */
-function validateBoardCode(boardCode?: string | null): ValidationResult {
+export function validateBoardCode(boardCode?: string | null): ValidationResult {
   if (!boardCode || typeof boardCode !== 'string') {
     return { valid: false, error: 'Board code is required and must be a string.' };
   }
@@ -108,7 +108,7 @@ function validateBoardCode(boardCode?: string | null): ValidationResult {
 /**
  * Validates subjectCode strictly against the given board and class.
  */
-function validateSubjectCode(boardCode?: string | null, classNum?: string | number | null, subjectCode?: string | null): ValidationResult {
+export function validateSubjectCode(boardCode?: string | null, classNum?: string | number | null, subjectCode?: string | null): ValidationResult {
   const boardRes = validateBoardCode(boardCode);
   if (!boardRes.valid) return boardRes;
 
@@ -147,7 +147,7 @@ export interface ParsedCanonicalTopic {
 /**
  * Validates topicCode strictly (${boardCode}-${class}-${subjectCode}-${chapterNumber}-${topicNumber}).
  */
-function validateTopicCode(topicCode?: string | null): ValidationResult & { parsed?: ParsedCanonicalTopic } {
+export function validateTopicCode(topicCode?: string | null): ValidationResult & { parsed?: ParsedCanonicalTopic } {
   if (!topicCode || typeof topicCode !== 'string') {
     return { valid: false, error: 'Topic code is required.' };
   }
@@ -219,7 +219,7 @@ export interface ParsedCanonicalQuestion {
 /**
  * Validates questionCode strictly (${boardCode}-${class}-${subjectCode}-${chapterNumber}-${topicNumber}-${typeCode}-${sequence}).
  */
-function validateQuestionCode(questionCode?: string | null): ValidationResult & { parsed?: ParsedCanonicalQuestion } {
+export function validateQuestionCode(questionCode?: string | null): ValidationResult & { parsed?: ParsedCanonicalQuestion } {
   if (!questionCode || typeof questionCode !== 'string') {
     return { valid: false, error: 'Question code is required.' };
   }
