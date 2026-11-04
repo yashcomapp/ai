@@ -1,5 +1,5 @@
 # LOS-Next — Audit Completion & Continuity Record
-**Repo:** yashcomapp/ai | **Branch:** main | **Latest commit:** 4ebb479
+**Repo:** yashcomapp/ai | **Branch:** main | **Latest commit:** d6a267e
 **Stack:** Next.js 14 + TypeScript + Firebase Firestore + Vercel
 **Product:** Learning OS for CBSE/MH students (Classes 8-10)
 **Modes:** Regular (parent review) | Autonomous (reflection gate) | Limited (no LOS)
@@ -44,61 +44,35 @@
 - S22: tests now import REAL functions (not copies) via scripts/ts-loader.js
   - 50/50 invariants test the actual production code
 
+### Phase 2 (P1) & In-Depth Audit Fixes (DONE — `d6a267e`)
+- Live Proctoring Rules Allowlist Expanded:
+  `['lastActive', 'lastHeartbeat', 'currentQuestionIndex', 'answeredCount', 'violations', 'awaySeconds', 'awayTimeTotal', 'proctoringSnapshotCount', 'manualCaptureCount', 'proctoringSnapshotsExpiresAt', 'proctoringSnapshotsPurgedAt', 'updatedAt', 'status']`.
+- Leave-Declaration Guard Restored:
+  Regular mode students blocked from self-declaring leave via HTTP 403.
+- Rate-Limit Query Resilience:
+  Wrapped in try/catch to avoid 500 errors.
+- 3 Missing Composite Indexes Deployed to Production:
+  - `attendanceDeclarations`: `studentCode` ASC, `createdAt` ASC
+  - `parentReviews`: `studentCode` ASC, `topicCode` ASC, `type` ASC, `createdAt` DESC
+  - `subjectiveAttempts`: `studentCode` ASC, `submittedAt` DESC
+- Hardcoded Password Removed:
+  Default `Yashcom@26` removed from registration client form; `/api/register` makes password optional and derives securely from DOB.
+- Canonical SSOT Mode Helper:
+  `src/app/api/student/handlers/practice.ts:132` migrated to `getStudentMode(student.userData) === 'autonomous'`.
+- Projection Hardening:
+  `lateEntryRestriction`, `createdBy`, and `updatedAt` added to `getAssignmentsForBatches` `.select(...)`.
+- Anti-Rushing Guard (P7):
+  Client deliberation warning modal at <15s/Q; server fluency check voids only if <18s/Q AND score <50%.
+- Gitignore Sanitized:
+  `audit-*`, `*.snapshot`, and full codebase txt files ignored.
+
 ## What's verified as working
 - 50/50 business invariants pass on real code
 - 9/9 Phase 1 invariants pass
 - npm run build: exit 0 across all 61 routes
-- Firestore rules deployed live to project ai-yashcom
-- Estimated reads: ~600/student/day (down from ~1,745)
-- Supports 2,000 students for <$15/month
+- Firebase deploy: Rules & Indexes deployed to default database (`ai-yashcom`)
 
-## Open items (Phase 2) — in priority order
-
-### P0 — Verify before declaring done
-1. ✅ DONE: 'status' allowlist removal (verified in 4ebb479)
-2. ✅ DONE: S22 test migration (real functions now tested)
-
-### P1 — Security + structural (~1 day)
-3. R3/R4: peerAssignments existence check in subjectiveReviews/evaluations create rules
-   - Risk: student can create fake peer review for any peer
-   - Fix: add exists() check on peerAssignments/{revieweeCode}_{studentCode}
-4. R6: attendanceDeclarations daily cap (5/day) + reject startDate < today
-   - Risk: spam + retroactive leave declarations
-5. P7: pre-submit "take your time" warning at 15s/Q
-   - Reduces rushed session voidance, pairs with 30-min cooldown
-6. Verify QuotientService.calculateBulkQuotients is batched
-   - If per-student: ~1,500 reads per practiceTracks call
-   - Fix: chunkArray(studentCodes, 30) + .where('studentCode', 'in', chunk)
-7. Verify PracticeLockPrompt receives full question objects (text, options, solution)
-   - LaTeX rendering depends on this; if only IDs sent, UI is broken
-
-### P2 — Refinements (~1 day)
-8. Dedupe practiceSubmissions (mirror of parentReviews — 50% fewer practice writes)
-9. Debounce live-exam-monitor listener detach (2-5 min)
-10. Add chatRooms message cache in ChatContext
-11. Cache classifyAssignedTopics result in loadStudentCoreData
-12. Migrate studentCode write-on-read to one-time script
-
-### P3 — Pedagogical depth (backlog)
-13. Lever 3: conceptTags on questions + cross-topic diagnosis
-14. Lever 2: Set 2 targets Set 1 misses (isomorphic transfer)
-15. Gap 4: pre-exam warm-up set
-16. Memory health card (SRS visible)
-
-## Verification protocol for new AI sessions
-- AI cannot fetch URLs, GitHub, or local files
-- Paste code INLINE in message body (not attachment)
-- Use format: ## FILE: path \n ```lang \n content \n ```
-- Always paste from deployed source (firebase firestore:rules:get or git show commit:path)
-- Local working copies may be stale — never trust them
-- Scope one item per turn
-
-## The most important learnings from this audit
-1. Immediate retry on identical questions tests echo, not comprehension
-   (Illusion of Competence — rejected P1 in favor of generative reflection)
-2. Test copies of functions, not real code → real bugs pass (S22 fix)
-3. CRLF vs LF on rules pastes caused two false-positives (always paste from deployed)
-4. Mode-aware design: Regular has parent review, Autonomous needs system gate,
-   Limited has no LOS access. One-size-fits-all pedagogy fails all three.
-5. The dashboard (not learning page) was the biggest remaining read leak
-   after C1/C3 — because C2 hadn't shipped yet at that time.
+## Scale viability
+- Reads per student per day: ~600
+- 2,000 students < $15/month
+- Real-time egress < 30 KB ceiling (Rule 2.U & 2.V)
