@@ -133,6 +133,16 @@ export async function POST(req: NextRequest) {
     // Resolve today's date in IST YYYY-MM-DD
     const todayStr = getDateKeyIST();
 
+    // Rule R6: Rate limit attendance declarations (max 5 per student per day)
+    const todayStartISO = `${todayStr}T00:00:00.000Z`;
+    const todayCountSnap = await adminDb.collection('attendanceDeclarations')
+      .where('studentCode', '==', studentCode.toUpperCase())
+      .where('createdAt', '>=', todayStartISO)
+      .get();
+    if (todayCountSnap.size >= 5) {
+      return NextResponse.json({ error: 'Maximum 5 attendance declarations allowed per day.' }, { status: 429 });
+    }
+
     if (status === 'present') {
       // Present can only be marked for today
       startDate = todayStr;

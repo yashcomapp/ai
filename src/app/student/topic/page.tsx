@@ -93,6 +93,8 @@ function TopicPracticeContent() {
   // Timers
   const [totalSeconds, setTotalSeconds] = useState(0);
   const [currentQSeconds, setCurrentQSeconds] = useState(0);
+  const [showRushingWarning, setShowRushingWarning] = useState(false);
+  const rushingWarningDismissedRef = useRef(false);
 
   // Modal & Mount state
   const [startModalOpen, setStartModalOpen] = useState(true);
@@ -419,9 +421,18 @@ function TopicPracticeContent() {
     }
   };
 
-  // Submit complete practice set
-  const handleFinishPractice = async () => {
+  // Submit complete practice set (Rule P7: Deliberation Warning Guard)
+  const handleFinishPractice = async (forceSubmit = false) => {
     if (!firebaseUser || !data || isSubmittingPracticeRef.current || finishedRef.current) return;
+
+    // Rule P7: Pre-submit deliberation warning if average solving time is under 15s/Q
+    const qCount = data.questions?.length || 1;
+    const avgSecPerQ = totalSeconds / qCount;
+    if (avgSecPerQ < 15 && !forceSubmit && !rushingWarningDismissedRef.current) {
+      setShowRushingWarning(true);
+      return;
+    }
+
     isSubmittingPracticeRef.current = true;
     setIsSubmittingPractice(true);
     setLoading(true);
@@ -792,6 +803,63 @@ function TopicPracticeContent() {
         onSelectErrorReason={(reason: string) => setErrorReasons(prev => ({ ...prev, [currentQIndex]: reason }))}
         onNext={handleNext}
       />
+
+      {/* Rule P7: Pre-submit Deliberation Warning Modal */}
+      {showRushingWarning && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.65)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 10000,
+          padding: '20px'
+        }}>
+          <div style={{
+            maxWidth: '440px',
+            width: '100%',
+            background: 'var(--surface)',
+            borderRadius: 'var(--radius-lg)',
+            padding: '28px 24px',
+            textAlign: 'center',
+            border: '1px solid var(--warning)',
+            boxShadow: 'var(--shadow-lg)'
+          }}>
+            <div style={{ fontSize: '2.5rem', marginBottom: '10px' }}>⏱️</div>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text)', marginBottom: '8px' }}>
+              Solving Very Quickly! / घाई होत आहे!
+            </h3>
+            <p style={{ fontSize: '13.5px', color: 'var(--text-muted)', lineHeight: '1.5', marginBottom: '20px' }}>
+              You solved this set in <strong>{totalSeconds}s</strong> (~{Math.round(totalSeconds / (data?.questions?.length || 1))}s per question).
+              <br /><br />
+              Rushing through practice without double-checking may void your practice quota if your score is below 50%. Take your time to review!
+            </p>
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+              <button
+                className="btn btn-secondary"
+                onClick={() => setShowRushingWarning(false)}
+              >
+                🔍 Review Answers
+              </button>
+              <button
+                className="btn btn-primary"
+                onClick={() => {
+                  setShowRushingWarning(false);
+                  rushingWarningDismissedRef.current = true;
+                  handleFinishPractice(true);
+                }}
+              >
+                Submit Anyway
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

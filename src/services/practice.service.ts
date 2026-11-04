@@ -284,8 +284,6 @@ export class PracticeService {
     const totalDuration = Number(durationSpent) || 0;
     const totalEvalCount = evaluations.length || 1;
     const avgSecondsPerQ = totalDuration / totalEvalCount;
-    // Anti-Rushing Gate: If student spent less than 18 seconds per question on average, void the session to protect quota and enforce 30-min cooldown
-    const isRushedSession = totalDuration === 0 || avgSecondsPerQ < 18;
 
     const validQuestionsCount = Math.max(1, evaluations.length - disputedCount);
     const scorePercent = Math.min(100, Math.max(0, Math.round((correctCount / validQuestionsCount) * 100)));
@@ -294,6 +292,10 @@ export class PracticeService {
     if (correctCount > 0 && scorePercent === 0) {
       throw new Error(`[CRITICAL INVARIANT] Practice score calculation error: correctCount is ${correctCount}/${validQuestionsCount} but scorePercent computed as 0%`);
     }
+
+    // Anti-Rushing Gate: If student spent less than 18 seconds per question on average AND score < 50%, void the session to protect quota and enforce 30-min cooldown.
+    // Note: If score >= 50%, high solving speed reflects genuine fluency rather than reckless guessing.
+    const isRushedSession = (totalDuration === 0 || avgSecondsPerQ < 18) && scorePercent < 50;
 
     const strengths: string[] = [];
     const needsAttention: string[] = [];

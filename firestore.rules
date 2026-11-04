@@ -236,14 +236,15 @@ service cloud.firestore { match /databases/{database}/documents {
       allow read:   if isAuth() && (isAdmin() 
                        || (isParent() && isMyChildCode(resource.data.revieweeCode))
                        || (isStudent() && !isLimitedStudent() && (resource.data.reviewerId == myStudentCode() || resource.data.revieweeCode == myStudentCode())));
-      allow create: if (isStudent() && !isLimitedStudent() 
-                        && request.resource.data.reviewerId == myStudentCode()
-                        && request.resource.data.reviewerType == 'peer')
+      allow create: if isAdmin()
                        || (isParent() 
                            && request.resource.data.reviewerId == userEmail()
                            && request.resource.data.reviewerType == 'parent'
                            && isMyChildCode(request.resource.data.revieweeCode))
-                       || isAdmin();
+                       || (isStudent() && !isLimitedStudent() 
+                           && request.resource.data.reviewerId == myStudentCode()
+                           && request.resource.data.reviewerType == 'peer'
+                           && ('assignmentId' in request.resource.data && exists(/databases/$(database)/documents/peerAssignments/$(request.resource.data.assignmentId))));
       allow update: if isAdmin()
                        || (isStudent() && !isLimitedStudent() 
                            && resource.data.reviewerId == myStudentCode()
@@ -267,7 +268,8 @@ service cloud.firestore { match /databases/{database}/documents {
                            && request.resource.data.evaluatorName == userEmail())
                        || (isStudent() && !isLimitedStudent()
                            && request.resource.data.evaluatorType == 'peer'
-                           && (request.resource.data.evaluatorId == myStudentCode() || request.resource.data.evaluatorCode == myStudentCode()));
+                           && (request.resource.data.evaluatorId == myStudentCode() || request.resource.data.evaluatorCode == myStudentCode())
+                           && ('assignmentId' in request.resource.data && exists(/databases/$(database)/documents/peerAssignments/$(request.resource.data.assignmentId))));
       allow update: if isAdmin()
                        || (isParent() 
                            && isMyChildCode(resource.data.studentCode)

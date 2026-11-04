@@ -143,7 +143,10 @@ export async function GET(req: NextRequest) {
         if (!lastPracticeSnap.empty) {
           const lastPractice = lastPracticeSnap.docs[0].data();
           if (lastPractice.reflectionRequiredByGate && !lastPractice.studentReviewCompletedAt) {
-            const missedQuestions = (lastPractice.questionDetails || []).filter((q: any) => !q.isCorrect);
+            const rawList = Array.isArray(lastPractice.questionDetails) && lastPractice.questionDetails.length > 0
+              ? lastPractice.questionDetails
+              : (Array.isArray(lastPractice.questions) ? lastPractice.questions : []);
+            const missedQuestions = rawList.filter((q: any) => !q.isCorrect);
             return NextResponse.json({
               locked: true,
               lockType: 'reflection_required',
