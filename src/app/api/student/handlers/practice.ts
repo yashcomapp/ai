@@ -1,3 +1,4 @@
+import { getStudentMode } from '@/types/user.types';
 import { NextRequest, NextResponse } from 'next/server';
 import * as admin from 'firebase-admin';
 import { adminDb } from '@/lib/firebase/admin';
@@ -129,7 +130,7 @@ export async function GET(req: NextRequest) {
 
     // 0. Lever 1: Autonomous Student Generative Reflection Gate
     // If student is in Autonomous Mode, require reflection on missed questions from previous session before continuing.
-    const isAutonomous = student.userData?.autonomous === true;
+    const isAutonomous = getStudentMode(student.userData) === 'autonomous';
     if (isAutonomous && !isTeacherAssigned) {
       try {
         const lastPracticeSnap = await adminDb.collection('parentReviews')

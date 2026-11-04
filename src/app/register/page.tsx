@@ -29,8 +29,8 @@ export default function RegisterPage() {
     parentMobile: '',
     parentEmail: '',
     parentOccupation: '',
-    password: 'Yashcom@26',
-    confirmPassword: 'Yashcom@26'
+    password: '',
+    confirmPassword: ''
   });
 
   // Validation messages state

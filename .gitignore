@@ -39,3 +39,8 @@ exports/
 
 __pycache__/
 *.pyc
+
+# Audit and dump artifacts
+audit-*
+*.snapshot
+los-next-full-codebase.txt

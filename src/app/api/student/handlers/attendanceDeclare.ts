@@ -130,17 +130,28 @@ export async function POST(req: NextRequest) {
     const studentMode = getStudentMode(session.userData);
     const isAutonomous = studentMode === 'autonomous';
 
+    // Leave-declaration guard: Regular mode students cannot self-declare leave
+    if (status === 'leave' && session.role === 'student' && !isAutonomous) {
+      return NextResponse.json({
+        error: 'Regular mode students cannot self-declare leave. Please ask your parent to declare it.'
+      }, { status: 403 });
+    }
+
     // Resolve today's date in IST YYYY-MM-DD
     const todayStr = getDateKeyIST();
 
     // Rule R6: Rate limit attendance declarations (max 5 per student per day)
     const todayStartISO = `${todayStr}T00:00:00.000Z`;
-    const todayCountSnap = await adminDb.collection('attendanceDeclarations')
-      .where('studentCode', '==', studentCode.toUpperCase())
-      .where('createdAt', '>=', todayStartISO)
-      .get();
-    if (todayCountSnap.size >= 5) {
-      return NextResponse.json({ error: 'Maximum 5 attendance declarations allowed per day.' }, { status: 429 });
+    try {
+      const todayCountSnap = await adminDb.collection('attendanceDeclarations')
+        .where('studentCode', '==', studentCode.toUpperCase())
+        .where('createdAt', '>=', todayStartISO)
+        .get();
+      if (todayCountSnap.size >= 5) {
+        return NextResponse.json({ error: 'Maximum 5 attendance declarations allowed per day.' }, { status: 429 });
+      }
+    } catch (rateLimitErr: any) {
+      console.warn('[attendanceDeclare] Rate limit check bypassed or failed (check index):', rateLimitErr.message);
     }
 
     if (status === 'present') {

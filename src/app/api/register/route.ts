@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
 
     // Server-side validation
     if (!studentName || !studentEmail || !studentMobile || !dob || !gender || !bloodGroup || !address ||
-        !parentName || !parentMobile || !parentEmail || !batchId || !password) {
+        !parentName || !parentMobile || !parentEmail || !batchId) {
       return NextResponse.json({ message: 'All required fields must be completed.' }, { status: 400 });
     }
 
@@ -68,9 +68,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: pEmailVal.error }, { status: 400 });
     }
 
-    const pwdVal = validatePassword(password);
-    if (!pwdVal.valid) {
-      return NextResponse.json({ message: pwdVal.error }, { status: 400 });
+    if (password) {
+      const pwdVal = validatePassword(password);
+      if (!pwdVal.valid) {
+        return NextResponse.json({ message: pwdVal.error }, { status: 400 });
+      }
     }
 
     // Derive password from student's date of birth in DDMMYY format to satisfy Firebase 6-character minimum

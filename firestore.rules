@@ -299,7 +299,9 @@ service cloud.firestore { match /databases/{database}/documents {
                            && request.resource.data.studentCode == myStudentCode()
                            && request.resource.data.diff(resource.data).affectedKeys()
                                 .hasOnly(['lastActive', 'lastHeartbeat', 'currentQuestionIndex',
-                                          'awaySeconds', 'proctoringSnapshotCount', 'manualCaptureCount',
+                                          'answeredCount', 'violations', 'awaySeconds', 'awayTimeTotal',
+                                          'proctoringSnapshotCount', 'manualCaptureCount',
+                                          'proctoringSnapshotsExpiresAt', 'proctoringSnapshotsPurgedAt',
                                           'updatedAt', 'status'])));
       allow delete: if isAuth() && (isAdmin()
                        || (isStudent() && resource.data.studentCode == myStudentCode()));
