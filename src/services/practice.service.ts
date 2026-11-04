@@ -460,6 +460,11 @@ export class PracticeService {
       finalMastery = updatedData.mastery;
       finalConfidence = updatedData.confidence;
 
+      // Lever 1: Generative Reflection Gate for Autonomous students with missed questions
+      const wrongCount = Math.max(0, validQuestionsCount - correctCount);
+      const needsStudentReflection = wrongCount > 0 && scorePercent < 80;
+      const reflectionRequiredByGate = isAutonomous && needsStudentReflection;
+
       // Construct ONE Single Source of Truth Session Payload
       const unifiedSessionPayload = {
         studentCode,
@@ -504,6 +509,11 @@ export class PracticeService {
         parentStatus: isAutonomous ? 'approved' : 'pending',
         status: isAutonomous ? 'approved' : 'pending',
         reviewedByActor: isAutonomous ? 'autonomous' : null,
+        needsStudentReflection,
+        reflectionRequiredByGate,
+        reflectionStatus: reflectionRequiredByGate ? 'pending' : (needsStudentReflection ? 'optional' : 'not_needed'),
+        studentReflections: [],
+        studentReviewCompletedAt: null,
         practiceNumber: practiceNumber,
         questions: evaluations,
         questionDetails: evaluations.map(e => ({

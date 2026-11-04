@@ -1041,11 +1041,12 @@ export async function POST(req: NextRequest) {
       endAt = parseIST(endAtStr);
     }
 
+    let origExamData: any = {};
     try {
       const examRef = adminDb.collection(type === 'objective' ? 'exams' : 'subjectiveExams').doc(examId);
       const examDoc = await examRef.get();
       if (examDoc.exists) {
-        const origExamData = examDoc.data() || {};
+        origExamData = examDoc.data() || {};
         const currentName = origExamData.name || origExamData.title || examId;
         const newName = updateExamNameWithAssignedDate(currentName, startAt);
         if (newName !== currentName) {
@@ -1055,6 +1056,12 @@ export async function POST(req: NextRequest) {
     } catch (err) {
       console.warn('Failed to update exam name with assigned date:', err);
     }
+
+    // Rule C4: Store topicCode and topicCodes directly on assignment to avoid downstream exams doc reads
+    const topicCodes: string[] = Array.isArray(origExamData.topicCodes)
+      ? origExamData.topicCodes
+      : (origExamData.topicCode ? [origExamData.topicCode] : []);
+    const topicCode: string = origExamData.topicCode || (topicCodes[0] || '');
 
     const payload: any = {
       examId: examId,
@@ -1069,13 +1076,17 @@ export async function POST(req: NextRequest) {
       status: 'active',
       createdBy: (adminUser.decodedToken?.email || adminUser.userData?.email) || 'admin@yashcom.com',
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      topicCode,
+      topicCodes,
+      title: origExamData.name || origExamData.title || '',
+      subject: origExamData.subject || origExamData.subjects?.[0] || 'General',
+      chapter: origExamData.chapter || origExamData.chapterName || ''
     };
 
     let assignmentDocId: string;
 
     if (type === 'objective') {
-      payload.title = '';
       payload.assignmentType = 'exam';
       payload.examDuration = Number(examDuration) || 30;
       

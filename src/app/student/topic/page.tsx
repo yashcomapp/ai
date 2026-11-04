@@ -69,7 +69,9 @@ function TopicPracticeContent() {
   const [textbookStudyMessage, setTextbookStudyMessage] = useState('');
   const [textbookConfirmedCheck, setTextbookConfirmedCheck] = useState(false);
   const [confirmingTextbook, setConfirmingTextbook] = useState(false);
-  const [lockType, setLockType] = useState<'initial' | 'cooldown' | 'daily' | 'quota_reached' | null>(null);
+  const [lockType, setLockType] = useState<'initial' | 'cooldown' | 'daily' | 'quota_reached' | 'reflection_required' | null>(null);
+  const [reflectionReviewId, setReflectionReviewId] = useState<string>('');
+  const [reflectionQuestions, setReflectionQuestions] = useState<any[]>([]);
 
   // Setup practice status
   const [started, setStarted] = useState(false);
@@ -266,6 +268,10 @@ function TopicPracticeContent() {
           setRequireTextbookStudy(true);
           setLockType(pData.lockType || 'initial');
           setTextbookStudyMessage(pData.message || '');
+          if (pData.lockType === 'reflection_required') {
+            setReflectionReviewId(pData.reviewId || '');
+            setReflectionQuestions(pData.questions || []);
+          }
           setLoading(false);
           return;
         }
@@ -557,12 +563,6 @@ function TopicPracticeContent() {
     }
   }, [currentQIndex]);
 
-  if (user && (user as any)?.autonomous) {
-    return <PracticeLockPrompt type="autonomous" topicCode={topicCode} category={category} />;
-  }
-
-
-
   if (requireTextbookStudy) {
     return (
       <PracticeLockPrompt
@@ -575,6 +575,14 @@ function TopicPracticeContent() {
         setTextbookConfirmedCheck={setTextbookConfirmedCheck}
         confirmingTextbook={confirmingTextbook}
         onConfirmTextbook={handleConfirmTextbook}
+        firebaseUser={firebaseUser}
+        reflectionReviewId={reflectionReviewId}
+        reflectionQuestions={reflectionQuestions}
+        onReflectionComplete={() => {
+          setRequireTextbookStudy(false);
+          setLoading(true);
+          fetchQuestions();
+        }}
       />
     );
   }

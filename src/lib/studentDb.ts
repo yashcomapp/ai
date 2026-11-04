@@ -165,6 +165,146 @@ export async function fetchStudentRawAssignments(studentCode: string, batchIds: 
   };
 }
 
+export interface StudentCoreData {
+  reviewsSnapshot: any;
+  peerReviewsSnapshot: any;
+  rawAssignments: {
+    batchAssignmentsSnapshot: { docs: any[] };
+    studentAssignmentsSnapshot: { docs: any[] };
+    subAssignmentsSnapshot: { docs: any[] };
+    subStudentAssignmentsSnapshot: { docs: any[] };
+    objectiveDocs: any[];
+    subjectiveDocs: any[];
+  };
+  masterySnapshot: any;
+  attemptsSnapshot: any;
+  examAttemptsSnapshot: any;
+  evaluationsSnapshot: any;
+  syllabusList: any;
+  classroomExamsSnap: any;
+  homePracticeSnap: any;
+  parentReviewsSnapshot: any;
+  integritySnapshot: any;
+}
+
+/**
+ * Rule C2: SSOT Shared Student Core Data Pipeline
+ * Loads essential student data in parallel with bounds and caches in memory for 60s.
+ * Shared between getDashboardData and getStudentLearningData to eliminate redundant reads.
+ */
+export async function loadStudentCoreData(
+  studentCode: string,
+  batchIds: string[],
+  isLimited: boolean,
+  bypassCache: boolean = false
+): Promise<StudentCoreData> {
+  const cacheKey = `student_core_${studentCode}`;
+  if (!bypassCache) {
+    const cached = getFromCache<StudentCoreData>(cacheKey);
+    if (cached) return cached;
+  }
+
+  const [
+    reviewsSnapshot,
+    peerReviewsSnapshot,
+    rawAssignments,
+    masterySnapshot,
+    attemptsSnapshot,
+    examAttemptsSnapshot,
+    evaluationsSnapshot,
+    syllabusList,
+    classroomExamsSnap,
+    homePracticeSnap,
+    parentReviewsSnapshot,
+    integritySnapshot
+  ] = isLimited
+    ? await Promise.all([
+        Promise.resolve({ docs: [] } as any),
+        Promise.resolve({ docs: [] } as any),
+        fetchStudentRawAssignments(studentCode, batchIds),
+        Promise.resolve({ docs: [] } as any),
+        Promise.resolve({ docs: [] } as any),
+        adminDb.collection('examAttempts')
+          .where('studentCode', '==', studentCode)
+          .select('examId', 'status', 'completedAt', 'score', 'totalMarks', 'percentage', 'scheduledDate')
+          .get(),
+        Promise.resolve({ docs: [] } as any),
+        Promise.resolve([] as any[]),
+        Promise.resolve({ docs: [] } as any),
+        Promise.resolve({ docs: [] } as any),
+        Promise.resolve({ docs: [] } as any),
+        Promise.resolve({ docs: [] } as any)
+      ])
+    : await Promise.all([
+        adminDb.collection('reviews')
+          .where('studentCode', '==', studentCode)
+          .orderBy('completedAt', 'desc')
+          .limit(100)
+          .get()
+          .catch(() => adminDb.collection('reviews').where('studentCode', '==', studentCode).get()),
+        adminDb.collection('peerAssignments')
+          .where('reviewerStudentCode', '==', studentCode)
+          .where('status', '==', 'pending')
+          .get(),
+        fetchStudentRawAssignments(studentCode, batchIds),
+        adminDb.collection('studentTopicMastery')
+          .where('studentCode', '==', studentCode)
+          .get(),
+        Promise.resolve({ docs: [] } as any), // Rule C1: dropped subjectiveAttempts
+        adminDb.collection('examAttempts')
+          .where('studentCode', '==', studentCode)
+          .select('examId', 'status', 'completedAt', 'score', 'totalMarks', 'percentage', 'scheduledDate')
+          .get(),
+        adminDb.collection('evaluations')
+          .where('studentCode', '==', studentCode)
+          .orderBy('createdAt', 'desc')
+          .limit(100)
+          .get()
+          .catch(() => adminDb.collection('evaluations').where('studentCode', '==', studentCode).get()),
+        getCachedSyllabus(),
+        batchIds.length > 0
+          ? adminDb.collection('subjectiveExams')
+              .where('type', '==', 'classroom_test')
+              .where('batchId', 'in', batchIds)
+              .get()
+          : Promise.resolve({ docs: [] } as any),
+        batchIds.length > 0
+          ? adminDb.collection('subjectiveExams')
+              .where('type', '==', 'home_practice')
+              .where('batchId', 'in', batchIds)
+              .get()
+          : Promise.resolve({ docs: [] } as any),
+        adminDb.collection('parentReviews')
+          .where('studentCode', '==', studentCode)
+          .where('type', '==', 'practice')
+          .orderBy('createdAt', 'desc')
+          .limit(100)
+          .get()
+          .catch(() => adminDb.collection('parentReviews').where('studentCode', '==', studentCode).where('type', '==', 'practice').get()),
+        adminDb.collection('integrityScores')
+          .where('studentCode', '==', studentCode)
+          .get()
+      ]);
+
+  const coreData: StudentCoreData = {
+    reviewsSnapshot,
+    peerReviewsSnapshot,
+    rawAssignments,
+    masterySnapshot,
+    attemptsSnapshot,
+    examAttemptsSnapshot,
+    evaluationsSnapshot,
+    syllabusList,
+    classroomExamsSnap,
+    homePracticeSnap,
+    parentReviewsSnapshot,
+    integritySnapshot
+  };
+
+  setInCache(cacheKey, coreData, 60 * 1000);
+  return coreData;
+}
+
 export async function getDashboardData(uid: string, userData: any, rangeDays: number = 7, bypassCache: boolean = false) {
   try {
     let studentCode = userData.studentCode || '';
@@ -197,9 +337,9 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
     const studentMode = getStudentMode(userData);
     const isLimited = studentMode === 'limited';
 
-    // 2. Fetch student statistics and other items in parallel
-    // Cost Guard: If student is in Limited Mode (Mode 3), bypass 9 metric/review Firestore queries completely!
-    const [
+    // Rule C2: SSOT Shared Core Data Pipeline with 60s in-memory caching
+    const coreData = await loadStudentCoreData(studentCode, batchIds, isLimited, bypassCache);
+    const {
       reviewsSnapshot,
       peerReviewsSnapshot,
       rawAssignments,
@@ -212,49 +352,7 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
       homePracticeSnap,
       parentReviewsSnapshot,
       integritySnapshot
-    ] = isLimited
-      ? await Promise.all([
-          Promise.resolve({ docs: [] } as unknown as admin.firestore.QuerySnapshot), // reviews (0 reads)
-          Promise.resolve({ docs: [] } as unknown as admin.firestore.QuerySnapshot), // peerAssignments (0 reads)
-          fetchStudentRawAssignments(studentCode, batchIds),
-          Promise.resolve({ docs: [] } as unknown as admin.firestore.QuerySnapshot), // studentTopicMastery (0 reads)
-          adminDb.collection('subjectiveAttempts').where('studentCode', '==', studentCode).get(),
-          adminDb.collection('examAttempts').where('studentCode', '==', studentCode).get(),
-          Promise.resolve({ docs: [] } as unknown as admin.firestore.QuerySnapshot), // evaluations (0 reads)
-          Promise.resolve([] as any[]), // syllabus (0 reads)
-          Promise.resolve({ docs: [] } as unknown as admin.firestore.QuerySnapshot), // classroomExams (0 reads)
-          Promise.resolve({ docs: [] } as unknown as admin.firestore.QuerySnapshot), // homePractice (0 reads)
-          Promise.resolve({ docs: [] } as unknown as admin.firestore.QuerySnapshot), // parentReviews (0 reads)
-          Promise.resolve({ docs: [] } as unknown as admin.firestore.QuerySnapshot)  // integrityScores (0 reads)
-        ])
-      : await Promise.all([
-          adminDb.collection('reviews').where('studentCode', '==', studentCode).get(),
-          adminDb.collection('peerAssignments').where('reviewerStudentCode', '==', studentCode).where('status', '==', 'pending').get(),
-          fetchStudentRawAssignments(studentCode, batchIds),
-          adminDb.collection('studentTopicMastery').where('studentCode', '==', studentCode).get(),
-          adminDb.collection('subjectiveAttempts').where('studentCode', '==', studentCode).get(),
-          adminDb.collection('examAttempts').where('studentCode', '==', studentCode).get(),
-          adminDb.collection('evaluations').where('studentCode', '==', studentCode).get(),
-          getCachedSyllabus(),
-          batchIds.length > 0
-            ? adminDb.collection('subjectiveExams')
-                .where('type', '==', 'classroom_test')
-                .where('batchId', 'in', batchIds)
-                .get()
-            : Promise.resolve({ docs: [] } as unknown as admin.firestore.QuerySnapshot),
-          batchIds.length > 0
-            ? adminDb.collection('subjectiveExams')
-                .where('type', '==', 'home_practice')
-                .where('batchId', 'in', batchIds)
-                .get()
-            : Promise.resolve({ docs: [] } as unknown as admin.firestore.QuerySnapshot),
-          adminDb.collection('parentReviews')
-            .where('studentCode', '==', studentCode)
-            .get(),
-          adminDb.collection('integrityScores')
-            .where('studentCode', '==', studentCode)
-            .get()
-        ]);
+    } = coreData;
 
     const {
       batchAssignmentsSnapshot,
@@ -293,12 +391,15 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
         });
         if (!attemptedInObj && !attemptedInSub && !attemptedInEval) {
           absentExamsCount++;
+          const aData = typeof ass.data === 'function' ? ass.data() : ass;
           absentExamsList.push({
             examId: ass.examId,
-            name: ass.examName || ass.name || ass.examId,
-            subject: ass.subject || 'General',
-            chapter: ass.chapter || '',
-            endAt: ass.endAt
+            name: ass.examName || ass.name || aData.title || aData.name || ass.examId,
+            subject: ass.subject || aData.subject || 'General',
+            chapter: ass.chapter || aData.chapter || '',
+            endAt: ass.endAt,
+            topicCode: ass.topicCode || aData.topicCode || '',
+            topicCodes: ass.topicCodes || aData.topicCodes || []
           });
         }
       }
@@ -314,7 +415,7 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
         const scheduledDateStr = examData.scheduledDate || todayDateStr;
         const isPast = scheduledDateStr < todayDateStr;
         if (isPast) {
-          const attempted = attemptsSnapshot.docs.some(a => a.data().examId === doc.id);
+          const attempted = attemptsSnapshot.docs.some((a: any) => a.data().examId === doc.id);
           const attemptedInEval = evaluationsSnapshot.docs.some((d: any) => {
             const e = d.data();
             return e.examId === doc.id || 
@@ -347,7 +448,7 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
             : new Date(`${examData.scheduledDate}T23:00:00.000Z`);
         const isPast = now > untilDate;
         if (isPast) {
-          const attempted = attemptsSnapshot.docs.some(a => a.data().examId === doc.id);
+          const attempted = attemptsSnapshot.docs.some((a: any) => a.data().examId === doc.id);
           const attemptedInEval = evaluationsSnapshot.docs.some((d: any) => {
             const e = d.data();
             return e.examId === doc.id || 
@@ -412,10 +513,10 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
     }
 
     // Fetch subjective evaluations for this student
-    const subjectiveEvaluationsList = evaluationsSnapshot.docs.map(doc => doc.data());
+    const subjectiveEvaluationsList = evaluationsSnapshot.docs.map((doc: any) => doc.data());
     const objectiveReviewsList = reviews.filter((r: any) => r.examType !== 'entrance');
-    const topicMasteriesList = masterySnapshot.docs.map(doc => doc.data());
-    const practiceReviewsList = parentReviewsSnapshot.docs.map(doc => doc.data());
+    const topicMasteriesList = masterySnapshot.docs.map((doc: any) => doc.data());
+    const practiceReviewsList = parentReviewsSnapshot.docs.map((doc: any) => doc.data());
 
     // Resolve student integrity score
     const { integrityScore } = resolveIntegrityScore(integritySnapshot);
@@ -506,7 +607,7 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
     const allPercentages = [...objPercentages, ...evalPercentages];
     
     const evalMap = new Set(
-      evaluationsSnapshot.docs.map(doc => {
+      evaluationsSnapshot.docs.map((doc: any) => {
         const d = doc.data();
         return d.attemptId || d.legacyId;
       }).filter(Boolean)
@@ -659,7 +760,7 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
       }
     }
 
-    const attempts = attemptsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const attempts = attemptsSnapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() }));
 
     // Batch resolve all unique subjective exam details
     const uniqueSubjectiveIds = Array.from(new Set([
@@ -1039,71 +1140,19 @@ export async function getStudentLearningData(userData: any, preloadedData?: Prel
   let subAssignmentsSnap = preloadedData?.subAssignmentsSnap;
   let evalsSnap = preloadedData?.evalsSnap;
 
-  if (!masterySnaps || !parentReviewsSnap || !reviewsSnap || !attemptsSnap || !subAttemptsSnap || !evalsSnap) {
-    const [
-      fMastery,
-      fParentReviews,
-      fAttempts,
-      fReviews,
-      fSubAttempts,
-      fObjAssignments,
-      fSubAssignments,
-      fEvals
-    ] = await Promise.all([
-      masterySnaps || adminDb.collection('studentTopicMastery').where('studentCode', '==', studentCode).get(),
-      parentReviewsSnap || adminDb.collection('parentReviews')
-        .where('studentCode', '==', studentCode)
-        .where('type', '==', 'practice')
-        .orderBy('createdAt', 'desc')
-        .limit(100)
-        .get()
-        .catch(() =>
-          adminDb.collection('parentReviews')
-            .where('studentCode', '==', studentCode)
-            .where('type', '==', 'practice')
-            .get()
-        ),
-      attemptsSnap || adminDb.collection('examAttempts')
-        .where('studentCode', '==', studentCode)
-        .select('examId', 'status', 'completedAt')
-        .get(),
-      reviewsSnap || adminDb.collection('reviews')
-        .where('studentCode', '==', studentCode)
-        .orderBy('completedAt', 'desc')
-        .limit(100)
-        .get()
-        .catch(() =>
-          adminDb.collection('reviews')
-            .where('studentCode', '==', studentCode)
-            .get()
-        ),
-      subAttemptsSnap || Promise.resolve({ docs: [] } as any),
-      objAssignmentsSnap || (batchIds.length > 0
-        ? getAssignmentsForBatches(batchIds, { type: 'objective', status: 'active' }).then(r => ({ docs: r.objectiveDocs }))
-        : Promise.resolve({ docs: [] } as any)),
-      subAssignmentsSnap || (batchIds.length > 0
-        ? getAssignmentsForBatches(batchIds, { type: 'subjective', status: 'active' }).then(r => ({ docs: r.subjectiveDocs }))
-        : Promise.resolve({ docs: [] } as any)),
-      evalsSnap || adminDb.collection('evaluations')
-        .where('studentCode', '==', studentCode)
-        .orderBy('createdAt', 'desc')
-        .limit(100)
-        .get()
-        .catch(() =>
-          adminDb.collection('evaluations')
-            .where('studentCode', '==', studentCode)
-            .get()
-        )
-    ]);
-
-    masterySnaps = fMastery;
-    parentReviewsSnap = fParentReviews;
-    attemptsSnap = fAttempts;
-    reviewsSnap = fReviews;
-    subAttemptsSnap = fSubAttempts;
-    objAssignmentsSnap = fObjAssignments;
-    subAssignmentsSnap = fSubAssignments;
-    evalsSnap = fEvals;
+  if (!masterySnaps || !parentReviewsSnap || !reviewsSnap || !attemptsSnap || !evalsSnap) {
+    // Rule C2: Reuse cached student core data if not explicitly preloaded
+    const studentMode = getStudentMode(userData);
+    const isLimited = studentMode === 'limited';
+    const coreData = await loadStudentCoreData(studentCode, batchIds, isLimited, bypassCache);
+    masterySnaps = masterySnaps || coreData.masterySnapshot;
+    parentReviewsSnap = parentReviewsSnap || coreData.parentReviewsSnapshot;
+    attemptsSnap = attemptsSnap || coreData.examAttemptsSnapshot;
+    reviewsSnap = reviewsSnap || coreData.reviewsSnapshot;
+    subAttemptsSnap = subAttemptsSnap || coreData.attemptsSnapshot;
+    objAssignmentsSnap = objAssignmentsSnap || { docs: coreData.rawAssignments.objectiveDocs };
+    subAssignmentsSnap = subAssignmentsSnap || { docs: coreData.rawAssignments.subjectiveDocs };
+    evalsSnap = evalsSnap || coreData.evaluationsSnapshot;
   }
 
   // Identify absent exams and collect their topics

@@ -70,6 +70,8 @@ export async function getAssignmentsForBatches(
     for (const chunk of batchChunks) {
       let q: admin.firestore.Query = adminDb.collection(collName).where('targetBatches', 'array-contains-any', chunk);
       if (status) q = q.where('status', '==', status);
+      // Rule C9: Apply projection to reduce bandwidth egress
+      q = q.select('examId', 'examType', 'type', 'title', 'name', 'startAt', 'endAt', 'availableUntil', 'scheduledDate', 'duration', 'examDuration', 'status', 'targetBatches', 'targetStudents', 'targetType', 'topicCode', 'topicCodes', 'openMode', 'assignmentType', 'attemptLimit', 'createdAt', 'batchId');
       promises.push(q.get().catch(() => ({ docs: [] } as any)));
     }
 
@@ -78,10 +80,12 @@ export async function getAssignmentsForBatches(
       if (chunk.length === 1) {
         let q: admin.firestore.Query = adminDb.collection(collName).where('targetStudents', 'array-contains', chunk[0]);
         if (status) q = q.where('status', '==', status);
+        q = q.select('examId', 'examType', 'type', 'title', 'name', 'startAt', 'endAt', 'availableUntil', 'scheduledDate', 'duration', 'examDuration', 'status', 'targetBatches', 'targetStudents', 'targetType', 'topicCode', 'topicCodes', 'openMode', 'assignmentType', 'attemptLimit', 'createdAt', 'batchId');
         promises.push(q.get().catch(() => ({ docs: [] } as any)));
       } else {
         let q: admin.firestore.Query = adminDb.collection(collName).where('targetStudents', 'array-contains-any', chunk);
         if (status) q = q.where('status', '==', status);
+        q = q.select('examId', 'examType', 'type', 'title', 'name', 'startAt', 'endAt', 'availableUntil', 'scheduledDate', 'duration', 'examDuration', 'status', 'targetBatches', 'targetStudents', 'targetType', 'topicCode', 'topicCodes', 'openMode', 'assignmentType', 'attemptLimit', 'createdAt', 'batchId');
         promises.push(q.get().catch(() => ({ docs: [] } as any)));
       }
     }

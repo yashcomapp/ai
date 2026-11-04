@@ -9,6 +9,7 @@ import { resolveParentStudentCodes } from '@/lib/dashboardDbUtils';
 import { getFromCache, setInCache } from '@/lib/firebase/cache';
 import { deriveScoreMetrics } from '@/lib/scoreUtils';
 import { shouldBypassCache } from '@/lib/cacheBypassGuard';
+import { ReportCacheManager } from '@/lib/reportCache';
 
 export async function GET(req: NextRequest) {
   try {
@@ -53,7 +54,8 @@ export async function GET(req: NextRequest) {
       const bypassCache = shouldBypassCache(req, studentCode || id);
       const scorecardCacheKey = `scorecard_${id}_${studentCode || 'any'}`;
       if (!bypassCache) {
-        const cachedScorecard = getFromCache<any>(scorecardCacheKey);
+        // Rule C5: ReportCacheManager L1 in-memory + L2 Firestore cache for scorecards
+        const cachedScorecard = await ReportCacheManager.getReport<any>(scorecardCacheKey);
         if (cachedScorecard) {
           return NextResponse.json(cachedScorecard);
         }
@@ -688,7 +690,8 @@ export async function GET(req: NextRequest) {
         questions: questionsWithAnswers
       };
 
-      setInCache(scorecardCacheKey, scorecardResult, 300000); // 5 min cache for completed scorecards
+      // Rule C5: Persistent Firestore + memory cache for completed scorecards (180s TTL)
+      await ReportCacheManager.setReport(scorecardCacheKey, scorecardResult, 180, true);
       return NextResponse.json(scorecardResult);
     }
 

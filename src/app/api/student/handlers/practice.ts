@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import * as admin from 'firebase-admin';
 import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole, isStudentLimited } from '@/lib/auth';
 import { QuestionRepository } from '@/repositories/question.repository';
@@ -125,6 +126,40 @@ export async function GET(req: NextRequest) {
     }
 
     const isPracticeLimitReached = !isTeacherAssigned && !isRevisionMode && (completedPractices >= maxSessionsAllowed || (practiceQuestionsAttempted >= maxQuestionsAllowed && mastery < 80));
+
+    // 0. Lever 1: Autonomous Student Generative Reflection Gate
+    // If student is in Autonomous Mode, require reflection on missed questions from previous session before continuing.
+    const isAutonomous = student.userData?.autonomous === true;
+    if (isAutonomous && !isTeacherAssigned) {
+      try {
+        const lastPracticeSnap = await adminDb.collection('parentReviews')
+          .where('studentCode', '==', studentCode)
+          .where('topicCode', '==', topicCode)
+          .where('type', '==', 'practice')
+          .orderBy('createdAt', 'desc')
+          .limit(1)
+          .get();
+
+        if (!lastPracticeSnap.empty) {
+          const lastPractice = lastPracticeSnap.docs[0].data();
+          if (lastPractice.reflectionRequiredByGate && !lastPractice.studentReviewCompletedAt) {
+            const missedQuestions = (lastPractice.questionDetails || []).filter((q: any) => !q.isCorrect);
+            return NextResponse.json({
+              locked: true,
+              lockType: 'reflection_required',
+              reviewId: lastPracticeSnap.docs[0].id,
+              practiceSessionId: lastPractice.practiceSessionId || lastPracticeSnap.docs[0].id,
+              scorePercent: lastPractice.scorePercent,
+              wrongCount: (lastPractice.total || 0) - (lastPractice.score || 0),
+              questions: missedQuestions,
+              message: 'Please complete your mistake reflection for the previous practice set before beginning a new set.'
+            }, { status: 200 });
+          }
+        }
+      } catch (gateErr) {
+        console.warn('Autonomous reflection gate check warning:', gateErr);
+      }
+    }
 
     // 1. Quota Gate: Topic sets completed (bypassed if teacher explicitly assigned practice)
     if (isPracticeLimitReached) {
@@ -768,6 +803,130 @@ export async function POST(req: NextRequest) {
 
   } catch (error: any) {
     console.error('API grade practice error:', error);
+    return NextResponse.json({ message: error.message || 'Internal Server Error' }, { status: 500 });
+  }
+}
+
+
+/**
+ * Lever 1: Generative Student Mistake Reflection Endpoint
+ * Submits structured pedagogical reflection for autonomous students before next practice.
+ */
+export async function postPracticeReflect(req: NextRequest) {
+  try {
+    const student = await verifyRole(req, 'student');
+    if (!student) {
+      return NextResponse.json({ message: 'Unauthorized. Student role required.' }, { status: 403 });
+    }
+    if (isStudentLimited(student)) {
+      return NextResponse.json({ message: 'Access Denied. Limited Mode students do not have access.' }, { status: 403 });
+    }
+
+    const studentCode = student.userData?.studentCode;
+    if (!studentCode) {
+      return NextResponse.json({ message: 'Missing student identifier profile.' }, { status: 400 });
+    }
+
+    const body = await req.json().catch(() => null);
+    if (!body || !body.reviewId || !Array.isArray(body.reflections) || body.reflections.length === 0) {
+      return NextResponse.json({ message: 'Missing reviewId or reflections array.' }, { status: 400 });
+    }
+
+    const { reviewId, reflections } = body;
+    const reviewRef = adminDb.collection('parentReviews').doc(reviewId);
+    const reviewDoc = await reviewRef.get();
+    if (!reviewDoc.exists) {
+      return NextResponse.json({ message: 'Practice review document not found.' }, { status: 404 });
+    }
+
+    const reviewData = reviewDoc.data()!;
+    if (reviewData.studentCode !== studentCode) {
+      return NextResponse.json({ message: 'Forbidden. You do not own this practice record.' }, { status: 403 });
+    }
+
+    // Tier 2 Generative Reflection Validation
+    const validCategories = new Set([
+      'conceptual_misunderstanding',
+      'calculation_error',
+      'misread_question',
+      'silly_mistake',
+      'over_thinking',
+      'guessed'
+    ]);
+
+    const repetitiveCharRegex = /(.)\1{4,}/;
+    const bannedTestPhrases = [
+      'asdf', 'qwerty', 'test', 'idk', "i don't know", "dont know", "i dont know",
+      'wrong answer', 'made a mistake', 'nothing', 'skip', 'just guessed', 'abcdef', 'xyz'
+    ];
+
+    const sanitizedReflections: any[] = [];
+    for (const r of reflections) {
+      const questionCode = String(r.questionCode || r.questionId || '').trim();
+      const category = String(r.category || '').trim().toLowerCase();
+      const explanation = String(r.studentExplanation || r.explanation || '').trim();
+
+      if (!validCategories.has(category)) {
+        return NextResponse.json({
+          message: `Invalid reflection category for question ${questionCode || 'unknown'}. Must be one of: conceptual_misunderstanding, calculation_error, misread_question, silly_mistake, over_thinking, guessed.`
+        }, { status: 400 });
+      }
+
+      if (explanation.length < 25) {
+        return NextResponse.json({
+          message: `Reflection for question ${questionCode || 'item'} is too brief (${explanation.length} characters). Explain your reasoning in at least 25 characters.`
+        }, { status: 400 });
+      }
+
+      if (explanation.length > 350) {
+        return NextResponse.json({
+          message: `Reflection for question ${questionCode || 'item'} exceeds 350 characters.`
+        }, { status: 400 });
+      }
+
+      if (repetitiveCharRegex.test(explanation)) {
+        return NextResponse.json({
+          message: `Reflection for question ${questionCode || 'item'} contains repetitive characters. Please provide a genuine explanation.`
+        }, { status: 400 });
+      }
+
+      const lowerExpl = explanation.toLowerCase();
+      for (const phrase of bannedTestPhrases) {
+        if (lowerExpl === phrase || lowerExpl.startsWith(phrase + ' ') || lowerExpl.endsWith(' ' + phrase)) {
+          return NextResponse.json({
+            message: `Please provide a genuine pedagogical explanation instead of '${phrase}'.`
+          }, { status: 400 });
+        }
+      }
+
+      sanitizedReflections.push({
+        questionCode,
+        category,
+        studentExplanation: explanation,
+        submittedAt: new Date().toISOString()
+      });
+    }
+
+    const now = new Date();
+    const updatePayload: any = {
+      studentReflections: sanitizedReflections,
+      studentReviewCompletedAt: now,
+      reflectionStatus: 'completed',
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    };
+
+    const batch = adminDb.batch();
+    batch.update(reviewRef, updatePayload);
+    const subRef = adminDb.collection('practiceSubmissions').doc(reviewId);
+    batch.update(subRef, updatePayload);
+    await batch.commit();
+
+    return NextResponse.json({
+      success: true,
+      message: 'Reflection submitted successfully. You may now start your next practice set.'
+    });
+  } catch (error: any) {
+    console.error('API postPracticeReflect error:', error);
     return NextResponse.json({ message: error.message || 'Internal Server Error' }, { status: 500 });
   }
 }

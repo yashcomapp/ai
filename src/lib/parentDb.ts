@@ -414,9 +414,12 @@ export async function getParentDashboardData(
       });
       if (!attemptedObj && !attemptedSub && !attemptedInEval) {
         absentExamsCount++;
+        const aData = typeof ass.data === 'function' ? ass.data() : ass;
         const exData = objectiveExamsMap.get(ass.examId);
-        if (exData?.topicCode) absentTopicCodes.add(exData.topicCode);
-        if (Array.isArray(exData?.topicCodes)) exData.topicCodes.forEach((tc: string) => absentTopicCodes.add(tc));
+        const resolvedTopicCode = ass.topicCode || aData.topicCode || exData?.topicCode;
+        const resolvedTopicCodes = ass.topicCodes || aData.topicCodes || exData?.topicCodes;
+        if (resolvedTopicCode) absentTopicCodes.add(resolvedTopicCode);
+        if (Array.isArray(resolvedTopicCodes)) resolvedTopicCodes.forEach((tc: string) => absentTopicCodes.add(tc));
       }
     }
   });
