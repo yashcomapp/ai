@@ -1,0 +1,12 @@
+node_modules
+.next
+.git
+.gitignore
+*.md
+backups
+reports
+exports
+*.zip
+*.snapshot
+inspect-*.js
+debug-*.js
