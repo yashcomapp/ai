@@ -1,6 +1,6 @@
 import * as admin from 'firebase-admin';
 
-const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID;
+const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID || 'ai-yashcom';
 if (!projectId) {
   throw new Error("Missing NEXT_PUBLIC_FIREBASE_PROJECT_ID / FIREBASE_PROJECT_ID environment variable.");
 }
