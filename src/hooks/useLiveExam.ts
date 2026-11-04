@@ -251,6 +251,24 @@ export function useLiveExam({
 
   // (sanitizeForRtdbPath and getSessionDocId imported from proctoring SSOT)
 
+  const hasReportedSyncErrorRef = useRef<boolean>(false);
+  const notifySessionSyncFailure = (err: any) => {
+    if (hasReportedSyncErrorRef.current) return;
+    hasReportedSyncErrorRef.current = true;
+    try {
+      fetch('/api/system/client-error', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          source: 'proctoring_session_sync',
+          message: `Live session sync failure: ${err?.message || err}`,
+          examId,
+          studentCode
+        })
+      }).catch(() => {});
+    } catch {}
+  };
+
   const flushLiveProctoringSession = async (updates: any) => {
     if (mock || examType === 'practice') return;
     if (!liveSessionDocRef.current || !liveSessionActiveRef.current) return;
@@ -259,6 +277,7 @@ export function useLiveExam({
       await updateLiveSession(liveSessionDocRef.current, updates);
     } catch (err: any) {
       console.warn('Failed to update live session:', err.message);
+      notifySessionSyncFailure(err);
     }
   };
 
@@ -523,7 +542,10 @@ export function useLiveExam({
         ...(pendingUpdatesRef.current || {})
       };
       pendingUpdatesRef.current = null;
-      updateLiveSession(liveSessionDocRef.current, finalUpdates).catch(err => console.warn('Could not update live proctoring status:', err.message));
+      updateLiveSession(liveSessionDocRef.current, finalUpdates).catch(err => {
+        console.warn('Could not update live proctoring status:', err.message);
+        notifySessionSyncFailure(err);
+      });
     }
 
     if (rtdb) {

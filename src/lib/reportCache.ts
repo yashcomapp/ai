@@ -101,6 +101,8 @@ export class ReportCacheManager {
         tags,
         data,
         expiry,
+        expiresAt: new Date(expiry),
+        ttl: new Date(expiry),
         isCompletedExam,
         createdAt: new Date()
       });
