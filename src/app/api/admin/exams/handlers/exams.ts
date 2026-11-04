@@ -551,13 +551,22 @@ export async function GET(req: NextRequest) {
       for (let i = 0; i < studentCodes.length; i += 30) {
         chunks.push(studentCodes.slice(i, i + 30));
       }
+      const windowStartDate = dayKeys.length > 0 ? parseIST(dayKeys[0]) : new Date(now.getTime() - 30 * 86400000);
       const reviewsSnaps = await Promise.all(
         chunks.map(chunk =>
           adminDb.collection('parentReviews')
             .where('studentCode', 'in', chunk)
+            .where('createdAt', '>=', windowStartDate)
             .select('studentCode', 'startedAt', 'createdAt', 'submittedAt', 'totalQuestions', 'questionsCount', 'correctCount', 'scorePercent', 'type', 'durationSpent')
             .get()
-            .catch(() => null)
+            .catch((err) => {
+              console.warn('[INDEX FALLBACK] parentReviews practiceTracks fell back to unbounded:', err?.message || err);
+              return adminDb.collection('parentReviews')
+                .where('studentCode', 'in', chunk)
+                .select('studentCode', 'startedAt', 'createdAt', 'submittedAt', 'totalQuestions', 'questionsCount', 'correctCount', 'scorePercent', 'type', 'durationSpent')
+                .get()
+                .catch(() => null);
+            })
         )
       );
 

@@ -142,22 +142,24 @@ export async function getParentDashboardData(
       .orderBy('completedAt', 'desc')
       .limit(100)
       .get()
-      .catch(() =>
-        adminDb.collection('reviews')
+      .catch((err) => {
+        console.warn('[INDEX FALLBACK] reviews parentDb fell back to unbounded:', err?.message || err);
+        return adminDb.collection('reviews')
           .where('studentCode', '==', targetStudentCode)
-          .get()
-      ),
+          .get();
+      }),
     adminDb.collection('parentReviews')
       .where('studentCode', '==', targetStudentCode)
       .where('type', '==', 'practice')
       .orderBy('createdAt', 'desc')
       .limit(100)
       .get()
-      .catch(() =>
-        adminDb.collection('parentReviews')
+      .catch((err) => {
+        console.warn('[INDEX FALLBACK] parentReviews parentDb fell back to unbounded:', err?.message || err);
+        return adminDb.collection('parentReviews')
           .where('studentCode', '==', targetStudentCode)
-          .get()
-      ),
+          .get();
+      }),
     adminDb.collection('subjectiveAttempts')
       .where('studentCode', '==', targetStudentCode)
       .orderBy('submittedAt', 'desc')
@@ -221,11 +223,12 @@ export async function getParentDashboardData(
       .orderBy('createdAt', 'desc')
       .limit(100)
       .get()
-      .catch(() =>
-        adminDb.collection('evaluations')
+      .catch((err) => {
+        console.warn('[INDEX FALLBACK] evaluations parentDb fell back to unbounded:', err?.message || err);
+        return adminDb.collection('evaluations')
           .where('studentCode', '==', targetStudentCode)
-          .get()
-      )
+          .get();
+      })
   ]);
 
   const allExamResults = reviewsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() as any }));
