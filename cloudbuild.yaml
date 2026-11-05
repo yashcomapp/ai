@@ -7,10 +7,14 @@ steps:
       - |
         docker pull asia-south1-docker.pkg.dev/ai-yashcom/cloud-run-source-deploy/los-next:latest || exit 0
 
-  # 2. Build image with cache-from
+  # 2. Build image with BuildKit and inline layer cache
   - name: 'gcr.io/cloud-builders/docker'
+    env:
+      - 'DOCKER_BUILDKIT=1'
     args:
       - 'build'
+      - '--build-arg'
+      - 'BUILDKIT_INLINE_CACHE=1'
       - '--cache-from'
       - 'asia-south1-docker.pkg.dev/ai-yashcom/cloud-run-source-deploy/los-next:latest'
       - '-t'
