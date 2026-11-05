@@ -750,6 +750,7 @@ export async function PUT(req: NextRequest) {
       examId,
       examName,
       wrongAnswerReasons,
+      studentExplanations,
       reviewedQuestionIds: reviewedQuestionIds || [],
       challenges: challenges || [],
       timeSpentSeconds: timeSpentSeconds || 0

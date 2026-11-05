@@ -52,7 +52,8 @@ export interface DetailedScorecard {
   };
   integrityScore: number;
   status: string;
-  wrongAnswerReasons?: string[];
+  wrongAnswerReasons?: string[] | Record<string, string>;
+  studentExplanations?: string[] | Record<string, string>;
   questions: QuestionDetailsItem[];
   subject?: string;
   chapter?: string;

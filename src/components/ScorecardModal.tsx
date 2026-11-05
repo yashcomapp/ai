@@ -32,6 +32,15 @@ interface ScorecardModalProps {
   actionButton?: React.ReactNode;
 }
 
+const MISTAKE_CATEGORIES = [
+  { key: 'silly_mistake', label: '⚡ Silly Mistake', hint: 'e.g. Rushed or clicked wrong option without reading carefully' },
+  { key: 'concept_gap', label: '📖 Formula / Concept Gap', hint: 'e.g. Forgot core formula or definition; review chapter' },
+  { key: 'calculation_error', label: '🔢 Calculation Slip', hint: 'e.g. Math or sign error in calculation step' },
+  { key: 'reading_error', label: '👓 Misread Question', hint: 'e.g. Missed NOT/INCORRECT or specific unit in question' },
+  { key: 'over_thinking', label: '🌀 Over-Thinking', hint: 'e.g. Had the right answer first but changed it' },
+  { key: 'guessed', label: '🎲 Guessed / Fluke', hint: 'e.g. Unsure of method, guessed between options' }
+];
+
 export default function ScorecardModal({ scorecard, loading, onClose, actionButton }: ScorecardModalProps) {
   const { user, firebaseUser } = useAuth();
   
@@ -53,6 +62,75 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
   // Interactive Review & 60-Minute Accountability State
   const isOfficialExam = scorecard?.examType !== 'practice' && scorecard?.examType !== 'entrance';
   const [reviewedQuestionIds, setReviewedQuestionIds] = useState<Set<string>>(new Set());
+  const [mistakeReasons, setMistakeReasons] = useState<Record<string, string>>({});
+  const [mistakeNotes, setMistakeNotes] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (!scorecard) return;
+    const initialReasons: Record<string, string> = {};
+    if (scorecard.wrongAnswerReasons) {
+      if (Array.isArray(scorecard.wrongAnswerReasons)) {
+        scorecard.wrongAnswerReasons.forEach((r, idx) => {
+          if (r) initialReasons[String(idx)] = String(r);
+        });
+      } else if (typeof scorecard.wrongAnswerReasons === 'object') {
+        Object.entries(scorecard.wrongAnswerReasons).forEach(([k, v]) => {
+          if (v) initialReasons[k] = String(v);
+        });
+      }
+    }
+
+    const initialNotes: Record<string, string> = {};
+    if (scorecard.studentExplanations) {
+      if (Array.isArray(scorecard.studentExplanations)) {
+        scorecard.studentExplanations.forEach((n, idx) => {
+          if (n) initialNotes[String(idx)] = String(n);
+        });
+      } else if (typeof scorecard.studentExplanations === 'object') {
+        Object.entries(scorecard.studentExplanations).forEach(([k, v]) => {
+          if (v) initialNotes[k] = String(v);
+        });
+      }
+    }
+
+    if (Array.isArray(scorecard.questions)) {
+      scorecard.questions.forEach((q: any) => {
+        const qId = q.questionCode || q.id;
+        if (!qId) return;
+        if (!initialReasons[qId] && (q.errorReason || q.mistakeReason)) {
+          initialReasons[qId] = q.errorReason || q.mistakeReason;
+        }
+        if (!initialNotes[qId] && (q.studentExplanation || q.errorNote || q.notes)) {
+          initialNotes[qId] = q.studentExplanation || q.errorNote || q.notes;
+        }
+      });
+    }
+    setMistakeReasons(initialReasons);
+    setMistakeNotes(initialNotes);
+  }, [scorecard]);
+
+  const handleSelectMistakeReason = (qId: string, reasonLabel: string) => {
+    setMistakeReasons(prev => {
+      const next = { ...prev };
+      if (next[qId] === reasonLabel) {
+        delete next[qId];
+      } else {
+        next[qId] = reasonLabel;
+      }
+      return next;
+    });
+    setReviewedQuestionIds(prev => new Set(prev).add(qId));
+  };
+
+  const handleUpdateMistakeNote = (qId: string, note: string) => {
+    setMistakeNotes(prev => ({
+      ...prev,
+      [qId]: note
+    }));
+    if (note.trim().length > 0) {
+      setReviewedQuestionIds(prev => new Set(prev).add(qId));
+    }
+  };
   const [challenges, setChallenges] = useState<Record<string, any>>({});
   const [reviewSubmitting, setReviewSubmitting] = useState<boolean>(false);
   const [reviewSubmittedSuccess, setReviewSubmittedSuccess] = useState<string | null>(null);
@@ -169,7 +247,7 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
 
   const reviewedMistakesCount = questionsNeedingReview.filter(q => {
     const qId = q.questionCode || q.id;
-    return reviewedQuestionIds.has(qId) || !!challenges[qId];
+    return reviewedQuestionIds.has(qId) || !!challenges[qId] || !!mistakeReasons[qId] || !!mistakeNotes[qId];
   }).length;
 
   const isReviewComplete = questionsNeedingReview.length === 0 || reviewedMistakesCount >= questionsNeedingReview.length;
@@ -283,6 +361,8 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
           examId,
           examName: scorecard.examName,
           reviewedQuestionIds: Array.from(reviewedQuestionIds),
+          wrongAnswerReasons: mistakeReasons,
+          studentExplanations: mistakeNotes,
           challenges: challengeList,
           timeSpentSeconds: timeSpentSecs,
           partnershipLog: {
@@ -711,6 +791,84 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
                           explanationLabel="💡 Step-by-Step Solution & Concept • चरणबद्ध हल व स्पष्टीकरण:"
                         />
 
+                        {/* Mistake Reflection & Self-Correction Note Box (Mistakes Only) */}
+                        {(!q.isCorrect || isUnanswered) && (
+                          <div style={{
+                            marginTop: '10px',
+                            marginBottom: '6px',
+                            padding: '10px 12px',
+                            borderRadius: 'var(--radius, 8px)',
+                            border: '1px solid var(--border-light, #e2e8f0)',
+                            background: 'var(--bg-soft, #f8fafc)',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '7px'
+                          }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '4px' }}>
+                              <span style={{ fontSize: '11.5px', fontWeight: 800, color: 'var(--text, #0f172a)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                🎯 Reason for Mistake / चूक का कारण:
+                              </span>
+                              {mistakeReasons[qId] && (
+                                <span style={{ fontSize: '10.5px', color: 'var(--accent, #4f46e5)', fontWeight: 700, background: 'var(--accent-bg, #eef2ff)', padding: '2px 8px', borderRadius: '10px' }}>
+                                  {mistakeReasons[qId]}
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Compact Category Chips */}
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
+                              {MISTAKE_CATEGORIES.map(cat => {
+                                const isSelected = mistakeReasons[qId] === cat.label;
+                                return (
+                                  <button
+                                    key={cat.key}
+                                    type="button"
+                                    onClick={() => handleSelectMistakeReason(qId, cat.label)}
+                                    style={{
+                                      padding: '3px 9px',
+                                      borderRadius: '12px',
+                                      fontSize: '10.5px',
+                                      fontWeight: isSelected ? 800 : 500,
+                                      border: isSelected ? '1.5px solid var(--accent, #4f46e5)' : '1px solid var(--border-light, #cbd5e1)',
+                                      background: isSelected ? 'var(--accent, #4f46e5)' : '#ffffff',
+                                      color: isSelected ? '#ffffff' : 'var(--text, #1e293b)',
+                                      cursor: 'pointer',
+                                      transition: 'all 0.15s ease'
+                                    }}
+                                  >
+                                    {cat.label}
+                                  </button>
+                                );
+                              })}
+                            </div>
+
+                            {/* Self-correction note text input */}
+                            <div style={{ marginTop: '2px' }}>
+                              <input
+                                type="text"
+                                value={mistakeNotes[qId] || ''}
+                                onChange={(e) => handleUpdateMistakeNote(qId, e.target.value.slice(0, 220))}
+                                placeholder={
+                                  mistakeReasons[qId]
+                                    ? (MISTAKE_CATEGORIES.find(c => c.label === mistakeReasons[qId])?.hint || 'Type what went wrong or key concept to remember...')
+                                    : '✍️ Type reason for mistake or note to self (e.g. calculation slip, formula)...'
+                                }
+                                style={{
+                                  width: '100%',
+                                  padding: '6px 10px',
+                                  fontSize: '11px',
+                                  borderRadius: '6px',
+                                  border: '1px solid var(--border-light, #cbd5e1)',
+                                  background: '#ffffff',
+                                  color: 'var(--text, #1e293b)',
+                                  outline: 'none',
+                                  boxSizing: 'border-box'
+                                }}
+                              />
+                            </div>
+                          </div>
+                        )}
+
                         {/* Bottom Question Controls & Challenge Button */}
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', paddingTop: '10px', borderTop: '1px solid var(--border-light, #e2e8f0)' }}>
                           <div style={{ display: 'flex', gap: '8px' }}>
@@ -1004,6 +1162,81 @@ export default function ScorecardModal({ scorecard, loading, onClose, actionButt
                             explanation={q.solution}
                             explanationLabel="💡 Step-by-Step Solution & Concept:"
                           />
+
+                          {/* Mistake Reflection & Self-Correction Note Box (Mistakes Only) */}
+                          {(!q.isCorrect || isUnanswered) && (
+                            <div style={{
+                              marginTop: '8px',
+                              marginBottom: '4px',
+                              padding: '8px 10px',
+                              borderRadius: 'var(--radius, 6px)',
+                              border: '1px solid var(--border-light, #e2e8f0)',
+                              background: 'var(--bg-soft, #f8fafc)',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: '6px'
+                            }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '4px' }}>
+                                <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text, #0f172a)' }}>
+                                  🎯 Reason for Mistake / चूक का कारण:
+                                </span>
+                                {mistakeReasons[qId] && (
+                                  <span style={{ fontSize: '10px', color: 'var(--accent, #4f46e5)', fontWeight: 700, background: 'var(--accent-bg, #eef2ff)', padding: '1px 6px', borderRadius: '8px' }}>
+                                    {mistakeReasons[qId]}
+                                  </span>
+                                )}
+                              </div>
+
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                                {MISTAKE_CATEGORIES.map(cat => {
+                                  const isSelected = mistakeReasons[qId] === cat.label;
+                                  return (
+                                    <button
+                                      key={cat.key}
+                                      type="button"
+                                      onClick={() => handleSelectMistakeReason(qId, cat.label)}
+                                      style={{
+                                        padding: '2px 8px',
+                                        borderRadius: '10px',
+                                        fontSize: '10px',
+                                        fontWeight: isSelected ? 800 : 500,
+                                        border: isSelected ? '1.5px solid var(--accent, #4f46e5)' : '1px solid var(--border-light, #cbd5e1)',
+                                        background: isSelected ? 'var(--accent, #4f46e5)' : '#ffffff',
+                                        color: isSelected ? '#ffffff' : 'var(--text, #1e293b)',
+                                        cursor: 'pointer'
+                                      }}
+                                    >
+                                      {cat.label}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+
+                              <div style={{ marginTop: '2px' }}>
+                                <input
+                                  type="text"
+                                  value={mistakeNotes[qId] || ''}
+                                  onChange={(e) => handleUpdateMistakeNote(qId, e.target.value.slice(0, 220))}
+                                  placeholder={
+                                    mistakeReasons[qId]
+                                      ? (MISTAKE_CATEGORIES.find(c => c.label === mistakeReasons[qId])?.hint || 'Type what went wrong or key concept...')
+                                      : '✍️ Type reason for mistake or note to self...'
+                                  }
+                                  style={{
+                                    width: '100%',
+                                    padding: '5px 8px',
+                                    fontSize: '11px',
+                                    borderRadius: '5px',
+                                    border: '1px solid var(--border-light, #cbd5e1)',
+                                    background: '#ffffff',
+                                    color: 'var(--text, #1e293b)',
+                                    outline: 'none',
+                                    boxSizing: 'border-box'
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          )}
 
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px', marginTop: '6px', paddingTop: '6px', borderTop: '1px solid var(--border-light, #e2e8f0)' }}>
                             <button

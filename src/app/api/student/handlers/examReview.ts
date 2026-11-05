@@ -52,6 +52,8 @@ export async function POST(req: NextRequest) {
       examId,
       examName,
       reviewedQuestionIds = [],
+      wrongAnswerReasons,
+      studentExplanations,
       challenges = [],
       timeSpentSeconds = 0
     } = body;
@@ -67,6 +69,8 @@ export async function POST(req: NextRequest) {
       examName,
       batchId,
       reviewedQuestionIds,
+      wrongAnswerReasons,
+      studentExplanations,
       challenges,
       timeSpentSeconds
     });

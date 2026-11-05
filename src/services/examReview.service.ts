@@ -191,13 +191,15 @@ export class ExamReviewService {
       examId: canonicalExamId,
       examName: examName || 'Official Exam',
       reviewedQuestionIds: reviewedQuestionIds || [],
+      wrongAnswerReasons: wrongAnswerReasons || {},
+      studentExplanations: studentExplanations || {},
       timeSpentSeconds: timeSpentSeconds || 0,
       elapsedMinutesAtSubmission: reviewStatus.elapsedMinutes || 0,
       status: reviewStatusValue,
       submittedAt: now.toISOString()
     }, { merge: true });
 
-    // Also update reviews and examAttempts collections status to unlock pending student reviews
+    // Also update reviews, examAttempts, parentReviews and practiceSubmissions collections status to unlock pending student reviews
     try {
       const userSnap = await adminDb.collection('users').where('studentCode', '==', sCodeUpper).where('role', '==', 'student').limit(1).get().catch(() => null);
       const isAutonomous = userSnap && !userSnap.empty && userSnap.docs[0].data()?.autonomous === true;
@@ -206,8 +208,12 @@ export class ExamReviewService {
       const candidateDocIds = Array.from(new Set([
         `${canonicalExamId}_${studentCode}`,
         `${canonicalExamId}_${sCodeUpper}`,
+        `${sCodeUpper}_${canonicalExamId}`,
+        `${studentCode}_${canonicalExamId}`,
         `${examId}_${studentCode}`,
         `${examId}_${sCodeUpper}`,
+        `${sCodeUpper}_${examId}`,
+        `${studentCode}_${examId}`,
         canonicalExamId,
         examId
       ].filter(Boolean)));
@@ -226,26 +232,22 @@ export class ExamReviewService {
 
       const reviewRefs = candidateDocIds.map(id => adminDb.collection('reviews').doc(id));
       const attemptRefs = candidateDocIds.map(id => adminDb.collection('examAttempts').doc(id));
-      const [rSnaps, aSnaps] = await Promise.all([
+      const parentReviewRefs = candidateDocIds.map(id => adminDb.collection('parentReviews').doc(id));
+      const practiceSubRefs = candidateDocIds.map(id => adminDb.collection('practiceSubmissions').doc(id));
+      const [rSnaps, aSnaps, pSnaps, psSnaps] = await Promise.all([
         adminDb.getAll(...reviewRefs).catch(() => []),
-        adminDb.getAll(...attemptRefs).catch(() => [])
+        adminDb.getAll(...attemptRefs).catch(() => []),
+        adminDb.getAll(...parentReviewRefs).catch(() => []),
+        adminDb.getAll(...practiceSubRefs).catch(() => [])
       ]);
 
       const batch = adminDb.batch();
       let hasBatchOps = false;
+      const allFoundSnaps = [...rSnaps, ...aSnaps, ...pSnaps, ...psSnaps].filter(s => s && s.exists);
 
-      for (const snap of rSnaps) {
-        if (snap && snap.exists) {
-          const currentRevStatus = snap.data()?.status;
-          if (currentRevStatus === 'student_review' || isAutonomous || wrongAnswerReasons) {
-            batch.update(snap.ref, updatePayload);
-            hasBatchOps = true;
-          }
-        }
-      }
-
-      for (const snap of aSnaps) {
-        if (snap && snap.exists) {
+      for (const snap of allFoundSnaps) {
+        const currentRevStatus = snap.data()?.status;
+        if (currentRevStatus === 'student_review' || isAutonomous || wrongAnswerReasons || studentExplanations) {
           batch.update(snap.ref, updatePayload);
           hasBatchOps = true;
         }
@@ -258,16 +260,9 @@ export class ExamReviewService {
           console.warn('Batch commit failed for review sync, falling back to individual updates:', bErr);
           // Fallback: update documents in parallel so a single failure doesn't drop the rest
           const fallbackPromises: Promise<any>[] = [];
-          for (const snap of rSnaps) {
-            if (snap && snap.exists) {
-              const currentRevStatus = snap.data()?.status;
-              if (currentRevStatus === 'student_review' || isAutonomous || wrongAnswerReasons) {
-                fallbackPromises.push(snap.ref.update(updatePayload));
-              }
-            }
-          }
-          for (const snap of aSnaps) {
-            if (snap && snap.exists) {
+          for (const snap of allFoundSnaps) {
+            const currentRevStatus = snap.data()?.status;
+            if (currentRevStatus === 'student_review' || isAutonomous || wrongAnswerReasons || studentExplanations) {
               fallbackPromises.push(snap.ref.update(updatePayload));
             }
           }

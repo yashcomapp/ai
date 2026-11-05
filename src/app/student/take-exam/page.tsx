@@ -87,6 +87,7 @@ function TakeExamContent() {
   const [unattemptedQuestions, setUnattemptedQuestions] = useState<any[]>([]);
   const [reviewedQuestions, setReviewedQuestions] = useState<Set<number>>(new Set());
   const [selectedReasons, setSelectedReasons] = useState<{[key: number]: string}>({});
+  const [studentExplanations, setStudentExplanations] = useState<{[key: number]: string}>({});
   const [reviewScores, setReviewScores] = useState<{ score: number, totalMarks: number, percentage: number } | null>(null);
   const [reviewSecondsRemaining, setReviewSecondsRemaining] = useState(0);
 
@@ -1709,6 +1710,33 @@ function TakeExamContent() {
                                 );
                               })}
                             </div>
+                            {/* Note input for self-correction */}
+                            <div style={{ marginTop: '8px' }}>
+                              <input
+                                type="text"
+                                value={studentExplanations[qItem.globalIdx] || ''}
+                                onChange={(e) => {
+                                  const val = e.target.value.slice(0, 220);
+                                  setStudentExplanations(prev => ({ ...prev, [qItem.globalIdx]: val }));
+                                }}
+                                disabled={isUnderstood}
+                                placeholder={
+                                  selectedReasons[qItem.globalIdx]
+                                    ? `✍️ Self-correction note for ${selectedReasons[qItem.globalIdx]} (optional)...`
+                                    : '✍️ Type reason for mistake or note to self (e.g. calculation slip, formula)...'
+                                }
+                                style={{
+                                  width: '100%',
+                                  padding: '6px 10px',
+                                  fontSize: '11px',
+                                  borderRadius: 'var(--radius-sm)',
+                                  border: '1px solid var(--border-light)',
+                                  background: 'var(--surface)',
+                                  color: 'var(--text)',
+                                  boxSizing: 'border-box'
+                                }}
+                              />
+                            </div>
                           </div>
                         </div>
 
@@ -1797,7 +1825,8 @@ function TakeExamContent() {
                             },
                             body: JSON.stringify({ 
                               examId,
-                              wrongAnswerReasons: finalReasons
+                              wrongAnswerReasons: finalReasons,
+                              studentExplanations: studentExplanations
                             })
                           });
                           if (!res.ok) {
