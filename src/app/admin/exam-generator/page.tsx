@@ -373,7 +373,7 @@ export default function AdminExamGeneratorPage() {
 
   useEffect(() => {
     triggerLoadChapters(selectedSubjects);
-  }, [selectedSubjects]);
+  }, [selectedSubjects, syllabusIndex]);
 
 
 
@@ -388,10 +388,23 @@ export default function AdminExamGeneratorPage() {
     resetChaptersTopics();
     if (subs.size === 0) return;
 
+    const resolveSyllabusEntry = (sub: string) => {
+      const byBoard = syllabusIndex?.subjects?.[selectedBoard]?.[selectedClass]?.[sub];
+      if (byBoard) return byBoard;
+      const bCode = boardCodes[selectedBoard] || (selectedBoard === 'Maharashtra Board' ? 'MH' : selectedBoard === 'MH' ? 'Maharashtra Board' : selectedBoard);
+      const byCode = syllabusIndex?.subjects?.[bCode]?.[selectedClass]?.[sub];
+      if (byCode) return byCode;
+      const altBoard = selectedBoard === 'MH' ? 'Maharashtra Board' : selectedBoard === 'Maharashtra Board' ? 'MH' : '';
+      if (altBoard && syllabusIndex?.subjects?.[altBoard]?.[selectedClass]?.[sub]) {
+        return syllabusIndex.subjects[altBoard][selectedClass][sub];
+      }
+      return null;
+    };
+
     // 1. INSTANT: Synchronously populate chapters and topics from loaded syllabusIndex (0ms delay)
     const instantChaptersList: any[] = [];
     Array.from(subs).forEach((subject) => {
-      const entry = syllabusIndex?.subjects?.[selectedBoard]?.[selectedClass]?.[subject];
+      const entry = resolveSyllabusEntry(subject);
       if (entry && Array.isArray(entry.chapters)) {
         entry.chapters.forEach((ch: any, idx: number) => {
           const chNum = String(ch.number || idx + 1);
@@ -467,11 +480,13 @@ export default function AdminExamGeneratorPage() {
       
       await Promise.all(
         Array.from(subs).map(async (subject) => {
-          const entry = syllabusIndex?.subjects?.[selectedBoard]?.[selectedClass]?.[subject];
-          if (entry && entry.docId) {
-            const res = await fetch(`/api/admin/exams/generate?docId=${entry.docId}`, {
-              headers: { 'Authorization': `Bearer ${idToken}` }
-            });
+          const entry = resolveSyllabusEntry(subject);
+          const queryUrl = entry && entry.docId
+            ? `/api/admin/exams/generate?docId=${entry.docId}`
+            : `/api/admin/exams/generate?board=${encodeURIComponent(selectedBoard)}&classNum=${encodeURIComponent(selectedClass)}&subject=${encodeURIComponent(subject)}`;
+          const res = await fetch(queryUrl, {
+            headers: { 'Authorization': `Bearer ${idToken}` }
+          });
             if (res.ok) {
               const syllabusDoc = await res.json();
               const list = syllabusDoc.chapters || [];
@@ -490,7 +505,6 @@ export default function AdminExamGeneratorPage() {
                 });
               });
             }
-          }
         })
       );
 

@@ -197,14 +197,38 @@ export async function GET(req: NextRequest) {
     }
 
     // Action B: Fetch single syllabus document with live calculated question counts
-    if (docId) {
-      const cached = SYLLABUS_DOC_CACHE.get(docId);
+    const reqBoard = searchParams.get('board') || '';
+    const reqClass = searchParams.get('classNum') || searchParams.get('class') || '';
+    const reqSubject = searchParams.get('subject') || '';
+    const isSingleDocQuery = Boolean(docId || (reqBoard && reqClass && reqSubject));
+
+    if (isSingleDocQuery) {
+      const cacheKey = docId || `${reqBoard}_${reqClass}_${reqSubject}`;
+      const cached = SYLLABUS_DOC_CACHE.get(cacheKey);
       if (cached && (Date.now() - cached.timestamp < SYLLABUS_DOC_TTL)) {
         return NextResponse.json(cached.data);
       }
 
-      const docSnap = await adminDb.collection('syllabus').doc(docId).get();
-      if (!docSnap.exists) {
+      let docSnap: admin.firestore.DocumentSnapshot | null = null;
+      if (docId) {
+        docSnap = await adminDb.collection('syllabus').doc(docId).get();
+      } else {
+        const bCode = getCanonicalBoardCode(reqBoard);
+        const cNum = getCanonicalClass(reqClass);
+        const sSnap = await adminDb.collection('syllabus')
+          .where('class', 'in', [cNum, Number(cNum)])
+          .get();
+        for (const sDoc of sSnap.docs) {
+          const sData = sDoc.data();
+          const sBCode = getCanonicalBoardCode(sData.boardCode || sData.board);
+          if (sBCode === bCode && (sData.subject === reqSubject || sData.subjectCode === reqSubject)) {
+            docSnap = sDoc;
+            break;
+          }
+        }
+      }
+
+      if (!docSnap || !docSnap.exists) {
         return NextResponse.json({ message: 'Subject syllabus not found.' }, { status: 404 });
       }
 
@@ -561,7 +585,8 @@ export async function GET(req: NextRequest) {
         console.warn('Chapter questions aggregation error bypassed:', countErr);
       }
 
-      SYLLABUS_DOC_CACHE.set(docId, { data: subjectData, timestamp: Date.now() });
+      SYLLABUS_DOC_CACHE.set(docId || cacheKey, { data: subjectData, timestamp: Date.now() });
+      if (docSnap && docSnap.id) SYLLABUS_DOC_CACHE.set(docSnap.id, { data: subjectData, timestamp: Date.now() });
       return NextResponse.json(subjectData);
     }
 

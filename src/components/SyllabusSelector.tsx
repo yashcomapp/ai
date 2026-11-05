@@ -183,11 +183,7 @@ export function SyllabusSelector<T extends { topic: string; subject?: string }>(
                       <span style={{ color: 'var(--accent)' }}>S: {ch.subjectiveCount ?? ch.chapter?.subjectiveCount ?? 0}</span>
                     </span>
                     {(() => {
-                      const rawCond = ch.conductedTopicsCount ?? ch.chapter?.conductedTopicsCount;
-                      if (rawCond === undefined) {
-                        return null;
-                      }
-                      const condTopics = rawCond ?? 0;
+                      const condTopics = ch.conductedTopicsCount ?? ch.chapter?.conductedTopicsCount ?? 0;
                       const totTopics = ch.totalTopicsCount ?? ch.chapter?.totalTopicsCount ?? (Array.isArray(ch.chapter?.topics) ? ch.chapter.topics.length : 0);
                       const exStatus = ch.examStatus ?? ch.chapter?.examStatus ?? (condTopics > 0 && condTopics >= totTopics ? 'all_conducted' : condTopics > 0 ? 'partial_conducted' : 'unconducted');
 

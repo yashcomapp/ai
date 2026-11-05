@@ -323,12 +323,16 @@ export function buildSyllabusHierarchyFromDocs(docs: any[], includeChapters = fa
       if (subjectCode) {
         subjectCodes[subject] = subjectCode;
       }
-      if (!subjectsMap[board]) subjectsMap[board] = {};
-      if (!subjectsMap[board][cls]) subjectsMap[board][cls] = {};
-      subjectsMap[board][cls][subject] = {
-        docId: doc.id || data.id,
-        ...(includeChapters ? { chapters: data.chapters || [] } : {})
-      };
+      const boardKeys = Array.from(new Set([board, bCode, data.board].filter(Boolean)));
+      boardKeys.forEach(bk => {
+        if (!subjectsMap[bk]) subjectsMap[bk] = {};
+        if (!subjectsMap[bk][cls]) subjectsMap[bk][cls] = {};
+        subjectsMap[bk][cls][subject] = {
+          docId: doc.id || data.id,
+          subjectCode,
+          ...(includeChapters ? { chapters: data.chapters || [] } : {})
+        };
+      });
     }
   });
 
