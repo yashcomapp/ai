@@ -275,35 +275,35 @@ export default function TopicCoverageTab({ batches }: TopicCoverageTabProps) {
   };
 
   return (
-    <div style={{ padding: '0 4px', color: 'var(--text)' }}>
+    <div style={{ padding: '0 2px', color: 'var(--text)' }}>
       {/* 1. Header Toolbar & Batch Selector */}
       <div style={{
         display: 'flex',
         flexWrap: 'wrap',
         justifyContent: 'space-between',
         alignItems: 'center',
-        gap: '12px',
-        marginBottom: '20px',
-        padding: '16px',
+        gap: '8px',
+        marginBottom: '10px',
+        padding: '10px 14px',
         background: 'var(--card-bg, #1a1e29)',
-        borderRadius: '12px',
+        borderRadius: '8px',
         border: '1px solid var(--border-light, #2d3748)'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-          <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-muted, #94a3b8)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted, #94a3b8)' }}>
             Selected Batch:
           </span>
           <select
             value={selectedBatchId}
             onChange={(e) => setSelectedBatchId(e.target.value)}
             style={{
-              padding: '8px 14px',
-              borderRadius: '8px',
+              padding: '5px 10px',
+              borderRadius: '6px',
               background: '#0f172a',
               color: '#f8fafc',
               border: '1px solid #3b82f6',
               fontWeight: 600,
-              fontSize: '14px',
+              fontSize: '12px',
               cursor: 'pointer'
             }}
           >
@@ -314,26 +314,26 @@ export default function TopicCoverageTab({ batches }: TopicCoverageTabProps) {
             ))}
           </select>
 
-          <span style={{ fontSize: '13px', color: '#64748b' }}>
+          <span style={{ fontSize: '11.5px', color: '#64748b' }}>
             {data ? `• ${data.totalStudents} Active Students` : ''}
           </span>
         </div>
 
         {/* Search Input */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <input
             type="text"
             placeholder="Search conducted topics or chapters..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             style={{
-              padding: '8px 12px',
-              borderRadius: '8px',
+              padding: '5px 10px',
+              borderRadius: '6px',
               background: '#0f172a',
               color: '#f8fafc',
               border: '1px solid var(--border-light, #334155)',
-              fontSize: '13px',
-              width: '260px'
+              fontSize: '12px',
+              width: '220px'
             }}
           />
         </div>
@@ -342,61 +342,61 @@ export default function TopicCoverageTab({ batches }: TopicCoverageTabProps) {
       {/* 2. High-Level Summary Metrics Cards */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
-        gap: '14px',
-        marginBottom: '24px'
+        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+        gap: '10px',
+        marginBottom: '12px'
       }}>
         <div style={{
           background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.7), rgba(15, 23, 42, 0.9))',
-          padding: '16px',
-          borderRadius: '12px',
+          padding: '10px 14px',
+          borderRadius: '8px',
           border: '1px solid #334155'
         }}>
-          <div style={{ fontSize: '12px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 700 }}>
+          <div style={{ fontSize: '10.5px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 700 }}>
             Conducted Topics
           </div>
-          <div style={{ fontSize: '28px', fontWeight: 800, color: '#38bdf8', marginTop: '4px' }}>
+          <div style={{ fontSize: '20px', fontWeight: 800, color: '#38bdf8', marginTop: '2px' }}>
             {summaryMetrics.totalConducted}
           </div>
-          <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>
+          <div style={{ fontSize: '10px', color: '#64748b', marginTop: '1px' }}>
             Strictly tested in assigned exams
           </div>
         </div>
 
         <div style={{
           background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.7), rgba(15, 23, 42, 0.9))',
-          padding: '16px',
-          borderRadius: '12px',
+          padding: '10px 14px',
+          borderRadius: '8px',
           border: '1px solid #334155'
         }}>
-          <div style={{ fontSize: '12px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 700 }}>
+          <div style={{ fontSize: '10.5px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 700 }}>
             Batch Mastery Average
           </div>
-          <div style={{ fontSize: '28px', fontWeight: 800, color: summaryMetrics.batchAvg >= 75 ? '#22c55e' : (summaryMetrics.batchAvg >= 50 ? '#eab308' : '#ef4444'), marginTop: '4px' }}>
+          <div style={{ fontSize: '20px', fontWeight: 800, color: summaryMetrics.batchAvg >= 75 ? '#22c55e' : (summaryMetrics.batchAvg >= 50 ? '#eab308' : '#ef4444'), marginTop: '2px' }}>
             {summaryMetrics.batchAvg}%
           </div>
-          <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>
+          <div style={{ fontSize: '10px', color: '#64748b', marginTop: '1px' }}>
             Across all conducted topics
           </div>
         </div>
 
         <div style={{
           background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.7), rgba(15, 23, 42, 0.9))',
-          padding: '16px',
-          borderRadius: '12px',
+          padding: '10px 14px',
+          borderRadius: '8px',
           border: '1px solid #334155'
         }}>
-          <div style={{ fontSize: '12px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 700 }}>
+          <div style={{ fontSize: '10.5px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 700 }}>
             Performance Distribution
           </div>
-          <div style={{ display: 'flex', gap: '8px', marginTop: '8px', alignItems: 'center' }}>
-            <span style={{ fontSize: '12px', background: 'rgba(34, 197, 94, 0.15)', color: '#4ade80', padding: '4px 8px', borderRadius: '6px', fontWeight: 700 }}>
+          <div style={{ display: 'flex', gap: '6px', marginTop: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '11px', background: 'rgba(34, 197, 94, 0.15)', color: '#4ade80', padding: '2px 6px', borderRadius: '4px', fontWeight: 700 }}>
               🟢 {summaryMetrics.totalMastered} Mastered
             </span>
-            <span style={{ fontSize: '12px', background: 'rgba(234, 179, 8, 0.15)', color: '#facc15', padding: '4px 8px', borderRadius: '6px', fontWeight: 700 }}>
+            <span style={{ fontSize: '11px', background: 'rgba(234, 179, 8, 0.15)', color: '#facc15', padding: '2px 6px', borderRadius: '4px', fontWeight: 700 }}>
               🟡 {summaryMetrics.totalPracticing} Practicing
             </span>
-            <span style={{ fontSize: '12px', background: 'rgba(239, 68, 68, 0.15)', color: '#f87171', padding: '4px 8px', borderRadius: '6px', fontWeight: 700 }}>
+            <span style={{ fontSize: '11px', background: 'rgba(239, 68, 68, 0.15)', color: '#f87171', padding: '2px 6px', borderRadius: '4px', fontWeight: 700 }}>
               🔴 {summaryMetrics.totalNeedsAttention} Needs Attention
             </span>
           </div>
@@ -405,13 +405,13 @@ export default function TopicCoverageTab({ batches }: TopicCoverageTabProps) {
 
       {/* 3. Subject Filter Pills */}
       {availableSubjects.length > 0 && (
-        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '16px' }}>
+        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '10px' }}>
           <button
             onClick={() => setSubjectFilter('all')}
             style={{
-              padding: '6px 14px',
-              borderRadius: '20px',
-              fontSize: '12px',
+              padding: '4px 10px',
+              borderRadius: '16px',
+              fontSize: '11px',
               fontWeight: 700,
               cursor: 'pointer',
               border: 'none',
@@ -428,9 +428,9 @@ export default function TopicCoverageTab({ batches }: TopicCoverageTabProps) {
                 key={sub}
                 onClick={() => setSubjectFilter(sub)}
                 style={{
-                  padding: '6px 14px',
-                  borderRadius: '20px',
-                  fontSize: '12px',
+                  padding: '4px 10px',
+                  borderRadius: '16px',
+                  fontSize: '11px',
                   fontWeight: 700,
                   cursor: 'pointer',
                   border: 'none',
@@ -447,20 +447,21 @@ export default function TopicCoverageTab({ batches }: TopicCoverageTabProps) {
 
       {/* 4. Loading & Error States */}
       {loading && (
-        <div style={{ textAlign: 'center', padding: '40px 20px', color: '#94a3b8' }}>
-          <div style={{ fontSize: '16px', fontWeight: 600 }}>⏳ Loading conducted topics for this batch...</div>
-          <div style={{ fontSize: '12px', color: '#64748b', marginTop: '6px' }}>Aggregating exam assignments and student mastery scores.</div>
+        <div style={{ textAlign: 'center', padding: '30px 20px', color: '#94a3b8' }}>
+          <div style={{ fontSize: '14px', fontWeight: 600 }}>⏳ Loading conducted topics for this batch...</div>
+          <div style={{ fontSize: '11.5px', color: '#64748b', marginTop: '4px' }}>Aggregating exam assignments and student mastery scores.</div>
         </div>
       )}
 
       {error && !loading && (
         <div style={{
-          padding: '16px',
+          padding: '10px 14px',
           background: 'rgba(239, 68, 68, 0.1)',
           border: '1px solid #ef4444',
-          borderRadius: '8px',
+          borderRadius: '6px',
           color: '#f87171',
-          marginBottom: '20px'
+          marginBottom: '12px',
+          fontSize: '12px'
         }}>
           ⚠️ {error}
         </div>
@@ -470,14 +471,14 @@ export default function TopicCoverageTab({ batches }: TopicCoverageTabProps) {
       {!loading && !error && filteredTopics.length === 0 && (
         <div style={{
           textAlign: 'center',
-          padding: '60px 20px',
+          padding: '40px 20px',
           background: 'var(--card-bg, #1a1e29)',
-          borderRadius: '12px',
+          borderRadius: '8px',
           border: '1px dashed #334155',
           color: '#94a3b8'
         }}>
-          <div style={{ fontSize: '18px', fontWeight: 700, color: '#f1f5f9' }}>No Conducted Topics Found</div>
-          <div style={{ fontSize: '13px', marginTop: '6px' }}>
+          <div style={{ fontSize: '15px', fontWeight: 700, color: '#f1f5f9' }}>No Conducted Topics Found</div>
+          <div style={{ fontSize: '12px', marginTop: '4px' }}>
             No exams have been assigned or conducted on topics for this batch yet.
           </div>
         </div>
@@ -486,19 +487,19 @@ export default function TopicCoverageTab({ batches }: TopicCoverageTabProps) {
       {!loading && filteredTopics.length > 0 && (
         <div style={{
           background: 'var(--card-bg, #1a1e29)',
-          borderRadius: '12px',
+          borderRadius: '8px',
           border: '1px solid var(--border-light, #2d3748)',
           overflow: 'hidden'
         }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12px' }}>
             <thead>
               <tr style={{ background: '#0f172a', borderBottom: '1px solid #334155', color: '#94a3b8' }}>
-                <th style={{ padding: '12px 16px', fontWeight: 700 }}>Topic & Chapter</th>
-                <th style={{ padding: '12px 16px', fontWeight: 700 }}>Subject</th>
-                <th style={{ padding: '12px 16px', fontWeight: 700 }}>Exams Tested</th>
-                <th style={{ padding: '12px 16px', fontWeight: 700 }}>Batch Avg</th>
-                <th style={{ padding: '12px 16px', fontWeight: 700 }}>Student Mastery Breakdown</th>
-                <th style={{ padding: '12px 16px', fontWeight: 700, textAlign: 'right' }}>Actions</th>
+                <th style={{ padding: '8px 12px', fontWeight: 700 }}>Topic & Chapter</th>
+                <th style={{ padding: '8px 12px', fontWeight: 700 }}>Subject</th>
+                <th style={{ padding: '8px 12px', fontWeight: 700 }}>Exams Tested</th>
+                <th style={{ padding: '8px 12px', fontWeight: 700 }}>Batch Avg</th>
+                <th style={{ padding: '8px 12px', fontWeight: 700 }}>Student Mastery Breakdown</th>
+                <th style={{ padding: '8px 12px', fontWeight: 700, textAlign: 'right' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -515,23 +516,23 @@ export default function TopicCoverageTab({ batches }: TopicCoverageTabProps) {
                       }}
                     >
                       {/* Topic & Chapter */}
-                      <td style={{ padding: '14px 16px' }}>
-                        <div style={{ fontWeight: 700, color: '#f8fafc', fontSize: '14px' }}>
+                      <td style={{ padding: '8px 12px' }}>
+                        <div style={{ fontWeight: 700, color: '#f8fafc', fontSize: '13px' }}>
                           {topic.topicName}
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px', flexWrap: 'wrap' }}>
-                          <span style={{ fontSize: '11px', color: '#94a3b8', background: '#0f172a', padding: '2px 6px', borderRadius: '4px', fontFamily: 'monospace' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '3px', flexWrap: 'wrap' }}>
+                          <span style={{ fontSize: '10.5px', color: '#94a3b8', background: '#0f172a', padding: '1px 5px', borderRadius: '3px', fontFamily: 'monospace' }}>
                             {topic.topicCode}
                           </span>
-                          <span style={{ fontSize: '12px', color: '#cbd5e1' }}>
+                          <span style={{ fontSize: '11px', color: '#cbd5e1' }}>
                             {topic.chapterName}
                           </span>
                           {topic.hasNumericals ? (
-                            <span style={{ fontSize: '10px', background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', padding: '2px 6px', borderRadius: '4px', fontWeight: 700 }}>
+                            <span style={{ fontSize: '9.5px', background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', padding: '1px 5px', borderRadius: '3px', fontWeight: 700 }}>
                               🔢 Numericals (ONE)
                             </span>
                           ) : (
-                            <span style={{ fontSize: '10px', background: 'rgba(148, 163, 184, 0.15)', color: '#94a3b8', padding: '2px 6px', borderRadius: '4px' }}>
+                            <span style={{ fontSize: '9.5px', background: 'rgba(148, 163, 184, 0.15)', color: '#94a3b8', padding: '1px 5px', borderRadius: '3px' }}>
                               📖 Conceptual
                             </span>
                           )}
@@ -539,19 +540,19 @@ export default function TopicCoverageTab({ batches }: TopicCoverageTabProps) {
                       </td>
 
                       {/* Subject */}
-                      <td style={{ padding: '14px 16px', color: '#cbd5e1', fontWeight: 600 }}>
+                      <td style={{ padding: '8px 12px', color: '#cbd5e1', fontWeight: 600 }}>
                         {topic.subject}
                       </td>
 
                       {/* Exams Tested */}
-                      <td style={{ padding: '14px 16px' }}>
+                      <td style={{ padding: '8px 12px' }}>
                         <span style={{
                           background: '#0f172a',
                           color: '#e2e8f0',
-                          padding: '4px 8px',
-                          borderRadius: '6px',
+                          padding: '2px 6px',
+                          borderRadius: '4px',
                           fontWeight: 700,
-                          fontSize: '12px',
+                          fontSize: '11px',
                           border: '1px solid #334155'
                         }}>
                           {topic.examsConductedCount} Exam{topic.examsConductedCount === 1 ? '' : 's'}
@@ -559,30 +560,30 @@ export default function TopicCoverageTab({ batches }: TopicCoverageTabProps) {
                       </td>
 
                       {/* Batch Avg */}
-                      <td style={{ padding: '14px 16px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <td style={{ padding: '8px 12px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                           <div style={{
-                            width: '44px',
+                            width: '36px',
                             fontWeight: 800,
-                            fontSize: '14px',
+                            fontSize: '13px',
                             color: topic.batchAvgScore >= 75 ? '#22c55e' : (topic.batchAvgScore >= 50 ? '#eab308' : '#ef4444')
                           }}>
                             {topic.batchAvgScore}%
                           </div>
-                          <div style={{ width: '80px', height: '6px', background: '#334155', borderRadius: '3px', overflow: 'hidden' }}>
+                          <div style={{ width: '60px', height: '4px', background: '#334155', borderRadius: '2px', overflow: 'hidden' }}>
                             <div style={{
                               width: `${topic.batchAvgScore}%`,
                               height: '100%',
                               background: topic.batchAvgScore >= 75 ? '#22c55e' : (topic.batchAvgScore >= 50 ? '#eab308' : '#ef4444'),
-                              borderRadius: '3px'
+                              borderRadius: '2px'
                             }} />
                           </div>
                         </div>
                       </td>
 
                       {/* Student Mastery Breakdown */}
-                      <td style={{ padding: '14px 16px' }}>
-                        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                      <td style={{ padding: '8px 12px' }}>
+                        <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
                           <button
                             onClick={() => setExpandedTopicCode(isExpanded ? null : topic.topicCode)}
                             title="Click to view student roster"
@@ -590,9 +591,9 @@ export default function TopicCoverageTab({ batches }: TopicCoverageTabProps) {
                               background: 'rgba(34, 197, 94, 0.15)',
                               color: '#4ade80',
                               border: '1px solid rgba(34, 197, 94, 0.3)',
-                              padding: '3px 8px',
-                              borderRadius: '4px',
-                              fontSize: '11px',
+                              padding: '2px 6px',
+                              borderRadius: '3px',
+                              fontSize: '10.5px',
                               fontWeight: 700,
                               cursor: 'pointer'
                             }}
@@ -606,9 +607,9 @@ export default function TopicCoverageTab({ batches }: TopicCoverageTabProps) {
                               background: 'rgba(234, 179, 8, 0.15)',
                               color: '#facc15',
                               border: '1px solid rgba(234, 179, 8, 0.3)',
-                              padding: '3px 8px',
-                              borderRadius: '4px',
-                              fontSize: '11px',
+                              padding: '2px 6px',
+                              borderRadius: '3px',
+                              fontSize: '10.5px',
                               fontWeight: 700,
                               cursor: 'pointer'
                             }}
@@ -622,9 +623,9 @@ export default function TopicCoverageTab({ batches }: TopicCoverageTabProps) {
                               background: 'rgba(239, 68, 68, 0.15)',
                               color: '#f87171',
                               border: '1px solid rgba(239, 68, 68, 0.3)',
-                              padding: '3px 8px',
-                              borderRadius: '4px',
-                              fontSize: '11px',
+                              padding: '2px 6px',
+                              borderRadius: '3px',
+                              fontSize: '10.5px',
                               fontWeight: 700,
                               cursor: 'pointer'
                             }}
@@ -637,9 +638,9 @@ export default function TopicCoverageTab({ batches }: TopicCoverageTabProps) {
                               background: 'none',
                               border: 'none',
                               color: '#60a5fa',
-                              fontSize: '11px',
+                              fontSize: '10.5px',
                               cursor: 'pointer',
-                              padding: '0 4px',
+                              padding: '0 2px',
                               textDecoration: 'underline'
                             }}
                           >

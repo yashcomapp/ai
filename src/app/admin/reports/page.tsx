@@ -114,52 +114,52 @@ export default function AdminReportsHubPage() {
     <div style={{ background: 'var(--bg)', flex: 1, display: 'flex', flexDirection: 'column' }}>
 
       {/* Reports Hub Sub-Navigation Bar */}
-      <div style={{ maxWidth: '1280px', width: '100%', margin: '0 auto', padding: '12px 16px 0 16px' }}>
-        <nav style={{ display: 'flex', gap: '16px', borderBottom: '1px solid var(--border-light)', paddingBottom: '8px', overflowX: 'auto' }}>
-          <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--accent)', borderBottom: '2px solid var(--accent)', paddingBottom: '4px', whiteSpace: 'nowrap' }}>
+      <div style={{ maxWidth: '1280px', width: '100%', margin: '0 auto', padding: '8px 16px 0 16px' }}>
+        <nav style={{ display: 'flex', gap: '14px', borderBottom: '1px solid var(--border-light)', paddingBottom: '6px', overflowX: 'auto' }}>
+          <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--accent)', borderBottom: '2px solid var(--accent)', paddingBottom: '4px', whiteSpace: 'nowrap' }}>
             ⚡ Daily Intervention Queue
           </span>
-          <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-muted)', cursor: 'pointer', whiteSpace: 'nowrap' }} onClick={() => router.push('/admin/reports/remediation')}>
+          <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', cursor: 'pointer', whiteSpace: 'nowrap' }} onClick={() => router.push('/admin/reports/remediation')}>
             🎯 Topic Remediation Tracker
           </span>
-          <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-muted)', cursor: 'pointer', whiteSpace: 'nowrap' }} onClick={() => router.push('/admin/reports/learning-quotient')}>
+          <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', cursor: 'pointer', whiteSpace: 'nowrap' }} onClick={() => router.push('/admin/reports/learning-quotient')}>
             📊 Student Learning Profiles (LQ)
           </span>
-          <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-muted)', cursor: 'pointer', whiteSpace: 'nowrap' }} onClick={() => router.push('/admin/reports/usage')}>
+          <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', cursor: 'pointer', whiteSpace: 'nowrap' }} onClick={() => router.push('/admin/reports/usage')}>
             🛡️ System Health & Audit
           </span>
         </nav>
       </div>
 
       {/* Main Workspace */}
-      <main style={{ flex: 1, padding: '20px 16px', maxWidth: '1280px', width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <main style={{ flex: 1, padding: '10px 14px', maxWidth: '1280px', width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
         
         {/* Page Title & Refresh */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <h2 style={{ fontSize: '22px', fontWeight: 800, color: 'var(--text)', margin: 0 }}>
+              <h2 style={{ fontSize: '17px', fontWeight: 800, color: 'var(--text)', margin: 0 }}>
                 ⚡ Daily Intervention Queue
               </h2>
               <span style={{
-                fontSize: '11px',
+                fontSize: '10px',
                 fontWeight: 700,
-                padding: '2px 8px',
-                borderRadius: '10px',
+                padding: '1px 6px',
+                borderRadius: '6px',
                 background: 'rgba(239, 68, 68, 0.12)',
                 color: 'var(--danger, #ef4444)'
               }}>
                 Exam-to-Practice Remediation Hub
               </span>
             </div>
-            <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
+            <p style={{ fontSize: '11.5px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
               Tracks students failing to recover from exam baselines through daily practice. Actionable triggers for teachers & admins.
             </p>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             {data?.lastUpdated && (
-              <span style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
                 Updated {new Date(data.lastUpdated).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </span>
             )}
@@ -169,15 +169,15 @@ export default function AdminReportsHubPage() {
               style={{
                 background: 'var(--surface)',
                 border: '1px solid var(--border)',
-                borderRadius: '8px',
-                padding: '7px 14px',
-                fontSize: '12.5px',
+                borderRadius: '6px',
+                padding: '5px 10px',
+                fontSize: '11.5px',
                 fontWeight: 600,
                 color: 'var(--text)',
                 cursor: loading || refreshing ? 'not-allowed' : 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '6px'
+                gap: '5px'
               }}
             >
               <span>{refreshing ? '🔄' : '⚡'}</span>
@@ -189,8 +189,8 @@ export default function AdminReportsHubPage() {
         {/* 4-Stage Metric Cards Aligned with Lifecycle */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-          gap: '14px'
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: '10px'
         }}>
           {/* Card 1: Missed Baseline Exams (Step 1) */}
           <div
@@ -198,25 +198,25 @@ export default function AdminReportsHubPage() {
             style={{
               background: 'var(--surface)',
               border: selectedCategory === 'missed_exam' ? '2px solid var(--danger, #ef4444)' : '1px solid var(--border-light)',
-              borderRadius: '10px',
-              padding: '16px',
+              borderRadius: '8px',
+              padding: '10px 12px',
               cursor: 'pointer',
               transition: 'all 0.15s ease'
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-              <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--danger, #ef4444)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
+              <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--danger, #ef4444)' }}>
                 🔴 1. Missed Exams
               </span>
-              <span style={{ fontSize: '10px', fontWeight: 700, padding: '1px 6px', borderRadius: '4px', background: 'rgba(239, 68, 68, 0.15)', color: 'var(--danger, #ef4444)' }}>
+              <span style={{ fontSize: '9.5px', fontWeight: 700, padding: '1px 5px', borderRadius: '4px', background: 'rgba(239, 68, 68, 0.15)', color: 'var(--danger, #ef4444)' }}>
                 Baseline Missing
               </span>
             </div>
-            <div style={{ fontSize: '26px', fontWeight: 800, color: 'var(--danger, #ef4444)' }}>
+            <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--danger, #ef4444)' }}>
               {data?.criticalCount ?? (loading ? '...' : 0)}
             </div>
-            <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
-              Assigned exams unattempted; topics cannot be calibrated
+            <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', marginTop: '2px' }}>
+              Assigned exams unattempted
             </div>
           </div>
 
@@ -226,25 +226,25 @@ export default function AdminReportsHubPage() {
             style={{
               background: 'var(--surface)',
               border: selectedCategory === 'reflection_gate' ? '2px solid #f97316' : '1px solid var(--border-light)',
-              borderRadius: '10px',
-              padding: '16px',
+              borderRadius: '8px',
+              padding: '10px 12px',
               cursor: 'pointer',
               transition: 'all 0.15s ease'
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-              <span style={{ fontSize: '12px', fontWeight: 600, color: '#f97316' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
+              <span style={{ fontSize: '11px', fontWeight: 600, color: '#f97316' }}>
                 🟠 2. Practice Locked
               </span>
-              <span style={{ fontSize: '10px', fontWeight: 700, padding: '1px 6px', borderRadius: '4px', background: 'rgba(249, 115, 22, 0.15)', color: '#f97316' }}>
+              <span style={{ fontSize: '9.5px', fontWeight: 700, padding: '1px 5px', borderRadius: '4px', background: 'rgba(249, 115, 22, 0.15)', color: '#f97316' }}>
                 Reflection Pending
               </span>
             </div>
-            <div style={{ fontSize: '26px', fontWeight: 800, color: '#f97316' }}>
+            <div style={{ fontSize: '20px', fontWeight: 800, color: '#f97316' }}>
               {data?.gateBlockedCount ?? (loading ? '...' : 0)}
             </div>
-            <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
-              Locked out of practice due to uncompleted mistake review
+            <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', marginTop: '2px' }}>
+              Locked out due to mistake review
             </div>
           </div>
 
@@ -254,25 +254,25 @@ export default function AdminReportsHubPage() {
             style={{
               background: 'var(--surface)',
               border: selectedCategory === 'conceptual_block' ? '2px solid #ef4444' : '1px solid var(--border-light)',
-              borderRadius: '10px',
-              padding: '16px',
+              borderRadius: '8px',
+              padding: '10px 12px',
               cursor: 'pointer',
               transition: 'all 0.15s ease'
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-              <span style={{ fontSize: '12px', fontWeight: 600, color: '#ef4444' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
+              <span style={{ fontSize: '11px', fontWeight: 600, color: '#ef4444' }}>
                 🔴 3. Needs Re-Teach
               </span>
-              <span style={{ fontSize: '10px', fontWeight: 700, padding: '1px 6px', borderRadius: '4px', background: 'rgba(239, 68, 68, 0.15)', color: '#ef4444' }}>
-                Algorithm Failed
+              <span style={{ fontSize: '9.5px', fontWeight: 700, padding: '1px 5px', borderRadius: '4px', background: 'rgba(239, 68, 68, 0.15)', color: '#ef4444' }}>
+                Stuck &lt;50%
               </span>
             </div>
-            <div style={{ fontSize: '26px', fontWeight: 800, color: '#ef4444' }}>
+            <div style={{ fontSize: '20px', fontWeight: 800, color: '#ef4444' }}>
               {data?.conceptualBlockCount ?? (loading ? '...' : 0)}
             </div>
-            <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
-              Practiced questions, but still &lt;50%; teacher intervention needed
+            <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', marginTop: '2px' }}>
+              Practiced questions, but still &lt;50%
             </div>
           </div>
 
@@ -282,25 +282,25 @@ export default function AdminReportsHubPage() {
             style={{
               background: 'var(--surface)',
               border: selectedCategory === 'neglected_topic' ? '2px solid #eab308' : '1px solid var(--border-light)',
-              borderRadius: '10px',
-              padding: '16px',
+              borderRadius: '8px',
+              padding: '10px 12px',
               cursor: 'pointer',
               transition: 'all 0.15s ease'
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-              <span style={{ fontSize: '12px', fontWeight: 600, color: '#eab308' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2px' }}>
+              <span style={{ fontSize: '11px', fontWeight: 600, color: '#eab308' }}>
                 🟡 4. Practice Neglected
               </span>
-              <span style={{ fontSize: '10px', fontWeight: 700, padding: '1px 6px', borderRadius: '4px', background: 'rgba(234, 179, 8, 0.15)', color: '#eab308' }}>
+              <span style={{ fontSize: '9.5px', fontWeight: 700, padding: '1px 5px', borderRadius: '4px', background: 'rgba(234, 179, 8, 0.15)', color: '#eab308' }}>
                 0 Sets Done
               </span>
             </div>
-            <div style={{ fontSize: '26px', fontWeight: 800, color: '#eab308' }}>
+            <div style={{ fontSize: '20px', fontWeight: 800, color: '#eab308' }}>
               {data?.neglectedTopicCount ?? (loading ? '...' : 0)}
             </div>
-            <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
-              Exam placed topic into 🔴, but student hasn&apos;t started practice
+            <div style={{ fontSize: '10.5px', color: 'var(--text-muted)', marginTop: '2px' }}>
+              Weak topic with 0 practice started
             </div>
           </div>
         </div>
@@ -309,21 +309,21 @@ export default function AdminReportsHubPage() {
         <div style={{
           background: 'var(--surface)',
           border: '1px solid var(--border-light)',
-          borderRadius: '10px',
-          padding: '12px 16px',
+          borderRadius: '8px',
+          padding: '8px 12px',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
           flexWrap: 'wrap',
-          gap: '12px'
+          gap: '8px'
         }}>
           {/* Category Tabs */}
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
             {[
-              { id: 'all', label: `All Triggers (${data?.totalItems ?? 0})` },
-              { id: 'missed_exam', label: `🔴 Missed Exams (${data?.criticalCount ?? 0})` },
-              { id: 'reflection_gate', label: `🟠 Locked Practice (${data?.gateBlockedCount ?? 0})` },
-              { id: 'conceptual_block', label: `🔴 Re-Teach Needed (${data?.conceptualBlockCount ?? 0})` },
+              { id: 'all', label: `All (${data?.totalItems ?? 0})` },
+              { id: 'missed_exam', label: `🔴 Missed (${data?.criticalCount ?? 0})` },
+              { id: 'reflection_gate', label: `🟠 Locked (${data?.gateBlockedCount ?? 0})` },
+              { id: 'conceptual_block', label: `🔴 Re-Teach (${data?.conceptualBlockCount ?? 0})` },
               { id: 'neglected_topic', label: `🟡 0 Practice (${data?.neglectedTopicCount ?? 0})` }
             ].map(tab => (
               <button
@@ -334,8 +334,8 @@ export default function AdminReportsHubPage() {
                   color: selectedCategory === tab.id ? '#ffffff' : 'var(--text)',
                   border: '1px solid ' + (selectedCategory === tab.id ? 'var(--accent)' : 'var(--border)'),
                   borderRadius: '6px',
-                  padding: '6px 12px',
-                  fontSize: '12px',
+                  padding: '4px 10px',
+                  fontSize: '11px',
                   fontWeight: 600,
                   cursor: 'pointer',
                   transition: 'all 0.15s ease'
@@ -347,8 +347,7 @@ export default function AdminReportsHubPage() {
           </div>
 
           {/* Right Filters: Batch & Search */}
-          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
-            {/* Batch Selector */}
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
             <select
               value={selectedBatch}
               onChange={(e) => setSelectedBatch(e.target.value)}
@@ -356,8 +355,8 @@ export default function AdminReportsHubPage() {
                 background: 'var(--surface)',
                 border: '1px solid var(--border)',
                 borderRadius: '6px',
-                padding: '6px 10px',
-                fontSize: '12px',
+                padding: '4px 8px',
+                fontSize: '11.5px',
                 color: 'var(--text)',
                 outline: 'none',
                 cursor: 'pointer'
@@ -369,7 +368,6 @@ export default function AdminReportsHubPage() {
               ))}
             </select>
 
-            {/* Search Input */}
             <input
               type="text"
               placeholder="Search student or topic..."
@@ -379,11 +377,11 @@ export default function AdminReportsHubPage() {
                 background: 'var(--surface)',
                 border: '1px solid var(--border)',
                 borderRadius: '6px',
-                padding: '6px 10px',
-                fontSize: '12px',
+                padding: '4px 8px',
+                fontSize: '11.5px',
                 color: 'var(--text)',
                 outline: 'none',
-                minWidth: '180px'
+                minWidth: '160px'
               }}
             />
           </div>
@@ -391,9 +389,9 @@ export default function AdminReportsHubPage() {
 
         {/* Loading & Error States */}
         {loading && !data && (
-          <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--text-muted)' }}>
-            <div style={{ fontSize: '28px', marginBottom: '8px' }}>⏳</div>
-            <div style={{ fontSize: '14px', fontWeight: 600 }}>Analyzing exam baseline performance & practice recovery status...</div>
+          <div style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text-muted)' }}>
+            <div style={{ fontSize: '22px', marginBottom: '6px' }}>⏳</div>
+            <div style={{ fontSize: '12.5px', fontWeight: 600 }}>Analyzing exam baseline performance & practice recovery status...</div>
           </div>
         )}
 
@@ -402,9 +400,9 @@ export default function AdminReportsHubPage() {
             background: 'rgba(239, 68, 68, 0.1)',
             border: '1px solid rgba(239, 68, 68, 0.3)',
             color: 'var(--danger, #ef4444)',
-            padding: '16px',
-            borderRadius: '8px',
-            fontSize: '13px',
+            padding: '10px 14px',
+            borderRadius: '6px',
+            fontSize: '12px',
             fontWeight: 600
           }}>
             ⚠️ {error}
@@ -416,19 +414,19 @@ export default function AdminReportsHubPage() {
           <div style={{
             background: 'var(--surface)',
             border: '1px solid var(--border-light)',
-            borderRadius: '12px',
-            padding: '48px 24px',
+            borderRadius: '8px',
+            padding: '30px 16px',
             textAlign: 'center',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            gap: '12px'
+            gap: '8px'
           }}>
-            <div style={{ fontSize: '42px' }}>🎉</div>
-            <h3 style={{ fontSize: '17px', fontWeight: 800, color: 'var(--text)', margin: 0 }}>
+            <div style={{ fontSize: '32px' }}>🎉</div>
+            <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text)', margin: 0 }}>
               All Clear! No Remediation Blockers
             </h3>
-            <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0, maxWidth: '480px' }}>
+            <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0, maxWidth: '480px' }}>
               {selectedBatch !== 'all' || selectedCategory !== 'all' || searchQuery
                 ? 'No students match your selected filters. Try switching batches or categories.'
                 : 'All scheduled exams are baselined, practice sets are unlocked, and students are successfully recovering from weak topics!'}
@@ -438,8 +436,8 @@ export default function AdminReportsHubPage() {
 
         {/* Intervention Cards Feed */}
         {!error && filteredItems.length > 0 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div style={{ fontSize: '11.5px', fontWeight: 600, color: 'var(--text-muted)' }}>
               Showing {filteredItems.length} student intervention{filteredItems.length === 1 ? '' : 's'}
             </div>
 
@@ -452,12 +450,12 @@ export default function AdminReportsHubPage() {
               const badgeBg = (isMissed || isBlock) ? 'rgba(239, 68, 68, 0.12)' : (isGate ? 'rgba(249, 115, 22, 0.12)' : 'rgba(234, 179, 8, 0.12)');
 
               const categoryBadgeText = isMissed 
-                ? '🔴 1. Baseline Exam Missed' 
+                ? '🔴 1. Baseline Missed' 
                 : (isGate 
-                    ? '🟠 2. Practice Locked (Reflection)' 
+                    ? '🟠 2. Locked (Reflection)' 
                     : (isBlock 
-                        ? '🔴 3. Re-Teach Needed (Stuck in 🔴)' 
-                        : '🟡 4. Remediation Neglected (0 Practice)'));
+                        ? '🔴 3. Re-Teach (Stuck 🔴)' 
+                        : '🟡 4. 0 Practice'));
 
               return (
                 <div
@@ -465,27 +463,27 @@ export default function AdminReportsHubPage() {
                   style={{
                     background: 'var(--surface)',
                     border: '1px solid ' + ((isMissed || isBlock) ? 'rgba(239, 68, 68, 0.4)' : 'var(--border-light)'),
-                    borderLeft: `4px solid ${badgeColor}`,
-                    borderRadius: '10px',
-                    padding: '16px 20px',
+                    borderLeft: `3px solid ${badgeColor}`,
+                    borderRadius: '8px',
+                    padding: '10px 14px',
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
                     flexWrap: 'wrap',
-                    gap: '16px',
+                    gap: '10px',
                     boxShadow: 'var(--shadow-sm)'
                   }}
                 >
                   {/* Left Column: Student & Issue */}
-                  <div style={{ flex: 1, minWidth: '280px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', marginBottom: '6px' }}>
-                      <span style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text)' }}>
+                  <div style={{ flex: 1, minWidth: '260px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '4px' }}>
+                      <span style={{ fontSize: '13.5px', fontWeight: 800, color: 'var(--text)' }}>
                         {item.studentName}
                       </span>
                       <span style={{
-                        fontSize: '11px',
+                        fontSize: '10.5px',
                         fontWeight: 600,
-                        padding: '2px 8px',
+                        padding: '1px 6px',
                         borderRadius: '4px',
                         background: 'var(--bg-soft, rgba(255, 255, 255, 0.05))',
                         color: 'var(--text-muted)',
@@ -494,9 +492,9 @@ export default function AdminReportsHubPage() {
                         {item.className}
                       </span>
                       <span style={{
-                        fontSize: '11px',
+                        fontSize: '10.5px',
                         fontWeight: 700,
-                        padding: '2px 8px',
+                        padding: '1px 6px',
                         borderRadius: '4px',
                         background: badgeBg,
                         color: badgeColor
@@ -505,21 +503,21 @@ export default function AdminReportsHubPage() {
                       </span>
                     </div>
 
-                    <div style={{ fontSize: '13.5px', fontWeight: 700, color: 'var(--text)', marginBottom: '3px' }}>
+                    <div style={{ fontSize: '12.5px', fontWeight: 700, color: 'var(--text)', marginBottom: '2px' }}>
                       {item.title}
                     </div>
 
-                    <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '6px' }}>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px' }}>
                       {item.subtitle}
                     </div>
 
-                    <div style={{ fontSize: '12px', color: 'var(--text)', opacity: 0.85, lineHeight: 1.4 }}>
+                    <div style={{ fontSize: '11.5px', color: 'var(--text)', opacity: 0.85, lineHeight: 1.35 }}>
                       💡 {item.description}
                     </div>
                   </div>
 
                   {/* Right Column: 1-Click Action Buttons */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                     
                     {/* 1. WhatsApp 1-Click Action */}
                     <button
@@ -528,14 +526,14 @@ export default function AdminReportsHubPage() {
                         background: '#25D366',
                         color: '#ffffff',
                         border: 'none',
-                        borderRadius: '7px',
-                        padding: '8px 14px',
-                        fontSize: '12.5px',
+                        borderRadius: '6px',
+                        padding: '5px 10px',
+                        fontSize: '11.5px',
                         fontWeight: 700,
                         cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '6px',
+                        gap: '5px',
                         boxShadow: '0 2px 4px rgba(37, 211, 102, 0.25)'
                       }}
                       title="Open WhatsApp with pre-filled message"
@@ -551,9 +549,9 @@ export default function AdminReportsHubPage() {
                         background: 'var(--surface)',
                         color: 'var(--text-muted)',
                         border: '1px solid var(--border)',
-                        borderRadius: '7px',
-                        padding: '8px 12px',
-                        fontSize: '12px',
+                        borderRadius: '6px',
+                        padding: '5px 8px',
+                        fontSize: '11px',
                         fontWeight: 600,
                         cursor: 'pointer'
                       }}
@@ -569,14 +567,14 @@ export default function AdminReportsHubPage() {
                         background: 'var(--accent-soft, rgba(217, 123, 56, 0.12))',
                         color: 'var(--accent)',
                         border: '1px solid var(--accent)',
-                        borderRadius: '7px',
-                        padding: '8px 14px',
-                        fontSize: '12.5px',
+                        borderRadius: '6px',
+                        padding: '5px 10px',
+                        fontSize: '11.5px',
                         fontWeight: 700,
                         cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '5px'
+                        gap: '4px'
                       }}
                       title="View Student 4-Pillar Learning Profile"
                     >

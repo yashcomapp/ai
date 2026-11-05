@@ -30,7 +30,8 @@ export class ReportService {
       parentEvalsSnap,
       studentEvalsSnap,
       totalEvalsSnap,
-      recentEvalsSnap
+      recentEvalsSnap,
+      studentsSnap
     ] = await Promise.all([
       adminDb.collection('users').count().get(),
       adminDb.collection('subjectiveExams').count().get(),
@@ -42,25 +43,71 @@ export class ReportService {
       adminDb.collection('evaluations')
         .orderBy('createdAt', 'desc')
         .limit(100)
-        .select('examName', 'examCode', 'name', 'studentCode', 'childStudentCode', 'reviewedByActor', 'evaluatorType', 'createdAt', 'date')
         .get()
         .catch(() => 
           adminDb.collection('evaluations')
             .limit(100)
-            .select('examName', 'examCode', 'name', 'studentCode', 'childStudentCode', 'reviewedByActor', 'evaluatorType', 'createdAt', 'date')
             .get()
-        )
+        ),
+      adminDb.collection('users')
+        .where('role', '==', 'student')
+        .select('name', 'studentCode', 'rollNumber', 'class')
+        .get()
+        .catch(() => ({ docs: [] } as any))
     ]);
 
     const parentReviews = parentEvalsSnap.data().count;
     const studentReviews = studentEvalsSnap.data().count;
 
+    const studentNameMap = new Map<string, { name: string; rollNumber?: string; className?: string }>();
+    studentsSnap.docs.forEach((doc: any) => {
+      const d = doc.data();
+      const meta = {
+        name: d.name || '',
+        rollNumber: d.rollNumber != null ? String(d.rollNumber) : '',
+        className: d.class || d.className || ''
+      };
+      if (d.studentCode) {
+        studentNameMap.set(d.studentCode, meta);
+      }
+      studentNameMap.set(doc.id, meta);
+    });
+
     const evaluations = recentEvalsSnap.docs
       .map((doc: any) => {
         const data = doc.data();
+        const targetCode = data.studentCode || data.childStudentCode || data.studentId || data.userId || '';
+        const studentMeta = studentNameMap.get(targetCode);
+        
+        // Extract roll number digits fallback if available
+        const rawDigits = targetCode.replace(/[^0-9]/g, '');
+        const rollFallback = rawDigits.length >= 2 ? `Roll #${parseInt(rawDigits.slice(-3), 10)}` : 'Student';
+
+        let studentDisplayName = data.studentName 
+          || (data.name && !data.name.startsWith('ST-') ? data.name : '') 
+          || studentMeta?.name 
+          || (studentMeta?.rollNumber ? `Roll #${studentMeta.rollNumber}` : rollFallback);
+
+        // SSOT Invariant Rule B: Never display raw ST-YYYY-XXXXXX in user-facing UI
+        if (studentDisplayName.startsWith('ST-')) {
+          studentDisplayName = studentMeta?.name || (studentMeta?.rollNumber ? `Roll #${studentMeta.rollNumber}` : rollFallback);
+        }
+
+        const title = data.examTitle || data.title || data.examName || data.examCode || 'Practice Attempt';
+        const isPractice = title.toLowerCase().includes('practice') || data.attemptType === 'practice' || !data.examId;
+
+        const evaluatorDisplay = isPractice 
+          ? '⚡ System Auto' 
+          : (data.reviewedByActor === 'student' ? 'Student Reflection' : (data.evaluatorType === 'teacher' ? 'Teacher' : (data.evaluatorType === 'parent' ? 'Parent' : '⚡ System Auto')));
+
         return {
           id: doc.id,
           ...data,
+          studentName: studentDisplayName,
+          rollNumber: studentMeta?.rollNumber || '',
+          className: studentMeta?.className || '',
+          examTitle: title,
+          reviewedByActor: evaluatorDisplay,
           createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : data.createdAt || null,
           date: data.date?.toDate ? data.date.toDate() : data.date || null
         };

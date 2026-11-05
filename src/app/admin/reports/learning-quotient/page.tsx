@@ -599,7 +599,7 @@ _Empowering Conceptual Excellence_`;
       <th 
         onClick={() => handleSort(field)} 
         style={{ 
-          padding: '12px 8px', 
+          padding: '6px 8px', 
           cursor: 'pointer', 
           userSelect: 'none',
           textAlign: align,
@@ -633,19 +633,19 @@ _Empowering Conceptual Excellence_`;
     <div style={{ background: 'var(--bg)', flex: 1, display: 'flex', flexDirection: 'column' }}>
       
       {/* Reports Sub-Navigation Bar */}
-      <div style={{ maxWidth: '1400px', width: '100%', margin: '0 auto', padding: '12px 12px 0 12px' }}>
-        <nav style={{ display: 'flex', gap: '15px', borderBottom: '1px solid var(--border-light)', paddingBottom: '8px', overflowX: 'auto' }}>
-          <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-muted)', cursor: 'pointer', whiteSpace: 'nowrap' }} onClick={() => router.push('/admin/reports')}>⚡ Intervention Queue</span>
-          <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-muted)', cursor: 'pointer', whiteSpace: 'nowrap' }} onClick={() => router.push('/admin/reports/remediation')}>🎯 Topic Remediation Tracker</span>
-          <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--accent)', borderBottom: '2px solid var(--accent)', paddingBottom: '4px', whiteSpace: 'nowrap' }}>📊 Student Learning Profiles (LQ)</span>
-          <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-muted)', cursor: 'pointer', whiteSpace: 'nowrap' }} onClick={() => router.push('/admin/reports/usage')}>🛡️ System Health & Audit</span>
+      <div style={{ maxWidth: '1400px', width: '100%', margin: '0 auto', padding: '8px 16px 0 16px' }}>
+        <nav style={{ display: 'flex', gap: '14px', borderBottom: '1px solid var(--border-light)', paddingBottom: '6px', overflowX: 'auto' }}>
+          <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', cursor: 'pointer', whiteSpace: 'nowrap' }} onClick={() => router.push('/admin/reports')}>⚡ Daily Intervention Queue</span>
+          <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', cursor: 'pointer', whiteSpace: 'nowrap' }} onClick={() => router.push('/admin/reports/remediation')}>🎯 Topic Remediation Tracker</span>
+          <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--accent)', borderBottom: '2px solid var(--accent)', paddingBottom: '4px', whiteSpace: 'nowrap' }}>📊 Student Learning Profiles (LQ)</span>
+          <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', cursor: 'pointer', whiteSpace: 'nowrap' }} onClick={() => router.push('/admin/reports/usage')}>🛡️ System Health & Audit</span>
         </nav>
       </div>
 
-      <main style={{ flex: 1, padding: '24px 12px', maxWidth: '1400px', width: '100%', margin: '0 auto' }}>
+      <main style={{ flex: 1, padding: '10px 14px', maxWidth: '1400px', width: '100%', margin: '0 auto' }}>
         
         {/* Top Controls Toolbar */}
-        <div className="card glass" style={{ padding: '12px 16px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '20px' }}>
+        <div className="card glass" style={{ padding: '8px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginBottom: '10px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'nowrap', maxWidth: '100%', overflowX: 'auto', paddingBottom: '2px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'nowrap', flexShrink: 0 }}>
               <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-muted)' }}>Batch:</span>
@@ -791,8 +791,8 @@ _Empowering Conceptual Excellence_`;
                 sortedStudents.map(s => {
                   const hasScore = s.overallQuotient !== null;
                   return (
-                    <tr key={s.id} style={{ borderBottom: '1px solid var(--border-light)', fontSize: '12px', transition: 'background 0.2s ease' }} className="table-row-hover">
-                      <td style={{ padding: '12px 8px' }}>
+                    <tr key={s.id} style={{ borderBottom: '1px solid var(--border-light)', fontSize: '11.5px', transition: 'background 0.2s ease' }} className="table-row-hover">
+                      <td style={{ padding: '6px 8px' }}>
                         <div 
                           style={{ fontWeight: 700, color: 'var(--text)', cursor: 'pointer', textDecoration: 'underline decoration-dotted' }}
                           onClick={() => handleOpenDetailsModal(s)}
@@ -801,26 +801,26 @@ _Empowering Conceptual Excellence_`;
                           {formatReportStudentName(s.name)}
                         </div>
                       </td>
-                      <td style={{ padding: '12px 8px', textAlign: 'center' }}>
+                      <td style={{ padding: '6px 8px', textAlign: 'center' }}>
                         <span style={{ fontWeight: 700, color: getScoreColor(s.examScore) }}>{s.examScore}</span>
                       </td>
-                      <td style={{ padding: '12px 8px', textAlign: 'center' }}>
+                      <td style={{ padding: '6px 8px', textAlign: 'center' }}>
                         <span style={{ fontWeight: 700, color: getScoreColor(s.practiceScore) }}>{s.practiceScore}</span>
                       </td>
-                      <td style={{ padding: '12px 8px', textAlign: 'center' }}>
+                      <td style={{ padding: '6px 8px', textAlign: 'center' }}>
                         <span style={{ fontWeight: 700, color: getScoreColor(s.qualityScore) }}>{s.qualityScore}</span>
                       </td>
-                      <td style={{ padding: '12px 8px', textAlign: 'center' }}>
+                      <td style={{ padding: '6px 8px', textAlign: 'center' }}>
                         <span style={{ fontWeight: 700, color: getScoreColor(s.healthScore) }}>{s.healthScore}</span>
                       </td>
-                      <td style={{ padding: '12px 8px', textAlign: 'center' }}>
+                      <td style={{ padding: '6px 8px', textAlign: 'center' }}>
                         {hasScore ? (
                           <span 
                             style={{
-                              fontSize: '13px',
+                              fontSize: '12px',
                               fontWeight: 800,
-                              padding: '4px 10px',
-                              borderRadius: '12px',
+                              padding: '2px 8px',
+                              borderRadius: '8px',
                               background: `${getScoreColor(s.overallQuotient!)}15`,
                               color: getScoreColor(s.overallQuotient!),
                               border: `1px solid ${getScoreColor(s.overallQuotient!)}25`
@@ -832,11 +832,11 @@ _Empowering Conceptual Excellence_`;
                           <span style={{ color: 'var(--text-muted)' }}>--</span>
                         )}
                       </td>
-                      <td style={{ padding: '12px 8px', textAlign: 'center' }}>
+                      <td style={{ padding: '6px 8px', textAlign: 'center' }}>
                         <button
                           className="btn btn-secondary"
                           onClick={() => handleOpenDetailsModal(s)}
-                          style={{ padding: '5px 12px', fontSize: '11px', fontWeight: 700, borderRadius: 'var(--radius-sm)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                          style={{ padding: '4px 10px', fontSize: '11px', fontWeight: 700, borderRadius: 'var(--radius-sm)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
                           title="View detailed academic performance breakdown"
                         >
                           📊 Dossier
