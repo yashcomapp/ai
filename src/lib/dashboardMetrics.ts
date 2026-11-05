@@ -347,6 +347,12 @@ export function classifyAssignedTopics(input: ClassifyAssignedTopicsInput): Clas
       }
     });
 
+    // Fallback: If practiceReviews query didn't capture all sessions (e.g. beyond query limit),
+    // derive practice count from studentTopicMastery's verified attempts / questions / daily count
+    const fallbackFromQuestions = Math.ceil(practiceQuestionsAttempted / 6);
+    const fallbackFromDaily = Number(mData?.dailyPracticeSessionsCount || 0);
+    practiceCount = Math.max(practiceCount, fallbackFromQuestions, fallbackFromDaily);
+
     const priorityScore = isAbsentExam ? 999 : (!hasPracticed ? 995 : calculateTopicPriority(mastery, confidence, reqConf));
 
     // SRS calculation

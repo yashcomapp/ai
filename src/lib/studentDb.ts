@@ -289,7 +289,7 @@ export async function loadStudentCoreData(
           .where('studentCode', '==', studentCode)
           .where('type', '==', 'practice')
           .orderBy('createdAt', 'desc')
-          .limit(100)
+          .limit(500)
           .get()
           .catch(() => adminDb.collection('parentReviews').where('studentCode', '==', studentCode).where('type', '==', 'practice').get()),
         adminDb.collection('integrityScores')

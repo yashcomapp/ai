@@ -274,7 +274,9 @@ export async function GET(req: NextRequest) {
         const chapNum = parsed?.chapterNumber || sData?.chapterNumber || '';
         const topName = d?.topicName || (sData?.topicName ? (parentTopic ? `${sData.topicName} (${parsed?.topicNumber || tCode})` : sData.topicName) : (d?.name || `Topic ${parsed?.topicNumber || tCode}`));
 
-        const practiceCount = practiceCountMap.get(tCode) || 0;
+        const fallbackFromQ = Math.ceil((Number(d?.practiceQuestionsAttempted || 0)) / 6);
+        const fallbackFromDaily = Number(d?.dailyPracticeSessionsCount || 0);
+        const practiceCount = Math.max(practiceCountMap.get(tCode) || 0, fallbackFromQ, fallbackFromDaily);
         const attempts = d ? (d.questionsAttempted || d.attempts || 0) : 0;
         const mastery = d ? Number(d.mastery || 0) : 0;
         const confidence = d ? Number(d.confidence || 0) : 0;
@@ -283,8 +285,9 @@ export async function GET(req: NextRequest) {
         const reqConfidence = getRequiredConfidence(classification, targetQ);
         const isFullConfidence = confidence >= reqConfidence;
         const rawScope = String(classification || '').toLowerCase().trim();
-        const isMinorTopic = rawScope === 'minor' || rawScope === 'micro' || (targetQ !== undefined && targetQ <= 20);
-        const maxPractices = isMinorTopic ? 2 : 3;
+        const isMinorTopic = rawScope === 'minor' || rawScope === 'micro' || (targetQ !== undefined && targetQ <= 30);
+        const isMajorTopic = rawScope === 'major' || rawScope === 'calculative' || rawScope === 'hots' || (targetQ !== undefined && targetQ > 50);
+        const maxPractices = isMinorTopic ? 2 : (isMajorTopic ? 4 : 3);
         const isLimitReached = practiceCount >= maxPractices;
 
         let state = 'needsAttention';

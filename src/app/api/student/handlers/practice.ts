@@ -126,7 +126,7 @@ export async function GET(req: NextRequest) {
       // silent fallback
     }
 
-    const isPracticeLimitReached = !isTeacherAssigned && !isRevisionMode && (completedPractices >= maxSessionsAllowed || (practiceQuestionsAttempted >= maxQuestionsAllowed && mastery < 80));
+    const isPracticeLimitReached = !isTeacherAssigned && !isRevisionMode && !textbookReadConfirmed && (completedPractices >= maxSessionsAllowed || (practiceQuestionsAttempted >= maxQuestionsAllowed && mastery < 80));
 
     // 0. Lever 1: Autonomous Student Generative Reflection Gate
     // If student is in Autonomous Mode, require reflection on missed questions from previous session before continuing.
@@ -171,7 +171,7 @@ export async function GET(req: NextRequest) {
         locked: true,
         requireTextbookStudy: true,
         lockType: 'quota_reached',
-        message: `Maximum limit of ${maxSessionsAllowed} practice sessions reached for this topic. Revise your textbook notes before taking exams.`
+        message: `Maximum recommended limit of ${maxSessionsAllowed} practice sessions reached for this topic. Please revise your textbook notes, then confirm below to unlock additional practice.`
       }, { status: 200 });
     }
 
@@ -726,16 +726,16 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ message: 'Missing topicCode.' }, { status: 400 });
       }
       const now = new Date();
-      const cooldownTime = new Date(now.getTime() + 2 * 60 * 60 * 1000); // 2-hour cooldown
       const masteryDocId = `${studentCode}_${topicCode}`;
       await adminDb.collection('studentTopicMastery').doc(masteryDocId).set({
         textbookReadConfirmed: true,
         lastConfirmedAt: now,
-        cooldownUntil: cooldownTime
+        cooldownUntil: null,
+        dailyLockedUntil: null
       }, { merge: true });
       return NextResponse.json({ 
         success: true,
-        cooldownUntil: cooldownTime.toISOString()
+        message: 'Textbook study confirmed. Practice unlocked.'
       });
     }
 

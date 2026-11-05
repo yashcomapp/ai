@@ -290,7 +290,7 @@ export function PracticeLockPrompt({
 
   if (type === 'textbook') {
     const isQuota = lockType === 'quota_reached';
-    const isLockedState = lockType === 'cooldown' || lockType === 'daily' || isQuota;
+    const isLockedState = lockType === 'cooldown' || lockType === 'daily';
     const icon = lockType === 'cooldown' ? '⏳' : lockType === 'daily' ? '🔒' : isQuota ? '🎓' : '📖';
     const heading = lockType === 'cooldown' 
       ? 'Deliberation Cooldown Active / विश्राम अवधि ⏳' 
