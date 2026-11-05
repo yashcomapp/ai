@@ -183,7 +183,11 @@ export function SyllabusSelector<T extends { topic: string; subject?: string }>(
                       <span style={{ color: 'var(--accent)' }}>S: {ch.subjectiveCount ?? ch.chapter?.subjectiveCount ?? 0}</span>
                     </span>
                     {(() => {
-                      const condTopics = ch.conductedTopicsCount ?? ch.chapter?.conductedTopicsCount ?? 0;
+                      const rawCond = ch.conductedTopicsCount ?? ch.chapter?.conductedTopicsCount;
+                      if (rawCond === undefined) {
+                        return null;
+                      }
+                      const condTopics = rawCond ?? 0;
                       const totTopics = ch.totalTopicsCount ?? ch.chapter?.totalTopicsCount ?? (Array.isArray(ch.chapter?.topics) ? ch.chapter.topics.length : 0);
                       const exStatus = ch.examStatus ?? ch.chapter?.examStatus ?? (condTopics > 0 && condTopics >= totTopics ? 'all_conducted' : condTopics > 0 ? 'partial_conducted' : 'unconducted');
 
@@ -206,7 +210,7 @@ export function SyllabusSelector<T extends { topic: string; subject?: string }>(
                             title={`All ${totTopics} topics in this chapter tested`}
                           >
                             <span>🟢</span>
-                            <span>All Tested (${condTopics}/${totTopics})</span>
+                            <span>All Tested ({condTopics}/{totTopics})</span>
                           </span>
                         );
                       }
@@ -229,7 +233,7 @@ export function SyllabusSelector<T extends { topic: string; subject?: string }>(
                             title={`${condTopics} of ${totTopics} topics tested in this chapter`}
                           >
                             <span>🟡</span>
-                            <span>${condTopics}/${totTopics} Tested</span>
+                            <span>{condTopics}/{totTopics} Tested</span>
                           </span>
                         );
                       }
@@ -392,7 +396,11 @@ export function SyllabusSelector<T extends { topic: string; subject?: string }>(
                       </span>
 
                       {(() => {
-                        const tTests = (top as any).testsCount ?? 0;
+                        const rawTests = (top as any).testsCount;
+                        if (rawTests === undefined) {
+                          return null;
+                        }
+                        const tTests = rawTests ?? 0;
                         if (tTests > 0) {
                           return (
                             <span

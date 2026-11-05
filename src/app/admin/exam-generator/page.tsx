@@ -394,17 +394,25 @@ export default function AdminExamGeneratorPage() {
       const entry = syllabusIndex?.subjects?.[selectedBoard]?.[selectedClass]?.[subject];
       if (entry && Array.isArray(entry.chapters)) {
         entry.chapters.forEach((ch: any, idx: number) => {
+          const chNum = String(ch.number || idx + 1);
+          const existingCh = availableChapters.find(
+            ac => String(ac.chapterNumber) === chNum && ac.subject === subject
+          );
+          const condTopics = existingCh?.conductedTopicsCount ?? ch.conductedTopicsCount;
+          const totTopics = existingCh?.totalTopicsCount ?? ch.totalTopicsCount ?? (Array.isArray(ch.topics) ? ch.topics.length : 0);
+          const exStatus = existingCh?.examStatus ?? ch.examStatus ?? (condTopics !== undefined && condTopics > 0 ? (condTopics >= totTopics ? 'all_conducted' : 'partial_conducted') : undefined);
+
           instantChaptersList.push({
             subject,
             chapter: ch,
             chapterName: ch.name || `Chapter ${ch.number || idx + 1}`,
-            chapterNumber: String(ch.number || idx + 1),
-            objectiveCount: ch.objectiveCount || 0,
-            subjectiveCount: ch.subjectiveCount || 0,
-            testsCount: ch.testsCount || 0,
-            conductedTopicsCount: ch.conductedTopicsCount || 0,
-            totalTopicsCount: ch.totalTopicsCount || (Array.isArray(ch.topics) ? ch.topics.length : 0),
-            examStatus: ch.examStatus || ((ch.conductedTopicsCount || 0) > 0 ? ((ch.conductedTopicsCount || 0) >= (ch.totalTopicsCount || (Array.isArray(ch.topics) ? ch.topics.length : 0)) ? 'all_conducted' : 'partial_conducted') : 'unconducted')
+            chapterNumber: chNum,
+            objectiveCount: existingCh?.objectiveCount ?? ch.objectiveCount ?? 0,
+            subjectiveCount: existingCh?.subjectiveCount ?? ch.subjectiveCount ?? 0,
+            testsCount: existingCh?.testsCount ?? ch.testsCount ?? 0,
+            conductedTopicsCount: condTopics,
+            totalTopicsCount: totTopics,
+            examStatus: exStatus
           });
         });
       }
@@ -423,6 +431,11 @@ export default function AdminExamGeneratorPage() {
             const label = rawNum ? `${rawNum} ${name}` : name;
             const num = rawNum || label;
             const topCode = isObj ? (t.topicCode || t.subtopicCode || '') : (parentCode ? `${parentCode}.${sIdx + 1}` : '');
+
+            const existingTop = availableTopics.find(
+              at => (topCode && at.topicCode === topCode) || (at.topic === label && String(at.chapterNumber) === String(chItem.chapterNumber))
+            );
+
             instantTopicsList.push({
               subject: chItem.subject,
               chapterName: chItem.chapterName,
@@ -431,9 +444,9 @@ export default function AdminExamGeneratorPage() {
               topicName: name || label,
               topicNumber: num,
               topicCode: topCode,
-              objectiveCount: isObj ? (t.objectiveCount || 0) : 0,
-              subjectiveCount: isObj ? (t.subjectiveCount || 0) : 0,
-              testsCount: isObj ? (t.testsCount || 0) : 0,
+              objectiveCount: existingTop?.objectiveCount ?? (isObj ? (t.objectiveCount || 0) : 0),
+              subjectiveCount: existingTop?.subjectiveCount ?? (isObj ? (t.subjectiveCount || 0) : 0),
+              testsCount: existingTop?.testsCount ?? (isObj ? (t.testsCount || 0) : 0),
               hasSubtopics: isObj && Array.isArray(t.subtopics) && t.subtopics.length > 0
             });
             if (isObj && t.subtopics && t.subtopics.length > 0) walk(t.subtopics, num, topCode);
@@ -547,16 +560,7 @@ export default function AdminExamGeneratorPage() {
     }
   };
 
-  // Auto-refresh question counts when returning to the Exam Generator tab from Create Question Bank
-  useEffect(() => {
-    const handleFocus = () => {
-      if (selectedSubjects.size > 0 && selectedBoard && selectedClass) {
-        triggerLoadChapters(selectedSubjects);
-      }
-    };
-    window.addEventListener('focus', handleFocus);
-    return () => window.removeEventListener('focus', handleFocus);
-  }, [selectedSubjects, selectedBoard, selectedClass]);
+
 
   const handleOpenCreateQBForTopic = (topic: any) => {
     const board = boardCodes[selectedBoard] || selectedBoard;
