@@ -35,12 +35,6 @@ export function useReports() {
     return fetchReport(url, idToken);
   };
 
-
-
-  const getParentPendingReport = async (idToken: string) => {
-    return fetchReport('/api/admin/reports/parent-pending', idToken);
-  };
-
   const getQuotientReport = async (idToken: string, studentCode?: string, duration?: string) => {
     let url = '/api/admin/reports/learning-quotient';
     const params = new URLSearchParams();
@@ -56,7 +50,6 @@ export function useReports() {
     error,
     getUsageReport,
     getIntegrityReport,
-    getParentPendingReport,
     getQuotientReport
   };
 }

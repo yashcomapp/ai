@@ -935,7 +935,6 @@ export async function POST(req: NextRequest) {
       invalidateCache(childStudentCode);
 
       // Invalidate parent pending / sincerity report caches
-      await ReportCacheManager.invalidateReport('parent-pending-report').catch(() => null);
       await ReportCacheManager.invalidateReport('parent-sincerity-report').catch(() => null);
 
       // Write parent sincerity log with 2-point camera verification & duration

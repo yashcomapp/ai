@@ -129,24 +129,6 @@ async function handleLoginRegister(req: NextRequest) {
   return NextResponse.json(report, { headers: REPORT_CACHE_HEADERS });
 }
 
-// ── 4. Parent Pending Sincerity Report Handler ─────────────────────────
-async function handleParentPending(req: NextRequest) {
-  const adminUser = await verifyRole(req, 'admin');
-  if (!adminUser) {
-    return NextResponse.json({ message: 'Unauthorized. Admin role required.' }, { status: 403 });
-  }
-
-  const cacheKey = 'admin_report_parent_pending';
-  const cached = getFromCache<any>(cacheKey);
-  if (cached) {
-    return NextResponse.json(cached, { headers: REPORT_CACHE_HEADERS });
-  }
-
-  const report = await ReportService.getParentPendingReport();
-  setInCache(cacheKey, report, STANDARD_REPORT_TTL_MS);
-  return NextResponse.json(report, { headers: REPORT_CACHE_HEADERS });
-}
-
 // ── 5. Truth Test Report Handler ──────────────────────────────────────
 async function handleTruthTest(req: NextRequest) {
   const adminUser = await verifyRole(req, 'admin');
@@ -222,8 +204,6 @@ export async function GET(req: NextRequest, { params }: { params: { slug: string
         return await handleLearningQuotientGet(req);
       case 'login-register':
         return await handleLoginRegister(req);
-      case 'parent-pending':
-        return await handleParentPending(req);
       case 'truth-test':
         return await handleTruthTest(req);
       case 'usage':

@@ -34,13 +34,6 @@ const REPORT_SECTIONS: ReportCard[] = [
     badge: 'Presence Audit'
   },
   {
-    title: 'Parent Pending Action Reports',
-    description: 'Track outstanding parent homework reviews, pending confirmations, and signature requirements.',
-    path: '/admin/reports/parent-pending',
-    icon: '👨‍👩‍👧',
-    badge: 'Engagement'
-  },
-  {
     title: 'System Usage & Time Logs',
     description: 'Detailed breakdown of active session durations, device platform analytics, and student time distribution.',
     path: '/admin/reports/usage',
