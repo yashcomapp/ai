@@ -28,7 +28,7 @@ const getAdminPageTitle = (pathname: string): string => {
   if (pathname.startsWith('/admin/fees')) return 'Fees Manager';
   if (pathname.startsWith('/admin/notices')) return 'Notices & Announcements';
   if (pathname.startsWith('/admin/chat')) return 'Live Chat Workspace';
-  if (pathname === '/admin/reports') return 'Reports & Analytics Hub';
+  if (pathname === '/admin/reports') return 'Daily Intervention Queue';
   if (pathname.startsWith('/admin/reports/learning-quotient')) return 'Learning Quotient (LQ)';
   if (pathname.startsWith('/admin/reports/daily-practice')) return 'Daily Practice Summary';
   if (pathname.startsWith('/admin/reports/usage')) return 'System Usage Analytics';
@@ -68,6 +68,7 @@ const ADMIN_SUBMENUS: { [key: string]: SubmenuItem[] } = {
     { icon: '👥', en: 'Students & Batches', url: '/admin/students' }
   ],
   reports: [
+    { icon: '⚡', en: 'Intervention Queue', url: '/admin/reports' },
     { icon: '📊', en: 'Learning Quotient (LQ)', url: '/admin/reports/learning-quotient' },
     { icon: '✍️', en: 'Daily Practice Summary', url: '/admin/reports/daily-practice' },
     { icon: '📈', en: 'System Usage Analytics', url: '/admin/reports/usage' },

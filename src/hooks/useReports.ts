@@ -26,6 +26,11 @@ export function useReports() {
 
 
 
+  const getInterventionQueue = async (idToken: string, forceRefresh?: boolean) => {
+    const url = forceRefresh ? '/api/admin/reports/interventions?refresh=true' : '/api/admin/reports/interventions';
+    return fetchReport(url, idToken);
+  };
+
   const getUsageReport = async (idToken: string) => {
     return fetchReport('/api/admin/reports/usage', idToken);
   };
@@ -48,6 +53,7 @@ export function useReports() {
   return {
     loading,
     error,
+    getInterventionQueue,
     getUsageReport,
     getIntegrityReport,
     getQuotientReport

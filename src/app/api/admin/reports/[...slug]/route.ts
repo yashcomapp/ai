@@ -5,6 +5,7 @@ import { ReportService } from '@/services/report.service';
 import { QuotientService } from '@/services/quotient.service';
 import { getFromCache, setInCache, invalidateCache } from '@/lib/firebase/cache';
 import { ReportCacheManager } from '@/lib/reportCache';
+import { InterventionService } from '@/services/intervention.service';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,6 +20,21 @@ const NO_CACHE_HEADERS = {
 const USAGE_CACHE_TTL_MS = 30000; // 30s for real-time presence & online status
 const STANDARD_REPORT_TTL_MS = 60000; // 60s for daily practice, login register, parent pending, truth test
 const LQ_REPORT_TTL_MS = 1800000; // 30 minutes for bulk learning quotient report (with on-demand refresh)
+
+
+// ── 0. Intervention Queue Handler ─────────────────────────────────────
+async function handleInterventions(req: NextRequest) {
+  const adminUser = await verifyRole(req, 'admin');
+  if (!adminUser) {
+    return NextResponse.json({ message: 'Unauthorized. Admin role required.' }, { status: 403 });
+  }
+
+  const { searchParams } = new URL(req.url);
+  const refresh = searchParams.get('refresh') === 'true';
+
+  const report = await InterventionService.getInterventionQueue(refresh);
+  return NextResponse.json(report, { headers: NO_CACHE_HEADERS });
+}
 
 // ── 1. Daily Practice Report Handler ──────────────────────────────────
 async function handleDailyPractice(req: NextRequest) {
@@ -198,6 +214,8 @@ export async function GET(req: NextRequest, { params }: { params: { slug: string
     const subroute = (resolvedParams.slug || []).join('/');
 
     switch (subroute) {
+      case 'interventions':
+        return await handleInterventions(req);
       case 'daily-practice':
         return await handleDailyPractice(req);
       case 'learning-quotient':
