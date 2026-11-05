@@ -485,7 +485,13 @@ export async function GET(req: NextRequest) {
       }
 
       // Calculate unified metrics via Single Source of Truth (QuotientService & calculateUnifiedMetrics)
-      const quotientsMap = await QuotientService.calculateBulkQuotients(studentCodes, 'all');
+      // Check cache first for instant sub-second response
+      const bulkLqCacheKey = `bulk-learning-quotients-v2-report-all`;
+      let quotientsMap = await ReportCacheManager.getReport<Record<string, any>>(bulkLqCacheKey);
+      if (!quotientsMap) {
+        quotientsMap = await QuotientService.calculateBulkQuotients(studentCodes, 'all');
+        await ReportCacheManager.setReport(bulkLqCacheKey, quotientsMap, 1800);
+      }
 
       // Generate dynamic sliding window / date keys in IST
       const now = new Date();
@@ -706,7 +712,7 @@ export async function GET(req: NextRequest) {
           endLabel: weekDays[weekDays.length - 1]?.label || ''
         }
       };
-      await ReportCacheManager.setReport(cacheKey, responsePayload, 180);
+      await ReportCacheManager.setReport(cacheKey, responsePayload, 1800);
 
       return NextResponse.json(responsePayload);
     }

@@ -1444,14 +1444,14 @@ export class QuotientService {
       subjectiveExamsSnap,
       baResult
     ] = await Promise.all([
-      Promise.all(activeStudentChunks.map(chunk => adminDb.collection('examAttempts').where('studentCode', 'in', chunk).get().catch(() => null as any))),
-      Promise.all(activeStudentChunks.map(chunk => adminDb.collection('assignments').where('studentCode', 'in', chunk).get().catch(() => null as any))),
-      // studentTopicMastery: Full document required for retention, SRS schedule, attempts, and confidence calculations
-      Promise.all(activeStudentChunks.map(chunk => adminDb.collection('studentTopicMastery').where('studentCode', 'in', chunk).get().catch(() => null as any))),
-      Promise.all(activeStudentChunks.map(chunk => adminDb.collection('integrityScores').where('studentCode', 'in', chunk).get().catch(() => null as any))),
-      // parentReviews: Full document required for calculateUnifiedMetrics and PracticeQualityCalculator
-      Promise.all(activeStudentChunks.map(chunk => adminDb.collection('parentReviews').where('studentCode', 'in', chunk).get().catch(() => null as any))),
-      Promise.all(activeStudentChunks.map(chunk => adminDb.collection('evaluations').where('studentCode', 'in', chunk).get().catch(() => null as any))),
+      Promise.all(activeStudentChunks.map(chunk => adminDb.collection('examAttempts').where('studentCode', 'in', chunk).select('studentCode', 'examId', 'score', 'maxMarks', 'percentage', 'completedAt', 'submittedAt', 'createdAt', 'status', 'examType').get().catch(() => null as any))),
+      Promise.all(activeStudentChunks.map(chunk => adminDb.collection('assignments').where('studentCode', 'in', chunk).select('studentCode', 'examId', 'status', 'assignedAt', 'createdAt', 'targetBatches', 'targetStudents', 'examType').get().catch(() => null as any))),
+      // studentTopicMastery: Targeted fields for retention, SRS schedule, attempts, and confidence calculations
+      Promise.all(activeStudentChunks.map(chunk => adminDb.collection('studentTopicMastery').where('studentCode', 'in', chunk).select('studentCode', 'topicCode', 'mastery', 'confidence', 'topicClassification', 'targetQuestions', 'isRecoveryMastered', 'attempts', 'attemptsCount', 'srsStage', 'nextReviewDate', 'lastReviewDate', 'lastAccuracy', 'intervalDays').get().catch(() => null as any))),
+      Promise.all(activeStudentChunks.map(chunk => adminDb.collection('integrityScores').where('studentCode', 'in', chunk).select('studentCode', 'examId', 'score', 'integrityScore', 'calculatedAt', 'createdAt').get().catch(() => null as any))),
+      // parentReviews: Targeted fields for calculateUnifiedMetrics and PracticeQualityCalculator
+      Promise.all(activeStudentChunks.map(chunk => adminDb.collection('parentReviews').where('studentCode', 'in', chunk).select('studentCode', 'topicCode', 'topicName', 'totalQuestions', 'questionsCount', 'correctCount', 'score', 'scorePercent', 'percentage', 'status', 'type', 'pacingScore', 'durationSpent', 'pacing', 'startedAt', 'createdAt', 'submittedAt').get().catch(() => null as any))),
+      Promise.all(activeStudentChunks.map(chunk => adminDb.collection('evaluations').where('studentCode', 'in', chunk).select('studentCode', 'examId', 'score', 'maxMarks', 'percentage', 'status', 'submittedAt', 'evaluatedAt', 'createdAt').get().catch(() => null as any))),
       objExamsPromise,
       subjExamsPromise,
       baPromise
