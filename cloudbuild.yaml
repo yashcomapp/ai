@@ -1,0 +1,40 @@
+steps:
+  # 1. Pull previous image for Docker layer caching
+  - name: 'gcr.io/cloud-builders/docker'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        docker pull asia-south1-docker.pkg.dev/ai-yashcom/cloud-run-source-deploy/los-next:latest || exit 0
+
+  # 2. Build image with cache-from
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '--cache-from'
+      - 'asia-south1-docker.pkg.dev/ai-yashcom/cloud-run-source-deploy/los-next:latest'
+      - '-t'
+      - 'asia-south1-docker.pkg.dev/ai-yashcom/cloud-run-source-deploy/los-next:latest'
+      - '.'
+
+  # 3. Push to Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'asia-south1-docker.pkg.dev/ai-yashcom/cloud-run-source-deploy/los-next:latest'
+
+  # 4. Deploy container to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'gcloud'
+    args:
+      - 'run'
+      - 'deploy'
+      - 'los-next'
+      - '--image'
+      - 'asia-south1-docker.pkg.dev/ai-yashcom/cloud-run-source-deploy/los-next:latest'
+      - '--region'
+      - 'asia-south1'
+      - '--allow-unauthenticated'
+
+options:
+  machineType: 'E2_HIGHCPU_8'

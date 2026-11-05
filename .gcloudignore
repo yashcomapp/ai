@@ -1,0 +1,14 @@
+.gcloudignore
+.git
+.gitignore
+node_modules
+.next
+*.md
+backups
+reports
+exports
+*.zip
+*.snapshot
+inspect-*.js
+debug-*.js
+.env*.local
