@@ -173,8 +173,12 @@ export async function GET(req: NextRequest) {
             if (normQTopCode.includes(`-${normTNum}-`) || normQSubCode.includes(`-${normTNum}-`)) return true;
             if (normQCode.includes(`-${normTNum}-`) || normQCode.includes(`-${normTNum}.`)) return true;
 
-            // Parent/child prefix matching only (e.g. 4.3 matches 4.3.1, or 4.3.1 matches 4.3)
-            if (qTopNum.startsWith(`${tNum}.`) || tNum.startsWith(`${qTopNum}.`)) return true;
+            // Subtopic code suffix / exact match
+            if (normQSubCode && (normQSubCode === normTNum || normQSubCode.endsWith(`-${normTNum}`) || normQSubCode.endsWith(`.${normTNum}`))) return true;
+
+            // Parent/child prefix matching (e.g. searching 11.1.1 matches parent 11.1, or 11.1 matches 11.1.1)
+            if (qTopNum && (qTopNum.startsWith(`${tNum}.`) || tNum.startsWith(`${qTopNum}.`))) return true;
+            if (normQTopCode && (normTNum.startsWith(`${normQTopCode}.`) || normTNum.startsWith(`${normQTopCode}-`))) return true;
 
             // Name / Title / ConceptTag match
             if (qTopicName && (qTopicName === tLower || cleanStringForMatch(qTopicName) === cleanStringForMatch(tLower))) return true;

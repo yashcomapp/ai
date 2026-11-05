@@ -325,6 +325,14 @@ export function SyllabusSelector<T extends { topic: string; subject?: string }>(
                 availableTopics.map((top, idx) => {
                   const hasSubtopics = !!(top as any).hasSubtopics;
                   const isChecked = isTopicChecked(top);
+                  const childSubtopics = hasSubtopics ? availableTopics.filter(t => {
+                    const tCh = String((t as any).chapterNumber || '').trim();
+                    const tNum = String((t as any).topicNumber || '').trim();
+                    const topNum = String((top as any).topicNumber || '').trim();
+                    return tCh === String((top as any).chapterNumber || '').trim() && tNum.startsWith(`${topNum}.`);
+                  }) : [];
+                  const areAllSubtopicsSelected = hasSubtopics && childSubtopics.length > 0 && childSubtopics.every(cs => selectedTopics.some(s => isSameTopic(s, cs)));
+                  const isPartiallySelected = hasSubtopics && !areAllSubtopicsSelected && childSubtopics.some(cs => selectedTopics.some(s => isSameTopic(s, cs)));
                   return (
                     <label
                       key={idx}
@@ -336,28 +344,26 @@ export function SyllabusSelector<T extends { topic: string; subject?: string }>(
                         background: hasSubtopics 
                           ? 'var(--bg-soft)' 
                           : (isChecked ? 'rgba(59, 130, 246, 0.1)' : 'var(--surface)'),
-                        border: hasSubtopics
-                          ? '1px dashed var(--border-light)'
-                          : (isChecked ? '1.5px solid var(--accent)' : ((((top as any).testsCount ?? 0) > 0) ? '1px solid rgba(16, 185, 129, 0.35)' : '1px solid var(--border-light)')),
+                        border: (hasSubtopics ? (areAllSubtopicsSelected || isPartiallySelected) : isChecked)
+                          ? '1.5px solid var(--accent)'
+                          : ((((top as any).testsCount ?? 0) > 0) ? '1px solid rgba(16, 185, 129, 0.35)' : (hasSubtopics ? '1px dashed var(--border-light)' : '1px solid var(--border-light)')),
                         borderRadius: 'var(--radius-sm)',
-                        cursor: hasSubtopics ? 'not-allowed' : 'pointer',
+                        cursor: 'pointer',
                         fontSize: '11.5px',
-                        color: hasSubtopics ? 'var(--text-muted)' : (isChecked ? 'var(--accent)' : 'var(--text)'),
+                        color: (hasSubtopics ? (areAllSubtopicsSelected || isPartiallySelected) : isChecked) ? 'var(--accent)' : 'var(--text)',
                         fontWeight: hasSubtopics ? 700 : (isChecked ? 700 : 400),
-                        opacity: hasSubtopics ? 0.75 : 1,
+                        opacity: 1,
                         whiteSpace: 'nowrap',
                         transition: 'all 0.15s ease'
                       }}
-                      title={hasSubtopics ? 'This topic contains subtopics. Please select specific subtopics below.' : undefined}
+                      title={hasSubtopics ? 'Click to select / deselect all subtopics under this topic' : undefined}
                     >
                       <input
                         type={singleTopicSelect ? "radio" : "checkbox"}
                         name={singleTopicSelect ? "qb_single_topic_selection" : undefined}
-                        checked={!hasSubtopics && isChecked}
-                        disabled={hasSubtopics}
-                        onChange={() => {
-                          if (!hasSubtopics) onToggleTopic(top);
-                        }}
+                        checked={hasSubtopics ? areAllSubtopicsSelected : isChecked}
+                        ref={el => { if (el) el.indeterminate = isPartiallySelected; }}
+                        onChange={() => onToggleTopic(top)}
                       />
                       <span>{top.topic}</span>
                       {hasSubtopics && (

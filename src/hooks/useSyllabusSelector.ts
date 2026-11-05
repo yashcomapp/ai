@@ -51,7 +51,31 @@ export function useSyllabusSelector<T extends { topic: string; subject?: string;
   };
 
   const handleToggleTopic = (topicItem: T) => {
-    if ((topicItem as any).hasSubtopics) return;
+    if ((topicItem as any).hasSubtopics) {
+      const topNum = String((topicItem as any).topicNumber || '').trim();
+      const chNum = String((topicItem as any).chapterNumber || '').trim();
+      const childSubtopics = availableTopics.filter(t => {
+        const tCh = String((t as any).chapterNumber || '').trim();
+        const tNum = String((t as any).topicNumber || '').trim();
+        return tCh === chNum && tNum.startsWith(`${topNum}.`);
+      });
+
+      if (childSubtopics.length > 0) {
+        setSelectedTopics(prev => {
+          const allSelected = childSubtopics.every(cs => prev.some(p => isSameTopic(p, cs)));
+          if (allSelected) {
+            return prev.filter(p => !childSubtopics.some(cs => isSameTopic(cs, p)));
+          } else {
+            const next = [...prev];
+            childSubtopics.forEach(cs => {
+              if (!next.some(p => isSameTopic(p, cs))) next.push(cs);
+            });
+            return next;
+          }
+        });
+      }
+      return;
+    }
     setSelectedTopics(prev => {
       const exists = prev.some(t => isSameTopic(t, topicItem));
       if (exists) {
