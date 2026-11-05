@@ -19,13 +19,20 @@ steps:
       - 'asia-south1-docker.pkg.dev/ai-yashcom/cloud-run-source-deploy/los-next:latest'
       - '-t'
       - 'asia-south1-docker.pkg.dev/ai-yashcom/cloud-run-source-deploy/los-next:latest'
+      - '-t'
+      - 'asia-south1-docker.pkg.dev/ai-yashcom/cloud-run-source-deploy/los-next:$SHORT_SHA'
+      - '--label'
+      - 'org.opencontainers.image.description=YASHCOM Learning OS (los-next)'
+      - '--label'
+      - 'org.opencontainers.image.revision=$SHORT_SHA'
       - '.'
 
-  # 3. Push to Artifact Registry
+  # 3. Push all tags to Artifact Registry
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'push'
-      - 'asia-south1-docker.pkg.dev/ai-yashcom/cloud-run-source-deploy/los-next:latest'
+      - '--all-tags'
+      - 'asia-south1-docker.pkg.dev/ai-yashcom/cloud-run-source-deploy/los-next'
 
   # 4. Deploy container to Cloud Run
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
