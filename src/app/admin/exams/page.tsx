@@ -9,15 +9,11 @@ const AssignExamModal = dynamic(() => import('@/components/admin/exams/AssignExa
 const EditAssignmentModal = dynamic(() => import('@/components/admin/exams/EditAssignmentModal'), { ssr: false });
 const PeerReviewModal = dynamic(() => import('@/components/admin/exams/PeerReviewModal'), { ssr: false });
 const TruthTestModal = dynamic(() => import('@/components/admin/exams/TruthTestModal'), { ssr: false });
-const PracticeHistoryModal = dynamic(() => import('@/components/admin/exams/PracticeHistoryModal'), { ssr: false });
-const TopicStatusBreakdownModal = dynamic(() => import('@/components/admin/exams/TopicStatusBreakdownModal'), { ssr: false });
 import { useMathRender } from '@/hooks/useMathRender';
 import { useScorecard } from '@/hooks/useScorecard';
 import { toISTDateTimeLocalInput, formatDateDMY, parseDateInput, getDateKeyIST, formatDateTimeIST, getMorningTestTimes, getEveningTestTimes } from '@/lib/dateUtils';
 import ObjectiveTab from '@/components/admin/exams/ObjectiveTab';
 import SubjectiveTab from '@/components/admin/exams/SubjectiveTab';
-import TopicCoverageTab from '@/components/admin/exams/TopicCoverageTab';
-import PracticeTab from '@/components/admin/exams/PracticeTab';
 import { isExamAssigned, Exam, Assignment, Batch, Student } from '@/components/admin/exams/types';
 import {
   getNormExamDuration,
@@ -43,7 +39,7 @@ export default function AdminExamsPage() {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [activeTab, setActiveTab] = useState<'objective' | 'subjective' | 'coverage' | 'practice'>('objective');
+  const [activeTab, setActiveTab] = useState<'objective' | 'subjective'>('objective');
 
   // Master lists
   const [exams, setExams] = useState<Exam[]>([]);
@@ -52,31 +48,6 @@ export default function AdminExamsPage() {
   const [students, setStudents] = useState<Student[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [attemptCounts, setAttemptCounts] = useState<{ [key: string]: number }>({});
-  const [practiceStats, setPracticeStats] = useState<{
-    [studentCode: string]: {
-      totalSessions: number;
-      questionsAttempted: number;
-      avgScore: number;
-      examAvg?: number;
-      lastActive: string | null;
-    }
-  }>({});
-  const [masteryStats, setMasteryStats] = useState<{
-    [studentCode: string]: {
-      avgMastery: number;
-      avgQuality?: number;
-      efforts?: number;
-      totalAssigned?: number;
-      mastered: number;
-      practicing: number;
-      needsAttention: number;
-    }
-  }>({});
-  const [weeklyStats, setWeeklyStats] = useState<Record<string, any>>({});
-  const [weekDays, setWeekDays] = useState<Array<{ dateKey: string; label: string; shortLabel: string; dayName: string; isToday: boolean }>>([]);
-  const [loadingPracticeTracks, setLoadingPracticeTracks] = useState(false);
-  const [practiceTracksLoaded, setPracticeTracksLoaded] = useState(false);
-  const [practiceTracksError, setPracticeTracksError] = useState<string | null>(null);
 
   // Filtering states
   const [objFilterName, setObjFilterName] = useState('');
@@ -238,12 +209,6 @@ export default function AdminExamsPage() {
     };
   };
 
-  // Practice filter & sort state
-  const [pracBatchFilter, setPracBatchFilter] = useState('all');
-  const [pracSearchName, setPracSearchName] = useState('');
-  const [pracSortField, setPracSortField] = useState<string | null>(null);
-  const [pracSortDir, setPracSortDir] = useState<'asc' | 'desc'>('asc');
-
   // Modals active states
   const [assignModal, setAssignModal] = useState<{
     show: boolean;
@@ -372,158 +337,8 @@ export default function AdminExamsPage() {
 
   const [truthSearchText, setTruthSearchText] = useState('');
 
-  const [selectedPracStudent, setSelectedPracStudent] = useState<Student | null>(null);
-  const [pracHistory, setPracHistory] = useState<any[]>([]);
-  const [loadingPracHistory, setLoadingPracHistory] = useState(false);
-
-  // Accordion inside Practice History modal
-  const [modalExpandedSubjects, setModalExpandedSubjects] = useState<Set<string>>(new Set());
-  const [modalExpandedChapters, setModalExpandedChapters] = useState<Set<string>>(new Set());
-  const [modalSortKey, setModalSortKey] = useState<'name' | 'score' | 'date' | 'integrity'>('date');
-  const [modalSortDirection, setModalSortDirection] = useState<'asc' | 'desc'>('desc');
-
-  const handleModalSort = (key: 'name' | 'score' | 'date' | 'integrity') => {
-    if (modalSortKey === key) {
-      setModalSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
-    } else {
-      setModalSortKey(key);
-      setModalSortDirection(key === 'name' ? 'asc' : 'desc');
-    }
-  };
-
   // Scorecard modal state
   const { scorecard: scorecardData, loading: scorecardLoading, loadScorecard: fetchScorecard, setScorecard: setScorecardData, selectedScorecardId, setSelectedScorecardId } = useScorecard();
-
-  const [topicStatusModal, setTopicStatusModal] = useState<{
-    show: boolean;
-    student: Student | null;
-    initialTab: 'all' | 'mastered' | 'practicing' | 'needsAttention';
-    activeTab: 'all' | 'mastered' | 'practicing' | 'needsAttention';
-    loading: boolean;
-    searchText: string;
-    data: {
-      mastered: any[];
-      practicing: any[];
-      needsAttention: any[];
-      stats: { masteredCount: number; practicingCount: number; needsAttentionCount: number };
-    } | null;
-  }>({
-    show: false,
-    student: null,
-    initialTab: 'all',
-    activeTab: 'all',
-    loading: false,
-    searchText: '',
-    data: null
-  });
-
-  const deferredPracSearchName = useDeferredValue(pracSearchName);
-
-  const filteredPracticeBatches = useMemo(() => {
-    const q = deferredPracSearchName.toLowerCase().trim();
-    const activeBatches = batches.filter(b => pracBatchFilter === 'all' || b.id === pracBatchFilter);
-
-    return activeBatches.map(batch => {
-      const batchStudents = students.filter(s => {
-        if (!s.batchIds || !s.batchIds.includes(batch.id)) return false;
-        if (q && !s.name.toLowerCase().includes(q)) return false;
-        return true;
-      });
-
-      const sortedStudents = [...batchStudents].sort((a, b) => {
-        const statsA = practiceStats[a.studentCode] || { totalSessions: 0, questionsAttempted: 0, avgScore: 0, lastActive: null };
-        const statsB = practiceStats[b.studentCode] || { totalSessions: 0, questionsAttempted: 0, avgScore: 0, lastActive: null };
-        const masteryA = masteryStats[a.studentCode] || { avgMastery: 0, mastered: 0, practicing: 0, needsAttention: 0 };
-        const masteryB = masteryStats[b.studentCode] || { avgMastery: 0, mastered: 0, practicing: 0, needsAttention: 0 };
-        
-        let valA: any = '';
-        let valB: any = '';
-
-        if (pracSortField === 'student') {
-          valA = a.name.toLowerCase();
-          valB = b.name.toLowerCase();
-        } else if (pracSortField === 'code') {
-          valA = a.studentCode;
-          valB = b.studentCode;
-        } else if (pracSortField === 'sessions') {
-          valA = statsA.totalSessions;
-          valB = statsB.totalSessions;
-        } else if (pracSortField === 'questions') {
-          valA = statsA.questionsAttempted;
-          valB = statsB.questionsAttempted;
-        } else if (pracSortField === 'score') {
-          valA = statsA.avgScore;
-          valB = statsB.avgScore;
-        } else if (pracSortField === 'avgMastery') {
-          valA = masteryA.avgMastery;
-          valB = masteryB.avgMastery;
-        } else if (pracSortField === 'avgQuality') {
-          valA = (masteryA as any).avgQuality ?? 100;
-          valB = (masteryB as any).avgQuality ?? 100;
-        } else if (pracSortField === 'efforts') {
-          valA = (masteryA as any).efforts ?? 0;
-          valB = (masteryB as any).efforts ?? 0;
-        } else if (pracSortField === 'masteryStats') {
-          valA = masteryA.mastered;
-          valB = masteryB.mastered;
-        } else if (pracSortField === 'active') {
-          valA = statsA.lastActive ? new Date(statsA.lastActive).getTime() : 0;
-          valB = statsB.lastActive ? new Date(statsB.lastActive).getTime() : 0;
-        } else if (pracSortField === 'weeklyQuestions') {
-          valA = weeklyStats[a.studentCode]?.totalQuestions || 0;
-          valB = weeklyStats[b.studentCode]?.totalQuestions || 0;
-        } else if (pracSortField === 'weeklyActive') {
-          valA = weeklyStats[a.studentCode]?.activeDays || 0;
-          valB = weeklyStats[b.studentCode]?.activeDays || 0;
-        } else if (pracSortField === 'weeklyScore') {
-          valA = weeklyStats[a.studentCode]?.avgScore || 0;
-          valB = weeklyStats[b.studentCode]?.avgScore || 0;
-        } else {
-          return 0;
-        }
-
-        if (valA < valB) return pracSortDir === 'asc' ? -1 : 1;
-        if (valA > valB) return pracSortDir === 'asc' ? 1 : -1;
-        return 0;
-      });
-
-      return {
-        batch,
-        batchStudents,
-        sortedStudents
-      };
-    }).filter(item => !q || item.sortedStudents.length > 0);
-  }, [batches, pracBatchFilter, students, deferredPracSearchName, practiceStats, masteryStats, weeklyStats, pracSortField, pracSortDir]);
-
-  const openTopicStatusModal = async (student: Student, filterType: 'mastered' | 'practicing' | 'needsAttention' | 'all', e: React.MouseEvent) => {
-    e.stopPropagation();
-    setTopicStatusModal({
-      show: true,
-      student,
-      initialTab: filterType,
-      activeTab: filterType,
-      loading: true,
-      searchText: '',
-      data: null
-    });
-
-    try {
-      const idToken = await firebaseUser!.getIdToken();
-      const res = await fetch(`/api/admin/exams?action=studentTopicStatus&studentCode=${student.studentCode}`, {
-        headers: { 'Authorization': `Bearer ${idToken}` }
-      });
-      if (!res.ok) throw new Error('Failed to load student topic status breakdown');
-      const json = await res.json();
-      setTopicStatusModal(prev => ({
-        ...prev,
-        loading: false,
-        data: json
-      }));
-    } catch (err: any) {
-      console.error('Error loading student topic status:', err);
-      setTopicStatusModal(prev => ({ ...prev, loading: false }));
-    }
-  };
 
   // Dynamically load KaTeX and auto-render math expressions
   useMathRender([selectedScorecardId, scorecardData, truthTestModal]);
@@ -576,44 +391,6 @@ export default function AdminExamsPage() {
     }
   };
 
-  const loadPracticeTracks = async (options?: {
-    days?: number;
-    startDate?: string;
-    endDate?: string;
-  }) => {
-    if (!firebaseUser) return;
-    setLoadingPracticeTracks(true);
-    setPracticeTracksError(null);
-    try {
-      const idToken = await firebaseUser.getIdToken();
-      const params = new URLSearchParams({ action: 'practiceTracks' });
-      params.set('days', String(options?.days || 7));
-      if (options?.startDate) params.set('startDate', options.startDate);
-      if (options?.endDate) params.set('endDate', options.endDate);
-
-      const res = await fetch(`/api/admin/exams?${params.toString()}`, {
-        headers: {
-          'Authorization': `Bearer ${idToken}`
-        }
-      });
-      if (!res.ok) {
-        const errJson = await res.json().catch(() => ({}));
-        throw new Error(errJson.message || 'Failed to load practice tracks data.');
-      }
-      const data = await res.json();
-      setPracticeStats(data.practiceStats || {});
-      setMasteryStats(data.masteryStats || {});
-      setWeeklyStats(data.weeklyStats || {});
-      setWeekDays(data.weekDays || []);
-    } catch (err: any) {
-      console.error('Failed to load practice tracks:', err);
-      setPracticeTracksError(err?.message || 'Failed to load practice tracks data.');
-    } finally {
-      setPracticeTracksLoaded(true);
-      setLoadingPracticeTracks(false);
-    }
-  };
-
   const toggleAssignmentStatus = async (id: string, collection: string, newStatus: string) => {
     try {
       const idToken = await firebaseUser!.getIdToken();
@@ -637,55 +414,11 @@ export default function AdminExamsPage() {
     }
   };
 
-  const handlePracSort = (field: string) => {
-    if (pracSortField === field) {
-      setPracSortDir(prev => prev === 'asc' ? 'desc' : 'asc');
-    } else {
-      setPracSortField(field);
-      setPracSortDir('asc');
-    }
-  };
-
-  const handleRowClick = async (student: Student) => {
-    if (!firebaseUser) return;
-    setSelectedPracStudent(student);
-    setLoadingPracHistory(true);
-    try {
-      const idToken = await firebaseUser.getIdToken();
-      const res = await fetch(`/api/parent/review?studentCode=${student.studentCode}`, {
-        headers: { 'Authorization': `Bearer ${idToken}` }
-      });
-      if (res.ok) {
-        const data = await res.json();
-        const history = data.practiceReviews || [];
-        setPracHistory(history);
-
-        const firstSub = history.map((h: any) => h.subject).filter(Boolean)[0];
-        if (firstSub) {
-          setModalExpandedSubjects(new Set([firstSub]));
-        } else {
-          setModalExpandedSubjects(new Set());
-        }
-        setModalExpandedChapters(new Set());
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoadingPracHistory(false);
-    }
-  };
-
   useEffect(() => {
     if (firebaseUser) {
       loadData();
     }
   }, [firebaseUser]);
-
-  useEffect(() => {
-    if (activeTab === 'practice' && !practiceTracksLoaded && !loadingPracticeTracks && !practiceTracksError && firebaseUser) {
-      loadPracticeTracks();
-    }
-  }, [activeTab, practiceTracksLoaded, loadingPracticeTracks, practiceTracksError, firebaseUser]);
 
   useEffect(() => {
     if (!loading) {
@@ -1212,20 +945,6 @@ export default function AdminExamsPage() {
           >
             Subjective Exams
           </button>
-          <button 
-            className={`tab-btn ${activeTab === 'coverage' ? 'active' : ''}`}
-            onClick={() => setActiveTab('coverage')}
-            style={{ padding: '8px 16px', border: 'none', cursor: 'pointer', background: 'none', fontWeight: 600, borderBottom: activeTab === 'coverage' ? '2.5px solid var(--accent)' : 'none', color: activeTab === 'coverage' ? 'var(--accent)' : 'var(--text-muted)' }}
-          >
-            📊 Topic Coverage & Mastery
-          </button>
-          <button 
-            className={`tab-btn ${activeTab === 'practice' ? 'active' : ''}`}
-            onClick={() => setActiveTab('practice')}
-            style={{ padding: '8px 16px', border: 'none', cursor: 'pointer', background: 'none', fontWeight: 600, borderBottom: activeTab === 'practice' ? '2.5px solid var(--accent)' : 'none', color: activeTab === 'practice' ? 'var(--accent)' : 'var(--text-muted)' }}
-          >
-            🏋️ Practice Tracks
-          </button>
         </div>
 
         {/* Tab Content: Objective Exams */}
@@ -1314,35 +1033,6 @@ export default function AdminExamsPage() {
             router={router}
           />
         )}
-
-        {/* Tab Content: Topic Coverage & Mastery (Conducted Topics Only) */}
-        {activeTab === 'coverage' && (
-          <TopicCoverageTab batches={batches} />
-        )}
-
-        {/* Tab Content: Practice Track summary logs */}
-        {activeTab === 'practice' && (
-          <PracticeTab
-            batches={batches}
-            pracBatchFilter={pracBatchFilter}
-            setPracBatchFilter={setPracBatchFilter}
-            pracSearchName={pracSearchName}
-            setPracSearchName={setPracSearchName}
-            loadingPracticeTracks={loadingPracticeTracks}
-            filteredPracticeBatches={filteredPracticeBatches}
-            pracSortField={pracSortField}
-            pracSortDir={pracSortDir}
-            handlePracSort={handlePracSort}
-            practiceStats={practiceStats}
-            masteryStats={masteryStats}
-            weeklyStats={weeklyStats}
-            weekDays={weekDays}
-            handleRowClick={handleRowClick}
-            openTopicStatusModal={openTopicStatusModal}
-            formatDateDMY={formatDateDMY}
-            onSelectDuration={loadPracticeTracks}
-          />
-        )}
       </main>
 
       <AssignExamModal 
@@ -1378,27 +1068,6 @@ export default function AdminExamsPage() {
       <TruthTestModal 
         truthTestModal={truthTestModal}
         setTruthTestModal={setTruthTestModal}
-      />
-
-      <PracticeHistoryModal 
-        selectedPracStudent={selectedPracStudent}
-        setSelectedPracStudent={setSelectedPracStudent}
-        loadingPracHistory={loadingPracHistory}
-        pracHistory={pracHistory}
-        modalExpandedSubjects={modalExpandedSubjects}
-        setModalExpandedSubjects={setModalExpandedSubjects}
-        modalExpandedChapters={modalExpandedChapters}
-        setModalExpandedChapters={setModalExpandedChapters}
-        modalSortKey={modalSortKey}
-        modalSortDirection={modalSortDirection}
-        handleModalSort={handleModalSort}
-        loadScorecard={fetchScorecard}
-        formatDateDMY={formatDateDMY}
-      />
-
-      <TopicStatusBreakdownModal 
-        topicStatusModal={topicStatusModal as any}
-        setTopicStatusModal={setTopicStatusModal as any}
       />
 
       <ScorecardModal 
