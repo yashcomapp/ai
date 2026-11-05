@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 
 export function useReports() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchReport = async (url: string, idToken: string) => {
+  const fetchReport = useCallback(async (url: string, idToken: string) => {
     setLoading(true);
     setError(null);
     try {
@@ -22,25 +22,23 @@ export function useReports() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-
-
-  const getInterventionQueue = async (idToken: string, forceRefresh?: boolean) => {
+  const getInterventionQueue = useCallback(async (idToken: string, forceRefresh?: boolean) => {
     const url = forceRefresh ? '/api/admin/reports/interventions?refresh=true' : '/api/admin/reports/interventions';
     return fetchReport(url, idToken);
-  };
+  }, [fetchReport]);
 
-  const getUsageReport = async (idToken: string) => {
+  const getUsageReport = useCallback(async (idToken: string) => {
     return fetchReport('/api/admin/reports/usage', idToken);
-  };
+  }, [fetchReport]);
 
-  const getIntegrityReport = async (idToken: string, forceRefresh?: boolean) => {
+  const getIntegrityReport = useCallback(async (idToken: string, forceRefresh?: boolean) => {
     const url = forceRefresh ? '/api/admin/integrity?refresh=true' : '/api/admin/integrity';
     return fetchReport(url, idToken);
-  };
+  }, [fetchReport]);
 
-  const getQuotientReport = async (idToken: string, studentCode?: string, duration?: string) => {
+  const getQuotientReport = useCallback(async (idToken: string, studentCode?: string, duration?: string) => {
     let url = '/api/admin/reports/learning-quotient';
     const params = new URLSearchParams();
     if (studentCode) params.set('studentCode', studentCode);
@@ -48,7 +46,7 @@ export function useReports() {
     const qs = params.toString();
     if (qs) url += `?${qs}`;
     return fetchReport(url, idToken);
-  };
+  }, [fetchReport]);
 
   return {
     loading,

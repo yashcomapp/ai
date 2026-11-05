@@ -46,8 +46,10 @@ export default function AdminReportsHubPage() {
   }, [firebaseUser, getInterventionQueue]);
 
   useEffect(() => {
+    if (!firebaseUser) return;
     fetchQueue(false);
-  }, [fetchQueue]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [firebaseUser]);
 
   // Unique batches from items
   const batches = useMemo(() => {
@@ -388,7 +390,7 @@ export default function AdminReportsHubPage() {
         </div>
 
         {/* Loading & Error States */}
-        {loading && (
+        {loading && !data && (
           <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--text-muted)' }}>
             <div style={{ fontSize: '28px', marginBottom: '8px' }}>⏳</div>
             <div style={{ fontSize: '14px', fontWeight: 600 }}>Analyzing exam baseline performance & practice recovery status...</div>
@@ -435,7 +437,7 @@ export default function AdminReportsHubPage() {
         )}
 
         {/* Intervention Cards Feed */}
-        {!loading && !error && filteredItems.length > 0 && (
+        {!error && filteredItems.length > 0 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)' }}>
               Showing {filteredItems.length} student intervention{filteredItems.length === 1 ? '' : 's'}
