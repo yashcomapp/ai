@@ -669,10 +669,10 @@ export async function GET(req: NextRequest) {
           return;
         }
 
-        const examComp = qData.components.find(c => c.parameterId === 'exam');
-        const practiceComp = qData.components.find(c => c.parameterId === 'practice');
-        const qualityComp = qData.components.find(c => c.parameterId === 'quality');
-        const healthComp = qData.components.find(c => c.parameterId === 'topicHealth');
+        const examComp = (qData.components || []).find((c: any) => c.parameterId === 'exam');
+        const practiceComp = (qData.components || []).find((c: any) => c.parameterId === 'practice');
+        const qualityComp = (qData.components || []).find((c: any) => c.parameterId === 'quality');
+        const healthComp = (qData.components || []).find((c: any) => c.parameterId === 'topicHealth');
 
         const totalAssigned = healthComp?.details?.totalTopics ?? practiceComp?.details?.totalAssignedTopics ?? 0;
         const mastered = healthComp?.details?.masteredCount ?? 0;
