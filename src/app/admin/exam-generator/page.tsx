@@ -881,7 +881,7 @@ export default function AdminExamGeneratorPage() {
             const prioritizedRemaining = sortQuestionsByCompetencyDepth(remaining, selected, 2);
             const picked = prioritizedRemaining.slice(0, targetForTopic - pickedForTopic);
 
-            remaining.forEach(q => {
+            picked.forEach(q => {
               usedCodes.add(q.questionCode || q.id || '');
               selected.push(q);
               pickedForTopic++;
@@ -961,7 +961,7 @@ export default function AdminExamGeneratorPage() {
                 selected.push(q);
                 topicPickedCounts[tKey] = (topicPickedCounts[tKey] || 0) + 1;
               });
-              stillNeeded -= relaxed.length;
+              stillNeeded -= pickedRelaxed.length;
             }
 
             // 3. Graceful Backfill: If the bank doesn't have enough questions of this exact type in this topic, backfill from other valid question types in this topic so the exam is filled
@@ -979,7 +979,7 @@ export default function AdminExamGeneratorPage() {
                 selected.push(q);
                 topicPickedCounts[tKey] = (topicPickedCounts[tKey] || 0) + 1;
               });
-              stillNeeded -= otherTypes.length;
+              stillNeeded -= pickedOther.length;
             }
 
             // 4. True shortfall if the topic itself has run out of candidate questions
@@ -1011,7 +1011,7 @@ export default function AdminExamGeneratorPage() {
             const prioritizedRemaining = sortQuestionsByCompetencyDepth(remaining, selected, 2);
             const picked = prioritizedRemaining.slice(0, neededForTopic);
 
-            remaining.forEach(q => {
+            picked.forEach(q => {
               usedCodes.add(q.questionCode || q.id || '');
               selected.push(q);
               topicPickedCounts[tKey] = (topicPickedCounts[tKey] || 0) + 1;
@@ -1036,7 +1036,8 @@ export default function AdminExamGeneratorPage() {
         }
       }
 
-      setGeneratedQuestions(selected);
+      const finalSelected = selected.slice(0, effectiveTotalQs);
+      setGeneratedQuestions(finalSelected);
       setShortfalls(shortfallReqs);
 
       if (candidatePool.length === 0) {
