@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { adminDb } from '@/lib/firebase/admin';
 import { getFromCache, setInCache } from '@/lib/firebase/cache';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     // Public directory for candidate registration. Admin batch modifications are strictly protected via verifyRole on /api/admin/batches.
