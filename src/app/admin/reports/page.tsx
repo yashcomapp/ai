@@ -150,11 +150,11 @@ export default function AdminReportsHubPage() {
                 background: 'rgba(239, 68, 68, 0.12)',
                 color: 'var(--danger, #ef4444)'
               }}>
-                Action Hub
+                Exam-to-Practice Remediation Hub
               </span>
             </div>
             <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
-              Ranked list of students needing help today. Focus on these 1-click interventions to eliminate blockers.
+              Tracks students failing to recover from exam baselines through daily practice. Actionable triggers for teachers & admins.
             </p>
           </div>
 
@@ -187,36 +187,13 @@ export default function AdminReportsHubPage() {
           </div>
         </div>
 
-        {/* Top Metric Cards */}
+        {/* 4-Stage Metric Cards Aligned with Lifecycle */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
           gap: '14px'
         }}>
-          {/* Card 1: Total */}
-          <div
-            onClick={() => setSelectedCategory('all')}
-            style={{
-              background: 'var(--surface)',
-              border: selectedCategory === 'all' ? '2px solid var(--accent)' : '1px solid var(--border-light)',
-              borderRadius: '10px',
-              padding: '16px',
-              cursor: 'pointer',
-              transition: 'all 0.15s ease'
-            }}
-          >
-            <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '4px' }}>
-              Total Interventions
-            </div>
-            <div style={{ fontSize: '26px', fontWeight: 800, color: 'var(--text)' }}>
-              {data?.totalItems ?? (loading ? '...' : 0)}
-            </div>
-            <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
-              Actionable triggers across all active students
-            </div>
-          </div>
-
-          {/* Card 2: Missed Exams */}
+          {/* Card 1: Missed Baseline Exams (Step 1) */}
           <div
             onClick={() => setSelectedCategory('missed_exam')}
             style={{
@@ -230,21 +207,21 @@ export default function AdminReportsHubPage() {
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
               <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--danger, #ef4444)' }}>
-                🔴 Missed Exams
+                🔴 1. Missed Exams
               </span>
               <span style={{ fontSize: '10px', fontWeight: 700, padding: '1px 6px', borderRadius: '4px', background: 'rgba(239, 68, 68, 0.15)', color: 'var(--danger, #ef4444)' }}>
-                Critical
+                Baseline Missing
               </span>
             </div>
             <div style={{ fontSize: '26px', fontWeight: 800, color: 'var(--danger, #ef4444)' }}>
               {data?.criticalCount ?? (loading ? '...' : 0)}
             </div>
             <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
-              Scheduled tests past deadline with 0 attempts
+              Assigned exams unattempted; topics cannot be calibrated
             </div>
           </div>
 
-          {/* Card 3: Gate Blockers */}
+          {/* Card 2: Practice Locked (Step 3 Lockdown) */}
           <div
             onClick={() => setSelectedCategory('reflection_gate')}
             style={{
@@ -258,26 +235,54 @@ export default function AdminReportsHubPage() {
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
               <span style={{ fontSize: '12px', fontWeight: 600, color: '#f97316' }}>
-                🟠 Reflection Gates
+                🟠 2. Practice Locked
               </span>
               <span style={{ fontSize: '10px', fontWeight: 700, padding: '1px 6px', borderRadius: '4px', background: 'rgba(249, 115, 22, 0.15)', color: '#f97316' }}>
-                High Priority
+                Reflection Pending
               </span>
             </div>
             <div style={{ fontSize: '26px', fontWeight: 800, color: '#f97316' }}>
               {data?.gateBlockedCount ?? (loading ? '...' : 0)}
             </div>
             <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
-              Students locked out of practice by uncompleted reflections
+              Locked out of practice due to uncompleted mistake review
             </div>
           </div>
 
-          {/* Card 4: Low Mastery */}
+          {/* Card 3: Conceptual Block (Practiced but still stuck in 🔴) */}
           <div
-            onClick={() => setSelectedCategory('low_mastery')}
+            onClick={() => setSelectedCategory('conceptual_block')}
             style={{
               background: 'var(--surface)',
-              border: selectedCategory === 'low_mastery' ? '2px solid #eab308' : '1px solid var(--border-light)',
+              border: selectedCategory === 'conceptual_block' ? '2px solid #ef4444' : '1px solid var(--border-light)',
+              borderRadius: '10px',
+              padding: '16px',
+              cursor: 'pointer',
+              transition: 'all 0.15s ease'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+              <span style={{ fontSize: '12px', fontWeight: 600, color: '#ef4444' }}>
+                🔴 3. Needs Re-Teach
+              </span>
+              <span style={{ fontSize: '10px', fontWeight: 700, padding: '1px 6px', borderRadius: '4px', background: 'rgba(239, 68, 68, 0.15)', color: '#ef4444' }}>
+                Algorithm Failed
+              </span>
+            </div>
+            <div style={{ fontSize: '26px', fontWeight: 800, color: '#ef4444' }}>
+              {data?.conceptualBlockCount ?? (loading ? '...' : 0)}
+            </div>
+            <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
+              Practiced questions, but still &lt;50%; teacher intervention needed
+            </div>
+          </div>
+
+          {/* Card 4: Remediation Neglected (0 practice done on 🔴 topic) */}
+          <div
+            onClick={() => setSelectedCategory('neglected_topic')}
+            style={{
+              background: 'var(--surface)',
+              border: selectedCategory === 'neglected_topic' ? '2px solid #eab308' : '1px solid var(--border-light)',
               borderRadius: '10px',
               padding: '16px',
               cursor: 'pointer',
@@ -286,17 +291,17 @@ export default function AdminReportsHubPage() {
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
               <span style={{ fontSize: '12px', fontWeight: 600, color: '#eab308' }}>
-                🟡 Low Topic Mastery
+                🟡 4. Practice Neglected
               </span>
               <span style={{ fontSize: '10px', fontWeight: 700, padding: '1px 6px', borderRadius: '4px', background: 'rgba(234, 179, 8, 0.15)', color: '#eab308' }}>
-                Needs Revision
+                0 Sets Done
               </span>
             </div>
             <div style={{ fontSize: '26px', fontWeight: 800, color: '#eab308' }}>
-              {data?.lowMasteryCount ?? (loading ? '...' : 0)}
+              {data?.neglectedTopicCount ?? (loading ? '...' : 0)}
             </div>
             <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>
-              Students struggling below 50% accuracy on key topics
+              Exam placed topic into 🔴, but student hasn&apos;t started practice
             </div>
           </div>
         </div>
@@ -316,10 +321,11 @@ export default function AdminReportsHubPage() {
           {/* Category Tabs */}
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             {[
-              { id: 'all', label: `All Items (${data?.totalItems ?? 0})` },
-              { id: 'missed_exam', label: `🔴 Missed Tests (${data?.criticalCount ?? 0})` },
-              { id: 'reflection_gate', label: `🟠 Reflection Gate (${data?.gateBlockedCount ?? 0})` },
-              { id: 'low_mastery', label: `🟡 Low Mastery (${data?.lowMasteryCount ?? 0})` }
+              { id: 'all', label: `All Triggers (${data?.totalItems ?? 0})` },
+              { id: 'missed_exam', label: `🔴 Missed Exams (${data?.criticalCount ?? 0})` },
+              { id: 'reflection_gate', label: `🟠 Locked Practice (${data?.gateBlockedCount ?? 0})` },
+              { id: 'conceptual_block', label: `🔴 Re-Teach Needed (${data?.conceptualBlockCount ?? 0})` },
+              { id: 'neglected_topic', label: `🟡 0 Practice (${data?.neglectedTopicCount ?? 0})` }
             ].map(tab => (
               <button
                 key={tab.id}
@@ -388,7 +394,7 @@ export default function AdminReportsHubPage() {
         {loading && (
           <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--text-muted)' }}>
             <div style={{ fontSize: '28px', marginBottom: '8px' }}>⏳</div>
-            <div style={{ fontSize: '14px', fontWeight: 600 }}>Analyzing academic indicators & building intervention queue...</div>
+            <div style={{ fontSize: '14px', fontWeight: 600 }}>Analyzing exam baseline performance & practice recovery status...</div>
           </div>
         )}
 
@@ -421,12 +427,12 @@ export default function AdminReportsHubPage() {
           }}>
             <div style={{ fontSize: '42px' }}>🎉</div>
             <h3 style={{ fontSize: '17px', fontWeight: 800, color: 'var(--text)', margin: 0 }}>
-              All Clear! No Pending Interventions
+              All Clear! No Remediation Blockers
             </h3>
             <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0, maxWidth: '480px' }}>
               {selectedBatch !== 'all' || selectedCategory !== 'all' || searchQuery
                 ? 'No students match your selected filters. Try switching batches or categories.'
-                : 'Zero active students are currently blocked by reflection gates or missed exams. Excellent learning cadence!'}
+                : 'All scheduled exams are baselined, practice sets are unlocked, and students are successfully recovering from weak topics!'}
             </p>
           </div>
         )}
@@ -439,18 +445,27 @@ export default function AdminReportsHubPage() {
             </div>
 
             {filteredItems.map(item => {
-              const isCritical = item.urgency === 'critical';
-              const isHigh = item.urgency === 'high';
+              const isMissed = item.category === 'missed_exam';
+              const isBlock = item.category === 'conceptual_block';
+              const isGate = item.category === 'reflection_gate';
 
-              const badgeColor = isCritical ? 'var(--danger, #ef4444)' : (isHigh ? '#f97316' : '#eab308');
-              const badgeBg = isCritical ? 'rgba(239, 68, 68, 0.12)' : (isHigh ? 'rgba(249, 115, 22, 0.12)' : 'rgba(234, 179, 8, 0.12)');
+              const badgeColor = (isMissed || isBlock) ? 'var(--danger, #ef4444)' : (isGate ? '#f97316' : '#eab308');
+              const badgeBg = (isMissed || isBlock) ? 'rgba(239, 68, 68, 0.12)' : (isGate ? 'rgba(249, 115, 22, 0.12)' : 'rgba(234, 179, 8, 0.12)');
+
+              const categoryBadgeText = isMissed 
+                ? '🔴 1. Baseline Exam Missed' 
+                : (isGate 
+                    ? '🟠 2. Practice Locked (Reflection)' 
+                    : (isBlock 
+                        ? '🔴 3. Re-Teach Needed (Stuck in 🔴)' 
+                        : '🟡 4. Remediation Neglected (0 Practice)'));
 
               return (
                 <div
                   key={item.id}
                   style={{
                     background: 'var(--surface)',
-                    border: '1px solid ' + (isCritical ? 'rgba(239, 68, 68, 0.4)' : 'var(--border-light)'),
+                    border: '1px solid ' + ((isMissed || isBlock) ? 'rgba(239, 68, 68, 0.4)' : 'var(--border-light)'),
                     borderLeft: `4px solid ${badgeColor}`,
                     borderRadius: '10px',
                     padding: '16px 20px',
@@ -487,7 +502,7 @@ export default function AdminReportsHubPage() {
                         background: badgeBg,
                         color: badgeColor
                       }}>
-                        {item.category === 'missed_exam' ? '🔴 Missed Exam' : (item.category === 'reflection_gate' ? '🟠 Gate Blocked' : '🟡 Low Mastery')}
+                        {categoryBadgeText}
                       </span>
                     </div>
 
@@ -507,7 +522,7 @@ export default function AdminReportsHubPage() {
                   {/* Right Column: 1-Click Action Buttons */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                     
-                    {/* 1. WhatsApp 1-Click Nudge */}
+                    {/* 1. WhatsApp 1-Click Action */}
                     <button
                       onClick={() => handleOpenWhatsApp(item.phone || item.parentPhone, item.whatsappMessage)}
                       style={{
@@ -527,7 +542,7 @@ export default function AdminReportsHubPage() {
                       title="Open WhatsApp with pre-filled message"
                     >
                       <span>💬</span>
-                      <span>WhatsApp Nudge</span>
+                      <span>{item.actionLabel}</span>
                     </button>
 
                     {/* 2. Copy Message */}
