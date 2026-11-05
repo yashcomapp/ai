@@ -2034,8 +2034,8 @@ Return ONLY valid JSON. No markdown wrappers or extra commentary.`;
                     </label>
                   </div>
 
-                  {/* Editable Keywords & Solution Preview */}
-                  {(q.type === 'subjective' || q.type === 'subjective_short' || q.type === 'subjective_long' || q.solution) && (
+                  {/* Editable Keywords & Solution Preview (Subjective questions only) */}
+                  {(questionType === 'subjective' || ['subjective', 'subjective_short', 'subjective_long', 'SDF', 'SLP', 'SSA', 'SSR', 'SSN', 'SLA', 'SLN'].includes(q.type || '')) && (
                     <div style={{ marginTop: '6px', padding: '12px 14px', background: 'var(--surface)', borderRadius: '6px', border: '1px solid var(--border-light)', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '12px', width: '100%' }}>
                       <div>
                         <QuestionKeywordsInput
