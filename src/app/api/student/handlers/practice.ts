@@ -104,8 +104,8 @@ export async function GET(req: NextRequest) {
     const rawScope = String(topicClassification || '').toLowerCase().trim();
     const isMinorTopic = rawScope === 'minor' || rawScope === 'micro' || (targetQuestions !== undefined && targetQuestions <= 30);
     const isMajorTopic = rawScope === 'major' || rawScope === 'calculative' || rawScope === 'hots' || (targetQuestions !== undefined && targetQuestions > 50);
-    const maxSessionsAllowed = isMinorTopic ? 2 : (isMajorTopic ? 4 : 3);
-    const maxQuestionsAllowed = isMinorTopic ? 12 : (isMajorTopic ? 24 : 18);
+    const maxSessionsAllowed = 2; // Fixed 2 practice tests per topic
+    const maxQuestionsAllowed = 12;
 
     const isRevisionMode = category === 'revision';
 
@@ -126,7 +126,7 @@ export async function GET(req: NextRequest) {
       // silent fallback
     }
 
-    const isPracticeLimitReached = !isTeacherAssigned && !isRevisionMode && !textbookReadConfirmed && (completedPractices >= maxSessionsAllowed || (practiceQuestionsAttempted >= maxQuestionsAllowed && mastery < 80));
+    const isPracticeLimitReached = !isTeacherAssigned && !isRevisionMode && (completedPractices >= 2 || practiceQuestionsAttempted >= 12);
 
     // 0. Lever 1: Autonomous Student Generative Reflection Gate
     // If student is in Autonomous Mode, require reflection on missed questions from previous session before continuing.
@@ -171,7 +171,7 @@ export async function GET(req: NextRequest) {
         locked: true,
         requireTextbookStudy: true,
         lockType: 'quota_reached',
-        message: `Maximum recommended limit of ${maxSessionsAllowed} practice sessions reached for this topic. Please revise your textbook notes, then confirm below to unlock additional practice.`
+        message: 'You have completed both practice sets (2/2) for this topic. Self-directed practice is complete.'
       }, { status: 200 });
     }
 
@@ -207,15 +207,7 @@ export async function GET(req: NextRequest) {
       }, { status: 200 });
     }
 
-    // 4. Study Break & Textbook Lock (When struggling: 12+ practice questions attempted, mastery < 75%, not yet confirmed)
-    if (practiceQuestionsAttempted >= 12 && mastery < 75 && !textbookReadConfirmed && !isRevisionMode) {
-      return NextResponse.json({
-        locked: true,
-        requireTextbookStudy: true,
-        lockType: 'initial',
-        message: "Let's take a break from tests. Please read your textbook and review your class notes for this chapter before trying again."
-      }, { status: 200 });
-    }
+    // 4. Textbook study break removed (fixed 2 practices per topic)
 
     // Lock checks passed: silently close any existing in-progress practice attempts to allow seamless re-entry/retries
     const activeSnap = await adminDb.collection('practiceAttempts')
@@ -720,24 +712,6 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { action, category, answers, durationSpent, violations, sessionId, proctoringViolationTriggered, disputedQuestionIds } = body;
     const topicCode = QuestionRepository.normalizeTopicCode(body.topicCode || '');
-
-    if (action === 'confirmTextbook') {
-      if (!topicCode) {
-        return NextResponse.json({ message: 'Missing topicCode.' }, { status: 400 });
-      }
-      const now = new Date();
-      const masteryDocId = `${studentCode}_${topicCode}`;
-      await adminDb.collection('studentTopicMastery').doc(masteryDocId).set({
-        textbookReadConfirmed: true,
-        lastConfirmedAt: now,
-        cooldownUntil: null,
-        dailyLockedUntil: null
-      }, { merge: true });
-      return NextResponse.json({ 
-        success: true,
-        message: 'Textbook study confirmed. Practice unlocked.'
-      });
-    }
 
     if (!topicCode || !Array.isArray(answers)) {
       return NextResponse.json({ message: 'Missing required parameters (topicCode, answers).' }, { status: 400 });

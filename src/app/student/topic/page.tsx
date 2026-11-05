@@ -67,8 +67,6 @@ function TopicPracticeContent() {
   const [data, setData] = useState<PracticeData | null>(null);
   const [requireTextbookStudy, setRequireTextbookStudy] = useState(false);
   const [textbookStudyMessage, setTextbookStudyMessage] = useState('');
-  const [textbookConfirmedCheck, setTextbookConfirmedCheck] = useState(false);
-  const [confirmingTextbook, setConfirmingTextbook] = useState(false);
   const [lockType, setLockType] = useState<'initial' | 'cooldown' | 'daily' | 'quota_reached' | 'reflection_required' | null>(null);
   const [reflectionReviewId, setReflectionReviewId] = useState<string>('');
   const [reflectionQuestions, setReflectionQuestions] = useState<any[]>([]);
@@ -307,34 +305,7 @@ function TopicPracticeContent() {
     }
   }, [firebaseUser, topicCode, user]);
 
-  const handleConfirmTextbook = async () => {
-    if (!firebaseUser || !topicCode || confirmingTextbook) return;
-    setConfirmingTextbook(true);
-    try {
-      const idToken = await firebaseUser.getIdToken();
-      const res = await fetch('/api/student/practice', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${idToken}`
-        },
-        body: JSON.stringify({
-          action: 'confirmTextbook',
-          topicCode
-        })
-      });
-      if (!res.ok) {
-        throw new Error('Failed to confirm textbook review.');
-      }
-      setRequireTextbookStudy(false);
-      setLoading(true);
-      fetchQuestions();
-    } catch (err: any) {
-      alert(err.message || 'Error updating textbook confirmation status.');
-    } finally {
-      setConfirmingTextbook(false);
-    }
-  };
+  
 
   const handleRunCheck = async () => {
     const stream = await startCameraStream();
@@ -582,10 +553,6 @@ function TopicPracticeContent() {
         category={category}
         lockType={lockType}
         textbookStudyMessage={textbookStudyMessage}
-        textbookConfirmedCheck={textbookConfirmedCheck}
-        setTextbookConfirmedCheck={setTextbookConfirmedCheck}
-        confirmingTextbook={confirmingTextbook}
-        onConfirmTextbook={handleConfirmTextbook}
         firebaseUser={firebaseUser}
         reflectionReviewId={reflectionReviewId}
         reflectionQuestions={reflectionQuestions}

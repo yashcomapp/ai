@@ -461,8 +461,6 @@ export class PracticeService {
 
       finalMastery = updatedData.mastery;
       finalConfidence = updatedData.confidence;
-      updatedData.textbookReadConfirmed = false;
-
       // Lever 1: Generative Reflection Gate for Autonomous students with missed questions
       const wrongCount = Math.max(0, validQuestionsCount - correctCount);
       const needsStudentReflection = wrongCount > 0 && scorePercent < 80;

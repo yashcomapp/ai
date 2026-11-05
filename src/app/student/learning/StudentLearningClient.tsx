@@ -754,14 +754,14 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                                            let expText = '';
                                            const practiceCount = topic.practiceCount || 0;
                                            const reqConf = topic.requiredConfidence || getRequiredConfidence(topic.topicClassification, topic.targetQuestions);
-                                           const maxPractices = Math.ceil(reqConf / 6);
+                                           const maxPractices = 2; // Fixed 2 practice tests per topic
                                            const isLimitReached = practiceCount >= maxPractices;
 
                                            if (state === 'needsAttention') {
                                              if (isLimitReached) {
                                                expIcon = '🔒';
                                                expColor = 'var(--text-muted)';
-                                               expText = `${maxPractices}/${maxPractices} practices done (${mastery}% accuracy). Practice quota reached. Revise textbook notes before upcoming exams.`;
+                                               expText = `2/2 practices done (${mastery}% accuracy). Practice limit reached.`;
                                              } else if (isAbsent) {
                                                expIcon = '⚠️';
                                                expColor = 'var(--danger)';
@@ -784,7 +784,7 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                                              } else if (isLimitReached) {
                                                expIcon = '🔒';
                                                expColor = 'var(--text-muted)';
-                                               expText = `${maxPractices}/${maxPractices} practices done (${mastery}% accuracy). Practice quota reached. Revise textbook notes before upcoming exams.`;
+                                               expText = `2/2 practices done (${mastery}% accuracy). Practice limit reached.`;
                                              } else {
                                                expIcon = '📈';
                                                expColor = 'var(--warning)';
@@ -805,7 +805,7 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
 
                                           const reqMasteryQs = topic.requiredConfidence || getRequiredConfidence(topic.topicClassification, topic.targetQuestions);
 
-                                          let btnLabel = isLimitReached && !isMasteredState ? '🔒 Quota Reached' : actionText;
+                                          let btnLabel = isLimitReached && !isMasteredState ? '🔒 2/2 Sets Done' : actionText;
 
                                           return (
                                             <tr 

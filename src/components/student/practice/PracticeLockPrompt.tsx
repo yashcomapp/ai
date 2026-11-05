@@ -10,10 +10,6 @@ interface PracticeLockPromptProps {
   category: string;
   textbookStudyMessage?: string;
   lockType?: 'initial' | 'cooldown' | 'daily' | 'quota_reached' | 'reflection_required' | null;
-  textbookConfirmedCheck?: boolean;
-  setTextbookConfirmedCheck?: (checked: boolean) => void;
-  confirmingTextbook?: boolean;
-  onConfirmTextbook?: () => void;
   firebaseUser?: any;
   reflectionReviewId?: string;
   reflectionQuestions?: any[];
@@ -34,10 +30,6 @@ export function PracticeLockPrompt({
   topicCode,
   textbookStudyMessage,
   lockType,
-  textbookConfirmedCheck = false,
-  setTextbookConfirmedCheck,
-  confirmingTextbook = false,
-  onConfirmTextbook,
   firebaseUser,
   reflectionReviewId,
   reflectionQuestions = [],
@@ -295,10 +287,8 @@ export function PracticeLockPrompt({
     const heading = lockType === 'cooldown' 
       ? 'Deliberation Cooldown Active / विश्राम अवधि ⏳' 
       : lockType === 'daily' 
-        ? 'Daily Limit Reached / दैनिक अभ्यास सीमा 🔒' 
-        : isQuota 
-          ? 'Practice Quota Completed / अभ्यास कोटा पूर्ण 🎓'
-          : 'Time to hit the textbook! / पाठ्यपुस्तक पढ़ें 📚';
+        ? 'Daily Limit Reached / दैनिक अभ्यास मर्यादा 🔒' 
+        : 'Practice Limit Completed (2/2 Sets Done) 🎓';
 
     return (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '80vh', padding: '20px' }}>
@@ -320,34 +310,10 @@ export function PracticeLockPrompt({
             {heading}
           </h3>
           <p style={{ fontSize: '14px', color: 'var(--text-muted)', lineHeight: '1.6', marginBottom: '24px' }}>
-            {textbookStudyMessage || "Let's take a break from tests. Please read your textbook and review your class notes for this chapter before trying again."}
+            {textbookStudyMessage || "You have completed both practice sets (2/2) for this topic. Self-directed practice is complete."}
           </p>
           
-          {!isLockedState && (
-            <label style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '10px', 
-              fontSize: '13px', 
-              color: 'var(--text)', 
-              cursor: 'pointer',
-              padding: '12px 16px',
-              background: 'var(--bg)',
-              borderRadius: 'var(--radius-md)',
-              border: '1px solid var(--border-light)',
-              width: '100%',
-              marginBottom: '24px',
-              boxSizing: 'border-box'
-            }}>
-              <input 
-                type="checkbox" 
-                checked={textbookConfirmedCheck} 
-                onChange={(e) => setTextbookConfirmedCheck?.(e.target.checked)}
-                style={{ width: '18px', height: '18px', cursor: 'pointer' }}
-              />
-              <span style={{ textAlign: 'left' }}>I confirm that I have reviewed this concept in my textbook/notes.</span>
-            </label>
-          )}
+          
 
           <div style={{ display: 'flex', gap: '12px', width: '100%' }}>
             <button 
@@ -357,16 +323,7 @@ export function PracticeLockPrompt({
             >
               🏠 Back to Dashboard
             </button>
-            {!isLockedState && (
-              <button 
-                className="btn btn-primary" 
-                disabled={!textbookConfirmedCheck || confirmingTextbook}
-                onClick={onConfirmTextbook}
-                style={{ flex: 1 }}
-              >
-                {confirmingTextbook ? 'Updating...' : '⚡ Unlock & Resume'}
-              </button>
-            )}
+            
           </div>
         </div>
       </div>

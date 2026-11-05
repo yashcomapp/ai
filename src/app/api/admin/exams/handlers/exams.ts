@@ -287,7 +287,7 @@ export async function GET(req: NextRequest) {
         const rawScope = String(classification || '').toLowerCase().trim();
         const isMinorTopic = rawScope === 'minor' || rawScope === 'micro' || (targetQ !== undefined && targetQ <= 30);
         const isMajorTopic = rawScope === 'major' || rawScope === 'calculative' || rawScope === 'hots' || (targetQ !== undefined && targetQ > 50);
-        const maxPractices = isMinorTopic ? 2 : (isMajorTopic ? 4 : 3);
+        const maxPractices = 2; // Fixed 2 practice tests per topic
         const isLimitReached = practiceCount >= maxPractices;
 
         let state = 'needsAttention';
@@ -364,7 +364,7 @@ export async function GET(req: NextRequest) {
           if (isLimitReached) {
             expIcon = '🔒';
             expColor = 'var(--text-muted)';
-            expText = `${maxPractices}/${maxPractices} practices done (${mastery}% accuracy). Practice quota reached. Revise textbook concepts before exams.`;
+            expText = `2/2 practices done (${mastery}% accuracy). Practice limit reached.`;
           } else {
             expIcon = '📈';
             expColor = 'var(--warning)';
@@ -391,7 +391,7 @@ export async function GET(req: NextRequest) {
           if (isLimitReached) {
             expIcon = '🔒';
             expColor = 'var(--text-muted)';
-            expText = `${maxPractices}/${maxPractices} practices done (${mastery}% accuracy). Practice quota reached. Revise textbook concepts before exams.`;
+            expText = `2/2 practices done (${mastery}% accuracy). Practice limit reached.`;
           } else if (attempts === 0) {
             expIcon = '⚪';
             expColor = 'var(--text-muted)';
