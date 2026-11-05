@@ -29,9 +29,10 @@ const getAdminPageTitle = (pathname: string): string => {
   if (pathname.startsWith('/admin/notices')) return 'Notices & Announcements';
   if (pathname.startsWith('/admin/chat')) return 'Live Chat Workspace';
   if (pathname === '/admin/reports') return 'Daily Intervention Queue';
+  if (pathname.startsWith('/admin/reports/remediation')) return 'Topic Remediation Tracker';
   if (pathname.startsWith('/admin/reports/learning-quotient')) return 'Learning Quotient (LQ)';
   if (pathname.startsWith('/admin/reports/daily-practice')) return 'Daily Practice Summary';
-  if (pathname.startsWith('/admin/reports/usage')) return 'System Usage Analytics';
+  if (pathname.startsWith('/admin/reports/usage')) return 'System Health & Audit';
   if (pathname.startsWith('/admin/reports/login-register')) return 'Login Activity Register';
   if (pathname.startsWith('/admin/integrity-score-manager')) return 'Integrity Score Manager';
   if (pathname.startsWith('/admin/teacher-final-review')) return 'Teacher Final Review';
@@ -69,10 +70,9 @@ const ADMIN_SUBMENUS: { [key: string]: SubmenuItem[] } = {
   ],
   reports: [
     { icon: '⚡', en: 'Intervention Queue', url: '/admin/reports' },
+    { icon: '🎯', en: 'Topic Remediation', url: '/admin/reports/remediation' },
     { icon: '📊', en: 'Learning Quotient (LQ)', url: '/admin/reports/learning-quotient' },
-    { icon: '✍️', en: 'Daily Practice Summary', url: '/admin/reports/daily-practice' },
-    { icon: '📈', en: 'System Usage Analytics', url: '/admin/reports/usage' },
-    { icon: '🔑', en: 'Login Activity Register', url: '/admin/reports/login-register' }
+    { icon: '🛡️', en: 'System Health & Audit', url: '/admin/reports/usage' }
   ],
   settings: [
     { icon: '🛡️', en: 'Integrity Scores', url: '/admin/integrity-score-manager' },
