@@ -145,6 +145,7 @@ export class ExamReviewService {
     batchId?: string;
     reviewedQuestionIds?: string[];
     wrongAnswerReasons?: Record<string | number, string>;
+    studentExplanations?: Record<string | number, string>;
     challenges?: QuestionDisputeInput[];
     timeSpentSeconds?: number;
   }): Promise<{
@@ -162,6 +163,7 @@ export class ExamReviewService {
       batchId = '',
       reviewedQuestionIds = [],
       wrongAnswerReasons,
+      studentExplanations,
       challenges = [],
       timeSpentSeconds = 0
     } = params;
@@ -217,6 +219,9 @@ export class ExamReviewService {
       };
       if (wrongAnswerReasons && Object.keys(wrongAnswerReasons).length > 0) {
         updatePayload.wrongAnswerReasons = wrongAnswerReasons;
+      }
+      if (studentExplanations && Object.keys(studentExplanations).length > 0) {
+        updatePayload.studentExplanations = studentExplanations;
       }
 
       const reviewRefs = candidateDocIds.map(id => adminDb.collection('reviews').doc(id));
@@ -344,7 +349,7 @@ export class ExamReviewService {
       // 1. Sweep 'reviews' collection
       const pendingReviewsSnap = await adminDb.collection('reviews')
         .where('studentCode', 'in', chunk)
-        .where('status', 'in', ['pending', 'student_review'])
+        .where('status', '==', 'pending')
         .get()
         .catch(() => ({ docs: [] } as any));
 
@@ -373,7 +378,7 @@ export class ExamReviewService {
       // 2. Sweep 'examAttempts' collection
       const pendingAttemptsSnap = await adminDb.collection('examAttempts')
         .where('studentCode', 'in', chunk)
-        .where('status', 'in', ['pending', 'student_review'])
+        .where('status', '==', 'pending')
         .get()
         .catch(() => ({ docs: [] } as any));
 
@@ -402,7 +407,7 @@ export class ExamReviewService {
       // 3. Sweep 'parentReviews' collection
       const pendingParentReviewsSnap = await adminDb.collection('parentReviews')
         .where('studentCode', 'in', chunk)
-        .where('status', 'in', ['pending', 'pending_parent', 'student_review'])
+        .where('status', 'in', ['pending', 'pending_parent'])
         .get()
         .catch(() => ({ docs: [] } as any));
 

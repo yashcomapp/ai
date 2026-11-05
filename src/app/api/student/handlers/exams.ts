@@ -734,7 +734,7 @@ export async function PUT(req: NextRequest) {
 
     const student = caller;
     const body = await req.json();
-    const { examId, wrongAnswerReasons, reviewedQuestionIds, challenges, timeSpentSeconds, examName } = body;
+    const { examId, wrongAnswerReasons, studentExplanations, reviewedQuestionIds, challenges, timeSpentSeconds, examName } = body;
     const studentCode = student.userData?.studentCode || '';
     const studentName = student.userData?.name || 'Student';
     const batchId = student.userData?.batchId || (Array.isArray(student.userData?.batchIds) ? student.userData.batchIds[0] : '');

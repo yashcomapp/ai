@@ -128,6 +128,25 @@ export async function GET(req: NextRequest) {
 
     const isPracticeLimitReached = !isTeacherAssigned && !isRevisionMode && (completedPractices >= 2 || practiceQuestionsAttempted >= 12);
 
+        // 0. Exam Reflection Gate: If student has an uncompleted exam reflection, gate practice until reflected!
+    const pendingExamSnap = await adminDb.collection('reviews')
+      .where('studentCode', '==', studentCode)
+      .where('status', '==', 'student_review')
+      .limit(1)
+      .get()
+      .catch(() => ({ empty: true, docs: [] } as any));
+
+    if (!pendingExamSnap.empty) {
+      const pendingExam = pendingExamSnap.docs[0].data();
+      return NextResponse.json({
+        locked: true,
+        lockType: 'exam_reflection_required',
+        examId: pendingExam.examId || pendingExamSnap.docs[0].id,
+        examName: pendingExam.examName || 'Scheduled Exam',
+        message: `You have an incomplete mistake reflection for "${pendingExam.examName || 'Scheduled Exam'}". Please reflect on your exam errors before starting remedial practice.`
+      }, { status: 200 });
+    }
+
     // 0. Lever 1: Autonomous Student Generative Reflection Gate
     // If student is in Autonomous Mode, require reflection on missed questions from previous session before continuing.
     const isAutonomous = getStudentMode(student.userData) === 'autonomous';

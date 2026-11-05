@@ -9,7 +9,7 @@ interface PracticeLockPromptProps {
   topicCode: string;
   category: string;
   textbookStudyMessage?: string;
-  lockType?: 'initial' | 'cooldown' | 'daily' | 'quota_reached' | 'reflection_required' | null;
+  lockType?: 'initial' | 'cooldown' | 'daily' | 'quota_reached' | 'reflection_required' | 'exam_reflection_required' | null;
   firebaseUser?: any;
   reflectionReviewId?: string;
   reflectionQuestions?: any[];
@@ -54,6 +54,30 @@ export function PracticeLockPrompt({
           <button className="btn btn-primary" onClick={() => router.push('/student')}>
             🏠 Back to Dashboard
           </button>
+        </div>
+      </div>
+    );
+  }
+
+    if (lockType === 'exam_reflection_required') {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '80vh', padding: '20px' }}>
+        <div style={{ maxWidth: '520px', width: '100%', textAlign: 'center', padding: '36px 24px', background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--danger)', boxShadow: 'var(--shadow-glass)' }}>
+          <div style={{ fontSize: '3.5rem', marginBottom: '16px' }}>📝</div>
+          <h3 style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--text)', marginBottom: '10px' }}>
+            Exam Mistake Reflection Required / परीक्षा चूक आत्मनिरीक्षण 📝
+          </h3>
+          <p style={{ fontSize: '14px', color: 'var(--text-muted)', lineHeight: '1.6', marginBottom: '24px' }}>
+            {textbookStudyMessage || 'You have an incomplete mistake reflection for a recent exam. Please analyze your exam errors before starting remedial practice.'}
+          </p>
+          <div style={{ display: 'flex', gap: '12px', width: '100%' }}>
+            <button className="btn btn-secondary" onClick={() => router.push('/student')} style={{ flex: 1 }}>
+              🏠 Dashboard
+            </button>
+            <button className="btn btn-primary" onClick={() => router.push('/student')} style={{ flex: 1.5, fontWeight: 700 }}>
+              📝 Go to Dashboard &amp; Reflect
+            </button>
+          </div>
         </div>
       </div>
     );

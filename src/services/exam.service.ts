@@ -191,7 +191,7 @@ export class ExamService {
         continue;
       }
       const isApprovedByEval = evalMap.has(revDoc.id) || (data.examId && evalMap.has(data.examId));
-      if (isApprovedByEval || (isAutonomous && (data.status === 'pending' || data.status === 'student_review'))) {
+      if (isApprovedByEval || (isAutonomous && data.status === 'pending')) {
         // Auto-heal status in Firestore
         revDoc.ref.update({ status: 'approved', updatedAt: new Date() }).catch(() => null);
       } else {

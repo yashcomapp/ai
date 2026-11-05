@@ -27,6 +27,7 @@ export default function StudentSelfReflectionModal({
   const [unattemptedQuestions, setUnattemptedQuestions] = useState<any[]>([]);
   const [reviewedQuestions, setReviewedQuestions] = useState<Set<number>>(new Set());
   const [selectedReasons, setSelectedReasons] = useState<{ [key: number]: string }>({});
+  const [studentExplanations, setStudentExplanations] = useState<{ [key: number]: string }>({});
   const [filterTab, setFilterTab] = useState<'all' | 'incorrect' | 'unanswered'>('all');
   const [submitting, setSubmitting] = useState(false);
 
@@ -108,7 +109,11 @@ export default function StudentSelfReflectionModal({
 
   const totalToReview = questionsToReview.length;
   const reviewedCount = reviewedQuestions.size;
-  const isAllReviewed = totalToReview > 0 && reviewedCount === totalToReview;
+  const isAllReviewed = totalToReview > 0 && questionsToReview.every(q => {
+    const hasReason = Boolean(selectedReasons[q.globalIdx]);
+    const hasExplanation = (studentExplanations[q.globalIdx] || '').trim().length >= 25;
+    return hasReason && hasExplanation && reviewedQuestions.has(q.globalIdx);
+  });
 
   const handleSubmitReflection = async () => {
     if (!isAllReviewed || submitting || !firebaseUser) return;
@@ -123,7 +128,8 @@ export default function StudentSelfReflectionModal({
         },
         body: JSON.stringify({
           examId,
-          wrongAnswerReasons: selectedReasons
+          wrongAnswerReasons: selectedReasons,
+          studentExplanations: studentExplanations
         })
       });
 
@@ -424,6 +430,39 @@ export default function StudentSelfReflectionModal({
                                   </button>
                                 );
                               })}
+                            </div>
+                          </div>
+
+                          {/* Generative Explanation Box (Min 25 chars) */}
+                          <div style={{ marginTop: '10px' }}>
+                            <label style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
+                              Explain your mistake &amp; correct approach in your own words (min 25 characters):
+                            </label>
+                            <textarea
+                              value={studentExplanations[qItem.globalIdx] || ''}
+                              onChange={(e) => {
+                                const val = e.target.value.slice(0, 350);
+                                setStudentExplanations(prev => ({ ...prev, [qItem.globalIdx]: val }));
+                              }}
+                              placeholder="Where was the misunderstanding or calculation slip, and what is the correct concept? (min 25 characters)..."
+                              rows={2}
+                              style={{
+                                width: '100%',
+                                padding: '8px 10px',
+                                fontSize: '12px',
+                                borderRadius: 'var(--radius-sm)',
+                                border: (studentExplanations[qItem.globalIdx] || '').trim().length >= 25 ? '1px solid var(--border-light)' : '1px solid var(--danger)',
+                                background: 'var(--surface)',
+                                color: 'var(--text)',
+                                resize: 'vertical',
+                                boxSizing: 'border-box'
+                              }}
+                            />
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '2px', fontSize: '10px' }}>
+                              <span style={{ color: (studentExplanations[qItem.globalIdx] || '').trim().length >= 25 ? 'var(--success)' : 'var(--danger)', fontWeight: 600 }}>
+                                {(studentExplanations[qItem.globalIdx] || '').trim().length >= 25 ? '✓ Minimum length satisfied' : `Needs at least ${25 - (studentExplanations[qItem.globalIdx] || '').trim().length} more characters`}
+                              </span>
+                              <span style={{ color: 'var(--text-muted)' }}>{(studentExplanations[qItem.globalIdx] || '').length}/350</span>
                             </div>
                           </div>
                         </div>
