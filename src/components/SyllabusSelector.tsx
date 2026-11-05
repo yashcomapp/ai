@@ -182,6 +182,79 @@ export function SyllabusSelector<T extends { topic: string; subject?: string }>(
                       <span style={{ opacity: 0.4 }}>|</span>
                       <span style={{ color: 'var(--accent)' }}>S: {ch.subjectiveCount ?? ch.chapter?.subjectiveCount ?? 0}</span>
                     </span>
+                    {(() => {
+                      const condTopics = ch.conductedTopicsCount ?? ch.chapter?.conductedTopicsCount ?? 0;
+                      const totTopics = ch.totalTopicsCount ?? ch.chapter?.totalTopicsCount ?? (Array.isArray(ch.chapter?.topics) ? ch.chapter.topics.length : 0);
+                      const exStatus = ch.examStatus ?? ch.chapter?.examStatus ?? (condTopics > 0 && condTopics >= totTopics ? 'all_conducted' : condTopics > 0 ? 'partial_conducted' : 'unconducted');
+
+                      if (exStatus === 'all_conducted' || (condTopics > 0 && condTopics >= totTopics)) {
+                        return (
+                          <span
+                            style={{
+                              fontSize: '9px',
+                              fontWeight: 700,
+                              marginLeft: '3px',
+                              padding: '1px 5px',
+                              borderRadius: '4px',
+                              background: 'rgba(16, 185, 129, 0.18)',
+                              color: '#34d399',
+                              border: '1px solid rgba(16, 185, 129, 0.4)',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '3px'
+                            }}
+                            title={`All ${totTopics} topics in this chapter tested`}
+                          >
+                            <span>🟢</span>
+                            <span>All Tested (${condTopics}/${totTopics})</span>
+                          </span>
+                        );
+                      }
+                      if (exStatus === 'partial_conducted' || condTopics > 0) {
+                        return (
+                          <span
+                            style={{
+                              fontSize: '9px',
+                              fontWeight: 700,
+                              marginLeft: '3px',
+                              padding: '1px 5px',
+                              borderRadius: '4px',
+                              background: 'rgba(245, 158, 11, 0.18)',
+                              color: '#fbbf24',
+                              border: '1px solid rgba(245, 158, 11, 0.4)',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '3px'
+                            }}
+                            title={`${condTopics} of ${totTopics} topics tested in this chapter`}
+                          >
+                            <span>🟡</span>
+                            <span>${condTopics}/${totTopics} Tested</span>
+                          </span>
+                        );
+                      }
+                      return (
+                        <span
+                          style={{
+                            fontSize: '9px',
+                            fontWeight: 600,
+                            marginLeft: '3px',
+                            padding: '1px 5px',
+                            borderRadius: '4px',
+                            background: 'rgba(148, 163, 184, 0.08)',
+                            color: 'var(--text-muted, #94a3b8)',
+                            border: '1px solid rgba(148, 163, 184, 0.18)',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '3px'
+                          }}
+                          title="No exams conducted on any topic in this chapter yet"
+                        >
+                          <span>⚪</span>
+                          <span>Untested{totTopics > 0 ? ` (0/${totTopics})` : ''}</span>
+                        </span>
+                      );
+                    })()}
                     {onCreateQBChapter && (
                       <button
                         type="button"
@@ -265,7 +338,7 @@ export function SyllabusSelector<T extends { topic: string; subject?: string }>(
                           : (isChecked ? 'rgba(59, 130, 246, 0.1)' : 'var(--surface)'),
                         border: hasSubtopics
                           ? '1px dashed var(--border-light)'
-                          : (isChecked ? '1.5px solid var(--accent)' : '1px solid var(--border-light)'),
+                          : (isChecked ? '1.5px solid var(--accent)' : ((((top as any).testsCount ?? 0) > 0) ? '1px solid rgba(16, 185, 129, 0.35)' : '1px solid var(--border-light)')),
                         borderRadius: 'var(--radius-sm)',
                         cursor: hasSubtopics ? 'not-allowed' : 'pointer',
                         fontSize: '11.5px',
@@ -312,35 +385,53 @@ export function SyllabusSelector<T extends { topic: string; subject?: string }>(
                         <span style={{ color: 'var(--purple)' }}>S: {(top as any).subjectiveCount ?? 0}</span>
                       </span>
 
-                      {onCreateQBTopic && !hasSubtopics && (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            onCreateQBTopic(top);
-                          }}
-                          style={{
-                            marginLeft: '4px',
-                            fontSize: '9.5px',
-                            fontWeight: 800,
-                            padding: '1px 6px',
-                            borderRadius: '4px',
-                            background: (((top as any).objectiveCount ?? 0) === 0) ? 'rgba(239, 68, 68, 0.18)' : 'rgba(59, 130, 246, 0.12)',
-                            color: (((top as any).objectiveCount ?? 0) === 0) ? '#f87171' : 'var(--accent)',
-                            border: (((top as any).objectiveCount ?? 0) === 0) ? '1px solid rgba(239, 68, 68, 0.45)' : '1px solid rgba(59, 130, 246, 0.3)',
-                            cursor: 'pointer',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '3px',
-                            lineHeight: 1.4
-                          }}
-                          title={`Generate Questions for ${top.topic} directly in Create Question Bank (AI)`}
-                        >
-                          <span>✨</span>
-                          <span>+QB (AI)</span>
-                        </button>
-                      )}
+                      {(() => {
+                        const tTests = (top as any).testsCount ?? 0;
+                        if (tTests > 0) {
+                          return (
+                            <span
+                              style={{
+                                marginLeft: '3px',
+                                fontSize: '9px',
+                                fontWeight: 700,
+                                padding: '1px 5px',
+                                borderRadius: '4px',
+                                background: 'rgba(16, 185, 129, 0.16)',
+                                color: '#10b981',
+                                border: '1px solid rgba(16, 185, 129, 0.35)',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '2px'
+                              }}
+                              title={`Exam conducted on this topic (${tTests} test${tTests > 1 ? 's' : ''})`}
+                            >
+                              <span>✓</span>
+                              <span>{tTests} Exam{tTests > 1 ? 's' : ''}</span>
+                            </span>
+                          );
+                        }
+                        return (
+                          <span
+                            style={{
+                              marginLeft: '3px',
+                              fontSize: '9px',
+                              fontWeight: 600,
+                              padding: '1px 5px',
+                              borderRadius: '4px',
+                              background: 'rgba(148, 163, 184, 0.08)',
+                              color: 'var(--text-muted, #94a3b8)',
+                              border: '1px solid rgba(148, 163, 184, 0.18)',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '2px'
+                            }}
+                            title="No exams conducted on this topic yet"
+                          >
+                            <span>○</span>
+                            <span>Untested</span>
+                          </span>
+                        );
+                      })()}
                     </label>
                   );
                 })

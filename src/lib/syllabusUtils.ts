@@ -86,6 +86,42 @@ export function buildObjectiveSchema(Schema: any, typeIds: string[]) {
 }
 
 /**
+ * SSOT Helper to determine whether an exam's topicCodes match a given syllabus topic or subtopic code.
+ */
+export function matchTopicCode(examTopicCodes: any, cleanCode: string, number: string, chapNum: string): boolean {
+  if (!Array.isArray(examTopicCodes)) return false;
+  const cleanCodeLower = String(cleanCode || '').toLowerCase().trim();
+  const numStr = String(number || '').trim();
+  const chapNumStr = String(chapNum || '').trim();
+  
+  const compareNum = numStr.replace(/[-_]/g, '.');
+  const compareChapNum = `${chapNumStr}.${numStr}`.replace(/[-_]/g, '.');
+
+  return examTopicCodes.some((code: any) => {
+    if (!code) return false;
+    const c = String(code).toLowerCase().trim();
+    if (c === cleanCodeLower) return true;
+    if (c === numStr) return true;
+    
+    const compareC = c.replace(/[-_]/g, '.');
+    if (compareC === compareNum) return true;
+    if (compareC === compareChapNum) return true;
+    
+    // Boundary-aware suffix match for full topic code
+    if (cleanCodeLower.endsWith('-' + c) || cleanCodeLower.endsWith('_' + c)) return true;
+    
+    // Boundary-aware suffix match for exam code ending in topic number
+    if (c.endsWith('-' + compareNum) || c.endsWith('_' + compareNum)) return true;
+    if (c.endsWith('-' + compareChapNum) || c.endsWith('_' + compareChapNum)) return true;
+
+    // Subtopic prefix/containment match: e.g. cleanCode is MH-9-SCIT-11-11.1.1 and exam topic is 11.1
+    if (cleanCodeLower.includes(`-${compareC}.`) || cleanCodeLower.includes(`_${compareC}.`)) return true;
+
+    return false;
+  });
+}
+
+/**
  * SSOT Canonical Board Code Standard (Rule 2L & 2R)
  */
 export function getCanonicalBoardCode(board: any): 'CBSE' | 'MH' {

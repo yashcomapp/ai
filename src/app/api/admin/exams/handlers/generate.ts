@@ -10,7 +10,8 @@ import {
   getCanonicalBoardName, 
   getCanonicalClass, 
   getCanonicalSubjectCode,
-  buildSyllabusHierarchyFromDocs 
+  buildSyllabusHierarchyFromDocs,
+  matchTopicCode 
 } from '@/lib/syllabusUtils';
 import { getCachedSyllabus, getCachedTemplates, invalidateCache } from '@/lib/firebase/cache';
 import { assertCanonicalExamPayload } from '@/lib/canonicalValidation';
@@ -206,14 +207,14 @@ export async function GET(req: NextRequest) {
       const subjectData = docSnap.data()!;
       let questionsList: any[] = [];
 
-      try {
-        const boardVal = subjectData.board || '';
-        const classVal = subjectData.class !== undefined ? subjectData.class : '';
-        const subjectVal = subjectData.subject || '';
-        const subjectCodeVal = subjectData.subjectCode || '';
+      const boardVal = subjectData.board || '';
+      const classVal = subjectData.class !== undefined ? subjectData.class : '';
+      const subjectVal = subjectData.subject || '';
+      const subjectCodeVal = subjectData.subjectCode || '';
+      const cleanClassVal = String(classVal).replace(/\D/g, '');
+      const classVariations = Array.from(new Set([cleanClassVal, Number(cleanClassVal), classVal].filter(v => v !== undefined && v !== '')));
 
-        const cleanClassVal = String(classVal).replace(/\D/g, '');
-        const classVariations = Array.from(new Set([cleanClassVal, Number(cleanClassVal), classVal].filter(v => v !== undefined && v !== '')));
+      try {
 
         let questionsSnap: admin.firestore.QuerySnapshot | null = null;
         if (subjectCodeVal) {
@@ -281,6 +282,53 @@ export async function GET(req: NextRequest) {
         console.warn('Questions count query bypassed:', err);
       }
 
+      // SSOT: Fetch exams and subjective exams to compute topic & chapter coverage
+      let examsList: any[] = [];
+      let subjectiveExamsList: any[] = [];
+      try {
+        const [examsSnap, subjectiveExamsSnap] = await Promise.all([
+          adminDb.collection('exams')
+            .where('class', 'in', classVariations)
+            .get()
+            .catch(() => null),
+          adminDb.collection('subjectiveExams')
+            .where('class', 'in', classVariations)
+            .get()
+            .catch(() => null)
+        ]);
+
+        const scLower = String(subjectData.subjectCode || '').toLowerCase();
+        const subjLower = String(subjectData.subject || '').toLowerCase();
+
+        if (examsSnap && !examsSnap.empty) {
+          examsList = examsSnap.docs
+            .map(doc => ({ id: doc.id, ...doc.data() as any }))
+            .filter(exam => {
+              const isPractice = exam.id.startsWith('PRACTICE_') || exam.type === 'practice' || exam.isPractice === true;
+              const eSc = String(exam.subjectCode || '').toLowerCase();
+              const eSubj = String(exam.subject || '').toLowerCase();
+              const scMatch = !scLower || eSc === scLower || (eSc === 'math' && scLower === 'mth') || (eSc === 'mth' && scLower === 'math');
+              const subjMatch = !subjLower || (Array.isArray(exam.subjects) && exam.subjects.some((s: string) => String(s).toLowerCase().includes(subjLower) || subjLower.includes(String(s).toLowerCase()))) || eSubj.includes(subjLower) || subjLower.includes(eSubj);
+              return !isPractice && (scMatch || subjMatch);
+            });
+        }
+
+        if (subjectiveExamsSnap && !subjectiveExamsSnap.empty) {
+          subjectiveExamsList = subjectiveExamsSnap.docs
+            .map(doc => ({ id: doc.id, ...doc.data() as any }))
+            .filter(exam => {
+              const isPractice = exam.id.startsWith('PRACTICE_') || exam.type === 'home_practice' || exam.isPractice === true;
+              const eSc = String(exam.subjectCode || '').toLowerCase();
+              const eSubj = String(exam.subject || '').toLowerCase();
+              const scMatch = !scLower || eSc === scLower || (eSc === 'math' && scLower === 'mth') || (eSc === 'mth' && scLower === 'math');
+              const subjMatch = !subjLower || eSubj.includes(subjLower) || subjLower.includes(eSubj);
+              return !isPractice && (scMatch || subjMatch);
+            });
+        }
+      } catch (examErr) {
+        console.warn('Exams count query bypassed in generate handler:', examErr);
+      }
+
       const bCode = subjectData.boardCode || (String(subjectData.board || '').toUpperCase().includes('CBSE') ? 'CBSE' : 'MH');
       const cls = String(subjectData.class || '');
       const sCode = String(subjectData.subjectCode || '');
@@ -291,6 +339,9 @@ export async function GET(req: NextRequest) {
         chapters.forEach((chap: any) => {
           if (!chap || typeof chap !== 'object') return;
           const chapNumStr = String(chap.number ?? '').trim();
+          const allTestsCountsUnderChapter: number[] = [];
+          let leafTopicsTotal = 0;
+          let leafTopicsTested = 0;
           
           const chapQuestions = questionsList.filter(q => {
             if (!q) return false;
@@ -309,6 +360,43 @@ export async function GET(req: NextRequest) {
             const cleanTopicCode = String(top.topicCode || `${canonicalTopicPrefix}-${chapNumStr}-${topNumStr}`).trim();
             const topTitle = String(top.name || top.title || '').trim();
             const cleanTopTitle = cleanStringForMatch(topTitle);
+            let directTopicTests = 0;
+            examsList.forEach(exam => {
+              const topicCodes = Array.isArray(exam.topicCodes) ? exam.topicCodes : [];
+              if (matchTopicCode(topicCodes, cleanTopicCode, topNumStr, chapNumStr)) {
+                directTopicTests++;
+              }
+            });
+            subjectiveExamsList.forEach(exam => {
+              const topicCodes = Array.isArray(exam.topicCodes) ? exam.topicCodes : [];
+              let isMatch = matchTopicCode(topicCodes, cleanTopicCode, topNumStr, chapNumStr);
+              if (!isMatch) {
+                const qIds = Array.isArray(exam.questionIds) ? exam.questionIds : [];
+                if (qIds.length > 0) {
+                  const qId = String(qIds[0] || '');
+                  const cleanCode = qId.replace(/[-_]\d+$/, '');
+                  const parts = cleanCode.split(/[-_]/);
+                  if (parts.length >= 5) {
+                    let derived = '';
+                    if (parts[4].includes('.')) {
+                      derived = `${parts[0]}-${parts[1]}-${parts[2]}-${parts[3]}-${parts[4]}`;
+                    } else if (parts.length >= 7 && /^\d+$/.test(parts[4]) && /^\d+$/.test(parts[5]) && /^\d+$/.test(parts[6])) {
+                      derived = `${parts[0]}-${parts[1]}-${parts[2]}-${parts[4]}-${parts[5]}.${parts[6]}`;
+                    }
+                    if (derived === cleanTopicCode) isMatch = true;
+                  }
+                }
+              }
+              if (!isMatch) {
+                const examTopics = Array.isArray(exam.topics) ? exam.topics : [];
+                if (examTopics.some((tName: any) => cleanTopTitle && String(tName || '').toLowerCase() === cleanTopTitle.toLowerCase())) {
+                  isMatch = true;
+                }
+              }
+              if (isMatch) {
+                directTopicTests++;
+              }
+            });
 
             const rawSubtopics = Array.isArray(top.subtopics) ? top.subtopics : [];
             const subtopics = rawSubtopics.map((sub: any, subIdx: number) => {
@@ -422,17 +510,48 @@ export async function GET(req: NextRequest) {
 
                 sub.objectiveCount = subQuestions.filter(q => q.isObjective).length;
                 sub.subjectiveCount = subQuestions.filter(q => !q.isObjective).length;
+                let subTests = 0;
+                examsList.forEach(exam => {
+                  const topicCodes = Array.isArray(exam.topicCodes) ? exam.topicCodes : [];
+                  if (matchTopicCode(topicCodes, cleanSubCode, subNumStr, chapNumStr)) {
+                    subTests++;
+                  }
+                });
+                subjectiveExamsList.forEach(exam => {
+                  const topicCodes = Array.isArray(exam.topicCodes) ? exam.topicCodes : [];
+                  if (matchTopicCode(topicCodes, cleanSubCode, subNumStr, chapNumStr)) {
+                    subTests++;
+                  }
+                });
+                sub.testsCount = subTests > 0 ? subTests : directTopicTests;
+                allTestsCountsUnderChapter.push(sub.testsCount);
+                leafTopicsTotal++;
+                if (sub.testsCount > 0) leafTopicsTested++;
               });
             }
 
             // Top-level topic objective/subjective count is the total unique questions under this topic branch
             top.objectiveCount = topicBranchQuestions.filter(q => q.isObjective).length;
             top.subjectiveCount = topicBranchQuestions.filter(q => !q.isObjective).length;
+            if (subtopics.length > 0) {
+              top.testsCount = Math.max(directTopicTests, ...subtopics.map((s: any) => s.testsCount || 0));
+            } else {
+              top.testsCount = directTopicTests;
+              allTestsCountsUnderChapter.push(directTopicTests);
+              leafTopicsTotal++;
+              if (directTopicTests > 0) leafTopicsTested++;
+            }
           });
 
           // Chapter total is the exact unique count of questions for this chapter
           chap.objectiveCount = chapQuestions.filter(q => q.isObjective).length;
           chap.subjectiveCount = chapQuestions.filter(q => !q.isObjective).length;
+          chap.testsCount = allTestsCountsUnderChapter.length > 0 ? Math.max(0, ...allTestsCountsUnderChapter) : 0;
+          chap.totalTopicsCount = leafTopicsTotal;
+          chap.conductedTopicsCount = leafTopicsTested;
+          chap.examStatus = (leafTopicsTested > 0 && leafTopicsTested >= leafTopicsTotal)
+            ? 'all_conducted'
+            : (leafTopicsTested > 0 ? 'partial_conducted' : 'unconducted');
         });
       } catch (countErr) {
         console.warn('Chapter questions aggregation error bypassed:', countErr);

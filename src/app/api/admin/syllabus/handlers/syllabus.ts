@@ -349,6 +349,26 @@ export async function GET(req: NextRequest) {
           chap.testsCount = allTestsCountsUnderChapter.length > 0 
             ? Math.max(0, ...allTestsCountsUnderChapter) 
             : 0;
+
+          let leafTopicsTotal = 0;
+          let leafTopicsTested = 0;
+          topics.forEach((t: any) => {
+            const subs = Array.isArray(t.subtopics) ? t.subtopics : [];
+            if (subs.length > 0) {
+              subs.forEach((s: any) => {
+                leafTopicsTotal++;
+                if ((s.testsCount || 0) > 0) leafTopicsTested++;
+              });
+            } else {
+              leafTopicsTotal++;
+              if ((t.testsCount || 0) > 0) leafTopicsTested++;
+            }
+          });
+          chap.totalTopicsCount = leafTopicsTotal;
+          chap.conductedTopicsCount = leafTopicsTested;
+          chap.examStatus = (leafTopicsTested > 0 && leafTopicsTested >= leafTopicsTotal)
+            ? 'all_conducted'
+            : (leafTopicsTested > 0 ? 'partial_conducted' : 'unconducted');
         });
       } catch (loopErr) {
         console.warn('Syllabus chapter aggregation loop error bypassed:', loopErr);

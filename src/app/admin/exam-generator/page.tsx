@@ -400,7 +400,11 @@ export default function AdminExamGeneratorPage() {
             chapterName: ch.name || `Chapter ${ch.number || idx + 1}`,
             chapterNumber: String(ch.number || idx + 1),
             objectiveCount: ch.objectiveCount || 0,
-            subjectiveCount: ch.subjectiveCount || 0
+            subjectiveCount: ch.subjectiveCount || 0,
+            testsCount: ch.testsCount || 0,
+            conductedTopicsCount: ch.conductedTopicsCount || 0,
+            totalTopicsCount: ch.totalTopicsCount || (Array.isArray(ch.topics) ? ch.topics.length : 0),
+            examStatus: ch.examStatus || ((ch.conductedTopicsCount || 0) > 0 ? ((ch.conductedTopicsCount || 0) >= (ch.totalTopicsCount || (Array.isArray(ch.topics) ? ch.topics.length : 0)) ? 'all_conducted' : 'partial_conducted') : 'unconducted')
           });
         });
       }
@@ -429,6 +433,7 @@ export default function AdminExamGeneratorPage() {
               topicCode: topCode,
               objectiveCount: isObj ? (t.objectiveCount || 0) : 0,
               subjectiveCount: isObj ? (t.subjectiveCount || 0) : 0,
+              testsCount: isObj ? (t.testsCount || 0) : 0,
               hasSubtopics: isObj && Array.isArray(t.subtopics) && t.subtopics.length > 0
             });
             if (isObj && t.subtopics && t.subtopics.length > 0) walk(t.subtopics, num, topCode);
@@ -464,7 +469,11 @@ export default function AdminExamGeneratorPage() {
                   chapterName: ch.name || `Chapter ${ch.number || idx + 1}`,
                   chapterNumber: String(ch.number || idx + 1),
                   objectiveCount: ch.objectiveCount || 0,
-                  subjectiveCount: ch.subjectiveCount || 0
+                  subjectiveCount: ch.subjectiveCount || 0,
+                  testsCount: ch.testsCount || 0,
+                  conductedTopicsCount: ch.conductedTopicsCount || 0,
+                  totalTopicsCount: ch.totalTopicsCount || (Array.isArray(ch.topics) ? ch.topics.length : 0),
+                  examStatus: ch.examStatus || ((ch.conductedTopicsCount || 0) > 0 ? ((ch.conductedTopicsCount || 0) >= (ch.totalTopicsCount || (Array.isArray(ch.topics) ? ch.topics.length : 0)) ? 'all_conducted' : 'partial_conducted') : 'unconducted')
                 });
               });
             }
@@ -496,6 +505,7 @@ export default function AdminExamGeneratorPage() {
                 topicCode: topCode,
                 objectiveCount: isObj ? (t.objectiveCount || 0) : 0,
                 subjectiveCount: isObj ? (t.subjectiveCount || 0) : 0,
+                testsCount: isObj ? (t.testsCount || 0) : 0,
                 hasSubtopics: isObj && Array.isArray(t.subtopics) && t.subtopics.length > 0
               });
               if (isObj && t.subtopics && t.subtopics.length > 0) walk(t.subtopics, num, topCode);
@@ -1375,7 +1385,6 @@ Return ONLY valid JSON. No markdown wrappers or extra commentary.`;
             onToggleTopic={handleToggleTopic}
             onSelectAllTopics={() => handleSelectAllTopics(filteredTopics)}
             onDeselectAllTopics={() => handleDeselectAllTopics(filteredTopics)}
-            onCreateQBTopic={handleOpenCreateQBForTopic}
             onCreateQBChapter={handleOpenCreateQBForChapter}
           />
 

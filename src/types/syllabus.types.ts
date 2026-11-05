@@ -44,6 +44,9 @@ export interface Chapter {
   testsCount?: number;
   tests?: any[];
   chapterExercises?: any[];
+  totalTopicsCount?: number;
+  conductedTopicsCount?: number;
+  examStatus?: 'all_conducted' | 'partial_conducted' | 'unconducted' | string;
   [key: string]: any;
 }
 
