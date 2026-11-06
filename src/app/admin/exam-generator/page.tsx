@@ -1,7 +1,7 @@
 'use client';
 import { QuestionKeywordsInput } from '@/components/admin/questions/QuestionKeywordsInput';
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import Script from 'next/script';
@@ -176,6 +176,8 @@ export default function AdminExamGeneratorPage() {
   const [syllabusIndex, setSyllabusIndex] = useState<any>(null);
   const [boardCodes, setBoardCodes] = useState<any>({});
   const [subjectCodes, setSubjectCodes] = useState<any>({});
+  const metadataLoadedRef = useRef(false);
+  const prevSubsKeyRef = useRef<string>('');
 
   // Input states
   const {
@@ -364,18 +366,15 @@ export default function AdminExamGeneratorPage() {
   };
 
   useEffect(() => {
-    if (firebaseUser) {
+    if (firebaseUser && !metadataLoadedRef.current) {
+      metadataLoadedRef.current = true;
       loadInitialMetadata();
     }
   }, [firebaseUser]);
 
-
-
   useEffect(() => {
     triggerLoadChapters(selectedSubjects);
   }, [selectedSubjects, syllabusIndex]);
-
-
 
   const resetChaptersTopics = () => {
     resetSyllabusChaptersTopics();
@@ -385,8 +384,19 @@ export default function AdminExamGeneratorPage() {
   };
 
   const triggerLoadChapters = async (subs: Set<string>) => {
-    resetChaptersTopics();
-    if (subs.size === 0) return;
+    if (subs.size === 0) {
+      prevSubsKeyRef.current = '';
+      resetChaptersTopics();
+      return;
+    }
+
+    const newSubsKey = Array.from(subs).sort().join(',');
+    const subjectsChanged = prevSubsKeyRef.current !== newSubsKey;
+    prevSubsKeyRef.current = newSubsKey;
+
+    if (subjectsChanged) {
+      resetChaptersTopics();
+    }
 
     const resolveSyllabusEntry = (sub: string) => {
       const byBoard = syllabusIndex?.subjects?.[selectedBoard]?.[selectedClass]?.[sub];

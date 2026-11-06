@@ -206,7 +206,7 @@ export function SyllabusSelector<T extends { topic: string; subject?: string }>(
                             title={`All ${totTopics} topics in this chapter tested`}
                           >
                             <span>🟢</span>
-                            <span>All Tested ({condTopics}/{totTopics})</span>
+                            <span>All ({condTopics}/{totTopics})</span>
                           </span>
                         );
                       }
@@ -229,7 +229,7 @@ export function SyllabusSelector<T extends { topic: string; subject?: string }>(
                             title={`${condTopics} of ${totTopics} topics tested in this chapter`}
                           >
                             <span>🟡</span>
-                            <span>{condTopics}/{totTopics} Tested</span>
+                            <span>{condTopics}/{totTopics}</span>
                           </span>
                         );
                       }

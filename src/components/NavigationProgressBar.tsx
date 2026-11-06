@@ -21,6 +21,21 @@ function ProgressBarInner() {
     }
   }, [pathname, searchParams]);
 
+  // Safety watchdog: auto-hide after 4 seconds if navigation doesn't change route (prevents stuck progress bar)
+  useEffect(() => {
+    if (!visible) return;
+    const safetyTimer = setTimeout(() => {
+      setProgress(100);
+      const hideTimer = setTimeout(() => {
+        setVisible(false);
+        setProgress(0);
+      }, 250);
+      return () => clearTimeout(hideTimer);
+    }, 3500);
+
+    return () => clearTimeout(safetyTimer);
+  }, [visible]);
+
   // Intercept internal navigation clicks to start progress bar instantly
   useEffect(() => {
     const handleAnchorClick = (e: MouseEvent) => {
