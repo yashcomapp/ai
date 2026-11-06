@@ -7,6 +7,7 @@ import { shuffleArray, isQuestionQuarantined, cleanStringForMatch } from '@/lib/
 import { areQuestionsTooSimilar, filterDistinctCandidates } from '@/lib/questionSimilarity';
 import { getDateKeyIST } from '@/lib/dateUtils';
 import { getSyllabusByClass } from '@/lib/syllabusServerUtils';
+import { getCanonicalBoardCode, getCanonicalBoardName } from '@/lib/syllabusUtils';
 
 export async function GET(request: NextRequest) {
   try {
@@ -120,12 +121,10 @@ export async function POST(request: NextRequest) {
       selectedChaptersList
     } = body;
 
-    let targetBoard = board || '';
-    if (targetBoard === 'MSBSHSE' || targetBoard === 'MH' || targetBoard === 'State Board') {
-      targetBoard = 'Maharashtra Board';
-    }
+    const boardCode = getCanonicalBoardCode(board);
+    const targetBoard = getCanonicalBoardName(boardCode);
 
-    if (!targetBoard || !className || !daysConfig || !Array.isArray(daysConfig)) {
+    if (!boardCode || !className || !daysConfig || !Array.isArray(daysConfig)) {
       return NextResponse.json({ error: 'Missing required parameters or daysConfig array' }, { status: 400 });
     }
 
@@ -136,7 +135,6 @@ export async function POST(request: NextRequest) {
     
     const boardCodes = boardCodesSnap.exists ? boardCodesSnap.data()! : {};
     const subjectCodes = subjectCodesSnap.exists ? subjectCodesSnap.data()! : {};
-    const boardCode = boardCodes[targetBoard] || targetBoard.substring(0, 4).toUpperCase();
 
     const targetSubjects = subjects && Array.isArray(subjects) ? subjects : [subject].filter(Boolean);
     const targetChapters = selectedChaptersList && Array.isArray(selectedChaptersList) 

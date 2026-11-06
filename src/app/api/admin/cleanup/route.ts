@@ -549,26 +549,26 @@ export async function POST(req: NextRequest) {
       // B. Normalize Board names in questions (MSBSHSE / MH -> Maharashtra Board)
       const questionsBoardSnap1 = await adminDb.collection('questions').where('board', '==', 'MSBSHSE').get();
       questionsBoardSnap1.docs.forEach(doc => {
-        batch.update(doc.ref, { board: 'Maharashtra Board' });
+        batch.update(doc.ref, { board: 'Maharashtra Board', boardCode: 'MH' });
         boardNormalizedCount++;
       });
 
       const questionsBoardSnap2 = await adminDb.collection('questions').where('board', '==', 'MH').get();
       questionsBoardSnap2.docs.forEach(doc => {
-        batch.update(doc.ref, { board: 'Maharashtra Board' });
+        batch.update(doc.ref, { board: 'Maharashtra Board', boardCode: 'MH' });
         boardNormalizedCount++;
       });
 
       // C. Normalize Board names in syllabus (MSBSHSE / MH -> Maharashtra Board)
       const syllabusBoardSnap1 = await adminDb.collection('syllabus').where('board', '==', 'MSBSHSE').get();
       syllabusBoardSnap1.docs.forEach(doc => {
-        batch.update(doc.ref, { board: 'Maharashtra Board' });
+        batch.update(doc.ref, { board: 'Maharashtra Board', boardCode: 'MH' });
         boardNormalizedCount++;
       });
 
       const syllabusBoardSnap2 = await adminDb.collection('syllabus').where('board', '==', 'MH').get();
       syllabusBoardSnap2.docs.forEach(doc => {
-        batch.update(doc.ref, { board: 'Maharashtra Board' });
+        batch.update(doc.ref, { board: 'Maharashtra Board', boardCode: 'MH' });
         boardNormalizedCount++;
       });
 

@@ -76,10 +76,8 @@ export async function GET(req: NextRequest) {
 
     // Scenario B: Scan for duplicate questions
     if (action === 'fetchDuplicates') {
-      let filterBoard = searchParams.get('board') || '';
-      if (filterBoard === 'MSBSHSE' || filterBoard === 'MH' || filterBoard === 'State Board') {
-        filterBoard = 'Maharashtra Board';
-      }
+      const rawFilterBoard = searchParams.get('board') || '';
+      const filterBoard = rawFilterBoard ? getCanonicalBoardCode(rawFilterBoard) : '';
       let filterClass = searchParams.get('classNum') || searchParams.get('class') || '';
       if (filterClass.includes('Class')) {
         const match = filterClass.match(/\d+/);
@@ -88,7 +86,7 @@ export async function GET(req: NextRequest) {
       const filterSubject = searchParams.get('subject') || '';
 
       const filters = (filterBoard || filterClass || filterSubject) ? {
-        board: filterBoard || undefined,
+        boardCode: filterBoard || undefined,
         classNum: filterClass || undefined,
         subject: filterSubject || undefined
       } : undefined;
@@ -98,10 +96,8 @@ export async function GET(req: NextRequest) {
     }
 
     // Default Scenario: Paginated Questions List with filters
-    let board = searchParams.get('board') || '';
-    if (board === 'MSBSHSE' || board === 'MH' || board === 'State Board') {
-      board = 'Maharashtra Board';
-    }
+    const rawBoard = searchParams.get('board') || '';
+    const board = rawBoard ? getCanonicalBoardCode(rawBoard) : '';
     let classNum = searchParams.get('classNum') || searchParams.get('class') || '';
     if (classNum.includes('Class')) {
       const match = classNum.match(/\d+/);

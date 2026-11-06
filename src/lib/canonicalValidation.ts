@@ -22,6 +22,8 @@
  * ==============================================================================
  */
 
+import { getCanonicalBoardCode } from './syllabusUtils';
+
 export const CANONICAL_BOARDS = ['CBSE', 'MH'] as const;
 export type CanonicalBoard = typeof CANONICAL_BOARDS[number];
 
@@ -312,7 +314,7 @@ export function assertCanonicalExamPayload(examData: any): void {
     }
   }
 
-  const bCode = examData.boardCode || (examData.board === 'Maharashtra Board' ? 'MH' : examData.board);
+  const bCode = (examData.boardCode || examData.board) ? getCanonicalBoardCode(examData.boardCode || examData.board) : '';
   if (bCode) {
     const bRes = validateBoardCode(bCode);
     if (!bRes.valid) throw new Error(`[CANONICAL BARRIER VIOLATION] ${bRes.error}`);
@@ -342,7 +344,7 @@ export function assertCanonicalQuestionPayload(questionData: any): void {
     assertCanonicalTopicCode(questionData.topicCode);
   }
 
-  const bCode = questionData.boardCode || (questionData.board === 'Maharashtra Board' ? 'MH' : questionData.board);
+  const bCode = (questionData.boardCode || questionData.board) ? getCanonicalBoardCode(questionData.boardCode || questionData.board) : '';
   const cls = questionData.class || questionData.classNum;
   if (bCode && cls && questionData.subjectCode) {
     const sRes = validateSubjectCode(bCode, cls, questionData.subjectCode);

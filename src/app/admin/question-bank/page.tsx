@@ -201,8 +201,8 @@ export default function AdminQuestionBankPage() {
       // Read URL search parameters on mount
       if (typeof window !== 'undefined') {
         const urlParams = new URLSearchParams(window.location.search);
-        let b = urlParams.get('board') || '';
-        if (b === 'MSBSHSE' || b === 'MH' || b === 'State Board') b = 'Maharashtra Board';
+        const rawB = urlParams.get('board') || '';
+        const b = rawB ? getCanonicalBoardCode(rawB) : '';
         const c = urlParams.get('classNum') || urlParams.get('class') || '';
         const s = urlParams.get('subject') || '';
         const ch = urlParams.get('chapterNumber') || urlParams.get('chapter') || '';
@@ -1191,7 +1191,7 @@ ${JSON.stringify(missingList, null, 2)}`;
                       cursor: 'pointer'
                     }}
                   >
-                    🎯 {filterBoard || filterClass || filterSubject ? `${filterBoard ? filterBoard.replace('Maharashtra Board', 'MH') : ''} ${filterClass ? `Cl.${filterClass}` : ''} ${filterSubject || ''}`.trim() : 'Filtered View'}
+                    🎯 {filterBoard || filterClass || filterSubject ? `${filterBoard || ''} ${filterClass ? `Cl.${filterClass}` : ''} ${filterSubject || ''}`.trim() : 'Filtered View'}
                   </button>
                   <button
                     type="button"

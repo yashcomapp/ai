@@ -6,7 +6,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useMathRender } from '@/hooks/useMathRender';
 import { preprocessMathText, robustParseAIJson, validateQuestion, highlightModelAnswerKeywords } from '@/lib/questionTypes';
-import { getBoardCurriculumPromptMeta } from '@/lib/syllabusUtils';
+import { getBoardCurriculumPromptMeta, getCanonicalBoardCode } from '@/lib/syllabusUtils';
 import { toISTDateTimeLocalInput, getDateKeyIST } from '@/lib/dateUtils';
 import { fetchCachedSyllabusSubject } from '@/hooks/useAdminReferenceData';
 import InPlaceAiGenerator from '@/components/admin/classroom-test/InPlaceAiGenerator';
@@ -260,10 +260,7 @@ export default function AdminClassroomTestPage() {
       const idToken = await firebaseUser.getIdToken();
       const sets: string[] = [];
       
-      let qBoard = selectedBoard;
-      if (qBoard === 'State Board' || qBoard === 'MSBSHSE' || qBoard === 'MH') {
-        qBoard = 'Maharashtra Board';
-      }
+      const qBoard = getCanonicalBoardCode(selectedBoard);
 
       const chapterFetches = selectedChapters.map(async (chKey) => {
         const [subj, chNum] = chKey.split('||');
@@ -1777,12 +1774,11 @@ OUTPUT FORMAT: Return ONLY a valid JSON array of objects with schema:
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '8px' }}>
             <div className="form-group">
               <label style={{ fontSize: '11px', fontWeight: 600 }}>🏛️ Board</label>
-              <select className="form-input" value={selectedBoard} onChange={(e) => setSelectedBoard(e.target.value)}>
+              <select className="form-input" value={selectedBoard} onChange={(e) => setSelectedBoard(getCanonicalBoardCode(e.target.value))}>
                 <option value="">Select Board</option>
-                {boards.map(b => {
-                  const codes: Record<string, string> = { 'Maharashtra Board': 'MH', 'maharashtra board': 'MH', 'CBSE': 'CBSE', 'cbse': 'CBSE', 'ICSE': 'ICSE', 'icse': 'ICSE' };
-                  return <option key={b} value={b}>{codes[b] || b}</option>;
-                })}
+                {Array.from(new Set(boards.map(b => getCanonicalBoardCode(b)))).sort().map(code => (
+                  <option key={code} value={code}>{code}</option>
+                ))}
               </select>
             </div>
             
