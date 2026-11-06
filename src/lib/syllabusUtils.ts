@@ -318,21 +318,19 @@ export function buildSyllabusHierarchyFromDocs(docs: any[], includeChapters = fa
     const bCode = getCanonicalBoardCode(data.boardCode || board);
     const subjectCode = data.subjectCode || getCanonicalSubjectCode(bCode, cls, subject);
 
-    if (board && subject) {
-      boardCodes[board] = bCode;
+    if (bCode && subject) {
+      boardCodes[bCode] = bCode;
       if (subjectCode) {
         subjectCodes[subject] = subjectCode;
       }
-      const boardKeys = Array.from(new Set([board, bCode, data.board].filter(Boolean)));
-      boardKeys.forEach(bk => {
-        if (!subjectsMap[bk]) subjectsMap[bk] = {};
-        if (!subjectsMap[bk][cls]) subjectsMap[bk][cls] = {};
-        subjectsMap[bk][cls][subject] = {
-          docId: doc.id || data.id,
-          subjectCode,
-          ...(includeChapters ? { chapters: data.chapters || [] } : {})
-        };
-      });
+      // Strict SSOT (Rule 2.R): Index strictly by canonical boardCode ('CBSE' or 'MH')
+      if (!subjectsMap[bCode]) subjectsMap[bCode] = {};
+      if (!subjectsMap[bCode][cls]) subjectsMap[bCode][cls] = {};
+      subjectsMap[bCode][cls][subject] = {
+        docId: doc.id || data.id,
+        subjectCode,
+        ...(includeChapters ? { chapters: data.chapters || [] } : {})
+      };
     }
   });
 

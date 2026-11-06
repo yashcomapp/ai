@@ -10,7 +10,7 @@ import { smartJsonParse, robustParseAIJson, cleanStringForMatch, toCanonicalQues
 import { SyllabusSelector } from '@/components/SyllabusSelector';
 import { useSyllabusSelector } from '@/hooks/useSyllabusSelector';
 import { QuestionDisplay, RichMathText } from '@/components/QuestionDisplay';
-import { distributeCountsByWeight, buildObjectiveSchema, isSameTopic } from '@/lib/syllabusUtils';
+import { distributeCountsByWeight, buildObjectiveSchema, isSameTopic, getCanonicalBoardCode } from '@/lib/syllabusUtils';
 import { areQuestionsTooSimilar } from '@/lib/questionSimilarity';
 import { Template } from '@/types/exam.types';
 import { Question } from '@/types/question.types';
@@ -399,16 +399,8 @@ export default function AdminExamGeneratorPage() {
     }
 
     const resolveSyllabusEntry = (sub: string) => {
-      const byBoard = syllabusIndex?.subjects?.[selectedBoard]?.[selectedClass]?.[sub];
-      if (byBoard) return byBoard;
-      const bCode = boardCodes[selectedBoard] || (selectedBoard === 'Maharashtra Board' ? 'MH' : selectedBoard === 'MH' ? 'Maharashtra Board' : selectedBoard);
-      const byCode = syllabusIndex?.subjects?.[bCode]?.[selectedClass]?.[sub];
-      if (byCode) return byCode;
-      const altBoard = selectedBoard === 'MH' ? 'Maharashtra Board' : selectedBoard === 'Maharashtra Board' ? 'MH' : '';
-      if (altBoard && syllabusIndex?.subjects?.[altBoard]?.[selectedClass]?.[sub]) {
-        return syllabusIndex.subjects[altBoard][selectedClass][sub];
-      }
-      return null;
+      const bCode = getCanonicalBoardCode(selectedBoard);
+      return syllabusIndex?.subjects?.[bCode]?.[selectedClass]?.[sub] || null;
     };
 
     // 1. INSTANT: Synchronously populate chapters and topics from loaded syllabusIndex (0ms delay)

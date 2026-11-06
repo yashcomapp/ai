@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import * as admin from 'firebase-admin';
 import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole } from '@/lib/auth';
+import { getCanonicalBoardCode } from '@/lib/syllabusUtils';
 
 // Rebuild helper logic (adapted from syllabusIndexService.js)
 async function runIndexRebuild() {
@@ -36,26 +37,25 @@ async function runIndexRebuild() {
 
   for (const doc of syllabusSnap.docs) {
     const data = doc.data();
-    const board = data.board || '';
+    const boardCode = getCanonicalBoardCode(data.boardCode || data.board);
     const classNum = String(data.class || '');
     const subjectName = data.subject || '';
 
-    if (!board || !classNum || !subjectName) {
+    if (!boardCode || !classNum || !subjectName) {
       summary.errors.push(`Skipped syllabus doc "${doc.id}" due to missing board/class/subject values.`);
       continue;
     }
 
-    if (!syllabusSubjectsTree[board]) {
-      syllabusSubjectsTree[board] = {};
+    if (!syllabusSubjectsTree[boardCode]) {
+      syllabusSubjectsTree[boardCode] = {};
     }
-    if (!syllabusSubjectsTree[board][classNum]) {
-      syllabusSubjectsTree[board][classNum] = {};
+    if (!syllabusSubjectsTree[boardCode][classNum]) {
+      syllabusSubjectsTree[boardCode][classNum] = {};
     }
-    syllabusSubjectsTree[board][classNum][subjectName] = {
+    syllabusSubjectsTree[boardCode][classNum][subjectName] = {
       docId: doc.id
     };
 
-    const boardCode = data.boardCode || boardCodes[board] || board.substring(0, 4).toUpperCase();
     const subjectCode = data.subjectCode || subjectCodes[subjectName] || subjectName.substring(0, 4).toUpperCase();
 
     const chapters = Array.isArray(data.chapters) ? data.chapters : [];
