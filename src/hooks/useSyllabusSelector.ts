@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { isSameTopic } from '@/lib/syllabusUtils';
+import { isSameTopic, getCanonicalBoardCode, getCanonicalBoardName } from '@/lib/syllabusUtils';
 
 export function useSyllabusSelector<T extends { topic: string; subject?: string; chapterNumber?: string | number }, S = any>({
   syllabusIndex,
@@ -153,6 +153,16 @@ export function useSyllabusSelector<T extends { topic: string; subject?: string;
 
   const [classes, setClasses] = useState<string[]>([]);
 
+  const resolveBoardSubjects = (b: string) => {
+    if (!b || !syllabusIndex || !syllabusIndex.subjects) return null;
+    if (syllabusIndex.subjects[b]) return syllabusIndex.subjects[b];
+    const code = getCanonicalBoardCode(b);
+    if (syllabusIndex.subjects[code]) return syllabusIndex.subjects[code];
+    const name = getCanonicalBoardName(b);
+    if (syllabusIndex.subjects[name]) return syllabusIndex.subjects[name];
+    return null;
+  };
+
   const handleBoardChange = (
     board: string,
     onBoardChange?: () => void
@@ -167,11 +177,12 @@ export function useSyllabusSelector<T extends { topic: string; subject?: string;
     
     if (onBoardChange) onBoardChange();
 
-    if (!board || !syllabusIndex || !syllabusIndex.subjects?.[board]) {
+    const boardData = resolveBoardSubjects(board);
+    if (!board || !boardData) {
       setClasses([]);
       return;
     }
-    const filteredClasses = Object.keys(syllabusIndex.subjects[board]).sort((a, b) => parseInt(a) - parseInt(b));
+    const filteredClasses = Object.keys(boardData).sort((a, b) => parseInt(a) - parseInt(b));
     setClasses(filteredClasses);
   };
 
@@ -188,17 +199,28 @@ export function useSyllabusSelector<T extends { topic: string; subject?: string;
 
     if (onClassChange) onClassChange();
 
-    if (!selectedBoard || !cls || !syllabusIndex || !syllabusIndex.subjects?.[selectedBoard]?.[cls]) {
+    const boardData = resolveBoardSubjects(selectedBoard);
+    if (!selectedBoard || !cls || !boardData?.[cls]) {
       setAvailableSubjects([]);
       return;
     }
-    const filteredSubjects = Object.keys(syllabusIndex.subjects[selectedBoard][cls]).sort();
+    const filteredSubjects = Object.keys(boardData[cls]).sort();
     setAvailableSubjects(filteredSubjects);
   };
 
   const boards = useMemo(() => {
     if (!syllabusIndex || !syllabusIndex.subjects) return [];
-    return Object.keys(syllabusIndex.subjects).sort();
+    const raw = Object.keys(syllabusIndex.subjects);
+    const seen = new Set<string>();
+    const result: string[] = [];
+    raw.forEach(b => {
+      const code = getCanonicalBoardCode(b);
+      if (!seen.has(code)) {
+        seen.add(code);
+        result.push(code);
+      }
+    });
+    return result.sort();
   }, [syllabusIndex]);
 
   const filteredTopics = useMemo(() => {

@@ -28,6 +28,7 @@ import {
 import QuestionDisplay from '@/components/QuestionDisplay';
 import Image from 'next/image';
 import { Question } from '@/types/question.types';
+import { getCanonicalBoardCode, getCanonicalBoardName } from '@/lib/syllabusUtils';
 
 export default function AdminQuestionBankPage() {
   const { firebaseUser } = useAuth();
@@ -251,6 +252,16 @@ export default function AdminQuestionBankPage() {
     fetchQuestionsList(lastCode);
   };
 
+  const resolveBoardSubjects = (b: string) => {
+    if (!b || !syllabusIndex || !syllabusIndex.subjects) return null;
+    if (syllabusIndex.subjects[b]) return syllabusIndex.subjects[b];
+    const code = getCanonicalBoardCode(b);
+    if (syllabusIndex.subjects[code]) return syllabusIndex.subjects[code];
+    const name = getCanonicalBoardName(b);
+    if (syllabusIndex.subjects[name]) return syllabusIndex.subjects[name];
+    return null;
+  };
+
   // Cascade Filter Triggers
   const handleBoardChange = (board: string) => {
     setFilterBoard(board);
@@ -268,7 +279,8 @@ export default function AdminQuestionBankPage() {
     setFilterSubject('');
     setFilterChapter('');
     setFilterTopic('');
-    const list = Object.keys(syllabusIndex?.subjects?.[filterBoard]?.[cls] || {}).sort();
+    const boardData = resolveBoardSubjects(filterBoard);
+    const list = Object.keys(boardData?.[cls] || {}).sort();
     setAvailableSubjects(list);
     setAvailableChapters([]);
     setAvailableTopics([]);
@@ -281,7 +293,8 @@ export default function AdminQuestionBankPage() {
     setAvailableTopics([]);
 
     // 1. INSTANT: Immediately populate chapters from syllabusIndex (0ms delay)
-    const entry = syllabusIndex?.subjects?.[filterBoard]?.[filterClass]?.[subj];
+    const boardData = resolveBoardSubjects(filterBoard);
+    const entry = boardData?.[filterClass]?.[subj];
     if (entry && Array.isArray(entry.chapters) && entry.chapters.length > 0) {
       setAvailableChapters(entry.chapters);
     } else {
@@ -867,9 +880,21 @@ ${JSON.stringify(missingList, null, 2)}`;
                 style={{ width: '100%', padding: '6px', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', background: 'var(--surface)', color: 'var(--text)', fontSize: '12px' }}
               >
                 <option value="">-- Choose Board --</option>
-                {syllabusIndex && Object.keys(syllabusIndex.subjects || {}).sort().map(b => (
-                  <option key={b} value={b}>{boardCodes[b] || b.toUpperCase()}</option>
-                ))}
+                {(() => {
+                  const raw = Object.keys(syllabusIndex?.subjects || {});
+                  const seen = new Set<string>();
+                  const uniqueBoards: string[] = [];
+                  raw.forEach(b => {
+                    const code = getCanonicalBoardCode(b);
+                    if (!seen.has(code)) {
+                      seen.add(code);
+                      uniqueBoards.push(code);
+                    }
+                  });
+                  return uniqueBoards.sort().map(b => (
+                    <option key={b} value={b}>{boardCodes[b] || b.toUpperCase()}</option>
+                  ));
+                })()}
               </select>
             </div>
             <div>
@@ -881,9 +906,12 @@ ${JSON.stringify(missingList, null, 2)}`;
                 style={{ width: '100%', padding: '6px', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', background: 'var(--surface)', color: 'var(--text)', fontSize: '12px' }}
               >
                 <option value="">-- Choose Class --</option>
-                {filterBoard && syllabusIndex?.subjects?.[filterBoard] && Object.keys(syllabusIndex.subjects[filterBoard]).sort((a,b)=>parseInt(a)-parseInt(b)).map(c => (
-                  <option key={c} value={c}>Class {c}</option>
-                ))}
+                {filterBoard && (() => {
+                  const bData = resolveBoardSubjects(filterBoard);
+                  return bData ? Object.keys(bData).sort((a,b)=>parseInt(a)-parseInt(b)).map(c => (
+                    <option key={c} value={c}>Class {c}</option>
+                  )) : null;
+                })()}
               </select>
             </div>
             <div>

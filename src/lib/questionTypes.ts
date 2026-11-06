@@ -75,6 +75,13 @@ export function preprocessMathText(text: any): string {
   str = str.replace(/(^|[\s,;:(!/])\^\s*\\?circ\b/g, '$1{}^\\circ');
   str = str.replace(/(^|[\s,;:(!/])\^{\s*\\?circ\s*}/g, '$1{}^{\\circ}');
 
+  // Heal any corrupted nested delimiters inside superscripts/subscripts like ^{\(\circ\)} or _{...}
+  str = str.replace(/([\^_]\{)\s*\\?\(\s*(\\?[a-zA-Z0-9]+)\s*\\?\)\s*(\})/g, '$1$2$3');
+  str = str.replace(/\\?\(\s*\\circ\s*\\?\)/g, '\\circ');
+
+  // Pre-normalize degrees like 20^{\circ}, 20^\circ, 20° into clean inline math
+  str = str.replace(/(?<!\\)(?<!\()(\b\d+(?:\.\d+)?\s*\^\s*\{?\\?circ\}?)/g, '\\($1\\)');
+
   // Normalize display math $$...$$ to \[...\]
   str = str.replace(/(?<!\\)\$\$([\s\S]+?)\$\$/g, '\\[$1\\]');
 
@@ -144,7 +151,7 @@ export function preprocessMathText(text: any): string {
   });
 
   // NEW DYNAMIC WRAPPING: If there are raw math constructs left (containing \, ^, or _) without delimiters, wrap them
-  const latexRegex = /(?<!\\)(?<!\()([a-zA-Z0-9\.\+\-\*\/\=,]*?\\[a-zA-Z]+(?:\{[^\}]*\}|\^[a-zA-Z0-9\+\-]+|_[a-zA-Z0-9\+\-]+)*|[a-zA-Z0-9\.\+\-\*\/]+[\^_][a-zA-Z0-9\.\+\-\*\/\{\}]*)/g;
+  const latexRegex = /(?<!\\)(?<!\()([a-zA-Z0-9\.\+\-\*\/\=,]*?\\[a-zA-Z]+(?:\{[^{}]*\}|\^[a-zA-Z0-9\+\-]+|_[a-zA-Z0-9\+\-]+)*|[a-zA-Z0-9\.\+\-\*\/]+[\^_](?:\{[^{}]*\}|\\?[a-zA-Z0-9\.\+\-\*\/]+))/g;
   str = str.replace(latexRegex, (match) => {
     const trimmed = match.trim();
     if (!trimmed) return match;
@@ -167,6 +174,10 @@ export function preprocessMathText(text: any): string {
   preservedHtmlBlocks.forEach((block, idx) => {
     str = str.replace(`§§HTMLBLOCK${idx}§§`, block);
   });
+
+  // Clean up any remaining nested math delimiters: \(...\(...\)... -> \(...\)
+  str = str.replace(/\\\(([^()]*?)\\\(([^()]*?)\\\)([^()]*?)\\\)/g, '\\($1$2$3\\)');
+  str = str.replace(/\\\(+\\\(/g, '\\(').replace(/\\\)+\\\)/g, '\\)');
 
   if (MATH_PREPROCESS_CACHE.size >= MAX_MATH_CACHE_SIZE) {
     const firstKey = MATH_PREPROCESS_CACHE.keys().next().value;
