@@ -113,20 +113,20 @@ export async function GET(req: NextRequest) {
       const pool = questionsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() as any }))
         .filter(q => {
           if (isQuestionQuarantined(q)) return false;
-          const b = String(q.board || '').toLowerCase();
+          if (board) {
+            const qBCode = getCanonicalBoardCode(q.boardCode || q.board);
+            const targetBCode = getCanonicalBoardCode(board);
+            if (qBCode !== targetBCode) return false;
+          }
+
           const s = String(q.subject || '').toLowerCase();
           const sc = String(q.subjectCode || '').toLowerCase();
-
-          const bMatch = !board || b === boardLower || 
-                         (boardLower.includes('cbse') && b.includes('cbse')) ||
-                         (boardLower.includes('mh') && (b.includes('mh') || b.includes('maharashtra'))) ||
-                         (boardLower.includes('maharashtra') && (b.includes('mh') || b.includes('maharashtra')));
 
           const sMatch = searchSubjects.length === 0 || searchSubjects.some(subLower => 
             s === subLower || sc === subLower || s.includes(subLower) || subLower.includes(s)
           );
 
-          if (!bMatch || !sMatch) return false;
+          if (!sMatch) return false;
 
           const qCanonicalType = toCanonicalQuestionType(q.type);
           const typeMatch = questionType === 'subjective'
@@ -268,20 +268,16 @@ export async function GET(req: NextRequest) {
         questionsList = questionsSnap.docs
           .map(doc => {
             const q = doc.data();
-            const b = String(q.board || '').toLowerCase();
+            const qBCode = getCanonicalBoardCode(q.boardCode || q.board);
+            const targetBCode = getCanonicalBoardCode(boardVal || subjectData.boardCode || subjectData.board);
+            if (qBCode !== targetBCode) return null;
+
             const s = String(q.subject || '').toLowerCase();
             const sc = String(q.subjectCode || '').toLowerCase();
-            const bMatch = b === String(boardVal).toLowerCase() || 
-                           b === String(subjectData.boardCode || '').toLowerCase() ||
-                           (String(boardVal).toLowerCase().includes('cbse') && b.includes('cbse')) ||
-                           (String(boardVal).toLowerCase().includes('mh') && (b.includes('mh') || b.includes('maharashtra')));
-            const sMatch = s === String(subjectVal).toLowerCase() || 
-                           sc === String(subjectData.subjectCode || '').toLowerCase() ||
-                           (sc === 'math' && String(subjectData.subjectCode || '').toLowerCase() === 'mth') ||
-                           (sc === 'mth' && String(subjectData.subjectCode || '').toLowerCase() === 'math') ||
-                           s.includes(String(subjectVal).toLowerCase()) ||
-                           String(subjectVal).toLowerCase().includes(s);
-            if (!bMatch || !sMatch) return null;
+            const targetSub = String(subjectVal || subjectData.subject || '').toLowerCase();
+            const targetSubCode = String(subjectData.subjectCode || '').toLowerCase();
+            const sMatch = s === targetSub || sc === targetSubCode || sc === targetSub || s === targetSubCode || s.includes(targetSub);
+            if (!sMatch) return null;
 
             let chNum = String(q.chapterNumber || q.chapter || '').replace(/^Ch\.?\s*/i, '').trim();
             const topNum = String(q.topicNumber || '').trim();

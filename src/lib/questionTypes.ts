@@ -1,4 +1,6 @@
 
+import { getCanonicalBoardName } from './syllabusUtils';
+
 export function stripOptionLabel(text: any): string {
   if (text == null) return '';
   return String(text).replace(/^\s*\(?[A-Da-d]\)?[).:]\s*/, '');
@@ -751,7 +753,7 @@ export function parseTopicCode(topicCode?: string | null): ParsedTopicCode | nul
   if (parts.length < 3) return null;
 
   const boardCode = parts[0] || '';
-  const board = boardCode === 'CBSE' ? 'CBSE' : 'Maharashtra Board';
+  const board = getCanonicalBoardName(boardCode);
   const cls = parts[1] || '';
   const subjectCode = parts[2] || '';
   const chapterNumber = parts[3] || '';

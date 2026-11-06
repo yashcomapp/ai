@@ -84,17 +84,16 @@ export async function GET(req: NextRequest) {
 
         questionsSnap.docs.forEach(doc => {
           const q = doc.data();
-          const b = String(q.board || '').toLowerCase();
+          const qBCode = getCanonicalBoardCode(q.boardCode || q.board);
+          const targetBCode = getCanonicalBoardCode(boardVal || subjectData.boardCode || subjectData.board);
+          if (qBCode !== targetBCode) return;
+
           const s = String(q.subject || '').toLowerCase();
           const sc = String(q.subjectCode || '').toLowerCase();
-          const bMatch = b === String(boardVal).toLowerCase() || 
-                         b === String(subjectData.boardCode || '').toLowerCase() ||
-                         (String(boardVal).toLowerCase().includes('cbse') && b.includes('cbse')) ||
-                         (String(boardVal).toLowerCase().includes('mh') && (b.includes('mh') || b.includes('maharashtra')));
-          const sMatch = s === String(subjectVal).toLowerCase() || 
-                         sc === String(subjectData.subjectCode || '').toLowerCase() ||
-                         s.includes(String(subjectVal).toLowerCase());
-          if (!bMatch || !sMatch) return;
+          const targetSub = String(subjectVal || subjectData.subject || '').toLowerCase();
+          const targetSubCode = String(subjectData.subjectCode || '').toLowerCase();
+          const sMatch = s === targetSub || sc === targetSubCode || sc === targetSub || s === targetSubCode || s.includes(targetSub);
+          if (!sMatch) return;
 
           const chNum = String(q.chapterNumber || '').trim();
           const topNum = String(q.topicNumber || '').trim();

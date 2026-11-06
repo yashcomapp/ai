@@ -1,6 +1,6 @@
 import { adminDb } from '@/lib/firebase/admin';
 import { getCachedSyllabus, getFromCache, setInCache } from '@/lib/firebase/cache';
-import { getCanonicalClass, buildSyllabusHierarchyFromDocs } from './syllabusUtils';
+import { getCanonicalClass, buildSyllabusHierarchyFromDocs, getCanonicalBoardName, getCanonicalBoardCode } from './syllabusUtils';
 import { cleanStringForMatch } from './questionTypes';
 
 /**
@@ -105,7 +105,7 @@ export async function getCachedSyllabusTopicsMap(classCodes: string[] = []): Pro
           chapterName: chName,
           chapter: chName,
           chapterTitle: chName,
-          board: boardCode === 'CBSE' ? 'CBSE' : 'Maharashtra Board',
+          board: getCanonicalBoardName(boardCode),
           boardCode,
           class: classNum,
           classCode: classNum,
@@ -154,7 +154,7 @@ export async function getCachedSyllabusTopicsMap(classCodes: string[] = []): Pro
             chapterName: chName,
             chapter: chName,
             chapterTitle: chName,
-            board: boardCode === 'CBSE' ? 'CBSE' : 'Maharashtra Board',
+            board: getCanonicalBoardName(boardCode),
             boardCode,
             class: classNum,
             classCode: classNum,

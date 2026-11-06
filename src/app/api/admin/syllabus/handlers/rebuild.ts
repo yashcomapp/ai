@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import * as admin from 'firebase-admin';
 import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole } from '@/lib/auth';
-import { getCanonicalBoardCode } from '@/lib/syllabusUtils';
+import { getCanonicalBoardCode, getCanonicalBoardName } from '@/lib/syllabusUtils';
 
 // Rebuild helper logic (adapted from syllabusIndexService.js)
 async function runIndexRebuild() {
@@ -82,7 +82,7 @@ async function runIndexRebuild() {
 
         const docRef = adminDb.collection('syllabusTopicIndex').doc(topicCode);
         batch.set(docRef, {
-          board: boardCode === 'CBSE' ? 'CBSE' : 'Maharashtra Board',
+          board: getCanonicalBoardName(boardCode),
           boardCode,
           class: String(classNum),
           classCode: String(classNum),
@@ -135,7 +135,7 @@ async function runIndexRebuild() {
 
           const subRef = adminDb.collection('syllabusTopicIndex').doc(subCode);
           batch.set(subRef, {
-            board: boardCode === 'CBSE' ? 'CBSE' : 'Maharashtra Board',
+            board: getCanonicalBoardName(boardCode),
             boardCode,
             class: String(classNum),
             classCode: String(classNum),
