@@ -5,6 +5,7 @@ import { TabsSkeleton, TableSkeleton } from '@/components/common/Skeletons';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { invalidateAdminReferenceData } from '@/hooks/useAdminReferenceData';
+import { getCanonicalBoardCode, getCanonicalBoardName, getCanonicalClass, getCanonicalSubjectCode } from '@/lib/syllabusUtils';
 
 
 import { Chapter, Topic, Subtopic, SyllabusSubject } from '@/types/syllabus.types';
@@ -395,9 +396,9 @@ export default function AdminSyllabusPage() {
   // Auto subject preview codes derivation
   const getSubjectCodePreview = (board: string, subject: string) => {
     if (!board || !subject) return '';
-    const bPart = board.trim().substring(0, 4).toUpperCase();
-    const sPart = subject.trim().substring(0, 4).toUpperCase();
-    return `${bPart}_${sPart}`;
+    const bCode = getCanonicalBoardCode(board);
+    const cNum = getCanonicalClass(subjectModal.classNum || '8');
+    return getCanonicalSubjectCode(bCode, cNum, subject) || `${bCode}_${subject.trim().substring(0, 4).toUpperCase()}`;
   };
 
   // Add/Edit Subject Modal saves
@@ -443,8 +444,9 @@ export default function AdminSyllabusPage() {
         },
         body: JSON.stringify({
           docId: subjectModal.docId,
-          board: subjectModal.board,
-          classNum: subjectModal.classNum,
+          board: getCanonicalBoardName(subjectModal.board),
+          boardCode: getCanonicalBoardCode(subjectModal.board),
+          classNum: getCanonicalClass(subjectModal.classNum),
           subjectName: subjectModal.subjectName,
           subjectCode: subjectModal.subjectCode
         })
@@ -588,7 +590,7 @@ export default function AdminSyllabusPage() {
       return;
     }
 
-    const bPart = activeSubjectDoc.board.substring(0, 4).toUpperCase();
+    const bPart = getCanonicalBoardCode(activeSubjectDoc.boardCode || activeSubjectDoc.board);
     const sPart = activeSubjectDoc.subjectCode || 'GEN';
     const code = `${bPart}-${activeSubjectDoc.class}-${sPart}-${number}`;
 
@@ -687,7 +689,7 @@ export default function AdminSyllabusPage() {
     const chapter = chapters[chIdx];
     if (!chapter) return;
 
-    const bPart = activeSubjectDoc.board.substring(0, 4).toUpperCase();
+    const bPart = getCanonicalBoardCode(activeSubjectDoc.boardCode || activeSubjectDoc.board);
     const sPart = activeSubjectDoc.subjectCode || 'GEN';
     const code = `${bPart}-${activeSubjectDoc.class}-${sPart}-${chapter.number}-${number}`;
 
@@ -800,7 +802,7 @@ export default function AdminSyllabusPage() {
     const topic = chapter?.topics?.[topIdx];
     if (!topic) return;
 
-    const bPart = activeSubjectDoc.board.substring(0, 4).toUpperCase();
+    const bPart = getCanonicalBoardCode(activeSubjectDoc.boardCode || activeSubjectDoc.board);
     const sPart = activeSubjectDoc.subjectCode || 'GEN';
     const code = `${bPart}-${activeSubjectDoc.class}-${sPart}-${chapter.number}-${number}`;
     const quotaVal = Number(targetQuestions) || 30;
@@ -1031,7 +1033,8 @@ Return ONLY a valid JSON object matching the schema below:
 
     setSaving(true);
     try {
-      const docId = `${aiPreviewData.board.toLowerCase()}_${aiPreviewData.class}_${aiPreviewData.subject.toLowerCase().replace(/\s+/g, '_')}`;
+      const bCode = getCanonicalBoardCode(aiPreviewData.boardCode || aiPreviewData.board);
+      const docId = `${bCode.toLowerCase()}_${aiPreviewData.class}_${aiPreviewData.subject.toLowerCase().replace(/\s+/g, '_')}`;
       const idToken = await firebaseUser.getIdToken();
       const res = await fetch('/api/admin/syllabus', {
         method: 'POST',
@@ -1041,7 +1044,8 @@ Return ONLY a valid JSON object matching the schema below:
         },
         body: JSON.stringify({
           docId,
-          board: aiPreviewData.board,
+          board: getCanonicalBoardName(aiPreviewData.board),
+          boardCode: bCode,
           classNum: aiPreviewData.class,
           subjectName: aiPreviewData.subject,
           chapters: aiPreviewData.chapters
@@ -1777,13 +1781,14 @@ Return ONLY a valid JSON object matching the schema below:
 
             <div>
               <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '5px' }}>Board</label>
-              <input 
-                type="text" 
+              <select 
                 value={subjectModal.board}
-                placeholder="e.g. CBSE"
                 onChange={(e) => setSubjectModal(prev => ({ ...prev, board: e.target.value }))}
                 style={{ width: '100%', padding: '8px', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', background: 'var(--surface)', color: 'var(--text)', fontSize: '12px' }}
-              />
+              >
+                <option value="CBSE">CBSE</option>
+                <option value="MH">MH (Maharashtra Board)</option>
+              </select>
             </div>
 
             <div>
