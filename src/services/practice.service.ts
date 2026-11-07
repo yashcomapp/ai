@@ -422,6 +422,13 @@ export class PracticeService {
         updatedData.mastery = Math.max(updatedData.mastery, MASTERY_THRESHOLDS.MASTERED_MIN);
       }
 
+      // Non-Degradation Ratchet Invariant:
+      // A high-performance practice session (sessionAccuracy >= 90% or sessionAccuracy >= existingMastery)
+      // must NEVER reduce a student's topic mastery!
+      if (sessionAccuracy >= MASTERY_THRESHOLDS.MASTERED_MIN || sessionAccuracy >= existingMastery) {
+        updatedData.mastery = Math.max(updatedData.mastery, existingMastery);
+      }
+
       // Enforce Deliberation Gate: Rushed sessions (< 18s/question) do NOT advance mastery & trigger 30-min cooldown
       if (isRushedSession) {
         if (!isMasteredTopic) {

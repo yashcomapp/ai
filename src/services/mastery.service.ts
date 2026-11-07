@@ -64,6 +64,12 @@ export class MasteryService {
     let weightedPointsPossibleDelta = 0;
     let weightedPointsEarnedDelta = 0;
 
+    // Track previous attempt state per question to support remediation and prevent denominator inflation
+    const existingHistoryMap = new Map<string, QuestionHistoryItem>();
+    ((data.questionHistory || []) as QuestionHistoryItem[]).forEach(h => {
+      existingHistoryMap.set(h.questionId, h);
+    });
+
     evaluations.forEach(ev => {
       if ((ev as any).isDisputed) return;
 
@@ -85,17 +91,34 @@ export class MasteryService {
         earnedRatio = isPassed ? 1 : 0;
       }
 
-      if (isPassed) {
-        questionsCorrectDelta += 1;
-      } else {
-        questionsWrongDelta += 1;
-      }
+      const prevAttempt = existingHistoryMap.get(ev.id);
+      const isRemediation = Boolean(prevAttempt && !prevAttempt.wasCorrect && isPassed);
+      const isRegression = Boolean(prevAttempt && prevAttempt.wasCorrect && !isPassed);
 
-      weightedPointsEarnedDelta += weight * earnedRatio;
-      if (isPassed || !isFoundation) {
+      if (isRemediation) {
+        // Remediated previous mistake: convert previous wrong into correct
+        questionsCorrectDelta += 1;
+        questionsWrongDelta -= 1;
+        // The question's weight was already in weightedPointsPossible from the previous failed attempt.
+        // Award the earned points now without double-counting possible points in the denominator.
+        weightedPointsEarnedDelta += weight * earnedRatio;
+      } else if (isRegression) {
+        // Regressed on previously correct question: decrement correct, increment wrong
+        questionsCorrectDelta -= 1;
+        questionsWrongDelta += 1;
+        weightedPointsEarnedDelta -= weight;
+      } else if (prevAttempt && prevAttempt.wasCorrect && isPassed) {
+        // Repeatedly correct on the same question: already counted in earned and possible
+        // No duplicate denominator inflation needed
+      } else if (isPassed) {
+        // Fresh question passed
+        questionsCorrectDelta += 1;
+        weightedPointsEarnedDelta += weight * earnedRatio;
         weightedPointsPossibleDelta += weight;
       } else {
-        weightedPointsPossibleDelta += weight * 0.3;
+        // Fresh question missed
+        questionsWrongDelta += 1;
+        weightedPointsPossibleDelta += isFoundation ? weight * 0.3 : weight;
       }
     });
 
@@ -113,14 +136,19 @@ export class MasteryService {
       data.examQuestionsAttempted = (data.examQuestionsAttempted || 0) + questionsAttemptedDelta;
     }
 
-    data.questionsAttempted = (data.questionsAttempted || 0) + questionsAttemptedDelta;
-    data.questionsCorrect = (data.questionsCorrect || 0) + questionsCorrectDelta;
-    data.questionsWrong = (data.questionsWrong || 0) + questionsWrongDelta;
-    data.weightedPointsEarned = (data.weightedPointsEarned || 0) + weightedPointsEarnedDelta;
-    data.weightedPointsPossible = (data.weightedPointsPossible || 0) + weightedPointsPossibleDelta;
+    data.questionsAttempted = Math.max(0, (data.questionsAttempted || 0) + questionsAttemptedDelta);
+    data.questionsCorrect = Math.max(0, (data.questionsCorrect || 0) + questionsCorrectDelta);
+    data.questionsWrong = Math.max(0, (data.questionsWrong || 0) + questionsWrongDelta);
+    data.weightedPointsEarned = Math.max(0, (data.weightedPointsEarned || 0) + weightedPointsEarnedDelta);
+    data.weightedPointsPossible = Math.max(0, (data.weightedPointsPossible || 0) + weightedPointsPossibleDelta);
+
+    // Guard against potential rounding/overflow where earned slightly exceeds possible
+    if (data.weightedPointsEarned > data.weightedPointsPossible) {
+      data.weightedPointsPossible = data.weightedPointsEarned;
+    }
 
     data.mastery = data.weightedPointsPossible > 0
-      ? Math.round((data.weightedPointsEarned / data.weightedPointsPossible) * 100)
+      ? Math.min(100, Math.max(0, Math.round((data.weightedPointsEarned / data.weightedPointsPossible) * 100)))
       : 0;
     data.confidence = Math.min(data.questionsAttempted, 100);
 
