@@ -34,7 +34,51 @@ export interface GetAssignmentsForBatchesOptions {
   status?: string | null;
   studentCode?: string;
   studentCodes?: string[];
+  isLimited?: boolean;
   collection?: 'batchAssignments' | 'subjectiveAssignments' | 'subjectiveExams';
+}
+
+/**
+ * Canonical SSOT predicate to check if an assignment document applies to a given student.
+ * 
+ * Rules:
+ * 1. If targetType === 'student', the student MUST be explicitly listed in targetStudents.
+ * 2. If student is in Limited Mode (Mode 3): Limited students NEVER inherit batch-wide assignments.
+ *    They can ONLY access exams where targetStudents explicitly contains their studentCode.
+ * 3. If targetType === 'batch': Regular/Autonomous students in targetBatches match.
+ * 4. If targetType === 'mixed': Matches if student is in targetStudents OR student's batch is in targetBatches.
+ */
+export function isAssignmentApplicableToStudent(
+  assignmentData: any,
+  studentCode: string,
+  studentBatchIds: string[] = [],
+  isLimited: boolean = false
+): boolean {
+  if (!assignmentData || !studentCode) return false;
+
+  const targetStudents: string[] = Array.isArray(assignmentData.targetStudents) ? assignmentData.targetStudents : [];
+  const targetBatches: string[] = Array.isArray(assignmentData.targetBatches) ? assignmentData.targetBatches : [];
+  const targetType = assignmentData.targetType || (targetStudents.length > 0 ? (targetBatches.length > 0 ? 'mixed' : 'student') : 'batch');
+
+  const studentMatches = targetStudents.includes(studentCode);
+  const batchMatches = targetBatches.some((b: string) => studentBatchIds.includes(b));
+
+  // Mode 3 (Limited Mode) Rule: Strict perimeter enforcement.
+  // Limited Mode students NEVER inherit batch assignments. They MUST be explicitly targeted by studentCode.
+  if (isLimited) {
+    return studentMatches;
+  }
+
+  if (targetType === 'student') {
+    return studentMatches;
+  }
+
+  if (targetType === 'batch') {
+    return batchMatches;
+  }
+
+  // targetType === 'mixed' or legacy fallback
+  return studentMatches || batchMatches;
 }
 
 /**
@@ -49,7 +93,7 @@ export async function getAssignmentsForBatches(
   subjectiveDocs: admin.firestore.QueryDocumentSnapshot[];
   allDocs: admin.firestore.QueryDocumentSnapshot[];
 }> {
-  const { type = 'all', status = 'active', studentCode, studentCodes, collection } = options;
+  const { type = 'all', status = 'active', studentCode, studentCodes, isLimited, collection } = options;
   const batchList = (batchIds || []).filter(Boolean);
   const targetStudentList = (studentCodes || (studentCode ? [studentCode] : [])).filter(Boolean);
 
@@ -66,13 +110,15 @@ export async function getAssignmentsForBatches(
   const queryCollection = async (collName: string) => {
     const promises: Promise<admin.firestore.QuerySnapshot>[] = [];
 
-    // 1. By targetBatches (chunked by 10)
-    for (const chunk of batchChunks) {
-      let q: admin.firestore.Query = adminDb.collection(collName).where('targetBatches', 'array-contains-any', chunk);
-      if (status) q = q.where('status', '==', status);
-      // Rule C9: Apply projection to reduce bandwidth egress
-      q = q.select('examId', 'examType', 'type', 'title', 'name', 'subject', 'chapter', 'chapterName', 'startAt', 'endAt', 'availableUntil', 'scheduledDate', 'duration', 'examDuration', 'status', 'targetBatches', 'targetStudents', 'targetType', 'topicCode', 'topicCodes', 'openMode', 'assignmentType', 'attemptLimit', 'createdAt', 'batchId', 'lateEntryRestriction', 'createdBy', 'updatedAt');
-      promises.push(q.get().catch(() => ({ docs: [] } as any)));
+    // 1. By targetBatches (chunked by 10) - Limited students NEVER inherit batch assignments, skip this query completely
+    if (!isLimited) {
+      for (const chunk of batchChunks) {
+        let q: admin.firestore.Query = adminDb.collection(collName).where('targetBatches', 'array-contains-any', chunk);
+        if (status) q = q.where('status', '==', status);
+        // Rule C9: Apply projection to reduce bandwidth egress
+        q = q.select('examId', 'examType', 'type', 'title', 'name', 'subject', 'chapter', 'chapterName', 'startAt', 'endAt', 'availableUntil', 'scheduledDate', 'duration', 'examDuration', 'status', 'targetBatches', 'targetStudents', 'targetType', 'topicCode', 'topicCodes', 'openMode', 'assignmentType', 'attemptLimit', 'createdAt', 'batchId', 'lateEntryRestriction', 'createdBy', 'updatedAt');
+        promises.push(q.get().catch(() => ({ docs: [] } as any)));
+      }
     }
 
     // 2. By targetStudents
@@ -96,6 +142,17 @@ export async function getAssignmentsForBatches(
     snaps.forEach(snap => {
       snap.docs.forEach(d => {
         if (!seen.has(d.id)) {
+          const data = d.data();
+          if (studentCode) {
+            if (!isAssignmentApplicableToStudent(data, studentCode, batchList, isLimited === true)) {
+              return;
+            }
+          } else if (targetStudentList.length > 0) {
+            const anyMatch = targetStudentList.some(code =>
+              isAssignmentApplicableToStudent(data, code, batchList, isLimited === true)
+            );
+            if (!anyMatch) return;
+          }
           seen.add(d.id);
           docs.push(d);
         }
@@ -129,13 +186,14 @@ export class ExamService {
   /**
    * Helper to fetch active assignments targeted specifically to a student (by batch or direct assignment),
    */
-  public static async fetchStudentActiveAssignments(studentCode: string, studentBatchIds: string[]): Promise<{
+  public static async fetchStudentActiveAssignments(studentCode: string, studentBatchIds: string[], isLimited?: boolean): Promise<{
     objAssignments: admin.firestore.QueryDocumentSnapshot[];
     subAssignments: admin.firestore.QueryDocumentSnapshot[];
   }> {
     const res = await getAssignmentsForBatches(studentBatchIds, {
       status: 'active',
-      studentCode
+      studentCode,
+      isLimited: isLimited === true
     });
     return {
       objAssignments: res.objectiveDocs,
@@ -151,8 +209,14 @@ export class ExamService {
     studentCode: string;
     currentExamId: string;
     isAutonomous?: boolean;
+    isLimited?: boolean;
   }): Promise<{ blocked: boolean; message?: string }> {
-    const { studentCode, currentExamId, isAutonomous } = params;
+    const { studentCode, currentExamId, isAutonomous, isLimited } = params;
+
+    // Limited Mode students do not participate in student reflections, peer reviews, or parent sign-offs
+    if (isLimited) {
+      return { blocked: false };
+    }
 
     const [pendingObj, pendingSub, pendingPeer, evalSnaps] = await Promise.all([
       adminDb.collection('reviews')
@@ -235,17 +299,18 @@ export class ExamService {
     currentExamId: string;
     evalMap?: Set<string> | Map<string, any>;
     isAutonomous?: boolean;
+    isLimited?: boolean;
   }): Promise<{ blocked: boolean; examTitle?: string; message?: string }> {
-    const { studentCode, studentBatchIds, currentExamId, evalMap, isAutonomous } = params;
+    const { studentCode, studentBatchIds, currentExamId, evalMap, isAutonomous, isLimited } = params;
     
-    // Autonomous students do not have active parent accounts to acknowledge absences
-    if (isAutonomous) {
+    // Autonomous and Limited Mode students do not have active parent accounts to acknowledge absences
+    if (isAutonomous || isLimited) {
       return { blocked: false };
     }
 
     const now = new Date();
 
-    const { objAssignments, subAssignments } = await this.fetchStudentActiveAssignments(studentCode, studentBatchIds);
+    const { objAssignments, subAssignments } = await this.fetchStudentActiveAssignments(studentCode, studentBatchIds, isLimited);
 
     // Identify exams that are currently active or upcoming (reassigned or scheduled in the future/today)
     const currentlyActiveExamIds = new Set<string>();

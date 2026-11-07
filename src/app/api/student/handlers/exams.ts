@@ -3,7 +3,7 @@ import * as admin from 'firebase-admin';
 import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole, verifyAnyRole, isStudentLimited } from '@/lib/auth';
 import { ExamRepository } from '@/repositories/exam.repository';
-import { ExamService } from '@/services/exam.service';
+import { ExamService, isAssignmentApplicableToStudent } from '@/services/exam.service';
 import { AttemptService } from '@/services/attempt.service';
 import { deriveTopicCodeFromQuestionCode, evaluateQuestionAnswer } from '@/lib/questionTypes';
 import { invalidateCache } from '@/lib/firebase/cache';
@@ -181,58 +181,56 @@ export async function GET(req: NextRequest) {
     }
 
     const studentCode = caller.userData?.studentCode || '';
+    const isLimited = isStudentLimited(caller);
+    const isAutonomous = caller.userData?.autonomous === true;
+    const studentBatchIds = caller.userData?.batchIds || (caller.userData?.batchId ? [caller.userData.batchId] : []);
 
-    // Validate if student is assigned to this objective exam
-    const studentBatchIds = caller.userData?.batchIds || [];
+    // Validate if student is assigned to this objective exam using canonical applicability check
     const assignmentQuery = await adminDb.collection('batchAssignments')
       .where('examId', '==', examId)
       .where('status', '==', 'active')
       .get();
 
-    const isAssigned = assignmentQuery.docs.some(doc => {
-      const data = doc.data();
-      const targetType = data.targetType;
-      if (targetType === 'student') {
-        return Array.isArray(data.targetStudents) && data.targetStudents.includes(studentCode);
-      } else {
-        return Array.isArray(data.targetBatches) && data.targetBatches.some((b: string) => studentBatchIds.includes(b));
-      }
-    });
+    const isAssigned = assignmentQuery.docs.some(doc => 
+      isAssignmentApplicableToStudent(doc.data(), studentCode, studentBatchIds, isLimited)
+    );
 
     if (!isAssigned) {
       return NextResponse.json({ message: 'Access Denied: You are not assigned to take this exam.' }, { status: 403 });
     }
 
-    // Strict block if there are pending reviews (either objective self-reflection, pending parent review, or classmate peer reviews)
-    const pendingReviewsCheck = await ExamService.verifyPendingReviewsBlock({
-      studentCode,
-      currentExamId: examId,
-      isAutonomous: student.userData?.autonomous === true
-    });
+    // Reviews and absence blocks only apply to regular/autonomous students (Limited Mode has no parent portal or peer reviews)
+    if (!isLimited) {
+      const pendingReviewsCheck = await ExamService.verifyPendingReviewsBlock({
+        studentCode,
+        currentExamId: examId,
+        isAutonomous,
+        isLimited
+      });
 
-    if (pendingReviewsCheck.blocked) {
-      return NextResponse.json({
-        status: 'blocked_by_pending_review',
-        message: pendingReviewsCheck.message
-      }, { status: 403 });
+      if (pendingReviewsCheck.blocked) {
+        return NextResponse.json({
+          status: 'blocked_by_pending_review',
+          message: pendingReviewsCheck.message
+        }, { status: 403 });
+      }
+
+      // Strict block if the student was absent for a past scheduled exam and parent has not reviewed/acknowledged
+      const absenceCheck = await ExamService.verifyStudentPastExamAbsenceBlock({
+        studentCode,
+        studentBatchIds,
+        currentExamId: examId,
+        isAutonomous,
+        isLimited
+      });
+
+      if (absenceCheck.blocked) {
+        return NextResponse.json({
+          status: 'blocked_by_absence',
+          message: absenceCheck.message || `You missed your scheduled exam '${absenceCheck.examTitle}'. You are blocked from taking new exams until your parent reviews and acknowledges this absence in the Parent Portal.\n\n(तुम्ही तुमची नियोजित परीक्षा '${absenceCheck.examTitle}' वेळेत दिली नाही. जोपर्यंत तुमचे पालक पालक पोर्टल (Parent Portal) मध्ये जाऊन या गैरहजेरीचे कारण नोंदवत नाहीत, तोपर्यंत नवीन परीक्षा सुरू करता येणार नाही.)`
+        }, { status: 403 });
+      }
     }
-
-    // Strict block if the student was absent for a past scheduled exam and parent has not reviewed/acknowledged
-    const isAutonomous = student.userData?.autonomous === true;
-    const absenceCheck = await ExamService.verifyStudentPastExamAbsenceBlock({
-      studentCode,
-      studentBatchIds,
-      currentExamId: examId,
-      isAutonomous
-    });
-
-    if (absenceCheck.blocked) {
-      return NextResponse.json({
-        status: 'blocked_by_absence',
-        message: absenceCheck.message || `You missed your scheduled exam '${absenceCheck.examTitle}'. You are blocked from taking new exams until your parent reviews and acknowledges this absence in the Parent Portal.\n\n(तुम्ही तुमची नियोजित परीक्षा '${absenceCheck.examTitle}' वेळेत दिली नाही. जोपर्यंत तुमचे पालक पालक पोर्टल (Parent Portal) मध्ये जाऊन या गैरहजेरीचे कारण नोंदवत नाहीत, तोपर्यंत नवीन परीक्षा सुरू करता येणार नाही.)`
-      }, { status: 403 });
-    }
-
 
     // Enforce re-attempt prevention on close/reload for Objective exams
     const attemptRef = adminDb.collection('examAttempts').doc(`${examId}_${studentCode}`);
@@ -341,22 +339,10 @@ export async function GET(req: NextRequest) {
         .where('status', '==', 'active')
         .get();
       
-      // First check for student-specific assignment in batchAssignments
-      let matched = baSnap.docs.find(doc => {
-        const data = doc.data();
-        return data.targetType === 'student' && 
-               Array.isArray(data.targetStudents) && 
-               data.targetStudents.includes(studentCode);
-      });
-
-      // If not found, check for batch assignments
-      if (!matched && studentBatches.length > 0) {
-        matched = baSnap.docs.find(doc => {
-          const data = doc.data();
-          const targetBatches = data.targetBatches || [];
-          return targetBatches.some((b: string) => studentBatches.includes(b));
-        });
-      }
+      // Canonical applicability check for active assignments
+      const matched = baSnap.docs.find(doc => 
+        isAssignmentApplicableToStudent(doc.data(), studentCode, studentBatches, isLimited)
+      );
 
       if (matched) {
         assignment = matched.data();

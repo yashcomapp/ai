@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import * as admin from 'firebase-admin';
 import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole, verifyAnyRole, isStudentLimited } from '@/lib/auth';
-import { ExamService } from '@/services/exam.service';
+import { ExamService, isAssignmentApplicableToStudent } from '@/services/exam.service';
 import { cleanSubjectiveExamName } from '@/lib/studentDb';
 import { invalidateCache } from '@/lib/firebase/cache';
 
@@ -219,35 +219,40 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    // B. Strict block if there are pending reviews (either objective self-reflection, pending parent review, or classmate peer reviews)
-    const pendingReviewsCheck = await ExamService.verifyPendingReviewsBlock({
-      studentCode,
-      currentExamId: examId,
-      isAutonomous: student.userData?.autonomous === true
-    });
-
-    if (pendingReviewsCheck.blocked) {
-      return NextResponse.json({
-        status: 'blocked',
-        message: pendingReviewsCheck.message
-      }, { status: 403 });
-    }
-
-    // Strict block if the student was absent for a past scheduled exam and parent has not reviewed/acknowledged
+    const isLimited = isStudentLimited(caller);
     const isAutonomous = student.userData?.autonomous === true;
-    const studentBatchIds = student.userData?.batchIds || [];
-    const absenceCheck = await ExamService.verifyStudentPastExamAbsenceBlock({
-      studentCode,
-      studentBatchIds,
-      currentExamId: examId,
-      isAutonomous
-    });
+    const studentBatchIds = student.userData?.batchIds || (student.userData?.batchId ? [student.userData.batchId] : []);
 
-    if (absenceCheck.blocked) {
-      return NextResponse.json({
-        status: 'blocked',
-        message: absenceCheck.message || `You were absent for scheduled exam '${absenceCheck.examTitle}'. You are blocked from taking new exams until your parent reviews and acknowledges this absence in the Parent Portal.\n\n(तुम्ही तुमची नियोजित परीक्षा '${absenceCheck.examTitle}' वेळेत दिली नाही. जोपर्यंत तुमचे पालक पालक पोर्टल (Parent Portal) मध्ये जाऊन या गैरहजेरीचे कारण नोंदवत नाहीत, तोपर्यंत नवीन परीक्षा सुरू करता येणार नाही.)`
-      }, { status: 403 });
+    // Reviews and absence blocks only apply to regular/autonomous students (Limited Mode has no parent portal or peer reviews)
+    if (!isLimited) {
+      const pendingReviewsCheck = await ExamService.verifyPendingReviewsBlock({
+        studentCode,
+        currentExamId: examId,
+        isAutonomous,
+        isLimited
+      });
+
+      if (pendingReviewsCheck.blocked) {
+        return NextResponse.json({
+          status: 'blocked',
+          message: pendingReviewsCheck.message
+        }, { status: 403 });
+      }
+
+      const absenceCheck = await ExamService.verifyStudentPastExamAbsenceBlock({
+        studentCode,
+        studentBatchIds,
+        currentExamId: examId,
+        isAutonomous,
+        isLimited
+      });
+
+      if (absenceCheck.blocked) {
+        return NextResponse.json({
+          status: 'blocked',
+          message: absenceCheck.message || `You were absent for scheduled exam '${absenceCheck.examTitle}'. You are blocked from taking new exams until your parent reviews and acknowledges this absence in the Parent Portal.\n\n(तुम्ही तुमची नियोजित परीक्षा '${absenceCheck.examTitle}' वेळेत दिली नाही. जोपर्यंत तुमचे पालक पालक पोर्टल (Parent Portal) मध्ये जाऊन या गैरहजेरीचे कारण नोंदवत नाहीत, तोपर्यंत नवीन परीक्षा सुरू करता येणार नाही.)`
+        }, { status: 403 });
+      }
     }
 
 
@@ -289,10 +294,7 @@ export async function GET(req: NextRequest) {
     let matchingAssignment: any = null;
     let isAssigned = assignmentQuery.docs.some(doc => {
       const data = doc.data();
-      const targetType = data.targetType;
-      const match = targetType === 'student'
-        ? Array.isArray(data.targetStudents) && data.targetStudents.includes(studentCode)
-        : Array.isArray(data.targetBatches) && data.targetBatches.some((b: string) => studentBatchIds.includes(b));
+      const match = isAssignmentApplicableToStudent(data, studentCode, studentBatchIds, isLimited);
       if (match && !matchingAssignment) {
         matchingAssignment = { id: doc.id, ...data };
       }
@@ -300,9 +302,12 @@ export async function GET(req: NextRequest) {
     });
 
     if (!isAssigned && examData.type === 'home_practice') {
-      const matchBatch = !examData.batchId || studentBatchIds.includes(examData.batchId);
-      if (matchBatch) {
-        isAssigned = true;
+      // Weekly suite home practice: Limited Mode students cannot take batch exams unless explicitly targeted
+      if (!isLimited) {
+        const matchBatch = !examData.batchId || studentBatchIds.includes(examData.batchId);
+        if (matchBatch) {
+          isAssigned = true;
+        }
       }
     }
 

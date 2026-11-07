@@ -589,10 +589,18 @@ export default function AdminExamsPage() {
     if (!firebaseUser || assigning) return;
     const { examId, type, targetType, selectedBatches, selectedStudents, openMode, startAtStr, endAtStr, attemptLimit, examDuration, examMode, classroomDuration, classroomTimePerQ, lateEntryRestriction } = assignModal;
 
-    const batchesArr = Array.from(selectedBatches);
-    const studentsArr = Array.from(selectedStudents);
+    const batchesArr = targetType === 'student' ? [] : Array.from(selectedBatches);
+    const studentsArr = targetType === 'batch' ? [] : Array.from(selectedStudents);
 
-    if (batchesArr.length === 0 && studentsArr.length === 0) {
+    if (targetType === 'batch' && batchesArr.length === 0) {
+      alert('Please select at least one batch to assign.');
+      return;
+    }
+    if (targetType === 'student' && studentsArr.length === 0) {
+      alert('Please select at least one student to assign.');
+      return;
+    }
+    if (targetType === 'mixed' && batchesArr.length === 0 && studentsArr.length === 0) {
       alert('Please select at least one batch or student to assign.');
       return;
     }
@@ -667,10 +675,18 @@ export default function AdminExamsPage() {
     if (!firebaseUser) return;
     const { id, collection, targetType, selectedBatches, selectedStudents, openMode, startAtStr, endAtStr, attemptLimit, examDuration, lateEntryRestriction } = editModal;
 
-    const batchesArr = Array.from(selectedBatches);
-    const studentsArr = Array.from(selectedStudents);
+    const batchesArr = targetType === 'student' ? [] : Array.from(selectedBatches);
+    const studentsArr = targetType === 'batch' ? [] : Array.from(selectedStudents);
 
-    if (batchesArr.length === 0 && studentsArr.length === 0) {
+    if (targetType === 'batch' && batchesArr.length === 0) {
+      alert('Please select at least one batch for the assignment.');
+      return;
+    }
+    if (targetType === 'student' && studentsArr.length === 0) {
+      alert('Please select at least one student for the assignment.');
+      return;
+    }
+    if (targetType === 'mixed' && batchesArr.length === 0 && studentsArr.length === 0) {
       alert('Please select at least one batch or student for the assignment.');
       return;
     }

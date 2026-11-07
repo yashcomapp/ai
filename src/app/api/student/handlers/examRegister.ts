@@ -4,7 +4,7 @@ import { deriveTopicCodeFromQuestionCode } from '@/lib/questionTypes';
 import { verifyAnyRole, isStudentLimited } from '@/lib/auth';
 import { getStudentMode } from '@/types/user.types';
 import { getDateKeyIST, formatDateIST as formatDate } from '@/lib/dateUtils';
-import { fetchStudentRawAssignments, getAssignmentsForBatches } from '@/lib/studentDb';
+import { fetchStudentRawAssignments, getAssignmentsForBatches, isAssignmentApplicableToStudent } from '@/lib/studentDb';
 import { resolveParentStudentCodes } from '@/lib/dashboardDbUtils';
 
 
@@ -61,6 +61,7 @@ export async function GET(req: NextRequest) {
     if (callerRole === 'parent' && getStudentMode(studentUser) !== 'regular') {
       return NextResponse.json({ message: 'Access Denied: Parent access is disabled for Autonomous and Limited student accounts.' }, { status: 403 });
     }
+    const isLimited = getStudentMode(studentUser) === 'limited';
     const studentName = studentUser.name || 'Student';
     const batchIds: string[] = studentUser.batchIds || (studentUser.batchId ? [studentUser.batchId] : []);
     const studentClassRaw = studentUser.classNum || studentUser.class || studentUser.grade;
@@ -77,7 +78,7 @@ export async function GET(req: NextRequest) {
       directSubjBatchesAnySnap,
       directSubjStudentsSnap
     ] = await Promise.all([
-      fetchStudentRawAssignments(studentCode, batchIds),
+      fetchStudentRawAssignments(studentCode, batchIds, isLimited),
 
       // Objective attempts (reviews collection is the source of truth)
       adminDb.collection('reviews')
@@ -94,8 +95,8 @@ export async function GET(req: NextRequest) {
         .where('studentCode', '==', studentCode)
         .get(),
 
-      // Direct Subjective exams for student's batches (targeted)
-      batchIds.length > 0
+      // Direct Subjective exams for student's batches (targeted) - exclude if limited
+      !isLimited && batchIds.length > 0
         ? adminDb.collection('subjectiveExams')
             .where('status', '==', 'active')
             .where('batchId', 'in', batchIds)
@@ -106,7 +107,8 @@ export async function GET(req: NextRequest) {
       getAssignmentsForBatches(batchIds, {
         collection: 'subjectiveExams',
         status: 'active',
-        studentCode
+        studentCode,
+        isLimited
       }).then(r => ({ docs: r.allDocs })),
       Promise.resolve({ docs: [] } as any)
     ]);
@@ -214,6 +216,10 @@ export async function GET(req: NextRequest) {
     allAssignments.forEach(assignment => {
       const examId = assignment.examId;
       if (!examId) return;
+
+      if (!isAssignmentApplicableToStudent(assignment, studentCode, batchIds, isLimited)) {
+        return;
+      }
 
       const endAt = assignment.endAt?.toDate ? assignment.endAt.toDate() : new Date(assignment.endAt || assignment.createdAt);
       const isPast = now > endAt;

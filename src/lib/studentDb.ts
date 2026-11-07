@@ -8,9 +8,9 @@ import { calculateUnifiedMetrics, extractConductedTopicCodes, getRequiredConfide
 import { deriveTopicCodeFromQuestionCode, getCanonicalSubjectName, parseTopicCode, normalizeTopicCode } from '@/lib/questionTypes';
 import { calculateSrsSchedule, SrsSchedule } from '@/lib/srsRotation';
 import { deduplicateAssignments, resolveIntegrityScore } from '@/lib/dashboardDbUtils';
-import { getAssignmentsForBatches } from '@/services/exam.service';
+import { getAssignmentsForBatches, isAssignmentApplicableToStudent } from '@/services/exam.service';
 
-export { getAssignmentsForBatches };
+export { getAssignmentsForBatches, isAssignmentApplicableToStudent };
 
 /**
  * Checks if a user or student profile is a demo / placeholder account
@@ -160,10 +160,11 @@ export function deriveStudentBatchIds(userData: any): string[] {
 /**
  * SSOT for querying active batch & student-specific objective and subjective assignments.
  */
-export async function fetchStudentRawAssignments(studentCode: string, batchIds: string[]) {
+export async function fetchStudentRawAssignments(studentCode: string, batchIds: string[], isLimited?: boolean) {
   const { objectiveDocs, subjectiveDocs } = await getAssignmentsForBatches(batchIds, {
     status: 'active',
-    studentCode
+    studentCode,
+    isLimited: isLimited === true
   });
 
   return {
@@ -232,7 +233,7 @@ export async function loadStudentCoreData(
     ? await Promise.all([
         Promise.resolve({ docs: [] } as any),
         Promise.resolve({ docs: [] } as any),
-        fetchStudentRawAssignments(studentCode, batchIds),
+        fetchStudentRawAssignments(studentCode, batchIds, true),
         Promise.resolve({ docs: [] } as any),
         Promise.resolve({ docs: [] } as any),
         adminDb.collection('examAttempts')
@@ -257,7 +258,7 @@ export async function loadStudentCoreData(
           .where('reviewerStudentCode', '==', studentCode)
           .where('status', '==', 'pending')
           .get(),
-        fetchStudentRawAssignments(studentCode, batchIds),
+        fetchStudentRawAssignments(studentCode, batchIds, false),
         adminDb.collection('studentTopicMastery')
           .where('studentCode', '==', studentCode)
           .get(),

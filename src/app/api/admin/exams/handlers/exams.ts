@@ -96,6 +96,7 @@ export async function GET(req: NextRequest) {
 
       const studentUser = studentUserSnap.docs[0]?.data();
       const bIds = studentUser?.batchIds || (studentUser?.batchId ? [studentUser.batchId] : []);
+      const isLim = getStudentMode(studentUser) === 'limited';
       const studentClass = studentUser?.class || studentUser?.className || '';
       const cleanClass = String(studentClass).replace(/\D/g, '');
       const todayDateStr = getDateKeyIST();
@@ -104,7 +105,8 @@ export async function GET(req: NextRequest) {
       const baPromise = getAssignmentsForBatches(bIds, {
         type: 'objective',
         status: null,
-        studentCode: studentCodeParam
+        studentCode: studentCodeParam,
+        isLimited: isLim
       });
 
       // 3. Class-scoped active/draft exams
@@ -1067,11 +1069,12 @@ export async function POST(req: NextRequest) {
       : (origExamData.topicCode ? [origExamData.topicCode] : []);
     const topicCode: string = origExamData.topicCode || (topicCodes[0] || '');
 
+    const resolvedTargetType = targetType || 'batch';
     const payload: any = {
       examId: examId,
-      targetType: targetType || 'batch',
-      targetBatches: targetBatches || [],
-      targetStudents: targetStudents || [],
+      targetType: resolvedTargetType,
+      targetBatches: resolvedTargetType === 'student' ? [] : (Array.isArray(targetBatches) ? targetBatches : []),
+      targetStudents: resolvedTargetType === 'batch' ? [] : (Array.isArray(targetStudents) ? targetStudents : []),
       openMode: openMode || 'immediate',
       startAt: admin.firestore.Timestamp.fromDate(startAt),
       endAt: admin.firestore.Timestamp.fromDate(endAt),
@@ -1286,14 +1289,17 @@ export async function PUT(req: NextRequest) {
       updates.examDuration = Number(examDuration);
     }
 
-    if (targetType) {
-      updates.targetType = targetType;
-    }
-    if (Array.isArray(targetBatches)) {
-      updates.targetBatches = targetBatches;
-    }
-    if (Array.isArray(targetStudents)) {
-      updates.targetStudents = targetStudents;
+    const resolvedTargetType = targetType || assignData.targetType || 'batch';
+    updates.targetType = resolvedTargetType;
+    if (resolvedTargetType === 'student') {
+      updates.targetBatches = [];
+      updates.targetStudents = Array.isArray(targetStudents) ? targetStudents : (assignData.targetStudents || []);
+    } else if (resolvedTargetType === 'batch') {
+      updates.targetBatches = Array.isArray(targetBatches) ? targetBatches : (assignData.targetBatches || []);
+      updates.targetStudents = [];
+    } else {
+      if (Array.isArray(targetBatches)) updates.targetBatches = targetBatches;
+      if (Array.isArray(targetStudents)) updates.targetStudents = targetStudents;
     }
 
     const isRescheduled = assignData.startAt && Math.abs(updatedStart.getTime() - (assignData.startAt.toDate ? assignData.startAt.toDate().getTime() : new Date(assignData.startAt).getTime())) > 600000;
