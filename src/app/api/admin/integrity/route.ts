@@ -160,6 +160,7 @@ export async function POST(request: Request) {
       let totalNoFaceCount = 0;
       let totalMultipleFacesCount = 0;
       let totalLookingAwayCount = 0;
+      let totalHeadMovementCount = 0;
       let percentTimeAwaySum = 0;
       let sessionsCount = 0;
 
@@ -175,6 +176,7 @@ export async function POST(request: Request) {
           totalNoFaceCount += (pViols.noFace || pViols.noFaceCount || 0);
           totalLookingAwayCount += (pViols.lookingAway || pViols.lookingAwayCount || 0);
           totalMultipleFacesCount += (pViols.multipleFaces || pViols.multipleFacesCount || 0);
+          totalHeadMovementCount += (pViols.headMovement || pViols.headMovementCount || 0);
           percentTimeAwaySum += (docData.percentTimeAway || 0);
         }
       };
@@ -189,7 +191,7 @@ export async function POST(request: Request) {
         noFace: totalNoFaceCount,
         lookingAway: totalLookingAwayCount,
         multipleFaces: totalMultipleFacesCount,
-        headMovement: 0
+        headMovement: totalHeadMovementCount
       };
       
       const { integrityScore } = IntegrityService.calculateScore(totalTabViolations, normViols);
@@ -214,12 +216,14 @@ export async function POST(request: Request) {
         year: currentYear,
         integrityScore: integrityScore,
         score: integrityScore, // Backwards compatibility fallback
-        violationsCount: totalTabViolations + totalNoFaceCount + totalLookingAwayCount,
+        violationsCount: totalTabViolations + totalNoFaceCount + totalLookingAwayCount + totalMultipleFacesCount + totalHeadMovementCount,
         level,
         totalSessions: sessionsCount,
         tabViolations: totalTabViolations,
         noFaceCount: totalNoFaceCount,
         multipleFacesCount: totalMultipleFacesCount,
+        lookingAwayCount: totalLookingAwayCount,
+        headMovementCount: totalHeadMovementCount,
         avgPercentTimeAway: Math.round(avgPercentTimeAway),
         createdAt: new Date(),
         updatedAt: new Date()

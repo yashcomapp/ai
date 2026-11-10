@@ -5,6 +5,7 @@ import { getDateKeyIST as getISTDateString } from '@/lib/dateUtils';
 import { getFromCache, setInCache } from '@/lib/firebase/cache';
 import { isDemoUser } from '@/lib/studentDb';
 import { shouldBypassCache } from '@/lib/cacheBypassGuard';
+import { calculateAttendanceSummary, AttendanceRecord } from '@/lib/attendanceUtils';
 
 export const dynamic = 'force-dynamic';
 
@@ -105,21 +106,18 @@ export async function GET(req: NextRequest) {
       };
     });
 
-    // Calculate today's attendance rate
-    let totalMarked = 0;
-    let presentTotal = 0;
+    // Calculate today's attendance rate using SSOT attendance calculator
+    const allRecords: AttendanceRecord[] = [];
     attendanceSnap.docs.forEach(doc => {
       const records = doc.data().records || {};
       Object.values(records).forEach((r: any) => {
-        if (r.status === 'present' || r.status === 'late') {
-          presentTotal++;
-          totalMarked++;
-        } else if (r.status === 'absent') {
-          totalMarked++;
+        if (r && typeof r === 'object') {
+          allRecords.push(r);
         }
       });
     });
-    const todayAttendanceRate = totalMarked > 0 ? Math.round((presentTotal / totalMarked) * 100) : null;
+    const attendanceSummary = calculateAttendanceSummary(allRecords);
+    const todayAttendanceRate = attendanceSummary.totalDays > 0 ? attendanceSummary.attendancePercentage : null;
 
     // Calculate admin unread chats count
     const unreadChatsCount = chatRoomsSnap.docs.filter(doc => {

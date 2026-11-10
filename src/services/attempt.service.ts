@@ -453,7 +453,7 @@ export class AttemptService {
           year,
           week,
           integrityScore: integrityScore,
-          violationsCount: (tabViolations || 0) + (proctoringViolations?.noFace || 0) + (proctoringViolations?.lookingAway || 0),
+          violationsCount: (tabViolations || 0) + (proctoringViolations?.noFace || 0) + (proctoringViolations?.lookingAway || 0) + (proctoringViolations?.multipleFaces || 0) + (proctoringViolations?.headMovement || 0),
           weekStart: admin.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
       }

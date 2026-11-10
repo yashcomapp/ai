@@ -1315,6 +1315,7 @@ export class ExamService {
           let totalNoFace = 0;
           let totalLookingAway = 0;
           let totalMultipleFaces = 0;
+          let totalHeadMovement = 0;
           let sessionCount = 0;
 
           const checkDoc = (docData: any, docId: string) => {
@@ -1329,6 +1330,7 @@ export class ExamService {
               totalNoFace += (pViols.noFace || pViols.noFaceCount || 0);
               totalLookingAway += (pViols.lookingAway || pViols.lookingAwayCount || 0);
               totalMultipleFaces += (pViols.multipleFaces || pViols.multipleFacesCount || 0);
+              totalHeadMovement += (pViols.headMovement || pViols.headMovementCount || 0);
             }
           };
 
@@ -1354,7 +1356,7 @@ export class ExamService {
               noFace: totalNoFace,
               lookingAway: totalLookingAway,
               multipleFaces: totalMultipleFaces,
-              headMovement: 0
+              headMovement: totalHeadMovement
             });
             await integrityRef.set({
               studentCode,
@@ -1362,7 +1364,7 @@ export class ExamService {
               week: targetWeek,
               integrityScore,
               score: integrityScore,
-              violationsCount: totalTabViolations + totalNoFace + totalLookingAway,
+              violationsCount: totalTabViolations + totalNoFace + totalLookingAway + totalMultipleFaces + totalHeadMovement,
               totalSessions: sessionCount,
               tabViolations: totalTabViolations,
               level: integrityScore >= 90 ? 'good' : (integrityScore >= 75 ? 'attention' : 'review'),
