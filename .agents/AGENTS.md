@@ -187,6 +187,10 @@
   - Expired `liveExamEvidence` documents must be purged automatically at midnight via `purgeExpiredProctoringSnapshots` so evidence never accumulates long-term storage or egress costs.
 - **No Paid Crons in Vercel**:
   - Vercel paid cron jobs (`vercel.json`) are strictly forbidden. All maintenance sweeps must be opportunistic or triggered via manual admin action.
+- **Zero-Cost Build & Compute Invariant (Cloud Build & Cloud Run)**:
+  - NEVER configure non-default or high-resource machine types (e.g. `machineType: 'E2_HIGHCPU_8'`, `E2_HIGHCPU_4`, etc.) in `cloudbuild.yaml` or build/deploy scripts.
+  - All builds MUST run strictly on Google Cloud's default standard build tier covered by the **120 free build-minutes per day** ($₹0.00$ cost invariant).
+  - Cloud Run services MUST ALWAYS maintain `--min-instances 0` to scale to zero when idle, guaranteeing $₹0.00$ idle compute costs.
 
 ### V. Automated Cost & Egress Early Warning System (`src/lib/costGuard.ts`)
 - **Rule**: All real-time Firestore mutations MUST be guarded by `sanitizeRealTimePayload` and `inspectPayloadCostSafety`.
