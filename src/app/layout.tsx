@@ -57,6 +57,34 @@ export default function RootLayout({
         <script src="https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/contrib/auto-render.min.js" defer></script>
       </head>
       <body>
+        <Script id="chunk-recovery" strategy="beforeInteractive">
+          {`
+            (function() {
+              function handleChunkFailure(msg) {
+                var str = String(msg || '').toLowerCase();
+                if (
+                  str.indexOf('loading chunk') !== -1 ||
+                  str.indexOf('chunkloaderror') !== -1 ||
+                  str.indexOf('failed to fetch dynamically imported module') !== -1
+                ) {
+                  var key = 'yc_last_chunk_reload';
+                  var now = Date.now();
+                  var last = sessionStorage.getItem(key);
+                  if (!last || (now - parseInt(last, 10)) > 10000) {
+                    sessionStorage.setItem(key, now.toString());
+                    window.location.reload();
+                  }
+                }
+              }
+              window.addEventListener('error', function(e) {
+                handleChunkFailure(e && e.message);
+              });
+              window.addEventListener('unhandledrejection', function(e) {
+                handleChunkFailure(e && e.reason);
+              });
+            })();
+          `}
+        </Script>
         <Script id="register-sw" strategy="lazyOnload">
           {`
             if ('serviceWorker' in navigator) {
