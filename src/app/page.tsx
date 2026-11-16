@@ -3,6 +3,9 @@ import Link from 'next/link';
 import LoginModal from '@/components/LoginModal';
 import Image from 'next/image';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default function LoginPage() {
   return (
     <div className="landing-shell">
