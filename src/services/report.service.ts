@@ -377,12 +377,14 @@ export class ReportService {
 
       const totalAssignedTopics = Number(topicHealth?.totalTopics ?? practiceComp?.totalAssignedTopics ?? 0);
       const topicsAttemptedCount = Number(practiceComp?.topicsAttemptedCount ?? 0);
-      const unattemptedTopicsCount = Number(topicHealth?.unattemptedCount ?? Math.max(0, totalAssignedTopics - topicsAttemptedCount));
+      const actualPendingCount = Math.max(0, totalAssignedTopics - topicsAttemptedCount);
+      const unattemptedTopicsCount = actualPendingCount;
       const masteredTopicsCount = Number(topicHealth?.masteredCount ?? 0);
       const coveragePercent = Number(practiceComp?.coveragePercent ?? (totalAssignedTopics > 0 ? Math.round((topicsAttemptedCount / totalAssignedTopics) * 100) : 0));
 
-      const hasPracticedAllAssigned = totalAssignedTopics > 0 ? (unattemptedTopicsCount === 0 || coveragePercent >= 100) : false;
-      const allTopicsMastered = totalAssignedTopics > 0 ? (masteredTopicsCount >= totalAssignedTopics) : false;
+      // Strictly: student has practiced all assigned topics ONLY IF totalAssignedTopics > 0 AND topicsAttemptedCount >= totalAssignedTopics AND actualPendingCount === 0!
+      const hasPracticedAllAssigned = totalAssignedTopics > 0 && topicsAttemptedCount >= totalAssignedTopics && actualPendingCount === 0;
+      const allTopicsMastered = totalAssignedTopics > 0 && masteredTopicsCount >= totalAssignedTopics;
 
       return {
         studentCode,

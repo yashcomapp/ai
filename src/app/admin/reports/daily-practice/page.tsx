@@ -31,6 +31,142 @@ interface StudentSummary {
 
 type DurationPreset = 'today' | 'yesterday' | '7d' | '14d' | '30d' | 'thisMonth' | 'custom';
 
+interface StudentRemarkEvaluation {
+  text: string;
+  badgeType: 'all_done' | 'outstanding' | 'strong' | 'sincere' | 'irregular' | 'careless' | 'needs_practice';
+  bg: string;
+  color: string;
+  border?: string;
+}
+
+function evaluateStudentPracticeRemark(
+  s: StudentSummary,
+  durationDays: number
+): StudentRemarkEvaluation {
+  const totalTopics = s.totalAssignedTopics || 0;
+  const attemptedTopics = s.topicsAttemptedCount || 0;
+  const pendingTopics = Math.max(0, totalTopics - attemptedTopics);
+  const isFullyCovered = totalTopics > 0 && attemptedTopics >= totalTopics;
+
+  // Case 1: Student has 100% completed practice on all assigned curriculum topics
+  if (isFullyCovered) {
+    if (durationDays > 1 && s.sessionsCount >= durationDays && s.avgAccuracy >= 85) {
+      return {
+        text: '✨ 100% Covered (Active)',
+        badgeType: 'all_done',
+        bg: '#dcfce7',
+        color: '#14532d',
+        border: '1.5px solid #86efac'
+      };
+    }
+    return {
+      text: '✨ 100% Topics Covered',
+      badgeType: 'all_done',
+      bg: '#dcfce7',
+      color: '#14532d',
+      border: '1.5px solid #86efac'
+    };
+  }
+
+  // Case 2: Multi-day duration (e.g. 7d, 10d, 14d, 30d, thisMonth) AND full topics are NOT covered
+  if (durationDays >= 2) {
+    // Severe low volume: Student barely practiced while having unpracticed topics (<= 40% of days, e.g. <= 4 in 10d, <= 2 in 7d)
+    const severeLowThreshold = Math.max(1, Math.floor(durationDays * 0.4));
+    if (s.sessionsCount <= severeLowThreshold) {
+      return {
+        text: `⚠️ Careless (${s.sessionsCount} sess / ${durationDays}d)`,
+        badgeType: 'careless',
+        bg: '#fee2e2',
+        color: '#991b1b',
+        border: '1.5px solid #fca5a5'
+      };
+    }
+
+    // Irregular pace: Student did fewer sessions than days (e.g. 5 to 9 sessions in 10 days)
+    if (s.sessionsCount < durationDays) {
+      return {
+        text: `⚠️ Irregular (${s.sessionsCount} sess / ${durationDays}d)`,
+        badgeType: 'irregular',
+        bg: '#ffedd5',
+        color: '#c2410c',
+        border: '1.5px solid #fdba74'
+      };
+    }
+
+    // High volume: Student did >= durationDays sessions (e.g. >= 10 sessions in 10 days)
+    if (s.avgAccuracy >= 90 && s.avgHonesty >= 85) {
+      return {
+        text: '🌟 Outstanding & Sincere',
+        badgeType: 'outstanding',
+        bg: '#dcfce7',
+        color: '#14532d',
+        border: '1.5px solid #86efac'
+      };
+    }
+    if (s.avgAccuracy >= 75) {
+      return {
+        text: '✅ Strong & Sincere',
+        badgeType: 'strong',
+        bg: '#e0f2fe',
+        color: '#0369a1',
+        border: '1.5px solid #7dd3fc'
+      };
+    }
+    if (s.avgAccuracy >= 50) {
+      return {
+        text: '🟡 Moderate Accuracy',
+        badgeType: 'sincere',
+        bg: '#fef9c3',
+        color: '#854d0e',
+        border: '1.5px solid #fde047'
+      };
+    }
+    return {
+      text: '⚠️ Low Accuracy',
+      badgeType: 'needs_practice',
+      bg: '#fee2e2',
+      color: '#991b1b',
+      border: '1.5px solid #fca5a5'
+    };
+  }
+
+  // Case 3: Single Day duration (durationDays <= 1)
+  if (s.sessionsCount >= 3 && s.avgAccuracy >= 85) {
+    return {
+      text: '🌟 Highly Active Today',
+      badgeType: 'outstanding',
+      bg: '#dcfce7',
+      color: '#14532d',
+      border: '1.5px solid #86efac'
+    };
+  }
+  if (s.avgAccuracy >= 80) {
+    return {
+      text: '✅ Sincere Today',
+      badgeType: 'strong',
+      bg: '#e0f2fe',
+      color: '#0369a1',
+      border: '1.5px solid #7dd3fc'
+    };
+  }
+  if (s.avgAccuracy >= 50) {
+    return {
+      text: '🟡 Moderate Today',
+      badgeType: 'sincere',
+      bg: '#fef9c3',
+      color: '#854d0e',
+      border: '1.5px solid #fde047'
+    };
+  }
+  return {
+    text: '⚠️ Needs Practice',
+    badgeType: 'needs_practice',
+    bg: '#fee2e2',
+    color: '#991b1b',
+    border: '1.5px solid #fca5a5'
+  };
+}
+
 export default function DailyPracticeSummaryPage() {
   const { firebaseUser, user } = useAuth();
   const router = useRouter();
@@ -182,6 +318,19 @@ export default function DailyPracticeSummaryPage() {
     return `${formatDateDMY(startDate)} – ${formatDateDMY(endDate)}`;
   };
 
+  // Calculate duration in days
+  const durationDays = useMemo(() => {
+    try {
+      const d1 = new Date(startDate);
+      const d2 = new Date(endDate);
+      const diffTime = Math.abs(d2.getTime() - d1.getTime());
+      const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24)) + 1;
+      return Math.max(1, diffDays);
+    } catch (_) {
+      return 1;
+    }
+  }, [startDate, endDate]);
+
   const selectedBatchName = selectedBatchId === 'all' 
     ? 'All Batches' 
     : batches.find(b => b.id === selectedBatchId)?.name || 'Selected Batch';
@@ -216,10 +365,11 @@ export default function DailyPracticeSummaryPage() {
   // Students who did not practice in this duration BUT HAVE ALREADY PRACTICED ON ALL ASSIGNED TOPICS!
   // "check if students have practiced on every topic assigned .. then they should be marked differently as they do not have anything to practice in that duration"
   const fullyCoveredInactiveList = useMemo(() => {
-    return inactiveList.filter(s => 
-      s.hasPracticedAllAssigned === true || 
-      (typeof s.totalAssignedTopics === 'number' && s.totalAssignedTopics > 0 && (s.unattemptedTopicsCount === 0 || (s.coveragePercent || 0) >= 100))
-    );
+    return inactiveList.filter(s => {
+      const total = s.totalAssignedTopics || 0;
+      const attempted = s.topicsAttemptedCount || 0;
+      return total > 0 && attempted >= total;
+    });
   }, [inactiveList]);
 
   // Students who did not practice in this duration AND STILL HAVE UNATTEMPTED/PENDING TOPICS TO PRACTICE!
@@ -318,21 +468,12 @@ export default function DailyPracticeSummaryPage() {
         const displayName = formatReportStudentName(s.name);
         const rowBg = idx % 2 === 0 ? '#ffffff' : '#f8fafc';
 
-        let remarkHtml = '';
-        if (s.hasPracticedAllAssigned) {
-          remarkHtml = `<span style="display:inline-block; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 800; background: #dcfce7; color: #14532d; border: 1.5px solid #86efac; white-space: nowrap;">✨ All Topics Done</span>`;
-        } else if (s.avgAccuracy >= 90) {
-          remarkHtml = `<span style="display:inline-block; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 800; background: #dcfce7; color: #14532d; border: 1.5px solid #86efac; white-space: nowrap;">🌟 Outstanding</span>`;
-        } else if (s.avgAccuracy >= 75) {
-          remarkHtml = `<span style="display:inline-block; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 800; background: #e0f2fe; color: #0369a1; border: 1.5px solid #7dd3fc; white-space: nowrap;">✅ Strong</span>`;
-        } else if (s.avgAccuracy >= 50) {
-          remarkHtml = `<span style="display:inline-block; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 800; background: #fef9c3; color: #854d0e; border: 1.5px solid #fde047; white-space: nowrap;">🟡 Moderate</span>`;
-        } else {
-          remarkHtml = `<span style="display:inline-block; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 800; background: #fee2e2; color: #991b1b; border: 1.5px solid #fca5a5; white-space: nowrap;">⚠️ Needs Practice</span>`;
-        }
+        const evalResult = evaluateStudentPracticeRemark(s, durationDays);
+        const remarkHtml = `<span style="display:inline-block; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 800; background: ${evalResult.bg}; color: ${evalResult.color}; border: ${evalResult.border || 'none'}; white-space: nowrap;">${evalResult.text}</span>`;
 
+        const pendingTopics = s.totalAssignedTopics ? Math.max(0, s.totalAssignedTopics - (s.topicsAttemptedCount || 0)) : 0;
         const topicCoverageChip = s.totalAssignedTopics 
-          ? `<span style="font-size: 11px; font-weight: 700; color: #475569;">${s.topicsAttemptedCount || 0}/${s.totalAssignedTopics}</span>`
+          ? `<span style="font-size: 11px; font-weight: 700; color: #475569;">${s.topicsAttemptedCount || 0}/${s.totalAssignedTopics}${pendingTopics > 0 ? ` <span style="font-size: 9.5px; color: #dc2626; font-weight: 800;">(${pendingTopics} pend)</span>` : ''}</span>`
           : '—';
 
         return `
@@ -978,18 +1119,8 @@ export default function DailyPracticeSummaryPage() {
                     </tr>
                   ) : (
                     sortedActiveStudents.map((row, idx) => {
-                      let remarkBadge = null;
-                      if (row.hasPracticedAllAssigned) {
-                        remarkBadge = <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 800, background: '#dcfce7', color: '#14532d', border: '1px solid #86efac' }}>✨ All Topics Done</span>;
-                      } else if (row.avgAccuracy >= 90) {
-                        remarkBadge = <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 800, background: '#dcfce7', color: '#14532d' }}>🌟 Outstanding</span>;
-                      } else if (row.avgAccuracy >= 75) {
-                        remarkBadge = <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 800, background: '#e0f2fe', color: '#0369a1' }}>✅ Strong</span>;
-                      } else if (row.avgAccuracy >= 50) {
-                        remarkBadge = <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 800, background: '#fef9c3', color: '#854d0e' }}>🟡 Moderate</span>;
-                      } else {
-                        remarkBadge = <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 800, background: '#fee2e2', color: '#991b1b' }}>⚠️ Needs Practice</span>;
-                      }
+                      const evalResult = evaluateStudentPracticeRemark(row, durationDays);
+                      const pendingTopics = row.totalAssignedTopics ? Math.max(0, row.totalAssignedTopics - (row.topicsAttemptedCount || 0)) : 0;
 
                       return (
                         <tr 
@@ -1007,17 +1138,28 @@ export default function DailyPracticeSummaryPage() {
                           </td>
                           <td style={{ padding: '10px 14px', textAlign: 'center' }}>
                             {row.totalAssignedTopics ? (
-                              <span style={{ 
-                                fontSize: '11.5px', 
-                                fontWeight: 700, 
-                                padding: '2px 6px',
-                                borderRadius: '4px',
-                                background: row.hasPracticedAllAssigned ? '#dcfce7' : 'var(--bg-soft)',
-                                color: row.hasPracticedAllAssigned ? '#14532d' : 'var(--text-muted)',
-                                border: '1px solid ' + (row.hasPracticedAllAssigned ? '#86efac' : 'var(--border-light)')
-                              }}>
-                                {row.topicsAttemptedCount || 0} / {row.totalAssignedTopics}
-                              </span>
+                              <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
+                                <span style={{ 
+                                  fontSize: '11.5px', 
+                                  fontWeight: 800, 
+                                  padding: '2px 8px',
+                                  borderRadius: '4px',
+                                  background: (row.topicsAttemptedCount || 0) >= row.totalAssignedTopics ? '#dcfce7' : 'var(--bg-soft)',
+                                  color: (row.topicsAttemptedCount || 0) >= row.totalAssignedTopics ? '#14532d' : 'var(--text)',
+                                  border: '1px solid ' + ((row.topicsAttemptedCount || 0) >= row.totalAssignedTopics ? '#86efac' : 'var(--border-light)')
+                                }}>
+                                  {row.topicsAttemptedCount || 0} / {row.totalAssignedTopics}
+                                </span>
+                                {pendingTopics > 0 ? (
+                                  <span style={{ fontSize: '10px', fontWeight: 800, color: 'var(--danger, #ef4444)' }}>
+                                    {pendingTopics} pending
+                                  </span>
+                                ) : (
+                                  <span style={{ fontSize: '10px', fontWeight: 800, color: '#16a34a' }}>
+                                    100% Covered
+                                  </span>
+                                )}
+                              </div>
                             ) : (
                               <span style={{ color: 'var(--text-muted)' }}>—</span>
                             )}
@@ -1046,7 +1188,19 @@ export default function DailyPracticeSummaryPage() {
                             {formatTimeSpent(row.totalTimeSpent)}
                           </td>
                           <td style={{ padding: '10px 14px', textAlign: 'center' }}>
-                            {remarkBadge}
+                            <span style={{ 
+                              display: 'inline-block', 
+                              padding: '3px 8px', 
+                              borderRadius: '6px', 
+                              fontSize: '11px', 
+                              fontWeight: 800, 
+                              background: evalResult.bg, 
+                              color: evalResult.color, 
+                              border: evalResult.border || 'none',
+                              whiteSpace: 'nowrap'
+                            }}>
+                              {evalResult.text}
+                            </span>
                           </td>
                         </tr>
                       );
