@@ -1004,8 +1004,9 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
     // 7.9 Fetch Needs Attention & SRS Due topics for action items card
     let needsAttentionTopicsList: any[] = [];
     let srsDueTopicsList: any[] = [];
+    let learningData: any = null;
     try {
-      const learningData = await getStudentLearningData(userData, {
+      learningData = await getStudentLearningData(userData, {
         masterySnaps: masterySnapshot,
         parentReviewsSnap: parentReviewsSnapshot,
         reviewsSnap: reviewsSnapshot,
@@ -1023,6 +1024,16 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
     } catch (e) {
       console.warn('Failed to load learning data for dashboard:', e);
     }
+
+    const focusZeros = (learningData?.needsAttention || []).filter((t: any) => (t.practiceCount || 0) === 0).length;
+    const practiceZeros = (learningData?.continuePractice || []).filter((t: any) => (t.practiceCount || 0) === 0).length;
+    const practiceSummary = {
+      zeroPracticeCount: focusZeros + practiceZeros,
+      pendingTopicsCount: (learningData?.needsAttention || []).length + (learningData?.continuePractice || []).length,
+      focusCount: (learningData?.needsAttention || []).length,
+      continuePracticeCount: (learningData?.continuePractice || []).length,
+      masteredCount: (learningData?.mastered || []).length
+    };
 
     // 7.10 Fetch pending self-reflection reviews (exams needing student mistake review)
     const pendingSelfReviewsList: any[] = [];
@@ -1063,6 +1074,7 @@ export async function getDashboardData(uid: string, userData: any, rangeDays: nu
         profile,
         resultsSummary,
         needsAttention: needsAttentionTopicsList,
+        practiceSummary,
         srsDueTopics: srsDueTopicsList,
         pendingSelfReviews: pendingSelfReviewsList,
         pendingAbsences: pendingAbsencesList,

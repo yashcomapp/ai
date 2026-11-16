@@ -411,18 +411,23 @@ export default function DailyPracticeSummaryPage() {
   const avgBatchIntegrity = totalPracticedCount > 0 ? parseFloat((sumHonesty / totalPracticedCount).toFixed(1)) : 100;
 
   const getLockTag = (student: StudentSummary) => {
-    if (student.isAutonomous) {
-      return <span style={{ color: 'var(--warning)', fontSize: '11px', fontWeight: 800 }}>🤖 Autonomous</span>;
-    }
-    if (student.activeLocks && student.activeLocks.length > 0) {
-      const lock = student.activeLocks[0];
-      const code = lock.split(':')[0] || 'Topic';
-      const type = lock.includes('Daily') ? 'Daily' : 'Cooldown';
+    const hasLocks = student.activeLocks && student.activeLocks.length > 0;
+    const lockCount = student.activeLocks ? student.activeLocks.length : 0;
+    if (hasLocks) {
+      const firstLock = student.activeLocks[0];
+      const parts = firstLock.split(':');
+      const code = parts[0] || 'Topic';
+      const type = firstLock.includes('Quota') ? 'Quota' : (firstLock.includes('Daily') ? 'Daily' : 'Cooldown');
+      const label = lockCount > 1 ? `🔒 ${lockCount} Locked` : `🔒 ${type} (${code})`;
       return (
-        <span style={{ color: 'var(--error)', fontSize: '11px', fontWeight: 800 }} title={student.activeLocks.join(', ')}>
-          🔒 {type} ({code})
+        <span style={{ color: '#ef4444', fontSize: '11px', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '4px' }} title={student.activeLocks.join(', ')}>
+          {label}
+          {student.isAutonomous && <span style={{ color: 'var(--warning)', fontSize: '10px' }}>(Auto)</span>}
         </span>
       );
+    }
+    if (student.isAutonomous) {
+      return <span style={{ color: 'var(--warning)', fontSize: '11px', fontWeight: 800 }}>🤖 Autonomous</span>;
     }
     return null;
   };

@@ -579,7 +579,7 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
                     }}>
                       {(t.topicClassification === 'minor' || t.topicClassification === 'micro') && '📘 Minor (6 Qs to Master • Max 2 Sets)'}
                       {(t.topicClassification === 'medium' || t.topicClassification === 'moderate' || t.topicClassification === 'conceptual') && '📙 Medium (10 Qs to Master • Max 3 Sets)'}
-                      {(t.topicClassification === 'major' || t.topicClassification === 'calculative' || t.topicClassification === 'hots') && '📕 Major (15 Qs to Master • Max 3 Sets)'}
+                      {(t.topicClassification === 'major' || t.topicClassification === 'calculative' || t.topicClassification === 'hots') && '📕 Major (15 Qs to Master • Max 4 Sets)'}
                     </span>
                   </>
                 )}
@@ -767,6 +767,42 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
                   {hasActionItems && (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                       {allActionItems.slice(0, 3).map(item => renderActionItem(item, false))}
+                    </div>
+                  )}
+
+                  {/* ZERO PRACTICE CALLOUT BANNER */}
+                  {((data as any)?.practiceSummary?.zeroPracticeCount || 0) > 0 && (
+                    <div 
+                      onClick={() => { triggerNavStart(); router.push('/student/learning'); }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '8px 12px',
+                        marginTop: '6px',
+                        marginBottom: '4px',
+                        background: 'rgba(239, 68, 68, 0.08)',
+                        border: '1px solid rgba(239, 68, 68, 0.25)',
+                        borderRadius: 'var(--radius-sm)',
+                        cursor: 'pointer',
+                        gap: '8px'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '14px' }}>📚</span>
+                        <div style={{ fontSize: '11.5px', color: 'var(--text)' }}>
+                          <span style={{ fontWeight: 800, color: '#ef4444' }}>
+                            {(data as any).practiceSummary.zeroPracticeCount} Topics
+                          </span>
+                          {' have 0 practice sets completed '}
+                          <span style={{ color: 'var(--text-muted)', fontSize: '10.5px' }}>
+                            ({((data as any).practiceSummary.focusCount || 0)} Critical Focus + {Math.max(0, (data as any).practiceSummary.zeroPracticeCount - ((data as any).practiceSummary.focusCount || 0))} In Syllabus)
+                          </span>
+                        </div>
+                      </div>
+                      <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--accent)', display: 'inline-flex', alignItems: 'center', gap: '2px', whiteSpace: 'nowrap' }}>
+                        Practice Now →
+                      </span>
                     </div>
                   )}
 

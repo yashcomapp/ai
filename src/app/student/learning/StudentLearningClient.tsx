@@ -63,6 +63,13 @@ interface LearningPathData {
   mastered: StudentLearningTopicItem[];
 }
 
+const getMaxTopicPractices = (topic: any): number => {
+  const cls = (topic?.topicClassification || 'minor').toLowerCase();
+  if (cls === 'major' || cls === 'calculative' || cls === 'hots') return 4;
+  if (cls === 'medium' || cls === 'moderate' || cls === 'conceptual') return 3;
+  return 2;
+};
+
 export default function StudentLearning({ initialData }: { initialData?: LearningPathData }) {
   const { firebaseUser, user } = useAuth();
   const router = useRouter();
@@ -142,6 +149,7 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
   }, [data]);
 
   const [activeTab, setActiveTab] = useState<'needsAttention' | 'continuePractice' | 'mastered'>('needsAttention');
+  const [practiceSubFilter, setPracticeSubFilter] = useState<'all' | 'zero' | 'in_progress' | 'locked'>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [alertMsg, setAlertMsg] = useState<{ text: string; isError: boolean } | null>(null);
 
@@ -199,6 +207,36 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
     toggleChapterSet(`${subjectName}||${chapterName}`);
   };
 
+    const practiceBreakdown = useMemo(() => {
+    const list = data?.continuePractice || [];
+    let zero = 0;
+    let inProgress = 0;
+    let locked = 0;
+    list.forEach(t => {
+      const maxP = getMaxTopicPractices(t);
+      const pCount = t.practiceCount || 0;
+      if (pCount === 0) zero++;
+      else if (pCount >= maxP) locked++;
+      else inProgress++;
+    });
+    return { zero, inProgress, locked, total: list.length };
+  }, [data?.continuePractice]);
+
+  const focusBreakdown = useMemo(() => {
+    const list = data?.needsAttention || [];
+    let zero = 0;
+    let inProgress = 0;
+    let locked = 0;
+    list.forEach(t => {
+      const maxP = getMaxTopicPractices(t);
+      const pCount = t.practiceCount || 0;
+      if (pCount === 0) zero++;
+      else if (pCount >= maxP) locked++;
+      else inProgress++;
+    });
+    return { zero, inProgress, locked, total: list.length };
+  }, [data?.needsAttention]);
+
   const deferredSearchTerm = useDeferredValue(searchTerm);
 
   // Filter topics based on active tab and search query
@@ -209,6 +247,16 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
         list = data.needsAttention || [];
       } else if (activeTab === 'continuePractice') {
         list = data.continuePractice || [];
+        if (practiceSubFilter !== 'all') {
+          list = list.filter(t => {
+            const maxP = getMaxTopicPractices(t);
+            const pCount = t.practiceCount || 0;
+            if (practiceSubFilter === 'zero') return pCount === 0;
+            if (practiceSubFilter === 'in_progress') return pCount > 0 && pCount < maxP;
+            if (practiceSubFilter === 'locked') return pCount >= maxP;
+            return true;
+          });
+        }
       } else if (activeTab === 'mastered') {
         list = data.mastered || [];
       }
@@ -250,7 +298,7 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
     const sortedSubjs = Array.from(grp.keys()).sort((a, b) => getSubjMastery(a) - getSubjMastery(b));
 
     return { grouped: grp, sortedSubjects: sortedSubjs, topicsList: list };
-  }, [data, activeTab, deferredSearchTerm]);
+  }, [data, activeTab, practiceSubFilter, deferredSearchTerm]);
 
   if (user && (user as any).autonomous) {
     return (
@@ -533,9 +581,28 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                       </span>
                     </div>
                     <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                      {isAllExhausted 
-                        ? 'Student has completed and mastered 100% of the syllabus pool tested so far. Next practice unlocks with upcoming exams.'
-                        : `${practiceCount + focusCount} topic(s) currently open for practice and concept elevation.`}
+                      {isAllExhausted ? (
+                        'Student has completed and mastered 100% of the syllabus pool tested so far. Next practice unlocks with upcoming exams.'
+                      ) : (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                          <span>{practiceCount + focusCount} topic(s) open for practice:</span>
+                          <span style={{ color: '#ef4444', fontWeight: 800 }}>
+                            {focusBreakdown.zero + practiceBreakdown.zero} pending zero practice
+                          </span>
+                          <span>•</span>
+                          <span style={{ color: '#f59e0b', fontWeight: 700 }}>
+                            {focusBreakdown.inProgress + practiceBreakdown.inProgress} in progress
+                          </span>
+                          {(focusBreakdown.locked + practiceBreakdown.locked) > 0 && (
+                            <>
+                              <span>•</span>
+                              <span style={{ color: 'var(--text-muted)', fontWeight: 700 }}>
+                                {focusBreakdown.locked + practiceBreakdown.locked} quota locked
+                              </span>
+                            </>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div style={{ width: '120px', height: '6px', background: 'var(--surface-2)', borderRadius: '3px', overflow: 'hidden' }}>
@@ -557,6 +624,81 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                 🏆 Mastered <span className="tab-count">{data ? data.mastered.length : 0}</span>
               </button>
             </div>
+
+            {/* Practice Sub-filters for Zero Practice / In-Progress / Locked */}
+            {activeTab === 'continuePractice' && (
+              <div style={{ display: 'flex', gap: '6px', marginBottom: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
+                <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginRight: '4px' }}>
+                  Filter:
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setPracticeSubFilter('all')}
+                  style={{
+                    padding: '3px 10px',
+                    borderRadius: '20px',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    border: '1px solid ' + (practiceSubFilter === 'all' ? 'var(--accent)' : 'var(--border-light)'),
+                    background: practiceSubFilter === 'all' ? 'var(--accent)' : 'var(--bg-soft)',
+                    color: practiceSubFilter === 'all' ? '#ffffff' : 'var(--text-muted)',
+                    cursor: 'pointer'
+                  }}
+                >
+                  All Practice ({practiceBreakdown.total})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPracticeSubFilter('zero')}
+                  style={{
+                    padding: '3px 10px',
+                    borderRadius: '20px',
+                    fontSize: '11px',
+                    fontWeight: 800,
+                    border: '1px solid ' + (practiceSubFilter === 'zero' ? '#ef4444' : 'var(--border-light)'),
+                    background: practiceSubFilter === 'zero' ? 'rgba(239, 68, 68, 0.18)' : 'var(--bg-soft)',
+                    color: practiceSubFilter === 'zero' ? '#ef4444' : 'var(--text-muted)',
+                    cursor: 'pointer'
+                  }}
+                >
+                  🔴 Zero Practice ({practiceBreakdown.zero})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPracticeSubFilter('in_progress')}
+                  style={{
+                    padding: '3px 10px',
+                    borderRadius: '20px',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    border: '1px solid ' + (practiceSubFilter === 'in_progress' ? '#f59e0b' : 'var(--border-light)'),
+                    background: practiceSubFilter === 'in_progress' ? 'rgba(245, 158, 11, 0.18)' : 'var(--bg-soft)',
+                    color: practiceSubFilter === 'in_progress' ? '#f59e0b' : 'var(--text-muted)',
+                    cursor: 'pointer'
+                  }}
+                >
+                  🟡 In Progress ({practiceBreakdown.inProgress})
+                </button>
+                {practiceBreakdown.locked > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setPracticeSubFilter('locked')}
+                    style={{
+                      padding: '3px 10px',
+                      borderRadius: '20px',
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      border: '1px solid ' + (practiceSubFilter === 'locked' ? '#94a3b8' : 'var(--border-light)'),
+                      background: practiceSubFilter === 'locked' ? 'rgba(148, 163, 184, 0.25)' : 'var(--bg-soft)',
+                      color: practiceSubFilter === 'locked' ? 'var(--text)' : 'var(--text-muted)',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    🔒 Quota Locked ({practiceBreakdown.locked})
+                  </button>
+                )}
+              </div>
+            )}
           </>
         )}
 
@@ -754,14 +896,14 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                                            let expText = '';
                                            const practiceCount = topic.practiceCount || 0;
                                            const reqConf = topic.requiredConfidence || getRequiredConfidence(topic.topicClassification, topic.targetQuestions);
-                                           const maxPractices = 2; // Fixed 2 practice tests per topic
+                                           const maxPractices = getMaxTopicPractices(topic);
                                            const isLimitReached = practiceCount >= maxPractices;
 
                                            if (state === 'needsAttention') {
                                              if (isLimitReached) {
                                                expIcon = '🔒';
                                                expColor = 'var(--text-muted)';
-                                               expText = `2/2 practices done (${mastery}% accuracy). Practice limit reached.`;
+                                               expText = `${practiceCount}/${maxPractices} practices done (${mastery}% accuracy). Quota limit reached. Consult teacher for re-teaching or unlock.`;
                                              } else if (isAbsent) {
                                                expIcon = '⚠️';
                                                expColor = 'var(--danger)';
@@ -769,7 +911,7 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                                              } else if (attempts === 0) {
                                                expIcon = '⚪';
                                                expColor = 'var(--text-muted)';
-                                               expText = 'Not attempted yet. Start 1st practice to assess concept baseline.';
+                                               expText = `Never practiced yet (0/${maxPractices} sets). Start 1st practice to assess concept baseline.`;
                                              } else {
                                                expIcon = '🚨';
                                                expColor = 'var(--danger)';
@@ -805,7 +947,9 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
 
                                           const reqMasteryQs = topic.requiredConfidence || getRequiredConfidence(topic.topicClassification, topic.targetQuestions);
 
-                                          let btnLabel = isLimitReached && !isMasteredState ? '🔒 2/2 Sets Done' : actionText;
+                                          let btnLabel = isLimitReached && !isMasteredState 
+                                              ? `🔒 Quota Used (${practiceCount}/${maxPractices})` 
+                                              : (practiceCount === 0 ? 'Start 1st Practice →' : `Practice Set ${practiceCount + 1} →`);
 
                                           return (
                                             <tr 
@@ -896,13 +1040,23 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                                                    </span>
                                                  ) : (
                                                     <>
-                                                      {topic.practiceCount}/{maxPractices} practices
+                                                      <div style={{
+                                                        fontSize: '11px',
+                                                        fontWeight: 700,
+                                                        color: isLimitReached ? 'var(--text-muted)' : (practiceCount === 0 ? '#ef4444' : 'var(--text)')
+                                                      }}>
+                                                        {practiceCount === 0 ? `🔴 0/${maxPractices} sets` : `${practiceCount}/${maxPractices} practices`}
+                                                      </div>
                                                       <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
                                                         {state === 'mastered'
                                                           ? 'Concept certified'
-                                                          : mastery >= 80
-                                                            ? `${mastery}% → 90% (${Math.max(1, reqMasteryQs - topic.attempts)} more Qs)`
-                                                            : `(${topic.attempts} / ${reqMasteryQs} to Master)`}
+                                                          : isLimitReached
+                                                            ? '🔒 Quota exhausted'
+                                                            : practiceCount === 0
+                                                              ? 'Never practiced'
+                                                              : mastery >= 80
+                                                                ? `${mastery}% → 90% (${Math.max(1, reqMasteryQs - topic.attempts)} more Qs)`
+                                                                : `(${topic.attempts} / ${reqMasteryQs} to Master)`}
                                                       </div>
                                                     </>
                                                  )}
@@ -923,23 +1077,38 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                                                   }}>
                                                     ✓ Mastered
                                                   </span>
-                                                ) : (
-                                                  <button 
-                                                    onClick={() => router.push(targetUrl)}
-                                                    style={{ 
-                                                      padding: '4px 12px', 
-                                                      borderRadius: '30px', 
+                                                ) : isLimitReached ? (
+                                                    <span style={{ 
+                                                      padding: '4px 10px', 
+                                                      borderRadius: '20px', 
                                                       fontSize: '10px', 
-                                                      fontWeight: 600, 
-                                                      border: 'none', 
-                                                      background: 'var(--accent-grad)', 
-                                                      color: 'white', 
-                                                      cursor: 'pointer' 
-                                                    }}
-                                                  >
-                                                    {btnLabel}
-                                                  </button>
-                                                )}
+                                                      fontWeight: 700, 
+                                                      background: 'rgba(148, 163, 184, 0.15)', 
+                                                      color: 'var(--text-muted)',
+                                                      border: '1px solid var(--border-light)',
+                                                      display: 'inline-flex',
+                                                      alignItems: 'center',
+                                                      gap: '3px'
+                                                    }}>
+                                                      🔒 Locked ({practiceCount}/{maxPractices})
+                                                    </span>
+                                                  ) : (
+                                                    <button 
+                                                      onClick={() => router.push(targetUrl)}
+                                                      style={{ 
+                                                        padding: '4px 12px', 
+                                                        borderRadius: '30px', 
+                                                        fontSize: '10px', 
+                                                        fontWeight: 600, 
+                                                        border: 'none', 
+                                                        background: practiceCount === 0 ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)' : 'var(--accent-grad)', 
+                                                        color: 'white', 
+                                                        cursor: 'pointer' 
+                                                      }}
+                                                    >
+                                                      {btnLabel}
+                                                    </button>
+                                                  )}
                                               </td>
                                             </tr>
                                           );

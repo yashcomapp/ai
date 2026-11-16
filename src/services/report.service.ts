@@ -321,6 +321,13 @@ export class ReportService {
       if (cooldownUntil && cooldownUntil > now) {
         locksByStudent[studentCode].push(`${topicCode}: Cooldown Lock`);
       }
+      const classification = (data.topicClassification || 'minor').toLowerCase();
+      const maxPractices = (classification === 'major' || classification === 'calculative' || classification === 'hots') ? 4 : (classification === 'medium' || classification === 'moderate' || classification === 'conceptual') ? 3 : 2;
+      const pCount = Number(data.practiceSessionsCount || data.practiceCount || 0);
+      const masteryVal = Number(data.mastery || data.masteryScore || 0);
+      if (pCount >= maxPractices && masteryVal < 90) {
+        locksByStudent[studentCode].push(`${topicCode}: Quota Locked (${pCount}/${maxPractices})`);
+      }
     }
 
     // Resolve Topic Assignment & Completion Metrics via SSOT
