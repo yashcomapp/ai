@@ -6,6 +6,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { formatDateDMY, getDateKeyIST } from '@/lib/dateUtils';
 import { loadHtml2Canvas, formatReportStudentName, getScoreChip } from '@/lib/lqCardExport';
+import { playNotificationSound } from '@/lib/audioUtils';
 
 interface StudentSummary {
   studentCode: string;
@@ -188,6 +189,7 @@ export default function DailyPracticeSummaryPage() {
   const [sortField, setSortField] = useState<keyof StudentSummary>('name');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [exportingImage, setExportingImage] = useState(false);
+  const [copiedRecently, setCopiedRecently] = useState(false);
 
   // Client-side authentication check
   useEffect(() => {
@@ -613,11 +615,44 @@ export default function DailyPracticeSummaryPage() {
 
       document.body.removeChild(container);
 
-      const link = document.createElement('a');
+      const blob: Blob = await new Promise((resolve, reject) => {
+        canvas.toBlob((b: Blob | null) => {
+          if (b) resolve(b);
+          else reject(new Error('Failed to generate image blob from canvas.'));
+        }, 'image/png');
+      });
+
       const cleanBatch = selectedBatchName.replace(/[^a-zA-Z0-9_-]/g, '_');
-      link.download = `Practice_Track_${cleanBatch}_${startDate}_to_${endDate}.png`;
-      link.href = canvas.toDataURL('image/png');
+      const fileName = `Practice_Track_${cleanBatch}_${startDate}_to_${endDate}.png`;
+      const imageUri = canvas.toDataURL('image/png');
+
+      let copiedToClipboard = false;
+      if (typeof navigator !== 'undefined' && navigator.clipboard && typeof ClipboardItem !== 'undefined') {
+        try {
+          await navigator.clipboard.write([
+            new ClipboardItem({ 'image/png': blob })
+          ]);
+          copiedToClipboard = true;
+        } catch (clipErr) {
+          console.warn('Clipboard image write failed:', clipErr);
+        }
+      }
+
+      // Also trigger file download as permanent artifact
+      const link = document.createElement('a');
+      link.download = fileName;
+      link.href = imageUri;
       link.click();
+
+      playNotificationSound();
+
+      if (copiedToClipboard) {
+        setCopiedRecently(true);
+        setTimeout(() => setCopiedRecently(false), 4000);
+        alert(`✅ WhatsApp Report Card Copied & Downloaded!\n\n1. Copied to Clipboard! You can directly press Ctrl + V in WhatsApp Web.\n2. Also downloaded as ${fileName}`);
+      } else {
+        alert(`✅ WhatsApp Report Card downloaded as ${fileName}!\n(Note: Direct clipboard image access was blocked by browser permissions, but the image file was downloaded to your computer).`);
+      }
     } catch (err: any) {
       console.error('Error generating WhatsApp export:', err);
       alert('Failed to generate export card: ' + (err.message || 'Unknown error'));
@@ -765,16 +800,21 @@ export default function DailyPracticeSummaryPage() {
                 fontSize: '12.5px', 
                 fontWeight: 700, 
                 padding: '7px 16px',
-                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                background: copiedRecently 
+                  ? 'linear-gradient(135deg, #059669 0%, #047857 100%)' 
+                  : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
                 color: '#ffffff',
                 border: 'none',
                 borderRadius: 'var(--radius-sm, 6px)',
                 cursor: (exportingImage || loading) ? 'wait' : 'pointer',
-                boxShadow: '0 2px 8px rgba(16, 185, 129, 0.3)'
+                boxShadow: copiedRecently 
+                  ? '0 2px 10px rgba(5, 150, 105, 0.5)' 
+                  : '0 2px 8px rgba(16, 185, 129, 0.3)',
+                transition: 'all 0.2s ease'
               }}
-              title="Export lossless card optimized for WhatsApp sharing"
+              title="Copy lossless card to clipboard and download for WhatsApp sharing"
             >
-              {exportingImage ? '⏳ Generating Card...' : '📸 WhatsApp Report Card'}
+              {exportingImage ? '⏳ Generating Card...' : copiedRecently ? '📋 Copied to Clipboard!' : '📸 WhatsApp Report Card'}
             </button>
           </div>
         </div>
