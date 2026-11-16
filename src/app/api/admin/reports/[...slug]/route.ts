@@ -45,10 +45,23 @@ async function handleDailyPractice(req: NextRequest) {
 
   const { searchParams } = new URL(req.url);
   const dateParam = searchParams.get('date');
+  const startDateParam = searchParams.get('startDate');
+  const endDateParam = searchParams.get('endDate');
   const refresh = searchParams.get('refresh') === 'true';
-  const targetDateStr = dateParam || getDateKeyIST();
 
-  const cacheKey = `admin_report_daily_practice_${targetDateStr}`;
+  let startDate = startDateParam || '';
+  let endDate = endDateParam || '';
+
+  if (!startDate && !endDate) {
+    startDate = dateParam || getDateKeyIST();
+    endDate = startDate;
+  } else if (startDate && !endDate) {
+    endDate = startDate;
+  } else if (!startDate && endDate) {
+    startDate = endDate;
+  }
+
+  const cacheKey = `admin_report_daily_practice_${startDate}_${endDate}`;
   if (!refresh) {
     const cached = getFromCache<any>(cacheKey);
     if (cached) {
@@ -56,7 +69,11 @@ async function handleDailyPractice(req: NextRequest) {
     }
   }
 
-  const report = await ReportService.getDailyPracticeReport(targetDateStr, refresh);
+  const report = await ReportService.getDailyPracticeReport({
+    startDate: startDate || getDateKeyIST(),
+    endDate: endDate || startDate || getDateKeyIST(),
+    forceRefresh: refresh
+  });
   setInCache(cacheKey, report, STANDARD_REPORT_TTL_MS);
   return NextResponse.json(report, { headers: REPORT_CACHE_HEADERS });
 }

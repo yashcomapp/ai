@@ -70,6 +70,7 @@ const ADMIN_SUBMENUS: { [key: string]: SubmenuItem[] } = {
   ],
   reports: [
     { icon: '⚡', en: 'Intervention Queue', url: '/admin/reports' },
+    { icon: '📝', en: 'Practice Track Report', url: '/admin/reports/daily-practice' },
     { icon: '🎯', en: 'Topic Remediation', url: '/admin/reports/remediation' },
     { icon: '📊', en: 'Learning Quotient (LQ)', url: '/admin/reports/learning-quotient' },
     { icon: '🛡️', en: 'System Health & Audit', url: '/admin/reports/usage' }

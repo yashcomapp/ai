@@ -183,17 +183,35 @@ export class ReportService {
 
   /**
    * Daily Practice Report with IST day boundaries and caching.
+   * Supports both single date and date range / duration queries.
    */
-  static async getDailyPracticeReport(targetDateStr: string = getDateKeyIST(), forceRefresh: boolean = false) {
-    const cacheKey = `daily-practice-report-${targetDateStr}`;
+  static async getDailyPracticeReport(
+    targetDateOrParams: string | { startDate?: string; endDate?: string; targetDateStr?: string; forceRefresh?: boolean } = getDateKeyIST(),
+    forceRefreshParam: boolean = false
+  ) {
+    let startDateStr: string;
+    let endDateStr: string;
+    let forceRefresh: boolean;
+
+    if (typeof targetDateOrParams === 'string') {
+      startDateStr = targetDateOrParams;
+      endDateStr = targetDateOrParams;
+      forceRefresh = forceRefreshParam;
+    } else {
+      startDateStr = targetDateOrParams.startDate || targetDateOrParams.targetDateStr || getDateKeyIST();
+      endDateStr = targetDateOrParams.endDate || startDateStr;
+      forceRefresh = targetDateOrParams.forceRefresh || forceRefreshParam;
+    }
+
+    const startOfRange = new Date(`${startDateStr}T00:00:00+05:30`);
+    const endOfRange = new Date(`${endDateStr}T23:59:59.999+05:30`);
+    const now = new Date();
+
+    const cacheKey = `daily-practice-report-${startDateStr}_${endDateStr}`;
     if (!forceRefresh) {
       const cached = await ReportCacheManager.getReport<any>(cacheKey);
       if (cached) return cached;
     }
-
-    const startOfISTDay = new Date(`${targetDateStr}T00:00:00+05:30`);
-    const endOfISTDay = new Date(`${targetDateStr}T23:59:59.999+05:30`);
-    const now = new Date();
 
     const [studentsSnap, batchesSnap, rawReviewsSnap, masterySnap] = await Promise.all([
       adminDb.collection('users')
@@ -202,8 +220,8 @@ export class ReportService {
         .get(),
       getCachedBatches(),
       adminDb.collection('parentReviews')
-        .where('createdAt', '>=', startOfISTDay)
-        .where('createdAt', '<=', endOfISTDay)
+        .where('createdAt', '>=', startOfRange)
+        .where('createdAt', '<=', endOfRange)
         .select(
           'studentCode',
           'type',
@@ -305,6 +323,19 @@ export class ReportService {
       }
     }
 
+    // Resolve Topic Assignment & Completion Metrics via SSOT
+    const studentCodes = activeStudents.map(s => s.studentCode);
+    const bulkLqCacheKey = `bulk-learning-quotients-v2-report-all`;
+    let quotientsMap = await ReportCacheManager.getReport<Record<string, any>>(bulkLqCacheKey);
+    if (!quotientsMap && studentCodes.length > 0) {
+      try {
+        quotientsMap = await QuotientService.calculateBulkQuotients(studentCodes, 'all');
+        await ReportCacheManager.setReport(bulkLqCacheKey, quotientsMap, 1800);
+      } catch (err) {
+        console.warn('[ReportService.getDailyPracticeReport] Error fetching quotientsMap:', err);
+      }
+    }
+
     const studentSummaries = activeStudents.map(student => {
       const studentCode = student.studentCode;
       const sessions = practiceSessionsByStudent[studentCode] || [];
@@ -340,6 +371,19 @@ export class ReportService {
       const avgHonesty = totalSessions > 0 ? parseFloat((totalHonesty / totalSessions).toFixed(1)) : 100;
       const avgMastery = totalSessions > 0 ? parseFloat((totalMastery / totalSessions).toFixed(1)) : 0;
 
+      const lqData = quotientsMap ? quotientsMap[studentCode] : null;
+      const topicHealth = lqData?.components?.find((c: any) => c.parameterId === 'topicHealth')?.details;
+      const practiceComp = lqData?.components?.find((c: any) => c.parameterId === 'practice')?.details;
+
+      const totalAssignedTopics = Number(topicHealth?.totalTopics ?? practiceComp?.totalAssignedTopics ?? 0);
+      const topicsAttemptedCount = Number(practiceComp?.topicsAttemptedCount ?? 0);
+      const unattemptedTopicsCount = Number(topicHealth?.unattemptedCount ?? Math.max(0, totalAssignedTopics - topicsAttemptedCount));
+      const masteredTopicsCount = Number(topicHealth?.masteredCount ?? 0);
+      const coveragePercent = Number(practiceComp?.coveragePercent ?? (totalAssignedTopics > 0 ? Math.round((topicsAttemptedCount / totalAssignedTopics) * 100) : 0));
+
+      const hasPracticedAllAssigned = totalAssignedTopics > 0 ? (unattemptedTopicsCount === 0 || coveragePercent >= 100) : false;
+      const allTopicsMastered = totalAssignedTopics > 0 ? (masteredTopicsCount >= totalAssignedTopics) : false;
+
       return {
         studentCode,
         name: student.name,
@@ -352,13 +396,23 @@ export class ReportService {
         avgHonesty,
         avgMastery,
         totalQuestions,
-        totalTimeSpent
+        totalTimeSpent,
+        totalAssignedTopics,
+        topicsAttemptedCount,
+        unattemptedTopicsCount,
+        masteredTopicsCount,
+        coveragePercent,
+        hasPracticedAllAssigned,
+        allTopicsMastered
       };
     });
 
     const result = {
       success: true,
-      date: targetDateStr,
+      startDate: startDateStr,
+      endDate: endDateStr,
+      date: startDateStr === endDateStr ? startDateStr : `${startDateStr} to ${endDateStr}`,
+      isRange: startDateStr !== endDateStr,
       batches,
       students: studentSummaries
     };
