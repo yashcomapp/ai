@@ -190,13 +190,6 @@ export default function DailyPracticeSummaryPage() {
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [exportingImage, setExportingImage] = useState(false);
   const [copiedRecently, setCopiedRecently] = useState(false);
-  const [exportModal, setExportModal] = useState<{
-    blob: Blob;
-    imageUri: string;
-    fileName: string;
-    copied: boolean;
-  } | null>(null);
-  const [modalCopySuccess, setModalCopySuccess] = useState(false);
 
   // Client-side authentication check
   useEffect(() => {
@@ -633,76 +626,54 @@ export default function DailyPracticeSummaryPage() {
       const fileName = `Practice_Track_${cleanBatch}_${startDate}_to_${endDate}.png`;
       const imageUri = canvas.toDataURL('image/png');
 
+      // 1. Copy lossless PNG to clipboard for instant Ctrl+V
       let copiedToClipboard = false;
       if (typeof navigator !== 'undefined' && navigator.clipboard && typeof ClipboardItem !== 'undefined') {
         try {
+          if (typeof window !== 'undefined' && window.focus) {
+            window.focus();
+          }
           await navigator.clipboard.write([
             new ClipboardItem({ 'image/png': blob })
           ]);
           copiedToClipboard = true;
         } catch (clipErr) {
-          console.warn('Direct clipboard write deferred to preview modal:', clipErr);
+          console.warn('Clipboard write attempt 1 failed, trying fallback:', clipErr);
+          try {
+            await navigator.clipboard.write([
+              new ClipboardItem({ 'image/png': Promise.resolve(blob) })
+            ]);
+            copiedToClipboard = true;
+          } catch (clipErr2) {
+            console.warn('Clipboard write fallback failed:', clipErr2);
+          }
         }
       }
+
+      // 2. Trigger lossless PNG download
+      const downloadLink = document.createElement('a');
+      downloadLink.download = fileName;
+      downloadLink.href = imageUri;
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      setTimeout(() => {
+        try { document.body.removeChild(downloadLink); } catch (_) {}
+      }, 100);
 
       playNotificationSound();
 
       if (copiedToClipboard) {
         setCopiedRecently(true);
         setTimeout(() => setCopiedRecently(false), 4000);
+        alert(`✅ WhatsApp Report Card Copied & Downloaded!\n\n1. Copied to Clipboard! You can directly press Ctrl + V in WhatsApp.\n2. Also downloaded as ${fileName}`);
+      } else {
+        alert(`✅ WhatsApp Report Card downloaded as ${fileName}!\n(Image downloaded to your computer for WhatsApp sharing).`);
       }
-
-      // Open Export Modal with high-visibility 1-click clipboard copy, instant download, and preview
-      setExportModal({
-        blob,
-        imageUri,
-        fileName,
-        copied: copiedToClipboard
-      });
-
     } catch (err: any) {
       console.error('Error generating WhatsApp export:', err);
       alert('Failed to generate export card: ' + (err.message || 'Unknown error'));
     } finally {
       setExportingImage(false);
-    }
-  };
-
-  const handleCopyFromModal = async () => {
-    if (!exportModal) return;
-    try {
-      if (typeof navigator !== 'undefined' && navigator.clipboard && typeof ClipboardItem !== 'undefined') {
-        await navigator.clipboard.write([
-          new ClipboardItem({ 'image/png': exportModal.blob })
-        ]);
-        setModalCopySuccess(true);
-        setCopiedRecently(true);
-        playNotificationSound();
-        setTimeout(() => setModalCopySuccess(false), 3000);
-      } else {
-        alert('Clipboard API is not available. Please use Download Image.');
-      }
-    } catch (err: any) {
-      console.error('Modal copy failed:', err);
-      alert('Browser blocked clipboard write: ' + (err.message || 'Please use Download Image instead.'));
-    }
-  };
-
-  const handleDownloadFromModal = () => {
-    if (!exportModal) return;
-    const link = document.createElement('a');
-    link.download = exportModal.fileName;
-    link.href = exportModal.imageUri;
-    link.click();
-  };
-
-  const handleCopyTextSummary = async () => {
-    const activeRate = filteredStudents.length > 0 ? Math.round((activeList.length / filteredStudents.length) * 100) : 0;
-    const textSummary = `*🏆 YASHCOM Learning OS - Practice Track Summary*\n*Batch:* ${selectedBatchName}\n*Duration:* ${formatDurationLabel()}\n*Active Students:* ${activeRate}% (${activeList.length}/${filteredStudents.length})\n*Sessions Completed:* ${totalSessionsCount} | *Avg Accuracy:* ${avgBatchAccuracy}%\n\n${fullyCoveredInactiveList.length > 0 ? `*🎉 All Assigned Topics Practiced (${fullyCoveredInactiveList.length} Students):*\n${fullyCoveredInactiveList.map(s => `• ${formatReportStudentName(s.name)}`).join('\n')}\n\n` : ''}${pendingPracticeInactiveList.length > 0 ? `*🔴 Pending Practice (${pendingPracticeInactiveList.length} Students):*\n${pendingPracticeInactiveList.map(s => `• ${formatReportStudentName(s.name)}${s.unattemptedTopicsCount ? ` (${s.unattemptedTopicsCount} pending)` : ''}`).join('\n')}\n\n` : ''}*Top Performers:*\n${sortedActiveStudents.slice(0, 5).map((s, idx) => `${idx + 1}. ${formatReportStudentName(s.name)}: ${s.sessionsCount} sess, ${s.avgAccuracy}% acc`).join('\n')}`;
-
-    if (navigator.clipboard) {
-      await navigator.clipboard.writeText(textSummary);
-      alert('✅ Formatted WhatsApp text summary copied to clipboard!');
     }
   };
 
@@ -1297,182 +1268,6 @@ export default function DailyPracticeSummaryPage() {
           )}
         </div>
       </main>
-
-      {/* WhatsApp Export & Share Modal */}
-      {exportModal && (
-        <div style={{
-          position: 'fixed',
-          inset: 0,
-          background: 'rgba(0, 0, 0, 0.75)',
-          backdropFilter: 'blur(5px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 99999,
-          padding: '20px'
-        }}>
-          <div className="card glass" style={{
-            background: 'var(--surface-popover)',
-            border: '2px solid var(--accent)',
-            borderRadius: 'var(--radius-lg)',
-            maxWidth: '680px',
-            width: '100%',
-            maxHeight: '90vh',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '16px',
-            padding: '24px',
-            boxShadow: 'var(--shadow-xl)',
-            overflowY: 'auto'
-          }}>
-            {/* Modal Header */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--border-light)', paddingBottom: '12px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <span style={{ fontSize: '24px' }}>📱</span>
-                <div>
-                  <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: 'var(--text)' }}>
-                    WhatsApp Report Card Ready
-                  </h3>
-                  <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                    {exportModal.fileName}
-                  </div>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setExportModal(null)}
-                style={{ border: 'none', background: 'transparent', fontSize: '1.5rem', cursor: 'pointer', color: 'var(--text-muted)' }}
-              >
-                ✕
-              </button>
-            </div>
-
-            {/* Status Alert Banner */}
-            {exportModal.copied || modalCopySuccess ? (
-              <div style={{
-                padding: '12px 16px',
-                borderRadius: '8px',
-                background: 'rgba(16, 185, 129, 0.12)',
-                border: '1.5px solid #10b981',
-                color: '#10b981',
-                fontSize: '13px',
-                fontWeight: 700,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}>
-                <span style={{ fontSize: '18px' }}>✅</span>
-                <span>Copied to Clipboard! You can now switch to WhatsApp Web and press <strong>Ctrl + V</strong> to paste the image.</span>
-              </div>
-            ) : (
-              <div style={{
-                padding: '12px 16px',
-                borderRadius: '8px',
-                background: 'rgba(59, 130, 246, 0.1)',
-                border: '1.5px solid #3b82f6',
-                color: '#2563eb',
-                fontSize: '13px',
-                fontWeight: 600,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}>
-                <span style={{ fontSize: '18px' }}>ℹ️</span>
-                <span>Click the green button below to copy the image directly to your clipboard for WhatsApp Web.</span>
-              </div>
-            )}
-
-            {/* Action Buttons Row */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
-              <button
-                type="button"
-                onClick={handleCopyFromModal}
-                className="btn btn-primary"
-                style={{
-                  flex: '2 1 220px',
-                  padding: '12px 20px',
-                  fontSize: '13.5px',
-                  fontWeight: 800,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  background: modalCopySuccess
-                    ? 'linear-gradient(135deg, #059669 0%, #047857 100%)'
-                    : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                  boxShadow: '0 4px 14px rgba(16, 185, 129, 0.4)'
-                }}
-              >
-                <span>📋</span>
-                <span>{modalCopySuccess ? '✓ Copied to Clipboard!' : 'Copy Image to Clipboard (Ctrl+V Ready)'}</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={handleDownloadFromModal}
-                className="btn btn-secondary"
-                style={{
-                  flex: '1 1 140px',
-                  padding: '12px 16px',
-                  fontSize: '13px',
-                  fontWeight: 700,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '6px'
-                }}
-              >
-                <span>⬇️</span>
-                <span>Download PNG</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={handleCopyTextSummary}
-                className="btn btn-secondary"
-                style={{
-                  flex: '1 1 140px',
-                  padding: '12px 16px',
-                  fontSize: '13px',
-                  fontWeight: 700,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '6px'
-                }}
-              >
-                <span>📝</span>
-                <span>Copy Text</span>
-              </button>
-            </div>
-
-            {/* Image Preview Box */}
-            <div style={{
-              borderRadius: '8px',
-              border: '1px solid var(--border-light)',
-              background: '#ffffff',
-              padding: '8px',
-              textAlign: 'center',
-              overflow: 'hidden',
-              boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.05)'
-            }}>
-              <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748b', marginBottom: '6px' }}>Card Preview:</div>
-              <img
-                src={exportModal.imageUri}
-                alt="WhatsApp Report Preview"
-                style={{
-                  maxWidth: '100%',
-                  height: 'auto',
-                  maxHeight: '380px',
-                  objectFit: 'contain',
-                  borderRadius: '4px',
-                  border: '1px solid #e2e8f0'
-                }}
-              />
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
