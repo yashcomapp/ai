@@ -630,9 +630,6 @@ export default function DailyPracticeSummaryPage() {
       let copiedToClipboard = false;
       if (typeof navigator !== 'undefined' && navigator.clipboard && typeof ClipboardItem !== 'undefined') {
         try {
-          if (typeof window !== 'undefined' && window.focus) {
-            window.focus();
-          }
           await navigator.clipboard.write([
             new ClipboardItem({ 'image/png': blob })
           ]);
