@@ -109,11 +109,13 @@ export default function AdminAttendancePage() {
   }, [firebaseUser]);
 
   // Fetch Roster
-  async function fetchRoster() {
+  async function fetchRoster(preserveLocalEdits = false) {
     if (!firebaseUser || !selectedBatchId) return;
-    setRosterLoading(true);
-    setError('');
-    setSuccessMsg('');
+    if (!preserveLocalEdits) {
+      setRosterLoading(true);
+      setError('');
+      setSuccessMsg('');
+    }
     try {
       const token = await firebaseUser!.getIdToken();
       const res = await fetch(`/api/admin/attendance?batchId=${selectedBatchId}&date=${selectedDate}`, {
@@ -125,11 +127,30 @@ export default function AdminAttendancePage() {
       rawRoster.sort((a, b) =>
         (a.name || '').trim().localeCompare((b.name || '').trim(), undefined, { sensitivity: 'base', numeric: true })
       );
-      setRoster(rawRoster);
+      if (preserveLocalEdits) {
+        setRoster(prev => {
+          const localMap = new Map(prev.map(r => [r.studentCode, r]));
+          return rawRoster.map(serverRec => {
+            const localRec = localMap.get(serverRec.studentCode);
+            if (!localRec) return serverRec;
+            return {
+              ...serverRec,
+              status: localRec.status,
+              remarks: localRec.remarks
+            };
+          });
+        });
+      } else {
+        setRoster(rawRoster);
+      }
     } catch (e: any) {
-      setError(e.message);
+      if (!preserveLocalEdits) {
+        setError(e.message);
+      }
     } finally {
-      setRosterLoading(false);
+      if (!preserveLocalEdits) {
+        setRosterLoading(false);
+      }
     }
   }
 
@@ -144,7 +165,7 @@ export default function AdminAttendancePage() {
     fetchRoster();
   }, [selectedBatchId, firebaseUser, selectedDate]);
 
-  const handleApproveLeave = async (leaveId: string) => {
+  const handleApproveLeave = async (leaveId: string, studentCode?: string) => {
     if (!firebaseUser) return;
     if (!confirm('Are you sure you want to approve this leave request?')) return;
     try {
@@ -164,8 +185,26 @@ export default function AdminAttendancePage() {
         const errData = await res.json();
         throw new Error(errData.error || 'Failed to approve leave request');
       }
+
+      // Immediately update local roster state for this student without losing other students' markings!
+      setRoster(prev => prev.map(s => {
+        if (s.pendingLeave?.id === leaveId || (studentCode && s.studentCode === studentCode)) {
+          const leaveRemarks = s.pendingLeave?.remarks ? `Approved Leave: ${s.pendingLeave.remarks}` : 'Approved Leave';
+          return {
+            ...s,
+            status: 'leave',
+            isLeaveApproved: true,
+            pendingLeave: null,
+            remarks: s.remarks || leaveRemarks
+          };
+        }
+        return s;
+      }));
+
+      loadLeaves();
+      // Silently refresh server metadata in background while strictly preserving all local unsaved marks
+      fetchRoster(true);
       alert('✅ Leave request approved successfully.');
-      fetchRoster();
     } catch (e: any) {
       alert(e.message || 'Error approving leave.');
     }
@@ -263,7 +302,7 @@ export default function AdminAttendancePage() {
       setNewLeaveRemarks('');
       setShowLeaveModal(false);
       loadLeaves();
-      fetchRoster();
+      fetchRoster(true);
       alert('Long duration leave approved successfully!');
     } catch (err: any) {
       alert(err.message);
@@ -272,9 +311,9 @@ export default function AdminAttendancePage() {
     }
   };
 
-  // Delete Leave approval
-  const handleDeleteLeave = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this leave approval?')) return;
+  // Delete Leave approval or decline pending request
+  const handleDeleteLeave = async (id: string, studentCode?: string) => {
+    if (!confirm('Are you sure you want to decline or delete this leave?')) return;
     try {
       const token = await firebaseUser!.getIdToken();
       const res = await fetch('/api/admin/attendance/leaves', {
@@ -289,8 +328,21 @@ export default function AdminAttendancePage() {
         })
       });
       if (!res.ok) throw new Error('Failed to delete leave record');
+
+      // Immediately update local roster state for this student without losing other students' markings!
+      setRoster(prev => prev.map(s => {
+        if (s.pendingLeave?.id === id || (studentCode && s.studentCode === studentCode)) {
+          return {
+            ...s,
+            pendingLeave: null,
+            isLeaveApproved: false
+          };
+        }
+        return s;
+      }));
+
       loadLeaves();
-      fetchRoster();
+      fetchRoster(true);
     } catch (err: any) {
       alert(err.message);
     }
@@ -402,7 +454,7 @@ export default function AdminAttendancePage() {
                               {student.pendingLeave && (
                                 <div style={{ display: 'flex', gap: '6px', marginBottom: '4px' }}>
                                   <button
-                                    onClick={() => handleApproveLeave(student.pendingLeave!.id)}
+                                    onClick={() => handleApproveLeave(student.pendingLeave!.id, student.studentCode)}
                                     className="btn"
                                     style={{
                                       padding: '4px 8px',
@@ -418,7 +470,7 @@ export default function AdminAttendancePage() {
                                     Approve 🌴
                                   </button>
                                   <button
-                                    onClick={() => handleDeleteLeave(student.pendingLeave!.id)}
+                                    onClick={() => handleDeleteLeave(student.pendingLeave!.id, student.studentCode)}
                                     className="btn"
                                     style={{
                                       padding: '4px 8px',
@@ -669,7 +721,7 @@ export default function AdminAttendancePage() {
                           {l.remarks && <div style={{ fontSize: '11px', fontStyle: 'italic', color: 'var(--text-muted)', marginTop: '2px' }}>"{l.remarks}"</div>}
                         </div>
                         <button
-                          onClick={() => handleDeleteLeave(l.id)}
+                          onClick={() => handleDeleteLeave(l.id, l.studentCode)}
                           style={{ border: 'none', background: 'transparent', color: 'var(--danger)', cursor: 'pointer', fontSize: '1.1rem' }}
                           title="Delete Leave"
                         >
