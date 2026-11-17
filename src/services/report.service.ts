@@ -128,7 +128,7 @@ export class ReportService {
       evaluations
     };
 
-    await ReportCacheManager.setReport(cacheKey, result, 60);
+    await ReportCacheManager.setReport(cacheKey, result, 300);
     return result;
   }
 
@@ -428,7 +428,7 @@ export class ReportService {
       students: studentSummaries
     };
 
-    await ReportCacheManager.setReport(cacheKey, result, 60);
+    await ReportCacheManager.setReport(cacheKey, result, 300);
     return result;
   }
 

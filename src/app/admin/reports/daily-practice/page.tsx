@@ -200,13 +200,14 @@ export default function DailyPracticeSummaryPage() {
     }
   }, [user, router]);
 
-  const loadData = async (startVal: string, endVal: string) => {
+  const loadData = async (startVal: string, endVal: string, forceRefresh: boolean = false) => {
     if (!firebaseUser) return;
     setLoading(true);
     try {
       const idToken = await firebaseUser.getIdToken();
+      const refreshParam = forceRefresh ? '&refresh=true' : '';
       const res = await fetch(
-        `/api/admin/reports/daily-practice?startDate=${encodeURIComponent(startVal)}&endDate=${encodeURIComponent(endVal)}&refresh=true`,
+        `/api/admin/reports/daily-practice?startDate=${encodeURIComponent(startVal)}&endDate=${encodeURIComponent(endVal)}${refreshParam}`,
         {
           headers: {
             'Authorization': `Bearer ${idToken}`
@@ -872,8 +873,8 @@ export default function DailyPracticeSummaryPage() {
               </button>
             </div>
 
-            {/* Active Duration Display Badge */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            {/* Active Duration Display Badge & Live Refresh */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span style={{
                 fontSize: '11.5px',
                 fontWeight: 700,
@@ -885,6 +886,27 @@ export default function DailyPracticeSummaryPage() {
               }}>
                 📅 {formatDurationLabel()}
               </span>
+              <button
+                type="button"
+                onClick={() => loadData(startDate, endDate, true)}
+                disabled={loading}
+                title="Force refresh live database records"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  padding: '4px 10px',
+                  fontSize: '11.5px',
+                  fontWeight: 700,
+                  borderRadius: '6px',
+                  background: 'var(--surface, #fff)',
+                  border: '1px solid var(--border, #e2e8f0)',
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                  color: 'var(--text)'
+                }}
+              >
+                {loading ? '⏳' : '🔄 Refresh'}
+              </button>
             </div>
           </div>
 
