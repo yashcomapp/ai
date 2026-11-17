@@ -16,17 +16,16 @@ build/
 !package-lock.json
 !tsconfig.json
 !firestore.indexes.json
-!vercel.json
 *.tsbuildinfo
 tsconfig.tsbuildinfo
 
-.vercel
 .firebase/
 Users/
 
 # Local scratch and one-off repair scripts
 src/scripts/
 scratch/
+crops/
 backups/
 /reports/
 public/reports/
@@ -45,3 +44,7 @@ __pycache__/
 audit-*
 *.snapshot
 los-next-full-codebase.txt
+
+# Generated reports and rosters at root
+/Class_*_HD.png
+/Diwali_Vacation_*.pdf
