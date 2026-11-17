@@ -63,10 +63,8 @@ interface LearningPathData {
   mastered: StudentLearningTopicItem[];
 }
 
-const getMaxTopicPractices = (topic: any): number => {
-  const cls = (topic?.topicClassification || 'minor').toLowerCase();
-  if (cls === 'major' || cls === 'calculative' || cls === 'hots') return 4;
-  if (cls === 'medium' || cls === 'moderate' || cls === 'conceptual') return 3;
+const getMaxTopicPractices = (_topic?: any): number => {
+  // Single Source of Truth (SSOT): All topics have strictly 2 practice sets assigned (Target: 12 Qs)
   return 2;
 };
 
@@ -393,6 +391,13 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
         .topic-row-hover:hover {
           background-color: var(--bg-soft) !important;
         }
+        .topic-card-hover {
+          transition: all 0.15s ease;
+        }
+        .topic-card-hover:hover {
+          border-color: var(--accent) !important;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
         @keyframes skeleton-blink {
           0% { opacity: 0.6; }
           50% { opacity: 1; }
@@ -436,18 +441,14 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                       <span style={{ fontWeight: 800, fontSize: '13px', color: 'var(--text)' }}>
-                        System Transparency: Questions Required for Topic Mastery
+                        Topic Mastery Standard: 2 Practice Sets to Master
                       </span>
                       <span style={{ fontSize: '11px', color: 'var(--accent)', fontWeight: 600 }}>
-                        {showSlabGuide ? 'Hide Rules ▲' : 'View Rules & Details ▼'}
+                        {showSlabGuide ? 'Hide Rules ▲' : 'View Rules ▼'}
                       </span>
                     </div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                      <span>📘 <strong>Minor:</strong> 6 Qs (Max 2 Sets)</span>
-                      <span>•</span>
-                      <span>📙 <strong>Medium:</strong> 10 Qs (Max 3 Sets)</span>
-                      <span>•</span>
-                      <span>📕 <strong>Major:</strong> 15 Qs (Max 3 Sets)</span>
+                    <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                      🎯 <strong>Standard Quota:</strong> Exactly 2 practice sets assigned per topic (12 questions total) • Achieve ≥90% accuracy for Certified Mastered
                     </div>
                   </div>
                 </div>
@@ -466,58 +467,14 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
 
               {showSlabGuide && (
                 <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px dashed var(--border-light)' }}>
-                  <div style={{ fontSize: '12px', color: 'var(--text)', marginBottom: '10px', lineHeight: 1.5 }}>
-                    To make your learning roadmap completely predictable and transparent, each topic is classified into one of <strong>3 Topic Scopes</strong>. To attain <strong style={{ color: 'var(--success)' }}>🏆 Mastered</strong>, you must achieve <strong>≥90%</strong> accuracy AND complete the topic's required <strong>Mastery Questions</strong>:
-                  </div>
-
-                  {/* 3 Topic Scopes Grid */}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '8px', marginBottom: '12px' }}>
-                    <div style={{ padding: '8px 10px', borderRadius: '8px', background: 'var(--surface)', border: '1px solid rgba(52, 211, 153, 0.3)' }}>
-                      <div style={{ fontWeight: 800, fontSize: '12px', color: 'var(--success)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <span>📘 Minor Topic</span>
-                      </div>
-                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                        Definitions, Basic Formulas, Units & Direct Facts (~30 Qs Quota)
-                      </div>
-                      <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text)', marginTop: '4px' }}>
-                        Mastery Requirement: <span style={{ color: 'var(--success)' }}>6 Questions • Max 2 Practice Sets</span>
-                      </div>
-                    </div>
-
-                    <div style={{ padding: '8px 10px', borderRadius: '8px', background: 'var(--surface)', border: '1px solid rgba(56, 189, 248, 0.3)' }}>
-                      <div style={{ fontWeight: 800, fontSize: '12px', color: 'var(--info)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <span>📙 Medium Topic</span>
-                      </div>
-                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                        Standard Concepts, Laws, Derivations & Direct Applications (~50 Qs Quota)
-                      </div>
-                      <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text)', marginTop: '4px' }}>
-                        Mastery Requirement: <span style={{ color: 'var(--info)' }}>10 Questions • Max 3 Practice Sets</span>
-                      </div>
-                    </div>
-
-                    <div style={{ padding: '8px 10px', borderRadius: '8px', background: 'var(--surface)', border: '1px solid rgba(248, 113, 113, 0.3)' }}>
-                      <div style={{ fontWeight: 800, fontSize: '12px', color: 'var(--danger)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <span>📕 Major Topic</span>
-                      </div>
-                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                        Complex Numericals, Multi-Step Problems & Keystone Concepts (~55 Qs Quota)
-                      </div>
-                      <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text)', marginTop: '4px' }}>
-                        Mastery Requirement: <span style={{ color: 'var(--danger)' }}>15 Questions • Max 3 Practice Sets</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 3 Core Rules */}
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '8px', fontSize: '11px', color: 'var(--text-muted)' }}>
-                    <div style={{ padding: '6px 8px', background: 'var(--surface)', borderRadius: '6px', border: '1px solid var(--border-light)' }}>
-                      <strong style={{ color: 'var(--text)' }}>🛡️ Daily Pacing Cap:</strong> Max 3 practice sets (18 Qs) per topic/day to protect your focus and let concepts settle in.
+                    <div style={{ padding: '8px 10px', background: 'var(--surface)', borderRadius: '6px', border: '1px solid var(--border-light)' }}>
+                      <strong style={{ color: 'var(--success)' }}>🏆 Mastered Standard:</strong> Complete 2 practice sets (12 verified questions) with ≥90% accuracy to earn Certified Mastered status.
                     </div>
-                    <div style={{ padding: '6px 8px', background: 'var(--surface)', borderRadius: '6px', border: '1px solid var(--border-light)' }}>
+                    <div style={{ padding: '8px 10px', background: 'var(--surface)', borderRadius: '6px', border: '1px solid var(--border-light)' }}>
                       <strong style={{ color: 'var(--text)' }}>🔒 Zero-Collision Vaults:</strong> Questions in Practice are dedicated to self-study only and will never appear on scheduled exams.
                     </div>
-                    <div style={{ padding: '6px 8px', background: 'var(--surface)', borderRadius: '6px', border: '1px solid var(--border-light)' }}>
+                    <div style={{ padding: '8px 10px', background: 'var(--surface)', borderRadius: '6px', border: '1px solid var(--border-light)' }}>
                       <strong style={{ color: 'var(--text)' }}>⏱️ Deliberation Gate:</strong> Minimum 18s/question deliberate solving required. Rushed sessions (&lt; 18s/Q) are voided with a 30-min cooldown.
                     </div>
                   </div>
@@ -860,261 +817,276 @@ export default function StudentLearning({ initialData }: { initialData?: Learnin
                               </div>
 
                               {isChExpanded && (
-                                <div className="topics-list" style={{ padding: '4px 6px' }}>
-                                  <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-                                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', minWidth: '550px' }}>
-                                      <thead>
-                                        <tr style={{ borderBottom: '1px solid var(--border-light)', color: 'var(--text-muted)', fontSize: '10px', textTransform: 'uppercase', height: '30px' }}>
-                                          <th onClick={() => handleSort('topicName')} style={{ padding: '6px 8px', textAlign: 'left', cursor: 'pointer', userSelect: 'none' }}>
-                                            Topic Name {sortField === 'topicName' ? (sortDir === 'asc' ? '▲' : '▼') : '⇅'}
-                                          </th>
-                                          <th onClick={() => handleSort('mastery')} style={{ padding: '6px 8px', textAlign: 'center', width: '70px', cursor: 'pointer', userSelect: 'none' }}>
-                                            Mastery {sortField === 'mastery' ? (sortDir === 'asc' ? '▲' : '▼') : '⇅'}
-                                          </th>
-                                          <th style={{ padding: '6px 8px', textAlign: 'center', width: '80px' }} title="Topic-aware confidence threshold: Minor/Micro (6 Qs), Medium/Conceptual (10 Qs), Major/HOTS (15 Qs)">Confidence</th>
-                                          <th onClick={() => handleSort('attempts')} style={{ padding: '6px 8px', textAlign: 'center', width: '110px', cursor: 'pointer', userSelect: 'none' }}>
-                                            Practiced {sortField === 'attempts' ? (sortDir === 'asc' ? '▲' : '▼') : '⇅'}
-                                          </th>
-                                          <th onClick={() => handleSort('lastAttempt')} style={{ padding: '6px 8px', textAlign: 'center', width: '100px', cursor: 'pointer', userSelect: 'none' }}>
-                                            Last Practice {sortField === 'lastAttempt' ? (sortDir === 'asc' ? '▲' : '▼') : '⇅'}
-                                          </th>
-                                          <th style={{ padding: '6px 8px', textAlign: 'right', width: '90px' }}>Action</th>
-                                        </tr>
-                                      </thead>
-                                      <tbody>
-                                        {sortedTopics.map(topic => {
-                                          const mastery = Math.round(topic.mastery);
-                                          const confidence = Math.round(topic.confidence);
-                                          const masteryClass = getMasteryClass(mastery);
-                                          const actionText = getActionText(topic.state);
-                                          const attempts = Number(topic.attempts || topic.confidence || topic.questionsAttempted || 0);
-                                          const isAbsent = !!topic.isAbsentExam;
-                                          const state = topic.state;
+                                <div className="topics-list" style={{ padding: '6px 4px 10px' }}>
+                                  {/* Compact Sort Toolbar */}
+                                  <div style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    padding: '4px 6px 8px',
+                                    fontSize: '11px',
+                                    color: 'var(--text-muted)',
+                                    borderBottom: '1px solid var(--border-light)',
+                                    marginBottom: '10px',
+                                    flexWrap: 'wrap',
+                                    gap: '6px'
+                                  }}>
+                                    <span style={{ fontWeight: 600 }}>{sortedTopics.length} Topic{sortedTopics.length !== 1 ? 's' : ''}</span>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                      <span style={{ fontSize: '10.5px' }}>Sort:</span>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleSort('mastery')}
+                                        style={{
+                                          background: sortField === 'mastery' ? 'rgba(59, 130, 246, 0.12)' : 'transparent',
+                                          color: sortField === 'mastery' ? 'var(--accent)' : 'var(--text-muted)',
+                                          border: sortField === 'mastery' ? '1px solid var(--accent)' : '1px solid var(--border-light)',
+                                          padding: '2px 8px',
+                                          borderRadius: '12px',
+                                          fontSize: '10.5px',
+                                          fontWeight: sortField === 'mastery' ? 700 : 500,
+                                          cursor: 'pointer'
+                                        }}
+                                      >
+                                        Mastery {sortField === 'mastery' ? (sortDir === 'asc' ? '▲' : '▼') : ''}
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleSort('topicName')}
+                                        style={{
+                                          background: sortField === 'topicName' ? 'rgba(59, 130, 246, 0.12)' : 'transparent',
+                                          color: sortField === 'topicName' ? 'var(--accent)' : 'var(--text-muted)',
+                                          border: sortField === 'topicName' ? '1px solid var(--accent)' : '1px solid var(--border-light)',
+                                          padding: '2px 8px',
+                                          borderRadius: '12px',
+                                          fontSize: '10.5px',
+                                          fontWeight: sortField === 'topicName' ? 700 : 500,
+                                          cursor: 'pointer'
+                                        }}
+                                      >
+                                        Name {sortField === 'topicName' ? (sortDir === 'asc' ? '▲' : '▼') : ''}
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleSort('attempts')}
+                                        style={{
+                                          background: sortField === 'attempts' ? 'rgba(59, 130, 246, 0.12)' : 'transparent',
+                                          color: sortField === 'attempts' ? 'var(--accent)' : 'var(--text-muted)',
+                                          border: sortField === 'attempts' ? '1px solid var(--accent)' : '1px solid var(--border-light)',
+                                          padding: '2px 8px',
+                                          borderRadius: '12px',
+                                          fontSize: '10.5px',
+                                          fontWeight: sortField === 'attempts' ? 700 : 500,
+                                          cursor: 'pointer'
+                                        }}
+                                      >
+                                        Practiced {sortField === 'attempts' ? (sortDir === 'asc' ? '▲' : '▼') : ''}
+                                      </button>
+                                    </div>
+                                  </div>
 
-                                           let expIcon = '⚪';
-                                           let expColor = 'var(--text-muted)';
-                                           let expText = '';
-                                           const practiceCount = topic.practiceCount || 0;
-                                           const reqConf = topic.requiredConfidence || getRequiredConfidence(topic.topicClassification, topic.targetQuestions);
-                                           const maxPractices = getMaxTopicPractices(topic);
-                                           const isLimitReached = practiceCount >= maxPractices;
+                                  {/* List of Unified Topic Cells (One cell per topic) */}
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                    {sortedTopics.map(topic => {
+                                      const mastery = Math.round(topic.mastery);
+                                      const confidence = Math.round(topic.confidence);
+                                      const attempts = Number(topic.attempts || topic.confidence || topic.questionsAttempted || 0);
+                                      const isAbsent = !!topic.isAbsentExam;
+                                      const state = topic.state;
+                                      const practiceCount = topic.practiceCount || 0;
+                                      const maxPractices = 2; // Unified SSOT: exactly 2 practice sets assigned
+                                      const reqMasteryQs = 12; // 2 sets * 6 questions = 12 Qs to Master
+                                      const isLimitReached = practiceCount >= maxPractices;
+                                      const isMasteredState = state === 'mastered';
+                                      const targetUrl = `/student/topic?topicCode=${encodeURIComponent(topic.topicCode)}&category=${topic.state}`;
 
-                                           if (state === 'needsAttention') {
-                                             if (isLimitReached) {
-                                               expIcon = '🔒';
-                                               expColor = 'var(--text-muted)';
-                                               expText = `${practiceCount}/${maxPractices} practices done (${mastery}% accuracy). Quota limit reached. Consult teacher for re-teaching or unlock.`;
-                                             } else if (isAbsent) {
-                                               expIcon = '⚠️';
-                                               expColor = 'var(--danger)';
-                                               expText = 'Missed scheduled exam. Practice questions to recover concept understanding.';
-                                             } else if (attempts === 0) {
-                                               expIcon = '⚪';
-                                               expColor = 'var(--text-muted)';
-                                               expText = `Never practiced yet (0/${maxPractices} sets). Start 1st practice to assess concept baseline.`;
-                                             } else {
-                                               expIcon = '🚨';
-                                               expColor = 'var(--danger)';
-                                               expText = `${practiceCount}/${maxPractices} practices done (${mastery}% accuracy). ${Math.max(0, maxPractices - practiceCount)} practice(s) left — focus on weak areas.`;
-                                             }
-                                           } else if (state === 'practicing' || state === 'continuePractice' || state === 'revision') {
-                                             if (mastery >= MASTERY_THRESHOLDS.MASTERED_MIN && attempts < reqConf) {
-                                               const needed = Math.max(1, reqConf - attempts);
-                                               expIcon = '📖';
-                                               expColor = 'var(--accent)';
-                                               expText = `High accuracy (${mastery}%), but needs ${needed} more verified question(s) to reach full confidence for Mastered.`;
-                                             } else if (isLimitReached) {
-                                               expIcon = '🔒';
-                                               expColor = 'var(--text-muted)';
-                                               expText = `2/2 practices done (${mastery}% accuracy). Practice limit reached.`;
-                                             } else {
-                                               expIcon = '📈';
-                                               expColor = 'var(--warning)';
-                                               expText = `${practiceCount}/${maxPractices} practices done (${mastery}% accuracy). Complete 1 practice set (6 Qs) to aim for ${MASTERY_THRESHOLDS.MASTERED_MIN}%+ Mastered.`;
-                                             }
-                                           } else if (state === 'mastered') {
-                                              expIcon = '⭐';
-                                              expColor = 'var(--success)';
-                                              expText = `Mastered (${mastery}% accuracy across ${attempts} verified questions). Concept complete.`;
-                                           } else {
-                                              expIcon = '⚪';
-                                              expColor = 'var(--text-muted)';
-                                              expText = `${mastery}% accuracy across ${attempts} verified questions.`;
-                                           }
+                                      // Status styling
+                                      let statusBadgeColor = 'var(--text-muted)';
+                                      let statusBadgeBg = 'rgba(148, 163, 184, 0.12)';
+                                      let statusLabel = 'Needs Attention';
+                                      let masteryBarColor = 'var(--danger)';
 
-                                          const isMasteredState = state === 'mastered';
-                                          const targetUrl = `/student/topic?topicCode=${encodeURIComponent(topic.topicCode)}&category=${topic.state}`;
+                                      if (isMasteredState) {
+                                        statusBadgeColor = 'var(--success)';
+                                        statusBadgeBg = 'rgba(16, 185, 129, 0.12)';
+                                        statusLabel = 'Mastered';
+                                        masteryBarColor = 'var(--success)';
+                                      } else if (state === 'practicing' || state === 'continuePractice' || state === 'revision') {
+                                        statusBadgeColor = 'var(--warning)';
+                                        statusBadgeBg = 'rgba(245, 158, 11, 0.12)';
+                                        statusLabel = 'Practicing';
+                                        masteryBarColor = mastery >= 80 ? 'var(--warning)' : 'var(--danger)';
+                                      } else {
+                                        statusBadgeColor = 'var(--danger)';
+                                        statusBadgeBg = 'rgba(239, 68, 68, 0.12)';
+                                        statusLabel = 'Needs Attention';
+                                        masteryBarColor = 'var(--danger)';
+                                      }
 
-                                          const reqMasteryQs = topic.requiredConfidence || getRequiredConfidence(topic.topicClassification, topic.targetQuestions);
+                                      let expIcon = '⚪';
+                                      let expColor = 'var(--text-muted)';
+                                      let expText = '';
 
-                                          let btnLabel = isLimitReached && !isMasteredState 
-                                              ? `🔒 Quota Used (${practiceCount}/${maxPractices})` 
-                                              : (practiceCount === 0 ? 'Start 1st Practice →' : `Practice Set ${practiceCount + 1} →`);
+                                      if (state === 'needsAttention') {
+                                        if (isLimitReached) {
+                                          expIcon = '🔒';
+                                          expColor = 'var(--text-muted)';
+                                          expText = `${practiceCount}/2 practices done (${mastery}% accuracy). Quota reached. Consult teacher for re-teaching or unlock.`;
+                                        } else if (isAbsent) {
+                                          expIcon = '⚠️';
+                                          expColor = 'var(--danger)';
+                                          expText = 'Missed scheduled exam. Complete practice questions to recover concept understanding.';
+                                        } else if (attempts === 0) {
+                                          expIcon = '⚪';
+                                          expColor = 'var(--text-muted)';
+                                          expText = 'Never practiced yet (0/2 sets). Start 1st practice to assess concept baseline.';
+                                        } else {
+                                          expIcon = '🚨';
+                                          expColor = 'var(--danger)';
+                                          expText = `${practiceCount}/2 practices done (${mastery}% accuracy). ${Math.max(0, 2 - practiceCount)} practice set(s) left — focus on weak areas.`;
+                                        }
+                                      } else if (state === 'practicing' || state === 'continuePractice' || state === 'revision') {
+                                        if (mastery >= MASTERY_THRESHOLDS.MASTERED_MIN && attempts < reqMasteryQs) {
+                                          const needed = Math.max(1, reqMasteryQs - attempts);
+                                          expIcon = '📖';
+                                          expColor = 'var(--accent)';
+                                          expText = `High accuracy (${mastery}%), but needs ${needed} more verified question(s) to reach full confidence for Mastered.`;
+                                        } else if (isLimitReached) {
+                                          expIcon = '🔒';
+                                          expColor = 'var(--text-muted)';
+                                          expText = '2/2 practices done (${mastery}% accuracy). Practice quota completed.';
+                                        } else {
+                                          expIcon = '📈';
+                                          expColor = 'var(--warning)';
+                                          expText = `${practiceCount}/2 practices done (${mastery}% accuracy). Complete Practice Set ${practiceCount + 1} (6 Qs) to aim for 90%+ Mastered.`;
+                                        }
+                                      } else if (state === 'mastered') {
+                                        expIcon = '⭐';
+                                        expColor = 'var(--success)';
+                                        expText = `Mastered (${mastery}% accuracy across ${attempts} verified questions). Concept complete.`;
+                                      } else {
+                                        expIcon = '⚪';
+                                        expColor = 'var(--text-muted)';
+                                        expText = `${mastery}% accuracy across ${attempts} verified questions.`;
+                                      }
 
-                                          return (
-                                            <tr 
-                                              key={topic.topicCode}
-                                              onClick={() => {
-                                                if (!isMasteredState) {
+                                      let btnLabel = isLimitReached && !isMasteredState
+                                        ? `🔒 Quota Used (${practiceCount}/2)`
+                                        : (practiceCount === 0 ? 'Start 1st Practice →' : `Practice Set ${practiceCount + 1} →`);
+
+                                      return (
+                                        <div
+                                          key={topic.topicCode}
+                                          onClick={() => {
+                                            if (!isMasteredState) router.push(targetUrl);
+                                          }}
+                                          style={{
+                                            background: 'var(--surface)',
+                                            borderRadius: '8px',
+                                            border: '1px solid var(--border-light)',
+                                            padding: '12px 14px',
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            gap: '8px',
+                                            cursor: isMasteredState ? 'default' : 'pointer'
+                                          }}
+                                          className={isMasteredState ? '' : 'topic-card-hover'}
+                                        >
+                                          {/* Row 1: Topic Name & Status Badge */}
+                                          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px' }}>
+                                            <div style={{ fontWeight: 600, fontSize: '13.5px', color: 'var(--text)', lineHeight: 1.35, flex: 1 }}>
+                                              📍 {topic.topicName || topic.topicCode}
+                                            </div>
+                                            <span style={{
+                                              fontSize: '11px',
+                                              fontWeight: 700,
+                                              padding: '2px 8px',
+                                              borderRadius: '12px',
+                                              background: statusBadgeBg,
+                                              color: statusBadgeColor,
+                                              whiteSpace: 'nowrap',
+                                              flexShrink: 0
+                                            }}>
+                                              {statusLabel} • {mastery}%
+                                            </span>
+                                          </div>
+
+                                          {/* Row 2: Mastery Progress Bar */}
+                                          <div style={{ width: '100%', height: '4px', background: 'rgba(148, 163, 184, 0.15)', borderRadius: '2px', overflow: 'hidden' }}>
+                                            <div style={{ width: `${Math.min(100, Math.max(0, mastery))}%`, height: '100%', background: masteryBarColor, borderRadius: '2px' }} />
+                                          </div>
+
+                                          {/* Row 3: Metrics (Practiced, Confidence, Last Activity) */}
+                                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', fontSize: '11.5px', color: 'var(--text-muted)' }}>
+                                            <span style={{ fontWeight: 600, color: practiceCount === 0 ? '#ef4444' : 'var(--text)' }}>
+                                              🎯 {practiceCount === 0 ? '0/2 Sets (Never Practiced)' : `${practiceCount}/2 Practices Done`}
+                                            </span>
+                                            <span>•</span>
+                                            <span>📊 {confidence}% Confidence ({attempts}/12 Qs)</span>
+                                            <span>•</span>
+                                            <span>🕒 {formatDateOrFallback(topic.lastAttempt, 'Never')}</span>
+                                          </div>
+
+                                          {/* Row 4: Diagnostic Guidance Note */}
+                                          <div style={{ fontSize: '11.5px', color: expColor, lineHeight: 1.4 }}>
+                                            <span>{expIcon}</span> {expText}
+                                          </div>
+
+                                          {/* Row 5: Action Button / Completed Badge */}
+                                          <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', paddingTop: '6px', borderTop: '1px dashed var(--border-light)' }}>
+                                            {isMasteredState ? (
+                                              <span style={{
+                                                fontSize: '11.5px',
+                                                fontWeight: 700,
+                                                color: 'var(--success)',
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
+                                                gap: '4px',
+                                                padding: '4px 8px'
+                                              }}>
+                                                ✓ Concept Certified Mastered
+                                              </span>
+                                            ) : isLimitReached ? (
+                                              <span style={{
+                                                padding: '4px 10px',
+                                                borderRadius: '20px',
+                                                fontSize: '10.5px',
+                                                fontWeight: 600,
+                                                background: 'rgba(148, 163, 184, 0.12)',
+                                                color: 'var(--text-muted)',
+                                                border: '1px solid var(--border-light)'
+                                              }}>
+                                                🔒 Locked ({practiceCount}/2)
+                                              </span>
+                                            ) : (
+                                              <button
+                                                type="button"
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
                                                   router.push(targetUrl);
-                                                }
-                                              }}
-                                              style={{ 
-                                                borderBottom: '1px solid var(--border-light)', 
-                                                cursor: isMasteredState ? 'default' : 'pointer', 
-                                                height: '48px',
-                                                opacity: isMasteredState ? 0.95 : 1
-                                              }}
-                                              className={isMasteredState ? '' : 'topic-row-hover'}
-                                            >
-                                              <td style={{ padding: '8px', fontWeight: 600, color: 'var(--text)' }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                                                  <span>📍 {topic.topicName || topic.topicCode}</span>
-                                                  {topic.topicClassification && (
-                                                    <span style={{
-                                                      fontSize: '9px',
-                                                      fontWeight: 700,
-                                                      textTransform: 'uppercase',
-                                                      padding: '1px 5px',
-                                                      borderRadius: '4px',
-                                                      background: (topic.topicClassification === 'minor' || topic.topicClassification === 'micro') ? 'var(--success-bg)' : (topic.topicClassification === 'major' || topic.topicClassification === 'calculative' || topic.topicClassification === 'hots') ? 'var(--danger-bg)' : 'var(--info-bg)',
-                                                      color: (topic.topicClassification === 'minor' || topic.topicClassification === 'micro') ? 'var(--success)' : (topic.topicClassification === 'major' || topic.topicClassification === 'calculative' || topic.topicClassification === 'hots') ? 'var(--danger)' : 'var(--info)',
-                                                      border: `1px solid ${(topic.topicClassification === 'minor' || topic.topicClassification === 'micro') ? 'rgba(52, 211, 153, 0.3)' : (topic.topicClassification === 'major' || topic.topicClassification === 'calculative' || topic.topicClassification === 'hots') ? 'rgba(248, 113, 113, 0.3)' : 'rgba(56, 189, 248, 0.3)'}`
-                                                    }}>
-                                                      {(topic.topicClassification === 'minor' || topic.topicClassification === 'micro') && '📘 Minor (Target: 12 Qs • Max 2 Sets)'}
-                                                      {(topic.topicClassification === 'medium' || topic.topicClassification === 'moderate' || topic.topicClassification === 'conceptual') && '📙 Medium (Target: 18 Qs • Max 3 Sets)'}
-                                                      {(topic.topicClassification === 'major' || topic.topicClassification === 'calculative' || topic.topicClassification === 'hots') && '📕 Major (Target: 24 Qs • Max 4 Sets)'}
-                                                      {topic.topicClassification !== 'minor' && topic.topicClassification !== 'micro' && topic.topicClassification !== 'medium' && topic.topicClassification !== 'moderate' && topic.topicClassification !== 'conceptual' && topic.topicClassification !== 'major' && topic.topicClassification !== 'calculative' && topic.topicClassification !== 'hots' && '📙 Standard (Target: 18 Qs • Max 3 Sets)'}
-                                                    </span>
-                                                  )}
-                                                  {isAbsent && (
-                                                    <span style={{ fontSize: '9px', fontWeight: 700, padding: '1px 5px', borderRadius: '4px', background: 'var(--danger-bg)', color: 'var(--danger)', border: '1px solid rgba(248, 113, 113, 0.3)' }}>
-                                                      Missed Exam
-                                                    </span>
-                                                  )}
-                                                  {topic.isSrsDue && (
-                                                    <span style={{ fontSize: '9px', fontWeight: 700, padding: '1px 6px', borderRadius: '10px', background: 'var(--info-bg)', color: 'var(--info)', border: '1px solid rgba(56, 189, 248, 0.35)' }}>
-                                                      🧠 SRS Due • {topic.srsSchedule?.stageLabel || 'Workout'}
-                                                    </span>
-                                                  )}
-                                                  {state === 'mastered' && (
-                                                    <span style={{ fontSize: '9px', fontWeight: 700, padding: '1px 6px', borderRadius: '10px', background: 'var(--success-bg)', color: 'var(--success)', border: '1px solid rgba(52, 211, 153, 0.3)' }}>
-                                                      🌟 Certified Mastered
-                                                    </span>
-                                                  )}
-                                                </div>
-                                                <div style={{ fontSize: '10.5px', fontWeight: 400, color: expColor, marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                                  <span>{expIcon}</span>
-                                                  <span>{expText}</span>
-                                                </div>
-                                              </td>
-                                              <td style={{ padding: '6px 8px', textAlign: 'center' }}>
-                                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px' }}>
-                                                  <span className={`badge badge-${masteryClass}`} style={{ fontSize: '10px', fontWeight: 'bold', padding: '2px 6px', borderRadius: '4px' }}>
-                                                    {mastery}%
-                                                  </span>
-                                                  {state !== 'mastered' && (
-                                                    <div 
-                                                      style={{ width: '44px', height: '4px', background: 'var(--border-light)', borderRadius: '2px', overflow: 'hidden' }} 
-                                                      title={`${mastery}% / 90% target`}
-                                                    >
-                                                      <div 
-                                                        style={{ 
-                                                          width: `${Math.min(100, Math.round((mastery / 90) * 100))}%`, 
-                                                          height: '100%', 
-                                                          background: mastery >= 80 ? 'var(--warning)' : 'var(--danger)', 
-                                                          borderRadius: '2px' 
-                                                        }} 
-                                                      />
-                                                    </div>
-                                                  )}
-                                                </div>
-                                              </td>
-                                              <td style={{ padding: '6px 8px', textAlign: 'center', color: 'var(--text-muted)' }}>
-                                                {confidence}%
-                                              </td>
-                                              <td style={{ padding: '6px 8px', textAlign: 'center', color: 'var(--text)' }}>
-                                                 {topic.isSrsDue && topic.srsSchedule ? (
-                                                   <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--info)' }}>
-                                                     {topic.srsSchedule.stageLabel}
-                                                   </span>
-                                                 ) : (
-                                                    <>
-                                                      <div style={{
-                                                        fontSize: '11px',
-                                                        fontWeight: 700,
-                                                        color: isLimitReached ? 'var(--text-muted)' : (practiceCount === 0 ? '#ef4444' : 'var(--text)')
-                                                      }}>
-                                                        {practiceCount === 0 ? `🔴 0/${maxPractices} sets` : `${practiceCount}/${maxPractices} practices`}
-                                                      </div>
-                                                      <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
-                                                        {state === 'mastered'
-                                                          ? 'Concept certified'
-                                                          : isLimitReached
-                                                            ? '🔒 Quota exhausted'
-                                                            : practiceCount === 0
-                                                              ? 'Never practiced'
-                                                              : mastery >= 80
-                                                                ? `${mastery}% → 90% (${Math.max(1, reqMasteryQs - topic.attempts)} more Qs)`
-                                                                : `(${topic.attempts} / ${reqMasteryQs} to Master)`}
-                                                      </div>
-                                                    </>
-                                                 )}
-                                               </td>
-                                              <td style={{ padding: '6px 8px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '11px' }}>
-                                                {formatDateOrFallback(topic.lastAttempt, 'Never')}
-                                              </td>
-                                              <td style={{ padding: '6px 8px', textAlign: 'right' }} onClick={(e) => e.stopPropagation()}>
-                                                {isMasteredState ? (
-                                                  <span style={{ 
-                                                    fontSize: '11px', 
-                                                    fontWeight: 700, 
-                                                    color: 'var(--success)', 
-                                                    display: 'inline-flex', 
-                                                    alignItems: 'center', 
-                                                    gap: '4px',
-                                                    padding: '4px 8px'
-                                                  }}>
-                                                    ✓ Mastered
-                                                  </span>
-                                                ) : isLimitReached ? (
-                                                    <span style={{ 
-                                                      padding: '4px 10px', 
-                                                      borderRadius: '20px', 
-                                                      fontSize: '10px', 
-                                                      fontWeight: 700, 
-                                                      background: 'rgba(148, 163, 184, 0.15)', 
-                                                      color: 'var(--text-muted)',
-                                                      border: '1px solid var(--border-light)',
-                                                      display: 'inline-flex',
-                                                      alignItems: 'center',
-                                                      gap: '3px'
-                                                    }}>
-                                                      🔒 Locked ({practiceCount}/{maxPractices})
-                                                    </span>
-                                                  ) : (
-                                                    <button 
-                                                      onClick={() => router.push(targetUrl)}
-                                                      style={{ 
-                                                        padding: '4px 12px', 
-                                                        borderRadius: '30px', 
-                                                        fontSize: '10px', 
-                                                        fontWeight: 600, 
-                                                        border: 'none', 
-                                                        background: practiceCount === 0 ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)' : 'var(--accent-grad)', 
-                                                        color: 'white', 
-                                                        cursor: 'pointer' 
-                                                      }}
-                                                    >
-                                                      {btnLabel}
-                                                    </button>
-                                                  )}
-                                              </td>
-                                            </tr>
-                                          );
-                                        })}
-                                      </tbody>
-                                    </table>
+                                                }}
+                                                className="btn btn-sm btn-primary"
+                                                style={{
+                                                  padding: '5px 14px',
+                                                  borderRadius: '20px',
+                                                  fontSize: '11.5px',
+                                                  fontWeight: 600,
+                                                  background: practiceCount === 0 ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)' : 'var(--accent-grad)',
+                                                  color: '#fff',
+                                                  cursor: 'pointer',
+                                                  border: 'none',
+                                                  display: 'inline-flex',
+                                                  alignItems: 'center',
+                                                  gap: '4px'
+                                                }}
+                                              >
+                                                <span>{btnLabel}</span>
+                                              </button>
+                                            )}
+                                          </div>
+                                        </div>
+                                      );
+                                    })}
                                   </div>
                                 </div>
                               )}

@@ -565,24 +565,6 @@ export default function StudentDashboardClient({ initialData }: { initialData: D
                 ) : (
                   <span style={{ color: 'var(--warning)', fontWeight: 700 }}>{t.mastery || 0}% Mastery</span>
                 )}
-                {t.topicClassification && (
-                  <>
-                    <span>•</span>
-                    <span style={{
-                      fontSize: '9.5px',
-                      fontWeight: 700,
-                      padding: '1px 6px',
-                      borderRadius: '4px',
-                      background: (t.topicClassification === 'minor' || t.topicClassification === 'micro') ? 'var(--success-bg)' : (t.topicClassification === 'major' || t.topicClassification === 'calculative' || t.topicClassification === 'hots') ? 'var(--danger-bg)' : 'var(--info-bg)',
-                      color: (t.topicClassification === 'minor' || t.topicClassification === 'micro') ? 'var(--success)' : (t.topicClassification === 'major' || t.topicClassification === 'calculative' || t.topicClassification === 'hots') ? 'var(--danger)' : 'var(--info)',
-                      border: `1px solid ${(t.topicClassification === 'minor' || t.topicClassification === 'micro') ? 'rgba(52, 211, 153, 0.25)' : (t.topicClassification === 'major' || t.topicClassification === 'calculative' || t.topicClassification === 'hots') ? 'rgba(248, 113, 113, 0.25)' : 'rgba(56, 189, 248, 0.25)'}`
-                    }}>
-                      {(t.topicClassification === 'minor' || t.topicClassification === 'micro') && '📘 Minor (6 Qs to Master • Max 2 Sets)'}
-                      {(t.topicClassification === 'medium' || t.topicClassification === 'moderate' || t.topicClassification === 'conceptual') && '📙 Medium (10 Qs to Master • Max 3 Sets)'}
-                      {(t.topicClassification === 'major' || t.topicClassification === 'calculative' || t.topicClassification === 'hots') && '📕 Major (15 Qs to Master • Max 4 Sets)'}
-                    </span>
-                  </>
-                )}
               </div>
             </div>
             <button 

@@ -80,17 +80,13 @@ export function PracticeHardwareModal({
                 <span style={{
                   fontSize: '10px',
                   fontWeight: 700,
-                  textTransform: 'uppercase',
                   padding: '2px 8px',
-                  borderRadius: '4px',
-                  background: (topicData.topicScope === 'minor' || topicData.topicClassification === 'minor' || topicData.topicClassification === 'micro') ? 'var(--success-bg)' : (topicData.topicScope === 'major' || topicData.topicClassification === 'major' || topicData.topicClassification === 'calculative' || topicData.topicClassification === 'hots') ? 'var(--danger-bg)' : 'var(--info-bg)',
-                  color: (topicData.topicScope === 'minor' || topicData.topicClassification === 'minor' || topicData.topicClassification === 'micro') ? 'var(--success)' : (topicData.topicScope === 'major' || topicData.topicClassification === 'major' || topicData.topicClassification === 'calculative' || topicData.topicClassification === 'hots') ? 'var(--danger)' : 'var(--info)',
-                  border: `1px solid ${(topicData.topicScope === 'minor' || topicData.topicClassification === 'minor' || topicData.topicClassification === 'micro') ? 'rgba(52, 211, 153, 0.3)' : (topicData.topicScope === 'major' || topicData.topicClassification === 'major' || topicData.topicClassification === 'calculative' || topicData.topicClassification === 'hots') ? 'rgba(248, 113, 113, 0.3)' : 'rgba(56, 189, 248, 0.3)'}`
+                  borderRadius: '12px',
+                  background: 'rgba(59, 130, 246, 0.12)',
+                  color: 'var(--accent)',
+                  border: '1px solid rgba(59, 130, 246, 0.3)'
                 }}>
-                  {(topicData.topicScope === 'minor' || topicData.topicClassification === 'minor' || topicData.topicClassification === 'micro') && '📘 Minor (6 Qs to Master • Max 2 Sets)'}
-                  {(topicData.topicScope === 'medium' || topicData.topicClassification === 'medium' || topicData.topicClassification === 'moderate' || topicData.topicClassification === 'conceptual') && '📙 Medium (10 Qs to Master • Max 3 Sets)'}
-                  {(topicData.topicScope === 'major' || topicData.topicClassification === 'major' || topicData.topicClassification === 'calculative' || topicData.topicClassification === 'hots') && '📕 Major (15 Qs to Master • Max 3 Sets)'}
-                  {!topicData.topicScope && !topicData.topicClassification && '📙 Standard (10 Qs to Master • Max 3 Sets)'}
+                  🎯 2 Sets to Master
                 </span>
               </div>
 
@@ -98,13 +94,13 @@ export function PracticeHardwareModal({
               <div style={{ marginBottom: '8px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '3px' }}>
                   <span>Confidence Progress (Score ≥ 90% Needed)</span>
-                  <strong>{topicData.totalAttemptedCount || 0} / {topicData.requiredConfidence || (topicData.topicScope === 'minor' ? 6 : topicData.topicScope === 'major' ? 15 : 10)} Qs Practiced</strong>
+                  <strong>{topicData.totalAttemptedCount || 0} / 12 Qs Practiced</strong>
                 </div>
                 <div style={{ height: '6px', background: 'var(--border-light)', borderRadius: '3px', overflow: 'hidden' }}>
                   <div style={{
                     height: '100%',
                     background: 'var(--accent)',
-                    width: `${Math.min(100, Math.round(((topicData.totalAttemptedCount || 0) / Math.max(1, topicData.requiredConfidence || (topicData.topicScope === 'minor' ? 6 : topicData.topicScope === 'major' ? 15 : 10))) * 100))}%`,
+                    width: `${Math.min(100, Math.round(((topicData.totalAttemptedCount || 0) / 12) * 100))}%`,
                     transition: 'width 0.3s ease'
                   }}></div>
                 </div>
