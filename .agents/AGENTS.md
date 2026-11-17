@@ -248,3 +248,20 @@
   6. **Automated Verification & Zero-Error Compilation**:
      - Run `node scripts/verify_all_business_invariants.js` and verify all tests pass (40/40+).
      - Run `npm run build` and ensure exit code 0 across all 136+ routes before committing.
+
+
+### Z. High-Velocity Execution Standard (Anti-Over-Researching & Anti-Whack-A-Mole Invariant)
+- **Rule**: Deliver production-grade solutions with maximum velocity by strictly eliminating speculative analysis loops and banning superficial band-aids.
+- **Key Invariants**:
+  1. **Zero Over-Researching (No 50-Line Read Loops)**:
+     - Strictly forbidden to paginate through large files in repetitive 50-line increments.
+     - Use targeted keyword queries (Select-String or exact AST inspection) to jump directly to the owning function or component.
+     - Diagnose the root cause within $\\le 2$ targeted reads and proceed directly to execution.
+  2. **Anti-Band-Aid & Anti-Whack-A-Mole Standard**:
+     - Never apply superficial inline hacks, hardcoded constants (e.g. hardcoding maxPractices = 2), or localized conditional overrides that mask a symptom on one screen while leaving other views broken.
+     - Every fix MUST resolve the root cause at the Single Source of Truth (SSOT)—the shared utility, service calculation engine, or database schema—guaranteeing complete parity across Student, Parent, and Admin views without regressions.
+  3. **Lean & Rapid Verification**:
+     - For intermediate code edits, verify validity in seconds using targeted checks (px tsc --noEmit) instead of incurring 3-minute full Next.js production builds on every turn.
+     - Execute production build verification (pm run build) cleanly prior to final deployment.
+  4. **Proactive Transparency**:
+     - If an infrastructure anomaly occurs (API idle stream timeout or server 503 capacity error), notify the user immediately rather than stalling silently in retry loops.
