@@ -5,6 +5,7 @@ import { verifyRole } from '@/lib/auth';
 import { getDateKeyIST } from '@/lib/dateUtils';
 import { isTopicPurelyQualitative } from '@/lib/curriculumGuard';
 import { invalidateCache } from '@/lib/firebase/cache';
+import { getStudentMode } from '@/types/user.types';
 
 export const dynamic = 'force-dynamic';
 
@@ -88,7 +89,7 @@ export async function POST(req: NextRequest) {
       codeChunks.map(chunk =>
         adminDb.collection('users')
           .where('studentCode', 'in', chunk)
-          .select('studentCode', 'name', 'role', 'batchIds', 'batchId', 'status')
+          .select('studentCode', 'name', 'role', 'batchIds', 'batchId', 'status', 'studentMode', 'autonomous')
           .get()
       )
     );
@@ -97,7 +98,7 @@ export async function POST(req: NextRequest) {
     userDocsSnaps.forEach(snap => {
       snap.docs.forEach(doc => {
         const data = doc.data();
-        if (data.role === 'student' && data.studentCode && data.status !== 'inactive') {
+        if (data.role === 'student' && data.studentCode && data.status !== 'inactive' && getStudentMode(data) !== 'limited') {
           const bIds = data.batchIds || [data.batchId].filter(Boolean);
           if (bIds.includes(batchId)) {
             studentMap.set(data.studentCode, {

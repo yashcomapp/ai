@@ -216,7 +216,7 @@ export class ReportService {
     const [studentsSnap, batchesSnap, rawReviewsSnap, masterySnap] = await Promise.all([
       adminDb.collection('users')
         .where('role', '==', 'student')
-        .select('studentCode', 'name', 'status', 'batchId', 'batchIds', 'className', 'class', 'autonomous', 'email', 'isDemo')
+        .select('studentCode', 'name', 'status', 'batchId', 'batchIds', 'className', 'class', 'autonomous', 'email', 'isDemo', 'studentMode')
         .get(),
       getCachedBatches(),
       adminDb.collection('parentReviews')
@@ -270,10 +270,11 @@ export class ReportService {
           status: data.status || 'active',
           batchIds: data.batchIds || (data.batchId ? [data.batchId] : []),
           className: data.className || data.class || '',
-          isAutonomous: data.autonomous === true
+          isAutonomous: data.autonomous === true,
+          studentMode: data.studentMode
         };
       })
-      .filter(s => s.status !== 'inactive' && !isDemoUser(s));
+      .filter(s => s.status !== 'inactive' && !isDemoUser(s) && getStudentMode(s) !== 'limited');
 
     const batches = batchesSnap.docs.map(doc => ({
       id: doc.id,
@@ -399,6 +400,7 @@ export class ReportService {
         batchIds: student.batchIds,
         className: student.className,
         isAutonomous: student.isAutonomous,
+        studentMode: student.studentMode || (student.isAutonomous ? 'autonomous' : 'regular'),
         activeLocks: locksByStudent[studentCode] || [],
         sessionsCount: totalSessions,
         avgAccuracy,
@@ -500,10 +502,11 @@ export class ReportService {
     const cachedFullBulk = await ReportCacheManager.getReport<any>(fullBulkCacheKey);
     if (cachedFullBulk) return cachedFullBulk;
 
-    const [students, batchesSnap] = await Promise.all([
+    const [rawStudents, batchesSnap] = await Promise.all([
       StudentRepository.listStudents(),
       getCachedBatches()
     ]);
+    const students = rawStudents.filter(s => getStudentMode(s) !== 'limited');
 
     const batches = batchesSnap.docs.map(doc => ({
       id: doc.id,

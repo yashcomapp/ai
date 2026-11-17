@@ -55,6 +55,7 @@ export class StudentRepository {
         currentPagePath: data.currentPagePath || '',
         overallMastery: data.overallMastery || 0,
         autonomous: data.autonomous === true || data.isAutonomous === true || data.mode === 'autonomous',
+        studentMode: data.studentMode,
         role: 'student' as const,
         status: data.status || 'active'
       };

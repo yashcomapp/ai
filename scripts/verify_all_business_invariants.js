@@ -741,6 +741,24 @@ test('Parent Dashboard & Review Portal strictly excludes Mode 2 (Autonomous) and
   assert.strictEqual(canParentReviewChild(children[2]), false); // Limited -> disabled
 });
 
+test('Practice Reports & Remediation Hub strictly exclude Mode 3 (Limited) students from practice tracking and alert queues', () => {
+  const students = [
+    { studentCode: 'ST-001', role: 'student', status: 'active', studentMode: 'regular' },
+    { studentCode: 'ST-002', role: 'student', status: 'active', studentMode: 'autonomous' },
+    { studentCode: 'ST-003', role: 'student', status: 'active', studentMode: 'limited' },
+    { studentCode: 'ST-004', role: 'student', status: 'inactive', studentMode: 'regular' }
+  ];
+
+  // Daily Practice Report active students filter
+  const practiceEligible = students.filter(s => s.status !== 'inactive' && getStudentMode(s) !== 'limited');
+  assert.strictEqual(practiceEligible.length, 2);
+  assert.strictEqual(practiceEligible.some(s => s.studentCode === 'ST-003'), false);
+
+  // Intervention queue filter (Remediation & Practice Lockdown)
+  const interventionEligible = students.filter(s => s.status !== 'inactive' && getStudentMode(s) !== 'limited');
+  assert.strictEqual(interventionEligible.some(s => s.studentCode === 'ST-003'), false);
+});
+
 // -----------------------------------------------------------------------------
 // SUITE 14: Parent Student Codes & Legacy Link Isolation
 // -----------------------------------------------------------------------------

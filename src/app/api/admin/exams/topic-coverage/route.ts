@@ -6,6 +6,7 @@ import { deriveTopicCodeFromQuestionCode, normalizeTopicCode } from '@/lib/quest
 import { classifyAssignedTopics } from '@/lib/dashboardMetrics';
 import { getFromCache, setInCache, getCachedBatches } from '@/lib/firebase/cache';
 import { getCachedSyllabusTopicsMap } from '@/lib/syllabusServerUtils';
+import { getStudentMode } from '@/types/user.types';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -57,7 +58,7 @@ export async function GET(req: NextRequest) {
     const studentsSnap = await adminDb.collection('users')
       .where('role', '==', 'student')
       .where('batchIds', 'array-contains', batchId)
-      .select('studentCode', 'name', 'status', 'batchIds', 'batchId')
+      .select('studentCode', 'name', 'status', 'batchIds', 'batchId', 'studentMode', 'autonomous')
       .get();
 
     let batchStudents = studentsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -67,13 +68,13 @@ export async function GET(req: NextRequest) {
       const legacySnap = await adminDb.collection('users')
         .where('role', '==', 'student')
         .where('batchId', '==', batchId)
-        .select('studentCode', 'name', 'status', 'batchIds', 'batchId')
+        .select('studentCode', 'name', 'status', 'batchIds', 'batchId', 'studentMode', 'autonomous')
         .get();
       batchStudents = legacySnap.docs.map(d => ({ id: d.id, ...d.data() }));
     }
 
-    // Exclude inactive students per Rule 2C
-    batchStudents = batchStudents.filter((s: any) => s.status !== 'inactive' && s.studentCode);
+    // Exclude inactive students per Rule 2C and Limited Mode students who cannot access practice/remediation
+    batchStudents = batchStudents.filter((s: any) => s.status !== 'inactive' && s.studentCode && getStudentMode(s) !== 'limited');
     const studentCodes = batchStudents.map((s: any) => String(s.studentCode).trim());
 
     // 3. Find all conducted/assigned exams for this batch

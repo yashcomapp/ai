@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { formatDateDMY, getDateKeyIST } from '@/lib/dateUtils';
 import { loadHtml2Canvas, formatReportStudentName, getScoreChip } from '@/lib/lqCardExport';
 import { playNotificationSound } from '@/lib/audioUtils';
+import { getStudentMode } from '@/types/user.types';
 
 interface StudentSummary {
   studentCode: string;
@@ -14,6 +15,7 @@ interface StudentSummary {
   batchIds: string[];
   className: string;
   isAutonomous: boolean;
+  studentMode?: string;
   activeLocks: string[];
   sessionsCount: number;
   avgAccuracy: number;
@@ -337,9 +339,10 @@ export default function DailyPracticeSummaryPage() {
     ? 'All Batches' 
     : batches.find(b => b.id === selectedBatchId)?.name || 'Selected Batch';
 
-  // Filtered students by batch and search
+  // Filtered students by batch and search (strictly excluding Limited Mode students)
   const filteredStudents = useMemo(() => {
     return students.filter(student => {
+      if (getStudentMode(student) === 'limited') return false;
       if (selectedBatchId !== 'all') {
         const isInBatch = student.batchIds && student.batchIds.includes(selectedBatchId);
         if (!isInBatch) return false;

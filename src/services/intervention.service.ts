@@ -2,6 +2,7 @@ import { adminDb } from '@/lib/firebase/admin';
 import { getAssignmentsForBatches } from '@/services/exam.service';
 import { getDateKeyIST } from '@/lib/dateUtils';
 import { ReportCacheManager } from '@/lib/reportCache';
+import { getStudentMode } from '@/types/user.types';
 
 export type InterventionCategory = 
   | 'missed_exam'       // Step 1: Baseline Exam missed
@@ -73,15 +74,15 @@ export class InterventionService {
 
     const now = new Date();
 
-    // 1. Fetch all active students (excluding deactivated accounts per Rule 2.C)
+    // 1. Fetch all active students (excluding deactivated accounts per Rule 2.C and Limited Mode students who cannot practice)
     const studentsSnap = await adminDb.collection('users')
       .where('role', '==', 'student')
-      .select('name', 'studentCode', 'className', 'batch', 'phone', 'parentPhone', 'status', 'batchId', 'batchIds')
+      .select('name', 'studentCode', 'className', 'batch', 'phone', 'parentPhone', 'status', 'batchId', 'batchIds', 'studentMode', 'autonomous')
       .get();
 
     const activeStudents = studentsSnap.docs
       .map(d => ({ id: d.id, ...d.data() } as any))
-      .filter(s => s.status !== 'inactive');
+      .filter(s => s.status !== 'inactive' && getStudentMode(s) !== 'limited');
 
     const studentMap = new Map<string, any>();
     const allBatchIds = new Set<string>();
