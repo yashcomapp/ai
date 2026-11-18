@@ -854,6 +854,7 @@ export async function POST(req: NextRequest) {
         boardCode,
         class: classNum,
         subjectCode,
+        subject: subjectName || (Array.isArray(subjects) && subjects.length > 0 ? subjects[0] : ''),
         subjects: subjects || [subjectName],
 
         subjectWeightage: subjectWeightage || {},
