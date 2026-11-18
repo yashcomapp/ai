@@ -500,6 +500,7 @@ export default function AdminExamGeneratorPage() {
                   chapterNumber: String(ch.number || idx + 1),
                   objectiveCount: ch.objectiveCount || 0,
                   subjectiveCount: ch.subjectiveCount || 0,
+                  vaultCounts: ch.vaultCounts,
                   testsCount: ch.testsCount || 0,
                   conductedTopicsCount: ch.conductedTopicsCount || 0,
                   totalTopicsCount: ch.totalTopicsCount || (Array.isArray(ch.topics) ? ch.topics.length : 0),
@@ -534,6 +535,7 @@ export default function AdminExamGeneratorPage() {
                 topicCode: topCode,
                 objectiveCount: isObj ? (t.objectiveCount || 0) : 0,
                 subjectiveCount: isObj ? (t.subjectiveCount || 0) : 0,
+                vaultCounts: isObj ? t.vaultCounts : undefined,
                 testsCount: isObj ? (t.testsCount || 0) : 0,
                 hasSubtopics: isObj && Array.isArray(t.subtopics) && t.subtopics.length > 0
               });
@@ -594,6 +596,12 @@ export default function AdminExamGeneratorPage() {
     if (topicNum) params.set('topic', topicNum);
     if (qType) params.set('questionType', qType);
 
+    const targetVault = (currentTemplate?.examCategory === 'foundation' || currentTemplate?.examCategory === 'mock') ? 'mock' : 'exam';
+
+    params.set('vault', targetVault);
+
+
+
     const url = `/admin/create-qb?${params.toString()}`;
     window.open(url, '_blank');
   };
@@ -611,6 +619,12 @@ export default function AdminExamGeneratorPage() {
     if (subject) params.set('subject', subject);
     if (chapterNum) params.set('chapter', chapterNum);
     if (qType) params.set('questionType', qType);
+
+    const targetVault = (currentTemplate?.examCategory === 'foundation' || currentTemplate?.examCategory === 'mock') ? 'mock' : 'exam';
+
+    params.set('vault', targetVault);
+
+
 
     const url = `/admin/create-qb?${params.toString()}`;
     window.open(url, '_blank');
@@ -736,7 +750,25 @@ export default function AdminExamGeneratorPage() {
       });
     } else {
       setCurrentTemplate(tmpl);
-    }
+        }
+        const newCat = tmpl?.examCategory || 'standard';
+        const newVault = (newCat === 'foundation' || newCat === 'mock') ? 'foundation' : 'exam';
+        setAvailableChapters(prev => prev.map(ch => {
+          if (!ch.vaultCounts) return ch;
+          return {
+            ...ch,
+            objectiveCount: ch.vaultCounts[newVault]?.objective ?? 0,
+            subjectiveCount: ch.vaultCounts[newVault]?.subjective ?? 0
+          };
+        }));
+        setAvailableTopics(prev => prev.map(top => {
+          if (!top.vaultCounts) return top;
+          return {
+            ...top,
+            objectiveCount: top.vaultCounts[newVault]?.objective ?? 0,
+            subjectiveCount: top.vaultCounts[newVault]?.subjective ?? 0
+          };
+        }));
   };
 
   const getNormalizedTypeCounts = (tmpl: Template | null, qType: 'objective' | 'subjective') => {

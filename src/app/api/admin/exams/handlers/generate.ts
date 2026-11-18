@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as admin from 'firebase-admin';
 import { adminDb } from '@/lib/firebase/admin';
-import { OBJECTIVE_QUESTION_TYPES, SUBJECTIVE_QUESTION_TYPES, toCanonicalQuestionType, CANONICAL_OBJECTIVE_TYPES, CANONICAL_SUBJECTIVE_TYPES, cleanStringForMatch, isQuestionQuarantined } from '@/lib/questionTypes';
+import { OBJECTIVE_QUESTION_TYPES, SUBJECTIVE_QUESTION_TYPES, toCanonicalQuestionType, CANONICAL_OBJECTIVE_TYPES, CANONICAL_SUBJECTIVE_TYPES, cleanStringForMatch, isQuestionQuarantined, getCanonicalQuestionVault, isQuestionInVault } from '@/lib/questionTypes';
 import { verifyRole } from '@/lib/auth';
 import { ChunkedBatch } from '@/lib/firebase/batch';
 import { ExamRepository } from '@/repositories/exam.repository';
@@ -139,15 +139,11 @@ export async function GET(req: NextRequest) {
                          usedInExamsSet.has(String(q.id || '').trim()) || 
                          usedInExamsSet.has(String(q.questionCode || '').trim());
           const unusedMatch = !isUsed;
-          // When generating standard/regular tests, all curriculum questions in the selected topics
-          // (standard, foundation, practice, school, objective) are eligible candidates.
-          // For foundation/olympiad mocks, questions tagged foundation, hard difficulty, or standard are eligible.
-          const categoryMatch = !examCategory || 
-                                examCategory === 'mock' || 
-                                examCategory === 'standard' ||
-                                (examCategory === 'foundation' 
-                                  ? (q.examCategory === 'foundation' || q.difficulty === 'hard' || (q.examCategory || 'standard') === 'standard') 
-                                  : true);
+          // Strict Category / Vault Isolation SSOT:
+          // 'exam' tests ONLY pull from 'exam' vault
+          // 'foundation' / 'mock' tests ONLY pull from 'foundation' vault ('mock' === 'foundation')
+          // 'practice' tests ONLY pull from 'practice' vault
+          const categoryMatch = isQuestionInVault(q, examCategory);
 
           // Chapter boundary check if chapterNumbers are provided
           if (chapterNumbers.length > 0) {
@@ -211,10 +207,12 @@ export async function GET(req: NextRequest) {
     const reqBoard = searchParams.get('board') || '';
     const reqClass = searchParams.get('classNum') || searchParams.get('class') || '';
     const reqSubject = searchParams.get('subject') || '';
+    const reqCategory = searchParams.get('examCategory') || searchParams.get('vault') || 'standard';
+    const activeVault = (reqCategory === 'foundation' || reqCategory === 'mock') ? 'foundation' : (reqCategory === 'practice' ? 'practice' : 'exam');
     const isSingleDocQuery = Boolean(docId || (reqBoard && reqClass && reqSubject));
 
     if (isSingleDocQuery) {
-      const cacheKey = docId || `${reqBoard}_${reqClass}_${reqSubject}`;
+      const cacheKey = docId ? `${docId}_${activeVault}` : `${reqBoard}_${reqClass}_${reqSubject}_${activeVault}`;
       const cached = SYLLABUS_DOC_CACHE.get(cacheKey);
       if (cached && (Date.now() - cached.timestamp < SYLLABUS_DOC_TTL)) {
         return NextResponse.json(cached.data);
@@ -321,7 +319,8 @@ export async function GET(req: NextRequest) {
               if (parts.length >= 4) { chNum = parts[3]; }
             }
 
-            return { id: doc.id, chNum, topNum, subNum, tCode, sCode, tName, sName, cTag, isObjective };
+            const qVault = getCanonicalQuestionVault(q);
+            return { id: doc.id, chNum, topNum, subNum, tCode, sCode, tName, sName, cTag, isObjective, vault: qVault };
           })
           .filter(Boolean) as any[];
       } catch (err) {
@@ -578,8 +577,22 @@ export async function GET(req: NextRequest) {
                   return false;
                 });
 
-                sub.objectiveCount = subQuestions.filter(q => q.isObjective).length;
-                sub.subjectiveCount = subQuestions.filter(q => !q.isObjective).length;
+                sub.vaultCounts = {
+                  exam: {
+                    objective: subQuestions.filter(q => q.isObjective && q.vault === 'exam').length,
+                    subjective: subQuestions.filter(q => !q.isObjective && q.vault === 'exam').length
+                  },
+                  practice: {
+                    objective: subQuestions.filter(q => q.isObjective && q.vault === 'practice').length,
+                    subjective: subQuestions.filter(q => !q.isObjective && q.vault === 'practice').length
+                  },
+                  foundation: {
+                    objective: subQuestions.filter(q => q.isObjective && q.vault === 'foundation').length,
+                    subjective: subQuestions.filter(q => !q.isObjective && q.vault === 'foundation').length
+                  }
+                };
+                sub.objectiveCount = sub.vaultCounts[activeVault]?.objective ?? 0;
+                sub.subjectiveCount = sub.vaultCounts[activeVault]?.subjective ?? 0;
                 let subTests = 0;
                 examsList.forEach(exam => {
                   const topicCodes = Array.isArray(exam.topicCodes) ? exam.topicCodes : [];
@@ -601,25 +614,56 @@ export async function GET(req: NextRequest) {
             }
 
             // Top-level topic objective/subjective count
-            if (subtopics.length > 0) {
-              const directObj = topicBranchQuestions.filter(q => {
-                if (!q.isObjective) return false;
-                const tCode = String(q.tCode || '');
-                return tCode === cleanTopicCode || String(q.topNum || '') === topNumStr;
-              }).length;
-              const directSubj = topicBranchQuestions.filter(q => {
-                if (q.isObjective) return false;
-                const tCode = String(q.tCode || '');
-                return tCode === cleanTopicCode || String(q.topNum || '') === topNumStr;
-              }).length;
-              const subObj = subtopics.reduce((acc: number, s: any) => acc + (Number(s.objectiveCount) || 0), 0);
-              const subSubj = subtopics.reduce((acc: number, s: any) => acc + (Number(s.subjectiveCount) || 0), 0);
-              top.objectiveCount = directObj + subObj;
-              top.subjectiveCount = directSubj + subSubj;
-            } else {
-              top.objectiveCount = topicBranchQuestions.filter(q => q.isObjective).length;
-              top.subjectiveCount = topicBranchQuestions.filter(q => !q.isObjective).length;
-            }
+            const directObjExam = topicBranchQuestions.filter(q => {
+              if (!q.isObjective || q.vault !== 'exam') return false;
+              const tCode = String(q.tCode || '');
+              return tCode === cleanTopicCode || String(q.topNum || '') === topNumStr;
+            }).length;
+            const directSubjExam = topicBranchQuestions.filter(q => {
+              if (q.isObjective || q.vault !== 'exam') return false;
+              const tCode = String(q.tCode || '');
+              return tCode === cleanTopicCode || String(q.topNum || '') === topNumStr;
+            }).length;
+
+            const directObjPractice = topicBranchQuestions.filter(q => {
+              if (!q.isObjective || q.vault !== 'practice') return false;
+              const tCode = String(q.tCode || '');
+              return tCode === cleanTopicCode || String(q.topNum || '') === topNumStr;
+            }).length;
+            const directSubjPractice = topicBranchQuestions.filter(q => {
+              if (q.isObjective || q.vault !== 'practice') return false;
+              const tCode = String(q.tCode || '');
+              return tCode === cleanTopicCode || String(q.topNum || '') === topNumStr;
+            }).length;
+
+            const directObjFoundation = topicBranchQuestions.filter(q => {
+              if (!q.isObjective || q.vault !== 'foundation') return false;
+              const tCode = String(q.tCode || '');
+              return tCode === cleanTopicCode || String(q.topNum || '') === topNumStr;
+            }).length;
+            const directSubjFoundation = topicBranchQuestions.filter(q => {
+              if (q.isObjective || q.vault !== 'foundation') return false;
+              const tCode = String(q.tCode || '');
+              return tCode === cleanTopicCode || String(q.topNum || '') === topNumStr;
+            }).length;
+
+            top.vaultCounts = {
+              exam: {
+                objective: subtopics.length > 0 ? (directObjExam + subtopics.reduce((acc: number, s: any) => acc + (s.vaultCounts?.exam?.objective || 0), 0)) : topicBranchQuestions.filter(q => q.isObjective && q.vault === 'exam').length,
+                subjective: subtopics.length > 0 ? (directSubjExam + subtopics.reduce((acc: number, s: any) => acc + (s.vaultCounts?.exam?.subjective || 0), 0)) : topicBranchQuestions.filter(q => !q.isObjective && q.vault === 'exam').length
+              },
+              practice: {
+                objective: subtopics.length > 0 ? (directObjPractice + subtopics.reduce((acc: number, s: any) => acc + (s.vaultCounts?.practice?.objective || 0), 0)) : topicBranchQuestions.filter(q => q.isObjective && q.vault === 'practice').length,
+                subjective: subtopics.length > 0 ? (directSubjPractice + subtopics.reduce((acc: number, s: any) => acc + (s.vaultCounts?.practice?.subjective || 0), 0)) : topicBranchQuestions.filter(q => !q.isObjective && q.vault === 'practice').length
+              },
+              foundation: {
+                objective: subtopics.length > 0 ? (directObjFoundation + subtopics.reduce((acc: number, s: any) => acc + (s.vaultCounts?.foundation?.objective || 0), 0)) : topicBranchQuestions.filter(q => q.isObjective && q.vault === 'foundation').length,
+                subjective: subtopics.length > 0 ? (directSubjFoundation + subtopics.reduce((acc: number, s: any) => acc + (s.vaultCounts?.foundation?.subjective || 0), 0)) : topicBranchQuestions.filter(q => !q.isObjective && q.vault === 'foundation').length
+              }
+            };
+            top.objectiveCount = top.vaultCounts[activeVault]?.objective ?? 0;
+            top.subjectiveCount = top.vaultCounts[activeVault]?.subjective ?? 0;
+
             if (subtopics.length > 0) {
               top.testsCount = Math.max(directTopicTests, ...subtopics.map((s: any) => s.testsCount || 0));
             } else {
@@ -630,9 +674,23 @@ export async function GET(req: NextRequest) {
             }
           });
 
-          // Chapter total is the exact unique count of questions for this chapter
-          chap.objectiveCount = chapQuestions.filter(q => q.isObjective).length;
-          chap.subjectiveCount = chapQuestions.filter(q => !q.isObjective).length;
+          // Chapter total strictly reflects the active vault
+          chap.vaultCounts = {
+            exam: {
+              objective: chapQuestions.filter(q => q.isObjective && q.vault === 'exam').length,
+              subjective: chapQuestions.filter(q => !q.isObjective && q.vault === 'exam').length
+            },
+            practice: {
+              objective: chapQuestions.filter(q => q.isObjective && q.vault === 'practice').length,
+              subjective: chapQuestions.filter(q => !q.isObjective && q.vault === 'practice').length
+            },
+            foundation: {
+              objective: chapQuestions.filter(q => q.isObjective && q.vault === 'foundation').length,
+              subjective: chapQuestions.filter(q => !q.isObjective && q.vault === 'foundation').length
+            }
+          };
+          chap.objectiveCount = chap.vaultCounts[activeVault]?.objective ?? 0;
+          chap.subjectiveCount = chap.vaultCounts[activeVault]?.subjective ?? 0;
           chap.testsCount = allTestsCountsUnderChapter.length > 0 ? Math.max(0, ...allTestsCountsUnderChapter) : 0;
           chap.totalTopicsCount = leafTopicsTotal;
           chap.conductedTopicsCount = leafTopicsTested;

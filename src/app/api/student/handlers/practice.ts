@@ -5,7 +5,7 @@ import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole, isStudentLimited } from '@/lib/auth';
 import { QuestionRepository } from '@/repositories/question.repository';
 import { PracticeService } from '@/services/practice.service';
-import { shuffleArray, isObjectiveType, isSingleChoiceType, isMultipleChoiceType, isAssertionReasonType, isQuestionQuarantined, DEFAULT_ASSERTION_REASON_OPTIONS } from '@/lib/questionTypes';
+import { shuffleArray, isObjectiveType, isSingleChoiceType, isMultipleChoiceType, isAssertionReasonType, isQuestionQuarantined, DEFAULT_ASSERTION_REASON_OPTIONS, isQuestionInVault } from '@/lib/questionTypes';
 import { getDateKeyIST } from '@/lib/dateUtils';
 import { getRequiredConfidence } from '@/lib/studentDb';
 import { MASTERY_THRESHOLDS } from '@/lib/dashboardMetrics';
@@ -285,32 +285,9 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // 3-Tier Waterfall for Zero-Collision & Zero-Starvation Practice:
-    // Tier 1: Practice vault standard questions (preferred)
-    const tier1PracticeStandard = candidatePool.filter(q => {
-      const isPracticeVault = !q.vault || q.vault === 'practice';
-      const isStandardCat = !q.examCategory || q.examCategory === 'standard';
-      return isPracticeVault && isStandardCat;
-    });
-
-    // Tier 2: Foundation & Mock questions (Olympiad / Homi Bhabha / competitive practice)
-    const tier2MockFoundation = candidatePool.filter(q => {
-      return q.vault === 'mock' || q.examCategory === 'foundation';
-    });
-
-    // Tier 3: Exam Vault questions (fallback to prevent student starvation if topic only has exam questions)
-    const tier3ExamVault = candidatePool.filter(q => {
-      return q.vault === 'exam' && q.examCategory !== 'foundation';
-    });
-
-    let allQuestions: any[] = [];
-    if (tier1PracticeStandard.length >= finalSize) {
-      allQuestions = tier1PracticeStandard;
-    } else if (tier1PracticeStandard.length + tier2MockFoundation.length >= finalSize) {
-      allQuestions = [...tier1PracticeStandard, ...tier2MockFoundation];
-    } else {
-      allQuestions = [...tier1PracticeStandard, ...tier2MockFoundation, ...tier3ExamVault];
-    }
+    // Strict SSOT: Student Practice sessions strictly pull ONLY from Practice vault.
+    // Never leak Exam vault or Foundation/Mock questions into practice.
+    const allQuestions: any[] = candidatePool.filter(q => isQuestionInVault(q, 'practice'));
 
     let topicName = topicCode;
     if (allQuestions.length > 0) {

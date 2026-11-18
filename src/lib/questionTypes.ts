@@ -437,6 +437,49 @@ export function isSubjectiveType(type: any): boolean {
   return CANONICAL_SUBJECTIVE_TYPES.includes(toCanonicalQuestionType(type));
 }
 
+export type CanonicalQuestionVault = 'exam' | 'practice' | 'foundation';
+
+/**
+ * SSOT Invariant: Resolves a question's canonical vault.
+ * The system strictly supports 3 isolated vaults:
+ * 1. 'exam'       - Classroom Exams & Official Tests (vault: 'exam', or standard/school/objective)
+ * 2. 'practice'   - Student Adaptive Practice Sessions (vault: 'practice')
+ * 3. 'foundation' - Foundation / Olympiad Mock Exams (vault: 'mock' | 'foundation' or examCategory: 'foundation' | 'mock')
+ * Note: 'mock' and 'foundation' are identical representations of the same vault.
+ */
+export function getCanonicalQuestionVault(q: any): CanonicalQuestionVault {
+  if (!q) return 'exam';
+  const v = String(q.vault || q.pool || '').trim().toLowerCase();
+  const c = String(q.examCategory || '').trim().toLowerCase();
+
+  // Foundation & Mock are identical SSOT aliases
+  if (v === 'mock' || v === 'foundation' || c === 'foundation' || c === 'mock') {
+    return 'foundation';
+  }
+
+  // Practice
+  if (v === 'practice' || c === 'practice') {
+    return 'practice';
+  }
+
+  // Exam
+  if (v === 'exam' || c === 'standard' || c === 'school' || c === 'objective') {
+    return 'exam';
+  }
+
+  return 'exam';
+}
+
+/**
+ * Strictly checks if a question belongs to the specified target vault.
+ * Prevents any cross-category leakage.
+ */
+export function isQuestionInVault(q: any, targetVault: CanonicalQuestionVault | string): boolean {
+  const normTarget = String(targetVault || '').trim().toLowerCase();
+  const canonicalTarget = (normTarget === 'mock' || normTarget === 'foundation') ? 'foundation' : (normTarget === 'practice' ? 'practice' : 'exam');
+  return getCanonicalQuestionVault(q) === canonicalTarget;
+}
+
 
 export function evaluateQuestionAnswer(type: string, userAnswer: any, correctAnswer: any, options?: any[]): boolean {
   if (isBlank(userAnswer)) return false;

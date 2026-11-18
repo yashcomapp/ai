@@ -4,7 +4,7 @@ import { adminDb } from '@/lib/firebase/admin';
 import { verifyRole } from '@/lib/auth';
 import { QuestionRepository } from '@/repositories/question.repository';
 import { ChunkedBatch } from '@/lib/firebase/batch';
-import { validateQuestion, normalizeBloomLevel, OBJECTIVE_QUESTION_TYPES, SUBJECTIVE_QUESTION_TYPES, QUESTION_TYPE_MAP, cleanStringForMatch, toCanonicalQuestionType, isObjectiveType, isSubjectiveType, stripCitations, canonicalizeQuestionAnswers } from '@/lib/questionTypes';
+import { validateQuestion, normalizeBloomLevel, OBJECTIVE_QUESTION_TYPES, SUBJECTIVE_QUESTION_TYPES, QUESTION_TYPE_MAP, cleanStringForMatch, toCanonicalQuestionType, isObjectiveType, isSubjectiveType, stripCitations, canonicalizeQuestionAnswers, isQuestionInVault } from '@/lib/questionTypes';
 import { validateQuestionCurriculum } from '@/lib/curriculumGuard';
 import { getFromCache, setInCache, invalidateCache } from '@/lib/firebase/cache';
 import { 
@@ -238,19 +238,9 @@ export async function GET(req: NextRequest) {
         if (!matchesTop) return false;
       }
 
-      // Pool / Vault check
+      // Pool / Vault check (SSOT Invariant)
       if (pool) {
-        const qVault = String(q.vault || '').trim().toLowerCase();
-        const searchPool = pool.trim().toLowerCase();
-        if (searchPool === 'exam') {
-          if (qVault !== 'exam') return false;
-        } else if (searchPool === 'practice') {
-          if (qVault !== 'practice') return false;
-        } else if (searchPool === 'mock' || searchPool === 'foundation') {
-          if (qVault !== 'mock' && qVault !== 'foundation' && q.examCategory !== 'foundation') return false;
-        } else if (qVault !== searchPool) {
-          return false;
-        }
+        if (!isQuestionInVault(q, pool)) return false;
       }
 
       // Type check

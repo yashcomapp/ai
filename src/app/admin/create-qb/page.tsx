@@ -129,6 +129,12 @@ function CreateQBContent() {
     if (qtype === 'subjective' || qtype === 'objective') {
       setQuestionType(qtype as any);
     }
+    const v = searchParams.get('vault');
+    if (v === 'exam' || v === 'practice' || v === 'mock') {
+      setVault(v as any);
+    } else if (v === 'foundation') {
+      setVault('mock');
+    }
   }, [searchParams]);
 
   // Manual Paste Workspace
