@@ -968,7 +968,7 @@ ${JSON.stringify(missingList, null, 2)}`;
                 <option value="">-- All Pools --</option>
                 <option value="exam">Exams Pool</option>
                 <option value="practice">Practice Pool</option>
-                <option value="mock">Mock (Foundation) Pool</option>
+                <option value="foundation">Foundation Pool</option>
               </select>
             </div>
             <div>
@@ -1124,8 +1124,8 @@ ${JSON.stringify(missingList, null, 2)}`;
                           {q.vault === 'practice' && (
                             <span className="badge" style={{ fontSize: '9.5px', padding: '1px 6px', borderRadius: '4px', background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', fontWeight: 700 }}>Practice Pool</span>
                           )}
-                          {(q.vault === 'mock' || q.vault === 'foundation' || q.examCategory === 'foundation') && (
-                            <span className="badge" style={{ fontSize: '9.5px', padding: '1px 6px', borderRadius: '4px', background: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b', fontWeight: 700 }}>Mock (Foundation)</span>
+                          {(q.vault === 'foundation' || q.vault === 'mock' || q.examCategory === 'foundation') && (
+                            <span className="badge" style={{ fontSize: '9.5px', padding: '1px 6px', borderRadius: '4px', background: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b', fontWeight: 700 }}>Foundation Pool</span>
                           )}
                           {q.usedInClassroomTest ? (
                             <span className="badge" style={{ fontSize: '9.5px', padding: '1px 6px', borderRadius: '4px', background: 'rgba(107, 70, 193, 0.1)', color: 'var(--accent)', fontWeight: 700 }}>Used</span>
@@ -1392,17 +1392,17 @@ ${JSON.stringify(missingList, null, 2)}`;
                 <div>
                   <label style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', marginBottom: '5px' }}>Pool</label>
                   <select 
-                    value={(editorModal as any).vault || ((editorModal as any).examCategory === 'foundation' ? 'mock' : 'exam')} 
+                    value={(editorModal as any).vault || ((editorModal as any).examCategory === 'foundation' ? 'foundation' : 'exam')} 
                     onChange={(e) => setEditorModal(prev => ({ 
                       ...prev, 
                       vault: e.target.value, 
-                      examCategory: e.target.value === 'mock' ? 'foundation' : (prev as any).examCategory || 'standard' 
+                      examCategory: e.target.value === 'foundation' ? 'foundation' : (prev as any).examCategory || 'standard' 
                     }))}
                     style={{ width: '100%', padding: '6px', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', background: 'var(--surface)', color: 'var(--text)', fontSize: '12px' }}
                   >
                     <option value="exam">Exams Pool</option>
                     <option value="practice">Practice Pool</option>
-                    <option value="mock">Mock (Foundation) Pool</option>
+                    <option value="foundation">Foundation Pool</option>
                   </select>
                 </div>
                 <div>

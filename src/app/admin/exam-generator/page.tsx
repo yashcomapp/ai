@@ -97,7 +97,7 @@ const CANONICAL_EXAM_PRESETS: Template[] = [
   },
   {
     id: 'foundation_olympiad_50',
-    name: 'Foundation / Olympiad Mock (50 Questions • Dynamic Time • +4/-1 Marks)',
+    name: 'Foundation Test (50 Questions • Dynamic Time • +4/-1 Marks)',
     totalQuestions: 50,
     duration: 50,
     positiveMarks: 4,
@@ -107,7 +107,7 @@ const CANONICAL_EXAM_PRESETS: Template[] = [
   },
   {
     id: 'homi_bhabha_100',
-    name: 'Dr. Homi Bhabha Science Mock (100 Questions • 90 Mins • +1/0 Marks)',
+    name: 'Dr. Homi Bhabha Science Foundation (100 Questions • 90 Mins • +1/0 Marks)',
     totalQuestions: 100,
     duration: 90,
     positiveMarks: 1,
@@ -417,13 +417,19 @@ export default function AdminExamGeneratorPage() {
           const totTopics = existingCh?.totalTopicsCount ?? ch.totalTopicsCount ?? (Array.isArray(ch.topics) ? ch.topics.length : 0);
           const exStatus = existingCh?.examStatus ?? ch.examStatus ?? (condTopics !== undefined && condTopics > 0 ? (condTopics >= totTopics ? 'all_conducted' : 'partial_conducted') : undefined);
 
+          const activeVault = (currentTemplate?.examCategory === 'foundation' || currentTemplate?.examCategory === 'mock') ? 'foundation' : 'exam';
+          const chVaultCounts = existingCh?.vaultCounts ?? ch.vaultCounts;
+          const objCount = chVaultCounts ? (chVaultCounts[activeVault]?.objective ?? 0) : (existingCh?.objectiveCount ?? ch.objectiveCount ?? 0);
+          const subjCount = chVaultCounts ? (chVaultCounts[activeVault]?.subjective ?? 0) : (existingCh?.subjectiveCount ?? ch.subjectiveCount ?? 0);
+
           instantChaptersList.push({
             subject,
             chapter: ch,
             chapterName: ch.name || `Chapter ${ch.number || idx + 1}`,
             chapterNumber: chNum,
-            objectiveCount: existingCh?.objectiveCount ?? ch.objectiveCount ?? 0,
-            subjectiveCount: existingCh?.subjectiveCount ?? ch.subjectiveCount ?? 0,
+            objectiveCount: objCount,
+            subjectiveCount: subjCount,
+            vaultCounts: chVaultCounts,
             testsCount: existingCh?.testsCount ?? ch.testsCount ?? 0,
             conductedTopicsCount: condTopics,
             totalTopicsCount: totTopics,
@@ -451,6 +457,11 @@ export default function AdminExamGeneratorPage() {
               at => (topCode && at.topicCode === topCode) || (at.topic === label && String(at.chapterNumber) === String(chItem.chapterNumber))
             );
 
+            const activeVault = (currentTemplate?.examCategory === 'foundation' || currentTemplate?.examCategory === 'mock') ? 'foundation' : 'exam';
+            const topVaultCounts = existingTop?.vaultCounts ?? (isObj ? t.vaultCounts : undefined);
+            const topObjCount = topVaultCounts ? (topVaultCounts[activeVault]?.objective ?? 0) : (existingTop?.objectiveCount ?? (isObj ? (t.objectiveCount || 0) : 0));
+            const topSubjCount = topVaultCounts ? (topVaultCounts[activeVault]?.subjective ?? 0) : (existingTop?.subjectiveCount ?? (isObj ? (t.subjectiveCount || 0) : 0));
+
             instantTopicsList.push({
               subject: chItem.subject,
               chapterName: chItem.chapterName,
@@ -459,8 +470,9 @@ export default function AdminExamGeneratorPage() {
               topicName: name || label,
               topicNumber: num,
               topicCode: topCode,
-              objectiveCount: existingTop?.objectiveCount ?? (isObj ? (t.objectiveCount || 0) : 0),
-              subjectiveCount: existingTop?.subjectiveCount ?? (isObj ? (t.subjectiveCount || 0) : 0),
+              objectiveCount: topObjCount,
+              subjectiveCount: topSubjCount,
+              vaultCounts: topVaultCounts,
               testsCount: existingTop?.testsCount ?? (isObj ? (t.testsCount || 0) : 0),
               hasSubtopics: isObj && Array.isArray(t.subtopics) && t.subtopics.length > 0
             });
@@ -479,13 +491,14 @@ export default function AdminExamGeneratorPage() {
     try {
       const idToken = await firebaseUser.getIdToken();
       const allChaptersList: any[] = [];
+      const activeVault = (currentTemplate?.examCategory === 'foundation' || currentTemplate?.examCategory === 'mock') ? 'foundation' : 'exam';
       
       await Promise.all(
         Array.from(subs).map(async (subject) => {
           const entry = resolveSyllabusEntry(subject);
           const queryUrl = entry && entry.docId
-            ? `/api/admin/exams/generate?docId=${entry.docId}`
-            : `/api/admin/exams/generate?board=${encodeURIComponent(selectedBoard)}&classNum=${encodeURIComponent(selectedClass)}&subject=${encodeURIComponent(subject)}`;
+            ? `/api/admin/exams/generate?docId=${entry.docId}&vault=${activeVault}`
+            : `/api/admin/exams/generate?board=${encodeURIComponent(selectedBoard)}&classNum=${encodeURIComponent(selectedClass)}&subject=${encodeURIComponent(subject)}&vault=${activeVault}`;
           const res = await fetch(queryUrl, {
             headers: { 'Authorization': `Bearer ${idToken}` }
           });
@@ -493,13 +506,15 @@ export default function AdminExamGeneratorPage() {
               const syllabusDoc = await res.json();
               const list = syllabusDoc.chapters || [];
               list.forEach((ch: any, idx: number) => {
+                const chObjCount = ch.vaultCounts ? (ch.vaultCounts[activeVault]?.objective ?? 0) : (ch.objectiveCount || 0);
+                const chSubjCount = ch.vaultCounts ? (ch.vaultCounts[activeVault]?.subjective ?? 0) : (ch.subjectiveCount || 0);
                 allChaptersList.push({
                   subject,
                   chapter: ch,
                   chapterName: ch.name || `Chapter ${ch.number || idx + 1}`,
                   chapterNumber: String(ch.number || idx + 1),
-                  objectiveCount: ch.objectiveCount || 0,
-                  subjectiveCount: ch.subjectiveCount || 0,
+                  objectiveCount: chObjCount,
+                  subjectiveCount: chSubjCount,
                   vaultCounts: ch.vaultCounts,
                   testsCount: ch.testsCount || 0,
                   conductedTopicsCount: ch.conductedTopicsCount || 0,
@@ -525,6 +540,9 @@ export default function AdminExamGeneratorPage() {
               const label = rawNum ? `${rawNum} ${name}` : name;
               const num = rawNum || label;
               const topCode = isObj ? (t.topicCode || t.subtopicCode || '') : (parentCode ? `${parentCode}.${sIdx + 1}` : '');
+              const topVaultCounts = isObj ? t.vaultCounts : undefined;
+              const topObjCount = topVaultCounts ? (topVaultCounts[activeVault]?.objective ?? 0) : (isObj ? (t.objectiveCount || 0) : 0);
+              const topSubjCount = topVaultCounts ? (topVaultCounts[activeVault]?.subjective ?? 0) : (isObj ? (t.subjectiveCount || 0) : 0);
               allTopicsList.push({
                 subject: chItem.subject,
                 chapterName: chItem.chapterName,
@@ -533,9 +551,9 @@ export default function AdminExamGeneratorPage() {
                 topicName: name || label,
                 topicNumber: num,
                 topicCode: topCode,
-                objectiveCount: isObj ? (t.objectiveCount || 0) : 0,
-                subjectiveCount: isObj ? (t.subjectiveCount || 0) : 0,
-                vaultCounts: isObj ? t.vaultCounts : undefined,
+                objectiveCount: topObjCount,
+                subjectiveCount: topSubjCount,
+                vaultCounts: topVaultCounts,
                 testsCount: isObj ? (t.testsCount || 0) : 0,
                 hasSubtopics: isObj && Array.isArray(t.subtopics) && t.subtopics.length > 0
               });
@@ -596,8 +614,7 @@ export default function AdminExamGeneratorPage() {
     if (topicNum) params.set('topic', topicNum);
     if (qType) params.set('questionType', qType);
 
-    const targetVault = (currentTemplate?.examCategory === 'foundation' || currentTemplate?.examCategory === 'mock') ? 'mock' : 'exam';
-
+    const targetVault = currentTemplate?.examCategory === 'foundation' ? 'foundation' : 'exam';
     params.set('vault', targetVault);
 
 
@@ -620,8 +637,7 @@ export default function AdminExamGeneratorPage() {
     if (chapterNum) params.set('chapter', chapterNum);
     if (qType) params.set('questionType', qType);
 
-    const targetVault = (currentTemplate?.examCategory === 'foundation' || currentTemplate?.examCategory === 'mock') ? 'mock' : 'exam';
-
+    const targetVault = currentTemplate?.examCategory === 'foundation' ? 'foundation' : 'exam';
     params.set('vault', targetVault);
 
 
@@ -650,6 +666,8 @@ export default function AdminExamGeneratorPage() {
     if (chapter) params.set('chapter', chapter);
     if (topicNums) params.set('topic', topicNums);
     if (qType) params.set('questionType', qType);
+    const targetVault = currentTemplate?.examCategory === 'foundation' ? 'foundation' : 'exam';
+    params.set('vault', targetVault);
 
     const url = `/admin/create-qb?${params.toString()}`;
     window.open(url, '_blank');
@@ -1752,7 +1770,7 @@ Return ONLY valid JSON. No markdown wrappers or extra commentary.`;
                     onChange={(e) => setCustomNegativeMarks(Number(e.target.value))}
                     style={{ width: '100%', padding: '4px 6px', border: '1px solid var(--border-light)', borderRadius: 'var(--radius-sm)', background: 'var(--surface)', color: 'var(--text)', fontSize: '12px', height: '28px' }}
                   >
-                    <option value={0}>0 (No Penalty / Mock)</option>
+                    <option value={0}>0 (No Penalty / Foundation)</option>
                     <option value={0.25}>-0.25 Marks</option>
                     <option value={0.5}>-0.5 Marks</option>
                     <option value={1}>-1 Mark (Standard)</option>

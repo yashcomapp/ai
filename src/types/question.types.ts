@@ -74,7 +74,7 @@ export interface Question {
   metadata?: any;
   relaxProctoring?: boolean;
   isNumerical?: boolean;
-  vault?: 'exam' | 'practice' | 'mock' | 'foundation' | string;
+  vault?: 'exam' | 'practice' | 'foundation' | string;
   examCategory?: 'standard' | 'foundation' | string;
   [key: string]: any;
 }

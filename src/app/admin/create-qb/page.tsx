@@ -120,7 +120,7 @@ function CreateQBContent() {
   // Question Type and Generation settings
   const [questionType, setQuestionType] = useState<'objective' | 'subjective'>('objective');
   const [examCategory, setExamCategory] = useState<'standard' | 'foundation'>('standard');
-  const [vault, setVault] = useState<'practice' | 'exam' | 'mock'>('practice');
+  const [vault, setVault] = useState<'practice' | 'exam' | 'foundation'>('practice');
   const [includeNumericals, setIncludeNumericals] = useState<boolean>(false);
   const [numericalsManuallyToggled, setNumericalsManuallyToggled] = useState<boolean>(false);
 
@@ -130,10 +130,10 @@ function CreateQBContent() {
       setQuestionType(qtype as any);
     }
     const v = searchParams.get('vault');
-    if (v === 'exam' || v === 'practice' || v === 'mock') {
+    if (v === 'exam' || v === 'practice' || v === 'foundation') {
       setVault(v as any);
-    } else if (v === 'foundation') {
-      setVault('mock');
+    } else if (v === 'mock') {
+      setVault('foundation');
     }
   }, [searchParams]);
 
@@ -1148,7 +1148,7 @@ CRITICAL RULES & LEVEL/SOURCE FIDELITY:
    - Strictly DO NOT invent or fabricate artificial flow rates, methane extraction volumes, earthworm consumption mass, transpiration rates, lapse rates, stoichiometry, or synthetic physics equations for qualitative/biological concepts (environmental management, solid waste, disaster management, first aid, cell biology, taxonomy, microbes).
    - All questions MUST be purely conceptual, mechanistic, experimental, or factual questions using OSC, OMC, OTF, and OAR only.`}
 9. MANDATORY ATTRIBUTES: Each question object MUST include:
-   - "vault": "practice" | "exam" | "mock"
+   - "vault": "practice" | "exam" | "foundation"
    - "bloomLevel": "Remember" | "Understand" | "Apply" | "Analyze" | "Evaluate" | "Create"
    - "difficulty": "easy" | "medium" | "hard"
    - "examCategory": "${isFoundation ? 'foundation' : 'standard'}"
